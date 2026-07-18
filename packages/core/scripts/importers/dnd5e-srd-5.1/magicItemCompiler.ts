@@ -324,6 +324,24 @@ export function magicItemEngineHookKey(binding: EngineHookBinding): string {
   return JSON.stringify([binding.engine, binding.hook]);
 }
 
+/**
+ * Reviewed exact hooks whose complete contract is owned by the live item
+ * runtime. Keep this registry at hook granularity: several other F5 hooks
+ * deliberately combine a landed mutation (spend or state transition) with an
+ * unlanded responsibility (recharge or timer execution), so family-level
+ * ownership would overstate playability.
+ *
+ * `duration-budget accounting` is implemented end to end by
+ * `createInitialItemState` (canonical duration -> minutes) and `useItem`
+ * (validated operation cost -> persisted decrement and depletion handling).
+ */
+export const LANDED_MAGIC_ITEM_ENGINE_HOOKS: ReadonlySet<string> = new Set([
+  magicItemEngineHookKey({
+    engine: 'F5',
+    hook: 'duration-budget accounting',
+  }),
+]);
+
 type Obj = Record<string, unknown>;
 
 function asObject(value: unknown): Obj | undefined {

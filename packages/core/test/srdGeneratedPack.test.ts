@@ -2555,8 +2555,8 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(counts).toEqual({
         'adjudicated-by-design': 2,
         'design-blocked': 1,
-        'engine-pending': 781,
-        green: 217,
+        'engine-pending': 780,
+        green: 218,
       });
       const pending = clauses.filter(
         ({ readiness }) => readiness === 'engine-pending',
@@ -2566,7 +2566,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         expect(clause.clauseId).toBeTypeOf('string');
         expect(clause.representation).toBeDefined();
         expect(clause.engineHooks?.length).toBeGreaterThan(0);
-        expect(clause.missingHooks).toEqual(clause.engineHooks);
+        expect(clause.missingHooks?.length).toBeGreaterThan(0);
+        expect(clause.engineHooks).toEqual(
+          expect.arrayContaining(clause.missingHooks ?? []),
+        );
       }
       expect(clauses.some(({ scope }) => scope?.kind === 'variant')).toBe(true);
     });

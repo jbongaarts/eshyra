@@ -233,7 +233,7 @@ export function buildSystemPrompt(
     '  perform spell-scaling arithmetic yourself.',
     '- All changes to canonical game state go through a state tool:',
     '  `adjust_hp` for HP, `add_condition`/`remove_condition` for conditions,',
-    '  `give_item`/`remove_item` for inventory, `update_clock` for time and',
+    '  `give_item`/`transfer_item`/`remove_item` for inventory, `update_clock` for time and',
     '  location, `set_plot_flag` for narrative flags, `set_world_fact` for',
     '  world-template overlays, and `record_world_fact` for consequential',
     '  improvised lore or stable continuity dressing. Prose that claims a',

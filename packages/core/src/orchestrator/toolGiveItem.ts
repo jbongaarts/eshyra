@@ -1,7 +1,6 @@
 import { withTransaction } from '../persistence/db.js';
-import { isStatefulMagicItemMechanics } from '../rules/magicItemMechanics.js';
+import { lookupRulesRecord } from '../rules/lookup.js';
 import {
-  effectiveMagicItemMechanics,
   MagicItemVariantError,
   resolveMagicItemVariant,
 } from '../rules/magicItemVariants.js';
@@ -10,6 +9,7 @@ import { giveItem } from '../state/domainMutations.js';
 import {
   createInitialItemState,
   ItemStateError,
+  isStatefulMagicItem,
   validatePackRef,
   writeItemState,
 } from '../state/itemState.js';
@@ -128,14 +128,10 @@ export const giveItemTool: Tool = {
         } else {
           resolveMagicItemVariant(hit.record, variantId);
         }
-        const data = hit?.record.data as Record<string, unknown> | undefined;
         const stateful =
           hit === undefined
             ? false
-            : isStatefulMagicItemMechanics(
-                effectiveMagicItemMechanics(hit.record, variantId),
-                data?.requiresAttunement === true,
-              );
+            : isStatefulMagicItem(hit.record, variantId);
         const granted = giveItem(
           txnDb,
           {
@@ -167,6 +163,13 @@ export const giveItemTool: Tool = {
             createInitialItemState(packRef, hit.record, {
               variantId,
               rng: ctx.rng,
+              resolveTable: (ref) => {
+                const result = lookupRulesRecord(hit.stack, {
+                  kind: 'table',
+                  ref,
+                });
+                return result.ok ? result.record : undefined;
+              },
             }),
             {
               provenance: `model:${ctx.turnId}`,

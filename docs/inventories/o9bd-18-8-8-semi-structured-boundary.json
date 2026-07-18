@@ -15545,7 +15545,7 @@
         "F2",
         "F5"
       ],
-      "population": 781,
+      "population": 780,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15569,7 +15569,7 @@
         "F2",
         "F5"
       ],
-      "population": 1483,
+      "population": 1475,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15593,7 +15593,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1483,
+      "population": 1475,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",

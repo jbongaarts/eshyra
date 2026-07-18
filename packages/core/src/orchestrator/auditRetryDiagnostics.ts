@@ -29,6 +29,7 @@ const STATE_TOOLS = new Set([
   'award_inspiration',
   'use_inspiration',
   'give_item',
+  'transfer_item',
   'remove_item',
   'gain_currency',
   'spend_currency',

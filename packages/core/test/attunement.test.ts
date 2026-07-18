@@ -175,6 +175,56 @@ describe('attuneItem', () => {
     ).toThrow(/more than one copy/);
   });
 
+  it('treats distinct canonical variants as distinct types and rejects the same variant twice', () => {
+    const { db } = setup();
+    const instanceIds = new Map<string, string>();
+    for (const [id, variantId] of [
+      ['agility-1', 'agility'],
+      ['protection-1', 'protection'],
+      ['agility-2', 'agility'],
+    ] as const)
+      instanceIds.set(
+        id,
+        giveItem(
+          db,
+          {
+            id,
+            name: 'Ioun Stone',
+            packRef: 'magic-item:ioun-stone',
+            variantId,
+            stateful: true,
+          },
+          CTX,
+        ).id,
+      );
+
+    const agility = attuneItem(db, {
+      campaignId: CAMPAIGN,
+      itemId: instanceIds.get('agility-1') as string,
+      ...CTX,
+    });
+    const protection = attuneItem(db, {
+      campaignId: CAMPAIGN,
+      itemId: instanceIds.get('protection-1') as string,
+      ...CTX,
+    });
+    expect(agility.attuned).toMatchObject({
+      itemKey: 'magic-item:ioun-stone#variant:agility',
+      displayName: 'Agility',
+    });
+    expect(protection.attuned).toMatchObject({
+      itemKey: 'magic-item:ioun-stone#variant:protection',
+      displayName: 'Protection',
+    });
+    expect(() =>
+      attuneItem(db, {
+        campaignId: CAMPAIGN,
+        itemId: instanceIds.get('agility-2') as string,
+        ...CTX,
+      }),
+    ).toThrow(/copy of 'Agility'.*more than one copy/);
+  });
+
   it('enforces one creature per item until the other attunement ends', () => {
     const { db, pcId } = setup();
     ensureCharacterRow(db, 'pc-2', CTX.provenance, CTX.sessionId, CTX.at);

@@ -42,6 +42,7 @@ export interface ItemOperationReadinessInput {
   readonly economyIds: ReadonlySet<string>;
   readonly effectIds: ReadonlySet<string>;
   readonly usesStateMachine: boolean;
+  readonly usesSpellStore: boolean;
 }
 
 /**
@@ -94,6 +95,8 @@ export function assertMagicItemOperationReady(
         input.effectIds.has(representation.effectId);
     else if (representation?.block === 'stateMachine')
       relevant = input.usesStateMachine;
+    else if (representation?.block === 'spellStore')
+      relevant = input.usesSpellStore;
     else if (
       typeof representation?.block === 'string' &&
       representation.block !== 'structuredField'

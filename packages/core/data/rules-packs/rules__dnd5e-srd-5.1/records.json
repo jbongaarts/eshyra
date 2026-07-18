@@ -90233,16 +90233,11 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F5",
-                "hook": "duration-budget accounting"
-              },
-              {
                 "engine": "F7",
                 "hook": "long-rest reset"
               }
             ],
             "missingEngines": [
-              "F5",
               "F7"
             ]
           },
@@ -91458,16 +91453,7 @@
                 "hook": "duration-budget accounting"
               }
             ],
-            "readiness": "engine-pending",
-            "missingHooks": [
-              {
-                "engine": "F5",
-                "hook": "duration-budget accounting"
-              }
-            ],
-            "missingEngines": [
-              "F5"
-            ]
+            "readiness": "green"
           },
           {
             "clauseId": "magic-item:candle-of-invocation/c2-residual-invocation-zone",
@@ -107625,17 +107611,12 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F5",
-                "hook": "duration-budget accounting"
-              },
-              {
                 "engine": "F10",
                 "hook": "downtime study window"
               }
             ],
             "missingEngines": [
-              "F10",
-              "F5"
+              "F10"
             ]
           },
           {
@@ -107762,17 +107743,12 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F5",
-                "hook": "duration-budget accounting"
-              },
-              {
                 "engine": "F10",
                 "hook": "downtime study window"
               }
             ],
             "missingEngines": [
-              "F10",
-              "F5"
+              "F10"
             ]
           },
           {
@@ -108114,17 +108090,12 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F5",
-                "hook": "duration-budget accounting"
-              },
-              {
                 "engine": "F10",
                 "hook": "downtime study window"
               }
             ],
             "missingEngines": [
-              "F10",
-              "F5"
+              "F10"
             ]
           },
           {
@@ -137114,17 +137085,12 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F5",
-                "hook": "duration-budget accounting"
-              },
-              {
                 "engine": "F10",
                 "hook": "downtime study window"
               }
             ],
             "missingEngines": [
-              "F10",
-              "F5"
+              "F10"
             ]
           },
           {
@@ -137251,17 +137217,12 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F5",
-                "hook": "duration-budget accounting"
-              },
-              {
                 "engine": "F10",
                 "hook": "downtime study window"
               }
             ],
             "missingEngines": [
-              "F10",
-              "F5"
+              "F10"
             ]
           },
           {
@@ -137388,17 +137349,12 @@
             "readiness": "engine-pending",
             "missingHooks": [
               {
-                "engine": "F5",
-                "hook": "duration-budget accounting"
-              },
-              {
                 "engine": "F10",
                 "hook": "downtime study window"
               }
             ],
             "missingEngines": [
-              "F10",
-              "F5"
+              "F10"
             ]
           },
           {

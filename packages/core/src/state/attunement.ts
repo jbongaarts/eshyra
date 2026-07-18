@@ -7,8 +7,8 @@
 //
 // - A creature can be attuned to no more than three magic items at a time,
 //   and cannot attune to more than one copy of the same item (identity =
-//   the resolved magic-item record key, or the normalized item name for
-//   items outside the pack).
+//   the resolved magic-item record key plus canonical variant identity when
+//   selected, or the normalized item name for items outside the pack).
 // - An item can be attuned to only one creature at a time: attuning to an
 //   item some other character is still attuned to is refused until that
 //   attunement is ended.
@@ -30,6 +30,12 @@
 
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
+import type { MagicItemVariantDefinition } from '../rules/magicItemVariants.js';
+import {
+  MagicItemVariantError,
+  magicItemVariantTypeKey,
+  resolveMagicItemVariant,
+} from '../rules/magicItemVariants.js';
 import { resolveCharacterId } from './activeCharacter.js';
 import { lookupCampaignRecord } from './campaignRecordLookup.js';
 import type { LifeState } from './hpLifecycle.js';
@@ -177,10 +183,10 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
 
     const item = txnDb
       .prepare(
-        'SELECT name, pack_ref FROM inventory WHERE id = ? AND character_id = ?',
+        'SELECT name, pack_ref, variant_id FROM inventory WHERE id = ? AND character_id = ?',
       )
       .get(input.itemId, character.id) as
-      | { name: string; pack_ref: string | null }
+      | { name: string; pack_ref: string | null; variant_id: string | null }
       | undefined;
     if (item === undefined) {
       throw new AttunementError(
@@ -209,8 +215,13 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
         `itemRef '${input.itemRef}' does not resolve to a magic-item record in the campaign rules stack; find the exact key via lookup_rules or omit itemRef`,
       );
     }
+    if (item.variant_id !== null && record === undefined)
+      throw new AttunementError(
+        `variant '${item.variant_id}' requires a resolvable magic-item record for '${input.itemId}'`,
+      );
     let prerequisite: string | undefined;
     let itemKey = `name:${normalizeItemKey(item.name)}`;
+    let displayName = item.name;
     if (record !== undefined) {
       const data = record.data as Record<string, unknown>;
       if (data.requiresAttunement !== true) {
@@ -218,7 +229,19 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
           `'${item.name}' (${record.key}) does not require attunement per its record; its properties work without a slot`,
         );
       }
-      itemKey = record.key;
+      let selectedVariant: MagicItemVariantDefinition | undefined;
+      try {
+        selectedVariant = resolveMagicItemVariant(
+          record,
+          item.variant_id ?? undefined,
+        );
+      } catch (error) {
+        if (error instanceof MagicItemVariantError)
+          throw new AttunementError(error.message);
+        throw error;
+      }
+      itemKey = magicItemVariantTypeKey(record.key, selectedVariant?.id);
+      if (selectedVariant !== undefined) displayName = selectedVariant.name;
       if (typeof data.attunementRequirement === 'string') {
         prerequisite = data.attunementRequirement;
       }
@@ -227,12 +250,12 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
     const existing = listAttunements(txnDb, input.campaignId, character.id);
     if (existing.some((entry) => entry.itemId === input.itemId)) {
       throw new AttunementError(
-        `${character.label} is already attuned to '${item.name}'`,
+        `${character.label} is already attuned to '${displayName}'`,
       );
     }
     if (existing.some((entry) => entry.itemKey === itemKey)) {
       throw new AttunementError(
-        `${character.label} is already attuned to a copy of '${item.name}'; a creature cannot attune to more than one copy of the same item`,
+        `${character.label} is already attuned to a copy of '${displayName}'; a creature cannot attune to more than one copy of the same item`,
       );
     }
     if (existing.length >= ATTUNEMENT_SLOT_LIMIT) {
@@ -253,7 +276,7 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
       | undefined;
     if (otherHolder !== undefined) {
       throw new AttunementError(
-        `item '${item.name}' is still attuned to character '${otherHolder.character_id}'; an item can be attuned to only one creature at a time — end that attunement first`,
+        `item '${displayName}' is still attuned to character '${otherHolder.character_id}'; an item can be attuned to only one creature at a time — end that attunement first`,
       );
     }
 
@@ -270,7 +293,7 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
         character.id,
         input.itemId,
         itemKey,
-        item.name,
+        displayName,
         input.at,
         input.provenance,
         input.sessionId,

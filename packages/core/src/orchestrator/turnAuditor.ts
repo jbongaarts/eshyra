@@ -70,7 +70,7 @@ export interface AuditVerdict {
   readonly missingRequiredCalls: readonly MissingRequiredCall[];
   /**
    * Explicit-action-only tools the candidate executed WITHOUT explicit player
-   * action intent (eshyra-4ia4). A `give_item`/`remove_item` call made merely to
+   * action intent (eshyra-4ia4). A `give_item`/`transfer_item`/`remove_item` call made merely to
    * answer an inventory query ("What am I equipped with?") lands here. Empty on
    * accept. Populated independently of {@link missingRequiredTools}: a candidate
    * can be rejected for calling a forbidden tool even while it is missing none.
@@ -179,7 +179,7 @@ const AUDIT_POLICY = [
   '  value. Reject hand-computed, mismatched, failed, or lookup-only scaling.',
   '- A change to HP, conditions, inventory, time/location, plot flags, or world',
   '  facts requires the matching state tool (e.g. `adjust_hp`, `add_condition`,',
-  '  `give_item`, `update_clock`, `set_plot_flag`, `set_world_fact`).',
+  '  `give_item`, `transfer_item`, `update_clock`, `set_plot_flag`, `set_world_fact`).',
   '- Wallet balances are valid read-only evidence from the Current State Snapshot.',
   '  Narrated currency gains, spending, or denomination changes require the',
   '  corresponding `gain_currency`, `spend_currency`, or `convert_currency` call.',
@@ -262,7 +262,7 @@ const AUDIT_POLICY = [
   '- A read-only query about current state ("What am I equipped with?", "What is',
   '  in my pack?", "Check my inventory") is NOT explicit action intent. A',
   '  candidate that executed an explicit-action-only tool (e.g. `give_item`,',
-  '  `remove_item`) to answer such a query is a violation: list that tool in',
+  '  `transfer_item`, `remove_item`) to answer such a query is a violation: list that tool in',
   '  disallowedToolCalls and reject. State changes must NOT be invented to answer',
   '  a question — the DM should report current state and offer a choice instead.',
   '- An explicit player action ("I buy a torch", "I pick up the sword", "I drop',

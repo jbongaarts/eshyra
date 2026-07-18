@@ -70,6 +70,7 @@ import { stabilizeCharacterTool } from './toolStabilizeCharacter.js';
 import { startEffectTool } from './toolStartEffect.js';
 import { startEncounterTool } from './toolStartEncounter.js';
 import { suppressEffectTool } from './toolSuppressEffect.js';
+import { transferItemTool } from './toolTransferItem.js';
 import { unsuppressEffectTool } from './toolUnsuppressEffect.js';
 import { updateClockTool } from './toolUpdateClock.js';
 import { updateCombatantTool } from './toolUpdateCombatant.js';
@@ -118,6 +119,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   convertCurrencyTool,
   giveItemTool,
   useItemTool,
+  transferItemTool,
   removeItemTool,
   updateClockTool,
   advanceTimeTool,

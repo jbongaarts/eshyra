@@ -300,6 +300,52 @@ describe('removeItem', () => {
     db.close();
   });
 
+  it('atomically releases attunement with item_destroyed evidence when removing an item', () => {
+    const db = freshDb();
+    giveItem(db, { id: 'ring', name: 'Ring of Protection' }, CTX);
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'pc-1',
+      'ring',
+      'magic-item:ring-of-protection',
+      'Ring of Protection',
+      CTX.at,
+      CTX.provenance,
+      CTX.sessionId,
+      CTX.at,
+    );
+
+    const result = removeItem(db, 'ring', undefined, CTX);
+
+    expect(result.attunementsEnded).toEqual([
+      {
+        ended: {
+          characterId: 'pc-1',
+          itemId: 'ring',
+          itemKey: 'magic-item:ring-of-protection',
+          displayName: 'Ring of Protection',
+          attunedAt: CTX.at,
+        },
+        reason: 'item_destroyed',
+        provenance: CTX.provenance,
+        sessionId: CTX.sessionId,
+        endedAt: CTX.at,
+      },
+    ]);
+    expect(
+      db.prepare('SELECT 1 FROM attunement WHERE item_id = ?').get('ring'),
+    ).toBeUndefined();
+    expect(
+      db.prepare('SELECT 1 FROM inventory WHERE id = ?').get('ring'),
+    ).toBeUndefined();
+    db.close();
+  });
+
   it('decrements quantity', () => {
     const db = freshDb();
     giveItem(db, { id: 'torch', name: 'Torch', quantity: 5 }, CTX);

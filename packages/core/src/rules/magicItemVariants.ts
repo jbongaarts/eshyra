@@ -43,6 +43,14 @@ export function canonicalMagicItemVariantId(name: string): string {
   return id;
 }
 
+/** Canonical attunement type identity: sibling variants are different items. */
+export function magicItemVariantTypeKey(
+  packRef: string,
+  variantId: string | undefined,
+): string {
+  return variantId === undefined ? packRef : `${packRef}#variant:${variantId}`;
+}
+
 function object(value: unknown, path: string): Obj {
   if (typeof value !== 'object' || value === null || Array.isArray(value))
     throw new MagicItemVariantError(`${path} must be an object`);

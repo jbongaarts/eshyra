@@ -957,6 +957,7 @@ export {
   effectiveMagicItemMechanics,
   MagicItemVariantError,
   magicItemVariantDefinitions,
+  magicItemVariantTypeKey,
   mergeMagicItemVariantMechanics,
   resolveMagicItemVariant,
 } from './rules/magicItemVariants.js';
@@ -1285,6 +1286,12 @@ export {
   spendInspiration,
 } from './state/inspiration.js';
 export type {
+  DestroyedItemAttunementEvidence,
+  DestroyInventoryItemResult,
+  InventoryDestructionContext,
+} from './state/inventoryLifecycle.js';
+export { destroyInventoryItem } from './state/inventoryLifecycle.js';
+export type {
   ItemEconomyState,
   ItemInstanceState,
   UseItemInput,
@@ -1301,6 +1308,12 @@ export {
   validatePackRef,
   writeItemState,
 } from './state/itemState.js';
+export type {
+  ItemTransferAttunementPolicy,
+  TransferItemInput,
+  TransferItemResult,
+} from './state/itemTransfer.js';
+export { ItemTransferError, transferItem } from './state/itemTransfer.js';
 // Read-only level-up eligibility detection.
 export type { LevelUpEligibility } from './state/levelUpEligibility.js';
 export {

@@ -39,6 +39,7 @@ import { getEquipmentPackContents } from './equipmentPackContents.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
 import {
   attachMagicItemExecutionReadiness,
+  LANDED_MAGIC_ITEM_ENGINE_HOOKS,
   validateMagicItemClausesAndClassify,
 } from './magicItemCompiler.js';
 import {
@@ -1731,6 +1732,7 @@ export function buildPack(input: BuildPackInput): RulesPack {
     const readiness = validateMagicItemClausesAndClassify({
       records,
       clausesByItemKey: magicItemClauses,
+      landedEngineHooks: LANDED_MAGIC_ITEM_ENGINE_HOOKS,
     });
     records = [...attachMagicItemExecutionReadiness(records, readiness)];
   }

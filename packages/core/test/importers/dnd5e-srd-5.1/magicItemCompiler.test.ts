@@ -4,6 +4,7 @@ import {
   aggregateMagicItemFamilyProjections,
   attachMagicItemExecutionReadiness,
   type ItemClauseExpectation,
+  LANDED_MAGIC_ITEM_ENGINE_HOOKS,
   MAGIC_ITEM_ENGINE_FAMILIES,
   magicItemEngineHookKey,
   validateMagicItemClausesAndClassify,
@@ -27,6 +28,27 @@ function itemRecord(data: Record<string, unknown>): RulesRecord {
 describe('magic-item compiler family aggregation', () => {
   it('keeps F1 in the reviewed magic-item engine-hook vocabulary', () => {
     expect(MAGIC_ITEM_ENGINE_FAMILIES).toContain('F1');
+  });
+
+  it('registers only reviewed, exact live-runtime hook contracts', () => {
+    expect([...LANDED_MAGIC_ITEM_ENGINE_HOOKS]).toEqual([
+      magicItemEngineHookKey({
+        engine: 'F5',
+        hook: 'duration-budget accounting',
+      }),
+    ]);
+    expect(LANDED_MAGIC_ITEM_ENGINE_HOOKS).not.toContain(
+      magicItemEngineHookKey({
+        engine: 'F5',
+        hook: 'magic-item-usage-recharge',
+      }),
+    );
+    expect(LANDED_MAGIC_ITEM_ENGINE_HOOKS).not.toContain(
+      magicItemEngineHookKey({
+        engine: 'F5',
+        hook: 'item state transition and duration processing',
+      }),
+    );
   });
   it('merges orthogonal keyed blocks and arrays deterministically', () => {
     const result = aggregateMagicItemFamilyProjections([

@@ -3,6 +3,7 @@ import type { Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
+import { lookupRulesRecord } from '../rules/lookup.js';
 import {
   isStatefulMagicItemMechanics,
   type MagicItemDurationSpec,
@@ -10,6 +11,7 @@ import {
 import {
   effectiveMagicItemMechanics,
   MagicItemVariantError,
+  magicItemVariantTypeKey,
   resolveMagicItemVariant,
 } from '../rules/magicItemVariants.js';
 import type { RulesRecord } from '../rules/types.js';
@@ -17,6 +19,10 @@ import {
   type CampaignRulesPackResolver,
   lookupStrictCampaignRecord,
 } from './campaignRecordLookup.js';
+import {
+  type DestroyedItemAttunementEvidence,
+  destroyInventoryItem,
+} from './inventoryLifecycle.js';
 import {
   ItemDepletionError,
   type ItemDepletionResolution,
@@ -26,6 +32,18 @@ import {
   assertMagicItemOperationReady,
   ItemExecutionReadinessError,
 } from './itemExecutionReadiness.js';
+import {
+  ItemRandomInitializationError,
+  type ItemRandomInitializationState,
+  initializeDeclaredRandomState,
+  validateDeclaredRandomState,
+} from './itemRandomInitialization.js';
+import {
+  type ItemStateTimer,
+  ItemTimerError,
+  reconcileItemStateTimers,
+  resolveItemStateTimers,
+} from './itemTimers.js';
 
 type Obj = Record<string, unknown>;
 
@@ -49,6 +67,9 @@ export interface ItemInstanceState {
   readonly spellStoreLevels?: Readonly<Record<string, number>>;
   readonly curse?: { readonly attached: boolean; readonly revealed: boolean };
   readonly custom?: Readonly<Record<string, unknown>>;
+  readonly randomInitialization?: Readonly<
+    Record<string, ItemRandomInitializationState>
+  >;
   readonly initializationRolls?: readonly {
     readonly purpose: string;
     readonly notation: string;
@@ -60,19 +81,7 @@ export interface ItemInstanceState {
     readonly status: 'consumed' | 'inert' | 'nonmagical';
     readonly pendingTerminal?: 'destroyed';
   };
-  readonly pendingTimers?: readonly {
-    readonly from: string;
-    readonly to: string;
-    readonly startedAt: string;
-    readonly amount: number;
-    readonly unit: 'round' | 'minute' | 'hour' | 'day';
-    readonly dueAt?: string;
-    readonly roll?: {
-      readonly notation: string;
-      readonly rolls: readonly number[];
-      readonly total: number;
-    };
-  }[];
+  readonly pendingTimers?: readonly ItemStateTimer[];
 }
 
 export interface UseItemInput {
@@ -118,6 +127,7 @@ export interface UseItemResult {
   readonly state?: ItemInstanceState;
   readonly quantity?: number;
   readonly consumed: boolean;
+  readonly attunementsEnded?: readonly DestroyedItemAttunementEvidence[];
 }
 
 export class ItemStateError extends Error {
@@ -172,6 +182,7 @@ export function validateItemStateJson(
       'spellStoreLevels',
       'curse',
       'custom',
+      'randomInitialization',
       'initializationRolls',
       'depletions',
       'lifecycle',
@@ -270,6 +281,60 @@ export function validateItemStateJson(
       );
   }
   if (state.custom !== undefined) obj(state.custom, `${path}.custom`);
+  if (state.randomInitialization !== undefined) {
+    const declarations = obj(
+      state.randomInitialization,
+      `${path}.randomInitialization`,
+    );
+    for (const [procedureId, raw] of Object.entries(declarations)) {
+      if (procedureId.length === 0)
+        throw new ItemStateError(
+          `${path}.randomInitialization contains an empty procedure id`,
+        );
+      const entryPath = `${path}.randomInitialization.${procedureId}`;
+      const entry = obj(raw, entryPath);
+      if (typeof entry.kind !== 'string' || typeof entry.tableRef !== 'string')
+        throw new ItemStateError(`${entryPath} has invalid kind/tableRef`);
+      if (entry.kind === 'table-pool') {
+        onlyKeys(
+          entry,
+          ['kind', 'tableRef', 'remainingEntryIds', 'removedEntryIds'],
+          entryPath,
+        );
+        const all: string[] = [];
+        for (const field of ['remainingEntryIds', 'removedEntryIds'] as const) {
+          const values = entry[field];
+          if (
+            !Array.isArray(values) ||
+            !values.every((value) => typeof value === 'string')
+          )
+            throw new ItemStateError(`${entryPath}.${field} must be strings`);
+          all.push(...(values as string[]));
+        }
+        if (new Set(all).size !== all.length)
+          throw new ItemStateError(
+            `${entryPath} table-pool ids must be unique`,
+          );
+        continue;
+      }
+      if (entry.kind === 'containment-occupant') {
+        onlyKeys(entry, ['kind', 'tableRef', 'occupant'], entryPath);
+        if (entry.occupant === null) continue;
+        validateRandomTableResult(entry.occupant, `${entryPath}.occupant`);
+        continue;
+      }
+      if (entry.kind === 'table-results') {
+        onlyKeys(entry, ['kind', 'tableRef', 'results'], entryPath);
+        if (!Array.isArray(entry.results))
+          throw new ItemStateError(`${entryPath}.results must be an array`);
+        entry.results.forEach((result, index) => {
+          validateRandomTableResult(result, `${entryPath}.results[${index}]`);
+        });
+        continue;
+      }
+      throw new ItemStateError(`${entryPath}.kind is unsupported`);
+    }
+  }
   if (state.initializationRolls !== undefined) {
     if (!Array.isArray(state.initializationRolls))
       throw new ItemStateError(`${path}.initializationRolls must be an array`);
@@ -387,20 +452,39 @@ export function validateItemStateJson(
       const timer = obj(raw, `${path}.pendingTimers[${index}]`);
       onlyKeys(
         timer,
-        ['from', 'to', 'startedAt', 'amount', 'unit', 'dueAt', 'roll'],
+        [
+          'from',
+          'to',
+          'anchorElapsedMinutes',
+          'deadlineElapsedMinutes',
+          'amount',
+          'unit',
+          'roll',
+        ],
         `${path}.pendingTimers[${index}]`,
       );
       if (
         typeof timer.from !== 'string' ||
         typeof timer.to !== 'string' ||
-        typeof timer.startedAt !== 'string' ||
-        typeof timer.amount !== 'number' ||
-        !Number.isFinite(timer.amount) ||
-        timer.amount < 0 ||
-        !['round', 'minute', 'hour', 'day'].includes(String(timer.unit)) ||
-        (timer.dueAt !== undefined && typeof timer.dueAt !== 'string')
+        !Number.isSafeInteger(timer.anchorElapsedMinutes) ||
+        (timer.anchorElapsedMinutes as number) < 0 ||
+        !Number.isSafeInteger(timer.deadlineElapsedMinutes) ||
+        (timer.deadlineElapsedMinutes as number) < 0 ||
+        !Number.isSafeInteger(timer.amount) ||
+        (timer.amount as number) < 0 ||
+        !['minute', 'hour', 'day'].includes(String(timer.unit))
       )
         throw new ItemStateError(`${path}.pendingTimers[${index}] is invalid`);
+      const multiplier =
+        timer.unit === 'minute' ? 1 : timer.unit === 'hour' ? 60 : 1_440;
+      if (
+        timer.deadlineElapsedMinutes !==
+        (timer.anchorElapsedMinutes as number) +
+          (timer.amount as number) * multiplier
+      )
+        throw new ItemStateError(
+          `${path}.pendingTimers[${index}] deadline does not match its campaign-clock anchor and duration`,
+        );
       if (timer.roll !== undefined) {
         const roll = obj(timer.roll, `${path}.pendingTimers[${index}].roll`);
         onlyKeys(
@@ -421,6 +505,19 @@ export function validateItemStateJson(
     });
   }
   return state as unknown as ItemInstanceState;
+}
+
+function validateRandomTableResult(value: unknown, path: string): void {
+  const result = obj(value, path);
+  onlyKeys(result, ['roll', 'rowIndex', 'outcome'], path);
+  if (
+    !Number.isInteger(result.roll) ||
+    !Number.isInteger(result.rowIndex) ||
+    (result.rowIndex as number) < 0 ||
+    !Array.isArray(result.outcome) ||
+    !result.outcome.every((cell) => typeof cell === 'string')
+  )
+    throw new ItemStateError(`${path} has invalid table-result evidence`);
 }
 
 function mechanicsFor(record: RulesRecord, variantId?: string): Obj {
@@ -523,9 +620,13 @@ export function isStatefulMagicItem(
   variantId?: string,
 ): boolean {
   const data = obj(record.data, `${record.key}.data`);
-  return isStatefulMagicItemMechanics(
-    effectiveMagicItemMechanics(record, variantId),
-    data.requiresAttunement === true,
+  const mechanics = effectiveMagicItemMechanics(record, variantId);
+  if (isStatefulMagicItemMechanics(mechanics, data.requiresAttunement === true))
+    return true;
+  return (
+    mechanics?.randomProcedure?.procedures.some(
+      (procedure) => procedure.kind === 'initial-state',
+    ) === true
   );
 }
 
@@ -627,6 +728,7 @@ function initialRemaining(
 export interface CreateInitialItemStateOptions {
   readonly variantId?: string;
   readonly rng?: Rng;
+  readonly resolveTable?: (ref: string) => RulesRecord | undefined;
 }
 
 export function createInitialItemState(
@@ -648,109 +750,6 @@ export function createInitialItemState(
         initializationRolls,
       );
       if (remaining !== undefined) stateEconomies[id] = { remaining };
-    }
-  }
-  let custom: Readonly<Record<string, unknown>> | undefined;
-  if (mechanics.randomProcedure !== undefined) {
-    const randomProcedure = obj(
-      mechanics.randomProcedure,
-      'mechanics.randomProcedure',
-    );
-    if (randomProcedure.customState !== undefined) {
-      const declaration = obj(
-        randomProcedure.customState,
-        'mechanics.randomProcedure.customState',
-      );
-      if (declaration.kind === 'card-pool') {
-        const variants = Array.isArray(declaration.variants)
-          ? declaration.variants.map((raw, index) =>
-              obj(
-                raw,
-                `mechanics.randomProcedure.customState.variants[${index}]`,
-              ),
-            )
-          : [];
-        if (variants.length === 0)
-          throw new ItemStateError(`${packRef} card-pool has no variants`);
-        let selected = variants[0];
-        if (variants.length > 1) {
-          if (options.rng === undefined)
-            throw new ItemStateError(
-              `${packRef} card-pool variant is dice-defined; seeded RNG is required for item initialization`,
-            );
-          const initialStateProcedure = Array.isArray(
-            randomProcedure.procedures,
-          )
-            ? randomProcedure.procedures
-                .map((raw, index) =>
-                  obj(raw, `mechanics.randomProcedure.procedures[${index}]`),
-                )
-                .find((procedure) => procedure.kind === 'initial-state')
-            : undefined;
-          const risk =
-            initialStateProcedure?.risk === undefined
-              ? undefined
-              : obj(initialStateProcedure.risk, 'initial-state.risk');
-          if (
-            typeof risk?.percent !== 'number' ||
-            !Number.isInteger(risk.percent) ||
-            risk.percent < 0 ||
-            risk.percent > 100
-          )
-            throw new ItemStateError(
-              `${packRef} multi-variant card-pool lacks an initial-state percentage`,
-            );
-          const rolled = rollDice('1d100', options.rng);
-          initializationRolls.push({
-            purpose: 'custom:card-pool:variant',
-            notation: rolled.notation,
-            rolls: rolled.rolls,
-            total: rolled.total,
-          });
-          const outcome = initialStateProcedure?.outcome;
-          if (typeof outcome !== 'string')
-            throw new ItemStateError(
-              `${packRef} card-pool initial-state procedure lacks an outcome`,
-            );
-          const normalizedOutcome = outcome.toLowerCase();
-          const outcomeNamesVariant = (prefix: string, id: string): boolean =>
-            [id, id.replaceAll('-', ' ')].some((label) =>
-              normalizedOutcome.includes(`${prefix}${label} variant`),
-            );
-          const thresholdVariant = variants.find(
-            ({ id }) =>
-              typeof id === 'string' &&
-              outcomeNamesVariant(
-                `${risk.percent} percent initializes the `,
-                id,
-              ),
-          );
-          const otherwiseVariant = variants.find(
-            ({ id }) =>
-              typeof id === 'string' &&
-              outcomeNamesVariant('otherwise initialize the ', id),
-          );
-          if (
-            thresholdVariant === undefined ||
-            otherwiseVariant === undefined ||
-            thresholdVariant === otherwiseVariant
-          )
-            throw new ItemStateError(
-              `${packRef} card-pool initial-state outcome does not unambiguously bind its declared variants`,
-            );
-          selected =
-            rolled.total <= risk.percent ? thresholdVariant : otherwiseVariant;
-        }
-        if (!Array.isArray(selected.initialCardIds))
-          throw new ItemStateError(
-            `${packRef} card-pool variant has no initial cards`,
-          );
-        custom = {
-          variantId: selected.id,
-          remainingCardIds: [...selected.initialCardIds],
-          returnedCardIds: [],
-        };
-      }
     }
   }
   const spellStoreLevels: Record<string, number> = {};
@@ -786,6 +785,44 @@ export function createInitialItemState(
       spellStoreLevels[contract.id] = levels;
     }
   }
+  let declaredRandom: ReturnType<typeof initializeDeclaredRandomState>;
+  try {
+    declaredRandom = initializeDeclaredRandomState({
+      mechanics,
+      rng: options.rng,
+      evidence: initializationRolls,
+      resolveTable: options.resolveTable,
+    });
+  } catch (error) {
+    if (error instanceof ItemRandomInitializationError)
+      throw new ItemStateError(`${packRef} ${error.message}`);
+    throw error;
+  }
+  for (const initialized of Object.values(
+    declaredRandom.randomInitialization ?? {},
+  )) {
+    if (initialized.kind !== 'table-pool') continue;
+    const fullCount =
+      initialized.remainingEntryIds.length + initialized.removedEntryIds.length;
+    const candidates = Object.entries(
+      mechanics.economies === undefined
+        ? {}
+        : obj(mechanics.economies, 'mechanics.economies'),
+    ).filter(([, raw]) => {
+      const economy = obj(raw, 'mechanics.economies[]');
+      return (
+        economy.kind === 'doses' &&
+        obj(economy.doses, 'mechanics.economies[].doses').count === fullCount
+      );
+    });
+    if (candidates.length !== 1)
+      throw new ItemStateError(
+        `${packRef} table-pool initialization does not unambiguously bind a ${fullCount}-entry doses economy`,
+      );
+    stateEconomies[candidates[0][0]] = {
+      remaining: initialized.remainingEntryIds.length,
+    };
+  }
   const state: ItemInstanceState = {
     packRef,
     ...(options.variantId === undefined
@@ -801,11 +838,22 @@ export function createInitialItemState(
             obj(mechanics.stateMachine, 'mechanics.stateMachine').initial,
           ),
         }),
-    ...(custom === undefined ? {} : { custom }),
+    ...(declaredRandom.custom === undefined
+      ? {}
+      : { custom: declaredRandom.custom }),
+    ...(declaredRandom.randomInitialization === undefined
+      ? {}
+      : { randomInitialization: declaredRandom.randomInitialization }),
     ...(Object.keys(spellStoreLevels).length === 0 ? {} : { spellStoreLevels }),
     ...(initializationRolls.length === 0 ? {} : { initializationRolls }),
   };
-  return validateItemStateForRecord(state, packRef, record, options.variantId);
+  return validateItemStateForRecord(state, packRef, record, options.variantId, {
+    resolveTable: options.resolveTable,
+  });
+}
+
+export interface ValidateItemStateOptions {
+  readonly resolveTable?: (ref: string) => RulesRecord | undefined;
 }
 
 export function validateItemStateForRecord(
@@ -813,6 +861,7 @@ export function validateItemStateForRecord(
   packRef: string,
   record: RulesRecord,
   variantId?: string,
+  options: ValidateItemStateOptions = {},
 ): ItemInstanceState {
   const state = validateItemStateJson(value);
   if (state.packRef !== packRef)
@@ -940,6 +989,51 @@ export function validateItemStateForRecord(
         `${packRef} does not declare a validated custom state shape`,
       );
     validateCardPoolCustomState(state.custom, declaration, packRef);
+  }
+  const initialTableProcedures = new Map<string, string>();
+  if (mechanics.randomProcedure !== undefined) {
+    const random = obj(mechanics.randomProcedure, `${packRef}.randomProcedure`);
+    for (const raw of Array.isArray(random.procedures)
+      ? random.procedures
+      : []) {
+      const procedure = obj(raw, `${packRef}.randomProcedure.procedures[]`);
+      if (
+        procedure.kind === 'initial-state' &&
+        typeof procedure.id === 'string' &&
+        typeof procedure.tableRef === 'string'
+      )
+        initialTableProcedures.set(procedure.id, procedure.tableRef);
+    }
+  }
+  for (const [id, tableRef] of initialTableProcedures) {
+    const initialized = state.randomInitialization?.[id];
+    if (initialized === undefined)
+      throw new ItemStateError(
+        `${packRef} requires randomInitialization for initial-state procedure '${id}'`,
+      );
+    if (initialized.tableRef !== tableRef)
+      throw new ItemStateError(
+        `${packRef} randomInitialization '${id}' has tableRef '${initialized.tableRef}', expected '${tableRef}'`,
+      );
+  }
+  for (const id of Object.keys(state.randomInitialization ?? {}))
+    if (!initialTableProcedures.has(id))
+      throw new ItemStateError(
+        `${packRef} does not license randomInitialization procedure '${id}'`,
+      );
+  if (initialTableProcedures.size > 0) {
+    try {
+      validateDeclaredRandomState({
+        mechanics,
+        state: state.randomInitialization ?? {},
+        evidence: state.initializationRolls ?? [],
+        resolveTable: options.resolveTable,
+      });
+    } catch (error) {
+      if (error instanceof ItemRandomInitializationError)
+        throw new ItemStateError(`${packRef} ${error.message}`);
+      throw error;
+    }
   }
   return state;
 }
@@ -1216,59 +1310,6 @@ function costAmount(
   );
 }
 
-function resolvePendingTimerState(
-  transition: SelectedStateTransition | undefined,
-  at: string,
-  rng: Rng | undefined,
-): NonNullable<ItemInstanceState['pendingTimers']> {
-  const pending = transition?.result.pendingTimers ?? [];
-  return pending.map(({ to, timer }) => {
-    const resolved =
-      typeof timer.amount === 'number'
-        ? { amount: timer.amount }
-        : (() => {
-            if (rng === undefined)
-              throw new ItemStateError(
-                `state timer is dice-defined (${timer.amount}); seeded RNG is required before applying the transition`,
-              );
-            const rolled = rollDice(timer.amount, rng);
-            return {
-              amount: rolled.total,
-              roll: {
-                notation: rolled.notation,
-                rolls: rolled.rolls,
-                total: rolled.total,
-              },
-            };
-          })();
-    const milliseconds: Partial<Record<MagicItemDurationSpec['unit'], number>> =
-      {
-        minute: 60_000,
-        hour: 3_600_000,
-        day: 86_400_000,
-      };
-    const multiplier = milliseconds[timer.unit];
-    const started = Date.parse(at);
-    if (!Number.isFinite(started))
-      throw new ItemStateError('use_item.at must be an ISO timestamp');
-    return {
-      from: transition?.nextState ?? '',
-      to,
-      startedAt: at,
-      amount: resolved.amount,
-      unit: timer.unit,
-      ...(multiplier === undefined
-        ? {}
-        : {
-            dueAt: new Date(
-              started + resolved.amount * multiplier,
-            ).toISOString(),
-          }),
-      ...('roll' in resolved ? { roll: resolved.roll } : {}),
-    };
-  });
-}
-
 function isDeferredDestroyedLifecycle(
   selectedTransition: SelectedStateTransition | undefined,
 ): boolean {
@@ -1320,7 +1361,8 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
         .get(input.campaignId, input.characterId, input.instanceId) as
         | { item_key: string }
         | undefined;
-      if (attuned === undefined || attuned.item_key !== packRef)
+      const attunementKey = magicItemVariantTypeKey(packRef, variantId);
+      if (attuned === undefined || attuned.item_key !== attunementKey)
         throw new ItemStateError(
           `${packRef} requires authoritative attunement by character '${input.characterId}' before use`,
         );
@@ -1372,6 +1414,13 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
           ? (transition.effects as string[])
           : [],
     );
+    const spellStore =
+      mechanics.spellStore === undefined
+        ? undefined
+        : obj(mechanics.spellStore, `${packRef}.mechanics.spellStore`);
+    const spellStoreContracts = Array.isArray(spellStore?.contracts)
+      ? spellStore.contracts
+      : [];
     try {
       assertMagicItemOperationReady(hit.record, variantId, {
         operationId: input.operationId,
@@ -1385,12 +1434,26 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
           ...possibleTransitionEffectIds,
         ]),
         usesStateMachine: operationTransitions.length > 0,
+        usesSpellStore: spellStoreContracts.some((raw, index) => {
+          const contract = obj(
+            raw,
+            `${packRef}.mechanics.spellStore.contracts[${index}]`,
+          );
+          return (
+            Array.isArray(contract.operationIds) &&
+            contract.operationIds.includes(input.operationId)
+          );
+        }),
       });
     } catch (error) {
       if (error instanceof ItemExecutionReadinessError)
         throw new ItemStateError(error.message);
       throw error;
     }
+    const resolveTable = (ref: string): RulesRecord | undefined => {
+      const result = lookupRulesRecord(hit.stack, { kind: 'table', ref });
+      return result.ok ? result.record : undefined;
+    };
     const stateful = isStatefulMagicItem(hit.record, variantId);
     if (stateful && row.quantity !== 1)
       throw new ItemStateError(
@@ -1401,10 +1464,17 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       state = createInitialItemState(packRef, hit.record, {
         variantId,
         rng: input.rng,
+        resolveTable,
       });
     }
     if (state !== undefined)
-      state = validateItemStateForRecord(state, packRef, hit.record, variantId);
+      state = validateItemStateForRecord(
+        state,
+        packRef,
+        hit.record,
+        variantId,
+        { resolveTable },
+      );
     if (
       state?.lifecycle?.status === 'inert' ||
       state?.lifecycle?.status === 'nonmagical'
@@ -1421,11 +1491,21 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       state?.machineState,
     );
     const transitionEffectIds = selectedTransition?.effectIds ?? [];
-    const pendingTimers = resolvePendingTimerState(
-      selectedTransition,
-      input.at,
-      input.rng,
-    );
+    let pendingTimers: readonly ItemStateTimer[] = [];
+    if (selectedTransition !== undefined) {
+      try {
+        pendingTimers = resolveItemStateTimers(
+          txnDb,
+          selectedTransition.nextState,
+          selectedTransition.result.pendingTimers ?? [],
+          input.rng,
+        );
+      } catch (error) {
+        if (error instanceof ItemTimerError)
+          throw new ItemStateError(error.message);
+        throw error;
+      }
+    }
 
     const costs: { economy: string; amount: number }[] = [];
     let stackedSingleUse = 0;
@@ -1496,13 +1576,16 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
 
     let quantity = row.quantity;
     let consumed = spentStatefulSingleUse;
+    let attunementsEnded: readonly DestroyedItemAttunementEvidence[] = [];
     if (stackedSingleUse > 0) {
       quantity -= stackedSingleUse;
       consumed = true;
       if (quantity === 0)
-        txnDb
-          .prepare('DELETE FROM inventory WHERE id = ?')
-          .run(input.instanceId);
+        attunementsEnded = destroyInventoryItem(
+          txnDb,
+          input.instanceId,
+          input,
+        ).attunementsEnded;
       else
         txnDb
           .prepare(
@@ -1556,26 +1639,27 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
                     : {}),
                 },
               }),
-          ...(pendingTimers.length === 0
-            ? {}
-            : {
-                pendingTimers: [
-                  ...(state.pendingTimers ?? []),
-                  ...pendingTimers,
-                ],
-              }),
           ...(selectedTransition === undefined
             ? {}
-            : { machineState: selectedTransition.nextState }),
+            : {
+                machineState: selectedTransition.nextState,
+                pendingTimers: reconcileItemStateTimers(
+                  selectedTransition.nextState,
+                  pendingTimers,
+                ),
+              }),
         },
         packRef,
         hit.record,
         variantId,
+        { resolveTable },
       );
       if (destroyed && !deferredDestroyed) {
-        txnDb
-          .prepare('DELETE FROM inventory WHERE id = ?')
-          .run(input.instanceId);
+        attunementsEnded = destroyInventoryItem(
+          txnDb,
+          input.instanceId,
+          input,
+        ).attunementsEnded;
         quantity = 0;
         consumed = true;
       } else {
@@ -1595,6 +1679,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       ...(quantity === 0 ? {} : { quantity }),
       ...(state === undefined || quantity === 0 ? {} : { state }),
       consumed,
+      ...(attunementsEnded.length === 0 ? {} : { attunementsEnded }),
     };
   });
 }

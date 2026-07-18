@@ -12,6 +12,10 @@ import {
   conditionImpliesIncapacitated,
 } from './activeEffects.js';
 import { resolveCampaignAdvancementPolicy } from './advancementPolicy.js';
+import {
+  type DestroyedItemAttunementEvidence,
+  destroyInventoryItem,
+} from './inventoryLifecycle.js';
 import { ItemStateError, validatePackRef } from './itemState.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import {
@@ -308,6 +312,7 @@ export interface RemoveItemResult {
   removed: boolean;
   previousQuantity: number;
   newQuantity: number;
+  attunementsEnded?: readonly DestroyedItemAttunementEvidence[];
 }
 
 export function removeItem(
@@ -340,12 +345,15 @@ export function removeItem(
     const previousQuantity = row.quantity;
 
     if (quantity === undefined || previousQuantity - quantity <= 0) {
-      txnDb
-        .prepare(
-          'DELETE FROM inventory WHERE id = ? AND (character_id = ? OR character_id IS NULL)',
-        )
-        .run(itemId, charId);
-      return { removed: true, previousQuantity, newQuantity: 0 };
+      const destruction = destroyInventoryItem(txnDb, itemId, ctx);
+      return {
+        removed: destruction.destroyed,
+        previousQuantity,
+        newQuantity: 0,
+        ...(destruction.attunementsEnded.length === 0
+          ? {}
+          : { attunementsEnded: destruction.attunementsEnded }),
+      };
     }
 
     const newQuantity = previousQuantity - quantity;

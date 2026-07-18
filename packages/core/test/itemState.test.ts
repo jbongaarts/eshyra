@@ -3,14 +3,17 @@ import type { RulesPack, RulesRecord } from '../src/internal.js';
 import {
   createInitialItemState,
   createSeededRng,
+  effectiveMagicItemMechanics,
   getBundledDnd5eSrdPack,
   giveItem,
   isStatefulMagicItem,
   magicItemVariantDefinitions,
+  parseDice,
   readItemState,
   readStateSnapshot,
   useItem,
   validateItemStateForRecord,
+  withTransaction,
   writeItemState,
 } from '../src/internal.js';
 import { freshDbWithSession } from './support/db.js';
@@ -125,6 +128,11 @@ describe('magic-item live instance state', () => {
         transitions: [
           { from: 'inactive', to: 'active', via: 'toggle-flames' },
           { from: 'active', to: 'inactive', via: 'extinguish-flames' },
+          {
+            from: 'active',
+            to: 'inactive',
+            timer: { amount: 10, unit: 'minute' },
+          },
         ],
       },
     });
@@ -146,13 +154,29 @@ describe('magic-item live instance state', () => {
       useItem(db, useInput(pack(flameTongue), granted.id, 'toggle-flames')),
     ).toMatchObject({
       transition: { from: 'inactive', to: 'active', outcome: 'success' },
-      state: { machineState: 'active' },
+      state: {
+        machineState: 'active',
+        pendingTimers: [
+          { anchorElapsedMinutes: 0, deadlineElapsedMinutes: 10 },
+        ],
+      },
     });
     expect(
       useItem(db, useInput(pack(flameTongue), granted.id, 'extinguish-flames')),
     ).toMatchObject({
       transition: { from: 'active', to: 'inactive', outcome: 'success' },
-      state: { machineState: 'inactive' },
+      state: { machineState: 'inactive', pendingTimers: [] },
+    });
+    db.prepare('UPDATE clock SET elapsed_minutes=5 WHERE id=1').run();
+    expect(
+      useItem(db, useInput(pack(flameTongue), granted.id, 'toggle-flames')),
+    ).toMatchObject({
+      state: {
+        machineState: 'active',
+        pendingTimers: [
+          { anchorElapsedMinutes: 5, deadlineElapsedMinutes: 15 },
+        ],
+      },
     });
     db.close();
   });
@@ -577,7 +601,7 @@ describe('magic-item live instance state', () => {
     });
     expect(low.initializationRolls).toEqual([
       {
-        purpose: 'custom:card-pool:variant',
+        purpose: 'randomProcedure:initial-deck',
         notation: '1d100',
         rolls: [1],
         total: 1,
@@ -588,6 +612,156 @@ describe('magic-item live instance state', () => {
         rng: { nextInt: () => 99 },
       }).custom,
     ).toMatchObject({ variantId: 'full-deck' });
+  });
+
+  it('materializes every reviewed table-backed initial-state shape semantically', () => {
+    const bundled = getBundledDnd5eSrdPack();
+    const byKey = new Map(
+      bundled.records.map((record) => [record.key, record]),
+    );
+    const named = (key: string) => {
+      const record = byKey.get(`magic-item:${key}`);
+      if (record === undefined) throw new Error(`missing ${key}`);
+      return record;
+    };
+    const options = (nextInt: (maximum: number) => number) => ({
+      rng: { nextInt },
+      resolveTable: (ref: string) => byKey.get(ref),
+    });
+
+    const illusions = createInitialItemState(
+      'magic-item:deck-of-illusions',
+      named('deck-of-illusions'),
+      options((maximum) => maximum - 1),
+    );
+    const illusionPool =
+      illusions.randomInitialization?.['initial-missing-cards'];
+    expect(illusionPool).toMatchObject({
+      kind: 'table-pool',
+      tableRef: 'table:deck-of-illusions',
+    });
+    if (illusionPool?.kind !== 'table-pool')
+      throw new Error('missing illusion pool');
+    expect(illusionPool.removedEntryIds).toHaveLength(19);
+    expect(illusionPool.remainingEntryIds).toHaveLength(15);
+    expect(illusions.economies?.cards.remaining).toBe(15);
+
+    const emptyFlask = createInitialItemState(
+      'magic-item:iron-flask',
+      named('iron-flask'),
+      options(() => 0),
+    ).randomInitialization?.['initial-creature'];
+    expect(emptyFlask).toEqual({
+      kind: 'containment-occupant',
+      tableRef: 'table:iron-flask',
+      occupant: null,
+    });
+    const occupiedFlaskState = createInitialItemState(
+      'magic-item:iron-flask',
+      named('iron-flask'),
+      options((maximum) => maximum - 1),
+    );
+    const occupiedFlask =
+      occupiedFlaskState.randomInitialization?.['initial-creature'];
+    expect(occupiedFlask).toMatchObject({
+      kind: 'containment-occupant',
+      occupant: { roll: 100, outcome: ['Xorn'] },
+    });
+    expect(() =>
+      validateItemStateForRecord(
+        {
+          ...occupiedFlaskState,
+          randomInitialization: {
+            'initial-creature': {
+              kind: 'containment-occupant',
+              tableRef: 'table:iron-flask',
+              occupant: { roll: 100, rowIndex: 0, outcome: ['Empty'] },
+            },
+          },
+        },
+        'magic-item:iron-flask',
+        named('iron-flask'),
+        undefined,
+        { resolveTable: (ref) => byKey.get(ref) },
+      ),
+    ).toThrow(/does not match/);
+
+    const necklace = createInitialItemState(
+      'magic-item:necklace-of-prayer-beads',
+      named('necklace-of-prayer-beads'),
+      options(() => 0),
+    );
+    const beads = necklace.randomInitialization?.['initial-bead-types'];
+    expect(necklace.economies?.beads.remaining).toBe(3);
+    expect(beads).toMatchObject({ kind: 'table-results' });
+    if (beads?.kind !== 'table-results') throw new Error('missing bead types');
+    expect(beads.results).toHaveLength(3);
+    expect(
+      beads.results.every(({ outcome }) => outcome[0] === 'Blessing'),
+    ).toBe(true);
+
+    const robe = createInitialItemState(
+      'magic-item:robe-of-useful-items',
+      named('robe-of-useful-items'),
+      options(() => 0),
+    );
+    const patches = robe.randomInitialization?.['initial-extra-patches'];
+    expect(robe.economies?.patches.remaining).toBe(16);
+    expect(patches).toMatchObject({ kind: 'table-results' });
+    if (patches?.kind !== 'table-results')
+      throw new Error('missing useful-item patches');
+    expect(patches.results).toHaveLength(4);
+    expect(
+      patches.results.every(({ outcome }) => outcome[0] === 'Bag of 100 gp'),
+    ).toBe(true);
+  });
+
+  it('fails closed when an initial-state declaration has no typed owner', () => {
+    const unowned = item('unowned-initial-state', {
+      randomProcedure: {
+        procedures: [
+          {
+            id: 'mystery',
+            kind: 'initial-state',
+            trigger: 'instance is discovered',
+            roll: '1d6',
+            outcome: 'initialize an undeclared mystery',
+          },
+        ],
+      },
+    });
+    expect(() =>
+      createInitialItemState(unowned.key, unowned, {
+        rng: createSeededRng(1),
+      }),
+    ).toThrow(/no deterministic initialization owner|not bound/);
+    expect(isStatefulMagicItem(unowned)).toBe(true);
+
+    const db = freshDbWithSession();
+    expect(() =>
+      withTransaction(db, (txnDb) => {
+        const granted = giveItem(
+          txnDb,
+          {
+            id: 'unowned',
+            name: 'Unowned Initial State',
+            packRef: unowned.key,
+            stateful: true,
+          },
+          MUTATION,
+        );
+        const state = createInitialItemState(unowned.key, unowned, {
+          rng: createSeededRng(1),
+        });
+        writeItemState(txnDb, granted.id, state, MUTATION);
+      }),
+    ).toThrow(/no deterministic initialization owner|not bound/);
+    expect(
+      db
+        .prepare("SELECT 1 FROM inventory WHERE name='Unowned Initial State'")
+        .get(),
+    ).toBeUndefined();
+    db.close();
   });
 
   it('enforces singleton stateful grants and gives identical items independent state', () => {
@@ -798,6 +972,147 @@ describe('magic-item live instance state', () => {
     db.close();
   });
 
+  it('requires the same canonical variant identity at the use boundary', () => {
+    const db = freshDbWithSession();
+    const base = item(
+      'variant-attuned-use',
+      { operations: [{ id: 'invoke' }] },
+      true,
+    );
+    const record: RulesRecord = {
+      ...base,
+      data: {
+        ...(base.data as Record<string, unknown>),
+        variants: [
+          {
+            id: 'agility',
+            name: 'Agility',
+            rarity: 'very rare',
+            text: 'Agility variant.',
+          },
+        ],
+      },
+    };
+    const granted = giveItem(
+      db,
+      {
+        id: 'variant-instance',
+        name: 'Variant Attuned Use',
+        packRef: record.key,
+        variantId: 'agility',
+        stateful: true,
+      },
+      MUTATION,
+    );
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'pc-1',
+      granted.id,
+      record.key,
+      'Agility',
+      MUTATION.at,
+      MUTATION.provenance,
+      MUTATION.sessionId,
+      MUTATION.at,
+    );
+    expect(() =>
+      useItem(db, useInput(pack(record), granted.id, 'invoke')),
+    ).toThrow(/requires authoritative attunement/);
+
+    db.prepare('UPDATE attunement SET item_key = ? WHERE item_id = ?').run(
+      `${record.key}#variant:agility`,
+      granted.id,
+    );
+    expect(
+      useItem(db, useInput(pack(record), granted.id, 'invoke')),
+    ).toMatchObject({ operationId: 'invoke', consumed: false });
+    db.close();
+  });
+
+  it('plays a reviewed bundled duration budget while refusing a bundled pending operation before mutation', () => {
+    const db = freshDbWithSession();
+    const bundled = getBundledDnd5eSrdPack();
+    const candle = bundled.records.find(
+      (record) => record.key === 'magic-item:candle-of-invocation',
+    );
+    const wand = bundled.records.find(
+      (record) => record.key === 'magic-item:wand-of-magic-missiles',
+    );
+    if (candle === undefined || wand === undefined)
+      throw new Error('bundled magic-item fixtures are missing');
+
+    const grantedCandle = giveItem(
+      db,
+      {
+        id: 'ignored-candle',
+        name: candle.name,
+        packRef: candle.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'pc-1',
+      grantedCandle.id,
+      candle.key,
+      candle.name,
+      MUTATION.at,
+      MUTATION.provenance,
+      MUTATION.sessionId,
+      MUTATION.at,
+    );
+
+    expect(readItemState(db, grantedCandle.id)).toBeUndefined();
+    expect(
+      useItem(db, useInput(bundled, grantedCandle.id, 'burn')),
+    ).toMatchObject({
+      operationId: 'burn',
+      costs: [{ economy: 'burn-time', amount: 1 }],
+      state: { economies: { 'burn-time': { remaining: 239 } } },
+    });
+    expect(readItemState(db, grantedCandle.id)?.economies['burn-time']).toEqual(
+      { remaining: 239 },
+    );
+
+    const grantedWand = giveItem(
+      db,
+      {
+        id: 'ignored-wand',
+        name: wand.name,
+        packRef: wand.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    expect(readItemState(db, grantedWand.id)).toBeUndefined();
+    expect(() =>
+      useItem(
+        db,
+        useInput(bundled, grantedWand.id, 'cast-magic-missile', {
+          charges: 1,
+        }),
+      ),
+    ).toThrow(/engine-pending/);
+    expect(readItemState(db, grantedWand.id)).toBeUndefined();
+    expect(
+      db
+        .prepare('SELECT quantity FROM inventory WHERE id = ?')
+        .get(grantedWand.id),
+    ).toEqual({ quantity: 1 });
+    db.close();
+  });
+
   it('never transfers a pack-bound row to another character on an id collision', () => {
     const db = freshDbWithSession();
     const record = item('passive-test', { effects: [{ kind: 'test' }] });
@@ -942,9 +1257,10 @@ describe('magic-item live instance state', () => {
           {
             from: 'sphere',
             to: 'destroyed',
+            anchorElapsedMinutes: 0,
+            deadlineElapsedMinutes: 1,
             amount: 1,
             unit: 'minute',
-            dueAt: '2026-07-18T12:01:00.000Z',
           },
         ],
       },
@@ -984,11 +1300,41 @@ describe('magic-item live instance state', () => {
         createInitialItemState(record.key, record),
         MUTATION,
       );
+      if (becomes === 'destroyed')
+        db.prepare(
+          `INSERT INTO attunement(
+             campaign_id, character_id, item_id, item_key, display_name,
+             attuned_at, provenance, session_id, updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).run(
+          'campaign-1',
+          'pc-1',
+          granted.id,
+          record.key,
+          record.name,
+          MUTATION.at,
+          MUTATION.provenance,
+          MUTATION.sessionId,
+          MUTATION.at,
+        );
       const result = useItem(db, useInput(pack(record), granted.id, 'expend'));
       if (becomes === 'destroyed') {
-        expect(result).toMatchObject({ consumed: true });
+        expect(result).toMatchObject({
+          consumed: true,
+          attunementsEnded: [
+            {
+              reason: 'item_destroyed',
+              ended: { itemId: granted.id, itemKey: record.key },
+            },
+          ],
+        });
         expect(
           db.prepare('SELECT 1 FROM inventory WHERE id = ?').get(granted.id),
+        ).toBeUndefined();
+        expect(
+          db
+            .prepare('SELECT 1 FROM attunement WHERE item_id = ?')
+            .get(granted.id),
         ).toBeUndefined();
       } else {
         expect(result.state?.lifecycle?.status).toBe(becomes);
@@ -1080,10 +1426,16 @@ describe('magic-item live instance state', () => {
   });
 
   it('deterministically initializes every stateful parent and variant in the generated corpus', () => {
-    const magicItems = getBundledDnd5eSrdPack().records.filter(
+    const bundled = getBundledDnd5eSrdPack();
+    const byKey = new Map(
+      bundled.records.map((record) => [record.key, record]),
+    );
+    const magicItems = bundled.records.filter(
       (record) => record.kind === 'magic-item',
     );
     let initialized = 0;
+    let initialProcedures = 0;
+    let tableProcedures = 0;
     for (const [recordIndex, record] of magicItems.entries()) {
       const variants = magicItemVariantDefinitions(record);
       const variantIds: readonly (string | undefined)[] =
@@ -1096,14 +1448,67 @@ describe('magic-item live instance state', () => {
         const state = createInitialItemState(record.key, record, {
           variantId,
           rng: createSeededRng(recordIndex * 101 + variantIndex + 1),
+          resolveTable: (ref) => byKey.get(ref),
         });
         expect(
-          validateItemStateForRecord(state, record.key, record, variantId),
+          validateItemStateForRecord(state, record.key, record, variantId, {
+            resolveTable: (ref) => byKey.get(ref),
+          }),
           label,
         ).toEqual(state);
+        const mechanics = effectiveMagicItemMechanics(record, variantId);
+        const procedures = mechanics?.randomProcedure?.procedures.filter(
+          (procedure) => procedure.kind === 'initial-state',
+        );
+        for (const procedure of procedures ?? []) {
+          initialProcedures += 1;
+          if (procedure.tableRef !== undefined) {
+            const semanticState = state.randomInitialization?.[procedure.id];
+            expect(semanticState, `${label}:${procedure.id}`).toBeDefined();
+            expect(semanticState?.tableRef).toBe(procedure.tableRef);
+            if (semanticState?.kind === 'table-pool') {
+              const total =
+                semanticState.remainingEntryIds.length +
+                semanticState.removedEntryIds.length;
+              expect(total).toBe(34);
+              expect(state.economies?.cards.remaining).toBe(
+                semanticState.remainingEntryIds.length,
+              );
+            } else if (semanticState?.kind === 'table-results') {
+              expect(semanticState.results.length).toBeGreaterThan(0);
+              expect(
+                semanticState.results.every(
+                  (result) => result.outcome.length > 0,
+                ),
+              ).toBe(true);
+            } else if (semanticState?.kind === 'containment-occupant') {
+              expect(
+                semanticState.occupant === null ||
+                  semanticState.occupant.outcome.length > 0,
+              ).toBe(true);
+            }
+            tableProcedures += 1;
+          } else if (procedure.risk !== undefined) {
+            expect(state.custom, `${label}:${procedure.id}`).toBeDefined();
+          } else if (procedure.roll !== undefined) {
+            const expected = parseDice(procedure.roll);
+            expect(
+              state.initializationRolls?.some((roll) => {
+                const actual = parseDice(roll.notation);
+                return (
+                  actual.count === expected.count &&
+                  actual.faces === expected.faces
+                );
+              }),
+              `${label}:${procedure.id}`,
+            ).toBe(true);
+          }
+        }
         initialized += 1;
       }
     }
     expect(initialized).toBeGreaterThan(100);
+    expect(initialProcedures).toBe(13);
+    expect(tableProcedures).toBe(4);
   });
 });
