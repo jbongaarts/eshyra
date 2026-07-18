@@ -9,9 +9,9 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1290,
+  "rowCount": 1295,
   "dispositionCounts": {
-    "complete": 347,
+    "complete": 352,
     "model-adjudicated": 742,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 2,
@@ -22650,6 +22650,106 @@
         "day"
       ],
       "population": 23,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.sourceCorrection.extractedSourcePhrase",
+      "representativeValues": [
+        "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st."
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.sourceCorrection.extractedSourceSha256",
+      "representativeValues": [
+        "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.sourceCorrection.id",
+      "representativeValues": [
+        "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.sourceCorrection.note",
+      "representativeValues": [
+        "The PDF text layer omitted \"for each slot\"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation."
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
+      "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
+      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
+      "retainedProseBoundary": "data.higherLevels",
+      "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.upcast.sourceCorrection.reviewedSourcePhrase",
+      "representativeValues": [
+        "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st."
+      ],
+      "population": 1,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
       "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",

@@ -11,8 +11,12 @@ scaling remains authoritative and is adapted by the runtime resolver without
 duplication.
 
 The SRD PDF text layer's malformed Animal Friendship clause is retained
-verbatim and matched by an exact spell/page/text override whose deterministic
-projection restores the source-backed “for each slot level” count. Damage
+verbatim and matched by an exact spell/page/text correction whose deterministic
+projection restores the source-backed “for each slot level” count. The emitted
+correction now names a stable correction ID, retained extracted phrase and
+SHA-256, reviewed phrase, and explanatory note; runtime evidence returns the
+reviewed phrase and the complete correction tuple so the operation is
+reproducible without hidden compiler knowledge. Damage
 subjects use clause-local unique types and source-named components, while S1
 results retain their creation/control scope and selection semantics.
 Reviewed clause-level coverage pins complete multi-threshold schedules and
@@ -27,13 +31,20 @@ constraints; Counterspell and Dispel Magic resolve their automatic spell-level
 threshold directly from the selected slot; Glyph of Warding carries an
 exclusive typed branch; and False Life emits flat temporary-hit-point scaling.
 Resolved adjustments carry stable semantic source-operation IDs rather than
-array offsets, together with the exact clause/page/phrase provenance tuple.
+array offsets. Their source binding identifies the owning pack ID/version,
+structured source reference and locator, compact ordered override-chain
+identity, exact clause/page, reviewed operation phrase, and any raw-source
+extraction correction.
 
 The schema validator and runtime share one closed parser, including operation /
-subject compatibility and S1 fail-closed checks. Both model-facing tools resolve
-the exact campaign base and ordered add-ons by system, pack, and version. The
-slot tool retains legacy `{ spell }` replay compatibility while canonicalizing
-new calls to `spellRef`.
+subject compatibility and S1 fail-closed checks. Threshold schedules use the
+same `semanticId + choice group + choice option` axis in validation and runtime,
+including multiple thresholds within each exclusive branch. Both model-facing
+tools resolve the exact campaign base and ordered add-ons by system, pack, and
+version. Slot capacity is derived from a character resolver over that same
+resolved stack, so an add-on class progression override cannot diverge from the
+spell source. The slot tool retains legacy `{ spell }` replay compatibility
+while canonicalizing new calls to `spellRef`.
 
 Generated scope:
 
@@ -42,6 +53,8 @@ Generated scope:
   explicit source-marker metadata (92 higher-slot, 10 character-level);
 - equipment, magic-item, and non-spell records are unchanged;
 - raw `higherLevels` text remains retained verbatim;
+- exactly one generated record changes in the review follow-up:
+  `spell:animal-friendship` gains the explicit source-correction tuple;
 - canonical regeneration and `verify:dnd5e-srd-pack` are byte-identical.
 
 Evidence: `spellUpcastInventory.ts`, `spellUpcast.test.ts`, the semi-structured
@@ -49,4 +62,4 @@ boundary inventory, and the canonical importer verification.
 
 Updated frozen `records.json` SHA-256:
 
-`af4b7dafdefe9e5bd4f99ab4306a72bb82ee090028525d38999931c7cb32a204`
+`7ad477f6271ab96472c685061ebdabc603f6a6a9899929b6d3f05d0568b5b89a`

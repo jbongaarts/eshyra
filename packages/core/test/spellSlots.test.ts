@@ -308,7 +308,7 @@ describe('spend_spell_slot tool', () => {
     db.close();
   });
 
-  it('resolves exact add-on overrides and add-on-only spells from the full binding', () => {
+  it('resolves add-on spell and class-progression overrides from the same full binding', () => {
     const db = setup('class:wizard', 5);
     const base = getBundledDnd5eSrdPack();
     const fireball = structuredClone(
@@ -317,7 +317,10 @@ describe('spend_spell_slot tool', () => {
     const shield = structuredClone(
       base.records.find((record) => record.key === 'spell:shield'),
     );
-    if (fireball === undefined || shield === undefined)
+    const wizard = structuredClone(
+      base.records.find((record) => record.key === 'class:wizard'),
+    );
+    if (fireball === undefined || shield === undefined || wizard === undefined)
       throw new Error('missing spell fixtures');
     const fireballData = fireball.data as Record<string, unknown>;
     const fireballUpcast = fireballData.upcast as Record<string, unknown>;
@@ -329,7 +332,23 @@ describe('spend_spell_slot tool', () => {
     ).dice = '2d6';
     const override = {
       ...fireball,
+      source: 'Test add-on Fireball display label',
       overrides: [`${base.meta.packId}/spell:fireball`],
+    };
+    const wizardData = wizard.data as Record<string, unknown>;
+    const levelFive = (
+      wizardData.progression as Record<string, unknown>[]
+    ).find((row) => row.level === 5);
+    const spellcasting = (
+      levelFive?.advancement as Record<string, unknown>[] | undefined
+    )?.find((entry) => entry.kind === 'spellcastingProgression');
+    if (spellcasting === undefined) {
+      throw new Error('missing Wizard level-five spellcasting progression');
+    }
+    (spellcasting.slots as Record<string, number>)['4'] = 1;
+    const wizardOverride = {
+      ...wizard,
+      overrides: [`${base.meta.packId}/class:wizard`],
     };
     const addonOnly = {
       ...shield,
@@ -349,11 +368,33 @@ describe('spend_spell_slot tool', () => {
         description: 'Test-only exact binding fixture.',
         role: 'addon',
         version: '1.0.0',
+        order: 1,
         compatibleBaseSystems: [
           { systemId: base.meta.systemId, versions: [base.meta.version] },
         ],
       },
-      records: [override, addonOnly, ambiguousAddonOnly],
+      records: [override, wizardOverride, addonOnly, ambiguousAddonOnly],
+    };
+    const secondOverride = structuredClone(override);
+    (
+      (
+        (secondOverride.data as Record<string, unknown>).upcast as Record<
+          string,
+          unknown
+        >
+      ).operations as Record<string, unknown>[]
+    )[0].dice = '3d6';
+    secondOverride.overrides = [`${addon.meta.packId}/spell:fireball`];
+    const secondAddon: RulesPack = {
+      meta: {
+        ...addon.meta,
+        packId: 'rules:test-upcast-addon-2',
+        title: 'Second test upcast add-on',
+        version: '2.0.0',
+        order: 2,
+        dependsOn: [addon.meta.packId],
+      },
+      records: [secondOverride],
     };
     writeCampaignRulesBinding(db, {
       base: {
@@ -367,6 +408,11 @@ describe('spend_spell_slot tool', () => {
           packId: addon.meta.packId,
           version: addon.meta.version,
         },
+        {
+          systemId: secondAddon.meta.systemId,
+          packId: secondAddon.meta.packId,
+          version: secondAddon.meta.version,
+        },
       ],
       resolvedAt: AT,
     });
@@ -378,7 +424,9 @@ describe('spend_spell_slot tool', () => {
       turnId: 'turn-addon',
       at: AT,
       resolveRulesPack: (ref) =>
-        ref.packId === addon.meta.packId ? addon : undefined,
+        [addon, secondAddon].find(
+          (candidate) => candidate.meta.packId === ref.packId,
+        ),
     };
     expect(
       createDefaultToolRegistry().invoke(
@@ -390,16 +438,62 @@ describe('spend_spell_slot tool', () => {
       ok: true,
       data: { record: { key: 'spell:addon-aegis' } },
     });
-    expect(
-      createDefaultToolRegistry().invoke(
-        'resolve_spell_upcast',
-        { spellRef: 'spell:fireball', slotLevel: 4 },
-        context,
-      ),
-    ).toMatchObject({
+    const registry = createDefaultToolRegistry();
+    const resolvedFireball = registry.invoke(
+      'resolve_spell_upcast',
+      { spellRef: 'spell:fireball', slotLevel: 4 },
+      context,
+    );
+    expect(resolvedFireball).toMatchObject({
       ok: true,
-      data: { adjustments: [{ addedDice: '2d6' }] },
+      data: {
+        adjustments: [{ addedDice: '3d6' }],
+        sourceBindings: [
+          {
+            packId: 'rules:test-upcast-addon-2',
+            packVersion: '2.0.0',
+            sourceRef:
+              'https://dnd.wizards.com/resources/systems-reference-document',
+            locator: 'p. 144',
+            overrideChain: [
+              {
+                packId: 'rules:dnd5e-srd-5.1',
+                packVersion: '5.1',
+                recordKey: 'spell:fireball',
+                sourceRef:
+                  'https://dnd.wizards.com/resources/systems-reference-document',
+                locator: 'p. 144',
+              },
+              {
+                packId: 'rules:test-upcast-addon',
+                packVersion: '1.0.0',
+                recordKey: 'spell:fireball',
+                sourceRef:
+                  'https://dnd.wizards.com/resources/systems-reference-document',
+                locator: 'p. 144',
+              },
+            ],
+          },
+        ],
+      },
     });
+    const spentFireball = registry.invoke(
+      'spend_spell_slot',
+      { spellRef: 'spell:fireball', slotLevel: 4 },
+      context,
+    );
+    expect(spentFireball).toMatchObject({
+      ok: true,
+      data: {
+        selectedSlotLevel: 4,
+        counter: { spellLevel: 4, slotsMax: 1, slotsUsed: 1 },
+      },
+    });
+    expect(
+      spentFireball.ok && resolvedFireball.ok
+        ? spentFireball.data.upcast
+        : undefined,
+    ).toEqual(resolvedFireball.ok ? resolvedFireball.data : undefined);
     expect(
       createDefaultToolRegistry().invoke(
         'resolve_spell_upcast',

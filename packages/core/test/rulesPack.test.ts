@@ -266,7 +266,20 @@ describe('rules pack validation', () => {
     });
     expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
     expect(() => validateRulesPack(pack)).toThrow(
-      /sourceUrl or sourceIdentity/,
+      /exactly one of sourceUrl or sourceIdentity/,
+    );
+  });
+
+  it('rejects packs whose source has both sourceUrl and sourceIdentity', () => {
+    const pack = validRulesPack({
+      source: packSource({
+        sourceUrl: 'https://example.test/srd/5.2',
+        sourceIdentity: 'example-srd:vendored:5.2',
+      }),
+    });
+    expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
+    expect(() => validateRulesPack(pack)).toThrow(
+      /exactly one of sourceUrl or sourceIdentity/,
     );
   });
 

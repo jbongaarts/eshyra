@@ -4468,13 +4468,12 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
   optMechanics(data, 'mechanics', `${path}.data`);
   let upcast: ReturnType<typeof parseSpellUpcastSpec>;
   try {
-    const provenancePage = Number(
-      /p(?:p)?\.\s*(\d+)/i.exec(record.source)?.[1],
-    );
     upcast = parseSpellUpcastSpec({
       recordKey: record.key,
       data,
-      ...(Number.isInteger(provenancePage) ? { provenancePage } : {}),
+      ...(record.provenance.locator === undefined
+        ? {}
+        : { provenanceLocator: record.provenance.locator }),
     });
   } catch (error) {
     if (error instanceof SpellUpcastContractError) {

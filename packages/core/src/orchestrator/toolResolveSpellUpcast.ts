@@ -37,18 +37,18 @@ export const resolveSpellUpcastTool: Tool = {
         'resolve_spell_upcast requires { spellRef, slotLevel }',
       );
     try {
-      const record = lookupStrictCampaignRecord(
+      const lookup = lookupStrictCampaignRecord(
         ctx.db,
         'spell',
         a.spellRef,
         ctx.resolveRulesPack,
       );
-      if (record === undefined)
+      if (lookup === undefined)
         return err(
           'invalid_spell',
           `canonical spell reference '${a.spellRef}' does not resolve in the campaign rules binding`,
         );
-      return ok(resolveSpellUpcast(record, a.slotLevel));
+      return ok(resolveSpellUpcast(lookup, a.slotLevel));
     } catch (error) {
       if (error instanceof CampaignRulesBindingResolutionError)
         return err('rules_binding_error', error.message);

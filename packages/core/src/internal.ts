@@ -768,7 +768,10 @@ export {
 } from './orchestrator/scene.js';
 export type {
   SpellUpcastAdjustment,
+  SpellUpcastOverrideSourceBinding,
+  SpellUpcastRecordSource,
   SpellUpcastResolution,
+  SpellUpcastSourceBinding,
 } from './orchestrator/spellUpcast.js';
 export {
   resolveSpellUpcast,
@@ -912,7 +915,11 @@ export {
   assertShippableRulesPack,
   evaluateRulesPackPolicy,
 } from './rules/license.js';
-export type { RulesLookupInput, RulesLookupResult } from './rules/lookup.js';
+export type {
+  RulesLookupHit,
+  RulesLookupInput,
+  RulesLookupResult,
+} from './rules/lookup.js';
 export {
   lookupRulesRecord,
   RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP,
@@ -935,6 +942,7 @@ export {
 } from './rules/repeatedFeatureChoices.js';
 export type {
   ParsedSpellUpcastSpec,
+  SpellUpcastSourceCorrection,
   UpcastChoice,
   UpcastOperation,
   UpcastSubject,
@@ -943,6 +951,7 @@ export type {
 export {
   parseSpellUpcastSpec,
   SpellUpcastContractError,
+  spellUpcastThresholdAxisKey,
 } from './rules/spellUpcastContract.js';
 export type {
   SrdAuditCategory,

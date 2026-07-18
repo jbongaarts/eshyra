@@ -8,7 +8,7 @@ import { compileSpellUpcast } from '../scripts/importers/dnd5e-srd-5.1/upcast.js
 import {
   getBundledDnd5eSrdPack,
   parseSpellUpcastSpec,
-  resolveSpellUpcast,
+  resolveSpellUpcast as resolveSpellUpcastFromSource,
   SpellUpcastError,
   validateRecordKindSchema,
 } from '../src/internal.js';
@@ -18,6 +18,20 @@ function spell(ref: string) {
   const record = pack.records.find((candidate) => candidate.key === ref);
   if (record === undefined) throw new Error(`missing ${ref}`);
   return record;
+}
+
+function resolveSpellUpcast(
+  record: ReturnType<typeof spell>,
+  slotLevel: number,
+) {
+  return resolveSpellUpcastFromSource(
+    {
+      record,
+      pack: pack.meta,
+      overrideChain: [],
+    },
+    slotLevel,
+  );
 }
 
 function compileRecordWithClause(
@@ -70,10 +84,16 @@ describe('source-bound spell upcast resolver', () => {
       sourceBindings: [
         {
           clauseId: 'fireball:higher-slot',
+          packId: 'rules:dnd5e-srd-5.1',
+          packVersion: '5.1',
+          sourceRef:
+            'https://dnd.wizards.com/resources/systems-reference-document',
+          locator: 'p. 144',
           sourcePage: 144,
           sourcePhrase:
             'When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.',
           operationIds: ['fireball:damage:dice-per-slot'],
+          overrideChain: [],
         },
       ],
       adjustments: [
@@ -205,11 +225,29 @@ describe('source-bound spell upcast resolver', () => {
 
   it('corrects and resolves Animal Friendship per-slot cardinality exactly', () => {
     const animalFriendship = spell('spell:animal-friendship');
+    const extractedSourcePhrase =
+      'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.';
+    const reviewedSourcePhrase =
+      'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.';
+    const sourceCorrection = {
+      id: 'dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission',
+      extractedSourcePhrase,
+      extractedSourceSha256:
+        EXPECTED_HIGHER_SLOT_SOURCE_SHA256['spell:animal-friendship'],
+      reviewedSourcePhrase,
+      note: 'The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.',
+    };
     expect(
       (animalFriendship.data as Record<string, unknown>).higherLevels,
-    ).toBe(
-      'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.',
-    );
+    ).toBe(extractedSourcePhrase);
+    expect(
+      (
+        (animalFriendship.data as Record<string, unknown>).upcast as Record<
+          string,
+          unknown
+        >
+      ).sourceCorrection,
+    ).toEqual(sourceCorrection);
     expect(resolveSpellUpcast(animalFriendship, 1).adjustments).toEqual([]);
     for (const [slotLevel, amount] of [
       [2, 1],
@@ -233,6 +271,12 @@ describe('source-bound spell upcast resolver', () => {
         },
       ]);
     }
+    expect(
+      resolveSpellUpcast(animalFriendship, 2).sourceBindings[0],
+    ).toMatchObject({
+      sourcePhrase: reviewedSourcePhrase,
+      sourceCorrection,
+    });
     expect(() =>
       compileSpellUpcast({
         name: 'Animal Friendships',
@@ -266,6 +310,11 @@ describe('source-bound spell upcast resolver', () => {
       sourceBindings: [
         {
           clauseId: 'acid-arrow:higher-slot',
+          packId: 'rules:dnd5e-srd-5.1',
+          packVersion: '5.1',
+          sourceRef:
+            'https://dnd.wizards.com/resources/systems-reference-document',
+          locator: 'p. 114',
           sourcePage: 114,
           sourcePhrase:
             'When you cast this spell using a spell slot of 3rd level or higher, the damage (both initial and later) increases by 1d4 for each slot level above 2nd.',
@@ -273,6 +322,7 @@ describe('source-bound spell upcast resolver', () => {
             'acid arrow:initial-damage:dice-per-slot',
             'acid arrow:later-damage:dice-per-slot',
           ],
+          overrideChain: [],
         },
       ],
       adjustments: [
@@ -460,6 +510,72 @@ describe('source-bound spell upcast resolver', () => {
         );
       }
     }
+  });
+
+  it('resolves independent multi-threshold schedules on exclusive choice axes', () => {
+    const record = structuredClone(spell('spell:magic-weapon'));
+    const data = record.data as Record<string, unknown>;
+    const upcast = data.upcast as Record<string, unknown>;
+    const subject = {
+      kind: 'effect',
+      semanticId: 'synthetic:shared-choice-threshold',
+      property: 'bonus',
+    };
+    upcast.operations = [
+      {
+        kind: 'threshold',
+        subject,
+        choice: { groupId: 'synthetic:mode', optionId: 'branch-a' },
+        atSlotLevel: 4,
+        value: { kind: 'bonus', amount: 1 },
+      },
+      {
+        kind: 'threshold',
+        subject,
+        choice: { groupId: 'synthetic:mode', optionId: 'branch-b' },
+        atSlotLevel: 5,
+        value: { kind: 'bonus', amount: 10 },
+      },
+      {
+        kind: 'threshold',
+        subject,
+        choice: { groupId: 'synthetic:mode', optionId: 'branch-a' },
+        atSlotLevel: 6,
+        value: { kind: 'bonus', amount: 2 },
+      },
+      {
+        kind: 'threshold',
+        subject,
+        choice: { groupId: 'synthetic:mode', optionId: 'branch-b' },
+        atSlotLevel: 7,
+        value: { kind: 'bonus', amount: 20 },
+      },
+    ];
+
+    expect(resolveSpellUpcast(record, 5).adjustments).toEqual([
+      expect.objectContaining({
+        threshold: 4,
+        choice: { groupId: 'synthetic:mode', optionId: 'branch-a' },
+        value: { kind: 'bonus', amount: 1 },
+      }),
+      expect.objectContaining({
+        threshold: 5,
+        choice: { groupId: 'synthetic:mode', optionId: 'branch-b' },
+        value: { kind: 'bonus', amount: 10 },
+      }),
+    ]);
+    expect(resolveSpellUpcast(record, 7).adjustments).toEqual([
+      expect.objectContaining({
+        threshold: 6,
+        choice: { groupId: 'synthetic:mode', optionId: 'branch-a' },
+        value: { kind: 'bonus', amount: 2 },
+      }),
+      expect.objectContaining({
+        threshold: 7,
+        choice: { groupId: 'synthetic:mode', optionId: 'branch-b' },
+        value: { kind: 'bonus', amount: 20 },
+      }),
+    ]);
   });
 
   it('does not fabricate an interval threshold for Spiritual Weapon', () => {
@@ -823,10 +939,39 @@ describe('source-bound spell upcast resolver', () => {
     expect(() => resolveSpellUpcast(pageDrift, 4)).toThrow(
       /must equal record provenance page/,
     );
+    const displayLabelWithoutPage = structuredClone(spell('spell:fireball'));
+    (displayLabelWithoutPage as { source: string }).source =
+      'SRD display label';
+    expect(() => resolveSpellUpcast(displayLabelWithoutPage, 4)).not.toThrow();
+    expect(() =>
+      validateRecordKindSchema(displayLabelWithoutPage, 'record'),
+    ).not.toThrow();
     const missingPage = structuredClone(spell('spell:fireball'));
-    (missingPage as { source: string }).source = 'SRD 5.1';
+    (missingPage.provenance as { locator?: string }).locator = undefined;
     expect(() => resolveSpellUpcast(missingPage, 4)).toThrow(
       /requires a source-page locator/,
+    );
+    expect(() => validateRecordKindSchema(missingPage, 'record')).toThrow(
+      /requires a source-page locator/,
+    );
+    const mismatchedSource = structuredClone(spell('spell:fireball'));
+    (mismatchedSource.provenance as { sourceRef: string }).sourceRef =
+      'test:wrong-source';
+    expect(() => resolveSpellUpcast(mismatchedSource, 4)).toThrow(
+      /provenance does not match owning pack/,
+    );
+    const correctionHashDrift = structuredClone(
+      spell('spell:animal-friendship'),
+    );
+    const correction = (
+      (correctionHashDrift.data as Record<string, unknown>).upcast as Record<
+        string,
+        unknown
+      >
+    ).sourceCorrection as Record<string, unknown>;
+    correction.extractedSourceSha256 = '0'.repeat(64);
+    expect(() => resolveSpellUpcast(correctionHashDrift, 2)).toThrow(
+      /does not match extractedSourcePhrase/,
     );
   });
 
@@ -839,7 +984,7 @@ describe('source-bound spell upcast resolver', () => {
         parseSpellUpcastSpec({
           recordKey: record.key,
           data,
-          provenancePage: 144,
+          provenanceLocator: 'p. 144',
         });
     };
     const upcast = (data: Record<string, unknown>) =>
@@ -955,7 +1100,7 @@ describe('source-bound spell upcast resolver', () => {
       parseSpellUpcastSpec({
         recordKey: thresholds.key,
         data: thresholdData,
-        provenancePage: 161,
+        provenanceLocator: 'p. 161',
       }),
     ).toThrow(/strictly ordered/);
     expect(

@@ -48,6 +48,8 @@ export type RulesLookupResult =
       readonly candidateKeys: readonly string[];
     };
 
+export type RulesLookupHit = Extract<RulesLookupResult, { readonly ok: true }>;
+
 /** Cap on candidate keys surfaced in an ambiguous result (prompt safety). */
 export const RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP = 12;
 

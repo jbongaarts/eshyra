@@ -145,8 +145,10 @@ function source(value: unknown): RulesPackSource {
   const o = obj(value, path);
   const sourceUrl = optStr(o.sourceUrl, `${path}.sourceUrl`);
   const sourceIdentity = optStr(o.sourceIdentity, `${path}.sourceIdentity`);
-  if (sourceUrl === undefined && sourceIdentity === undefined) {
-    throw new RulesPackError(`${path} must set sourceUrl or sourceIdentity`);
+  if ((sourceUrl === undefined) === (sourceIdentity === undefined)) {
+    throw new RulesPackError(
+      `${path} must set exactly one of sourceUrl or sourceIdentity`,
+    );
   }
   return {
     sourceTitle: str(o.sourceTitle, `${path}.sourceTitle`),

@@ -20,8 +20,19 @@ interface ReviewedProjection {
   readonly qualifier?: SpellUpcastQualifier;
 }
 
+interface ReviewedSourceBinding {
+  readonly page: number;
+  /** Reviewed text used to derive the typed projection. */
+  readonly text: string;
+  readonly correction?: {
+    readonly id: string;
+    readonly extractedText: string;
+    readonly note: string;
+  };
+}
+
 const REVIEWED_SOURCE_BINDINGS: Readonly<
-  Record<string, { readonly page: number; readonly text: string }>
+  Record<string, ReviewedSourceBinding>
 > = {
   aid: {
     page: 114,
@@ -30,6 +41,12 @@ const REVIEWED_SOURCE_BINDINGS: Readonly<
   'animal-friendship': {
     page: 115,
     text: 'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.',
+    correction: {
+      id: 'dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission',
+      extractedText:
+        'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.',
+      note: 'The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.',
+    },
   },
   'chain-lightning': {
     page: 124,
@@ -1183,14 +1200,21 @@ export function compileSpellUpcast(
   }
   const clauseId = `${spellSlug(spell.name)}:higher-slot`;
   const isS1 = S1_SUMMONS.has(spellSlug(spell.name));
-  const malformedAnimalFriendship =
-    'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.';
+  const reviewedSourceBinding =
+    REVIEWED_SOURCE_BINDINGS[spellKey.slice('spell:'.length)];
+  const sourceCorrection = reviewedSourceBinding?.correction;
+  if (
+    sourceCorrection !== undefined &&
+    spell.higherLevels !== sourceCorrection.extractedText
+  ) {
+    throw new Error(
+      `reviewed source correction drift for ${spellKey}: expected ${JSON.stringify(sourceCorrection.extractedText)}, got ${JSON.stringify(spell.higherLevels)}`,
+    );
+  }
   const operationText =
-    spellKey === 'spell:animal-friendship' &&
-    spell.sourcePage === 115 &&
-    spell.higherLevels === malformedAnimalFriendship
-      ? 'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.'
-      : spell.higherLevels;
+    sourceCorrection === undefined
+      ? spell.higherLevels
+      : reviewedSourceBinding.text;
   if (/\bbeast t level above\b/i.test(operationText)) {
     throw new Error(
       `malformed Animal Friendship higher-level source in ${spell.name}`,
@@ -1230,6 +1254,17 @@ export function compileSpellUpcast(
     sourceKind: 'higher-slot',
     clauseId,
     sourcePhrase: spell.scalingSourceText ?? spell.higherLevels,
+    ...(sourceCorrection === undefined
+      ? {}
+      : {
+          sourceCorrection: {
+            id: sourceCorrection.id,
+            extractedSourcePhrase: spell.higherLevels,
+            extractedSourceSha256: sourceHash,
+            reviewedSourcePhrase: operationText,
+            note: sourceCorrection.note,
+          },
+        }),
     sourcePage: spell.sourcePage,
     operations,
     ...(qualifier === undefined ? {} : { qualifier }),

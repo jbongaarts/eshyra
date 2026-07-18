@@ -4,7 +4,7 @@ import {
   readCampaignRulesBinding,
 } from '../rules/binding.js';
 import { getBundledDnd5eSrdPack } from '../rules/bundledSrdPack.js';
-import { lookupRulesRecord } from '../rules/lookup.js';
+import { lookupRulesRecord, type RulesLookupHit } from '../rules/lookup.js';
 import { PATHFINDER2E_REMASTER_RULES_PACK } from '../rules/pathfinder2eRemaster.js';
 import type { ResolvedRulesStack } from '../rules/stack.js';
 import { resolveRulesStack } from '../rules/stack.js';
@@ -26,6 +26,11 @@ export class CampaignRulesBindingResolutionError extends Error {
     this.name = 'CampaignRulesBindingResolutionError';
   }
 }
+
+/** Successful exact lookup plus the resolved stack that produced it. */
+export type StrictCampaignRecordLookup = RulesLookupHit & {
+  readonly stack: ResolvedRulesStack;
+};
 
 function bundledRulesPacks(): readonly RulesPack[] {
   return [getBundledDnd5eSrdPack(), PATHFINDER2E_REMASTER_RULES_PACK];
@@ -94,23 +99,21 @@ export function lookupCampaignRecord(
   return result.ok ? result.record : undefined;
 }
 
-/** Strict binding lookup for model-facing tools: an unsupported/missing active
- * base must not silently fall back to D&D and produce the wrong spell. */
+/**
+ * Strict binding lookup for model-facing tools. Preserve both lookup metadata
+ * and the exact resolved stack so downstream mechanics and evidence cannot
+ * silently fall back to a different rules source.
+ */
 export function lookupStrictCampaignRecord(
   db: Db,
   kind: RulesRecordKind,
   ref: string,
   resolver?: CampaignRulesPackResolver,
-): RulesRecord | undefined {
+): StrictCampaignRecordLookup | undefined {
   if (!ref.includes(':')) return undefined;
-  const result = lookupRulesRecord(
-    resolveStrictCampaignRulesStack(db, resolver),
-    {
-      kind,
-      ref,
-    },
-  );
-  return result.ok ? result.record : undefined;
+  const stack = resolveStrictCampaignRulesStack(db, resolver);
+  const result = lookupRulesRecord(stack, { kind, ref });
+  return result.ok ? { ...result, stack } : undefined;
 }
 
 /** Compatibility-only name lookup for legacy persisted tool calls. */
@@ -119,13 +122,8 @@ export function lookupStrictCampaignRecordByName(
   kind: RulesRecordKind,
   name: string,
   resolver?: CampaignRulesPackResolver,
-): RulesRecord | undefined {
-  const result = lookupRulesRecord(
-    resolveStrictCampaignRulesStack(db, resolver),
-    {
-      kind,
-      name,
-    },
-  );
-  return result.ok ? result.record : undefined;
+): StrictCampaignRecordLookup | undefined {
+  const stack = resolveStrictCampaignRulesStack(db, resolver);
+  const result = lookupRulesRecord(stack, { kind, name });
+  return result.ok ? { ...result, stack } : undefined;
 }

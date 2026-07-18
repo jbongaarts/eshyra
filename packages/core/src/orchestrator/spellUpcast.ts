@@ -1,12 +1,16 @@
+import type { RulesLookupHit } from '../rules/lookup.js';
 import {
   parseSpellUpcastSpec,
   SpellUpcastContractError,
+  type SpellUpcastSourceCorrection,
   spellUpcastOperationId,
+  spellUpcastThresholdAxisKey,
   type UpcastChoice,
   type UpcastSubject,
   type UpcastThresholdValue,
 } from '../rules/spellUpcastContract.js';
-import type { RulesRecord } from '../rules/types.js';
+import type { RulesStackRecordSource } from '../rules/stack.js';
+import type { RulesPackMeta, RulesRecord } from '../rules/types.js';
 import { parseDice } from './dice.js';
 
 export interface SpellUpcastAdjustment {
@@ -37,6 +41,33 @@ export interface SpellUpcastAdjustment {
   readonly sourceOperationId: string;
 }
 
+export type SpellUpcastRecordSource = Pick<
+  RulesLookupHit,
+  'record' | 'pack' | 'overrideChain'
+>;
+
+export interface SpellUpcastOverrideSourceBinding {
+  readonly packId: string;
+  readonly packVersion: string;
+  readonly recordKey: string;
+  readonly sourceRef: string;
+  readonly locator?: string;
+}
+
+export interface SpellUpcastSourceBinding {
+  readonly clauseId: string;
+  readonly packId: string;
+  readonly packVersion: string;
+  readonly sourceRef: string;
+  readonly locator: string;
+  readonly sourcePage: number;
+  /** Reviewed text actually used to derive the returned operations. */
+  readonly sourcePhrase: string;
+  readonly sourceCorrection?: SpellUpcastSourceCorrection;
+  readonly operationIds: readonly string[];
+  readonly overrideChain: readonly SpellUpcastOverrideSourceBinding[];
+}
+
 export interface SpellUpcastResolution {
   readonly spellRef: string;
   readonly spellName: string;
@@ -45,12 +76,7 @@ export interface SpellUpcastResolution {
   readonly levelsAboveBase: number;
   readonly hasHigherSlotBenefit: boolean;
   readonly clauseIds: readonly string[];
-  readonly sourceBindings: readonly {
-    readonly clauseId: string;
-    readonly sourcePage: number;
-    readonly sourcePhrase: string;
-    readonly operationIds: readonly string[];
-  }[];
+  readonly sourceBindings: readonly SpellUpcastSourceBinding[];
   readonly adjustments: readonly SpellUpcastAdjustment[];
   readonly qualifier?: string;
 }
@@ -80,6 +106,40 @@ function finiteProduct(left: number, right: number): number {
   if (!Number.isSafeInteger(value))
     throw new SpellUpcastError('upcast arithmetic overflow');
   return value;
+}
+
+function owningSourceRef(record: RulesRecord, pack: RulesPackMeta): string {
+  const refs = [pack.source.sourceUrl, pack.source.sourceIdentity].filter(
+    (ref): ref is string => ref !== undefined,
+  );
+  if (refs.length !== 1 || record.provenance.sourceRef !== refs[0]) {
+    throw new SpellUpcastError(
+      `spell ${record.key} provenance does not match owning pack ${pack.packId}@${pack.version}`,
+    );
+  }
+  return refs[0];
+}
+
+function overrideSourceBinding(
+  source: RulesStackRecordSource,
+): SpellUpcastOverrideSourceBinding {
+  return {
+    packId: source.pack.meta.packId,
+    packVersion: source.pack.meta.version,
+    recordKey: source.record.key,
+    sourceRef: owningSourceRef(source.record, source.pack.meta),
+    ...(source.record.provenance.locator === undefined
+      ? {}
+      : { locator: source.record.provenance.locator }),
+  };
+}
+
+function thresholdAxisKey(adjustment: SpellUpcastAdjustment): string {
+  const semanticId = obj(adjustment.subject).semanticId;
+  if (typeof semanticId !== 'string') {
+    throw new SpellUpcastError('threshold subject requires a semantic id');
+  }
+  return spellUpcastThresholdAxisKey({ semanticId }, adjustment.choice);
 }
 
 function s1AppliesTo(
@@ -209,9 +269,10 @@ function resolveS1Scaling(
 
 /** Resolve only the source-bound, closed spell transform. It never rolls or mutates state. */
 export function resolveSpellUpcast(
-  record: RulesRecord,
+  source: SpellUpcastRecordSource,
   slotLevel: number,
 ): SpellUpcastResolution {
+  const { record } = source;
   if (record.kind !== 'spell')
     throw new SpellUpcastError('upcast input must be a spell record');
   const data = obj(record.data);
@@ -239,13 +300,14 @@ export function resolveSpellUpcast(
     sourceBindings: [],
     adjustments: [],
   };
-  const provenancePage = Number(/p(?:p)?\.\s*(\d+)/i.exec(record.source)?.[1]);
   let upcast: ReturnType<typeof parseSpellUpcastSpec>;
   try {
     upcast = parseSpellUpcastSpec({
       recordKey: record.key,
       data: record.data,
-      ...(Number.isInteger(provenancePage) ? { provenancePage } : {}),
+      ...(record.provenance.locator === undefined
+        ? {}
+        : { provenanceLocator: record.provenance.locator }),
     });
   } catch (error) {
     if (error instanceof SpellUpcastContractError) {
@@ -254,6 +316,13 @@ export function resolveSpellUpcast(
     throw error;
   }
   if (upcast === undefined) return result;
+  const sourceRef = owningSourceRef(record, source.pack);
+  const locator = record.provenance.locator;
+  if (locator === undefined) {
+    throw new SpellUpcastError(
+      `spell ${record.key} requires a structured provenance locator`,
+    );
+  }
   const adjustments: SpellUpcastAdjustment[] = [];
   upcast.operations.forEach((operation) => {
     const kind = operation.kind;
@@ -356,7 +425,7 @@ export function resolveSpellUpcast(
   const winningThreshold = new Map<string, number>();
   for (const adjustment of adjustments) {
     if (adjustment.kind === 'threshold' && adjustment.threshold !== undefined) {
-      const key = String(obj(adjustment.subject).semanticId);
+      const key = thresholdAxisKey(adjustment);
       winningThreshold.set(
         key,
         Math.max(winningThreshold.get(key) ?? 0, adjustment.threshold),
@@ -367,7 +436,7 @@ export function resolveSpellUpcast(
     (adjustment) =>
       adjustment.kind !== 'threshold' ||
       adjustment.threshold ===
-        winningThreshold.get(String(obj(adjustment.subject).semanticId)),
+        winningThreshold.get(thresholdAxisKey(adjustment)),
   );
   const applicableQualifier: string | undefined =
     upcast.qualifier !== undefined && slotLevel >= upcast.qualifier.minSlotLevel
@@ -381,11 +450,20 @@ export function resolveSpellUpcast(
     sourceBindings: [
       {
         clauseId: upcast.clauseId,
+        packId: source.pack.packId,
+        packVersion: source.pack.version,
+        sourceRef,
+        locator,
         sourcePage: upcast.sourcePage,
-        sourcePhrase: upcast.sourcePhrase,
+        sourcePhrase:
+          upcast.sourceCorrection?.reviewedSourcePhrase ?? upcast.sourcePhrase,
+        ...(upcast.sourceCorrection === undefined
+          ? {}
+          : { sourceCorrection: upcast.sourceCorrection }),
         operationIds: resolvedAdjustments.map(
           (adjustment) => adjustment.sourceOperationId,
         ),
+        overrideChain: source.overrideChain.map(overrideSourceBinding),
       },
     ],
     adjustments: resolvedAdjustments,

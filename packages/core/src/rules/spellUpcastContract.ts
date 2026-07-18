@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 /** Closed, system-specific contract shared by pack validation and runtime. */
 
 export const SRD_DAMAGE_TYPES = [
@@ -93,6 +95,18 @@ export interface UpcastChoice {
   readonly optionId: string;
 }
 
+/** Shared threshold identity used by both contract validation and runtime. */
+export function spellUpcastThresholdAxisKey(
+  subject: { readonly semanticId: string },
+  choice?: UpcastChoice,
+): string {
+  return JSON.stringify([
+    subject.semanticId,
+    choice?.groupId ?? null,
+    choice?.optionId ?? null,
+  ]);
+}
+
 interface UpcastOperationBase {
   readonly subject: UpcastSubject;
   readonly choice?: UpcastChoice;
@@ -147,10 +161,24 @@ export interface SpellUpcastQualifier {
   readonly minSlotLevel: number;
 }
 
+/**
+ * Explicit reviewed repair of a malformed source extraction. The extracted
+ * phrase remains authoritative provenance; `reviewedSourcePhrase` is the text
+ * the compiler actually used to derive the typed operation.
+ */
+export interface SpellUpcastSourceCorrection {
+  readonly id: string;
+  readonly extractedSourcePhrase: string;
+  readonly extractedSourceSha256: string;
+  readonly reviewedSourcePhrase: string;
+  readonly note: string;
+}
+
 export interface ParsedSpellUpcastSpec {
   readonly sourceKind: 'higher-slot';
   readonly clauseId: string;
   readonly sourcePhrase: string;
+  readonly sourceCorrection?: SpellUpcastSourceCorrection;
   readonly sourcePage: number;
   readonly operations: readonly UpcastOperation[];
   readonly qualifier?: SpellUpcastQualifier;
@@ -537,7 +565,69 @@ function parseThresholdValue(
 export interface ParseSpellUpcastInput {
   readonly recordKey: string;
   readonly data: unknown;
-  readonly provenancePage?: number;
+  readonly provenanceLocator?: string;
+}
+
+function parseSourceCorrection(
+  value: unknown,
+  path: string,
+  sourcePhrase: string,
+): SpellUpcastSourceCorrection | undefined {
+  if (value === undefined) return undefined;
+  const correction = object(value, path);
+  onlyKeys(
+    correction,
+    [
+      'id',
+      'extractedSourcePhrase',
+      'extractedSourceSha256',
+      'reviewedSourcePhrase',
+      'note',
+    ],
+    path,
+  );
+  const extractedSourcePhrase = string(
+    correction.extractedSourcePhrase,
+    `${path}.extractedSourcePhrase`,
+  );
+  if (extractedSourcePhrase !== sourcePhrase) {
+    throw new SpellUpcastContractError(
+      `${path}.extractedSourcePhrase must equal the retained source phrase`,
+    );
+  }
+  const extractedSourceSha256 = string(
+    correction.extractedSourceSha256,
+    `${path}.extractedSourceSha256`,
+  );
+  if (!/^[a-f0-9]{64}$/.test(extractedSourceSha256)) {
+    throw new SpellUpcastContractError(
+      `${path}.extractedSourceSha256 must be a lowercase SHA-256 digest`,
+    );
+  }
+  const actualHash = createHash('sha256')
+    .update(extractedSourcePhrase)
+    .digest('hex');
+  if (extractedSourceSha256 !== actualHash) {
+    throw new SpellUpcastContractError(
+      `${path}.extractedSourceSha256 does not match extractedSourcePhrase`,
+    );
+  }
+  const reviewedSourcePhrase = string(
+    correction.reviewedSourcePhrase,
+    `${path}.reviewedSourcePhrase`,
+  );
+  if (reviewedSourcePhrase === extractedSourcePhrase) {
+    throw new SpellUpcastContractError(
+      `${path}.reviewedSourcePhrase must differ from extractedSourcePhrase`,
+    );
+  }
+  return {
+    id: string(correction.id, `${path}.id`),
+    extractedSourcePhrase,
+    extractedSourceSha256,
+    reviewedSourcePhrase,
+    note: string(correction.note, `${path}.note`),
+  };
 }
 
 export function parseSpellUpcastSpec(
@@ -561,6 +651,7 @@ export function parseSpellUpcastSpec(
       'sourceKind',
       'clauseId',
       'sourcePhrase',
+      'sourceCorrection',
       'sourcePage',
       'operations',
       'qualifier',
@@ -588,6 +679,11 @@ export function parseSpellUpcastSpec(
       `${path} source phrase must equal higherLevels and scalingSourceText`,
     );
   }
+  const sourceCorrection = parseSourceCorrection(
+    upcast.sourceCorrection,
+    `${path}.sourceCorrection`,
+    sourcePhrase,
+  );
   if (upcast.sourceKind !== 'higher-slot') {
     throw new SpellUpcastContractError(
       `${path}.sourceKind must be higher-slot`,
@@ -601,12 +697,15 @@ export function parseSpellUpcastSpec(
     );
   }
   const sourcePage = integer(upcast.sourcePage, `${path}.sourcePage`, 1, 999);
-  if (!Number.isInteger(input.provenancePage)) {
+  const provenancePage = Number(
+    /\bp(?:p)?\.\s*(\d+)\b/i.exec(input.provenanceLocator ?? '')?.[1],
+  );
+  if (!Number.isInteger(provenancePage)) {
     throw new SpellUpcastContractError(
       `${path} requires a source-page locator on its owning spell`,
     );
   }
-  if (sourcePage !== input.provenancePage) {
+  if (sourcePage !== provenancePage) {
     throw new SpellUpcastContractError(
       `${path}.sourcePage must equal record provenance page`,
     );
@@ -616,7 +715,6 @@ export function parseSpellUpcastSpec(
   }
   const semanticKinds = new Map<string, string>();
   const operationKeys = new Set<string>();
-  const choiceOptions = new Set<string>();
   const choiceGroups = new Map<string, Set<string>>();
   const lastThresholdByAxis = new Map<string, number>();
   const operations = upcast.operations.map((raw, index): UpcastOperation => {
@@ -661,13 +759,6 @@ export function parseSpellUpcastSpec(
         ? undefined
         : parseChoice(operation.choice, `${operationPath}.choice`);
     if (choice !== undefined) {
-      const choiceKey = `${choice.groupId}\u0000${choice.optionId}`;
-      if (choiceOptions.has(choiceKey)) {
-        throw new SpellUpcastContractError(
-          `${operationPath}.choice duplicates an option`,
-        );
-      }
-      choiceOptions.add(choiceKey);
       const options = choiceGroups.get(choice.groupId) ?? new Set<string>();
       options.add(choice.optionId);
       choiceGroups.set(choice.groupId, options);
@@ -691,7 +782,7 @@ export function parseSpellUpcastSpec(
           `${operationPath}.value`,
         ),
       };
-      const thresholdAxis = `${subject.semanticId}\u0000${choice?.groupId ?? ''}\u0000${choice?.optionId ?? ''}`;
+      const thresholdAxis = spellUpcastThresholdAxisKey(subject, choice);
       const previousThreshold = lastThresholdByAxis.get(thresholdAxis);
       if (previousThreshold !== undefined && atSlotLevel <= previousThreshold) {
         throw new SpellUpcastContractError(
@@ -845,6 +936,7 @@ export function parseSpellUpcastSpec(
     sourceKind: 'higher-slot',
     clauseId,
     sourcePhrase,
+    ...(sourceCorrection === undefined ? {} : { sourceCorrection }),
     sourcePage,
     operations,
     ...(qualifier === undefined ? {} : { qualifier }),

@@ -1,3 +1,4 @@
+import { createRulesPackCharacterResolver } from '../character/rulesPackResolver.js';
 import {
   CampaignRulesBindingResolutionError,
   lookupStrictCampaignRecord,
@@ -70,7 +71,7 @@ export const spendSpellSlotTool: Tool = {
     const target = resolveTargetCharacterId(a.character, ctx);
     if ('ok' in target) return target;
     try {
-      const spell =
+      const spellLookup =
         typeof spellRef === 'string'
           ? lookupStrictCampaignRecord(
               ctx.db,
@@ -86,11 +87,12 @@ export const spendSpellSlotTool: Tool = {
             );
       const requestedSpell =
         typeof spellRef === 'string' ? spellRef : (legacySpell as string);
-      if (spell === undefined)
+      if (spellLookup === undefined)
         return err(
           'invalid_spell',
           `spell '${requestedSpell}' does not resolve unambiguously in the campaign rules binding`,
         );
+      const spell = spellLookup.record;
       const level =
         typeof spell.data === 'object' &&
         spell.data !== null &&
@@ -107,12 +109,13 @@ export const spendSpellSlotTool: Tool = {
         spellLevel: level,
         ...(typeof a.slotLevel === 'number' ? { slotLevel: a.slotLevel } : {}),
         ...(target.id === undefined ? {} : { characterId: target.id }),
+        resolver: createRulesPackCharacterResolver(spellLookup.stack),
         provenance: `model:${ctx.turnId}`,
         sessionId: ctx.sessionId,
         at: ctx.at,
         beforeSpend: (selectedSlotLevel) => {
           if (level !== 0) {
-            upcast = resolveSpellUpcast(spell, selectedSlotLevel);
+            upcast = resolveSpellUpcast(spellLookup, selectedSlotLevel);
           }
         },
       });
