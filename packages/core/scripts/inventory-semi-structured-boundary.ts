@@ -506,6 +506,36 @@ const rules: readonly ClassificationRule[] = [
     },
   },
   {
+    name: 'spell upcast source boundary',
+    matches: ({ system, recordKinds, fieldPath }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('spell')({ recordKinds }) &&
+      (fieldPath === 'data.scalingSourceKind' ||
+        fieldPath === 'data.scalingSourceText' ||
+        fieldPath.startsWith('data.upcast')),
+    classify: ({ fieldPath }) => {
+      const retained =
+        fieldPath === 'data.scalingSourceText' ||
+        fieldPath === 'data.upcast.sourcePhrase' ||
+        fieldPath === 'data.upcast.qualifier.text';
+      return result(
+        retained ? 'source prose' : 'scalar-like',
+        fieldPath === 'data.upcast.qualifier.text'
+          ? 'typed-core-with-prose-qualifier'
+          : retained && fieldPath === 'data.scalingSourceText'
+            ? 'not-mechanical'
+            : 'complete',
+        'shared spell upcast contract, canonical compiler, and resolveSpellUpcast',
+        'one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift',
+        '92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence',
+        'SpellUpcastSpec / SpellUpcastOperation',
+        'parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts',
+        false,
+        'data.higherLevels',
+      );
+    },
+  },
+  {
     name: 'mechanics duration projection with source qualifier',
     matches: exactPath(
       'data.mechanics.duration.kind',

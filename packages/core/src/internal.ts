@@ -767,6 +767,17 @@ export {
   SceneError,
 } from './orchestrator/scene.js';
 export type {
+  SpellUpcastAdjustment,
+  SpellUpcastOverrideSourceBinding,
+  SpellUpcastRecordSource,
+  SpellUpcastResolution,
+  SpellUpcastSourceBinding,
+} from './orchestrator/spellUpcast.js';
+export {
+  resolveSpellUpcast,
+  SpellUpcastError,
+} from './orchestrator/spellUpcast.js';
+export type {
   ToolRequest,
   ToolRequestSource,
 } from './orchestrator/toolRequest.js';
@@ -904,7 +915,11 @@ export {
   assertShippableRulesPack,
   evaluateRulesPackPolicy,
 } from './rules/license.js';
-export type { RulesLookupInput, RulesLookupResult } from './rules/lookup.js';
+export type {
+  RulesLookupHit,
+  RulesLookupInput,
+  RulesLookupResult,
+} from './rules/lookup.js';
 export {
   lookupRulesRecord,
   RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP,
@@ -925,6 +940,19 @@ export {
   deriveFeatureChoiceInstances,
   featureGrantLevels,
 } from './rules/repeatedFeatureChoices.js';
+export type {
+  ParsedSpellUpcastSpec,
+  SpellUpcastSourceCorrection,
+  UpcastChoice,
+  UpcastOperation,
+  UpcastSubject,
+  UpcastThresholdValue,
+} from './rules/spellUpcastContract.js';
+export {
+  parseSpellUpcastSpec,
+  SpellUpcastContractError,
+  spellUpcastThresholdAxisKey,
+} from './rules/spellUpcastContract.js';
 export type {
   SrdAuditCategory,
   SrdAuditFinding,
@@ -983,6 +1011,7 @@ export type {
   RulesAmbiguity,
   RulesAmbiguityInterpretation,
   RulesAmbiguitySource,
+  RulesPack,
   RulesPackSource,
   RulesRecord,
   RulesRecordKind,
@@ -1135,6 +1164,7 @@ export {
   endAttunement,
   listAttunements,
 } from './state/attunement.js';
+export type { CampaignRulesPackResolver } from './state/campaignRecordLookup.js';
 export type {
   AddConditionInput,
   AddConditionResult,

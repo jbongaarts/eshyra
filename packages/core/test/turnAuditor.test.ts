@@ -225,6 +225,18 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
     expect(prompt).toContain('enemy stealth/perception');
   });
 
+  it('requires exact slot-spend and source-bound upcast evidence', () => {
+    const prompt = buildAuditSystemPrompt();
+    expect(prompt).toContain('narrated leveled-spell cast');
+    expect(prompt).toContain('successful `spend_spell_slot`');
+    expect(prompt).toContain('exact casting character and canonical spell');
+    expect(prompt).toContain('selected slot must');
+    expect(prompt).toContain('lookup alone does not substantiate a cast');
+    expect(prompt).toContain('successful `resolve_spell_upcast`');
+    expect(prompt).toContain('clause/source binding');
+    expect(prompt).toContain('Reject hand-computed, mismatched, failed');
+  });
+
   it('user message lists the explicit-action-only tools for the turn', () => {
     const message = buildAuditUserMessage({
       playerInput: 'What am I equipped with?',

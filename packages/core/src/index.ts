@@ -527,6 +527,7 @@ export {
   resolveCharacterRef,
   setActiveCharacterId,
 } from './state/activeCharacter.js';
+export type { CampaignRulesPackResolver } from './state/campaignRecordLookup.js';
 export type { CombatInstance } from './state/encounterCombatants.js';
 // Active-combat lookup (used by the resume conflict-resolution UX to warn
 // before catching a character up mid-combat — ADR 0012, eshyra-lupf.14.4).

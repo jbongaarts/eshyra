@@ -27,6 +27,7 @@ import type {
 } from '../model/usage.js';
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
+import type { CampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
 import {
   classifyAuditPresentationRepair,
   classifyAuditRetryCause,
@@ -86,6 +87,8 @@ export interface RunTurnDeps {
   db: Db;
   model: ModelClient;
   registry: ToolRegistry;
+  /** Resolves exact campaign-bound base/add-on packs not bundled in core. */
+  resolveRulesPack?: CampaignRulesPackResolver;
   /**
    * Optional mechanics-audit gate (eshyra-oobh). When provided, every candidate
    * DM response is audited before it is shown or persisted: a candidate that
@@ -526,6 +529,7 @@ export async function runTurn(
     turnId: input.turnId,
     at: input.at,
     resolveAdventureModule: deps.resolveAdventureModule,
+    resolveRulesPack: deps.resolveRulesPack,
   };
 
   // Tracked here (not inside runModelLoop) so the failure path can still

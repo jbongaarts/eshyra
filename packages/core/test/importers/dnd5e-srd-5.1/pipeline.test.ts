@@ -30,7 +30,7 @@ import {
   FeatureCoverageError,
   NpcCoverageError,
   RuleCoverageError,
-  runImporter,
+  runImporter as runCanonicalImporter,
   SubclassCoverageError,
   TableCoverageError,
   TrapCoverageError,
@@ -43,6 +43,12 @@ import {
 import { loadRulesPackFromDirectory } from '../../../src/internal.js';
 
 const tmpDirs: string[] = [];
+
+const runImporter = (input: Parameters<typeof runCanonicalImporter>[0]) =>
+  runCanonicalImporter({
+    ...input,
+    allowSyntheticSpellSourceBindings: true,
+  });
 
 afterEach(() => {
   for (const dir of tmpDirs.splice(0)) {

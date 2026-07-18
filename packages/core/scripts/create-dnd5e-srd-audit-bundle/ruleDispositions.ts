@@ -281,7 +281,7 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
     'rule:casting-a-spell-at-a-higher-level': {
       class: 'engine-procedure',
       family: 'spellcasting',
-      note: "spellcasting: spell assumes the slot's level; scaling applies per structured per-spell `scaling` (promoted from DEF: deterministic upcasting procedure)",
+      note: 'spellcasting: F4 atomically selects/spends the legal slot; the shared closed upcast contract resolves every reviewed higher-slot transform. Choosing to upcast, targets, and typed exclusive branches remains a DM/player choice.',
     },
     'rule:casting-a-spell-attack-rolls': {
       class: 'engine-procedure',
@@ -1848,9 +1848,24 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'movement-mode ruling; speeds structured',
   },
   'rule:casting-a-spell-at-a-higher-level': {
-    status: 'partial',
-    missing:
-      'choosing to upcast is a ruling; missing: upcast scaling transform (extra dice/targets per slot level above base, from structured `scaling`) → F9',
+    status: 'implemented',
+    primitives: ['lookup_rules', 'spend_spell_slot', 'resolve_spell_upcast'],
+    runtimeOwner: [
+      'packages/core/src/orchestrator/spellUpcast.ts',
+      'packages/core/src/rules/spellUpcastContract.ts',
+      'packages/core/src/orchestrator/toolResolveSpellUpcast.ts',
+      'packages/core/src/orchestrator/toolSpendSpellSlot.ts',
+      'packages/core/src/orchestrator/turnTraceProjection.ts',
+      'packages/core/src/state/campaignRecordLookup.ts',
+      'packages/core/src/state/spellSlots.ts',
+    ],
+    evidence: [
+      'packages/core/test/spellUpcast.test.ts',
+      'packages/core/test/spellSlots.test.ts',
+      'packages/core/test/turnTraceProjection.test.ts',
+    ],
+    contextRequirement:
+      'player/DM chooses whether to upcast and selects targets or a typed exclusive branch; all resulting arithmetic, thresholds, constraints, and source provenance are tool-owned',
   },
   'rule:casting-a-spell-attack-rolls': {
     status: 'model-adjudicated-supported',
@@ -2955,21 +2970,21 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * state/timing/application portions (prone on landing, deprivation
  * clocks, travel pace, load classification and penalty application,
  * movement costs) remain — as originally classified — model-adjudicated
- * over the primitives. casting-a-spell-at-a-higher-level stays partial
- * (upcast scaling needs structured spell `scaling` data, landing with the
- * F4 interplay). F10 exposed the wallet, mutation invariants, persistence, and
+ * over the primitives. casting-a-spell-at-a-higher-level is implemented: F4
+ * owns slot legality/expenditure and F9 owns the source-bound typed upcast
+ * transform. F10 exposed the wallet, mutation invariants, persistence, and
  * audit trail, but deterministic resale and downtime-cost transforms remain
  * partial until registered calculation primitives own those numbers. F3,
  * eshyra-2n1t.5, moved concentration from unimplemented to implemented. The
  * Equipment payload closure keeps special-weapon and generic weapon-property
  * execution partial pending scenario evidence; the reviewed stacked census is
- * now 37/108/18/2/10.
+ * now 38/108/17/2/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 37,
+    implemented: 38,
     'model-adjudicated-supported': 108,
-    partial: 18,
+    partial: 17,
     unimplemented: 2,
     'design-blocked': 10,
   });

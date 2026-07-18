@@ -1,4 +1,3 @@
-import type { CampaignRulesBinding } from '../rules/binding.js';
 import {
   DEFAULT_DND5E_SRD_BINDING,
   readCampaignRulesBinding,
@@ -15,7 +14,11 @@ import type { ResolvedRulesStack } from '../rules/stack.js';
 import { resolveRulesStack } from '../rules/stack.js';
 import type { RulesPack, RulesRecordKind } from '../rules/types.js';
 import { RulesPackError } from '../rules/types.js';
-import type { Tool, ToolContext } from './toolRegistry.js';
+import {
+  CampaignRulesBindingResolutionError,
+  resolveStrictCampaignRulesStack,
+} from '../state/campaignRecordLookup.js';
+import type { Tool } from './toolRegistry.js';
 import { asRecord, err, ok } from './toolRegistry.js';
 
 /**
@@ -27,20 +30,10 @@ function bundledRulesPacks(): readonly RulesPack[] {
   return [getBundledDnd5eSrdPack(), PATHFINDER2E_REMASTER_RULES_PACK];
 }
 
-function findBundledPackById(packId: string): RulesPack | undefined {
-  return bundledRulesPacks().find((pack) => pack.meta.packId === packId);
-}
-
 function findBundledBaseBySystemId(systemId: string): RulesPack | undefined {
   return bundledRulesPacks().find(
     (pack) => pack.meta.systemId === systemId && pack.meta.role === 'base',
   );
-}
-
-function resolveBindingBasePack(ctx: ToolContext): RulesPack | undefined {
-  const binding: CampaignRulesBinding =
-    readCampaignRulesBinding(ctx.db) ?? DEFAULT_DND5E_SRD_BINDING;
-  return findBundledPackById(binding.base.packId);
 }
 
 // Resolving a single-base, no-addon stack is deterministic per pack object, so
@@ -138,18 +131,15 @@ export const lookupRulesTool: Tool = {
     }
     const kind = a.kind as RulesRecordKind;
 
-    const basePack =
-      a.systemId !== undefined
-        ? findBundledBaseBySystemId(a.systemId)
-        : resolveBindingBasePack(ctx);
-
-    if (basePack === undefined) {
-      if (a.systemId !== undefined) {
+    if (a.systemId !== undefined) {
+      const basePack = findBundledBaseBySystemId(a.systemId);
+      if (basePack === undefined) {
         return err(
           'unknown_pack',
           `lookup_rules: systemId '${a.systemId}' is not a bundled rules system`,
         );
       }
+    } else {
       const binding =
         readCampaignRulesBinding(ctx.db) ?? DEFAULT_DND5E_SRD_BINDING;
       if (binding.base.packId === RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID) {
@@ -161,14 +151,15 @@ export const lookupRulesTool: Tool = {
             'Recreate the pre-v1 campaign or update the binding base pack id.',
         );
       }
-      return err(
-        'unknown_pack',
-        'lookup_rules: campaign rules binding references a pack that is not bundled in core',
-      );
     }
 
     try {
-      const stack = resolveSingleBaseStack(basePack);
+      const stack =
+        a.systemId !== undefined
+          ? resolveSingleBaseStack(
+              findBundledBaseBySystemId(a.systemId) as RulesPack,
+            )
+          : resolveStrictCampaignRulesStack(ctx.db, ctx.resolveRulesPack);
       const result =
         typeof a.ref === 'string'
           ? lookupRulesRecord(stack, { kind, ref: a.ref })
@@ -198,6 +189,9 @@ export const lookupRulesTool: Tool = {
           : undefined,
       );
     } catch (e) {
+      if (e instanceof CampaignRulesBindingResolutionError) {
+        return err('rules_binding_error', e.message);
+      }
       if (e instanceof RulesPackError) {
         return err('rules_pack_error', e.message);
       }

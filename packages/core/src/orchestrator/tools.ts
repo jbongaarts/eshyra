@@ -49,6 +49,7 @@ import { resolveCheckTool } from './toolResolveCheck.js';
 import { resolveConcentrationTool } from './toolResolveConcentration.js';
 import { resolveContestTool } from './toolResolveContest.js';
 import { resolveDamageTool } from './toolResolveDamage.js';
+import { resolveSpellUpcastTool } from './toolResolveSpellUpcast.js';
 import {
   advanceTimeTool,
   completeLongRestTool,
@@ -80,6 +81,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   resolveCheckTool,
   resolveContestTool,
   resolveDamageTool,
+  resolveSpellUpcastTool,
   calcTool,
   markSceneTool,
   lookupRulesTool,

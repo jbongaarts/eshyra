@@ -826,6 +826,18 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   },
   { kind: 'spell', field: 'higherLevels', missingCount: 227, totalInKind: 319 },
   { kind: 'spell', field: 'ritual', missingCount: 290, totalInKind: 319 },
+  {
+    kind: 'spell',
+    field: 'scalingSourceKind',
+    missingCount: 217,
+    totalInKind: 319,
+  },
+  {
+    kind: 'spell',
+    field: 'scalingSourceText',
+    missingCount: 217,
+    totalInKind: 319,
+  },
   // Seven spells own the nine embedded spell-description tables (eshyra-o4j7);
   // Control Weather owns three, while the other six own one each.
   {
@@ -834,6 +846,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 312,
     totalInKind: 319,
   },
+  { kind: 'spell', field: 'upcast', missingCount: 227, totalInKind: 319 },
   // The 2 inline stat blocks (eshyra-4a7.4) carry different optional keyed
   // fields: Avatar of Death has damage/condition immunities and a "—"
   // challengeRating with 0 XP; Giant Fly (abbreviated) has neither. senses and

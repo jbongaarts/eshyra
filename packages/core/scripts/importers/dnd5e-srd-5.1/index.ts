@@ -1892,6 +1892,8 @@ export interface RunImporterInput {
   readonly pdfPath: string;
   /** Output directory; receives manifest.json + records.json. */
   readonly outDir: string;
+  /** Explicitly permits reduced synthetic-PDF fixtures to use local pages. */
+  readonly allowSyntheticSpellSourceBindings?: true;
   /**
    * Override the default section anchors. Useful when the vendored PDF uses
    * variant chapter headings, or for tests that supply a fixture PDF whose
@@ -3553,6 +3555,9 @@ export async function runImporter(
     ancestries,
     backgrounds,
     sourceHash,
+    ...(input.allowSyntheticSpellSourceBindings === true
+      ? { allowSyntheticSpellSourceBindings: true as const }
+      : {}),
   });
   validateRecordTextCoverage(pack.records, input.expectedRecordTextSentinels);
   // Cross-record grant/choice ref integrity (eshyra-ngcj.3/.4/.5). These need

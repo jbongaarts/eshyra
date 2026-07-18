@@ -121,9 +121,9 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // implements spell-slot expenditure/recovery; F3, eshyra-2n1t.5 moved
     // concentration to implemented); keep them in lockstep with
     // EXPECTED_COVERAGE_CENSUS.
-    expect(report.engineProcedure.implemented).toBe(37);
+    expect(report.engineProcedure.implemented).toBe(38);
     expect(report.engineProcedure.modelAdjudicatedSupported).toBe(108);
-    expect(report.engineProcedure.partial).toHaveLength(18);
+    expect(report.engineProcedure.partial).toHaveLength(17);
     expect(report.engineProcedure.unimplemented).toHaveLength(2);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
     // Five pre-existing external clauses plus two runtime-execution clauses
@@ -136,10 +136,11 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
   it('surfaces actionable detail (key + missing/designOwner/clause), not just counts', () => {
     const report = buildRuleDispositionReport();
     expect(
-      report.engineProcedure.partial.find(
-        (row) => row.key === 'rule:casting-a-spell-at-a-higher-level',
-      )?.missing,
-    ).toMatch(/upcast scaling transform/);
+      ENGINE_PROCEDURE_COVERAGE['rule:casting-a-spell-at-a-higher-level']
+        ?.primitives,
+    ).toEqual(
+      expect.arrayContaining(['spend_spell_slot', 'resolve_spell_upcast']),
+    );
     expect(
       report.engineProcedure.designBlocked.find(
         (row) => row.key === 'rule:multiclassing',

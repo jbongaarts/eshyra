@@ -2,11 +2,16 @@
 // upcasting expenditure, Pact Magic's separate recharge, and ADR 0018 guard.
 
 import { describe, expect, it } from 'vitest';
-import type { CharacterSheet } from '../src/internal.js';
+import type {
+  CharacterSheet,
+  RulesPack,
+  ToolContext,
+} from '../src/internal.js';
 import {
   createDefaultToolRegistry,
   createSeededRng,
   createSqliteCharacterSheetStore,
+  getBundledDnd5eSrdPack,
   mutateState,
   readSpellSlots,
   restoreSpellSlots,
@@ -14,6 +19,7 @@ import {
   spendSpellSlot,
   syncSpellSlots,
   UnsupportedCharacterBuildError,
+  writeCampaignRulesBinding,
 } from '../src/internal.js';
 import { bareDb, DEFAULT_TEST_SESSION_ID } from './support/db.js';
 
@@ -140,6 +146,21 @@ describe('spell-slot economy — ordinary Spellcasting', () => {
     db.close();
   });
 
+  it('does not commit a slot when pre-increment upcast validation fails', () => {
+    const db = setup('class:wizard', 5);
+    expect(() =>
+      spendSpellSlot(db, {
+        spellLevel: 3,
+        ...CTX,
+        beforeSpend: () => {
+          throw new SpellSlotError('upcast validation failed');
+        },
+      }),
+    ).toThrow('upcast validation failed');
+    expect(readSpellSlots(db)).toEqual([]);
+    db.close();
+  });
+
   it('treats cantrips as at will and does not create a counter for them', () => {
     const db = setup('class:wizard', 1);
 
@@ -229,7 +250,7 @@ describe('spend_spell_slot tool', () => {
 
     const tooLow = registry.invoke(
       'spend_spell_slot',
-      { spell: 'Fireball', slotLevel: 1 },
+      { spellRef: 'spell:fireball', slotLevel: 1 },
       context,
     );
     expect(tooLow).toMatchObject({
@@ -239,16 +260,293 @@ describe('spend_spell_slot tool', () => {
     });
     const legal = registry.invoke(
       'spend_spell_slot',
-      { spell: 'Fireball', slotLevel: 3 },
+      { spellRef: 'spell:fireball', slotLevel: 3 },
       context,
     );
     expect(legal).toMatchObject({
       ok: true,
       data: {
         spent: true,
+        spellRef: 'spell:fireball',
+        baseSpellLevel: 3,
+        selectedSlotLevel: 3,
         counter: { spellLevel: 3, slotsUsed: 1 },
       },
     });
+    const resolved = registry.invoke(
+      'resolve_spell_upcast',
+      { spellRef: 'spell:fireball', slotLevel: 3 },
+      context,
+    );
+    expect(legal.ok && resolved.ok ? legal.data.upcast : undefined).toEqual(
+      resolved.ok ? resolved.data : undefined,
+    );
+    expect(JSON.stringify(legal.ok ? legal.data.upcast : undefined)).toBe(
+      JSON.stringify(resolved.ok ? resolved.data : undefined),
+    );
+    db.close();
+  });
+
+  it('replays the previous { spell } argument shape and canonicalizes its result', () => {
+    const db = setup('class:wizard', 5);
+    const result = createDefaultToolRegistry().invoke(
+      'spend_spell_slot',
+      { spell: 'Fireball', slotLevel: 3 },
+      {
+        db,
+        rng: createSeededRng(1),
+        campaignId: 'campaign-1',
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: 'turn-replay',
+        at: AT,
+      },
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      data: { spellRef: 'spell:fireball', baseSpellLevel: 3 },
+    });
+    db.close();
+  });
+
+  it('resolves add-on spell and class-progression overrides from the same full binding', () => {
+    const db = setup('class:wizard', 5);
+    const base = getBundledDnd5eSrdPack();
+    const fireball = structuredClone(
+      base.records.find((record) => record.key === 'spell:fireball'),
+    );
+    const shield = structuredClone(
+      base.records.find((record) => record.key === 'spell:shield'),
+    );
+    const wizard = structuredClone(
+      base.records.find((record) => record.key === 'class:wizard'),
+    );
+    if (fireball === undefined || shield === undefined || wizard === undefined)
+      throw new Error('missing spell fixtures');
+    const fireballData = fireball.data as Record<string, unknown>;
+    const fireballUpcast = fireballData.upcast as Record<string, unknown>;
+    (
+      (fireballUpcast.operations as Record<string, unknown>[])[0] as Record<
+        string,
+        unknown
+      >
+    ).dice = '2d6';
+    const override = {
+      ...fireball,
+      source: 'Test add-on Fireball display label',
+      overrides: [`${base.meta.packId}/spell:fireball`],
+    };
+    const wizardData = wizard.data as Record<string, unknown>;
+    const levelFive = (
+      wizardData.progression as Record<string, unknown>[]
+    ).find((row) => row.level === 5);
+    const spellcasting = (
+      levelFive?.advancement as Record<string, unknown>[] | undefined
+    )?.find((entry) => entry.kind === 'spellcastingProgression');
+    if (spellcasting === undefined) {
+      throw new Error('missing Wizard level-five spellcasting progression');
+    }
+    (spellcasting.slots as Record<string, number>)['4'] = 1;
+    const wizardOverride = {
+      ...wizard,
+      overrides: [`${base.meta.packId}/class:wizard`],
+    };
+    const addonOnly = {
+      ...shield,
+      key: 'spell:addon-aegis',
+      name: 'Addon Aegis',
+    };
+    const ambiguousAddonOnly = {
+      ...shield,
+      key: 'spell:addon-aegis-variant',
+      name: 'Addon Aegis',
+    };
+    const addon: RulesPack = {
+      meta: {
+        ...base.meta,
+        packId: 'rules:test-upcast-addon',
+        title: 'Test upcast add-on',
+        description: 'Test-only exact binding fixture.',
+        role: 'addon',
+        version: '1.0.0',
+        order: 1,
+        compatibleBaseSystems: [
+          { systemId: base.meta.systemId, versions: [base.meta.version] },
+        ],
+      },
+      records: [override, wizardOverride, addonOnly, ambiguousAddonOnly],
+    };
+    const secondOverride = structuredClone(override);
+    (
+      (
+        (secondOverride.data as Record<string, unknown>).upcast as Record<
+          string,
+          unknown
+        >
+      ).operations as Record<string, unknown>[]
+    )[0].dice = '3d6';
+    secondOverride.overrides = [`${addon.meta.packId}/spell:fireball`];
+    const secondAddon: RulesPack = {
+      meta: {
+        ...addon.meta,
+        packId: 'rules:test-upcast-addon-2',
+        title: 'Second test upcast add-on',
+        version: '2.0.0',
+        order: 2,
+        dependsOn: [addon.meta.packId],
+      },
+      records: [secondOverride],
+    };
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: base.meta.systemId,
+        packId: base.meta.packId,
+        version: base.meta.version,
+      },
+      addons: [
+        {
+          systemId: addon.meta.systemId,
+          packId: addon.meta.packId,
+          version: addon.meta.version,
+        },
+        {
+          systemId: secondAddon.meta.systemId,
+          packId: secondAddon.meta.packId,
+          version: secondAddon.meta.version,
+        },
+      ],
+      resolvedAt: AT,
+    });
+    const context: ToolContext = {
+      db,
+      rng: createSeededRng(1),
+      campaignId: 'campaign-1',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'turn-addon',
+      at: AT,
+      resolveRulesPack: (ref) =>
+        [addon, secondAddon].find(
+          (candidate) => candidate.meta.packId === ref.packId,
+        ),
+    };
+    expect(
+      createDefaultToolRegistry().invoke(
+        'lookup_rules',
+        { kind: 'spell', ref: 'spell:addon-aegis' },
+        context,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: { record: { key: 'spell:addon-aegis' } },
+    });
+    const registry = createDefaultToolRegistry();
+    const resolvedFireball = registry.invoke(
+      'resolve_spell_upcast',
+      { spellRef: 'spell:fireball', slotLevel: 4 },
+      context,
+    );
+    expect(resolvedFireball).toMatchObject({
+      ok: true,
+      data: {
+        adjustments: [{ addedDice: '3d6' }],
+        sourceBindings: [
+          {
+            packId: 'rules:test-upcast-addon-2',
+            packVersion: '2.0.0',
+            sourceRef:
+              'https://dnd.wizards.com/resources/systems-reference-document',
+            locator: 'p. 144',
+            overrideChain: [
+              {
+                packId: 'rules:dnd5e-srd-5.1',
+                packVersion: '5.1',
+                recordKey: 'spell:fireball',
+                sourceRef:
+                  'https://dnd.wizards.com/resources/systems-reference-document',
+                locator: 'p. 144',
+              },
+              {
+                packId: 'rules:test-upcast-addon',
+                packVersion: '1.0.0',
+                recordKey: 'spell:fireball',
+                sourceRef:
+                  'https://dnd.wizards.com/resources/systems-reference-document',
+                locator: 'p. 144',
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const spentFireball = registry.invoke(
+      'spend_spell_slot',
+      { spellRef: 'spell:fireball', slotLevel: 4 },
+      context,
+    );
+    expect(spentFireball).toMatchObject({
+      ok: true,
+      data: {
+        selectedSlotLevel: 4,
+        counter: { spellLevel: 4, slotsMax: 1, slotsUsed: 1 },
+      },
+    });
+    expect(
+      spentFireball.ok && resolvedFireball.ok
+        ? spentFireball.data.upcast
+        : undefined,
+    ).toEqual(resolvedFireball.ok ? resolvedFireball.data : undefined);
+    expect(
+      createDefaultToolRegistry().invoke(
+        'resolve_spell_upcast',
+        { spellRef: 'spell:addon-aegis', slotLevel: 1 },
+        context,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: { spellRef: 'spell:addon-aegis', adjustments: [] },
+    });
+    expect(
+      createDefaultToolRegistry().invoke(
+        'resolve_spell_upcast',
+        { spellRef: 'Addon Aegis', slotLevel: 1 },
+        context,
+      ),
+    ).toMatchObject({ ok: false, code: 'invalid_spell' });
+    expect(
+      createDefaultToolRegistry().invoke(
+        'spend_spell_slot',
+        { spell: 'Addon Aegis', slotLevel: 1 },
+        context,
+      ),
+    ).toMatchObject({ ok: false, code: 'invalid_spell' });
+    db.close();
+  });
+
+  it('rejects unavailable binding versions instead of using a same-id pack', () => {
+    const db = setup('class:wizard', 5);
+    const base = getBundledDnd5eSrdPack();
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: base.meta.systemId,
+        packId: base.meta.packId,
+        version: '5.2',
+      },
+      addons: [],
+      resolvedAt: AT,
+    });
+    expect(
+      createDefaultToolRegistry().invoke(
+        'resolve_spell_upcast',
+        { spellRef: 'spell:fireball', slotLevel: 4 },
+        {
+          db,
+          rng: createSeededRng(1),
+          campaignId: 'campaign-1',
+          sessionId: DEFAULT_TEST_SESSION_ID,
+          turnId: 'turn-version',
+          at: AT,
+        },
+      ),
+    ).toMatchObject({ ok: false, code: 'rules_binding_error' });
     db.close();
   });
 });

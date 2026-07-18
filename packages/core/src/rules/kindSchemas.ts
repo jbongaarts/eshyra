@@ -13,6 +13,10 @@ import {
   isFeatureChoiceCategory,
 } from './featureChoices.js';
 import {
+  parseSpellUpcastSpec,
+  SpellUpcastContractError,
+} from './spellUpcastContract.js';
+import {
   summoningHasTransitionTrigger,
   validateS1SummoningEffect,
 } from './summoningSchema.js';
@@ -4430,7 +4434,68 @@ function validateDnd5eSpell(record: RulesRecord, path: string): void {
   // description (eshyra-o4j7). The prose remains source-preserving; tableRefs
   // provides direct navigation to the separately emitted table records.
   optStrArray(data, 'tableRefs', `${path}.data`);
+  const sourceKind = data.scalingSourceKind;
+  if (
+    sourceKind !== undefined &&
+    sourceKind !== 'higher-slot' &&
+    sourceKind !== 'character-level'
+  ) {
+    throw new RulesPackError(
+      `${path}.data.scalingSourceKind must be higher-slot or character-level`,
+    );
+  }
+  optStr(data, 'scalingSourceText', `${path}.data`);
+  if (data.higherLevels !== undefined) {
+    reqStr(data, 'higherLevels', `${path}.data`);
+    if (sourceKind === undefined) {
+      throw new RulesPackError(
+        `${path}.data.higherLevels requires scalingSourceKind`,
+      );
+    }
+    if (
+      reqStr(data, 'scalingSourceText', `${path}.data`) !== data.higherLevels
+    ) {
+      throw new RulesPackError(
+        `${path}.data.scalingSourceText must equal higherLevels`,
+      );
+    }
+  }
+  if (sourceKind === 'character-level' && data.level !== 0) {
+    throw new RulesPackError(
+      `${path}.data.character-level scaling is only valid for cantrips`,
+    );
+  }
   optMechanics(data, 'mechanics', `${path}.data`);
+  let upcast: ReturnType<typeof parseSpellUpcastSpec>;
+  try {
+    upcast = parseSpellUpcastSpec({
+      recordKey: record.key,
+      data,
+      ...(record.provenance.locator === undefined
+        ? {}
+        : { provenanceLocator: record.provenance.locator }),
+    });
+  } catch (error) {
+    if (error instanceof SpellUpcastContractError) {
+      throw new RulesPackError(error.message);
+    }
+    throw error;
+  }
+  if (upcast?.disposition === 'existing-s1-typed-scaling') {
+    const mechanics = reqObj(data, 'mechanics', `${path}.data`);
+    const effects = objArray(mechanics, 'effects', `${path}.data.mechanics`);
+    const hasScaling = effects?.some(
+      (effect) =>
+        effect.kind === 'summoning' &&
+        Array.isArray(effect.scaling) &&
+        effect.scaling.length > 0,
+    );
+    if (!hasScaling) {
+      throw new RulesPackError(
+        `${path}.data.upcast S1 disposition requires usable summoning scaling`,
+      );
+    }
+  }
 }
 
 /**

@@ -17,7 +17,8 @@ import {
   ArmorClassShapeError,
   actionExtractionsToRecords,
   ancestryExtractionsToRecords,
-  buildPack,
+  buildPack as buildCanonicalPack,
+  spellExtractionsToRecords as canonicalSpellExtractionsToRecords,
   conditionExtractionsToRecords,
   creatureExtractionsToRecords,
   diseaseExtractionsToRecords,
@@ -28,7 +29,6 @@ import {
   magicItemExtractionsToRecords,
   poisonExtractionsToRecords,
   SRD_5_1_LICENSE,
-  spellExtractionsToRecords,
   subclassExtractionsToRecords,
   tableExtractionsToRecords,
   writePackToDirectory,
@@ -53,6 +53,19 @@ import type {
 } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
 
 const tmpDirs: string[] = [];
+
+const buildPack = (input: Parameters<typeof buildCanonicalPack>[0]) =>
+  buildCanonicalPack({
+    ...input,
+    allowSyntheticSpellSourceBindings: true,
+  });
+
+const spellExtractionsToRecords = (
+  ...args: Parameters<typeof canonicalSpellExtractionsToRecords>
+) =>
+  canonicalSpellExtractionsToRecords(args[0], args[1], {
+    allowSyntheticSourceBindings: true,
+  });
 
 afterEach(() => {
   for (const dir of tmpDirs.splice(0)) {
