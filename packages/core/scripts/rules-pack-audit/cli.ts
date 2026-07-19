@@ -29,6 +29,7 @@
  */
 
 import { isAbsolute, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   auditHasFindings,
   auditPack,
@@ -43,6 +44,18 @@ import {
 interface SharedOptions {
   readonly json: boolean;
   readonly strict: boolean;
+}
+
+export interface RulesPackAuditCliIO {
+  readonly stdout: Pick<NodeJS.WriteStream, 'write'>;
+  readonly stderr: Pick<NodeJS.WriteStream, 'write'>;
+  readonly cwd: string;
+}
+
+class CliExit extends Error {
+  constructor(readonly code: number) {
+    super(`rules-pack-audit exited with code ${code}`);
+  }
 }
 
 interface AuditCommand {
@@ -60,24 +73,27 @@ interface DiffCommand {
 
 type ParsedCommand = AuditCommand | DiffCommand;
 
-function ensureAbsolute(path: string): string {
-  return isAbsolute(path) ? path : resolve(process.cwd(), path);
+function ensureAbsolute(path: string, cwd: string): string {
+  return isAbsolute(path) ? path : resolve(cwd, path);
 }
 
-function parseArgs(argv: readonly string[]): ParsedCommand {
+function parseArgs(
+  argv: readonly string[],
+  io: RulesPackAuditCliIO,
+): ParsedCommand {
   if (argv.length === 0 || argv[0] === '--help' || argv[0] === '-h') {
-    printHelpAndExit(argv.length === 0 ? 1 : 0);
+    printHelpAndExit(argv.length === 0 ? 1 : 0, io);
   }
   const subcommand = argv[0];
   const rest = argv.slice(1);
   if (subcommand === 'audit') {
-    return parseAuditArgs(rest);
+    return parseAuditArgs(rest, io);
   }
   if (subcommand === 'diff') {
-    return parseDiffArgs(rest);
+    return parseDiffArgs(rest, io);
   }
-  console.error(`unknown subcommand: ${subcommand}`);
-  printHelpAndExit(1);
+  io.stderr.write(`unknown subcommand: ${subcommand}\n`);
+  printHelpAndExit(1, io);
 }
 
 interface PartitionedArgs {
@@ -85,7 +101,10 @@ interface PartitionedArgs {
   readonly options: SharedOptions;
 }
 
-function partitionArgs(argv: readonly string[]): PartitionedArgs {
+function partitionArgs(
+  argv: readonly string[],
+  io: RulesPackAuditCliIO,
+): PartitionedArgs {
   let json = false;
   let strict = false;
   const positional: string[] = [];
@@ -95,10 +114,10 @@ function partitionArgs(argv: readonly string[]): PartitionedArgs {
     } else if (token === '--strict') {
       strict = true;
     } else if (token === '--help' || token === '-h') {
-      printHelpAndExit(0);
+      printHelpAndExit(0, io);
     } else if (token.startsWith('--')) {
-      console.error(`unknown flag: ${token}`);
-      printHelpAndExit(1);
+      io.stderr.write(`unknown flag: ${token}\n`);
+      printHelpAndExit(1, io);
     } else {
       positional.push(token);
     }
@@ -106,34 +125,42 @@ function partitionArgs(argv: readonly string[]): PartitionedArgs {
   return { positional, options: { json, strict } };
 }
 
-function parseAuditArgs(argv: readonly string[]): AuditCommand {
-  const { positional, options } = partitionArgs(argv);
+function parseAuditArgs(
+  argv: readonly string[],
+  io: RulesPackAuditCliIO,
+): AuditCommand {
+  const { positional, options } = partitionArgs(argv, io);
   if (positional.length !== 1) {
-    console.error('audit: expected exactly one <packDir> argument');
-    printHelpAndExit(1);
+    io.stderr.write('audit: expected exactly one <packDir> argument\n');
+    printHelpAndExit(1, io);
   }
   return {
     kind: 'audit',
-    packDir: ensureAbsolute(positional[0]),
+    packDir: ensureAbsolute(positional[0], io.cwd),
     options,
   };
 }
 
-function parseDiffArgs(argv: readonly string[]): DiffCommand {
-  const { positional, options } = partitionArgs(argv);
+function parseDiffArgs(
+  argv: readonly string[],
+  io: RulesPackAuditCliIO,
+): DiffCommand {
+  const { positional, options } = partitionArgs(argv, io);
   if (positional.length !== 2) {
-    console.error('diff: expected <baselineDir> and <candidateDir> arguments');
-    printHelpAndExit(1);
+    io.stderr.write(
+      'diff: expected <baselineDir> and <candidateDir> arguments\n',
+    );
+    printHelpAndExit(1, io);
   }
   return {
     kind: 'diff',
-    beforeDir: ensureAbsolute(positional[0]),
-    afterDir: ensureAbsolute(positional[1]),
+    beforeDir: ensureAbsolute(positional[0], io.cwd),
+    afterDir: ensureAbsolute(positional[1], io.cwd),
     options,
   };
 }
 
-function printHelpAndExit(code: number): never {
+function printHelpAndExit(code: number, io: RulesPackAuditCliIO): never {
   const text = [
     'Usage:',
     '  rules-pack-audit audit <packDir> [--json] [--strict]',
@@ -155,20 +182,20 @@ function printHelpAndExit(code: number): never {
     '  2  pack failed validation or could not be loaded',
   ].join('\n');
   if (code === 0) {
-    console.log(text);
+    io.stdout.write(`${text}\n`);
   } else {
-    console.error(text);
+    io.stderr.write(`${text}\n`);
   }
-  process.exit(code);
+  throw new CliExit(code);
 }
 
-function runAudit(command: AuditCommand): number {
-  const pack = loadOrExit(command.packDir);
+function runAudit(command: AuditCommand, io: RulesPackAuditCliIO): number {
+  const pack = loadOrExit(command.packDir, io);
   const audit = auditPack(pack);
   if (command.options.json) {
-    console.log(JSON.stringify(audit, null, 2));
+    io.stdout.write(`${JSON.stringify(audit, null, 2)}\n`);
   } else {
-    process.stdout.write(formatAuditReport(audit));
+    io.stdout.write(formatAuditReport(audit));
   }
   if (command.options.strict && auditHasFindings(audit)) {
     return 1;
@@ -176,14 +203,14 @@ function runAudit(command: AuditCommand): number {
   return 0;
 }
 
-function runDiff(command: DiffCommand): number {
-  const before = loadOrExit(command.beforeDir);
-  const after = loadOrExit(command.afterDir);
+function runDiff(command: DiffCommand, io: RulesPackAuditCliIO): number {
+  const before = loadOrExit(command.beforeDir, io);
+  const after = loadOrExit(command.afterDir, io);
   const diff = diffPacks(before, after);
   if (command.options.json) {
-    console.log(JSON.stringify(diff, null, 2));
+    io.stdout.write(`${JSON.stringify(diff, null, 2)}\n`);
   } else {
-    process.stdout.write(formatDiffReport(diff));
+    io.stdout.write(formatDiffReport(diff));
   }
   if (command.options.strict && diffHasChanges(diff)) {
     return 1;
@@ -193,25 +220,44 @@ function runDiff(command: DiffCommand): number {
 
 function loadOrExit(
   dir: string,
+  io: RulesPackAuditCliIO,
 ): ReturnType<typeof loadRulesPackFromDirectory> {
   try {
     return loadRulesPackFromDirectory(dir);
   } catch (cause) {
     if (cause instanceof RulesPackError) {
-      console.error(`pack at ${dir} failed validation: ${cause.message}`);
+      io.stderr.write(`pack at ${dir} failed validation: ${cause.message}\n`);
     } else {
-      console.error(
-        `failed to load pack at ${dir}: ${(cause as Error).message}`,
+      io.stderr.write(
+        `failed to load pack at ${dir}: ${(cause as Error).message}\n`,
       );
     }
-    process.exit(2);
+    throw new CliExit(2);
   }
 }
 
-function main(): void {
-  const command = parseArgs(process.argv.slice(2));
-  const code = command.kind === 'audit' ? runAudit(command) : runDiff(command);
-  process.exit(code);
+export function runCli(
+  argv: readonly string[],
+  io: RulesPackAuditCliIO = {
+    stdout: process.stdout,
+    stderr: process.stderr,
+    cwd: process.cwd(),
+  },
+): number {
+  try {
+    const command = parseArgs(argv, io);
+    return command.kind === 'audit'
+      ? runAudit(command, io)
+      : runDiff(command, io);
+  } catch (cause) {
+    if (cause instanceof CliExit) {
+      return cause.code;
+    }
+    throw cause;
+  }
 }
 
-main();
+const thisFile = fileURLToPath(import.meta.url);
+if (process.argv[1] === thisFile) {
+  process.exitCode = runCli(process.argv.slice(2));
+}
