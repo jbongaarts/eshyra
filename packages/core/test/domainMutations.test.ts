@@ -624,25 +624,21 @@ describe('removeItem', () => {
     ).toMatchObject({ disposition: 'lost', removed: true });
     ensureCharacterRow(db, 'pc-2', 'test', CTX.sessionId, CTX.at);
     const secondHolder = { ...CTX, characterId: 'pc-2' };
-    expect(claimItem(db, axe.id, secondHolder)).toMatchObject({
-      itemId: axe.id,
-      characterId: 'pc-2',
-    });
+    expect(() => claimItem(db, axe.id, secondHolder)).toThrow(
+      /not a generally claimable drop/,
+    );
     expect(
       db
         .prepare('SELECT character_id FROM attunement WHERE item_id=?')
         .get(axe.id),
     ).toEqual({ character_id: 'pc-1' });
-    expect(
-      removeItem(db, { itemId: axe.id, disposition: 'sold' }, secondHolder),
-    ).toMatchObject({ disposition: 'sold', removed: true });
-    expect(
+    expect(() =>
       removeItem(
         db,
         { itemId: axe.id, disposition: 'destroyed' },
         secondHolder,
       ),
-    ).toMatchObject({ disposition: 'destroyed', removed: true });
+    ).toThrow(/not under the acting character's custody/);
 
     const unattuned = giveItem(
       db,
@@ -984,11 +980,11 @@ describe('removeItem', () => {
     db.close();
   });
 
-  it('partially destroys an unheld stateless stack in place', () => {
+  it('partially destroys a dropped unheld stateless stack in place', () => {
     const db = freshDb();
     giveItem(db, { id: 'firewood', name: 'Firewood', quantity: 5 }, CTX);
     updateClock(db, { locationId: 'camp' }, CTX);
-    removeItem(db, { itemId: 'firewood', disposition: 'lost' }, CTX);
+    removeItem(db, { itemId: 'firewood', disposition: 'dropped' }, CTX);
 
     expect(
       removeItem(
@@ -1007,6 +1003,38 @@ describe('removeItem', () => {
         .prepare('SELECT character_id, quantity FROM inventory WHERE id=?')
         .get('firewood'),
     ).toEqual({ character_id: null, quantity: 3 });
+    db.close();
+  });
+
+  it('preserves sold and lost custody without making either row claimable or seller-controlled', () => {
+    const db = freshDb();
+    updateClock(db, { locationId: 'market' }, CTX);
+    for (const disposition of ['sold', 'lost'] as const) {
+      const itemId = `${disposition}-relic`;
+      giveItem(db, { id: itemId, name: `${disposition} relic` }, CTX);
+      removeItem(db, { itemId, disposition }, CTX);
+      expect(
+        db
+          .prepare(
+            `SELECT character_id, world_location_id, unheld_disposition
+             FROM inventory WHERE id=?`,
+          )
+          .get(itemId),
+      ).toEqual({
+        character_id: null,
+        world_location_id: 'market',
+        unheld_disposition: disposition,
+      });
+      expect(() => claimItem(db, itemId, CTX)).toThrow(
+        /not a generally claimable drop/,
+      );
+      expect(() =>
+        giveItem(db, { id: itemId, name: 'Re-granted relic' }, CTX),
+      ).toThrow(/not available to give or claim/);
+      expect(() =>
+        removeItem(db, { itemId, disposition: 'destroyed' }, CTX),
+      ).toThrow(/not under the acting character's custody/);
+    }
     db.close();
   });
 

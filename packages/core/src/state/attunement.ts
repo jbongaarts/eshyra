@@ -30,7 +30,6 @@
 
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
-import type { MagicItemVariantDefinition } from '../rules/magicItemVariants.js';
 import {
   effectiveMagicItemMechanics,
   MagicItemVariantError,
@@ -228,12 +227,56 @@ export function assertEffectiveAttunementCurseReady(
     (curse?.attunement?.preconditionEffects?.length ?? 0) > 0;
   const blocksMutation =
     mutation === 'attune'
-      ? attachesPersistentState || pendingPrecondition
-      : attachesPersistentState || curse?.blocksUnattune === true;
+      ? attachesPersistentState ||
+        pendingPrecondition ||
+        curse?.blocksUnattune === true
+      : attachesPersistentState;
   if (blocksMutation)
     throw new AttunementError(
-      `${record.key}${variantId === undefined ? '' : ` variant '${variantId}'`} has a source-declared curse contract with attunement lifecycle mechanics that are engine-pending, so '${mutation}' must fail closed. Only authoritative death or item-destruction lifecycle cleanup may end an existing persistent cursed bond.`,
+      `${record.key}${variantId === undefined ? '' : ` variant '${variantId}'`} has a source-declared curse contract with attunement lifecycle mechanics that are engine-pending, so '${mutation}' must fail closed rather than create, rewrite, or discard a bond without its authoritative curse state.`,
     );
+}
+
+export interface CanonicalAttunementContract {
+  readonly itemKey: string;
+  readonly displayName: string;
+  readonly variantId?: string;
+  readonly prerequisite?: string;
+}
+
+/**
+ * Resolve the canonical identity and every record-owned precondition required
+ * before a persisted attunement may be created or rewritten. Keeping this
+ * boundary shared prevents compatibility paths from manufacturing bonds that
+ * the normal attune mutation would reject.
+ */
+export function resolveCanonicalAttunementContract(
+  record: import('../rules/types.js').RulesRecord,
+  variantId: string | undefined,
+  inventoryName: string,
+): CanonicalAttunementContract {
+  const data = record.data as Record<string, unknown>;
+  if (data.requiresAttunement !== true)
+    throw new AttunementError(
+      `'${inventoryName}' (${record.key}) does not require attunement per its record; its properties work without a slot`,
+    );
+  let selectedVariant: ReturnType<typeof resolveMagicItemVariant>;
+  try {
+    selectedVariant = resolveMagicItemVariant(record, variantId);
+  } catch (error) {
+    if (error instanceof MagicItemVariantError)
+      throw new AttunementError(error.message);
+    throw error;
+  }
+  assertEffectiveAttunementCurseReady(record, selectedVariant?.id, 'attune');
+  return {
+    itemKey: magicItemVariantTypeKey(record.key, selectedVariant?.id),
+    displayName: selectedVariant?.name ?? inventoryName,
+    ...(selectedVariant === undefined ? {} : { variantId: selectedVariant.id }),
+    ...(typeof data.attunementRequirement !== 'string'
+      ? {}
+      : { prerequisite: data.attunementRequirement }),
+  };
 }
 
 /** Resolve immutable inventory identity through the campaign stack, then gate. */
@@ -423,33 +466,14 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
     let itemKey = `name:${normalizeItemKey(item.name)}`;
     let displayName = item.name;
     if (record !== undefined) {
-      const data = record.data as Record<string, unknown>;
-      if (data.requiresAttunement !== true) {
-        throw new AttunementError(
-          `'${item.name}' (${record.key}) does not require attunement per its record; its properties work without a slot`,
-        );
-      }
-      let selectedVariant: MagicItemVariantDefinition | undefined;
-      try {
-        selectedVariant = resolveMagicItemVariant(
-          record,
-          item.variant_id ?? undefined,
-        );
-      } catch (error) {
-        if (error instanceof MagicItemVariantError)
-          throw new AttunementError(error.message);
-        throw error;
-      }
-      assertEffectiveAttunementCurseReady(
+      const contract = resolveCanonicalAttunementContract(
         record,
-        selectedVariant?.id,
-        'attune',
+        item.variant_id ?? undefined,
+        item.name,
       );
-      itemKey = magicItemVariantTypeKey(record.key, selectedVariant?.id);
-      if (selectedVariant !== undefined) displayName = selectedVariant.name;
-      if (typeof data.attunementRequirement === 'string') {
-        prerequisite = data.attunementRequirement;
-      }
+      itemKey = contract.itemKey;
+      displayName = contract.displayName;
+      prerequisite = contract.prerequisite;
     }
 
     const existing = listAttunements(txnDb, input.campaignId, character.id);

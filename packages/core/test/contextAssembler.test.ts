@@ -452,8 +452,9 @@ describe('Context Assembler', () => {
     const insert = db.prepare(
       `INSERT INTO inventory(
          id, character_id, name, quantity, location, world_location_id,
-         properties_json, provenance, session_id, updated_at
-       ) VALUES (?, NULL, ?, ?, NULL, ?, ?, 'test', ?, ?)`,
+         properties_json, provenance, session_id, updated_at,
+         unheld_disposition
+       ) VALUES (?, NULL, ?, ?, NULL, ?, ?, 'test', ?, ?, ?)`,
     );
     insert.run(
       'claimable-ring',
@@ -463,6 +464,7 @@ describe('Context Assembler', () => {
       '{"engraved":true}',
       SESSION,
       '2026-05-20T10:00:00.000Z',
+      'dropped',
     );
     const hugePayload = `NEARBY_SECRET_${'x'.repeat(10_000)}`;
     db.prepare(
@@ -474,6 +476,22 @@ describe('Context Assembler', () => {
        ) VALUES ('claimable-ring', ?, 'test', ?, ?)`,
     ).run(
       JSON.stringify({ custom: { hugePayload } }),
+      SESSION,
+      '2026-05-20T10:00:00.000Z',
+    );
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at
+       ) VALUES ('legacy-review', 'pc-1', 'Legacy Review', ?, 'test', ?, ?)`,
+    ).run(
+      JSON.stringify({
+        magicItemAdoption: {
+          status: 'gm-review-required',
+          requestedPackRef: 'magic-item:orb-of-dragonkind',
+          reason: `RECONCILE_ME ${'bounded'.repeat(100)} HIDDEN_REASON_TAIL`,
+        },
+      }),
       SESSION,
       '2026-05-20T10:00:00.000Z',
     );
@@ -510,6 +528,7 @@ describe('Context Assembler', () => {
       '{}',
       SESSION,
       '2026-05-20T10:00:00.000Z',
+      'dropped',
     );
     insert.run(
       'unknown-cache',
@@ -519,7 +538,19 @@ describe('Context Assembler', () => {
       '{}',
       SESSION,
       '2026-05-20T10:00:00.000Z',
+      null,
     );
+    for (const disposition of ['sold', 'lost'])
+      insert.run(
+        `${disposition}-item`,
+        `${disposition} item`,
+        1,
+        'market',
+        '{}',
+        SESSION,
+        '2026-05-20T10:00:00.000Z',
+        disposition,
+      );
 
     const context = assembleContext({
       db,
@@ -541,6 +572,11 @@ describe('Context Assembler', () => {
       state: { custom: { marker: 'HELD_STATE_UNCHANGED' } },
     });
     expect(rendered).toContain('HELD_STATE_UNCHANGED');
+    expect(rendered).toContain('Legacy Review x1 [id=legacy-review]');
+    expect(rendered).toContain(
+      'adoption=gm-review-required; requestedPackRef=magic-item:orb-of-dragonkind; reason=RECONCILE_ME',
+    );
+    expect(rendered).not.toContain('HIDDEN_REASON_TAIL');
     expect(context.state.nearbyInventory[0]).not.toHaveProperty('properties');
     expect(context.state.nearbyInventory[0]).not.toHaveProperty('state');
     const listed = createDefaultToolRegistry().invoke(
@@ -565,6 +601,8 @@ describe('Context Assembler', () => {
     }
     expect(rendered).not.toContain('remote-crate');
     expect(rendered).not.toContain('unknown-cache');
+    expect(rendered).not.toContain('sold-item');
+    expect(rendered).not.toContain('lost-item');
     db.close();
   });
 
@@ -576,12 +614,19 @@ describe('Context Assembler', () => {
     const insert = db.prepare(
       `INSERT INTO inventory(
          id, character_id, name, location, world_location_id, properties_json,
-         provenance, session_id, updated_at
-       ) VALUES (?, NULL, ?, NULL, ?, '{}', 'test', ?, ?)`,
+         provenance, session_id, updated_at, unheld_disposition
+       ) VALUES (?, NULL, ?, NULL, ?, '{}', 'test', ?, ?, ?)`,
     );
     for (let index = 1; index <= 22; index += 1) {
       const id = `item-${String(index).padStart(2, '0')}`;
-      insert.run(id, id, 'market', SESSION, '2026-05-20T10:00:00.000Z');
+      insert.run(
+        id,
+        id,
+        'market',
+        SESSION,
+        '2026-05-20T10:00:00.000Z',
+        'dropped',
+      );
     }
     insert.run(
       'remote',
@@ -589,8 +634,16 @@ describe('Context Assembler', () => {
       'docks',
       SESSION,
       '2026-05-20T10:00:00.000Z',
+      'dropped',
     );
-    insert.run('unknown', 'Unknown', null, SESSION, '2026-05-20T10:00:00.000Z');
+    insert.run(
+      'unknown',
+      'Unknown',
+      null,
+      SESSION,
+      '2026-05-20T10:00:00.000Z',
+      null,
+    );
     const context = assembleContext({
       db,
       campaignId: CAMPAIGN,

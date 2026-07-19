@@ -8,6 +8,10 @@ import {
 } from '../rules/magicItemVariants.js';
 import type { RulesRecord } from '../rules/types.js';
 import {
+  AttunementError,
+  resolveCanonicalAttunementContract,
+} from './attunement.js';
+import {
   type CampaignRulesPackResolver,
   lookupStrictCampaignRecord,
 } from './campaignRecordLookup.js';
@@ -324,7 +328,26 @@ export function adoptMagicItem(
       return result.ok ? result.record : undefined;
     };
     if (attunementRows.length > 0) {
-      const canonicalType = magicItemVariantTypeKey(packRef, variantId);
+      let canonicalType: string;
+      try {
+        canonicalType = resolveCanonicalAttunementContract(
+          hit.record,
+          variantId,
+          row.name,
+        ).itemKey;
+      } catch (error) {
+        if (error instanceof AttunementError)
+          return reviewResult(
+            txnDb,
+            row,
+            properties,
+            input,
+            packRef,
+            stateful,
+            `legacy attunement cannot cross the canonical attunement boundary: ${error.message}`,
+          );
+        throw error;
+      }
       const duplicate = txnDb
         .prepare(
           `SELECT item_id FROM attunement

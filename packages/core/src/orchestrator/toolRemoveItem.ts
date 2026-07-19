@@ -18,7 +18,7 @@ export const removeItemTool: Tool = {
   requiresExplicitAction: true,
   description:
     'Apply an explicit physical disposition to a held item: destroyed, dropped, sold, or lost. ' +
-    'Only destroyed deletes the row and ends attunement; destroying an unheld row requires its world location to exactly match the current campaign location. A full drop, sale, or loss clears held storage and preserves the physical row and state as unheld at the current world location; a partial stateless stack is split into a new unheld row there. ' +
+    'Only destroyed deletes the row and ends attunement; destroying an unheld dropped row requires its world location to exactly match the current campaign location. A full drop, sale, or loss clears held storage and preserves the physical row, state, and disposition. Only dropped rows become discoverable and generally claimable; sold and lost rows remain outside player custody. A partial stateless stack is split into a new disposition-marked unheld row. ' +
     'Call ONLY when the player explicitly drops, uses, sells, or loses an item — ' +
     'never call to answer a question about what is currently equipped or carried.',
   inputSchema: {

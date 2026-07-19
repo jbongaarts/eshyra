@@ -283,7 +283,7 @@ describe('legacy magic-item adoption', () => {
       'adopt_item',
       {
         id: 'legacy-item',
-        packRef: 'magic-item:necklace-of-fireballs',
+        packRef: 'magic-item:wand-of-fireballs',
       },
       s.ctx,
     );
@@ -301,7 +301,7 @@ describe('legacy magic-item adoption', () => {
       .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
       .get('legacy-item') as { state_json: string };
     expect(JSON.parse(state.state_json)).toMatchObject({
-      packRef: 'magic-item:necklace-of-fireballs',
+      packRef: 'magic-item:wand-of-fireballs',
       economies: { charges: { remaining: 2 } },
     });
     expect(
@@ -311,9 +311,55 @@ describe('legacy magic-item adoption', () => {
         )
         .get('legacy-item'),
     ).toEqual({
-      item_key: 'magic-item:necklace-of-fireballs',
-      display_name: 'Necklace of Fireballs',
+      item_key: 'magic-item:wand-of-fireballs',
+      display_name: 'Wand of Fireballs',
     });
+  });
+
+  it('does not canonicalize a legacy bond that the normal attunement boundary rejects', () => {
+    for (const [id, packRef, expected] of [
+      [
+        'ordinary',
+        'magic-item:adamantine-armor',
+        'does not require attunement',
+      ],
+      ['orb', 'magic-item:orb-of-dragonkind', 'engine-pending'],
+    ] as const) {
+      const s = setup();
+      insertLegacy(s, { id });
+      s.db
+        .prepare(
+          `INSERT INTO attunement(
+             campaign_id, character_id, item_id, item_key, display_name,
+             attuned_at, provenance, session_id, updated_at
+           ) VALUES ('campaign-1', ?, ?, ?, 'Legacy item', ?,
+                     'test:legacy', 'session-1', ?)`,
+        )
+        .run(s.characterId, id, `name:${id}`, AT, AT);
+
+      const result = createDefaultToolRegistry().invoke(
+        'adopt_item',
+        { id, packRef },
+        s.ctx,
+      );
+      expect(result).toMatchObject({
+        ok: true,
+        data: {
+          adopted: false,
+          reviewRequired: true,
+          reason: expect.stringContaining(expected),
+        },
+      });
+      expect(
+        s.db
+          .prepare('SELECT pack_ref, properties_json FROM inventory WHERE id=?')
+          .get(id),
+      ).toMatchObject({ pack_ref: null });
+      expect(
+        s.db.prepare('SELECT item_key FROM attunement WHERE item_id=?').get(id),
+      ).toEqual({ item_key: `name:${id}` });
+      s.db.close();
+    }
   });
 
   it('durably flags unlicensed transitional mechanics without binding or splitting', () => {
@@ -709,7 +755,10 @@ describe('legacy magic-item adoption', () => {
     expect(
       createDefaultToolRegistry().invoke(
         'adopt_item',
-        { id: 'legacy-item', packRef: 'magic-item:necklace-of-fireballs' },
+        {
+          id: 'legacy-item',
+          packRef: 'magic-item:necklace-of-prayer-beads',
+        },
         s.ctx,
       ),
     ).toMatchObject({ ok: false });

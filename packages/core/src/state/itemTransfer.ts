@@ -138,6 +138,7 @@ export function transferItem(
       .prepare(
         `UPDATE inventory
          SET character_id=?, location=NULL, world_location_id=NULL,
+             unheld_disposition=NULL,
              provenance=?, session_id=?, updated_at=?
          WHERE id=? AND character_id=?`,
       )

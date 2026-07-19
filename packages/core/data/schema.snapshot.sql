@@ -479,7 +479,11 @@ CREATE TABLE inventory (
     variant_id NOT GLOB '*--*' AND
     variant_id NOT GLOB '-*' AND
     variant_id NOT GLOB '*-'
-  ), world_location_id TEXT);
+  ), world_location_id TEXT, unheld_disposition TEXT
+  CHECK (
+    unheld_disposition IS NULL OR
+    unheld_disposition IN ('dropped', 'sold', 'lost')
+  ));
 
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY
@@ -740,28 +744,39 @@ CREATE INDEX idx_character_wallet_event_character
 CREATE INDEX idx_progression_event_character
   ON progression_event (character_id, occurred_at, id);
 
-CREATE INDEX inventory_unheld_world_location_id
+CREATE INDEX inventory_claimable_world_location_id
 ON inventory(world_location_id, id)
-WHERE character_id IS NULL;
+WHERE character_id IS NULL AND unheld_disposition = 'dropped';
 
 CREATE INDEX rest_event_long_benefit_time ON rest_event(campaign_id, kind, end_elapsed_minutes);
 
 CREATE TRIGGER inventory_location_insert_guard
 BEFORE INSERT ON inventory
 WHEN
-  (NEW.character_id IS NOT NULL AND NEW.world_location_id IS NOT NULL) OR
+  (NEW.character_id IS NOT NULL AND (
+    NEW.world_location_id IS NOT NULL OR NEW.unheld_disposition IS NOT NULL
+  )) OR
   (NEW.character_id IS NULL AND NEW.location IS NOT NULL) OR
-  (NEW.world_location_id IS NOT NULL AND trim(NEW.world_location_id) = '')
+  (NEW.world_location_id IS NOT NULL AND trim(NEW.world_location_id) = '') OR
+  (NEW.character_id IS NULL AND NEW.world_location_id IS NOT NULL AND
+    NEW.unheld_disposition IS NULL) OR
+  (NEW.unheld_disposition = 'dropped' AND NEW.world_location_id IS NULL)
 BEGIN
   SELECT RAISE(ABORT, 'inventory custody/location invariant violated');
 END;
 
 CREATE TRIGGER inventory_location_update_guard
-BEFORE UPDATE OF character_id, location, world_location_id ON inventory
+BEFORE UPDATE OF character_id, location, world_location_id, unheld_disposition
+ON inventory
 WHEN
-  (NEW.character_id IS NOT NULL AND NEW.world_location_id IS NOT NULL) OR
+  (NEW.character_id IS NOT NULL AND (
+    NEW.world_location_id IS NOT NULL OR NEW.unheld_disposition IS NOT NULL
+  )) OR
   (NEW.character_id IS NULL AND NEW.location IS NOT NULL) OR
-  (NEW.world_location_id IS NOT NULL AND trim(NEW.world_location_id) = '')
+  (NEW.world_location_id IS NOT NULL AND trim(NEW.world_location_id) = '') OR
+  (NEW.character_id IS NULL AND NEW.world_location_id IS NOT NULL AND
+    NEW.unheld_disposition IS NULL) OR
+  (NEW.unheld_disposition = 'dropped' AND NEW.world_location_id IS NULL)
 BEGIN
   SELECT RAISE(ABORT, 'inventory custody/location invariant violated');
 END;

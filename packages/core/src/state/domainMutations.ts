@@ -251,6 +251,7 @@ export function giveItem(
           character_id: string | null;
           pack_ref: string | null;
           variant_id: string | null;
+          unheld_disposition: string | null;
         }
       | undefined;
     if (item.stateful === true) {
@@ -270,19 +271,23 @@ export function giveItem(
     } else {
       collision = txnDb
         .prepare(
-          'SELECT character_id, pack_ref, variant_id FROM inventory WHERE id = ?',
+          `SELECT character_id, pack_ref, variant_id, unheld_disposition
+           FROM inventory WHERE id = ?`,
         )
         .get(rowId) as
         | {
             character_id: string | null;
             pack_ref: string | null;
             variant_id: string | null;
+            unheld_disposition: string | null;
           }
         | undefined;
       if (collision !== undefined && collision.character_id !== charId) {
         throw new MutateStateError(
           collision.character_id === null
-            ? `inventory id '${rowId}' is an unheld physical row; use claim_item to take custody`
+            ? collision.unheld_disposition === 'dropped'
+              ? `inventory id '${rowId}' is a dropped physical row; use claim_item to take custody`
+              : `inventory id '${rowId}' has unheld disposition '${collision.unheld_disposition ?? 'unknown'}' and is not available to give or claim`
             : `inventory id '${rowId}' is held by '${collision.character_id}'; use transfer_item to change custody`,
         );
       }
@@ -400,7 +405,7 @@ export function claimItem(
     const row = txnDb
       .prepare(
         `SELECT name, quantity, character_id, pack_ref, variant_id,
-                world_location_id
+                world_location_id, unheld_disposition
          FROM inventory WHERE id = ?`,
       )
       .get(itemId) as
@@ -411,6 +416,7 @@ export function claimItem(
           pack_ref: string | null;
           variant_id: string | null;
           world_location_id: string | null;
+          unheld_disposition: string | null;
         }
       | undefined;
     if (row === undefined)
@@ -418,6 +424,10 @@ export function claimItem(
     if (row.character_id !== null)
       throw new MutateStateError(
         `inventory item '${itemId}' is already held by '${row.character_id}'`,
+      );
+    if (row.unheld_disposition !== 'dropped')
+      throw new MutateStateError(
+        `inventory item '${itemId}' has unheld disposition '${row.unheld_disposition ?? 'unknown'}' and is not a generally claimable drop`,
       );
     let currentLocation: string;
     try {
@@ -437,7 +447,7 @@ export function claimItem(
     const updated = txnDb
       .prepare(
         `UPDATE inventory
-         SET character_id=?, world_location_id=NULL,
+         SET character_id=?, world_location_id=NULL, unheld_disposition=NULL,
              provenance=?, session_id=?, updated_at=?
          WHERE id=? AND character_id IS NULL`,
       )
@@ -511,7 +521,7 @@ export function removeItem(
     const row = txnDb
       .prepare(
         `SELECT id, character_id, name, quantity, location, world_location_id,
-                properties_json, pack_ref, variant_id
+                properties_json, pack_ref, variant_id, unheld_disposition
          FROM inventory WHERE id = ?`,
       )
       .get(itemId) as
@@ -525,6 +535,7 @@ export function removeItem(
           properties_json: string;
           pack_ref: string | null;
           variant_id: string | null;
+          unheld_disposition: string | null;
         }
       | undefined;
 
@@ -566,6 +577,10 @@ export function removeItem(
       .get() as { current_location_id: string | null } | undefined;
     let currentWorldLocation = clock?.current_location_id ?? null;
     if (row.character_id === null) {
+      if (row.unheld_disposition !== 'dropped')
+        throw new MutateStateError(
+          `unheld inventory item '${itemId}' has disposition '${row.unheld_disposition ?? 'unknown'}' and is not under the acting character's custody`,
+        );
       try {
         currentWorldLocation = requireCurrentWorldLocation(txnDb);
       } catch (error) {
@@ -635,11 +650,13 @@ export function removeItem(
           .prepare(
             `UPDATE inventory
              SET character_id=NULL, location=NULL, world_location_id=?,
+                 unheld_disposition=?,
                  provenance=?, session_id=?, updated_at=?
              WHERE id=? AND character_id=?`,
           )
           .run(
             worldLocation,
+            disposition,
             ctx.provenance,
             ctx.sessionId,
             ctx.at,
@@ -665,8 +682,8 @@ export function removeItem(
           `INSERT INTO inventory(
              id, character_id, name, quantity, location, world_location_id,
              properties_json, provenance, session_id, updated_at, pack_ref,
-             variant_id
-           ) VALUES (?, NULL, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
+             variant_id, unheld_disposition
+           ) VALUES (?, NULL, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           relinquishedItemId,
@@ -679,6 +696,7 @@ export function removeItem(
           ctx.at,
           row.pack_ref,
           row.variant_id,
+          disposition,
         );
       mutateState(txnDb, {
         target: 'inventory',

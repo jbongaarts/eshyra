@@ -49,6 +49,7 @@ export const listNearbyItemsTool: Tool = {
         `SELECT id, name, quantity, world_location_id, pack_ref, variant_id
          FROM inventory
          WHERE character_id IS NULL
+           AND unheld_disposition='dropped'
            AND world_location_id=?
            AND trim(world_location_id) <> ''
            AND id>?

@@ -39,7 +39,7 @@ describe('schema snapshot (ADR 0015 §7)', () => {
     const snapshot = renderSchemaSnapshot(db);
     db.close();
     expect(snapshot).not.toContain('schema_migrations');
-    expect(snapshot).toContain('inventory_unheld_world_location_id');
+    expect(snapshot).toContain('inventory_claimable_world_location_id');
     expect(snapshot).toContain('inventory_location_insert_guard');
     expect(snapshot).toContain('inventory_location_update_guard');
   });

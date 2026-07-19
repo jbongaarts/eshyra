@@ -362,6 +362,7 @@ export function readStateSnapshot(
                     world_location_id
              FROM inventory
              WHERE character_id IS NULL
+               AND unheld_disposition = 'dropped'
                AND world_location_id = ?
                AND trim(world_location_id) <> ''
              ORDER BY id
@@ -676,6 +677,37 @@ function renderParty(party: PartyMember[], actingId: string): string {
     .join('\n');
 }
 
+const MAX_ADOPTION_REASON_CONTEXT_CHARS = 240;
+
+function renderMagicItemAdoptionStatus(
+  properties: InventoryItemProperties,
+): string {
+  const marker = properties.magicItemAdoption;
+  if (
+    marker === null ||
+    typeof marker !== 'object' ||
+    Array.isArray(marker) ||
+    marker.status !== 'gm-review-required'
+  )
+    return '';
+  const requestedPackRef =
+    typeof marker.requestedPackRef === 'string'
+      ? `; requestedPackRef=${marker.requestedPackRef}`
+      : '';
+  const requestedVariantId =
+    typeof marker.requestedVariantId === 'string'
+      ? `; requestedVariantId=${marker.requestedVariantId}`
+      : '';
+  const reason =
+    typeof marker.reason === 'string'
+      ? marker.reason
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, MAX_ADOPTION_REASON_CONTEXT_CHARS)
+      : 'reason unavailable';
+  return ` adoption=gm-review-required${requestedPackRef}${requestedVariantId}; reason=${reason}`;
+}
+
 function renderState(state: StateSnapshot): string {
   const c = state.character;
   const lines = [
@@ -721,11 +753,11 @@ function renderState(state: StateSnapshot): string {
     lines.push(
       `Inventory: ${state.inventory
         .map((i) => {
-          const identity =
-            i.packRef === undefined ? '' : ` [${i.id}; ${i.packRef}]`;
+          const identity = ` [id=${i.id}${i.packRef === undefined ? '' : `; ${i.packRef}`}${i.variantId === undefined ? '' : `; variant=${i.variantId}`}]`;
           const liveState =
             i.state === undefined ? '' : ` state=${JSON.stringify(i.state)}`;
-          return `${i.name} x${i.quantity}${identity}${liveState}`;
+          const adoption = renderMagicItemAdoptionStatus(i.properties);
+          return `${i.name} x${i.quantity}${identity}${adoption}${liveState}`;
         })
         .join(', ')}`,
     );

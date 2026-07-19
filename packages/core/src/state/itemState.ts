@@ -1436,8 +1436,8 @@ function splitNonmagicalSingleUseInventory(
       `INSERT INTO inventory(
          id, character_id, name, quantity, location, world_location_id,
          properties_json, provenance, session_id, updated_at, pack_ref,
-         variant_id
-       ) VALUES (?, NULL, ?, ?, NULL, ?, ?, ?, ?, ?, NULL, NULL)`,
+         variant_id, unheld_disposition
+       ) VALUES (?, NULL, ?, ?, NULL, ?, ?, ?, ?, ?, NULL, NULL, 'dropped')`,
     ).run(
       transformedInstanceId,
       `Nonmagical ammunition (formerly ${source.name})`,

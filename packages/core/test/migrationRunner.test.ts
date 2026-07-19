@@ -420,6 +420,79 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0017 classifies legacy drops and enforces explicit unheld disposition', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 16)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(16);
+    db.prepare(
+      `INSERT INTO inventory(
+         id, name, world_location_id, provenance, session_id, updated_at
+       ) VALUES ('legacy-drop', 'Legacy Drop', 'old-road', 'test', 'session', ?)`,
+    ).run(NOW());
+
+    const migration17 = bundled[16];
+    if (migration17 === undefined) throw new Error('missing migration 0017');
+    writeFileSync(
+      join(dir, '0017_inventory_unheld_disposition.sql'),
+      migration17.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([17]);
+    expect(
+      db
+        .prepare(
+          `SELECT character_id, world_location_id, unheld_disposition
+           FROM inventory WHERE id='legacy-drop'`,
+        )
+        .get(),
+    ).toEqual({
+      character_id: null,
+      world_location_id: 'old-road',
+      unheld_disposition: 'dropped',
+    });
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO inventory(
+             id, name, world_location_id, provenance, session_id, updated_at
+           ) VALUES ('implicit', 'Implicit', 'old-road', 'test', 'session', ?)`,
+        )
+        .run(NOW()),
+    ).toThrow(/custody\/location invariant/);
+    expect(() =>
+      db
+        .prepare(
+          `UPDATE inventory
+           SET character_id='pc-1'
+           WHERE id='legacy-drop'`,
+        )
+        .run(),
+    ).toThrow(/custody\/location invariant/);
+    expect(
+      db
+        .prepare(
+          `SELECT type, name FROM sqlite_master
+           WHERE name IN (
+             'inventory_unheld_world_location_id',
+             'inventory_claimable_world_location_id'
+           ) ORDER BY name`,
+        )
+        .all(),
+    ).toEqual([
+      { type: 'index', name: 'inventory_claimable_world_location_id' },
+    ]);
+    db.close();
+  });
+
   it('refuses to start when an applied migration file was edited (checksum drift)', () => {
     const db = openDatabase(':memory:');
     const dir = makeMigrationDir({

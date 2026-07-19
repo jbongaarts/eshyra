@@ -403,6 +403,45 @@ describe('attuneItem', () => {
 });
 
 describe('endAttunement', () => {
+  it('refuses to create an Orb bond before its control-state owner lands but permits distance cleanup', () => {
+    const { db } = setup();
+    const orb = giveItem(
+      db,
+      {
+        id: 'orb',
+        name: 'Orb of Dragonkind',
+        packRef: 'magic-item:orb-of-dragonkind',
+        stateful: true,
+      },
+      CTX,
+    );
+    expect(() =>
+      attuneItem(db, {
+        campaignId: CAMPAIGN,
+        itemId: orb.id,
+        ...CTX,
+      }),
+    ).toThrow(/engine-pending.*attune/);
+
+    insertAttunement(
+      db,
+      orb.id,
+      'magic-item:orb-of-dragonkind',
+      'Orb of Dragonkind',
+    );
+    expect(
+      endAttunement(db, {
+        campaignId: CAMPAIGN,
+        itemId: orb.id,
+        reason: 'distance',
+        ...CTX,
+      }),
+    ).toMatchObject({
+      reason: 'distance',
+      ended: { itemId: orb.id },
+    });
+  });
+
   it('cannot explicitly delete a persisted cursed bond', () => {
     const { db } = setup();
     const cursedId = giveItem(
@@ -590,13 +629,13 @@ describe('cursed attunement corpus guard', () => {
     expect(blockedAttune.sort()).toEqual([
       'Armor of Vulnerability:parent',
       'Berserker Axe:parent',
+      'Orb of Dragonkind:parent',
       'Robe of the Archmagi:parent',
       'Shield of Missile Attraction:parent',
     ]);
     expect(blockedEnd.sort()).toEqual([
       'Armor of Vulnerability:parent',
       'Berserker Axe:parent',
-      'Orb of Dragonkind:parent',
       'Shield of Missile Attraction:parent',
     ]);
 
@@ -634,14 +673,14 @@ describe('cursed attunement corpus guard', () => {
         'cursed-form',
         'attune',
       ),
-    ).not.toThrow();
+    ).toThrow(/engine-pending/);
     expect(() =>
       assertEffectiveAttunementCurseReady(
         syntheticVariant,
         'cursed-form',
         'end',
       ),
-    ).toThrow(/engine-pending/);
+    ).not.toThrow();
   });
 });
 
