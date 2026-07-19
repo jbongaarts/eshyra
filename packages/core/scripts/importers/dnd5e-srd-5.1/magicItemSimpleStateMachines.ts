@@ -270,6 +270,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
             from: 'bound',
             to: 'broken',
             via: 'escape-shackles',
+            note: 'Once every 30 days, the bound creature makes a DC 30 Strength (Athletics) check; on success it breaks free and destroys the shackles.',
             onFailure: {
               retryAfter: { amount: 30, unit: 'day' },
               scope: 'actor',
@@ -487,6 +488,7 @@ const SPECS: ReadonlyMap<string, SimpleStateSpec> = new Map([
             from: 'restraining',
             to: 'destroyed',
             via: 'break-bands',
+            note: 'The creature uses an action to make a DC 20 Strength check; on success the iron bands are destroyed and the restrained creature is freed.',
             onFailure: {
               retryAfter: { amount: 24, unit: 'hour' },
               scope: 'actor',

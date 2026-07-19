@@ -163,6 +163,20 @@ describe('M8 magic-item random-procedure projection', () => {
   });
 
   it('pins missing-count, cumulative-risk, nested-roll, and wand meta-rule regressions', () => {
+    expect(randomProcedure('Helm of Brilliance')?.procedures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'failed-fire-save-destruction',
+          outcome: expect.stringContaining('DC 17 Dexterity saving throw'),
+        }),
+      ]),
+    );
+    expect(randomProcedure('Staff of Power')?.procedures[0]).toMatchObject({
+      outcome: expect.stringContaining('DC 17 Dexterity saving throw'),
+    });
+    expect(randomProcedure('Staff of the Magi')?.procedures[0]).toMatchObject({
+      outcome: expect.stringContaining('DC 17 Dexterity saving throw'),
+    });
     expect(randomProcedure('Deck of Illusions')?.procedures[0]).toMatchObject({
       roll: '1d20-1',
       tableRef: 'table:deck-of-illusions',

@@ -124,6 +124,30 @@ describe('C2 spell grants and activated save/DC projection', () => {
 
   it('models activation, save branches, conditions, repeats, and healing', () => {
     expect(
+      projectMagicItemActivatedEffects(named('Ring of Shooting Stars'))
+        ?.mechanics.effects,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'c2-launch-shooting-stars-payload',
+          save: { ability: 'dexterity', dc: 15 },
+          failedSaveDamage: { dice: '5d4', type: 'fire' },
+          successfulSaveDamage: 'half',
+        }),
+      ]),
+    );
+    expect(
+      projectMagicItemActivatedEffects(named('Staff of Power'))?.mechanics
+        .effects,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'c2-power-strike-payload',
+          damage: { dice: '1d6', type: 'force' },
+        }),
+      ]),
+    );
+    expect(
       projectMagicItemActivatedEffects(named('Armor of Invulnerability')),
     ).toMatchObject({
       mechanics: {
