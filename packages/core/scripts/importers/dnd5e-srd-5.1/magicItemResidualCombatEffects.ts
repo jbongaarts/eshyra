@@ -311,11 +311,46 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
   [
     'Iron Flask',
     [
+      triggered(
+        'iron-flask-trap-save',
+        'target must succeed on a DC 17 Wisdom saving throw or be trapped in the flask',
+        'target is native to another plane and is within 60 feet',
+        'resolve the trap save before entering the flask',
+        {
+          save: { ability: 'wisdom', dc: 17 },
+          rangeFeet: 60,
+          target: 'creature native to another plane of existence',
+          failedSaveEffect: 'trapped in the flask',
+        },
+        [F1, F8, F9],
+      ),
       advantage(
         'iron-flask-known-save',
         'has advantage on the saving throw',
         'Wisdom saving throw',
         'target has been trapped by this flask before',
+      ),
+    ],
+  ],
+  [
+    'Mace of Disruption',
+    [
+      triggered(
+        'mace-of-disruption-destruction-rider',
+        'If the target has 25 hit points or fewer after taking this damage, it must succeed on a DC 15 Wisdom saving throw or be destroyed',
+        'hit fiend or undead after extra radiant damage leaves it at 25 hit points or fewer',
+        'resolve destruction save; on success frighten the creature until the end of your next turn',
+        {
+          save: { ability: 'wisdom', dc: 15 },
+          targetTypes: ['fiend', 'undead'],
+          hitPointThreshold: { maximum: 25, timing: 'after damage' },
+          failedSaveEffect: 'destroyed',
+          onSuccessfulSave: {
+            condition: 'frightened',
+            duration: 'until end of your next turn',
+          },
+        },
+        [F1, F8, F9],
       ),
     ],
   ],
@@ -333,6 +368,19 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
   [
     'Mirror of Life Trapping',
     [
+      triggered(
+        'mirror-trapping-save',
+        'must succeed on a DC 15 Charisma saving throw or be trapped',
+        'eligible creature sees its reflection in the activated mirror within 30 feet',
+        'resolve the reflection save before entering an extradimensional cell',
+        {
+          save: { ability: 'charisma', dc: 15 },
+          rangeFeet: 30,
+          failedSaveEffect:
+            'trapped in an extradimensional cell with worn and carried items',
+        },
+        [F1, F8, F9],
+      ),
       advantage(
         'mirror-known-save',
         'saving throw is made with advantage',
@@ -376,6 +424,31 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
           ignoresCover: ['half', 'three-quarters'],
           ignoresLongRangeDisadvantage: true,
         },
+      ),
+      triggered(
+        'oathbow-sworn-enemy-extra-damage',
+        'If the attack hits, your sworn enemy takes an extra 3d6 piercing damage',
+        'attack hits sworn enemy',
+        'deal extra piercing damage to the sworn enemy',
+        { extraDamage: { dice: '3d6', type: 'piercing' } },
+        [F1, F8, F9],
+      ),
+    ],
+  ],
+  [
+    'Giant Slayer',
+    [
+      triggered(
+        'giant-slayer-prone-rider',
+        'must succeed on a DC 15 Strength saving throw or fall prone',
+        'giant is hit with the weapon',
+        'resolve the Strength save and impose prone on failure',
+        {
+          save: { ability: 'strength', dc: 15 },
+          failedSaveCondition: 'prone',
+          targetTypes: ['giant'],
+        },
+        [F1, F8, F9],
       ),
     ],
   ],
@@ -499,6 +572,22 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
         'eyes on the robe can’t be closed or averted',
         'wearer would avert gaze from a creature',
         'cannot avert eyes from creature',
+      ),
+      triggered(
+        'robe-eyes-light-blindness',
+        'causes you to be blinded for 1 minute',
+        'light or daylight is cast on or within 5 feet of the robe',
+        'impose blindness and allow an end-of-turn Constitution save to end it',
+        {
+          conditions: ['blinded'],
+          duration: { amount: 1, unit: 'minute' },
+          saves: [
+            { ability: 'constitution', dc: 11, source: 'light' },
+            { ability: 'constitution', dc: 15, source: 'daylight' },
+          ],
+          repeatSave: 'end of each turn',
+          endsOn: ['successful-repeat-save'],
+        },
       ),
     ],
   ],

@@ -9,10 +9,10 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1771,
+  "rowCount": 1778,
   "dispositionCounts": {
     "complete": 382,
-    "model-adjudicated": 1188,
+    "model-adjudicated": 1195,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 2,
     "unsupported": 6
@@ -15473,7 +15473,7 @@
         "magic-item:amulet-of-health/m2-amulet-of-health-constitution-score-set",
         "magic-item:amulet-of-proof-against-detection-and-location/c2-residual-proof-against-divination"
       ],
-      "population": 1001,
+      "population": 1012,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15497,7 +15497,7 @@
         "F2",
         "F5"
       ],
-      "population": 1483,
+      "population": 1516,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15521,7 +15521,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1483,
+      "population": 1516,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15545,7 +15545,7 @@
         "F2",
         "F5"
       ],
-      "population": 780,
+      "population": 791,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15569,7 +15569,7 @@
         "F2",
         "F5"
       ],
-      "population": 1475,
+      "population": 1508,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15593,7 +15593,7 @@
         "damage, range, cover, and forced movement",
         "seeded dice, percentage, table, and pool selection"
       ],
-      "population": 1475,
+      "population": 1508,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15616,7 +15616,7 @@
         "adjudicated-by-design",
         "design-blocked"
       ],
-      "population": 1001,
+      "population": 1012,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15662,7 +15662,7 @@
         "stateMachine",
         "structuredField"
       ],
-      "population": 998,
+      "population": 1009,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15710,7 +15710,7 @@
         "c2-residual-proof-against-divination",
         "c2-residual-plane-shift-check"
       ],
-      "population": 446,
+      "population": 457,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15844,7 +15844,7 @@
         "parent",
         "variant"
       ],
-      "population": 1001,
+      "population": 1012,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -15892,7 +15892,7 @@
         "M8",
         "M5"
       ],
-      "population": 1001,
+      "population": 1012,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes",
       "deterministicConsumers": "magic-item compiler classification persistence and audit-bundle readiness report",
@@ -19715,11 +19715,32 @@
       "recordKinds": [
         "magic-item"
       ],
+      "fieldPath": "data.mechanics.effects[].area.centeredOn",
+      "representativeValues": [
+        "attack target"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].area.centeredOn",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
       "fieldPath": "data.mechanics.effects[].area.shape",
       "representativeValues": [
-        "cone"
+        "cone",
+        "radius"
       ],
-      "population": 3,
+      "population": 4,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20005,7 +20026,7 @@
       "representativeValues": [
         "minute"
       ],
-      "population": 2,
+      "population": 3,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20029,7 +20050,7 @@
         "frightened",
         "charmed"
       ],
-      "population": 15,
+      "population": 16,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20216,10 +20237,11 @@
       "representativeValues": [
         "until ended by a god or The Fates",
         "until start of next turn",
+        "until end of your next turn",
         "while attuned",
         "until end of wearer next turn"
       ],
-      "population": 4,
+      "population": 5,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20261,7 +20283,7 @@
         "minute",
         "hour"
       ],
-      "population": 43,
+      "population": 44,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20388,7 +20410,7 @@
         "successful-repeat-save",
         "spell:lesser-restoration"
       ],
-      "population": 18,
+      "population": 19,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20573,9 +20595,10 @@
       ],
       "fieldPath": "data.mechanics.effects[].extraDamage.dice",
       "representativeValues": [
+        "3d6",
         "2d10"
       ],
-      "population": 1,
+      "population": 2,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20593,9 +20616,10 @@
       ],
       "fieldPath": "data.mechanics.effects[].extraDamage.type",
       "representativeValues": [
+        "piercing",
         "necrotic"
       ],
-      "population": 1,
+      "population": 2,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20613,12 +20637,13 @@
       ],
       "fieldPath": "data.mechanics.effects[].failedSaveCondition",
       "representativeValues": [
-        "prone",
-        "deafened",
         "poisoned",
+        "prone",
+        "stunned",
+        "deafened",
         "one exhaustion level"
       ],
-      "population": 6,
+      "population": 9,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20638,11 +20663,11 @@
       "representativeValues": [
         "6d10",
         "5d4",
+        "2d10",
         "1d4",
-        "10d6",
-        "5d6"
+        "10d6"
       ],
-      "population": 13,
+      "population": 14,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20663,10 +20688,10 @@
         "piercing",
         "fire",
         "force",
-        "bludgeoning",
-        "necrotic"
+        "poison",
+        "bludgeoning"
       ],
-      "population": 13,
+      "population": 14,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20684,9 +20709,13 @@
       ],
       "fieldPath": "data.mechanics.effects[].failedSaveEffect",
       "representativeValues": [
-        "disadvantage on Strength or Constitution ability checks and saving throws"
+        "die",
+        "trapped in the flask",
+        "destroyed",
+        "trapped in an extradimensional cell with worn and carried items",
+        "slain instantly"
       ],
-      "population": 1,
+      "population": 6,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20927,6 +20956,26 @@
       "recordKinds": [
         "magic-item"
       ],
+      "fieldPath": "data.mechanics.effects[].hitPointThreshold.timing",
+      "representativeValues": [
+        "after damage"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].hitPointThreshold.timing",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
       "fieldPath": "data.mechanics.effects[].id",
       "representativeValues": [
         "c2-static-adamantine-critical-normalization",
@@ -20935,7 +20984,7 @@
         "c2-residual-proof-against-divination",
         "c2-residual-plane-shift-check"
       ],
-      "population": 458,
+      "population": 469,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -20961,6 +21010,27 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].ignoresCover[]",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].immuneTypes[]",
+      "representativeValues": [
+        "construct",
+        "undead"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].immuneTypes[]",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -21060,7 +21130,7 @@
         "immunity",
         "acBonus"
       ],
-      "population": 458,
+      "population": 469,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -21210,6 +21280,46 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].onSuccess",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].onSuccessfulSave.condition",
+      "representativeValues": [
+        "frightened"
+      ],
+      "population": 1,
+      "valueClass": "compound mechanical text",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
+      "currentAuditReadiness": "qualifier remains source/entry prose and is not claimed as typed gameplay support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].onSuccessfulSave.duration",
+      "representativeValues": [
+        "until end of your next turn"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].onSuccessfulSave.duration",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -21513,7 +21623,7 @@
         "end of each turn while conscious",
         "end of each turn"
       ],
-      "population": 12,
+      "population": 13,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -21617,7 +21727,7 @@
         "apply the exact vehicle control from the source table",
         "resolve DC 17 Constitution save and extra damage"
       ],
-      "population": 66,
+      "population": 72,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -21682,9 +21792,10 @@
         "constitution",
         "dexterity",
         "strength",
-        "wisdom"
+        "wisdom",
+        "charisma"
       ],
-      "population": 31,
+      "population": 39,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -21729,6 +21840,47 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].saveDcAndAttackBonusTableRef",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].saves[].ability",
+      "representativeValues": [
+        "constitution"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].saves[].ability",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.effects[].saves[].source",
+      "representativeValues": [
+        "light",
+        "daylight"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].saves[].source",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -21953,9 +22105,9 @@
         "spell:levitate",
         "spell:dimension-door",
         "spell:scorching-ray",
-        "spell:scrying"
+        "spell:web"
       ],
-      "population": 139,
+      "population": 140,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -22165,10 +22317,10 @@
         "self",
         "one humanoid",
         "creature currently focused on with detect thoughts",
-        "failed controller",
-        "charmed attuned bearer"
+        "creature native to another plane of existence",
+        "failed controller"
       ],
-      "population": 13,
+      "population": 14,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -22297,7 +22449,7 @@
         "undead",
         "construct"
       ],
-      "population": 6,
+      "population": 8,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -22428,7 +22580,7 @@
         "a lever changes position",
         "ranged attack targets a creature within 5 feet of wielder"
       ],
-      "population": 89,
+      "population": 99,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23637,7 +23789,7 @@
         "free",
         "consume"
       ],
-      "population": 309,
+      "population": 313,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23680,11 +23832,11 @@
       "representativeValues": [
         "wearing the armor",
         "eligible matching-alignment cleric or druid in candle light",
-        "wearing the lenses",
-        "holding the gem; speak second command word",
-        "holding the gem; speak third command word"
+        "wearing the cloak",
+        "dagger is coated",
+        "wearing the lenses"
       ],
-      "population": 50,
+      "population": 53,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23708,7 +23860,7 @@
         "water or a water-composed elemental",
         "self and breathing creatures within 30 feet"
       ],
-      "population": 41,
+      "population": 42,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -23732,7 +23884,7 @@
         "listed spell contacts barrier",
         "effect moves wearer against wearer’s will along ground"
       ],
-      "population": 26,
+      "population": 28,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23822,9 +23974,9 @@
         "c2-residual-redirect-ranged-attack",
         "c2-residual-slaying-damage",
         "bead-force-payload",
-        "c2-cast-gate"
+        "c2-cast-web"
       ],
-      "population": 175,
+      "population": 180,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23868,7 +24020,7 @@
         "set-lever-1",
         "set-lever-2"
       ],
-      "population": 362,
+      "population": 363,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",

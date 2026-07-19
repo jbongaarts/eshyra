@@ -56,13 +56,13 @@ function mechanicsRecord(name: string, mechanics: unknown): RulesRecord {
 
 describe('C2 spell grants and activated save/DC projection', () => {
   it('pins the exact reviewed bounded membership and canonical references', () => {
-    expect(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).toHaveLength(59);
-    expect(new Set(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).size).toBe(59);
+    expect(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).toHaveLength(63);
+    expect(new Set(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).size).toBe(63);
     expect(
       items
         .map(({ name }) => name)
         .filter((name) => MAGIC_ITEM_ACTIVATED_EFFECT_NAMES.includes(name)),
-    ).toHaveLength(59);
+    ).toHaveLength(63);
     for (const ref of MAGIC_ITEM_ACTIVATED_EFFECT_REFERENCES) {
       expect(keys.has(ref), ref).toBe(true);
     }
@@ -147,6 +147,61 @@ describe('C2 spell grants and activated save/DC projection', () => {
           },
           { conditions: ['paralyzed'], repeatSave: 'end of each turn' },
           { conditions: ['frightened'], repeatSave: 'end of each turn' },
+        ],
+      },
+    });
+  });
+
+  it('projects the restored source-exact activated payloads', () => {
+    expect(
+      projectMagicItemActivatedEffects(named('Cloak of Arachnida')),
+    ).toMatchObject({
+      mechanics: {
+        effects: [{ spellRef: 'spell:web', saveDc: 13, areaMultiplier: 2 }],
+      },
+    });
+    expect(
+      projectMagicItemActivatedEffects(named('Dagger of Venom')),
+    ).toMatchObject({
+      mechanics: {
+        effects: [
+          {
+            save: { ability: 'constitution', dc: 15 },
+            failedSaveDamage: { dice: '2d10', type: 'poison' },
+            failedSaveCondition: 'poisoned',
+            conditionDuration: { amount: 1, unit: 'minute' },
+          },
+        ],
+      },
+    });
+    expect(
+      projectMagicItemActivatedEffects(named('Hammer of Thunderbolts')),
+    ).toMatchObject({
+      mechanics: {
+        effects: [
+          {
+            save: { ability: 'constitution', dc: 17 },
+            failedSaveEffect: 'die',
+          },
+          {
+            range: { normalFeet: 20, longFeet: 60 },
+            area: { feet: 30 },
+            failedSaveCondition: 'stunned',
+            duration: 'until end of your next turn',
+          },
+        ],
+      },
+    });
+    expect(
+      projectMagicItemActivatedEffects(named('Nine Lives Stealer')),
+    ).toMatchObject({
+      mechanics: {
+        effects: [
+          {
+            save: { ability: 'constitution', dc: 15 },
+            immuneTypes: ['construct', 'undead'],
+            chargeCost: 1,
+          },
         ],
       },
     });

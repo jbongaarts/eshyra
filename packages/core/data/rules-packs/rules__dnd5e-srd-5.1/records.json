@@ -92393,15 +92393,29 @@
         "operations": [
           {
             "id": "cast-web",
+            "activation": {
+              "cost": "action",
+              "requirement": "wearing the cloak"
+            },
             "cost": [
               {
                 "economy": "uses",
                 "amount": 1
               }
+            ],
+            "effects": [
+              "c2-cast-web"
             ]
           }
         ],
         "effects": [
+          {
+            "id": "c2-cast-web",
+            "kind": "castSpell",
+            "spellRef": "spell:web",
+            "saveDc": 13,
+            "areaMultiplier": 2
+          },
           {
             "id": "c2-static-arachnida-poison",
             "kind": "damageResistance",
@@ -92462,6 +92476,51 @@
             ],
             "missingEngines": [
               "F5"
+            ]
+          },
+          {
+            "clauseId": "magic-item:cloak-of-arachnida/c2-effect-cast-web",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-cast-web"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F4",
+                "hook": "canonical spell execution"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F4",
+                "hook": "canonical spell execution"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F4",
+              "F8"
             ]
           },
           {
@@ -94608,17 +94667,39 @@
           {
             "id": "coat-blade",
             "activation": {
-              "cost": "action"
+              "cost": "action",
+              "requirement": "dagger is coated"
             },
             "cost": [
               {
                 "economy": "uses",
                 "amount": 1
               }
+            ],
+            "effects": [
+              "c2-coat-blade-payload"
             ]
           }
         ],
         "effects": [
+          {
+            "id": "c2-coat-blade-payload",
+            "kind": "triggeredEffect",
+            "trigger": "an attack using the coated dagger hits a creature",
+            "save": {
+              "ability": "constitution",
+              "dc": 15
+            },
+            "failedSaveDamage": {
+              "dice": "2d10",
+              "type": "poison"
+            },
+            "failedSaveCondition": "poisoned",
+            "conditionDuration": {
+              "amount": 1,
+              "unit": "minute"
+            }
+          },
           {
             "id": "c2-static-dagger-venom-attack-damage",
             "kind": "attackAndDamageBonus",
@@ -94654,6 +94735,51 @@
             ],
             "missingEngines": [
               "F5"
+            ]
+          },
+          {
+            "clauseId": "magic-item:dagger-of-venom/c2-effect-coat-blade-payload",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-coat-blade-payload"
+            },
+            "engineHooks": [
+              {
+                "engine": "F6",
+                "hook": "hit points and condition lifecycle"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F6",
+                "hook": "hit points and condition lifecycle"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "missingEngines": [
+              "F6",
+              "F8",
+              "F9"
             ]
           },
           {
@@ -101253,6 +101379,20 @@
       "mechanics": {
         "effects": [
           {
+            "id": "c2-residual-giant-slayer-prone-rider",
+            "kind": "triggeredEffect",
+            "trigger": "giant is hit with the weapon",
+            "result": "resolve the Strength save and impose prone on failure",
+            "save": {
+              "ability": "strength",
+              "dc": 15
+            },
+            "failedSaveCondition": "prone",
+            "targetTypes": [
+              "giant"
+            ]
+          },
+          {
             "id": "c2-static-giant-slayer-attack-damage",
             "kind": "attackAndDamageBonus",
             "amount": 1
@@ -101271,6 +101411,51 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:giant-slayer/c2-residual-giant-slayer-prone-rider",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-residual-giant-slayer-prone-rider"
+            },
+            "engineHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "missingEngines": [
+              "F1",
+              "F8",
+              "F9"
+            ]
+          },
           {
             "clauseId": "magic-item:giant-slayer/c2-static-giant-slayer-attack-damage",
             "scope": {
@@ -101857,15 +102042,63 @@
         "operations": [
           {
             "id": "hurl-thunderclap",
+            "activation": {
+              "cost": "action",
+              "requirement": "attuned to and holding the hammer",
+              "target": "one target within 60 feet"
+            },
             "cost": [
               {
                 "economy": "charges",
                 "amount": 1
               }
+            ],
+            "effects": [
+              "c2-hurl-thunderclap-payload"
+            ]
+          },
+          {
+            "id": "giant-slaying-critical",
+            "activation": {
+              "cost": "free",
+              "trigger": "natural 20 attack against a giant"
+            },
+            "effects": [
+              "c2-giant-slaying-critical-payload"
             ]
           }
         ],
         "effects": [
+          {
+            "id": "c2-giant-slaying-critical-payload",
+            "kind": "triggeredEffect",
+            "trigger": "natural 20 attack against a giant with the hammer",
+            "save": {
+              "ability": "constitution",
+              "dc": 17
+            },
+            "failedSaveEffect": "die"
+          },
+          {
+            "id": "c2-hurl-thunderclap-payload",
+            "kind": "triggeredEffect",
+            "trigger": "hurl-thunderbolts attack hits",
+            "range": {
+              "normalFeet": 20,
+              "longFeet": 60
+            },
+            "area": {
+              "shape": "radius",
+              "feet": 30,
+              "centeredOn": "attack target"
+            },
+            "save": {
+              "ability": "constitution",
+              "dc": 17
+            },
+            "failedSaveCondition": "stunned",
+            "duration": "until end of your next turn"
+          },
           {
             "id": "c2-static-hammer-thunderbolts-attack-damage",
             "kind": "attackAndDamageBonus",
@@ -101938,6 +102171,96 @@
             ],
             "missingEngines": [
               "F5"
+            ]
+          },
+          {
+            "clauseId": "magic-item:hammer-of-thunderbolts/c2-effect-giant-slaying-critical-payload",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-giant-slaying-critical-payload"
+            },
+            "engineHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "missingEngines": [
+              "F1",
+              "F8",
+              "F9"
+            ]
+          },
+          {
+            "clauseId": "magic-item:hammer-of-thunderbolts/c2-effect-hurl-thunderclap-payload",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-hurl-thunderclap-payload"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F8",
+              "F9"
             ]
           },
           {
@@ -106161,6 +106484,19 @@
         },
         "effects": [
           {
+            "id": "c2-residual-iron-flask-trap-save",
+            "kind": "triggeredEffect",
+            "trigger": "target is native to another plane and is within 60 feet",
+            "result": "resolve the trap save before entering the flask",
+            "save": {
+              "ability": "wisdom",
+              "dc": 17
+            },
+            "rangeFeet": 60,
+            "target": "creature native to another plane of existence",
+            "failedSaveEffect": "trapped in the flask"
+          },
+          {
             "id": "c2-residual-iron-flask-known-save",
             "kind": "advantage",
             "roll": "Wisdom saving throw",
@@ -106199,6 +106535,51 @@
             ],
             "missingEngines": [
               "F8"
+            ]
+          },
+          {
+            "clauseId": "magic-item:iron-flask/c2-residual-iron-flask-trap-save",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-residual-iron-flask-trap-save"
+            },
+            "engineHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "missingEngines": [
+              "F1",
+              "F8",
+              "F9"
             ]
           },
           {
@@ -107030,6 +107411,29 @@
       "mechanics": {
         "effects": [
           {
+            "id": "c2-residual-mace-of-disruption-destruction-rider",
+            "kind": "triggeredEffect",
+            "trigger": "hit fiend or undead after extra radiant damage leaves it at 25 hit points or fewer",
+            "result": "resolve destruction save; on success frighten the creature until the end of your next turn",
+            "save": {
+              "ability": "wisdom",
+              "dc": 15
+            },
+            "targetTypes": [
+              "fiend",
+              "undead"
+            ],
+            "hitPointThreshold": {
+              "maximum": 25,
+              "timing": "after damage"
+            },
+            "failedSaveEffect": "destroyed",
+            "onSuccessfulSave": {
+              "condition": "frightened",
+              "duration": "until end of your next turn"
+            }
+          },
+          {
             "id": "c2-static-mace-disruption-rider",
             "kind": "extraDamage",
             "dice": "2d6",
@@ -107044,6 +107448,51 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:mace-of-disruption/c2-residual-mace-of-disruption-destruction-rider",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-residual-mace-of-disruption-destruction-rider"
+            },
+            "engineHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "missingEngines": [
+              "F1",
+              "F8",
+              "F9"
+            ]
+          },
           {
             "clauseId": "magic-item:mace-of-disruption/c2-static-mace-disruption-rider",
             "scope": {
@@ -108595,6 +109044,18 @@
         },
         "effects": [
           {
+            "id": "c2-residual-mirror-trapping-save",
+            "kind": "triggeredEffect",
+            "trigger": "eligible creature sees its reflection in the activated mirror within 30 feet",
+            "result": "resolve the reflection save before entering an extradimensional cell",
+            "save": {
+              "ability": "charisma",
+              "dc": 15
+            },
+            "rangeFeet": 30,
+            "failedSaveEffect": "trapped in an extradimensional cell with worn and carried items"
+          },
+          {
             "id": "c2-residual-mirror-known-save",
             "kind": "advantage",
             "roll": "Charisma saving throw",
@@ -108673,6 +109134,51 @@
             ],
             "missingEngines": [
               "F8"
+            ]
+          },
+          {
+            "clauseId": "magic-item:mirror-of-life-trapping/c2-residual-mirror-trapping-save",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-residual-mirror-trapping-save"
+            },
+            "engineHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "missingEngines": [
+              "F1",
+              "F8",
+              "F9"
             ]
           },
           {
@@ -109435,15 +109941,37 @@
         "operations": [
           {
             "id": "slay-on-critical",
+            "activation": {
+              "cost": "free",
+              "trigger": "critical hit against eligible creature"
+            },
             "cost": [
               {
                 "economy": "charges",
                 "amount": 1
               }
+            ],
+            "effects": [
+              "c2-slay-on-critical-payload"
             ]
           }
         ],
         "effects": [
+          {
+            "id": "c2-slay-on-critical-payload",
+            "kind": "triggeredEffect",
+            "trigger": "critical hit against creature with fewer than 100 hit points",
+            "save": {
+              "ability": "constitution",
+              "dc": 15
+            },
+            "immuneTypes": [
+              "construct",
+              "undead"
+            ],
+            "failedSaveEffect": "slain instantly",
+            "chargeCost": 1
+          },
           {
             "id": "c2-static-nine-lives-attack-damage",
             "kind": "attackAndDamageBonus",
@@ -109506,6 +110034,51 @@
             ],
             "missingEngines": [
               "F5"
+            ]
+          },
+          {
+            "clauseId": "magic-item:nine-lives-stealer/c2-effect-slay-on-critical-payload",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-slay-on-critical-payload"
+            },
+            "engineHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "missingEngines": [
+              "F1",
+              "F8",
+              "F9"
             ]
           },
           {
@@ -109640,6 +110213,16 @@
             "ignoresLongRangeDisadvantage": true
           },
           {
+            "id": "c2-residual-oathbow-sworn-enemy-extra-damage",
+            "kind": "triggeredEffect",
+            "trigger": "attack hits sworn enemy",
+            "result": "deal extra piercing damage to the sworn enemy",
+            "extraDamage": {
+              "dice": "3d6",
+              "type": "piercing"
+            }
+          },
+          {
             "id": "m7-oathbow-other-weapons",
             "kind": "advantage",
             "mode": "disadvantage",
@@ -109720,6 +110303,51 @@
             ],
             "missingEngines": [
               "F8"
+            ]
+          },
+          {
+            "clauseId": "magic-item:oathbow/c2-residual-oathbow-sworn-enemy-extra-damage",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-residual-oathbow-sworn-enemy-extra-damage"
+            },
+            "engineHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "missingEngines": [
+              "F1",
+              "F8",
+              "F9"
             ]
           },
           {
@@ -121699,6 +122327,35 @@
             "result": "cannot avert eyes from creature"
           },
           {
+            "id": "c2-residual-robe-eyes-light-blindness",
+            "kind": "triggeredEffect",
+            "trigger": "light or daylight is cast on or within 5 feet of the robe",
+            "result": "impose blindness and allow an end-of-turn Constitution save to end it",
+            "conditions": [
+              "blinded"
+            ],
+            "duration": {
+              "amount": 1,
+              "unit": "minute"
+            },
+            "saves": [
+              {
+                "ability": "constitution",
+                "dc": 11,
+                "source": "light"
+              },
+              {
+                "ability": "constitution",
+                "dc": 15,
+                "source": "daylight"
+              }
+            ],
+            "repeatSave": "end of each turn",
+            "endsOn": [
+              "successful-repeat-save"
+            ]
+          },
+          {
             "kind": "sense",
             "sense": "all-around-vision",
             "id": "m3-robe-of-eyes-sense-all-around-vision"
@@ -121729,6 +122386,51 @@
             "representation": {
               "block": "effects",
               "effectId": "c2-residual-robe-eyes-cannot-avert"
+            },
+            "engineHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F1",
+                "hook": "condition and eligibility relations"
+              },
+              {
+                "engine": "F8",
+                "hook": "roll mode and targeting modifiers"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, range, cover, and forced movement"
+              }
+            ],
+            "missingEngines": [
+              "F1",
+              "F8",
+              "F9"
+            ]
+          },
+          {
+            "clauseId": "magic-item:robe-of-eyes/c2-residual-robe-eyes-light-blindness",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-residual-robe-eyes-light-blindness"
             },
             "engineHooks": [
               {

@@ -17,6 +17,10 @@ import type {
 } from './magicItemCompiler.js';
 import type { MagicItemExtraction } from './types.js';
 
+const F1 = {
+  engine: 'F1',
+  hook: 'condition and eligibility relations',
+} as const;
 const F2 = { engine: 'F2', hook: 'action-economy activation' } as const;
 const F3 = { engine: 'F3', hook: 'concentration lifecycle' } as const;
 const F4 = { engine: 'F4', hook: 'canonical spell execution' } as const;
@@ -86,6 +90,48 @@ const fixedDc = (saveDc: number) => ({ saveDc });
 const noConcentration = { concentrationRequired: false } as const;
 
 const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
+  [
+    'Cloak of Arachnida',
+    {
+      sourcePhrases: [
+        'use an action to cast the web spell (save DC 13)',
+        'web created by the spell fills twice its normal area',
+      ],
+      effects: [
+        spell(
+          'cast-web',
+          'spell:web',
+          { ...fixedDc(13), areaMultiplier: 2 },
+          action('wearing the cloak'),
+        ),
+      ],
+    },
+  ],
+  [
+    'Dagger of Venom',
+    {
+      sourcePhrases: [
+        'use an action to cause thick, black poison to coat the blade',
+        'poison remains for 1 minute or until an attack using this weapon hits a creature',
+        'DC 15 Constitution saving throw or take 2d10 poison damage and become poisoned for 1 minute',
+      ],
+      effects: [
+        payload(
+          'coat-blade',
+          'triggeredEffect',
+          {
+            trigger: 'an attack using the coated dagger hits a creature',
+            save: { ability: 'constitution', dc: 15 },
+            failedSaveDamage: { dice: '2d10', type: 'poison' },
+            failedSaveCondition: 'poisoned',
+            conditionDuration: { amount: 1, unit: 'minute' },
+          },
+          [F6, F8, F9],
+          action('dagger is coated'),
+        ),
+      ],
+    },
+  ],
   [
     'Armor of Invulnerability',
     {
@@ -1314,6 +1360,72 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           failedSaveCondition: 'deafened',
           conditionDuration: { amount: 1, unit: 'minute' },
         }),
+      ],
+    },
+  ],
+  [
+    'Hammer of Thunderbolts',
+    {
+      sourcePhrases: [
+        'roll a 20 on an attack roll made with this weapon against a giant',
+        'make a ranged weapon attack with the hammer, hurling it as if it had the thrown property with a normal range of 20 feet and a long range of 60 feet',
+        'target and every creature within 30 feet of it must succeed on a DC 17 Constitution saving throw or be stunned until the end of your next turn',
+      ],
+      effects: [
+        payload(
+          'giant-slaying-critical',
+          'triggeredEffect',
+          {
+            trigger: 'natural 20 attack against a giant with the hammer',
+            save: { ability: 'constitution', dc: 17 },
+            failedSaveEffect: 'die',
+          },
+          [F1, F8, F9],
+          { cost: 'free', trigger: 'natural 20 attack against a giant' },
+        ),
+        payload(
+          'hurl-thunderclap',
+          'triggeredEffect',
+          {
+            trigger: 'hurl-thunderbolts attack hits',
+            range: { normalFeet: 20, longFeet: 60 },
+            area: { shape: 'radius', feet: 30, centeredOn: 'attack target' },
+            save: { ability: 'constitution', dc: 17 },
+            failedSaveCondition: 'stunned',
+            duration: 'until end of your next turn',
+          },
+          [F2, F8, F9],
+          action(
+            'attuned to and holding the hammer',
+            'one target within 60 feet',
+          ),
+        ),
+      ],
+    },
+  ],
+  [
+    'Nine Lives Stealer',
+    {
+      sourcePhrases: [
+        'score a critical hit against a creature that has fewer than 100 hit points',
+        'DC 15 Constitution saving throw or be slain instantly',
+        'sword loses 1 charge if the creature is slain',
+      ],
+      effects: [
+        payload(
+          'slay-on-critical',
+          'triggeredEffect',
+          {
+            trigger:
+              'critical hit against creature with fewer than 100 hit points',
+            save: { ability: 'constitution', dc: 15 },
+            immuneTypes: ['construct', 'undead'],
+            failedSaveEffect: 'slain instantly',
+            chargeCost: 1,
+          },
+          [F1, F8, F9],
+          { cost: 'free', trigger: 'critical hit against eligible creature' },
+        ),
       ],
     },
   ],
