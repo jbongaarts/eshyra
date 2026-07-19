@@ -28,13 +28,11 @@
 //   The long rest expires the buffer via {@link expireTemporaryHp} (F7 reset
 //   hook).
 //
-// A stable character's automatic recovery (regain 1 HP after 1d4 hours if
-// still at 0) has no durable deadline yet: scheduling is model-prompted and
-// only the resulting transition lands through {@link adjustHp}. That gap
-// keeps stabilizing-a-creature PARTIAL in the coverage registry and is owned
-// by eshyra-2n1t.8.1 (needs a seeded roll recorded at stabilize time plus a
-// deterministic in-game-clock resolution hook).
+// A stable character's automatic recovery is scheduled here and resolved by
+// the canonical world-clock advance path. The model never owns this deadline.
 
+import { rollDice } from '../orchestrator/dice.js';
+import { createSeededRng, type Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
@@ -132,13 +130,69 @@ interface HpRow {
   life_state: LifeState;
   death_save_successes: number;
   death_save_failures: number;
+  stable_recovery_roll: number | null;
+  stable_recovery_anchor_elapsed_minutes: number | null;
+  stable_recovery_deadline_elapsed_minutes: number | null;
+}
+
+function scheduleStableRecovery(
+  db: Db,
+  charId: string,
+  ctx: DomainMutationContext,
+  rng: Rng,
+): { roll: number; anchor: number; deadline: number } {
+  const row = db
+    .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
+    .get() as { elapsed_minutes?: number } | undefined;
+  if (
+    row === undefined ||
+    !Number.isSafeInteger(row.elapsed_minutes) ||
+    (row.elapsed_minutes as number) < 0
+  )
+    throw new MutateStateError('campaign clock elapsed_minutes is malformed');
+  const roll = rollDice('1d4', rng).total;
+  const anchor = row.elapsed_minutes as number;
+  const deadline = anchor + roll * 60;
+  if (!Number.isSafeInteger(deadline))
+    throw new MutateStateError(
+      'stable recovery deadline exceeds safe integer range',
+    );
+  mutateStateBatch(db, [
+    {
+      target: 'character',
+      id: charId,
+      field: 'stable_recovery_roll',
+      op: 'set',
+      value: roll,
+      ...ctx,
+    },
+    {
+      target: 'character',
+      id: charId,
+      field: 'stable_recovery_anchor_elapsed_minutes',
+      op: 'set',
+      value: anchor,
+      ...ctx,
+    },
+    {
+      target: 'character',
+      id: charId,
+      field: 'stable_recovery_deadline_elapsed_minutes',
+      op: 'set',
+      value: deadline,
+      ...ctx,
+    },
+  ]);
+  return { roll, anchor, deadline };
 }
 
 function readHpRow(db: Db, charId: string): HpRow {
   const row = db
     .prepare(
       `SELECT hp_current, hp_max, hp_temp, life_state,
-              death_save_successes, death_save_failures
+              death_save_successes, death_save_failures,
+              stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+              stable_recovery_deadline_elapsed_minutes
        FROM character WHERE id = ?`,
     )
     .get(charId) as HpRow | undefined;
@@ -163,7 +217,19 @@ function writeHpFields(
   ctx: DomainMutationContext,
 ): void {
   const mutations = (
-    Object.entries(after) as [keyof typeof after, number | string][]
+    Object.entries({
+      ...after,
+      stable_recovery_roll:
+        after.life_state === 'stable' ? before.stable_recovery_roll : null,
+      stable_recovery_anchor_elapsed_minutes:
+        after.life_state === 'stable'
+          ? before.stable_recovery_anchor_elapsed_minutes
+          : null,
+      stable_recovery_deadline_elapsed_minutes:
+        after.life_state === 'stable'
+          ? before.stable_recovery_deadline_elapsed_minutes
+          : null,
+    }) as [keyof HpRow, number | string | null][]
   )
     .filter(([field, value]) => before[field] !== value)
     .map(([field, value]) => ({
@@ -397,6 +463,7 @@ export function recordDeathSave(
   db: Db,
   roll: number,
   ctx: DomainMutationContext,
+  rng: Rng = createSeededRng(0),
 ): DeathSaveResult {
   if (!Number.isInteger(roll) || roll < 1 || roll > 20) {
     throw new MutateStateError(
@@ -461,6 +528,7 @@ export function recordDeathSave(
       },
       ctx,
     );
+    if (lifeState === 'stable') scheduleStableRecovery(txnDb, charId, ctx, rng);
 
     return {
       roll,
@@ -487,6 +555,7 @@ export interface StabilizeResult {
 export function stabilizeCharacter(
   db: Db,
   ctx: DomainMutationContext,
+  rng: Rng = createSeededRng(0),
 ): StabilizeResult {
   return withTransaction(db, (txnDb) => {
     const charId = resolveCharacterId(txnDb, ctx.characterId);
@@ -511,9 +580,49 @@ export function stabilizeCharacter(
       },
       ctx,
     );
+    scheduleStableRecovery(txnDb, charId, ctx, rng);
 
     return { lifeState: 'stable', hpCurrent: row.hp_current };
   });
+}
+
+export interface StableRecoveryResult {
+  characterId: string;
+  recoveryRoll: number;
+  deadlineElapsedMinutes: number;
+  hp: AdjustHpResult;
+}
+
+/** Resolve every due stable recovery through the authoritative HP write path. */
+export function resolveStableRecoveries(
+  db: Db,
+  elapsedMinutes: number,
+  ctx: DomainMutationContext,
+): readonly StableRecoveryResult[] {
+  if (!Number.isSafeInteger(elapsedMinutes) || elapsedMinutes < 0)
+    throw new MutateStateError('elapsed_minutes is malformed');
+  const rows = db
+    .prepare(
+      `SELECT id, stable_recovery_roll, stable_recovery_deadline_elapsed_minutes
+       FROM character
+       WHERE life_state='stable' AND hp_current=0
+         AND stable_recovery_roll IS NOT NULL
+         AND stable_recovery_anchor_elapsed_minutes IS NOT NULL
+         AND stable_recovery_deadline_elapsed_minutes IS NOT NULL
+         AND stable_recovery_deadline_elapsed_minutes <= ?
+       ORDER BY stable_recovery_deadline_elapsed_minutes, id`,
+    )
+    .all(elapsedMinutes) as Array<{
+    id: string;
+    stable_recovery_roll: number;
+    stable_recovery_deadline_elapsed_minutes: number;
+  }>;
+  return rows.map((row) => ({
+    characterId: row.id,
+    recoveryRoll: row.stable_recovery_roll,
+    deadlineElapsedMinutes: row.stable_recovery_deadline_elapsed_minutes,
+    hp: adjustHp(db, 1, { ...ctx, characterId: row.id }),
+  }));
 }
 
 export interface GrantTemporaryHpOptions {

@@ -274,7 +274,7 @@ CREATE TABLE character (
     CHECK (life_state IN ('alive', 'dying', 'stable', 'dead')), death_save_successes INTEGER NOT NULL DEFAULT 0
     CHECK (death_save_successes BETWEEN 0 AND 3), death_save_failures INTEGER NOT NULL DEFAULT 0
     CHECK (death_save_failures BETWEEN 0 AND 3), inspiration INTEGER NOT NULL DEFAULT 0
-    CHECK (inspiration IN (0, 1)));
+    CHECK (inspiration IN (0, 1)), stable_recovery_roll INTEGER CHECK (stable_recovery_roll BETWEEN 1 AND 4), stable_recovery_anchor_elapsed_minutes INTEGER CHECK (stable_recovery_anchor_elapsed_minutes >= 0), stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0));
 
 CREATE TABLE character_hit_dice (
   character_id TEXT PRIMARY KEY REFERENCES character(id),
@@ -565,6 +565,25 @@ CREATE TABLE inventory_custody_event (
   PRIMARY KEY (inventory_id, seq)
 );
 
+CREATE TABLE inventory_identity_repair (
+  inventory_id TEXT PRIMARY KEY
+    REFERENCES inventory(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  id_bytes INTEGER NOT NULL CHECK (id_bytes > 0),
+  name_bytes INTEGER NOT NULL CHECK (name_bytes > 0),
+  reason TEXT NOT NULL
+);
+
+CREATE TABLE inventory_wear_state (
+  inventory_id TEXT PRIMARY KEY
+    REFERENCES inventory(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  character_id TEXT NOT NULL
+    REFERENCES character(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  wear_state TEXT NOT NULL CHECK (wear_state IN ('worn', 'not_worn')),
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY
     REFERENCES inventory(id) ON DELETE CASCADE,
@@ -828,7 +847,28 @@ CREATE INDEX inventory_claimable_world_location_id
 ON inventory(world_location_id, id)
 WHERE character_id IS NULL AND unheld_disposition = 'dropped';
 
+CREATE INDEX inventory_wear_state_character
+  ON inventory_wear_state(character_id, wear_state, inventory_id);
+
 CREATE INDEX rest_event_long_benefit_time ON rest_event(campaign_id, kind, end_elapsed_minutes);
+
+CREATE TRIGGER inventory_identity_insert_guard
+BEFORE INSERT ON inventory
+WHEN length(CAST(NEW.id AS BLOB)) > 256
+  OR length(CAST(NEW.name AS BLOB)) > 256
+BEGIN
+  SELECT RAISE(ABORT, 'inventory id/name exceeds UTF-8 identity bounds');
+END;
+
+CREATE TRIGGER inventory_identity_update_guard
+BEFORE UPDATE OF id, name ON inventory
+WHEN (length(CAST(NEW.id AS BLOB)) > 256
+      AND length(CAST(OLD.id AS BLOB)) <= 256)
+  OR (length(CAST(NEW.name AS BLOB)) > 256
+      AND length(CAST(OLD.name AS BLOB)) <= 256)
+BEGIN
+  SELECT RAISE(ABORT, 'inventory id/name exceeds UTF-8 identity bounds');
+END;
 
 CREATE TRIGGER inventory_location_insert_guard
 BEFORE INSERT ON inventory

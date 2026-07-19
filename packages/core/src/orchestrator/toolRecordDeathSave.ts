@@ -45,12 +45,17 @@ export const recordDeathSaveTool: Tool = {
       return target;
     }
     try {
-      const result = recordDeathSave(ctx.db, a.roll, {
-        provenance: `model:${ctx.turnId}`,
-        sessionId: ctx.sessionId,
-        at: ctx.at,
-        characterId: target.id,
-      });
+      const result = recordDeathSave(
+        ctx.db,
+        a.roll,
+        {
+          provenance: `model:${ctx.turnId}`,
+          sessionId: ctx.sessionId,
+          at: ctx.at,
+          characterId: target.id,
+        },
+        ctx.rng,
+      );
       return ok(result);
     } catch (e) {
       if (e instanceof MutateStateError) {

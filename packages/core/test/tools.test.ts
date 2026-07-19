@@ -158,6 +158,8 @@ describe('ToolRegistry', () => {
         'complete_long_rest',
         'complete_short_rest',
         'convert_currency',
+        'doff_item',
+        'don_item',
         'end_attunement',
         'end_effect',
         'finish_short_rest_recovery',
@@ -996,13 +998,14 @@ describe('domain mutation tools', () => {
     expect(armorGrant.ok).toBe(true);
     if (!armorGrant.ok) throw new Error(armorGrant.error.message);
     const armorId = (armorGrant.data as { id: string }).id;
+    expect(registry.invoke('don_item', { id: armorId }, c)).toMatchObject({
+      ok: true,
+    });
     expect(
       registry.invoke('remove_item', { id: armorId, disposition: 'lost' }, c),
     ).toMatchObject({
       ok: false,
-      message: expect.stringContaining(
-        'authoritative don/doff state is unavailable',
-      ),
+      message: expect.stringContaining('source-declared as impossible to doff'),
     });
   });
 
@@ -1874,6 +1877,8 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'complete_long_rest',
         'complete_short_rest',
         'convert_currency',
+        'doff_item',
+        'don_item',
         'end_attunement',
         'end_effect',
         'finish_short_rest_recovery',

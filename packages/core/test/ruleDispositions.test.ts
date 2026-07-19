@@ -111,7 +111,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     expect(report.duplicates).toBe(12);
     // Coverage counts move as engine families land (F6, eshyra-2n1t.8 moved
     // four unimplemented rows and healing to implemented, and
-    // stabilizing-a-creature to partial; F2, eshyra-2n1t.4 moved the five
+    // stabilizing-a-creature to implemented; F2, eshyra-2n1t.4 moved the five
     // action-economy rows to implemented; F5, eshyra-2n1t.7 moved
     // limited-usage, legendary-actions, attunement, and gaining-inspiration
     // to implemented and using-inspiration to partial; F1+F9,
@@ -121,9 +121,9 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // implements spell-slot expenditure/recovery; F3, eshyra-2n1t.5 moved
     // concentration to implemented); keep them in lockstep with
     // EXPECTED_COVERAGE_CENSUS.
-    expect(report.engineProcedure.implemented).toBe(38);
+    expect(report.engineProcedure.implemented).toBe(39);
     expect(report.engineProcedure.modelAdjudicatedSupported).toBe(108);
-    expect(report.engineProcedure.partial).toHaveLength(17);
+    expect(report.engineProcedure.partial).toHaveLength(16);
     expect(report.engineProcedure.unimplemented).toHaveLength(2);
     expect(report.engineProcedure.designBlocked).toHaveLength(10);
     // Five pre-existing external clauses plus two runtime-execution clauses

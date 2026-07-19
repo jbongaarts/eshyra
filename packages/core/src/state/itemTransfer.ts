@@ -150,6 +150,19 @@ export function transferItem(
         input.itemId,
         fromCharacterId,
       );
+    txnDb
+      .prepare(
+        `INSERT INTO inventory_wear_state(
+           inventory_id, character_id, wear_state, provenance, session_id, updated_at
+         ) VALUES (?, ?, 'not_worn', ?, ?, ?)
+         ON CONFLICT(inventory_id) DO UPDATE SET
+           character_id=excluded.character_id,
+           wear_state='not_worn',
+           provenance=excluded.provenance,
+           session_id=excluded.session_id,
+           updated_at=excluded.updated_at`,
+      )
+      .run(input.itemId, toCharacterId, ctx.provenance, ctx.sessionId, ctx.at);
     return {
       itemId: row.id,
       name: row.name,

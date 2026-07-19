@@ -88,7 +88,7 @@ describe('transferItem', () => {
     db.close();
   });
 
-  it('cannot transfer held undoffable armor without authoritative don/doff state', () => {
+  it('transfers a held cursed armor that is explicitly not worn', () => {
     const db = freshDbWithSession();
     addRecipient(db);
     const armor = giveItem(
@@ -102,7 +102,7 @@ describe('transferItem', () => {
       },
       CTX,
     );
-    expect(() =>
+    expect(
       transferItem(
         db,
         {
@@ -113,12 +113,12 @@ describe('transferItem', () => {
         },
         CTX,
       ),
-    ).toThrow(/authoritative don\/doff state is unavailable.*fail closed/);
+    ).toMatchObject({ itemId: armor.id, toCharacterId: 'pc-2' });
     expect(
       db
         .prepare('SELECT character_id, location FROM inventory WHERE id=?')
         .get(armor.id),
-    ).toEqual({ character_id: 'pc-1', location: null });
+    ).toEqual({ character_id: 'pc-2', location: null });
 
     const ordinary = giveItem(
       db,
@@ -147,6 +147,37 @@ describe('transferItem', () => {
         .prepare('SELECT character_id, location FROM inventory WHERE id=?')
         .get(ordinary.id),
     ).toEqual({ character_id: 'pc-2', location: null });
+    db.close();
+  });
+
+  it('fails closed when a held cursed armor has no authoritative wear row', () => {
+    const db = freshDbWithSession();
+    addRecipient(db);
+    const armor = giveItem(
+      db,
+      {
+        id: 'legacy-transfer-demon-armor',
+        name: 'Demon Armor',
+        packRef: 'magic-item:demon-armor',
+        stateful: true,
+      },
+      CTX,
+    );
+    db.prepare('DELETE FROM inventory_wear_state WHERE inventory_id=?').run(
+      armor.id,
+    );
+    expect(() =>
+      transferItem(
+        db,
+        {
+          campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+          itemId: armor.id,
+          toCharacterRef: 'pc-2',
+          attunement: 'require-unattuned',
+        },
+        CTX,
+      ),
+    ).toThrow(/source-declared as impossible to doff/);
     db.close();
   });
 

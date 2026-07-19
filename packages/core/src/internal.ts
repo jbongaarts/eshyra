@@ -1278,6 +1278,7 @@ export type {
   GrantTemporaryHpResult,
   LifeState,
   StabilizeResult,
+  StableRecoveryResult,
 } from './state/hpLifecycle.js';
 // HP write path + death/dying/temp-HP state machine (F6, eshyra-2n1t.8).
 export {
@@ -1285,6 +1286,7 @@ export {
   expireTemporaryHp,
   grantTemporaryHp,
   recordDeathSave,
+  resolveStableRecoveries,
   stabilizeCharacter,
 } from './state/hpLifecycle.js';
 // Inspiration boolean resource (F5, eshyra-2n1t.7).
@@ -1305,6 +1307,18 @@ export type {
   InventoryDestructionContext,
 } from './state/inventoryLifecycle.js';
 export { destroyInventoryItem } from './state/inventoryLifecycle.js';
+export type {
+  InventoryWearContext,
+  InventoryWearInput,
+  InventoryWearResult,
+  InventoryWearState,
+} from './state/inventoryWear.js';
+export {
+  doffItem,
+  donItem,
+  getInventoryWearState,
+  InventoryWearError,
+} from './state/inventoryWear.js';
 export type {
   AdoptMagicItemInput,
   AdoptMagicItemResult,

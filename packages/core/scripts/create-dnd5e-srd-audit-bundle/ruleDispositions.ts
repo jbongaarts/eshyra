@@ -2719,13 +2719,13 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'size/cost/disadv ruling',
   },
   'rule:stabilizing-a-creature': {
-    status: 'partial',
+    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolStabilizeCharacter.ts',
     ],
-    missing:
-      'durable 1d4 h → 1 HP stable-recovery deadline (seeded roll recorded at stabilize time + owned clock-resolution hook) → eshyra-2n1t.8.1; the stable flag, counter reset, and the stable → alive transition through adjust_hp are code-owned, but recovery scheduling is still model-prompted and can silently drift',
+    evidence: ['packages/core/test/hpLifecycle.test.ts'],
+    primitives: ['stabilize_character', 'advance_time', 'adjust_hp'],
   },
   'rule:strength-attack-rolls-and-damage': {
     status: 'model-adjudicated-supported',
@@ -2948,8 +2948,8 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * eshyra-2n1t.8 (F6 death/dying/temp-HP machine) moved death-saving-throws,
  * falling-unconscious, instant-death and temporary-hit-points from
  * unimplemented and healing from partial to implemented, and
- * stabilizing-a-creature from unimplemented to partial (durable 1d4 h
- * recovery deadline outstanding → eshyra-2n1t.8.1); eshyra-2n1t.4 (F2
+ * stabilizing-a-creature from unimplemented to implemented (durable seeded
+ * 1d4 h recovery deadline + clock resolution → eshyra-2n1t.8.1); eshyra-2n1t.4 (F2
  * action-economy turn budget) moved your-turn, bonus-action, bonus-actions,
  * reactions and other-activity-on-your-turn from unimplemented to
  * implemented (surprise and two-weapon-fighting keep partial for their F9
@@ -2978,13 +2978,13 @@ const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
  * eshyra-2n1t.5, moved concentration from unimplemented to implemented. The
  * Equipment payload closure keeps special-weapon and generic weapon-property
  * execution partial pending scenario evidence; the reviewed stacked census is
- * now 38/108/17/2/10.
+ * now 39/108/16/2/10.
  */
 const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
   Object.freeze({
-    implemented: 38,
+    implemented: 39,
     'model-adjudicated-supported': 108,
-    partial: 17,
+    partial: 16,
     unimplemented: 2,
     'design-blocked': 10,
   });

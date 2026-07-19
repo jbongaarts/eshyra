@@ -17,9 +17,10 @@ export const stabilizeCharacterTool: Tool = {
     'Mark a dying character stable, after a successful DC 10 Wisdom ' +
     '(Medicine) check (rolled via `roll`) or a stabilizing effect. A stable ' +
     'character stays at 0 HP and unconscious but makes no more death saves; ' +
-    'their death-save counters reset. If still at 0 HP after 1d4 hours, ' +
-    'they regain 1 hit point (apply it with `adjust_hp` when that time ' +
-    'passes). Damage knocks a stable character back to dying.',
+    'their death-save counters reset. The engine records a seeded 1d4-hour ' +
+    'recovery deadline and automatically regains 1 hit point if they remain ' +
+    'at 0 HP when campaign time reaches it. Damage knocks a stable character ' +
+    'back to dying.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -34,12 +35,16 @@ export const stabilizeCharacterTool: Tool = {
       return target;
     }
     try {
-      const result = stabilizeCharacter(ctx.db, {
-        provenance: `model:${ctx.turnId}`,
-        sessionId: ctx.sessionId,
-        at: ctx.at,
-        characterId: target.id,
-      });
+      const result = stabilizeCharacter(
+        ctx.db,
+        {
+          provenance: `model:${ctx.turnId}`,
+          sessionId: ctx.sessionId,
+          at: ctx.at,
+          characterId: target.id,
+        },
+        ctx.rng,
+      );
       return ok(result);
     } catch (e) {
       if (e instanceof MutateStateError) {

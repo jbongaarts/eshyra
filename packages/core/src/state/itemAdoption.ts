@@ -678,6 +678,22 @@ export function adoptMagicItem(
       instanceIds.push(id);
     }
 
+    for (const id of instanceIds) {
+      txnDb
+        .prepare(
+          `INSERT OR IGNORE INTO inventory_wear_state(
+             inventory_id, character_id, wear_state, provenance, session_id, updated_at
+           ) VALUES (?, ?, 'not_worn', ?, ?, ?)`,
+        )
+        .run(
+          id,
+          input.characterId,
+          input.provenance,
+          input.sessionId,
+          input.at,
+        );
+    }
+
     if (stateful) {
       for (const [index, id] of instanceIds.entries()) {
         const state =

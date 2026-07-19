@@ -138,6 +138,59 @@ describe('discoverMigrations', () => {
 });
 
 describe('runMigrations', () => {
+  it('records oversized legacy identities and rejects oversized new writes', () => {
+    const db = openDatabase(':memory:');
+    for (const migration of discoverMigrations()) {
+      if (migration.version <= 18) db.exec(migration.sql);
+    }
+    const id = 'legacy-'.repeat(50);
+    const name = 'é'.repeat(130);
+    db.prepare(
+      `INSERT INTO inventory(
+         id, name, provenance, session_id, updated_at
+       ) VALUES (?, ?, 'test', 'session', '2026-05-20T10:00:00.000Z')`,
+    ).run(id, name);
+
+    const migration = discoverMigrations().find(
+      (entry) => entry.version === 19,
+    );
+    if (migration === undefined) throw new Error('missing migration 0019');
+    db.exec(migration.sql);
+
+    expect(
+      db
+        .prepare(
+          'SELECT id_bytes, name_bytes, reason FROM inventory_identity_repair WHERE inventory_id=?',
+        )
+        .get(id),
+    ).toEqual({
+      id_bytes: 350,
+      name_bytes: 260,
+      reason: 'id-and-name-over-limit',
+    });
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO inventory(id, name, provenance, session_id, updated_at)
+           VALUES (?, 'valid', 'test', 'session', '2026-05-20T10:00:00.000Z')`,
+        )
+        .run('x'.repeat(257)),
+    ).toThrow(/identity bounds/);
+    db.prepare('UPDATE inventory SET id=?, name=? WHERE id=?').run(
+      'legacy-repaired',
+      'Repaired name',
+      id,
+    );
+    expect(
+      db
+        .prepare(
+          'SELECT inventory_id FROM inventory_identity_repair WHERE inventory_id=?',
+        )
+        .get('legacy-repaired'),
+    ).toEqual({ inventory_id: 'legacy-repaired' });
+    db.close();
+  });
+
   const NOW = () => '2026-06-26T00:00:00.000Z';
 
   it('applies all migrations to an empty database and records the ledger', () => {
