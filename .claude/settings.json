@@ -19,7 +19,7 @@
             "type": "command"
           },
           {
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/fable-supervisor-context.sh\"",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/fable-supervisor-context.mjs\"",
             "type": "command"
           }
         ],
