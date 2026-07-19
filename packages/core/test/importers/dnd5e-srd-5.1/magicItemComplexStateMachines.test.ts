@@ -61,10 +61,29 @@ describe('complex M5 state-machine complement', () => {
       projectMagicItemComplexStateMachine(named('Apparatus of the Crab')),
     ).toMatchObject({
       mechanics: {
-        effects: [{ tableRef: 'table:apparatus-of-the-crab-levers' }],
+        effects: [
+          {
+            tableRef: 'table:apparatus-of-the-crab-levers',
+            depthDamage: {
+              dice: '2d6',
+              type: 'bludgeoning',
+              interval: { amount: 1, unit: 'minute' },
+            },
+          },
+        ],
         stateMachine: { initial: 'sealed' },
       },
     });
+    expect(
+      projectMagicItemComplexStateMachine(named('Apparatus of the Crab'))
+        ?.clauses,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          representation: expect.objectContaining({ adjudicated: true }),
+        }),
+      ]),
+    );
     const cube = projectMagicItemComplexStateMachine(named('Cube of Force'));
     expect(cube?.mechanics.operations?.[0]).toMatchObject({
       id: 'press-face-1',

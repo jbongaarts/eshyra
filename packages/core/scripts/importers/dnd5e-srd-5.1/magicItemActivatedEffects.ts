@@ -572,6 +572,7 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
       sourcePhrases: [
         'cast dancing lights and light from the ring at will',
         'cast faerie fire from the ring',
+        'Each creature within a 15-foot cube originating from that point is showered in sparks and must make a DC 15 Dexterity saving throw, taking 5d4 fire damage on a failed save, or half as much damage on a successful one',
       ],
       effects: [
         spell(
@@ -591,6 +592,22 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
           'spell:faerie-fire',
           { concentrationRequired: true },
           action('wearing the ring'),
+        ),
+        payload(
+          'launch-shooting-stars',
+          'triggeredEffect',
+          {
+            trigger: 'a glowing mote reaches its chosen point',
+            result:
+              'each creature in the originating 15-foot cube resolves the save and fire damage',
+            area: { shape: 'cube', sizeFeet: 15 },
+            rangeFeet: 60,
+            save: { ability: 'dexterity', dc: 15 },
+            failedSaveDamage: { dice: '5d4', type: 'fire' },
+            successfulSaveDamage: 'half',
+          },
+          [F2, F8, F9],
+          action('expend 1 to 3 charges'),
         ),
       ],
     },
@@ -720,8 +737,20 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
         'using your spell save DC and spell attack bonus',
         'fireball (5th-level version, 5 charges)',
         'lightning bolt (5th-level version, 5 charges)',
+        'When you hit with a melee attack using the staff, you can expend 1 charge to deal an extra 1d6 force damage to the target',
       ],
       effects: [
+        payload(
+          'power-strike',
+          'triggeredEffect',
+          {
+            trigger: 'a melee attack using the staff hits',
+            result: 'deal extra force damage to the target',
+            damage: { dice: '1d6', type: 'force' },
+          },
+          [F2, F9],
+          { cost: 'free', trigger: 'melee attack using the staff hits' },
+        ),
         spell('cast-cone-of-cold', 'spell:cone-of-cold', ownDc),
         spell('cast-fireball', 'spell:fireball', { ...ownDc, castLevel: 5 }),
         spell(

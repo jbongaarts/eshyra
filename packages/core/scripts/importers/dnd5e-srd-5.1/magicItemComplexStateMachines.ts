@@ -44,6 +44,8 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
       phrases: [
         'Ten levers are set in a row at the far end, each in a neutral position',
         'functions as shown in the Apparatus of the Crab Levers table',
+        'hidden catch, which can be found with a successful DC 20 Intelligence (Investigation) check',
+        'Below that, the vehicle takes 2d6 bludgeoning damage per minute from pressure',
       ],
       operations: Array.from({ length: 10 }, (_, i) =>
         op(`set-lever-${i + 1}`),
@@ -57,6 +59,11 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
             tableRef: 'table:apparatus-of-the-crab-levers',
             airSupplyHours: 10,
             depthDamageThresholdFeet: 900,
+            depthDamage: {
+              dice: '2d6',
+              type: 'bludgeoning',
+              interval: { amount: 1, unit: 'minute' },
+            },
           },
         ),
       ],
@@ -848,6 +855,18 @@ export function projectMagicItemComplexStateMachine(
           },
         ],
       },
+      ...(item.name === 'Apparatus of the Crab'
+        ? [
+            {
+              id: 'm5-complex-apparatus-hidden-catch',
+              tag: 'M5' as const,
+              representation: {
+                adjudicated: true as const,
+                note: 'The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text.',
+              },
+            },
+          ]
+        : []),
     ],
   };
 }

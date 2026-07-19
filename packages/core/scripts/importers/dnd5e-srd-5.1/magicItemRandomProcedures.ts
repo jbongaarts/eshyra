@@ -279,7 +279,9 @@ const SPECS: ReadonlyMap<string, RandomProcedureSpec> = new Map<
             'wearer takes fire damage after failing a save against a spell',
           roll: '1d20',
           outcome:
-            'on 1, discharge every remaining gem as beams and destroy the helm and gems',
+            'on 1, discharge every remaining gem as beams; each creature within 60 feet of the helm other than the wearer makes a DC 17 Dexterity saving throw, taking radiant damage equal to the number of gems on a failed save; destroy the helm and gems',
+          procedureNote:
+            'The source says the helm and its gems are destroyed after the beam resolution.',
         },
       ],
       hooks: [F5_STATE, F9_RESOLUTION],
@@ -434,7 +436,7 @@ const SPECS: ReadonlyMap<string, RandomProcedureSpec> = new Map<
                   ? 'table:staff-of-power'
                   : 'table:staff-of-the-magi',
               outcome:
-                'on success the breaker travels to a random plane and avoids the explosion; otherwise apply charge-scaled self damage and the distance table to other creatures',
+                'on success the breaker travels to a random plane and avoids the explosion; otherwise the breaker takes force damage equal to 16 × the number of charges and every other creature makes a DC 17 Dexterity saving throw, taking the distance-table damage on a failure or half as much on a success',
             },
             {
               id: 'last-charge-roll',

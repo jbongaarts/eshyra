@@ -87366,7 +87366,15 @@
             "result": "apply the exact vehicle control from the source table",
             "tableRef": "table:apparatus-of-the-crab-levers",
             "airSupplyHours": 10,
-            "depthDamageThresholdFeet": 900
+            "depthDamageThresholdFeet": 900,
+            "depthDamage": {
+              "dice": "2d6",
+              "type": "bludgeoning",
+              "interval": {
+                "amount": 1,
+                "unit": "minute"
+              }
+            }
           }
         ]
       },
@@ -87376,6 +87384,19 @@
       "executionReadiness": {
         "source": "derived-magic-item-clauses-v1",
         "clauses": [
+          {
+            "clauseId": "magic-item:apparatus-of-the-crab/m5-complex-apparatus-hidden-catch",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "M5",
+            "readiness": "adjudicated-by-design",
+            "representation": {
+              "adjudicated": true,
+              "note": "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text."
+            },
+            "reason": "The source-stated DC 20 Intelligence (Investigation) hidden-catch discovery procedure is accepted as prose-only: it is a one-time exploration adjudication with no persistent item state or deterministic engine hook beyond the source text."
+          },
           {
             "clauseId": "magic-item:apparatus-of-the-crab/m5-complex-apparatus-of-the-crab",
             "scope": {
@@ -96273,6 +96294,7 @@
               "from": "bound",
               "to": "broken",
               "via": "escape-shackles",
+              "note": "Once every 30 days, the bound creature makes a DC 30 Strength (Athletics) check; on success it breaks free and destroys the shackles.",
               "onFailure": {
                 "retryAfter": {
                   "amount": 30,
@@ -102491,7 +102513,8 @@
               "kind": "nested-roll",
               "trigger": "wearer takes fire damage after failing a save against a spell",
               "roll": "1d20",
-              "outcome": "on 1, discharge every remaining gem as beams and destroy the helm and gems"
+              "outcome": "on 1, discharge every remaining gem as beams; each creature within 60 feet of the helm other than the wearer makes a DC 17 Dexterity saving throw, taking radiant damage equal to the number of gems on a failed save; destroy the helm and gems",
+              "procedureNote": "The source says the helm and its gems are destroyed after the beam resolution."
             }
           ]
         },
@@ -105879,6 +105902,7 @@
               "from": "restraining",
               "to": "destroyed",
               "via": "break-bands",
+              "note": "The creature uses an action to make a DC 20 Strength check; on success the iron bands are destroyed and the restrained creature is freed.",
               "onFailure": {
                 "retryAfter": {
                   "amount": 24,
@@ -119838,11 +119862,18 @@
           },
           {
             "id": "launch-shooting-stars",
+            "activation": {
+              "cost": "action",
+              "requirement": "expend 1 to 3 charges"
+            },
             "cost": [
               {
                 "economy": "charges",
                 "amount": "variable"
               }
+            ],
+            "effects": [
+              "c2-launch-shooting-stars-payload"
             ]
           },
           {
@@ -119896,6 +119927,26 @@
             "kind": "castSpell",
             "spellRef": "spell:faerie-fire",
             "concentrationRequired": true
+          },
+          {
+            "id": "c2-launch-shooting-stars-payload",
+            "kind": "triggeredEffect",
+            "trigger": "a glowing mote reaches its chosen point",
+            "result": "each creature in the originating 15-foot cube resolves the save and fire damage",
+            "area": {
+              "shape": "cube",
+              "sizeFeet": 15
+            },
+            "rangeFeet": 60,
+            "save": {
+              "ability": "dexterity",
+              "dc": 15
+            },
+            "failedSaveDamage": {
+              "dice": "5d4",
+              "type": "fire"
+            },
+            "successfulSaveDamage": "half"
           }
         ]
       },
@@ -120164,6 +120215,51 @@
               "F2",
               "F4",
               "F8"
+            ]
+          },
+          {
+            "clauseId": "magic-item:ring-of-shooting-stars/c2-effect-launch-shooting-stars-payload",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-launch-shooting-stars-payload"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F8",
+                "hook": "save DC and spell attack resolution"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F8",
+              "F9"
             ]
           },
           {
@@ -128879,7 +128975,7 @@
                 "percent": 50
               },
               "tableRef": "table:staff-of-power",
-              "outcome": "on success the breaker travels to a random plane and avoids the explosion; otherwise apply charge-scaled self damage and the distance table to other creatures"
+              "outcome": "on success the breaker travels to a random plane and avoids the explosion; otherwise the breaker takes force damage equal to 16 × the number of charges and every other creature makes a DC 17 Dexterity saving throw, taking the distance-table damage on a failure or half as much on a success"
             },
             {
               "id": "last-charge-roll",
@@ -128920,11 +129016,18 @@
         "operations": [
           {
             "id": "power-strike",
+            "activation": {
+              "cost": "free",
+              "trigger": "melee attack using the staff hits"
+            },
             "cost": [
               {
                 "economy": "charges",
                 "amount": 1
               }
+            ],
+            "effects": [
+              "c2-power-strike-payload"
             ]
           },
           {
@@ -129064,6 +129167,16 @@
           }
         ],
         "effects": [
+          {
+            "id": "c2-power-strike-payload",
+            "kind": "triggeredEffect",
+            "trigger": "a melee attack using the staff hits",
+            "result": "deal extra force damage to the target",
+            "damage": {
+              "dice": "1d6",
+              "type": "force"
+            }
+          },
           {
             "id": "c2-cast-cone-of-cold",
             "kind": "castSpell",
@@ -129851,6 +129964,42 @@
               "F2",
               "F4",
               "F8"
+            ]
+          },
+          {
+            "clauseId": "magic-item:staff-of-power/c2-effect-power-strike-payload",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-power-strike-payload"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F9"
             ]
           },
           {
@@ -130676,7 +130825,7 @@
                 "percent": 50
               },
               "tableRef": "table:staff-of-the-magi",
-              "outcome": "on success the breaker travels to a random plane and avoids the explosion; otherwise apply charge-scaled self damage and the distance table to other creatures"
+              "outcome": "on success the breaker travels to a random plane and avoids the explosion; otherwise the breaker takes force damage equal to 16 × the number of charges and every other creature makes a DC 17 Dexterity saving throw, taking the distance-table damage on a failure or half as much on a success"
             },
             {
               "id": "last-charge-roll",

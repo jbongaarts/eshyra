@@ -2551,11 +2551,11 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ],
         ),
       );
-      expect(clauses).toHaveLength(1001);
+      expect(clauses).toHaveLength(1004);
       expect(counts).toEqual({
-        'adjudicated-by-design': 2,
+        'adjudicated-by-design': 3,
         'design-blocked': 1,
-        'engine-pending': 780,
+        'engine-pending': 782,
         green: 218,
       });
       const pending = clauses.filter(
