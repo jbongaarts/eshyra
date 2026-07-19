@@ -46,6 +46,10 @@ import {
   listCombatants,
 } from '../state/encounterCombatants.js';
 import { formatHpStatus, type LifeState } from '../state/hpLifecycle.js';
+import {
+  assertNoInventoryIdentityRepairs,
+  fitsNearbyInventoryBudget,
+} from '../state/inventoryIdentity.js';
 import { isConcreteWorldLocation } from '../state/inventoryWorldLocation.js';
 import {
   type ItemAdoptionReview,
@@ -332,6 +336,7 @@ export function readStateSnapshot(
   activeCharacterId?: string,
   campaignId?: string,
 ): StateSnapshot {
+  assertNoInventoryIdentityRepairs(db);
   const charId = resolveActingCharacterId(db, activeCharacterId);
   const character = db
     .prepare(
@@ -408,6 +413,27 @@ export function readStateSnapshot(
       ? undefined
       : normalizeCharacterWallet(sheet.wallet);
 
+  const nearbyInventory: NearbyInventoryItem[] = [];
+  for (const row of nearbyInventoryRows) {
+    const item: NearbyInventoryItem = {
+      id: row.id,
+      name: row.name,
+      quantity: row.quantity,
+      worldLocationId: row.world_location_id,
+      packRef:
+        row.pack_ref === null
+          ? undefined
+          : validatePackRef(
+              row.pack_ref,
+              `nearbyInventory[${row.id}].pack_ref`,
+            ),
+      ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
+    };
+    if (nearbyInventory.length >= 20) break;
+    if (!fitsNearbyInventoryBudget(nearbyInventory, item)) break;
+    nearbyInventory.push(item);
+  }
+
   return {
     character: {
       id: character.id,
@@ -469,23 +495,9 @@ export function readStateSnapshot(
         state: readItemState(db, row.id),
       };
     }),
-    nearbyInventory: nearbyInventoryRows.slice(0, 20).map((row) => {
-      return {
-        id: row.id,
-        name: row.name,
-        quantity: row.quantity,
-        worldLocationId: row.world_location_id,
-        packRef:
-          row.pack_ref === null
-            ? undefined
-            : validatePackRef(
-                row.pack_ref,
-                `nearbyInventory[${row.id}].pack_ref`,
-              ),
-        ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
-      };
-    }),
-    nearbyInventoryTruncated: nearbyInventoryRows.length > 20,
+    nearbyInventory,
+    nearbyInventoryTruncated:
+      nearbyInventoryRows.length > nearbyInventory.length,
     attunements:
       campaignId === undefined ? [] : listAttunements(db, campaignId, charId),
     activeEffects:

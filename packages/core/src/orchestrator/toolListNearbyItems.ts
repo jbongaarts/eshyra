@@ -1,3 +1,4 @@
+import { fitsNearbyInventoryBudget } from '../state/inventoryIdentity.js';
 import { isConcreteWorldLocation } from '../state/inventoryWorldLocation.js';
 import { validatePackRef } from '../state/itemState.js';
 import type { Tool } from './toolRegistry.js';
@@ -63,10 +64,10 @@ export const listNearbyItemsTool: Tool = {
       pack_ref: string | null;
       variant_id: string | null;
     }>;
-    const page = rows.slice(0, limit);
-    return ok({
-      locationId,
-      items: page.map((row) => ({
+    const page: typeof rows = [];
+    for (const row of rows) {
+      if (page.length >= limit) break;
+      const item = {
         id: row.id,
         name: row.name,
         quantity: row.quantity,
@@ -75,8 +76,24 @@ export const listNearbyItemsTool: Tool = {
           ? {}
           : { packRef: validatePackRef(row.pack_ref, 'inventory.pack_ref') }),
         ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
-      })),
-      ...(rows.length <= limit || page.length === 0
+      };
+      if (!fitsNearbyInventoryBudget(page, item)) break;
+      page.push(row);
+    }
+    const items = page.map((row) => ({
+      id: row.id,
+      name: row.name,
+      quantity: row.quantity,
+      worldLocationId: row.world_location_id,
+      ...(row.pack_ref === null
+        ? {}
+        : { packRef: validatePackRef(row.pack_ref, 'inventory.pack_ref') }),
+      ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
+    }));
+    return ok({
+      locationId,
+      items,
+      ...(rows.length <= page.length || page.length === 0
         ? {}
         : { nextCursor: page[page.length - 1]?.id }),
     });

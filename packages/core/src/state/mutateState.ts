@@ -3,6 +3,10 @@ import { withTransaction } from '../persistence/db.js';
 import { JsonColumnError, jsonColumn } from '../persistence/jsonColumn.js';
 import { requireNonEmpty } from '../validation.js';
 import { resolveCharacterId } from './activeCharacter.js';
+import {
+  InventoryIdentityError,
+  validateInventoryIdentity,
+} from './inventoryIdentity.js';
 import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 import {
   LiveStateSchemaError,
@@ -295,6 +299,28 @@ function setInventoryField(db: Db, input: MutateStateInput): void {
     input.value,
     INVENTORY_FIELDS,
   );
+  if (input.field === 'name') {
+    try {
+      validateInventoryIdentity(input.id as string, value as string);
+    } catch (error) {
+      if (error instanceof InventoryIdentityError)
+        throw new MutateStateError(error.message);
+      throw error;
+    }
+  } else {
+    const row = db
+      .prepare('SELECT name FROM inventory WHERE id = ?')
+      .get(input.id) as { name: string } | undefined;
+    if (row !== undefined) {
+      try {
+        validateInventoryIdentity(input.id as string, row.name);
+      } catch (error) {
+        if (error instanceof InventoryIdentityError)
+          throw new MutateStateError(error.message);
+        throw error;
+      }
+    }
+  }
   if (
     input.field === 'quantity' &&
     typeof value === 'number' &&

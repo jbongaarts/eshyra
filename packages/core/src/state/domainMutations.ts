@@ -19,6 +19,7 @@ import {
   MagicItemCustodyError,
 } from './attunement.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
+import { validateInventoryIdentity } from './inventoryIdentity.js';
 import {
   type DestroyedItemAttunementEvidence,
   destroyInventoryItem,
@@ -322,6 +323,8 @@ export function giveItem(
         );
       }
     }
+
+    validateInventoryIdentity(rowId, item.name);
 
     const base = {
       target: 'inventory' as const,
