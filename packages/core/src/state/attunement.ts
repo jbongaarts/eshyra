@@ -130,7 +130,12 @@ export class MagicItemCustodyError extends Error {
   }
 }
 
-export type CursedCustodyMutation = 'dropped' | 'sold' | 'lost' | 'transfer';
+export type CursedCustodyMutation =
+  | 'doff'
+  | 'dropped'
+  | 'sold'
+  | 'lost'
+  | 'transfer';
 
 /** Gate only exact source-declared possession/doff constraints. */
 export function assertInventoryCurseCustodyReady(
@@ -186,9 +191,26 @@ export function assertInventoryCurseCustodyReady(
         'SELECT 1 FROM attunement WHERE item_id=? AND character_id=? LIMIT 1',
       )
       .get(itemId, item.character_id) !== undefined;
-  if (curse?.blocksDoff === true && item.character_id !== null)
+  const wear =
+    item.character_id === null
+      ? undefined
+      : (db
+          .prepare(
+            `SELECT character_id, wear_state FROM inventory_wear_state
+             WHERE inventory_id=?`,
+          )
+          .get(itemId) as
+          | { character_id: string; wear_state: 'worn' | 'not_worn' }
+          | undefined);
+  if (
+    curse?.blocksDoff === true &&
+    item.character_id !== null &&
+    (wear === undefined ||
+      wear.character_id !== item.character_id ||
+      wear.wear_state === 'worn')
+  )
     throw new MagicItemCustodyError(
-      `${record.key} is source-declared as impossible to doff while cursed, but authoritative don/doff state is unavailable; '${mutation}' must fail closed for the held item until the curse is removed`,
+      `${record.key} is source-declared as impossible to doff while cursed; '${mutation}' must fail closed while the item is worn or its authoritative wear state is ambiguous`,
     );
   // Transfer has its own persistent-attunement owner; this gate contributes
   // only the blocks-doff constraint there. Loss is involuntary.

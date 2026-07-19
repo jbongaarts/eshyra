@@ -3,6 +3,7 @@ import {
   addCondition,
   adjustHp,
   claimItem,
+  donItem,
   ensureCharacterRow,
   giveItem,
   initSchema,
@@ -691,9 +692,10 @@ describe('removeItem', () => {
         },
         CTX,
       );
+      donItem(db, { ...CTX, itemId: armor.id });
       expect(() =>
         removeItem(db, { itemId: armor.id, disposition }, CTX),
-      ).toThrow(/authoritative don\/doff state is unavailable.*fail closed/);
+      ).toThrow(/source-declared as impossible to doff/);
     }
 
     const destroyedArmor = giveItem(
@@ -728,6 +730,31 @@ describe('removeItem', () => {
     expect(
       removeItem(db, { itemId: ordinary.id, disposition: 'dropped' }, CTX),
     ).toMatchObject({ disposition: 'dropped', removed: true });
+    db.close();
+  });
+
+  it('fails closed when a held blocksDoff item has no wear row', () => {
+    const db = freshDb();
+    updateClock(db, { locationId: 'market-square' }, CTX);
+    const armor = giveItem(
+      db,
+      {
+        id: 'legacy-demon-armor',
+        name: 'Demon Armor',
+        packRef: 'magic-item:demon-armor',
+        stateful: true,
+      },
+      CTX,
+    );
+    db.prepare('DELETE FROM inventory_wear_state WHERE inventory_id=?').run(
+      armor.id,
+    );
+
+    for (const disposition of ['dropped', 'sold', 'lost'] as const) {
+      expect(() =>
+        removeItem(db, { itemId: armor.id, disposition }, CTX),
+      ).toThrow(/source-declared as impossible to doff/);
+    }
     db.close();
   });
 
@@ -795,6 +822,54 @@ describe('removeItem', () => {
         variant_id: null,
       });
     }
+    expect(
+      db
+        .prepare(
+          `SELECT wear.inventory_id
+           FROM inventory_wear_state AS wear
+           LEFT JOIN inventory AS item ON item.id=wear.inventory_id
+           WHERE item.id IS NULL OR item.character_id IS NULL
+              OR item.character_id <> wear.character_id`,
+        )
+        .all(),
+    ).toEqual([]);
+
+    const dropped = removeItem(
+      db,
+      { itemId: 'arrows', quantity: 1, disposition: 'dropped' },
+      CTX,
+    );
+    expect(
+      claimItem(db, dropped.relinquishedItemId as string, CTX),
+    ).toMatchObject({
+      itemId: dropped.relinquishedItemId,
+      characterId: 'pc-1',
+    });
+    expect(
+      reacquireItem(
+        db,
+        {
+          itemId: first.relinquishedItemId as string,
+          basis: 'returned',
+          evidence: 'The sold arrow bundle was returned at the market.',
+        },
+        CTX,
+      ),
+    ).toMatchObject({
+      itemId: first.relinquishedItemId,
+      characterId: 'pc-1',
+    });
+    expect(
+      db
+        .prepare(
+          `SELECT wear.inventory_id
+           FROM inventory_wear_state AS wear
+           LEFT JOIN inventory AS item ON item.id=wear.inventory_id
+           WHERE item.id IS NULL OR item.character_id IS NULL
+              OR item.character_id <> wear.character_id`,
+        )
+        .all(),
+    ).toEqual([]);
     db.close();
   });
 

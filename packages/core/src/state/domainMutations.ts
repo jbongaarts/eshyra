@@ -372,6 +372,13 @@ export function giveItem(
           item.packRef ?? null,
           item.variantId ?? null,
         );
+      txnDb
+        .prepare(
+          `INSERT INTO inventory_wear_state(
+             inventory_id, character_id, wear_state, provenance, session_id, updated_at
+           ) VALUES (?, ?, 'not_worn', ?, ?, ?)`,
+        )
+        .run(rowId, charId, ctx.provenance, ctx.sessionId, ctx.at);
     } else {
       mutateStateBatch(txnDb, mutations);
     }
@@ -573,6 +580,19 @@ export function claimItem(
       throw new MutateStateError(
         `inventory item '${itemId}' was claimed concurrently`,
       );
+    txnDb
+      .prepare(
+        `INSERT INTO inventory_wear_state(
+           inventory_id, character_id, wear_state, provenance, session_id, updated_at
+         ) VALUES (?, ?, 'not_worn', ?, ?, ?)
+         ON CONFLICT(inventory_id) DO UPDATE SET
+           character_id=excluded.character_id,
+           wear_state='not_worn',
+           provenance=excluded.provenance,
+           session_id=excluded.session_id,
+           updated_at=excluded.updated_at`,
+      )
+      .run(itemId, characterId, ctx.provenance, ctx.sessionId, ctx.at);
     return {
       itemId,
       characterId,
@@ -735,6 +755,19 @@ export function reacquireItem(
       throw new MutateStateError(
         `inventory item '${input.itemId}' was reacquired concurrently`,
       );
+    txnDb
+      .prepare(
+        `INSERT INTO inventory_wear_state(
+           inventory_id, character_id, wear_state, provenance, session_id, updated_at
+         ) VALUES (?, ?, 'not_worn', ?, ?, ?)
+         ON CONFLICT(inventory_id) DO UPDATE SET
+           character_id=excluded.character_id,
+           wear_state='not_worn',
+           provenance=excluded.provenance,
+           session_id=excluded.session_id,
+           updated_at=excluded.updated_at`,
+      )
+      .run(input.itemId, characterId, ctx.provenance, ctx.sessionId, ctx.at);
     return {
       itemId: input.itemId,
       characterId,
@@ -952,6 +985,9 @@ export function removeItem(
             itemId,
             charId,
           );
+        txnDb
+          .prepare('DELETE FROM inventory_wear_state WHERE inventory_id=?')
+          .run(itemId);
         return {
           disposition,
           removed: true,

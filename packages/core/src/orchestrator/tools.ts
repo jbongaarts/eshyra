@@ -81,6 +81,7 @@ import { updateClockTool } from './toolUpdateClock.js';
 import { updateCombatantTool } from './toolUpdateCombatant.js';
 import { useInspirationTool } from './toolUseInspiration.js';
 import { useItemTool } from './toolUseItem.js';
+import { doffItemTool, donItemTool } from './toolWearItem.js';
 import { worldQueryTool } from './toolWorldQuery.js';
 
 export const DEFAULT_TOOLS: readonly Tool[] = [
@@ -130,6 +131,8 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   giveItemTool,
   useItemTool,
   transferItemTool,
+  donItemTool,
+  doffItemTool,
   removeItemTool,
   updateClockTool,
   advanceTimeTool,

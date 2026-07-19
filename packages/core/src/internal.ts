@@ -1308,6 +1308,18 @@ export type {
 } from './state/inventoryLifecycle.js';
 export { destroyInventoryItem } from './state/inventoryLifecycle.js';
 export type {
+  InventoryWearContext,
+  InventoryWearInput,
+  InventoryWearResult,
+  InventoryWearState,
+} from './state/inventoryWear.js';
+export {
+  doffItem,
+  donItem,
+  getInventoryWearState,
+  InventoryWearError,
+} from './state/inventoryWear.js';
+export type {
   AdoptMagicItemInput,
   AdoptMagicItemResult,
 } from './state/itemAdoption.js';
