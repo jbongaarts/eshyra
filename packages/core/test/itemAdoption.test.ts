@@ -589,6 +589,27 @@ describe('legacy magic-item adoption', () => {
         )
         .get(),
     ).toEqual({ n: 0 });
+    expect(
+      createDefaultToolRegistry().invoke(
+        'adopt_item',
+        {
+          id: 'legacy-item',
+          packRef: 'magic-item:necklace-of-fireballs',
+          resolution: {
+            action: 'discard-evidence',
+            evidence: 'The GM discarded the unlicensed property projection.',
+          },
+        },
+        s.ctx,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        adopted: true,
+        instanceIds: ['legacy-item', 'legacy-item#2'],
+      },
+    });
+    expect(adoptionReview(s.db, 'legacy-item')).toBeUndefined();
   });
 
   it('quarantines an unlicensed legacy item_state row outside live state', () => {
@@ -635,6 +656,129 @@ describe('legacy magic-item adoption', () => {
     expect(adoptionReview(s.db, 'legacy-item')).toMatchObject({
       raw_item_state_json: JSON.stringify(legacyState),
     });
+    expect(
+      createDefaultToolRegistry().invoke(
+        'adopt_item',
+        {
+          id: 'legacy-item',
+          packRef: 'magic-item:necklace-of-fireballs',
+          resolution: {
+            action: 'discard-evidence',
+            evidence: 'The GM discarded the unlicensed persisted projection.',
+          },
+        },
+        s.ctx,
+      ),
+    ).toMatchObject({ ok: true, data: { adopted: true } });
+    expect(adoptionReview(s.db, 'legacy-item')).toBeUndefined();
+  });
+
+  it('successfully resolves every remaining malformed-evidence producer branch', () => {
+    for (const testCase of [
+      {
+        name: 'dual legacy evidence sources',
+        packRef: 'magic-item:necklace-of-fireballs',
+        reason: 'multiple legacy mechanics sources',
+        arrange(s: ReturnType<typeof setup>) {
+          insertLegacy(s, {
+            properties: {
+              material: 'silver',
+              mechanics: { economies: { charges: { remaining: 2 } } },
+            },
+          });
+          s.db
+            .prepare(
+              `INSERT INTO item_state(
+                 inventory_id, state_json, provenance, session_id, updated_at
+               ) VALUES ('legacy-item', ?, 'test:legacy', 'session-1', ?)`,
+            )
+            .run(
+              JSON.stringify({
+                packRef: 'magic-item:necklace-of-fireballs',
+                economies: { charges: { remaining: 3 } },
+              }),
+              AT,
+            );
+        },
+      },
+      {
+        name: 'invalid persisted JSON',
+        packRef: 'magic-item:necklace-of-fireballs',
+        reason: 'not valid JSON',
+        arrange(s: ReturnType<typeof setup>) {
+          insertLegacy(s);
+          s.db
+            .prepare(
+              `INSERT INTO item_state(
+                 inventory_id, state_json, provenance, session_id, updated_at
+               ) VALUES ('legacy-item', '{', 'test:legacy', 'session-1', ?)`,
+            )
+            .run(AT);
+        },
+      },
+      {
+        name: 'state on a stateless target',
+        packRef: 'magic-item:potion-of-healing',
+        reason: 'stateless and cannot license legacy mechanics',
+        arrange(s: ReturnType<typeof setup>) {
+          insertLegacy(s, {
+            properties: {
+              material: 'silver',
+              mechanics: { legacyDose: { remaining: 1 } },
+            },
+          });
+        },
+      },
+    ]) {
+      const s = setup();
+      testCase.arrange(s);
+      const registry = createDefaultToolRegistry();
+      expect(
+        registry.invoke(
+          'adopt_item',
+          { id: 'legacy-item', packRef: testCase.packRef },
+          s.ctx,
+        ),
+        testCase.name,
+      ).toMatchObject({
+        ok: true,
+        data: {
+          adopted: false,
+          reviewRequired: true,
+          reviewKind: 'malformed-evidence',
+          requiredResolutionAction: 'discard-evidence',
+          reason: expect.stringContaining(testCase.reason),
+        },
+      });
+      expect(
+        registry.invoke(
+          'adopt_item',
+          {
+            id: 'legacy-item',
+            packRef: testCase.packRef,
+            resolution: {
+              action: 'discard-evidence',
+              evidence: `The GM discarded ${testCase.name}.`,
+            },
+          },
+          s.ctx,
+        ),
+        testCase.name,
+      ).toMatchObject({ ok: true, data: { adopted: true } });
+      expect(
+        adoptionReview(s.db, 'legacy-item'),
+        testCase.name,
+      ).toBeUndefined();
+      expect(
+        s.db
+          .prepare(
+            "SELECT action FROM inventory_adoption_resolution WHERE inventory_id='legacy-item'",
+          )
+          .get(),
+        testCase.name,
+      ).toEqual({ action: 'discard-evidence' });
+      s.db.close();
+    }
   });
 
   it('flags and preserves a legacy item usage counter instead of creating dual spend owners', () => {
