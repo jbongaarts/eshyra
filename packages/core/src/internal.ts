@@ -1278,6 +1278,7 @@ export type {
   GrantTemporaryHpResult,
   LifeState,
   StabilizeResult,
+  StableRecoveryResult,
 } from './state/hpLifecycle.js';
 // HP write path + death/dying/temp-HP state machine (F6, eshyra-2n1t.8).
 export {
@@ -1285,6 +1286,7 @@ export {
   expireTemporaryHp,
   grantTemporaryHp,
   recordDeathSave,
+  resolveStableRecoveries,
   stabilizeCharacter,
 } from './state/hpLifecycle.js';
 // Inspiration boolean resource (F5, eshyra-2n1t.7).

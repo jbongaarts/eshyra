@@ -13,7 +13,12 @@ import {
 } from '../rules/binding.js';
 import type { ExpiredWorldEffectSummary } from './activeEffects.js';
 import { expireElapsedWorldEffects } from './activeEffects.js';
-import { adjustHp, expireTemporaryHp, type LifeState } from './hpLifecycle.js';
+import {
+  adjustHp,
+  expireTemporaryHp,
+  type LifeState,
+  resolveStableRecoveries,
+} from './hpLifecycle.js';
 import { mutateState } from './mutateState.js';
 import { restoreSpellSlots } from './spellSlots.js';
 import { resetUsage } from './usageCounters.js';
@@ -36,6 +41,7 @@ export interface WorldClock {
   narrativeLabelStale: boolean;
   expiredEffects: readonly ExpiredWorldEffectSummary[];
   closedRecoveryWindows: readonly ClosedShortRestRecovery[];
+  stableRecoveries: readonly import('./hpLifecycle.js').StableRecoveryResult[];
 }
 export interface ClosedShortRestRecovery {
   restId: string;
@@ -154,7 +160,7 @@ export function advanceWorldTime(
   db: Db,
   input: AdvanceWorldTimeInput,
 ): WorldClock {
-  return withTransaction(db, (txn) => {
+  const result = withTransaction(db, (txn) => {
     const minutes = int(input.minutes, 'minutes', 1);
     const before = clock(txn);
     const next = before.elapsedMinutes + minutes;
@@ -206,6 +212,10 @@ export function advanceWorldTime(
       closedRecoveryWindows,
     };
   });
+  return {
+    ...result,
+    stableRecoveries: resolveStableRecoveries(db, result.elapsedMinutes, input),
+  };
 }
 
 function resolvePool(

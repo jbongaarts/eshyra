@@ -8,6 +8,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   adjustHp,
+  advanceWorldTime,
+  createSeededRng,
   expireTemporaryHp,
   formatHpStatus,
   grantTemporaryHp,
@@ -61,6 +63,8 @@ function readMachine(db: ReturnType<typeof openDatabase>) {
     .prepare(
       `SELECT hp_current, hp_temp, life_state,
               death_save_successes, death_save_failures
+              , stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+              stable_recovery_deadline_elapsed_minutes
        FROM character WHERE id = 'pc-1'`,
     )
     .get() as {
@@ -69,6 +73,9 @@ function readMachine(db: ReturnType<typeof openDatabase>) {
     life_state: LifeState;
     death_save_successes: number;
     death_save_failures: number;
+    stable_recovery_roll: number | null;
+    stable_recovery_anchor_elapsed_minutes: number | null;
+    stable_recovery_deadline_elapsed_minutes: number | null;
   };
 }
 
@@ -495,6 +502,70 @@ describe('stabilizeCharacter', () => {
       expect(() => stabilizeCharacter(db, CTX)).toThrow(MutateStateError);
       db.close();
     }
+  });
+
+  it('persists a seeded 1d4-hour deadline and resolves it at the boundary', () => {
+    const db = freshDb({ max: 20, current: 0, lifeState: 'dying' });
+    stabilizeCharacter(db, CTX, createSeededRng(42));
+    const scheduled = db
+      .prepare(
+        `SELECT stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+                stable_recovery_deadline_elapsed_minutes
+         FROM character WHERE id='pc-1'`,
+      )
+      .get() as {
+      stable_recovery_roll: number;
+      stable_recovery_anchor_elapsed_minutes: number;
+      stable_recovery_deadline_elapsed_minutes: number;
+    };
+    expect(scheduled.stable_recovery_roll).toBeGreaterThanOrEqual(1);
+    expect(scheduled.stable_recovery_roll).toBeLessThanOrEqual(4);
+    expect(scheduled.stable_recovery_anchor_elapsed_minutes).toBe(0);
+    expect(scheduled.stable_recovery_deadline_elapsed_minutes).toBe(
+      scheduled.stable_recovery_roll * 60,
+    );
+
+    const before = advanceWorldTime(db, {
+      ...CTX,
+      campaignId: 'campaign-1',
+      minutes: scheduled.stable_recovery_deadline_elapsed_minutes - 1,
+    });
+    expect(before.stableRecoveries).toEqual([]);
+    expect(readMachine(db).life_state).toBe('stable');
+
+    const due = advanceWorldTime(db, {
+      ...CTX,
+      campaignId: 'campaign-1',
+      minutes: 1,
+    });
+    expect(due.stableRecoveries).toHaveLength(1);
+    expect(due.stableRecoveries[0]?.hp).toMatchObject({
+      previousHp: 0,
+      newHp: 1,
+      previousLifeState: 'stable',
+      lifeState: 'alive',
+    });
+    expect(readMachine(db)).toMatchObject({
+      hp_current: 1,
+      life_state: 'alive',
+      stable_recovery_roll: null,
+      stable_recovery_anchor_elapsed_minutes: null,
+      stable_recovery_deadline_elapsed_minutes: null,
+    });
+    db.close();
+  });
+
+  it('cancels the deadline when damage knocks a stable character back to dying', () => {
+    const db = freshDb({ max: 20, current: 0, lifeState: 'dying' });
+    stabilizeCharacter(db, CTX, createSeededRng(42));
+    adjustHp(db, -1, CTX);
+    expect(readMachine(db)).toMatchObject({
+      life_state: 'dying',
+      stable_recovery_roll: null,
+      stable_recovery_anchor_elapsed_minutes: null,
+      stable_recovery_deadline_elapsed_minutes: null,
+    });
+    db.close();
   });
 });
 

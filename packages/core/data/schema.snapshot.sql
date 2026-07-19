@@ -274,7 +274,7 @@ CREATE TABLE character (
     CHECK (life_state IN ('alive', 'dying', 'stable', 'dead')), death_save_successes INTEGER NOT NULL DEFAULT 0
     CHECK (death_save_successes BETWEEN 0 AND 3), death_save_failures INTEGER NOT NULL DEFAULT 0
     CHECK (death_save_failures BETWEEN 0 AND 3), inspiration INTEGER NOT NULL DEFAULT 0
-    CHECK (inspiration IN (0, 1)));
+    CHECK (inspiration IN (0, 1)), stable_recovery_roll INTEGER CHECK (stable_recovery_roll BETWEEN 1 AND 4), stable_recovery_anchor_elapsed_minutes INTEGER CHECK (stable_recovery_anchor_elapsed_minutes >= 0), stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0));
 
 CREATE TABLE character_hit_dice (
   character_id TEXT PRIMARY KEY REFERENCES character(id),
