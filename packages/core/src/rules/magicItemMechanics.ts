@@ -908,6 +908,10 @@ function stateMachine(
       duration(transition.timer, `${transitionPath}.timer`);
     if (transition.condition !== undefined)
       string(transition.condition, `${transitionPath}.condition`);
+    if (transition.effects !== undefined && transition.onFailure !== undefined)
+      throw new RulesPackError(
+        `${transitionPath} cannot declare both effects and onFailure`,
+      );
     if (transition.effects !== undefined) {
       const transitionEffects = strings(
         transition.effects,

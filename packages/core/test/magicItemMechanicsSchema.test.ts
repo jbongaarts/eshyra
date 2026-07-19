@@ -71,6 +71,30 @@ describe('magic-item mechanics schema', () => {
     ).toThrow(/losePropertyOn requires .*roll/);
   });
 
+  it('rejects transitions that combine success effects with onFailure', () => {
+    expect(() =>
+      validate({
+        effects: [castEffect('success', 'spell:magic-missile')],
+        stateMachine: {
+          initial: 'ready',
+          states: [{ id: 'ready' }, { id: 'done' }],
+          transitions: [
+            {
+              from: 'ready',
+              to: 'done',
+              via: 'activate',
+              effects: ['success'],
+              onFailure: {
+                retryAfter: { amount: 1, unit: 'round' },
+                scope: 'item',
+              },
+            },
+          ],
+        },
+      }),
+    ).toThrow(/cannot declare both effects and onFailure/);
+  });
+
   it('accepts staff-of-fire shared charges and operation/effect bindings', () => {
     const mechanics = {
       activation: { cost: 'action', commandWord: true },
