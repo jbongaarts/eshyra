@@ -65,6 +65,7 @@ import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
 import { lookupCampaignRecord } from './campaignRecordLookup.js';
 import type { LifeState } from './hpLifecycle.js';
+import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 
 /** Who a counter row belongs to: an acting entity, or — for charge
  *  economies — the item itself, so charge state follows the item across
@@ -698,6 +699,8 @@ function resolveItemCounter(
       `${resolved.ownerLabel} holds no inventory item '${itemId}'`,
     );
   }
+  const quarantine = itemAdoptionReviewBlockMessage(db, itemId, 'usage');
+  if (quarantine !== undefined) throw new UsageCounterError(quarantine);
   if (item.pack_ref !== null)
     throw new UsageCounterError(
       `inventory item '${itemId}' is bound to canonical pack item '${item.pack_ref}'; execute its declared semantic operation with use_item. spend_usage, restore_usage, and reset_usage item counters are only for legacy/ad-hoc unbound items`,
@@ -707,6 +710,12 @@ function resolveItemCounter(
 
 function assertResettableItemCounter(db: Db, row: CounterRow): void {
   if (row.owner_kind !== 'item') return;
+  const quarantine = itemAdoptionReviewBlockMessage(
+    db,
+    row.owner_ref,
+    'reset_usage',
+  );
+  if (quarantine !== undefined) throw new UsageCounterError(quarantine);
   const item = db
     .prepare('SELECT pack_ref FROM inventory WHERE id = ?')
     .get(row.owner_ref) as { pack_ref: string | null } | undefined;
@@ -1308,6 +1317,12 @@ export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
          FROM entity_usage_counter
          WHERE campaign_id = ? AND uses_used > 0
            AND reset_kind IN (${placeholders})${ownerClause}
+           AND NOT (
+             owner_kind='item' AND EXISTS (
+               SELECT 1 FROM inventory_adoption_review
+               WHERE inventory_id=entity_usage_counter.owner_ref
+             )
+           )
          ORDER BY owner_kind, owner_ref, counter_key`,
       )
       .all(input.campaignId, ...kinds, ...ownerParams) as CounterRow[];
@@ -1359,6 +1374,12 @@ export function readSpentUsageCounters(
       `SELECT ${COUNTER_COLUMNS}
        FROM entity_usage_counter
        WHERE campaign_id = ? AND uses_used > 0
+         AND NOT (
+           owner_kind='item' AND EXISTS (
+             SELECT 1 FROM inventory_adoption_review
+             WHERE inventory_id=entity_usage_counter.owner_ref
+           )
+         )
        ORDER BY owner_kind, owner_ref, counter_key`,
     )
     .all(campaignId) as CounterRow[];

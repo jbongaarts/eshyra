@@ -1218,6 +1218,7 @@ export type {
   InventoryRemovalDisposition,
   ReacquireItemInput,
   ReacquireItemResult,
+  RecoverableInventoryItem,
   RemoveConditionResult,
   RemoveItemInput,
   RemoveItemResult,
@@ -1230,6 +1231,7 @@ export {
   claimItem,
   giveItem,
   grantMilestone,
+  listRecoverableItems,
   reacquireItem,
   removeCondition,
   removeItem,
@@ -1312,6 +1314,13 @@ export {
   ItemAdoptionError,
   MAX_MAGIC_ITEM_ADOPTION_SINGLETONS,
 } from './state/itemAdoption.js';
+export type {
+  ItemAdoptionResolution,
+  ItemAdoptionResolutionAction,
+  ItemAdoptionReview,
+  ItemAdoptionReviewKind,
+} from './state/itemAdoptionReview.js';
+export { requiredItemAdoptionResolutionAction } from './state/itemAdoptionReview.js';
 export type {
   ItemEconomyState,
   ItemInstanceState,

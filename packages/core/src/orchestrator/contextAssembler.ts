@@ -47,7 +47,10 @@ import {
 } from '../state/encounterCombatants.js';
 import { formatHpStatus, type LifeState } from '../state/hpLifecycle.js';
 import { isConcreteWorldLocation } from '../state/inventoryWorldLocation.js';
-import type { ItemAdoptionReview } from '../state/itemAdoptionReview.js';
+import {
+  type ItemAdoptionReview,
+  requiredItemAdoptionResolutionAction,
+} from '../state/itemAdoptionReview.js';
 import {
   type ItemInstanceState,
   readItemState,
@@ -299,6 +302,7 @@ interface InventoryRow {
   variant_id: string | null;
   review_requested_pack_ref: string | null;
   review_requested_variant_id: string | null;
+  review_kind: ItemAdoptionReview['reviewKind'] | null;
   review_reason: string | null;
 }
 
@@ -349,6 +353,7 @@ export function readStateSnapshot(
               i.pack_ref, i.variant_id,
               r.requested_pack_ref AS review_requested_pack_ref,
               r.requested_variant_id AS review_requested_variant_id,
+              r.review_kind,
               r.reason AS review_reason
        FROM inventory i
        LEFT JOIN inventory_adoption_review r ON r.inventory_id = i.id
@@ -446,7 +451,9 @@ export function readStateSnapshot(
             ? undefined
             : validatePackRef(row.pack_ref, `inventory[${row.id}].pack_ref`),
         ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
-        ...(row.review_requested_pack_ref === null || row.review_reason === null
+        ...(row.review_requested_pack_ref === null ||
+        row.review_kind === null ||
+        row.review_reason === null
           ? {}
           : {
               adoptionReview: {
@@ -455,6 +462,7 @@ export function readStateSnapshot(
                 ...(row.review_requested_variant_id === null
                   ? {}
                   : { requestedVariantId: row.review_requested_variant_id }),
+                reviewKind: row.review_kind,
                 reason: row.review_reason,
               },
             }),
@@ -715,7 +723,7 @@ function renderMagicItemAdoptionStatus(
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, MAX_ADOPTION_REASON_CONTEXT_CHARS);
-  return ` adoption=gm-review-required${requestedPackRef}${requestedVariantId}; reason=${reason}`;
+  return ` adoption=gm-review-required${requestedPackRef}${requestedVariantId}; reviewKind=${review.reviewKind}; requiredResolution=${requiredItemAdoptionResolutionAction(review.reviewKind)}; reason=${reason}`;
 }
 
 function renderState(state: StateSnapshot): string {

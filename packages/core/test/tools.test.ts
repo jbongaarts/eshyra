@@ -165,6 +165,7 @@ describe('ToolRegistry', () => {
         'give_item',
         'grant_temporary_hp',
         'list_nearby_items',
+        'list_recoverable_items',
         'lookup_rules',
         'mark_scene',
         'memory_drilldown',
@@ -220,6 +221,7 @@ describe('ToolRegistry', () => {
       'world_query',
       'memory_drilldown',
       'list_nearby_items',
+      'list_recoverable_items',
     ]) {
       expect(registry.isMutating(name), `${name} should be read-only`).toBe(
         false,
@@ -237,6 +239,7 @@ describe('ToolRegistry', () => {
       'world_query',
       'memory_drilldown',
       'list_nearby_items',
+      'list_recoverable_items',
     ]);
     for (const name of registry.list()) {
       if (!readOnly.has(name)) {
@@ -846,7 +849,7 @@ describe('domain mutation tools', () => {
         'reacquire_item',
         {
           id: 'sold-map',
-          basis: 'repurchased',
+          basis: 'returned',
           evidence: 'The merchant accepted payment and returned this map.',
         },
         c,
@@ -1878,6 +1881,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'give_item',
         'grant_temporary_hp',
         'list_nearby_items',
+        'list_recoverable_items',
         'lookup_rules',
         'mark_scene',
         'memory_drilldown',

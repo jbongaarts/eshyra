@@ -485,12 +485,61 @@ CREATE TABLE inventory (
     unheld_disposition IN ('dropped', 'sold', 'lost')
   ));
 
+CREATE TABLE inventory_adoption_resolution (
+  -- Append-only evidence intentionally survives later item destruction.
+  inventory_id TEXT NOT NULL,
+  seq INTEGER NOT NULL CHECK (seq >= 1),
+  action TEXT NOT NULL CHECK (action IN (
+    'discard-evidence',
+    'set-reviewed-quantity',
+    'discard-legacy-attunement',
+    'discard-legacy-counter'
+  )),
+  evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+  previous_reason TEXT NOT NULL,
+  previous_review_kind TEXT NOT NULL CHECK (previous_review_kind IN (
+    'legacy-marker',
+    'malformed-evidence',
+    'oversized-stack',
+    'legacy-attunement',
+    'legacy-counter'
+  )),
+  previous_requested_pack_ref TEXT NOT NULL,
+  previous_requested_variant_id TEXT,
+  resulting_pack_ref TEXT NOT NULL CHECK (resulting_pack_ref GLOB 'magic-item:*'),
+  resulting_variant_id TEXT,
+  reviewed_quantity INTEGER CHECK (reviewed_quantity IS NULL OR reviewed_quantity >= 1),
+  discarded_structure_json TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  resolved_at TEXT NOT NULL,
+  CHECK ((action = 'set-reviewed-quantity') = (reviewed_quantity IS NOT NULL)),
+  CHECK (
+    (previous_review_kind IN ('legacy-marker', 'malformed-evidence')
+      AND action = 'discard-evidence') OR
+    (previous_review_kind = 'oversized-stack'
+      AND action = 'set-reviewed-quantity') OR
+    (previous_review_kind = 'legacy-attunement'
+      AND action = 'discard-legacy-attunement') OR
+    (previous_review_kind = 'legacy-counter'
+      AND action = 'discard-legacy-counter')
+  ),
+  PRIMARY KEY (inventory_id, seq)
+);
+
 CREATE TABLE inventory_adoption_review (
   inventory_id TEXT PRIMARY KEY
     REFERENCES inventory(id) ON DELETE CASCADE,
   requested_pack_ref TEXT NOT NULL
     CHECK (requested_pack_ref GLOB 'magic-item:*'),
   requested_variant_id TEXT,
+  review_kind TEXT NOT NULL CHECK (review_kind IN (
+    'legacy-marker',
+    'malformed-evidence',
+    'oversized-stack',
+    'legacy-attunement',
+    'legacy-counter'
+  )),
   reason TEXT NOT NULL CHECK (length(trim(reason)) > 0),
   raw_properties_json TEXT,
   raw_item_state_json TEXT,
@@ -500,17 +549,19 @@ CREATE TABLE inventory_adoption_review (
 );
 
 CREATE TABLE inventory_custody_event (
-  inventory_id TEXT NOT NULL
-    REFERENCES inventory(id) ON DELETE CASCADE,
+  -- Custody history remains auditable after the physical row is destroyed.
+  inventory_id TEXT NOT NULL,
   seq INTEGER NOT NULL CHECK (seq >= 1),
   from_disposition TEXT NOT NULL CHECK (from_disposition IN ('sold', 'lost')),
   basis TEXT NOT NULL CHECK (basis IN ('found', 'repurchased', 'returned')),
   evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+  payment_event_id TEXT REFERENCES character_wallet_event(id),
   to_character_id TEXT NOT NULL REFERENCES character(id),
   world_location_id TEXT NOT NULL,
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
   occurred_at TEXT NOT NULL,
+  CHECK ((basis = 'repurchased') = (payment_event_id IS NOT NULL)),
   PRIMARY KEY (inventory_id, seq)
 );
 

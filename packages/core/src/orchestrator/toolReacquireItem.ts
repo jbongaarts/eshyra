@@ -1,5 +1,10 @@
 import { reacquireItem } from '../state/domainMutations.js';
 import { MutateStateError } from '../state/mutateState.js';
+import {
+  CURRENCY_AMOUNTS_SCHEMA,
+  isToolFailure,
+  parseCurrencyAmounts,
+} from './toolCurrencyShared.js';
 import type { Tool } from './toolRegistry.js';
 import {
   asRecord,
@@ -14,7 +19,7 @@ export const reacquireItemTool: Tool = {
   mutates: true,
   requiresExplicitAction: true,
   description:
-    'Restore custody of one specifically identified sold or lost inventory row after an explicit, adjudicated recovery. Requires exact current-world co-location, non-empty custody evidence, and a disposition-compatible basis; preserves the original row id, state, and attunement. Use claim_item only for dropped rows.',
+    'Restore custody of one specifically identified sold or lost inventory row after an explicit, adjudicated recovery. Requires exact current-world co-location, non-empty custody evidence, and a disposition-compatible basis; preserves the original row id, state, and attunement. Repurchase requires an exact-denomination payment that is debited atomically. Use list_recoverable_items to discover eligible ids and claim_item only for dropped rows.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -33,6 +38,11 @@ export const reacquireItemTool: Tool = {
         minLength: 1,
         description:
           'Concise canon evidence establishing this specific custody recovery.',
+      },
+      payment: {
+        ...CURRENCY_AMOUNTS_SCHEMA,
+        description:
+          'Exact coins paid atomically for a repurchase; required for repurchased and forbidden for found/returned.',
       },
       character: CHARACTER_TARGET_SCHEMA,
     },
@@ -55,6 +65,11 @@ export const reacquireItemTool: Tool = {
       );
     const target = resolveTargetCharacterId(input.character, ctx);
     if ('ok' in target) return target;
+    const payment =
+      input.payment === undefined
+        ? undefined
+        : parseCurrencyAmounts(input.payment);
+    if (payment !== undefined && isToolFailure(payment)) return payment;
     try {
       return ok(
         reacquireItem(
@@ -63,6 +78,7 @@ export const reacquireItemTool: Tool = {
             itemId: input.id,
             basis: input.basis,
             evidence: input.evidence,
+            ...(payment === undefined ? {} : { payment }),
           },
           {
             provenance: `model:${ctx.turnId}`,

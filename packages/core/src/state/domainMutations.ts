@@ -1,3 +1,5 @@
+import { adjustCharacterCurrency } from '../character/currency.js';
+import type { CharacterWallet } from '../character/finalizeCharacter.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
@@ -403,12 +405,95 @@ export interface ReacquireItemInput {
   readonly itemId: string;
   readonly basis: InventoryReacquisitionBasis;
   readonly evidence: string;
+  /** Exact-denomination atomic payment; required only for repurchase. */
+  readonly payment?: Partial<CharacterWallet>;
 }
 
 export interface ReacquireItemResult extends ClaimItemResult {
   readonly previousDisposition: 'sold' | 'lost';
   readonly basis: InventoryReacquisitionBasis;
   readonly evidence: string;
+  readonly paymentEventId?: string;
+}
+
+export interface RecoverableInventoryItem {
+  readonly itemId: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly disposition: 'sold' | 'lost';
+  readonly worldLocationId: string;
+  readonly packRef?: string;
+  readonly variantId?: string;
+  readonly priorReacquisitions: number;
+}
+
+/** Bounded identity discovery after the scene has established a recovery basis. */
+export function listRecoverableItems(
+  db: Db,
+  basis: InventoryReacquisitionBasis,
+): {
+  readonly items: readonly RecoverableInventoryItem[];
+  readonly truncated: boolean;
+} {
+  if (!['found', 'repurchased', 'returned'].includes(basis))
+    throw new MutateStateError(
+      'list_recoverable_items basis must be found, repurchased, or returned',
+    );
+  let currentLocation: string;
+  try {
+    currentLocation = requireCurrentWorldLocation(db);
+  } catch (error) {
+    if (error instanceof InventoryWorldLocationError)
+      throw new MutateStateError(error.message);
+    throw error;
+  }
+  const allowedDispositions =
+    basis === 'found'
+      ? ['lost']
+      : basis === 'repurchased'
+        ? ['sold']
+        : ['sold', 'lost'];
+  const placeholders = allowedDispositions.map(() => '?').join(', ');
+  const rows = db
+    .prepare(
+      `SELECT i.id, i.name, i.quantity, i.unheld_disposition,
+              i.world_location_id, i.pack_ref, i.variant_id,
+              (SELECT COUNT(*) FROM inventory_custody_event e
+               WHERE e.inventory_id=i.id) AS prior_reacquisitions
+       FROM inventory i
+       WHERE i.character_id IS NULL
+         AND i.world_location_id=?
+         AND i.unheld_disposition IN (${placeholders})
+         AND NOT EXISTS (
+           SELECT 1 FROM inventory_adoption_review r
+           WHERE r.inventory_id=i.id
+         )
+       ORDER BY i.id
+       LIMIT 21`,
+    )
+    .all(currentLocation, ...allowedDispositions) as {
+    id: string;
+    name: string;
+    quantity: number;
+    unheld_disposition: 'sold' | 'lost';
+    world_location_id: string;
+    pack_ref: string | null;
+    variant_id: string | null;
+    prior_reacquisitions: number;
+  }[];
+  return {
+    items: rows.slice(0, 20).map((row) => ({
+      itemId: row.id,
+      name: row.name,
+      quantity: row.quantity,
+      disposition: row.unheld_disposition,
+      worldLocationId: row.world_location_id,
+      ...(row.pack_ref === null ? {} : { packRef: row.pack_ref }),
+      ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
+      priorReacquisitions: row.prior_reacquisitions,
+    })),
+    truncated: rows.length > 20,
+  };
 }
 
 /**
@@ -517,6 +602,14 @@ export function reacquireItem(
     throw new MutateStateError(
       'reacquire_item requires non-empty adjudicated custody evidence',
     );
+  if (input.basis === 'repurchased' && input.payment === undefined)
+    throw new MutateStateError(
+      'reacquire_item repurchased basis requires an atomic exact-denomination payment',
+    );
+  if (input.basis !== 'repurchased' && input.payment !== undefined)
+    throw new MutateStateError(
+      'reacquire_item payment is valid only for repurchased custody',
+    );
   return withTransaction(db, (txnDb) => {
     const characterId = resolveCharacterId(txnDb, ctx.characterId);
     const row = txnDb
@@ -582,13 +675,30 @@ export function reacquireItem(
          FROM inventory_custody_event WHERE inventory_id=?`,
       )
       .get(input.itemId) as { seq: number };
+    const payment =
+      input.basis === 'repurchased'
+        ? adjustCharacterCurrency(
+            txnDb,
+            {
+              kind: 'spend',
+              amounts: input.payment as Partial<CharacterWallet>,
+            },
+            {
+              source: `inventory-repurchase:${input.itemId}`,
+              provenance: ctx.provenance,
+              sessionId: ctx.sessionId,
+              at: ctx.at,
+              characterId,
+            },
+          )
+        : undefined;
     txnDb
       .prepare(
         `INSERT INTO inventory_custody_event(
            inventory_id, seq, from_disposition, basis, evidence,
-           to_character_id, world_location_id, provenance, session_id,
-           occurred_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           payment_event_id, to_character_id, world_location_id, provenance,
+           session_id, occurred_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         input.itemId,
@@ -596,6 +706,7 @@ export function reacquireItem(
         row.unheld_disposition,
         input.basis,
         input.evidence.trim(),
+        payment?.event.id ?? null,
         characterId,
         currentLocation,
         ctx.provenance,
@@ -630,6 +741,7 @@ export function reacquireItem(
       previousDisposition: row.unheld_disposition,
       basis: input.basis,
       evidence: input.evidence.trim(),
+      ...(payment === undefined ? {} : { paymentEventId: payment.event.id }),
       ...(row.pack_ref === null ? {} : { packRef: row.pack_ref }),
       ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
     };

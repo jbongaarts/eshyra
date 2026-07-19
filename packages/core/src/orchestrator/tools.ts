@@ -36,6 +36,7 @@ import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
 import { listNearbyItemsTool } from './toolListNearbyItems.js';
+import { listRecoverableItemsTool } from './toolListRecoverableItems.js';
 import { lookupRulesTool } from './toolLookupRules.js';
 import { markSceneTool } from './toolMarkScene.js';
 import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
@@ -125,6 +126,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   claimItemTool,
   reacquireItemTool,
   listNearbyItemsTool,
+  listRecoverableItemsTool,
   giveItemTool,
   useItemTool,
   transferItemTool,

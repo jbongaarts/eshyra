@@ -487,9 +487,10 @@ describe('Context Assembler', () => {
     ).run('{}', SESSION, '2026-05-20T10:00:00.000Z');
     db.prepare(
       `INSERT INTO inventory_adoption_review(
-         inventory_id, requested_pack_ref, reason, provenance, session_id,
-         updated_at
-       ) VALUES ('legacy-review', 'magic-item:orb-of-dragonkind', ?, 'test', ?, ?)`,
+         inventory_id, requested_pack_ref, review_kind, reason, provenance,
+         session_id, updated_at
+       ) VALUES ('legacy-review', 'magic-item:orb-of-dragonkind',
+                 'legacy-attunement', ?, 'test', ?, ?)`,
     ).run(
       `RECONCILE_ME ${'bounded'.repeat(100)} HIDDEN_REASON_TAIL`,
       SESSION,
@@ -574,7 +575,10 @@ describe('Context Assembler', () => {
     expect(rendered).toContain('HELD_STATE_UNCHANGED');
     expect(rendered).toContain('Legacy Review x1 [id=legacy-review]');
     expect(rendered).toContain(
-      'adoption=gm-review-required; requestedPackRef=magic-item:orb-of-dragonkind; reason=RECONCILE_ME',
+      'adoption=gm-review-required; requestedPackRef=magic-item:orb-of-dragonkind',
+    );
+    expect(rendered).toContain(
+      'reviewKind=legacy-attunement; requiredResolution=discard-legacy-attunement; reason=RECONCILE_ME',
     );
     expect(rendered).not.toContain('HIDDEN_REASON_TAIL');
     expect(context.state.nearbyInventory[0]).not.toHaveProperty('properties');

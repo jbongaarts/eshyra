@@ -156,4 +156,129 @@ describe('currency gameplay tools', () => {
     });
     expect(listCharacterWalletEvents(db)).toHaveLength(0);
   });
+
+  it('discovers and repurchases a sold row only with an atomic wallet debit', () => {
+    const { db, ctx, registry } = setup();
+    db.prepare(
+      "UPDATE clock SET current_location_id='market' WHERE id=1",
+    ).run();
+    expect(
+      registry.invoke('give_item', { id: 'sold-map', name: 'Sold Map' }, ctx),
+    ).toMatchObject({ ok: true });
+    expect(
+      registry.invoke(
+        'remove_item',
+        { id: 'sold-map', disposition: 'sold' },
+        ctx,
+      ),
+    ).toMatchObject({ ok: true });
+    db.prepare("UPDATE clock SET current_location_id='docks' WHERE id=1").run();
+    expect(
+      registry.invoke('list_recoverable_items', { basis: 'repurchased' }, ctx),
+    ).toMatchObject({ ok: true, data: { items: [] } });
+    db.prepare(
+      "UPDATE clock SET current_location_id='market' WHERE id=1",
+    ).run();
+    expect(
+      registry.invoke('list_recoverable_items', { basis: 'repurchased' }, ctx),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        items: [{ itemId: 'sold-map', disposition: 'sold' }],
+        truncated: false,
+      },
+    });
+    expect(
+      registry.invoke('list_recoverable_items', { basis: 'found' }, ctx),
+    ).toMatchObject({ ok: true, data: { items: [] } });
+    expect(
+      registry.invoke(
+        'reacquire_item',
+        {
+          id: 'sold-map',
+          basis: 'repurchased',
+          evidence: 'The merchant agreed to sell the map back for 2 gp.',
+        },
+        ctx,
+      ),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('requires an atomic'),
+    });
+    expect(listCharacterWalletEvents(db)).toHaveLength(0);
+    expect(
+      db
+        .prepare(
+          'SELECT character_id, unheld_disposition FROM inventory WHERE id=?',
+        )
+        .get('sold-map'),
+    ).toEqual({ character_id: null, unheld_disposition: 'sold' });
+    expect(
+      registry.invoke(
+        'reacquire_item',
+        {
+          id: 'sold-map',
+          basis: 'repurchased',
+          evidence: 'The merchant demanded an unaffordable platinum piece.',
+          payment: { pp: 1 },
+        },
+        ctx,
+      ),
+    ).toMatchObject({ ok: false, code: 'mutate_error' });
+    expect(listCharacterWalletEvents(db)).toHaveLength(0);
+    expect(
+      db
+        .prepare('SELECT 1 FROM inventory_custody_event WHERE inventory_id=?')
+        .get('sold-map'),
+    ).toBeUndefined();
+
+    const result = registry.invoke(
+      'reacquire_item',
+      {
+        id: 'sold-map',
+        basis: 'repurchased',
+        evidence: 'The merchant agreed to sell the map back for 2 gp.',
+        payment: { gp: 2 },
+      },
+      ctx,
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        itemId: 'sold-map',
+        previousDisposition: 'sold',
+        paymentEventId: expect.any(String),
+      },
+    });
+    const events = listCharacterWalletEvents(db);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      kind: 'spend',
+      amounts: { gp: 2 },
+      resultingWallet: { gp: 8 },
+      source: 'inventory-repurchase:sold-map',
+    });
+    expect(
+      db
+        .prepare(
+          `SELECT payment_event_id FROM inventory_custody_event
+           WHERE inventory_id='sold-map'`,
+        )
+        .get(),
+    ).toEqual({ payment_event_id: events[0]?.id });
+    expect(
+      registry.invoke(
+        'remove_item',
+        { id: 'sold-map', disposition: 'destroyed' },
+        ctx,
+      ),
+    ).toMatchObject({ ok: true });
+    expect(
+      db
+        .prepare(
+          "SELECT payment_event_id FROM inventory_custody_event WHERE inventory_id='sold-map'",
+        )
+        .get(),
+    ).toEqual({ payment_event_id: events[0]?.id });
+  });
 });

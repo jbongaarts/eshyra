@@ -1,6 +1,7 @@
 import { MagicItemVariantError } from '../rules/magicItemVariants.js';
 import { resolveCharacterId } from '../state/activeCharacter.js';
 import { adoptMagicItem, ItemAdoptionError } from '../state/itemAdoption.js';
+import type { ItemAdoptionResolution } from '../state/itemAdoptionReview.js';
 import { ItemStateError } from '../state/itemState.js';
 import type { Tool } from './toolRegistry.js';
 import {
@@ -18,7 +19,7 @@ export const adoptItemTool: Tool = {
   description:
     'Recognize one legacy held inventory row as an exact canonical magic item from the active campaign rules stack. ' +
     'Supply the inventory id and exact packRef (plus required variantId); this tool never guesses from the display name. ' +
-    'It safely splits stateful legacy stacks of at most 100 instances and quarantines incompatible or malformed legacy evidence for GM review. Set resolveReview only after explicit GM reconciliation to discard quarantined legacy projections and retry the supplied exact identity.',
+    'It safely splits stateful legacy stacks of at most 100 instances and quarantines incompatible or malformed legacy evidence for GM review. Resolve a quarantine only with one typed resolution action and durable GM evidence; the action and canonical adoption commit atomically.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -39,10 +40,25 @@ export const adoptItemTool: Tool = {
         description:
           'Exact canonical variant id; required when the selected record declares variants.',
       },
-      resolveReview: {
-        type: 'boolean',
+      resolution: {
+        type: 'object',
+        properties: {
+          action: {
+            type: 'string',
+            enum: [
+              'discard-evidence',
+              'set-reviewed-quantity',
+              'discard-legacy-attunement',
+              'discard-legacy-counter',
+            ],
+          },
+          evidence: { type: 'string', minLength: 1 },
+          quantity: { type: 'integer', minimum: 1, maximum: 100 },
+        },
+        required: ['action', 'evidence'],
+        additionalProperties: false,
         description:
-          'Explicitly resolve an existing GM-review quarantine by discarding its quarantined legacy projection and retrying this exact canonical identity.',
+          'Typed structural reconciliation with durable GM evidence. quantity is required only for set-reviewed-quantity.',
       },
       character: CHARACTER_TARGET_SCHEMA,
     },
@@ -59,6 +75,51 @@ export const adoptItemTool: Tool = {
       return err('invalid_args', 'adopt_item requires { id, packRef }');
     const target = resolveTargetCharacterId(input.character, ctx);
     if ('ok' in target) return target;
+    const rawResolution = asRecord(input.resolution);
+    const resolution = (() => {
+      if (rawResolution === undefined) return undefined;
+      if (
+        ![
+          'discard-evidence',
+          'set-reviewed-quantity',
+          'discard-legacy-attunement',
+          'discard-legacy-counter',
+        ].includes(rawResolution.action as string) ||
+        typeof rawResolution.evidence !== 'string'
+      )
+        return err(
+          'invalid_args',
+          'adopt_item resolution requires a typed action and evidence',
+        );
+      if (
+        rawResolution.action === 'set-reviewed-quantity' &&
+        typeof rawResolution.quantity !== 'number'
+      )
+        return err(
+          'invalid_args',
+          'adopt_item set-reviewed-quantity resolution requires quantity',
+        );
+      if (
+        rawResolution.action !== 'set-reviewed-quantity' &&
+        rawResolution.quantity !== undefined
+      )
+        return err(
+          'invalid_args',
+          'adopt_item quantity is valid only for set-reviewed-quantity',
+        );
+      return {
+        action: rawResolution.action as
+          | 'discard-evidence'
+          | 'set-reviewed-quantity'
+          | 'discard-legacy-attunement'
+          | 'discard-legacy-counter',
+        evidence: rawResolution.evidence,
+        ...(rawResolution.action === 'set-reviewed-quantity'
+          ? { quantity: rawResolution.quantity as number }
+          : {}),
+      } as ItemAdoptionResolution;
+    })();
+    if (resolution !== undefined && 'ok' in resolution) return resolution;
     try {
       return ok(
         adoptMagicItem(ctx.db, {
@@ -69,7 +130,7 @@ export const adoptItemTool: Tool = {
           ...(typeof input.variantId === 'string'
             ? { variantId: input.variantId }
             : {}),
-          ...(input.resolveReview === true ? { resolveReview: true } : {}),
+          ...(resolution === undefined ? {} : { resolution }),
           resolveRulesPack: ctx.resolveRulesPack,
           rng: ctx.rng,
           provenance: `model:${ctx.turnId}`,

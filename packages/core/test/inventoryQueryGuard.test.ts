@@ -206,6 +206,8 @@ describe('inventory tool classification (eshyra-4ia4)', () => {
       'lookup_rules',
       'world_query',
       'memory_drilldown',
+      'list_nearby_items',
+      'list_recoverable_items',
     ];
     for (const tool of DEFAULT_TOOLS) {
       if (readOnly.includes(tool.name)) {

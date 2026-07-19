@@ -64,7 +64,7 @@ function insertLegacy(
 function adoptionReview(db: ReturnType<typeof setup>['db'], id: string) {
   return db
     .prepare(
-      `SELECT requested_pack_ref, requested_variant_id, reason,
+      `SELECT requested_pack_ref, requested_variant_id, review_kind, reason,
               raw_properties_json, raw_item_state_json
        FROM inventory_adoption_review WHERE inventory_id=?`,
     )
@@ -72,6 +72,7 @@ function adoptionReview(db: ReturnType<typeof setup>['db'], id: string) {
     | {
         requested_pack_ref: string;
         requested_variant_id: string | null;
+        review_kind: string;
         reason: string;
         raw_properties_json: string | null;
         raw_item_state_json: string | null;
@@ -244,6 +245,8 @@ describe('legacy magic-item adoption', () => {
       data: {
         adopted: false,
         reviewRequired: true,
+        reviewKind: 'oversized-stack',
+        requiredResolutionAction: 'set-reviewed-quantity',
         reason: expect.stringContaining('reviewed adoption maximum of 100'),
       },
     });
@@ -282,6 +285,40 @@ describe('legacy magic-item adoption', () => {
         )
         .get(),
     ).toEqual({ states: 0 });
+    expect(
+      createDefaultToolRegistry().invoke(
+        'adopt_item',
+        {
+          id: 'oversized-stack',
+          packRef: 'magic-item:necklace-of-fireballs',
+          resolution: {
+            action: 'set-reviewed-quantity',
+            quantity: 2,
+            evidence:
+              'The GM verified that the legacy stack represented two necklaces.',
+          },
+        },
+        s.ctx,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        adopted: true,
+        instanceIds: ['oversized-stack', 'oversized-stack#2'],
+      },
+    });
+    expect(
+      s.db
+        .prepare(
+          `SELECT action, reviewed_quantity, discarded_structure_json
+           FROM inventory_adoption_resolution WHERE inventory_id='oversized-stack'`,
+        )
+        .get(),
+    ).toMatchObject({
+      action: 'set-reviewed-quantity',
+      reviewed_quantity: 2,
+      discarded_structure_json: '{"previousQuantity":101}',
+    });
   });
 
   it('lifts a compatible mechanics envelope and canonicalizes existing attunement identity', () => {
@@ -381,6 +418,28 @@ describe('legacy magic-item adoption', () => {
       expect(
         s.db.prepare('SELECT item_key FROM attunement WHERE item_id=?').get(id),
       ).toEqual({ item_key: `name:${id}` });
+      if (id === 'ordinary') {
+        expect(
+          createDefaultToolRegistry().invoke(
+            'adopt_item',
+            {
+              id,
+              packRef,
+              resolution: {
+                action: 'discard-legacy-attunement',
+                evidence: 'The GM removed the impossible legacy bond.',
+              },
+            },
+            s.ctx,
+          ),
+        ).toMatchObject({ ok: true, data: { adopted: true } });
+        expect(
+          s.db.prepare('SELECT 1 FROM attunement WHERE item_id=?').get(id),
+        ).toBeUndefined();
+        expect(
+          s.db.prepare('SELECT pack_ref FROM inventory WHERE id=?').get(id),
+        ).toEqual({ pack_ref: packRef });
+      }
       s.db.close();
     }
   });
@@ -462,8 +521,11 @@ describe('legacy magic-item adoption', () => {
         'adopt_item',
         {
           id: 'orb',
-          packRef: 'magic-item:wand-of-fireballs',
-          resolveReview: true,
+          packRef: 'magic-item:orb-of-dragonkind',
+          resolution: {
+            action: 'discard-legacy-attunement',
+            evidence: 'The GM ruled the pre-canonical bond invalid.',
+          },
         },
         s.ctx,
       ),
@@ -473,7 +535,10 @@ describe('legacy magic-item adoption', () => {
       s.db
         .prepare('SELECT item_key FROM attunement WHERE item_id=?')
         .get('orb'),
-    ).toEqual({ item_key: 'magic-item:wand-of-fireballs' });
+    ).toBeUndefined();
+    expect(
+      s.db.prepare('SELECT pack_ref FROM inventory WHERE id=?').get('orb'),
+    ).toEqual({ pack_ref: 'magic-item:orb-of-dragonkind' });
   });
 
   it('durably flags unlicensed transitional mechanics without binding or splitting', () => {
@@ -574,7 +639,13 @@ describe('legacy magic-item adoption', () => {
 
   it('flags and preserves a legacy item usage counter instead of creating dual spend owners', () => {
     const s = setup();
-    insertLegacy(s, { quantity: 2 });
+    insertLegacy(s, {
+      quantity: 2,
+      properties: {
+        material: 'silver',
+        mechanics: { economies: { charges: { remaining: 2 } } },
+      },
+    });
     s.db
       .prepare(
         `INSERT INTO entity_usage_counter(
@@ -598,6 +669,8 @@ describe('legacy magic-item adoption', () => {
       data: {
         adopted: false,
         reviewRequired: true,
+        reviewKind: 'legacy-counter',
+        requiredResolutionAction: 'discard-legacy-counter',
         reason: expect.stringContaining('usage counter'),
       },
     });
@@ -623,6 +696,173 @@ describe('legacy magic-item adoption', () => {
     expect(adoptionReview(s.db, 'legacy-item')).toMatchObject({
       reason: expect.stringContaining('usage counter'),
     });
+    const registry = createDefaultToolRegistry();
+    for (const [tool, args] of [
+      ['spend_usage', { itemId: 'legacy-item' }],
+      ['restore_usage', { itemId: 'legacy-item', amount: 1 }],
+    ] as const)
+      expect(registry.invoke(tool, args, s.ctx)).toMatchObject({
+        ok: false,
+        message: expect.stringContaining('quarantined for GM adoption review'),
+      });
+    expect(
+      registry.invoke('reset_usage', { event: 'dawn' }, s.ctx),
+    ).toMatchObject({ ok: true, data: { reset: [], needsRolledRestore: [] } });
+    expect(
+      s.db
+        .prepare(
+          "SELECT uses_used FROM entity_usage_counter WHERE owner_kind='item' AND owner_ref='legacy-item'",
+        )
+        .get(),
+    ).toEqual({ uses_used: 2 });
+    const context = renderContextMessage(
+      assembleContext({
+        db: s.db,
+        campaignId: 'campaign-1',
+        sessionId: 'session-1',
+        playerInput: 'Inspect the quarantined item.',
+      }),
+    );
+    expect(context).not.toContain('Legacy charges');
+
+    expect(
+      registry.invoke(
+        'adopt_item',
+        {
+          id: 'legacy-item',
+          packRef: 'magic-item:wand-of-fireballs',
+          resolution: {
+            action: 'discard-legacy-counter',
+            evidence: 'Attempted identity substitution.',
+          },
+        },
+        s.ctx,
+      ),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining(
+        "quarantined for exact identity 'magic-item:necklace-of-fireballs'",
+      ),
+    });
+    expect(
+      registry.invoke(
+        'adopt_item',
+        {
+          id: 'legacy-item',
+          packRef: 'magic-item:necklace-of-fireballs',
+          resolution: {
+            action: 'discard-legacy-counter',
+            evidence: 'Quantity must not accompany this action.',
+            quantity: 1,
+          },
+        },
+        s.ctx,
+      ),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining(
+        'quantity is valid only for set-reviewed-quantity',
+      ),
+    });
+
+    expect(
+      registry.invoke(
+        'adopt_item',
+        {
+          id: 'legacy-item',
+          packRef: 'magic-item:necklace-of-fireballs',
+          resolution: {
+            action: 'discard-evidence',
+            evidence: 'Wrong structural action.',
+          },
+        },
+        s.ctx,
+      ),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining(
+        "review kind 'legacy-counter' requires resolution action 'discard-legacy-counter'",
+      ),
+    });
+    expect(adoptionReview(s.db, 'legacy-item')).toMatchObject({
+      review_kind: 'legacy-counter',
+    });
+    expect(
+      s.db
+        .prepare(
+          "SELECT uses_used FROM entity_usage_counter WHERE owner_kind='item' AND owner_ref='legacy-item'",
+        )
+        .get(),
+    ).toEqual({ uses_used: 2 });
+
+    expect(
+      registry.invoke(
+        'adopt_item',
+        {
+          id: 'legacy-item',
+          packRef: 'magic-item:necklace-of-fireballs',
+          resolution: {
+            action: 'discard-legacy-counter',
+            evidence: 'The GM ruled the ad-hoc charge ledger noncanonical.',
+          },
+        },
+        s.ctx,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: { adopted: true, liftedLegacyState: true },
+    });
+    expect(adoptionReview(s.db, 'legacy-item')).toBeUndefined();
+    expect(
+      s.db
+        .prepare(
+          "SELECT 1 FROM entity_usage_counter WHERE owner_kind='item' AND owner_ref='legacy-item'",
+        )
+        .get(),
+    ).toBeUndefined();
+    const resolution = s.db
+      .prepare(
+        `SELECT action, evidence, discarded_structure_json
+         FROM inventory_adoption_resolution WHERE inventory_id='legacy-item'`,
+      )
+      .get() as {
+      action: string;
+      evidence: string;
+      discarded_structure_json: string;
+    };
+    expect(resolution).toMatchObject({
+      action: 'discard-legacy-counter',
+      evidence: 'The GM ruled the ad-hoc charge ledger noncanonical.',
+    });
+    expect(resolution.discarded_structure_json).toContain('Legacy charges');
+    expect(
+      JSON.parse(
+        (
+          s.db
+            .prepare(
+              "SELECT state_json FROM item_state WHERE inventory_id='legacy-item'",
+            )
+            .get() as { state_json: string }
+        ).state_json,
+      ),
+    ).toMatchObject({
+      packRef: 'magic-item:necklace-of-fireballs',
+      economies: { charges: { remaining: 2 } },
+    });
+    expect(
+      registry.invoke(
+        'remove_item',
+        { id: 'legacy-item', disposition: 'destroyed' },
+        s.ctx,
+      ),
+    ).toMatchObject({ ok: true });
+    expect(
+      s.db
+        .prepare(
+          "SELECT action FROM inventory_adoption_resolution WHERE inventory_id='legacy-item'",
+        )
+        .get(),
+    ).toEqual({ action: 'discard-legacy-counter' });
   });
 
   it('requires exact variants and preserves stateless stacks without item state', () => {
@@ -865,7 +1105,10 @@ describe('legacy magic-item adoption', () => {
         {
           id: 'legacy-item',
           packRef: 'magic-item:necklace-of-fireballs',
-          resolveReview: true,
+          resolution: {
+            action: 'discard-evidence',
+            evidence: 'The GM discarded the malformed legacy projection.',
+          },
         },
         s.ctx,
       ),

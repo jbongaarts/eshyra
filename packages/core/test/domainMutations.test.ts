@@ -6,6 +6,7 @@ import {
   ensureCharacterRow,
   giveItem,
   initSchema,
+  listRecoverableItems,
   MutateStateError,
   mutateState,
   openDatabase,
@@ -1036,11 +1037,21 @@ describe('removeItem', () => {
         removeItem(db, { itemId, disposition: 'destroyed' }, CTX),
       ).toThrow(/not under the acting character's custody/);
       expect(
+        listRecoverableItems(db, disposition === 'sold' ? 'returned' : 'found')
+          .items,
+      ).toEqual([
+        expect.objectContaining({
+          itemId,
+          disposition,
+          worldLocationId: 'market',
+        }),
+      ]);
+      expect(
         reacquireItem(
           db,
           {
             itemId,
-            basis: disposition === 'sold' ? 'repurchased' : 'found',
+            basis: disposition === 'sold' ? 'returned' : 'found',
             evidence: `The ${disposition} relic returned in the market scene.`,
           },
           CTX,
@@ -1059,7 +1070,7 @@ describe('removeItem', () => {
           .get(itemId),
       ).toEqual({
         from_disposition: disposition,
-        basis: disposition === 'sold' ? 'repurchased' : 'found',
+        basis: disposition === 'sold' ? 'returned' : 'found',
         evidence: `The ${disposition} relic returned in the market scene.`,
       });
     }

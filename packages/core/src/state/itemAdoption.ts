@@ -17,7 +17,11 @@ import {
 } from './campaignRecordLookup.js';
 import {
   clearItemAdoptionReview,
+  type ItemAdoptionResolution,
+  type ItemAdoptionReviewKind,
   readItemAdoptionReview,
+  recordItemAdoptionResolution,
+  requiredItemAdoptionResolutionAction,
   writeItemAdoptionReview,
 } from './itemAdoptionReview.js';
 import {
@@ -42,7 +46,7 @@ interface LegacyInventoryRow {
   readonly id: string;
   readonly character_id: string | null;
   readonly name: string;
-  readonly quantity: number;
+  quantity: number;
   readonly location: string | null;
   readonly world_location_id: string | null;
   readonly properties_json: string;
@@ -56,9 +60,8 @@ export interface AdoptMagicItemInput {
   readonly characterId: string;
   readonly packRef: string;
   readonly variantId?: string;
-  /** Explicit GM reconciliation: discard quarantined legacy projections and
-   * retry against the supplied exact canonical identity. */
-  readonly resolveReview?: boolean;
+  /** Typed GM reconciliation applied atomically before canonical adoption. */
+  readonly resolution?: ItemAdoptionResolution;
   readonly resolveRulesPack?: CampaignRulesPackResolver;
   readonly rng?: Rng;
   readonly provenance: string;
@@ -77,6 +80,8 @@ export interface AdoptMagicItemResult {
   readonly alreadyBound?: boolean;
   readonly liftedLegacyState?: boolean;
   readonly reason?: string;
+  readonly reviewKind?: ItemAdoptionReviewKind;
+  readonly requiredResolutionAction?: ItemAdoptionResolution['action'];
 }
 
 export class ItemAdoptionError extends Error {
@@ -137,13 +142,14 @@ function compatibleLegacyState(
   });
 }
 
-function reviewResult(
+function persistReviewResult(
   db: Db,
   row: LegacyInventoryRow,
   properties: Obj,
   input: AdoptMagicItemInput,
   packRef: string,
   stateful: boolean,
+  reviewKind: ItemAdoptionReviewKind,
   reason: string,
   rawPropertiesJson?: string,
 ): AdoptMagicItemResult {
@@ -161,6 +167,7 @@ function reviewResult(
     ...(input.variantId === undefined
       ? {}
       : { requestedVariantId: input.variantId }),
+    reviewKind,
     reason,
     ...(rawPropertiesJson === undefined && properties.mechanics === undefined
       ? {}
@@ -195,7 +202,37 @@ function reviewResult(
     ...(input.variantId === undefined ? {} : { variantId: input.variantId }),
     stateful,
     reason,
+    reviewKind,
+    requiredResolutionAction: requiredItemAdoptionResolutionAction(reviewKind),
   };
+}
+
+function reviewResultOrFail(
+  db: Db,
+  row: LegacyInventoryRow,
+  properties: Obj,
+  input: AdoptMagicItemInput,
+  packRef: string,
+  stateful: boolean,
+  reviewKind: ItemAdoptionReviewKind,
+  reason: string,
+  rawPropertiesJson?: string,
+): AdoptMagicItemResult {
+  if (input.resolution !== undefined)
+    throw new ItemAdoptionError(
+      `review resolution '${input.resolution.action}' did not resolve the quarantined structure: ${reason}`,
+    );
+  return persistReviewResult(
+    db,
+    row,
+    properties,
+    input,
+    packRef,
+    stateful,
+    reviewKind,
+    reason,
+    rawPropertiesJson,
+  );
 }
 
 /**
@@ -246,7 +283,15 @@ export function adoptMagicItem(
         `inventory instance '${input.inventoryId}' must have a positive integer quantity`,
       );
     const existingReview = readItemAdoptionReview(txnDb, row.id);
-    if (existingReview !== undefined && input.resolveReview !== true)
+    if (
+      existingReview !== undefined &&
+      (existingReview.requestedPackRef !== packRef ||
+        existingReview.requestedVariantId !== variantId)
+    )
+      throw new ItemAdoptionError(
+        `inventory instance '${row.id}' is quarantined for exact identity '${existingReview.requestedPackRef}'${existingReview.requestedVariantId === undefined ? '' : ` variant '${existingReview.requestedVariantId}'`}; resolve that reviewed identity rather than substituting '${packRef}'${variantId === undefined ? '' : ` variant '${variantId}'`}`,
+      );
+    if (existingReview !== undefined && input.resolution === undefined)
       return {
         adopted: false,
         reviewRequired: true,
@@ -258,7 +303,107 @@ export function adoptMagicItem(
           : { variantId: existingReview.requestedVariantId }),
         stateful,
         reason: existingReview.reason,
+        reviewKind: existingReview.reviewKind,
+        requiredResolutionAction: requiredItemAdoptionResolutionAction(
+          existingReview.reviewKind,
+        ),
       };
+    if (existingReview === undefined && input.resolution !== undefined)
+      throw new ItemAdoptionError(
+        `inventory instance '${row.id}' has no adoption review to resolve`,
+      );
+    let discardedStructureJson: string | undefined;
+    if (existingReview !== undefined && input.resolution !== undefined) {
+      const resolution = input.resolution;
+      if (
+        typeof resolution.evidence !== 'string' ||
+        resolution.evidence.trim().length === 0
+      )
+        throw new ItemAdoptionError(
+          'review resolution requires non-empty GM evidence',
+        );
+      const expectedAction = requiredItemAdoptionResolutionAction(
+        existingReview.reviewKind,
+      );
+      if (resolution.action !== expectedAction)
+        throw new ItemAdoptionError(
+          `review kind '${existingReview.reviewKind}' requires resolution action '${expectedAction}', not '${resolution.action}'`,
+        );
+      switch (resolution.action) {
+        case 'discard-evidence':
+          if (
+            existingReview.rawPropertiesJson === undefined &&
+            existingReview.rawItemStateJson === undefined
+          )
+            throw new ItemAdoptionError(
+              'discard-evidence requires quarantined raw properties or item state',
+            );
+          discardedStructureJson = JSON.stringify({
+            rawPropertiesJson: existingReview.rawPropertiesJson ?? null,
+            rawItemStateJson: existingReview.rawItemStateJson ?? null,
+          });
+          break;
+        case 'set-reviewed-quantity':
+          if (row.quantity <= MAX_MAGIC_ITEM_ADOPTION_SINGLETONS)
+            throw new ItemAdoptionError(
+              `set-reviewed-quantity applies only to a quarantined stack above ${MAX_MAGIC_ITEM_ADOPTION_SINGLETONS}`,
+            );
+          if (
+            !Number.isInteger(resolution.quantity) ||
+            (resolution.quantity as number) < 1 ||
+            (resolution.quantity as number) > MAX_MAGIC_ITEM_ADOPTION_SINGLETONS
+          )
+            throw new ItemAdoptionError(
+              `reviewed quantity must be an integer from 1 to ${MAX_MAGIC_ITEM_ADOPTION_SINGLETONS}`,
+            );
+          discardedStructureJson = JSON.stringify({
+            previousQuantity: row.quantity,
+          });
+          txnDb
+            .prepare('UPDATE inventory SET quantity=? WHERE id=?')
+            .run(resolution.quantity, row.id);
+          row.quantity = resolution.quantity as number;
+          break;
+        case 'discard-legacy-attunement': {
+          const attunements = txnDb
+            .prepare(
+              `SELECT campaign_id, character_id, item_id, item_key,
+                      display_name, attuned_at, provenance, session_id,
+                      updated_at
+               FROM attunement WHERE item_id=?`,
+            )
+            .all(row.id) as Record<string, unknown>[];
+          if (attunements.length === 0)
+            throw new ItemAdoptionError(
+              'discard-legacy-attunement requires a quarantined legacy bond',
+            );
+          discardedStructureJson = JSON.stringify({ attunements });
+          txnDb.prepare('DELETE FROM attunement WHERE item_id=?').run(row.id);
+          break;
+        }
+        case 'discard-legacy-counter': {
+          const counters = txnDb
+            .prepare(
+              `SELECT * FROM entity_usage_counter
+               WHERE owner_kind='item' AND owner_ref=?
+               ORDER BY campaign_id, counter_key`,
+            )
+            .all(row.id) as Record<string, unknown>[];
+          if (counters.length === 0)
+            throw new ItemAdoptionError(
+              'discard-legacy-counter requires a quarantined item counter',
+            );
+          discardedStructureJson = JSON.stringify({ counters });
+          txnDb
+            .prepare(
+              `DELETE FROM entity_usage_counter
+               WHERE owner_kind='item' AND owner_ref=?`,
+            )
+            .run(row.id);
+          break;
+        }
+      }
+    }
     const attunementRows = txnDb
       .prepare(
         `SELECT campaign_id, character_id FROM attunement
@@ -282,6 +427,24 @@ export function adoptMagicItem(
         throw new ItemAdoptionError(
           `bound stateful inventory instance '${input.inventoryId}' must have quantity 1`,
         );
+      if (existingReview !== undefined && input.resolution !== undefined)
+        recordItemAdoptionResolution(txnDb, {
+          inventoryId: row.id,
+          action: input.resolution.action,
+          evidence: input.resolution.evidence,
+          previousReview: existingReview,
+          resultingPackRef: packRef,
+          ...(variantId === undefined ? {} : { resultingVariantId: variantId }),
+          ...(input.resolution.quantity === undefined
+            ? {}
+            : { reviewedQuantity: input.resolution.quantity }),
+          ...(discardedStructureJson === undefined
+            ? {}
+            : { discardedStructureJson }),
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+        });
       clearItemAdoptionReview(txnDb, row.id);
       return {
         adopted: true,
@@ -295,31 +458,42 @@ export function adoptMagicItem(
       };
     }
 
+    const rehydrateReviewedEvidence =
+      existingReview !== undefined &&
+      input.resolution !== undefined &&
+      input.resolution.action !== 'discard-evidence';
+    const propertiesRow =
+      rehydrateReviewedEvidence &&
+      existingReview.rawPropertiesJson !== undefined
+        ? { ...row, properties_json: existingReview.rawPropertiesJson }
+        : row;
     let properties: Obj;
     try {
-      properties = decodeInventoryProperties(row);
+      properties = decodeInventoryProperties(propertiesRow);
     } catch (error) {
       if (error instanceof ItemAdoptionError)
-        return reviewResult(
+        return reviewResultOrFail(
           txnDb,
           row,
           {},
           input,
           packRef,
           stateful,
+          'malformed-evidence',
           error.message,
-          row.properties_json,
+          propertiesRow.properties_json,
         );
       throw error;
     }
     if (stateful && row.quantity > MAX_MAGIC_ITEM_ADOPTION_SINGLETONS)
-      return reviewResult(
+      return reviewResultOrFail(
         txnDb,
         row,
         properties,
         input,
         packRef,
         stateful,
+        'oversized-stack',
         `stateful legacy stack quantity ${row.quantity} exceeds the reviewed adoption maximum of ${MAX_MAGIC_ITEM_ADOPTION_SINGLETONS} singleton instances`,
       );
     const legacyPropertiesState = properties.mechanics;
@@ -331,26 +505,31 @@ export function adoptMagicItem(
       )
       .get(row.id) as { counter_key: string } | undefined;
     if (legacyCounter !== undefined)
-      return reviewResult(
+      return reviewResultOrFail(
         txnDb,
         row,
         properties,
         input,
         packRef,
         stateful,
+        'legacy-counter',
         `legacy item usage counter '${legacyCounter.counter_key}' requires GM reconciliation before canonical binding`,
       );
-    const persistedStateRow = txnDb
-      .prepare('SELECT state_json FROM item_state WHERE inventory_id = ?')
-      .get(row.id) as { state_json: string } | undefined;
+    const persistedStateRow =
+      rehydrateReviewedEvidence && existingReview.rawItemStateJson !== undefined
+        ? { state_json: existingReview.rawItemStateJson }
+        : (txnDb
+            .prepare('SELECT state_json FROM item_state WHERE inventory_id = ?')
+            .get(row.id) as { state_json: string } | undefined);
     if (legacyPropertiesState !== undefined && persistedStateRow !== undefined)
-      return reviewResult(
+      return reviewResultOrFail(
         txnDb,
         row,
         properties,
         input,
         packRef,
         stateful,
+        'malformed-evidence',
         'multiple legacy mechanics sources require GM reconciliation',
       );
     let persistedState: unknown;
@@ -359,26 +538,28 @@ export function adoptMagicItem(
         persistedState = JSON.parse(persistedStateRow.state_json) as unknown;
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
-        return reviewResult(
+        return reviewResultOrFail(
           txnDb,
           row,
           properties,
           input,
           packRef,
           stateful,
+          'malformed-evidence',
           `persisted legacy item state is not valid JSON: ${detail}`,
         );
       }
     }
     const legacyState = legacyPropertiesState ?? persistedState;
     if (!stateful && legacyState !== undefined)
-      return reviewResult(
+      return reviewResultOrFail(
         txnDb,
         row,
         properties,
         input,
         packRef,
         stateful,
+        'malformed-evidence',
         'the selected canonical item is stateless and cannot license legacy mechanics',
       );
 
@@ -396,13 +577,14 @@ export function adoptMagicItem(
         ).itemKey;
       } catch (error) {
         if (error instanceof AttunementError)
-          return reviewResult(
+          return reviewResultOrFail(
             txnDb,
             row,
             properties,
             input,
             packRef,
             stateful,
+            'legacy-attunement',
             `legacy attunement cannot cross the canonical attunement boundary: ${error.message}`,
           );
         throw error;
@@ -433,13 +615,14 @@ export function adoptMagicItem(
         );
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
-        return reviewResult(
+        return reviewResultOrFail(
           txnDb,
           row,
           properties,
           input,
           packRef,
           stateful,
+          'malformed-evidence',
           `legacy mechanics are not licensed by the selected canonical item: ${detail}`,
         );
       }
@@ -525,6 +708,24 @@ export function adoptMagicItem(
         row.id,
       );
 
+    if (existingReview !== undefined && input.resolution !== undefined)
+      recordItemAdoptionResolution(txnDb, {
+        inventoryId: row.id,
+        action: input.resolution.action,
+        evidence: input.resolution.evidence,
+        previousReview: existingReview,
+        resultingPackRef: packRef,
+        ...(variantId === undefined ? {} : { resultingVariantId: variantId }),
+        ...(input.resolution.quantity === undefined
+          ? {}
+          : { reviewedQuantity: input.resolution.quantity }),
+        ...(discardedStructureJson === undefined
+          ? {}
+          : { discardedStructureJson }),
+        provenance: input.provenance,
+        sessionId: input.sessionId,
+        at: input.at,
+      });
     clearItemAdoptionReview(txnDb, row.id);
 
     return {

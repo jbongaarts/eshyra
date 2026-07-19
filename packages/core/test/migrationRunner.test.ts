@@ -520,7 +520,7 @@ describe('runMigrations', () => {
           status: 'gm-review-required',
           requestedPackRef: 'magic-item:orb-of-dragonkind',
           requestedVariantId: 'red',
-          reason: 'existing bond needs reconciliation',
+          reason: 'multiple legacy mechanics sources require GM reconciliation',
         },
       }),
       NOW(),
@@ -530,6 +530,131 @@ describe('runMigrations', () => {
          inventory_id, state_json, provenance, session_id, updated_at
        ) VALUES ('legacy-review', '{', 'test', 'session', ?)`,
     ).run(NOW());
+    const boundProperties = JSON.stringify({
+      mechanics: { retained: true },
+      magicItemAdoption: {
+        status: 'gm-review-required',
+        requestedPackRef: 'magic-item:orb-of-dragonkind',
+        reason: 'marker-shaped but model-writable property',
+      },
+    });
+    const boundState = JSON.stringify({
+      packRef: 'magic-item:wand-of-fireballs',
+      economies: { charges: { remaining: 4 } },
+    });
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at, pack_ref
+       ) VALUES ('bound-marker-shape', 'pc-1', 'Bound Wand', ?, 'test',
+                 'session', ?, 'magic-item:wand-of-fireballs')`,
+    ).run(boundProperties, NOW());
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('bound-marker-shape', ?, 'test', 'session', ?)`,
+    ).run(boundState, NOW());
+    const unheldProperties = JSON.stringify({
+      mechanics: { retained: 'unheld' },
+      magicItemAdoption: {
+        status: 'gm-review-required',
+        requestedPackRef: 'magic-item:orb-of-dragonkind',
+        reason: 'unheld marker-shaped model property',
+      },
+    });
+    const unheldState = JSON.stringify({ retained: 'unheld' });
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at, world_location_id, unheld_disposition
+       ) VALUES ('unheld-marker-shape', NULL, 'Unheld Marker', ?, 'test',
+                 'session', ?, 'market', 'sold')`,
+    ).run(unheldProperties, NOW());
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('unheld-marker-shape', ?, 'test', 'session', ?)`,
+    ).run(unheldState, NOW());
+    const heldNearMissProperties = JSON.stringify({
+      mechanics: { retained: 'held-near-miss' },
+      magicItemAdoption: {
+        status: 'gm-review-required',
+        requestedPackRef: 'magic-item:orb-of-dragonkind',
+        reason: 'marker-shaped but not a code-produced review reason',
+      },
+    });
+    const heldNearMissState = JSON.stringify({ retained: 'held-near-miss' });
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at
+       ) VALUES ('held-marker-near-miss', 'pc-1', 'Held Near Miss', ?,
+                 'test', 'session', ?)`,
+    ).run(heldNearMissProperties, NOW());
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('held-marker-near-miss', ?, 'test', 'session', ?)`,
+    ).run(heldNearMissState, NOW());
+    const marker = (reason: string) =>
+      JSON.stringify({
+        magicItemAdoption: {
+          status: 'gm-review-required',
+          requestedPackRef: 'magic-item:necklace-of-fireballs',
+          reason,
+        },
+      });
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, quantity, properties_json, provenance,
+         session_id, updated_at
+       ) VALUES ('oversized-review', 'pc-1', 'Oversized', 101, ?, 'test',
+                 'session', ?)`,
+    ).run(
+      marker(
+        'stateful legacy stack quantity 101 exceeds the reviewed adoption maximum of 100 singleton instances',
+      ),
+      NOW(),
+    );
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at
+       ) VALUES ('counter-review', 'pc-1', 'Counter', ?, 'test', 'session', ?)`,
+    ).run(
+      marker(
+        "legacy item usage counter 'charges' requires GM reconciliation before canonical binding",
+      ),
+      NOW(),
+    );
+    db.prepare(
+      `INSERT INTO entity_usage_counter(
+         campaign_id, owner_kind, owner_ref, counter_key, display_name,
+         uses_max, uses_used, reset_kind, source, provenance, session_id,
+         updated_at
+       ) VALUES ('campaign-1', 'item', 'counter-review', 'charges',
+                 'Legacy charges', 7, 2, 'dawn', 'declared', 'test',
+                 'session', ?)`,
+    ).run(NOW());
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at
+       ) VALUES ('attunement-review', 'pc-1', 'Attuned', ?, 'test',
+                 'session', ?)`,
+    ).run(
+      marker(
+        'legacy attunement cannot cross the canonical attunement boundary: fixture',
+      ),
+      NOW(),
+    );
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES ('campaign-1', 'pc-1', 'attunement-review',
+                 'name:attunement-review', 'Attuned', ?, 'test', 'session', ?)`,
+    ).run(NOW(), NOW());
 
     const migration18 = bundled[17];
     if (migration18 === undefined) throw new Error('missing migration 0018');
@@ -541,7 +666,7 @@ describe('runMigrations', () => {
     expect(
       db
         .prepare(
-          `SELECT requested_pack_ref, requested_variant_id, reason,
+          `SELECT requested_pack_ref, requested_variant_id, review_kind, reason,
                   raw_properties_json, raw_item_state_json
            FROM inventory_adoption_review WHERE inventory_id='legacy-review'`,
         )
@@ -549,7 +674,8 @@ describe('runMigrations', () => {
     ).toEqual({
       requested_pack_ref: 'magic-item:orb-of-dragonkind',
       requested_variant_id: 'red',
-      reason: 'existing bond needs reconciliation',
+      review_kind: 'malformed-evidence',
+      reason: 'multiple legacy mechanics sources require GM reconciliation',
       raw_properties_json: expect.stringContaining('invented'),
       raw_item_state_json: '{',
     });
@@ -564,6 +690,96 @@ describe('runMigrations', () => {
       db
         .prepare(
           "SELECT state_json FROM item_state WHERE inventory_id='legacy-review'",
+        )
+        .get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          `SELECT inventory_id, review_kind FROM inventory_adoption_review
+           WHERE inventory_id IN (
+             'oversized-review', 'counter-review', 'attunement-review'
+           )
+           ORDER BY inventory_id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        inventory_id: 'attunement-review',
+        review_kind: 'legacy-attunement',
+      },
+      { inventory_id: 'counter-review', review_kind: 'legacy-counter' },
+      { inventory_id: 'oversized-review', review_kind: 'oversized-stack' },
+    ]);
+    expect(
+      db
+        .prepare(
+          `SELECT pack_ref, properties_json FROM inventory
+           WHERE id='bound-marker-shape'`,
+        )
+        .get(),
+    ).toEqual({
+      pack_ref: 'magic-item:wand-of-fireballs',
+      properties_json: boundProperties,
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT state_json FROM item_state WHERE inventory_id='bound-marker-shape'",
+        )
+        .get(),
+    ).toEqual({ state_json: boundState });
+    expect(
+      db
+        .prepare(
+          "SELECT 1 FROM inventory_adoption_review WHERE inventory_id='bound-marker-shape'",
+        )
+        .get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          `SELECT properties_json, world_location_id, unheld_disposition
+           FROM inventory WHERE id='unheld-marker-shape'`,
+        )
+        .get(),
+    ).toEqual({
+      properties_json: unheldProperties,
+      world_location_id: 'market',
+      unheld_disposition: 'sold',
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT state_json FROM item_state WHERE inventory_id='unheld-marker-shape'",
+        )
+        .get(),
+    ).toEqual({ state_json: unheldState });
+    expect(
+      db
+        .prepare(
+          "SELECT 1 FROM inventory_adoption_review WHERE inventory_id='unheld-marker-shape'",
+        )
+        .get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          "SELECT properties_json FROM inventory WHERE id='held-marker-near-miss'",
+        )
+        .get(),
+    ).toEqual({ properties_json: heldNearMissProperties });
+    expect(
+      db
+        .prepare(
+          "SELECT state_json FROM item_state WHERE inventory_id='held-marker-near-miss'",
+        )
+        .get(),
+    ).toEqual({ state_json: heldNearMissState });
+    expect(
+      db
+        .prepare(
+          "SELECT 1 FROM inventory_adoption_review WHERE inventory_id='held-marker-near-miss'",
         )
         .get(),
     ).toBeUndefined();
