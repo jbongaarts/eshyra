@@ -83,6 +83,19 @@ describe('residual C2 combat and defense projection', () => {
 
   it('projects redirect, missile catch, visibility, save, cover, and range goldens', () => {
     expect(
+      projectMagicItemResidualCombatEffects(named('Arrow of Slaying')),
+    ).toMatchObject({
+      mechanics: {
+        operations: [
+          {
+            id: 'deal-extra-damage',
+            effects: ['c2-residual-slaying-damage'],
+          },
+        ],
+        effects: [{ id: 'c2-residual-slaying-damage' }],
+      },
+    });
+    expect(
       projectMagicItemResidualCombatEffects(named('Arrow-Catching Shield')),
     ).toMatchObject({
       mechanics: {

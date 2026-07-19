@@ -332,8 +332,9 @@ export function magicItemEngineHookKey(binding: EngineHookBinding): string {
  * ownership would overstate playability.
  *
  * `duration-budget accounting` is implemented end to end by
- * `createInitialItemState` (canonical duration -> minutes) and `useItem`
- * (validated operation cost -> persisted decrement and depletion handling).
+ * `createInitialItemState` (total duration -> exact declared-increment units)
+ * and `useItem` (validated increment cost -> persisted decrement and depletion
+ * handling).
  */
 export const LANDED_MAGIC_ITEM_ENGINE_HOOKS: ReadonlySet<string> = new Set([
   magicItemEngineHookKey({

@@ -16,6 +16,7 @@ import {
   withTransaction,
   writeItemState,
 } from '../src/internal.js';
+import { assertMagicItemOperationReady } from '../src/state/itemExecutionReadiness.js';
 import { freshDbWithSession } from './support/db.js';
 
 const MUTATION = {
@@ -877,6 +878,122 @@ describe('magic-item live instance state', () => {
     ]);
   });
 
+  it('accounts for every bundled duration budget in its declared increment units', () => {
+    const bundled = getBundledDnd5eSrdPack();
+    const expected = new Map<string, { economyId: string; remaining: number }>([
+      ['magic-item:boots-of-speed', { economyId: 'speed', remaining: 100 }],
+      [
+        'magic-item:candle-of-invocation',
+        { economyId: 'burn-time', remaining: 240 },
+      ],
+      [
+        'magic-item:manual-of-bodily-health',
+        { economyId: 'study', remaining: 48 },
+      ],
+      [
+        'magic-item:manual-of-gainful-exercise',
+        { economyId: 'study', remaining: 48 },
+      ],
+      [
+        'magic-item:manual-of-quickness-of-action',
+        { economyId: 'study', remaining: 48 },
+      ],
+      [
+        'magic-item:tome-of-clear-thought',
+        { economyId: 'study', remaining: 48 },
+      ],
+      [
+        'magic-item:tome-of-leadership-and-influence',
+        { economyId: 'study', remaining: 48 },
+      ],
+      [
+        'magic-item:tome-of-understanding',
+        { economyId: 'study', remaining: 48 },
+      ],
+      ['magic-item:winged-boots', { economyId: 'flight', remaining: 240 }],
+    ]);
+    const budgetRecords = bundled.records.filter((record) => {
+      if (record.kind !== 'magic-item') return false;
+      const mechanics = (record.data as Record<string, unknown>).mechanics as
+        | { economies?: Record<string, { kind?: string }> }
+        | undefined;
+      return Object.values(mechanics?.economies ?? {}).some(
+        (economy) => economy.kind === 'budget',
+      );
+    });
+    expect(budgetRecords.map(({ key }) => key).sort()).toEqual(
+      [...expected.keys()].sort(),
+    );
+    for (const record of budgetRecords) {
+      const assertion = expected.get(record.key);
+      if (assertion === undefined) throw new Error(`unexpected ${record.key}`);
+      expect(
+        createInitialItemState(record.key, record).economies?.[
+          assertion.economyId
+        ]?.remaining,
+        record.key,
+      ).toBe(assertion.remaining);
+    }
+
+    const landedBindings = bundled.records.flatMap((record) => {
+      if (record.kind !== 'magic-item') return [];
+      const readiness = (record.data as Record<string, unknown>)
+        .executionReadiness as
+        | {
+            clauses?: {
+              representation?: { block?: string; economyId?: string };
+              engineHooks?: { engine: string; hook: string }[];
+            }[];
+          }
+        | undefined;
+      return (readiness?.clauses ?? [])
+        .filter((clause) =>
+          clause.engineHooks?.some(
+            (hook) =>
+              hook.engine === 'F5' &&
+              hook.hook === 'duration-budget accounting',
+          ),
+        )
+        .map(() => record.key);
+    });
+    expect(landedBindings.sort()).toEqual(
+      [...expected.keys()]
+        .filter((key) => key !== 'magic-item:winged-boots')
+        .sort(),
+    );
+  });
+
+  it('fails closed on unsafe or inexact duration budget arithmetic', () => {
+    const invalid = (
+      total: { amount: number; unit: string },
+      increment: { amount: number; unit: string },
+    ) =>
+      item('invalid-budget', {
+        economies: { time: { kind: 'budget', budget: { total, increment } } },
+      });
+    expect(() =>
+      createInitialItemState(
+        'magic-item:invalid-budget',
+        invalid({ amount: 1, unit: 'round' }, { amount: 1, unit: 'minute' }),
+      ),
+    ).toThrow(/exactly divisible/);
+    expect(() =>
+      createInitialItemState(
+        'magic-item:invalid-budget',
+        invalid({ amount: 0, unit: 'hour' }, { amount: 1, unit: 'minute' }),
+      ),
+    ).toThrow(/positive safe integer/);
+    expect(() =>
+      createInitialItemState(
+        'magic-item:invalid-budget',
+        invalid(
+          { amount: Number.MAX_SAFE_INTEGER, unit: 'day' },
+          { amount: 1, unit: 'round' },
+        ),
+      ),
+    ).toThrow(/safe duration accounting/);
+  });
+
   it('initializes single-use state for an otherwise stateful instance', () => {
     const record = item(
       'stateful-single-use',
@@ -1043,7 +1160,14 @@ describe('magic-item live instance state', () => {
     const wand = bundled.records.find(
       (record) => record.key === 'magic-item:wand-of-magic-missiles',
     );
-    if (candle === undefined || wand === undefined)
+    const flyingPotion = bundled.records.find(
+      (record) => record.key === 'magic-item:potion-of-flying',
+    );
+    if (
+      candle === undefined ||
+      wand === undefined ||
+      flyingPotion === undefined
+    )
       throw new Error('bundled magic-item fixtures are missing');
 
     const grantedCandle = giveItem(
@@ -1084,6 +1208,40 @@ describe('magic-item live instance state', () => {
     expect(readItemState(db, grantedCandle.id)?.economies['burn-time']).toEqual(
       { remaining: 239 },
     );
+    const candleStateBeforeUnsupportedSpend = readItemState(
+      db,
+      grantedCandle.id,
+    );
+    const candleInventoryBeforeUnsupportedSpend = db
+      .prepare(
+        'SELECT quantity, pack_ref, variant_id FROM inventory WHERE id = ?',
+      )
+      .get(grantedCandle.id);
+    const candleAttunementBeforeUnsupportedSpend = db
+      .prepare(
+        'SELECT item_key FROM attunement WHERE campaign_id = ? AND item_id = ?',
+      )
+      .get('campaign-1', grantedCandle.id);
+    expect(() =>
+      useItem(db, useInput(bundled, grantedCandle.id, 'cast-gate')),
+    ).toThrow(/economy 'gate-use' has no trusted semantic owner/);
+    expect(readItemState(db, grantedCandle.id)).toEqual(
+      candleStateBeforeUnsupportedSpend,
+    );
+    expect(
+      db
+        .prepare(
+          'SELECT quantity, pack_ref, variant_id FROM inventory WHERE id = ?',
+        )
+        .get(grantedCandle.id),
+    ).toEqual(candleInventoryBeforeUnsupportedSpend);
+    expect(
+      db
+        .prepare(
+          'SELECT item_key FROM attunement WHERE campaign_id = ? AND item_id = ?',
+        )
+        .get('campaign-1', grantedCandle.id),
+    ).toEqual(candleAttunementBeforeUnsupportedSpend);
 
     const grantedWand = giveItem(
       db,
@@ -1110,7 +1268,96 @@ describe('magic-item live instance state', () => {
         .prepare('SELECT quantity FROM inventory WHERE id = ?')
         .get(grantedWand.id),
     ).toEqual({ quantity: 1 });
+    giveItem(
+      db,
+      {
+        id: 'flying-potion',
+        name: flyingPotion.name,
+        packRef: flyingPotion.key,
+      },
+      MUTATION,
+    );
+    expect(() =>
+      useItem(db, useInput(bundled, 'flying-potion', 'drink')),
+    ).toThrow(
+      /operation effect 'flight' has no exact trusted readiness clause/,
+    );
+    expect(
+      db
+        .prepare('SELECT quantity, pack_ref FROM inventory WHERE id = ?')
+        .get('flying-potion'),
+    ).toEqual({ quantity: 1, pack_ref: flyingPotion.key });
     db.close();
+  });
+
+  it('finds Candle gate-use as the only bundled spend newly refused for missing semantic ownership', () => {
+    const newlyRefused: string[] = [];
+    const newlyRefusedForMissingEffectCoverage: string[] = [];
+    for (const record of getBundledDnd5eSrdPack().records) {
+      if (record.kind !== 'magic-item') continue;
+      const mechanics = (record.data as Record<string, unknown>).mechanics as
+        | {
+            operations?: {
+              id: string;
+              cost?: { economy: string }[];
+              effects?: string[];
+            }[];
+            stateMachine?: {
+              transitions?: { via?: string; effects?: string[] }[];
+            };
+            spellStore?: { contracts?: { operationIds?: string[] }[] };
+          }
+        | undefined;
+      for (const operation of mechanics?.operations ?? []) {
+        if ((operation.cost?.length ?? 0) === 0) continue;
+        const transitions = (mechanics?.stateMachine?.transitions ?? []).filter(
+          ({ via }) => via === operation.id,
+        );
+        try {
+          assertMagicItemOperationReady(record, undefined, {
+            operationId: operation.id,
+            economyIds: new Set(
+              (operation.cost ?? []).map(({ economy }) => economy),
+            ),
+            operationEffectIds: new Set(operation.effects ?? []),
+            effectIds: new Set([
+              ...(operation.effects ?? []),
+              ...transitions.flatMap(({ effects }) => effects ?? []),
+            ]),
+            usesStateMachine: transitions.length > 0,
+            usesSpellStore: (mechanics?.spellStore?.contracts ?? []).some(
+              ({ operationIds }) => operationIds?.includes(operation.id),
+            ),
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          if (
+            message.includes('has no trusted semantic owner') &&
+            !/(engine-pending|design-blocked|transitional)/.test(message)
+          )
+            newlyRefused.push(`${record.key}/${operation.id}`);
+          if (
+            message.includes('has no exact trusted readiness clause') &&
+            !/(engine-pending|design-blocked|transitional)/.test(message)
+          )
+            newlyRefusedForMissingEffectCoverage.push(
+              `${record.key}/${operation.id}`,
+            );
+        }
+      }
+    }
+    expect(newlyRefused).toEqual(['magic-item:candle-of-invocation/cast-gate']);
+    expect(newlyRefusedForMissingEffectCoverage).toEqual([
+      'magic-item:dust-of-disappearance/throw-dust',
+      'magic-item:philter-of-love/drink',
+      'magic-item:potion-of-climbing/drink',
+      'magic-item:potion-of-flying/drink',
+      'magic-item:potion-of-giant-strength/drink',
+      'magic-item:potion-of-invisibility/drink',
+      'magic-item:potion-of-resistance/drink',
+      'magic-item:potion-of-water-breathing/drink',
+    ]);
   });
 
   it('never transfers a pack-bound row to another character on an id collision', () => {
@@ -1140,7 +1387,6 @@ describe('magic-item live instance state', () => {
       { id: 'shared-id', name: 'Passive Test', packRef: record.key },
       MUTATION,
     );
-
     expect(() =>
       giveItem(
         db,
@@ -1159,7 +1405,9 @@ describe('magic-item live instance state', () => {
   it('consumes stateless single-use stacks and cascades state on deletion', () => {
     const db = freshDbWithSession();
     const potion = item('potion-test', {
-      economies: { dose: { kind: 'single-use' } },
+      economies: {
+        dose: { kind: 'single-use', onDepleted: { becomes: 'destroyed' } },
+      },
       operations: [{ id: 'drink', cost: [{ economy: 'dose', amount: 1 }] }],
     });
     giveItem(
@@ -1196,6 +1444,112 @@ describe('magic-item live instance state', () => {
         .prepare('SELECT 1 FROM item_state WHERE inventory_id = ?')
         .get(granted.id),
     ).toBeUndefined();
+    db.close();
+  });
+
+  it('atomically splits bundled nonmagical ammunition from the held magic stack', () => {
+    const db = freshDbWithSession();
+    const bundled = getBundledDnd5eSrdPack();
+    const ammunition = bundled.records.find(
+      (record) => record.key === 'magic-item:ammunition-1-2-or-3',
+    );
+    if (ammunition === undefined)
+      throw new Error('bundled magic ammunition is missing');
+    giveItem(
+      db,
+      {
+        id: 'magic-ammunition',
+        name: 'Ammunition +1',
+        quantity: 3,
+        location: 'quiver',
+        properties: { material: 'silvered' },
+        packRef: ammunition.key,
+      },
+      MUTATION,
+    );
+    db.prepare(
+      "UPDATE clock SET current_location_id='battlefield' WHERE id=1",
+    ).run();
+
+    const result = useItem(
+      db,
+      useInput(bundled, 'magic-ammunition', 'hit-target'),
+    );
+    expect(result).toMatchObject({
+      quantity: 2,
+      consumed: false,
+      transformations: [
+        {
+          kind: 'became-nonmagical',
+          economyId: 'use',
+          quantity: 1,
+          sourceInstanceId: 'magic-ammunition',
+          transformedInstanceId: 'magic-ammunition:nonmagical',
+          sourceLocation: 'quiver',
+        },
+      ],
+    });
+    expect(
+      db
+        .prepare(
+          `SELECT id, character_id, name, quantity, location, properties_json,
+                  pack_ref, variant_id
+           FROM inventory ORDER BY id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        id: 'magic-ammunition',
+        character_id: 'pc-1',
+        name: 'Ammunition +1',
+        quantity: 2,
+        location: 'quiver',
+        properties_json: '{"material":"silvered"}',
+        pack_ref: ammunition.key,
+        variant_id: null,
+      },
+      {
+        id: 'magic-ammunition:nonmagical',
+        character_id: null,
+        name: 'Nonmagical ammunition (formerly Ammunition +1)',
+        quantity: 1,
+        location: 'battlefield',
+        properties_json:
+          '{"material":"silvered","magicItemTransformation":{"status":"nonmagical","sourcePackRef":"magic-item:ammunition-1-2-or-3","sourceLocation":"quiver","economyId":"use"}}',
+        pack_ref: null,
+        variant_id: null,
+      },
+    ]);
+    const conservation = db
+      .prepare(
+        `SELECT SUM(quantity) AS quantity FROM inventory
+         WHERE id = ? OR id LIKE ?`,
+      )
+      .get('magic-ammunition', 'magic-ammunition:nonmagical%') as {
+      quantity: number;
+    };
+    expect(conservation.quantity).toBe(3);
+    expect(
+      useItem(db, useInput(bundled, 'magic-ammunition', 'hit-target'))
+        .transformations?.[0]?.transformedInstanceId,
+    ).toBe('magic-ammunition:nonmagical#2');
+    expect(
+      useItem(db, useInput(bundled, 'magic-ammunition', 'hit-target'))
+        .transformations?.[0]?.transformedInstanceId,
+    ).toBe('magic-ammunition:nonmagical#3');
+    expect(
+      db.prepare("SELECT 1 FROM inventory WHERE id='magic-ammunition'").get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          `SELECT COUNT(*) AS stacks, SUM(quantity) AS quantity
+           FROM inventory
+           WHERE id LIKE 'magic-ammunition:nonmagical%'
+             AND character_id IS NULL AND pack_ref IS NULL`,
+        )
+        .get(),
+    ).toEqual({ stacks: 3, quantity: 3 });
     db.close();
   });
 
@@ -1344,6 +1698,91 @@ describe('magic-item live instance state', () => {
       }
       db.close();
     }
+  });
+
+  it('applies risk-based nonmagical and destroyed charge outcomes atomically', () => {
+    for (const becomes of ['nonmagical', 'destroyed'] as const) {
+      const db = freshDbWithSession();
+      const record = item(`risk-depletion-${becomes}`, {
+        economies: {
+          charges: {
+            kind: 'charges',
+            charges: { max: 1 },
+            onDepleted: { roll: 'd20', destroyedOn: 1, becomes },
+          },
+        },
+        operations: [
+          { id: 'expend', cost: [{ economy: 'charges', amount: 1 }] },
+        ],
+      });
+      const granted = giveItem(
+        db,
+        {
+          id: 'ignored',
+          name: `Risk Depletion ${becomes}`,
+          packRef: record.key,
+          stateful: true,
+        },
+        MUTATION,
+      );
+      const result = useItem(db, {
+        ...useInput(pack(record), granted.id, 'expend'),
+        rng: { nextInt: () => 0 },
+      });
+      if (becomes === 'destroyed') {
+        expect(result.consumed).toBe(true);
+        expect(
+          db.prepare('SELECT 1 FROM inventory WHERE id = ?').get(granted.id),
+        ).toBeUndefined();
+      } else {
+        expect(result.state?.lifecycle?.status).toBe('nonmagical');
+        expect(
+          db
+            .prepare('SELECT quantity FROM inventory WHERE id = ?')
+            .get(granted.id),
+        ).toEqual({ quantity: 1 });
+      }
+      db.close();
+    }
+  });
+
+  it('blocks a lose-property-only operation after its economy reaches zero', () => {
+    const db = freshDbWithSession();
+    const record = item('lose-property-only', {
+      economies: {
+        charges: {
+          kind: 'charges',
+          charges: { max: 1 },
+          onDepleted: { loseProperty: true },
+        },
+      },
+      operations: [
+        { id: 'special-property', cost: [{ economy: 'charges', amount: 1 }] },
+      ],
+    });
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored',
+        name: 'Lose Property Only',
+        packRef: record.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    expect(
+      useItem(db, useInput(pack(record), granted.id, 'special-property')).state
+        ?.economies.charges.remaining,
+    ).toBe(0);
+    expect(
+      readItemState(db, granted.id)?.lifecycle,
+      'loseProperty alone must not invent an item-wide inert lifecycle',
+    ).toBeUndefined();
+    expect(() =>
+      useItem(db, useInput(pack(record), granted.id, 'special-property')),
+    ).toThrow(/insufficient charges: 0 remaining/);
+    expect(readItemState(db, granted.id)?.economies.charges.remaining).toBe(0);
+    db.close();
   });
 
   it('refuses engine-pending operation clauses before spending state', () => {

@@ -1,6 +1,11 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
+import {
+  AttunementError,
+  assertInventoryAttunementCurseReady,
+} from './attunement.js';
+import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
 import type { DomainMutationContext } from './domainMutations.js';
 
 export type ItemTransferAttunementPolicy = 'end' | 'require-unattuned';
@@ -11,6 +16,7 @@ export interface TransferItemInput {
   readonly fromCharacterRef?: string;
   readonly toCharacterRef: string;
   readonly attunement: ItemTransferAttunementPolicy;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 export interface TransferItemResult {
@@ -97,10 +103,23 @@ export function transferItem(
       throw new ItemTransferError(
         `inventory instance '${input.itemId}' is attuned to '${attunement.character_id}'; choose attunement 'end' or end it first`,
       );
-    if (attunement !== undefined)
+    if (attunement !== undefined) {
+      try {
+        assertInventoryAttunementCurseReady(
+          txnDb,
+          input.itemId,
+          'transfer-end',
+          input.resolveRulesPack,
+        );
+      } catch (error) {
+        if (error instanceof AttunementError)
+          throw new ItemTransferError(error.message);
+        throw error;
+      }
       txnDb
         .prepare('DELETE FROM attunement WHERE campaign_id=? AND item_id=?')
         .run(input.campaignId, input.itemId);
+    }
     txnDb
       .prepare(
         `UPDATE inventory

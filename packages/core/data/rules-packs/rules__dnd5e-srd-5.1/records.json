@@ -88234,6 +88234,9 @@
                 "economy": "use",
                 "amount": 1
               }
+            ],
+            "effects": [
+              "c2-residual-slaying-damage"
             ]
           }
         ],

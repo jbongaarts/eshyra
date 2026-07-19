@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addCondition,
   adjustHp,
+  claimItem,
   ensureCharacterRow,
   giveItem,
   initSchema,
@@ -287,9 +288,14 @@ describe('removeItem', () => {
     const db = freshDb();
     giveItem(db, { id: 'torch', name: 'Torch', quantity: 5 }, CTX);
 
-    const result = removeItem(db, 'torch', undefined, CTX);
+    const result = removeItem(
+      db,
+      { itemId: 'torch', disposition: 'destroyed' },
+      CTX,
+    );
 
     expect(result).toEqual({
+      disposition: 'destroyed',
       removed: true,
       previousQuantity: 5,
       newQuantity: 0,
@@ -320,7 +326,11 @@ describe('removeItem', () => {
       CTX.at,
     );
 
-    const result = removeItem(db, 'ring', undefined, CTX);
+    const result = removeItem(
+      db,
+      { itemId: 'ring', disposition: 'destroyed' },
+      CTX,
+    );
 
     expect(result.attunementsEnded).toEqual([
       {
@@ -350,9 +360,14 @@ describe('removeItem', () => {
     const db = freshDb();
     giveItem(db, { id: 'torch', name: 'Torch', quantity: 5 }, CTX);
 
-    const result = removeItem(db, 'torch', 2, CTX);
+    const result = removeItem(
+      db,
+      { itemId: 'torch', quantity: 2, disposition: 'destroyed' },
+      CTX,
+    );
 
     expect(result).toEqual({
+      disposition: 'destroyed',
       removed: false,
       previousQuantity: 5,
       newQuantity: 3,
@@ -364,9 +379,14 @@ describe('removeItem', () => {
     const db = freshDb();
     giveItem(db, { id: 'torch', name: 'Torch', quantity: 2 }, CTX);
 
-    const result = removeItem(db, 'torch', 5, CTX);
+    const result = removeItem(
+      db,
+      { itemId: 'torch', quantity: 5, disposition: 'destroyed' },
+      CTX,
+    );
 
     expect(result).toEqual({
+      disposition: 'destroyed',
       removed: true,
       previousQuantity: 2,
       newQuantity: 0,
@@ -380,13 +400,421 @@ describe('removeItem', () => {
   it('returns removed=false for non-existent item', () => {
     const db = freshDb();
 
-    const result = removeItem(db, 'nonexistent', undefined, CTX);
+    const result = removeItem(
+      db,
+      { itemId: 'nonexistent', disposition: 'destroyed' },
+      CTX,
+    );
 
     expect(result).toEqual({
+      disposition: 'destroyed',
       removed: false,
       previousQuantity: 0,
       newQuantity: 0,
     });
+    db.close();
+  });
+
+  it('fully relinquishes the same physical row at the world location without ending attunement or losing state', () => {
+    const db = freshDb();
+    const granted = giveItem(
+      db,
+      {
+        id: 'stone',
+        name: 'Ioun Stone',
+        packRef: 'magic-item:ioun-stone',
+        variantId: 'agility',
+        properties: { color: 'deep red' },
+        location: 'orbiting',
+        stateful: true,
+      },
+      CTX,
+    );
+    const stateJson = JSON.stringify({
+      packRef: 'magic-item:ioun-stone',
+      variantId: 'agility',
+      machineState: 'orbiting',
+    });
+    db.prepare(
+      `INSERT INTO item_state(inventory_id, state_json, provenance, session_id, updated_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    ).run(granted.id, stateJson, CTX.provenance, CTX.sessionId, CTX.at);
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'pc-1',
+      granted.id,
+      'magic-item:ioun-stone#variant:agility',
+      'Agility',
+      CTX.at,
+      CTX.provenance,
+      CTX.sessionId,
+      CTX.at,
+    );
+    updateClock(db, { locationId: 'market-square' }, CTX);
+
+    const result = removeItem(
+      db,
+      { itemId: granted.id, disposition: 'dropped' },
+      CTX,
+    );
+
+    expect(result).toMatchObject({
+      disposition: 'dropped',
+      removed: true,
+      relinquishedItemId: granted.id,
+      previousQuantity: 1,
+      newQuantity: 0,
+    });
+    expect(
+      db
+        .prepare(
+          `SELECT id, character_id, quantity, location, properties_json, pack_ref, variant_id
+           FROM inventory WHERE id=?`,
+        )
+        .get(granted.id),
+    ).toEqual({
+      id: granted.id,
+      character_id: null,
+      quantity: 1,
+      location: 'market-square',
+      properties_json: JSON.stringify({ color: 'deep red' }),
+      pack_ref: 'magic-item:ioun-stone',
+      variant_id: 'agility',
+    });
+    expect(
+      db
+        .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
+        .get(granted.id),
+    ).toEqual({ state_json: stateJson });
+    expect(
+      db
+        .prepare('SELECT item_id FROM attunement WHERE item_id=?')
+        .get(granted.id),
+    ).toEqual({ item_id: granted.id });
+    db.close();
+  });
+
+  it('splits partial relinquishment into collision-safe unheld physical rows with conserved identity', () => {
+    const db = freshDb();
+    giveItem(
+      db,
+      {
+        id: 'arrows',
+        name: 'Silvered Arrow',
+        quantity: 5,
+        location: 'quiver',
+        properties: { silvered: true },
+        packRef: 'magic-item:ammunition-1',
+      },
+      CTX,
+    );
+    updateClock(db, { locationId: 'forest-road' }, CTX);
+    const first = removeItem(
+      db,
+      { itemId: 'arrows', quantity: 1, disposition: 'sold' },
+      CTX,
+    );
+    const second = removeItem(
+      db,
+      { itemId: 'arrows', quantity: 1, disposition: 'sold' },
+      CTX,
+    );
+    expect(first.relinquishedItemId).toBe('arrows#sold-1');
+    expect(second.relinquishedItemId).toBe('arrows#sold-2');
+    const rows = db
+      .prepare(
+        `SELECT id, character_id, quantity, location, properties_json, pack_ref, variant_id
+         FROM inventory WHERE id LIKE 'arrows%' ORDER BY id`,
+      )
+      .all() as {
+      id: string;
+      character_id: string | null;
+      quantity: number;
+      location: string;
+      properties_json: string;
+      pack_ref: string;
+      variant_id: string | null;
+    }[];
+    expect(
+      rows.map(({ id, character_id, quantity }) => ({
+        id,
+        character_id,
+        quantity,
+      })),
+    ).toEqual([
+      { id: 'arrows', character_id: 'pc-1', quantity: 3 },
+      { id: 'arrows#sold-1', character_id: null, quantity: 1 },
+      { id: 'arrows#sold-2', character_id: null, quantity: 1 },
+    ]);
+    expect(rows.reduce((sum, row) => sum + row.quantity, 0)).toBe(5);
+    for (const row of rows) {
+      expect(row).toMatchObject({
+        location: row.character_id === null ? 'forest-road' : 'quiver',
+        properties_json: JSON.stringify({ silvered: true }),
+        pack_ref: 'magic-item:ammunition-1',
+        variant_id: null,
+      });
+    }
+    db.close();
+  });
+
+  it('refuses partial copying of item state and refuses unheld removal', () => {
+    const db = freshDb();
+    giveItem(db, { id: 'stateful-stack', name: 'Stateful', quantity: 2 }, CTX);
+    db.prepare(
+      `INSERT INTO item_state(inventory_id, state_json, provenance, session_id, updated_at)
+       VALUES (?, '{}', ?, ?, ?)`,
+    ).run('stateful-stack', CTX.provenance, CTX.sessionId, CTX.at);
+    expect(() =>
+      removeItem(
+        db,
+        { itemId: 'stateful-stack', quantity: 1, disposition: 'lost' },
+        CTX,
+      ),
+    ).toThrow(/cannot be partially disposed/);
+    expect(() =>
+      removeItem(
+        db,
+        {
+          itemId: 'stateful-stack',
+          quantity: 1,
+          disposition: 'destroyed',
+        },
+        CTX,
+      ),
+    ).toThrow(/cannot be partially disposed/);
+    giveItem(db, { id: 'counter-stack', name: 'Counter', quantity: 2 }, CTX);
+    db.prepare(
+      `INSERT INTO entity_usage_counter(
+         campaign_id, owner_kind, owner_ref, counter_key, display_name,
+         uses_max, uses_used, reset_kind, source, provenance, session_id,
+         updated_at
+       ) VALUES (?, 'item', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'counter-stack',
+      'charges',
+      'Charges',
+      3,
+      1,
+      'dawn',
+      'record',
+      CTX.provenance,
+      CTX.sessionId,
+      CTX.at,
+    );
+    expect(() =>
+      removeItem(
+        db,
+        { itemId: 'counter-stack', quantity: 1, disposition: 'sold' },
+        CTX,
+      ),
+    ).toThrow(/cannot be partially disposed/);
+    removeItem(db, { itemId: 'counter-stack', disposition: 'sold' }, CTX);
+    expect(
+      db
+        .prepare(
+          `SELECT inventory.character_id, entity_usage_counter.uses_used
+           FROM inventory
+           JOIN entity_usage_counter
+             ON entity_usage_counter.owner_kind='item'
+            AND entity_usage_counter.owner_ref=inventory.id
+           WHERE inventory.id=?`,
+        )
+        .get('counter-stack'),
+    ).toEqual({ character_id: null, uses_used: 1 });
+    giveItem(db, { id: 'attuned-stack', name: 'Attuned', quantity: 2 }, CTX);
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'pc-1',
+      'attuned-stack',
+      'name:attuned',
+      'Attuned',
+      CTX.at,
+      CTX.provenance,
+      CTX.sessionId,
+      CTX.at,
+    );
+    expect(() =>
+      removeItem(
+        db,
+        { itemId: 'attuned-stack', quantity: 1, disposition: 'dropped' },
+        CTX,
+      ),
+    ).toThrow(/cannot be partially disposed/);
+    expect(
+      db
+        .prepare('SELECT quantity FROM inventory WHERE id=?')
+        .get('attuned-stack'),
+    ).toEqual({ quantity: 2 });
+    expect(
+      db
+        .prepare('SELECT quantity FROM inventory WHERE id=?')
+        .get('stateful-stack'),
+    ).toEqual({ quantity: 2 });
+
+    removeItem(db, { itemId: 'stateful-stack', disposition: 'lost' }, CTX);
+    expect(() =>
+      removeItem(db, { itemId: 'stateful-stack', disposition: 'dropped' }, CTX),
+    ).toThrow(/is unheld/);
+    db.close();
+  });
+
+  it('destroys a dropped physical row and atomically releases its retained attunement', () => {
+    const db = freshDb();
+    giveItem(db, { id: 'ring', name: 'Ring of Protection' }, CTX);
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'pc-1',
+      'ring',
+      'magic-item:ring-of-protection',
+      'Ring of Protection',
+      CTX.at,
+      CTX.provenance,
+      CTX.sessionId,
+      CTX.at,
+    );
+    for (const ownerKind of ['item', 'character'])
+      db.prepare(
+        `INSERT INTO entity_usage_counter(
+           campaign_id, owner_kind, owner_ref, counter_key, display_name,
+           uses_max, uses_used, reset_kind, source, provenance, session_id,
+           updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        'campaign-1',
+        ownerKind,
+        'ring',
+        'charges',
+        'Charges',
+        3,
+        1,
+        'dawn',
+        'record',
+        CTX.provenance,
+        CTX.sessionId,
+        CTX.at,
+      );
+    removeItem(db, { itemId: 'ring', disposition: 'dropped' }, CTX);
+
+    const destroyed = removeItem(
+      db,
+      { itemId: 'ring', disposition: 'destroyed' },
+      CTX,
+    );
+
+    expect(destroyed).toMatchObject({
+      disposition: 'destroyed',
+      removed: true,
+      attunementsEnded: [
+        {
+          reason: 'item_destroyed',
+          ended: { itemId: 'ring' },
+        },
+      ],
+    });
+    expect(
+      db.prepare('SELECT 1 FROM inventory WHERE id=?').get('ring'),
+    ).toBeUndefined();
+    expect(
+      db.prepare('SELECT 1 FROM attunement WHERE item_id=?').get('ring'),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          `SELECT owner_kind FROM entity_usage_counter
+           WHERE owner_ref=? ORDER BY owner_kind`,
+        )
+        .all('ring'),
+    ).toEqual([{ owner_kind: 'character' }]);
+    db.close();
+  });
+
+  it('partially destroys an unheld stateless stack in place', () => {
+    const db = freshDb();
+    giveItem(db, { id: 'firewood', name: 'Firewood', quantity: 5 }, CTX);
+    removeItem(db, { itemId: 'firewood', disposition: 'lost' }, CTX);
+
+    expect(
+      removeItem(
+        db,
+        { itemId: 'firewood', quantity: 2, disposition: 'destroyed' },
+        CTX,
+      ),
+    ).toEqual({
+      disposition: 'destroyed',
+      removed: false,
+      previousQuantity: 5,
+      newQuantity: 3,
+    });
+    expect(
+      db
+        .prepare('SELECT character_id, quantity FROM inventory WHERE id=?')
+        .get('firewood'),
+    ).toEqual({ character_id: null, quantity: 3 });
+    db.close();
+  });
+
+  it('claims an unheld row without changing identity or item state and refuses held rows', () => {
+    const db = freshDb();
+    giveItem(
+      db,
+      {
+        id: 'relic',
+        name: 'Ioun Stone',
+        packRef: 'magic-item:ioun-stone',
+        variantId: 'agility',
+      },
+      CTX,
+    );
+    db.prepare(
+      `INSERT INTO item_state(inventory_id, state_json, provenance, session_id, updated_at)
+       VALUES (?, '{"custom":{"mark":1}}', ?, ?, ?)`,
+    ).run('relic', CTX.provenance, CTX.sessionId, CTX.at);
+    updateClock(db, { locationId: 'ruined-shrine' }, CTX);
+    removeItem(db, { itemId: 'relic', disposition: 'dropped' }, CTX);
+
+    expect(claimItem(db, 'relic', CTX)).toMatchObject({
+      itemId: 'relic',
+      characterId: 'pc-1',
+      name: 'Ioun Stone',
+      quantity: 1,
+      packRef: 'magic-item:ioun-stone',
+      variantId: 'agility',
+    });
+    expect(
+      db
+        .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
+        .get('relic'),
+    ).toEqual({ state_json: '{"custom":{"mark":1}}' });
+    expect(
+      db
+        .prepare('SELECT id, pack_ref, variant_id FROM inventory WHERE id=?')
+        .get('relic'),
+    ).toEqual({
+      id: 'relic',
+      pack_ref: 'magic-item:ioun-stone',
+      variant_id: 'agility',
+    });
+    expect(
+      db.prepare('SELECT location FROM inventory WHERE id=?').get('relic'),
+    ).toEqual({ location: 'ruined-shrine' });
+    expect(() => claimItem(db, 'relic', CTX)).toThrow(/already held/);
     db.close();
   });
 });
@@ -559,10 +987,9 @@ describe('inventory ownership isolation', () => {
     );
 
     setActiveCharacterId(db, 'pc-2');
-    const result = removeItem(db, 'gem', undefined, CTX);
-
-    expect(result.removed).toBe(false);
-    expect(result.previousQuantity).toBe(0);
+    expect(() =>
+      removeItem(db, { itemId: 'gem', disposition: 'lost' }, CTX),
+    ).toThrow(/held by another character/);
 
     const pc1Row = db
       .prepare('SELECT id FROM inventory WHERE id = ?')

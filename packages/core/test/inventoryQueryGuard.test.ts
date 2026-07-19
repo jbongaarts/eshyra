@@ -2,7 +2,7 @@
  * Tests for the inventory query vs. action guard (eshyra-4ia4).
  *
  * Verifies:
- * - give_item and remove_item are classified as requiresExplicitAction
+ * - inventory ownership mutations are classified as requiresExplicitAction
  * - The system prompt includes the inventory guard section
  * - A query ("What am I equipped with?") with empty inventory produces no mutations
  * - A query with existing inventory reports items without mutation
@@ -86,7 +86,7 @@ class IntentSimulatingAuditModel {
         playerInput,
       );
 
-    // The section reads "give_item, remove_item — <description>"; the tool names
+    // The section lists each explicit-action inventory tool and its description.
     // are the comma list before the em dash.
     const gatedNames = explicitTools
       .split('—')[0]
@@ -184,9 +184,13 @@ function inventoryCount(db: ReturnType<typeof freshDbWithSession>): number {
 // ---------------------------------------------------------------------------
 
 describe('inventory tool classification (eshyra-4ia4)', () => {
-  it('give_item and remove_item are flagged requiresExplicitAction', () => {
+  it('inventory ownership mutations are flagged requiresExplicitAction', () => {
     for (const tool of DEFAULT_TOOLS) {
-      if (tool.name === 'give_item' || tool.name === 'remove_item') {
+      if (
+        tool.name === 'give_item' ||
+        tool.name === 'claim_item' ||
+        tool.name === 'remove_item'
+      ) {
         expect(
           tool.requiresExplicitAction,
           `${tool.name} should have requiresExplicitAction: true`,
@@ -212,10 +216,11 @@ describe('inventory tool classification (eshyra-4ia4)', () => {
     }
   });
 
-  it('listRequiresExplicitAction returns give_item and remove_item', () => {
+  it('listRequiresExplicitAction returns give_item, claim_item, and remove_item', () => {
     const registry = createDefaultToolRegistry();
     const names = registry.listRequiresExplicitAction().sort();
     expect(names).toContain('give_item');
+    expect(names).toContain('claim_item');
     expect(names).toContain('remove_item');
   });
 
@@ -242,9 +247,10 @@ describe('system prompt inventory guard (eshyra-4ia4)', () => {
     expect(prompt).toContain('Inventory and Equipment Guard');
   });
 
-  it('names give_item and remove_item as requiring explicit action', () => {
+  it('names give_item, claim_item, and remove_item as requiring explicit action', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
     expect(prompt).toContain('give_item');
+    expect(prompt).toContain('claim_item');
     expect(prompt).toContain('remove_item');
     expect(prompt).toContain('explicit player action intent');
   });

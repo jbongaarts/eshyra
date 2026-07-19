@@ -150,7 +150,12 @@ describe('tool character targeting', () => {
 
     const removed = registry.invoke(
       'remove_item',
-      { id: 'torch', quantity: 1, character: 'Brielle' },
+      {
+        id: 'torch',
+        quantity: 1,
+        disposition: 'destroyed',
+        character: 'Brielle',
+      },
       ctx(db),
     );
     expect(removed).toMatchObject({
@@ -163,6 +168,38 @@ describe('tool character targeting', () => {
         characterId: 'pc-2',
       },
     });
+  });
+
+  it('claim_item targets a PC by name while preserving the unheld row id', () => {
+    const db = freshDb();
+    ensureCharacterRow(db, 'pc-2', 'test', 'session-1', AT);
+    set(db, 'pc-2', 'name', 'Brielle');
+    registry.invoke(
+      'give_item',
+      { id: 'found-ring', name: 'Found Ring' },
+      ctx(db),
+    );
+    registry.invoke(
+      'remove_item',
+      { id: 'found-ring', disposition: 'dropped' },
+      ctx(db),
+    );
+
+    expect(
+      registry.invoke(
+        'claim_item',
+        { id: 'found-ring', character: 'Brielle' },
+        ctx(db),
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: { itemId: 'found-ring', characterId: 'pc-2' },
+    });
+    expect(
+      db
+        .prepare('SELECT character_id FROM inventory WHERE id=?')
+        .get('found-ring'),
+    ).toEqual({ character_id: 'pc-2' });
   });
 
   it('remove_item does not report metadata from another character inventory row', () => {
@@ -182,26 +219,14 @@ describe('tool character targeting', () => {
 
     const result = registry.invoke(
       'remove_item',
-      { id: 'torch', quantity: 1, character: 'pc-2' },
+      { id: 'torch', quantity: 1, disposition: 'lost', character: 'pc-2' },
       ctx(db),
     );
 
     expect(result).toMatchObject({
-      ok: true,
-      data: {
-        id: 'torch',
-        quantity: 1,
-        previousQuantity: 0,
-        newQuantity: 0,
-        character: 'pc-2',
-        characterId: 'pc-2',
-      },
+      ok: false,
+      code: 'mutate_error',
     });
-    if (result.ok) {
-      const evidence = result.data as Record<string, unknown>;
-      expect(evidence).not.toHaveProperty('name');
-      expect(evidence).not.toHaveProperty('location');
-    }
     expect(
       db.prepare('SELECT quantity FROM inventory WHERE id = ?').get('torch'),
     ).toEqual({ quantity: 3 });

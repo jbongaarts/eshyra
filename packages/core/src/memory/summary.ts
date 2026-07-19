@@ -262,8 +262,11 @@ const CHARACTER_TOOL_FIELDS: Readonly<Record<string, string>> = {
   grant_temporary_hp: 'hp_temp',
   add_condition: 'conditions_json',
   remove_condition: 'conditions_json',
+  claim_item: 'inventory',
   give_item: 'inventory',
   remove_item: 'inventory',
+  transfer_item: 'inventory',
+  use_item: 'inventory',
 };
 
 function deriveCharacterSalientRefs(
@@ -286,24 +289,55 @@ function deriveCharacterSalientRefs(
       }
       const record = call as Record<string, TraceJsonValue>;
       const tool = typeof record.tool === 'string' ? record.tool : undefined;
-      const field =
-        tool === undefined ? undefined : CHARACTER_TOOL_FIELDS[tool];
+      if (tool === undefined) {
+        continue;
+      }
+      const field = CHARACTER_TOOL_FIELDS[tool];
       if (field === undefined) {
         continue;
       }
-      const pcId = resolveSalientCharacterId(db, record.args, trace);
-      if (pcId === undefined) {
-        continue;
+      const pcIds = resolveSalientCharacterIds(db, tool, record.args, trace);
+      for (const pcId of pcIds) {
+        const dedupeKey = `${pcId}:${field}`;
+        if (seen.has(dedupeKey)) {
+          continue;
+        }
+        seen.add(dedupeKey);
+        refs.push({ target: 'character', id: pcId, field });
       }
-      const dedupeKey = `${pcId}:${field}`;
-      if (seen.has(dedupeKey)) {
-        continue;
-      }
-      seen.add(dedupeKey);
-      refs.push({ target: 'character', id: pcId, field });
     }
   }
   return refs;
+}
+
+function resolveSalientCharacterIds(
+  db: Db,
+  tool: string,
+  args: TraceJsonValue | undefined,
+  trace: { actingCharacterId?: string },
+): string[] {
+  if (tool !== 'transfer_item') {
+    const pcId = resolveSalientCharacterId(db, args, trace);
+    return pcId === undefined ? [] : [pcId];
+  }
+
+  const record =
+    typeof args === 'object' && args !== null && !Array.isArray(args)
+      ? (args as Record<string, TraceJsonValue>)
+      : undefined;
+  const hasExplicitFromCharacter =
+    typeof record?.from_character === 'string' &&
+    record.from_character.length > 0;
+  const fromCharacter = hasExplicitFromCharacter
+    ? resolveExplicitSalientCharacterId(db, record.from_character)
+    : trace.actingCharacterId;
+  const toCharacter = resolveExplicitSalientCharacterId(
+    db,
+    record?.to_character,
+  );
+  return [fromCharacter, toCharacter].filter(
+    (pcId): pcId is string => pcId !== undefined,
+  );
 }
 
 function resolveSalientCharacterId(
@@ -316,16 +350,26 @@ function resolveSalientCharacterId(
       ? (args as Record<string, TraceJsonValue>).character
       : undefined;
   if (typeof charRef === 'string' && charRef.length > 0) {
-    try {
-      return resolveCharacterRef(db, charRef);
-    } catch (e) {
-      if (e instanceof CharacterResolutionError) {
-        return undefined;
-      }
-      throw e;
-    }
+    return resolveExplicitSalientCharacterId(db, charRef);
   }
   return trace.actingCharacterId;
+}
+
+function resolveExplicitSalientCharacterId(
+  db: Db,
+  charRef: TraceJsonValue | undefined,
+): string | undefined {
+  if (typeof charRef !== 'string' || charRef.length === 0) {
+    return undefined;
+  }
+  try {
+    return resolveCharacterRef(db, charRef);
+  } catch (e) {
+    if (e instanceof CharacterResolutionError) {
+      return undefined;
+    }
+    throw e;
+  }
 }
 
 export function listSceneSummaries(

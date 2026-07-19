@@ -64,6 +64,7 @@ export const transferItemTool: Tool = {
               : {}),
             toCharacterRef: input.to_character,
             attunement: input.attunement,
+            resolveRulesPack: ctx.resolveRulesPack,
           },
           {
             provenance: `model:${ctx.turnId}`,

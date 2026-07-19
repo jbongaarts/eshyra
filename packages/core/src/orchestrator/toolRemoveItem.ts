@@ -17,8 +17,8 @@ export const removeItemTool: Tool = {
   // Only valid when player explicitly drops, uses, or loses an item (eshyra-4ia4).
   requiresExplicitAction: true,
   description:
-    'Remove an item or reduce its quantity. Omit quantity to remove the item entirely. ' +
-    'If quantity would drop to zero or below, the item is deleted. ' +
+    'Apply an explicit physical disposition to a held item: destroyed, dropped, sold, or lost. ' +
+    'Only destroyed deletes the row and ends attunement, and it may target an exact held or unheld physical row. A full drop, sale, or loss preserves the physical row and state as unheld at the current world location; a partial stateless stack is split into a new unheld row there. ' +
     'Call ONLY when the player explicitly drops, uses, sells, or loses an item — ' +
     'never call to answer a question about what is currently equipped or carried.',
   inputSchema: {
@@ -34,15 +34,30 @@ export const removeItemTool: Tool = {
         description: 'How many to remove. Omit to remove the item entirely.',
         minimum: 1,
       },
+      disposition: {
+        type: 'string',
+        enum: ['destroyed', 'dropped', 'sold', 'lost'],
+        description:
+          'What physically happened. This is required; only destroyed deletes the item.',
+      },
       character: CHARACTER_TARGET_SCHEMA,
     },
-    required: ['id'],
+    required: ['id', 'disposition'],
     additionalProperties: false,
   },
   run(args, ctx) {
     const a = asRecord(args);
-    if (a === undefined || typeof a.id !== 'string') {
-      return err('invalid_args', 'remove_item requires { id }');
+    if (
+      a === undefined ||
+      typeof a.id !== 'string' ||
+      !['destroyed', 'dropped', 'sold', 'lost'].includes(
+        a.disposition as string,
+      )
+    ) {
+      return err(
+        'invalid_args',
+        'remove_item requires { id, disposition: destroyed|dropped|sold|lost }',
+      );
     }
     const target = resolveTargetCharacterId(a.character, ctx);
     if ('ok' in target) {
@@ -54,15 +69,23 @@ export const removeItemTool: Tool = {
         .prepare(
           `SELECT name, location, character_id
            FROM inventory
-           WHERE id = ? AND (character_id = ? OR character_id IS NULL)`,
+           WHERE id = ?
+             AND (character_id = ? OR (character_id IS NULL AND ? = 'destroyed'))`,
         )
-        .get(a.id, targetCharacterId) as
+        .get(a.id, targetCharacterId, a.disposition) as
         | { name: string; location: string | null; character_id: string | null }
         | undefined;
       const result = removeItem(
         ctx.db,
-        a.id,
-        typeof a.quantity === 'number' ? a.quantity : undefined,
+        {
+          itemId: a.id,
+          quantity: typeof a.quantity === 'number' ? a.quantity : undefined,
+          disposition: a.disposition as
+            | 'destroyed'
+            | 'dropped'
+            | 'sold'
+            | 'lost',
+        },
         {
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
@@ -83,7 +106,7 @@ export const removeItemTool: Tool = {
         ...(existing?.character_id !== null &&
         existing?.character_id !== undefined
           ? { characterId: existing.character_id }
-          : target.id !== undefined
+          : existing === undefined && target.id !== undefined
             ? { characterId: target.id }
             : {}),
       });

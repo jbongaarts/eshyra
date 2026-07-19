@@ -152,6 +152,7 @@ describe('ToolRegistry', () => {
         'award_inspiration',
         'begin_turn',
         'calc',
+        'claim_item',
         'close_combat_instance',
         'complete_long_rest',
         'complete_short_rest',
@@ -790,7 +791,7 @@ describe('domain mutation tools', () => {
 
     const removed = registry.invoke(
       'remove_item',
-      { id: 'torch', quantity: 4 },
+      { id: 'torch', quantity: 4, disposition: 'destroyed' },
       c,
     );
     expect(removed).toMatchObject({
@@ -800,10 +801,64 @@ describe('domain mutation tools', () => {
         name: 'Torch',
         quantity: 4,
         location: 'backpack',
+        disposition: 'destroyed',
         previousQuantity: 10,
         newQuantity: 6,
       },
     });
+
+    expect(registry.invoke('remove_item', { id: 'torch' }, c)).toMatchObject({
+      ok: false,
+    });
+    registry.invoke('give_item', { id: 'keepsake', name: 'Keepsake' }, c);
+    expect(
+      registry.invoke(
+        'remove_item',
+        { id: 'keepsake', disposition: 'dropped' },
+        c,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: { relinquishedItemId: 'keepsake', disposition: 'dropped' },
+    });
+    expect(registry.invoke('claim_item', { id: 'keepsake' }, c)).toMatchObject({
+      ok: true,
+      data: { itemId: 'keepsake', characterId: 'pc-1' },
+    });
+    registry.invoke('give_item', { id: 'broken-vase', name: 'Broken Vase' }, c);
+    registry.invoke(
+      'remove_item',
+      { id: 'broken-vase', disposition: 'dropped' },
+      c,
+    );
+    expect(
+      registry.invoke(
+        'remove_item',
+        { id: 'broken-vase', disposition: 'destroyed' },
+        c,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        id: 'broken-vase',
+        name: 'Broken Vase',
+        disposition: 'destroyed',
+        removed: true,
+      },
+    });
+  });
+
+  it('remove_item requires an explicit physical disposition', () => {
+    const definition = createDefaultToolRegistry()
+      .definitions()
+      .find(({ name }) => name === 'remove_item');
+    expect(definition?.inputSchema.required).toEqual(['id', 'disposition']);
+    expect(definition?.inputSchema.properties.disposition?.enum).toEqual([
+      'destroyed',
+      'dropped',
+      'sold',
+      'lost',
+    ]);
   });
 
   it('set_plot_flag sets a flag with model provenance', () => {
@@ -1655,6 +1710,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'award_inspiration',
         'begin_turn',
         'calc',
+        'claim_item',
         'close_combat_instance',
         'complete_long_rest',
         'complete_short_rest',

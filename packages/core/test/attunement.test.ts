@@ -8,15 +8,22 @@ import {
   AttunementError,
   adjustHp,
   assembleContext,
+  assertEffectiveAttunementCurseReady,
   attuneItem,
+  destroyInventoryItem,
+  effectiveMagicItemMechanics,
+  endAllAttunementsOnDeath,
   endAttunement,
   ensureCharacterRow,
   getActiveCharacterId,
+  getBundledDnd5eSrdPack,
   giveItem,
   listAttunements,
+  magicItemVariantDefinitions,
   mutateState,
   renderContextMessage,
 } from '../src/internal.js';
+import { installCursedAttunementAddon } from './support/cursedAttunementAddon.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_SESSION_ID,
@@ -41,7 +48,101 @@ function give(db: ReturnType<typeof setup>['db'], id: string, name: string) {
   giveItem(db, { id, name }, CTX);
 }
 
+function insertAttunement(
+  db: ReturnType<typeof setup>['db'],
+  itemId: string,
+  itemKey: string,
+  displayName: string,
+): void {
+  db.prepare(
+    `INSERT INTO attunement(
+       campaign_id, character_id, item_id, item_key, display_name,
+       attuned_at, provenance, session_id, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    CAMPAIGN,
+    'pc-1',
+    itemId,
+    itemKey,
+    displayName,
+    NOW,
+    CTX.provenance,
+    CTX.sessionId,
+    NOW,
+  );
+}
+
 describe('attuneItem', () => {
+  it('uses an add-on override curse for attune and ordinary end', () => {
+    const { db } = setup();
+    const resolveRulesPack = installCursedAttunementAddon(db, NOW);
+    giveItem(
+      db,
+      {
+        id: 'overridden-ring',
+        name: 'Ring of Protection',
+        packRef: 'magic-item:ring-of-protection',
+      },
+      CTX,
+    );
+
+    expect(() =>
+      attuneItem(db, {
+        campaignId: CAMPAIGN,
+        itemId: 'overridden-ring',
+        resolveRulesPack,
+        ...CTX,
+      }),
+    ).toThrow(/curse contract.*engine-pending.*attune/);
+    insertAttunement(
+      db,
+      'overridden-ring',
+      'magic-item:ring-of-protection',
+      'Ring of Protection',
+    );
+    expect(() =>
+      endAttunement(db, {
+        campaignId: CAMPAIGN,
+        itemId: 'overridden-ring',
+        reason: 'voluntary',
+        resolveRulesPack,
+        ...CTX,
+      }),
+    ).toThrow(/curse contract.*engine-pending.*end/);
+    expect(
+      endAttunement(db, {
+        campaignId: CAMPAIGN,
+        itemId: 'overridden-ring',
+        reason: 'death',
+        resolveRulesPack,
+        ...CTX,
+      }).ended.itemId,
+    ).toBe('overridden-ring');
+  });
+
+  it('fails before ledger mutation when effective mechanics declares a curse', () => {
+    const { db } = setup();
+    const cursedId = giveItem(
+      db,
+      {
+        id: 'cursed-axe',
+        name: 'Berserker Axe',
+        packRef: 'magic-item:berserker-axe',
+        stateful: true,
+      },
+      CTX,
+    );
+    expect(() =>
+      attuneItem(db, {
+        campaignId: CAMPAIGN,
+        itemId: cursedId.id,
+        ...CTX,
+      }),
+    ).toThrow(/curse contract.*engine-pending.*attune/);
+    expect(
+      db.prepare('SELECT 1 FROM attunement WHERE item_id=?').get(cursedId.id),
+    ).toBeUndefined();
+  });
   it('attunes a held item whose record requires attunement', () => {
     const { db, pcId } = setup();
     give(db, 'ring-1', 'Ring of Protection');
@@ -136,6 +237,27 @@ describe('attuneItem', () => {
         ...CTX,
       }),
     ).toThrow(/does not resolve/);
+  });
+
+  it('fails closed when immutable pack identity does not resolve', () => {
+    const { db } = setup();
+    giveItem(
+      db,
+      {
+        id: 'unavailable-relic',
+        name: 'Unavailable Relic',
+        packRef: 'magic-item:unavailable-relic',
+      },
+      CTX,
+    );
+
+    expect(() =>
+      attuneItem(db, {
+        campaignId: CAMPAIGN,
+        itemId: 'unavailable-relic',
+        ...CTX,
+      }),
+    ).toThrow(/inventory packRef.*exact campaign rules stack.*refusing/);
   });
 
   it('requires possession of the item', () => {
@@ -283,6 +405,52 @@ describe('attuneItem', () => {
 });
 
 describe('endAttunement', () => {
+  it('cannot explicitly delete a persisted cursed bond', () => {
+    const { db } = setup();
+    const cursedId = giveItem(
+      db,
+      {
+        id: 'cursed-axe',
+        name: 'Berserker Axe',
+        packRef: 'magic-item:berserker-axe',
+        stateful: true,
+      },
+      CTX,
+    );
+    insertAttunement(
+      db,
+      cursedId.id,
+      'magic-item:berserker-axe',
+      'Berserker Axe',
+    );
+    expect(() =>
+      endAttunement(db, {
+        campaignId: CAMPAIGN,
+        itemId: cursedId.id,
+        reason: 'voluntary',
+        ...CTX,
+      }),
+    ).toThrow(/curse contract.*engine-pending.*end/);
+    expect(
+      db.prepare('SELECT 1 FROM attunement WHERE item_id=?').get(cursedId.id),
+    ).toEqual({ 1: 1 });
+    expect(() =>
+      endAttunement(db, {
+        campaignId: CAMPAIGN,
+        itemId: cursedId.id,
+        reason: 'item_destroyed',
+        ...CTX,
+      }),
+    ).toThrow(/curse contract.*engine-pending/);
+    expect(
+      endAttunement(db, {
+        campaignId: CAMPAIGN,
+        itemId: cursedId.id,
+        reason: 'death',
+        ...CTX,
+      }).ended.itemId,
+    ).toBe(cursedId.id);
+  });
   it('frees the slot and reports the remaining attunements', () => {
     const { db, pcId } = setup();
     give(db, 'ring-1', 'Ring of Protection');
@@ -333,6 +501,34 @@ describe('endAttunement', () => {
 });
 
 describe('death ends attunement (F6 hook)', () => {
+  it('preserves authoritative death and destruction cleanup exceptions', () => {
+    const { db, pcId } = setup();
+    const instanceIds: string[] = [];
+    for (const itemId of ['death-axe', 'destroyed-axe']) {
+      const granted = giveItem(
+        db,
+        {
+          id: itemId,
+          name: 'Berserker Axe',
+          packRef: 'magic-item:berserker-axe',
+          stateful: true,
+        },
+        CTX,
+      );
+      instanceIds.push(granted.id);
+      insertAttunement(
+        db,
+        granted.id,
+        'magic-item:berserker-axe',
+        'Berserker Axe',
+      );
+    }
+    expect(
+      destroyInventoryItem(db, instanceIds[1], CTX).attunementsEnded,
+    ).toHaveLength(1);
+    expect(endAllAttunementsOnDeath(db, pcId)).toBe(1);
+    expect(listAttunements(db, CAMPAIGN, pcId)).toEqual([]);
+  });
   it('releases every slot when the death machine records death', () => {
     const { db, pcId } = setup();
     for (const [field, value] of [
@@ -356,6 +552,67 @@ describe('death ends attunement (F6 hook)', () => {
     const result = adjustHp(db, -40, CTX);
     expect(result.lifeState).toBe('dead');
     expect(listAttunements(db, CAMPAIGN, pcId)).toHaveLength(0);
+  });
+});
+
+describe('cursed attunement corpus guard', () => {
+  it('guards all 12 effective bundled curse-bearing scopes and variant mechanics', () => {
+    const bundled = getBundledDnd5eSrdPack();
+    const guarded: string[] = [];
+    for (const record of bundled.records.filter(
+      (candidate) => candidate.kind === 'magic-item',
+    )) {
+      const variants = magicItemVariantDefinitions(record);
+      const scopes: readonly (string | undefined)[] =
+        variants.length === 0
+          ? [undefined]
+          : variants.map((variant) => variant.id);
+      for (const variantId of scopes) {
+        if (effectiveMagicItemMechanics(record, variantId)?.curse === undefined)
+          continue;
+        expect(() =>
+          assertEffectiveAttunementCurseReady(record, variantId, 'attune'),
+        ).toThrow(/engine-pending/);
+        guarded.push(`${record.key}:${variantId ?? 'parent'}`);
+      }
+    }
+    expect(guarded).toHaveLength(12);
+
+    const exemplar = bundled.records.find(
+      (record) => record.kind === 'magic-item',
+    );
+    if (exemplar === undefined) throw new Error('missing magic-item exemplar');
+    const syntheticVariant = {
+      ...exemplar,
+      key: 'magic-item:variant-curse-test',
+      data: {
+        itemType: 'wondrous item',
+        rarity: 'rare',
+        requiresAttunement: true,
+        description: 'fixture',
+        variants: [
+          {
+            id: 'cursed-form',
+            name: 'Cursed Form',
+            rarity: 'rare',
+            text: 'fixture',
+            mechanics: {
+              curse: {
+                blocksUnattune: true,
+                note: 'synthetic variant fixture',
+              },
+            },
+          },
+        ],
+      },
+    };
+    expect(() =>
+      assertEffectiveAttunementCurseReady(
+        syntheticVariant,
+        'cursed-form',
+        'attune',
+      ),
+    ).toThrow(/engine-pending/);
   });
 });
 

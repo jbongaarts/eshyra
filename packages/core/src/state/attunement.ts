@@ -32,12 +32,17 @@ import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import type { MagicItemVariantDefinition } from '../rules/magicItemVariants.js';
 import {
+  effectiveMagicItemMechanics,
   MagicItemVariantError,
   magicItemVariantTypeKey,
   resolveMagicItemVariant,
 } from '../rules/magicItemVariants.js';
 import { resolveCharacterId } from './activeCharacter.js';
-import { lookupCampaignRecord } from './campaignRecordLookup.js';
+import {
+  type CampaignRulesPackResolver,
+  lookupCampaignRecord,
+  lookupStrictCampaignRecord,
+} from './campaignRecordLookup.js';
 import type { LifeState } from './hpLifecycle.js';
 
 export const ATTUNEMENT_SLOT_LIMIT = 3;
@@ -71,6 +76,7 @@ export interface AttunementMutationContext {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 export interface AttuneItemInput extends AttunementMutationContext {
@@ -115,6 +121,83 @@ export class AttunementError extends Error {
     super(message);
     this.name = 'AttunementError';
   }
+}
+
+export type CursedAttunementMutation = 'attune' | 'end' | 'transfer-end';
+
+/** One effective parent+variant curse gate shared by every ordinary mutation. */
+export function assertEffectiveAttunementCurseReady(
+  record: import('../rules/types.js').RulesRecord,
+  variantId: string | undefined,
+  mutation: CursedAttunementMutation,
+): void {
+  let curse: unknown;
+  try {
+    curse = effectiveMagicItemMechanics(record, variantId)?.curse;
+  } catch (error) {
+    if (error instanceof MagicItemVariantError)
+      throw new AttunementError(error.message);
+    throw error;
+  }
+  if (curse !== undefined)
+    throw new AttunementError(
+      `${record.key}${variantId === undefined ? '' : ` variant '${variantId}'`} has a source-declared curse contract; cursed attunement persistence is engine-pending, so '${mutation}' must fail closed. Only authoritative death or item-destruction lifecycle cleanup may end an existing cursed bond.`,
+    );
+}
+
+/** Resolve immutable inventory identity through the campaign stack, then gate. */
+export function assertInventoryAttunementCurseReady(
+  db: Db,
+  itemId: string,
+  mutation: Exclude<CursedAttunementMutation, 'attune'>,
+  resolveRulesPack?: CampaignRulesPackResolver,
+): void {
+  const item = db
+    .prepare('SELECT pack_ref, variant_id FROM inventory WHERE id = ?')
+    .get(itemId) as
+    | { pack_ref: string | null; variant_id: string | null }
+    | undefined;
+  if (item === undefined)
+    throw new AttunementError(
+      `inventory item '${itemId}' does not exist; refusing to bypass possible cursed attunement persistence`,
+    );
+  if (item.pack_ref === null) return;
+  const record = lookupImmutableMagicItemRecord(
+    db,
+    item.pack_ref,
+    resolveRulesPack,
+  );
+  assertEffectiveAttunementCurseReady(
+    record,
+    item.variant_id ?? undefined,
+    mutation,
+  );
+}
+
+function lookupImmutableMagicItemRecord(
+  db: Db,
+  packRef: string,
+  resolveRulesPack?: CampaignRulesPackResolver,
+): import('../rules/types.js').RulesRecord {
+  let record: import('../rules/types.js').RulesRecord | undefined;
+  try {
+    record = lookupStrictCampaignRecord(
+      db,
+      'magic-item',
+      packRef,
+      resolveRulesPack,
+    )?.record;
+  } catch (error) {
+    const reason = error instanceof Error ? `: ${error.message}` : '';
+    throw new AttunementError(
+      `inventory packRef '${packRef}' cannot be resolved through the exact campaign rules stack${reason}; refusing to bypass possible cursed attunement persistence`,
+    );
+  }
+  if (record === undefined)
+    throw new AttunementError(
+      `inventory packRef '${packRef}' does not resolve in the exact campaign rules stack; refusing to bypass possible cursed attunement persistence`,
+    );
+  return record;
 }
 
 interface AttunementRow {
@@ -209,7 +292,33 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
       item.pack_ref ??
       input.itemRef ??
       `magic-item:${normalizeItemKey(item.name)}`;
-    const record = lookupCampaignRecord(txnDb, 'magic-item', candidateRef);
+    let record: import('../rules/types.js').RulesRecord | undefined;
+    if (
+      item.pack_ref !== null ||
+      input.itemRef !== undefined ||
+      input.resolveRulesPack !== undefined
+    ) {
+      try {
+        record = lookupStrictCampaignRecord(
+          txnDb,
+          'magic-item',
+          candidateRef,
+          input.resolveRulesPack,
+        )?.record;
+      } catch (error) {
+        const reason = error instanceof Error ? `: ${error.message}` : '';
+        throw new AttunementError(
+          `magic-item ref '${candidateRef}' cannot be resolved through the exact campaign rules stack${reason}`,
+        );
+      }
+    } else {
+      record = lookupCampaignRecord(txnDb, 'magic-item', candidateRef);
+    }
+    if (item.pack_ref !== null && record === undefined) {
+      throw new AttunementError(
+        `inventory packRef '${item.pack_ref}' does not resolve in the exact campaign rules stack; refusing to bypass possible cursed attunement persistence`,
+      );
+    }
     if (input.itemRef !== undefined && record === undefined) {
       throw new AttunementError(
         `itemRef '${input.itemRef}' does not resolve to a magic-item record in the campaign rules stack; find the exact key via lookup_rules or omit itemRef`,
@@ -240,6 +349,11 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
           throw new AttunementError(error.message);
         throw error;
       }
+      assertEffectiveAttunementCurseReady(
+        record,
+        selectedVariant?.id,
+        'attune',
+      );
       itemKey = magicItemVariantTypeKey(record.key, selectedVariant?.id);
       if (selectedVariant !== undefined) displayName = selectedVariant.name;
       if (typeof data.attunementRequirement === 'string') {
@@ -346,6 +460,13 @@ export function endAttunement(
         }`,
       );
     }
+    if (input.reason !== 'death')
+      assertInventoryAttunementCurseReady(
+        txnDb,
+        input.itemId,
+        'end',
+        input.resolveRulesPack,
+      );
     txnDb
       .prepare(
         `DELETE FROM attunement

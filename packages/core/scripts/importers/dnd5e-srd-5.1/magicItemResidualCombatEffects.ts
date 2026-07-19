@@ -632,6 +632,11 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
           failedSaveDamage: { dice: '6d10', type: 'piercing' },
           successfulSaveDamage: 'half',
         },
+        [F1, F8, F9],
+        {
+          id: 'deal-extra-damage',
+          effects: ['c2-residual-slaying-damage'],
+        },
       ),
     ],
   ],

@@ -26,6 +26,7 @@ import { attuneItemTool } from './toolAttuneItem.js';
 import { awardInspirationTool } from './toolAwardInspiration.js';
 import { beginTurnTool } from './toolBeginTurn.js';
 import { calcTool } from './toolCalc.js';
+import { claimItemTool } from './toolClaimItem.js';
 import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
 import { convertCurrencyTool } from './toolConvertCurrency.js';
 import { endAttunementTool } from './toolEndAttunement.js';
@@ -117,6 +118,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   gainCurrencyTool,
   spendCurrencyTool,
   convertCurrencyTool,
+  claimItemTool,
   giveItemTool,
   useItemTool,
   transferItemTool,

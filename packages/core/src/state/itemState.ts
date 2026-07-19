@@ -128,6 +128,14 @@ export interface UseItemResult {
   readonly quantity?: number;
   readonly consumed: boolean;
   readonly attunementsEnded?: readonly DestroyedItemAttunementEvidence[];
+  readonly transformations?: readonly {
+    readonly kind: 'became-nonmagical';
+    readonly economyId: string;
+    readonly quantity: number;
+    readonly sourceInstanceId: string;
+    readonly transformedInstanceId: string;
+    readonly sourceLocation?: string;
+  }[];
 }
 
 export class ItemStateError extends Error {
@@ -630,23 +638,36 @@ export function isStatefulMagicItem(
   );
 }
 
-function durationMinutes(raw: unknown, amount: number): number | undefined {
-  const duration = obj(raw, 'duration');
+const DURATION_ROUND_TICKS = {
+  round: 1,
+  minute: 10,
+  hour: 600,
+  day: 14_400,
+} as const;
+
+function durationRoundTicks(
+  raw: unknown,
+  amount: number,
+  path: string,
+): number {
+  const duration = obj(raw, path);
+  if (!Number.isSafeInteger(amount) || amount <= 0)
+    throw new ItemStateError(
+      `${path}.amount must resolve to a positive safe integer`,
+    );
   if (
-    !Number.isFinite(amount) ||
-    amount < 0 ||
-    typeof duration.unit !== 'string'
+    typeof duration.unit !== 'string' ||
+    !(duration.unit in DURATION_ROUND_TICKS)
   )
-    return undefined;
-  const multiplier: Record<string, number> = {
-    round: 0.1,
-    minute: 1,
-    hour: 60,
-    day: 1440,
-  };
-  return multiplier[duration.unit] === undefined
-    ? undefined
-    : amount * multiplier[duration.unit];
+    throw new ItemStateError(
+      `${path}.unit must be round, minute, hour, or day`,
+    );
+  const ticks =
+    amount *
+    DURATION_ROUND_TICKS[duration.unit as keyof typeof DURATION_ROUND_TICKS];
+  if (!Number.isSafeInteger(ticks))
+    throw new ItemStateError(`${path} exceeds safe duration accounting`);
+  return ticks;
 }
 
 type InitializationRoll = NonNullable<
@@ -701,7 +722,9 @@ function initialRemaining(
     );
   }
   if (economy.kind === 'budget') {
-    const total = obj(economy.budget, 'item economy.budget').total;
+    const budget = obj(economy.budget, 'item economy.budget');
+    const total = budget.total;
+    const increment = budget.increment;
     const duration = obj(total, 'item economy.budget.total');
     const amount = resolvedInitialAmount(
       duration.amount,
@@ -709,7 +732,30 @@ function initialRemaining(
       rng,
       rolls,
     );
-    return amount === undefined ? undefined : durationMinutes(total, amount);
+    if (amount === undefined)
+      throw new ItemStateError(
+        `economy:${economyId}:budget.total.amount must be a number or dice expression`,
+      );
+    const incrementDuration = obj(increment, 'item economy.budget.increment');
+    if (typeof incrementDuration.amount !== 'number')
+      throw new ItemStateError(
+        `economy:${economyId}:budget.increment.amount must be numeric`,
+      );
+    const totalTicks = durationRoundTicks(
+      total,
+      amount,
+      `economy:${economyId}:budget.total`,
+    );
+    const incrementTicks = durationRoundTicks(
+      increment,
+      incrementDuration.amount,
+      `economy:${economyId}:budget.increment`,
+    );
+    if (totalTicks % incrementTicks !== 0)
+      throw new ItemStateError(
+        `economy:${economyId}:budget.total must be exactly divisible by its increment`,
+      );
+    return totalTicks / incrementTicks;
   }
   if (economy.kind === 'doses') {
     const doses = obj(economy.doses, 'item economy.doses');
@@ -1317,15 +1363,108 @@ function isDeferredDestroyedLifecycle(
   return !['destroyed', 'consumed'].includes(selectedTransition.nextState);
 }
 
+interface StatelessSingleUseTransformationSource {
+  readonly id: string;
+  readonly character_id: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly location: string | null;
+  readonly properties_json: string;
+  readonly pack_ref: string;
+  readonly variant_id: string | null;
+}
+
+function nextNonmagicalInventoryId(db: Db, sourceId: string): string {
+  const base = `${sourceId}:nonmagical`;
+  let candidate = base;
+  let suffix = 2;
+  while (
+    db.prepare('SELECT 1 FROM inventory WHERE id = ?').get(candidate) !==
+    undefined
+  ) {
+    candidate = `${base}#${suffix}`;
+    suffix += 1;
+  }
+  return candidate;
+}
+
+/**
+ * Atomically splits physically surviving single-use units away from their
+ * magic rules binding. The caller owns the surrounding use-item transaction;
+ * this owner preserves a physical inventory row and descriptive properties while the
+ * new row's null pack/variant identity prevents any further magic execution.
+ */
+function splitNonmagicalSingleUseInventory(
+  db: Db,
+  source: StatelessSingleUseTransformationSource,
+  transformations: readonly {
+    readonly economyId: string;
+    readonly quantity: number;
+  }[],
+  ctx: Pick<UseItemInput, 'provenance' | 'sessionId' | 'at'>,
+): NonNullable<UseItemResult['transformations']> {
+  const clock = db
+    .prepare('SELECT current_location_id FROM clock WHERE id=1')
+    .get() as { current_location_id: string | null } | undefined;
+  const worldLocation = clock?.current_location_id ?? null;
+  return transformations.map(({ economyId, quantity }) => {
+    const transformedInstanceId = nextNonmagicalInventoryId(db, source.id);
+    const properties = JSON.parse(source.properties_json) as Obj;
+    const transformedProperties = {
+      ...properties,
+      magicItemTransformation: {
+        status: 'nonmagical',
+        sourcePackRef: source.pack_ref,
+        ...(source.variant_id === null
+          ? {}
+          : { sourceVariantId: source.variant_id }),
+        ...(source.location === null
+          ? {}
+          : { sourceLocation: source.location }),
+        economyId,
+      },
+    };
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, quantity, location, properties_json,
+         provenance, session_id, updated_at, pack_ref, variant_id
+       ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)`,
+    ).run(
+      transformedInstanceId,
+      `Nonmagical ammunition (formerly ${source.name})`,
+      quantity,
+      worldLocation,
+      JSON.stringify(transformedProperties),
+      ctx.provenance,
+      ctx.sessionId,
+      ctx.at,
+    );
+    return {
+      kind: 'became-nonmagical' as const,
+      economyId,
+      quantity,
+      sourceInstanceId: source.id,
+      transformedInstanceId,
+      ...(source.location === null ? {} : { sourceLocation: source.location }),
+    };
+  });
+}
+
 export function useItem(db: Db, input: UseItemInput): UseItemResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
       .prepare(
-        'SELECT id, pack_ref, variant_id, quantity FROM inventory WHERE id = ? AND character_id = ?',
+        `SELECT id, character_id, name, quantity, location, properties_json,
+                pack_ref, variant_id
+         FROM inventory WHERE id = ? AND character_id = ?`,
       )
       .get(input.instanceId, input.characterId) as
       | {
           id: string;
+          character_id: string;
+          name: string;
+          location: string | null;
+          properties_json: string;
           pack_ref: string | null;
           variant_id: string | null;
           quantity: number;
@@ -1429,6 +1568,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
             String(obj(raw, 'operation cost').economy),
           ),
         ),
+        operationEffectIds: new Set(operationEffectIds),
         effectIds: new Set([
           ...operationEffectIds,
           ...possibleTransitionEffectIds,
@@ -1509,6 +1649,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
 
     const costs: { economy: string; amount: number }[] = [];
     let stackedSingleUse = 0;
+    const statelessSingleUseCosts: { economyId: string; amount: number }[] = [];
     let spentStatefulSingleUse = false;
     const nextEconomies: Record<string, ItemEconomyState> = {
       ...(state?.economies ?? {}),
@@ -1522,6 +1663,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       if (economy.kind === 'at-will') continue;
       if (economy.kind === 'single-use' && !stateful) {
         stackedSingleUse += amount;
+        statelessSingleUseCosts.push({ economyId, amount });
         continue;
       }
       if (economy.kind === 'single-use') spentStatefulSingleUse = true;
@@ -1577,9 +1719,49 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
     let quantity = row.quantity;
     let consumed = spentStatefulSingleUse;
     let attunementsEnded: readonly DestroyedItemAttunementEvidence[] = [];
+    let transformations: NonNullable<UseItemResult['transformations']> = [];
     if (stackedSingleUse > 0) {
       quantity -= stackedSingleUse;
-      consumed = true;
+      const nonmagical: { economyId: string; quantity: number }[] = [];
+      for (const { economyId, amount } of statelessSingleUseCosts) {
+        let resolution: ItemDepletionResolution | undefined;
+        try {
+          resolution = resolveItemDepletion(
+            economyId,
+            refs.economies[economyId],
+            input.rng,
+          );
+        } catch (error) {
+          if (error instanceof ItemDepletionError)
+            throw new ItemStateError(error.message);
+          throw error;
+        }
+        if (resolution?.becomes === 'nonmagical') {
+          nonmagical.push({ economyId, quantity: amount });
+        } else if (
+          resolution?.becomes !== undefined &&
+          resolution.becomes !== 'destroyed'
+        ) {
+          throw new ItemStateError(
+            `${packRef} stateless single-use depletion '${String(resolution.becomes)}' has no inventory transformation owner`,
+          );
+        }
+      }
+      consumed =
+        stackedSingleUse >
+        nonmagical.reduce((total, entry) => total + entry.quantity, 0);
+      if (nonmagical.length > 0) {
+        if (row.pack_ref === null)
+          throw new ItemStateError(
+            `inventory instance '${input.instanceId}' lost its pack binding during use`,
+          );
+        transformations = splitNonmagicalSingleUseInventory(
+          txnDb,
+          { ...row, pack_ref: row.pack_ref },
+          nonmagical,
+          input,
+        );
+      }
       if (quantity === 0)
         attunementsEnded = destroyInventoryItem(
           txnDb,
@@ -1680,6 +1862,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       ...(state === undefined || quantity === 0 ? {} : { state }),
       consumed,
       ...(attunementsEnded.length === 0 ? {} : { attunementsEnded }),
+      ...(transformations.length === 0 ? {} : { transformations }),
     };
   });
 }

@@ -40,6 +40,7 @@ function hookLabel(raw: unknown): string | undefined {
 export interface ItemOperationReadinessInput {
   readonly operationId: string;
   readonly economyIds: ReadonlySet<string>;
+  readonly operationEffectIds: ReadonlySet<string>;
   readonly effectIds: ReadonlySet<string>;
   readonly usesStateMachine: boolean;
   readonly usesSpellStore: boolean;
@@ -67,16 +68,12 @@ export function assertMagicItemOperationReady(
     );
 
   const blockers: string[] = [];
+  const ownedEconomyIds = new Set<string>();
+  const representedEffectIds = new Set<string>();
+  let hasOperationOutcomeOwner = false;
   for (const rawClause of readiness.clauses) {
     const clause = object(rawClause);
     if (clause === undefined || !inSelectedScope(clause.scope, variantId))
-      continue;
-    if (
-      clause.readiness !== 'engine-pending' &&
-      clause.readiness !== 'design-blocked' &&
-      clause.readiness !== 'red' &&
-      clause.readiness !== 'transitional'
-    )
       continue;
     const representation = object(clause.representation);
     let relevant =
@@ -103,6 +100,29 @@ export function assertMagicItemOperationReady(
     )
       relevant = true;
     if (!relevant) continue;
+    if (
+      representation?.block === 'economies' &&
+      typeof representation.economyId === 'string'
+    )
+      ownedEconomyIds.add(representation.economyId);
+    if (
+      representation?.block === 'effects' ||
+      representation?.block === 'stateMachine' ||
+      representation?.block === 'spellStore'
+    )
+      hasOperationOutcomeOwner = true;
+    if (
+      representation?.block === 'effects' &&
+      typeof representation.effectId === 'string'
+    )
+      representedEffectIds.add(representation.effectId);
+    if (
+      clause.readiness !== 'engine-pending' &&
+      clause.readiness !== 'design-blocked' &&
+      clause.readiness !== 'red' &&
+      clause.readiness !== 'transitional'
+    )
+      continue;
     const hooks = (
       Array.isArray(clause.missingHooks) ? clause.missingHooks : []
     )
@@ -112,6 +132,16 @@ export function assertMagicItemOperationReady(
       `${String(clause.clauseId ?? 'unscoped-clause')} (${String(clause.readiness)}${hooks.length === 0 ? '' : `: ${hooks.join(', ')}`})`,
     );
   }
+  for (const economyId of input.economyIds)
+    if (!ownedEconomyIds.has(economyId) && !hasOperationOutcomeOwner)
+      blockers.push(
+        `economy '${economyId}' has no trusted semantic owner connecting this spend to an effect, transition, spell-store contract, or reviewed economy clause`,
+      );
+  for (const effectId of input.operationEffectIds)
+    if (!representedEffectIds.has(effectId))
+      blockers.push(
+        `operation effect '${effectId}' has no exact trusted readiness clause`,
+      );
   if (blockers.length > 0)
     throw new ItemExecutionReadinessError(
       `${record.key} operation '${input.operationId}' is not safely executable: ${blockers.join('; ')}`,

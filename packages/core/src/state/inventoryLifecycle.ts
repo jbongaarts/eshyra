@@ -54,6 +54,12 @@ export function destroyInventoryItem(
       )
       .all(itemId) as AttunementRow[];
     txnDb.prepare('DELETE FROM attunement WHERE item_id = ?').run(itemId);
+    txnDb
+      .prepare(
+        `DELETE FROM entity_usage_counter
+         WHERE owner_kind='item' AND owner_ref=?`,
+      )
+      .run(itemId);
     const deleted = txnDb
       .prepare('DELETE FROM inventory WHERE id = ?')
       .run(itemId);

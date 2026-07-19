@@ -309,21 +309,120 @@ export function giveItem(
 }
 
 export interface RemoveItemResult {
+  disposition: InventoryRemovalDisposition;
   removed: boolean;
   previousQuantity: number;
   newQuantity: number;
+  relinquishedItemId?: string;
   attunementsEnded?: readonly DestroyedItemAttunementEvidence[];
+}
+
+export interface ClaimItemResult {
+  readonly itemId: string;
+  readonly characterId: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly packRef?: string;
+  readonly variantId?: string;
+}
+
+/**
+ * Claim one existing unheld physical row without recreating its identity.
+ * Its world location is retained as pickup provenance; callers may explicitly
+ * move/stow it through a later inventory operation.
+ */
+export function claimItem(
+  db: Db,
+  itemId: string,
+  ctx: DomainMutationContext,
+): ClaimItemResult {
+  if (typeof itemId !== 'string' || itemId.length === 0)
+    throw new MutateStateError('claim_item item id must be non-empty');
+  return withTransaction(db, (txnDb) => {
+    const characterId = resolveCharacterId(txnDb, ctx.characterId);
+    const row = txnDb
+      .prepare(
+        `SELECT name, quantity, character_id, pack_ref, variant_id
+         FROM inventory WHERE id = ?`,
+      )
+      .get(itemId) as
+      | {
+          name: string;
+          quantity: number;
+          character_id: string | null;
+          pack_ref: string | null;
+          variant_id: string | null;
+        }
+      | undefined;
+    if (row === undefined)
+      throw new MutateStateError(`unheld inventory item '${itemId}' not found`);
+    if (row.character_id !== null)
+      throw new MutateStateError(
+        `inventory item '${itemId}' is already held by '${row.character_id}'`,
+      );
+    const updated = txnDb
+      .prepare(
+        `UPDATE inventory
+         SET character_id=?, provenance=?, session_id=?, updated_at=?
+         WHERE id=? AND character_id IS NULL`,
+      )
+      .run(characterId, ctx.provenance, ctx.sessionId, ctx.at, itemId);
+    if (updated.changes !== 1)
+      throw new MutateStateError(
+        `inventory item '${itemId}' was claimed concurrently`,
+      );
+    return {
+      itemId,
+      characterId,
+      name: row.name,
+      quantity: row.quantity,
+      ...(row.pack_ref === null ? {} : { packRef: row.pack_ref }),
+      ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
+    };
+  });
+}
+
+export type InventoryRemovalDisposition =
+  | 'destroyed'
+  | 'dropped'
+  | 'sold'
+  | 'lost';
+
+export interface RemoveItemInput {
+  readonly itemId: string;
+  readonly quantity?: number;
+  readonly disposition: InventoryRemovalDisposition;
+}
+
+function nextRelinquishedItemId(
+  db: Db,
+  itemId: string,
+  disposition: Exclude<InventoryRemovalDisposition, 'destroyed'>,
+): string {
+  const base = `${itemId}#${disposition}`;
+  let suffix = 1;
+  while (
+    db
+      .prepare('SELECT 1 FROM inventory WHERE id = ?')
+      .get(`${base}-${suffix}`) !== undefined
+  )
+    suffix += 1;
+  return `${base}-${suffix}`;
 }
 
 export function removeItem(
   db: Db,
-  itemId: string,
-  quantity: number | undefined,
+  input: RemoveItemInput,
   ctx: DomainMutationContext,
 ): RemoveItemResult {
+  const { itemId, quantity, disposition } = input;
   if (typeof itemId !== 'string' || itemId.length === 0) {
     throw new MutateStateError('item id must be a non-empty string');
   }
+  if (!['destroyed', 'dropped', 'sold', 'lost'].includes(disposition))
+    throw new MutateStateError(
+      'remove_item disposition must be destroyed, dropped, sold, or lost',
+    );
   if (quantity !== undefined && (!Number.isInteger(quantity) || quantity < 1)) {
     throw new MutateStateError(
       'remove_item quantity must be a positive integer',
@@ -334,19 +433,50 @@ export function removeItem(
     const charId = resolveCharacterId(txnDb, ctx.characterId);
     const row = txnDb
       .prepare(
-        'SELECT quantity FROM inventory WHERE id = ? AND (character_id = ? OR character_id IS NULL)',
+        `SELECT id, character_id, name, quantity, location, properties_json,
+                pack_ref, variant_id
+         FROM inventory WHERE id = ?`,
       )
-      .get(itemId, charId) as { quantity: number } | undefined;
+      .get(itemId) as
+      | {
+          id: string;
+          character_id: string | null;
+          name: string;
+          quantity: number;
+          location: string | null;
+          properties_json: string;
+          pack_ref: string | null;
+          variant_id: string | null;
+        }
+      | undefined;
 
     if (row === undefined) {
-      return { removed: false, previousQuantity: 0, newQuantity: 0 };
+      return {
+        disposition,
+        removed: false,
+        previousQuantity: 0,
+        newQuantity: 0,
+      };
     }
+    if (
+      row.character_id !== charId &&
+      !(row.character_id === null && disposition === 'destroyed')
+    )
+      throw new MutateStateError(
+        row.character_id === null
+          ? `inventory item '${itemId}' is unheld and cannot be ${disposition} by character '${charId}'`
+          : `inventory item '${itemId}' is held by another character and cannot be removed by '${charId}'`,
+      );
 
     const previousQuantity = row.quantity;
+    const requestedQuantity = quantity ?? previousQuantity;
+    const fullDisposition =
+      quantity === undefined || previousQuantity - requestedQuantity <= 0;
 
-    if (quantity === undefined || previousQuantity - quantity <= 0) {
+    if (disposition === 'destroyed' && fullDisposition) {
       const destruction = destroyInventoryItem(txnDb, itemId, ctx);
       return {
+        disposition,
         removed: destruction.destroyed,
         previousQuantity,
         newQuantity: 0,
@@ -356,7 +486,93 @@ export function removeItem(
       };
     }
 
-    const newQuantity = previousQuantity - quantity;
+    const newQuantity = previousQuantity - requestedQuantity;
+    const hasInstanceState =
+      txnDb
+        .prepare('SELECT 1 FROM item_state WHERE inventory_id = ?')
+        .get(itemId) !== undefined ||
+      txnDb
+        .prepare(
+          `SELECT 1 FROM entity_usage_counter
+           WHERE owner_kind='item' AND owner_ref=? LIMIT 1`,
+        )
+        .get(itemId) !== undefined ||
+      txnDb
+        .prepare('SELECT 1 FROM attunement WHERE item_id=? LIMIT 1')
+        .get(itemId) !== undefined;
+    if (!fullDisposition && hasInstanceState)
+      throw new MutateStateError(
+        `inventory item '${itemId}' has per-instance state and cannot be partially disposed; act on the whole physical instance`,
+      );
+    if (disposition !== 'destroyed') {
+      const clock = txnDb
+        .prepare('SELECT current_location_id FROM clock WHERE id=1')
+        .get() as { current_location_id: string | null } | undefined;
+      const worldLocation = clock?.current_location_id ?? null;
+      if (fullDisposition) {
+        txnDb
+          .prepare(
+            `UPDATE inventory
+             SET character_id=NULL, location=?, provenance=?, session_id=?, updated_at=?
+             WHERE id=? AND character_id=?`,
+          )
+          .run(
+            worldLocation,
+            ctx.provenance,
+            ctx.sessionId,
+            ctx.at,
+            itemId,
+            charId,
+          );
+        return {
+          disposition,
+          removed: true,
+          previousQuantity,
+          newQuantity: 0,
+          relinquishedItemId: itemId,
+        };
+      }
+      const relinquishedItemId = nextRelinquishedItemId(
+        txnDb,
+        itemId,
+        disposition,
+      );
+      txnDb
+        .prepare(
+          `INSERT INTO inventory(
+             id, character_id, name, quantity, location, properties_json,
+             provenance, session_id, updated_at, pack_ref, variant_id
+           ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          relinquishedItemId,
+          row.name,
+          requestedQuantity,
+          worldLocation,
+          row.properties_json,
+          ctx.provenance,
+          ctx.sessionId,
+          ctx.at,
+          row.pack_ref,
+          row.variant_id,
+        );
+      mutateState(txnDb, {
+        target: 'inventory',
+        id: itemId,
+        field: 'quantity',
+        op: 'set',
+        value: newQuantity,
+        ...ctx,
+      });
+      return {
+        disposition,
+        removed: false,
+        previousQuantity,
+        newQuantity,
+        relinquishedItemId,
+      };
+    }
+
     mutateState(txnDb, {
       target: 'inventory',
       id: itemId,
@@ -366,7 +582,7 @@ export function removeItem(
       ...ctx,
     });
 
-    return { removed: false, previousQuantity, newQuantity };
+    return { disposition, removed: false, previousQuantity, newQuantity };
   });
 }
 

@@ -23758,11 +23758,11 @@
       "representativeValues": [
         "c2-activate-immunity-payload",
         "c2-residual-redirect-ranged-attack",
+        "c2-residual-slaying-damage",
         "bead-force-payload",
-        "c2-cast-gate",
-        "c2-cast-plane-shift"
+        "c2-cast-gate"
       ],
-      "population": 174,
+      "population": 175,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
