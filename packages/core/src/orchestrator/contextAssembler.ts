@@ -47,6 +47,7 @@ import {
 } from '../state/encounterCombatants.js';
 import { formatHpStatus, type LifeState } from '../state/hpLifecycle.js';
 import { isConcreteWorldLocation } from '../state/inventoryWorldLocation.js';
+import type { ItemAdoptionReview } from '../state/itemAdoptionReview.js';
 import {
   type ItemInstanceState,
   readItemState,
@@ -179,6 +180,8 @@ export interface InventoryItem {
   properties: InventoryItemProperties;
   packRef: string | undefined;
   variantId?: string;
+  /** Code-owned quarantine metadata; raw legacy evidence is never prompted. */
+  adoptionReview?: ItemAdoptionReview;
   /** Validated, per-instance mutable magic-item state. */
   state: ItemInstanceState | undefined;
 }
@@ -294,6 +297,9 @@ interface InventoryRow {
   properties_json: string;
   pack_ref: string | null;
   variant_id: string | null;
+  review_requested_pack_ref: string | null;
+  review_requested_variant_id: string | null;
+  review_reason: string | null;
 }
 
 interface NearbyInventoryRow {
@@ -339,10 +345,15 @@ export function readStateSnapshot(
 
   const inventoryRows = db
     .prepare(
-      `SELECT id, name, quantity, location, properties_json, pack_ref, variant_id
-       FROM inventory
-       WHERE character_id = ?
-       ORDER BY id`,
+      `SELECT i.id, i.name, i.quantity, i.location, i.properties_json,
+              i.pack_ref, i.variant_id,
+              r.requested_pack_ref AS review_requested_pack_ref,
+              r.requested_variant_id AS review_requested_variant_id,
+              r.reason AS review_reason
+       FROM inventory i
+       LEFT JOIN inventory_adoption_review r ON r.inventory_id = i.id
+       WHERE i.character_id = ?
+       ORDER BY i.id`,
     )
     .all(charId) as InventoryRow[];
 
@@ -435,6 +446,18 @@ export function readStateSnapshot(
             ? undefined
             : validatePackRef(row.pack_ref, `inventory[${row.id}].pack_ref`),
         ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
+        ...(row.review_requested_pack_ref === null || row.review_reason === null
+          ? {}
+          : {
+              adoptionReview: {
+                inventoryId: row.id,
+                requestedPackRef: row.review_requested_pack_ref,
+                ...(row.review_requested_variant_id === null
+                  ? {}
+                  : { requestedVariantId: row.review_requested_variant_id }),
+                reason: row.review_reason,
+              },
+            }),
         state: readItemState(db, row.id),
       };
     }),
@@ -680,31 +703,18 @@ function renderParty(party: PartyMember[], actingId: string): string {
 const MAX_ADOPTION_REASON_CONTEXT_CHARS = 240;
 
 function renderMagicItemAdoptionStatus(
-  properties: InventoryItemProperties,
+  review: ItemAdoptionReview | undefined,
 ): string {
-  const marker = properties.magicItemAdoption;
-  if (
-    marker === null ||
-    typeof marker !== 'object' ||
-    Array.isArray(marker) ||
-    marker.status !== 'gm-review-required'
-  )
-    return '';
-  const requestedPackRef =
-    typeof marker.requestedPackRef === 'string'
-      ? `; requestedPackRef=${marker.requestedPackRef}`
-      : '';
+  if (review === undefined) return '';
+  const requestedPackRef = `; requestedPackRef=${review.requestedPackRef}`;
   const requestedVariantId =
-    typeof marker.requestedVariantId === 'string'
-      ? `; requestedVariantId=${marker.requestedVariantId}`
+    review.requestedVariantId !== undefined
+      ? `; requestedVariantId=${review.requestedVariantId}`
       : '';
-  const reason =
-    typeof marker.reason === 'string'
-      ? marker.reason
-          .replace(/\s+/g, ' ')
-          .trim()
-          .slice(0, MAX_ADOPTION_REASON_CONTEXT_CHARS)
-      : 'reason unavailable';
+  const reason = review.reason
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MAX_ADOPTION_REASON_CONTEXT_CHARS);
   return ` adoption=gm-review-required${requestedPackRef}${requestedVariantId}; reason=${reason}`;
 }
 
@@ -756,7 +766,7 @@ function renderState(state: StateSnapshot): string {
           const identity = ` [id=${i.id}${i.packRef === undefined ? '' : `; ${i.packRef}`}${i.variantId === undefined ? '' : `; variant=${i.variantId}`}]`;
           const liveState =
             i.state === undefined ? '' : ` state=${JSON.stringify(i.state)}`;
-          const adoption = renderMagicItemAdoptionStatus(i.properties);
+          const adoption = renderMagicItemAdoptionStatus(i.adoptionReview);
           return `${i.name} x${i.quantity}${identity}${adoption}${liveState}`;
         })
         .join(', ')}`,

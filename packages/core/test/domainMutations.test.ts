@@ -9,6 +9,7 @@ import {
   MutateStateError,
   mutateState,
   openDatabase,
+  reacquireItem,
   readStateSnapshot,
   removeCondition,
   removeItem,
@@ -1034,7 +1035,101 @@ describe('removeItem', () => {
       expect(() =>
         removeItem(db, { itemId, disposition: 'destroyed' }, CTX),
       ).toThrow(/not under the acting character's custody/);
+      expect(
+        reacquireItem(
+          db,
+          {
+            itemId,
+            basis: disposition === 'sold' ? 'repurchased' : 'found',
+            evidence: `The ${disposition} relic returned in the market scene.`,
+          },
+          CTX,
+        ),
+      ).toMatchObject({
+        itemId,
+        previousDisposition: disposition,
+        characterId: 'pc-1',
+      });
+      expect(
+        db
+          .prepare(
+            `SELECT from_disposition, basis, evidence
+             FROM inventory_custody_event WHERE inventory_id=?`,
+          )
+          .get(itemId),
+      ).toEqual({
+        from_disposition: disposition,
+        basis: disposition === 'sold' ? 'repurchased' : 'found',
+        evidence: `The ${disposition} relic returned in the market scene.`,
+      });
     }
+    db.close();
+  });
+
+  it('reacquires the exact sold row without resetting state or attunement', () => {
+    const db = freshDb();
+    updateClock(db, { locationId: 'market' }, CTX);
+    const returning = giveItem(
+      db,
+      {
+        id: 'returning-orb',
+        name: 'Returning Orb',
+        packRef: 'magic-item:crystal-ball',
+        variantId: 'crystal-ball-of-telepathy',
+        stateful: true,
+      },
+      CTX,
+    );
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES (?, ?, 'test', 'session-1', ?)`,
+    ).run(
+      returning.id,
+      JSON.stringify({
+        packRef: 'magic-item:crystal-ball',
+        variantId: 'crystal-ball-of-telepathy',
+        custom: { scar: 'unchanged' },
+      }),
+      CTX.at,
+    );
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES ('campaign-1', 'pc-1', ?,
+                 'magic-item:crystal-ball', 'Returning Orb', ?, 'test',
+                 'session-1', ?)`,
+    ).run(returning.id, CTX.at, CTX.at);
+    removeItem(db, { itemId: returning.id, disposition: 'sold' }, CTX);
+
+    expect(
+      reacquireItem(
+        db,
+        {
+          itemId: returning.id,
+          basis: 'returned',
+          evidence: 'The merchant rescinded the sale and handed it back.',
+        },
+        CTX,
+      ),
+    ).toMatchObject({ itemId: returning.id, previousDisposition: 'sold' });
+    expect(
+      db
+        .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
+        .get(returning.id),
+    ).toEqual({
+      state_json: JSON.stringify({
+        packRef: 'magic-item:crystal-ball',
+        variantId: 'crystal-ball-of-telepathy',
+        custom: { scar: 'unchanged' },
+      }),
+    });
+    expect(
+      db
+        .prepare('SELECT character_id FROM attunement WHERE item_id=?')
+        .get(returning.id),
+    ).toEqual({ character_id: 'pc-1' });
     db.close();
   });
 

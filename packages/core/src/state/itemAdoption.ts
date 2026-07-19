@@ -16,6 +16,11 @@ import {
   lookupStrictCampaignRecord,
 } from './campaignRecordLookup.js';
 import {
+  clearItemAdoptionReview,
+  readItemAdoptionReview,
+  writeItemAdoptionReview,
+} from './itemAdoptionReview.js';
+import {
   createInitialItemState,
   type ItemInstanceState,
   isStatefulMagicItem,
@@ -51,6 +56,9 @@ export interface AdoptMagicItemInput {
   readonly characterId: string;
   readonly packRef: string;
   readonly variantId?: string;
+  /** Explicit GM reconciliation: discard quarantined legacy projections and
+   * retry against the supplied exact canonical identity. */
+  readonly resolveReview?: boolean;
   readonly resolveRulesPack?: CampaignRulesPackResolver;
   readonly rng?: Rng;
   readonly provenance: string;
@@ -137,27 +145,47 @@ function reviewResult(
   packRef: string,
   stateful: boolean,
   reason: string,
+  rawPropertiesJson?: string,
 ): AdoptMagicItemResult {
-  const marker = {
-    status: 'gm-review-required',
+  const persistedStateRow = db
+    .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
+    .get(row.id) as { state_json: string } | undefined;
+  const adoptedProperties = Object.fromEntries(
+    Object.entries(properties).filter(
+      ([key]) => key !== 'mechanics' && key !== 'magicItemAdoption',
+    ),
+  );
+  writeItemAdoptionReview(db, {
+    inventoryId: row.id,
     requestedPackRef: packRef,
     ...(input.variantId === undefined
       ? {}
       : { requestedVariantId: input.variantId }),
     reason,
-  };
+    ...(rawPropertiesJson === undefined && properties.mechanics === undefined
+      ? {}
+      : { rawPropertiesJson: rawPropertiesJson ?? row.properties_json }),
+    ...(persistedStateRow === undefined
+      ? {}
+      : { rawItemStateJson: persistedStateRow.state_json }),
+    provenance: input.provenance,
+    sessionId: input.sessionId,
+    at: input.at,
+  });
   db.prepare(
     `UPDATE inventory
      SET properties_json=?, provenance=?, session_id=?, updated_at=?
      WHERE id=? AND character_id=? AND pack_ref IS NULL`,
   ).run(
-    JSON.stringify({ ...properties, magicItemAdoption: marker }),
+    JSON.stringify(adoptedProperties),
     input.provenance,
     input.sessionId,
     input.at,
     row.id,
     input.characterId,
   );
+  if (persistedStateRow !== undefined)
+    db.prepare('DELETE FROM item_state WHERE inventory_id=?').run(row.id);
   return {
     adopted: false,
     reviewRequired: true,
@@ -217,6 +245,20 @@ export function adoptMagicItem(
       throw new ItemAdoptionError(
         `inventory instance '${input.inventoryId}' must have a positive integer quantity`,
       );
+    const existingReview = readItemAdoptionReview(txnDb, row.id);
+    if (existingReview !== undefined && input.resolveReview !== true)
+      return {
+        adopted: false,
+        reviewRequired: true,
+        originalInstanceId: row.id,
+        instanceIds: [row.id],
+        packRef: existingReview.requestedPackRef,
+        ...(existingReview.requestedVariantId === undefined
+          ? {}
+          : { variantId: existingReview.requestedVariantId }),
+        stateful,
+        reason: existingReview.reason,
+      };
     const attunementRows = txnDb
       .prepare(
         `SELECT campaign_id, character_id FROM attunement
@@ -240,6 +282,7 @@ export function adoptMagicItem(
         throw new ItemAdoptionError(
           `bound stateful inventory instance '${input.inventoryId}' must have quantity 1`,
         );
+      clearItemAdoptionReview(txnDb, row.id);
       return {
         adopted: true,
         reviewRequired: false,
@@ -252,7 +295,23 @@ export function adoptMagicItem(
       };
     }
 
-    const properties = decodeInventoryProperties(row);
+    let properties: Obj;
+    try {
+      properties = decodeInventoryProperties(row);
+    } catch (error) {
+      if (error instanceof ItemAdoptionError)
+        return reviewResult(
+          txnDb,
+          row,
+          {},
+          input,
+          packRef,
+          stateful,
+          error.message,
+          row.properties_json,
+        );
+      throw error;
+    }
     if (stateful && row.quantity > MAX_MAGIC_ITEM_ADOPTION_SINGLETONS)
       return reviewResult(
         txnDb,
@@ -465,6 +524,8 @@ export function adoptMagicItem(
         input.campaignId,
         row.id,
       );
+
+    clearItemAdoptionReview(txnDb, row.id);
 
     return {
       adopted: true,

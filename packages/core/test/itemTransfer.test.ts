@@ -44,6 +44,50 @@ function addRecipient(db: ReturnType<typeof freshDbWithSession>): void {
 }
 
 describe('transferItem', () => {
+  it('cannot use transfer-end to bypass an existing Orb of Dragonkind bond', () => {
+    const db = freshDbWithSession();
+    addRecipient(db);
+    const orb = giveItem(
+      db,
+      {
+        id: 'orb',
+        name: 'Orb of Dragonkind',
+        packRef: 'magic-item:orb-of-dragonkind',
+        stateful: true,
+      },
+      CTX,
+    );
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, 'pc-1', ?, 'magic-item:orb-of-dragonkind',
+                 'Orb of Dragonkind', ?, 'test', ?, ?)`,
+    ).run(DEFAULT_TEST_CAMPAIGN_ID, orb.id, AT, DEFAULT_TEST_SESSION_ID, AT);
+
+    expect(() =>
+      transferItem(
+        db,
+        {
+          campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+          itemId: orb.id,
+          toCharacterRef: 'pc-2',
+          attunement: 'end',
+        },
+        CTX,
+      ),
+    ).toThrow(/engine-pending.*transfer-end/);
+    expect(
+      db.prepare('SELECT character_id FROM inventory WHERE id=?').get(orb.id),
+    ).toEqual({ character_id: 'pc-1' });
+    expect(
+      db
+        .prepare('SELECT character_id FROM attunement WHERE item_id=?')
+        .get(orb.id),
+    ).toEqual({ character_id: 'pc-1' });
+    db.close();
+  });
+
   it('cannot transfer held undoffable armor without authoritative don/doff state', () => {
     const db = freshDbWithSession();
     addRecipient(db);

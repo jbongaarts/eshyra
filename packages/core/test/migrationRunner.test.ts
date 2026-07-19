@@ -493,6 +493,91 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0018 moves adoption review markers out of writable inventory JSON', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 17)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(17);
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at
+       ) VALUES ('legacy-review', 'pc-1', 'Legacy Review', ?, 'test', 'session', ?)`,
+    ).run(
+      JSON.stringify({
+        material: 'silver',
+        mechanics: { economies: { invented: { remaining: 3 } } },
+        magicItemAdoption: {
+          status: 'gm-review-required',
+          requestedPackRef: 'magic-item:orb-of-dragonkind',
+          requestedVariantId: 'red',
+          reason: 'existing bond needs reconciliation',
+        },
+      }),
+      NOW(),
+    );
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('legacy-review', '{', 'test', 'session', ?)`,
+    ).run(NOW());
+
+    const migration18 = bundled[17];
+    if (migration18 === undefined) throw new Error('missing migration 0018');
+    writeFileSync(
+      join(dir, '0018_inventory_adoption_review.sql'),
+      migration18.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([18]);
+    expect(
+      db
+        .prepare(
+          `SELECT requested_pack_ref, requested_variant_id, reason,
+                  raw_properties_json, raw_item_state_json
+           FROM inventory_adoption_review WHERE inventory_id='legacy-review'`,
+        )
+        .get(),
+    ).toEqual({
+      requested_pack_ref: 'magic-item:orb-of-dragonkind',
+      requested_variant_id: 'red',
+      reason: 'existing bond needs reconciliation',
+      raw_properties_json: expect.stringContaining('invented'),
+      raw_item_state_json: '{',
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT properties_json FROM inventory WHERE id='legacy-review'",
+        )
+        .get(),
+    ).toEqual({ properties_json: '{"material":"silver"}' });
+    expect(
+      db
+        .prepare(
+          "SELECT state_json FROM item_state WHERE inventory_id='legacy-review'",
+        )
+        .get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          `SELECT name FROM sqlite_master WHERE type='table'
+           AND name='inventory_custody_event'`,
+        )
+        .get(),
+    ).toEqual({ name: 'inventory_custody_event' });
+    db.close();
+  });
+
   it('refuses to start when an applied migration file was edited (checksum drift)', () => {
     const db = openDatabase(':memory:');
     const dir = makeMigrationDir({

@@ -26,6 +26,7 @@ import {
   isConcreteWorldLocation,
   requireCurrentWorldLocation,
 } from './inventoryWorldLocation.js';
+import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 import { ItemStateError, validatePackRef } from './itemState.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import {
@@ -282,6 +283,14 @@ export function giveItem(
             unheld_disposition: string | null;
           }
         | undefined;
+      if (collision !== undefined) {
+        const quarantine = itemAdoptionReviewBlockMessage(
+          txnDb,
+          rowId,
+          'give_item',
+        );
+        if (quarantine !== undefined) throw new MutateStateError(quarantine);
+      }
       if (collision !== undefined && collision.character_id !== charId) {
         throw new MutateStateError(
           collision.character_id === null
@@ -388,6 +397,20 @@ export interface ClaimItemResult {
   readonly claimedFromWorldLocationId: string;
 }
 
+export type InventoryReacquisitionBasis = 'found' | 'repurchased' | 'returned';
+
+export interface ReacquireItemInput {
+  readonly itemId: string;
+  readonly basis: InventoryReacquisitionBasis;
+  readonly evidence: string;
+}
+
+export interface ReacquireItemResult extends ClaimItemResult {
+  readonly previousDisposition: 'sold' | 'lost';
+  readonly basis: InventoryReacquisitionBasis;
+  readonly evidence: string;
+}
+
 /**
  * Claim one existing unheld physical row without recreating its identity.
  * Co-location is proven against the campaign clock before custody changes.
@@ -425,6 +448,12 @@ export function claimItem(
       throw new MutateStateError(
         `inventory item '${itemId}' is already held by '${row.character_id}'`,
       );
+    const quarantine = itemAdoptionReviewBlockMessage(
+      txnDb,
+      itemId,
+      'claim_item',
+    );
+    if (quarantine !== undefined) throw new MutateStateError(quarantine);
     if (row.unheld_disposition !== 'dropped')
       throw new MutateStateError(
         `inventory item '${itemId}' has unheld disposition '${row.unheld_disposition ?? 'unknown'}' and is not a generally claimable drop`,
@@ -462,6 +491,145 @@ export function claimItem(
       name: row.name,
       quantity: row.quantity,
       claimedFromWorldLocationId: row.world_location_id,
+      ...(row.pack_ref === null ? {} : { packRef: row.pack_ref }),
+      ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
+    };
+  });
+}
+
+/**
+ * Authorized reverse transition for a specifically identified sold/lost row.
+ * Unlike general claim, this requires an explicit disposition-compatible basis
+ * plus durable adjudication evidence and deterministic co-location.
+ */
+export function reacquireItem(
+  db: Db,
+  input: ReacquireItemInput,
+  ctx: DomainMutationContext,
+): ReacquireItemResult {
+  if (typeof input.itemId !== 'string' || input.itemId.length === 0)
+    throw new MutateStateError('reacquire_item item id must be non-empty');
+  if (!['found', 'repurchased', 'returned'].includes(input.basis))
+    throw new MutateStateError(
+      'reacquire_item basis must be found, repurchased, or returned',
+    );
+  if (typeof input.evidence !== 'string' || input.evidence.trim().length === 0)
+    throw new MutateStateError(
+      'reacquire_item requires non-empty adjudicated custody evidence',
+    );
+  return withTransaction(db, (txnDb) => {
+    const characterId = resolveCharacterId(txnDb, ctx.characterId);
+    const row = txnDb
+      .prepare(
+        `SELECT name, quantity, character_id, pack_ref, variant_id,
+                world_location_id, unheld_disposition
+         FROM inventory WHERE id=?`,
+      )
+      .get(input.itemId) as
+      | {
+          name: string;
+          quantity: number;
+          character_id: string | null;
+          pack_ref: string | null;
+          variant_id: string | null;
+          world_location_id: string | null;
+          unheld_disposition: string | null;
+        }
+      | undefined;
+    if (row === undefined)
+      throw new MutateStateError(
+        `unheld inventory item '${input.itemId}' not found`,
+      );
+    if (row.character_id !== null)
+      throw new MutateStateError(
+        `inventory item '${input.itemId}' is already held by '${row.character_id}'`,
+      );
+    if (row.unheld_disposition !== 'sold' && row.unheld_disposition !== 'lost')
+      throw new MutateStateError(
+        `inventory item '${input.itemId}' has disposition '${row.unheld_disposition ?? 'unknown'}'; use claim_item for a dropped row`,
+      );
+    if (
+      (row.unheld_disposition === 'sold' && input.basis === 'found') ||
+      (row.unheld_disposition === 'lost' && input.basis === 'repurchased')
+    )
+      throw new MutateStateError(
+        `reacquisition basis '${input.basis}' is incompatible with '${row.unheld_disposition}' custody`,
+      );
+    const quarantine = itemAdoptionReviewBlockMessage(
+      txnDb,
+      input.itemId,
+      'reacquire_item',
+    );
+    if (quarantine !== undefined) throw new MutateStateError(quarantine);
+    let currentLocation: string;
+    try {
+      currentLocation = requireCurrentWorldLocation(txnDb);
+    } catch (error) {
+      if (error instanceof InventoryWorldLocationError)
+        throw new MutateStateError(error.message);
+      throw error;
+    }
+    if (
+      !isConcreteWorldLocation(row.world_location_id) ||
+      currentLocation !== row.world_location_id
+    )
+      throw new MutateStateError(
+        `inventory item '${input.itemId}' cannot be reacquired without deterministic co-location (item: ${row.world_location_id ?? 'unknown'}, character: ${currentLocation})`,
+      );
+    const sequence = txnDb
+      .prepare(
+        `SELECT COALESCE(MAX(seq), 0) + 1 AS seq
+         FROM inventory_custody_event WHERE inventory_id=?`,
+      )
+      .get(input.itemId) as { seq: number };
+    txnDb
+      .prepare(
+        `INSERT INTO inventory_custody_event(
+           inventory_id, seq, from_disposition, basis, evidence,
+           to_character_id, world_location_id, provenance, session_id,
+           occurred_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        input.itemId,
+        sequence.seq,
+        row.unheld_disposition,
+        input.basis,
+        input.evidence.trim(),
+        characterId,
+        currentLocation,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+      );
+    const updated = txnDb
+      .prepare(
+        `UPDATE inventory
+         SET character_id=?, world_location_id=NULL, unheld_disposition=NULL,
+             provenance=?, session_id=?, updated_at=?
+         WHERE id=? AND character_id IS NULL AND unheld_disposition=?`,
+      )
+      .run(
+        characterId,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+        input.itemId,
+        row.unheld_disposition,
+      );
+    if (updated.changes !== 1)
+      throw new MutateStateError(
+        `inventory item '${input.itemId}' was reacquired concurrently`,
+      );
+    return {
+      itemId: input.itemId,
+      characterId,
+      name: row.name,
+      quantity: row.quantity,
+      claimedFromWorldLocationId: currentLocation,
+      previousDisposition: row.unheld_disposition,
+      basis: input.basis,
+      evidence: input.evidence.trim(),
       ...(row.pack_ref === null ? {} : { packRef: row.pack_ref }),
       ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
     };
@@ -547,6 +715,12 @@ export function removeItem(
         newQuantity: 0,
       };
     }
+    const quarantine = itemAdoptionReviewBlockMessage(
+      txnDb,
+      itemId,
+      'remove_item',
+    );
+    if (quarantine !== undefined) throw new MutateStateError(quarantine);
     if (
       row.character_id !== charId &&
       !(row.character_id === null && disposition === 'destroyed')

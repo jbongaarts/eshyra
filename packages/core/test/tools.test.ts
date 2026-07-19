@@ -168,6 +168,7 @@ describe('ToolRegistry', () => {
         'lookup_rules',
         'mark_scene',
         'memory_drilldown',
+        'reacquire_item',
         'record_death_save',
         'record_world_fact',
         'remove_condition',
@@ -831,6 +832,32 @@ describe('domain mutation tools', () => {
     expect(registry.invoke('claim_item', { id: 'keepsake' }, c)).toMatchObject({
       ok: true,
       data: { itemId: 'keepsake', characterId: 'pc-1' },
+    });
+    registry.invoke('give_item', { id: 'sold-map', name: 'Sold Map' }, c);
+    expect(
+      registry.invoke(
+        'remove_item',
+        { id: 'sold-map', disposition: 'sold' },
+        c,
+      ),
+    ).toMatchObject({ ok: true, data: { disposition: 'sold' } });
+    expect(
+      registry.invoke(
+        'reacquire_item',
+        {
+          id: 'sold-map',
+          basis: 'repurchased',
+          evidence: 'The merchant accepted payment and returned this map.',
+        },
+        c,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        itemId: 'sold-map',
+        previousDisposition: 'sold',
+        characterId: 'pc-1',
+      },
     });
     registry.invoke('give_item', { id: 'broken-vase', name: 'Broken Vase' }, c);
     registry.invoke(
@@ -1854,6 +1881,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'lookup_rules',
         'mark_scene',
         'memory_drilldown',
+        'reacquire_item',
         'record_death_save',
         'record_world_fact',
         'remove_condition',

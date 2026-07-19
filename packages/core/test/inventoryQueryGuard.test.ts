@@ -189,6 +189,7 @@ describe('inventory tool classification (eshyra-4ia4)', () => {
       if (
         tool.name === 'give_item' ||
         tool.name === 'claim_item' ||
+        tool.name === 'reacquire_item' ||
         tool.name === 'remove_item'
       ) {
         expect(
@@ -216,11 +217,12 @@ describe('inventory tool classification (eshyra-4ia4)', () => {
     }
   });
 
-  it('listRequiresExplicitAction returns give_item, claim_item, and remove_item', () => {
+  it('listRequiresExplicitAction includes every inventory custody transition', () => {
     const registry = createDefaultToolRegistry();
     const names = registry.listRequiresExplicitAction().sort();
     expect(names).toContain('give_item');
     expect(names).toContain('claim_item');
+    expect(names).toContain('reacquire_item');
     expect(names).toContain('remove_item');
   });
 
@@ -247,10 +249,11 @@ describe('system prompt inventory guard (eshyra-4ia4)', () => {
     expect(prompt).toContain('Inventory and Equipment Guard');
   });
 
-  it('names give_item, claim_item, and remove_item as requiring explicit action', () => {
+  it('names inventory custody mutations as requiring explicit action', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
     expect(prompt).toContain('give_item');
     expect(prompt).toContain('claim_item');
+    expect(prompt).toContain('reacquire_item');
     expect(prompt).toContain('remove_item');
     expect(prompt).toContain('explicit player action intent');
   });

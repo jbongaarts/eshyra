@@ -30,6 +30,7 @@ const STATE_TOOLS = new Set([
   'use_inspiration',
   'adopt_item',
   'claim_item',
+  'reacquire_item',
   'give_item',
   'use_item',
   'transfer_item',

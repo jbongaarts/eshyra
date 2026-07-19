@@ -18,7 +18,7 @@ export const adoptItemTool: Tool = {
   description:
     'Recognize one legacy held inventory row as an exact canonical magic item from the active campaign rules stack. ' +
     'Supply the inventory id and exact packRef (plus required variantId); this tool never guesses from the display name. ' +
-    'It safely splits stateful legacy stacks of at most 100 instances and preserves or flags larger stacks and legacy state for GM review.',
+    'It safely splits stateful legacy stacks of at most 100 instances and quarantines incompatible or malformed legacy evidence for GM review. Set resolveReview only after explicit GM reconciliation to discard quarantined legacy projections and retry the supplied exact identity.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -38,6 +38,11 @@ export const adoptItemTool: Tool = {
         pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$',
         description:
           'Exact canonical variant id; required when the selected record declares variants.',
+      },
+      resolveReview: {
+        type: 'boolean',
+        description:
+          'Explicitly resolve an existing GM-review quarantine by discarding its quarantined legacy projection and retrying this exact canonical identity.',
       },
       character: CHARACTER_TARGET_SCHEMA,
     },
@@ -64,6 +69,7 @@ export const adoptItemTool: Tool = {
           ...(typeof input.variantId === 'string'
             ? { variantId: input.variantId }
             : {}),
+          ...(input.resolveReview === true ? { resolveReview: true } : {}),
           resolveRulesPack: ctx.resolveRulesPack,
           rng: ctx.rng,
           provenance: `model:${ctx.turnId}`,

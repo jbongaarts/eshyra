@@ -264,6 +264,7 @@ const CHARACTER_TOOL_FIELDS: Readonly<Record<string, string>> = {
   remove_condition: 'conditions_json',
   adopt_item: 'inventory',
   claim_item: 'inventory',
+  reacquire_item: 'inventory',
   give_item: 'inventory',
   remove_item: 'inventory',
   transfer_item: 'inventory',

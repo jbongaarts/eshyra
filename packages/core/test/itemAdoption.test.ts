@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { ToolContext } from '../src/internal.js';
 import {
   adoptMagicItem,
+  assembleContext,
   createDefaultToolRegistry,
   createSeededRng,
   MAX_MAGIC_ITEM_ADOPTION_SINGLETONS,
+  mutateState,
+  renderContextMessage,
   resolveCharacterId,
 } from '../src/internal.js';
 import { freshDbWithSession } from './support/db.js';
@@ -56,6 +59,24 @@ function insertLegacy(
       input.variantId ?? null,
     );
   return id;
+}
+
+function adoptionReview(db: ReturnType<typeof setup>['db'], id: string) {
+  return db
+    .prepare(
+      `SELECT requested_pack_ref, requested_variant_id, reason,
+              raw_properties_json, raw_item_state_json
+       FROM inventory_adoption_review WHERE inventory_id=?`,
+    )
+    .get(id) as
+    | {
+        requested_pack_ref: string;
+        requested_variant_id: string | null;
+        reason: string;
+        raw_properties_json: string | null;
+        raw_item_state_json: string | null;
+      }
+    | undefined;
 }
 
 describe('legacy magic-item adoption', () => {
@@ -240,8 +261,10 @@ describe('legacy magic-item adoption', () => {
       quantity: MAX_MAGIC_ITEM_ADOPTION_SINGLETONS + 1,
       pack_ref: null,
     });
-    expect(JSON.parse(row.properties_json)).toMatchObject({
-      magicItemAdoption: { status: 'gm-review-required' },
+    expect(JSON.parse(row.properties_json)).toEqual({ material: 'silver' });
+    expect(adoptionReview(s.db, 'oversized-stack')).toMatchObject({
+      requested_pack_ref: 'magic-item:necklace-of-fireballs',
+      reason: expect.stringContaining('reviewed adoption maximum of 100'),
     });
     expect(
       s.db
@@ -362,6 +385,97 @@ describe('legacy magic-item adoption', () => {
     }
   });
 
+  it('makes review quarantine code-owned and blocks every model-facing bypass until explicit resolution', () => {
+    const s = setup();
+    insertLegacy(s, { id: 'orb' });
+    s.db
+      .prepare(
+        `INSERT INTO attunement(
+           campaign_id, character_id, item_id, item_key, display_name,
+           attuned_at, provenance, session_id, updated_at
+         ) VALUES ('campaign-1', ?, 'orb', 'name:orb', 'Legacy Orb', ?,
+                   'test:legacy', 'session-1', ?)`,
+      )
+      .run(s.characterId, AT, AT);
+    expect(
+      createDefaultToolRegistry().invoke(
+        'adopt_item',
+        { id: 'orb', packRef: 'magic-item:orb-of-dragonkind' },
+        s.ctx,
+      ),
+    ).toMatchObject({
+      ok: true,
+      data: { adopted: false, reviewRequired: true },
+    });
+    s.db
+      .prepare(
+        `INSERT INTO character(
+         id, name, ability_scores_json, provenance, session_id, updated_at
+       ) VALUES ('pc-2', 'Recipient', ?, 'test', 'session-1', ?)`,
+      )
+      .run(
+        JSON.stringify({
+          strength: 10,
+          dexterity: 10,
+          constitution: 10,
+          intelligence: 10,
+          wisdom: 10,
+          charisma: 10,
+        }),
+        AT,
+      );
+
+    const registry = createDefaultToolRegistry();
+    for (const [tool, args] of [
+      ['end_attunement', { itemId: 'orb', reason: 'voluntary' }],
+      ['remove_item', { id: 'orb', disposition: 'destroyed' }],
+      ['give_item', { id: 'orb', name: 'Replacement' }],
+      ['use_item', { instanceId: 'orb', operationId: 'inspect' }],
+      ['transfer_item', { id: 'orb', to_character: 'pc-2', attunement: 'end' }],
+    ] as const) {
+      expect(registry.invoke(tool, args, s.ctx)).toMatchObject({
+        ok: false,
+        message: expect.stringContaining('quarantined for GM adoption review'),
+      });
+    }
+    expect(() =>
+      mutateState(s.db, {
+        target: 'inventory',
+        id: 'orb',
+        field: 'properties',
+        op: 'set',
+        value: { magicItemAdoption: null },
+        provenance: 'model:bypass',
+        sessionId: 'session-1',
+        at: AT,
+      }),
+    ).toThrow(/quarantined for GM adoption review/);
+    expect(adoptionReview(s.db, 'orb')).toBeDefined();
+    expect(
+      s.db
+        .prepare('SELECT item_key FROM attunement WHERE item_id=?')
+        .get('orb'),
+    ).toEqual({ item_key: 'name:orb' });
+
+    expect(
+      registry.invoke(
+        'adopt_item',
+        {
+          id: 'orb',
+          packRef: 'magic-item:wand-of-fireballs',
+          resolveReview: true,
+        },
+        s.ctx,
+      ),
+    ).toMatchObject({ ok: true, data: { adopted: true } });
+    expect(adoptionReview(s.db, 'orb')).toBeUndefined();
+    expect(
+      s.db
+        .prepare('SELECT item_key FROM attunement WHERE item_id=?')
+        .get('orb'),
+    ).toEqual({ item_key: 'magic-item:wand-of-fireballs' });
+  });
+
   it('durably flags unlicensed transitional mechanics without binding or splitting', () => {
     const s = setup();
     insertLegacy(s, {
@@ -397,13 +511,11 @@ describe('legacy magic-item adoption', () => {
       pack_ref: null,
       variant_id: null,
     });
-    expect(JSON.parse(row.properties_json)).toMatchObject({
-      mechanics: { economies: { invented: { remaining: 99 } } },
-      magicItemAdoption: {
-        status: 'gm-review-required',
-        requestedPackRef: 'magic-item:necklace-of-fireballs',
-        reason: expect.stringContaining('not licensed'),
-      },
+    expect(JSON.parse(row.properties_json)).toEqual({});
+    expect(adoptionReview(s.db, 'legacy-item')).toMatchObject({
+      requested_pack_ref: 'magic-item:necklace-of-fireballs',
+      reason: expect.stringContaining('not licensed'),
+      raw_properties_json: expect.stringContaining('invented'),
     });
     expect(
       s.db
@@ -414,7 +526,7 @@ describe('legacy magic-item adoption', () => {
     ).toEqual({ n: 0 });
   });
 
-  it('flags an unlicensed legacy item_state row without replacing it', () => {
+  it('quarantines an unlicensed legacy item_state row outside live state', () => {
     const s = setup();
     insertLegacy(s);
     const legacyState = {
@@ -448,12 +560,15 @@ describe('legacy magic-item adoption', () => {
       s.db
         .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
         .get('legacy-item'),
-    ).toEqual({ state_json: JSON.stringify(legacyState) });
+    ).toBeUndefined();
     const properties = s.db
       .prepare('SELECT properties_json FROM inventory WHERE id=?')
       .get('legacy-item') as { properties_json: string };
-    expect(JSON.parse(properties.properties_json)).toMatchObject({
-      magicItemAdoption: { status: 'gm-review-required' },
+    expect(JSON.parse(properties.properties_json)).toEqual({
+      material: 'silver',
+    });
+    expect(adoptionReview(s.db, 'legacy-item')).toMatchObject({
+      raw_item_state_json: JSON.stringify(legacyState),
     });
   });
 
@@ -505,14 +620,8 @@ describe('legacy magic-item adoption', () => {
         )
         .get(),
     ).toEqual({ n: 0 });
-    const properties = s.db
-      .prepare('SELECT properties_json FROM inventory WHERE id=?')
-      .get('legacy-item') as { properties_json: string };
-    expect(JSON.parse(properties.properties_json)).toMatchObject({
-      magicItemAdoption: {
-        status: 'gm-review-required',
-        reason: expect.stringContaining('usage counter'),
-      },
+    expect(adoptionReview(s.db, 'legacy-item')).toMatchObject({
+      reason: expect.stringContaining('usage counter'),
     });
   });
 
@@ -699,7 +808,7 @@ describe('legacy magic-item adoption', () => {
   it.each([
     ['invalid JSON', '{', 'contains invalid JSON'],
     ['non-object JSON', '[]', 'must be an object'],
-  ])('reports %s properties as a controlled adoption error without changing data', (_case, rawProperties, expectedMessage) => {
+  ])('quarantines %s properties and keeps assembled context readable', (_case, rawProperties, expectedMessage) => {
     const s = setup();
     insertLegacy(s);
     s.db
@@ -712,12 +821,13 @@ describe('legacy magic-item adoption', () => {
       s.ctx,
     );
     expect(result).toMatchObject({
-      ok: false,
-      code: 'adoption_error',
-      message: expect.stringContaining(expectedMessage),
+      ok: true,
+      data: {
+        adopted: false,
+        reviewRequired: true,
+        reason: expect.stringContaining(expectedMessage),
+      },
     });
-    if (result.ok) throw new Error('expected controlled adoption failure');
-    expect(result.message).not.toMatch(/SyntaxError|Unexpected/);
     expect(
       s.db
         .prepare(
@@ -727,13 +837,40 @@ describe('legacy magic-item adoption', () => {
     ).toEqual({
       quantity: 1,
       pack_ref: null,
-      properties_json: rawProperties,
+      properties_json: '{}',
+    });
+    expect(adoptionReview(s.db, 'legacy-item')).toMatchObject({
+      raw_properties_json: rawProperties,
+      reason: expect.stringContaining(expectedMessage),
     });
     expect(
       s.db
         .prepare('SELECT 1 FROM item_state WHERE inventory_id=?')
         .get('legacy-item'),
     ).toBeUndefined();
+    const rendered = renderContextMessage(
+      assembleContext({
+        db: s.db,
+        campaignId: 'campaign-1',
+        sessionId: 'session-1',
+        playerInput: 'Inspect the legacy item.',
+      }),
+    );
+    expect(rendered).toContain('adoption=gm-review-required');
+    expect(rendered).toContain(expectedMessage);
+    expect(rendered).not.toContain(rawProperties);
+    expect(
+      createDefaultToolRegistry().invoke(
+        'adopt_item',
+        {
+          id: 'legacy-item',
+          packRef: 'magic-item:necklace-of-fireballs',
+          resolveReview: true,
+        },
+        s.ctx,
+      ),
+    ).toMatchObject({ ok: true, data: { adopted: true } });
+    expect(adoptionReview(s.db, 'legacy-item')).toBeUndefined();
   });
 
   it('rolls back binding, splitting, and attunement rewrites when initialization fails', () => {

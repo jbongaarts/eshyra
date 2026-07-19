@@ -404,7 +404,7 @@ describe('attuneItem', () => {
 
 describe('endAttunement', () => {
   it('refuses to create an Orb bond before its control-state owner lands but permits distance cleanup', () => {
-    const { db } = setup();
+    const { db, pcId } = setup();
     const orb = giveItem(
       db,
       {
@@ -429,6 +429,15 @@ describe('endAttunement', () => {
       'magic-item:orb-of-dragonkind',
       'Orb of Dragonkind',
     );
+    expect(() =>
+      endAttunement(db, {
+        campaignId: CAMPAIGN,
+        itemId: orb.id,
+        reason: 'voluntary',
+        ...CTX,
+      }),
+    ).toThrow(/engine-pending.*end/);
+    expect(listAttunements(db, CAMPAIGN, pcId)).toHaveLength(1);
     expect(
       endAttunement(db, {
         campaignId: CAMPAIGN,
@@ -636,6 +645,7 @@ describe('cursed attunement corpus guard', () => {
     expect(blockedEnd.sort()).toEqual([
       'Armor of Vulnerability:parent',
       'Berserker Axe:parent',
+      'Orb of Dragonkind:parent',
       'Shield of Missile Attraction:parent',
     ]);
 
@@ -679,6 +689,14 @@ describe('cursed attunement corpus guard', () => {
         syntheticVariant,
         'cursed-form',
         'end',
+      ),
+    ).toThrow(/engine-pending/);
+    expect(() =>
+      assertEffectiveAttunementCurseReady(
+        syntheticVariant,
+        'cursed-form',
+        'end',
+        'distance',
       ),
     ).not.toThrow();
   });

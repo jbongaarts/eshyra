@@ -43,6 +43,7 @@ import {
   lookupStrictCampaignRecord,
 } from './campaignRecordLookup.js';
 import type { LifeState } from './hpLifecycle.js';
+import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 
 export const ATTUNEMENT_SLOT_LIMIT = 3;
 
@@ -154,6 +155,8 @@ export function assertInventoryCurseCustodyReady(
     throw new MagicItemCustodyError(
       `inventory item '${itemId}' does not exist; refusing to bypass possible curse custody constraints`,
     );
+  const quarantine = itemAdoptionReviewBlockMessage(db, itemId, mutation);
+  if (quarantine !== undefined) throw new MagicItemCustodyError(quarantine);
   if (item.pack_ref === null) return;
   let record: import('../rules/types.js').RulesRecord;
   try {
@@ -210,6 +213,7 @@ export function assertEffectiveAttunementCurseReady(
   record: import('../rules/types.js').RulesRecord,
   variantId: string | undefined,
   mutation: CursedAttunementMutation,
+  endReason?: AttunementEndReason,
 ): void {
   let curse:
     | import('../rules/magicItemMechanics.js').MagicItemCurse
@@ -225,12 +229,20 @@ export function assertEffectiveAttunementCurseReady(
     (curse?.attunement?.attachesStates?.length ?? 0) > 0;
   const pendingPrecondition =
     (curse?.attunement?.preconditionEffects?.length ?? 0) > 0;
+  const conditionalUnattuneLock = curse?.blocksUnattune === true;
+  const nonvoluntaryEnding =
+    endReason === 'distance' ||
+    endReason === 'death' ||
+    endReason === 'replaced' ||
+    endReason === 'item_destroyed';
   const blocksMutation =
     mutation === 'attune'
       ? attachesPersistentState ||
         pendingPrecondition ||
-        curse?.blocksUnattune === true
-      : attachesPersistentState;
+        conditionalUnattuneLock
+      : attachesPersistentState ||
+        (conditionalUnattuneLock &&
+          (mutation === 'transfer-end' || !nonvoluntaryEnding));
   if (blocksMutation)
     throw new AttunementError(
       `${record.key}${variantId === undefined ? '' : ` variant '${variantId}'`} has a source-declared curse contract with attunement lifecycle mechanics that are engine-pending, so '${mutation}' must fail closed rather than create, rewrite, or discard a bond without its authoritative curse state.`,
@@ -285,6 +297,7 @@ export function assertInventoryAttunementCurseReady(
   itemId: string,
   mutation: Exclude<CursedAttunementMutation, 'attune'>,
   resolveRulesPack?: CampaignRulesPackResolver,
+  endReason?: AttunementEndReason,
 ): void {
   const item = db
     .prepare('SELECT pack_ref, variant_id FROM inventory WHERE id = ?')
@@ -295,6 +308,8 @@ export function assertInventoryAttunementCurseReady(
     throw new AttunementError(
       `inventory item '${itemId}' does not exist; refusing to bypass possible cursed attunement persistence`,
     );
+  const quarantine = itemAdoptionReviewBlockMessage(db, itemId, mutation);
+  if (quarantine !== undefined) throw new AttunementError(quarantine);
   if (item.pack_ref === null) return;
   const record = lookupImmutableMagicItemRecord(
     db,
@@ -305,6 +320,7 @@ export function assertInventoryAttunementCurseReady(
     record,
     item.variant_id ?? undefined,
     mutation,
+    endReason,
   );
 }
 
@@ -410,6 +426,12 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
         `${character.label} holds no inventory item '${input.itemId}'; attunement requires possessing the item`,
       );
     }
+    const quarantine = itemAdoptionReviewBlockMessage(
+      txnDb,
+      input.itemId,
+      'attune',
+    );
+    if (quarantine !== undefined) throw new AttunementError(quarantine);
 
     // Item identity and the requires-attunement gate come from the rules
     // record when one resolves; a homebrew/module item falls back to its
@@ -581,6 +603,7 @@ export function endAttunement(
         input.itemId,
         'end',
         input.resolveRulesPack,
+        input.reason,
       );
     txnDb
       .prepare(

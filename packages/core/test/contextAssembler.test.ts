@@ -484,14 +484,14 @@ describe('Context Assembler', () => {
          id, character_id, name, properties_json, provenance, session_id,
          updated_at
        ) VALUES ('legacy-review', 'pc-1', 'Legacy Review', ?, 'test', ?, ?)`,
+    ).run('{}', SESSION, '2026-05-20T10:00:00.000Z');
+    db.prepare(
+      `INSERT INTO inventory_adoption_review(
+         inventory_id, requested_pack_ref, reason, provenance, session_id,
+         updated_at
+       ) VALUES ('legacy-review', 'magic-item:orb-of-dragonkind', ?, 'test', ?, ?)`,
     ).run(
-      JSON.stringify({
-        magicItemAdoption: {
-          status: 'gm-review-required',
-          requestedPackRef: 'magic-item:orb-of-dragonkind',
-          reason: `RECONCILE_ME ${'bounded'.repeat(100)} HIDDEN_REASON_TAIL`,
-        },
-      }),
+      `RECONCILE_ME ${'bounded'.repeat(100)} HIDDEN_REASON_TAIL`,
       SESSION,
       '2026-05-20T10:00:00.000Z',
     );

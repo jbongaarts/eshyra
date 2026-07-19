@@ -27,6 +27,7 @@ import {
   InventoryWorldLocationError,
   requireCurrentWorldLocation,
 } from './inventoryWorldLocation.js';
+import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 import {
   ItemDepletionError,
   type ItemDepletionResolution,
@@ -1483,6 +1484,12 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       throw new ItemStateError(
         `character '${input.characterId}' holds no inventory instance '${input.instanceId}'`,
       );
+    const quarantine = itemAdoptionReviewBlockMessage(
+      txnDb,
+      input.instanceId,
+      'use_item',
+    );
+    if (quarantine !== undefined) throw new ItemStateError(quarantine);
     if (row.pack_ref === null)
       throw new ItemStateError(
         `inventory instance '${input.instanceId}' is not bound to a rules-pack item`,

@@ -39,6 +39,7 @@ import { listNearbyItemsTool } from './toolListNearbyItems.js';
 import { lookupRulesTool } from './toolLookupRules.js';
 import { markSceneTool } from './toolMarkScene.js';
 import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
+import { reacquireItemTool } from './toolReacquireItem.js';
 import { recordDeathSaveTool } from './toolRecordDeathSave.js';
 import { recordWorldFactTool } from './toolRecordWorldFact.js';
 import { refreshEffectTool } from './toolRefreshEffect.js';
@@ -122,6 +123,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   convertCurrencyTool,
   adoptItemTool,
   claimItemTool,
+  reacquireItemTool,
   listNearbyItemsTool,
   giveItemTool,
   useItemTool,
