@@ -565,6 +565,14 @@ CREATE TABLE inventory_custody_event (
   PRIMARY KEY (inventory_id, seq)
 );
 
+CREATE TABLE inventory_identity_repair (
+  inventory_id TEXT PRIMARY KEY
+    REFERENCES inventory(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  id_bytes INTEGER NOT NULL CHECK (id_bytes > 0),
+  name_bytes INTEGER NOT NULL CHECK (name_bytes > 0),
+  reason TEXT NOT NULL
+);
+
 CREATE TABLE item_state (
   inventory_id TEXT PRIMARY KEY
     REFERENCES inventory(id) ON DELETE CASCADE,
@@ -829,6 +837,24 @@ ON inventory(world_location_id, id)
 WHERE character_id IS NULL AND unheld_disposition = 'dropped';
 
 CREATE INDEX rest_event_long_benefit_time ON rest_event(campaign_id, kind, end_elapsed_minutes);
+
+CREATE TRIGGER inventory_identity_insert_guard
+BEFORE INSERT ON inventory
+WHEN length(CAST(NEW.id AS BLOB)) > 256
+  OR length(CAST(NEW.name AS BLOB)) > 256
+BEGIN
+  SELECT RAISE(ABORT, 'inventory id/name exceeds UTF-8 identity bounds');
+END;
+
+CREATE TRIGGER inventory_identity_update_guard
+BEFORE UPDATE OF id, name ON inventory
+WHEN (length(CAST(NEW.id AS BLOB)) > 256
+      AND length(CAST(OLD.id AS BLOB)) <= 256)
+  OR (length(CAST(NEW.name AS BLOB)) > 256
+      AND length(CAST(OLD.name AS BLOB)) <= 256)
+BEGIN
+  SELECT RAISE(ABORT, 'inventory id/name exceeds UTF-8 identity bounds');
+END;
 
 CREATE TRIGGER inventory_location_insert_guard
 BEFORE INSERT ON inventory

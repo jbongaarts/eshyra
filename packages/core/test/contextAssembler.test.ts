@@ -28,6 +28,10 @@ import {
   stampSessionWithOpenArc,
   startAdventureRun,
 } from '../src/internal.js';
+import {
+  NEARBY_INVENTORY_MAX_BYTES,
+  utf8ByteLength,
+} from '../src/state/inventoryIdentity.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import { freshDbWithSession } from './support/db.js';
 
@@ -723,6 +727,59 @@ describe('Context Assembler', () => {
         playerInput: 'look around',
       }).state.nearbyInventory,
     ).toEqual([]);
+    db.close();
+  });
+
+  it('bounds multibyte nearby context and tool pages without cutting identities', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    db.prepare(
+      "UPDATE clock SET current_location_id='market' WHERE id=1",
+    ).run();
+    const insert = db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, location, world_location_id, properties_json,
+         provenance, session_id, updated_at, unheld_disposition
+       ) VALUES (?, NULL, ?, NULL, ?, '{}', 'test', ?, ?, 'dropped')`,
+    );
+    const name = 'é'.repeat(120);
+    for (let index = 1; index <= 20; index += 1) {
+      const id = `multibyte-${String(index).padStart(2, '0')}`;
+      insert.run(id, name, 'market', SESSION, '2026-05-20T10:00:00.000Z');
+    }
+
+    const context = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'look around',
+    });
+    expect(context.state.nearbyInventory.length).toBeLessThan(20);
+    expect(context.state.nearbyInventoryTruncated).toBe(true);
+    expect(context.state.nearbyInventory[0]?.name).toBe(name);
+    expect(
+      utf8ByteLength(JSON.stringify(context.state.nearbyInventory)),
+    ).toBeLessThanOrEqual(NEARBY_INVENTORY_MAX_BYTES);
+
+    const result = createDefaultToolRegistry().invoke(
+      'list_nearby_items',
+      { limit: 20 },
+      {
+        db,
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+        turnId: 'turn-1',
+        at: '2026-05-20T10:00:00.000Z',
+        rng: createSeededRng(1),
+      },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(result.message);
+    const data = result.data as { items: Array<{ id: string; name: string }> };
+    expect(data.items.length).toBeLessThan(20);
+    expect(data.items.every((item) => item.name === name)).toBe(true);
+    expect(utf8ByteLength(JSON.stringify(data.items))).toBeLessThanOrEqual(
+      NEARBY_INVENTORY_MAX_BYTES,
+    );
     db.close();
   });
 

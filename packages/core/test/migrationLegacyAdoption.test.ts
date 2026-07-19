@@ -264,7 +264,7 @@ describe('migration 0013 elapsed-world transition', () => {
       NOW(),
     );
     expect(migrateDatabase(db, { now: NOW }).migrations.applied).toEqual([
-      13, 14, 15, 16, 17, 18,
+      13, 14, 15, 16, 17, 18, 19,
     ]);
     expect(
       db
@@ -325,7 +325,7 @@ describe('migrateDatabase (end to end)', () => {
     const result = migrateDatabase(db, { now: NOW });
     expect(result.legacy.action).toBe('empty');
     expect(result.migrations.applied).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
     ]);
     expect(readMigrationLedger(db).map((r) => [r.version, r.name])).toEqual([
       [1, 'initial'],
@@ -346,6 +346,7 @@ describe('migrateDatabase (end to end)', () => {
       [16, 'inventory_world_location'],
       [17, 'inventory_unheld_disposition'],
       [18, 'inventory_adoption_review'],
+      [19, 'inventory_identity_bounds'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -363,17 +364,18 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.legacy.adoptedFromVersion).toBe(15);
     // 0001 is adopted (already applied); the post-baseline migrations apply.
     expect(result.migrations.applied).toEqual([
-      2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+      2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
     ]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     expect(
       readMigrationLedger(db)
-        .slice(-3)
+        .slice(-4)
         .map((r) => [r.version, r.name]),
     ).toEqual([
       [16, 'inventory_world_location'],
       [17, 'inventory_unheld_disposition'],
       [18, 'inventory_adoption_review'],
+      [19, 'inventory_identity_bounds'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -433,7 +435,7 @@ describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
     const result = migrateDatabase(db, { now: NOW });
 
     expect(result.migrations.applied).toEqual([
-      5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+      5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
     ]);
     const row = db
       .prepare(
