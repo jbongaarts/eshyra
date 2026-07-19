@@ -44,6 +44,68 @@ function addRecipient(db: ReturnType<typeof freshDbWithSession>): void {
 }
 
 describe('transferItem', () => {
+  it('cannot transfer held undoffable armor without authoritative don/doff state', () => {
+    const db = freshDbWithSession();
+    addRecipient(db);
+    const armor = giveItem(
+      db,
+      {
+        id: 'demon-armor',
+        name: 'Demon Armor',
+        packRef: 'magic-item:demon-armor',
+        location: null,
+        stateful: true,
+      },
+      CTX,
+    );
+    expect(() =>
+      transferItem(
+        db,
+        {
+          campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+          itemId: armor.id,
+          toCharacterRef: 'pc-2',
+          attunement: 'require-unattuned',
+        },
+        CTX,
+      ),
+    ).toThrow(/authoritative don\/doff state is unavailable.*fail closed/);
+    expect(
+      db
+        .prepare('SELECT character_id, location FROM inventory WHERE id=?')
+        .get(armor.id),
+    ).toEqual({ character_id: 'pc-1', location: null });
+
+    const ordinary = giveItem(
+      db,
+      {
+        id: 'ordinary-ring',
+        name: 'Ring of Protection',
+        packRef: 'magic-item:ring-of-protection',
+        location: 'worn',
+      },
+      CTX,
+    );
+    expect(
+      transferItem(
+        db,
+        {
+          campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+          itemId: ordinary.id,
+          toCharacterRef: 'pc-2',
+          attunement: 'require-unattuned',
+        },
+        CTX,
+      ),
+    ).toMatchObject({ itemId: ordinary.id, toCharacterId: 'pc-2' });
+    expect(
+      db
+        .prepare('SELECT character_id, location FROM inventory WHERE id=?')
+        .get(ordinary.id),
+    ).toEqual({ character_id: 'pc-2', location: null });
+    db.close();
+  });
+
   it('cannot end an add-on-overridden cursed bond during transfer', () => {
     const db = freshDbWithSession();
     addRecipient(db);
@@ -175,6 +237,7 @@ describe('transferItem', () => {
       {
         id: 'ignored',
         name: 'Ioun Stone of Agility',
+        location: 'worn',
         packRef: 'magic-item:ioun-stone',
         variantId: 'agility',
         stateful: true,
@@ -248,11 +311,14 @@ describe('transferItem', () => {
     expect(
       db
         .prepare(
-          'SELECT character_id, pack_ref, variant_id FROM inventory WHERE id=?',
+          `SELECT character_id, location, world_location_id, pack_ref, variant_id
+           FROM inventory WHERE id=?`,
         )
         .get(granted.id),
     ).toEqual({
       character_id: 'pc-2',
+      location: null,
+      world_location_id: null,
       pack_ref: 'magic-item:ioun-stone',
       variant_id: 'agility',
     });

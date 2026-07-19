@@ -1393,7 +1393,7 @@ describe('magic-item live instance state', () => {
         { id: 'shared-id', name: 'Passive Test', packRef: record.key },
         { ...MUTATION, characterId: 'pc-2' },
       ),
-    ).toThrow(/already belongs to another instance/);
+    ).toThrow(/transfer_item/);
     expect(
       db
         .prepare("SELECT character_id FROM inventory WHERE id='shared-id'")
@@ -1471,6 +1471,28 @@ describe('magic-item live instance state', () => {
       "UPDATE clock SET current_location_id='battlefield' WHERE id=1",
     ).run();
 
+    for (const legacyLocation of [null, '', '   ']) {
+      db.prepare('UPDATE clock SET current_location_id=? WHERE id=1').run(
+        legacyLocation,
+      );
+      expect(() =>
+        useItem(db, useInput(bundled, 'magic-ammunition', 'hit-target')),
+      ).toThrow(/concrete current campaign location/);
+      expect(
+        db
+          .prepare('SELECT quantity FROM inventory WHERE id=?')
+          .get('magic-ammunition'),
+      ).toEqual({ quantity: 3 });
+      expect(
+        db
+          .prepare("SELECT 1 FROM inventory WHERE id LIKE '%:nonmagical%'")
+          .get(),
+      ).toBeUndefined();
+    }
+    db.prepare(
+      "UPDATE clock SET current_location_id='battlefield' WHERE id=1",
+    ).run();
+
     const result = useItem(
       db,
       useInput(bundled, 'magic-ammunition', 'hit-target'),
@@ -1492,8 +1514,8 @@ describe('magic-item live instance state', () => {
     expect(
       db
         .prepare(
-          `SELECT id, character_id, name, quantity, location, properties_json,
-                  pack_ref, variant_id
+          `SELECT id, character_id, name, quantity, location,
+                  world_location_id, properties_json, pack_ref, variant_id
            FROM inventory ORDER BY id`,
         )
         .all(),
@@ -1504,6 +1526,7 @@ describe('magic-item live instance state', () => {
         name: 'Ammunition +1',
         quantity: 2,
         location: 'quiver',
+        world_location_id: null,
         properties_json: '{"material":"silvered"}',
         pack_ref: ammunition.key,
         variant_id: null,
@@ -1513,7 +1536,8 @@ describe('magic-item live instance state', () => {
         character_id: null,
         name: 'Nonmagical ammunition (formerly Ammunition +1)',
         quantity: 1,
-        location: 'battlefield',
+        location: null,
+        world_location_id: 'battlefield',
         properties_json:
           '{"material":"silvered","magicItemTransformation":{"status":"nonmagical","sourcePackRef":"magic-item:ammunition-1-2-or-3","sourceLocation":"quiver","economyId":"use"}}',
         pack_ref: null,

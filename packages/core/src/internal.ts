@@ -1198,10 +1198,12 @@ export {
   AttunementError,
   assertEffectiveAttunementCurseReady,
   assertInventoryAttunementCurseReady,
+  assertInventoryCurseCustodyReady,
   attuneItem,
   endAllAttunementsOnDeath,
   endAttunement,
   listAttunements,
+  MagicItemCustodyError,
 } from './state/attunement.js';
 export type { CampaignRulesPackResolver } from './state/campaignRecordLookup.js';
 export type {
@@ -1297,6 +1299,15 @@ export type {
   InventoryDestructionContext,
 } from './state/inventoryLifecycle.js';
 export { destroyInventoryItem } from './state/inventoryLifecycle.js';
+export type {
+  AdoptMagicItemInput,
+  AdoptMagicItemResult,
+} from './state/itemAdoption.js';
+export {
+  adoptMagicItem,
+  ItemAdoptionError,
+  MAX_MAGIC_ITEM_ADOPTION_SINGLETONS,
+} from './state/itemAdoption.js';
 export type {
   ItemEconomyState,
   ItemInstanceState,

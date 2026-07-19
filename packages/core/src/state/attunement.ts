@@ -123,15 +123,98 @@ export class AttunementError extends Error {
   }
 }
 
+export class MagicItemCustodyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MagicItemCustodyError';
+  }
+}
+
+export type CursedCustodyMutation = 'dropped' | 'sold' | 'lost' | 'transfer';
+
+/** Gate only exact source-declared possession/doff constraints. */
+export function assertInventoryCurseCustodyReady(
+  db: Db,
+  itemId: string,
+  mutation: CursedCustodyMutation,
+  resolveRulesPack?: CampaignRulesPackResolver,
+): void {
+  const item = db
+    .prepare(
+      `SELECT pack_ref, variant_id, character_id
+       FROM inventory WHERE id = ?`,
+    )
+    .get(itemId) as
+    | {
+        pack_ref: string | null;
+        variant_id: string | null;
+        character_id: string | null;
+      }
+    | undefined;
+  if (item === undefined)
+    throw new MagicItemCustodyError(
+      `inventory item '${itemId}' does not exist; refusing to bypass possible curse custody constraints`,
+    );
+  if (item.pack_ref === null) return;
+  let record: import('../rules/types.js').RulesRecord;
+  try {
+    record = lookupImmutableMagicItemRecord(
+      db,
+      item.pack_ref,
+      resolveRulesPack,
+    );
+  } catch (error) {
+    throw new MagicItemCustodyError((error as Error).message);
+  }
+  let curse:
+    | import('../rules/magicItemMechanics.js').MagicItemCurse
+    | undefined;
+  try {
+    curse = effectiveMagicItemMechanics(
+      record,
+      item.variant_id ?? undefined,
+    )?.curse;
+  } catch (error) {
+    throw new MagicItemCustodyError((error as Error).message);
+  }
+  const holderOwnsAttunement =
+    item.character_id !== null &&
+    db
+      .prepare(
+        'SELECT 1 FROM attunement WHERE item_id=? AND character_id=? LIMIT 1',
+      )
+      .get(itemId, item.character_id) !== undefined;
+  if (curse?.blocksDoff === true && item.character_id !== null)
+    throw new MagicItemCustodyError(
+      `${record.key} is source-declared as impossible to doff while cursed, but authoritative don/doff state is unavailable; '${mutation}' must fail closed for the held item until the curse is removed`,
+    );
+  // Transfer has its own persistent-attunement owner; this gate contributes
+  // only the blocks-doff constraint there. Loss is involuntary.
+  if (mutation === 'lost' || mutation === 'transfer') return;
+  const blockingStates = new Set(
+    curse?.possession?.blocksVoluntaryRelinquishmentWhileStates ?? [],
+  );
+  const attachedBlockingState =
+    curse?.attunement?.attachesStates?.some((stateId) =>
+      blockingStates.has(stateId),
+    ) === true;
+  if (attachedBlockingState && holderOwnsAttunement)
+    throw new MagicItemCustodyError(
+      `${record.key} has a source-declared attached curse state that prevents voluntary relinquishment; '${mutation}' must fail closed while that cursed bond is active`,
+    );
+}
+
 export type CursedAttunementMutation = 'attune' | 'end' | 'transfer-end';
 
-/** One effective parent+variant curse gate shared by every ordinary mutation. */
+/** Gate only source-declared attunement lifecycle work the runtime cannot own. */
 export function assertEffectiveAttunementCurseReady(
   record: import('../rules/types.js').RulesRecord,
   variantId: string | undefined,
   mutation: CursedAttunementMutation,
 ): void {
-  let curse: unknown;
+  let curse:
+    | import('../rules/magicItemMechanics.js').MagicItemCurse
+    | undefined;
   try {
     curse = effectiveMagicItemMechanics(record, variantId)?.curse;
   } catch (error) {
@@ -139,9 +222,17 @@ export function assertEffectiveAttunementCurseReady(
       throw new AttunementError(error.message);
     throw error;
   }
-  if (curse !== undefined)
+  const attachesPersistentState =
+    (curse?.attunement?.attachesStates?.length ?? 0) > 0;
+  const pendingPrecondition =
+    (curse?.attunement?.preconditionEffects?.length ?? 0) > 0;
+  const blocksMutation =
+    mutation === 'attune'
+      ? attachesPersistentState || pendingPrecondition
+      : attachesPersistentState || curse?.blocksUnattune === true;
+  if (blocksMutation)
     throw new AttunementError(
-      `${record.key}${variantId === undefined ? '' : ` variant '${variantId}'`} has a source-declared curse contract; cursed attunement persistence is engine-pending, so '${mutation}' must fail closed. Only authoritative death or item-destruction lifecycle cleanup may end an existing cursed bond.`,
+      `${record.key}${variantId === undefined ? '' : ` variant '${variantId}'`} has a source-declared curse contract with attunement lifecycle mechanics that are engine-pending, so '${mutation}' must fail closed. Only authoritative death or item-destruction lifecycle cleanup may end an existing persistent cursed bond.`,
     );
 }
 

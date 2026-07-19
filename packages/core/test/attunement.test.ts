@@ -10,6 +10,7 @@ import {
   assembleContext,
   assertEffectiveAttunementCurseReady,
   attuneItem,
+  claimItem,
   destroyInventoryItem,
   effectiveMagicItemMechanics,
   endAllAttunementsOnDeath,
@@ -21,7 +22,9 @@ import {
   listAttunements,
   magicItemVariantDefinitions,
   mutateState,
+  removeItem,
   renderContextMessage,
+  updateClock,
 } from '../src/internal.js';
 import { installCursedAttunementAddon } from './support/cursedAttunementAddon.js';
 import {
@@ -353,15 +356,10 @@ describe('attuneItem', () => {
     give(db, 'ring-1', 'Ring of Protection');
     attuneItem(db, { campaignId: CAMPAIGN, itemId: 'ring-1', ...CTX });
 
-    // The ring changes hands without the bond being broken.
-    giveItem(
-      db,
-      { id: 'ring-1', name: 'Ring of Protection' },
-      {
-        characterId: 'pc-2',
-        ...CTX,
-      },
-    );
+    // The ring is dropped and reclaimed without the bond being broken.
+    updateClock(db, { locationId: 'camp' }, CTX);
+    removeItem(db, { itemId: 'ring-1', disposition: 'dropped' }, CTX);
+    claimItem(db, 'ring-1', { characterId: 'pc-2', ...CTX });
     expect(() =>
       attuneItem(db, {
         campaignId: CAMPAIGN,
@@ -556,9 +554,11 @@ describe('death ends attunement (F6 hook)', () => {
 });
 
 describe('cursed attunement corpus guard', () => {
-  it('guards all 12 effective bundled curse-bearing scopes and variant mechanics', () => {
+  it('gates only explicit attunement lifecycle contracts, not every curse-family scope', () => {
     const bundled = getBundledDnd5eSrdPack();
-    const guarded: string[] = [];
+    const blockedAttune: string[] = [];
+    const blockedEnd: string[] = [];
+    const curseScopes: string[] = [];
     for (const record of bundled.records.filter(
       (candidate) => candidate.kind === 'magic-item',
     )) {
@@ -570,13 +570,35 @@ describe('cursed attunement corpus guard', () => {
       for (const variantId of scopes) {
         if (effectiveMagicItemMechanics(record, variantId)?.curse === undefined)
           continue;
-        expect(() =>
-          assertEffectiveAttunementCurseReady(record, variantId, 'attune'),
-        ).toThrow(/engine-pending/);
-        guarded.push(`${record.key}:${variantId ?? 'parent'}`);
+        const scope = `${record.name}:${variantId ?? 'parent'}`;
+        curseScopes.push(scope);
+        for (const [mutation, blocked] of [
+          ['attune', blockedAttune],
+          ['end', blockedEnd],
+        ] as const) {
+          try {
+            assertEffectiveAttunementCurseReady(record, variantId, mutation);
+          } catch (error) {
+            expect(error).toBeInstanceOf(AttunementError);
+            expect(String(error)).toMatch(/engine-pending/);
+            blocked.push(scope);
+          }
+        }
       }
     }
-    expect(guarded).toHaveLength(12);
+    expect(curseScopes).toHaveLength(12);
+    expect(blockedAttune.sort()).toEqual([
+      'Armor of Vulnerability:parent',
+      'Berserker Axe:parent',
+      'Robe of the Archmagi:parent',
+      'Shield of Missile Attraction:parent',
+    ]);
+    expect(blockedEnd.sort()).toEqual([
+      'Armor of Vulnerability:parent',
+      'Berserker Axe:parent',
+      'Orb of Dragonkind:parent',
+      'Shield of Missile Attraction:parent',
+    ]);
 
     const exemplar = bundled.records.find(
       (record) => record.kind === 'magic-item',
@@ -611,6 +633,13 @@ describe('cursed attunement corpus guard', () => {
         syntheticVariant,
         'cursed-form',
         'attune',
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertEffectiveAttunementCurseReady(
+        syntheticVariant,
+        'cursed-form',
+        'end',
       ),
     ).toThrow(/engine-pending/);
   });

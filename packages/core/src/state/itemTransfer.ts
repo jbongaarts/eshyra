@@ -4,6 +4,8 @@ import { resolveCharacterId } from './activeCharacter.js';
 import {
   AttunementError,
   assertInventoryAttunementCurseReady,
+  assertInventoryCurseCustodyReady,
+  MagicItemCustodyError,
 } from './attunement.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
 import type { DomainMutationContext } from './domainMutations.js';
@@ -103,6 +105,18 @@ export function transferItem(
       throw new ItemTransferError(
         `inventory instance '${input.itemId}' is attuned to '${attunement.character_id}'; choose attunement 'end' or end it first`,
       );
+    try {
+      assertInventoryCurseCustodyReady(
+        txnDb,
+        input.itemId,
+        'transfer',
+        input.resolveRulesPack,
+      );
+    } catch (error) {
+      if (error instanceof MagicItemCustodyError)
+        throw new ItemTransferError(error.message);
+      throw error;
+    }
     if (attunement !== undefined) {
       try {
         assertInventoryAttunementCurseReady(
@@ -123,7 +137,8 @@ export function transferItem(
     txnDb
       .prepare(
         `UPDATE inventory
-         SET character_id=?, provenance=?, session_id=?, updated_at=?
+         SET character_id=?, location=NULL, world_location_id=NULL,
+             provenance=?, session_id=?, updated_at=?
          WHERE id=? AND character_id=?`,
       )
       .run(

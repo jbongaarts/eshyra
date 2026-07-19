@@ -11,6 +11,8 @@ import {
   closeOpenArcAndOpenNext,
   closeScene,
   createCharacterChronicleStore,
+  createDefaultToolRegistry,
+  createSeededRng,
   createSqliteCharacterSheetStore,
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
@@ -439,6 +441,231 @@ describe('Context Assembler', () => {
     expect(ctx.state.character.hpCurrent).toBe(7);
     expect(ctx.state.inventory.map((i) => i.name)).toContain('Iron Sword');
     expect(ctx.state.plotFlags.met_barkeep).toBe(true);
+    db.close();
+  });
+
+  it('exposes only deterministically co-located unheld rows with claimable ids', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    db.prepare(
+      "UPDATE clock SET current_location_id='market' WHERE id=1",
+    ).run();
+    const insert = db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, quantity, location, world_location_id,
+         properties_json, provenance, session_id, updated_at
+       ) VALUES (?, NULL, ?, ?, NULL, ?, ?, 'test', ?, ?)`,
+    );
+    insert.run(
+      'claimable-ring',
+      'Found Ring',
+      1,
+      'market',
+      '{"engraved":true}',
+      SESSION,
+      '2026-05-20T10:00:00.000Z',
+    );
+    const hugePayload = `NEARBY_SECRET_${'x'.repeat(10_000)}`;
+    db.prepare(
+      `UPDATE inventory SET properties_json=? WHERE id='claimable-ring'`,
+    ).run(JSON.stringify({ engraved: true, hugePayload }));
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('claimable-ring', ?, 'test', ?, ?)`,
+    ).run(
+      JSON.stringify({ custom: { hugePayload } }),
+      SESSION,
+      '2026-05-20T10:00:00.000Z',
+    );
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at, pack_ref
+       ) VALUES (
+         'held-proof', 'pc-1', 'Held Proof', ?, 'test', ?, ?,
+         'magic-item:held-proof'
+       )`,
+    ).run(
+      JSON.stringify({ heldPayload: 'HELD_PROPERTIES_UNCHANGED' }),
+      SESSION,
+      '2026-05-20T10:00:00.000Z',
+    );
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('held-proof', ?, 'test', ?, ?)`,
+    ).run(
+      JSON.stringify({
+        packRef: 'magic-item:held-proof',
+        custom: { marker: 'HELD_STATE_UNCHANGED' },
+      }),
+      SESSION,
+      '2026-05-20T10:00:00.000Z',
+    );
+    insert.run(
+      'remote-crate',
+      'Remote Crate',
+      1,
+      'docks',
+      '{}',
+      SESSION,
+      '2026-05-20T10:00:00.000Z',
+    );
+    insert.run(
+      'unknown-cache',
+      'Unknown Cache',
+      1,
+      null,
+      '{}',
+      SESSION,
+      '2026-05-20T10:00:00.000Z',
+    );
+
+    const context = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'I pick up the ring.',
+    });
+    expect(context.state.nearbyInventory.map((item) => item.id)).toEqual([
+      'claimable-ring',
+    ]);
+    const rendered = renderContextMessage(context);
+    expect(rendered).toContain('claim_item');
+    expect(rendered).toContain('id=claimable-ring');
+    expect(rendered).not.toContain('properties=');
+    expect(rendered).not.toContain('NEARBY_SECRET_');
+    expect(context.state.inventory[0]).toMatchObject({
+      id: 'held-proof',
+      properties: { heldPayload: 'HELD_PROPERTIES_UNCHANGED' },
+      state: { custom: { marker: 'HELD_STATE_UNCHANGED' } },
+    });
+    expect(rendered).toContain('HELD_STATE_UNCHANGED');
+    expect(context.state.nearbyInventory[0]).not.toHaveProperty('properties');
+    expect(context.state.nearbyInventory[0]).not.toHaveProperty('state');
+    const listed = createDefaultToolRegistry().invoke(
+      'list_nearby_items',
+      {},
+      {
+        db,
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+        turnId: 'turn-1',
+        at: '2026-05-20T10:00:00.000Z',
+        rng: createSeededRng(1),
+      },
+    );
+    expect(listed.ok).toBe(true);
+    expect(JSON.stringify(listed)).not.toContain('NEARBY_SECRET_');
+    if (listed.ok) {
+      const item = (listed.data as { items: Record<string, unknown>[] })
+        .items[0];
+      expect(item).not.toHaveProperty('properties');
+      expect(item).not.toHaveProperty('state');
+    }
+    expect(rendered).not.toContain('remote-crate');
+    expect(rendered).not.toContain('unknown-cache');
+    db.close();
+  });
+
+  it('signals truncation and paginates every nearby id without remote leakage', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    db.prepare(
+      "UPDATE clock SET current_location_id='market' WHERE id=1",
+    ).run();
+    const insert = db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, location, world_location_id, properties_json,
+         provenance, session_id, updated_at
+       ) VALUES (?, NULL, ?, NULL, ?, '{}', 'test', ?, ?)`,
+    );
+    for (let index = 1; index <= 22; index += 1) {
+      const id = `item-${String(index).padStart(2, '0')}`;
+      insert.run(id, id, 'market', SESSION, '2026-05-20T10:00:00.000Z');
+    }
+    insert.run(
+      'remote',
+      'Remote',
+      'docks',
+      SESSION,
+      '2026-05-20T10:00:00.000Z',
+    );
+    insert.run('unknown', 'Unknown', null, SESSION, '2026-05-20T10:00:00.000Z');
+    const context = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      playerInput: 'look around',
+    });
+    expect(context.state.nearbyInventory).toHaveLength(20);
+    expect(context.state.nearbyInventoryTruncated).toBe(true);
+    expect(renderContextMessage(context)).toContain('list_nearby_items');
+
+    const registry = createDefaultToolRegistry();
+    const toolContext = {
+      db,
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      turnId: 'turn-1',
+      at: '2026-05-20T10:00:00.000Z',
+      rng: createSeededRng(1),
+    };
+    const first = registry.invoke(
+      'list_nearby_items',
+      { limit: 7 },
+      toolContext,
+    );
+    expect(first.ok).toBe(true);
+    if (!first.ok) throw new Error(first.error.message);
+    const firstData = first.data as {
+      items: Array<{ id: string }>;
+      nextCursor: string;
+    };
+    const second = registry.invoke(
+      'list_nearby_items',
+      { limit: 20, cursor: firstData.nextCursor },
+      toolContext,
+    );
+    expect(second.ok).toBe(true);
+    if (!second.ok) throw new Error(second.error.message);
+    const ids = [
+      ...firstData.items,
+      ...(second.data as { items: Array<{ id: string }> }).items,
+    ].map((item) => item.id);
+    expect(ids).toEqual(
+      Array.from(
+        { length: 22 },
+        (_, index) => `item-${String(index + 1).padStart(2, '0')}`,
+      ),
+    );
+    expect(ids).not.toContain('remote');
+    expect(ids).not.toContain('unknown');
+
+    db.prepare('UPDATE clock SET current_location_id=NULL WHERE id=1').run();
+    expect(registry.invoke('list_nearby_items', {}, toolContext)).toMatchObject(
+      {
+        ok: true,
+        data: { locationId: null, items: [] },
+      },
+    );
+    db.exec(
+      'DROP TRIGGER inventory_location_insert_guard; DROP TRIGGER inventory_location_update_guard;',
+    );
+    db.prepare(
+      "UPDATE inventory SET world_location_id='   ' WHERE id='unknown'",
+    ).run();
+    db.prepare("UPDATE clock SET current_location_id='   ' WHERE id=1").run();
+    expect(registry.invoke('list_nearby_items', {}, toolContext)).toMatchObject(
+      { ok: true, data: { locationId: null, items: [] } },
+    );
+    expect(
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+        playerInput: 'look around',
+      }).state.nearbyInventory,
+    ).toEqual([]);
     db.close();
   });
 

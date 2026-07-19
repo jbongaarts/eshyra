@@ -262,6 +262,7 @@ const CHARACTER_TOOL_FIELDS: Readonly<Record<string, string>> = {
   grant_temporary_hp: 'hp_temp',
   add_condition: 'conditions_json',
   remove_condition: 'conditions_json',
+  adopt_item: 'inventory',
   claim_item: 'inventory',
   give_item: 'inventory',
   remove_item: 'inventory',

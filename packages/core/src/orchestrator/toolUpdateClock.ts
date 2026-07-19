@@ -18,6 +18,7 @@ export const updateClockTool: Tool = {
       },
       location_id: {
         type: ['string', 'null'],
+        minLength: 1,
         description:
           'Location identifier to move the character to. Set to null to clear.',
       },
@@ -38,6 +39,13 @@ export const updateClockTool: Tool = {
       typeof a.location_id === 'string' || a.location_id === null
         ? (a.location_id as string | null)
         : undefined;
+
+    if (typeof locationId === 'string' && locationId.trim().length === 0) {
+      return err(
+        'invalid_args',
+        'update_clock location_id must contain a non-whitespace character or be null',
+      );
+    }
 
     if (inGameTime === undefined && locationId === undefined) {
       return err(

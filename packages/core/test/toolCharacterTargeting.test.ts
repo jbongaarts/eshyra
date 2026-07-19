@@ -172,6 +172,9 @@ describe('tool character targeting', () => {
 
   it('claim_item targets a PC by name while preserving the unheld row id', () => {
     const db = freshDb();
+    db.prepare(
+      "UPDATE clock SET current_location_id='market' WHERE id=1",
+    ).run();
     ensureCharacterRow(db, 'pc-2', 'test', 'session-1', AT);
     set(db, 'pc-2', 'name', 'Brielle');
     registry.invoke(

@@ -3,6 +3,7 @@ import type {
   MagicItemMechanics,
   MagicItemOperation,
 } from '../../../src/rules/magicItemMechanics.js';
+import { mergeMagicItemVariantMechanics } from '../../../src/rules/magicItemVariants.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 
 export const MAGIC_ITEM_ENGINE_FAMILIES = [
@@ -357,10 +358,16 @@ function clauseScope(
 ): NonNullable<MagicItemReadinessEntry['scope']> {
   const variantPrefix = `${itemKey}/variant:`;
   if (!clauseId.startsWith(variantPrefix)) return { kind: 'parent' };
-  const variantKey = clauseId.slice(variantPrefix.length).split('/', 1)[0];
+  const remainder = clauseId.slice(variantPrefix.length);
+  const separator = remainder.indexOf('/');
+  const variantKey = separator < 0 ? remainder : remainder.slice(0, separator);
   if (variantKey.length === 0)
     throw new Error(
       `magic-item clause integrity: ${clauseId} has an empty variant scope`,
+    );
+  if (separator < 0 || separator === remainder.length - 1)
+    throw new Error(
+      `magic-item clause integrity: ${clauseId} has a missing clause suffix after variant scope`,
     );
   return { kind: 'variant', variantKey };
 }
@@ -379,15 +386,35 @@ function representationKind(representation: Obj): string {
   return kinds[0];
 }
 
-function mechanicsScopes(data: Obj): readonly Obj[] {
+function selectedVariant(data: Obj, variantKey: string): Obj | undefined {
+  if (!Array.isArray(data.variants)) return undefined;
+  return data.variants
+    .map(asObject)
+    .find((variant) => variant?.id === variantKey);
+}
+
+function representationDataScopes(
+  data: Obj,
+  scope: NonNullable<MagicItemReadinessEntry['scope']>,
+): readonly Obj[] {
+  if (scope.kind === 'parent') return [data];
+  const variant = selectedVariant(data, scope.variantKey);
+  return variant === undefined
+    ? []
+    : [{ ...data, variants: [variant] }, variant];
+}
+
+function representationMechanicsScopes(
+  data: Obj,
+  scope: NonNullable<MagicItemReadinessEntry['scope']>,
+): readonly Obj[] {
   const scopes: Obj[] = [];
-  const direct = asObject(data.mechanics);
-  if (direct !== undefined) scopes.push(direct);
-  if (Array.isArray(data.variants)) {
-    for (const variant of data.variants) {
-      const nested = asObject(asObject(variant)?.mechanics);
-      if (nested !== undefined) scopes.push(nested);
-    }
+  const parent = asObject(data.mechanics);
+  if (parent !== undefined) scopes.push(parent);
+  if (scope.kind === 'variant') {
+    const variant = selectedVariant(data, scope.variantKey);
+    const nested = asObject(variant?.mechanics);
+    if (nested !== undefined) scopes.push(nested);
   }
   return scopes;
 }
@@ -423,21 +450,27 @@ function fieldContainsRef(value: unknown, ref: string): boolean {
   );
 }
 
-function representationResolves(data: Obj, representation: Obj): boolean {
+function representationResolves(
+  data: Obj,
+  representation: Obj,
+  scope: NonNullable<MagicItemReadinessEntry['scope']>,
+): boolean {
   const kind = representationKind(representation);
   if (kind !== 'block') return true;
   const block = representation.block;
   if (block === 'structuredField') {
     if (typeof representation.field !== 'string') return false;
-    const value = data[representation.field];
-    return (
-      value !== undefined &&
-      (representation.ref === undefined ||
-        (typeof representation.ref === 'string' &&
-          fieldContainsRef(value, representation.ref)))
-    );
+    return representationDataScopes(data, scope).some((dataScope) => {
+      const value = dataScope[representation.field as string];
+      return (
+        value !== undefined &&
+        (representation.ref === undefined ||
+          (typeof representation.ref === 'string' &&
+            fieldContainsRef(value, representation.ref)))
+      );
+    });
   }
-  const scopes = mechanicsScopes(data);
+  const scopes = representationMechanicsScopes(data, scope);
   if (block === 'economies') {
     return (
       typeof representation.economyId === 'string' &&
@@ -467,42 +500,106 @@ function representationResolves(data: Obj, representation: Obj): boolean {
   );
 }
 
-function validateOperationReferences(itemKey: string, data: Obj): void {
-  for (const scope of mechanicsScopes(data)) {
-    const economies = asObject(scope.economies) ?? {};
-    const effects = new Set(
-      (Array.isArray(scope.effects) ? scope.effects : [])
-        .map((effect) => asObject(effect)?.id)
-        .filter((id): id is string => typeof id === 'string'),
-    );
-    const operationIds = new Set<string>();
-    for (const raw of Array.isArray(scope.operations) ? scope.operations : []) {
-      const operation = asObject(raw);
-      if (operation === undefined) continue;
-      const operationId = operation.id;
-      if (typeof operationId !== 'string') continue;
-      if (operationIds.has(operationId)) duplicateId('operation', operationId);
-      operationIds.add(operationId);
-      for (const rawCost of Array.isArray(operation.cost)
-        ? operation.cost
-        : []) {
-        const economy = asObject(rawCost)?.economy;
-        if (typeof economy !== 'string' || !Object.hasOwn(economies, economy)) {
-          throw new Error(
-            `magic-item clause integrity: ${itemKey} operation ${operationId} references unknown economy ${JSON.stringify(economy)}`,
-          );
-        }
-      }
-      for (const effectId of Array.isArray(operation.effects)
-        ? operation.effects
-        : []) {
-        if (typeof effectId !== 'string' || !effects.has(effectId)) {
-          throw new Error(
-            `magic-item clause integrity: ${itemKey} operation ${operationId} references unknown effect ${JSON.stringify(effectId)}`,
-          );
-        }
-      }
+function operationIds(scope: Obj): Set<string> {
+  return new Set(
+    (Array.isArray(scope.operations) ? scope.operations : [])
+      .map((operation) => asObject(operation)?.id)
+      .filter((id): id is string => typeof id === 'string'),
+  );
+}
+
+function assertUniqueOperationIds(scope: Obj): void {
+  const seen = new Set<string>();
+  for (const raw of Array.isArray(scope.operations) ? scope.operations : []) {
+    const operationId = asObject(raw)?.id;
+    if (typeof operationId !== 'string') continue;
+    if (seen.has(operationId)) duplicateId('operation', operationId);
+    seen.add(operationId);
+  }
+}
+
+function validateEffectiveOperationReferences(
+  itemKey: string,
+  scopeName: string,
+  scope: Obj,
+): void {
+  const economies = asObject(scope.economies) ?? {};
+  const effects = new Set(
+    (Array.isArray(scope.effects) ? scope.effects : [])
+      .map((effect) => asObject(effect)?.id)
+      .filter((id): id is string => typeof id === 'string'),
+  );
+  const operations = operationIds(scope);
+  for (const raw of Array.isArray(scope.operations) ? scope.operations : []) {
+    const operation = asObject(raw);
+    if (operation === undefined || typeof operation.id !== 'string') continue;
+    for (const rawCost of Array.isArray(operation.cost) ? operation.cost : []) {
+      const economy = asObject(rawCost)?.economy;
+      if (typeof economy !== 'string' || !Object.hasOwn(economies, economy))
+        throw new Error(
+          `magic-item clause integrity: ${itemKey} ${scopeName} operation ${operation.id} references unknown economy ${JSON.stringify(economy)}`,
+        );
     }
+    for (const economy of Array.isArray(operation.doesNotExpend)
+      ? operation.doesNotExpend
+      : []) {
+      if (typeof economy !== 'string' || !Object.hasOwn(economies, economy))
+        throw new Error(
+          `magic-item clause integrity: ${itemKey} ${scopeName} operation ${operation.id} references unknown economy ${JSON.stringify(economy)}`,
+        );
+    }
+    for (const effectId of Array.isArray(operation.effects)
+      ? operation.effects
+      : []) {
+      if (typeof effectId !== 'string' || !effects.has(effectId))
+        throw new Error(
+          `magic-item clause integrity: ${itemKey} ${scopeName} operation ${operation.id} references unknown effect ${JSON.stringify(effectId)}`,
+        );
+    }
+    for (const excludedId of Array.isArray(operation.excludes)
+      ? operation.excludes
+      : []) {
+      if (typeof excludedId !== 'string' || !operations.has(excludedId))
+        throw new Error(
+          `magic-item clause integrity: ${itemKey} ${scopeName} operation ${operation.id} references unknown operation ${JSON.stringify(excludedId)}`,
+        );
+      if (excludedId === operation.id)
+        throw new Error(
+          `magic-item clause integrity: ${itemKey} ${scopeName} operation ${operation.id} excludes cannot reference itself`,
+        );
+    }
+  }
+}
+
+function validateOperationReferences(itemKey: string, data: Obj): void {
+  const parent = asObject(data.mechanics);
+  if (parent !== undefined) {
+    assertUniqueOperationIds(parent);
+    validateEffectiveOperationReferences(itemKey, 'parent', parent);
+  }
+  for (const rawVariant of Array.isArray(data.variants) ? data.variants : []) {
+    const variant = asObject(rawVariant);
+    const variantKey = variant?.id;
+    const child = asObject(variant?.mechanics);
+    if (typeof variantKey !== 'string' || child === undefined) continue;
+    assertUniqueOperationIds(child);
+    let effective: MagicItemMechanics | undefined;
+    try {
+      effective = mergeMagicItemVariantMechanics(
+        parent as MagicItemMechanics | undefined,
+        child as MagicItemMechanics,
+      );
+    } catch (error) {
+      throw new Error(
+        `magic-item clause integrity: ${itemKey} variant ${JSON.stringify(variantKey)} cannot merge with parent mechanics: ${(error as Error).message}`,
+      );
+    }
+    if (effective !== undefined)
+      validateEffectiveOperationReferences(
+        itemKey,
+        `variant ${JSON.stringify(variantKey)}`,
+        effective as Obj,
+      );
   }
 }
 
@@ -565,6 +662,14 @@ export function validateMagicItemClausesAndClassify(input: {
     for (const clause of clauses) {
       if (seen.has(clause.id)) duplicateId('clause', clause.id);
       seen.add(clause.id);
+      const scope = clauseScope(itemKey, clause.id);
+      if (
+        scope.kind === 'variant' &&
+        selectedVariant(data, scope.variantKey) === undefined
+      )
+        throw new Error(
+          `magic-item clause integrity: ${clause.id} references unknown variant ${JSON.stringify(scope.variantKey)} in ${itemKey}`,
+        );
       const representation = asObject(clause.representation);
       if (representation === undefined) {
         throw new Error(
@@ -599,7 +704,7 @@ export function validateMagicItemClausesAndClassify(input: {
         result.push({
           itemKey,
           clauseId: clause.id,
-          scope: clauseScope(itemKey, clause.id),
+          scope,
           tag: clause.tag,
           readiness: 'adjudicated-by-design',
           representation: clause.representation,
@@ -617,7 +722,7 @@ export function validateMagicItemClausesAndClassify(input: {
         result.push({
           itemKey,
           clauseId: clause.id,
-          scope: clauseScope(itemKey, clause.id),
+          scope,
           tag: clause.tag,
           readiness: 'design-blocked',
           representation: clause.representation,
@@ -631,7 +736,7 @@ export function validateMagicItemClausesAndClassify(input: {
         });
         continue;
       }
-      if (!representationResolves(data, representation)) {
+      if (!representationResolves(data, representation, scope)) {
         throw new Error(
           `magic-item clause integrity: ${clause.id} representation binding does not resolve in ${itemKey}`,
         );
@@ -642,7 +747,7 @@ export function validateMagicItemClausesAndClassify(input: {
       const common = {
         itemKey,
         clauseId: clause.id,
-        scope: clauseScope(itemKey, clause.id),
+        scope,
         tag: clause.tag,
         representation: clause.representation,
         ...(declaredHooks === undefined ? {} : { engineHooks: declaredHooks }),

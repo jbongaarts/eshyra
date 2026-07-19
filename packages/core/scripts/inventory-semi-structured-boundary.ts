@@ -183,6 +183,44 @@ function hasKind(
 
 const rules: readonly ClassificationRule[] = [
   {
+    name: 'magic-item curse lifecycle state and effect references',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('magic-item')({ recordKinds }) &&
+      exactPath(
+        'data.mechanics.curse.attunement.attachesStates[]',
+        'data.mechanics.curse.attunement.preconditionEffects[]',
+        'data.mechanics.curse.possession.blocksVoluntaryRelinquishmentWhileStates[]',
+      )({ fieldPath } as ClassificationContext),
+    classify: ({ fieldPath }) => {
+      const custodyState = fieldPath.includes('.possession.');
+      const attachedState = fieldPath.endsWith('.attachesStates[]');
+      return result(
+        'identifier-like',
+        'complete',
+        custodyState
+          ? 'assertInventoryCurseCustodyReady resolves the effective curse and gates voluntary release while the referenced attached state is active'
+          : attachedState
+            ? 'assertEffectiveAttunementCurseReady gates atomic curse attachment/end and assertInventoryCurseCustodyReady identifies active attached possession states'
+            : 'assertEffectiveAttunementCurseReady gates attunement until the referenced precondition effect can be evaluated',
+        custodyState || attachedState
+          ? 'validateMagicItemMechanics requires non-empty canonical state ids and resolves every id against curse.stateDefinitions'
+          : 'validateMagicItemMechanics requires non-empty canonical effect ids and resolves every id against mechanics.effects',
+        'magic-item curse projection, schema referential-integrity, attunement corpus, custody domain, transfer, and tool regressions',
+        custodyState
+          ? 'MagicItemCurse.possession.blocksVoluntaryRelinquishmentWhileStates / validateMagicItemMechanics'
+          : attachedState
+            ? 'MagicItemCurse.attunement.attachesStates / validateMagicItemMechanics'
+            : 'MagicItemCurse.attunement.preconditionEffects / validateMagicItemMechanics',
+        custodyState
+          ? 'attunement.ts assertInventoryCurseCustodyReady and the remove/transfer mutation boundaries'
+          : attachedState
+            ? 'attunement.ts assertEffectiveAttunementCurseReady and assertInventoryCurseCustodyReady'
+            : 'attunement.ts assertEffectiveAttunementCurseReady',
+      );
+    },
+  },
+  {
     name: 'canonical magic-item variant identity',
     matches: ({ system, fieldPath, recordKinds }) =>
       system === 'dnd5e-srd' &&

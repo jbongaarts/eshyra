@@ -9,7 +9,7 @@ export const transferItemTool: Tool = {
   requiresExplicitAction: true,
   description:
     'Transfer an existing inventory instance between party members without recreating it. ' +
-    'The row id, pack/variant identity, charges, curse, timers, and all item state are preserved. ' +
+    'The row id, pack/variant identity, charges, curse, timers, and all item state are preserved; holder-relative storage/equipment placement is cleared for the recipient. ' +
     'Attunement behavior must be explicit: "require-unattuned" refuses an attuned item; "end" atomically ends its current attunement.',
   inputSchema: {
     type: 'object',

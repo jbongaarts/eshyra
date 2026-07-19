@@ -18,7 +18,7 @@ export const removeItemTool: Tool = {
   requiresExplicitAction: true,
   description:
     'Apply an explicit physical disposition to a held item: destroyed, dropped, sold, or lost. ' +
-    'Only destroyed deletes the row and ends attunement, and it may target an exact held or unheld physical row. A full drop, sale, or loss preserves the physical row and state as unheld at the current world location; a partial stateless stack is split into a new unheld row there. ' +
+    'Only destroyed deletes the row and ends attunement; destroying an unheld row requires its world location to exactly match the current campaign location. A full drop, sale, or loss clears held storage and preserves the physical row and state as unheld at the current world location; a partial stateless stack is split into a new unheld row there. ' +
     'Call ONLY when the player explicitly drops, uses, sells, or loses an item — ' +
     'never call to answer a question about what is currently equipped or carried.',
   inputSchema: {
@@ -67,13 +67,18 @@ export const removeItemTool: Tool = {
       const targetCharacterId = resolveCharacterId(ctx.db, target.id);
       const existing = ctx.db
         .prepare(
-          `SELECT name, location, character_id
+          `SELECT name, location, world_location_id, character_id
            FROM inventory
            WHERE id = ?
              AND (character_id = ? OR (character_id IS NULL AND ? = 'destroyed'))`,
         )
         .get(a.id, targetCharacterId, a.disposition) as
-        | { name: string; location: string | null; character_id: string | null }
+        | {
+            name: string;
+            location: string | null;
+            world_location_id: string | null;
+            character_id: string | null;
+          }
         | undefined;
       const result = removeItem(
         ctx.db,
@@ -85,6 +90,7 @@ export const removeItemTool: Tool = {
             | 'dropped'
             | 'sold'
             | 'lost',
+          resolveRulesPack: ctx.resolveRulesPack,
         },
         {
           provenance: `model:${ctx.turnId}`,
@@ -102,6 +108,9 @@ export const removeItemTool: Tool = {
         ...(existing?.location !== null && existing?.location !== undefined
           ? { location: existing.location }
           : {}),
+        ...(result.worldLocationId === undefined
+          ? {}
+          : { worldLocationId: result.worldLocationId }),
         ...(typeof a.character === 'string' ? { character: a.character } : {}),
         ...(existing?.character_id !== null &&
         existing?.character_id !== undefined

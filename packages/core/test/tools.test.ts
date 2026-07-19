@@ -148,6 +148,7 @@ describe('ToolRegistry', () => {
         'add_condition',
         'adjust_hp',
         'advance_time',
+        'adopt_item',
         'attune_item',
         'award_inspiration',
         'begin_turn',
@@ -163,6 +164,7 @@ describe('ToolRegistry', () => {
         'gain_currency',
         'give_item',
         'grant_temporary_hp',
+        'list_nearby_items',
         'lookup_rules',
         'mark_scene',
         'memory_drilldown',
@@ -216,6 +218,7 @@ describe('ToolRegistry', () => {
       'lookup_rules',
       'world_query',
       'memory_drilldown',
+      'list_nearby_items',
     ]) {
       expect(registry.isMutating(name), `${name} should be read-only`).toBe(
         false,
@@ -232,6 +235,7 @@ describe('ToolRegistry', () => {
       'lookup_rules',
       'world_query',
       'memory_drilldown',
+      'list_nearby_items',
     ]);
     for (const name of registry.list()) {
       if (!readOnly.has(name)) {
@@ -810,6 +814,9 @@ describe('domain mutation tools', () => {
     expect(registry.invoke('remove_item', { id: 'torch' }, c)).toMatchObject({
       ok: false,
     });
+    c.db
+      .prepare("UPDATE clock SET current_location_id='market' WHERE id=1")
+      .run();
     registry.invoke('give_item', { id: 'keepsake', name: 'Keepsake' }, c);
     expect(
       registry.invoke(
@@ -845,6 +852,127 @@ describe('domain mutation tools', () => {
         disposition: 'destroyed',
         removed: true,
       },
+    });
+  });
+
+  it('remove_item rejects an unplaced surviving row without mutating custody', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    registry.invoke(
+      'give_item',
+      { id: 'parcel', name: 'Parcel', quantity: 2, location: 'pack' },
+      c,
+    );
+    expect(
+      registry.invoke(
+        'remove_item',
+        { id: 'parcel', quantity: 1, disposition: 'dropped' },
+        c,
+      ),
+    ).toMatchObject({ ok: false, code: 'mutate_error' });
+    expect(
+      c.db
+        .prepare(
+          'SELECT character_id, quantity, location, world_location_id FROM inventory WHERE id=?',
+        )
+        .get('parcel'),
+    ).toEqual({
+      character_id: 'pc-1',
+      quantity: 2,
+      location: 'pack',
+      world_location_id: null,
+    });
+  });
+
+  it('update_clock rejects blank location ids without changing canon', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    for (const location_id of ['', '   ']) {
+      expect(registry.invoke('update_clock', { location_id }, c)).toMatchObject(
+        {
+          ok: false,
+          code: 'invalid_args',
+        },
+      );
+      expect(
+        c.db.prepare('SELECT current_location_id FROM clock WHERE id=1').get(),
+      ).toEqual({ current_location_id: null });
+    }
+    expect(
+      registry.invoke('update_clock', { location_id: '  north-gate  ' }, c),
+    ).toMatchObject({ ok: true });
+    expect(
+      c.db.prepare('SELECT current_location_id FROM clock WHERE id=1').get(),
+    ).toEqual({ current_location_id: '  north-gate  ' });
+    expect(
+      registry.invoke('update_clock', { location_id: null }, c),
+    ).toMatchObject({ ok: true });
+  });
+
+  it('remove_item surfaces exact cursed possession and worn-doff failures', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    c.db
+      .prepare("UPDATE clock SET current_location_id='market' WHERE id=1")
+      .run();
+    const axeGrant = registry.invoke(
+      'give_item',
+      {
+        id: 'axe',
+        name: 'Berserker Axe',
+        packRef: 'magic-item:berserker-axe',
+        location: 'carried',
+      },
+      c,
+    );
+    expect(axeGrant.ok).toBe(true);
+    if (!axeGrant.ok) throw new Error(axeGrant.error.message);
+    const axeId = (axeGrant.data as { id: string }).id;
+    c.db
+      .prepare(
+        `INSERT INTO attunement(
+           campaign_id, character_id, item_id, item_key, display_name,
+           attuned_at, provenance, session_id, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        'campaign-1',
+        'pc-1',
+        axeId,
+        'magic-item:berserker-axe',
+        'Berserker Axe',
+        c.at,
+        'test',
+        c.sessionId,
+        c.at,
+      );
+    expect(
+      registry.invoke('remove_item', { id: axeId, disposition: 'sold' }, c),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('voluntary relinquishment'),
+    });
+
+    const armorGrant = registry.invoke(
+      'give_item',
+      {
+        id: 'armor',
+        name: 'Demon Armor',
+        packRef: 'magic-item:demon-armor',
+        location: 'backpack',
+      },
+      c,
+    );
+    expect(armorGrant.ok).toBe(true);
+    if (!armorGrant.ok) throw new Error(armorGrant.error.message);
+    const armorId = (armorGrant.data as { id: string }).id;
+    expect(
+      registry.invoke('remove_item', { id: armorId, disposition: 'lost' }, c),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining(
+        'authoritative don/doff state is unavailable',
+      ),
     });
   });
 
@@ -1705,6 +1833,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       [
         'add_condition',
         'adjust_hp',
+        'adopt_item',
         'advance_time',
         'attune_item',
         'award_inspiration',
@@ -1721,6 +1850,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'gain_currency',
         'give_item',
         'grant_temporary_hp',
+        'list_nearby_items',
         'lookup_rules',
         'mark_scene',
         'memory_drilldown',
@@ -1820,6 +1950,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       'string',
       'null',
     ]);
+    expect(def.inputSchema.properties.location_id?.minLength).toBe(1);
   });
 
   it('definitions are a snapshot — mutating the array does not affect later reads', () => {

@@ -28,6 +28,7 @@ const STATE_TOOLS = new Set([
   'end_attunement',
   'award_inspiration',
   'use_inspiration',
+  'adopt_item',
   'claim_item',
   'give_item',
   'use_item',

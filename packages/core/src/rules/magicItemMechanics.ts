@@ -215,6 +215,17 @@ export interface MagicItemCurse {
   readonly endedBy?: readonly string[];
   readonly blocksUnattune?: boolean;
   readonly blocksDoff?: boolean;
+  /** Explicit lifecycle hooks; a curse block alone is not an attunement rule. */
+  readonly attunement?: {
+    /** Effects that must be evaluated before the bond can be created. */
+    readonly preconditionEffects?: readonly string[];
+    /** Character-state definitions atomically attached when attunement begins. */
+    readonly attachesStates?: readonly string[];
+  };
+  readonly possession?: {
+    /** Active character states that prevent a voluntary custody release. */
+    readonly blocksVoluntaryRelinquishmentWhileStates: readonly string[];
+  };
   readonly effects?: readonly string[];
   readonly exclusiveState?: {
     readonly id: string;
@@ -1312,6 +1323,8 @@ function curse(
       'endedBy',
       'blocksUnattune',
       'blocksDoff',
+      'attunement',
+      'possession',
       'effects',
       'exclusiveState',
       'stateDefinitions',
@@ -1325,6 +1338,52 @@ function curse(
   }
   for (const key of ['blocksUnattune', 'blocksDoff']) {
     if (obj[key] !== undefined) boolean(obj[key], `${path}.${key}`);
+  }
+  let attachedStateIds: readonly string[] = [];
+  let possessionBlockingStateIds: readonly string[] = [];
+  if (obj.attunement !== undefined) {
+    const attunement = object(obj.attunement, `${path}.attunement`);
+    only(
+      attunement,
+      ['preconditionEffects', 'attachesStates'],
+      `${path}.attunement`,
+    );
+    if (attunement.preconditionEffects !== undefined) {
+      for (const effectId of strings(
+        attunement.preconditionEffects,
+        `${path}.attunement.preconditionEffects`,
+        { ids: true, nonEmpty: true },
+      )) {
+        if (!effectIds.has(effectId))
+          throw new RulesPackError(
+            `${path}.attunement.preconditionEffects references unknown effect ${JSON.stringify(effectId)}`,
+          );
+      }
+    }
+    if (attunement.attachesStates !== undefined)
+      attachedStateIds = strings(
+        attunement.attachesStates,
+        `${path}.attunement.attachesStates`,
+        { ids: true, nonEmpty: true },
+      );
+    if (
+      attunement.preconditionEffects === undefined &&
+      attunement.attachesStates === undefined
+    )
+      throw new RulesPackError(`${path}.attunement must not be empty`);
+  }
+  if (obj.possession !== undefined) {
+    const possession = object(obj.possession, `${path}.possession`);
+    only(
+      possession,
+      ['blocksVoluntaryRelinquishmentWhileStates'],
+      `${path}.possession`,
+    );
+    possessionBlockingStateIds = strings(
+      possession.blocksVoluntaryRelinquishmentWhileStates,
+      `${path}.possession.blocksVoluntaryRelinquishmentWhileStates`,
+      { ids: true, nonEmpty: true },
+    );
   }
   if (obj.effects !== undefined) {
     for (const effectId of strings(obj.effects, `${path}.effects`, {
@@ -1478,6 +1537,25 @@ function curse(
         );
       if (state.note !== undefined) string(state.note, `${statePath}.note`);
     });
+    for (const stateId of attachedStateIds) {
+      if (!stateIds.has(stateId))
+        throw new RulesPackError(
+          `${path}.attunement.attachesStates references unknown state ${JSON.stringify(stateId)}`,
+        );
+    }
+    for (const stateId of possessionBlockingStateIds) {
+      if (!stateIds.has(stateId))
+        throw new RulesPackError(
+          `${path}.possession.blocksVoluntaryRelinquishmentWhileStates references unknown state ${JSON.stringify(stateId)}`,
+        );
+    }
+  } else if (
+    attachedStateIds.length > 0 ||
+    possessionBlockingStateIds.length > 0
+  ) {
+    throw new RulesPackError(
+      `${path} attunement/possession state references require stateDefinitions`,
+    );
   }
   if (obj.note !== undefined) string(obj.note, `${path}.note`);
 }

@@ -346,6 +346,263 @@ describe('magic-item clause integrity and readiness', () => {
     ).toThrow(/representation binding does not resolve/);
   });
 
+  it('isolates parent and selected-variant clause evidence from sibling variants', () => {
+    const record = itemRecord({
+      parentField: ['parent-ref'],
+      mechanics: {
+        economies: { parentEconomy: { kind: 'charges' } },
+        operations: [{ id: 'parent-operation' }],
+        effects: [{ id: 'parent-effect', kind: 'sense' }],
+        stateMachine: { initial: 'parent' },
+      },
+      variants: [
+        {
+          id: 'alpha',
+          name: 'Alpha',
+          alphaField: ['alpha-ref'],
+          mechanics: {
+            economies: { alphaEconomy: { kind: 'charges' } },
+            operations: [{ id: 'alpha-operation' }],
+            effects: [{ id: 'alpha-effect', kind: 'sense' }],
+            containment: { capacity: 1 },
+          },
+        },
+        {
+          id: 'beta',
+          name: 'Beta',
+          betaField: ['beta-ref'],
+          mechanics: {
+            economies: { betaEconomy: { kind: 'charges' } },
+            operations: [{ id: 'beta-operation' }],
+            effects: [{ id: 'beta-effect', kind: 'sense' }],
+            curse: { blocksUnattune: true },
+          },
+        },
+      ],
+    });
+    const classify = (
+      id: string,
+      representation: ItemClauseExpectation['representation'],
+    ) =>
+      validateMagicItemClausesAndClassify({
+        records: [record],
+        clausesByItemKey: new Map([
+          [record.key, [{ id, tag: 'M1', representation }]],
+        ]),
+      });
+
+    const parentId = `${record.key}/parent`;
+    const alphaId = `${record.key}/variant:alpha/clause`;
+    expect(
+      classify(parentId, { block: 'effects', effectId: 'parent-effect' }),
+    ).toHaveLength(1);
+    expect(
+      classify(alphaId, { block: 'effects', effectId: 'parent-effect' }),
+    ).toHaveLength(1);
+    expect(
+      classify(alphaId, { block: 'effects', effectId: 'alpha-effect' }),
+    ).toHaveLength(1);
+    expect(
+      classify(alphaId, {
+        block: 'structuredField',
+        field: 'alphaField',
+        ref: 'alpha-ref',
+      }),
+    ).toHaveLength(1);
+    expect(
+      classify(alphaId, {
+        block: 'structuredField',
+        field: 'variants',
+        ref: 'alpha',
+      }),
+    ).toHaveLength(1);
+
+    for (const representation of [
+      { block: 'effects', effectId: 'beta-effect' },
+      { block: 'operations', operationId: 'beta-operation' },
+      { block: 'economies', economyId: 'betaEconomy' },
+      { block: 'curse' },
+      {
+        block: 'structuredField',
+        field: 'betaField',
+        ref: 'beta-ref',
+      },
+      {
+        block: 'structuredField',
+        field: 'variants',
+        ref: 'beta',
+      },
+    ] as const) {
+      expect(() => classify(alphaId, representation)).toThrow(
+        /representation binding does not resolve/,
+      );
+    }
+    expect(() =>
+      classify(parentId, { block: 'effects', effectId: 'alpha-effect' }),
+    ).toThrow(/representation binding does not resolve/);
+  });
+
+  it('requires every variant-scoped clause disposition to name an emitted variant and clause suffix', () => {
+    const record = itemRecord({
+      variants: [{ id: 'alpha', name: 'Alpha', mechanics: {} }],
+    });
+    const classify = (
+      id: string,
+      representation: ItemClauseExpectation['representation'],
+    ) =>
+      validateMagicItemClausesAndClassify({
+        records: [record],
+        clausesByItemKey: new Map([
+          [record.key, [{ id, tag: 'M1', representation }]],
+        ]),
+      });
+
+    for (const representation of [
+      { adjudicated: true, note: 'contextual' },
+      { designBlocked: true, reason: 'out of scope' },
+    ] as const) {
+      expect(() =>
+        classify(`${record.key}/variant:missing/clause`, representation),
+      ).toThrow(/references unknown variant "missing"/);
+    }
+    expect(() =>
+      classify(`${record.key}/variant:/clause`, {
+        adjudicated: true,
+        note: 'contextual',
+      }),
+    ).toThrow(/empty variant scope/);
+    for (const id of [
+      `${record.key}/variant:alpha`,
+      `${record.key}/variant:alpha/`,
+    ]) {
+      expect(() =>
+        classify(id, { adjudicated: true, note: 'contextual' }),
+      ).toThrow(/missing clause suffix/);
+    }
+    expect(
+      classify(`${record.key}/variant:alpha/clause`, {
+        adjudicated: true,
+        note: 'contextual',
+      }),
+    ).toHaveLength(1);
+  });
+
+  it('validates operation references against each runtime-effective parent plus selected variant scope', () => {
+    const classify = (record: RulesRecord) =>
+      validateMagicItemClausesAndClassify({
+        records: [record],
+        clausesByItemKey: new Map([[record.key, []]]),
+      });
+    const inherited = itemRecord({
+      mechanics: {
+        economies: { parentEconomy: { kind: 'charges' } },
+        effects: [{ id: 'parent-effect', kind: 'sense' }],
+        operations: [
+          {
+            id: 'shared-operation',
+            cost: [{ economy: 'parentEconomy', amount: 1 }],
+          },
+        ],
+      },
+      variants: [
+        {
+          id: 'alpha',
+          name: 'Alpha',
+          mechanics: {
+            economies: { alphaEconomy: { kind: 'charges' } },
+            effects: [{ id: 'alpha-effect', kind: 'sense' }],
+            operations: [
+              { id: 'shared-operation', effects: ['alpha-effect'] },
+              {
+                id: 'alpha-operation',
+                cost: [{ economy: 'parentEconomy', amount: 1 }],
+                doesNotExpend: ['parentEconomy'],
+                effects: ['parent-effect'],
+                excludes: ['shared-operation'],
+              },
+            ],
+          },
+        },
+      ],
+    });
+    expect(classify(inherited)).toMatchObject([{ readiness: 'red' }]);
+
+    const parentLicensedByChild = itemRecord({
+      mechanics: {
+        operations: [{ id: 'parent-operation', effects: ['child-effect'] }],
+      },
+      variants: [
+        {
+          id: 'alpha',
+          name: 'Alpha',
+          mechanics: { effects: [{ id: 'child-effect', kind: 'sense' }] },
+        },
+      ],
+    });
+    expect(() => classify(parentLicensedByChild)).toThrow(
+      /parent operation parent-operation references unknown effect "child-effect"/,
+    );
+
+    const siblingLeak = itemRecord({
+      variants: [
+        {
+          id: 'alpha',
+          name: 'Alpha',
+          mechanics: { effects: [{ id: 'alpha-effect', kind: 'sense' }] },
+        },
+        {
+          id: 'beta',
+          name: 'Beta',
+          mechanics: {
+            operations: [{ id: 'beta-operation', effects: ['alpha-effect'] }],
+          },
+        },
+      ],
+    });
+    expect(() => classify(siblingLeak)).toThrow(
+      /variant "beta" operation beta-operation references unknown effect "alpha-effect"/,
+    );
+  });
+
+  it('applies runtime variant operation merge conflict and duplicate rules during reference validation', () => {
+    const classify = (record: RulesRecord) =>
+      validateMagicItemClausesAndClassify({
+        records: [record],
+        clausesByItemKey: new Map([[record.key, []]]),
+      });
+    const conflict = itemRecord({
+      mechanics: {
+        operations: [{ id: 'activate', activation: { cost: 'action' } }],
+      },
+      variants: [
+        {
+          id: 'alpha',
+          name: 'Alpha',
+          mechanics: {
+            operations: [{ id: 'activate', activation: { cost: 'reaction' } }],
+          },
+        },
+      ],
+    });
+    expect(() => classify(conflict)).toThrow(
+      /variant "alpha" cannot merge.*conflict on operation 'activate' activation.cost/,
+    );
+    const duplicate = itemRecord({
+      variants: [
+        {
+          id: 'alpha',
+          name: 'Alpha',
+          mechanics: {
+            operations: [{ id: 'activate' }, { id: 'activate' }],
+          },
+        },
+      ],
+    });
+    expect(() => classify(duplicate)).toThrow(
+      /duplicate operation id "activate"/,
+    );
+  });
+
   it('keeps a multi-hook clause pending until every exact hook lands', () => {
     const record = itemRecord({
       mechanics: { effects: [{ id: 'flight', kind: 'speedSet', value: 60 }] },

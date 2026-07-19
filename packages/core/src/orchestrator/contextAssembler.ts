@@ -46,6 +46,7 @@ import {
   listCombatants,
 } from '../state/encounterCombatants.js';
 import { formatHpStatus, type LifeState } from '../state/hpLifecycle.js';
+import { isConcreteWorldLocation } from '../state/inventoryWorldLocation.js';
 import {
   type ItemInstanceState,
   readItemState,
@@ -182,6 +183,16 @@ export interface InventoryItem {
   state: ItemInstanceState | undefined;
 }
 
+export interface NearbyInventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  packRef: string | undefined;
+  variantId?: string;
+  /** Exact campaign placement proving this unheld row is claimable now. */
+  worldLocationId: string;
+}
+
 export interface ClockSnapshot {
   inGameTime: string;
   currentLocationId: string | undefined;
@@ -194,6 +205,9 @@ export interface StateSnapshot {
   /** The acting character's canonical wallet; unavailable before sheet finalization. */
   wallet: CharacterWallet | undefined;
   inventory: InventoryItem[];
+  /** Deterministically bounded unheld physical rows co-located with the clock. */
+  nearbyInventory: NearbyInventoryItem[];
+  nearbyInventoryTruncated: boolean;
   /** The acting character's attuned magic items (F5), at most three. */
   attunements: readonly AttunementEntry[];
   /** Live (active or suppressed) durable effects (F3): concentration and
@@ -282,6 +296,15 @@ interface InventoryRow {
   variant_id: string | null;
 }
 
+interface NearbyInventoryRow {
+  id: string;
+  name: string;
+  quantity: number;
+  pack_ref: string | null;
+  variant_id: string | null;
+  world_location_id: string;
+}
+
 interface ClockRow {
   in_game_time: string;
   current_location_id: string | null;
@@ -328,6 +351,23 @@ export function readStateSnapshot(
       'SELECT in_game_time, current_location_id, elapsed_minutes, in_game_time_elapsed_minutes FROM clock WHERE id = 1',
     )
     .get() as ClockRow;
+
+  const nearbyInventoryRows = !isConcreteWorldLocation(
+    clock.current_location_id,
+  )
+    ? []
+    : (db
+        .prepare(
+          `SELECT id, name, quantity, pack_ref, variant_id,
+                    world_location_id
+             FROM inventory
+             WHERE character_id IS NULL
+               AND world_location_id = ?
+               AND trim(world_location_id) <> ''
+             ORDER BY id
+             LIMIT 21`,
+        )
+        .all(clock.current_location_id) as NearbyInventoryRow[]);
 
   const plotFlagRows = db
     .prepare('SELECT key, value_json FROM plot_flags ORDER BY key')
@@ -397,6 +437,23 @@ export function readStateSnapshot(
         state: readItemState(db, row.id),
       };
     }),
+    nearbyInventory: nearbyInventoryRows.slice(0, 20).map((row) => {
+      return {
+        id: row.id,
+        name: row.name,
+        quantity: row.quantity,
+        worldLocationId: row.world_location_id,
+        packRef:
+          row.pack_ref === null
+            ? undefined
+            : validatePackRef(
+                row.pack_ref,
+                `nearbyInventory[${row.id}].pack_ref`,
+              ),
+        ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
+      };
+    }),
+    nearbyInventoryTruncated: nearbyInventoryRows.length > 20,
     attunements:
       campaignId === undefined ? [] : listAttunements(db, campaignId, charId),
     activeEffects:
@@ -674,6 +731,21 @@ function renderState(state: StateSnapshot): string {
     );
   } else {
     lines.push('Inventory: (empty)');
+  }
+  if (state.nearbyInventory.length > 0) {
+    lines.push('Nearby unheld items (claim with exact id via claim_item):');
+    for (const item of state.nearbyInventory) {
+      const pack = item.packRef === undefined ? '' : `; ${item.packRef}`;
+      const variant =
+        item.variantId === undefined ? '' : `; variant=${item.variantId}`;
+      lines.push(
+        `- ${item.name} x${item.quantity} (id=${item.id}; world=${item.worldLocationId}${pack}${variant})`,
+      );
+    }
+    if (state.nearbyInventoryTruncated)
+      lines.push(
+        '- More co-located rows exist; call list_nearby_items with cursor pagination to retrieve their exact ids.',
+      );
   }
   if (state.combatants.length > 0) {
     lines.push('Active combatants:');

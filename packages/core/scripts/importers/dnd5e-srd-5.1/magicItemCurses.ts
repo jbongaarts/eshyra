@@ -76,6 +76,9 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
       curse: {
         revealedBy: ['spell:identify', 'attunement'],
         endedBy: ['spell:remove-curse', 'similar magic'],
+        attunement: {
+          attachesStates: ['m7-armor-vulnerability-curse'],
+        },
         effects: ['c2-static-armor-vulnerability-two-types'],
         stateDefinitions: [
           state('armor-vulnerability-curse', 'attune to the armor', {
@@ -134,6 +137,10 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
         }),
       ],
       curse: {
+        attunement: { attachesStates: ['m7-berserker-axe-curse'] },
+        possession: {
+          blocksVoluntaryRelinquishmentWhileStates: ['m7-berserker-axe-curse'],
+        },
         effects: [
           'm7-berserker-unwilling-to-part',
           'm7-berserker-other-weapons',
@@ -253,6 +260,9 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
       curse: {
         revealedBy: ['attunement'],
         endedBy: ['spell:remove-curse', 'similar magic'],
+        attunement: {
+          attachesStates: ['m7-missile-attraction-curse'],
+        },
         effects: ['m7-missile-attraction-redirect'],
         stateDefinitions: [
           state('missile-attraction-curse', 'attune to the shield', {
@@ -616,6 +626,9 @@ const SPECS: ReadonlyMap<string, CurseSpec> = new Map([
         }),
       ],
       curse: {
+        attunement: {
+          preconditionEffects: ['m7-archmagi-alignment-gate'],
+        },
         effects: ['m7-archmagi-alignment-gate'],
         note: 'White=good, gray=neutral, black=evil; this is an attunement precondition, not a live curse.',
       },

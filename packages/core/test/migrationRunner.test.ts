@@ -318,6 +318,108 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0016 separates legacy unheld world placement from held storage', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 15)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(15);
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, location, provenance, session_id, updated_at
+       ) VALUES
+         ('held', 'pc-1', 'Held', 'backpack', 'test', 'session', ?),
+         ('unheld', NULL, 'Unheld', 'old-road', 'test', 'session', ?),
+         ('unheld-blank', NULL, 'Unheld Blank', '   ', 'test', 'session', ?)`,
+    ).run(NOW(), NOW(), NOW());
+
+    const migration16 = bundled[15];
+    if (migration16 === undefined) throw new Error('missing migration 0016');
+    writeFileSync(
+      join(dir, '0016_inventory_world_location.sql'),
+      migration16.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([16]);
+    expect(
+      db
+        .prepare(
+          `SELECT id, character_id, location, world_location_id
+           FROM inventory ORDER BY id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        id: 'held',
+        character_id: 'pc-1',
+        location: 'backpack',
+        world_location_id: null,
+      },
+      {
+        id: 'unheld',
+        character_id: null,
+        location: null,
+        world_location_id: 'old-road',
+      },
+      {
+        id: 'unheld-blank',
+        character_id: null,
+        location: null,
+        world_location_id: null,
+      },
+    ]);
+    expect(() =>
+      db
+        .prepare(
+          "UPDATE inventory SET world_location_id='elsewhere' WHERE id='held'",
+        )
+        .run(),
+    ).toThrow(/custody\/location invariant/);
+    expect(() =>
+      db.prepare("UPDATE inventory SET location='bag' WHERE id='unheld'").run(),
+    ).toThrow(/custody\/location invariant/);
+    for (const blank of ['', '   ']) {
+      expect(() =>
+        db
+          .prepare("UPDATE inventory SET world_location_id=? WHERE id='unheld'")
+          .run(blank),
+      ).toThrow(/custody\/location invariant/);
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO inventory(
+               id, name, world_location_id, provenance, session_id, updated_at
+             ) VALUES (?, 'Blank', ?, 'test', 'session', ?)`,
+          )
+          .run(`blank-${blank.length}`, blank, NOW()),
+      ).toThrow(/custody\/location invariant/);
+    }
+    expect(
+      db
+        .prepare(
+          `SELECT type, name FROM sqlite_master
+           WHERE name IN (
+             'inventory_unheld_world_location_id',
+             'inventory_location_insert_guard',
+             'inventory_location_update_guard'
+           ) ORDER BY type, name`,
+        )
+        .all(),
+    ).toEqual([
+      { type: 'index', name: 'inventory_unheld_world_location_id' },
+      { type: 'trigger', name: 'inventory_location_insert_guard' },
+      { type: 'trigger', name: 'inventory_location_update_guard' },
+    ]);
+    db.close();
+  });
+
   it('refuses to start when an applied migration file was edited (checksum drift)', () => {
     const db = openDatabase(':memory:');
     const dir = makeMigrationDir({

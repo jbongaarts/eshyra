@@ -13,11 +13,25 @@ import {
 } from './activeEffects.js';
 import { resolveCampaignAdvancementPolicy } from './advancementPolicy.js';
 import {
+  assertInventoryCurseCustodyReady,
+  MagicItemCustodyError,
+} from './attunement.js';
+import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
+import {
   type DestroyedItemAttunementEvidence,
   destroyInventoryItem,
 } from './inventoryLifecycle.js';
+import {
+  InventoryWorldLocationError,
+  isConcreteWorldLocation,
+  requireCurrentWorldLocation,
+} from './inventoryWorldLocation.js';
 import { ItemStateError, validatePackRef } from './itemState.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
+import {
+  LiveStateSchemaError,
+  validateInventoryPropertiesJson,
+} from './liveStateSchema.js';
 import {
   MutateStateError,
   type MutateStateInput,
@@ -220,8 +234,25 @@ export function giveItem(
     if (item.stateful === true && quantity !== 1) {
       throw new MutateStateError('stateful pack items must have quantity 1');
     }
+    let propertiesJson: string;
+    try {
+      const properties = item.properties ?? {};
+      validateInventoryPropertiesJson(properties, 'inventory.properties_json');
+      propertiesJson = JSON.stringify(properties);
+    } catch (error) {
+      if (error instanceof LiveStateSchemaError)
+        throw new MutateStateError(error.message);
+      throw error;
+    }
 
     let rowId = item.id;
+    let collision:
+      | {
+          character_id: string | null;
+          pack_ref: string | null;
+          variant_id: string | null;
+        }
+      | undefined;
     if (item.stateful === true) {
       if (item.packRef === undefined) {
         throw new MutateStateError('stateful items require a packRef');
@@ -237,7 +268,7 @@ export function giveItem(
       }
       rowId = `${base}#${suffix}`;
     } else {
-      const collision = txnDb
+      collision = txnDb
         .prepare(
           'SELECT character_id, pack_ref, variant_id FROM inventory WHERE id = ?',
         )
@@ -248,10 +279,17 @@ export function giveItem(
             variant_id: string | null;
           }
         | undefined;
+      if (collision !== undefined && collision.character_id !== charId) {
+        throw new MutateStateError(
+          collision.character_id === null
+            ? `inventory id '${rowId}' is an unheld physical row; use claim_item to take custody`
+            : `inventory id '${rowId}' is held by '${collision.character_id}'; use transfer_item to change custody`,
+        );
+      }
       if (
         item.packRef === undefined &&
-        collision?.pack_ref !== null &&
-        collision?.pack_ref !== undefined
+        collision !== undefined &&
+        collision.pack_ref !== null
       ) {
         throw new MutateStateError(
           `inventory id '${rowId}' belongs to pack-bound instance '${collision.pack_ref}' and cannot be overwritten by an ad-hoc grant`,
@@ -260,8 +298,7 @@ export function giveItem(
       if (
         item.packRef !== undefined &&
         collision !== undefined &&
-        (collision.character_id !== charId ||
-          collision.pack_ref !== item.packRef ||
+        (collision.pack_ref !== item.packRef ||
           collision.variant_id !== (item.variantId ?? null))
       ) {
         throw new MutateStateError(
@@ -294,13 +331,31 @@ export function giveItem(
       });
     }
 
-    mutateStateBatch(txnDb, mutations);
-
-    txnDb
-      .prepare(
-        'UPDATE inventory SET character_id = ?, pack_ref = ?, variant_id = ? WHERE id = ?',
-      )
-      .run(charId, item.packRef ?? null, item.variantId ?? null, rowId);
+    if (collision === undefined) {
+      txnDb
+        .prepare(
+          `INSERT INTO inventory(
+             id, character_id, name, quantity, location, properties_json,
+             provenance, session_id, updated_at, pack_ref, variant_id,
+             world_location_id
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+        )
+        .run(
+          rowId,
+          charId,
+          item.name,
+          quantity,
+          item.location ?? null,
+          propertiesJson,
+          ctx.provenance,
+          ctx.sessionId,
+          ctx.at,
+          item.packRef ?? null,
+          item.variantId ?? null,
+        );
+    } else {
+      mutateStateBatch(txnDb, mutations);
+    }
     return {
       id: rowId,
       ...(item.variantId === undefined ? {} : { variantId: item.variantId }),
@@ -315,6 +370,7 @@ export interface RemoveItemResult {
   newQuantity: number;
   relinquishedItemId?: string;
   attunementsEnded?: readonly DestroyedItemAttunementEvidence[];
+  worldLocationId?: string;
 }
 
 export interface ClaimItemResult {
@@ -324,12 +380,13 @@ export interface ClaimItemResult {
   readonly quantity: number;
   readonly packRef?: string;
   readonly variantId?: string;
+  readonly claimedFromWorldLocationId: string;
 }
 
 /**
  * Claim one existing unheld physical row without recreating its identity.
- * Its world location is retained as pickup provenance; callers may explicitly
- * move/stow it through a later inventory operation.
+ * Co-location is proven against the campaign clock before custody changes.
+ * Pickup clears the unheld-only world placement atomically.
  */
 export function claimItem(
   db: Db,
@@ -342,7 +399,8 @@ export function claimItem(
     const characterId = resolveCharacterId(txnDb, ctx.characterId);
     const row = txnDb
       .prepare(
-        `SELECT name, quantity, character_id, pack_ref, variant_id
+        `SELECT name, quantity, character_id, pack_ref, variant_id,
+                world_location_id
          FROM inventory WHERE id = ?`,
       )
       .get(itemId) as
@@ -352,6 +410,7 @@ export function claimItem(
           character_id: string | null;
           pack_ref: string | null;
           variant_id: string | null;
+          world_location_id: string | null;
         }
       | undefined;
     if (row === undefined)
@@ -360,10 +419,26 @@ export function claimItem(
       throw new MutateStateError(
         `inventory item '${itemId}' is already held by '${row.character_id}'`,
       );
+    let currentLocation: string;
+    try {
+      currentLocation = requireCurrentWorldLocation(txnDb);
+    } catch (error) {
+      if (error instanceof InventoryWorldLocationError)
+        throw new MutateStateError(error.message);
+      throw error;
+    }
+    if (
+      !isConcreteWorldLocation(row.world_location_id) ||
+      currentLocation !== row.world_location_id
+    )
+      throw new MutateStateError(
+        `inventory item '${itemId}' cannot be claimed without deterministic co-location (item: ${row.world_location_id ?? 'unknown'}, character: ${currentLocation ?? 'unknown'})`,
+      );
     const updated = txnDb
       .prepare(
         `UPDATE inventory
-         SET character_id=?, provenance=?, session_id=?, updated_at=?
+         SET character_id=?, world_location_id=NULL,
+             provenance=?, session_id=?, updated_at=?
          WHERE id=? AND character_id IS NULL`,
       )
       .run(characterId, ctx.provenance, ctx.sessionId, ctx.at, itemId);
@@ -376,6 +451,7 @@ export function claimItem(
       characterId,
       name: row.name,
       quantity: row.quantity,
+      claimedFromWorldLocationId: row.world_location_id,
       ...(row.pack_ref === null ? {} : { packRef: row.pack_ref }),
       ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
     };
@@ -392,6 +468,7 @@ export interface RemoveItemInput {
   readonly itemId: string;
   readonly quantity?: number;
   readonly disposition: InventoryRemovalDisposition;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 function nextRelinquishedItemId(
@@ -433,8 +510,8 @@ export function removeItem(
     const charId = resolveCharacterId(txnDb, ctx.characterId);
     const row = txnDb
       .prepare(
-        `SELECT id, character_id, name, quantity, location, properties_json,
-                pack_ref, variant_id
+        `SELECT id, character_id, name, quantity, location, world_location_id,
+                properties_json, pack_ref, variant_id
          FROM inventory WHERE id = ?`,
       )
       .get(itemId) as
@@ -444,6 +521,7 @@ export function removeItem(
           name: string;
           quantity: number;
           location: string | null;
+          world_location_id: string | null;
           properties_json: string;
           pack_ref: string | null;
           variant_id: string | null;
@@ -467,6 +545,42 @@ export function removeItem(
           ? `inventory item '${itemId}' is unheld and cannot be ${disposition} by character '${charId}'`
           : `inventory item '${itemId}' is held by another character and cannot be removed by '${charId}'`,
       );
+
+    if (disposition !== 'destroyed' && row.character_id !== null) {
+      try {
+        assertInventoryCurseCustodyReady(
+          txnDb,
+          itemId,
+          disposition,
+          input.resolveRulesPack,
+        );
+      } catch (error) {
+        if (error instanceof MagicItemCustodyError)
+          throw new MutateStateError(error.message);
+        throw error;
+      }
+    }
+
+    const clock = txnDb
+      .prepare('SELECT current_location_id FROM clock WHERE id=1')
+      .get() as { current_location_id: string | null } | undefined;
+    let currentWorldLocation = clock?.current_location_id ?? null;
+    if (row.character_id === null) {
+      try {
+        currentWorldLocation = requireCurrentWorldLocation(txnDb);
+      } catch (error) {
+        if (error instanceof InventoryWorldLocationError)
+          throw new MutateStateError(error.message);
+        throw error;
+      }
+      if (
+        !isConcreteWorldLocation(row.world_location_id) ||
+        currentWorldLocation !== row.world_location_id
+      )
+        throw new MutateStateError(
+          `unheld inventory item '${itemId}' cannot be destroyed without deterministic co-location (item: ${row.world_location_id ?? 'unknown'}, character: ${currentWorldLocation ?? 'unknown'})`,
+        );
+    }
 
     const previousQuantity = row.quantity;
     const requestedQuantity = quantity ?? previousQuantity;
@@ -504,16 +618,24 @@ export function removeItem(
       throw new MutateStateError(
         `inventory item '${itemId}' has per-instance state and cannot be partially disposed; act on the whole physical instance`,
       );
+    let relinquishmentLocation: string | undefined;
     if (disposition !== 'destroyed') {
-      const clock = txnDb
-        .prepare('SELECT current_location_id FROM clock WHERE id=1')
-        .get() as { current_location_id: string | null } | undefined;
-      const worldLocation = clock?.current_location_id ?? null;
+      try {
+        relinquishmentLocation = requireCurrentWorldLocation(txnDb);
+      } catch (error) {
+        if (error instanceof InventoryWorldLocationError)
+          throw new MutateStateError(error.message);
+        throw error;
+      }
+    }
+    if (disposition !== 'destroyed') {
+      const worldLocation = relinquishmentLocation as string;
       if (fullDisposition) {
         txnDb
           .prepare(
             `UPDATE inventory
-             SET character_id=NULL, location=?, provenance=?, session_id=?, updated_at=?
+             SET character_id=NULL, location=NULL, world_location_id=?,
+                 provenance=?, session_id=?, updated_at=?
              WHERE id=? AND character_id=?`,
           )
           .run(
@@ -530,6 +652,7 @@ export function removeItem(
           previousQuantity,
           newQuantity: 0,
           relinquishedItemId: itemId,
+          worldLocationId: worldLocation,
         };
       }
       const relinquishedItemId = nextRelinquishedItemId(
@@ -540,9 +663,10 @@ export function removeItem(
       txnDb
         .prepare(
           `INSERT INTO inventory(
-             id, character_id, name, quantity, location, properties_json,
-             provenance, session_id, updated_at, pack_ref, variant_id
-           ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             id, character_id, name, quantity, location, world_location_id,
+             properties_json, provenance, session_id, updated_at, pack_ref,
+             variant_id
+           ) VALUES (?, NULL, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           relinquishedItemId,
@@ -570,6 +694,7 @@ export function removeItem(
         previousQuantity,
         newQuantity,
         relinquishedItemId,
+        worldLocationId: worldLocation,
       };
     }
 
@@ -596,6 +721,13 @@ export function updateClock(
   input: UpdateClockInput,
   ctx: DomainMutationContext,
 ): void {
+  if (
+    typeof input.locationId === 'string' &&
+    input.locationId.trim().length === 0
+  )
+    throw new MutateStateError(
+      'update_clock location_id must contain a non-whitespace character or be null',
+    );
   const base = {
     target: 'clock' as const,
     op: 'set' as const,

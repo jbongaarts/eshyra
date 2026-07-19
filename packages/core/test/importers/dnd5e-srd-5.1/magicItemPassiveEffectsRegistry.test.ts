@@ -45,6 +45,14 @@ function recordNamed(name: string): RulesRecord {
   return record;
 }
 
+function slug(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[’']/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function projections(name: string) {
   const record = recordNamed(name);
   const item = extraction(record);
@@ -212,17 +220,25 @@ describe('M2/M3 passive effect clause registry', () => {
         );
         return {
           ...variant,
+          id: slug(variant.name),
           ...(projection === undefined
             ? {}
             : { mechanics: projection.mechanics }),
         };
       });
       const clauses = [
-        ...(parent?.clauses ?? []),
-        ...(item.variants ?? []).flatMap(
-          (variant: MagicItemVariant) =>
+        ...(parent?.clauses ?? []).map((clause) => ({
+          ...clause,
+          id: `${record.key}/${clause.id}`,
+        })),
+        ...(item.variants ?? []).flatMap((variant: MagicItemVariant) =>
+          (
             projectMagicItemPassiveVariantMechanics(name, variant)?.clauses ??
-            [],
+            []
+          ).map((clause) => ({
+            ...clause,
+            id: `${record.key}/variant:${slug(variant.name)}/${clause.id}`,
+          })),
         ),
       ];
       clausesByItemKey.set(record.key, clauses);

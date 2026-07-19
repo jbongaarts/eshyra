@@ -24,6 +24,10 @@ import {
   destroyInventoryItem,
 } from './inventoryLifecycle.js';
 import {
+  InventoryWorldLocationError,
+  requireCurrentWorldLocation,
+} from './inventoryWorldLocation.js';
+import {
   ItemDepletionError,
   type ItemDepletionResolution,
   resolveItemDepletion,
@@ -1403,10 +1407,14 @@ function splitNonmagicalSingleUseInventory(
   }[],
   ctx: Pick<UseItemInput, 'provenance' | 'sessionId' | 'at'>,
 ): NonNullable<UseItemResult['transformations']> {
-  const clock = db
-    .prepare('SELECT current_location_id FROM clock WHERE id=1')
-    .get() as { current_location_id: string | null } | undefined;
-  const worldLocation = clock?.current_location_id ?? null;
+  let worldLocation: string;
+  try {
+    worldLocation = requireCurrentWorldLocation(db);
+  } catch (error) {
+    if (error instanceof InventoryWorldLocationError)
+      throw new ItemStateError(error.message);
+    throw error;
+  }
   return transformations.map(({ economyId, quantity }) => {
     const transformedInstanceId = nextNonmagicalInventoryId(db, source.id);
     const properties = JSON.parse(source.properties_json) as Obj;
@@ -1426,9 +1434,10 @@ function splitNonmagicalSingleUseInventory(
     };
     db.prepare(
       `INSERT INTO inventory(
-         id, character_id, name, quantity, location, properties_json,
-         provenance, session_id, updated_at, pack_ref, variant_id
-       ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)`,
+         id, character_id, name, quantity, location, world_location_id,
+         properties_json, provenance, session_id, updated_at, pack_ref,
+         variant_id
+       ) VALUES (?, NULL, ?, ?, NULL, ?, ?, ?, ?, ?, NULL, NULL)`,
     ).run(
       transformedInstanceId,
       `Nonmagical ammunition (formerly ${source.name})`,

@@ -8,8 +8,11 @@ import type { AdventureModule } from '../src/internal.js';
 import {
   assembleContext,
   beginTurn,
+  createInitialItemState,
+  createSeededRng,
   ensureCharacterRow,
   getActiveCharacterId,
+  getBundledDnd5eSrdPack,
   giveItem,
   readSpentUsageCounters,
   renderContextMessage,
@@ -18,8 +21,10 @@ import {
   spendUsage,
   startAdventureRun,
   startEncounter,
+  transferItem,
   UsageCounterError,
   updateCombatant,
+  writeItemState,
 } from '../src/internal.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
@@ -392,6 +397,110 @@ describe('spendUsage — declared economies (characters and items)', () => {
     expect(restored.counter.usesUsed).toBe(0);
   });
 
+  it('rejects every generic counter mutation for canonical pack-bound items', () => {
+    const { db, pcId } = setup();
+    giveItem(
+      db,
+      { id: 'legacy-wand', name: 'Legacy wand' },
+      { characterId: pcId, ...CTX },
+    );
+    spendUsage(db, {
+      campaignId: CAMPAIGN,
+      owner: PC,
+      itemId: 'legacy-wand',
+      uses: 2,
+      declared: { maxUses: 7, reset: 'dawn' },
+      ...CTX,
+    });
+    db.prepare(
+      "UPDATE inventory SET pack_ref='magic-item:potion-of-healing' WHERE id='legacy-wand'",
+    ).run();
+
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: 'legacy-wand',
+        ...CTX,
+      }),
+    ).toThrow(/canonical pack item.*use_item.*legacy\/ad-hoc/s);
+    expect(() =>
+      restoreUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: 'legacy-wand',
+        amount: 1,
+        ...CTX,
+      }),
+    ).toThrow(/canonical pack item.*use_item.*legacy\/ad-hoc/s);
+    expect(() =>
+      resetUsage(db, {
+        campaignId: CAMPAIGN,
+        event: 'dawn',
+        ...CTX,
+      }),
+    ).toThrow(/canonical pack item.*use_item.*legacy\/ad-hoc/s);
+    expect(
+      db
+        .prepare(
+          `SELECT uses_used FROM entity_usage_counter
+           WHERE owner_kind='item' AND owner_ref='legacy-wand'`,
+        )
+        .get(),
+    ).toEqual({ uses_used: 2 });
+  });
+
+  it('cannot create a second counter economy beside canonical item_state', () => {
+    const { db, pcId } = setup();
+    const record = getBundledDnd5eSrdPack().records.find(
+      ({ key }) => key === 'magic-item:necklace-of-fireballs',
+    );
+    if (record === undefined) throw new Error('missing necklace fixture');
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored-for-stateful',
+        name: record.name,
+        packRef: record.key,
+        stateful: true,
+      },
+      { characterId: pcId, ...CTX },
+    );
+    writeItemState(
+      db,
+      granted.id,
+      createInitialItemState(record.key, record, {
+        rng: createSeededRng(42),
+      }),
+      CTX,
+    );
+    const before = db
+      .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
+      .get(granted.id);
+
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: PC,
+        itemId: granted.id,
+        declared: { maxUses: 99, reset: 'dawn' },
+        ...CTX,
+      }),
+    ).toThrow(/canonical pack item.*use_item/s);
+    expect(
+      db
+        .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
+        .get(granted.id),
+    ).toEqual(before);
+    expect(
+      db
+        .prepare(
+          "SELECT 1 FROM entity_usage_counter WHERE owner_kind='item' AND owner_ref=?",
+        )
+        .get(granted.id),
+    ).toBeUndefined();
+  });
+
   it('keeps charge state with the item when it changes hands', () => {
     const { db, pcId } = setup();
     ensureCharacterRow(db, 'pc-2', CTX.provenance, CTX.sessionId, CTX.at);
@@ -410,10 +519,15 @@ describe('spendUsage — declared economies (characters and items)', () => {
     });
 
     // The wand changes hands: its counter (2/7 spent) follows the item.
-    giveItem(
+    transferItem(
       db,
-      { id: 'wand-1', name: 'Wand of Fireballs' },
-      { characterId: 'pc-2', ...CTX },
+      {
+        campaignId: CAMPAIGN,
+        itemId: 'wand-1',
+        toCharacterRef: 'pc-2',
+        attunement: 'require-unattuned',
+      },
+      { characterId: pcId, ...CTX },
     );
 
     // The new holder cannot re-declare a fresh economy...

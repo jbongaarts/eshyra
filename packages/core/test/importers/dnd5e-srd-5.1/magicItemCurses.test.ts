@@ -131,6 +131,9 @@ describe('M7 magic-item curses, oaths, and restrictions', () => {
     expect(curse('Armor of Vulnerability')).toMatchObject({
       revealedBy: ['spell:identify', 'attunement'],
       endedBy: ['spell:remove-curse', 'similar magic'],
+      attunement: {
+        attachesStates: ['m7-armor-vulnerability-curse'],
+      },
     });
     expect(states('Armor of Vulnerability')[0]).toMatchObject({
       onset: 'attune to the armor',
@@ -142,6 +145,20 @@ describe('M7 magic-item curses, oaths, and restrictions', () => {
       endedBy: ['spell:remove-curse', 'similar magic'],
     });
     expect(curse('Orb of Dragonkind')).toMatchObject({ blocksUnattune: true });
+    expect(curse('Berserker Axe')).toMatchObject({
+      attunement: { attachesStates: ['m7-berserker-axe-curse'] },
+      possession: {
+        blocksVoluntaryRelinquishmentWhileStates: ['m7-berserker-axe-curse'],
+      },
+    });
+    expect(curse('Shield of Missile Attraction')).toMatchObject({
+      attunement: { attachesStates: ['m7-missile-attraction-curse'] },
+    });
+    expect(curse('Robe of the Archmagi')).toMatchObject({
+      attunement: {
+        preconditionEffects: ['m7-archmagi-alignment-gate'],
+      },
+    });
   });
 
   it('models Oathbow as one live item-instance sworn enemy with distinct death and seventh-dawn replacement rules', () => {

@@ -22,6 +22,7 @@ export { ToolRegistry } from './toolRegistry.js';
 
 import { addConditionTool } from './toolAddCondition.js';
 import { adjustHpTool } from './toolAdjustHp.js';
+import { adoptItemTool } from './toolAdoptItem.js';
 import { attuneItemTool } from './toolAttuneItem.js';
 import { awardInspirationTool } from './toolAwardInspiration.js';
 import { beginTurnTool } from './toolBeginTurn.js';
@@ -34,6 +35,7 @@ import { endEffectTool } from './toolEndEffect.js';
 import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
+import { listNearbyItemsTool } from './toolListNearbyItems.js';
 import { lookupRulesTool } from './toolLookupRules.js';
 import { markSceneTool } from './toolMarkScene.js';
 import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
@@ -118,7 +120,9 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   gainCurrencyTool,
   spendCurrencyTool,
   convertCurrencyTool,
+  adoptItemTool,
   claimItemTool,
+  listNearbyItemsTool,
   giveItemTool,
   useItemTool,
   transferItemTool,

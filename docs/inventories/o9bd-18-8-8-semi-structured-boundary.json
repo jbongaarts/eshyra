@@ -9,9 +9,9 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1768,
+  "rowCount": 1771,
   "dispositionCounts": {
-    "complete": 379,
+    "complete": 382,
     "model-adjudicated": 1188,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 2,
@@ -16579,6 +16579,48 @@
       "recordKinds": [
         "magic-item"
       ],
+      "fieldPath": "data.mechanics.curse.attunement.attachesStates[]",
+      "representativeValues": [
+        "m7-armor-vulnerability-curse",
+        "m7-berserker-axe-curse",
+        "m7-missile-attraction-curse"
+      ],
+      "population": 3,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "validateMagicItemMechanics requires non-empty canonical state ids and resolves every id against curse.stateDefinitions",
+      "deterministicConsumers": "assertEffectiveAttunementCurseReady gates atomic curse attachment/end and assertInventoryCurseCustodyReady identifies active attached possession states",
+      "currentAuditReadiness": "magic-item curse projection, schema referential-integrity, attunement corpus, custody domain, transfer, and tool regressions",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemCurse.attunement.attachesStates / validateMagicItemMechanics",
+      "retainedProseBoundary": null,
+      "owner": "attunement.ts assertEffectiveAttunementCurseReady and assertInventoryCurseCustodyReady",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.curse.attunement.preconditionEffects[]",
+      "representativeValues": [
+        "m7-archmagi-alignment-gate"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "validateMagicItemMechanics requires non-empty canonical effect ids and resolves every id against mechanics.effects",
+      "deterministicConsumers": "assertEffectiveAttunementCurseReady gates attunement until the referenced precondition effect can be evaluated",
+      "currentAuditReadiness": "magic-item curse projection, schema referential-integrity, attunement corpus, custody domain, transfer, and tool regressions",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemCurse.attunement.preconditionEffects / validateMagicItemMechanics",
+      "retainedProseBoundary": null,
+      "owner": "attunement.ts assertEffectiveAttunementCurseReady",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
       "fieldPath": "data.mechanics.curse.effects[]",
       "representativeValues": [
         "c2-static-armor-vulnerability-two-types",
@@ -16721,6 +16763,26 @@
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
       "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.curse.possession.blocksVoluntaryRelinquishmentWhileStates[]",
+      "representativeValues": [
+        "m7-berserker-axe-curse"
+      ],
+      "population": 1,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "validateMagicItemMechanics requires non-empty canonical state ids and resolves every id against curse.stateDefinitions",
+      "deterministicConsumers": "assertInventoryCurseCustodyReady resolves the effective curse and gates voluntary release while the referenced attached state is active",
+      "currentAuditReadiness": "magic-item curse projection, schema referential-integrity, attunement corpus, custody domain, transfer, and tool regressions",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "MagicItemCurse.possession.blocksVoluntaryRelinquishmentWhileStates / validateMagicItemMechanics",
+      "retainedProseBoundary": null,
+      "owner": "attunement.ts assertInventoryCurseCustodyReady and the remove/transfer mutation boundaries",
       "futureWork": false
     },
     {

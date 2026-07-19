@@ -184,6 +184,43 @@ describe('addCondition / removeCondition', () => {
 });
 
 describe('giveItem', () => {
+  it('updates only the target holder and routes custody changes to their owners', () => {
+    const db = freshDb();
+    ensureCharacterRow(db, 'pc-2', 'test', CTX.sessionId, CTX.at);
+    giveItem(db, { id: 'torch', name: 'Torch', quantity: 1 }, CTX);
+
+    expect(() =>
+      giveItem(
+        db,
+        { id: 'torch', name: 'Stolen Torch', quantity: 9 },
+        { ...CTX, characterId: 'pc-2' },
+      ),
+    ).toThrow(/transfer_item/);
+    updateClock(db, { locationId: 'gatehouse' }, CTX);
+    removeItem(db, { itemId: 'torch', disposition: 'dropped' }, CTX);
+    expect(() =>
+      giveItem(
+        db,
+        { id: 'torch', name: 'Recreated Torch', quantity: 9 },
+        { ...CTX, characterId: 'pc-2' },
+      ),
+    ).toThrow(/claim_item/);
+    expect(
+      db
+        .prepare(
+          'SELECT character_id, name, quantity, location, world_location_id FROM inventory WHERE id=?',
+        )
+        .get('torch'),
+    ).toEqual({
+      character_id: null,
+      name: 'Torch',
+      quantity: 1,
+      location: null,
+      world_location_id: 'gatehouse',
+    });
+    db.close();
+  });
+
   it('persists canonical pack variant identity and rejects invalid ids', () => {
     const db = freshDb();
     expect(() =>
@@ -284,6 +321,48 @@ describe('giveItem', () => {
 });
 
 describe('removeItem', () => {
+  it('rolls back every surviving unheld disposition when world placement is unknown', () => {
+    const db = freshDb();
+    giveItem(
+      db,
+      { id: 'supplies', name: 'Supplies', quantity: 3, location: 'pack' },
+      CTX,
+    );
+    for (const disposition of ['dropped', 'sold', 'lost'] as const) {
+      expect(() =>
+        removeItem(db, { itemId: 'supplies', quantity: 1, disposition }, CTX),
+      ).toThrow(/concrete current campaign location/);
+      expect(
+        db
+          .prepare(
+            'SELECT character_id, quantity, location, world_location_id FROM inventory WHERE id=?',
+          )
+          .get('supplies'),
+      ).toEqual({
+        character_id: 'pc-1',
+        quantity: 3,
+        location: 'pack',
+        world_location_id: null,
+      });
+    }
+    for (const legacyLocation of ['', '   ']) {
+      db.prepare('UPDATE clock SET current_location_id=? WHERE id=1').run(
+        legacyLocation,
+      );
+      expect(() =>
+        removeItem(
+          db,
+          { itemId: 'supplies', quantity: 1, disposition: 'dropped' },
+          CTX,
+        ),
+      ).toThrow(/concrete current campaign location/);
+      expect(
+        db.prepare('SELECT quantity FROM inventory WHERE id=?').get('supplies'),
+      ).toEqual({ quantity: 3 });
+    }
+    db.close();
+  });
+
   it('removes entire item when quantity omitted', () => {
     const db = freshDb();
     giveItem(db, { id: 'torch', name: 'Torch', quantity: 5 }, CTX);
@@ -473,7 +552,8 @@ describe('removeItem', () => {
     expect(
       db
         .prepare(
-          `SELECT id, character_id, quantity, location, properties_json, pack_ref, variant_id
+          `SELECT id, character_id, quantity, location, world_location_id,
+                  properties_json, pack_ref, variant_id
            FROM inventory WHERE id=?`,
         )
         .get(granted.id),
@@ -481,7 +561,8 @@ describe('removeItem', () => {
       id: granted.id,
       character_id: null,
       quantity: 1,
-      location: 'market-square',
+      location: null,
+      world_location_id: 'market-square',
       properties_json: JSON.stringify({ color: 'deep red' }),
       pack_ref: 'magic-item:ioun-stone',
       variant_id: 'agility',
@@ -499,6 +580,159 @@ describe('removeItem', () => {
     db.close();
   });
 
+  it('blocks only source-declared active curse custody constraints', () => {
+    const db = freshDb();
+    updateClock(db, { locationId: 'market-square' }, CTX);
+    const axe = giveItem(
+      db,
+      {
+        id: 'berserker-axe',
+        name: 'Berserker Axe',
+        packRef: 'magic-item:berserker-axe',
+        location: 'carried',
+        stateful: true,
+      },
+      CTX,
+    );
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'campaign-1',
+      'pc-1',
+      axe.id,
+      'magic-item:berserker-axe',
+      'Berserker Axe',
+      CTX.at,
+      CTX.provenance,
+      CTX.sessionId,
+      CTX.at,
+    );
+
+    for (const disposition of ['dropped', 'sold'] as const) {
+      expect(() =>
+        removeItem(db, { itemId: axe.id, disposition }, CTX),
+      ).toThrow(/prevents voluntary relinquishment/);
+    }
+    expect(
+      db.prepare('SELECT character_id FROM inventory WHERE id=?').get(axe.id),
+    ).toEqual({ character_id: 'pc-1' });
+    expect(
+      removeItem(db, { itemId: axe.id, disposition: 'lost' }, CTX),
+    ).toMatchObject({ disposition: 'lost', removed: true });
+    ensureCharacterRow(db, 'pc-2', 'test', CTX.sessionId, CTX.at);
+    const secondHolder = { ...CTX, characterId: 'pc-2' };
+    expect(claimItem(db, axe.id, secondHolder)).toMatchObject({
+      itemId: axe.id,
+      characterId: 'pc-2',
+    });
+    expect(
+      db
+        .prepare('SELECT character_id FROM attunement WHERE item_id=?')
+        .get(axe.id),
+    ).toEqual({ character_id: 'pc-1' });
+    expect(
+      removeItem(db, { itemId: axe.id, disposition: 'sold' }, secondHolder),
+    ).toMatchObject({ disposition: 'sold', removed: true });
+    expect(
+      removeItem(
+        db,
+        { itemId: axe.id, disposition: 'destroyed' },
+        secondHolder,
+      ),
+    ).toMatchObject({ disposition: 'destroyed', removed: true });
+
+    const unattuned = giveItem(
+      db,
+      {
+        id: 'unattuned-axe',
+        name: 'Berserker Axe',
+        packRef: 'magic-item:berserker-axe',
+        stateful: true,
+      },
+      CTX,
+    );
+    expect(
+      removeItem(db, { itemId: unattuned.id, disposition: 'dropped' }, CTX),
+    ).toMatchObject({ disposition: 'dropped', removed: true });
+
+    const oathbow = giveItem(
+      db,
+      {
+        id: 'oathbow',
+        name: 'Oathbow',
+        packRef: 'magic-item:oathbow',
+        stateful: true,
+      },
+      CTX,
+    );
+    expect(
+      removeItem(db, { itemId: oathbow.id, disposition: 'sold' }, CTX),
+    ).toMatchObject({ disposition: 'sold', removed: true });
+    db.close();
+  });
+
+  it('fails closed for every surviving Demon Armor custody change without authoritative don/doff state', () => {
+    const db = freshDb();
+    updateClock(db, { locationId: 'market-square' }, CTX);
+    for (const [index, location, disposition] of [
+      [1, null, 'dropped'],
+      [2, 'backpack', 'sold'],
+      [3, 'equipped', 'lost'],
+    ] as const) {
+      const armor = giveItem(
+        db,
+        {
+          id: `demon-armor-${index}`,
+          name: 'Demon Armor',
+          packRef: 'magic-item:demon-armor',
+          location,
+          stateful: true,
+        },
+        CTX,
+      );
+      expect(() =>
+        removeItem(db, { itemId: armor.id, disposition }, CTX),
+      ).toThrow(/authoritative don\/doff state is unavailable.*fail closed/);
+    }
+
+    const destroyedArmor = giveItem(
+      db,
+      {
+        id: 'destroyed-demon-armor',
+        name: 'Demon Armor',
+        packRef: 'magic-item:demon-armor',
+        location: 'backpack',
+        stateful: true,
+      },
+      CTX,
+    );
+    expect(
+      removeItem(
+        db,
+        { itemId: destroyedArmor.id, disposition: 'destroyed' },
+        CTX,
+      ),
+    ).toMatchObject({ disposition: 'destroyed', removed: true });
+
+    const ordinary = giveItem(
+      db,
+      {
+        id: 'ordinary-worn-ring',
+        name: 'Ring of Protection',
+        packRef: 'magic-item:ring-of-protection',
+        location: 'worn',
+      },
+      CTX,
+    );
+    expect(
+      removeItem(db, { itemId: ordinary.id, disposition: 'dropped' }, CTX),
+    ).toMatchObject({ disposition: 'dropped', removed: true });
+    db.close();
+  });
+
   it('splits partial relinquishment into collision-safe unheld physical rows with conserved identity', () => {
     const db = freshDb();
     giveItem(
@@ -509,7 +743,7 @@ describe('removeItem', () => {
         quantity: 5,
         location: 'quiver',
         properties: { silvered: true },
-        packRef: 'magic-item:ammunition-1',
+        packRef: 'magic-item:bead-of-force',
       },
       CTX,
     );
@@ -528,14 +762,16 @@ describe('removeItem', () => {
     expect(second.relinquishedItemId).toBe('arrows#sold-2');
     const rows = db
       .prepare(
-        `SELECT id, character_id, quantity, location, properties_json, pack_ref, variant_id
+        `SELECT id, character_id, quantity, location, world_location_id,
+                properties_json, pack_ref, variant_id
          FROM inventory WHERE id LIKE 'arrows%' ORDER BY id`,
       )
       .all() as {
       id: string;
       character_id: string | null;
       quantity: number;
-      location: string;
+      location: string | null;
+      world_location_id: string | null;
       properties_json: string;
       pack_ref: string;
       variant_id: string | null;
@@ -554,9 +790,10 @@ describe('removeItem', () => {
     expect(rows.reduce((sum, row) => sum + row.quantity, 0)).toBe(5);
     for (const row of rows) {
       expect(row).toMatchObject({
-        location: row.character_id === null ? 'forest-road' : 'quiver',
+        location: row.character_id === null ? null : 'quiver',
+        world_location_id: row.character_id === null ? 'forest-road' : null,
         properties_json: JSON.stringify({ silvered: true }),
-        pack_ref: 'magic-item:ammunition-1',
+        pack_ref: 'magic-item:bead-of-force',
         variant_id: null,
       });
     }
@@ -615,6 +852,7 @@ describe('removeItem', () => {
         CTX,
       ),
     ).toThrow(/cannot be partially disposed/);
+    updateClock(db, { locationId: 'storehouse' }, CTX);
     removeItem(db, { itemId: 'counter-stack', disposition: 'sold' }, CTX);
     expect(
       db
@@ -710,6 +948,7 @@ describe('removeItem', () => {
         CTX.sessionId,
         CTX.at,
       );
+    updateClock(db, { locationId: 'vault' }, CTX);
     removeItem(db, { itemId: 'ring', disposition: 'dropped' }, CTX);
 
     const destroyed = removeItem(
@@ -748,6 +987,7 @@ describe('removeItem', () => {
   it('partially destroys an unheld stateless stack in place', () => {
     const db = freshDb();
     giveItem(db, { id: 'firewood', name: 'Firewood', quantity: 5 }, CTX);
+    updateClock(db, { locationId: 'camp' }, CTX);
     removeItem(db, { itemId: 'firewood', disposition: 'lost' }, CTX);
 
     expect(
@@ -812,9 +1052,49 @@ describe('removeItem', () => {
       variant_id: 'agility',
     });
     expect(
-      db.prepare('SELECT location FROM inventory WHERE id=?').get('relic'),
-    ).toEqual({ location: 'ruined-shrine' });
+      db
+        .prepare('SELECT location, world_location_id FROM inventory WHERE id=?')
+        .get('relic'),
+    ).toEqual({ location: null, world_location_id: null });
     expect(() => claimItem(db, 'relic', CTX)).toThrow(/already held/);
+    db.close();
+  });
+
+  it('rejects remote or unknown-location claim and destruction', () => {
+    const db = freshDb();
+    updateClock(db, { locationId: 'north-gate' }, CTX);
+    giveItem(db, { id: 'crate', name: 'Crate' }, CTX);
+    removeItem(db, { itemId: 'crate', disposition: 'dropped' }, CTX);
+    updateClock(db, { locationId: 'south-gate' }, CTX);
+
+    expect(() => claimItem(db, 'crate', CTX)).toThrow(/co-location/);
+    expect(() =>
+      removeItem(db, { itemId: 'crate', disposition: 'destroyed' }, CTX),
+    ).toThrow(/co-location/);
+    updateClock(db, { locationId: null }, CTX);
+    expect(() => claimItem(db, 'crate', CTX)).toThrow(
+      /concrete current campaign location/,
+    );
+    expect(
+      db
+        .prepare(
+          'SELECT character_id, world_location_id FROM inventory WHERE id=?',
+        )
+        .get('crate'),
+    ).toEqual({ character_id: null, world_location_id: 'north-gate' });
+    db.exec(
+      'DROP TRIGGER inventory_location_insert_guard; DROP TRIGGER inventory_location_update_guard;',
+    );
+    db.prepare(
+      "UPDATE inventory SET world_location_id='   ' WHERE id='crate'",
+    ).run();
+    db.prepare("UPDATE clock SET current_location_id='   ' WHERE id=1").run();
+    expect(() => claimItem(db, 'crate', CTX)).toThrow(
+      /concrete current campaign location/,
+    );
+    expect(() =>
+      removeItem(db, { itemId: 'crate', disposition: 'destroyed' }, CTX),
+    ).toThrow(/concrete current campaign location/);
     db.close();
   });
 });
@@ -856,6 +1136,19 @@ describe('updateClock', () => {
   it('rejects empty update', () => {
     const db = freshDb();
     expect(() => updateClock(db, {}, CTX)).toThrow(MutateStateError);
+    for (const locationId of ['', '   ']) {
+      expect(() => updateClock(db, { locationId }, CTX)).toThrow(
+        /non-whitespace/,
+      );
+    }
+    expect(
+      db.prepare('SELECT current_location_id FROM clock WHERE id=1').get(),
+    ).toEqual({ current_location_id: null });
+    updateClock(db, { locationId: '  north-gate  ' }, CTX);
+    expect(
+      db.prepare('SELECT current_location_id FROM clock WHERE id=1').get(),
+    ).toEqual({ current_location_id: '  north-gate  ' });
+    updateClock(db, { locationId: null }, CTX);
     db.close();
   });
 });

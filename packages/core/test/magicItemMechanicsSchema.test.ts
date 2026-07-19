@@ -486,6 +486,55 @@ describe('magic-item mechanics schema', () => {
     ).not.toThrow();
   });
 
+  it('validates explicit attunement lifecycle state references', () => {
+    expect(() =>
+      validate({
+        curse: {
+          attunement: { attachesStates: ['persistent-curse'] },
+          possession: {
+            blocksVoluntaryRelinquishmentWhileStates: ['persistent-curse'],
+          },
+          stateDefinitions: [
+            {
+              id: 'persistent-curse',
+              onset: 'attunement',
+              note: 'persists until removed',
+            },
+          ],
+        },
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validate({
+        curse: {
+          attunement: { attachesStates: ['missing-state'] },
+          stateDefinitions: [
+            { id: 'other-state', onset: 'attunement', note: 'fixture' },
+          ],
+        },
+      }),
+    ).toThrow(/references unknown state "missing-state"/);
+    expect(() =>
+      validate({
+        curse: {
+          possession: {
+            blocksVoluntaryRelinquishmentWhileStates: ['missing-state'],
+          },
+          stateDefinitions: [
+            { id: 'other-state', onset: 'attunement', note: 'fixture' },
+          ],
+        },
+      }),
+    ).toThrow(/possession.*references unknown state "missing-state"/);
+    expect(() =>
+      validate({
+        curse: {
+          attunement: { preconditionEffects: ['missing-effect'] },
+        },
+      }),
+    ).toThrow(/preconditionEffects references unknown effect "missing-effect"/);
+  });
+
   it.each([
     [
       'unknown runtime owner',

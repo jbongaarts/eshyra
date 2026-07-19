@@ -28,6 +28,14 @@ export function installCursedAttunementAddon(
     ...((data.mechanics as Record<string, unknown> | undefined) ?? {}),
     curse: {
       blocksUnattune: true,
+      attunement: { attachesStates: ['test-addon-curse'] },
+      stateDefinitions: [
+        {
+          id: 'test-addon-curse',
+          onset: 'attune to the overridden ring',
+          note: 'test-only persistent character curse',
+        },
+      ],
       note: 'test-only add-on curse',
     },
   };
