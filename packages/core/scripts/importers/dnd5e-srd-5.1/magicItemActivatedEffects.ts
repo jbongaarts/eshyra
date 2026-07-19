@@ -685,10 +685,10 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
         'cone of cold (5 charges), fog cloud (1 charge), ice storm (4 charges), or wall of ice (4 charges)',
       ],
       effects: [
-        spell('cast-cone-of-cold', 'spell:cone-of-cold', fixedDc(17)),
+        spell('cast-cone-of-cold', 'spell:cone-of-cold', ownDc),
         spell('cast-fog-cloud', 'spell:fog-cloud'),
-        spell('cast-ice-storm', 'spell:ice-storm', fixedDc(17)),
-        spell('cast-wall-of-ice', 'spell:wall-of-ice', fixedDc(17)),
+        spell('cast-ice-storm', 'spell:ice-storm', ownDc),
+        spell('cast-wall-of-ice', 'spell:wall-of-ice', ownDc),
       ],
     },
   ],

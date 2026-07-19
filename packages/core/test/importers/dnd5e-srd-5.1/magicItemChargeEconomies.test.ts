@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { projectMagicItemActivatedEffects } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemActivatedEffects.js';
 import {
   deriveMagicItemChargeMechanics,
   EXPECTED_MAGIC_ITEM_CHARGE_ECONOMY_NAMES,
@@ -99,9 +100,14 @@ describe('magic-item C1 charge economies', () => {
         extraction(name, record?.data.description ?? ''),
       );
       expect(projection, name).toBeDefined();
-      const aggregated = aggregateMagicItemFamilyProjections(
-        projection === undefined ? [] : [projection],
-      );
+      const projections = projection === undefined ? [] : [projection];
+      if (name === 'Staff of Thunder and Lightning') {
+        const activated = projectMagicItemActivatedEffects(
+          extraction(name, record?.data.description ?? ''),
+        );
+        if (activated !== undefined) projections.push(activated);
+      }
+      const aggregated = aggregateMagicItemFamilyProjections(projections);
       expect(aggregated.mechanics, name).toBeDefined();
       expect(() =>
         validateMagicItemMechanics(
@@ -164,6 +170,14 @@ describe('magic-item C1 charge economies', () => {
         (operation) => operation.id === 'thunder-and-lightning',
       )?.doesNotExpend,
     ).toEqual(['lightning-strike', 'thunderclap']);
+    expect(
+      thunderMechanics?.operations?.find(
+        (operation) => operation.id === 'thunder-and-lightning',
+      ),
+    ).toMatchObject({
+      activation: { cost: 'action' },
+      effects: ['c2-lightning-strike-payload', 'c2-thunderclap-payload'],
+    });
   });
 
   it('models conditional last-charge outcomes with their regain formulas', () => {

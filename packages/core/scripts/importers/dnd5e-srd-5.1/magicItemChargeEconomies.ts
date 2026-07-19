@@ -747,7 +747,9 @@ const SPECS: ReadonlyMap<string, ChargeSpec> = new Map([
           op('thunderclap', 1, 'thunderclap'),
           {
             ...op('thunder-and-lightning', 1, 'thunder-and-lightning'),
+            activation: { cost: 'action' },
             doesNotExpend: ['lightning-strike', 'thunderclap'],
+            effects: ['c2-lightning-strike-payload', 'c2-thunderclap-payload'],
           },
         ],
       },

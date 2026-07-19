@@ -21704,7 +21704,7 @@
       "representativeValues": [
         "owner-spell-save-dc"
       ],
-      "population": 45,
+      "population": 48,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23637,7 +23637,7 @@
         "free",
         "consume"
       ],
-      "population": 309,
+      "population": 310,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -23824,7 +23824,7 @@
         "bead-force-payload",
         "c2-cast-gate"
       ],
-      "population": 175,
+      "population": 176,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -24968,7 +24968,7 @@
         "m5-complex-feather-selection",
         "m5-complex-useful-patch"
       ],
-      "population": 10,
+      "population": 9,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -24992,7 +24992,7 @@
         "open",
         "disabled"
       ],
-      "population": 136,
+      "population": 135,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25016,7 +25016,7 @@
         "apparatus reduced to 0 hit points",
         "ten-foot-radius transparent sphere; trapped creatures move with it"
       ],
-      "population": 46,
+      "population": 45,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -25084,7 +25084,7 @@
       "representativeValues": [
         "m5-complex-cube-contact"
       ],
-      "population": 6,
+      "population": 5,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25108,7 +25108,7 @@
         "open",
         "bead"
       ],
-      "population": 240,
+      "population": 232,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -25256,7 +25256,7 @@
         "sealed",
         "disabled"
       ],
-      "population": 240,
+      "population": 232,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -25280,7 +25280,7 @@
         "set-lever-2",
         "set-lever-3"
       ],
-      "population": 208,
+      "population": 200,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",

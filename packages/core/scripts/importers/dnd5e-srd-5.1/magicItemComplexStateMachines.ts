@@ -253,30 +253,35 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         initial: 'inactive',
         states: [
           state('inactive'),
-          ...Array.from({ length: 6 }, (_, i) =>
+          ...Array.from({ length: 5 }, (_, i) =>
             state(`face-${i + 1}`, `barrier face ${i + 1} active`, [
               'm5-complex-cube-faces',
             ]),
           ),
         ],
         transitions: [
-          ...Array.from({ length: 6 }, (_, i) => ({
+          ...Array.from({ length: 5 }, (_, i) => ({
             from: 'inactive',
             to: `face-${i + 1}`,
             via: `press-face-${i + 1}`,
           })),
-          ...Array.from({ length: 6 }, (_, from) =>
-            Array.from({ length: 6 }, (_, to) => ({
+          ...Array.from({ length: 5 }, (_, from) =>
+            Array.from({ length: 5 }, (_, to) => ({
               from: `face-${from + 1}`,
               to: `face-${to + 1}`,
               via: `press-face-${to + 1}`,
             })),
           ).flat(),
-          ...Array.from({ length: 6 }, (_, i) => ({
+          ...Array.from({ length: 5 }, (_, i) => ({
             from: `face-${i + 1}`,
             to: `face-${i + 1}`,
             via: 'spell-contact-loss',
             effects: ['m5-complex-cube-contact'],
+          })),
+          ...Array.from({ length: 5 }, (_, i) => ({
+            from: `face-${i + 1}`,
+            to: 'inactive',
+            via: 'press-face-6',
           })),
         ],
         duration: { amount: 1, unit: 'minute' },
@@ -701,17 +706,20 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
             'spear',
             'climbing-pole',
             'battering-ram',
-          ].flatMap((from) =>
+          ].flatMap((from, fromIndex) =>
             Array.from({ length: 6 }, (_, i) => ({
               from,
-              to: [
-                'flame-tongue',
-                'battleaxe',
-                'spear',
-                'climbing-pole',
-                'battering-ram',
-                'mace',
-              ][i],
+              to:
+                i === fromIndex
+                  ? 'mace'
+                  : [
+                      'flame-tongue',
+                      'battleaxe',
+                      'spear',
+                      'climbing-pole',
+                      'battering-ram',
+                      'mace',
+                    ][i],
               via: `press-button-${i + 1}`,
             })),
           ),

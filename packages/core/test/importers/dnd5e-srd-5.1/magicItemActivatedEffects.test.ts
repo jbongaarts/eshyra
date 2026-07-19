@@ -98,6 +98,25 @@ describe('C2 spell grants and activated save/DC projection', () => {
         .effects?.[0],
     ).toMatchObject({ spellRef: 'spell:magic-missile', castLevel: 5 });
     expect(
+      projectMagicItemActivatedEffects(named('Staff of Frost'))?.mechanics
+        .effects,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          spellRef: 'spell:cone-of-cold',
+          saveDc: 'owner-spell-save-dc',
+        }),
+        expect.objectContaining({
+          spellRef: 'spell:ice-storm',
+          saveDc: 'owner-spell-save-dc',
+        }),
+        expect.objectContaining({
+          spellRef: 'spell:wall-of-ice',
+          saveDc: 'owner-spell-save-dc',
+        }),
+      ]),
+    );
+    expect(
       projectMagicItemActivatedEffects(named('Potion of Healing'))?.mechanics
         .effects?.[0],
     ).toMatchObject({ kind: 'healing', tableRef: 'table:potions-of-healing' });

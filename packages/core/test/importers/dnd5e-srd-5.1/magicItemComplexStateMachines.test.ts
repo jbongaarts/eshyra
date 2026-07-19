@@ -73,11 +73,29 @@ describe('complex M5 state-machine complement', () => {
       { tableRef: 'table:cube-of-force-faces' },
       { tableRef: 'table:cube-of-force-charges-lost' },
     ]);
+    expect(cube?.mechanics.stateMachine?.states.map(({ id }) => id)).toEqual([
+      'inactive',
+      'face-1',
+      'face-2',
+      'face-3',
+      'face-4',
+      'face-5',
+    ]);
     expect(
-      projectMagicItemComplexStateMachine(
-        named('Rod of Lordly Might'),
-      )?.mechanics.stateMachine?.states.map(({ id }) => id),
-    ).toEqual([
+      cube?.mechanics.stateMachine?.transitions.filter(
+        ({ via }) => via === 'press-face-6',
+      ),
+    ).toEqual(
+      [1, 2, 3, 4, 5].map((face) => ({
+        from: `face-${face}`,
+        to: 'inactive',
+        via: 'press-face-6',
+      })),
+    );
+    const rod = projectMagicItemComplexStateMachine(
+      named('Rod of Lordly Might'),
+    );
+    expect(rod?.mechanics.stateMachine?.states.map(({ id }) => id)).toEqual([
       'mace',
       'flame-tongue',
       'battleaxe',
@@ -85,6 +103,19 @@ describe('complex M5 state-machine complement', () => {
       'climbing-pole',
       'battering-ram',
     ]);
+    for (const [state, button] of [
+      ['flame-tongue', 1],
+      ['battleaxe', 2],
+      ['spear', 3],
+      ['climbing-pole', 4],
+      ['battering-ram', 5],
+    ] as const) {
+      expect(rod?.mechanics.stateMachine?.transitions).toContainEqual({
+        from: state,
+        to: 'mace',
+        via: `press-button-${button}`,
+      });
+    }
     const sphere = projectMagicItemComplexStateMachine(
       named('Sphere of Annihilation'),
     );

@@ -93562,13 +93562,6 @@
                 "m5-complex-cube-faces"
               ],
               "note": "barrier face 5 active"
-            },
-            {
-              "id": "face-6",
-              "effects": [
-                "m5-complex-cube-faces"
-              ],
-              "note": "barrier face 6 active"
             }
           ],
           "transitions": [
@@ -93598,11 +93591,6 @@
               "via": "press-face-5"
             },
             {
-              "from": "inactive",
-              "to": "face-6",
-              "via": "press-face-6"
-            },
-            {
               "from": "face-1",
               "to": "face-1",
               "via": "press-face-1"
@@ -93626,11 +93614,6 @@
               "from": "face-1",
               "to": "face-5",
               "via": "press-face-5"
-            },
-            {
-              "from": "face-1",
-              "to": "face-6",
-              "via": "press-face-6"
             },
             {
               "from": "face-2",
@@ -93658,11 +93641,6 @@
               "via": "press-face-5"
             },
             {
-              "from": "face-2",
-              "to": "face-6",
-              "via": "press-face-6"
-            },
-            {
               "from": "face-3",
               "to": "face-1",
               "via": "press-face-1"
@@ -93686,11 +93664,6 @@
               "from": "face-3",
               "to": "face-5",
               "via": "press-face-5"
-            },
-            {
-              "from": "face-3",
-              "to": "face-6",
-              "via": "press-face-6"
             },
             {
               "from": "face-4",
@@ -93718,11 +93691,6 @@
               "via": "press-face-5"
             },
             {
-              "from": "face-4",
-              "to": "face-6",
-              "via": "press-face-6"
-            },
-            {
               "from": "face-5",
               "to": "face-1",
               "via": "press-face-1"
@@ -93746,41 +93714,6 @@
               "from": "face-5",
               "to": "face-5",
               "via": "press-face-5"
-            },
-            {
-              "from": "face-5",
-              "to": "face-6",
-              "via": "press-face-6"
-            },
-            {
-              "from": "face-6",
-              "to": "face-1",
-              "via": "press-face-1"
-            },
-            {
-              "from": "face-6",
-              "to": "face-2",
-              "via": "press-face-2"
-            },
-            {
-              "from": "face-6",
-              "to": "face-3",
-              "via": "press-face-3"
-            },
-            {
-              "from": "face-6",
-              "to": "face-4",
-              "via": "press-face-4"
-            },
-            {
-              "from": "face-6",
-              "to": "face-5",
-              "via": "press-face-5"
-            },
-            {
-              "from": "face-6",
-              "to": "face-6",
-              "via": "press-face-6"
             },
             {
               "from": "face-1",
@@ -93823,12 +93756,29 @@
               ]
             },
             {
-              "from": "face-6",
-              "to": "face-6",
-              "via": "spell-contact-loss",
-              "effects": [
-                "m5-complex-cube-contact"
-              ]
+              "from": "face-1",
+              "to": "inactive",
+              "via": "press-face-6"
+            },
+            {
+              "from": "face-2",
+              "to": "inactive",
+              "via": "press-face-6"
+            },
+            {
+              "from": "face-3",
+              "to": "inactive",
+              "via": "press-face-6"
+            },
+            {
+              "from": "face-4",
+              "to": "inactive",
+              "via": "press-face-6"
+            },
+            {
+              "from": "face-5",
+              "to": "inactive",
+              "via": "press-face-6"
             }
           ],
           "duration": {
@@ -123629,7 +123579,7 @@
             },
             {
               "from": "flame-tongue",
-              "to": "flame-tongue",
+              "to": "mace",
               "via": "press-button-1"
             },
             {
@@ -123664,7 +123614,7 @@
             },
             {
               "from": "battleaxe",
-              "to": "battleaxe",
+              "to": "mace",
               "via": "press-button-2"
             },
             {
@@ -123699,7 +123649,7 @@
             },
             {
               "from": "spear",
-              "to": "spear",
+              "to": "mace",
               "via": "press-button-3"
             },
             {
@@ -123734,7 +123684,7 @@
             },
             {
               "from": "climbing-pole",
-              "to": "climbing-pole",
+              "to": "mace",
               "via": "press-button-4"
             },
             {
@@ -123769,7 +123719,7 @@
             },
             {
               "from": "battering-ram",
-              "to": "battering-ram",
+              "to": "mace",
               "via": "press-button-5"
             },
             {
@@ -128038,7 +127988,7 @@
             "id": "c2-cast-cone-of-cold",
             "kind": "castSpell",
             "spellRef": "spell:cone-of-cold",
-            "saveDc": 17
+            "saveDc": "owner-spell-save-dc"
           },
           {
             "id": "c2-cast-fog-cloud",
@@ -128049,13 +127999,13 @@
             "id": "c2-cast-ice-storm",
             "kind": "castSpell",
             "spellRef": "spell:ice-storm",
-            "saveDc": 17
+            "saveDc": "owner-spell-save-dc"
           },
           {
             "id": "c2-cast-wall-of-ice",
             "kind": "castSpell",
             "spellRef": "spell:wall-of-ice",
-            "saveDc": 17
+            "saveDc": "owner-spell-save-dc"
           },
           {
             "id": "c2-static-staff-frost-resistance",
@@ -134226,9 +134176,16 @@
                 "amount": 1
               }
             ],
+            "activation": {
+              "cost": "action"
+            },
             "doesNotExpend": [
               "lightning-strike",
               "thunderclap"
+            ],
+            "effects": [
+              "c2-lightning-strike-payload",
+              "c2-thunderclap-payload"
             ]
           }
         ],
