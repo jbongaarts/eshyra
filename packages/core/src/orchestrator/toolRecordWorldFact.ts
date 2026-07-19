@@ -204,7 +204,7 @@ function resolveLocationId(
   if (
     row === undefined ||
     row.current_location_id === null ||
-    row.current_location_id.length === 0
+    row.current_location_id.trim().length === 0
   ) {
     return {};
   }

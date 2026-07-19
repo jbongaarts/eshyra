@@ -60,6 +60,7 @@ import {
   GRAM_SIZE,
   gramKey,
   isPageFooter,
+  isStrictProsePath,
   joinDehyphenated,
   locatorPages,
   pageTokens,
@@ -108,36 +109,6 @@ const PAGE_COVERAGE_EXCEPTIONS: ReadonlyArray<{
       'The p.3 errata-reporting notice ("please let us know by emailing askdnd@wizards.com") is document apparatus, not rules content; the adjacent Races/Racial Traits chapter headings are accounted as source structure.',
   },
 ];
-
-/**
- * Strict prose fields: stored verbatim from the source, so they must be
- * shingle-reproducible from the cited pages. Everything else (structured
- * values, reconstructed headers) is covered by the importer's own
- * fail-closed gates.
- */
-const STRICT_PROSE_LEAVES = new Set([
-  'description',
-  'text',
-  'higherLevels',
-  'componentMaterials',
-  'suggestedCharacteristics',
-  'sourceText',
-  'speedSourceText',
-]);
-
-function isStrictProsePath(path: string): boolean {
-  // `choices[n].sourceText` is a synthesized option-catalog label
-  // ("Acolyte Ideals (d6)."), not verbatim source prose.
-  if (/(^|\.)choices\[\d+\]\.sourceText$/.test(path)) return false;
-  const leaf =
-    path
-      .replace(/\[\d+\]$/, '')
-      .split('.')
-      .pop() ?? '';
-  if (STRICT_PROSE_LEAVES.has(leaf)) return true;
-  // `effects[3]` — condition effect sentences are verbatim source prose.
-  return /(^|\.)effects\[\d+\]$/.test(path);
-}
 
 interface StrictString {
   readonly key: string;

@@ -32,7 +32,7 @@ implementation slices from §4/§5.
   records) — that clause is design-blocked at the source level (GM-supplied
   content), not an importer defect.
 - Inline-variant structuring gaps (variants in prose with no `variants`
-  field): **ioun-stone** (13 variants), **crystal-ball** (3 legendary
+  field): **ioun-stone** (14 variants), **crystal-ball** (3 legendary
   variants), **ring-of-elemental-command** (4 planes × unlock tiers),
   **feather-token** (6 kinds; has tableRef), **carpet-of-flying** /
   **belt-of-giant-strength** / **potion-of-giant-strength** /

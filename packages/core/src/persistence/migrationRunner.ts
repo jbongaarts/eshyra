@@ -511,7 +511,9 @@ export const SCHEMA_SNAPSHOT_HEADER =
 
 /**
  * Render a deterministic, human-readable snapshot of `db`'s migration-authored
- * schema: every table and index DDL, tables then indexes, each ordered by name.
+ * schema: every table, index, and trigger DDL, grouped by type and ordered by
+ * name. Triggers are included because they can own load-bearing invariants just
+ * as strongly as table checks and indexes.
  * Excludes the runner-owned `schema_migrations` ledger and SQLite's internal
  * objects (including implicit autoindexes, whose `sql` is null). The result is
  * the committed `data/schema.snapshot.sql` review artifact (ADR 0015 §7); a test
@@ -521,11 +523,15 @@ export function renderSchemaSnapshot(db: Db): string {
   const objects = db
     .prepare(
       `SELECT sql FROM sqlite_master
-       WHERE type IN ('table', 'index')
+       WHERE type IN ('table', 'index', 'trigger')
          AND name <> 'schema_migrations'
          AND name NOT LIKE 'sqlite_%'
          AND sql IS NOT NULL
-       ORDER BY CASE type WHEN 'table' THEN 0 ELSE 1 END, name`,
+       ORDER BY CASE type
+         WHEN 'table' THEN 0
+         WHEN 'index' THEN 1
+         ELSE 2
+       END, name`,
     )
     .all() as { sql: string }[];
   const body = objects.map((row) => `${row.sql.trim()};`).join('\n\n');

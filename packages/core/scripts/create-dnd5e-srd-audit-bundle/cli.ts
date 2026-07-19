@@ -1083,6 +1083,71 @@ export interface GameplayReadinessDispositionPolicyEntry {
 export const CREATURE_ENTRY_MECHANICAL_SIGNAL =
   /\bDC\s*\d|\b\d+d\d+\b|saving throw|advantage|disadvantage|hit point|attack roll|to hit|damage|\bimmune\b|resistance|is (?:blinded|charmed|deafened|frightened|grappled|incapacitated|paralyzed|petrified|poisoned|prone|restrained|stunned|unconscious)\b/i;
 
+interface MagicItemExecutionReadinessReport {
+  readonly source: 'derived-magic-item-clauses-v1';
+  readonly itemCount: number;
+  readonly clauseCount: number;
+  readonly counts: Readonly<Record<string, number>>;
+  readonly entries: readonly {
+    readonly itemKey: string;
+    readonly clause: Record<string, unknown>;
+  }[];
+}
+
+function buildMagicItemExecutionReadinessReport(
+  pack: RulesPack,
+): MagicItemExecutionReadinessReport {
+  const items = pack.records.filter((record) => record.kind === 'magic-item');
+  const entries = items.flatMap((record) => {
+    const readiness = objectValue(objectValue(record.data)?.executionReadiness);
+    if (readiness?.source !== 'derived-magic-item-clauses-v1')
+      throw new Error(
+        `${record.key} has no derived magic-item execution readiness`,
+      );
+    const clauses = arrayValue(readiness.clauses);
+    if (clauses.length === 0)
+      throw new Error(`${record.key} has no execution-readiness clauses`);
+    return clauses.map((clause) => ({
+      itemKey: record.key,
+      clause: objectValue(clause) ?? {},
+    }));
+  });
+  const counts: Record<string, number> = {};
+  for (const { clause } of entries) {
+    const status = stringValue(clause.readiness);
+    if (status === null) throw new Error('readiness clause has no status');
+    counts[status] = (counts[status] ?? 0) + 1;
+  }
+  return {
+    source: 'derived-magic-item-clauses-v1',
+    itemCount: items.length,
+    clauseCount: entries.length,
+    counts: Object.fromEntries(
+      Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)),
+    ),
+    entries,
+  };
+}
+
+function formatMagicItemExecutionReadinessReport(
+  report: MagicItemExecutionReadinessReport,
+): string {
+  return [
+    'Magic-item execution readiness',
+    `Items: ${report.itemCount}`,
+    `Clauses: ${report.clauseCount}`,
+    ...Object.entries(report.counts).map(
+      ([status, count]) => `${status}: ${count}`,
+    ),
+    '',
+    ...report.entries.map(
+      ({ itemKey, clause }) =>
+        `${itemKey} ${String(clause.clauseId ?? '(item)')} ${String(clause.readiness)}`,
+    ),
+    '',
+  ].join('\n');
+}
+
 /**
  * A reviewed decision about one creature-entry ref (eshyra-o9bd.18.7.9 §1
  * exhaustive per-record classification):
@@ -1244,18 +1309,6 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
     status: 'accepted-prose-only',
     reason:
       'Reviewed residue after the eshyra-o9bd.18.7.5 projection passes: choice-picker features (Bonus Cantrip, Wizard Cantrips), linked spell-list features (Circle Spells), languages (Druidic, Thieves\u2019 Cant), open-ended senses/divination (Primeval Awareness, Tongue of the Sun and Moon), and meta features that modify other named features, spells, or costs (Peerless Skill, Archdruid, Beast Spells, Evocation Savant, Use Magic Device). Action economy, numeric formulas, movement rules, and resource changes are all typed.',
-  },
-  'magic-item#partial-structure': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.7',
-    reason:
-      'Magic items with variant/table structure but no deterministic effect or charge-economy projection.',
-  },
-  'magic-item#prose-only': {
-    status: 'finding',
-    bead: 'eshyra-o9bd.18.7.7',
-    reason:
-      'Magic items whose effects, charges, and bonuses are prose-only pending the phased effect-modeling epic.',
   },
   'rule#partial-structure': {
     status: 'finding',
@@ -2121,6 +2174,8 @@ function buildReadme(meta: {
     '- `gameplay-readiness.{json,txt}` — per-kind readiness summary for',
     '  structured choices, unresolved choice prose, deterministic grants,',
     '  mechanics projections, and prose-only records',
+    '- `magic-item-execution-readiness.{json,txt}` — derived clause-level',
+    '  representation bindings, exact hook gaps, and terminal dispositions',
     '- `source-hash-verification.txt` — SHA-256 and size check for the vendored PDF',
     '',
     '## How to reproduce',
@@ -2451,6 +2506,17 @@ async function main(): Promise<void> {
     writeFileSync(
       join(outDir, 'reports/gameplay-readiness.txt'),
       formatGameplayReadinessReport(gameplayReadinessReport),
+      'utf8',
+    );
+    const magicItemReadiness = buildMagicItemExecutionReadinessReport(pack);
+    writeFileSync(
+      join(outDir, 'reports/magic-item-execution-readiness.json'),
+      JSON.stringify(magicItemReadiness, null, 2),
+      'utf8',
+    );
+    writeFileSync(
+      join(outDir, 'reports/magic-item-execution-readiness.txt'),
+      formatMagicItemExecutionReadinessReport(magicItemReadiness),
       'utf8',
     );
 

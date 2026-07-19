@@ -24,10 +24,11 @@ export const spendUsageTool: Tool = {
   mutates: true,
   description:
     'Spend a use of a limited-use ability (X/Day, Recharge X-Y, ' +
-    'recharge-after-rest, per-day innate spell) or charges of an item. ' +
+    'recharge-after-rest, per-day innate spell) or charges of a legacy/ad-hoc unbound item. ' +
     "A combatant's economy derives from its creature record — pass only " +
     'ability (the statblock name, e.g. "Fire Breath" or "misty step"). ' +
-    'For character abilities and item charges the pack has no structured ' +
+    'Canonical pack-bound item operations and economies must use use_item. ' +
+    'For character abilities and unbound item charges there is no structured ' +
     'economy yet: look the feature/item up via lookup_rules first, then ' +
     'pass maxUses + reset (and rechargeMinimum for recharge_roll, or ' +
     'rechargeFormula like "1d6+1" for partial dawn recharges) on the ' +

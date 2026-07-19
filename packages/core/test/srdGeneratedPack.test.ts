@@ -744,20 +744,9 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 214,
     totalInKind: 240,
   },
-  // eshyra-o9bd.18.7.7.5: the M2 (passive character-rule modifier) and M3
-  // (movement/senses/environment) clause families from the magic-item
-  // mechanics inventory, projected as structured `mechanics.effects`. 55 of
-  // the 58 tagged items carry it; Ioun Stone, Ring of Elemental Command, and
-  // Crystal Ball are deferred pending inline variant structuring (see
-  // `MAGIC_ITEM_M2_M3_DEFERRED` in magicItemPassiveEffects.ts). The other
-  // clause families (charges, combat bonuses, state machines, curses, ...)
-  // are out of scope for this projection and owned by sibling beads.
-  {
-    kind: 'magic-item',
-    field: 'mechanics',
-    missingCount: 185,
-    totalInKind: 240,
-  },
+  // eshyra-o9bd.18.7.7: every magic item now carries its reviewed executable
+  // mechanics projection, so `mechanics` is no longer a partially populated
+  // field and intentionally does not appear in this missing-field baseline.
   // Deck of Many Things and Figurine of Wondrous Power reference their inline
   // stat blocks; the other 238 magic items have none.
   {
@@ -778,7 +767,7 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'magic-item',
     field: 'variants',
-    missingCount: 239,
+    missingCount: 236,
     totalInKind: 240,
   },
   // Half-Dragon Template owns its two reconstructed reference tables; other
@@ -953,8 +942,204 @@ const FORBIDDEN_HYPHEN_CODE_POINTS: ReadonlyArray<{
   { name: 'U+2011 NON-BREAKING HYPHEN', codePoint: 0x2011 },
 ];
 
+const DICE_TOKEN = /\b\d+d\d+(?:\s*[+\-−–—]\s*\d+)?\b/gi;
+const DC_TOKEN = /\bDC(?:\s+of)?\s+(\d+)\b/gi;
+
+function normalizeDiceToken(token: string): string {
+  const normalized = token
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[−–—]/g, '-');
+  return normalized.startsWith('d') ? `1${normalized}` : normalized;
+}
+
+function diceFamily(token: string): string {
+  return token.replace(/[+-].*$/, '');
+}
+
+function collectMechanicsValues(
+  value: unknown,
+  result: {
+    strings: string[];
+    diceStrings: string[];
+    literalDcs: number[];
+    numericDcs: number[];
+  },
+  includeDice = true,
+): void {
+  if (typeof value === 'string') {
+    result.strings.push(value);
+    if (includeDice) result.diceStrings.push(value);
+    for (const match of value.matchAll(DC_TOKEN))
+      result.literalDcs.push(Number(match[1]));
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value)
+      collectMechanicsValues(entry, result, includeDice);
+    return;
+  }
+  if (value === null || typeof value !== 'object') return;
+  for (const [key, entry] of Object.entries(value)) {
+    if ((key === 'dc' || key === 'saveDc') && typeof entry === 'number')
+      result.numericDcs.push(entry);
+    const isProseMetadata = new Set([
+      'condition',
+      'control',
+      'eligibility',
+      'note',
+      'onFailure',
+      'outcome',
+      'result',
+      'roll',
+      'termination',
+      'trigger',
+    ]).has(key);
+    collectMechanicsValues(entry, result, includeDice && !isProseMetadata);
+  }
+}
+
+function mechanicsTokens(data: Record<string, unknown>): {
+  readonly dice: Set<string>;
+  readonly typedDice: Set<string>;
+  readonly dcs: Set<number>;
+  readonly numericDcs: Set<number>;
+} {
+  const values = {
+    strings: [],
+    diceStrings: [],
+    literalDcs: [],
+    numericDcs: [],
+  } as {
+    strings: string[];
+    diceStrings: string[];
+    literalDcs: number[];
+    numericDcs: number[];
+  };
+  collectMechanicsValues(data.mechanics, values);
+  const variants = Array.isArray(data.variants) ? data.variants : [];
+  for (const variant of variants) {
+    if (variant && typeof variant === 'object')
+      collectMechanicsValues(
+        (variant as Record<string, unknown>).mechanics,
+        values,
+      );
+  }
+  return {
+    dice: new Set(
+      values.strings.flatMap((value) =>
+        [...value.matchAll(DICE_TOKEN)].map(([token]) =>
+          normalizeDiceToken(token),
+        ),
+      ),
+    ),
+    typedDice: new Set(
+      values.diceStrings.flatMap((value) =>
+        [...value.matchAll(DICE_TOKEN)].map(([token]) =>
+          normalizeDiceToken(token),
+        ),
+      ),
+    ),
+    dcs: new Set([...values.numericDcs, ...values.literalDcs]),
+    numericDcs: new Set(values.numericDcs),
+  };
+}
+
+function descriptionTokens(description: string): {
+  readonly dice: Set<string>;
+  readonly dcs: Set<number>;
+} {
+  return {
+    dice: new Set(
+      [...description.matchAll(DICE_TOKEN)].map(([token]) =>
+        normalizeDiceToken(token),
+      ),
+    ),
+    dcs: new Set(
+      [...description.matchAll(DC_TOKEN)].map(([, dc]) => Number(dc)),
+    ),
+  };
+}
+
+const FORWARD_NUMERIC_CONSERVATION_ACCEPTS: Readonly<Record<string, string>> = {
+  'magic-item:deck-of-many-things':
+    'card outcome dice are GM-mediated and represented by the linked card table/stat block',
+  'magic-item:figurine-of-wondrous-power':
+    'Giant Fly 3d10 is owned by the linked stat-block record',
+  'magic-item:bead-of-force':
+    '1d4 found-count belongs to loot metadata rather than item mechanics',
+  'magic-item:ioun-stone':
+    '1d3 orbit distance is flavor text, not an item mechanic',
+  'magic-item:apparatus-of-the-crab':
+    'DC 20 hidden-catch check is adjudicated per the as87 disposition',
+};
+
+const REVERSE_NUMERIC_CONSERVATION_ACCEPTS: Readonly<Record<string, string>> = {
+  'magic-item:deck-of-illusions':
+    '1d34 is a synthesized uniform draw over the full card table',
+};
+
 describe('D&D 5e SRD 5.1 committed pack', () => {
   const pack = loadRulesPackFromDirectory(PACK_DIR);
+
+  describe('magic-item numeric conservation gate', () => {
+    it('conserves description dice/DCs and mechanics dice/DCs in both directions', () => {
+      const findings: string[] = [];
+      for (const record of pack.records) {
+        if (record.kind !== 'magic-item') continue;
+        const data = record.data as Record<string, unknown>;
+        if (typeof data.description !== 'string') continue;
+        const prose = descriptionTokens(data.description);
+        const mechanics = mechanicsTokens(data);
+        for (const token of prose.dice) {
+          if (
+            !mechanics.dice.has(token) &&
+            ![...mechanics.dice].some(
+              (mechanicsToken) =>
+                diceFamily(mechanicsToken) === diceFamily(token),
+            ) &&
+            !(record.key in FORWARD_NUMERIC_CONSERVATION_ACCEPTS)
+          )
+            findings.push(`${record.key} forward dice ${token}`);
+        }
+        for (const dc of prose.dcs) {
+          if (
+            !mechanics.dcs.has(dc) &&
+            !(record.key in FORWARD_NUMERIC_CONSERVATION_ACCEPTS)
+          )
+            findings.push(`${record.key} forward DC ${dc}`);
+        }
+        for (const token of mechanics.typedDice) {
+          if (
+            !prose.dice.has(token) &&
+            ![...prose.dice].some(
+              (proseToken) => diceFamily(proseToken) === diceFamily(token),
+            ) &&
+            !(record.key in REVERSE_NUMERIC_CONSERVATION_ACCEPTS)
+          )
+            findings.push(`${record.key} reverse dice ${token}`);
+        }
+        for (const dc of mechanics.numericDcs) {
+          if (
+            !prose.dcs.has(dc) &&
+            !(record.key in REVERSE_NUMERIC_CONSERVATION_ACCEPTS)
+          )
+            findings.push(`${record.key} reverse DC ${dc}`);
+        }
+      }
+      expect(findings).toEqual([]);
+      expect(Object.keys(FORWARD_NUMERIC_CONSERVATION_ACCEPTS).sort()).toEqual([
+        'magic-item:apparatus-of-the-crab',
+        'magic-item:bead-of-force',
+        'magic-item:deck-of-many-things',
+        'magic-item:figurine-of-wondrous-power',
+        'magic-item:ioun-stone',
+      ]);
+      expect(Object.keys(REVERSE_NUMERIC_CONSERVATION_ACCEPTS)).toEqual([
+        'magic-item:deck-of-illusions',
+      ]);
+    });
+  });
 
   describe('schema validity', () => {
     it('loads and re-validates without error', () => {
@@ -2529,6 +2714,60 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(EXPECTED_SRD_5_1_MAGIC_ITEM_NAMES.length).toBe(
         EXPECTED_COUNTS_BY_KIND['magic-item'],
       );
+    });
+
+    it('persists clause-level execution readiness and cannot report zero runtime gaps', () => {
+      const clauses = magicItems.flatMap((record) => {
+        const readiness = (
+          record.data as {
+            executionReadiness?: {
+              source?: unknown;
+              clauses?: readonly {
+                readonly clauseId?: string;
+                readonly readiness?: string;
+                readonly scope?: { readonly kind?: string };
+                readonly representation?: unknown;
+                readonly engineHooks?: readonly unknown[];
+                readonly missingHooks?: readonly unknown[];
+              }[];
+            };
+          }
+        ).executionReadiness;
+        expect(readiness?.source, record.key).toBe(
+          'derived-magic-item-clauses-v1',
+        );
+        expect(readiness?.clauses?.length, record.key).toBeGreaterThan(0);
+        return readiness?.clauses ?? [];
+      });
+      const counts = Object.fromEntries(
+        [...new Set(clauses.map(({ readiness }) => readiness))].map(
+          (status) => [
+            status,
+            clauses.filter(({ readiness }) => readiness === status).length,
+          ],
+        ),
+      );
+      expect(clauses).toHaveLength(1015);
+      expect(counts).toEqual({
+        'adjudicated-by-design': 3,
+        'design-blocked': 1,
+        'engine-pending': 793,
+        green: 218,
+      });
+      const pending = clauses.filter(
+        ({ readiness }) => readiness === 'engine-pending',
+      );
+      expect(pending.length).toBeGreaterThan(0);
+      for (const clause of pending) {
+        expect(clause.clauseId).toBeTypeOf('string');
+        expect(clause.representation).toBeDefined();
+        expect(clause.engineHooks?.length).toBeGreaterThan(0);
+        expect(clause.missingHooks?.length).toBeGreaterThan(0);
+        expect(clause.engineHooks).toEqual(
+          expect.arrayContaining(clause.missingHooks ?? []),
+        );
+      }
+      expect(clauses.some(({ scope }) => scope?.kind === 'variant')).toBe(true);
     });
 
     it('carries representative item type, rarity, and attunement and strips embedded tables to table records', () => {

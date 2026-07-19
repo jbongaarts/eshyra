@@ -37,7 +37,15 @@ import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { equipmentMechanicsFor } from './equipmentMechanics.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
-import { deriveMagicItemMechanics } from './magicItemPassiveEffects.js';
+import {
+  attachMagicItemExecutionReadiness,
+  LANDED_MAGIC_ITEM_ENGINE_HOOKS,
+  validateMagicItemClausesAndClassify,
+} from './magicItemCompiler.js';
+import {
+  buildMagicItemClausesByItemKey,
+  compileMagicItemFamilies,
+} from './magicItemFamilyRegistry.js';
 import {
   deriveActionMechanics,
   deriveCreatureEntryMechanics,
@@ -1323,7 +1331,15 @@ export function equipmentExtractionsToRecords(
 function buildMagicItemData(
   item: MagicItemExtraction,
   statBlockRefs: readonly string[] | undefined,
+  compileExecutableSemantics: boolean,
 ): Record<string, unknown> {
+  // The executable-curation registry is an exact-corpus specification for the
+  // reviewed 240 SRD items. Small parser fixtures deliberately carry clipped
+  // descriptions and must exercise structural extraction without pretending
+  // to be authoritative semantic inputs.
+  const compiled = compileExecutableSemantics
+    ? compileMagicItemFamilies(item)
+    : { mechanics: undefined, clauses: [], variants: new Map() };
   const data: Record<string, unknown> = {
     itemType: item.itemType,
     rarity: item.rarity,
@@ -1334,11 +1350,16 @@ function buildMagicItemData(
   }
   data.description = item.description;
   if (item.variants !== undefined && item.variants.length > 0) {
-    data.variants = item.variants.map((variant) => ({
-      name: variant.name,
-      rarity: variant.rarity,
-      text: variant.text,
-    }));
+    data.variants = item.variants.map((variant) => {
+      const mechanics = compiled.variants.get(variant.name)?.mechanics;
+      return {
+        id: slug(variant.name),
+        name: variant.name,
+        rarity: variant.rarity,
+        text: variant.text,
+        ...(mechanics === undefined ? {} : { mechanics }),
+      };
+    });
   }
   // An item that defines an inline stat block (Deck of Many Things -> Avatar of
   // Death) points at the emitted `stat-block` record(s) via `statBlockRefs`
@@ -1346,9 +1367,8 @@ function buildMagicItemData(
   if (statBlockRefs !== undefined && statBlockRefs.length > 0) {
     data.statBlockRefs = [...statBlockRefs].sort();
   }
-  const mechanics = deriveMagicItemMechanics(item);
-  if (mechanics !== undefined) {
-    data.mechanics = mechanics;
+  if (compiled.mechanics !== undefined) {
+    data.mechanics = compiled.mechanics;
   }
   return data;
 }
@@ -1361,13 +1381,18 @@ export function magicItemExtractionsToRecords(
   magicItems: readonly MagicItemExtraction[],
   statBlockRefsByItemName: ReadonlyMap<string, readonly string[]> = new Map(),
 ): RulesRecord[] {
+  const compileExecutableSemantics = magicItems.length === 240;
   const out: RulesRecord[] = magicItems.map((item) => {
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'magic-item',
       key: magicItemKey(item.name),
       name: item.name,
-      data: buildMagicItemData(item, statBlockRefsByItemName.get(item.name)),
+      data: buildMagicItemData(
+        item,
+        statBlockRefsByItemName.get(item.name),
+        compileExecutableSemantics,
+      ),
       source: sourceLabelFor(item.sourcePage),
       license: SRD_5_1_LICENSE,
       provenance: provenanceFor(item.sourcePage),
@@ -1693,9 +1718,24 @@ export function buildPack(input: BuildPackInput): RulesPack {
   // records that belong to their entry (eshyra-o9bd.8). Adds `data.tableRefs`
   // only; the de-flattened prose above is untouched.
   const linked = linkOwnedTables(stripped);
-  const records = linked.sort((a, b) =>
+  let records = linked.sort((a, b) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0,
   );
+  // Clause integrity runs only after owner table links and every record exist.
+  // Every completed family feeds the same source-keyed registry. Structured
+  // table/stat-block bindings are projected here, after owner links exist.
+  if ((input.magicItems?.length ?? 0) === 240) {
+    const magicItemClauses = buildMagicItemClausesByItemKey(
+      input.magicItems ?? [],
+      records,
+    );
+    const readiness = validateMagicItemClausesAndClassify({
+      records,
+      clausesByItemKey: magicItemClauses,
+      landedEngineHooks: LANDED_MAGIC_ITEM_ENGINE_HOOKS,
+    });
+    records = [...attachMagicItemExecutionReadiness(records, readiness)];
+  }
   const includedKinds = uniqueKindsOf(records);
   const pack: RulesPack = {
     meta: buildMeta(input.sourceHash, includedKinds),

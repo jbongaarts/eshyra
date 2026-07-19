@@ -11,7 +11,7 @@ export const restoreUsageTool: Tool = {
   // Writes the owner's durable usage-counter record (eshyra-dwkm).
   mutates: true,
   description:
-    'Restore a spent limited-use ability or item charges. Two modes: (1) ' +
+    'Restore a spent limited-use ability or legacy/ad-hoc unbound item charges; canonical pack-bound items use use_item and their semantic reset owner. Two modes: (1) ' +
     "recharge roll — at the start of the creature's turn, roll its " +
     'recharge die via `roll` first, then pass the natural result as ' +
     '`roll`; the engine recharges the ability iff the roll meets the ' +

@@ -237,6 +237,13 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
     expect(prompt).toContain('Reject hand-computed, mismatched, failed');
   });
 
+  it('requires an embedded payment for identity-preserving repurchase', () => {
+    const prompt = buildAuditSystemPrompt();
+    expect(prompt).toContain('basis `repurchased`');
+    expect(prompt).toContain('embedded nonempty');
+    expect(prompt).toContain('separate unlinked `spend_currency`');
+  });
+
   it('user message lists the explicit-action-only tools for the turn', () => {
     const message = buildAuditUserMessage({
       playerInput: 'What am I equipped with?',

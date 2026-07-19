@@ -318,6 +318,482 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0016 separates legacy unheld world placement from held storage', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 15)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(15);
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, location, provenance, session_id, updated_at
+       ) VALUES
+         ('held', 'pc-1', 'Held', 'backpack', 'test', 'session', ?),
+         ('unheld', NULL, 'Unheld', 'old-road', 'test', 'session', ?),
+         ('unheld-blank', NULL, 'Unheld Blank', '   ', 'test', 'session', ?)`,
+    ).run(NOW(), NOW(), NOW());
+
+    const migration16 = bundled[15];
+    if (migration16 === undefined) throw new Error('missing migration 0016');
+    writeFileSync(
+      join(dir, '0016_inventory_world_location.sql'),
+      migration16.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([16]);
+    expect(
+      db
+        .prepare(
+          `SELECT id, character_id, location, world_location_id
+           FROM inventory ORDER BY id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        id: 'held',
+        character_id: 'pc-1',
+        location: 'backpack',
+        world_location_id: null,
+      },
+      {
+        id: 'unheld',
+        character_id: null,
+        location: null,
+        world_location_id: 'old-road',
+      },
+      {
+        id: 'unheld-blank',
+        character_id: null,
+        location: null,
+        world_location_id: null,
+      },
+    ]);
+    expect(() =>
+      db
+        .prepare(
+          "UPDATE inventory SET world_location_id='elsewhere' WHERE id='held'",
+        )
+        .run(),
+    ).toThrow(/custody\/location invariant/);
+    expect(() =>
+      db.prepare("UPDATE inventory SET location='bag' WHERE id='unheld'").run(),
+    ).toThrow(/custody\/location invariant/);
+    for (const blank of ['', '   ']) {
+      expect(() =>
+        db
+          .prepare("UPDATE inventory SET world_location_id=? WHERE id='unheld'")
+          .run(blank),
+      ).toThrow(/custody\/location invariant/);
+      expect(() =>
+        db
+          .prepare(
+            `INSERT INTO inventory(
+               id, name, world_location_id, provenance, session_id, updated_at
+             ) VALUES (?, 'Blank', ?, 'test', 'session', ?)`,
+          )
+          .run(`blank-${blank.length}`, blank, NOW()),
+      ).toThrow(/custody\/location invariant/);
+    }
+    expect(
+      db
+        .prepare(
+          `SELECT type, name FROM sqlite_master
+           WHERE name IN (
+             'inventory_unheld_world_location_id',
+             'inventory_location_insert_guard',
+             'inventory_location_update_guard'
+           ) ORDER BY type, name`,
+        )
+        .all(),
+    ).toEqual([
+      { type: 'index', name: 'inventory_unheld_world_location_id' },
+      { type: 'trigger', name: 'inventory_location_insert_guard' },
+      { type: 'trigger', name: 'inventory_location_update_guard' },
+    ]);
+    db.close();
+  });
+
+  it('migration 0017 classifies legacy drops and enforces explicit unheld disposition', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 16)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(16);
+    db.prepare(
+      `INSERT INTO inventory(
+         id, name, world_location_id, provenance, session_id, updated_at
+       ) VALUES ('legacy-drop', 'Legacy Drop', 'old-road', 'test', 'session', ?)`,
+    ).run(NOW());
+
+    const migration17 = bundled[16];
+    if (migration17 === undefined) throw new Error('missing migration 0017');
+    writeFileSync(
+      join(dir, '0017_inventory_unheld_disposition.sql'),
+      migration17.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([17]);
+    expect(
+      db
+        .prepare(
+          `SELECT character_id, world_location_id, unheld_disposition
+           FROM inventory WHERE id='legacy-drop'`,
+        )
+        .get(),
+    ).toEqual({
+      character_id: null,
+      world_location_id: 'old-road',
+      unheld_disposition: 'dropped',
+    });
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO inventory(
+             id, name, world_location_id, provenance, session_id, updated_at
+           ) VALUES ('implicit', 'Implicit', 'old-road', 'test', 'session', ?)`,
+        )
+        .run(NOW()),
+    ).toThrow(/custody\/location invariant/);
+    expect(() =>
+      db
+        .prepare(
+          `UPDATE inventory
+           SET character_id='pc-1'
+           WHERE id='legacy-drop'`,
+        )
+        .run(),
+    ).toThrow(/custody\/location invariant/);
+    expect(
+      db
+        .prepare(
+          `SELECT type, name FROM sqlite_master
+           WHERE name IN (
+             'inventory_unheld_world_location_id',
+             'inventory_claimable_world_location_id'
+           ) ORDER BY name`,
+        )
+        .all(),
+    ).toEqual([
+      { type: 'index', name: 'inventory_claimable_world_location_id' },
+    ]);
+    db.close();
+  });
+
+  it('migration 0018 moves adoption review markers out of writable inventory JSON', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 17)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(17);
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at
+       ) VALUES ('legacy-review', 'pc-1', 'Legacy Review', ?, 'test', 'session', ?)`,
+    ).run(
+      JSON.stringify({
+        material: 'silver',
+        mechanics: { economies: { invented: { remaining: 3 } } },
+        magicItemAdoption: {
+          status: 'gm-review-required',
+          requestedPackRef: 'magic-item:orb-of-dragonkind',
+          requestedVariantId: 'red',
+          reason: 'multiple legacy mechanics sources require GM reconciliation',
+        },
+      }),
+      NOW(),
+    );
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('legacy-review', '{', 'test', 'session', ?)`,
+    ).run(NOW());
+    const boundProperties = JSON.stringify({
+      mechanics: { retained: true },
+      magicItemAdoption: {
+        status: 'gm-review-required',
+        requestedPackRef: 'magic-item:orb-of-dragonkind',
+        reason: 'marker-shaped but model-writable property',
+      },
+    });
+    const boundState = JSON.stringify({
+      packRef: 'magic-item:wand-of-fireballs',
+      economies: { charges: { remaining: 4 } },
+    });
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at, pack_ref
+       ) VALUES ('bound-marker-shape', 'pc-1', 'Bound Wand', ?, 'test',
+                 'session', ?, 'magic-item:wand-of-fireballs')`,
+    ).run(boundProperties, NOW());
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('bound-marker-shape', ?, 'test', 'session', ?)`,
+    ).run(boundState, NOW());
+    const unheldProperties = JSON.stringify({
+      mechanics: { retained: 'unheld' },
+      magicItemAdoption: {
+        status: 'gm-review-required',
+        requestedPackRef: 'magic-item:orb-of-dragonkind',
+        reason: 'unheld marker-shaped model property',
+      },
+    });
+    const unheldState = JSON.stringify({ retained: 'unheld' });
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at, world_location_id, unheld_disposition
+       ) VALUES ('unheld-marker-shape', NULL, 'Unheld Marker', ?, 'test',
+                 'session', ?, 'market', 'sold')`,
+    ).run(unheldProperties, NOW());
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('unheld-marker-shape', ?, 'test', 'session', ?)`,
+    ).run(unheldState, NOW());
+    const heldNearMissProperties = JSON.stringify({
+      mechanics: { retained: 'held-near-miss' },
+      magicItemAdoption: {
+        status: 'gm-review-required',
+        requestedPackRef: 'magic-item:orb-of-dragonkind',
+        reason: 'marker-shaped but not a code-produced review reason',
+      },
+    });
+    const heldNearMissState = JSON.stringify({ retained: 'held-near-miss' });
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at
+       ) VALUES ('held-marker-near-miss', 'pc-1', 'Held Near Miss', ?,
+                 'test', 'session', ?)`,
+    ).run(heldNearMissProperties, NOW());
+    db.prepare(
+      `INSERT INTO item_state(
+         inventory_id, state_json, provenance, session_id, updated_at
+       ) VALUES ('held-marker-near-miss', ?, 'test', 'session', ?)`,
+    ).run(heldNearMissState, NOW());
+    const marker = (reason: string) =>
+      JSON.stringify({
+        magicItemAdoption: {
+          status: 'gm-review-required',
+          requestedPackRef: 'magic-item:necklace-of-fireballs',
+          reason,
+        },
+      });
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, quantity, properties_json, provenance,
+         session_id, updated_at
+       ) VALUES ('oversized-review', 'pc-1', 'Oversized', 101, ?, 'test',
+                 'session', ?)`,
+    ).run(
+      marker(
+        'stateful legacy stack quantity 101 exceeds the reviewed adoption maximum of 100 singleton instances',
+      ),
+      NOW(),
+    );
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at
+       ) VALUES ('counter-review', 'pc-1', 'Counter', ?, 'test', 'session', ?)`,
+    ).run(
+      marker(
+        "legacy item usage counter 'charges' requires GM reconciliation before canonical binding",
+      ),
+      NOW(),
+    );
+    db.prepare(
+      `INSERT INTO entity_usage_counter(
+         campaign_id, owner_kind, owner_ref, counter_key, display_name,
+         uses_max, uses_used, reset_kind, source, provenance, session_id,
+         updated_at
+       ) VALUES ('campaign-1', 'item', 'counter-review', 'charges',
+                 'Legacy charges', 7, 2, 'dawn', 'declared', 'test',
+                 'session', ?)`,
+    ).run(NOW());
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, properties_json, provenance, session_id,
+         updated_at
+       ) VALUES ('attunement-review', 'pc-1', 'Attuned', ?, 'test',
+                 'session', ?)`,
+    ).run(
+      marker(
+        'legacy attunement cannot cross the canonical attunement boundary: fixture',
+      ),
+      NOW(),
+    );
+    db.prepare(
+      `INSERT INTO attunement(
+         campaign_id, character_id, item_id, item_key, display_name,
+         attuned_at, provenance, session_id, updated_at
+       ) VALUES ('campaign-1', 'pc-1', 'attunement-review',
+                 'name:attunement-review', 'Attuned', ?, 'test', 'session', ?)`,
+    ).run(NOW(), NOW());
+
+    const migration18 = bundled[17];
+    if (migration18 === undefined) throw new Error('missing migration 0018');
+    writeFileSync(
+      join(dir, '0018_inventory_adoption_review.sql'),
+      migration18.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([18]);
+    expect(
+      db
+        .prepare(
+          `SELECT requested_pack_ref, requested_variant_id, review_kind, reason,
+                  raw_properties_json, raw_item_state_json
+           FROM inventory_adoption_review WHERE inventory_id='legacy-review'`,
+        )
+        .get(),
+    ).toEqual({
+      requested_pack_ref: 'magic-item:orb-of-dragonkind',
+      requested_variant_id: 'red',
+      review_kind: 'malformed-evidence',
+      reason: 'multiple legacy mechanics sources require GM reconciliation',
+      raw_properties_json: expect.stringContaining('invented'),
+      raw_item_state_json: '{',
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT properties_json FROM inventory WHERE id='legacy-review'",
+        )
+        .get(),
+    ).toEqual({ properties_json: '{"material":"silver"}' });
+    expect(
+      db
+        .prepare(
+          "SELECT state_json FROM item_state WHERE inventory_id='legacy-review'",
+        )
+        .get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          `SELECT inventory_id, review_kind FROM inventory_adoption_review
+           WHERE inventory_id IN (
+             'oversized-review', 'counter-review', 'attunement-review'
+           )
+           ORDER BY inventory_id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        inventory_id: 'attunement-review',
+        review_kind: 'legacy-attunement',
+      },
+      { inventory_id: 'counter-review', review_kind: 'legacy-counter' },
+      { inventory_id: 'oversized-review', review_kind: 'oversized-stack' },
+    ]);
+    expect(
+      db
+        .prepare(
+          `SELECT pack_ref, properties_json FROM inventory
+           WHERE id='bound-marker-shape'`,
+        )
+        .get(),
+    ).toEqual({
+      pack_ref: 'magic-item:wand-of-fireballs',
+      properties_json: boundProperties,
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT state_json FROM item_state WHERE inventory_id='bound-marker-shape'",
+        )
+        .get(),
+    ).toEqual({ state_json: boundState });
+    expect(
+      db
+        .prepare(
+          "SELECT 1 FROM inventory_adoption_review WHERE inventory_id='bound-marker-shape'",
+        )
+        .get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          `SELECT properties_json, world_location_id, unheld_disposition
+           FROM inventory WHERE id='unheld-marker-shape'`,
+        )
+        .get(),
+    ).toEqual({
+      properties_json: unheldProperties,
+      world_location_id: 'market',
+      unheld_disposition: 'sold',
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT state_json FROM item_state WHERE inventory_id='unheld-marker-shape'",
+        )
+        .get(),
+    ).toEqual({ state_json: unheldState });
+    expect(
+      db
+        .prepare(
+          "SELECT 1 FROM inventory_adoption_review WHERE inventory_id='unheld-marker-shape'",
+        )
+        .get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          "SELECT properties_json FROM inventory WHERE id='held-marker-near-miss'",
+        )
+        .get(),
+    ).toEqual({ properties_json: heldNearMissProperties });
+    expect(
+      db
+        .prepare(
+          "SELECT state_json FROM item_state WHERE inventory_id='held-marker-near-miss'",
+        )
+        .get(),
+    ).toEqual({ state_json: heldNearMissState });
+    expect(
+      db
+        .prepare(
+          "SELECT 1 FROM inventory_adoption_review WHERE inventory_id='held-marker-near-miss'",
+        )
+        .get(),
+    ).toBeUndefined();
+    expect(
+      db
+        .prepare(
+          `SELECT name FROM sqlite_master WHERE type='table'
+           AND name='inventory_custody_event'`,
+        )
+        .get(),
+    ).toEqual({ name: 'inventory_custody_event' });
+    db.close();
+  });
+
   it('refuses to start when an applied migration file was edited (checksum drift)', () => {
     const db = openDatabase(':memory:');
     const dir = makeMigrationDir({

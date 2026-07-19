@@ -132,6 +132,12 @@ describe('audit retry diagnostics', () => {
         [],
       ),
     ).toBe('missing_state');
+    expect(
+      classifyAuditRetryCause(
+        reject({ missingRequiredCalls: [{ tool: 'use_item' }] }),
+        [],
+      ),
+    ).toBe('missing_state');
   });
 
   it('classifies missing world evidence requirements', () => {

@@ -12,25 +12,24 @@
  * extracts ONLY the M2/M3-tagged clauses for each item; other clause types on
  * the same record are intentionally left unmodeled here.
  *
- * Three items — Ioun Stone, Ring of Elemental Command, and Crystal Ball — are
- * excluded even though the inventory tags them M2/M3. Each needs its prose
- * variants (Ioun Stone's 13 named stones; the ring's 4 elemental planes;
- * Crystal Ball's legendary "of Mind Reading"/"of Telepathy"/"of True Seeing"
- * variants) lifted into a structured `variants` field before its per-variant
- * M2/M3 clauses can be projected without conflating mutually exclusive
- * benefits into one record
- * (`docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-magic-item-state-contract-design.md`
- * §7.4 names this as a prerequisite). `MAGIC_ITEM_M2_M3_DEFERRED` records the
- * reason so the audit gate can distinguish "not yet modeled, tracked" from
- * "silently missed".
+ * Ioun Stone, Ring of Elemental Command, and Crystal Ball carry mutually
+ * exclusive inline variants. `parseMagicItems` lifts all 20 named variants
+ * into structured children; this module projects their M2/M3 clauses onto
+ * those 21 children only, never onto the shared parent record.
  *
  * Each entry's extractor asserts the source phrase it depends on is present
  * (via `must`) so drift in a future re-import fails the import instead of
  * silently emitting stale data.
  */
 
+import type { MagicItemEffect } from '../../../src/rules/magicItemMechanics.js';
+import {
+  aggregateMagicItemFamilyProjections,
+  type ItemClauseExpectation,
+  type MagicItemFamilyProjection,
+} from './magicItemCompiler.js';
 import { compact } from './mechanicsProjections.js';
-import type { MagicItemExtraction } from './types.js';
+import type { MagicItemExtraction, MagicItemVariant } from './types.js';
 
 type Mechanics = Record<string, unknown>;
 
@@ -48,27 +47,366 @@ function must(
   return match;
 }
 
-/**
- * Items the inventory tags M2/M3 that are intentionally NOT projected yet.
- * Each reason names the concrete prerequisite gap so this stays a tracked
- * deferral, not a silent omission.
- */
-export const MAGIC_ITEM_M2_M3_DEFERRED: ReadonlyMap<string, string> = new Map([
-  [
-    'Ioun Stone',
-    'inline variant structuring required first (13 named stones with mutually exclusive M2/M3 benefits; §0 gap in the mechanics inventory)',
-  ],
-  [
-    'Ring of Elemental Command',
-    'inline variant structuring required first (4 linked-plane variants with mutually exclusive M2/M3 benefits; §0 gap in the mechanics inventory)',
-  ],
-  [
-    'Crystal Ball',
-    'inline variant structuring required first (the truesight M3 clause belongs only to the legendary "Crystal Ball of True Seeing" variant; the item has no structured `variants` field yet, so projecting the effect onto the shared record would misrepresent every ordinary crystal ball as having it; §0 gap in the mechanics inventory, eshyra-o9bd.18.7.7.5 review)',
-  ],
+/** No M2/M3-tagged items remain deferred after inline variant structuring. */
+export const MAGIC_ITEM_M2_M3_DEFERRED: ReadonlyMap<string, string> = new Map();
+
+type Extractor = (text: string, itemName: string) => readonly MagicItemEffect[];
+
+type VariantExtractor = (
+  text: string,
+  parentName: string,
+  variantName: string,
+) => readonly MagicItemEffect[];
+
+const M2_DIRECT_NAMES = [
+  'Amulet of Health',
+  'Belt of Dwarvenkind',
+  'Belt of Giant Strength',
+  'Berserker Axe',
+  'Bracers of Archery',
+  'Demon Armor',
+  'Elven Chain',
+  'Gauntlets of Ogre Power',
+  'Hammer of Thunderbolts',
+  'Headband of Intellect',
+  'Manual of Bodily Health',
+  'Manual of Gainful Exercise',
+  'Manual of Quickness of Action',
+  'Periapt of Wound Closure',
+  'Potion of Giant Strength',
+  'Ring of Regeneration',
+  'Robe of the Archmagi',
+  'Sun Blade',
+  'Tome of Clear Thought',
+  'Tome of Leadership and Influence',
+  'Tome of Understanding',
+] as const;
+
+const M3_DIRECT_NAMES = [
+  'Boots of Speed',
+  'Boots of Striding and Springing',
+  'Boots of the Winterlands',
+  'Broom of Flying',
+  'Carpet of Flying',
+  'Cloak of Arachnida',
+  'Cloak of the Bat',
+  'Cloak of the Manta Ray',
+  'Dragon Scale Mail',
+  'Gem of Seeing',
+  'Gloves of Swimming and Climbing',
+  'Goggles of Night',
+  'Helm of Telepathy',
+  'Horseshoes of a Zephyr',
+  'Horseshoes of Speed',
+  'Lantern of Revealing',
+  'Necklace of Adaptation',
+  'Potion of Climbing',
+  'Potion of Flying',
+  'Potion of Water Breathing',
+  'Ring of Feather Falling',
+  'Ring of Free Action',
+  'Ring of Swimming',
+  'Ring of Warmth',
+  'Ring of Water Walking',
+  'Ring of X-ray Vision',
+  'Robe of Eyes',
+  'Rod of Alertness',
+  'Rod of Lordly Might',
+  'Slippers of Spider Climbing',
+  'Wand of Enemy Detection',
+  'Wand of Secrets',
+  'Winged Boots',
+  'Wings of Flying',
+] as const;
+
+export const MAGIC_ITEM_M2_NAMES = Object.freeze([
+  ...M2_DIRECT_NAMES,
+  'Ioun Stone',
+  'Ring of Elemental Command',
 ]);
 
-type Extractor = (text: string, itemName: string) => readonly Mechanics[];
+export const MAGIC_ITEM_M3_NAMES = Object.freeze([
+  'Belt of Dwarvenkind',
+  ...M3_DIRECT_NAMES,
+  'Ioun Stone',
+  'Ring of Elemental Command',
+  'Crystal Ball',
+]);
+
+const M2_DIRECT = new Set<string>(M2_DIRECT_NAMES);
+const M3_DIRECT = new Set<string>(M3_DIRECT_NAMES);
+
+function slug(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function effectTag(scope: string, effect: MagicItemEffect): 'M2' | 'M3' {
+  if (scope === 'Belt of Dwarvenkind')
+    return effect.kind === 'sense' ? 'M3' : 'M2';
+  if (scope.startsWith('Ioun Stone::'))
+    return scope === 'Ioun Stone::Sustenance' ? 'M3' : 'M2';
+  if (scope.startsWith('Ring of Elemental Command::'))
+    return effect.kind === 'proficiency' ? 'M2' : 'M3';
+  if (scope.startsWith('Crystal Ball::')) return 'M3';
+  if (M2_DIRECT.has(scope)) return 'M2';
+  if (M3_DIRECT.has(scope)) return 'M3';
+  throw new Error(`magic-item M2/M3 projection: no tag owner for ${scope}`);
+}
+
+function semanticEffectName(effect: MagicItemEffect): string {
+  const value = effect as Record<string, unknown>;
+  if (effect.kind === 'abilityScoreSet')
+    return `${String(value.ability)}-score-set`;
+  if (effect.kind === 'abilityScoreIncrease')
+    return `${(value.abilities as string[]).join('-')}-score-increase`;
+  if (effect.kind === 'proficiency')
+    return `proficiency-${slug(String(value.grant))}`;
+  if (effect.kind === 'sense') return `sense-${slug(String(value.sense))}`;
+  if (effect.kind === 'speedSet') return `${String(value.mode)}-speed`;
+  if (effect.kind === 'light') return `${String(value.level)}-light`;
+  if (effect.kind === 'breathes')
+    return value.anyEnvironment === true
+      ? 'breathe-any-environment'
+      : `breathe-${(value.environments as string[]).join('-')}`;
+  return slug(effect.kind);
+}
+
+function identifyEffects(
+  scope: string,
+  effects: readonly MagicItemEffect[],
+): {
+  readonly effects: readonly MagicItemEffect[];
+  readonly clauses: readonly ItemClauseExpectation[];
+} {
+  const ids = new Set<string>();
+  const identified = effects.map((effect) => {
+    const tag = effectTag(scope, effect);
+    const id = `${tag.toLowerCase()}-${slug(scope)}-${semanticEffectName(effect)}`;
+    if (ids.has(id))
+      throw new Error(
+        `magic-item M2/M3 projection: duplicate semantic effect id ${id}`,
+      );
+    ids.add(id);
+    return compactEffect({ ...effect, id });
+  });
+  return {
+    effects: identified,
+    clauses: identified.map((effect) => ({
+      id: effect.id as string,
+      tag: effectTag(scope, effect),
+      representation: { block: 'effects', effectId: effect.id as string },
+    })),
+  };
+}
+
+function compactEffect(effect: MagicItemEffect): MagicItemEffect {
+  return compact({ ...effect }) as MagicItemEffect;
+}
+
+const abilityStone =
+  (ability: string): VariantExtractor =>
+  (text, parentName, variantName) => {
+    must(
+      text,
+      new RegExp(
+        `Your ${ability[0].toUpperCase()}${ability.slice(1)} score increases by 2, to a maximum of 20`,
+      ),
+      `${parentName} / ${variantName}`,
+    );
+    return [
+      {
+        kind: 'abilityScoreIncrease',
+        abilities: [ability],
+        amount: 2,
+        newMaximum: 20,
+      },
+    ];
+  };
+
+const ELEMENTAL_UNLOCK =
+  'after you help slay an elemental from the linked plane while attuned to the ring';
+
+const MAGIC_ITEM_M2_M3_VARIANT_EXTRACTORS: ReadonlyMap<
+  string,
+  VariantExtractor
+> = new Map([
+  ['Ioun Stone::Agility', abilityStone('dexterity')],
+  ['Ioun Stone::Fortitude', abilityStone('constitution')],
+  ['Ioun Stone::Insight', abilityStone('wisdom')],
+  ['Ioun Stone::Intellect', abilityStone('intelligence')],
+  ['Ioun Stone::Leadership', abilityStone('charisma')],
+  ['Ioun Stone::Strength', abilityStone('strength')],
+  [
+    'Ioun Stone::Mastery',
+    (text, parentName, variantName) => {
+      must(
+        text,
+        /proficiency bonus increases by 1 while this pale green prism orbits your head/,
+        `${parentName} / ${variantName}`,
+      );
+      return [{ kind: 'proficiencyBonusIncrease', amount: 1 }];
+    },
+  ],
+  [
+    'Ioun Stone::Regeneration',
+    (text, parentName, variantName) => {
+      must(
+        text,
+        /regain 15 hit points at the end of each hour.+provided that you have at least 1 hit point/,
+        `${parentName} / ${variantName}`,
+      );
+      return [
+        {
+          kind: 'regeneration',
+          hitPoints: 15,
+          timing: 'end-of-each-hour',
+          condition: 'provided that you have at least 1 hit point',
+        },
+      ];
+    },
+  ],
+  [
+    'Ioun Stone::Sustenance',
+    (text, parentName, variantName) => {
+      must(
+        text,
+        /don’t need to eat or drink while this clear spindle orbits your head/,
+        `${parentName} / ${variantName}`,
+      );
+      return [{ kind: 'sustenance' }];
+    },
+  ],
+  [
+    'Ring of Elemental Command::Ring of Air Elemental Command',
+    (text, parentName, variantName) => {
+      const scopedName = `${parentName} / ${variantName}`;
+      must(
+        text,
+        /descend 60 feet per round and take no damage from falling/,
+        scopedName,
+      );
+      must(text, /speak and understand Auran/, scopedName);
+      must(
+        text,
+        /flying speed equal to your walking speed and can hover/,
+        scopedName,
+      );
+      return [
+        {
+          kind: 'slowFall',
+          descentFeetPerRound: 60,
+          noFallingDamageOnLanding: true,
+        },
+        { kind: 'proficiency', grant: 'speak and understand Auran' },
+        {
+          kind: 'speedSet',
+          mode: 'fly',
+          value: 'walking-speed',
+          hover: true,
+          condition: ELEMENTAL_UNLOCK,
+        },
+      ];
+    },
+  ],
+  [
+    'Ring of Elemental Command::Ring of Earth Elemental Command',
+    (text, parentName, variantName) => {
+      const scopedName = `${parentName} / ${variantName}`;
+      must(
+        text,
+        /difficult terrain that is composed of rubble, rocks, or dirt as if it were normal terrain/,
+        scopedName,
+      );
+      must(text, /speak and understand Terran/, scopedName);
+      must(
+        text,
+        /move through solid earth or rock as if those areas were difficult terrain/,
+        scopedName,
+      );
+      must(
+        text,
+        /shunted out to the nearest unoccupied space you last occupied/,
+        scopedName,
+      );
+      return [
+        {
+          kind: 'ignoreDifficultTerrain',
+          terrain: ['rubble', 'rocks', 'dirt'],
+        },
+        { kind: 'proficiency', grant: 'speak and understand Terran' },
+        {
+          kind: 'earthGlide',
+          condition: `${ELEMENTAL_UNLOCK}; if you end your turn in solid earth or rock, you are shunted to the nearest unoccupied space you last occupied`,
+        },
+      ];
+    },
+  ],
+  [
+    'Ring of Elemental Command::Ring of Fire Elemental Command',
+    (text, parentName, variantName) => {
+      must(
+        text,
+        /speak and understand Ignan/,
+        `${parentName} / ${variantName}`,
+      );
+      return [{ kind: 'proficiency', grant: 'speak and understand Ignan' }];
+    },
+  ],
+  [
+    'Ring of Elemental Command::Ring of Water Elemental Command',
+    (text, parentName, variantName) => {
+      const scopedName = `${parentName} / ${variantName}`;
+      must(
+        text,
+        /stand on and walk across liquid surfaces as if they were solid ground/,
+        scopedName,
+      );
+      must(text, /speak and understand Aquan/, scopedName);
+      must(
+        text,
+        /breathe underwater and have a swimming speed equal to your walking speed/,
+        scopedName,
+      );
+      return [
+        { kind: 'walkOnLiquids' },
+        { kind: 'proficiency', grant: 'speak and understand Aquan' },
+        {
+          kind: 'breathes',
+          environments: ['water'],
+          condition: ELEMENTAL_UNLOCK,
+        },
+        {
+          kind: 'speedSet',
+          mode: 'swim',
+          value: 'walking-speed',
+          condition: ELEMENTAL_UNLOCK,
+        },
+      ];
+    },
+  ],
+  [
+    'Crystal Ball::Crystal Ball of True Seeing',
+    (text, parentName, variantName) => {
+      must(
+        text,
+        /While scrying with the crystal ball, you have truesight with a radius of 120 feet centered on the spell’s sensor/,
+        `${parentName} / ${variantName}`,
+      );
+      return [
+        {
+          kind: 'sense',
+          sense: 'truesight',
+          rangeFeet: 120,
+          condition: 'while scrying; centered on the spell’s sensor',
+        },
+      ];
+    },
+  ],
+]);
 
 const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
   string,
@@ -1056,12 +1394,67 @@ const MAGIC_ITEM_M2_M3_EXTRACTORS: ReadonlyMap<string, Extractor> = new Map<
  * `undefined` when the item is outside the exact M2/M3 membership (or is a
  * tracked deferral — see `MAGIC_ITEM_M2_M3_DEFERRED`).
  */
-export function deriveMagicItemMechanics(
+export function projectMagicItemPassiveMechanics(
   item: MagicItemExtraction,
-): Mechanics | undefined {
+): MagicItemFamilyProjection | undefined {
   const extractor = MAGIC_ITEM_M2_M3_EXTRACTORS.get(item.name);
   if (extractor === undefined) return undefined;
   const effects = extractor(item.description, item.name);
   if (effects.length === 0) return undefined;
-  return compact({ effects: effects.map((effect) => compact({ ...effect })) });
+  const identified = identifyEffects(item.name, effects);
+  return {
+    family: 'M2-M3-passives',
+    mechanics: compact({
+      effects: identified.effects,
+    }),
+    clauses: identified.clauses,
+  };
+}
+
+export function deriveMagicItemMechanics(
+  item: MagicItemExtraction,
+): Mechanics | undefined {
+  const projection = projectMagicItemPassiveMechanics(item);
+  if (projection === undefined) return undefined;
+  return aggregateMagicItemFamilyProjections([projection]).mechanics as
+    | Mechanics
+    | undefined;
+}
+
+/**
+ * Projects M2/M3 effects for a structured child variant. An unlisted variant
+ * has no M2/M3-owned clause (its other mechanics remain with sibling owners).
+ */
+export function projectMagicItemPassiveVariantMechanics(
+  parentName: string,
+  variant: MagicItemVariant,
+): MagicItemFamilyProjection | undefined {
+  const extractor = MAGIC_ITEM_M2_M3_VARIANT_EXTRACTORS.get(
+    `${parentName}::${variant.name}`,
+  );
+  if (extractor === undefined) return undefined;
+  const effects = extractor(variant.text, parentName, variant.name);
+  if (effects.length === 0) return undefined;
+  const identified = identifyEffects(`${parentName}::${variant.name}`, effects);
+  return {
+    family: 'M2-M3-passives',
+    mechanics: compact({
+      effects: identified.effects,
+    }),
+    clauses: identified.clauses,
+  };
+}
+
+export function deriveMagicItemVariantMechanics(
+  parentName: string,
+  variant: MagicItemVariant,
+): Mechanics | undefined {
+  const projection = projectMagicItemPassiveVariantMechanics(
+    parentName,
+    variant,
+  );
+  if (projection === undefined) return undefined;
+  return aggregateMagicItemFamilyProjections([projection]).mechanics as
+    | Mechanics
+    | undefined;
 }

@@ -252,6 +252,20 @@ export interface ResolvedFeatureData {
   readonly level: number;
 }
 
+/** Player-selected feat fields consumed by the optional ASI/feat rule. */
+export interface ResolvedFeatData {
+  readonly key: string;
+  readonly name: string;
+  readonly prerequisites?: string;
+}
+
+/** A source-bounded background feature, kept inline by the SRD pack. */
+export interface ResolvedBackgroundFeature {
+  readonly key: string;
+  readonly name: string;
+  readonly text: string;
+}
+
 /** A racial trait as stored on an ancestry record: a name and verbatim prose. */
 export interface ResolvedAncestryTrait {
   readonly name: string;
@@ -287,6 +301,7 @@ export interface ResolvedBackgroundData {
   /** Verbatim equipment package prose; not yet structured into items. */
   readonly equipment?: string;
   readonly equipmentGrants?: readonly BackgroundEquipmentGrant[];
+  readonly feature?: ResolvedBackgroundFeature;
 }
 
 /**
@@ -318,6 +333,7 @@ export interface RulesPackCharacterResolver {
   resolveBackground(
     nameOrRef: string,
   ): CharacterResolution<ResolvedBackgroundData>;
+  resolveFeat(nameOrRef: string): CharacterResolution<ResolvedFeatData>;
   resolveStartingWealth(
     classKey: string,
   ): CharacterResolution<ResolvedStartingWealth>;
@@ -341,6 +357,8 @@ export interface RulesPackCharacterResolver {
   listSubclasses(): readonly ResolvedSubclassData[];
   /** Every well-formed `feature` record, in canonical-key order. */
   listFeatures(): readonly ResolvedFeatureData[];
+  /** Every well-formed player-selectable feat, in canonical-key order. */
+  listFeats(): readonly ResolvedFeatData[];
   listToolProficiencies(): readonly string[];
 }
 
@@ -355,6 +373,7 @@ export function createRulesPackCharacterResolver(
     resolveSpell: (nameOrRef) => resolveSpell(stack, nameOrRef),
     resolveAncestry: (nameOrRef) => resolveAncestry(stack, nameOrRef),
     resolveBackground: (nameOrRef) => resolveBackground(stack, nameOrRef),
+    resolveFeat: (nameOrRef) => resolveFeat(stack, nameOrRef),
     resolveStartingWealth: (classKey) => resolveStartingWealth(stack, classKey),
     listClasses: () => listClasses(stack),
     listAncestries: () =>
@@ -367,6 +386,8 @@ export function createRulesPackCharacterResolver(
       listByKind(stack, 'subclass', (key) => resolveSubclass(stack, key)),
     listFeatures: () =>
       listByKind(stack, 'feature', (key) => resolveFeature(stack, key)),
+    listFeats: () =>
+      listByKind(stack, 'feat', (key) => resolveFeat(stack, key)),
     listToolProficiencies: () => listToolProficiencies(stack),
   };
 }
@@ -1005,6 +1026,31 @@ function resolveFeature(
   };
 }
 
+function resolveFeat(
+  stack: ResolvedRulesStack,
+  nameOrRef: string,
+): CharacterResolution<ResolvedFeatData> {
+  const result = lookup(stack, 'feat', nameOrRef);
+  if (!result.ok) return lookupError(result);
+  if (!isRecord(result.record.data))
+    return malformed('feat', result.record.key);
+  const prerequisites = result.record.data.prerequisites;
+  if (
+    typeof result.record.data.description !== 'string' ||
+    (prerequisites !== undefined && typeof prerequisites !== 'string')
+  ) {
+    return malformed('feat', result.record.key);
+  }
+  return {
+    ok: true,
+    record: {
+      key: result.record.key,
+      name: result.record.name,
+      ...(typeof prerequisites === 'string' ? { prerequisites } : {}),
+    },
+  };
+}
+
 function resolveAncestry(
   stack: ResolvedRulesStack,
   nameOrRef: string,
@@ -1179,7 +1225,27 @@ function resolveBackground(
           : parseLanguageGrants(raw.languages),
       equipment: typeof raw.equipment === 'string' ? raw.equipment : undefined,
       equipmentGrants: parseBackgroundEquipmentGrants(raw.equipmentGrants),
+      feature: parseBackgroundFeature(result.record.key, raw.feature),
     },
+  };
+}
+
+function parseBackgroundFeature(
+  backgroundKey: string,
+  value: unknown,
+): ResolvedBackgroundFeature | undefined {
+  if (
+    !isRecord(value) ||
+    typeof value.name !== 'string' ||
+    typeof value.text !== 'string'
+  ) {
+    return undefined;
+  }
+  const slug = normalizeName(value.name).replace(/\s+/g, '-');
+  return {
+    key: `${backgroundKey}#feature:${slug}`,
+    name: value.name,
+    text: value.text,
   };
 }
 

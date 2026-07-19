@@ -45,8 +45,8 @@ function loadMagicItems(): readonly RulesRecord[] {
 
 // Transcribed once from the mechanics inventory's master table (§2), keyed
 // by the item's pack key suffix (after `magic-item:`). Deferred items (Ioun
-// Stone, Ring of Elemental Command, Crystal Ball) are included for the exact
-// membership check but excluded from the clause-count assertion below.
+// Stone, Ring of Elemental Command, Crystal Ball) are included and their
+// variant-scoped effects count toward the clause-depth assertion below.
 const MAGIC_ITEM_M2_M3_CLAUSE_COUNTS: Readonly<Record<string, number>> = {
   'amulet-of-health': 1,
   'belt-of-dwarvenkind': 2,
@@ -108,12 +108,6 @@ const MAGIC_ITEM_M2_M3_CLAUSE_COUNTS: Readonly<Record<string, number>> = {
   'wings-of-flying': 1,
 };
 
-const DEFERRED_ITEM_KEYS: ReadonlySet<string> = new Set([
-  'crystal-ball',
-  'ioun-stone',
-  'ring-of-elemental-command',
-]);
-
 describe('magic-item M2/M3 membership and clause-count gate (eshyra-o9bd.18.7.7.5)', () => {
   const magicItems = loadMagicItems();
   const nameByKey = new Map(
@@ -128,26 +122,15 @@ describe('magic-item M2/M3 membership and clause-count gate (eshyra-o9bd.18.7.7.
     }
   });
 
-  it('the deferred set is exactly the 3 pinned keys, all inside the baseline', () => {
-    expect(DEFERRED_ITEM_KEYS.size).toBe(3);
-    for (const key of DEFERRED_ITEM_KEYS) {
-      expect(key in MAGIC_ITEM_M2_M3_CLAUSE_COUNTS).toBe(true);
-      const name = nameByKey.get(key);
-      expect(name, `unknown magic-item key ${key}`).toBeDefined();
-      expect(
-        MAGIC_ITEM_M2_M3_DEFERRED.has(name as string),
-        `${name} must be registered in MAGIC_ITEM_M2_M3_DEFERRED`,
-      ).toBe(true);
-    }
-    expect(MAGIC_ITEM_M2_M3_DEFERRED.size).toBe(DEFERRED_ITEM_KEYS.size);
+  it('has no remaining M2/M3 deferrals', () => {
+    expect(MAGIC_ITEM_M2_M3_DEFERRED.size).toBe(0);
   });
 
-  it('every non-deferred item in the baseline is modeled with at least the pinned clause count', () => {
+  it('every item in the baseline is modeled with at least the pinned clause count', () => {
     const shortfalls: string[] = [];
     for (const [key, expectedClauses] of Object.entries(
       MAGIC_ITEM_M2_M3_CLAUSE_COUNTS,
     )) {
-      if (DEFERRED_ITEM_KEYS.has(key)) continue;
       const record = magicItems.find((r) => r.key === `magic-item:${key}`);
       expect(
         record,
@@ -162,8 +145,18 @@ describe('magic-item M2/M3 membership and clause-count gate (eshyra-o9bd.18.7.7.
           .description,
         sourcePage: 1,
       });
+      const data = (record as RulesRecord).data as {
+        variants?: readonly { mechanics?: { effects?: readonly unknown[] } }[];
+      };
+      const variantEffectCount =
+        data.variants?.reduce(
+          (count, variant) => count + (variant.mechanics?.effects?.length ?? 0),
+          0,
+        ) ?? 0;
       const actual =
-        mechanics === undefined ? 0 : (mechanics.effects as unknown[]).length;
+        (mechanics === undefined
+          ? 0
+          : (mechanics.effects as unknown[]).length) + variantEffectCount;
       if (actual < expectedClauses) {
         shortfalls.push(
           `${key}: expected >= ${expectedClauses} clause(s), got ${actual}`,
@@ -171,5 +164,89 @@ describe('magic-item M2/M3 membership and clause-count gate (eshyra-o9bd.18.7.7.
       }
     }
     expect(shortfalls).toEqual([]);
+  });
+
+  it('committed pack preserves exact variant membership and representative mechanics depth', () => {
+    const recordData = (key: string) =>
+      magicItems.find((record) => record.key === key)?.data as {
+        mechanics?: {
+          effects?: readonly Record<string, unknown>[];
+          operations?: readonly Record<string, unknown>[];
+          stateMachine?: unknown;
+        };
+        variants?: readonly {
+          name: string;
+          mechanics?: { effects?: readonly Record<string, unknown>[] };
+        }[];
+      };
+    const ioun = recordData('magic-item:ioun-stone');
+    const ring = recordData('magic-item:ring-of-elemental-command');
+    const crystal = recordData('magic-item:crystal-ball');
+
+    expect(ioun.mechanics?.stateMachine).toBeDefined();
+    expect(ioun.mechanics?.operations).toHaveLength(3);
+    expect(ioun.variants?.map((variant) => variant.name)).toEqual([
+      'Absorption',
+      'Agility',
+      'Awareness',
+      'Fortitude',
+      'Greater Absorption',
+      'Insight',
+      'Intellect',
+      'Leadership',
+      'Mastery',
+      'Protection',
+      'Regeneration',
+      'Reserve',
+      'Strength',
+      'Sustenance',
+    ]);
+    expect(
+      ioun.variants?.find((variant) => variant.name === 'Mastery')?.mechanics,
+    ).toEqual({
+      effects: [
+        {
+          kind: 'proficiencyBonusIncrease',
+          amount: 1,
+          id: 'm2-ioun-stone-mastery-proficiency-bonus-increase',
+        },
+      ],
+    });
+
+    expect(ring.mechanics?.stateMachine).toBeDefined();
+    expect(ring.mechanics?.operations?.length).toBeGreaterThan(0);
+    expect(ring.variants?.map((variant) => variant.name)).toEqual([
+      'Ring of Air Elemental Command',
+      'Ring of Earth Elemental Command',
+      'Ring of Fire Elemental Command',
+      'Ring of Water Elemental Command',
+    ]);
+    expect(
+      ring.variants?.find(
+        (variant) => variant.name === 'Ring of Earth Elemental Command',
+      )?.mechanics?.effects,
+    ).toHaveLength(4);
+
+    expect(crystal.mechanics?.effects?.length).toBeGreaterThan(0);
+    expect(crystal.variants?.map((variant) => variant.name)).toEqual([
+      'Crystal Ball of Mind Reading',
+      'Crystal Ball of Telepathy',
+      'Crystal Ball of True Seeing',
+    ]);
+    expect(
+      crystal.variants?.find(
+        (variant) => variant.name === 'Crystal Ball of True Seeing',
+      )?.mechanics,
+    ).toEqual({
+      effects: [
+        {
+          kind: 'sense',
+          sense: 'truesight',
+          rangeFeet: 120,
+          condition: 'while scrying; centered on the spell’s sensor',
+          id: 'm3-crystal-ball-crystal-ball-of-true-seeing-sense-truesight',
+        },
+      ],
+    });
   });
 });

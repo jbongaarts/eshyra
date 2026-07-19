@@ -183,6 +183,123 @@ function extractFigurineVariants(description: string): MagicItemVariant[] {
   });
 }
 
+interface InlineVariantMarker {
+  readonly name: string;
+  readonly rarity: string;
+  readonly marker: string;
+}
+
+interface InlineVariantSpec {
+  readonly introduction: RegExp;
+  readonly variants: readonly InlineVariantMarker[];
+}
+
+const INLINE_VARIANT_SPECS: ReadonlyMap<string, InlineVariantSpec> = new Map([
+  [
+    'Ioun Stone',
+    {
+      introduction:
+        /Many types of Ioun stone exist, each type a distinct combination of shape and color\./,
+      variants: [
+        ['Absorption', 'Very Rare'],
+        ['Agility', 'Very Rare'],
+        ['Awareness', 'Rare'],
+        ['Fortitude', 'Very Rare'],
+        ['Greater Absorption', 'Legendary'],
+        ['Insight', 'Very Rare'],
+        ['Intellect', 'Very Rare'],
+        ['Leadership', 'Very Rare'],
+        ['Mastery', 'Legendary'],
+        ['Protection', 'Rare'],
+        ['Regeneration', 'Legendary'],
+        ['Reserve', 'Rare'],
+        ['Strength', 'Very Rare'],
+        ['Sustenance', 'Rare'],
+      ].map(([name, rarity]) => ({
+        name,
+        rarity,
+        marker: `${name} (${rarity}).`,
+      })),
+    },
+  ],
+  [
+    'Ring of Elemental Command',
+    {
+      introduction: /This ring is linked to one of the four Elemental Planes\./,
+      variants: ['Air', 'Earth', 'Fire', 'Water'].map((plane) => ({
+        name: `Ring of ${plane} Elemental Command`,
+        rarity: 'Legendary',
+        marker: `Ring of ${plane} Elemental Command.`,
+      })),
+    },
+  ],
+  [
+    'Crystal Ball',
+    {
+      introduction:
+        /The following crystal ball variants are legendary items and have additional properties\./,
+      variants: ['Mind Reading', 'Telepathy', 'True Seeing'].map(
+        (property) => ({
+          name: `Crystal Ball of ${property}`,
+          rarity: 'Legendary',
+          marker: `Crystal Ball of ${property}.`,
+        }),
+      ),
+    },
+  ],
+]);
+
+/**
+ * Lift the three reviewed inline-variant families into child data. Exact source
+ * markers and pinned ordered memberships make source drift fail loudly: a
+ * missing, duplicated, renamed, or reordered heading aborts compilation.
+ */
+function extractReviewedInlineVariants(
+  itemName: string,
+  description: string,
+): MagicItemVariant[] {
+  const spec = INLINE_VARIANT_SPECS.get(itemName);
+  if (spec === undefined) return [];
+  if (!spec.introduction.test(description)) {
+    throw new Error(
+      `magic-item variant extraction: expected introduction ${spec.introduction} not found in "${itemName}" description`,
+    );
+  }
+
+  const starts = spec.variants.map((variant) => {
+    const start = description.indexOf(variant.marker);
+    const duplicate =
+      start === -1
+        ? -1
+        : description.indexOf(variant.marker, start + variant.marker.length);
+    if (start === -1 || duplicate !== -1) {
+      throw new Error(
+        `magic-item variant extraction: expected exactly one ${JSON.stringify(variant.marker)} marker in "${itemName}" description`,
+      );
+    }
+    return start;
+  });
+  for (let index = 1; index < starts.length; index++) {
+    if (starts[index] <= starts[index - 1]) {
+      throw new Error(
+        `magic-item variant extraction: reviewed variants are out of order in "${itemName}" description`,
+      );
+    }
+  }
+
+  return spec.variants.map((variant, index) => {
+    const textStart = starts[index] + variant.marker.length;
+    const textEnd = starts[index + 1] ?? description.length;
+    const text = description.slice(textStart, textEnd).trim();
+    if (text.length === 0) {
+      throw new Error(
+        `magic-item variant extraction: ${JSON.stringify(variant.name)} in "${itemName}" has no body text`,
+      );
+    }
+    return { name: variant.name, rarity: variant.rarity, text };
+  });
+}
+
 function categoryTextFromLine(line: string): string | undefined {
   const text = line.trim();
   for (const match of text.matchAll(ITEM_TYPE_WORD)) {
@@ -483,7 +600,7 @@ export function parseMagicItems(
     const variants =
       entry.name === 'Figurine of Wondrous Power'
         ? extractFigurineVariants(description)
-        : [];
+        : extractReviewedInlineVariants(entry.name, description);
     out.push({
       name: entry.name,
       itemType: entry.itemType,

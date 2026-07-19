@@ -118,6 +118,62 @@ describe('semi-structured boundary inventory', () => {
     });
   });
 
+  it('classifies exact magic-item curse lifecycle references by their deterministic owners', () => {
+    const artifact = buildInventoryArtifact();
+    expect(
+      row(
+        artifact,
+        'data.mechanics.curse.attunement.attachesStates[]',
+        'magic-item',
+      ),
+    ).toMatchObject({
+      disposition: 'complete',
+      valueClass: 'identifier-like',
+      currentSchemaValidation: expect.stringContaining('stateDefinitions'),
+      deterministicConsumers: expect.stringContaining(
+        'assertEffectiveAttunementCurseReady',
+      ),
+      typedSchemaOrConsumer: expect.stringContaining(
+        'MagicItemCurse.attunement.attachesStates',
+      ),
+      owner: expect.stringContaining('assertInventoryCurseCustodyReady'),
+    });
+    expect(
+      row(
+        artifact,
+        'data.mechanics.curse.attunement.preconditionEffects[]',
+        'magic-item',
+      ),
+    ).toMatchObject({
+      disposition: 'complete',
+      currentSchemaValidation: expect.stringContaining('mechanics.effects'),
+      deterministicConsumers: expect.stringContaining(
+        'referenced precondition effect',
+      ),
+      typedSchemaOrConsumer: expect.stringContaining(
+        'MagicItemCurse.attunement.preconditionEffects',
+      ),
+      owner: expect.stringContaining('assertEffectiveAttunementCurseReady'),
+    });
+    expect(
+      row(
+        artifact,
+        'data.mechanics.curse.possession.blocksVoluntaryRelinquishmentWhileStates[]',
+        'magic-item',
+      ),
+    ).toMatchObject({
+      disposition: 'complete',
+      currentSchemaValidation: expect.stringContaining('stateDefinitions'),
+      deterministicConsumers: expect.stringContaining(
+        'assertInventoryCurseCustodyReady',
+      ),
+      typedSchemaOrConsumer: expect.stringContaining(
+        'MagicItemCurse.possession.blocksVoluntaryRelinquishmentWhileStates',
+      ),
+      owner: expect.stringContaining('remove/transfer mutation boundaries'),
+    });
+  });
+
   it('preserves the exact unsupported residual set and structural invariants', () => {
     const artifact = buildInventoryArtifact();
     const unsupported = artifact.rows

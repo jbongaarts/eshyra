@@ -183,6 +183,78 @@ function hasKind(
 
 const rules: readonly ClassificationRule[] = [
   {
+    name: 'magic-item curse lifecycle state and effect references',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('magic-item')({ recordKinds }) &&
+      exactPath(
+        'data.mechanics.curse.attunement.attachesStates[]',
+        'data.mechanics.curse.attunement.preconditionEffects[]',
+        'data.mechanics.curse.possession.blocksVoluntaryRelinquishmentWhileStates[]',
+      )({ fieldPath } as ClassificationContext),
+    classify: ({ fieldPath }) => {
+      const custodyState = fieldPath.includes('.possession.');
+      const attachedState = fieldPath.endsWith('.attachesStates[]');
+      return result(
+        'identifier-like',
+        'complete',
+        custodyState
+          ? 'assertInventoryCurseCustodyReady resolves the effective curse and gates voluntary release while the referenced attached state is active'
+          : attachedState
+            ? 'assertEffectiveAttunementCurseReady gates atomic curse attachment/end and assertInventoryCurseCustodyReady identifies active attached possession states'
+            : 'assertEffectiveAttunementCurseReady gates attunement until the referenced precondition effect can be evaluated',
+        custodyState || attachedState
+          ? 'validateMagicItemMechanics requires non-empty canonical state ids and resolves every id against curse.stateDefinitions'
+          : 'validateMagicItemMechanics requires non-empty canonical effect ids and resolves every id against mechanics.effects',
+        'magic-item curse projection, schema referential-integrity, attunement corpus, custody domain, transfer, and tool regressions',
+        custodyState
+          ? 'MagicItemCurse.possession.blocksVoluntaryRelinquishmentWhileStates / validateMagicItemMechanics'
+          : attachedState
+            ? 'MagicItemCurse.attunement.attachesStates / validateMagicItemMechanics'
+            : 'MagicItemCurse.attunement.preconditionEffects / validateMagicItemMechanics',
+        custodyState
+          ? 'attunement.ts assertInventoryCurseCustodyReady and the remove/transfer mutation boundaries'
+          : attachedState
+            ? 'attunement.ts assertEffectiveAttunementCurseReady and assertInventoryCurseCustodyReady'
+            : 'attunement.ts assertEffectiveAttunementCurseReady',
+      );
+    },
+  },
+  {
+    name: 'canonical magic-item variant identity',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('magic-item')({ recordKinds }) &&
+      fieldPath === 'data.variants[].id',
+    classify: () =>
+      result(
+        'identifier-like',
+        'complete',
+        'canonicalMagicItemVariantId / MagicItemVariantDefinition.id',
+        'D&D magic-item validator requires a canonical unique id for every variant',
+        'emitter, schema, variant resolver, grant, and instance-state regression tests',
+        'MagicItemVariantDefinition.id',
+        'magicItemVariants.ts and magic-item variant identity tests',
+      ),
+  },
+  {
+    name: 'derived magic-item execution readiness',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('magic-item')({ recordKinds }) &&
+      fieldPath.startsWith('data.executionReadiness'),
+    classify: () =>
+      result(
+        'scalar-like',
+        'complete',
+        'magic-item compiler classification persistence and audit-bundle readiness report',
+        'D&D magic-item validator enforces closed entry, scope, representation, and exact hook shapes',
+        'generated-pack regression and audit report pin non-zero engine-pending/design-blocked counts',
+        'MagicItemExecutionReadiness / validateMagicItemExecutionReadiness',
+        'magicItemCompiler.ts, kindSchemas.ts, and magic-item execution-readiness audit',
+      ),
+  },
+  {
     name: 'explicit unsupported residuals',
     matches: ({ system, fieldPath, recordKinds }) =>
       system === 'dnd5e-srd' &&

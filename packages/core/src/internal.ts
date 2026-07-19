@@ -924,6 +924,43 @@ export {
   lookupRulesRecord,
   RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP,
 } from './rules/lookup.js';
+export type {
+  MagicItemActivationSpec,
+  MagicItemContainment,
+  MagicItemCurse,
+  MagicItemCurseStateDefinition,
+  MagicItemDurationSpec,
+  MagicItemEconomy,
+  MagicItemEconomyKind,
+  MagicItemEffect,
+  MagicItemEntityGrant,
+  MagicItemInterItem,
+  MagicItemMechanics,
+  MagicItemOperation,
+  MagicItemRandomProcedure,
+  MagicItemRandomProcedureCardPoolState,
+  MagicItemRandomProcedureDefinition,
+  MagicItemRollManipulation,
+  MagicItemRollTransform,
+  MagicItemSpellContract,
+  MagicItemSpellContractEvent,
+  MagicItemSpellStore,
+  MagicItemStateMachine,
+} from './rules/magicItemMechanics.js';
+export {
+  isStatefulMagicItemMechanics,
+  validateMagicItemMechanics,
+} from './rules/magicItemMechanics.js';
+export type { MagicItemVariantDefinition } from './rules/magicItemVariants.js';
+export {
+  canonicalMagicItemVariantId,
+  effectiveMagicItemMechanics,
+  MagicItemVariantError,
+  magicItemVariantDefinitions,
+  magicItemVariantTypeKey,
+  mergeMagicItemVariantMechanics,
+  resolveMagicItemVariant,
+} from './rules/magicItemVariants.js';
 export {
   loadRulesPackFromDirectory,
   PACK_MANIFEST_FILE,
@@ -1159,20 +1196,31 @@ export {
   ATTUNEMENT_END_REASONS,
   ATTUNEMENT_SLOT_LIMIT,
   AttunementError,
+  assertEffectiveAttunementCurseReady,
+  assertInventoryAttunementCurseReady,
+  assertInventoryCurseCustodyReady,
   attuneItem,
   endAllAttunementsOnDeath,
   endAttunement,
   listAttunements,
+  MagicItemCustodyError,
 } from './state/attunement.js';
 export type { CampaignRulesPackResolver } from './state/campaignRecordLookup.js';
 export type {
   AddConditionInput,
   AddConditionResult,
   AwardXpResult,
+  ClaimItemResult,
   DomainMutationContext,
   GiveItemInput,
   GrantMilestoneResult,
+  InventoryReacquisitionBasis,
+  InventoryRemovalDisposition,
+  ReacquireItemInput,
+  ReacquireItemResult,
+  RecoverableInventoryItem,
   RemoveConditionResult,
+  RemoveItemInput,
   RemoveItemResult,
   UpdateClockInput,
 } from './state/domainMutations.js';
@@ -1180,8 +1228,11 @@ export type {
 export {
   addCondition,
   awardXp,
+  claimItem,
   giveItem,
   grantMilestone,
+  listRecoverableItems,
+  reacquireItem,
   removeCondition,
   removeItem,
   setPlotFlag,
@@ -1248,6 +1299,51 @@ export {
   InspirationError,
   spendInspiration,
 } from './state/inspiration.js';
+export type {
+  DestroyedItemAttunementEvidence,
+  DestroyInventoryItemResult,
+  InventoryDestructionContext,
+} from './state/inventoryLifecycle.js';
+export { destroyInventoryItem } from './state/inventoryLifecycle.js';
+export type {
+  AdoptMagicItemInput,
+  AdoptMagicItemResult,
+} from './state/itemAdoption.js';
+export {
+  adoptMagicItem,
+  ItemAdoptionError,
+  MAX_MAGIC_ITEM_ADOPTION_SINGLETONS,
+} from './state/itemAdoption.js';
+export type {
+  ItemAdoptionResolution,
+  ItemAdoptionResolutionAction,
+  ItemAdoptionReview,
+  ItemAdoptionReviewKind,
+} from './state/itemAdoptionReview.js';
+export { requiredItemAdoptionResolutionAction } from './state/itemAdoptionReview.js';
+export type {
+  ItemEconomyState,
+  ItemInstanceState,
+  UseItemInput,
+  UseItemResult,
+} from './state/itemState.js';
+export {
+  createInitialItemState,
+  ItemStateError,
+  isStatefulMagicItem,
+  readItemState,
+  useItem,
+  validateItemStateForRecord,
+  validateItemStateJson,
+  validatePackRef,
+  writeItemState,
+} from './state/itemState.js';
+export type {
+  ItemTransferAttunementPolicy,
+  TransferItemInput,
+  TransferItemResult,
+} from './state/itemTransfer.js';
+export { ItemTransferError, transferItem } from './state/itemTransfer.js';
 // Read-only level-up eligibility detection.
 export type { LevelUpEligibility } from './state/levelUpEligibility.js';
 export {

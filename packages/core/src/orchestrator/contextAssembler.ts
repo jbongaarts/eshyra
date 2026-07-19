@@ -46,6 +46,16 @@ import {
   listCombatants,
 } from '../state/encounterCombatants.js';
 import { formatHpStatus, type LifeState } from '../state/hpLifecycle.js';
+import { isConcreteWorldLocation } from '../state/inventoryWorldLocation.js';
+import {
+  type ItemAdoptionReview,
+  requiredItemAdoptionResolutionAction,
+} from '../state/itemAdoptionReview.js';
+import {
+  type ItemInstanceState,
+  readItemState,
+  validatePackRef,
+} from '../state/itemState.js';
 import type {
   AbilityScores,
   CharacterConditionEntry,
@@ -171,6 +181,22 @@ export interface InventoryItem {
   quantity: number;
   location: string | undefined;
   properties: InventoryItemProperties;
+  packRef: string | undefined;
+  variantId?: string;
+  /** Code-owned quarantine metadata; raw legacy evidence is never prompted. */
+  adoptionReview?: ItemAdoptionReview;
+  /** Validated, per-instance mutable magic-item state. */
+  state: ItemInstanceState | undefined;
+}
+
+export interface NearbyInventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  packRef: string | undefined;
+  variantId?: string;
+  /** Exact campaign placement proving this unheld row is claimable now. */
+  worldLocationId: string;
 }
 
 export interface ClockSnapshot {
@@ -185,6 +211,9 @@ export interface StateSnapshot {
   /** The acting character's canonical wallet; unavailable before sheet finalization. */
   wallet: CharacterWallet | undefined;
   inventory: InventoryItem[];
+  /** Deterministically bounded unheld physical rows co-located with the clock. */
+  nearbyInventory: NearbyInventoryItem[];
+  nearbyInventoryTruncated: boolean;
   /** The acting character's attuned magic items (F5), at most three. */
   attunements: readonly AttunementEntry[];
   /** Live (active or suppressed) durable effects (F3): concentration and
@@ -269,6 +298,21 @@ interface InventoryRow {
   quantity: number;
   location: string | null;
   properties_json: string;
+  pack_ref: string | null;
+  variant_id: string | null;
+  review_requested_pack_ref: string | null;
+  review_requested_variant_id: string | null;
+  review_kind: ItemAdoptionReview['reviewKind'] | null;
+  review_reason: string | null;
+}
+
+interface NearbyInventoryRow {
+  id: string;
+  name: string;
+  quantity: number;
+  pack_ref: string | null;
+  variant_id: string | null;
+  world_location_id: string;
 }
 
 interface ClockRow {
@@ -305,10 +349,16 @@ export function readStateSnapshot(
 
   const inventoryRows = db
     .prepare(
-      `SELECT id, name, quantity, location, properties_json
-       FROM inventory
-       WHERE character_id = ?
-       ORDER BY id`,
+      `SELECT i.id, i.name, i.quantity, i.location, i.properties_json,
+              i.pack_ref, i.variant_id,
+              r.requested_pack_ref AS review_requested_pack_ref,
+              r.requested_variant_id AS review_requested_variant_id,
+              r.review_kind,
+              r.reason AS review_reason
+       FROM inventory i
+       LEFT JOIN inventory_adoption_review r ON r.inventory_id = i.id
+       WHERE i.character_id = ?
+       ORDER BY i.id`,
     )
     .all(charId) as InventoryRow[];
 
@@ -317,6 +367,24 @@ export function readStateSnapshot(
       'SELECT in_game_time, current_location_id, elapsed_minutes, in_game_time_elapsed_minutes FROM clock WHERE id = 1',
     )
     .get() as ClockRow;
+
+  const nearbyInventoryRows = !isConcreteWorldLocation(
+    clock.current_location_id,
+  )
+    ? []
+    : (db
+        .prepare(
+          `SELECT id, name, quantity, pack_ref, variant_id,
+                    world_location_id
+             FROM inventory
+             WHERE character_id IS NULL
+               AND unheld_disposition = 'dropped'
+               AND world_location_id = ?
+               AND trim(world_location_id) <> ''
+             ORDER BY id
+             LIMIT 21`,
+        )
+        .all(clock.current_location_id) as NearbyInventoryRow[]);
 
   const plotFlagRows = db
     .prepare('SELECT key, value_json FROM plot_flags ORDER BY key')
@@ -378,8 +446,46 @@ export function readStateSnapshot(
           rawProperties,
           `inventory[${row.id}].properties_json`,
         ),
+        packRef:
+          row.pack_ref === null
+            ? undefined
+            : validatePackRef(row.pack_ref, `inventory[${row.id}].pack_ref`),
+        ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
+        ...(row.review_requested_pack_ref === null ||
+        row.review_kind === null ||
+        row.review_reason === null
+          ? {}
+          : {
+              adoptionReview: {
+                inventoryId: row.id,
+                requestedPackRef: row.review_requested_pack_ref,
+                ...(row.review_requested_variant_id === null
+                  ? {}
+                  : { requestedVariantId: row.review_requested_variant_id }),
+                reviewKind: row.review_kind,
+                reason: row.review_reason,
+              },
+            }),
+        state: readItemState(db, row.id),
       };
     }),
+    nearbyInventory: nearbyInventoryRows.slice(0, 20).map((row) => {
+      return {
+        id: row.id,
+        name: row.name,
+        quantity: row.quantity,
+        worldLocationId: row.world_location_id,
+        packRef:
+          row.pack_ref === null
+            ? undefined
+            : validatePackRef(
+                row.pack_ref,
+                `nearbyInventory[${row.id}].pack_ref`,
+              ),
+        ...(row.variant_id === null ? {} : { variantId: row.variant_id }),
+      };
+    }),
+    nearbyInventoryTruncated: nearbyInventoryRows.length > 20,
     attunements:
       campaignId === undefined ? [] : listAttunements(db, campaignId, charId),
     activeEffects:
@@ -602,6 +708,24 @@ function renderParty(party: PartyMember[], actingId: string): string {
     .join('\n');
 }
 
+const MAX_ADOPTION_REASON_CONTEXT_CHARS = 240;
+
+function renderMagicItemAdoptionStatus(
+  review: ItemAdoptionReview | undefined,
+): string {
+  if (review === undefined) return '';
+  const requestedPackRef = `; requestedPackRef=${review.requestedPackRef}`;
+  const requestedVariantId =
+    review.requestedVariantId !== undefined
+      ? `; requestedVariantId=${review.requestedVariantId}`
+      : '';
+  const reason = review.reason
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MAX_ADOPTION_REASON_CONTEXT_CHARS);
+  return ` adoption=gm-review-required${requestedPackRef}${requestedVariantId}; reviewKind=${review.reviewKind}; requiredResolution=${requiredItemAdoptionResolutionAction(review.reviewKind)}; reason=${reason}`;
+}
+
 function renderState(state: StateSnapshot): string {
   const c = state.character;
   const lines = [
@@ -646,11 +770,32 @@ function renderState(state: StateSnapshot): string {
   if (state.inventory.length > 0) {
     lines.push(
       `Inventory: ${state.inventory
-        .map((i) => `${i.name} x${i.quantity}`)
+        .map((i) => {
+          const identity = ` [id=${i.id}${i.packRef === undefined ? '' : `; ${i.packRef}`}${i.variantId === undefined ? '' : `; variant=${i.variantId}`}]`;
+          const liveState =
+            i.state === undefined ? '' : ` state=${JSON.stringify(i.state)}`;
+          const adoption = renderMagicItemAdoptionStatus(i.adoptionReview);
+          return `${i.name} x${i.quantity}${identity}${adoption}${liveState}`;
+        })
         .join(', ')}`,
     );
   } else {
     lines.push('Inventory: (empty)');
+  }
+  if (state.nearbyInventory.length > 0) {
+    lines.push('Nearby unheld items (claim with exact id via claim_item):');
+    for (const item of state.nearbyInventory) {
+      const pack = item.packRef === undefined ? '' : `; ${item.packRef}`;
+      const variant =
+        item.variantId === undefined ? '' : `; variant=${item.variantId}`;
+      lines.push(
+        `- ${item.name} x${item.quantity} (id=${item.id}; world=${item.worldLocationId}${pack}${variant})`,
+      );
+    }
+    if (state.nearbyInventoryTruncated)
+      lines.push(
+        '- More co-located rows exist; call list_nearby_items with cursor pagination to retrieve their exact ids.',
+      );
   }
   if (state.combatants.length > 0) {
     lines.push('Active combatants:');

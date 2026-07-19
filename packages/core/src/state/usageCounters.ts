@@ -16,13 +16,11 @@
 //   from the record and judges the passed natural roll.
 // - "Recharge after a Short or Long Rest" is one use restored by either
 //   rest (limited-usage).
-// - Item charges are the same counter with a partial-recharge wrinkle:
+// - Legacy/ad-hoc item charges use the same counter with a partial-recharge wrinkle:
 //   "regains 1d6 + 1 expended charges daily at dawn" restores a rolled
 //   amount, not a full reset, so formula counters are surfaced at dawn for
-//   a rolled `restoreUsage` instead of being zeroed (charges; the pack-side
-//   charge data clause is eshyra-o9bd.18.7.7.1, so until it lands the DM
-//   declares an item's economy on first spend after `lookup_rules`).
-//   Charge state is owned by the ITEM (owner_kind 'item', ref = inventory
+//   a rolled `restoreUsage` instead of being zeroed. Their charge state is
+//   owned by the ITEM (owner_kind 'item', ref = inventory
 //   id), not by whoever happens to hold it: a half-spent wand handed to
 //   another character keeps its counter, and possession is a separate
 //   check at spend/restore time.
@@ -43,10 +41,12 @@
 // spellcasting per-day groups) and NOTHING else — a declared economy for a
 // combatant is rejected, and an ability that matches no record entry is a
 // lookup error or a pack-structure gap to report, never an invitation to
-// invent numbers. Character abilities and item charges have no structured
-// pack source yet, so their first spend requires an explicit declared
-// economy (maxUses + reset) — the validated-runtime-grant pattern
-// setReactionAllowance established — which is then durable.
+// invent numbers. Character abilities and legacy/ad-hoc item charges have no
+// structured pack source yet, so their first spend requires an explicit
+// declared economy (maxUses + reset). Canonical pack-bound items never use
+// these counters: useItem owns their readiness, semantic operation, cost, and
+// item_state atomically, so accepting the same economy here would create a
+// double-spend path.
 //
 // Reset events (shared vocabulary with F6/F7 per the classification): the
 // turn-start recharge roll, short rest, long rest, and dawn. `resetUsage`
@@ -65,6 +65,7 @@ import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
 import { lookupCampaignRecord } from './campaignRecordLookup.js';
 import type { LifeState } from './hpLifecycle.js';
+import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 
 /** Who a counter row belongs to: an acting entity, or — for charge
  *  economies — the item itself, so charge state follows the item across
@@ -687,14 +688,41 @@ function resolveItemCounter(
     );
   }
   const item = db
-    .prepare('SELECT name FROM inventory WHERE id = ? AND character_id = ?')
-    .get(itemId, resolved.owner.ref) as { name: string } | undefined;
+    .prepare(
+      'SELECT name, pack_ref FROM inventory WHERE id = ? AND character_id = ?',
+    )
+    .get(itemId, resolved.owner.ref) as
+    | { name: string; pack_ref: string | null }
+    | undefined;
   if (item === undefined) {
     throw new UsageCounterError(
       `${resolved.ownerLabel} holds no inventory item '${itemId}'`,
     );
   }
+  const quarantine = itemAdoptionReviewBlockMessage(db, itemId, 'usage');
+  if (quarantine !== undefined) throw new UsageCounterError(quarantine);
+  if (item.pack_ref !== null)
+    throw new UsageCounterError(
+      `inventory item '${itemId}' is bound to canonical pack item '${item.pack_ref}'; execute its declared semantic operation with use_item. spend_usage, restore_usage, and reset_usage item counters are only for legacy/ad-hoc unbound items`,
+    );
   return { owner: { kind: 'item', ref: itemId }, itemName: item.name };
+}
+
+function assertResettableItemCounter(db: Db, row: CounterRow): void {
+  if (row.owner_kind !== 'item') return;
+  const quarantine = itemAdoptionReviewBlockMessage(
+    db,
+    row.owner_ref,
+    'reset_usage',
+  );
+  if (quarantine !== undefined) throw new UsageCounterError(quarantine);
+  const item = db
+    .prepare('SELECT pack_ref FROM inventory WHERE id = ?')
+    .get(row.owner_ref) as { pack_ref: string | null } | undefined;
+  if (item !== undefined && item.pack_ref !== null)
+    throw new UsageCounterError(
+      `inventory item '${row.owner_ref}' is bound to canonical pack item '${item.pack_ref}'; execute its declared semantic operation with use_item. spend_usage, restore_usage, and reset_usage item counters are only for legacy/ad-hoc unbound items`,
+    );
 }
 
 /** Resolve the counter a spend targets: item spends key on the item itself
@@ -1289,6 +1317,12 @@ export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
          FROM entity_usage_counter
          WHERE campaign_id = ? AND uses_used > 0
            AND reset_kind IN (${placeholders})${ownerClause}
+           AND NOT (
+             owner_kind='item' AND EXISTS (
+               SELECT 1 FROM inventory_adoption_review
+               WHERE inventory_id=entity_usage_counter.owner_ref
+             )
+           )
          ORDER BY owner_kind, owner_ref, counter_key`,
       )
       .all(input.campaignId, ...kinds, ...ownerParams) as CounterRow[];
@@ -1296,6 +1330,7 @@ export function resetUsage(db: Db, input: ResetUsageInput): ResetUsageResult {
     const labelFor = ownerLabelMaps(txnDb, input.campaignId);
     const reset: UsageCounter[] = [];
     const needsRolledRestore: UsageCounter[] = [];
+    for (const row of rows) assertResettableItemCounter(txnDb, row);
     for (const row of rows) {
       // A partial-recharge formula ("regains 1d6 + 1 charges daily at
       // dawn") restores a rolled amount, not a full reset.
@@ -1339,6 +1374,12 @@ export function readSpentUsageCounters(
       `SELECT ${COUNTER_COLUMNS}
        FROM entity_usage_counter
        WHERE campaign_id = ? AND uses_used > 0
+         AND NOT (
+           owner_kind='item' AND EXISTS (
+             SELECT 1 FROM inventory_adoption_review
+             WHERE inventory_id=entity_usage_counter.owner_ref
+           )
+         )
        ORDER BY owner_kind, owner_ref, counter_key`,
     )
     .all(campaignId) as CounterRow[];

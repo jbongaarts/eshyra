@@ -109,7 +109,10 @@ stops the model from putting two Wands of Fireballs on one row.
    migration/first-touch; parseable transitional
    `properties_json.mechanics` state is lifted into the typed state
    document, anything else is flagged for GM review. Transitional state
-   never counts green (§5).
+   never counts green (§5). A single first-touch adoption may materialize at
+   most 100 stateful singleton rows; larger legacy stacks remain unbound and
+   receive a durable GM-review marker so one corrupt quantity cannot cause
+   unbounded rows, random initialization, or state writes.
 
 **Storage (recommendation, resolving prior §7.2):** a dedicated
 `item_state` table keyed by inventory row id (1:1, `ON DELETE CASCADE`),

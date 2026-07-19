@@ -22,10 +22,12 @@ export { ToolRegistry } from './toolRegistry.js';
 
 import { addConditionTool } from './toolAddCondition.js';
 import { adjustHpTool } from './toolAdjustHp.js';
+import { adoptItemTool } from './toolAdoptItem.js';
 import { attuneItemTool } from './toolAttuneItem.js';
 import { awardInspirationTool } from './toolAwardInspiration.js';
 import { beginTurnTool } from './toolBeginTurn.js';
 import { calcTool } from './toolCalc.js';
+import { claimItemTool } from './toolClaimItem.js';
 import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
 import { convertCurrencyTool } from './toolConvertCurrency.js';
 import { endAttunementTool } from './toolEndAttunement.js';
@@ -33,9 +35,12 @@ import { endEffectTool } from './toolEndEffect.js';
 import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
+import { listNearbyItemsTool } from './toolListNearbyItems.js';
+import { listRecoverableItemsTool } from './toolListRecoverableItems.js';
 import { lookupRulesTool } from './toolLookupRules.js';
 import { markSceneTool } from './toolMarkScene.js';
 import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
+import { reacquireItemTool } from './toolReacquireItem.js';
 import { recordDeathSaveTool } from './toolRecordDeathSave.js';
 import { recordWorldFactTool } from './toolRecordWorldFact.js';
 import { refreshEffectTool } from './toolRefreshEffect.js';
@@ -70,10 +75,12 @@ import { stabilizeCharacterTool } from './toolStabilizeCharacter.js';
 import { startEffectTool } from './toolStartEffect.js';
 import { startEncounterTool } from './toolStartEncounter.js';
 import { suppressEffectTool } from './toolSuppressEffect.js';
+import { transferItemTool } from './toolTransferItem.js';
 import { unsuppressEffectTool } from './toolUnsuppressEffect.js';
 import { updateClockTool } from './toolUpdateClock.js';
 import { updateCombatantTool } from './toolUpdateCombatant.js';
 import { useInspirationTool } from './toolUseInspiration.js';
+import { useItemTool } from './toolUseItem.js';
 import { worldQueryTool } from './toolWorldQuery.js';
 
 export const DEFAULT_TOOLS: readonly Tool[] = [
@@ -115,7 +122,14 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   gainCurrencyTool,
   spendCurrencyTool,
   convertCurrencyTool,
+  adoptItemTool,
+  claimItemTool,
+  reacquireItemTool,
+  listNearbyItemsTool,
+  listRecoverableItemsTool,
   giveItemTool,
+  useItemTool,
+  transferItemTool,
   removeItemTool,
   updateClockTool,
   advanceTimeTool,

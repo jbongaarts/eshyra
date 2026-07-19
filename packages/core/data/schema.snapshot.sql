@@ -469,6 +469,109 @@ CREATE TABLE inventory (
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL
+, pack_ref TEXT
+  CHECK (pack_ref IS NULL OR pack_ref GLOB 'magic-item:*'), variant_id TEXT
+  CHECK (
+    variant_id IS NULL OR
+    pack_ref IS NOT NULL AND
+    variant_id GLOB '[a-z0-9]*' AND
+    variant_id NOT GLOB '*[^a-z0-9-]*' AND
+    variant_id NOT GLOB '*--*' AND
+    variant_id NOT GLOB '-*' AND
+    variant_id NOT GLOB '*-'
+  ), world_location_id TEXT, unheld_disposition TEXT
+  CHECK (
+    unheld_disposition IS NULL OR
+    unheld_disposition IN ('dropped', 'sold', 'lost')
+  ));
+
+CREATE TABLE inventory_adoption_resolution (
+  -- Append-only evidence intentionally survives later item destruction.
+  inventory_id TEXT NOT NULL,
+  seq INTEGER NOT NULL CHECK (seq >= 1),
+  action TEXT NOT NULL CHECK (action IN (
+    'discard-evidence',
+    'set-reviewed-quantity',
+    'discard-legacy-attunement',
+    'discard-legacy-counter'
+  )),
+  evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+  previous_reason TEXT NOT NULL,
+  previous_review_kind TEXT NOT NULL CHECK (previous_review_kind IN (
+    'legacy-marker',
+    'malformed-evidence',
+    'oversized-stack',
+    'legacy-attunement',
+    'legacy-counter'
+  )),
+  previous_requested_pack_ref TEXT NOT NULL,
+  previous_requested_variant_id TEXT,
+  resulting_pack_ref TEXT NOT NULL CHECK (resulting_pack_ref GLOB 'magic-item:*'),
+  resulting_variant_id TEXT,
+  reviewed_quantity INTEGER CHECK (reviewed_quantity IS NULL OR reviewed_quantity >= 1),
+  discarded_structure_json TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  resolved_at TEXT NOT NULL,
+  CHECK ((action = 'set-reviewed-quantity') = (reviewed_quantity IS NOT NULL)),
+  CHECK (
+    (previous_review_kind IN ('legacy-marker', 'malformed-evidence')
+      AND action = 'discard-evidence') OR
+    (previous_review_kind = 'oversized-stack'
+      AND action = 'set-reviewed-quantity') OR
+    (previous_review_kind = 'legacy-attunement'
+      AND action = 'discard-legacy-attunement') OR
+    (previous_review_kind = 'legacy-counter'
+      AND action = 'discard-legacy-counter')
+  ),
+  PRIMARY KEY (inventory_id, seq)
+);
+
+CREATE TABLE inventory_adoption_review (
+  inventory_id TEXT PRIMARY KEY
+    REFERENCES inventory(id) ON DELETE CASCADE,
+  requested_pack_ref TEXT NOT NULL
+    CHECK (requested_pack_ref GLOB 'magic-item:*'),
+  requested_variant_id TEXT,
+  review_kind TEXT NOT NULL CHECK (review_kind IN (
+    'legacy-marker',
+    'malformed-evidence',
+    'oversized-stack',
+    'legacy-attunement',
+    'legacy-counter'
+  )),
+  reason TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+  raw_properties_json TEXT,
+  raw_item_state_json TEXT,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE inventory_custody_event (
+  -- Custody history remains auditable after the physical row is destroyed.
+  inventory_id TEXT NOT NULL,
+  seq INTEGER NOT NULL CHECK (seq >= 1),
+  from_disposition TEXT NOT NULL CHECK (from_disposition IN ('sold', 'lost')),
+  basis TEXT NOT NULL CHECK (basis IN ('found', 'repurchased', 'returned')),
+  evidence TEXT NOT NULL CHECK (length(trim(evidence)) > 0),
+  payment_event_id TEXT REFERENCES character_wallet_event(id),
+  to_character_id TEXT NOT NULL REFERENCES character(id),
+  world_location_id TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  occurred_at TEXT NOT NULL,
+  CHECK ((basis = 'repurchased') = (payment_event_id IS NOT NULL)),
+  PRIMARY KEY (inventory_id, seq)
+);
+
+CREATE TABLE item_state (
+  inventory_id TEXT PRIMARY KEY
+    REFERENCES inventory(id) ON DELETE CASCADE,
+  state_json TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 
 CREATE TABLE meta (
@@ -721,4 +824,39 @@ CREATE INDEX idx_character_wallet_event_character
 CREATE INDEX idx_progression_event_character
   ON progression_event (character_id, occurred_at, id);
 
+CREATE INDEX inventory_claimable_world_location_id
+ON inventory(world_location_id, id)
+WHERE character_id IS NULL AND unheld_disposition = 'dropped';
+
 CREATE INDEX rest_event_long_benefit_time ON rest_event(campaign_id, kind, end_elapsed_minutes);
+
+CREATE TRIGGER inventory_location_insert_guard
+BEFORE INSERT ON inventory
+WHEN
+  (NEW.character_id IS NOT NULL AND (
+    NEW.world_location_id IS NOT NULL OR NEW.unheld_disposition IS NOT NULL
+  )) OR
+  (NEW.character_id IS NULL AND NEW.location IS NOT NULL) OR
+  (NEW.world_location_id IS NOT NULL AND trim(NEW.world_location_id) = '') OR
+  (NEW.character_id IS NULL AND NEW.world_location_id IS NOT NULL AND
+    NEW.unheld_disposition IS NULL) OR
+  (NEW.unheld_disposition = 'dropped' AND NEW.world_location_id IS NULL)
+BEGIN
+  SELECT RAISE(ABORT, 'inventory custody/location invariant violated');
+END;
+
+CREATE TRIGGER inventory_location_update_guard
+BEFORE UPDATE OF character_id, location, world_location_id, unheld_disposition
+ON inventory
+WHEN
+  (NEW.character_id IS NOT NULL AND (
+    NEW.world_location_id IS NOT NULL OR NEW.unheld_disposition IS NOT NULL
+  )) OR
+  (NEW.character_id IS NULL AND NEW.location IS NOT NULL) OR
+  (NEW.world_location_id IS NOT NULL AND trim(NEW.world_location_id) = '') OR
+  (NEW.character_id IS NULL AND NEW.world_location_id IS NOT NULL AND
+    NEW.unheld_disposition IS NULL) OR
+  (NEW.unheld_disposition = 'dropped' AND NEW.world_location_id IS NULL)
+BEGIN
+  SELECT RAISE(ABORT, 'inventory custody/location invariant violated');
+END;

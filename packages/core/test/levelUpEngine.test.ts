@@ -63,6 +63,7 @@ interface SheetOverrides {
   subclass?: { readonly key: string; readonly name: string };
   system?: string;
   rulesPackId?: string;
+  feats?: CharacterSheet['feats'];
 }
 
 /** Build a minimal-but-valid CharacterSheet for the engine to advance. */
@@ -99,6 +100,7 @@ function buildSheet(overrides: SheetOverrides = {}): CharacterSheet {
       ? { subclass: overrides.subclass }
       : {}),
     ancestry: { key: 'ancestry:human', name: 'Human' },
+    ...(overrides.feats !== undefined ? { feats: overrides.feats } : {}),
     abilityScores,
     proficiencyBonus: overrides.proficiencyBonus ?? 2,
     maxHitPoints: overrides.maxHitPoints ?? 12,
@@ -248,6 +250,57 @@ describe('applyLevelUp — martial (Fighter)', () => {
 });
 
 describe('applyLevelUp — ASI canonical recomputation', () => {
+  it('takes the canonical Grappler feat instead of an ASI and persists it', () => {
+    const db = bareDb();
+    const store = createSqliteCharacterSheetStore(db, () => AT);
+    const sheet = buildSheet({
+      level: 3,
+      finalScores: { strength: 13 },
+      modifiers: { strength: 1, constitution: 1 },
+    });
+    store.save('pc-1', sheet);
+    seedLiveHp(db, 12, 12);
+    const result = applyLevelUp(db, {
+      store,
+      choices: { 'level.4.ability-score-improvement': ['feat:grappler'] },
+      ...APPLY,
+    });
+    expect(result.sheet.feats).toEqual([
+      { key: 'feat:grappler', name: 'Grappler' },
+    ]);
+    expect(result.changeSet.featsGained).toEqual(['feat:grappler']);
+    expect(result.changeSet.abilityScoreIncreases).toEqual([]);
+    db.close();
+  });
+
+  it('rejects unmet prerequisites, duplicate feats, and noncanonical feat names', () => {
+    const choice = { 'level.4.ability-score-improvement': ['feat:grappler'] };
+    const weak = previewLevelUpChangeSet(
+      buildSheet({ level: 3, finalScores: { strength: 12 } }),
+      { choices: choice },
+    );
+    expect(weak.ok).toBe(false);
+    if (!weak.ok)
+      expect(weak.requiredChoices[0]?.reason).toMatch(/Strength 13/);
+
+    const duplicate = previewLevelUpChangeSet(
+      buildSheet({
+        level: 3,
+        finalScores: { strength: 13 },
+        feats: [{ key: 'feat:grappler', name: 'Grappler' }],
+      }),
+      { choices: choice },
+    );
+    expect(duplicate.ok).toBe(false);
+    if (!duplicate.ok)
+      expect(duplicate.requiredChoices[0]?.reason).toMatch(/only once/);
+
+    const byName = previewLevelUpChangeSet(buildSheet({ level: 3 }), {
+      choices: { 'level.4.ability-score-improvement': ['Grappler'] },
+    });
+    expect(byName.ok).toBe(false);
+  });
+
   it('updates caster scores, saves, spellcasting, live state, HP, and ledger atomically', () => {
     const db = freshDbWithSession();
     const store = createSqliteCharacterSheetStore(db, () => AT);

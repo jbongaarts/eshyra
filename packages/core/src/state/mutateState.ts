@@ -3,6 +3,7 @@ import { withTransaction } from '../persistence/db.js';
 import { JsonColumnError, jsonColumn } from '../persistence/jsonColumn.js';
 import { requireNonEmpty } from '../validation.js';
 import { resolveCharacterId } from './activeCharacter.js';
+import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 import {
   LiveStateSchemaError,
   validateAbilityScoresJson,
@@ -282,12 +283,30 @@ function setInventoryField(db: Db, input: MutateStateInput): void {
     [['id', input.id ?? '']],
     () => 'inventory mutate_state id is required',
   );
+  const quarantine = itemAdoptionReviewBlockMessage(
+    db,
+    input.id as string,
+    'mutate_state',
+  );
+  if (quarantine !== undefined) throw new MutateStateError(quarantine);
   const value = validatedFieldValue(
     'inventory',
     input.field,
     input.value,
     INVENTORY_FIELDS,
   );
+  if (
+    input.field === 'quantity' &&
+    typeof value === 'number' &&
+    value !== 1 &&
+    db
+      .prepare('SELECT 1 FROM item_state WHERE inventory_id = ?')
+      .get(input.id) !== undefined
+  ) {
+    throw new MutateStateError(
+      `stateful inventory item '${input.id}' must have quantity 1`,
+    );
+  }
 
   db.prepare(
     `INSERT INTO inventory(

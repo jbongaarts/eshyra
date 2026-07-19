@@ -34,6 +34,7 @@ import { assertSupportedCharacterBuild } from './characterBuild.js';
 import {
   type CharacterCreationEngine,
   type CharacterDraft,
+  effectiveBackground,
   getDnd5eCharacterCreationEngine,
   parseStartingEquipmentMode,
   type RequiredChoice,
@@ -124,6 +125,17 @@ export interface CharacterSheet {
   readonly subclass?: FinalizedRecordRef;
   readonly ancestry: FinalizedRecordRef;
   readonly background?: FinalizedRecordRef;
+  /** Player-facing identity and source-faithful choices for a custom background. */
+  readonly backgroundCustomization?: {
+    readonly name: string;
+    readonly source: FinalizedRecordRef;
+    readonly skillProficiencies: readonly string[];
+    readonly toolProficiencies: readonly string[];
+    readonly languages: readonly string[];
+    readonly feature: FinalizedRecordRef;
+  };
+  /** Canonical player-selected feat refs, in acquisition order. */
+  readonly feats?: readonly FinalizedRecordRef[];
   readonly abilityScores: Readonly<
     Record<AbilityScoreName, FinalizedAbilityScore>
   >;
@@ -352,14 +364,19 @@ function buildFinalizedCharacter(
   const ancestryRecord = requireRecord(
     resolver.resolveAncestry(selections.ancestry ?? ''),
   );
-  const backgroundRecord =
+  const sourceBackgroundRecord =
     selections.background !== undefined && resolver.resolveBackground
       ? optionalRecord(resolver.resolveBackground(selections.background))
       : undefined;
+  const backgroundRecord = effectiveBackground(selections, resolver);
   const classRef = toRef(classRecord);
   const ancestryRef = toRef(ancestryRecord);
   const backgroundRef =
-    backgroundRecord !== undefined ? toRef(backgroundRecord) : undefined;
+    sourceBackgroundRecord !== undefined
+      ? toRef(sourceBackgroundRecord)
+      : undefined;
+  const custom = selections.backgroundCustomization;
+  const customFeature = sourceBackgroundRecord?.feature;
 
   const base = selections.baseAbilityScores ?? {};
   const abilityScores = {} as Record<AbilityScoreName, FinalizedAbilityScore>;
@@ -395,6 +412,20 @@ function buildFinalizedCharacter(
     class: classRef,
     ancestry: ancestryRef,
     ...(backgroundRef !== undefined ? { background: backgroundRef } : {}),
+    ...(custom !== undefined &&
+    backgroundRef !== undefined &&
+    customFeature !== undefined
+      ? {
+          backgroundCustomization: {
+            name: custom.name.trim(),
+            source: backgroundRef,
+            skillProficiencies: [...custom.skillProficiencies],
+            toolProficiencies: [...custom.toolProficiencies],
+            languages: [...custom.languages],
+            feature: toRef(customFeature),
+          },
+        }
+      : {}),
     abilityScores,
     ...(selections.rolledAbilityScores === undefined
       ? {}
@@ -556,9 +587,7 @@ function backgroundRecordForDraft(
   draft: CharacterDraft,
   resolver: RulesPackCharacterResolver,
 ): ResolvedBackgroundData | undefined {
-  if (draft.selections.background === undefined) return undefined;
-  const result = resolver.resolveBackground(draft.selections.background);
-  return result.ok ? result.record : undefined;
+  return effectiveBackground(draft.selections, resolver);
 }
 
 /**

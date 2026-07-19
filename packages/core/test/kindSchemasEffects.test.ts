@@ -1551,8 +1551,14 @@ describe('mechanics effect payload contracts', () => {
     expect(() =>
       validate({ kind: 'moveUpTo', amount: 'double-speed' }),
     ).toThrow(/amount/);
+    expect(() =>
+      validate({
+        kind: 'earthGlide',
+        condition: 'after the source-printed unlock prerequisite is met',
+      }),
+    ).not.toThrow();
     expect(() => validate({ kind: 'earthGlide', speed: 30 })).toThrow(
-      /marker-only/,
+      /optional condition/,
     );
     expect(() => validate({ kind: 'enterHostileSpace', size: 'Tiny' })).toThrow(
       /marker-only/,

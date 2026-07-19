@@ -7,8 +7,8 @@
 //
 // - A creature can be attuned to no more than three magic items at a time,
 //   and cannot attune to more than one copy of the same item (identity =
-//   the resolved magic-item record key, or the normalized item name for
-//   items outside the pack).
+//   the resolved magic-item record key plus canonical variant identity when
+//   selected, or the normalized item name for items outside the pack).
 // - An item can be attuned to only one creature at a time: attuning to an
 //   item some other character is still attuned to is refused until that
 //   attunement is ended.
@@ -30,9 +30,20 @@
 
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
+import {
+  effectiveMagicItemMechanics,
+  MagicItemVariantError,
+  magicItemVariantTypeKey,
+  resolveMagicItemVariant,
+} from '../rules/magicItemVariants.js';
 import { resolveCharacterId } from './activeCharacter.js';
-import { lookupCampaignRecord } from './campaignRecordLookup.js';
+import {
+  type CampaignRulesPackResolver,
+  lookupCampaignRecord,
+  lookupStrictCampaignRecord,
+} from './campaignRecordLookup.js';
 import type { LifeState } from './hpLifecycle.js';
+import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 
 export const ATTUNEMENT_SLOT_LIMIT = 3;
 
@@ -65,6 +76,7 @@ export interface AttunementMutationContext {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 export interface AttuneItemInput extends AttunementMutationContext {
@@ -109,6 +121,233 @@ export class AttunementError extends Error {
     super(message);
     this.name = 'AttunementError';
   }
+}
+
+export class MagicItemCustodyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MagicItemCustodyError';
+  }
+}
+
+export type CursedCustodyMutation = 'dropped' | 'sold' | 'lost' | 'transfer';
+
+/** Gate only exact source-declared possession/doff constraints. */
+export function assertInventoryCurseCustodyReady(
+  db: Db,
+  itemId: string,
+  mutation: CursedCustodyMutation,
+  resolveRulesPack?: CampaignRulesPackResolver,
+): void {
+  const item = db
+    .prepare(
+      `SELECT pack_ref, variant_id, character_id
+       FROM inventory WHERE id = ?`,
+    )
+    .get(itemId) as
+    | {
+        pack_ref: string | null;
+        variant_id: string | null;
+        character_id: string | null;
+      }
+    | undefined;
+  if (item === undefined)
+    throw new MagicItemCustodyError(
+      `inventory item '${itemId}' does not exist; refusing to bypass possible curse custody constraints`,
+    );
+  const quarantine = itemAdoptionReviewBlockMessage(db, itemId, mutation);
+  if (quarantine !== undefined) throw new MagicItemCustodyError(quarantine);
+  if (item.pack_ref === null) return;
+  let record: import('../rules/types.js').RulesRecord;
+  try {
+    record = lookupImmutableMagicItemRecord(
+      db,
+      item.pack_ref,
+      resolveRulesPack,
+    );
+  } catch (error) {
+    throw new MagicItemCustodyError((error as Error).message);
+  }
+  let curse:
+    | import('../rules/magicItemMechanics.js').MagicItemCurse
+    | undefined;
+  try {
+    curse = effectiveMagicItemMechanics(
+      record,
+      item.variant_id ?? undefined,
+    )?.curse;
+  } catch (error) {
+    throw new MagicItemCustodyError((error as Error).message);
+  }
+  const holderOwnsAttunement =
+    item.character_id !== null &&
+    db
+      .prepare(
+        'SELECT 1 FROM attunement WHERE item_id=? AND character_id=? LIMIT 1',
+      )
+      .get(itemId, item.character_id) !== undefined;
+  if (curse?.blocksDoff === true && item.character_id !== null)
+    throw new MagicItemCustodyError(
+      `${record.key} is source-declared as impossible to doff while cursed, but authoritative don/doff state is unavailable; '${mutation}' must fail closed for the held item until the curse is removed`,
+    );
+  // Transfer has its own persistent-attunement owner; this gate contributes
+  // only the blocks-doff constraint there. Loss is involuntary.
+  if (mutation === 'lost' || mutation === 'transfer') return;
+  const blockingStates = new Set(
+    curse?.possession?.blocksVoluntaryRelinquishmentWhileStates ?? [],
+  );
+  const attachedBlockingState =
+    curse?.attunement?.attachesStates?.some((stateId) =>
+      blockingStates.has(stateId),
+    ) === true;
+  if (attachedBlockingState && holderOwnsAttunement)
+    throw new MagicItemCustodyError(
+      `${record.key} has a source-declared attached curse state that prevents voluntary relinquishment; '${mutation}' must fail closed while that cursed bond is active`,
+    );
+}
+
+export type CursedAttunementMutation = 'attune' | 'end' | 'transfer-end';
+
+/** Gate only source-declared attunement lifecycle work the runtime cannot own. */
+export function assertEffectiveAttunementCurseReady(
+  record: import('../rules/types.js').RulesRecord,
+  variantId: string | undefined,
+  mutation: CursedAttunementMutation,
+  endReason?: AttunementEndReason,
+): void {
+  let curse:
+    | import('../rules/magicItemMechanics.js').MagicItemCurse
+    | undefined;
+  try {
+    curse = effectiveMagicItemMechanics(record, variantId)?.curse;
+  } catch (error) {
+    if (error instanceof MagicItemVariantError)
+      throw new AttunementError(error.message);
+    throw error;
+  }
+  const attachesPersistentState =
+    (curse?.attunement?.attachesStates?.length ?? 0) > 0;
+  const pendingPrecondition =
+    (curse?.attunement?.preconditionEffects?.length ?? 0) > 0;
+  const conditionalUnattuneLock = curse?.blocksUnattune === true;
+  const nonvoluntaryEnding =
+    endReason === 'distance' ||
+    endReason === 'death' ||
+    endReason === 'replaced' ||
+    endReason === 'item_destroyed';
+  const blocksMutation =
+    mutation === 'attune'
+      ? attachesPersistentState ||
+        pendingPrecondition ||
+        conditionalUnattuneLock
+      : attachesPersistentState ||
+        (conditionalUnattuneLock &&
+          (mutation === 'transfer-end' || !nonvoluntaryEnding));
+  if (blocksMutation)
+    throw new AttunementError(
+      `${record.key}${variantId === undefined ? '' : ` variant '${variantId}'`} has a source-declared curse contract with attunement lifecycle mechanics that are engine-pending, so '${mutation}' must fail closed rather than create, rewrite, or discard a bond without its authoritative curse state.`,
+    );
+}
+
+export interface CanonicalAttunementContract {
+  readonly itemKey: string;
+  readonly displayName: string;
+  readonly variantId?: string;
+  readonly prerequisite?: string;
+}
+
+/**
+ * Resolve the canonical identity and every record-owned precondition required
+ * before a persisted attunement may be created or rewritten. Keeping this
+ * boundary shared prevents compatibility paths from manufacturing bonds that
+ * the normal attune mutation would reject.
+ */
+export function resolveCanonicalAttunementContract(
+  record: import('../rules/types.js').RulesRecord,
+  variantId: string | undefined,
+  inventoryName: string,
+): CanonicalAttunementContract {
+  const data = record.data as Record<string, unknown>;
+  if (data.requiresAttunement !== true)
+    throw new AttunementError(
+      `'${inventoryName}' (${record.key}) does not require attunement per its record; its properties work without a slot`,
+    );
+  let selectedVariant: ReturnType<typeof resolveMagicItemVariant>;
+  try {
+    selectedVariant = resolveMagicItemVariant(record, variantId);
+  } catch (error) {
+    if (error instanceof MagicItemVariantError)
+      throw new AttunementError(error.message);
+    throw error;
+  }
+  assertEffectiveAttunementCurseReady(record, selectedVariant?.id, 'attune');
+  return {
+    itemKey: magicItemVariantTypeKey(record.key, selectedVariant?.id),
+    displayName: selectedVariant?.name ?? inventoryName,
+    ...(selectedVariant === undefined ? {} : { variantId: selectedVariant.id }),
+    ...(typeof data.attunementRequirement !== 'string'
+      ? {}
+      : { prerequisite: data.attunementRequirement }),
+  };
+}
+
+/** Resolve immutable inventory identity through the campaign stack, then gate. */
+export function assertInventoryAttunementCurseReady(
+  db: Db,
+  itemId: string,
+  mutation: Exclude<CursedAttunementMutation, 'attune'>,
+  resolveRulesPack?: CampaignRulesPackResolver,
+  endReason?: AttunementEndReason,
+): void {
+  const item = db
+    .prepare('SELECT pack_ref, variant_id FROM inventory WHERE id = ?')
+    .get(itemId) as
+    | { pack_ref: string | null; variant_id: string | null }
+    | undefined;
+  if (item === undefined)
+    throw new AttunementError(
+      `inventory item '${itemId}' does not exist; refusing to bypass possible cursed attunement persistence`,
+    );
+  const quarantine = itemAdoptionReviewBlockMessage(db, itemId, mutation);
+  if (quarantine !== undefined) throw new AttunementError(quarantine);
+  if (item.pack_ref === null) return;
+  const record = lookupImmutableMagicItemRecord(
+    db,
+    item.pack_ref,
+    resolveRulesPack,
+  );
+  assertEffectiveAttunementCurseReady(
+    record,
+    item.variant_id ?? undefined,
+    mutation,
+    endReason,
+  );
+}
+
+function lookupImmutableMagicItemRecord(
+  db: Db,
+  packRef: string,
+  resolveRulesPack?: CampaignRulesPackResolver,
+): import('../rules/types.js').RulesRecord {
+  let record: import('../rules/types.js').RulesRecord | undefined;
+  try {
+    record = lookupStrictCampaignRecord(
+      db,
+      'magic-item',
+      packRef,
+      resolveRulesPack,
+    )?.record;
+  } catch (error) {
+    const reason = error instanceof Error ? `: ${error.message}` : '';
+    throw new AttunementError(
+      `inventory packRef '${packRef}' cannot be resolved through the exact campaign rules stack${reason}; refusing to bypass possible cursed attunement persistence`,
+    );
+  }
+  if (record === undefined)
+    throw new AttunementError(
+      `inventory packRef '${packRef}' does not resolve in the exact campaign rules stack; refusing to bypass possible cursed attunement persistence`,
+    );
+  return record;
 }
 
 interface AttunementRow {
@@ -176,49 +415,98 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
     const character = resolveLivingCharacter(txnDb, input.characterRef);
 
     const item = txnDb
-      .prepare('SELECT name FROM inventory WHERE id = ? AND character_id = ?')
-      .get(input.itemId, character.id) as { name: string } | undefined;
+      .prepare(
+        'SELECT name, pack_ref, variant_id FROM inventory WHERE id = ? AND character_id = ?',
+      )
+      .get(input.itemId, character.id) as
+      | { name: string; pack_ref: string | null; variant_id: string | null }
+      | undefined;
     if (item === undefined) {
       throw new AttunementError(
         `${character.label} holds no inventory item '${input.itemId}'; attunement requires possessing the item`,
       );
     }
+    const quarantine = itemAdoptionReviewBlockMessage(
+      txnDb,
+      input.itemId,
+      'attune',
+    );
+    if (quarantine !== undefined) throw new AttunementError(quarantine);
 
     // Item identity and the requires-attunement gate come from the rules
     // record when one resolves; a homebrew/module item falls back to its
     // normalized name for the no-duplicates rule.
+    if (
+      item.pack_ref !== null &&
+      input.itemRef !== undefined &&
+      input.itemRef !== item.pack_ref
+    )
+      throw new AttunementError(
+        `itemRef '${input.itemRef}' does not match inventory packRef '${item.pack_ref}' for '${input.itemId}'`,
+      );
     const candidateRef =
-      input.itemRef ?? `magic-item:${normalizeItemKey(item.name)}`;
-    const record = lookupCampaignRecord(txnDb, 'magic-item', candidateRef);
+      item.pack_ref ??
+      input.itemRef ??
+      `magic-item:${normalizeItemKey(item.name)}`;
+    let record: import('../rules/types.js').RulesRecord | undefined;
+    if (
+      item.pack_ref !== null ||
+      input.itemRef !== undefined ||
+      input.resolveRulesPack !== undefined
+    ) {
+      try {
+        record = lookupStrictCampaignRecord(
+          txnDb,
+          'magic-item',
+          candidateRef,
+          input.resolveRulesPack,
+        )?.record;
+      } catch (error) {
+        const reason = error instanceof Error ? `: ${error.message}` : '';
+        throw new AttunementError(
+          `magic-item ref '${candidateRef}' cannot be resolved through the exact campaign rules stack${reason}`,
+        );
+      }
+    } else {
+      record = lookupCampaignRecord(txnDb, 'magic-item', candidateRef);
+    }
+    if (item.pack_ref !== null && record === undefined) {
+      throw new AttunementError(
+        `inventory packRef '${item.pack_ref}' does not resolve in the exact campaign rules stack; refusing to bypass possible cursed attunement persistence`,
+      );
+    }
     if (input.itemRef !== undefined && record === undefined) {
       throw new AttunementError(
         `itemRef '${input.itemRef}' does not resolve to a magic-item record in the campaign rules stack; find the exact key via lookup_rules or omit itemRef`,
       );
     }
+    if (item.variant_id !== null && record === undefined)
+      throw new AttunementError(
+        `variant '${item.variant_id}' requires a resolvable magic-item record for '${input.itemId}'`,
+      );
     let prerequisite: string | undefined;
     let itemKey = `name:${normalizeItemKey(item.name)}`;
+    let displayName = item.name;
     if (record !== undefined) {
-      const data = record.data as Record<string, unknown>;
-      if (data.requiresAttunement !== true) {
-        throw new AttunementError(
-          `'${item.name}' (${record.key}) does not require attunement per its record; its properties work without a slot`,
-        );
-      }
-      itemKey = record.key;
-      if (typeof data.attunementRequirement === 'string') {
-        prerequisite = data.attunementRequirement;
-      }
+      const contract = resolveCanonicalAttunementContract(
+        record,
+        item.variant_id ?? undefined,
+        item.name,
+      );
+      itemKey = contract.itemKey;
+      displayName = contract.displayName;
+      prerequisite = contract.prerequisite;
     }
 
     const existing = listAttunements(txnDb, input.campaignId, character.id);
     if (existing.some((entry) => entry.itemId === input.itemId)) {
       throw new AttunementError(
-        `${character.label} is already attuned to '${item.name}'`,
+        `${character.label} is already attuned to '${displayName}'`,
       );
     }
     if (existing.some((entry) => entry.itemKey === itemKey)) {
       throw new AttunementError(
-        `${character.label} is already attuned to a copy of '${item.name}'; a creature cannot attune to more than one copy of the same item`,
+        `${character.label} is already attuned to a copy of '${displayName}'; a creature cannot attune to more than one copy of the same item`,
       );
     }
     if (existing.length >= ATTUNEMENT_SLOT_LIMIT) {
@@ -239,7 +527,7 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
       | undefined;
     if (otherHolder !== undefined) {
       throw new AttunementError(
-        `item '${item.name}' is still attuned to character '${otherHolder.character_id}'; an item can be attuned to only one creature at a time — end that attunement first`,
+        `item '${displayName}' is still attuned to character '${otherHolder.character_id}'; an item can be attuned to only one creature at a time — end that attunement first`,
       );
     }
 
@@ -256,7 +544,7 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
         character.id,
         input.itemId,
         itemKey,
-        item.name,
+        displayName,
         input.at,
         input.provenance,
         input.sessionId,
@@ -309,6 +597,14 @@ export function endAttunement(
         }`,
       );
     }
+    if (input.reason !== 'death')
+      assertInventoryAttunementCurseReady(
+        txnDb,
+        input.itemId,
+        'end',
+        input.resolveRulesPack,
+        input.reason,
+      );
     txnDb
       .prepare(
         `DELETE FROM attunement

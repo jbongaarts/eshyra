@@ -97,6 +97,8 @@ export interface LevelUpChangeSet {
   readonly hitPoints: LevelUpHitPoints;
   /** Class feature refs granted at the new level (e.g. `feature:fighter:action-surge`). */
   readonly featuresGained: readonly string[];
+  /** Player-selected feat refs gained in place of an ASI. */
+  readonly featsGained?: readonly string[];
   /**
    * Spellcasting capacity at the new level (cantrips/spells-known counts, spell
    * slots), present only for a class whose target-level progression row carries
@@ -233,6 +235,7 @@ export interface LevelUpAppliedChoice {
   readonly label: string;
   readonly featureRefs: readonly string[];
   readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
+  readonly featRef?: string;
 }
 
 /**
@@ -705,6 +708,7 @@ function featureRequiredChoice(
         'Intelligence',
         'Wisdom',
         'Charisma',
+        ...resolver.listFeats().map((feat) => feat.key),
       ],
       reason: `level ${toLevel} grants an Ability Score Improvement`,
     };
@@ -863,6 +867,51 @@ function resolveLevelUpChoices(
       continue;
     }
     if (choice.kind === 'ability-score-improvement') {
+      if (selected.length === 1 && selected[0]?.startsWith('feat:')) {
+        const selectedRef = selected[0];
+        const featResult = resolver.resolveFeat(selectedRef);
+        if (!featResult.ok || featResult.record.key !== selectedRef) {
+          blockers.push({
+            ...choice,
+            reason: `Feat selection '${selectedRef}' is not a canonical feat ref`,
+          });
+          continue;
+        }
+        const feat = featResult.record;
+        if ((sheet.feats ?? []).some((owned) => owned.key === feat.key)) {
+          blockers.push({
+            ...choice,
+            reason: `Feat '${feat.name}' can be selected only once`,
+          });
+          continue;
+        }
+        if (
+          feat.key === 'feat:grappler' &&
+          sheet.abilityScores.strength.final < 13
+        ) {
+          blockers.push({
+            ...choice,
+            reason: 'Grappler requires Strength 13 or higher',
+          });
+          continue;
+        }
+        if (feat.prerequisites !== undefined && feat.key !== 'feat:grappler') {
+          blockers.push({
+            ...choice,
+            reason: `Feat '${feat.name}' has prerequisites that are not deterministically supported`,
+          });
+          continue;
+        }
+        applied.push({
+          id: choice.id,
+          kind: choice.kind,
+          value: feat.key,
+          label: feat.name,
+          featureRefs: [],
+          featRef: feat.key,
+        });
+        continue;
+      }
       const names = selected
         .map((value) => abilityNameFromToken(value))
         .filter(
@@ -983,6 +1032,9 @@ function applyResolvedChoicesToChangeSet(
     return changeSet;
   }
   const selectedFeatureRefs = applied.flatMap((choice) => choice.featureRefs);
+  const selectedFeatRefs = applied.flatMap((choice) =>
+    choice.featRef === undefined ? [] : [choice.featRef],
+  );
   const abilityScoreIncreases = applied.flatMap(
     (choice) => choice.abilityScoreIncreases ?? [],
   );
@@ -999,6 +1051,7 @@ function applyResolvedChoicesToChangeSet(
     return {
       ...changeSet,
       featuresGained: [...changeSet.featuresGained, ...selectedFeatureRefs],
+      ...(selectedFeatRefs.length > 0 ? { featsGained: selectedFeatRefs } : {}),
       choicesApplied: applied,
       abilityScoreIncreases,
       hitPoints: {
@@ -1016,6 +1069,7 @@ function applyResolvedChoicesToChangeSet(
   return {
     ...changeSet,
     featuresGained: [...changeSet.featuresGained, ...selectedFeatureRefs],
+    ...(selectedFeatRefs.length > 0 ? { featsGained: selectedFeatRefs } : {}),
     choicesApplied: applied,
     abilityScoreIncreases: applied.flatMap(
       (choice) => choice.abilityScoreIncreases ?? [],
@@ -1168,6 +1222,11 @@ function applyChangeSetToSheet(
   appliedChoices: readonly LevelUpAppliedChoice[] = [],
 ): CharacterSheet {
   const subclass = appliedChoices.find((choice) => choice.kind === 'subclass');
+  const gainedFeats = appliedChoices.flatMap((choice) =>
+    choice.featRef === undefined
+      ? []
+      : [{ key: choice.featRef, name: choice.label }],
+  );
   const next: CharacterSheet = {
     ...sheet,
     level: changeSet.level.to,
@@ -1193,6 +1252,9 @@ function applyChangeSetToSheet(
       : {}),
     ...(subclass !== undefined
       ? { subclass: { key: subclass.value, name: subclass.label } }
+      : {}),
+    ...(gainedFeats.length > 0
+      ? { feats: [...(sheet.feats ?? []), ...gainedFeats] }
       : {}),
     ...(changeSet.spellSaveDc?.to !== undefined
       ? { spellSaveDc: changeSet.spellSaveDc.to }

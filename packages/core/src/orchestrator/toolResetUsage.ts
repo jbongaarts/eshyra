@@ -22,8 +22,7 @@ export const resetUsageTool: Tool = {
     'Apply a usage reset event after narrating it: a short rest, a long ' +
     'rest, or dawn. Rests restore rest-recharge economies and Recharge ' +
     'X-Y abilities (long rests also cover short-rest economies); dawn ' +
-    'restores per-day economies (X/Day, innate per-day spells, daily item ' +
-    'charges). By default a rest applies to every character (the party ' +
+    'restores per-day economies (X/Day, innate per-day spells, and legacy/ad-hoc unbound item charges). Canonical pack-bound item economies are not generic usage counters. By default a rest applies to every character (the party ' +
     'rests); pass combatantId or character to scope the event to one ' +
     'owner. Dawn applies to everyone. Items that regain a rolled amount ' +
     '("1d6+1 daily at dawn") are returned in needsRolledRestore instead ' +

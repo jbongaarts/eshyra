@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   deriveMagicItemMechanics,
+  deriveMagicItemVariantMechanics,
   MAGIC_ITEM_M2_M3_DEFERRED,
 } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemPassiveEffects.js';
 import type { MagicItemExtraction } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
@@ -18,6 +19,18 @@ function item(
     description,
     sourcePage: 1,
     ...overrides,
+  };
+}
+
+function withoutEffectIds(
+  mechanics: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (mechanics === undefined) return undefined;
+  return {
+    ...mechanics,
+    effects: (mechanics.effects as readonly Record<string, unknown>[]).map(
+      ({ id: _id, ...effect }) => effect,
+    ),
   };
 }
 
@@ -40,7 +53,7 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
         'Your Constitution score is 19 while you wear this amulet. It has no effect on you if your Constitution is already 19 or higher.',
       ),
     );
-    expect(mechanics).toEqual({
+    expect(withoutEffectIds(mechanics)).toEqual({
       effects: [
         { kind: 'abilityScoreSet', ability: 'constitution', value: 19 },
       ],
@@ -54,7 +67,7 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
         'While you are attuned to this weapon, your hit point maximum increases by 1 for each level you have attained.',
       ),
     );
-    expect(mechanics).toEqual({
+    expect(withoutEffectIds(mechanics)).toEqual({
       effects: [{ kind: 'hitPointMaximumIncrease', perLevel: 1 }],
     });
   });
@@ -66,7 +79,7 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
         'When you drink this potion, your Strength score changes for 1 hour. The type of giant determines the score (see the table below).',
       ),
     );
-    expect(mechanics).toEqual({
+    expect(withoutEffectIds(mechanics)).toEqual({
       effects: [
         {
           kind: 'abilityScoreSet',
@@ -85,7 +98,7 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
         'While wearing this ring, you regain 1d6 hit points every 10 minutes, provided that you have at least 1 hit point. If you lose a body part, the ring causes the missing part to regrow and return to full functionality after 1d6 + 1 days if you have at least 1 hit point the whole time.',
       ),
     );
-    expect(mechanics).toEqual({
+    expect(withoutEffectIds(mechanics)).toEqual({
       effects: [
         {
           kind: 'regeneration',
@@ -107,7 +120,7 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
         'You can speak the carpet’s command word as an action to make the carpet hover and fly. A carpet can carry up to twice the weight shown on the table, but it flies at half speed if it carries more than its normal capacity.',
       ),
     );
-    expect(mechanics).toEqual({
+    expect(withoutEffectIds(mechanics)).toEqual({
       effects: [
         {
           kind: 'speedSet',
@@ -134,7 +147,7 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
         'While you wear these boots, your walking speed becomes 30 feet, unless your walking speed is higher, and your speed isn’t reduced if you are encumbered or wearing heavy armor. In addition, you can jump three times the normal distance, though you can’t jump farther than your remaining movement would allow.',
       ),
     );
-    expect(mechanics).toEqual({
+    expect(withoutEffectIds(mechanics)).toEqual({
       effects: [
         { kind: 'speedSet', mode: 'walk', value: 30, floor: true },
         {
@@ -151,7 +164,7 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
     });
   });
 
-  it('returns undefined and records a reason for the three deferred items', () => {
+  it('keeps variant-only benefits off all three parent records and has no deferrals', () => {
     expect(
       deriveMagicItemMechanics(
         item('Ioun Stone', 'An Ioun stone is named after Ioun...'),
@@ -173,15 +186,83 @@ describe('deriveMagicItemMechanics (eshyra-o9bd.18.7.7.5)', () => {
         ),
       ),
     ).toBeUndefined();
-    expect(MAGIC_ITEM_M2_M3_DEFERRED.get('Ioun Stone')).toMatch(
-      /inline variant structuring/,
-    );
-    expect(MAGIC_ITEM_M2_M3_DEFERRED.get('Ring of Elemental Command')).toMatch(
-      /inline variant structuring/,
-    );
-    expect(MAGIC_ITEM_M2_M3_DEFERRED.get('Crystal Ball')).toMatch(
-      /inline variant structuring/,
-    );
+    expect(MAGIC_ITEM_M2_M3_DEFERRED.size).toBe(0);
+  });
+
+  it('projects exact representative Ioun, elemental-ring, and crystal-ball variant effects', () => {
+    expect(
+      withoutEffectIds(
+        deriveMagicItemVariantMechanics('Ioun Stone', {
+          name: 'Agility',
+          rarity: 'Very Rare',
+          text: 'Your Dexterity score increases by 2, to a maximum of 20, while this deep red sphere orbits your head.',
+        }),
+      ),
+    ).toEqual({
+      effects: [
+        {
+          kind: 'abilityScoreIncrease',
+          abilities: ['dexterity'],
+          amount: 2,
+          newMaximum: 20,
+        },
+      ],
+    });
+    expect(
+      withoutEffectIds(
+        deriveMagicItemVariantMechanics('Ring of Elemental Command', {
+          name: 'Ring of Water Elemental Command',
+          rarity: 'Legendary',
+          text: 'In addition, you can stand on and walk across liquid surfaces as if they were solid ground. You can also speak and understand Aquan. If you help slay a water elemental while attuned to the ring, you gain access to the following additional properties: You can breathe underwater and have a swimming speed equal to your walking speed.',
+        }),
+      ),
+    ).toEqual({
+      effects: [
+        { kind: 'walkOnLiquids' },
+        { kind: 'proficiency', grant: 'speak and understand Aquan' },
+        {
+          kind: 'breathes',
+          environments: ['water'],
+          condition:
+            'after you help slay an elemental from the linked plane while attuned to the ring',
+        },
+        {
+          kind: 'speedSet',
+          mode: 'swim',
+          value: 'walking-speed',
+          condition:
+            'after you help slay an elemental from the linked plane while attuned to the ring',
+        },
+      ],
+    });
+    expect(
+      withoutEffectIds(
+        deriveMagicItemVariantMechanics('Crystal Ball', {
+          name: 'Crystal Ball of True Seeing',
+          rarity: 'Legendary',
+          text: 'While scrying with the crystal ball, you have truesight with a radius of 120 feet centered on the spell’s sensor.',
+        }),
+      ),
+    ).toEqual({
+      effects: [
+        {
+          kind: 'sense',
+          sense: 'truesight',
+          rangeFeet: 120,
+          condition: 'while scrying; centered on the spell’s sensor',
+        },
+      ],
+    });
+  });
+
+  it('fails closed when a modeled variant source clause drifts', () => {
+    expect(() =>
+      deriveMagicItemVariantMechanics('Ioun Stone', {
+        name: 'Mastery',
+        rarity: 'Legendary',
+        text: 'This stone grants an undocumented benefit.',
+      }),
+    ).toThrow(/expected pattern/);
   });
 
   it('throws when a modeled item’s source text drifts from the expected phrase', () => {

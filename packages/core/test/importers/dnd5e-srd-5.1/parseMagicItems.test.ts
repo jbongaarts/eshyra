@@ -595,3 +595,97 @@ describe('parseMagicItems', () => {
     );
   });
 });
+
+describe('parseMagicItems — reviewed inline variants (eshyra-xjp4)', () => {
+  it.each([
+    {
+      name: 'Ioun Stone',
+      rarity: 'rarity varies',
+      introduction:
+        'Many types of Ioun stone exist, each type a distinct combination of shape and color.',
+      bodies: [
+        'Absorption (Very Rare). Absorption text.',
+        'Agility (Very Rare). Agility text.',
+        'Awareness (Rare). Awareness text.',
+        'Fortitude (Very Rare). Fortitude text.',
+        'Greater Absorption (Legendary). Greater Absorption text.',
+        'Insight (Very Rare). Insight text.',
+        'Intellect (Very Rare). Intellect text.',
+        'Leadership (Very Rare). Leadership text.',
+        'Mastery (Legendary). Mastery text.',
+        'Protection (Rare). Protection text.',
+        'Regeneration (Legendary). Regeneration text.',
+        'Reserve (Rare). Reserve text.',
+        'Strength (Very Rare). Strength text.',
+        'Sustenance (Rare). Sustenance text.',
+      ],
+      expectedNames: [
+        'Absorption',
+        'Agility',
+        'Awareness',
+        'Fortitude',
+        'Greater Absorption',
+        'Insight',
+        'Intellect',
+        'Leadership',
+        'Mastery',
+        'Protection',
+        'Regeneration',
+        'Reserve',
+        'Strength',
+        'Sustenance',
+      ],
+    },
+    {
+      name: 'Ring of Elemental Command',
+      rarity: 'legendary',
+      introduction: 'This ring is linked to one of the four Elemental Planes.',
+      bodies: ['Air', 'Earth', 'Fire', 'Water'].map(
+        (plane) => `Ring of ${plane} Elemental Command. ${plane} variant text.`,
+      ),
+      expectedNames: ['Air', 'Earth', 'Fire', 'Water'].map(
+        (plane) => `Ring of ${plane} Elemental Command`,
+      ),
+    },
+    {
+      name: 'Crystal Ball',
+      rarity: 'very rare or legendary',
+      introduction:
+        'The following crystal ball variants are legendary items and have additional properties.',
+      bodies: ['Mind Reading', 'Telepathy', 'True Seeing'].map(
+        (property) => `Crystal Ball of ${property}. ${property} text.`,
+      ),
+      expectedNames: ['Mind Reading', 'Telepathy', 'True Seeing'].map(
+        (property) => `Crystal Ball of ${property}`,
+      ),
+    },
+  ])('extracts the exact ordered $name membership', (fixture) => {
+    const [parsed] = parseMagicItems([
+      page(1, [
+        fixture.name,
+        `Wondrous item, ${fixture.rarity}`,
+        fixture.introduction,
+        ...fixture.bodies,
+      ]),
+    ]);
+    expect(parsed.variants?.map((variant) => variant.name)).toEqual(
+      fixture.expectedNames,
+    );
+    expect(parsed.variants?.at(-1)?.text).toMatch(/text\.$/);
+  });
+
+  it('fails closed when a reviewed variant heading drifts', () => {
+    expect(() =>
+      parseMagicItems([
+        page(1, [
+          'Crystal Ball',
+          'Wondrous item, very rare or legendary',
+          'The following crystal ball variants are legendary items and have additional properties.',
+          'Crystal Ball of Mind Reading. Mind reading text.',
+          'Crystal Ball of Telepathy. Telepathy text.',
+          'Crystal Ball of Second Sight. Drifted heading text.',
+        ]),
+      ]),
+    ).toThrow(/expected exactly one.*Crystal Ball of True Seeing/);
+  });
+});

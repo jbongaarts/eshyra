@@ -204,6 +204,35 @@ export function locatorPages(locator: string): readonly number[] {
   return (locator.match(/\d+/g) ?? []).map(Number);
 }
 
+const STRICT_PROSE_LEAVES = new Set([
+  'description',
+  'text',
+  'higherLevels',
+  'componentMaterials',
+  'suggestedCharacteristics',
+  'sourceText',
+  'speedSourceText',
+]);
+
+/** Whether a record-data string is verbatim source prose for deep auditing. */
+export function isStrictProsePath(path: string): boolean {
+  // Executable mechanics contains typed identifiers and reviewed semantic
+  // summaries. Its projectors independently require source anchors; these
+  // values are not represented as verbatim PDF prose.
+  if (/(^|\.)mechanics(?:\.|$)/.test(path)) return false;
+  // `choices[n].sourceText` is a synthesized option-catalog label
+  // ("Acolyte Ideals (d6)."), not verbatim source prose.
+  if (/(^|\.)choices\[\d+\]\.sourceText$/.test(path)) return false;
+  const leaf =
+    path
+      .replace(/\[\d+\]$/, '')
+      .split('.')
+      .pop() ?? '';
+  if (STRICT_PROSE_LEAVES.has(leaf)) return true;
+  // `effects[3]` outside a mechanics block is condition-effect source prose.
+  return /(^|\.)effects\[\d+\]$/.test(path);
+}
+
 /** Walk every string leaf of a record's data, with dotted paths. */
 export function walkStrings(
   value: unknown,
