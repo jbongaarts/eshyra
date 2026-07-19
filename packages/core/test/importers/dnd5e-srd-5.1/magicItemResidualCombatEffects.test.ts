@@ -46,9 +46,9 @@ function schemaRecord(name: string, mechanics: unknown): RulesRecord {
 
 describe('residual C2 combat and defense projection', () => {
   it('pins the exact residual item/clause profile and conserves every reviewed C2 item', () => {
-    expect(MAGIC_ITEM_RESIDUAL_COMBAT_NAMES).toHaveLength(68);
-    expect(MAGIC_ITEM_RESIDUAL_COMBAT_CLAUSE_IDS).toHaveLength(84);
-    expect(new Set(MAGIC_ITEM_RESIDUAL_COMBAT_CLAUSE_IDS).size).toBe(84);
+    expect(MAGIC_ITEM_RESIDUAL_COMBAT_NAMES).toHaveLength(70);
+    expect(MAGIC_ITEM_RESIDUAL_COMBAT_CLAUSE_IDS).toHaveLength(90);
+    expect(new Set(MAGIC_ITEM_RESIDUAL_COMBAT_CLAUSE_IDS).size).toBe(90);
 
     const inventory = readFileSync(
       join(
@@ -139,6 +139,7 @@ describe('residual C2 combat and defense projection', () => {
             ignoresCover: ['half', 'three-quarters'],
             ignoresLongRangeDisadvantage: true,
           },
+          { extraDamage: { dice: '3d6', type: 'piercing' } },
         ],
       },
     });
@@ -149,6 +150,72 @@ describe('residual C2 combat and defense projection', () => {
     ).toMatchObject({
       mechanics: { effects: [{ result: 'ignore target half cover' }] },
     });
+  });
+
+  it('projects the restored source-exact C2 save and condition payloads', () => {
+    expect(
+      projectMagicItemResidualCombatEffects(named('Giant Slayer')),
+    ).toMatchObject({
+      mechanics: {
+        effects: [
+          {
+            save: { ability: 'strength', dc: 15 },
+            failedSaveCondition: 'prone',
+          },
+        ],
+      },
+    });
+    expect(
+      projectMagicItemResidualCombatEffects(named('Mace of Disruption')),
+    ).toMatchObject({
+      mechanics: {
+        effects: [
+          {
+            save: { ability: 'wisdom', dc: 15 },
+            hitPointThreshold: { maximum: 25 },
+            failedSaveEffect: 'destroyed',
+            onSuccessfulSave: { condition: 'frightened' },
+          },
+        ],
+      },
+    });
+    expect(
+      projectMagicItemResidualCombatEffects(named('Iron Flask'))?.mechanics
+        .effects,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          save: { ability: 'wisdom', dc: 17 },
+          rangeFeet: 60,
+        }),
+      ]),
+    );
+    expect(
+      projectMagicItemResidualCombatEffects(named('Mirror of Life Trapping'))
+        ?.mechanics.effects,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          save: { ability: 'charisma', dc: 15 },
+          rangeFeet: 30,
+        }),
+      ]),
+    );
+    expect(
+      projectMagicItemResidualCombatEffects(named('Robe of Eyes'))?.mechanics
+        .effects,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          conditions: ['blinded'],
+          duration: { amount: 1, unit: 'minute' },
+          saves: [
+            { ability: 'constitution', dc: 11, source: 'light' },
+            { ability: 'constitution', dc: 15, source: 'daylight' },
+          ],
+        }),
+      ]),
+    );
   });
 
   it('validates every projection through the canonical magic-item schema', () => {
