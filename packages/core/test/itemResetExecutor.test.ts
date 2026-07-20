@@ -143,6 +143,47 @@ describe('item reset/timer executor', () => {
     db.close();
   });
 
+  it('crosses dusk without treating dawn as dusk', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-dusk', {
+      economies: {
+        charges: {
+          kind: 'charges',
+          charges: { max: 5 },
+          reset: [{ at: 'dusk', amount: '1d4' }],
+        },
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    const before = readItemState(db, id);
+    if (before === undefined) throw new Error('fixture state was not written');
+    writeItemState(
+      db,
+      id,
+      { ...before, economies: { charges: { remaining: 0 } } },
+      CTX,
+    );
+    expect(
+      advanceWorldTime(db, {
+        ...CTX,
+        minutes: 360,
+        rng: createSeededRng(2),
+        resolveRulesPack: resolver(pack),
+      }).itemResets,
+    ).toHaveLength(0);
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 720,
+      rng: createSeededRng(2),
+      resolveRulesPack: resolver(pack),
+    });
+    expect(result.itemResets).toMatchObject([
+      { event: 'dusk', boundaryElapsedMinutes: 1_080 },
+    ]);
+    db.close();
+  });
+
   it('anchors and restarts a per-period budget on every use', () => {
     const db = freshDbWithSession();
     const record = fixture('reset-period', {
@@ -217,6 +258,112 @@ describe('item reset/timer executor', () => {
     db.close();
   });
 
+  it('anchors a seven-day cooldown and waits for the full interval', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-days-cooldown', {
+      economies: {
+        cooldown: {
+          kind: 'cooldown',
+          cooldown: { duration: { amount: 7, unit: 'day' } },
+          reset: [{ at: 'days', days: 7, amount: 'all' }],
+        },
+      },
+      operations: [
+        { id: 'activate', cost: [{ economy: 'cooldown', amount: 1 }] },
+      ],
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    useItem(db, useInput(pack, id, 'activate'));
+    expect(readItemState(db, id)?.economies?.cooldown).toMatchObject({
+      remaining: 0,
+      availableAt: '10080',
+    });
+    expect(
+      advanceWorldTime(db, {
+        ...CTX,
+        minutes: 10079,
+        resolveRulesPack: resolver(pack),
+      }).itemResets,
+    ).toHaveLength(0);
+    expect(
+      advanceWorldTime(db, {
+        ...CTX,
+        minutes: 1,
+        resolveRulesPack: resolver(pack),
+      }).itemResets,
+    ).toMatchObject([{ economy: 'cooldown', event: 'days', remaining: 1 }]);
+    db.close();
+  });
+
+  it('clears figurine inert state through depletion and its seven-day regain', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-figurine', {
+      economies: {
+        charges: {
+          kind: 'charges',
+          charges: { max: 1 },
+          reset: [{ at: 'days', days: 7, amount: 'all' }],
+          onDepleted: { becomes: 'inert' },
+        },
+      },
+      operations: [{ id: 'use', cost: [{ economy: 'charges', amount: 1 }] }],
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    useItem(db, useInput(pack, id, 'use'));
+    expect(readItemState(db, id)?.lifecycle?.status).toBe('inert');
+    advanceWorldTime(db, {
+      ...CTX,
+      minutes: 10080,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(readItemState(db, id)).toMatchObject({
+      economies: { charges: { remaining: 1 } },
+    });
+    expect(readItemState(db, id)?.lifecycle).toBeUndefined();
+    db.close();
+  });
+
+  it('restores a century-scale budget on its days anchor', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-century-budget', {
+      economies: {
+        budget: {
+          kind: 'budget',
+          budget: {
+            total: { amount: 36500, unit: 'day' },
+            increment: { amount: 1, unit: 'day' },
+          },
+          reset: [{ at: 'days', days: 36500, amount: 'all' }],
+        },
+      },
+      operations: [{ id: 'use', cost: [{ economy: 'budget', amount: 36500 }] }],
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    useItem(db, useInput(pack, id, 'use'));
+    expect(readItemState(db, id)?.economies?.budget).toMatchObject({
+      remaining: 0,
+      availableAt: '52560000',
+    });
+    advanceWorldTime(db, {
+      ...CTX,
+      minutes: 52559999,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(readItemState(db, id)?.economies?.budget?.remaining).toBe(0);
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 1,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(result.itemResets).toMatchObject([
+      { economy: 'budget', event: 'days', remaining: 36500 },
+    ]);
+    db.close();
+  });
+
   it('supports participant-scoped rest reset evidence', () => {
     const db = freshDbWithSession();
     const record = fixture('reset-short-rest', {
@@ -250,6 +397,86 @@ describe('item reset/timer executor', () => {
     expect(evidence).toMatchObject([
       { economy: 'uses', event: 'short-rest', remaining: 2 },
     ]);
+    db.close();
+  });
+
+  it('rolls a dice regain once for each of three crossed dawns', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-three-dawns', {
+      economies: {
+        charges: {
+          kind: 'charges',
+          charges: { max: 2 },
+          reset: [{ at: 'dawn', amount: '1d2' }],
+        },
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    const before = readItemState(db, id);
+    if (before === undefined) throw new Error('fixture state was not written');
+    writeItemState(
+      db,
+      id,
+      { ...before, economies: { charges: { remaining: 0 } } },
+      CTX,
+    );
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 4320,
+      rng: createSeededRng(3),
+      resolveRulesPack: resolver(pack),
+    });
+    expect(result.itemResets).toHaveLength(3);
+    expect(
+      result.itemResets.map((entry) => entry.boundaryElapsedMinutes),
+    ).toEqual([360, 1800, 3240]);
+    expect(readItemState(db, id)?.economies?.charges.remaining).toBe(2);
+    db.close();
+  });
+
+  it('interleaves dawn and dusk boundaries chronologically for one economy', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-dawn-dusk', {
+      economies: {
+        charges: {
+          kind: 'charges',
+          charges: { max: 10 },
+          reset: [
+            { at: 'dawn', amount: '1d2' },
+            { at: 'dusk', amount: '1d2' },
+          ],
+        },
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    const before = readItemState(db, id);
+    if (before === undefined) throw new Error('fixture state was not written');
+    writeItemState(
+      db,
+      id,
+      { ...before, economies: { charges: { remaining: 0 } } },
+      CTX,
+    );
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 2880,
+      rng: createSeededRng(4),
+      resolveRulesPack: resolver(pack),
+    });
+    expect(
+      result.itemResets.map((entry) => [
+        entry.event,
+        entry.boundaryElapsedMinutes,
+      ]),
+    ).toEqual([
+      ['dawn', 360],
+      ['dusk', 1080],
+      ['dawn', 1800],
+      ['dusk', 2520],
+    ]);
+    expect(readItemState(db, id)?.economies?.charges.lastReset).toBe('2520');
     db.close();
   });
 

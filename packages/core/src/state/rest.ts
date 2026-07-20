@@ -625,7 +625,9 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
       narrativeLabelStale: time.narrativeLabelStale,
       closedRecoveryWindows: time.closedRecoveryWindows,
       stableRecoveries: time.stableRecoveries,
-      itemResets: [] as import('./itemResetExecutor.js').ItemResetEvidence[],
+      itemResets: [
+        ...time.itemResets,
+      ] as import('./itemResetExecutor.js').ItemResetEvidence[],
       itemTimerResolutions: time.itemTimerResolutions,
     };
     const restEvent = kind === 'short' ? 'short-rest' : 'long-rest';

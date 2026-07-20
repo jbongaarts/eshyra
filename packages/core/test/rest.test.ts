@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { CharacterSheet } from '../src/internal.js';
+import type {
+  CharacterSheet,
+  RulesPack,
+  RulesRecord,
+} from '../src/internal.js';
 import {
   addCondition,
   advanceWorldTime,
@@ -7,13 +11,17 @@ import {
   completeShortRest,
   createActiveEffect,
   createDefaultToolRegistry,
+  createInitialItemState,
   createSeededRng,
   createSqliteCharacterSheetStore,
   finishShortRestRecovery,
+  getBundledDnd5eSrdPack,
+  giveItem,
   grantTemporaryHp,
   mutateState,
   RestError,
   readHitDice,
+  readItemState,
   readSpellSlots,
   spendRestHitDie,
   spendSpellSlot,
@@ -22,6 +30,8 @@ import {
   startEncounter,
   syncSpellSlots,
   updateClock,
+  useItem,
+  writeItemState,
 } from '../src/internal.js';
 import {
   assembleContext,
@@ -131,7 +141,208 @@ function setupCharacters(): ReturnType<typeof freshDbWithSession> {
   return db;
 }
 
+function itemFixture(
+  key: string,
+  mechanics: Record<string, unknown>,
+): RulesRecord {
+  const exemplar = getBundledDnd5eSrdPack().records.find(
+    (record) => record.kind === 'magic-item',
+  );
+  if (exemplar === undefined) throw new Error('bundled pack has no magic item');
+  const operations =
+    (mechanics.operations as { id: string }[] | undefined) ?? [];
+  const economies = Object.keys(
+    (mechanics.economies as Record<string, unknown> | undefined) ?? {},
+  );
+  return {
+    ...exemplar,
+    key: `magic-item:${key}`,
+    name: key,
+    data: {
+      itemType: 'wondrous item',
+      rarity: 'rare',
+      requiresAttunement: false,
+      description: 'rest fixture',
+      mechanics,
+      executionReadiness: {
+        source: 'derived-magic-item-clauses-v1',
+        clauses: [
+          ...operations.map(({ id }) => ({
+            clauseId: `fixture/operation:${id}`,
+            scope: { kind: 'parent' },
+            tag: 'M1',
+            readiness: 'green',
+            representation: { block: 'operations', operationId: id },
+          })),
+          ...economies.map((economyId) => ({
+            clauseId: `fixture/economy:${economyId}`,
+            scope: { kind: 'parent' },
+            tag: 'M1',
+            readiness: 'green',
+            representation: { block: 'economies', economyId },
+          })),
+        ],
+      },
+    },
+  };
+}
+
+function itemPack(records: readonly RulesRecord[]): RulesPack {
+  return { ...getBundledDnd5eSrdPack(), records };
+}
+
+function installEmptyItem(
+  db: ReturnType<typeof freshDbWithSession>,
+  record: RulesRecord,
+  characterId: string,
+): string {
+  const item = giveItem(
+    db,
+    {
+      id: `instance-${record.key}`,
+      name: record.name,
+      packRef: record.key,
+      stateful: true,
+    },
+    { ...CTX, characterId },
+  );
+  const state = createInitialItemState(record.key, record);
+  writeItemState(
+    db,
+    item.id,
+    {
+      ...state,
+      economies: Object.fromEntries(
+        Object.entries(state.economies ?? {}).map(([economyId, economy]) => [
+          economyId,
+          { ...economy, remaining: 0 },
+        ]),
+      ),
+    },
+    CTX,
+  );
+  return item.id;
+}
+
 describe('F7 rest qualification boundary', () => {
+  it('persists dawn clock evidence and participant rest resets together', () => {
+    const db = setupCharacters();
+    const dawn = itemFixture('rest-dawn', {
+      economies: {
+        charges: {
+          kind: 'charges',
+          charges: { max: 1 },
+          reset: [{ at: 'dawn', amount: 'all' }],
+        },
+      },
+    });
+    const longRest = itemFixture('rest-long-budget', {
+      economies: {
+        budget: {
+          kind: 'budget',
+          budget: {
+            total: { amount: 1, unit: 'day' },
+            increment: { amount: 1, unit: 'day' },
+          },
+          reset: [{ at: 'long-rest', amount: 'all' }],
+        },
+      },
+    });
+    const perDay = itemFixture('rest-long-per-day', {
+      economies: {
+        uses: {
+          kind: 'per-day',
+          perDay: { uses: 1 },
+          reset: [{ at: 'long-rest', amount: 'all' }],
+        },
+      },
+    });
+    const pack = itemPack([dawn, longRest, perDay]);
+    const dawnId = installEmptyItem(db, dawn, 'pc-1');
+    const longRestId = installEmptyItem(db, longRest, 'pc-1');
+    const perDayId = installEmptyItem(db, perDay, 'pc-1');
+    const nonParticipantId = installEmptyItem(db, perDay, 'pc-2');
+    const result = completeLongRest(db, {
+      ...CTX,
+      restId: 'item-benefits-long-rest',
+      participants: ['pc-1'],
+      qualification: {
+        durationMinutes: 480,
+        sleepMinutes: 360,
+        lightActivityMinutes: 0,
+        strenuousInterruptionMinutes: 0,
+        foodAndDrink: false,
+      },
+      resolveRulesPack: () => pack,
+    }) as {
+      itemResets: readonly { event: string; economy: string }[];
+    };
+    expect(result.itemResets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ event: 'dawn', economy: 'charges' }),
+        expect.objectContaining({ event: 'long-rest', economy: 'budget' }),
+        expect.objectContaining({ event: 'long-rest', economy: 'uses' }),
+      ]),
+    );
+    expect(readItemState(db, dawnId)?.economies?.charges.remaining).toBe(1);
+    expect(readItemState(db, longRestId)?.economies?.budget.remaining).toBe(1);
+    expect(readItemState(db, perDayId)?.economies?.uses.remaining).toBe(1);
+    expect(readItemState(db, nonParticipantId)?.economies?.uses.remaining).toBe(
+      0,
+    );
+    const persisted = db
+      .prepare(
+        "SELECT benefits_json FROM rest_event WHERE rest_id='item-benefits-long-rest'",
+      )
+      .get() as { benefits_json: string };
+    expect(JSON.parse(persisted.benefits_json).itemResets).toEqual(
+      result.itemResets,
+    );
+    db.close();
+  });
+
+  it('surfaces a timer resolved by short-rest time advancement', () => {
+    const db = setupCharacters();
+    const timer = itemFixture('rest-timer', {
+      operations: [{ id: 'activate' }],
+      stateMachine: {
+        initial: 'inactive',
+        states: [{ id: 'inactive' }, { id: 'active' }, { id: 'done' }],
+        transitions: [
+          { from: 'inactive', to: 'active', via: 'activate' },
+          {
+            from: 'active',
+            to: 'done',
+            timer: { amount: 1, unit: 'hour' },
+          },
+        ],
+      },
+    });
+    const pack = itemPack([timer]);
+    const itemId = installEmptyItem(db, timer, 'pc-1');
+    useItem(db, {
+      ...CTX,
+      instanceId: itemId,
+      operationId: 'activate',
+      characterId: 'pc-1',
+      resolveRulesPack: () => pack,
+    });
+    const result = completeShortRest(db, {
+      ...CTX,
+      restId: 'timer-short-rest',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+      resolveRulesPack: () => pack,
+    }) as {
+      itemTimerResolutions: readonly { from: string; to: string }[];
+    };
+    expect(result.itemTimerResolutions).toMatchObject([
+      { from: 'active', to: 'done' },
+    ]);
+    expect(readItemState(db, itemId)?.machineState).toBe('done');
+    db.close();
+  });
+
   it('publishes and persists stable recovery evidence when a short rest crosses its deadline', () => {
     const db = setupCharacters();
     mutateState(db, {

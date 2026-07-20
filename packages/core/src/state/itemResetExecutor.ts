@@ -463,6 +463,26 @@ function crossedBoundaries(
   return result;
 }
 
+function crossedBoundaryEvents(
+  previousElapsedMinutes: number,
+  elapsedMinutes: number,
+): { readonly event: 'dawn' | 'dusk'; readonly elapsedMinutes: number }[] {
+  return [
+    ...crossedBoundaries(previousElapsedMinutes, elapsedMinutes, 360).map(
+      (boundaryElapsedMinutes) => ({
+        event: 'dawn' as const,
+        elapsedMinutes: boundaryElapsedMinutes,
+      }),
+    ),
+    ...crossedBoundaries(previousElapsedMinutes, elapsedMinutes, 1_080).map(
+      (boundaryElapsedMinutes) => ({
+        event: 'dusk' as const,
+        elapsedMinutes: boundaryElapsedMinutes,
+      }),
+    ),
+  ].sort((a, b) => a.elapsedMinutes - b.elapsedMinutes);
+}
+
 function applyReset(
   item: ResolvedItem,
   state: ItemInstanceState,
@@ -837,34 +857,16 @@ export function resolveDueItemClockEvents(
     const rawState = readItemState(db, row.id);
     if (rawState === undefined) continue;
     let state = validatedState(item, rawState);
-    for (const boundary of crossedBoundaries(
+    for (const { event, elapsedMinutes } of crossedBoundaryEvents(
       input.previousElapsedMinutes,
       input.elapsedMinutes,
-      360,
     )) {
       const applied = resetItem(
         db,
         item,
         state,
-        'dawn',
-        boundary,
-        input.rng,
-        input,
-      );
-      state = applied.state;
-      itemResets.push(...applied.evidence);
-    }
-    for (const boundary of crossedBoundaries(
-      input.previousElapsedMinutes,
-      input.elapsedMinutes,
-      1_080,
-    )) {
-      const applied = resetItem(
-        db,
-        item,
-        state,
-        'dusk',
-        boundary,
+        event,
+        elapsedMinutes,
         input.rng,
         input,
       );
