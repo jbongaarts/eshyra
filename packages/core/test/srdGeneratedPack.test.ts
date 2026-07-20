@@ -1083,7 +1083,7 @@ const DICE_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
   'magic-item:robe-of-useful-items|reverse|4d4+12':
     'The SRD gives the robe twelve fixed patches plus 4d4 additional patches; reviewed mechanics synthesize that total as 4d4+12.',
   'magic-item:staff-of-striking|forward|1d6':
-    'The SRD describes the daily recharge as 1d6 + 4 expended charges; reviewed mechanics represent that recharge as 1d6+4.',
+    'The per-charge extra 1d6 force damage (C2-owned per the reviewed inventory) has no typed dice token in mechanics: the powerful-strike operation carries only a variable charge cost. Whether the operation needs a typed damage representation is tracked in eshyra-u5wn; the recharge 1d6+4 conserves exactly and needs no exception.',
 };
 
 function diceExceptionKey(
