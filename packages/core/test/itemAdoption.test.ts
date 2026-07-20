@@ -446,6 +446,65 @@ describe('legacy magic-item adoption', () => {
     ).toEqual({ action: 'discard-evidence' });
   });
 
+  it('refuses to delete an empty reviewed row that still has attunement records', () => {
+    const s = setup();
+    insertLegacy(s, { id: 'zero-quantity-attuned', quantity: 0 });
+    s.db
+      .prepare(
+        `INSERT INTO inventory_adoption_review(
+           inventory_id, requested_pack_ref, review_kind, reason,
+           raw_properties_json, provenance, session_id, updated_at
+         ) VALUES (?, ?, 'malformed-evidence', ?, ?, 'test', ?, ?)`,
+      )
+      .run(
+        'zero-quantity-attuned',
+        'magic-item:necklace-of-fireballs',
+        'zero quantity is malformed evidence',
+        '{"legacy":true}',
+        s.ctx.sessionId,
+        s.ctx.at,
+      );
+    s.db
+      .prepare(
+        `INSERT INTO attunement(
+           campaign_id, character_id, item_id, item_key, display_name,
+           attuned_at, provenance, session_id, updated_at
+         ) VALUES (?, ?, 'zero-quantity-attuned',
+                   'magic-item:necklace-of-fireballs', 'Empty Necklace', ?,
+                   'test', ?, ?)`,
+      )
+      .run(
+        s.ctx.campaignId,
+        s.characterId,
+        s.ctx.at,
+        s.ctx.sessionId,
+        s.ctx.at,
+      );
+
+    expect(() =>
+      adoptMagicItem(s.db, {
+        campaignId: s.ctx.campaignId,
+        inventoryId: 'zero-quantity-attuned',
+        characterId: s.characterId,
+        packRef: 'magic-item:necklace-of-fireballs',
+        resolution: {
+          action: 'discard-evidence',
+          evidence: 'The GM discarded the empty malformed legacy row.',
+        },
+        rng: s.ctx.rng,
+        provenance: 'test:adoption',
+        sessionId: s.ctx.sessionId,
+        at: s.ctx.at,
+      }),
+    ).toThrow(/attunement records; resolve attunement/);
+    expect(
+      s.db
+        .prepare('SELECT 1 FROM inventory WHERE id=?')
+        .get('zero-quantity-attuned'),
+    ).toEqual({ 1: 1 });
+    expect(adoptionReview(s.db, 'zero-quantity-attuned')).toBeDefined();
+  });
+
   it('rejects a zero-quantity adoption without a review resolution', () => {
     const s = setup();
     insertLegacy(s, { id: 'zero-quantity-unreviewed', quantity: 0 });

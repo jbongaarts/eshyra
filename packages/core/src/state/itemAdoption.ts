@@ -417,6 +417,15 @@ export function adoptMagicItem(
       existingReview !== undefined &&
       input.resolution !== undefined
     ) {
+      // Attunement has no FK to inventory; deleting the empty row would
+      // orphan any surviving attunement record, so fail closed instead.
+      const attunedRow = txnDb
+        .prepare('SELECT 1 FROM attunement WHERE item_id=? LIMIT 1')
+        .get(row.id);
+      if (attunedRow !== undefined)
+        throw new ItemAdoptionError(
+          `inventory instance '${row.id}' is empty but still has attunement records; resolve attunement before discarding the empty row`,
+        );
       recordItemAdoptionResolution(txnDb, {
         inventoryId: row.id,
         action: input.resolution.action,
