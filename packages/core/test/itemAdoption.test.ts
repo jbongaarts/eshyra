@@ -339,7 +339,7 @@ describe('legacy magic-item adoption', () => {
       .run(
         'reclassified-stack',
         'magic-item:necklace-of-fireballs',
-        'legacy oversized evidence [reclassified by 0022: inventory quantity <= 100]',
+        'legacy oversized evidence [reclassified by 0023: inventory quantity <= 100]',
         '{"legacy":true}',
         '{"legacyState":true}',
         s.ctx.sessionId,

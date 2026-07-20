@@ -8,6 +8,7 @@ import {
 } from './attunement.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
 import { lookupStrictCampaignRecord } from './campaignRecordLookup.js';
+import { isDonCurseStateOnset } from './curseState.js';
 import { addCondition } from './domainMutations.js';
 
 export type InventoryWearState = 'worn' | 'not_worn';
@@ -167,9 +168,8 @@ function findDonCurseState(
   const state = effectiveMagicItemMechanics(
     resolved,
     variantId ?? undefined,
-  )?.curse?.stateDefinitions?.find(
-    (candidate) =>
-      candidate.onset === 'don the armor' || candidate.onset.startsWith('don '),
+  )?.curse?.stateDefinitions?.find((candidate) =>
+    isDonCurseStateOnset(candidate.onset),
   );
   return state?.id;
 }

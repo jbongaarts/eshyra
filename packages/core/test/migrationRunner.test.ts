@@ -794,7 +794,7 @@ describe('runMigrations', () => {
           '{"state":3}', 'test', 'session', ?)`,
     ).run(NOW(), NOW(), NOW());
 
-    for (const migration of bundled.slice(18, 21)) {
+    for (const migration of bundled.slice(18, 22)) {
       writeFileSync(
         join(
           dir,
@@ -804,14 +804,14 @@ describe('runMigrations', () => {
       );
     }
 
-    const migration22 = bundled[21];
-    if (migration22 === undefined) throw new Error('missing migration 0022');
+    const migration23 = bundled[22];
+    if (migration23 === undefined) throw new Error('missing migration 0023');
     writeFileSync(
-      join(dir, '0022_adoption_review_oversized_reclassification.sql'),
-      migration22.sql,
+      join(dir, '0023_adoption_review_oversized_reclassification.sql'),
+      migration23.sql,
     );
     expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([
-      19, 20, 21, 22,
+      19, 20, 21, 22, 23,
     ]);
     expect(
       db
@@ -844,7 +844,7 @@ describe('runMigrations', () => {
         inventory_id: 'small-oversized-review',
         review_kind: 'malformed-evidence',
         reason:
-          'legacy oversized evidence [reclassified by 0022: inventory quantity <= 100]',
+          'legacy oversized evidence [reclassified by 0023: inventory quantity <= 100]',
         raw_properties_json: '{"raw":1}',
         raw_item_state_json: '{"state":1}',
       },

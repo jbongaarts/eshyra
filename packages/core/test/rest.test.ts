@@ -18,6 +18,7 @@ import {
   spendRestHitDie,
   spendSpellSlot,
   spendUsage,
+  stabilizeCharacter,
   startEncounter,
   syncSpellSlots,
   updateClock,
@@ -131,6 +132,59 @@ function setupCharacters(): ReturnType<typeof freshDbWithSession> {
 }
 
 describe('F7 rest qualification boundary', () => {
+  it('publishes and persists stable recovery evidence when a short rest crosses its deadline', () => {
+    const db = setupCharacters();
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'hp_current',
+      op: 'set',
+      value: 0,
+      ...CTX,
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'life_state',
+      op: 'set',
+      value: 'dying',
+      ...CTX,
+    });
+    stabilizeCharacter(
+      db,
+      { ...CTX, characterId: 'pc-1' },
+      createSeededRng(42),
+    );
+
+    const result = completeShortRest(db, {
+      ...CTX,
+      restId: 'stable-recovery-rest',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 240, strenuousActivity: false },
+    }) as {
+      stableRecoveries: readonly unknown[];
+    };
+    const persisted = db
+      .prepare(
+        "SELECT benefits_json FROM rest_event WHERE rest_id='stable-recovery-rest'",
+      )
+      .get() as { benefits_json: string };
+
+    expect(result.stableRecoveries).toHaveLength(1);
+    expect(JSON.parse(persisted.benefits_json).stableRecoveries).toEqual(
+      result.stableRecoveries,
+    );
+    expect(
+      db
+        .prepare("SELECT hp_current, life_state FROM character WHERE id='pc-1'")
+        .get(),
+    ).toEqual({
+      hp_current: 1,
+      life_state: 'alive',
+    });
+    db.close();
+  });
+
   it('keeps short-rest recovery open only until time or combat transitions', () => {
     const db = setupCharacters();
     completeShortRest(db, {

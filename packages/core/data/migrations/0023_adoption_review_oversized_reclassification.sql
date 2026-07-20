@@ -3,7 +3,7 @@
 
 UPDATE inventory_adoption_review
 SET review_kind = 'malformed-evidence',
-    reason = reason || ' [reclassified by 0022: inventory quantity <= 100]'
+    reason = reason || ' [reclassified by 0023: inventory quantity <= 100]'
 WHERE review_kind = 'oversized-stack'
   AND EXISTS (
     SELECT 1
