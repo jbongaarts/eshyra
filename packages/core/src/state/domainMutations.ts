@@ -462,7 +462,7 @@ export function listRecoverableItems(
       ? ['lost']
       : basis === 'repurchased'
         ? ['sold']
-        : ['sold', 'lost'];
+        : ['lost'];
   const placeholders = allowedDispositions.map(() => '?').join(', ');
   const rows = db
     .prepare(
@@ -666,10 +666,13 @@ export function reacquireItem(
       );
     if (
       (row.unheld_disposition === 'sold' && input.basis === 'found') ||
-      (row.unheld_disposition === 'lost' && input.basis === 'repurchased')
+      (row.unheld_disposition === 'lost' && input.basis === 'repurchased') ||
+      (row.unheld_disposition === 'sold' && input.basis === 'returned')
     )
       throw new MutateStateError(
-        `reacquisition basis '${input.basis}' is incompatible with '${row.unheld_disposition}' custody`,
+        row.unheld_disposition === 'sold' && input.basis === 'returned'
+          ? 'reacquire_item returned basis is valid only for lost custody; sold rows require repurchased with an atomic payment'
+          : `reacquisition basis '${input.basis}' is incompatible with '${row.unheld_disposition}' custody`,
       );
     const quarantine = itemAdoptionReviewBlockMessage(
       txnDb,
