@@ -838,11 +838,15 @@ describe('domain mutation tools', () => {
       ok: true,
       data: { itemId: 'keepsake', characterId: 'pc-1' },
     });
-    registry.invoke('give_item', { id: 'sold-map', name: 'Sold Map' }, c);
+    registry.invoke(
+      'give_item',
+      { id: 'sold-map-returned', name: 'Sold Map Returned' },
+      c,
+    );
     expect(
       registry.invoke(
         'remove_item',
-        { id: 'sold-map', disposition: 'sold' },
+        { id: 'sold-map-returned', disposition: 'sold' },
         c,
       ),
     ).toMatchObject({ ok: true, data: { disposition: 'sold' } });
@@ -850,19 +854,16 @@ describe('domain mutation tools', () => {
       registry.invoke(
         'reacquire_item',
         {
-          id: 'sold-map',
+          id: 'sold-map-returned',
           basis: 'returned',
           evidence: 'The merchant accepted payment and returned this map.',
         },
         c,
       ),
     ).toMatchObject({
-      ok: true,
-      data: {
-        itemId: 'sold-map',
-        previousDisposition: 'sold',
-        characterId: 'pc-1',
-      },
+      ok: false,
+      code: 'mutate_error',
+      message: expect.stringContaining('repurchased'),
     });
     registry.invoke('give_item', { id: 'broken-vase', name: 'Broken Vase' }, c);
     registry.invoke(

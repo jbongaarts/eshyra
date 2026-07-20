@@ -7,7 +7,7 @@ export const listRecoverableItemsTool: Tool = {
   name: 'list_recoverable_items',
   mutates: false,
   description:
-    'Bounded read-only discovery of exact sold/lost row ids eligible for a scene-adjudicated recovery at the current world location. Use found only after finding a lost item, repurchased only for a sold item being bought back, and returned only when a counterparty returns a sold/lost item. This never changes custody or reveals ordinary dropped loot.',
+    'Bounded read-only discovery of exact sold/lost row ids eligible for a scene-adjudicated recovery at the current world location. Use found after finding a lost item, returned when a counterparty returns lost property, and repurchased only for a sold item being bought back with payment. This never changes custody or reveals ordinary dropped loot.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -15,7 +15,7 @@ export const listRecoverableItemsTool: Tool = {
         type: 'string',
         enum: ['found', 'repurchased', 'returned'],
         description:
-          'Recovery basis already established by the current scene; controls which hidden custody dispositions are eligible.',
+          'Recovery basis already established by the current scene; found/returned discover lost rows, while repurchased discovers sold rows.',
       },
     },
     required: ['basis'],

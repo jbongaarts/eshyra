@@ -845,7 +845,7 @@ describe('removeItem', () => {
       itemId: dropped.relinquishedItemId,
       characterId: 'pc-1',
     });
-    expect(
+    expect(() =>
       reacquireItem(
         db,
         {
@@ -855,10 +855,7 @@ describe('removeItem', () => {
         },
         CTX,
       ),
-    ).toMatchObject({
-      itemId: first.relinquishedItemId,
-      characterId: 'pc-1',
-    });
+    ).toThrow(/repurchased.*atomic payment/);
     expect(
       db
         .prepare(
@@ -1114,28 +1111,48 @@ describe('removeItem', () => {
       expect(
         listRecoverableItems(db, disposition === 'sold' ? 'returned' : 'found')
           .items,
-      ).toEqual([
-        expect.objectContaining({
+      ).toEqual(
+        disposition === 'sold'
+          ? []
+          : [
+              expect.objectContaining({
+                itemId,
+                disposition,
+                worldLocationId: 'market',
+              }),
+            ],
+      );
+      if (disposition === 'sold') {
+        expect(() =>
+          reacquireItem(
+            db,
+            {
+              itemId,
+              basis: 'returned',
+              evidence: 'The merchant returned the sold relic.',
+            },
+            CTX,
+          ),
+        ).toThrow(/repurchased.*atomic payment/);
+      } else {
+        expect(
+          reacquireItem(
+            db,
+            {
+              itemId,
+              basis: 'returned',
+              evidence:
+                'The counterparty returned the lost relic in the market scene.',
+            },
+            CTX,
+          ),
+        ).toMatchObject({
           itemId,
-          disposition,
-          worldLocationId: 'market',
-        }),
-      ]);
-      expect(
-        reacquireItem(
-          db,
-          {
-            itemId,
-            basis: disposition === 'sold' ? 'returned' : 'found',
-            evidence: `The ${disposition} relic returned in the market scene.`,
-          },
-          CTX,
-        ),
-      ).toMatchObject({
-        itemId,
-        previousDisposition: disposition,
-        characterId: 'pc-1',
-      });
+          previousDisposition: disposition,
+          characterId: 'pc-1',
+        });
+      }
+      if (disposition === 'sold') continue;
       expect(
         db
           .prepare(
@@ -1145,8 +1162,9 @@ describe('removeItem', () => {
           .get(itemId),
       ).toEqual({
         from_disposition: disposition,
-        basis: disposition === 'sold' ? 'returned' : 'found',
-        evidence: `The ${disposition} relic returned in the market scene.`,
+        basis: 'returned',
+        evidence:
+          'The counterparty returned the lost relic in the market scene.',
       });
     }
     db.close();
@@ -1189,7 +1207,7 @@ describe('removeItem', () => {
     ).run(returning.id, CTX.at, CTX.at);
     removeItem(db, { itemId: returning.id, disposition: 'sold' }, CTX);
 
-    expect(
+    expect(() =>
       reacquireItem(
         db,
         {
@@ -1199,7 +1217,7 @@ describe('removeItem', () => {
         },
         CTX,
       ),
-    ).toMatchObject({ itemId: returning.id, previousDisposition: 'sold' });
+    ).toThrow(/repurchased.*atomic payment/);
     expect(
       db
         .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
