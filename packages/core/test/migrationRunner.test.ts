@@ -764,6 +764,91 @@ describe('runMigrations', () => {
       { inventory_id: 'counter-review', review_kind: 'legacy-counter' },
       { inventory_id: 'oversized-review', review_kind: 'oversized-stack' },
     ]);
+
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, quantity, properties_json, provenance,
+         session_id, updated_at
+      ) VALUES
+         ('small-oversized-review', 'pc-1', 'Small stack', 40, '{}',
+          'test', 'session', ?),
+         ('genuine-oversized-review', 'pc-1', 'Genuine stack', 150, '{}',
+          'test', 'session', ?),
+         ('existing-malformed-review', 'pc-1', 'Malformed', 1, '{}',
+          'test', 'session', ?)`,
+    ).run(NOW(), NOW(), NOW());
+    db.prepare(
+      `INSERT INTO inventory_adoption_review(
+         inventory_id, requested_pack_ref, review_kind, reason,
+         raw_properties_json, raw_item_state_json, provenance, session_id,
+         updated_at
+       ) VALUES
+         ('small-oversized-review', 'magic-item:necklace-of-fireballs',
+          'oversized-stack', 'legacy oversized evidence', '{"raw":1}',
+          '{"state":1}', 'test', 'session', ?),
+         ('genuine-oversized-review', 'magic-item:necklace-of-fireballs',
+          'oversized-stack', 'still oversized evidence', '{"raw":2}',
+          '{"state":2}', 'test', 'session', ?),
+         ('existing-malformed-review', 'magic-item:necklace-of-fireballs',
+          'malformed-evidence', 'already malformed', '{"raw":3}',
+          '{"state":3}', 'test', 'session', ?)`,
+    ).run(NOW(), NOW(), NOW());
+
+    for (const migration of bundled.slice(18, 21)) {
+      writeFileSync(
+        join(
+          dir,
+          `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+        ),
+        migration.sql,
+      );
+    }
+
+    const migration22 = bundled[21];
+    if (migration22 === undefined) throw new Error('missing migration 0022');
+    writeFileSync(
+      join(dir, '0022_adoption_review_oversized_reclassification.sql'),
+      migration22.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([
+      19, 20, 21, 22,
+    ]);
+    expect(
+      db
+        .prepare(
+          `SELECT inventory_id, review_kind, reason,
+                  raw_properties_json, raw_item_state_json
+           FROM inventory_adoption_review
+           WHERE inventory_id IN (
+             'small-oversized-review', 'genuine-oversized-review',
+             'existing-malformed-review'
+           ) ORDER BY inventory_id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        inventory_id: 'existing-malformed-review',
+        review_kind: 'malformed-evidence',
+        reason: 'already malformed',
+        raw_properties_json: '{"raw":3}',
+        raw_item_state_json: '{"state":3}',
+      },
+      {
+        inventory_id: 'genuine-oversized-review',
+        review_kind: 'oversized-stack',
+        reason: 'still oversized evidence',
+        raw_properties_json: '{"raw":2}',
+        raw_item_state_json: '{"state":2}',
+      },
+      {
+        inventory_id: 'small-oversized-review',
+        review_kind: 'malformed-evidence',
+        reason:
+          'legacy oversized evidence [reclassified by 0022: inventory quantity <= 100]',
+        raw_properties_json: '{"raw":1}',
+        raw_item_state_json: '{"state":1}',
+      },
+    ]);
     expect(
       db
         .prepare(

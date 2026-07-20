@@ -321,6 +321,72 @@ describe('legacy magic-item adoption', () => {
     });
   });
 
+  it('resolves a reclassified formerly oversized review by discarding preserved evidence', () => {
+    const s = setup();
+    insertLegacy(s, {
+      id: 'reclassified-stack',
+      quantity: 40,
+      properties: { material: 'silver' },
+    });
+    s.db
+      .prepare(
+        `INSERT INTO inventory_adoption_review(
+           inventory_id, requested_pack_ref, review_kind, reason,
+           raw_properties_json, raw_item_state_json, provenance, session_id,
+           updated_at
+         ) VALUES (?, ?, 'malformed-evidence', ?, ?, ?, 'test', ?, ?)`,
+      )
+      .run(
+        'reclassified-stack',
+        'magic-item:necklace-of-fireballs',
+        'legacy oversized evidence [reclassified by 0022: inventory quantity <= 100]',
+        '{"legacy":true}',
+        '{"legacyState":true}',
+        s.ctx.sessionId,
+        s.ctx.at,
+      );
+
+    const result = adoptMagicItem(s.db, {
+      campaignId: s.ctx.campaignId,
+      inventoryId: 'reclassified-stack',
+      characterId: s.characterId,
+      packRef: 'magic-item:necklace-of-fireballs',
+      resolution: {
+        action: 'discard-evidence',
+        evidence: 'The GM discarded the preserved malformed legacy evidence.',
+      },
+      rng: s.ctx.rng,
+      provenance: 'test:adoption',
+      sessionId: s.ctx.sessionId,
+      at: s.ctx.at,
+    });
+
+    expect(result).toMatchObject({ adopted: true, reviewRequired: false });
+    expect(
+      s.db
+        .prepare(
+          `SELECT COUNT(*) AS rows, SUM(quantity) AS quantity,
+                  MIN(pack_ref) AS pack_ref
+           FROM inventory WHERE id=? OR id LIKE ?`,
+        )
+        .get('reclassified-stack', 'reclassified-stack#%'),
+    ).toEqual({
+      rows: 40,
+      quantity: 40,
+      pack_ref: 'magic-item:necklace-of-fireballs',
+    });
+    expect(
+      s.db
+        .prepare(
+          'SELECT action, previous_review_kind FROM inventory_adoption_resolution WHERE inventory_id=?',
+        )
+        .get('reclassified-stack'),
+    ).toEqual({
+      action: 'discard-evidence',
+      previous_review_kind: 'malformed-evidence',
+    });
+  });
+
   it('lifts a compatible mechanics envelope and canonicalizes existing attunement identity', () => {
     const s = setup();
     insertLegacy(s, {
