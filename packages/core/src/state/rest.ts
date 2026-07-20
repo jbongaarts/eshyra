@@ -13,12 +13,17 @@ import {
 } from '../rules/binding.js';
 import type { ExpiredWorldEffectSummary } from './activeEffects.js';
 import { expireElapsedWorldEffects } from './activeEffects.js';
+import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
 import {
   adjustHp,
   expireTemporaryHp,
   type LifeState,
   resolveStableRecoveries,
 } from './hpLifecycle.js';
+import {
+  resolveDueItemClockEvents,
+  resolveRestEventItemResets,
+} from './itemResetExecutor.js';
 import { mutateState } from './mutateState.js';
 import { restoreSpellSlots } from './spellSlots.js';
 import { resetUsage } from './usageCounters.js';
@@ -28,6 +33,8 @@ export interface RestContext {
   provenance: string;
   sessionId: string;
   at: string;
+  rng?: Rng;
+  resolveRulesPack?: CampaignRulesPackResolver;
 }
 export interface AdvanceWorldTimeInput extends RestContext {
   campaignId: string;
@@ -42,6 +49,8 @@ export interface WorldClock {
   expiredEffects: readonly ExpiredWorldEffectSummary[];
   closedRecoveryWindows: readonly ClosedShortRestRecovery[];
   stableRecoveries: readonly import('./hpLifecycle.js').StableRecoveryResult[];
+  itemResets: readonly import('./itemResetExecutor.js').ItemResetEvidence[];
+  itemTimerResolutions: readonly import('./itemResetExecutor.js').ItemTimerResolutionEvidence[];
 }
 export interface ClosedShortRestRecovery {
   restId: string;
@@ -201,6 +210,12 @@ export function advanceWorldTime(
       at: input.at,
     });
     const stableRecoveries = resolveStableRecoveries(txn, next, input);
+    const itemEvents = resolveDueItemClockEvents(txn, {
+      ...input,
+      campaignId: input.campaignId,
+      previousElapsedMinutes: before.elapsedMinutes,
+      elapsedMinutes: next,
+    });
     return {
       previousElapsedMinutes: before.elapsedMinutes,
       elapsedMinutes: next,
@@ -212,6 +227,8 @@ export function advanceWorldTime(
       expiredEffects,
       closedRecoveryWindows,
       stableRecoveries,
+      itemResets: itemEvents.itemResets,
+      itemTimerResolutions: itemEvents.itemTimerResolutions,
     };
   });
   return result;
@@ -608,8 +625,19 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
       narrativeLabelStale: time.narrativeLabelStale,
       closedRecoveryWindows: time.closedRecoveryWindows,
       stableRecoveries: time.stableRecoveries,
+      itemResets: [] as import('./itemResetExecutor.js').ItemResetEvidence[],
+      itemTimerResolutions: time.itemTimerResolutions,
     };
+    const restEvent = kind === 'short' ? 'short-rest' : 'long-rest';
     for (const s of states) {
+      benefits.itemResets.push(
+        ...resolveRestEventItemResets(txn, {
+          ...input,
+          campaignId: input.campaignId,
+          event: restEvent,
+          participants: [s.id],
+        }),
+      );
       const pool = resolvePool(txn, s.id, input);
       if (kind === 'short')
         benefits.recovery[s.id] = {

@@ -89,6 +89,8 @@ export const advanceTimeTool: Tool = {
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,
+          rng: ctx.rng,
+          resolveRulesPack: ctx.resolveRulesPack,
         }),
       );
     } catch (e) {
@@ -135,6 +137,8 @@ function restTool(name: string, kind: 'short' | 'long'): Tool {
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,
+          rng: ctx.rng,
+          resolveRulesPack: ctx.resolveRulesPack,
         };
         return ok(
           kind === 'short'

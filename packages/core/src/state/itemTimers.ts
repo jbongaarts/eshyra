@@ -56,9 +56,17 @@ export function resolveItemStateTimers(
   from: string,
   declarations: readonly PendingItemTimerDeclaration[],
   rng: Rng | undefined,
+  anchorElapsedMinutes?: number,
 ): readonly ItemStateTimer[] {
   if (declarations.length === 0) return [];
-  const anchorElapsedMinutes = currentElapsedMinutes(db);
+  const anchor =
+    anchorElapsedMinutes === undefined
+      ? currentElapsedMinutes(db)
+      : anchorElapsedMinutes;
+  if (!Number.isSafeInteger(anchor) || anchor < 0)
+    throw new ItemTimerError(
+      'item timer anchor must be a nonnegative safe integer',
+    );
   return declarations.map(({ to, timer }) => {
     if (timer.unit === 'round')
       throw new ItemTimerError(
@@ -87,7 +95,7 @@ export function resolveItemStateTimers(
         'item timer amount must be a nonnegative integer',
       );
     const deadlineElapsedMinutes =
-      anchorElapsedMinutes + durationMinutes(resolved.amount, timer.unit);
+      anchor + durationMinutes(resolved.amount, timer.unit);
     if (!Number.isSafeInteger(deadlineElapsedMinutes))
       throw new ItemTimerError(
         'item timer deadline exceeds elapsed-world range',
@@ -95,7 +103,7 @@ export function resolveItemStateTimers(
     return {
       from,
       to,
-      anchorElapsedMinutes,
+      anchorElapsedMinutes: anchor,
       deadlineElapsedMinutes,
       amount: resolved.amount,
       unit: timer.unit,
