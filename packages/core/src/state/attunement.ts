@@ -42,8 +42,13 @@ import {
   lookupCampaignRecord,
   lookupStrictCampaignRecord,
 } from './campaignRecordLookup.js';
+import { isDonCurseStateOnset } from './curseState.js';
 import type { LifeState } from './hpLifecycle.js';
 import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
+import {
+  LiveStateSchemaError,
+  validateConditionsJson,
+} from './liveStateSchema.js';
 
 export const ATTUNEMENT_SLOT_LIMIT = 3;
 
@@ -208,10 +213,50 @@ export function assertInventoryCurseCustodyReady(
     (wear === undefined ||
       wear.character_id !== item.character_id ||
       wear.wear_state === 'worn')
-  )
-    throw new MagicItemCustodyError(
-      `${record.key} is source-declared as impossible to doff while cursed; '${mutation}' must fail closed while the item is worn or its authoritative wear state is ambiguous`,
-    );
+  ) {
+    if (wear?.character_id !== item.character_id || wear.wear_state !== 'worn')
+      throw new MagicItemCustodyError(
+        `${record.key} is source-declared as impossible to doff while cursed; '${mutation}' must fail closed while the item is worn or its authoritative wear state is ambiguous`,
+      );
+    const curseStateId = curse.stateDefinitions?.find((state) =>
+      isDonCurseStateOnset(state.onset),
+    )?.id;
+    if (curseStateId === undefined)
+      throw new MagicItemCustodyError(
+        `${record.key} is source-declared as impossible to doff while cursed, but has no authoritative don-onset curse state; '${mutation}' must fail closed`,
+      );
+    const character = db
+      .prepare('SELECT conditions_json FROM character WHERE id = ?')
+      .get(item.character_id) as { conditions_json: string } | undefined;
+    if (character === undefined)
+      throw new MagicItemCustodyError(
+        `character '${item.character_id}' does not exist; refusing to bypass possible curse custody constraints`,
+      );
+    let conditions: ReturnType<typeof validateConditionsJson>;
+    try {
+      conditions = validateConditionsJson(
+        JSON.parse(character.conditions_json),
+        `character '${item.character_id}'.conditions_json`,
+      );
+    } catch (error) {
+      if (
+        !(error instanceof LiveStateSchemaError) &&
+        !(error instanceof SyntaxError)
+      )
+        throw error;
+      throw new MagicItemCustodyError(
+        `character '${item.character_id}' has malformed conditions_json; refusing to bypass possible curse custody constraints`,
+      );
+    }
+    if (
+      conditions.some(
+        (condition) => (condition as { id: string }).id === curseStateId,
+      )
+    )
+      throw new MagicItemCustodyError(
+        `${record.key} is source-declared as impossible to doff while cursed; '${mutation}' must fail closed while the item is worn or its authoritative wear state is ambiguous`,
+      );
+  }
   // Transfer has its own persistent-attunement owner; this gate contributes
   // only the blocks-doff constraint there. Loss is involuntary.
   if (mutation === 'lost' || mutation === 'transfer') return;

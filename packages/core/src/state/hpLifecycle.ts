@@ -601,6 +601,26 @@ export function resolveStableRecoveries(
 ): readonly StableRecoveryResult[] {
   if (!Number.isSafeInteger(elapsedMinutes) || elapsedMinutes < 0)
     throw new MutateStateError('elapsed_minutes is malformed');
+  const malformedRows = db
+    .prepare(
+      `SELECT id
+       FROM character
+       WHERE life_state='stable' AND hp_current=0
+         AND (
+           stable_recovery_roll IS NULL
+           OR stable_recovery_anchor_elapsed_minutes IS NULL
+           OR stable_recovery_deadline_elapsed_minutes IS NULL
+         )
+       ORDER BY id`,
+    )
+    .all() as Array<{ id: string }>;
+  if (malformedRows.length > 0) {
+    throw new MutateStateError(
+      `stable recovery schedule is incomplete for character(s): ${malformedRows
+        .map((row) => row.id)
+        .join(', ')}`,
+    );
+  }
   const rows = db
     .prepare(
       `SELECT id, stable_recovery_roll, stable_recovery_deadline_elapsed_minutes

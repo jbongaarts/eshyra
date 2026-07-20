@@ -264,7 +264,7 @@ describe('migration 0013 elapsed-world transition', () => {
       NOW(),
     );
     expect(migrateDatabase(db, { now: NOW }).migrations.applied).toEqual([
-      13, 14, 15, 16, 17, 18, 19, 20, 21,
+      13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
     ]);
     expect(
       db
@@ -326,6 +326,7 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.legacy.action).toBe('empty');
     expect(result.migrations.applied).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+      22,
     ]);
     expect(readMigrationLedger(db).map((r) => [r.version, r.name])).toEqual([
       [1, 'initial'],
@@ -349,6 +350,7 @@ describe('migrateDatabase (end to end)', () => {
       [19, 'inventory_identity_bounds'],
       [20, 'stable_recovery_deadline'],
       [21, 'inventory_wear_state'],
+      [22, 'stable_recovery_adoption'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -367,6 +369,7 @@ describe('migrateDatabase (end to end)', () => {
     // 0001 is adopted (already applied); the post-baseline migrations apply.
     expect(result.migrations.applied).toEqual([
       2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+      22,
     ]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     expect(
@@ -374,10 +377,10 @@ describe('migrateDatabase (end to end)', () => {
         .slice(-4)
         .map((r) => [r.version, r.name]),
     ).toEqual([
-      [18, 'inventory_adoption_review'],
       [19, 'inventory_identity_bounds'],
       [20, 'stable_recovery_deadline'],
       [21, 'inventory_wear_state'],
+      [22, 'stable_recovery_adoption'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -404,6 +407,162 @@ describe('migrateDatabase (end to end)', () => {
     );
     expect(hasLedger(db)).toBe(false);
     db.close();
+  });
+});
+
+describe('migration 0022 stable-recovery adoption', () => {
+  function migrationDirThrough(version: number): string {
+    const dir = mkdtempSync(join(tmpdir(), 'eshyra-migrations-'));
+    for (const migration of discoverMigrations()) {
+      if (migration.version > version) break;
+      writeFileSync(
+        join(
+          dir,
+          `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+        ),
+        migration.sql,
+      );
+    }
+    return dir;
+  }
+
+  it('adopts legacy stable rows at four hours and preserves complete schedules', () => {
+    const db = openDatabase(':memory:');
+    const preAdoptionDir = migrationDirThrough(21);
+    const adoptionDir = migrationDirThrough(22);
+    try {
+      runMigrations(db, { dir: preAdoptionDir, now: NOW });
+      db.prepare('UPDATE clock SET elapsed_minutes = 100 WHERE id = 1').run();
+      db.prepare(
+        `INSERT INTO character
+         (id, hp_current, hp_max, life_state, provenance, session_id, updated_at,
+          stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+          stable_recovery_deadline_elapsed_minutes)
+         VALUES ('pc-complete', 0, 10, 'stable', 'test', 'session-1', ?, 2, 40, 160)`,
+      ).run(NOW());
+      db.prepare(
+        `INSERT INTO character
+         (id, hp_current, hp_max, life_state, provenance, session_id, updated_at)
+         VALUES ('pc-dying', 0, 10, 'dying', 'test', 'session-1', ?)`,
+      ).run(NOW());
+      db.prepare(
+        `UPDATE character SET hp_max = 10, hp_current = 0, life_state = 'stable'
+         WHERE id = 'pc-1'`,
+      ).run();
+
+      const result = runMigrations(db, { dir: adoptionDir, now: NOW });
+      expect(result.applied).toEqual([22]);
+      expect(
+        db
+          .prepare(
+            `SELECT stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+                  stable_recovery_deadline_elapsed_minutes
+           FROM character WHERE id = 'pc-1'`,
+          )
+          .get(),
+      ).toEqual({
+        stable_recovery_roll: 4,
+        stable_recovery_anchor_elapsed_minutes: 100,
+        stable_recovery_deadline_elapsed_minutes: 340,
+      });
+      expect(
+        db
+          .prepare(
+            `SELECT stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+                  stable_recovery_deadline_elapsed_minutes
+           FROM character WHERE id = 'pc-complete'`,
+          )
+          .get(),
+      ).toEqual({
+        stable_recovery_roll: 2,
+        stable_recovery_anchor_elapsed_minutes: 40,
+        stable_recovery_deadline_elapsed_minutes: 160,
+      });
+      expect(
+        db
+          .prepare("SELECT life_state FROM character WHERE id = 'pc-dying'")
+          .get(),
+      ).toEqual({ life_state: 'dying' });
+
+      advanceWorldTime(db, {
+        campaignId: 'campaign-1',
+        minutes: 340,
+        provenance: 'test:migration',
+        sessionId: 'session-1',
+        at: NOW(),
+      });
+      expect(
+        db
+          .prepare(
+            "SELECT hp_current, life_state FROM character WHERE id = 'pc-1'",
+          )
+          .get(),
+      ).toEqual({ hp_current: 1, life_state: 'alive' });
+    } finally {
+      rmSync(preAdoptionDir, { recursive: true, force: true });
+      rmSync(adoptionDir, { recursive: true, force: true });
+      db.close();
+    }
+  });
+
+  it('fails loudly when the singleton clock is missing', () => {
+    const db = openDatabase(':memory:');
+    const preAdoptionDir = migrationDirThrough(21);
+    const adoptionDir = migrationDirThrough(22);
+    try {
+      runMigrations(db, { dir: preAdoptionDir, now: NOW });
+      db.prepare('DELETE FROM clock WHERE id = 1').run();
+      expect(() => runMigrations(db, { dir: adoptionDir, now: NOW })).toThrow(
+        /NOT NULL constraint failed/,
+      );
+      expect(readMigrationLedger(db).map((row) => row.version)).not.toContain(
+        22,
+      );
+    } finally {
+      rmSync(preAdoptionDir, { recursive: true, force: true });
+      rmSync(adoptionDir, { recursive: true, force: true });
+      db.close();
+    }
+  });
+
+  it('rolls back and preserves a partially populated stable schedule', () => {
+    const db = openDatabase(':memory:');
+    const preAdoptionDir = migrationDirThrough(21);
+    const adoptionDir = migrationDirThrough(22);
+    try {
+      runMigrations(db, { dir: preAdoptionDir, now: NOW });
+      db.prepare('UPDATE clock SET elapsed_minutes = 500 WHERE id = 1').run();
+      db.prepare(
+        `INSERT INTO character
+         (id, hp_current, hp_max, life_state, provenance, session_id, updated_at,
+          stable_recovery_roll, stable_recovery_anchor_elapsed_minutes)
+         VALUES ('pc-partial', 0, 10, 'stable', 'test', 'session-1', ?, 1, 500)`,
+      ).run(NOW());
+
+      expect(() => runMigrations(db, { dir: adoptionDir, now: NOW })).toThrow(
+        /CHECK constraint failed/,
+      );
+      expect(readMigrationLedger(db).map((row) => row.version)).not.toContain(
+        22,
+      );
+      expect(
+        db
+          .prepare(
+            `SELECT stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+                    stable_recovery_deadline_elapsed_minutes
+             FROM character WHERE id = 'pc-partial'`,
+          )
+          .get(),
+      ).toEqual({
+        stable_recovery_roll: 1,
+        stable_recovery_anchor_elapsed_minutes: 500,
+        stable_recovery_deadline_elapsed_minutes: null,
+      });
+    } finally {
+      rmSync(preAdoptionDir, { recursive: true, force: true });
+      rmSync(adoptionDir, { recursive: true, force: true });
+      db.close();
+    }
   });
 });
 
@@ -437,7 +596,7 @@ describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
     const result = migrateDatabase(db, { now: NOW });
 
     expect(result.migrations.applied).toEqual([
-      5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+      5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
     ]);
     const row = db
       .prepare(
