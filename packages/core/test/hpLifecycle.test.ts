@@ -567,6 +567,36 @@ describe('stabilizeCharacter', () => {
     });
     db.close();
   });
+
+  it('rolls back the clock when stable recovery fails', () => {
+    const db = freshDb({ max: 20, current: 0, lifeState: 'dying' });
+    stabilizeCharacter(db, CTX, createSeededRng(42));
+    db.exec(
+      `CREATE TRIGGER fail_stable_recovery
+       BEFORE UPDATE OF hp_current ON character
+       WHEN NEW.id = 'pc-1'
+       BEGIN SELECT RAISE(ABORT, 'injected stable recovery failure'); END`,
+    );
+
+    expect(() =>
+      advanceWorldTime(db, {
+        ...CTX,
+        campaignId: 'campaign-1',
+        minutes: 240,
+      }),
+    ).toThrow(/injected stable recovery failure/);
+    expect(
+      db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get(),
+    ).toEqual({
+      elapsed_minutes: 0,
+    });
+    expect(readMachine(db)).toMatchObject({
+      hp_current: 0,
+      life_state: 'stable',
+      stable_recovery_deadline_elapsed_minutes: 180,
+    });
+    db.close();
+  });
 });
 
 describe('grantTemporaryHp', () => {

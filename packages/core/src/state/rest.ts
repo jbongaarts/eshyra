@@ -200,6 +200,7 @@ export function advanceWorldTime(
       sessionId: input.sessionId,
       at: input.at,
     });
+    const stableRecoveries = resolveStableRecoveries(txn, next, input);
     return {
       previousElapsedMinutes: before.elapsedMinutes,
       elapsedMinutes: next,
@@ -210,12 +211,10 @@ export function advanceWorldTime(
           : next) !== next,
       expiredEffects,
       closedRecoveryWindows,
+      stableRecoveries,
     };
   });
-  return {
-    ...result,
-    stableRecoveries: resolveStableRecoveries(db, result.elapsedMinutes, input),
-  };
+  return result;
 }
 
 function resolvePool(
@@ -608,6 +607,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
       inGameTime: time.inGameTime,
       narrativeLabelStale: time.narrativeLabelStale,
       closedRecoveryWindows: time.closedRecoveryWindows,
+      stableRecoveries: time.stableRecoveries,
     };
     for (const s of states) {
       const pool = resolvePool(txn, s.id, input);
