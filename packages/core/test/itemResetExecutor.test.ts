@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RulesPack, RulesRecord } from '../src/internal.js';
 import {
   advanceWorldTime,
+  attuneItem,
   createInitialItemState,
   getBundledDnd5eSrdPack,
   giveItem,
@@ -246,6 +247,126 @@ describe('item reset/timer executor', () => {
     expect(evidence).toMatchObject([
       { economy: 'uses', event: 'short-rest', remaining: 2 },
     ]);
+    db.close();
+  });
+
+  it('fails closed on a schema-legal but unsupported reset shape', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-unknown', {
+      economies: {
+        charges: {
+          kind: 'charges',
+          charges: { max: 5 },
+          reset: [{ at: 'dawn', amount: { amount: 1, unit: 'hour' } }],
+        },
+      },
+    });
+    const pack = rulesPack(record);
+    install(db, record);
+    expect(() =>
+      advanceWorldTime(db, {
+        ...CTX,
+        minutes: 1,
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toThrow(/magic-item:reset-unknown.*unsupported reset shape/);
+    db.close();
+  });
+
+  it('does not regain consumed or nonmagical items, but clears inert', () => {
+    for (const status of ['consumed', 'nonmagical', 'inert'] as const) {
+      const db = freshDbWithSession();
+      const record = fixture(`reset-${status}`, {
+        economies: {
+          charges: {
+            kind: 'charges',
+            charges: { max: 2 },
+            reset: [{ at: 'dawn', amount: 'all' }],
+            onDepleted: { becomes: 'inert' },
+          },
+        },
+      });
+      const pack = rulesPack(record);
+      const id = install(db, record);
+      const state = readItemState(db, id);
+      if (state === undefined) throw new Error('fixture state was not written');
+      writeItemState(
+        db,
+        id,
+        {
+          ...state,
+          economies: { charges: { remaining: 0 } },
+          depletions: [
+            {
+              economyId: 'charges',
+              rolls: [],
+              loseProperty: false,
+              becomes: 'inert',
+            },
+          ],
+          lifecycle: { status },
+        },
+        CTX,
+      );
+      const result = advanceWorldTime(db, {
+        ...CTX,
+        minutes: 360,
+        resolveRulesPack: resolver(pack),
+      });
+      if (status === 'inert') {
+        expect(result.itemResets).toHaveLength(1);
+        expect(readItemState(db, id)).toMatchObject({
+          economies: { charges: { remaining: 2 } },
+        });
+        expect(readItemState(db, id)?.lifecycle).toBeUndefined();
+      } else {
+        expect(result.itemResets).toHaveLength(0);
+        expect(readItemState(db, id)?.economies?.charges.remaining).toBe(0);
+        expect(readItemState(db, id)?.lifecycle?.status).toBe(status);
+      }
+      db.close();
+    }
+  });
+
+  it('destroys a timed item and returns attunement evidence', () => {
+    const db = freshDbWithSession();
+    const record = fixture(
+      'timer-destruction',
+      {
+        operations: [{ id: 'activate' }],
+        stateMachine: {
+          initial: 'inactive',
+          states: [{ id: 'inactive' }, { id: 'active' }, { id: 'destroyed' }],
+          transitions: [
+            { from: 'inactive', to: 'active', via: 'activate' },
+            {
+              from: 'active',
+              to: 'destroyed',
+              timer: { amount: 1, unit: 'minute' },
+            },
+          ],
+        },
+      },
+      true,
+    );
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    attuneItem(db, {
+      ...CTX,
+      itemId: id,
+      itemRef: record.key,
+      resolveRulesPack: resolver(pack),
+    });
+    useItem(db, useInput(pack, id, 'activate'));
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 1,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(result.itemTimerResolutions[0].attunementsEnded).toHaveLength(1);
+    expect(
+      db.prepare('SELECT 1 FROM inventory WHERE id=?').get(id),
+    ).toBeUndefined();
     db.close();
   });
 
