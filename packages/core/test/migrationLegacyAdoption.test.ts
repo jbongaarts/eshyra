@@ -524,6 +524,46 @@ describe('migration 0022 stable-recovery adoption', () => {
       db.close();
     }
   });
+
+  it('rolls back and preserves a partially populated stable schedule', () => {
+    const db = openDatabase(':memory:');
+    const preAdoptionDir = migrationDirThrough(21);
+    const adoptionDir = migrationDirThrough(22);
+    try {
+      runMigrations(db, { dir: preAdoptionDir, now: NOW });
+      db.prepare('UPDATE clock SET elapsed_minutes = 500 WHERE id = 1').run();
+      db.prepare(
+        `INSERT INTO character
+         (id, hp_current, hp_max, life_state, provenance, session_id, updated_at,
+          stable_recovery_roll, stable_recovery_anchor_elapsed_minutes)
+         VALUES ('pc-partial', 0, 10, 'stable', 'test', 'session-1', ?, 1, 500)`,
+      ).run(NOW());
+
+      expect(() => runMigrations(db, { dir: adoptionDir, now: NOW })).toThrow(
+        /CHECK constraint failed/,
+      );
+      expect(readMigrationLedger(db).map((row) => row.version)).not.toContain(
+        22,
+      );
+      expect(
+        db
+          .prepare(
+            `SELECT stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+                    stable_recovery_deadline_elapsed_minutes
+             FROM character WHERE id = 'pc-partial'`,
+          )
+          .get(),
+      ).toEqual({
+        stable_recovery_roll: 1,
+        stable_recovery_anchor_elapsed_minutes: 500,
+        stable_recovery_deadline_elapsed_minutes: null,
+      });
+    } finally {
+      rmSync(preAdoptionDir, { recursive: true, force: true });
+      rmSync(adoptionDir, { recursive: true, force: true });
+      db.close();
+    }
+  });
 });
 
 describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
