@@ -20,6 +20,7 @@ import {
   mutateStateBatch,
   openDatabase,
   recordDeathSave,
+  resolveStableRecoveries,
   stabilizeCharacter,
 } from '../src/internal.js';
 
@@ -595,6 +596,20 @@ describe('stabilizeCharacter', () => {
       life_state: 'stable',
       stable_recovery_deadline_elapsed_minutes: 180,
     });
+    db.close();
+  });
+
+  it('fails closed when a stable-at-zero recovery schedule is incomplete', () => {
+    const db = freshDb({ max: 20, current: 0, lifeState: 'dying' });
+    stabilizeCharacter(db, CTX, createSeededRng(42));
+    db.prepare(
+      `UPDATE character SET stable_recovery_anchor_elapsed_minutes = NULL
+       WHERE id = 'pc-1'`,
+    ).run();
+
+    expect(() => resolveStableRecoveries(db, 240, CTX)).toThrow(
+      /incomplete.*pc-1/,
+    );
     db.close();
   });
 });
