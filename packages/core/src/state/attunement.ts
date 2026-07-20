@@ -45,6 +45,10 @@ import {
 import { isDonCurseStateOnset } from './curseState.js';
 import type { LifeState } from './hpLifecycle.js';
 import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
+import {
+  LiveStateSchemaError,
+  validateConditionsJson,
+} from './liveStateSchema.js';
 
 export const ATTUNEMENT_SLOT_LIMIT = 3;
 
@@ -228,26 +232,22 @@ export function assertInventoryCurseCustodyReady(
       throw new MagicItemCustodyError(
         `character '${item.character_id}' does not exist; refusing to bypass possible curse custody constraints`,
       );
-    let conditions: unknown;
+    let conditions: ReturnType<typeof validateConditionsJson>;
     try {
-      conditions = JSON.parse(character.conditions_json);
-    } catch {
+      conditions = validateConditionsJson(
+        JSON.parse(character.conditions_json),
+        `character '${item.character_id}'.conditions_json`,
+      );
+    } catch (error) {
+      if (
+        !(error instanceof LiveStateSchemaError) &&
+        !(error instanceof SyntaxError)
+      )
+        throw error;
       throw new MagicItemCustodyError(
         `character '${item.character_id}' has malformed conditions_json; refusing to bypass possible curse custody constraints`,
       );
     }
-    if (
-      !Array.isArray(conditions) ||
-      conditions.some(
-        (condition) =>
-          typeof condition !== 'object' ||
-          condition === null ||
-          typeof (condition as { id?: unknown }).id !== 'string',
-      )
-    )
-      throw new MagicItemCustodyError(
-        `character '${item.character_id}' has malformed conditions_json; refusing to bypass possible curse custody constraints`,
-      );
     if (
       conditions.some(
         (condition) => (condition as { id: string }).id === curseStateId,

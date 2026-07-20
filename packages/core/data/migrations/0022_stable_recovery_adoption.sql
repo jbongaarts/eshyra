@@ -12,6 +12,22 @@ CREATE TEMP TABLE stable_recovery_adoption_clock (
 INSERT INTO stable_recovery_adoption_clock(elapsed_minutes)
 VALUES ((SELECT elapsed_minutes FROM clock WHERE id = 1));
 
+-- A partially populated schedule is corruption. Preserve its surviving
+-- evidence and abort the migration rather than rewriting it as an adoption.
+CREATE TEMP TABLE stable_recovery_adoption_guard (
+  violation_count INTEGER NOT NULL CHECK (violation_count = 0)
+);
+INSERT INTO stable_recovery_adoption_guard(violation_count)
+SELECT COUNT(*)
+FROM character
+WHERE life_state = 'stable'
+  AND hp_current = 0
+  AND (
+    (stable_recovery_roll IS NULL)
+    + (stable_recovery_anchor_elapsed_minutes IS NULL)
+    + (stable_recovery_deadline_elapsed_minutes IS NULL)
+  ) BETWEEN 1 AND 2;
+
 UPDATE character
 SET stable_recovery_roll = 4,
     stable_recovery_anchor_elapsed_minutes =
@@ -22,8 +38,9 @@ WHERE life_state = 'stable'
   AND hp_current = 0
   AND (
     stable_recovery_roll IS NULL
-    OR stable_recovery_anchor_elapsed_minutes IS NULL
-    OR stable_recovery_deadline_elapsed_minutes IS NULL
+    AND stable_recovery_anchor_elapsed_minutes IS NULL
+    AND stable_recovery_deadline_elapsed_minutes IS NULL
   );
 
+DROP TABLE stable_recovery_adoption_guard;
 DROP TABLE stable_recovery_adoption_clock;

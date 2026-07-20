@@ -73,6 +73,29 @@ describe('inventory wear state', () => {
     db.close();
   });
 
+  it('fails closed for malformed live conditions on a worn cursed item', () => {
+    const db = freshDbWithSession();
+    const armor = giveItem(
+      db,
+      {
+        id: 'malformed-demon-armor',
+        name: 'Demon Armor',
+        packRef: 'magic-item:demon-armor',
+        stateful: true,
+      },
+      CTX,
+    );
+    donItem(db, { ...CTX, itemId: armor.id });
+    db.prepare('UPDATE character SET conditions_json = ? WHERE id = ?').run(
+      '[{"id":""}]',
+      'pc-1',
+    );
+    expect(() => doffItem(db, { ...CTX, itemId: armor.id })).toThrow(
+      /malformed conditions_json.*refusing to bypass/,
+    );
+    db.close();
+  });
+
   it('does not infer legacy placement and fails closed for don', () => {
     const db = freshDbWithSession();
     db.prepare(
