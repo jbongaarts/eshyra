@@ -417,15 +417,27 @@ export function adoptMagicItem(
       existingReview !== undefined &&
       input.resolution !== undefined
     ) {
-      // Attunement has no FK to inventory; deleting the empty row would
-      // orphan any surviving attunement record, so fail closed instead.
-      const attunedRow = txnDb
-        .prepare('SELECT 1 FROM attunement WHERE item_id=? LIMIT 1')
-        .get(row.id);
-      if (attunedRow !== undefined)
-        throw new ItemAdoptionError(
-          `inventory instance '${row.id}' is empty but still has attunement records; resolve attunement before discarding the empty row`,
-        );
+      // Attunement has no FK to inventory, and end_attunement is itself
+      // blocked by this quarantine — so reconcile any surviving legacy
+      // attunement here, atomically: preserve it in the append-only
+      // discarded-structure evidence, then delete it with the empty row.
+      const survivingAttunements = txnDb
+        .prepare(
+          `SELECT * FROM attunement WHERE item_id=?
+           ORDER BY campaign_id, character_id`,
+        )
+        .all(row.id) as Record<string, unknown>[];
+      if (survivingAttunements.length > 0) {
+        const discardedBase =
+          discardedStructureJson === undefined
+            ? {}
+            : (JSON.parse(discardedStructureJson) as Record<string, unknown>);
+        discardedStructureJson = JSON.stringify({
+          ...discardedBase,
+          attunements: survivingAttunements,
+        });
+        txnDb.prepare('DELETE FROM attunement WHERE item_id=?').run(row.id);
+      }
       recordItemAdoptionResolution(txnDb, {
         inventoryId: row.id,
         action: input.resolution.action,

@@ -446,7 +446,7 @@ describe('legacy magic-item adoption', () => {
     ).toEqual({ action: 'discard-evidence' });
   });
 
-  it('refuses to delete an empty reviewed row that still has attunement records', () => {
+  it('atomically reconciles surviving attunement when resolving an empty reviewed row', () => {
     const s = setup();
     insertLegacy(s, { id: 'zero-quantity-attuned', quantity: 0 });
     s.db
@@ -481,28 +481,59 @@ describe('legacy magic-item adoption', () => {
         s.ctx.at,
       );
 
-    expect(() =>
-      adoptMagicItem(s.db, {
-        campaignId: s.ctx.campaignId,
-        inventoryId: 'zero-quantity-attuned',
-        characterId: s.characterId,
-        packRef: 'magic-item:necklace-of-fireballs',
-        resolution: {
-          action: 'discard-evidence',
-          evidence: 'The GM discarded the empty malformed legacy row.',
-        },
-        rng: s.ctx.rng,
-        provenance: 'test:adoption',
-        sessionId: s.ctx.sessionId,
-        at: s.ctx.at,
-      }),
-    ).toThrow(/attunement records; resolve attunement/);
+    // end_attunement is blocked by the quarantine itself, so the resolution
+    // must reconcile the surviving attunement atomically rather than deadlock.
+    const result = adoptMagicItem(s.db, {
+      campaignId: s.ctx.campaignId,
+      inventoryId: 'zero-quantity-attuned',
+      characterId: s.characterId,
+      packRef: 'magic-item:necklace-of-fireballs',
+      resolution: {
+        action: 'discard-evidence',
+        evidence: 'The GM discarded the empty malformed legacy row.',
+      },
+      rng: s.ctx.rng,
+      provenance: 'test:adoption',
+      sessionId: s.ctx.sessionId,
+      at: s.ctx.at,
+    });
+
+    expect(result).toMatchObject({
+      adopted: true,
+      reviewRequired: false,
+      originalInstanceId: 'zero-quantity-attuned',
+      instanceIds: [],
+    });
     expect(
       s.db
         .prepare('SELECT 1 FROM inventory WHERE id=?')
         .get('zero-quantity-attuned'),
-    ).toEqual({ 1: 1 });
-    expect(adoptionReview(s.db, 'zero-quantity-attuned')).toBeDefined();
+    ).toBeUndefined();
+    expect(adoptionReview(s.db, 'zero-quantity-attuned')).toBeUndefined();
+    expect(
+      s.db
+        .prepare('SELECT 1 FROM attunement WHERE item_id=?')
+        .get('zero-quantity-attuned'),
+    ).toBeUndefined();
+    const resolution = s.db
+      .prepare(
+        `SELECT action, discarded_structure_json
+         FROM inventory_adoption_resolution WHERE inventory_id=?`,
+      )
+      .get('zero-quantity-attuned') as {
+      action: string;
+      discarded_structure_json: string;
+    };
+    expect(resolution.action).toBe('discard-evidence');
+    expect(
+      JSON.parse(resolution.discarded_structure_json) as {
+        attunements: { item_id: string; display_name: string }[];
+      },
+    ).toMatchObject({
+      attunements: [
+        { item_id: 'zero-quantity-attuned', display_name: 'Empty Necklace' },
+      ],
+    });
   });
 
   it('rejects a zero-quantity adoption without a review resolution', () => {
