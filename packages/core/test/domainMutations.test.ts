@@ -1,10 +1,21 @@
 import { describe, expect, it } from 'vitest';
+import { ABILITY_SCORE_NAMES } from '../src/character/abilities.js';
+import type { AbilityScoreName } from '../src/character/creation.js';
+import type {
+  CharacterSheet,
+  FinalizedAbilityScore,
+} from '../src/character/finalizeCharacter.js';
 import {
   addCondition,
+  adjustCharacterCurrency,
   adjustHp,
   claimItem,
+  createSqliteCharacterSheetStore,
+  DND5E_SRD_PACK_ID,
+  DND5E_SRD_SYSTEM_ID,
   donItem,
   ensureCharacterRow,
+  getCharacterWallet,
   giveItem,
   initSchema,
   listRecoverableItems,
@@ -31,6 +42,39 @@ function freshDb() {
   const db = openDatabase(':memory:');
   initSchema(db);
   return db;
+}
+
+function seedWalletSheet(db: ReturnType<typeof freshDb>) {
+  const abilityScores = {} as Record<AbilityScoreName, FinalizedAbilityScore>;
+  const savingThrows = {} as CharacterSheet['savingThrows'];
+  for (const name of ABILITY_SCORE_NAMES) {
+    abilityScores[name] = { base: 10, final: 10, modifier: 0 };
+    savingThrows[name] = { modifier: 0, proficient: false };
+  }
+  createSqliteCharacterSheetStore(db).save('pc-1', {
+    schemaVersion: 1,
+    system: DND5E_SRD_SYSTEM_ID,
+    rulesPackId: DND5E_SRD_PACK_ID,
+    recipeId: 'dnd5e-srd-character',
+    creationMode: 'test',
+    level: 1,
+    identity: { name: 'Test' },
+    class: { key: 'class:fighter', name: 'Fighter' },
+    ancestry: { key: 'ancestry:human', name: 'Human' },
+    abilityScores,
+    proficiencyBonus: 2,
+    maxHitPoints: 10,
+    savingThrows,
+    skillProficiencies: [],
+    toolProficiencies: [],
+    armorProficiencies: [],
+    weaponProficiencies: [],
+    equipment: [],
+    languages: [],
+    spells: [],
+    wallet: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+    metadata: { createdAt: CTX.at },
+  });
 }
 
 describe('adjustHp', () => {
@@ -845,7 +889,7 @@ describe('removeItem', () => {
       itemId: dropped.relinquishedItemId,
       characterId: 'pc-1',
     });
-    expect(
+    expect(() =>
       reacquireItem(
         db,
         {
@@ -855,10 +899,7 @@ describe('removeItem', () => {
         },
         CTX,
       ),
-    ).toMatchObject({
-      itemId: first.relinquishedItemId,
-      characterId: 'pc-1',
-    });
+    ).toThrow(/repurchased.*atomic payment/);
     expect(
       db
         .prepare(
@@ -1114,28 +1155,48 @@ describe('removeItem', () => {
       expect(
         listRecoverableItems(db, disposition === 'sold' ? 'returned' : 'found')
           .items,
-      ).toEqual([
-        expect.objectContaining({
+      ).toEqual(
+        disposition === 'sold'
+          ? []
+          : [
+              expect.objectContaining({
+                itemId,
+                disposition,
+                worldLocationId: 'market',
+              }),
+            ],
+      );
+      if (disposition === 'sold') {
+        expect(() =>
+          reacquireItem(
+            db,
+            {
+              itemId,
+              basis: 'returned',
+              evidence: 'The merchant returned the sold relic.',
+            },
+            CTX,
+          ),
+        ).toThrow(/repurchased.*atomic payment/);
+      } else {
+        expect(
+          reacquireItem(
+            db,
+            {
+              itemId,
+              basis: 'returned',
+              evidence:
+                'The counterparty returned the lost relic in the market scene.',
+            },
+            CTX,
+          ),
+        ).toMatchObject({
           itemId,
-          disposition,
-          worldLocationId: 'market',
-        }),
-      ]);
-      expect(
-        reacquireItem(
-          db,
-          {
-            itemId,
-            basis: disposition === 'sold' ? 'returned' : 'found',
-            evidence: `The ${disposition} relic returned in the market scene.`,
-          },
-          CTX,
-        ),
-      ).toMatchObject({
-        itemId,
-        previousDisposition: disposition,
-        characterId: 'pc-1',
-      });
+          previousDisposition: disposition,
+          characterId: 'pc-1',
+        });
+      }
+      if (disposition === 'sold') continue;
       expect(
         db
           .prepare(
@@ -1145,8 +1206,9 @@ describe('removeItem', () => {
           .get(itemId),
       ).toEqual({
         from_disposition: disposition,
-        basis: disposition === 'sold' ? 'returned' : 'found',
-        evidence: `The ${disposition} relic returned in the market scene.`,
+        basis: 'returned',
+        evidence:
+          'The counterparty returned the lost relic in the market scene.',
       });
     }
     db.close();
@@ -1188,8 +1250,9 @@ describe('removeItem', () => {
                  'session-1', ?)`,
     ).run(returning.id, CTX.at, CTX.at);
     removeItem(db, { itemId: returning.id, disposition: 'sold' }, CTX);
+    seedWalletSheet(db);
 
-    expect(
+    expect(() =>
       reacquireItem(
         db,
         {
@@ -1199,7 +1262,7 @@ describe('removeItem', () => {
         },
         CTX,
       ),
-    ).toMatchObject({ itemId: returning.id, previousDisposition: 'sold' });
+    ).toThrow(/repurchased.*atomic payment/);
     expect(
       db
         .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
@@ -1216,6 +1279,58 @@ describe('removeItem', () => {
         .prepare('SELECT character_id FROM attunement WHERE item_id=?')
         .get(returning.id),
     ).toEqual({ character_id: 'pc-1' });
+    adjustCharacterCurrency(
+      db,
+      { kind: 'gain', amounts: { gp: 2 } },
+      { ...CTX, source: 'test:repurchase-seed' },
+    );
+    const repurchased = reacquireItem(
+      db,
+      {
+        itemId: returning.id,
+        basis: 'repurchased',
+        evidence:
+          'The merchant sold the orb back for the exact refunded price.',
+        payment: { gp: 2 },
+      },
+      CTX,
+    );
+    expect(repurchased).toMatchObject({
+      itemId: returning.id,
+      previousDisposition: 'sold',
+      paymentEventId: expect.any(String),
+    });
+    expect(
+      db
+        .prepare(
+          'SELECT character_id, unheld_disposition FROM inventory WHERE id=?',
+        )
+        .get(returning.id),
+    ).toEqual({ character_id: 'pc-1', unheld_disposition: null });
+    expect(
+      db
+        .prepare('SELECT state_json FROM item_state WHERE inventory_id=?')
+        .get(returning.id),
+    ).toEqual({
+      state_json: JSON.stringify({
+        packRef: 'magic-item:crystal-ball',
+        variantId: 'crystal-ball-of-telepathy',
+        custom: { scar: 'unchanged' },
+      }),
+    });
+    expect(
+      db
+        .prepare('SELECT character_id FROM attunement WHERE item_id=?')
+        .get(returning.id),
+    ).toEqual({ character_id: 'pc-1' });
+    expect(getCharacterWallet(db)).toMatchObject({ gp: 0 });
+    expect(
+      db
+        .prepare(
+          'SELECT payment_event_id FROM inventory_custody_event WHERE inventory_id=?',
+        )
+        .get(returning.id),
+    ).toEqual({ payment_event_id: repurchased.paymentEventId });
     db.close();
   });
 

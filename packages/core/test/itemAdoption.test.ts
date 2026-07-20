@@ -321,6 +321,237 @@ describe('legacy magic-item adoption', () => {
     });
   });
 
+  it('resolves a reclassified formerly oversized review by discarding preserved evidence', () => {
+    const s = setup();
+    insertLegacy(s, {
+      id: 'reclassified-stack',
+      quantity: 40,
+      properties: { material: 'silver' },
+    });
+    s.db
+      .prepare(
+        `INSERT INTO inventory_adoption_review(
+           inventory_id, requested_pack_ref, review_kind, reason,
+           raw_properties_json, raw_item_state_json, provenance, session_id,
+           updated_at
+         ) VALUES (?, ?, 'malformed-evidence', ?, ?, ?, 'test', ?, ?)`,
+      )
+      .run(
+        'reclassified-stack',
+        'magic-item:necklace-of-fireballs',
+        'legacy oversized evidence [reclassified by 0023: inventory quantity <= 100]',
+        '{"legacy":true}',
+        '{"legacyState":true}',
+        s.ctx.sessionId,
+        s.ctx.at,
+      );
+
+    const result = adoptMagicItem(s.db, {
+      campaignId: s.ctx.campaignId,
+      inventoryId: 'reclassified-stack',
+      characterId: s.characterId,
+      packRef: 'magic-item:necklace-of-fireballs',
+      resolution: {
+        action: 'discard-evidence',
+        evidence: 'The GM discarded the preserved malformed legacy evidence.',
+      },
+      rng: s.ctx.rng,
+      provenance: 'test:adoption',
+      sessionId: s.ctx.sessionId,
+      at: s.ctx.at,
+    });
+
+    expect(result).toMatchObject({ adopted: true, reviewRequired: false });
+    expect(
+      s.db
+        .prepare(
+          `SELECT COUNT(*) AS rows, SUM(quantity) AS quantity,
+                  MIN(pack_ref) AS pack_ref
+           FROM inventory WHERE id=? OR id LIKE ?`,
+        )
+        .get('reclassified-stack', 'reclassified-stack#%'),
+    ).toEqual({
+      rows: 40,
+      quantity: 40,
+      pack_ref: 'magic-item:necklace-of-fireballs',
+    });
+    expect(
+      s.db
+        .prepare(
+          'SELECT action, previous_review_kind FROM inventory_adoption_resolution WHERE inventory_id=?',
+        )
+        .get('reclassified-stack'),
+    ).toEqual({
+      action: 'discard-evidence',
+      previous_review_kind: 'malformed-evidence',
+    });
+  });
+
+  it('resolves a zero-quantity malformed-evidence review and deletes the empty row', () => {
+    const s = setup();
+    insertLegacy(s, {
+      id: 'zero-quantity-review',
+      quantity: 0,
+      properties: { material: 'silver' },
+    });
+    s.db
+      .prepare(
+        `INSERT INTO inventory_adoption_review(
+           inventory_id, requested_pack_ref, review_kind, reason,
+           raw_properties_json, provenance, session_id, updated_at
+         ) VALUES (?, ?, 'malformed-evidence', ?, ?, 'test', ?, ?)`,
+      )
+      .run(
+        'zero-quantity-review',
+        'magic-item:necklace-of-fireballs',
+        'zero quantity is malformed evidence',
+        '{"legacy":true}',
+        s.ctx.sessionId,
+        s.ctx.at,
+      );
+
+    const result = adoptMagicItem(s.db, {
+      campaignId: s.ctx.campaignId,
+      inventoryId: 'zero-quantity-review',
+      characterId: s.characterId,
+      packRef: 'magic-item:necklace-of-fireballs',
+      resolution: {
+        action: 'discard-evidence',
+        evidence: 'The GM discarded the empty malformed legacy row.',
+      },
+      rng: s.ctx.rng,
+      provenance: 'test:adoption',
+      sessionId: s.ctx.sessionId,
+      at: s.ctx.at,
+    });
+
+    expect(result).toMatchObject({
+      adopted: true,
+      reviewRequired: false,
+      originalInstanceId: 'zero-quantity-review',
+      instanceIds: [],
+    });
+    expect(
+      s.db
+        .prepare('SELECT 1 FROM inventory WHERE id=?')
+        .get('zero-quantity-review'),
+    ).toBeUndefined();
+    expect(adoptionReview(s.db, 'zero-quantity-review')).toBeUndefined();
+    expect(
+      s.db
+        .prepare(
+          'SELECT action FROM inventory_adoption_resolution WHERE inventory_id=?',
+        )
+        .get('zero-quantity-review'),
+    ).toEqual({ action: 'discard-evidence' });
+  });
+
+  it('atomically reconciles surviving attunement when resolving an empty reviewed row', () => {
+    const s = setup();
+    insertLegacy(s, { id: 'zero-quantity-attuned', quantity: 0 });
+    s.db
+      .prepare(
+        `INSERT INTO inventory_adoption_review(
+           inventory_id, requested_pack_ref, review_kind, reason,
+           raw_properties_json, provenance, session_id, updated_at
+         ) VALUES (?, ?, 'malformed-evidence', ?, ?, 'test', ?, ?)`,
+      )
+      .run(
+        'zero-quantity-attuned',
+        'magic-item:necklace-of-fireballs',
+        'zero quantity is malformed evidence',
+        '{"legacy":true}',
+        s.ctx.sessionId,
+        s.ctx.at,
+      );
+    s.db
+      .prepare(
+        `INSERT INTO attunement(
+           campaign_id, character_id, item_id, item_key, display_name,
+           attuned_at, provenance, session_id, updated_at
+         ) VALUES (?, ?, 'zero-quantity-attuned',
+                   'magic-item:necklace-of-fireballs', 'Empty Necklace', ?,
+                   'test', ?, ?)`,
+      )
+      .run(
+        s.ctx.campaignId,
+        s.characterId,
+        s.ctx.at,
+        s.ctx.sessionId,
+        s.ctx.at,
+      );
+
+    // end_attunement is blocked by the quarantine itself, so the resolution
+    // must reconcile the surviving attunement atomically rather than deadlock.
+    const result = adoptMagicItem(s.db, {
+      campaignId: s.ctx.campaignId,
+      inventoryId: 'zero-quantity-attuned',
+      characterId: s.characterId,
+      packRef: 'magic-item:necklace-of-fireballs',
+      resolution: {
+        action: 'discard-evidence',
+        evidence: 'The GM discarded the empty malformed legacy row.',
+      },
+      rng: s.ctx.rng,
+      provenance: 'test:adoption',
+      sessionId: s.ctx.sessionId,
+      at: s.ctx.at,
+    });
+
+    expect(result).toMatchObject({
+      adopted: true,
+      reviewRequired: false,
+      originalInstanceId: 'zero-quantity-attuned',
+      instanceIds: [],
+    });
+    expect(
+      s.db
+        .prepare('SELECT 1 FROM inventory WHERE id=?')
+        .get('zero-quantity-attuned'),
+    ).toBeUndefined();
+    expect(adoptionReview(s.db, 'zero-quantity-attuned')).toBeUndefined();
+    expect(
+      s.db
+        .prepare('SELECT 1 FROM attunement WHERE item_id=?')
+        .get('zero-quantity-attuned'),
+    ).toBeUndefined();
+    const resolution = s.db
+      .prepare(
+        `SELECT action, discarded_structure_json
+         FROM inventory_adoption_resolution WHERE inventory_id=?`,
+      )
+      .get('zero-quantity-attuned') as {
+      action: string;
+      discarded_structure_json: string;
+    };
+    expect(resolution.action).toBe('discard-evidence');
+    expect(
+      JSON.parse(resolution.discarded_structure_json) as {
+        attunements: { item_id: string; display_name: string }[];
+      },
+    ).toMatchObject({
+      attunements: [
+        { item_id: 'zero-quantity-attuned', display_name: 'Empty Necklace' },
+      ],
+    });
+  });
+
+  it('rejects a zero-quantity adoption without a review resolution', () => {
+    const s = setup();
+    insertLegacy(s, { id: 'zero-quantity-unreviewed', quantity: 0 });
+    expect(() =>
+      adoptMagicItem(s.db, {
+        campaignId: s.ctx.campaignId,
+        inventoryId: 'zero-quantity-unreviewed',
+        characterId: s.characterId,
+        packRef: 'magic-item:necklace-of-fireballs',
+        provenance: 'test:adoption',
+        sessionId: s.ctx.sessionId,
+        at: s.ctx.at,
+      }),
+    ).toThrow(/positive integer quantity/);
+  });
+
   it('lifts a compatible mechanics envelope and canonicalizes existing attunement identity', () => {
     const s = setup();
     insertLegacy(s, {

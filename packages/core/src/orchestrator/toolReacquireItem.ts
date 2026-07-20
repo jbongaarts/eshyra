@@ -19,7 +19,7 @@ export const reacquireItemTool: Tool = {
   mutates: true,
   requiresExplicitAction: true,
   description:
-    'Restore custody of one specifically identified sold or lost inventory row after an explicit, adjudicated recovery. Requires exact current-world co-location, non-empty custody evidence, and a disposition-compatible basis; preserves the original row id, state, and attunement. Repurchase requires an exact-denomination payment that is debited atomically. Use list_recoverable_items to discover eligible ids and claim_item only for dropped rows.',
+    'Restore custody of one specifically identified sold or lost inventory row after an explicit, adjudicated recovery. Requires exact current-world co-location, non-empty custody evidence, and a disposition-compatible basis; preserves the original row id, state, and attunement. Use returned only for lost property returned by a counterparty. Sold rows require repurchased with an exact-denomination payment debited atomically. Use list_recoverable_items to discover eligible ids and claim_item only for dropped rows.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -31,7 +31,8 @@ export const reacquireItemTool: Tool = {
       basis: {
         type: 'string',
         enum: ['found', 'repurchased', 'returned'],
-        description: 'Adjudicated basis by which custody returned.',
+        description:
+          'Adjudicated basis: found for lost property, returned for lost property returned by a counterparty, or repurchased for sold property with payment.',
       },
       evidence: {
         type: 'string',
