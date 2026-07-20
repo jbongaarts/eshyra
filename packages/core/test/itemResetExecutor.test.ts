@@ -4,6 +4,7 @@ import {
   advanceWorldTime,
   attuneItem,
   createInitialItemState,
+  createSeededRng,
   getBundledDnd5eSrdPack,
   giveItem,
   readItemState,
@@ -112,7 +113,7 @@ describe('item reset/timer executor', () => {
         charges: {
           kind: 'charges',
           charges: { max: 5 },
-          reset: [{ at: 'dawn', amount: 4 }],
+          reset: [{ at: 'dawn', amount: '1d4' }],
         },
       },
       operations: [{ id: 'spend', cost: [{ economy: 'charges', amount: 1 }] }],
@@ -123,6 +124,7 @@ describe('item reset/timer executor', () => {
     const first = advanceWorldTime(db, {
       ...CTX,
       minutes: 360,
+      rng: createSeededRng(1),
       resolveRulesPack: resolver(pack),
     });
     expect(first.itemResets).toHaveLength(1);
@@ -134,6 +136,7 @@ describe('item reset/timer executor', () => {
     const second = advanceWorldTime(db, {
       ...CTX,
       minutes: 1,
+      rng: createSeededRng(1),
       resolveRulesPack: resolver(pack),
     });
     expect(second.itemResets).toHaveLength(0);
@@ -438,6 +441,29 @@ describe('item reset/timer executor', () => {
     ).toMatchObject({
       elapsed_minutes: 0,
     });
+    db.close();
+  });
+
+  it('fails closed on a schema-legal but unsupported reset combination', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-unknown-shape', {
+      economies: {
+        charges: {
+          kind: 'charges',
+          charges: { max: 5 },
+          reset: [{ at: 'dawn', amount: 2 }],
+        },
+      },
+    });
+    const pack = rulesPack(record);
+    install(db, record);
+    expect(() =>
+      advanceWorldTime(db, {
+        ...CTX,
+        minutes: 360,
+        resolveRulesPack: resolver(pack),
+      }),
+    ).toThrow(/unsupported reset shape/);
     db.close();
   });
 });

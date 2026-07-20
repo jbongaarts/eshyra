@@ -301,9 +301,9 @@ function validateResetShape(
     at === 'long-rest'
   ) {
     if (
-      entry.amount !== 'all' &&
-      typeof entry.amount !== 'number' &&
-      typeof entry.amount !== 'string'
+      at === 'short-rest' || at === 'long-rest'
+        ? entry.amount !== 'all'
+        : entry.amount !== 'all' && typeof entry.amount !== 'string'
     )
       unsupported(packRef, economyId, entry);
     if (
@@ -359,6 +359,11 @@ function validateResetShape(
   )
     unsupported(packRef, economyId, entry);
   object(entry.amount, `${packRef}.economies.${economyId}.reset.amount`);
+  const period = object(
+    entry.period,
+    `${packRef}.economies.${economyId}.reset.period`,
+  );
+  if (typeof period.amount !== 'number') unsupported(packRef, economyId, entry);
   durationAmount(entry.period, packRef, economyId, undefined);
 }
 
