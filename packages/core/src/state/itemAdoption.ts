@@ -278,11 +278,19 @@ export function adoptMagicItem(
       throw new ItemAdoptionError(
         `held inventory instance '${input.inventoryId}' has invalid world placement`,
       );
-    if (row.quantity < 1 || !Number.isInteger(row.quantity))
+    const existingReview = readItemAdoptionReview(txnDb, row.id);
+    if (
+      !Number.isInteger(row.quantity) ||
+      (row.quantity < 1 &&
+        !(
+          row.quantity === 0 &&
+          existingReview !== undefined &&
+          input.resolution !== undefined
+        ))
+    )
       throw new ItemAdoptionError(
         `inventory instance '${input.inventoryId}' must have a positive integer quantity`,
       );
-    const existingReview = readItemAdoptionReview(txnDb, row.id);
     if (
       existingReview !== undefined &&
       (existingReview.requestedPackRef !== packRef ||
@@ -403,6 +411,37 @@ export function adoptMagicItem(
           break;
         }
       }
+    }
+    if (
+      row.quantity === 0 &&
+      existingReview !== undefined &&
+      input.resolution !== undefined
+    ) {
+      recordItemAdoptionResolution(txnDb, {
+        inventoryId: row.id,
+        action: input.resolution.action,
+        evidence: input.resolution.evidence,
+        previousReview: existingReview,
+        resultingPackRef: packRef,
+        ...(variantId === undefined ? {} : { resultingVariantId: variantId }),
+        ...(discardedStructureJson === undefined
+          ? {}
+          : { discardedStructureJson }),
+        provenance: input.provenance,
+        sessionId: input.sessionId,
+        at: input.at,
+      });
+      clearItemAdoptionReview(txnDb, row.id);
+      txnDb.prepare('DELETE FROM inventory WHERE id=?').run(row.id);
+      return {
+        adopted: true,
+        reviewRequired: false,
+        originalInstanceId: row.id,
+        instanceIds: [],
+        packRef,
+        ...(variantId === undefined ? {} : { variantId }),
+        stateful,
+      };
     }
     const attunementRows = txnDb
       .prepare(
