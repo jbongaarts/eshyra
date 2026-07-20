@@ -5,6 +5,7 @@ import {
   getInventoryWearState,
   giveItem,
   InventoryWearError,
+  removeCondition,
 } from '../src/internal.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
@@ -43,6 +44,32 @@ describe('inventory wear state', () => {
       InventoryWearError,
     );
     expect(getInventoryWearState(db, armor.id)).toBe('worn');
+    db.close();
+  });
+
+  it('allows doff after the live don-onset curse condition is removed', () => {
+    const db = freshDbWithSession();
+    const armor = giveItem(
+      db,
+      {
+        id: 'resolved-demon-armor',
+        name: 'Demon Armor',
+        packRef: 'magic-item:demon-armor',
+        stateful: true,
+      },
+      CTX,
+    );
+    donItem(db, { ...CTX, itemId: armor.id });
+    expect(() => doffItem(db, { ...CTX, itemId: armor.id })).toThrow(
+      InventoryWearError,
+    );
+    removeCondition(db, 'm7-demon-armor-curse', CTX);
+    expect(doffItem(db, { ...CTX, itemId: armor.id })).toMatchObject({
+      wearState: 'not_worn',
+    });
+    expect(
+      db.prepare('SELECT character_id FROM inventory WHERE id=?').get(armor.id),
+    ).toEqual({ character_id: 'pc-1' });
     db.close();
   });
 
