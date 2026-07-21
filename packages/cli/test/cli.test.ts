@@ -134,8 +134,9 @@ describe('main', () => {
  * fires when the module is the process entrypoint, so it cannot be exercised by
  * an in-process import. Spawn the built CLI as a real subprocess instead.
  * `npm test` runs the root `pretest` (`tsc --build`), and CI builds too, so
- * this runs in normal verification. The `skipIf` is only a backstop for a bare
- * `vitest run` invoked directly with no prior build.
+ * this runs in normal verification. Restricted sandbox verification skips this
+ * suite because that environment cannot launch the nested Node process. Outside
+ * that mode, `requireCliDist` makes missing build output fail loudly.
  */
 describe.skipIf(restrictedSandbox)('entrypoint guard', () => {
   it('runs main() when invoked as the entrypoint', () => {
@@ -233,8 +234,9 @@ describe.skipIf(restrictedSandbox)('package smoke', () => {
  * treated as a graceful quit. Spawn the built CLI with explicit character
  * creation deferral, then EOF: no turns run, so no model call is made, and on
  * graceful close the session must end up `closed`. `npm test` (root `pretest`)
- * and CI both build first; the `skipIf` only backs out a bare `vitest run`
- * with no build.
+ * and CI both build first. Restricted sandbox verification skips this suite
+ * because that environment cannot launch the nested Node process. Outside that
+ * mode, `requireCliDist` makes missing build output fail loudly.
  */
 describe.skipIf(restrictedSandbox)('play graceful close on stdin EOF', () => {
   // Test wall time is 4–7s on healthy CI runners and ~6.3s locally on Windows

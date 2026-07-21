@@ -209,6 +209,15 @@ describe('Node runtime policy', () => {
     );
     expect(agents).toMatch(/do not delete or recreate the\s+worktree/);
     expect(agents).toContain('`npm run format` (`biome check --write .`)');
+    expect(agents).toContain(
+      'Git/npm orchestration works but Vitest cannot launch',
+    );
+    expect(agents).toMatch(
+      /It does not support environments that deny all child\s+processes\./,
+    );
+    expect(agents).toMatch(
+      /Full `npm run verify:worktree` is required before commit\/push, except in the\s+narrowly qualified managed sandbox above, where\s+`npm run verify:worktree:sandbox` is the required alternative\./,
+    );
     expect(agents).not.toContain('temporary worktree-local Biome config');
   });
 
