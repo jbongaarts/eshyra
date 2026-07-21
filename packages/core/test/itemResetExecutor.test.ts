@@ -863,6 +863,65 @@ describe('item reset/timer executor', () => {
     db.close();
   });
 
+  it('completes a pending terminal when only an operation-driven exit remains', () => {
+    const db = freshDbWithSession();
+    const record = fixture('pending-terminal-operation-exit', {
+      economies: {
+        use: { kind: 'single-use', onDepleted: { becomes: 'destroyed' } },
+      },
+      operations: [{ id: 'dismiss' }],
+      stateMachine: {
+        initial: 'sphere',
+        states: [{ id: 'sphere' }, { id: 'settled' }, { id: 'dismissed' }],
+        transitions: [
+          {
+            from: 'sphere',
+            to: 'settled',
+            timer: { amount: 1, unit: 'minute' },
+          },
+          { from: 'settled', to: 'dismissed', via: 'dismiss' },
+        ],
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record, {
+      packRef: record.key,
+      machineState: 'sphere',
+      economies: { use: { remaining: 0 } },
+      depletions: [
+        {
+          economyId: 'use',
+          rolls: [],
+          loseProperty: false,
+          becomes: 'destroyed',
+        },
+      ],
+      lifecycle: { status: 'consumed', pendingTerminal: 'destroyed' },
+      pendingTimers: [
+        {
+          from: 'sphere',
+          to: 'settled',
+          anchorElapsedMinutes: 0,
+          deadlineElapsedMinutes: 1,
+          amount: 1,
+          unit: 'minute',
+        },
+      ],
+    });
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 1,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(result.itemTimerResolutions.map((entry) => entry.to)).toEqual([
+      'settled',
+    ]);
+    expect(db.prepare('SELECT 1 FROM inventory WHERE id=?').get(id)).toBe(
+      undefined,
+    );
+    db.close();
+  });
+
   it('completes a pending terminal only after the machine stops advancing', () => {
     const db = freshDbWithSession();
     const record = fixture('pending-terminal-cascade', {

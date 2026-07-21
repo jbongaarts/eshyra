@@ -874,16 +874,15 @@ function applyDueTimer(
       );
     }),
   };
-  // A pending terminal is fail-safe only once the entered state has no
-  // outgoing transition left to run; an intermediate state must still be
-  // allowed to finish its declared cascade.
-  const enteredStateHasOutgoingTransition = transitions.some(
-    (candidate) => candidate.from === timer.to,
-  );
+  // A deferred destruction completes once the clock can no longer move this
+  // machine — that is, when entering this state scheduled no further timer.
+  // An intermediate state still runs its cascade first, and a state whose only
+  // exit is an operation cannot strand the item forever, because no timer
+  // would ever fire to complete the terminal.
   if (
     timer.to === 'destroyed' ||
     (nextState.lifecycle?.pendingTerminal === 'destroyed' &&
-      !enteredStateHasOutgoingTransition)
+      scheduled.length === 0)
   ) {
     const destruction = destroyInventoryItem(db, item.row.id, ctx);
     return {
