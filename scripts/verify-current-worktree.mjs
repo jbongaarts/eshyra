@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { buildVerificationEnvironment } from './verification-environment.mjs';
 
 // Resolve the active git root and run full verification from there, so the
 // command works the same in the parent checkout or a linked worktree.
@@ -31,12 +32,7 @@ function npmCommand() {
 }
 
 const sandboxMode = process.argv.includes('--sandbox');
-const childEnv = Object.fromEntries(
-  Object.entries(process.env).filter(([key]) => key !== 'ESHYRA_TEST_SANDBOX'),
-);
-if (sandboxMode) {
-  childEnv.ESHYRA_TEST_SANDBOX = '1';
-}
+const childEnv = buildVerificationEnvironment(process.env, sandboxMode);
 
 if (sandboxMode) {
   console.log(

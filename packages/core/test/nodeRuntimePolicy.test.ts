@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { buildVerificationEnvironment } from '../../../scripts/verification-environment.mjs';
 
 interface PackageJson {
   engines?: { node?: string };
@@ -255,8 +256,15 @@ describe('Node runtime policy', () => {
     expect(verify).toContain("['rev-parse', '--show-toplevel']");
     expect(verify).toContain('cwd: repoRoot');
     expect(verify).toContain("process.argv.includes('--sandbox')");
-    expect(verify).toContain("key !== 'ESHYRA_TEST_SANDBOX'");
-    expect(verify).toContain("childEnv.ESHYRA_TEST_SANDBOX = '1'");
+    expect(verify).toContain(
+      'buildVerificationEnvironment(process.env, sandboxMode)',
+    );
+    const verificationEnvironment = readText(
+      'scripts/verification-environment.mjs',
+    );
+    expect(verificationEnvironment).toContain(
+      'key.toUpperCase() !== SANDBOX_ENV_KEY',
+    );
     expect(verify).not.toContain('BIOME_CONFIG_PATH');
     expect(verify).not.toContain('.biome-worktree-');
     expect(verify).not.toContain('New-WorktreeBiomeConfig');
@@ -264,6 +272,23 @@ describe('Node runtime policy', () => {
       expect(verify).toContain(`'${script}'`);
     }
     expect(verify).not.toContain('bd preflight --check');
+  });
+
+  it('removes every casing of an ambient sandbox marker from full verification', () => {
+    const ambient = {
+      PATH: '/bin',
+      ESHYRA_TEST_SANDBOX: '1',
+      eshyra_test_sandbox: '1',
+      EsHyRa_TeSt_SaNdBoX: '1',
+    };
+
+    expect(buildVerificationEnvironment(ambient, false)).toEqual({
+      PATH: '/bin',
+    });
+    expect(buildVerificationEnvironment(ambient, true)).toEqual({
+      PATH: '/bin',
+      ESHYRA_TEST_SANDBOX: '1',
+    });
   });
 
   it('requires manual review for major runtime and toolchain updates', () => {
