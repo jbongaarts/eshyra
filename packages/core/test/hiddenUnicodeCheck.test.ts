@@ -14,6 +14,8 @@ import {
   shouldScan,
 } from '../../../scripts/check-hidden-unicode.mjs';
 
+const restrictedSandbox = process.env.ESHYRA_TEST_SANDBOX === '1';
+
 // Forbidden characters are built from code points so this test file stays free
 // of the very characters it asserts on (it is itself scanned by the gate).
 const RLO = String.fromCodePoint(0x202e);
@@ -162,7 +164,7 @@ describe('hidden/bidi Unicode guard', () => {
     );
   });
 
-  it('passes on the current repository', () => {
+  it.skipIf(restrictedSandbox)('passes on the current repository', () => {
     const result = execFileSync(
       process.execPath,
       ['scripts/check-hidden-unicode.mjs'],

@@ -78,6 +78,7 @@ describe('runDoltInstall', () => {
 // from a developer machine's real `codex login`; combined with clearing the
 // other credential env vars this keeps provider selection hermetic (eshyra-6ygw).
 const NO_CODEX_HOME = join(tmpdir(), 'eshyra-test-no-codex-home');
+const restrictedSandbox = process.env.ESHYRA_TEST_SANDBOX === '1';
 /** Clear every provider credential so a test controls exactly which are present. */
 function clearProviderEnv(): void {
   vi.stubEnv('ANTHROPIC_API_KEY', '');
@@ -136,7 +137,7 @@ describe('main', () => {
  * this runs in normal verification. The `skipIf` is only a backstop for a bare
  * `vitest run` invoked directly with no prior build.
  */
-describe('entrypoint guard', () => {
+describe.skipIf(restrictedSandbox)('entrypoint guard', () => {
   it('runs main() when invoked as the entrypoint', () => {
     const cliDist = requireCliDist();
     const stdout = execFileSync(process.execPath, [cliDist], {
@@ -199,7 +200,7 @@ describe('cli bin shebang', () => {
   });
 });
 
-describe('package smoke', () => {
+describe.skipIf(restrictedSandbox)('package smoke', () => {
   const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 
   it('packs publishable tarballs with dist output and no source/test files', {
@@ -235,7 +236,7 @@ describe('package smoke', () => {
  * and CI both build first; the `skipIf` only backs out a bare `vitest run`
  * with no build.
  */
-describe('play graceful close on stdin EOF', () => {
+describe.skipIf(restrictedSandbox)('play graceful close on stdin EOF', () => {
   // Test wall time is 4–7s on healthy CI runners and ~6.3s locally on Windows
   // because it spawns the built CLI and runs the full graceful close pipeline
   // (Dolt `.checkpoints` write included). Vitest's 5000ms default times this

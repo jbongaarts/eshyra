@@ -36,6 +36,7 @@
     "audit-bundle:dnd5e-srd": "tsx packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts",
     "agent:preflight": "node scripts/agent-preflight-main.mjs",
     "verify:worktree": "node scripts/verify-current-worktree.mjs",
+    "verify:worktree:sandbox": "node scripts/verify-current-worktree.mjs --sandbox",
     "format": "biome check --write .",
     "format:check": "biome check --error-on-warnings .",
     "lint": "biome lint --error-on-warnings .",

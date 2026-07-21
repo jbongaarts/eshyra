@@ -30,6 +30,17 @@ function npmCommand() {
   return process.platform === 'win32' ? 'npm.cmd' : 'npm';
 }
 
+const sandboxMode = process.argv.includes('--sandbox');
+const childEnv = sandboxMode
+  ? { ...process.env, ESHYRA_TEST_SANDBOX: '1' }
+  : process.env;
+
+if (sandboxMode) {
+  console.log(
+    'Restricted sandbox verification enabled: subprocess and loopback integration tests may be skipped.',
+  );
+}
+
 console.log('Running: git rev-parse --show-toplevel');
 const repoRoot = checkedNativeOutput('git', ['rev-parse', '--show-toplevel']);
 
@@ -41,5 +52,5 @@ if (!existsSync(join(repoRoot, 'package.json'))) {
 
 const npm = npmCommand();
 for (const script of ['format', 'check', 'typecheck', 'test']) {
-  checkedNative(npm, ['run', script], { cwd: repoRoot });
+  checkedNative(npm, ['run', script], { cwd: repoRoot, env: childEnv });
 }

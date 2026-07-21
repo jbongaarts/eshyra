@@ -177,6 +177,11 @@ parent checkout:
 npm run verify:worktree
 ```
 
+Managed sandboxes that deny child-process or loopback operations may use
+`npm run verify:worktree:sandbox`. It runs the same format, check, and
+typecheck gates and marks only subprocess/loopback integration tests as
+environmental skips. CI and ordinary worktrees must use the full command.
+
 The helper resolves the active git root. It runs
 `npm run format` (`biome check --write .`) for safe fixes and import
 organization, then runs the repo checks and tests. The npm commands wrap

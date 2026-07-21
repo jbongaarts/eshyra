@@ -222,6 +222,9 @@ describe('Node runtime policy', () => {
     expect(scripts['verify:worktree']).toBe(
       'node scripts/verify-current-worktree.mjs',
     );
+    expect(scripts['verify:worktree:sandbox']).toBe(
+      'node scripts/verify-current-worktree.mjs --sandbox',
+    );
     expect(scripts.format).toBe('biome check --write .');
     // CI fails on any Biome diagnostic, not just errors: the read-only Biome
     // scripts pass --error-on-warnings so a warning is as blocking as an error.
@@ -242,6 +245,8 @@ describe('Node runtime policy', () => {
     const verify = readText('scripts/verify-current-worktree.mjs');
     expect(verify).toContain("['rev-parse', '--show-toplevel']");
     expect(verify).toContain('cwd: repoRoot');
+    expect(verify).toContain("process.argv.includes('--sandbox')");
+    expect(verify).toContain('ESHYRA_TEST_SANDBOX');
     expect(verify).not.toContain('BIOME_CONFIG_PATH');
     expect(verify).not.toContain('.biome-worktree-');
     expect(verify).not.toContain('New-WorktreeBiomeConfig');
