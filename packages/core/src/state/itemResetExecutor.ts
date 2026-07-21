@@ -463,10 +463,15 @@ function crossedBoundaries(
   return result;
 }
 
+interface CrossedBoundary {
+  readonly event: 'dawn' | 'dusk';
+  readonly elapsedMinutes: number;
+}
+
 function crossedBoundaryEvents(
   previousElapsedMinutes: number,
   elapsedMinutes: number,
-): { readonly event: 'dawn' | 'dusk'; readonly elapsedMinutes: number }[] {
+): CrossedBoundary[] {
   return [
     ...crossedBoundaries(previousElapsedMinutes, elapsedMinutes, 360).map(
       (boundaryElapsedMinutes) => ({
@@ -481,6 +486,21 @@ function crossedBoundaryEvents(
       }),
     ),
   ].sort((a, b) => a.elapsedMinutes - b.elapsedMinutes);
+}
+
+function economyMaximum(
+  item: ResolvedItem,
+  state: ItemInstanceState,
+  economyId: string,
+  economy: Obj,
+): number {
+  try {
+    return resolveEconomyMax(state, economyId, economy);
+  } catch (error) {
+    throw new ItemResetExecutorError(
+      `${item.packRef} instance '${item.row.id}' economy '${economyId}' maximum is unrecoverable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 function applyReset(
@@ -506,14 +526,7 @@ function applyReset(
     economy,
     rng,
   );
-  let maximum: number;
-  try {
-    maximum = resolveEconomyMax(state, economyId, economy);
-  } catch (error) {
-    throw new ItemResetExecutorError(
-      `${item.packRef} instance '${item.row.id}' economy '${economyId}' maximum is unrecoverable: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
+  const maximum = economyMaximum(item, state, economyId, economy);
   const previous = current.remaining;
   const restored =
     amount.requested === 'all'
@@ -602,21 +615,34 @@ function resetItem(
   return { state: next, evidence, changed };
 }
 
-function resetAnchoredItem(
-  db: Db,
+const ANCHORED_RESET_EVENTS = ['hour', 'days', 'per-period'] as const;
+type AnchoredResetEvent = (typeof ANCHORED_RESET_EVENTS)[number];
+
+interface DueAnchoredReset {
+  readonly economyId: string;
+  readonly economy: Obj;
+  readonly entry: Obj;
+  readonly at: AnchoredResetEvent;
+  readonly dueElapsedMinutes: number;
+}
+
+function anchoredResetEvent(value: unknown): AnchoredResetEvent | undefined {
+  return ANCHORED_RESET_EVENTS.includes(value as AnchoredResetEvent)
+    ? (value as AnchoredResetEvent)
+    : undefined;
+}
+
+/**
+ * The earliest anchored reset due at or before `elapsedMinutes`. Equal
+ * deadlines break on economy id so a replayed advance applies them in the same
+ * order.
+ */
+function nextDueAnchoredReset(
   item: ResolvedItem,
   state: ItemInstanceState,
   elapsedMinutes: number,
-  rng: Rng | undefined,
-  ctx: ItemResetExecutorContext,
-): {
-  state: ItemInstanceState;
-  evidence: ItemResetEvidence[];
-  changed: boolean;
-} {
-  let next = state;
-  const evidence: ItemResetEvidence[] = [];
-  let changed = false;
+): DueAnchoredReset | undefined {
+  let earliest: DueAnchoredReset | undefined;
   const economies = object(
     item.mechanics.economies ?? {},
     `${item.packRef}.economies`,
@@ -628,85 +654,104 @@ function resetAnchoredItem(
     );
     for (const entry of resetEntries(item.packRef, economyId, economy)) {
       validateResetShape(item.packRef, economyId, economy, entry);
-      if (
-        entry.at !== 'hour' &&
-        entry.at !== 'days' &&
-        entry.at !== 'per-period'
-      )
-        continue;
-      const current = next.economies?.[economyId];
+      const at = anchoredResetEvent(entry.at);
+      if (at === undefined) continue;
+      const current = state.economies?.[economyId];
       if (current?.availableAt === undefined) continue;
-      const availableAt = Number(current.availableAt);
-      if (!Number.isSafeInteger(availableAt) || availableAt < 0)
+      const dueElapsedMinutes = Number(current.availableAt);
+      if (!Number.isSafeInteger(dueElapsedMinutes) || dueElapsedMinutes < 0)
         throw new ItemResetExecutorError(
           `${item.packRef} instance '${item.row.id}' economy '${economyId}' availableAt is malformed`,
         );
-      if (!canRegain(next, economyId)) continue;
-      if (entry.at === 'per-period') {
-        const period = durationMinutes(
-          entry.period,
-          item.packRef,
-          economyId,
-          rng,
-        );
-        let anchor = availableAt;
-        while (anchor <= elapsedMinutes) {
-          const applied = applyReset(
-            item,
-            next,
-            economyId,
-            economy,
-            entry,
-            entry.at,
-            anchor,
-            rng,
-          );
-          next = {
-            ...applied.state,
-            economies: {
-              ...(applied.state.economies ?? {}),
-              [economyId]: {
-                ...(applied.state.economies?.[economyId] ?? current),
-                availableAt: String(anchor + period.amount),
-              },
-            },
-          };
-          evidence.push(
-            ...(applied.evidence === undefined ? [] : [applied.evidence]),
-          );
-          changed = true;
-          anchor += period.amount;
-        }
-      } else if (availableAt <= elapsedMinutes) {
-        const applied = applyReset(
-          item,
-          next,
-          economyId,
-          economy,
-          entry,
-          entry.at,
-          elapsedMinutes,
-          rng,
-        );
-        next = {
-          ...applied.state,
-          economies: {
-            ...(applied.state.economies ?? {}),
-            [economyId]: {
-              ...(applied.state.economies?.[economyId] ?? current),
-              availableAt: undefined,
-            },
-          },
-        };
-        evidence.push(
-          ...(applied.evidence === undefined ? [] : [applied.evidence]),
-        );
-        changed = true;
-      }
+      if (dueElapsedMinutes > elapsedMinutes) continue;
+      if (!canRegain(state, economyId)) continue;
+      if (
+        earliest === undefined ||
+        dueElapsedMinutes < earliest.dueElapsedMinutes ||
+        (dueElapsedMinutes === earliest.dueElapsedMinutes &&
+          economyId < earliest.economyId)
+      )
+        earliest = { economyId, economy, entry, at, dueElapsedMinutes };
     }
   }
-  if (changed) writeItemState(db, item.row.id, next, ctx);
-  return { state: next, evidence, changed };
+  return earliest;
+}
+
+function withAvailableAt(
+  state: ItemInstanceState,
+  economyId: string,
+  availableAt: string | undefined,
+): ItemInstanceState {
+  const current = state.economies?.[economyId];
+  if (current === undefined) return state;
+  return {
+    ...state,
+    economies: {
+      ...(state.economies ?? {}),
+      [economyId]: { ...current, availableAt },
+    },
+  };
+}
+
+/**
+ * Apply one due anchored reset. A `per-period` economy re-anchors for its next
+ * period only while it is below maximum; once full its schedule stops and the
+ * next spend re-anchors it, so a long advance cannot keep firing empty resets.
+ */
+function applyAnchoredReset(
+  db: Db,
+  item: ResolvedItem,
+  state: ItemInstanceState,
+  due: DueAnchoredReset,
+  rng: Rng | undefined,
+  ctx: ItemResetExecutorContext,
+): { state: ItemInstanceState; evidence?: ItemResetEvidence } {
+  const { economyId, economy, entry, at, dueElapsedMinutes } = due;
+  const current = state.economies?.[economyId];
+  if (current === undefined)
+    throw new ItemResetExecutorError(
+      `${item.packRef} instance '${item.row.id}' economy '${economyId}' has no live state`,
+    );
+  if (
+    at === 'per-period' &&
+    current.remaining >= economyMaximum(item, state, economyId, economy)
+  ) {
+    const cleared = validatedState(
+      item,
+      withAvailableAt(state, economyId, undefined),
+    );
+    writeItemState(db, item.row.id, cleared, ctx);
+    return { state: cleared };
+  }
+  const applied = applyReset(
+    item,
+    state,
+    economyId,
+    economy,
+    entry,
+    at,
+    dueElapsedMinutes,
+    rng,
+  );
+  const restored = applied.evidence;
+  const nextAvailableAt =
+    at === 'per-period' &&
+    restored !== undefined &&
+    restored.remaining < restored.maximum
+      ? String(
+          dueElapsedMinutes +
+            durationMinutes(entry.period, item.packRef, economyId, rng).amount,
+        )
+      : undefined;
+  const next = validatedState(
+    item,
+    withAvailableAt(applied.state, economyId, nextAvailableAt),
+  );
+  writeItemState(db, item.row.id, next, ctx);
+  return {
+    state: next,
+    ...(restored === undefined ? {} : { evidence: restored }),
+  };
 }
 
 function sameDuration(a: unknown, b: unknown): boolean {
@@ -718,122 +763,209 @@ function sameDuration(a: unknown, b: unknown): boolean {
   );
 }
 
-function resolveTimers(
-  db: Db,
-  item: ResolvedItem,
-  initialState: ItemInstanceState,
-  elapsedMinutes: number,
-  ctx: ItemResetExecutorContext,
-): { state?: ItemInstanceState; evidence: ItemTimerResolutionEvidence[] } {
-  let state = initialState;
-  const evidence: ItemTimerResolutionEvidence[] = [];
+function machineTransitions(item: ResolvedItem): Obj[] {
   const machine = object(
     item.mechanics.stateMachine,
     `${item.packRef}.stateMachine`,
   );
-  const transitions = Array.isArray(machine.transitions)
+  return Array.isArray(machine.transitions)
     ? machine.transitions.map((raw) =>
         object(raw, `${item.packRef}.stateMachine.transitions[]`),
       )
     : [];
+}
+
+function nextDueTimer(
+  state: ItemInstanceState,
+  elapsedMinutes: number,
+): ItemStateTimer | undefined {
+  return [...(state.pendingTimers ?? [])]
+    .sort((a, b) => a.deadlineElapsedMinutes - b.deadlineElapsedMinutes)
+    .find((candidate) => candidate.deadlineElapsedMinutes <= elapsedMinutes);
+}
+
+/**
+ * Fire one due timer. Returns no state when the item was destroyed, which ends
+ * that item's timeline.
+ */
+function applyDueTimer(
+  db: Db,
+  item: ResolvedItem,
+  state: ItemInstanceState,
+  timer: ItemStateTimer,
+  ctx: ItemResetExecutorContext,
+): { state?: ItemInstanceState; evidence: ItemTimerResolutionEvidence } {
+  const transitions = machineTransitions(item);
   const effects = Array.isArray(item.mechanics.effects)
     ? item.mechanics.effects
     : [];
-  while (true) {
-    const pending = [...(state.pendingTimers ?? [])].sort(
-      (a, b) => a.deadlineElapsedMinutes - b.deadlineElapsedMinutes,
+  if (timer.from !== state.machineState)
+    throw new ItemResetExecutorError(
+      `${item.packRef} instance '${item.row.id}' timer '${timer.from}' -> '${timer.to}' is not pending from machineState '${state.machineState}'`,
     );
-    const timer = pending.find(
-      (candidate) => candidate.deadlineElapsedMinutes <= elapsedMinutes,
+  const transition = transitions.find(
+    (candidate) =>
+      candidate.from === timer.from &&
+      candidate.to === timer.to &&
+      sameDuration(candidate.timer, {
+        amount: timer.amount,
+        unit: timer.unit,
+      }),
+  );
+  if (transition === undefined)
+    throw new ItemResetExecutorError(
+      `${item.packRef} instance '${item.row.id}' has an unlicensed pending timer ${JSON.stringify(timer)}`,
     );
-    if (timer === undefined) break;
-    if (timer.from !== state.machineState)
-      throw new ItemResetExecutorError(
-        `${item.packRef} instance '${item.row.id}' timer '${timer.from}' -> '${timer.to}' is not pending from machineState '${state.machineState}'`,
-      );
-    const transition = transitions.find(
+  // A machine has one current state, so leaving `timer.from` cancels every
+  // timer that state owned, not only the timer that fired.
+  const remainingTimers = (state.pendingTimers ?? []).filter(
+    (candidate) => candidate.from !== timer.from,
+  );
+  const declarations = transitions
+    .filter(
       (candidate) =>
-        candidate.from === timer.from &&
-        candidate.to === timer.to &&
-        sameDuration(candidate.timer, {
-          amount: timer.amount,
-          unit: timer.unit,
-        }),
+        candidate.from === timer.to && candidate.timer !== undefined,
+    )
+    .map((candidate) => ({
+      to: String(candidate.to),
+      timer: candidate.timer as MagicItemDurationSpec,
+    }));
+  let scheduled: readonly ItemStateTimer[];
+  try {
+    scheduled = resolveItemStateTimers(
+      db,
+      timer.to,
+      declarations,
+      ctx.rng,
+      timer.deadlineElapsedMinutes,
     );
-    if (transition === undefined)
+  } catch (error) {
+    if (error instanceof ItemTimerError)
       throw new ItemResetExecutorError(
-        `${item.packRef} instance '${item.row.id}' has an unlicensed pending timer ${JSON.stringify(timer)}`,
+        `${item.packRef} instance '${item.row.id}' ${error.message}`,
       );
-    const remainingTimers = pending.filter((candidate) => candidate !== timer);
-    const declarations = transitions
-      .filter(
-        (candidate) =>
-          candidate.from === timer.to && candidate.timer !== undefined,
-      )
-      .map((candidate) => ({
-        to: String(candidate.to),
-        timer: candidate.timer as MagicItemDurationSpec,
-      }));
-    let scheduled: readonly ItemStateTimer[];
-    try {
-      scheduled = resolveItemStateTimers(
-        db,
-        timer.to,
-        declarations,
-        ctx.rng,
-        timer.deadlineElapsedMinutes,
-      );
-    } catch (error) {
-      if (error instanceof ItemTimerError)
-        throw new ItemResetExecutorError(
-          `${item.packRef} instance '${item.row.id}' ${error.message}`,
-        );
-      throw error;
-    }
-    const nextState = validatedState(item, {
-      ...state,
-      machineState: String(timer.to),
-      pendingTimers: [...remainingTimers, ...scheduled],
-    });
-    const transitionEffects = effects.filter((effect) => {
+    throw error;
+  }
+  if (
+    scheduled.some(
+      (entry) => entry.deadlineElapsedMinutes <= timer.deadlineElapsedMinutes,
+    )
+  )
+    throw new ItemResetExecutorError(
+      `${item.packRef} instance '${item.row.id}' state '${timer.to}' declares a timer that expires no later than the transition that entered it`,
+    );
+  const nextState = validatedState(item, {
+    ...state,
+    machineState: String(timer.to),
+    pendingTimers: [...remainingTimers, ...scheduled],
+  });
+  const evidence: ItemTimerResolutionEvidence = {
+    instanceId: item.row.id,
+    packRef: item.packRef,
+    from: timer.from,
+    to: timer.to,
+    deadlineElapsedMinutes: timer.deadlineElapsedMinutes,
+    timer,
+    effects: effects.filter((effect) => {
       const entry = object(effect, `${item.packRef}.effects[]`);
       return (
         Array.isArray(transition.effects) &&
         transition.effects.includes(entry.id)
       );
-    });
-    evidence.push({
-      instanceId: item.row.id,
-      packRef: item.packRef,
-      from: timer.from,
-      to: timer.to,
-      deadlineElapsedMinutes: timer.deadlineElapsedMinutes,
-      timer,
-      effects: transitionEffects,
-    });
-    state = nextState;
-    if (
-      timer.to === 'destroyed' ||
-      state.lifecycle?.pendingTerminal === 'destroyed'
-    ) {
-      const destruction = destroyInventoryItem(db, item.row.id, ctx);
-      const last = evidence[evidence.length - 1];
-      evidence[evidence.length - 1] = {
-        ...last,
+    }),
+  };
+  // A pending terminal is fail-safe only once the entered state has no
+  // outgoing transition left to run; an intermediate state must still be
+  // allowed to finish its declared cascade.
+  const enteredStateHasOutgoingTransition = transitions.some(
+    (candidate) => candidate.from === timer.to,
+  );
+  if (
+    timer.to === 'destroyed' ||
+    (nextState.lifecycle?.pendingTerminal === 'destroyed' &&
+      !enteredStateHasOutgoingTransition)
+  ) {
+    const destruction = destroyInventoryItem(db, item.row.id, ctx);
+    return {
+      evidence: {
+        ...evidence,
         ...(destruction.attunementsEnded.length === 0
           ? {}
           : { attunementsEnded: destruction.attunementsEnded }),
-      };
-      return { evidence };
-    }
+      },
+    };
   }
-  if (state !== initialState)
-    writeItemState(db, item.row.id, state, {
-      provenance: ctx.provenance,
-      sessionId: ctx.sessionId,
-      at: ctx.at,
-    });
-  return { state, evidence };
+  writeItemState(db, item.row.id, nextState, ctx);
+  return { state: nextState, evidence };
+}
+
+/**
+ * Apply every event this item owes in chronological order. Dawn/dusk
+ * boundaries, anchored economy deadlines, and machine timers interleave, so an
+ * item destroyed at minute 1 can never first regain charges at a later dawn,
+ * and `lastReset` only ever moves forward. Events landing on the same minute
+ * run timers first, then anchored resets, then dawn/dusk.
+ */
+function resolveItemTimeline(
+  db: Db,
+  item: ResolvedItem,
+  initialState: ItemInstanceState,
+  boundaries: readonly CrossedBoundary[],
+  elapsedMinutes: number,
+  ctx: ItemResetExecutorContext,
+): ItemClockEventResolution {
+  const itemResets: ItemResetEvidence[] = [];
+  const itemTimerResolutions: ItemTimerResolutionEvidence[] = [];
+  let state: ItemInstanceState | undefined = initialState;
+  let boundaryIndex = 0;
+  while (state !== undefined) {
+    const boundary = boundaries[boundaryIndex];
+    const anchored = nextDueAnchoredReset(item, state, elapsedMinutes);
+    const timer =
+      item.mechanics.stateMachine === undefined
+        ? undefined
+        : nextDueTimer(state, elapsedMinutes);
+    if (boundary === undefined && anchored === undefined && timer === undefined)
+      break;
+    const earliest = Math.min(
+      boundary?.elapsedMinutes ?? Number.POSITIVE_INFINITY,
+      anchored?.dueElapsedMinutes ?? Number.POSITIVE_INFINITY,
+      timer?.deadlineElapsedMinutes ?? Number.POSITIVE_INFINITY,
+    );
+    if (timer !== undefined && timer.deadlineElapsedMinutes === earliest) {
+      const applied = applyDueTimer(db, item, state, timer, ctx);
+      itemTimerResolutions.push(applied.evidence);
+      state = applied.state;
+      continue;
+    }
+    if (anchored !== undefined && anchored.dueElapsedMinutes === earliest) {
+      const applied = applyAnchoredReset(
+        db,
+        item,
+        state,
+        anchored,
+        ctx.rng,
+        ctx,
+      );
+      if (applied.evidence !== undefined) itemResets.push(applied.evidence);
+      state = applied.state;
+      continue;
+    }
+    if (boundary === undefined) break;
+    const applied = resetItem(
+      db,
+      item,
+      state,
+      boundary.event,
+      boundary.elapsedMinutes,
+      ctx.rng,
+      ctx,
+    );
+    state = applied.state;
+    itemResets.push(...applied.evidence);
+    boundaryIndex += 1;
+  }
+  return { itemResets, itemTimerResolutions };
 }
 
 export function resolveDueItemClockEvents(
@@ -852,47 +984,24 @@ export function resolveDueItemClockEvents(
     throw new ItemResetExecutorError('item clock event interval is malformed');
   const itemResets: ItemResetEvidence[] = [];
   const itemTimerResolutions: ItemTimerResolutionEvidence[] = [];
+  const boundaries = crossedBoundaryEvents(
+    input.previousElapsedMinutes,
+    input.elapsedMinutes,
+  );
   for (const row of rowsForItems(db)) {
     const item = resolveItem(db, row, input.resolveRulesPack);
     const rawState = readItemState(db, row.id);
     if (rawState === undefined) continue;
-    let state = validatedState(item, rawState);
-    for (const { event, elapsedMinutes } of crossedBoundaryEvents(
-      input.previousElapsedMinutes,
-      input.elapsedMinutes,
-    )) {
-      const applied = resetItem(
-        db,
-        item,
-        state,
-        event,
-        elapsedMinutes,
-        input.rng,
-        input,
-      );
-      state = applied.state;
-      itemResets.push(...applied.evidence);
-    }
-    const anchored = resetAnchoredItem(
+    const resolved = resolveItemTimeline(
       db,
       item,
-      state,
+      validatedState(item, rawState),
+      boundaries,
       input.elapsedMinutes,
-      input.rng,
       input,
     );
-    state = anchored.state;
-    itemResets.push(...anchored.evidence);
-    if (item.mechanics.stateMachine !== undefined) {
-      const timers = resolveTimers(
-        db,
-        item,
-        state,
-        input.elapsedMinutes,
-        input,
-      );
-      itemTimerResolutions.push(...timers.evidence);
-    }
+    itemResets.push(...resolved.itemResets);
+    itemTimerResolutions.push(...resolved.itemTimerResolutions);
   }
   return { itemResets, itemTimerResolutions };
 }

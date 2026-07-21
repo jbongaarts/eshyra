@@ -693,4 +693,246 @@ describe('item reset/timer executor', () => {
     ).toThrow(/unsupported reset shape/);
     db.close();
   });
+
+  it('stops the per-period schedule at maximum and re-anchors on the next spend', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-per-period-stop', {
+      economies: {
+        flight: {
+          kind: 'budget',
+          budget: {
+            total: { amount: 4, unit: 'hour' },
+            increment: { amount: 1, unit: 'minute' },
+          },
+          reset: [
+            {
+              at: 'per-period',
+              period: { amount: 12, unit: 'hour' },
+              amount: { amount: 2, unit: 'hour' },
+              onlyIfUnused: true,
+            },
+          ],
+        },
+      },
+      operations: [{ id: 'fly', cost: [{ economy: 'flight', amount: 1 }] }],
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    useItem(db, useInput(pack, id, 'fly'));
+    expect(readItemState(db, id)?.economies?.flight).toMatchObject({
+      remaining: 239,
+      availableAt: '720',
+    });
+    const filled = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 720,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(filled.itemResets).toMatchObject([
+      { economy: 'flight', remaining: 240 },
+    ]);
+    expect(
+      readItemState(db, id)?.economies?.flight?.availableAt,
+    ).toBeUndefined();
+    const idle = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 14_400,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(idle.itemResets).toHaveLength(0);
+    useItem(db, useInput(pack, id, 'fly'));
+    expect(readItemState(db, id)?.economies?.flight?.availableAt).toBe('15840');
+    db.close();
+  });
+
+  it('cancels sibling timers when the machine leaves their state', () => {
+    const db = freshDbWithSession();
+    const record = fixture('timer-siblings', {
+      operations: [{ id: 'activate' }],
+      stateMachine: {
+        initial: 'off',
+        states: [
+          { id: 'off' },
+          { id: 'active' },
+          { id: 'early' },
+          { id: 'late' },
+        ],
+        transitions: [
+          { from: 'off', to: 'active', via: 'activate' },
+          { from: 'active', to: 'early', timer: { amount: 1, unit: 'minute' } },
+          { from: 'active', to: 'late', timer: { amount: 5, unit: 'minute' } },
+        ],
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    useItem(db, useInput(pack, id, 'activate'));
+    expect(readItemState(db, id)?.pendingTimers).toHaveLength(2);
+    const first = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 1,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(first.itemTimerResolutions.map((entry) => entry.to)).toEqual([
+      'early',
+    ]);
+    expect(readItemState(db, id)?.pendingTimers).toEqual([]);
+    const later = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 10,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(later.itemTimerResolutions).toHaveLength(0);
+    expect(readItemState(db, id)?.machineState).toBe('early');
+    db.close();
+  });
+
+  it('destroys an item on its timer before a later dawn can recharge it', () => {
+    const db = freshDbWithSession();
+    const record = fixture('timeline-destruction', {
+      economies: {
+        charges: {
+          kind: 'charges',
+          charges: { max: 3 },
+          reset: [{ at: 'dawn', amount: 'all' }],
+        },
+      },
+      operations: [
+        { id: 'activate', cost: [{ economy: 'charges', amount: 1 }] },
+      ],
+      stateMachine: {
+        initial: 'inactive',
+        states: [{ id: 'inactive' }, { id: 'active' }, { id: 'destroyed' }],
+        transitions: [
+          { from: 'inactive', to: 'active', via: 'activate' },
+          {
+            from: 'active',
+            to: 'destroyed',
+            timer: { amount: 1, unit: 'minute' },
+          },
+        ],
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    useItem(db, useInput(pack, id, 'activate'));
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 600,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(result.itemTimerResolutions.map((entry) => entry.to)).toEqual([
+      'destroyed',
+    ]);
+    expect(result.itemResets).toHaveLength(0);
+    expect(db.prepare('SELECT 1 FROM inventory WHERE id=?').get(id)).toBe(
+      undefined,
+    );
+    db.close();
+  });
+
+  it('records an anchored reset at its due minute, not when it was applied', () => {
+    const db = freshDbWithSession();
+    const record = fixture('reset-anchor-evidence', {
+      economies: {
+        cooldown: {
+          kind: 'cooldown',
+          cooldown: { duration: { amount: 1, unit: 'hour' } },
+          reset: [{ at: 'hour', amount: 'all' }],
+        },
+      },
+      operations: [
+        { id: 'activate', cost: [{ economy: 'cooldown', amount: 1 }] },
+      ],
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    useItem(db, useInput(pack, id, 'activate'));
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 600,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(result.itemResets).toMatchObject([
+      { economy: 'cooldown', boundaryElapsedMinutes: 60 },
+    ]);
+    expect(readItemState(db, id)?.economies?.cooldown).toMatchObject({
+      remaining: 1,
+      lastReset: '60',
+    });
+    db.close();
+  });
+
+  it('completes a pending terminal only after the machine stops advancing', () => {
+    const db = freshDbWithSession();
+    const record = fixture('pending-terminal-cascade', {
+      economies: {
+        use: { kind: 'single-use', onDepleted: { becomes: 'destroyed' } },
+      },
+      stateMachine: {
+        initial: 'sphere',
+        states: [{ id: 'sphere' }, { id: 'shrinking' }, { id: 'gone' }],
+        transitions: [
+          {
+            from: 'sphere',
+            to: 'shrinking',
+            timer: { amount: 1, unit: 'minute' },
+          },
+          {
+            from: 'shrinking',
+            to: 'gone',
+            timer: { amount: 1, unit: 'minute' },
+          },
+        ],
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record, {
+      packRef: record.key,
+      machineState: 'sphere',
+      economies: { use: { remaining: 0 } },
+      depletions: [
+        {
+          economyId: 'use',
+          rolls: [],
+          loseProperty: false,
+          becomes: 'destroyed',
+        },
+      ],
+      pendingTimers: [
+        {
+          from: 'sphere',
+          to: 'shrinking',
+          anchorElapsedMinutes: 0,
+          deadlineElapsedMinutes: 1,
+          amount: 1,
+          unit: 'minute',
+        },
+      ],
+      lifecycle: { status: 'consumed', pendingTerminal: 'destroyed' },
+    });
+    const intermediate = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 1,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(intermediate.itemTimerResolutions.map((entry) => entry.to)).toEqual([
+      'shrinking',
+    ]);
+    expect(db.prepare('SELECT 1 FROM inventory WHERE id=?').get(id)).toEqual({
+      1: 1,
+    });
+    const terminal = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 1,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(terminal.itemTimerResolutions.map((entry) => entry.to)).toEqual([
+      'gone',
+    ]);
+    expect(db.prepare('SELECT 1 FROM inventory WHERE id=?').get(id)).toBe(
+      undefined,
+    );
+    db.close();
+  });
 });
