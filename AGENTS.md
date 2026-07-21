@@ -177,15 +177,24 @@ parent checkout:
 npm run verify:worktree
 ```
 
+Managed sandboxes where Git/npm orchestration works but Vitest cannot launch
+the known nested Node/npm subprocesses or bind a loopback MCP server may use
+`npm run verify:worktree:sandbox`. It runs the same format, check, and
+typecheck gates and marks only those affected integration tests as
+environmental skips. It does not support environments that deny all child
+processes. CI and ordinary worktrees must use the full command.
+
 The helper resolves the active git root. It runs
 `npm run format` (`biome check --write .`) for safe fixes and import
 organization, then runs the repo checks and tests. The npm commands wrap
 `scripts/agent-preflight-main.mjs` and
 `scripts/verify-current-worktree.mjs`, respectively.
 
-Full `npm run verify:worktree` is required before commit/push. It may be run
-earlier when a task specifically needs a clean baseline, but agents should not
-treat full verification as mandatory immediately after creating a worktree. The
+Full `npm run verify:worktree` is required before commit/push, except in the
+narrowly qualified managed sandbox above, where
+`npm run verify:worktree:sandbox` is the required alternative. Verification may
+be run earlier when a task specifically needs a clean baseline, but agents
+should not treat it as mandatory immediately after creating a worktree. The
 cheap parent-checkout preflight plus CI-clean `origin/main` is sufficient to
 start work.
 

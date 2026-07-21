@@ -12,6 +12,8 @@ import {
 } from '../src/model/codexMcpHttpServer.js';
 import type { ModelToolDefinition } from '../src/model/toolSchema.js';
 
+const restrictedSandbox = process.env.ESHYRA_TEST_SANDBOX === '1';
+
 /**
  * Round-trip coverage for the in-process Eshyra MCP HTTP server (eshyra-jl8n),
  * driven by the real MCP SDK client over loopback. Verifies tool handlers
@@ -55,7 +57,7 @@ async function connect(
   return client;
 }
 
-describe('startEshyraMcpHttpServer', () => {
+describe.skipIf(restrictedSandbox)('startEshyraMcpHttpServer', () => {
   let server: EshyraMcpHttpServer | undefined;
   let client: Client | undefined;
 

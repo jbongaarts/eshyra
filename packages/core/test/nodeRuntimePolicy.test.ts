@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { buildVerificationEnvironment } from '../../../scripts/verification-environment.mjs';
 
 interface PackageJson {
   engines?: { node?: string };
@@ -209,6 +210,15 @@ describe('Node runtime policy', () => {
     );
     expect(agents).toMatch(/do not delete or recreate the\s+worktree/);
     expect(agents).toContain('`npm run format` (`biome check --write .`)');
+    expect(agents).toContain(
+      'Git/npm orchestration works but Vitest cannot launch',
+    );
+    expect(agents).toMatch(
+      /It does not support environments that deny all child\s+processes\./,
+    );
+    expect(agents).toMatch(
+      /Full `npm run verify:worktree` is required before commit\/push, except in the\s+narrowly qualified managed sandbox above, where\s+`npm run verify:worktree:sandbox` is the required alternative\./,
+    );
     expect(agents).not.toContain('temporary worktree-local Biome config');
   });
 
@@ -221,6 +231,9 @@ describe('Node runtime policy', () => {
     );
     expect(scripts['verify:worktree']).toBe(
       'node scripts/verify-current-worktree.mjs',
+    );
+    expect(scripts['verify:worktree:sandbox']).toBe(
+      'node scripts/verify-current-worktree.mjs --sandbox',
     );
     expect(scripts.format).toBe('biome check --write .');
     // CI fails on any Biome diagnostic, not just errors: the read-only Biome
@@ -242,6 +255,16 @@ describe('Node runtime policy', () => {
     const verify = readText('scripts/verify-current-worktree.mjs');
     expect(verify).toContain("['rev-parse', '--show-toplevel']");
     expect(verify).toContain('cwd: repoRoot');
+    expect(verify).toContain("process.argv.includes('--sandbox')");
+    expect(verify).toContain(
+      'buildVerificationEnvironment(process.env, sandboxMode)',
+    );
+    const verificationEnvironment = readText(
+      'scripts/verification-environment.mjs',
+    );
+    expect(verificationEnvironment).toContain(
+      'key.toUpperCase() !== SANDBOX_ENV_KEY',
+    );
     expect(verify).not.toContain('BIOME_CONFIG_PATH');
     expect(verify).not.toContain('.biome-worktree-');
     expect(verify).not.toContain('New-WorktreeBiomeConfig');
@@ -249,6 +272,23 @@ describe('Node runtime policy', () => {
       expect(verify).toContain(`'${script}'`);
     }
     expect(verify).not.toContain('bd preflight --check');
+  });
+
+  it('removes every casing of an ambient sandbox marker from full verification', () => {
+    const ambient = {
+      PATH: '/bin',
+      ESHYRA_TEST_SANDBOX: '1',
+      eshyra_test_sandbox: '1',
+      EsHyRa_TeSt_SaNdBoX: '1',
+    };
+
+    expect(buildVerificationEnvironment(ambient, false)).toEqual({
+      PATH: '/bin',
+    });
+    expect(buildVerificationEnvironment(ambient, true)).toEqual({
+      PATH: '/bin',
+      ESHYRA_TEST_SANDBOX: '1',
+    });
   });
 
   it('requires manual review for major runtime and toolchain updates', () => {
