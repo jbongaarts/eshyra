@@ -93859,6 +93859,46 @@
               "from": "face-5",
               "to": "inactive",
               "via": "press-face-6"
+            },
+            {
+              "from": "face-1",
+              "to": "inactive",
+              "timer": {
+                "amount": 1,
+                "unit": "minute"
+              }
+            },
+            {
+              "from": "face-2",
+              "to": "inactive",
+              "timer": {
+                "amount": 1,
+                "unit": "minute"
+              }
+            },
+            {
+              "from": "face-3",
+              "to": "inactive",
+              "timer": {
+                "amount": 1,
+                "unit": "minute"
+              }
+            },
+            {
+              "from": "face-4",
+              "to": "inactive",
+              "timer": {
+                "amount": 1,
+                "unit": "minute"
+              }
+            },
+            {
+              "from": "face-5",
+              "to": "inactive",
+              "timer": {
+                "amount": 1,
+                "unit": "minute"
+              }
             }
           ],
           "duration": {

@@ -9,6 +9,7 @@ import {
   magicItemClauseTagCensus,
 } from '../../../scripts/importers/dnd5e-srd-5.1/magicItemFamilyRegistry.js';
 import type { MagicItemExtraction } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
+import type { MagicItemStateMachine } from '../../../src/rules/magicItemMechanics.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 
 const ROOT = process.cwd();
@@ -154,5 +155,33 @@ describe('authoritative magic-item family registry', () => {
         expect(entry.readiness, entry.clauseId).toBe('engine-pending');
       }
     }
+  });
+
+  it('gives every state machine that declares a duration an executable timer', () => {
+    // A machine-level `duration` with no timer transition is a semantic dead
+    // end: the F5 reset/timer executor fails closed and leaves the duration
+    // unscheduled, so the barrier/effect never ends on its own.
+    const machinesWithoutTimer: string[] = [];
+    for (const record of compiledRecords()) {
+      if (record.kind !== 'magic-item') continue;
+      const data = record.data as Record<string, unknown>;
+      const scopes = [
+        { label: record.key, mechanics: data.mechanics },
+        ...(
+          (data.variants as { name: string; mechanics?: unknown }[]) ?? []
+        ).map((variant) => ({
+          label: `${record.key}#${variant.name}`,
+          mechanics: variant.mechanics,
+        })),
+      ];
+      for (const { label, mechanics } of scopes) {
+        const machine = (mechanics as { stateMachine?: MagicItemStateMachine })
+          ?.stateMachine;
+        if (machine?.duration === undefined) continue;
+        if (!machine.transitions.some(({ timer }) => timer !== undefined))
+          machinesWithoutTimer.push(label);
+      }
+    }
+    expect(machinesWithoutTimer).toEqual([]);
   });
 });

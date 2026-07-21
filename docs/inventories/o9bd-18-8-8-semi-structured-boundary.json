@@ -25326,7 +25326,7 @@
         "open",
         "bead"
       ],
-      "population": 232,
+      "population": 237,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
@@ -25471,7 +25471,7 @@
         "minute",
         "hour"
       ],
-      "population": 12,
+      "population": 17,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -25495,7 +25495,7 @@
         "sealed",
         "disabled"
       ],
-      "population": 232,
+      "population": 237,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",

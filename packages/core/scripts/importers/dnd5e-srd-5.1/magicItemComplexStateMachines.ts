@@ -234,6 +234,8 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
       phrases: [
         'press one of the cube’s faces',
         'forming a cube 15 feet on a side',
+        'lasts for 1 minute, until you use an action to press the cube',
+        'expending the requisite number of charges, resetting the duration',
         'cube loses charges when the barrier is targeted by certain spells',
       ],
       operations: [
@@ -289,6 +291,14 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
             from: `face-${i + 1}`,
             to: 'inactive',
             via: 'press-face-6',
+          })),
+          // Source: the barrier "lasts for 1 minute"; pressing another face
+          // expends charges "resetting the duration", which re-anchors the
+          // timer of the face state that press enters.
+          ...Array.from({ length: 5 }, (_, i) => ({
+            from: `face-${i + 1}`,
+            to: 'inactive',
+            timer: { amount: 1, unit: 'minute' } as const,
           })),
         ],
         duration: { amount: 1, unit: 'minute' },

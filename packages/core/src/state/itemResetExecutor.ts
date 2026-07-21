@@ -803,10 +803,14 @@ function applyDueTimer(
     throw new ItemResetExecutorError(
       `${item.packRef} instance '${item.row.id}' timer '${timer.from}' -> '${timer.to}' is not pending from machineState '${state.machineState}'`,
     );
+  // The same state pair can be joined by both an operation transition and a
+  // timer transition (Cube of Force: press-face-6 and the barrier's one
+  // minute), so only timer-bearing candidates license a pending timer.
   const transition = transitions.find(
     (candidate) =>
       candidate.from === timer.from &&
       candidate.to === timer.to &&
+      candidate.timer !== undefined &&
       sameDuration(candidate.timer, {
         amount: timer.amount,
         unit: timer.unit,
