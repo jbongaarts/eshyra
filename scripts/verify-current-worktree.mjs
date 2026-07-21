@@ -31,9 +31,12 @@ function npmCommand() {
 }
 
 const sandboxMode = process.argv.includes('--sandbox');
-const childEnv = sandboxMode
-  ? { ...process.env, ESHYRA_TEST_SANDBOX: '1' }
-  : process.env;
+const childEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => key !== 'ESHYRA_TEST_SANDBOX'),
+);
+if (sandboxMode) {
+  childEnv.ESHYRA_TEST_SANDBOX = '1';
+}
 
 if (sandboxMode) {
   console.log(

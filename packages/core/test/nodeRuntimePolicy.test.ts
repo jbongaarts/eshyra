@@ -255,7 +255,8 @@ describe('Node runtime policy', () => {
     expect(verify).toContain("['rev-parse', '--show-toplevel']");
     expect(verify).toContain('cwd: repoRoot');
     expect(verify).toContain("process.argv.includes('--sandbox')");
-    expect(verify).toContain('ESHYRA_TEST_SANDBOX');
+    expect(verify).toContain("key !== 'ESHYRA_TEST_SANDBOX'");
+    expect(verify).toContain("childEnv.ESHYRA_TEST_SANDBOX = '1'");
     expect(verify).not.toContain('BIOME_CONFIG_PATH');
     expect(verify).not.toContain('.biome-worktree-');
     expect(verify).not.toContain('New-WorktreeBiomeConfig');
