@@ -111,6 +111,24 @@ describe('complex M5 state-machine complement', () => {
         via: 'press-face-6',
       })),
     );
+    // The barrier "lasts for 1 minute", so every face state owns an executable
+    // timer back to 'inactive'; a face press re-enters a face state and thereby
+    // re-anchors it, which is the source's "resetting the duration".
+    expect(
+      cube?.mechanics.stateMachine?.transitions.filter(
+        ({ timer }) => timer !== undefined,
+      ),
+    ).toEqual(
+      [1, 2, 3, 4, 5].map((face) => ({
+        from: `face-${face}`,
+        to: 'inactive',
+        timer: { amount: 1, unit: 'minute' },
+      })),
+    );
+    expect(cube?.mechanics.stateMachine?.duration).toEqual({
+      amount: 1,
+      unit: 'minute',
+    });
     const rod = projectMagicItemComplexStateMachine(
       named('Rod of Lordly Might'),
     );
@@ -195,6 +213,15 @@ describe('complex M5 state-machine complement', () => {
         ),
       }),
     ).toThrow(/expected source phrase/);
+    expect(() =>
+      projectMagicItemComplexStateMachine({
+        ...cube,
+        description: cube.description.replace(
+          'expending the requisite number of charges, resetting the duration',
+          'expending the requisite number of charges',
+        ),
+      }),
+    ).toThrow(/resetting the duration/);
     expect(
       [...MAGIC_ITEM_COMPLEX_M5_REFERENCES, 'table:not-in-srd'].filter(
         (ref) => !keys.has(ref),

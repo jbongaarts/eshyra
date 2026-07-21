@@ -600,6 +600,80 @@ describe('item reset/timer executor', () => {
     db.close();
   });
 
+  it('ends the committed Cube of Force barrier on its declared one-minute duration', () => {
+    const db = freshDbWithSession();
+    // The bundled cube's own clauses are still engine-pending, so its committed
+    // mechanics are replayed through a readiness-green fixture: this asserts the
+    // pack's encoding is executable by F5, not a hand-copied approximation.
+    const bundled = getBundledDnd5eSrdPack().records.find(
+      ({ key }) => key === 'magic-item:cube-of-force',
+    );
+    if (bundled === undefined) throw new Error('bundled pack has no cube');
+    const record = fixture(
+      'cube-of-force-duration',
+      (bundled.data as { mechanics: Record<string, unknown> }).mechanics,
+      true,
+    );
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    attuneItem(db, {
+      ...CTX,
+      itemId: id,
+      itemRef: record.key,
+      resolveRulesPack: resolver(pack),
+    });
+    useItem(db, useInput(pack, id, 'press-face-1'));
+    expect(readItemState(db, id)?.pendingTimers).toMatchObject([
+      { from: 'face-1', to: 'inactive', amount: 1, unit: 'minute' },
+    ]);
+    // Source: pressing a different face expends charges "resetting the
+    // duration", so the face-1 deadline is cancelled and face-3 re-anchors.
+    useItem(db, useInput(pack, id, 'press-face-3'));
+    expect(readItemState(db, id)?.pendingTimers).toMatchObject([
+      { from: 'face-3', to: 'inactive', amount: 1, unit: 'minute' },
+    ]);
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 1,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(
+      result.itemTimerResolutions.map(({ from, to }) => ({ from, to })),
+    ).toEqual([{ from: 'face-3', to: 'inactive' }]);
+    expect(readItemState(db, id)?.machineState).toBe('inactive');
+    expect(readItemState(db, id)?.pendingTimers).toEqual([]);
+    db.close();
+  });
+
+  it('fires a timer whose state pair is also joined by an operation transition', () => {
+    const db = freshDbWithSession();
+    const record = fixture('timer-shared-pair', {
+      operations: [{ id: 'activate' }, { id: 'deactivate' }],
+      stateMachine: {
+        initial: 'off',
+        states: [{ id: 'off' }, { id: 'on' }],
+        transitions: [
+          { from: 'off', to: 'on', via: 'activate' },
+          // Declared before the timer, so a scan that inspects every same-pair
+          // candidate reaches an undefined timer declaration first.
+          { from: 'on', to: 'off', via: 'deactivate' },
+          { from: 'on', to: 'off', timer: { amount: 1, unit: 'minute' } },
+        ],
+      },
+    });
+    const pack = rulesPack(record);
+    const id = install(db, record);
+    useItem(db, useInput(pack, id, 'activate'));
+    const result = advanceWorldTime(db, {
+      ...CTX,
+      minutes: 1,
+      resolveRulesPack: resolver(pack),
+    });
+    expect(result.itemTimerResolutions.map(({ to }) => to)).toEqual(['off']);
+    expect(readItemState(db, id)?.machineState).toBe('off');
+    db.close();
+  });
+
   it('executes timer cascades from each fired deadline', () => {
     const db = freshDbWithSession();
     const record = fixture('timer-cascade', {
