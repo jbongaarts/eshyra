@@ -650,7 +650,7 @@ const DURATION_ROUND_TICKS = {
   day: 14_400,
 } as const;
 
-function durationRoundTicks(
+export function durationRoundTicks(
   raw: unknown,
   amount: number,
   path: string,
@@ -774,6 +774,86 @@ function initialRemaining(
   if (economy.kind === 'cooldown') return 1;
   if (economy.kind === 'single-use') return 1;
   return undefined;
+}
+
+/**
+ * Resolve the declared maximum using the same initialization evidence as
+ * createInitialItemState. Dice-derived maxima are never re-rolled by a reset.
+ */
+export function resolveEconomyMax(
+  state: ItemInstanceState,
+  economyId: string,
+  raw: unknown,
+): number {
+  const economy = obj(raw, `economy '${economyId}'`);
+  const recordedAmount = (value: unknown, purpose: string): number => {
+    if (typeof value === 'number') return value;
+    const roll = state.initializationRolls?.find(
+      (entry) => entry.purpose === purpose,
+    );
+    if (roll === undefined)
+      throw new ItemStateError(
+        `economy '${economyId}' maximum is dice-derived but initialization evidence '${purpose}' is missing`,
+      );
+    return roll.total;
+  };
+  const kind = economy.kind;
+  let maximum: number;
+  if (kind === 'charges') {
+    const charges = obj(economy.charges, `economy '${economyId}'.charges`);
+    maximum = recordedAmount(charges.max, `economy:${economyId}:charges.max`);
+  } else if (kind === 'per-day') {
+    const perDay = obj(economy.perDay, `economy '${economyId}'.perDay`);
+    maximum = recordedAmount(perDay.uses, `economy:${economyId}:perDay.uses`);
+  } else if (kind === 'doses') {
+    const doses = obj(economy.doses, `economy '${economyId}'.doses`);
+    const tablePool = Object.values(state.randomInitialization ?? {}).find(
+      (entry) => entry.kind === 'table-pool',
+    );
+    maximum =
+      tablePool?.kind === 'table-pool'
+        ? tablePool.remainingEntryIds.length + tablePool.removedEntryIds.length
+        : recordedAmount(doses.count, `economy:${economyId}:doses.count`);
+  } else if (kind === 'budget') {
+    const budget = obj(economy.budget, `economy '${economyId}'.budget`);
+    const total = obj(budget.total, `economy '${economyId}'.budget.total`);
+    const increment = obj(
+      budget.increment,
+      `economy '${economyId}'.budget.increment`,
+    );
+    const totalAmount = recordedAmount(
+      total.amount,
+      `economy:${economyId}:budget.total`,
+    );
+    if (typeof increment.amount !== 'number')
+      throw new ItemStateError(
+        `economy '${economyId}'.budget.increment.amount must be numeric`,
+      );
+    const totalTicks = durationRoundTicks(
+      total,
+      totalAmount,
+      `economy:${economyId}:budget.total`,
+    );
+    const incrementTicks = durationRoundTicks(
+      increment,
+      increment.amount,
+      `economy:${economyId}:budget.increment`,
+    );
+    if (totalTicks % incrementTicks !== 0)
+      throw new ItemStateError(
+        `economy '${economyId}'.budget.total must be exactly divisible by its increment`,
+      );
+    maximum = totalTicks / incrementTicks;
+  } else if (kind === 'cooldown' || kind === 'single-use') {
+    maximum = 1;
+  } else {
+    throw new ItemStateError(
+      `economy '${economyId}' has no recoverable maximum for kind '${String(kind)}'`,
+    );
+  }
+  if (!Number.isSafeInteger(maximum) || maximum < 0)
+    throw new ItemStateError(`economy '${economyId}' maximum is malformed`);
+  return maximum;
 }
 
 export interface CreateInitialItemStateOptions {
@@ -1361,6 +1441,121 @@ function costAmount(
   );
 }
 
+function elapsedNow(db: Db): number {
+  const row = db
+    .prepare('SELECT elapsed_minutes FROM clock WHERE id = 1')
+    .get() as { elapsed_minutes?: number } | undefined;
+  if (row === undefined || !Number.isSafeInteger(row.elapsed_minutes))
+    throw new ItemStateError('campaign clock elapsed_minutes is malformed');
+  return row.elapsed_minutes as number;
+}
+
+function durationMinutesAtSpend(
+  raw: unknown,
+  packRef: string,
+  economyId: string,
+  rng: Rng | undefined,
+): number {
+  const duration = obj(raw, `${packRef}.economies.${economyId}.duration`);
+  if (
+    duration.unit !== 'minute' &&
+    duration.unit !== 'hour' &&
+    duration.unit !== 'day'
+  )
+    throw new ItemStateError(
+      `${packRef} economy '${economyId}' has an unsupported spend anchor duration ${JSON.stringify(raw)}`,
+    );
+  const amount =
+    typeof duration.amount === 'number'
+      ? duration.amount
+      : (() => {
+          if (rng === undefined)
+            throw new ItemStateError(
+              `${packRef} economy '${economyId}' spend anchor is dice-defined (${String(duration.amount)}); seeded RNG is required`,
+            );
+          return rollDice(String(duration.amount), rng).total;
+        })();
+  const multiplier =
+    duration.unit === 'minute' ? 1 : duration.unit === 'hour' ? 60 : 1_440;
+  const minutes = amount * multiplier;
+  if (!Number.isSafeInteger(minutes) || minutes <= 0)
+    throw new ItemStateError(
+      `${packRef} economy '${economyId}' has an invalid spend anchor duration`,
+    );
+  return minutes;
+}
+
+function scheduleEconomyAfterSpend(
+  db: Db,
+  packRef: string,
+  economyId: string,
+  economy: Obj,
+  remaining: number,
+  rng: Rng | undefined,
+): string | undefined {
+  const resets = Array.isArray(economy.reset) ? economy.reset : [];
+  const perPeriod = resets.filter(
+    (entry) =>
+      obj(entry, `${packRef}.economies.${economyId}.reset[]`).at ===
+      'per-period',
+  );
+  if (perPeriod.length > 1)
+    throw new ItemStateError(
+      `${packRef} economy '${economyId}' has multiple per-period resets`,
+    );
+  const anchored = resets.filter((entry) => {
+    const at = obj(entry, `${packRef}.economies.${economyId}.reset[]`).at;
+    return at === 'hour' || at === 'days';
+  });
+  if (anchored.length > 1)
+    throw new ItemStateError(
+      `${packRef} economy '${economyId}' has multiple hour/days resets`,
+    );
+  const entry = perPeriod[0] ?? anchored[0];
+  if (entry === undefined) return undefined;
+  const reset = obj(entry, `${packRef}.economies.${economyId}.reset[]`);
+  let duration: unknown;
+  if (reset.at === 'per-period') duration = reset.period;
+  else if (reset.at === 'hour' || reset.at === 'days') {
+    const cooldown =
+      economy.cooldown === undefined
+        ? undefined
+        : obj(economy.cooldown, `${packRef}.economies.${economyId}.cooldown`)
+            .duration;
+    if (cooldown !== undefined) {
+      const cooldownDuration = obj(
+        cooldown,
+        `${packRef}.economies.${economyId}.cooldown.duration`,
+      );
+      if (
+        (reset.at === 'hour' && cooldownDuration.unit !== 'hour') ||
+        (reset.at === 'days' && cooldownDuration.unit !== 'day')
+      )
+        throw new ItemStateError(
+          `${packRef} economy '${economyId}' reset ${JSON.stringify(reset)} disagrees with cooldown.duration ${JSON.stringify(cooldown)}`,
+        );
+      if (reset.at === 'days' && typeof cooldownDuration.amount === 'number') {
+        if (cooldownDuration.amount !== reset.days)
+          throw new ItemStateError(
+            `${packRef} economy '${economyId}' reset ${JSON.stringify(reset)} disagrees with cooldown.duration ${JSON.stringify(cooldown)}`,
+          );
+      }
+      duration = cooldown;
+    } else {
+      duration =
+        reset.at === 'hour'
+          ? { amount: 1, unit: 'hour' }
+          : { amount: reset.days, unit: 'day' };
+    }
+  }
+  const availableAt =
+    remaining === 0 || reset.at === 'per-period'
+      ? elapsedNow(db) +
+        durationMinutesAtSpend(duration, packRef, economyId, rng)
+      : undefined;
+  return availableAt === undefined ? undefined : String(availableAt);
+}
+
 function isDeferredDestroyedLifecycle(
   selectedTransition: SelectedStateTransition | undefined,
 ): boolean {
@@ -1664,6 +1859,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
     }
 
     const costs: { economy: string; amount: number }[] = [];
+    const spentEconomyIds = new Set<string>();
     let stackedSingleUse = 0;
     const statelessSingleUseCosts: { economyId: string; amount: number }[] = [];
     let spentStatefulSingleUse = false;
@@ -1683,6 +1879,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
         continue;
       }
       if (economy.kind === 'single-use') spentStatefulSingleUse = true;
+      spentEconomyIds.add(economyId);
       const current = nextEconomies[economyId];
       if (current === undefined)
         throw new ItemStateError(
@@ -1729,6 +1926,26 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
         if (error instanceof ItemDepletionError)
           throw new ItemStateError(error.message);
         throw error;
+      }
+    }
+
+    if (state !== undefined) {
+      for (const economyId of spentEconomyIds) {
+        const next = nextEconomies[economyId];
+        const declared = obj(
+          refs.economies[economyId],
+          `${packRef}.economies.${economyId}`,
+        );
+        const availableAt = scheduleEconomyAfterSpend(
+          txnDb,
+          packRef,
+          economyId,
+          declared,
+          next.remaining,
+          input.rng,
+        );
+        if (availableAt !== undefined)
+          nextEconomies[economyId] = { ...next, availableAt };
       }
     }
 

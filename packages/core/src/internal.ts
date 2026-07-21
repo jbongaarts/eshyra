@@ -1336,6 +1336,17 @@ export type {
 } from './state/itemAdoptionReview.js';
 export { requiredItemAdoptionResolutionAction } from './state/itemAdoptionReview.js';
 export type {
+  ItemClockEventResolution,
+  ItemResetEvidence,
+  ItemResetExecutorContext,
+  ItemTimerResolutionEvidence,
+} from './state/itemResetExecutor.js';
+export {
+  ItemResetExecutorError,
+  resolveDueItemClockEvents,
+  resolveRestEventItemResets,
+} from './state/itemResetExecutor.js';
+export type {
   ItemEconomyState,
   ItemInstanceState,
   UseItemInput,
