@@ -182,6 +182,113 @@ describe('magic-item live instance state', () => {
     db.close();
   });
 
+  it('preserves, resets, and re-anchors timed state through useItem', () => {
+    const db = freshDbWithSession();
+    const barrier = item('timed-barrier-test', {
+      operations: [
+        { id: 'enter-barrier' },
+        { id: 'contact-barrier' },
+        { id: 'reset-barrier' },
+        { id: 'change-barrier' },
+      ],
+      stateMachine: {
+        initial: 'inactive',
+        states: [
+          { id: 'inactive' },
+          { id: 'barrier' },
+          { id: 'other-barrier' },
+          { id: 'expired' },
+          { id: 'other-expired' },
+        ],
+        transitions: [
+          { from: 'inactive', to: 'barrier', via: 'enter-barrier' },
+          { from: 'barrier', to: 'barrier', via: 'contact-barrier' },
+          {
+            from: 'barrier',
+            to: 'barrier',
+            via: 'reset-barrier',
+            resetsDuration: true,
+          },
+          { from: 'barrier', to: 'other-barrier', via: 'change-barrier' },
+          {
+            from: 'barrier',
+            to: 'expired',
+            timer: { amount: 10, unit: 'minute' },
+          },
+          {
+            from: 'other-barrier',
+            to: 'other-expired',
+            timer: { amount: 10, unit: 'minute' },
+          },
+        ],
+      },
+    });
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored',
+        name: 'Timed Barrier',
+        packRef: barrier.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    writeItemState(
+      db,
+      granted.id,
+      createInitialItemState(barrier.key, barrier),
+      MUTATION,
+    );
+    const rulesPack = pack(barrier);
+
+    expect(
+      useItem(db, useInput(rulesPack, granted.id, 'enter-barrier')).state,
+    ).toMatchObject({
+      machineState: 'barrier',
+      pendingTimers: [{ anchorElapsedMinutes: 0, deadlineElapsedMinutes: 10 }],
+    });
+    expect(readItemState(db, granted.id)).toMatchObject({
+      machineState: 'barrier',
+      pendingTimers: [{ anchorElapsedMinutes: 0, deadlineElapsedMinutes: 10 }],
+    });
+
+    db.prepare('UPDATE clock SET elapsed_minutes=5 WHERE id=1').run();
+    expect(
+      useItem(db, useInput(rulesPack, granted.id, 'contact-barrier')).state,
+    ).toMatchObject({
+      machineState: 'barrier',
+      pendingTimers: [{ anchorElapsedMinutes: 0, deadlineElapsedMinutes: 10 }],
+    });
+    expect(readItemState(db, granted.id)?.pendingTimers).toMatchObject([
+      { anchorElapsedMinutes: 0, deadlineElapsedMinutes: 10 },
+    ]);
+
+    db.prepare('UPDATE clock SET elapsed_minutes=7 WHERE id=1').run();
+    expect(
+      useItem(db, useInput(rulesPack, granted.id, 'reset-barrier')).state,
+    ).toMatchObject({
+      machineState: 'barrier',
+      pendingTimers: [{ anchorElapsedMinutes: 7, deadlineElapsedMinutes: 17 }],
+    });
+    expect(readItemState(db, granted.id)).toMatchObject({
+      machineState: 'barrier',
+      pendingTimers: [{ anchorElapsedMinutes: 7, deadlineElapsedMinutes: 17 }],
+    });
+
+    db.prepare('UPDATE clock SET elapsed_minutes=9 WHERE id=1').run();
+    expect(
+      useItem(db, useInput(rulesPack, granted.id, 'change-barrier')).state,
+    ).toMatchObject({
+      machineState: 'other-barrier',
+      pendingTimers: [{ anchorElapsedMinutes: 9, deadlineElapsedMinutes: 19 }],
+    });
+    expect(readItemState(db, granted.id)).toMatchObject({
+      machineState: 'other-barrier',
+      pendingTimers: [{ anchorElapsedMinutes: 9, deadlineElapsedMinutes: 19 }],
+    });
+    db.close();
+  });
+
   it('advances Dancing Sword through its declared attack progression', () => {
     const db = freshDbWithSession();
     const dancingSword = item('dancing-sword-test', {

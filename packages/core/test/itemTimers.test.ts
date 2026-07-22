@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { Rng } from '../src/orchestrator/rng.js';
 import {
   ItemTimerError,
   reconcileItemStateTimers,
@@ -65,28 +64,33 @@ describe('magic-item elapsed-world timers', () => {
       reconcileItemStateTimers('active', first)[0]?.deadlineElapsedMinutes,
     ).toBe(10);
     expect(reentered).toEqual(first);
-    const preservedRolled = {
+    const preservedUnrelated = {
       from: 'active',
-      to: 'ready',
+      to: 'other',
       anchorElapsedMinutes: 2,
       deadlineElapsedMinutes: 6,
       amount: 4,
       unit: 'minute' as const,
       roll: { notation: '1d4', rolls: [4], total: 4 },
     };
-    const noRng: Rng = {
-      nextInt: () => {
-        throw new Error('preserved timer must not roll');
-      },
-    };
     const unmatched = resolveItemStateTimers(
       db,
       'active',
       [{ to: 'ready', timer: { amount: '1d4', unit: 'minute' } }],
-      noRng,
-      { preserved: [preservedRolled] },
+      fixedRng,
+      { preserved: [preservedUnrelated] },
     );
-    expect(unmatched).toEqual([preservedRolled]);
+    expect(unmatched).toEqual([
+      {
+        from: 'active',
+        to: 'ready',
+        anchorElapsedMinutes: 5,
+        deadlineElapsedMinutes: 8,
+        amount: 3,
+        unit: 'minute',
+        roll: { notation: '1d4', rolls: [3], total: 3 },
+      },
+    ]);
     expect(reconcileItemStateTimers('inactive', [])).toEqual([]);
     db.close();
   });

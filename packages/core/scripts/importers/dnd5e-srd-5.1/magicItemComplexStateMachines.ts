@@ -274,8 +274,8 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
             to: `face-${i + 1}`,
             via: `press-face-${i + 1}`,
           })),
-          // Source: pressing a different face resets the duration; pressing
-          // the already-active face is the explicit reset-duration ruling.
+          // Source: activating a face creates a barrier that lasts for 1
+          // minute; pressing the already-active face restates that duration.
           ...Array.from({ length: 5 }, (_, from) =>
             Array.from({ length: 5 }, (_, to) => ({
               from: `face-${from + 1}`,
