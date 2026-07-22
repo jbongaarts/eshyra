@@ -55,8 +55,8 @@ provenance/session/updated-at like every other live-state table:
   without ending the effect.
 - **`active_effect_link`** — typed links to durable state the effect **owns**:
   today condition entries projected onto characters/combatants and linked
-  actors (summoned/animated combatants); `zone` and `form` are schema-reserved
-  for S3/transformation rollout and fail closed in code. Each link carries two
+  actors (summoned/animated combatants), spatial zones, and transformation
+  forms. Each link carries two
   cleanup policies (`cleanup_on_end`, `cleanup_on_break`) so normal spell end
   and concentration break can differ (the Conjure Elemental distinction: break
   releases the elemental, ordinary end removes it).
@@ -74,13 +74,11 @@ what an effect may declare (fail-closed):
 | --- | --- | --- | --- |
 | `spell-effect` | spell, ruling | condition | record-derived |
 | `summoning` | spell, feature, ruling | condition, actor | record-derived |
-| `ward` | spell, magic-item, ruling | condition, zone† | record-derived |
+| `ward` | spell, magic-item, ruling | condition, zone | record-derived |
 | `curse` | spell, magic-item, creature-trait, ruling | condition | record-derived |
-| `transformation` | spell, feature, ruling | condition, form† | record-derived |
+| `transformation` | spell, feature, ruling | condition, form | record-derived |
 | `item-power` | magic-item | condition | declared |
 | `condition-package` | spell, creature-trait, hazard, ruling | condition | forbidden |
-
-† schema-reserved; creation refused until the owning rollout bead lands.
 
 ### Source grounding
 
@@ -265,8 +263,9 @@ typed audit events.
   concentration ownership, target existence, projection collisions (a
   condition id already present on a target is refused — same-effect
   non-stacking is a rules question, silent double-ownership is corruption),
-  and linked-actor existence; performs concentration replacement; projects
-  conditions; records `created`.
+  linked-actor existence, zone identity/geometry, and one current form per
+  participant; performs concentration replacement; projects conditions,
+  zones, and forms; records `created`.
 - `endActiveEffect` — reason-validated end + owned cleanup (see §4).
 - `resolveConcentrationCheck` — evidence-validated check (see §5).
 - `breakConcentrationOnLifeEvent` — F6 hook; idempotent when the owner holds
@@ -372,9 +371,8 @@ the historical `mutate_state` wrapper was deleted (audit §5).
   'release'` encode the reviewed control/break matrix; per-spell projection
   stays in S1.
 - **S3 wards / transformations / item lifecycles**: suppression tools are
-  available for the future ward runtime, but `zone`/`form` link kinds remain
-  schema-reserved and fail closed until their canonical S3/C1 projection
-  runtimes land. Those runtimes must use F3 link cleanup: `remove` invokes the
+  available, and `zone`/`form` link kinds use canonical S3/C1 projection
+  stores through F3 cleanup: `remove` invokes the
   canonical projection operation in the terminal transaction, while `release`
   closes ownership and leaves the projection intact.
 - **F6 life state**: one-way reaction hook (see §5); the life-state machine

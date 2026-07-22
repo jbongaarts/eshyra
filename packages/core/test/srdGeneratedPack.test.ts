@@ -995,7 +995,7 @@ function collectMechanicsValues(
   }
 }
 
-function mechanicsTokens(data: Record<string, unknown>): {
+function mechanicsTokens(mechanics: unknown): {
   readonly dice: Set<string>;
   readonly typedDice: Set<string>;
   readonly dcs: Set<number>;
@@ -1012,15 +1012,7 @@ function mechanicsTokens(data: Record<string, unknown>): {
     literalDcs: number[];
     numericDcs: number[];
   };
-  collectMechanicsValues(data.mechanics, values);
-  const variants = Array.isArray(data.variants) ? data.variants : [];
-  for (const variant of variants) {
-    if (variant && typeof variant === 'object')
-      collectMechanicsValues(
-        (variant as Record<string, unknown>).mechanics,
-        values,
-      );
-  }
+  collectMechanicsValues(mechanics, values);
   return {
     dice: new Set(
       values.strings.flatMap((value) =>
@@ -1060,37 +1052,75 @@ function descriptionTokens(description: string): {
 type DiceConservationDirection = 'forward' | 'reverse';
 
 const DICE_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
-  'magic-item:bead-of-force|forward|1d4+4':
+  'magic-item:bead-of-force|parent|forward|1d4+4':
     '1d4 found-count belongs to loot metadata rather than item mechanics',
-  'magic-item:deck-of-many-things|forward|1d3':
+  'magic-item:deck-of-many-things|parent|forward|1d3':
     'card outcome dice are GM-mediated and represented by the linked card table/stat block',
-  'magic-item:deck-of-many-things|forward|1d4+1':
+  'magic-item:deck-of-many-things|parent|forward|1d4+1':
     'card outcome dice are GM-mediated and represented by the linked card table/stat block',
-  'magic-item:deck-of-many-things|forward|1d8':
+  'magic-item:deck-of-many-things|parent|forward|1d8':
     'card outcome dice are GM-mediated and represented by the linked card table/stat block',
-  'magic-item:deck-of-many-things|forward|1d8+3':
+  'magic-item:deck-of-many-things|parent|forward|1d8+3':
     'card outcome dice are GM-mediated and represented by the linked card table/stat block',
-  'magic-item:deck-of-many-things|forward|1d10':
+  'magic-item:deck-of-many-things|parent|forward|1d10':
     'card outcome dice are GM-mediated and represented by the linked card table/stat block',
-  'magic-item:figurine-of-wondrous-power|forward|3d10+3':
+  'magic-item:figurine-of-wondrous-power|parent|forward|3d10+3':
     'Giant Fly 3d10 is owned by the linked stat-block record',
-  'magic-item:ioun-stone|forward|1d3':
+  'magic-item:ioun-stone|parent|forward|1d3':
     '1d3 orbit distance is flavor text, not an item mechanic',
-  'magic-item:robe-of-useful-items|reverse|4d4+12':
+  'magic-item:robe-of-useful-items|parent|reverse|4d4+12':
     'The SRD gives the robe twelve fixed patches plus 4d4 additional patches; reviewed mechanics synthesize that total as 4d4+12.',
 };
 
 const DC_NUMERIC_CONSERVATION_EXCEPTIONS: Readonly<Record<string, string>> = {
-  'magic-item:apparatus-of-the-crab|forward|dc:20':
+  'magic-item:apparatus-of-the-crab|parent|forward|dc:20':
     'DC 20 hidden-catch check is adjudicated per the as87 disposition',
 };
 
 function diceExceptionKey(
   recordKey: string,
+  scope: string,
   direction: DiceConservationDirection,
   token: string,
 ): string {
-  return `${recordKey}|${direction}|${token}`;
+  return `${recordKey}|${scope}|${direction}|${token}`;
+}
+
+function numericConservationScopes(
+  data: Record<string, unknown>,
+): ReadonlyArray<{
+  readonly id: string;
+  readonly description: string;
+  readonly mechanics: unknown;
+}> {
+  const variants = Array.isArray(data.variants)
+    ? data.variants.filter(
+        (variant): variant is Record<string, unknown> =>
+          variant !== null && typeof variant === 'object',
+      )
+    : [];
+  let parentDescription = data.description as string;
+  for (const variant of variants) {
+    if (typeof variant.text === 'string')
+      parentDescription = parentDescription.replace(variant.text, '');
+  }
+  return [
+    {
+      id: 'parent',
+      description: parentDescription,
+      mechanics: data.mechanics,
+    },
+    ...variants
+      .filter(
+        (variant) =>
+          typeof variant.id === 'string' && typeof variant.text === 'string',
+      )
+      .map((variant) => ({
+        id: `variant:${variant.id as string}`,
+        description: variant.text as string,
+        mechanics: variant.mechanics,
+      })),
+  ];
 }
 
 function numericConservationFindings(
@@ -1106,37 +1136,62 @@ function numericConservationFindings(
     if (record.kind !== 'magic-item') continue;
     const data = record.data as Record<string, unknown>;
     if (typeof data.description !== 'string') continue;
-    const prose = descriptionTokens(data.description);
-    const mechanics = mechanicsTokens(data);
-    for (const token of prose.dice) {
-      const exceptionKey = diceExceptionKey(record.key, 'forward', token);
-      const hasException = exceptionKey in DICE_NUMERIC_CONSERVATION_EXCEPTIONS;
-      if (!mechanics.dice.has(token) && !hasException)
-        findings.push(`${record.key} forward dice ${token}`);
-      if (!mechanics.dice.has(token) && hasException)
-        usedExceptions.add(exceptionKey);
+    for (const scope of numericConservationScopes(data)) {
+      const prose = descriptionTokens(scope.description);
+      const mechanics = mechanicsTokens(scope.mechanics);
+      for (const token of prose.dice) {
+        const exceptionKey = diceExceptionKey(
+          record.key,
+          scope.id,
+          'forward',
+          token,
+        );
+        const hasException =
+          exceptionKey in DICE_NUMERIC_CONSERVATION_EXCEPTIONS;
+        if (!mechanics.dice.has(token) && !hasException)
+          findings.push(`${record.key} ${scope.id} forward dice ${token}`);
+        if (!mechanics.dice.has(token) && hasException)
+          usedExceptions.add(exceptionKey);
+      }
+      for (const token of mechanics.typedDice) {
+        const exceptionKey = diceExceptionKey(
+          record.key,
+          scope.id,
+          'reverse',
+          token,
+        );
+        const hasException =
+          exceptionKey in DICE_NUMERIC_CONSERVATION_EXCEPTIONS;
+        if (!prose.dice.has(token) && !hasException)
+          findings.push(`${record.key} ${scope.id} reverse dice ${token}`);
+        if (!prose.dice.has(token) && hasException)
+          usedExceptions.add(exceptionKey);
+      }
     }
+    const variants = Array.isArray(data.variants)
+      ? data.variants.filter(
+          (variant): variant is Record<string, unknown> =>
+            variant !== null && typeof variant === 'object',
+        )
+      : [];
+    const prose = descriptionTokens(data.description);
+    const mechanics = mechanicsTokens([
+      data.mechanics,
+      ...variants.map((variant) => variant.mechanics),
+    ]);
     for (const dc of prose.dcs) {
-      const exceptionKey = `${record.key}|forward|dc:${dc}`;
+      const exceptionKey = `${record.key}|parent|forward|dc:${dc}`;
       const hasException = exceptionKey in DC_NUMERIC_CONSERVATION_EXCEPTIONS;
       if (!mechanics.dcs.has(dc) && !hasException)
-        findings.push(`${record.key} forward DC ${dc}`);
+        findings.push(`${record.key} parent forward DC ${dc}`);
       if (!mechanics.dcs.has(dc) && hasException)
         usedExceptions.add(exceptionKey);
     }
-    for (const token of mechanics.typedDice) {
-      const exceptionKey = diceExceptionKey(record.key, 'reverse', token);
-      const hasException = exceptionKey in DICE_NUMERIC_CONSERVATION_EXCEPTIONS;
-      if (!prose.dice.has(token) && !hasException)
-        findings.push(`${record.key} reverse dice ${token}`);
-      if (!prose.dice.has(token) && hasException)
-        usedExceptions.add(exceptionKey);
-    }
     for (const dc of mechanics.numericDcs) {
-      const exceptionKey = `${record.key}|reverse|dc:${dc}`;
+      const exceptionKey = `${record.key}|parent|reverse|dc:${dc}`;
       const hasException = exceptionKey in DC_NUMERIC_CONSERVATION_EXCEPTIONS;
       if (!prose.dcs.has(dc) && !hasException)
-        findings.push(`${record.key} reverse DC ${dc}`);
+        findings.push(`${record.key} parent reverse DC ${dc}`);
       if (!prose.dcs.has(dc) && hasException) usedExceptions.add(exceptionKey);
     }
   }
@@ -1197,8 +1252,39 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         },
       ]);
       expect(findings).toContain(
-        'magic-item:synthetic-dropped-modifier forward dice 1d6+5',
+        'magic-item:synthetic-dropped-modifier parent forward dice 1d6+5',
       );
+    });
+
+    it("does not let sibling variants satisfy each other's dice tokens", () => {
+      const { findings } = numericConservationFindings([
+        {
+          kind: 'magic-item',
+          key: 'magic-item:synthetic-cross-variant',
+          data: {
+            description:
+              'First. The effect deals 1d6 damage. Second. The effect deals 1d8 damage.',
+            variants: [
+              {
+                id: 'first',
+                text: 'The effect deals 1d6 damage.',
+                mechanics: { damage: '1d8' },
+              },
+              {
+                id: 'second',
+                text: 'The effect deals 1d8 damage.',
+                mechanics: { damage: '1d6' },
+              },
+            ],
+          },
+        },
+      ]);
+      expect(findings).toEqual([
+        'magic-item:synthetic-cross-variant variant:first forward dice 1d6',
+        'magic-item:synthetic-cross-variant variant:first reverse dice 1d8',
+        'magic-item:synthetic-cross-variant variant:second forward dice 1d8',
+        'magic-item:synthetic-cross-variant variant:second reverse dice 1d6',
+      ]);
     });
   });
 

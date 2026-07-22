@@ -1292,6 +1292,99 @@ describe('endActiveEffect', () => {
 // ---------------------------------------------------------------------------
 
 describe('cleanup ownership', () => {
+  it('projects and removes canonical ward zones', () => {
+    const { db } = setup();
+    const created = createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-zone',
+      kind: 'ward',
+      displayName: 'Ward',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      zones: [
+        {
+          zoneId: 'zone-ward',
+          scopeRef: 'location:cellar',
+          shape: 'sphere',
+          sizeFeet: 20,
+        },
+      ],
+      ...CTX,
+    });
+    expect(created.effect.links[0]).toMatchObject({
+      linkKind: 'zone',
+      target: { kind: 'scope', ref: 'location:cellar' },
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT shape, size_feet FROM effect_spatial_zone WHERE zone_id='zone-ward'",
+        )
+        .get(),
+    ).toEqual({ shape: 'sphere', size_feet: 20 });
+    const ended = endActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-zone',
+      reason: 'dispelled',
+      ...CTX,
+    });
+    expect(ended.cleanup.links[0]?.action).toBe('removed');
+    expect(
+      db
+        .prepare("SELECT 1 FROM effect_spatial_zone WHERE zone_id='zone-ward'")
+        .get(),
+    ).toBeUndefined();
+  });
+
+  it('projects forms and reports release and missing cleanup', () => {
+    const { db, pcId } = setup();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-form-release',
+      kind: 'transformation',
+      displayName: 'Bear Form',
+      source: { kind: 'feature' },
+      duration: { kind: 'until-removed' },
+      forms: [
+        {
+          target: { kind: 'character', ref: pcId },
+          formRef: 'bear',
+          cleanupOnEnd: 'release',
+        },
+      ],
+      ...CTX,
+    });
+    const released = endActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-form-release',
+      reason: 'source-removed',
+      ...CTX,
+    });
+    expect(released.cleanup.links[0]?.action).toBe('released');
+    db.prepare(
+      'DELETE FROM effect_transformation_form WHERE target_ref = ?',
+    ).run(pcId);
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-form-missing',
+      kind: 'transformation',
+      displayName: 'Wolf Form',
+      source: { kind: 'feature' },
+      duration: { kind: 'until-removed' },
+      forms: [{ target: { kind: 'character', ref: pcId }, formRef: 'wolf' }],
+      ...CTX,
+    });
+    db.prepare(
+      'DELETE FROM effect_transformation_form WHERE target_ref = ?',
+    ).run(pcId);
+    const missing = endActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-form-missing',
+      reason: 'source-removed',
+      ...CTX,
+    });
+    expect(missing.cleanup.links[0]?.action).toBe('missing');
+  });
   it('removes exactly the ended effect’s projections, preserving unrelated ones', () => {
     const { db, pcId } = setup();
     createActiveEffect(db, {

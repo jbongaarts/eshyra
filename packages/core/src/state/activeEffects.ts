@@ -29,8 +29,8 @@
 // `kind` is a semantic license, not a label (the reviewed S1 profile
 // pattern): it limits which source kinds, link kinds, and concentration
 // semantics an effect may declare, so structurally valid but meaningless
-// combinations fail closed. `zone` and `form` links are schema-reserved for
-// the S3 ward / transformation rollout beads and are refused here.
+// combinations fail closed. Zone and form projections are durable canonical
+// state and use the same ownership cleanup contract as conditions and actors.
 
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
@@ -190,6 +190,22 @@ export interface EffectActorLinkInput {
   readonly cleanupOnBreak?: EffectCleanupPolicy;
 }
 
+export interface EffectZoneProjectionInput {
+  readonly zoneId: string;
+  readonly scopeRef: string;
+  readonly shape: 'sphere' | 'cube' | 'cylinder' | 'cone' | 'line';
+  readonly sizeFeet: number;
+  readonly cleanupOnEnd?: EffectCleanupPolicy;
+  readonly cleanupOnBreak?: EffectCleanupPolicy;
+}
+
+export interface EffectFormProjectionInput {
+  readonly target: EffectParticipant;
+  readonly formRef: string;
+  readonly cleanupOnEnd?: EffectCleanupPolicy;
+  readonly cleanupOnBreak?: EffectCleanupPolicy;
+}
+
 export interface CreateActiveEffectInput extends EffectMutationContext {
   readonly campaignId: string;
   /** Caller-supplied stable identity, unique per campaign. */
@@ -210,6 +226,8 @@ export interface CreateActiveEffectInput extends EffectMutationContext {
   readonly targets?: readonly EffectTargetInput[];
   readonly conditions?: readonly EffectConditionProjectionInput[];
   readonly actors?: readonly EffectActorLinkInput[];
+  readonly zones?: readonly EffectZoneProjectionInput[];
+  readonly forms?: readonly EffectFormProjectionInput[];
 }
 
 export interface EffectTargetView {
@@ -222,7 +240,7 @@ export interface EffectTargetView {
 
 export interface EffectLinkView {
   readonly linkKind: EffectLinkKind;
-  readonly target: EffectParticipant;
+  readonly target: EffectTargetInput;
   readonly projectionRef: string;
   readonly campaignActorId?: string;
   readonly cleanupOnEnd: EffectCleanupPolicy;
@@ -278,7 +296,7 @@ export interface ActiveEffectView {
 /** One owned-projection cleanup outcome recorded in the audit ledger. */
 export interface EffectCleanupAction {
   readonly linkKind: EffectLinkKind;
-  readonly target: EffectParticipant;
+  readonly target: EffectTargetInput;
   readonly projectionRef: string;
   /** 'removed' = projection deleted; 'released' = ownership dropped, state
    *  left in place; 'missing' = the projection's holder no longer exists /
@@ -509,10 +527,8 @@ const EFFECT_KIND_PROFILES: Readonly<
   },
 };
 
-// 'zone' and 'form' link kinds are schema-reserved for the S3 ward/spatial
-// and transformation rollout beads: CreateActiveEffectInput exposes no path
-// that creates them, so they cannot exist as active rows until those beads
-// add validated projection runtimes.
+// Zone and form links are created only alongside their canonical projection
+// rows; raw active links remain an integrity violation.
 
 // ---------------------------------------------------------------------------
 // Spell duration grounding (design doc §2)
@@ -618,7 +634,7 @@ interface EffectTargetRow {
 interface EffectLinkRow {
   readonly effect_id: string;
   readonly link_kind: EffectLinkKind;
-  readonly target_kind: EffectParticipantKind;
+  readonly target_kind: EffectTargetKind;
   readonly target_ref: string;
   readonly projection_ref: string;
   readonly campaign_actor_id: string | null;
@@ -1467,7 +1483,30 @@ export function auditActiveEffectIntegrity(
       if (link.status !== 'active') {
         continue;
       }
-      const holder = { kind: link.target_kind, ref: link.target_ref };
+      if (link.link_kind === 'zone') {
+        const projection = db
+          .prepare(
+            'SELECT 1 FROM effect_spatial_zone WHERE campaign_id = ? AND zone_id = ? AND scope_ref = ?',
+          )
+          .get(campaignId, link.projection_ref, link.target_ref);
+        if (projection === undefined)
+          issues.push({
+            effectId: row.effect_id,
+            issue: `zone link claims '${link.projection_ref}' in scope '${link.target_ref}' but no such spatial zone exists`,
+          });
+        continue;
+      }
+      if (link.target_kind === 'scope') {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `${link.link_kind} link has invalid scope holder '${link.target_ref}'`,
+        });
+        continue;
+      }
+      const holder: EffectParticipant = {
+        kind: link.target_kind,
+        ref: link.target_ref,
+      };
       if (!participantRowExists(db, campaignId, holder)) {
         issues.push({
           effectId: row.effect_id,
@@ -1492,6 +1531,20 @@ export function auditActiveEffectIntegrity(
           effectId: row.effect_id,
           issue: `condition link claims '${link.projection_ref}' on ${holder.kind} '${holder.ref}' but no such condition entry exists`,
         });
+      }
+      if (link.link_kind === 'form') {
+        const projection = db
+          .prepare(
+            'SELECT form_ref FROM effect_transformation_form WHERE campaign_id = ? AND target_kind = ? AND target_ref = ?',
+          )
+          .get(campaignId, link.target_kind, link.target_ref) as
+          | { form_ref: string }
+          | undefined;
+        if (projection?.form_ref !== link.projection_ref)
+          issues.push({
+            effectId: row.effect_id,
+            issue: `form link claims '${link.projection_ref}' on ${link.target_kind} '${link.target_ref}' but no such form projection exists`,
+          });
       }
     }
   }
@@ -2329,9 +2382,23 @@ function removeProjection(
       throw e;
     }
   }
-  // zone/form are schema-reserved and cannot be created, so an active row of
-  // that kind is corrupt state; close the link and report it missing.
-  return 'missing';
+  if (link.link_kind === 'zone') {
+    return db
+      .prepare(
+        'DELETE FROM effect_spatial_zone WHERE campaign_id = ? AND zone_id = ? AND scope_ref = ?',
+      )
+      .run(campaignId, link.projection_ref, link.target_ref).changes === 1
+      ? 'removed'
+      : 'missing';
+  }
+  return db
+    .prepare(
+      'DELETE FROM effect_transformation_form WHERE campaign_id = ? AND target_kind = ? AND target_ref = ? AND form_ref = ?',
+    )
+    .run(campaignId, link.target_kind, link.target_ref, link.projection_ref)
+    .changes === 1
+    ? 'removed'
+    : 'missing';
 }
 
 interface FinalizeEndInput {
@@ -2588,13 +2655,9 @@ export function createActiveEffect(
         input.campaignId,
         priorConcentration.effect_id,
       )) {
-        if (
-          link.status === 'active' &&
-          link.link_kind === 'condition' &&
-          link.cleanup_on_break === 'remove'
-        ) {
+        if (link.status === 'active' && link.cleanup_on_break === 'remove') {
           replacementRemovals.add(
-            `${link.target_kind}:${link.target_ref}:${link.projection_ref}`,
+            `${link.link_kind}:${link.target_kind}:${link.target_ref}:${link.projection_ref}`,
           );
         }
       }
@@ -2733,7 +2796,7 @@ export function createActiveEffect(
       // to remove is not a collision: validation sees post-replacement state.
       if (
         existing.includes(projection.condition.id) &&
-        !replacementRemovals.has(key)
+        !replacementRemovals.has(`condition:${key}`)
       ) {
         throw new ActiveEffectError(
           `${projection.target.kind} '${projection.target.ref}' already has a condition ` +
@@ -2838,6 +2901,85 @@ export function createActiveEffect(
         throw new ActiveEffectError(
           `combatant '${actor.combatantId}' is already owned by effect '${owner.effect_id}'; ` +
             'an entity has at most one owning effect',
+        );
+      }
+    }
+
+    // Canonical zone projections. A zone is itself the spatial state; its
+    // scope holder may be narrative rather than a creature.
+    const zones = input.zones ?? [];
+    if (zones.length > 0 && !profile.linkKinds.includes('zone')) {
+      throw new ActiveEffectError(
+        `a '${input.kind}' effect cannot project zones`,
+      );
+    }
+    const seenZones = new Set<string>();
+    for (const zone of zones) {
+      requireNonEmptyString(zone.zoneId, 'zone projection zoneId');
+      requireNonEmptyString(zone.scopeRef, 'zone projection scopeRef');
+      if (
+        !['sphere', 'cube', 'cylinder', 'cone', 'line'].includes(zone.shape)
+      ) {
+        throw new ActiveEffectError(
+          `zone projection shape '${zone.shape}' is unsupported`,
+        );
+      }
+      if (!Number.isInteger(zone.sizeFeet) || zone.sizeFeet < 1) {
+        throw new ActiveEffectError(
+          'zone projection sizeFeet must be a positive integer',
+        );
+      }
+      if (seenZones.has(zone.zoneId))
+        throw new ActiveEffectError(
+          `duplicate zone projection '${zone.zoneId}'`,
+        );
+      seenZones.add(zone.zoneId);
+      if (
+        txnDb
+          .prepare(
+            'SELECT 1 FROM effect_spatial_zone WHERE campaign_id = ? AND zone_id = ?',
+          )
+          .get(input.campaignId, zone.zoneId) !== undefined &&
+        !replacementRemovals.has(`zone:scope:${zone.scopeRef}:${zone.zoneId}`)
+      ) {
+        throw new ActiveEffectError(
+          `spatial zone '${zone.zoneId}' already exists; an effect can only own a projection it created`,
+        );
+      }
+    }
+
+    const forms = input.forms ?? [];
+    if (forms.length > 0 && !profile.linkKinds.includes('form')) {
+      throw new ActiveEffectError(
+        `a '${input.kind}' effect cannot project forms`,
+      );
+    }
+    const seenForms = new Set<string>();
+    for (const form of forms) {
+      requireParticipant(
+        txnDb,
+        input.campaignId,
+        form.target,
+        'form projection target',
+      );
+      requireNonEmptyString(form.formRef, 'form projection formRef');
+      const key = `${form.target.kind}:${form.target.ref}`;
+      if (seenForms.has(key))
+        throw new ActiveEffectError(`duplicate form projection target ${key}`);
+      seenForms.add(key);
+      if (
+        txnDb
+          .prepare(
+            'SELECT 1 FROM effect_transformation_form WHERE campaign_id = ? AND target_kind = ? AND target_ref = ?',
+          )
+          .get(input.campaignId, form.target.kind, form.target.ref) !==
+          undefined &&
+        ![...replacementRemovals].some((key) =>
+          key.startsWith(`form:${form.target.kind}:${form.target.ref}:`),
+        )
+      ) {
+        throw new ActiveEffectError(
+          `${form.target.kind} '${form.target.ref}' already has a projected form; end that form before applying another`,
         );
       }
     }
@@ -3028,6 +3170,66 @@ export function createActiveEffect(
       );
     }
 
+    for (const zone of zones) {
+      txnDb
+        .prepare(
+          'INSERT INTO effect_spatial_zone(campaign_id,zone_id,scope_ref,shape,size_feet,provenance,session_id,updated_at) VALUES (?,?,?,?,?,?,?,?)',
+        )
+        .run(
+          input.campaignId,
+          zone.zoneId,
+          zone.scopeRef,
+          zone.shape,
+          zone.sizeFeet,
+          input.provenance,
+          input.sessionId,
+          input.at,
+        );
+      insertLink.run(
+        input.campaignId,
+        input.effectId,
+        'zone',
+        'scope',
+        zone.scopeRef,
+        zone.zoneId,
+        null,
+        zone.cleanupOnEnd ?? 'remove',
+        zone.cleanupOnBreak ?? 'remove',
+        input.provenance,
+        input.sessionId,
+        input.at,
+      );
+    }
+    for (const form of forms) {
+      txnDb
+        .prepare(
+          'INSERT INTO effect_transformation_form(campaign_id,target_kind,target_ref,form_ref,provenance,session_id,updated_at) VALUES (?,?,?,?,?,?,?)',
+        )
+        .run(
+          input.campaignId,
+          form.target.kind,
+          form.target.ref,
+          form.formRef,
+          input.provenance,
+          input.sessionId,
+          input.at,
+        );
+      insertLink.run(
+        input.campaignId,
+        input.effectId,
+        'form',
+        form.target.kind,
+        form.target.ref,
+        form.formRef,
+        null,
+        form.cleanupOnEnd ?? 'remove',
+        form.cleanupOnBreak ?? 'remove',
+        input.provenance,
+        input.sessionId,
+        input.at,
+      );
+    }
+
     appendEvent(
       txnDb,
       input.campaignId,
@@ -3053,6 +3255,14 @@ export function createActiveEffect(
           conditionId: projection.condition.id,
         })),
         actors: actors.map((actor) => actor.combatantId),
+        zones: zones.map((zone) => ({
+          zoneId: zone.zoneId,
+          scopeRef: zone.scopeRef,
+        })),
+        forms: forms.map((form) => ({
+          target: { ...form.target },
+          formRef: form.formRef,
+        })),
         ...(replaced === undefined
           ? {}
           : { replacedEffectId: replaced.effectId }),
