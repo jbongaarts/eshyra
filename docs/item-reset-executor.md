@@ -59,7 +59,11 @@ transition cancels every timer owned by the state being left, not only the timer
 that fired. Only a timer-bearing transition licenses a pending timer: one state
 pair may be joined by both an operation transition and a timer (Cube of Force
 reaches `inactive` by pressing face six *and* when its minute runs out), and the
-operation transition never satisfies a pending timer. Timer effects and destruction attunement evidence are returned with
+operation transition never satisfies a pending timer. Re-entry into the
+same state preserves matching pending timers by default; a self-transition may
+declare `resetsDuration: true` when the source says that action restarts the
+duration. Cross-state transitions always anchor the entered state's timers
+fresh. Timer effects and destruction attunement evidence are returned with
 the resolution. A round-based timer, a timer that would expire no later than the
 transition entering its state, a dice amount without seeded RNG, or any reset
 shape outside the implemented pack contract throws with the pack reference and

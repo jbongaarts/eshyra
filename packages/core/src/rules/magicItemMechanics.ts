@@ -96,6 +96,7 @@ export interface MagicItemStateMachine {
   readonly transitions: readonly {
     readonly from: string;
     readonly to: string;
+    readonly resetsDuration?: true;
     readonly via?: string;
     readonly timer?: MagicItemDurationSpec;
     readonly condition?: string;
@@ -869,6 +870,7 @@ function stateMachine(
       [
         'from',
         'to',
+        'resetsDuration',
         'via',
         'timer',
         'condition',
@@ -892,6 +894,16 @@ function stateMachine(
       throw new RulesPackError(
         `${transitionPath} must declare exactly one of via, timer, or condition`,
       );
+    if (transition.resetsDuration !== undefined) {
+      if (transition.resetsDuration !== true)
+        throw new RulesPackError(
+          `${transitionPath}.resetsDuration must be true when declared`,
+        );
+      if (transition.from !== transition.to)
+        throw new RulesPackError(
+          `${transitionPath}.resetsDuration requires from and to to match`,
+        );
+    }
     if (transition.via !== undefined) {
       const via = id(transition.via, `${transitionPath}.via`);
       if (

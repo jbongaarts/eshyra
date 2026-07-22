@@ -93673,7 +93673,8 @@
             {
               "from": "face-1",
               "to": "face-1",
-              "via": "press-face-1"
+              "via": "press-face-1",
+              "resetsDuration": true
             },
             {
               "from": "face-1",
@@ -93703,7 +93704,8 @@
             {
               "from": "face-2",
               "to": "face-2",
-              "via": "press-face-2"
+              "via": "press-face-2",
+              "resetsDuration": true
             },
             {
               "from": "face-2",
@@ -93733,7 +93735,8 @@
             {
               "from": "face-3",
               "to": "face-3",
-              "via": "press-face-3"
+              "via": "press-face-3",
+              "resetsDuration": true
             },
             {
               "from": "face-3",
@@ -93763,7 +93766,8 @@
             {
               "from": "face-4",
               "to": "face-4",
-              "via": "press-face-4"
+              "via": "press-face-4",
+              "resetsDuration": true
             },
             {
               "from": "face-4",
@@ -93793,7 +93797,8 @@
             {
               "from": "face-5",
               "to": "face-5",
-              "via": "press-face-5"
+              "via": "press-face-5",
+              "resetsDuration": true
             },
             {
               "from": "face-1",

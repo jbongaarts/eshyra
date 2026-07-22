@@ -95,6 +95,47 @@ describe('magic-item mechanics schema', () => {
     ).toThrow(/cannot declare both effects and onFailure/);
   });
 
+  it('validates duration-reset markers as self-transition opt-ins', () => {
+    const base = {
+      initial: 'ready',
+      states: [{ id: 'ready' }, { id: 'done' }],
+      transitions: [
+        { from: 'ready', to: 'ready', via: 'activate', resetsDuration: true },
+      ],
+    };
+    expect(() => validate({ stateMachine: base })).not.toThrow();
+    expect(() =>
+      validate({
+        stateMachine: {
+          ...base,
+          transitions: [
+            {
+              from: 'ready',
+              to: 'ready',
+              via: 'activate',
+              resetsDuration: false,
+            },
+          ],
+        },
+      }),
+    ).toThrow(/transitions\[0\]\.resetsDuration must be true/);
+    expect(() =>
+      validate({
+        stateMachine: {
+          ...base,
+          transitions: [
+            {
+              from: 'ready',
+              to: 'done',
+              via: 'activate',
+              resetsDuration: true,
+            },
+          ],
+        },
+      }),
+    ).toThrow(/resetsDuration requires from and to to match/);
+  });
+
   it('accepts staff-of-fire shared charges and operation/effect bindings', () => {
     const mechanics = {
       activation: { cost: 'action', commandWord: true },

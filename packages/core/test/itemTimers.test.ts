@@ -45,7 +45,7 @@ describe('magic-item elapsed-world timers', () => {
     db.close();
   });
 
-  it('replaces all stale timers when a state is entered or left', () => {
+  it('preserves matching timers and leaves unrelated declarations fresh', () => {
     const db = freshDbWithSession();
     const first = resolveItemStateTimers(
       db,
@@ -59,13 +59,34 @@ describe('magic-item elapsed-world timers', () => {
       'active',
       [{ to: 'inactive', timer: { amount: 10, unit: 'minute' } }],
       undefined,
+      { preserved: first },
     );
     expect(
       reconcileItemStateTimers('active', first)[0]?.deadlineElapsedMinutes,
     ).toBe(10);
-    expect(
-      reconcileItemStateTimers('active', reentered)[0]?.deadlineElapsedMinutes,
-    ).toBe(15);
+    expect(reentered).toEqual(first);
+    const preservedRolled = {
+      from: 'active',
+      to: 'ready',
+      anchorElapsedMinutes: 2,
+      deadlineElapsedMinutes: 6,
+      amount: 4,
+      unit: 'minute' as const,
+      roll: { notation: '1d4', rolls: [4], total: 4 },
+    };
+    const noRng: Rng = {
+      nextInt: () => {
+        throw new Error('preserved timer must not roll');
+      },
+    };
+    const unmatched = resolveItemStateTimers(
+      db,
+      'active',
+      [{ to: 'ready', timer: { amount: '1d4', unit: 'minute' } }],
+      noRng,
+      { preserved: [preservedRolled] },
+    );
+    expect(unmatched).toEqual([preservedRolled]);
     expect(reconcileItemStateTimers('inactive', [])).toEqual([]);
     db.close();
   });

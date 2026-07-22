@@ -836,13 +836,9 @@ function applyDueTimer(
     }));
   let scheduled: readonly ItemStateTimer[];
   try {
-    scheduled = resolveItemStateTimers(
-      db,
-      timer.to,
-      declarations,
-      ctx.rng,
-      timer.deadlineElapsedMinutes,
-    );
+    scheduled = resolveItemStateTimers(db, timer.to, declarations, ctx.rng, {
+      anchorElapsedMinutes: timer.deadlineElapsedMinutes,
+    });
   } catch (error) {
     if (error instanceof ItemTimerError)
       throw new ItemResetExecutorError(

@@ -111,9 +111,20 @@ describe('complex M5 state-machine complement', () => {
         via: 'press-face-6',
       })),
     );
-    // The barrier "lasts for 1 minute", so every face state owns an executable
-    // timer back to 'inactive'; a face press re-enters a face state and thereby
-    // re-anchors it, which is the source's "resetting the duration".
+    // The barrier "lasts for 1 minute". Only pressing a different face resets
+    // that duration; spell contact merely deducts charges.
+    expect(
+      cube?.mechanics.stateMachine?.transitions.filter(
+        ({ resetsDuration }) => resetsDuration === true,
+      ),
+    ).toEqual(
+      [1, 2, 3, 4, 5].map((face) => ({
+        from: `face-${face}`,
+        to: `face-${face}`,
+        via: `press-face-${face}`,
+        resetsDuration: true,
+      })),
+    );
     expect(
       cube?.mechanics.stateMachine?.transitions.filter(
         ({ timer }) => timer !== undefined,

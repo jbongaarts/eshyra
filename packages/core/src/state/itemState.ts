@@ -1278,6 +1278,7 @@ function validateRecordReferences(
 
 interface SelectedStateTransition {
   readonly nextState: string;
+  readonly resetsDuration: boolean;
   readonly effectIds: readonly string[];
   readonly result: NonNullable<UseItemResult['transition']>;
 }
@@ -1403,6 +1404,7 @@ function selectStateTransition(
   );
   return {
     nextState: selected.destination,
+    resetsDuration: selected.transition.resetsDuration === true,
     effectIds: Array.isArray(selected.transition.effects)
       ? (selected.transition.effects as string[])
       : [],
@@ -1850,6 +1852,10 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
           selectedTransition.nextState,
           selectedTransition.result.pendingTimers ?? [],
           input.rng,
+          selectedTransition.nextState === state?.machineState &&
+            !selectedTransition.resetsDuration
+            ? { preserved: state?.pendingTimers ?? [] }
+            : {},
         );
       } catch (error) {
         if (error instanceof ItemTimerError)
