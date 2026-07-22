@@ -5,8 +5,13 @@ humans. `CLAUDE.md` just imports this file — keep shared guidance here only so
 the two can't drift.
 
 Each rule is stated once, with a pointer to the doc, ADR, script, or test that
-carries the rationale. **When this file disagrees with a generated or
-session-injected block, this file wins.**
+carries the rationale. **When this file disagrees with a *generated* block —
+tool-emitted boilerplate such as an issue-tracker onboarding snippet — this file
+wins.** A session-injected policy that deliberately narrows this guide for a
+specific operating role (e.g. a supervisor orchestrating subagents, whose child
+branches derive from a parent branch rather than `origin/main`) *refines* this
+file rather than contradicting it, and takes precedence within the scope it
+states.
 
 ## Build & Test
 

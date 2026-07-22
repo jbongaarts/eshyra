@@ -9,9 +9,12 @@
 //   - SessionStart fires only for the main session (subagents get the separate
 //     SubagentStart event, which is not registered) — the agent_id check below
 //     is belt-and-braces.
-//   - The hook input's optional "model" field gates on the supervisor-class
-//     list. If the field is absent (older CLI), the doc is injected with a
-//     self-gate preamble rather than silently dropped.
+//   - The hook input's "model" field gates on the supervisor-class list, and
+//     the gate is FAIL-CLOSED: absent or unrecognized model identity injects
+//     nothing. A prose "ignore this unless you are X" preamble is a request,
+//     not a gate — leaking supervisor policy into a non-supervisor session is
+//     exactly what this hook exists to prevent, so it must not depend on the
+//     reader choosing to comply.
 //   - source === "resume" is skipped: the transcript already carries the
 //     injection from the original startup, and re-emitting on every resume
 //     would accumulate duplicate copies. startup/clear/compact still emit.
@@ -41,15 +44,13 @@ const SUPERVISOR_MODEL = /fable|opus/i;
 const model = typeof input.model === 'string' ? input.model : '';
 if (input.agent_id) process.exit(0);
 if (input.source === 'resume') process.exit(0);
-if (model && !SUPERVISOR_MODEL.test(model)) process.exit(0);
+// Fail closed: an empty `model` fails this test too, so a payload without model
+// identity (older CLI) injects nothing rather than trusting a prose disclaimer.
+if (!SUPERVISOR_MODEL.test(model)) process.exit(0);
 
-const doc = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), 'codex-subagent-workflow.md'),
-  'utf8',
+process.stdout.write(
+  readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), 'codex-subagent-workflow.md'),
+    'utf8',
+  ),
 );
-if (!model) {
-  process.stdout.write(
-    '(The following supervisor workflow applies only if you are a Fable- or Opus-class model; otherwise ignore this entire section.)\n\n',
-  );
-}
-process.stdout.write(doc);

@@ -101,20 +101,32 @@ and leaving PR #462's reviewed head unreachable from the branch. Cross-session
 attribution is unreliable — trust the git and bd record, not any transcript's
 account of who did what.
 
-So **record identity at launch, and only ever act on what you recorded.** Start
-each dispatch in its own process group and save the PGID alongside the child
-bead:
+So **record identity at launch, and only ever act on what you recorded.** Have
+the new session leader record its own PID: after `setsid … &`, `$!` is the
+transient parent that `setsid` forked from, not the leader — it is usually
+already dead, and its PID is eligible for reuse, so signalling it later can hit
+an unrelated process group.
 
 ```bash
-setsid codex exec … </dev/null &     # new process group
-echo "$!" > .worktrees/<child-bead-id>/.dispatch-pid
+# Run from the supervisor's parent checkout. The registry sits BESIDE the
+# worktrees, never inside one: `.worktrees/` is gitignored, so no child agent
+# sees a stray untracked file and nothing can be committed by accident.
+reg="$(git rev-parse --show-toplevel)/.worktrees/.dispatch"
+mkdir -p "$reg"
+setsid bash -c 'echo "$$" >"$1"; exec codex exec … ' _ "$reg/<child-bead-id>.pgid" </dev/null &
 ```
+
+`exec` preserves the leader's PID, so the recorded value is the real PGID.
+Mirror it into the child bead's notes so the registry survives a deleted
+worktree.
 
 Before integrating:
 
-- Signal only that recorded group (`kill -TERM -<pgid>`), and only after
-  confirming it is still the process you launched — check that the PID's start
-  time and working directory match the dispatch. A PID can be recycled.
+- Signal only that recorded group — `kill -TERM -"$(cat "$reg/<child>.pgid")"` —
+  and only after confirming the PID was not recycled: `ps -o
+  pid,pgid,sid,lstart,cmd -p <pgid>` must still show PID == PGID == SID running
+  the command you launched. If it does not match, the dispatch already exited;
+  do nothing.
 - **Never** run a machine-wide match like `pgrep -af codex` and kill what comes
   back. That pattern catches the user's own interactive Codex sessions, work in
   other repositories, and children belonging to another supervisor; it destroys
