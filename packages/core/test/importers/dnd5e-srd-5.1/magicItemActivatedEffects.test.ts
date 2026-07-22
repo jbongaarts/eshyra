@@ -56,13 +56,13 @@ function mechanicsRecord(name: string, mechanics: unknown): RulesRecord {
 
 describe('C2 spell grants and activated save/DC projection', () => {
   it('pins the exact reviewed bounded membership and canonical references', () => {
-    expect(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).toHaveLength(63);
-    expect(new Set(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).size).toBe(63);
+    expect(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).toHaveLength(64);
+    expect(new Set(MAGIC_ITEM_ACTIVATED_EFFECT_NAMES).size).toBe(64);
     expect(
       items
         .map(({ name }) => name)
         .filter((name) => MAGIC_ITEM_ACTIVATED_EFFECT_NAMES.includes(name)),
-    ).toHaveLength(63);
+    ).toHaveLength(64);
     for (const ref of MAGIC_ITEM_ACTIVATED_EFFECT_REFERENCES) {
       expect(keys.has(ref), ref).toBe(true);
     }
@@ -190,6 +190,38 @@ describe('C2 spell grants and activated save/DC projection', () => {
           },
           { conditions: ['paralyzed'], repeatSave: 'end of each turn' },
           { conditions: ['frightened'], repeatSave: 'end of each turn' },
+        ],
+      },
+    });
+  });
+
+  it('projects Staff of Striking per-charge damage', () => {
+    expect(
+      projectMagicItemActivatedEffects(named('Staff of Striking')),
+    ).toMatchObject({
+      mechanics: {
+        operations: [
+          {
+            id: 'powerful-strike',
+            activation: {
+              cost: 'free',
+              trigger: 'hit with a melee attack using the staff',
+            },
+            effects: ['c2-powerful-strike-payload'],
+          },
+        ],
+        effects: [
+          {
+            id: 'c2-powerful-strike-payload',
+            kind: 'triggeredEffect',
+            trigger: 'hit with a melee attack using the staff',
+            extraDamage: {
+              dice: '1d6',
+              type: 'force',
+              perChargeExpended: true,
+              maximumCharges: 3,
+            },
+          },
         ],
       },
     });
