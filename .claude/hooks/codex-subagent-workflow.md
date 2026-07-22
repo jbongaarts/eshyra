@@ -1,7 +1,7 @@
-# Codex Subagent Workflow — Fable supervisor context
+# Codex Subagent Workflow — supervisor context
 
-<!-- Injected by .claude/hooks/fable-supervisor-context.mjs (SessionStart) only
-     for a main-agent Claude Code session on a Fable model. Keep this content
+<!-- Injected by .claude/hooks/supervisor-context.mjs (SessionStart) only for a
+     main-agent Claude Code session on a Fable or Opus model. Keep this content
      OUT of AGENTS.md, CLAUDE.md, bd memories, and bead descriptions — all of
      those are visible to Codex subagents and Claude subagents, which must not
      receive supervisor instructions. Child bead descriptions carry task-level
