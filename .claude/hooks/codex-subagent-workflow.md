@@ -69,6 +69,12 @@ especially compelling cases. (Workflow ported from chopcli, 2026-07-18.)
 
 ## Supervisor rules
 
+- **Reviews and planning are yours, never a subagent's.** Do not dispatch Codex
+  (or Claude) subagents to review code or to plan — including adversarial PR
+  review rounds. Dispatch only for implementation; do review and planning with
+  your own tools. (User correction, 2026-07-19, after read-only Codex review
+  dispatches on PR #455: "The reviews are for you, along with the planning.
+  code writing is for the subagents.")
 - Never trust subagent self-reports: read the diff and rerun verification
   yourself before merging a child branch.
 - Follow the Agent Worktree Workflow in AGENTS.md for every worktree
@@ -79,3 +85,28 @@ especially compelling cases. (Workflow ported from chopcli, 2026-07-18.)
   re-verify with `bd show` / `bd list --status=in_progress` before ending a
   session. `bd update`'s note-append flag is `--append-notes`. Run
   `bd dolt push` after any bead changes.
+
+## Dispatches outlive this session
+
+Codex children are billed and rate-limited separately from the supervisor, so
+when your session dies on a usage limit they keep running to completion. A
+"background task stopped" notification means only that the launched shell
+exited — never that the work stopped. (Confirmed by the user, 2026-07-21.)
+
+That is a branch-integrity hazard, not just a stray process. On bead
+`eshyra-c7sx` (2026-07-20) two supervisor sessions worked the same bead, each
+reading the other's commits as a rogue process; one reset the branch back past
+`9222f5d` and force-pushed `f45b1b9` over it, silently reverting two real fixes
+and leaving PR #462's reviewed head unreachable from the branch. Cross-session
+attribution is unreliable — trust the git and bd record, not any transcript's
+account of who did what.
+
+Before integrating:
+
+- `pgrep -af codex`, and kill survivors.
+- Read `git reflog <branch>` and compare against `git ls-remote`. An
+  unexplained `reset:` or a `merge:` you did not run means another agent moved
+  the branch.
+- Reconcile forward with additive commits and a plain fast-forward push. Never
+  force-push over a commit you did not create, and before discarding any
+  commit, check whether it carries fixes absent from the replacement.

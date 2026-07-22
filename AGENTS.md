@@ -259,10 +259,13 @@ bd dolt push             # REQUIRED after any bead change
   `.beads/issues.jsonl` is a passive export. Nothing leaves this machine without
   `bd dolt push`. Details and anti-patterns:
   [SYNC_CONCEPTS](https://github.com/gastownhall/beads/blob/main/docs/SYNC_CONCEPTS.md).
-- Use `bd remember` for durable project knowledge, not markdown MEMORY.md files
-  (they fragment across accounts). Verify a memory against the tree before
-  acting on it — memories record what was true when written and some have gone
-  stale.
+- Use `bd remember` for durable project knowledge — anything another machine,
+  account, or Codex session would need. Only bd memories sync (`bd dolt push`)
+  and reach other agents via `bd prime`. The ban on markdown memory files
+  targets in-repo TODO/memory documents; an agent harness's own private store
+  is exempt for harness-local preferences, but repo knowledge must never live
+  there, where it cannot sync and Codex cannot read it. Verify any memory
+  against the tree before acting on it — several have gone stale.
 - Issue IDs are `eshyra-*`. Historical `loreweaver-*` references map by swapping
   only the prefix (`loreweaver-r00` → `eshyra-r00`). `.beads/metadata.json`
   `dolt_database` remains `loreweaver` — an internal historical name, unrelated
