@@ -101,9 +101,27 @@ and leaving PR #462's reviewed head unreachable from the branch. Cross-session
 attribution is unreliable — trust the git and bd record, not any transcript's
 account of who did what.
 
+So **record identity at launch, and only ever act on what you recorded.** Start
+each dispatch in its own process group and save the PGID alongside the child
+bead:
+
+```bash
+setsid codex exec … </dev/null &     # new process group
+echo "$!" > .worktrees/<child-bead-id>/.dispatch-pid
+```
+
 Before integrating:
 
-- `pgrep -af codex`, and kill survivors.
+- Signal only that recorded group (`kill -TERM -<pgid>`), and only after
+  confirming it is still the process you launched — check that the PID's start
+  time and working directory match the dispatch. A PID can be recycled.
+- **Never** run a machine-wide match like `pgrep -af codex` and kill what comes
+  back. That pattern catches the user's own interactive Codex sessions, work in
+  other repositories, and children belonging to another supervisor; it destroys
+  work you cannot see and did not create. (It also matches loosely — any shell
+  whose command line merely contains "codex" is a hit.)
+- If an unrecorded Codex process seems to be interfering, treat that as a
+  finding to report, not something to kill. Reconcile through git instead.
 - Read `git reflog <branch>` and compare against `git ls-remote`. An
   unexplained `reset:` or a `merge:` you did not run means another agent moved
   the branch.

@@ -40,8 +40,8 @@ check asserting that build output exists. Reset with `npm run clean` (clears
 `dist` **and** `tsbuildinfo`) or use `npm run typecheck` (`--force`, as CI does).
 
 **Native dep — `better-sqlite3`** (the only compiled dependency): Node 24 LTS,
-workspace engines pinned `>=24 <25`, `@types/node` on 24.x, `better-sqlite3` on
-12.x (the line shipping Node 24 prebuilds). CI pins Node 24, sets
+workspace engines pinned `>=24 <25`, `@types/node` on 24.x, and
+`better-sqlite3` 12.x (the line shipping Node 24 prebuilds). CI pins Node 24, sets
 `npm_config_build_from_source=false`, and runs the CLI install smoke on Linux,
 Windows, and macOS. **An accidental source-build fallback is a regression**
 unless a bead explicitly changes runtime/native policy; *deliberately* moving
@@ -117,9 +117,11 @@ not scan every relevant file type. Covered by
 ## Agent Worktree Workflow
 
 Keep parent-checkout preflight cheap; run full verification only from the linked
-worktree being modified. CI keeps `main` clean — **do not** run Biome, tests,
-build, typecheck, or package verification from the parent checkout merely to
-prove that.
+worktree being modified. Fetch `origin/main` before creating a worktree with
+`npm run agent:preflight`. That refreshes the base ref only. Do not run full
+verification from the parent checkout: do not run Biome, tests, build,
+typecheck, or package verification merely to prove `main` is clean. CI keeps
+`main` clean.
 
 ```bash
 npm run agent:preflight                # fetch origin/main only; run before creating a worktree
@@ -129,26 +131,33 @@ npm run verify:worktree                # required before commit/push
 ```
 
 Run every install, edit, format, lint, test, build, and verification command
-from that worktree root. `verify:worktree` resolves the active git root, applies
-`npm run format` safe fixes and import organization, then runs the repo checks
-and tests. (The npm scripts wrap `scripts/agent-preflight-main.mjs` and
-`scripts/verify-current-worktree.mjs`.)
+from that worktree root. `verify:worktree` resolves the active git root, runs
+`npm run format` (`biome check --write .`) for safe fixes and import
+organization, then runs the repo checks and tests. (The npm scripts wrap
+`scripts/agent-preflight-main.mjs` and `scripts/verify-current-worktree.mjs`.)
 
-Verification may be run earlier when a task needs a clean baseline, but it is
-not mandatory immediately after creating a worktree — cheap preflight plus a
-CI-clean `origin/main` is enough to start work.
+**`verify:worktree` mutates the tree** — the formatter writes fixes — so it must
+run *before* you commit, never after. Verification may be run earlier when a
+task needs a clean baseline, but it is not mandatory immediately after creating
+a worktree — cheap preflight plus a CI-clean `origin/main` is enough to start
+work.
 
-**Managed-sandbox exception:** where Git/npm orchestration works but Vitest
-cannot launch the known nested Node/npm subprocesses or bind a loopback MCP
-server, `npm run verify:worktree:sandbox` is the required alternative. It runs
+**Managed-sandbox exception:** where Git/npm orchestration works but Vitest cannot launch
+the known nested Node/npm subprocesses or bind a loopback MCP server,
+`npm run verify:worktree:sandbox` is the required alternative. It runs
 the same format, check, and typecheck gates and marks only those affected
-integration tests as environmental skips. It does not support environments that
-deny all child processes. CI and ordinary worktrees must use the full command.
+integration tests as environmental skips. It does not support environments that deny all child
+processes. CI and ordinary worktrees must use the full command.
 
-**If Biome reports that no relevant files were checked,** the command ran from
-the parent checkout, where `.worktrees/` is ignored. Do not delete or recreate
-the worktree, and do not make Biome scan nested worktrees — enter the intended
-worktree, run `cd "$(git rev-parse --show-toplevel)"`, and rerun verification.
+Full `npm run verify:worktree` is required before commit/push, except in the
+narrowly qualified managed sandbox above, where
+`npm run verify:worktree:sandbox` is the required alternative.
+
+If Biome says no relevant files were checked because `.worktrees` is ignored,
+the command ran from the wrong checkout. The parent checkout's `.worktrees/`
+directory remains ignored; do not make Biome scan nested worktrees. In
+response, do not delete or recreate the worktree. Enter the intended worktree,
+run `cd "$(git rev-parse --show-toplevel)"`, and rerun verification.
 
 ## Architecture
 
@@ -196,8 +205,10 @@ the agent: `cp -f`, `mv -f`, `rm -f` / `rm -rf`, `apt-get -y`, and
 Work reaches `main` by pull request only — never by a direct push to `main`.
 
 1. Branch from an up-to-date `origin/main` (`npm run agent:preflight` first).
-2. Commit on the feature branch.
-3. Run `npm run verify:worktree` from the worktree holding the change.
+2. Run `npm run verify:worktree` from the worktree holding the change. It
+   rewrites files, so it must finish **before** you commit — verifying after
+   committing means the pushed tree is not the tree that passed.
+3. Commit on the feature branch.
 4. Push the branch and open a PR targeting `main`.
 5. Hand off the PR URL for review.
 
