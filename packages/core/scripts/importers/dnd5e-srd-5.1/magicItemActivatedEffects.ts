@@ -820,6 +820,32 @@ const SPECS: ReadonlyMap<string, ItemSpec> = new Map([
     },
   ],
   [
+    'Staff of Striking',
+    {
+      sourcePhrases: [
+        'expend up to 3 of its charges',
+        'extra 1d6 force damage',
+      ],
+      effects: [
+        payload(
+          'powerful-strike',
+          'triggeredEffect',
+          {
+            trigger: 'hit with a melee attack using the staff',
+            extraDamage: {
+              dice: '1d6',
+              type: 'force',
+              perChargeExpended: true,
+              maximumCharges: 3,
+            },
+          },
+          [F2, F6, F9],
+          { cost: 'free', trigger: 'hit with a melee attack using the staff' },
+        ),
+      ],
+    },
+  ],
+  [
     'Staff of Swarming Insects',
     {
       sourcePhrases: ['giant insect (4 charges) or insect plague (5 charges)'],

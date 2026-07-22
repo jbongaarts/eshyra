@@ -130942,15 +130942,33 @@
         "operations": [
           {
             "id": "powerful-strike",
+            "activation": {
+              "cost": "free",
+              "trigger": "hit with a melee attack using the staff"
+            },
             "cost": [
               {
                 "economy": "charges",
                 "amount": "variable"
               }
+            ],
+            "effects": [
+              "c2-powerful-strike-payload"
             ]
           }
         ],
         "effects": [
+          {
+            "id": "c2-powerful-strike-payload",
+            "kind": "triggeredEffect",
+            "trigger": "hit with a melee attack using the staff",
+            "extraDamage": {
+              "dice": "1d6",
+              "type": "force",
+              "perChargeExpended": true,
+              "maximumCharges": 3
+            }
+          },
           {
             "id": "c2-static-staff-striking-attack-damage",
             "kind": "attackAndDamageBonus",
@@ -131013,6 +131031,51 @@
             ],
             "missingEngines": [
               "F5"
+            ]
+          },
+          {
+            "clauseId": "magic-item:staff-of-striking/c2-effect-powerful-strike-payload",
+            "scope": {
+              "kind": "parent"
+            },
+            "tag": "C2",
+            "representation": {
+              "block": "effects",
+              "effectId": "c2-powerful-strike-payload"
+            },
+            "engineHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F6",
+                "hook": "hit points and condition lifecycle"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "readiness": "engine-pending",
+            "missingHooks": [
+              {
+                "engine": "F2",
+                "hook": "action-economy activation"
+              },
+              {
+                "engine": "F6",
+                "hook": "hit points and condition lifecycle"
+              },
+              {
+                "engine": "F9",
+                "hook": "damage, saving throws, and targeting"
+              }
+            ],
+            "missingEngines": [
+              "F2",
+              "F6",
+              "F9"
             ]
           },
           {
