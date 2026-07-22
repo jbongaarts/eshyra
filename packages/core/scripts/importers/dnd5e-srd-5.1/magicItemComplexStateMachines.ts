@@ -276,10 +276,11 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
             via: `press-face-${i + 1}`,
           })),
           // Source: activating a face creates a barrier that lasts for 1
-          // minute. Whether pressing the already-active face restates that
-          // The object form of resetsDuration means whether the active face
-          // restates the duration is unresolved; it is not a reset assertion.
-          // Retain both source interpretations for campaign ruling.
+          // minute, and pressing a *different* face resets that duration. The
+          // source never says what pressing the already-active face does, so
+          // the object form of resetsDuration gates it: it does not assert a
+          // reset, it records that whether one happens is unresolved. Both
+          // interpretations are retained for a campaign ruling.
           ...Array.from({ length: 5 }, (_, from) =>
             Array.from({ length: 5 }, (_, to) => ({
               from: `face-${from + 1}`,
