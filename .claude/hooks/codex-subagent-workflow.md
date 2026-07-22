@@ -1,7 +1,7 @@
-# Codex Subagent Workflow — Fable supervisor context
+# Codex Subagent Workflow — supervisor context
 
-<!-- Injected by .claude/hooks/fable-supervisor-context.mjs (SessionStart) only
-     for a main-agent Claude Code session on a Fable model. Keep this content
+<!-- Injected by .claude/hooks/supervisor-context.mjs (SessionStart) only for a
+     main-agent Claude Code session on a Fable or Opus model. Keep this content
      OUT of AGENTS.md, CLAUDE.md, bd memories, and bead descriptions — all of
      those are visible to Codex subagents and Claude subagents, which must not
      receive supervisor instructions. Child bead descriptions carry task-level
@@ -57,11 +57,17 @@ especially compelling cases. (Workflow ported from chopcli, 2026-07-18.)
 
   > You are working bead `<child-id>` on branch `<child-id>` in this worktree.
   > Run `bd show <child-id>` (and `<parent-id>` for the spec). Implement per
-  > the plan, verify with `npm run verify:worktree`, commit on the branch,
-  > record your completion report with `bd update <child-id> --append-notes`,
-  > file discovered follow-ups with `bd create`, then `bd close <child-id>`.
-  > Never close or modify `<parent-id>`, and never touch files outside this
-  > worktree.
+  > the plan, run `npm run verify:worktree` **before** committing (it rewrites
+  > files), commit on the branch, record your completion report with
+  > `bd update <child-id> --append-notes`, file discovered follow-ups with
+  > `bd create`, then `bd close <child-id>`.
+  >
+  > **Then stop.** AGENTS.md grants agents standing authority to push a branch
+  > and open a PR. That authority does **not** apply to you on this dispatch:
+  > do not push, do not open or comment on a pull request, and do not merge
+  > anything. Integration is handled by the agent that dispatched you; leaving
+  > your work committed on `<child-id>` is a complete handoff. Never close or
+  > modify `<parent-id>`, and never touch files outside this worktree.
 
 - Failed or partial attempts: close the child with `--reason`, then create
   attempt N+1 (fresh branch off the current parent branch; delete or abandon
@@ -69,6 +75,12 @@ especially compelling cases. (Workflow ported from chopcli, 2026-07-18.)
 
 ## Supervisor rules
 
+- **Reviews and planning are yours, never a subagent's.** Do not dispatch Codex
+  (or Claude) subagents to review code or to plan — including adversarial PR
+  review rounds. Dispatch only for implementation; do review and planning with
+  your own tools. (User correction, 2026-07-19, after read-only Codex review
+  dispatches on PR #455: "The reviews are for you, along with the planning.
+  code writing is for the subagents.")
 - Never trust subagent self-reports: read the diff and rerun verification
   yourself before merging a child branch.
 - Follow the Agent Worktree Workflow in AGENTS.md for every worktree
@@ -79,3 +91,65 @@ especially compelling cases. (Workflow ported from chopcli, 2026-07-18.)
   re-verify with `bd show` / `bd list --status=in_progress` before ending a
   session. `bd update`'s note-append flag is `--append-notes`. Run
   `bd dolt push` after any bead changes.
+
+## Dispatches outlive this session
+
+Codex children are billed and rate-limited separately from the supervisor, so
+when your session dies on a usage limit they keep running to completion. A
+"background task stopped" notification means only that the launched shell
+exited — never that the work stopped. (Confirmed by the user, 2026-07-21.)
+
+That is a branch-integrity hazard, not just a stray process. On bead
+`eshyra-c7sx` (2026-07-20) two supervisor sessions worked the same bead, each
+reading the other's commits as a rogue process; one reset the branch back past
+`9222f5d` and force-pushed `f45b1b9` over it, silently reverting two real fixes
+and leaving PR #462's reviewed head unreachable from the branch. Cross-session
+attribution is unreliable — trust the git and bd record, not any transcript's
+account of who did what.
+
+So **record identity at launch, and only ever act on what you recorded.** Have
+the new session leader record its own PID rather than trusting `$!`: `setsid`
+forks only when the caller is already a process group leader, so `$!` is *not
+guaranteed* to be the new session leader. When it does fork, `$!` is a parent
+that has already exited and whose PID is eligible for reuse — signalling it
+later can hit an unrelated process group. `echo "$$"` from inside the new
+session is correct either way.
+
+```bash
+# Launch from the supervisor's parent checkout, but the dispatch itself must
+# RUN IN THE CHILD WORKTREE -- write-capable runs never execute in the parent
+# checkout. Paths are absolute, resolved before the cd.
+root="$(git rev-parse --show-toplevel)"
+reg="$root/.worktrees/.dispatch"; mkdir -p "$reg"
+wt="$root/.worktrees/<child-bead-id>"
+setsid bash -c 'echo "$$" >"$2"; cd "$1" || exit 1; exec codex exec … ' \
+  _ "$wt" "$reg/<child-bead-id>.pgid" </dev/null &
+```
+
+`exec` preserves the leader's PID, so the recorded value is the real PGID, and
+the `cd` fails the dispatch closed if the worktree is missing. The registry sits
+BESIDE the worktrees, never inside one: `.worktrees/` is gitignored, so no child
+agent sees a stray untracked file and nothing can be committed by accident.
+Mirror the PGID into the child bead's notes so the registry survives a deleted
+worktree.
+
+Before integrating:
+
+- Signal only that recorded group — `kill -TERM -"$(cat "$reg/<child>.pgid")"` —
+  and only after confirming the PID was not recycled: `ps -o
+  pid,pgid,sid,lstart,cmd -p <pgid>` must still show PID == PGID == SID running
+  the command you launched. If it does not match, the dispatch already exited;
+  do nothing.
+- **Never** run a machine-wide match like `pgrep -af codex` and kill what comes
+  back. That pattern catches the user's own interactive Codex sessions, work in
+  other repositories, and children belonging to another supervisor; it destroys
+  work you cannot see and did not create. (It also matches loosely — any shell
+  whose command line merely contains "codex" is a hit.)
+- If an unrecorded Codex process seems to be interfering, treat that as a
+  finding to report, not something to kill. Reconcile through git instead.
+- Read `git reflog <branch>` and compare against `git ls-remote`. An
+  unexplained `reset:` or a `merge:` you did not run means another agent moved
+  the branch.
+- Reconcile forward with additive commits and a plain fast-forward push. Never
+  force-push over a commit you did not create, and before discarding any
+  commit, check whether it carries fixes absent from the replacement.
