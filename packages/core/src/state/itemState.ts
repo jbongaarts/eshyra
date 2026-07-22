@@ -127,8 +127,6 @@ export interface UseItemResult {
       readonly to: string;
       readonly timer: MagicItemDurationSpec;
     }[];
-    /** Source ambiguities that gate a duration reset pending campaign ruling. */
-    readonly unresolvedAmbiguityIds?: readonly string[];
     readonly duration?: MagicItemDurationSpec;
   };
   readonly state?: ItemInstanceState;
@@ -149,6 +147,29 @@ export class ItemStateError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'ItemStateError';
+  }
+}
+
+export class ItemStateAmbiguityError extends ItemStateError {
+  readonly ambiguityId: string;
+  readonly question: string;
+  readonly interpretationIds: readonly string[];
+  readonly owner = 'campaign-ruling' as const;
+
+  constructor(
+    packRef: string,
+    operationId: string,
+    ambiguityId: string,
+    question: string,
+    interpretationIds: readonly string[],
+  ) {
+    super(
+      `${packRef} operation '${operationId}' is blocked by unresolved source ambiguity '${ambiguityId}': ${question}; campaign-ruling must choose one of interpretation ids [${interpretationIds.join(', ')}]`,
+    );
+    this.name = 'ItemStateAmbiguityError';
+    this.ambiguityId = ambiguityId;
+    this.question = question;
+    this.interpretationIds = interpretationIds;
   }
 }
 
@@ -1281,7 +1302,6 @@ function validateRecordReferences(
 interface SelectedStateTransition {
   readonly nextState: string;
   readonly resetsDuration: boolean;
-  readonly unresolvedAmbiguityIds: readonly string[];
   readonly effectIds: readonly string[];
   readonly result: NonNullable<UseItemResult['transition']>;
 }
@@ -1393,15 +1413,52 @@ function selectStateTransition(
       : (selected.transition.onFailure as NonNullable<
           NonNullable<UseItemResult['transition']>['onFailure']
         >);
-  const unresolvedAmbiguityIds =
-    typeof selected.transition.resetsDuration === 'object' &&
-    selected.transition.resetsDuration !== null &&
-    !Array.isArray(selected.transition.resetsDuration)
-      ? [
-          (selected.transition.resetsDuration as { ambiguityId: string })
-            .ambiguityId,
-        ]
-      : [];
+  const reset = selected.transition.resetsDuration;
+  if (
+    typeof reset === 'object' &&
+    reset !== null &&
+    !Array.isArray(reset) &&
+    typeof (reset as Obj).ambiguityId === 'string'
+  ) {
+    const ambiguityId = (reset as Obj).ambiguityId as string;
+    const ambiguity = (
+      Array.isArray(mechanics.ambiguities) ? mechanics.ambiguities : []
+    )
+      .map((raw, index) =>
+        obj(raw, `${packRef}.mechanics.ambiguities[${index}]`),
+      )
+      .find((candidate) => candidate.id === ambiguityId);
+    if (ambiguity === undefined)
+      throw new ItemStateError(
+        `${packRef} operation '${operationId}' references undeclared source ambiguity '${ambiguityId}'`,
+      );
+    if (typeof ambiguity.question !== 'string')
+      throw new ItemStateError(
+        `${packRef}.mechanics ambiguity '${ambiguityId}' has no valid question`,
+      );
+    if (!Array.isArray(ambiguity.interpretations))
+      throw new ItemStateError(
+        `${packRef}.mechanics ambiguity '${ambiguityId}' has no valid interpretations`,
+      );
+    const interpretationIds = ambiguity.interpretations.map((raw, index) => {
+      const interpretation = obj(
+        raw,
+        `${packRef}.mechanics ambiguity '${ambiguityId}'.interpretations[${index}]`,
+      );
+      if (typeof interpretation.id !== 'string')
+        throw new ItemStateError(
+          `${packRef}.mechanics ambiguity '${ambiguityId}' has an interpretation without an id`,
+        );
+      return interpretation.id;
+    });
+    throw new ItemStateAmbiguityError(
+      packRef,
+      operationId,
+      ambiguityId,
+      ambiguity.question,
+      interpretationIds,
+    );
+  }
   const pendingTimers = transitions.flatMap((transition) =>
     transition.from === selected.destination &&
     typeof transition.to === 'string' &&
@@ -1417,7 +1474,6 @@ function selectStateTransition(
   return {
     nextState: selected.destination,
     resetsDuration: selected.transition.resetsDuration === true,
-    unresolvedAmbiguityIds,
     effectIds: Array.isArray(selected.transition.effects)
       ? (selected.transition.effects as string[])
       : [],
@@ -1427,9 +1483,6 @@ function selectStateTransition(
       outcome,
       ...(failure === undefined ? {} : { onFailure: failure }),
       ...(pendingTimers.length === 0 ? {} : { pendingTimers }),
-      ...(unresolvedAmbiguityIds.length === 0
-        ? {}
-        : { unresolvedAmbiguityIds }),
       ...(machine.duration === undefined
         ? {}
         : { duration: machine.duration as MagicItemDurationSpec }),

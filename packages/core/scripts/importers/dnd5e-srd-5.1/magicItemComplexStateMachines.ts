@@ -277,7 +277,9 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
           })),
           // Source: activating a face creates a barrier that lasts for 1
           // minute. Whether pressing the already-active face restates that
-          // duration is unresolved; retain both source interpretations.
+          // The object form of resetsDuration means whether the active face
+          // restates the duration is unresolved; it is not a reset assertion.
+          // Retain both source interpretations for campaign ruling.
           ...Array.from({ length: 5 }, (_, from) =>
             Array.from({ length: 5 }, (_, to) => ({
               from: `face-${from + 1}`,

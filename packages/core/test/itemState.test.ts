@@ -6,6 +6,7 @@ import {
   effectiveMagicItemMechanics,
   getBundledDnd5eSrdPack,
   giveItem,
+  ItemStateAmbiguityError,
   isStatefulMagicItem,
   magicItemVariantDefinitions,
   parseDice,
@@ -396,10 +397,16 @@ describe('magic-item live instance state', () => {
     db.close();
   });
 
-  it('preserves timers and surfaces unresolved ambiguity-gated resets', () => {
+  it('fails closed before mutation on unresolved ambiguity-gated resets', () => {
     const db = freshDbWithSession();
     const gated = item('ambiguity-gated-timer', {
-      operations: [{ id: 'enter' }, { id: 'restate' }],
+      economies: {
+        charges: { kind: 'charges', charges: { max: 2 } },
+      },
+      operations: [
+        { id: 'enter' },
+        { id: 'restate', cost: [{ economy: 'charges', amount: 1 }] },
+      ],
       ambiguities: [
         {
           id: 'ambiguity:test-reset',
@@ -457,15 +464,22 @@ describe('magic-item live instance state', () => {
     );
     const rulesPack = pack(gated);
     useItem(db, useInput(rulesPack, granted.id, 'enter'));
-    const before = readItemState(db, granted.id)?.pendingTimers;
-    expect(
-      useItem(db, useInput(rulesPack, granted.id, 'restate')),
-    ).toMatchObject({
-      transition: {
-        unresolvedAmbiguityIds: ['ambiguity:test-reset'],
-      },
+    const before = readItemState(db, granted.id);
+    let thrown: unknown;
+    try {
+      useItem(db, useInput(rulesPack, granted.id, 'restate'));
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(ItemStateAmbiguityError);
+    expect(thrown).toMatchObject({
+      ambiguityId: 'ambiguity:test-reset',
+      question: 'which reading applies?',
+      interpretationIds: ['first-reading', 'second-reading'],
+      owner: 'campaign-ruling',
     });
-    expect(readItemState(db, granted.id)?.pendingTimers).toEqual(before);
+    expect(String(thrown)).toMatch(/magic-item:ambiguity-gated-timer.*restate/);
+    expect(readItemState(db, granted.id)).toEqual(before);
     db.close();
   });
 

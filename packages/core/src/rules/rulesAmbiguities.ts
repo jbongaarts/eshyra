@@ -225,7 +225,10 @@ export function validateAmbiguityReferences(
     }
     if (typeof value !== 'object' || value === null) return;
     const object = value as Obj;
-    if (typeof object.ambiguityId === 'string') {
+    if (
+      object.kind === 'source-ambiguity' &&
+      typeof object.ambiguityId === 'string'
+    ) {
       if (!ambiguityIds.has(object.ambiguityId)) {
         throw new RulesPackError(
           `${valuePath}.ambiguityId references unknown mechanics ambiguity ${JSON.stringify(object.ambiguityId)}`,

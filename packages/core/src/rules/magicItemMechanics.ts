@@ -101,6 +101,7 @@ export interface MagicItemStateMachine {
   readonly transitions: readonly {
     readonly from: string;
     readonly to: string;
+    /** Literal true asserts a reset; the object form means whether this reset occurs is unresolved. */
     readonly resetsDuration?:
       | true
       | { readonly kind: 'source-ambiguity'; readonly ambiguityId: string };
@@ -911,7 +912,7 @@ function stateMachine(
           Array.isArray(transition.resetsDuration))
       )
         throw new RulesPackError(
-          `${transitionPath}.resetsDuration must be true or a source-ambiguity reference`,
+          `${transitionPath}.resetsDuration must be true (an asserted reset) or a source-ambiguity reference (an unresolved reset)`,
         );
       if (transition.resetsDuration !== true) {
         const reset = transition.resetsDuration as Obj;
@@ -922,7 +923,7 @@ function stateMachine(
         );
         if (reset.kind !== 'source-ambiguity')
           throw new RulesPackError(
-            `${transitionPath}.resetsDuration.kind must be source-ambiguity`,
+            `${transitionPath}.resetsDuration.kind must be source-ambiguity (an unresolved reset reference)`,
           );
         const ambiguityId = string(
           reset.ambiguityId,
@@ -930,16 +931,16 @@ function stateMachine(
         );
         if (!/^ambiguity:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(ambiguityId))
           throw new RulesPackError(
-            `${transitionPath}.resetsDuration.ambiguityId must be an ambiguity:<kebab-case> ID`,
+            `${transitionPath}.resetsDuration.ambiguityId must be an ambiguity:<kebab-case> ID for the unresolved reset`,
           );
       }
       if (transition.from !== transition.to)
         throw new RulesPackError(
-          `${transitionPath}.resetsDuration requires from and to to match`,
+          `${transitionPath}.resetsDuration requires from and to to match (the field asserts or gates whether the duration resets)`,
         );
       if (transition.via === undefined)
         throw new RulesPackError(
-          `${transitionPath}.resetsDuration requires via to be declared`,
+          `${transitionPath}.resetsDuration requires via to be declared (the field asserts or gates whether the duration resets)`,
         );
     }
     if (transition.via !== undefined) {
