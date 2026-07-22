@@ -1306,13 +1306,22 @@ interface SelectedStateTransition {
   readonly result: NonNullable<UseItemResult['transition']>;
 }
 
-function selectStateTransition(
+interface MatchedStateTransition {
+  readonly machine: Obj;
+  readonly transitions: readonly Obj[];
+  readonly transition: Obj;
+  readonly destination: string;
+  readonly outcome: 'success' | 'failure';
+  readonly currentState: string;
+}
+
+function matchStateTransition(
   mechanics: Obj,
   packRef: string,
   operationId: string,
   args: Readonly<Record<string, unknown>> | undefined,
   currentState: string | undefined,
-): SelectedStateTransition | undefined {
+): MatchedStateTransition | undefined {
   if (mechanics.stateMachine === undefined) {
     if (
       args?.transitionTo !== undefined ||
@@ -1407,12 +1416,6 @@ function selectStateTransition(
       `${packRef} operation '${operationId}' has no unambiguous '${outcome}' transition from '${currentState}' to '${String(rawTransitionTo)}'`,
     );
   const selected = matching[0];
-  const failure =
-    selected.transition.onFailure === undefined
-      ? undefined
-      : (selected.transition.onFailure as NonNullable<
-          NonNullable<UseItemResult['transition']>['onFailure']
-        >);
   const reset = selected.transition.resetsDuration;
   if (
     typeof reset === 'object' &&
@@ -1459,8 +1462,47 @@ function selectStateTransition(
       interpretationIds,
     );
   }
+  return {
+    machine,
+    transitions,
+    transition: selected.transition,
+    destination: selected.destination,
+    outcome,
+    currentState,
+  };
+}
+
+function selectStateTransition(
+  mechanics: Obj,
+  packRef: string,
+  operationId: string,
+  args: Readonly<Record<string, unknown>> | undefined,
+  currentState: string | undefined,
+): SelectedStateTransition | undefined {
+  const matched = matchStateTransition(
+    mechanics,
+    packRef,
+    operationId,
+    args,
+    currentState,
+  );
+  if (matched === undefined) return undefined;
+  const {
+    machine,
+    transitions,
+    transition,
+    destination,
+    outcome,
+    currentState: matchedCurrentState,
+  } = matched;
+  const failure =
+    transition.onFailure === undefined
+      ? undefined
+      : (transition.onFailure as NonNullable<
+          NonNullable<UseItemResult['transition']>['onFailure']
+        >);
   const pendingTimers = transitions.flatMap((transition) =>
-    transition.from === selected.destination &&
+    transition.from === destination &&
     typeof transition.to === 'string' &&
     transition.timer !== undefined
       ? [
@@ -1472,14 +1514,14 @@ function selectStateTransition(
       : [],
   );
   return {
-    nextState: selected.destination,
-    resetsDuration: selected.transition.resetsDuration === true,
-    effectIds: Array.isArray(selected.transition.effects)
-      ? (selected.transition.effects as string[])
+    nextState: destination,
+    resetsDuration: transition.resetsDuration === true,
+    effectIds: Array.isArray(transition.effects)
+      ? (transition.effects as string[])
       : [],
     result: {
-      from: currentState,
-      to: selected.destination,
+      from: matchedCurrentState,
+      to: destination,
       outcome,
       ...(failure === undefined ? {} : { onFailure: failure }),
       ...(pendingTimers.length === 0 ? {} : { pendingTimers }),
@@ -1883,6 +1925,25 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       );
     let state = readItemState(txnDb, input.instanceId);
     if (stateful && state === undefined) {
+      try {
+        if (mechanics.stateMachine !== undefined) {
+          const machine = obj(
+            mechanics.stateMachine,
+            `${packRef}.mechanics.stateMachine`,
+          );
+          matchStateTransition(
+            mechanics,
+            packRef,
+            input.operationId,
+            input.args,
+            typeof machine.initial === 'string' ? machine.initial : undefined,
+          );
+        }
+      } catch (error) {
+        if (error instanceof ItemStateAmbiguityError) throw error;
+        // Preserve the normal execution path's error precedence for malformed
+        // machines, invalid destinations, and non-matching transitions.
+      }
       state = createInitialItemState(packRef, hit.record, {
         variantId,
         rng: input.rng,

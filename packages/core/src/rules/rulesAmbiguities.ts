@@ -1,25 +1,8 @@
-import { RulesPackError } from './types.js';
+import { type RulesAmbiguity, RulesPackError } from './types.js';
+
+export type { RulesAmbiguity };
 
 type Obj = Record<string, unknown>;
-
-export interface RulesAmbiguity {
-  readonly id: string;
-  readonly question: string;
-  readonly source: readonly {
-    readonly locator: string;
-    readonly clauseId: string;
-  }[];
-  readonly affects: readonly string[];
-  readonly interpretations: readonly {
-    readonly id: string;
-    readonly summary: string;
-  }[];
-  readonly canonicalResolution: null;
-  readonly runtimeDisposition: {
-    readonly status: 'engine-pending';
-    readonly owner: 'campaign-ruling';
-  };
-}
 
 function requireOnlyKeys(
   obj: Obj,

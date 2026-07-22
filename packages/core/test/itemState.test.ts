@@ -107,6 +107,7 @@ function useInput(
   instanceId: string,
   operationId: string,
   args?: Readonly<Record<string, unknown>>,
+  rng?: { nextInt(maxExclusive: number): number },
 ) {
   return {
     campaignId: 'campaign-1',
@@ -115,6 +116,7 @@ function useInput(
     ...(args === undefined ? {} : { args }),
     characterId: 'pc-1',
     resolveRulesPack: resolver(rulesPack),
+    ...(rng === undefined ? {} : { rng }),
     ...MUTATION,
   };
 }
@@ -480,6 +482,183 @@ describe('magic-item live instance state', () => {
     });
     expect(String(thrown)).toMatch(/magic-item:ambiguity-gated-timer.*restate/);
     expect(readItemState(db, granted.id)).toEqual(before);
+    db.close();
+  });
+
+  it('preflights initial ambiguity gates before consuming lazy-init RNG', () => {
+    const db = freshDbWithSession();
+    const gated = item('lazy-ambiguity-gate', {
+      economies: {
+        charges: { kind: 'charges', charges: { max: '1d4' } },
+      },
+      operations: [{ id: 'restate' }, { id: 'initialize' }],
+      ambiguities: [
+        {
+          id: 'ambiguity:lazy-reset',
+          question: 'which initial-state reading applies?',
+          source: [{ locator: 'p. 1, clause', clauseId: 'source-clause' }],
+          affects: ['ready -> ready via restate'],
+          interpretations: [
+            { id: 'first-reading', summary: 'The first reading.' },
+            { id: 'second-reading', summary: 'The second reading.' },
+          ],
+          canonicalResolution: null,
+          runtimeDisposition: {
+            status: 'engine-pending',
+            owner: 'campaign-ruling',
+          },
+        },
+      ],
+      stateMachine: {
+        initial: 'ready',
+        states: [{ id: 'ready' }, { id: 'active' }, { id: 'expired' }],
+        transitions: [
+          {
+            from: 'ready',
+            to: 'ready',
+            via: 'restate',
+            resetsDuration: {
+              kind: 'source-ambiguity',
+              ambiguityId: 'ambiguity:lazy-reset',
+            },
+          },
+          { from: 'ready', to: 'active', via: 'initialize' },
+          {
+            from: 'active',
+            to: 'expired',
+            timer: { amount: 1, unit: 'minute' },
+          },
+        ],
+      },
+    });
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored',
+        name: 'Lazy Ambiguity Gate',
+        packRef: gated.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    const rulesPack = pack(gated);
+    const beforeInventory = db
+      .prepare('SELECT quantity FROM inventory WHERE id = ?')
+      .get(granted.id);
+    let rngCalls = 0;
+    const rng = {
+      nextInt(): number {
+        rngCalls += 1;
+        throw new Error('lazy initialization RNG must not be called');
+      },
+    };
+    let thrown: unknown;
+    try {
+      useItem(db, useInput(rulesPack, granted.id, 'restate', undefined, rng));
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(ItemStateAmbiguityError);
+    expect(thrown).toMatchObject({
+      ambiguityId: 'ambiguity:lazy-reset',
+      question: 'which initial-state reading applies?',
+      interpretationIds: ['first-reading', 'second-reading'],
+      owner: 'campaign-ruling',
+    });
+    expect(rngCalls).toBe(0);
+    expect(
+      db
+        .prepare('SELECT 1 AS present FROM item_state WHERE inventory_id = ?')
+        .get(granted.id),
+    ).toBeUndefined();
+    expect(
+      db.prepare('SELECT quantity FROM inventory WHERE id = ?').get(granted.id),
+    ).toEqual(beforeInventory);
+    expect(readItemState(db, granted.id)).toBeUndefined();
+    db.close();
+  });
+
+  it('still lazily initializes and consumes RNG for an unambiguous operation', () => {
+    const db = freshDbWithSession();
+    const gated = item('lazy-ambiguity-positive', {
+      economies: {
+        charges: { kind: 'charges', charges: { max: '1d4' } },
+      },
+      operations: [{ id: 'restate' }, { id: 'initialize' }],
+      ambiguities: [
+        {
+          id: 'ambiguity:lazy-reset-positive',
+          question: 'which initial-state reading applies?',
+          source: [{ locator: 'p. 1, clause', clauseId: 'source-clause' }],
+          affects: ['ready -> ready via restate'],
+          interpretations: [
+            { id: 'first-reading', summary: 'The first reading.' },
+            { id: 'second-reading', summary: 'The second reading.' },
+          ],
+          canonicalResolution: null,
+          runtimeDisposition: {
+            status: 'engine-pending',
+            owner: 'campaign-ruling',
+          },
+        },
+      ],
+      stateMachine: {
+        initial: 'ready',
+        states: [{ id: 'ready' }, { id: 'active' }, { id: 'expired' }],
+        transitions: [
+          {
+            from: 'ready',
+            to: 'ready',
+            via: 'restate',
+            resetsDuration: {
+              kind: 'source-ambiguity',
+              ambiguityId: 'ambiguity:lazy-reset-positive',
+            },
+          },
+          { from: 'ready', to: 'active', via: 'initialize' },
+          {
+            from: 'active',
+            to: 'expired',
+            timer: { amount: 1, unit: 'minute' },
+          },
+        ],
+      },
+    });
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored',
+        name: 'Lazy Ambiguity Positive',
+        packRef: gated.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    let rngCalls = 0;
+    const rng = {
+      nextInt(maxExclusive: number): number {
+        rngCalls += 1;
+        expect(maxExclusive).toBe(4);
+        return 0;
+      },
+    };
+    const result = useItem(
+      db,
+      useInput(pack(gated), granted.id, 'initialize', undefined, rng),
+    );
+    expect(rngCalls).toBe(1);
+    expect(result.state).toMatchObject({
+      machineState: 'active',
+      economies: { charges: { remaining: 1 } },
+    });
+    expect(readItemState(db, granted.id)?.pendingTimers).toMatchObject([
+      {
+        from: 'active',
+        to: 'expired',
+        amount: 1,
+        unit: 'minute',
+      },
+    ]);
     db.close();
   });
 

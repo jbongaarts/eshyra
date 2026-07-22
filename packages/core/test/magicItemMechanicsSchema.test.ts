@@ -1,7 +1,34 @@
 import { describe, expect, it } from 'vitest';
+import type { materializeS1RulesAmbiguities } from '../scripts/importers/dnd5e-srd-5.1/s1SummoningSpecs.js';
+import type { RulesAmbiguity as PublicRulesAmbiguity } from '../src/internal.js';
 import { validateRecordKindSchema } from '../src/rules/kindSchemas.js';
+import type { MagicItemMechanics } from '../src/rules/magicItemMechanics.js';
 import { isStatefulMagicItemMechanics } from '../src/rules/magicItemMechanics.js';
+import type { RulesAmbiguity as ValidatorRulesAmbiguity } from '../src/rules/rulesAmbiguities.js';
 import type { RulesRecord } from '../src/rules/types.js';
+
+type MutuallyAssignable<Left, Right> = [Left] extends [Right]
+  ? [Right] extends [Left]
+    ? true
+    : false
+  : false;
+type AssertTrue<Value extends true> = Value;
+type SpellRulesAmbiguity = ReturnType<
+  typeof materializeS1RulesAmbiguities
+>[number];
+type MagicItemRulesAmbiguity = NonNullable<
+  MagicItemMechanics['ambiguities']
+>[number];
+type CanonicalRulesAmbiguityIdentity = AssertTrue<
+  MutuallyAssignable<SpellRulesAmbiguity, MagicItemRulesAmbiguity> extends true
+    ? MutuallyAssignable<
+        MagicItemRulesAmbiguity,
+        PublicRulesAmbiguity
+      > extends true
+      ? MutuallyAssignable<PublicRulesAmbiguity, ValidatorRulesAmbiguity>
+      : false
+    : false
+>;
 
 function magicItem(mechanics: Record<string, unknown>): RulesRecord {
   return {
@@ -30,6 +57,11 @@ const castEffect = (id: string, spellRef: string) => ({
 });
 
 describe('magic-item mechanics schema', () => {
+  it('uses one RulesAmbiguity contract across spell, item, and exports', () => {
+    const typeCheck: CanonicalRulesAmbiguityIdentity = true;
+    expect(typeCheck).toBe(true);
+  });
+
   it('accepts paired conditional depletion outcomes and rejects incomplete pairs', () => {
     expect(() =>
       validate({

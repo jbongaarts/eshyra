@@ -1,9 +1,8 @@
 import {
   optRulesAmbiguities,
-  type RulesAmbiguity,
   validateAmbiguityReferences,
 } from './rulesAmbiguities.js';
-import { RulesPackError } from './types.js';
+import { type RulesAmbiguity, RulesPackError } from './types.js';
 
 type Obj = Record<string, unknown>;
 
