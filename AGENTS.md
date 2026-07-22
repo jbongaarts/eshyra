@@ -225,6 +225,11 @@ repository authority that `bd prime`'s injected conservative "no commit/push
 without authority" default defers to, and it overrides any generated block
 demanding an unconditional `git push`: a push is always to a feature branch.
 
+**If your task assigns you a specific branch and reserves integration to the
+agent that dispatched you, that scoping wins over this standing authority.**
+Commit on the branch you were given and hand back — do not push, do not open a
+PR, and do not merge. Steps 4–5 belong to whoever owns the integration.
+
 Do not merge the PR yourself unless the user explicitly asks you to after review
 and required checks are satisfied.
 

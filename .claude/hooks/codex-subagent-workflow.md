@@ -57,11 +57,17 @@ especially compelling cases. (Workflow ported from chopcli, 2026-07-18.)
 
   > You are working bead `<child-id>` on branch `<child-id>` in this worktree.
   > Run `bd show <child-id>` (and `<parent-id>` for the spec). Implement per
-  > the plan, verify with `npm run verify:worktree`, commit on the branch,
-  > record your completion report with `bd update <child-id> --append-notes`,
-  > file discovered follow-ups with `bd create`, then `bd close <child-id>`.
-  > Never close or modify `<parent-id>`, and never touch files outside this
-  > worktree.
+  > the plan, run `npm run verify:worktree` **before** committing (it rewrites
+  > files), commit on the branch, record your completion report with
+  > `bd update <child-id> --append-notes`, file discovered follow-ups with
+  > `bd create`, then `bd close <child-id>`.
+  >
+  > **Then stop.** AGENTS.md grants agents standing authority to push a branch
+  > and open a PR. That authority does **not** apply to you on this dispatch:
+  > do not push, do not open or comment on a pull request, and do not merge
+  > anything. Integration is handled by the agent that dispatched you; leaving
+  > your work committed on `<child-id>` is a complete handoff. Never close or
+  > modify `<parent-id>`, and never touch files outside this worktree.
 
 - Failed or partial attempts: close the child with `--reason`, then create
   attempt N+1 (fresh branch off the current parent branch; delete or abandon
@@ -102,22 +108,29 @@ attribution is unreliable — trust the git and bd record, not any transcript's
 account of who did what.
 
 So **record identity at launch, and only ever act on what you recorded.** Have
-the new session leader record its own PID: after `setsid … &`, `$!` is the
-transient parent that `setsid` forked from, not the leader — it is usually
-already dead, and its PID is eligible for reuse, so signalling it later can hit
-an unrelated process group.
+the new session leader record its own PID rather than trusting `$!`: `setsid`
+forks only when the caller is already a process group leader, so `$!` is *not
+guaranteed* to be the new session leader. When it does fork, `$!` is a parent
+that has already exited and whose PID is eligible for reuse — signalling it
+later can hit an unrelated process group. `echo "$$"` from inside the new
+session is correct either way.
 
 ```bash
-# Run from the supervisor's parent checkout. The registry sits BESIDE the
-# worktrees, never inside one: `.worktrees/` is gitignored, so no child agent
-# sees a stray untracked file and nothing can be committed by accident.
-reg="$(git rev-parse --show-toplevel)/.worktrees/.dispatch"
-mkdir -p "$reg"
-setsid bash -c 'echo "$$" >"$1"; exec codex exec … ' _ "$reg/<child-bead-id>.pgid" </dev/null &
+# Launch from the supervisor's parent checkout, but the dispatch itself must
+# RUN IN THE CHILD WORKTREE -- write-capable runs never execute in the parent
+# checkout. Paths are absolute, resolved before the cd.
+root="$(git rev-parse --show-toplevel)"
+reg="$root/.worktrees/.dispatch"; mkdir -p "$reg"
+wt="$root/.worktrees/<child-bead-id>"
+setsid bash -c 'echo "$$" >"$2"; cd "$1" || exit 1; exec codex exec … ' \
+  _ "$wt" "$reg/<child-bead-id>.pgid" </dev/null &
 ```
 
-`exec` preserves the leader's PID, so the recorded value is the real PGID.
-Mirror it into the child bead's notes so the registry survives a deleted
+`exec` preserves the leader's PID, so the recorded value is the real PGID, and
+the `cd` fails the dispatch closed if the worktree is missing. The registry sits
+BESIDE the worktrees, never inside one: `.worktrees/` is gitignored, so no child
+agent sees a stray untracked file and nothing can be committed by accident.
+Mirror the PGID into the child bead's notes so the registry survives a deleted
 worktree.
 
 Before integrating:
