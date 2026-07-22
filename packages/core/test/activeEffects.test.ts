@@ -4244,6 +4244,42 @@ describe('integrity audit corruption coverage', () => {
         .join('\n'),
     ).toMatch(/zone link has invalid character holder.*scope holders/);
   });
+
+  it('reports a zone/form link forged with release cleanup', () => {
+    const { db } = setup();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-zone-release-corrupt',
+      kind: 'ward',
+      displayName: 'Ward',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      zones: [
+        {
+          zoneId: 'zone-release-corrupt',
+          scopeRef: 'location:cellar',
+          shape: 'sphere',
+          sizeFeet: 10,
+        },
+      ],
+      ...CTX,
+    });
+    const forgeRelease = db.prepare(
+      `UPDATE active_effect_link SET cleanup_on_end = 'release'
+       WHERE campaign_id = ? AND effect_id = ? AND link_kind = 'zone'`,
+    );
+    expect(() => forgeRelease.run(CAMPAIGN, 'fx-zone-release-corrupt')).toThrow(
+      /CHECK constraint failed/,
+    );
+    db.pragma('ignore_check_constraints = ON');
+    forgeRelease.run(CAMPAIGN, 'fx-zone-release-corrupt');
+    db.pragma('ignore_check_constraints = OFF');
+    expect(
+      auditActiveEffectIntegrity(db, CAMPAIGN)
+        .map((entry) => entry.issue)
+        .join('\n'),
+    ).toMatch(/zone link 'zone-release-corrupt'.*require remove/);
+  });
 });
 
 // ---------------------------------------------------------------------------

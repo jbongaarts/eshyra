@@ -1480,6 +1480,15 @@ export function auditActiveEffectIntegrity(
     // Active links: holder exists and is reachable; condition links must
     // find the exact condition entry they claim to own on the holder.
     for (const link of links) {
+      if (
+        (link.link_kind === 'zone' || link.link_kind === 'form') &&
+        (link.cleanup_on_end !== 'remove' || link.cleanup_on_break !== 'remove')
+      ) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `${link.link_kind} link '${link.projection_ref}' has unsupported release cleanup; zone/form links require remove for end and break`,
+        });
+      }
       if (link.status !== 'active') {
         continue;
       }
