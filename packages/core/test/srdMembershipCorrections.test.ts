@@ -1448,7 +1448,7 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     }
   });
 
-  it('pins the exact generated ambiguity payload and exact two-record membership', () => {
+  it('pins the exact generated ambiguity payload and exact three-record membership', () => {
     const recordsWithAmbiguities = getBundledDnd5eSrdPack()
       .records.filter((record) => {
         const mechanics = (record.data as { mechanics?: unknown }).mechanics as
@@ -1458,6 +1458,7 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
       })
       .map((record) => record.key);
     expect(recordsWithAmbiguities).toEqual([
+      'magic-item:cube-of-force',
       'spell:create-undead',
       'spell:find-familiar',
     ]);

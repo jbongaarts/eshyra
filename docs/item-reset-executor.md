@@ -59,11 +59,20 @@ transition cancels every timer owned by the state being left, not only the timer
 that fired. Only a timer-bearing transition licenses a pending timer: one state
 pair may be joined by both an operation transition and a timer (Cube of Force
 reaches `inactive` by pressing face six *and* when its minute runs out), and the
-operation transition never satisfies a pending timer. Timer effects and destruction attunement evidence are returned with
-the resolution. A round-based timer, a timer that would expire no later than the
+operation transition never satisfies a pending timer. Re-entry into the
+same state preserves matching pending timers by default; a self-transition may
+declare `resetsDuration: true` when the source says that action restarts the
+duration. A source-ambiguity `resetsDuration` marker is an unresolved gate, not
+a reset or a preserve default: selecting that transition fails closed with a
+structured error before charges, timers, or item state can be mutated. The gate
+remains pending campaign-ruling support (epic `eshyra-jhpt`). Once campaign
+rulings exist, runtime will require a recorded choice of one of the declared
+interpretation IDs and execute that interpretation accordingly. Cross-state
+transitions always anchor the entered state's timers fresh.
+Timer effects and destruction attunement evidence are returned with the
+resolution. A round-based timer, a timer that would expire no later than the
 transition entering its state, a dice amount without seeded RNG, or any reset
 shape outside the implemented pack contract throws with the pack reference and
-leaves the transaction rolled back. A state-machine duration
-with no timer transition is left unscheduled and unexecuted until its importer
-finding is repaired. The executor never silently approximates unknown pack
-semantics.
+leaves the transaction rolled back. A state-machine duration with no timer
+transition is left unscheduled and unexecuted until its importer finding is
+repaired. The executor never silently approximates unknown pack semantics.

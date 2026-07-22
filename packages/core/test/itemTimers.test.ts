@@ -45,7 +45,7 @@ describe('magic-item elapsed-world timers', () => {
     db.close();
   });
 
-  it('replaces all stale timers when a state is entered or left', () => {
+  it('preserves matching timers and leaves unrelated declarations fresh', () => {
     const db = freshDbWithSession();
     const first = resolveItemStateTimers(
       db,
@@ -59,14 +59,69 @@ describe('magic-item elapsed-world timers', () => {
       'active',
       [{ to: 'inactive', timer: { amount: 10, unit: 'minute' } }],
       undefined,
+      { preserved: first },
     );
     expect(
       reconcileItemStateTimers('active', first)[0]?.deadlineElapsedMinutes,
     ).toBe(10);
-    expect(
-      reconcileItemStateTimers('active', reentered)[0]?.deadlineElapsedMinutes,
-    ).toBe(15);
+    expect(reentered).toEqual(first);
+    const preservedUnrelated = {
+      from: 'active',
+      to: 'other',
+      anchorElapsedMinutes: 2,
+      deadlineElapsedMinutes: 6,
+      amount: 4,
+      unit: 'minute' as const,
+      roll: { notation: '1d4', rolls: [4], total: 4 },
+    };
+    const unmatched = resolveItemStateTimers(
+      db,
+      'active',
+      [{ to: 'ready', timer: { amount: '1d4', unit: 'minute' } }],
+      fixedRng,
+      { preserved: [preservedUnrelated] },
+    );
+    expect(unmatched).toEqual([
+      {
+        from: 'active',
+        to: 'ready',
+        anchorElapsedMinutes: 5,
+        deadlineElapsedMinutes: 8,
+        amount: 3,
+        unit: 'minute',
+        roll: { notation: '1d4', rolls: [3], total: 3 },
+      },
+    ]);
     expect(reconcileItemStateTimers('inactive', [])).toEqual([]);
+    db.close();
+  });
+
+  it('preserves matching dice-defined timers without consuming RNG', () => {
+    const db = freshDbWithSession();
+    const preservedRolled = {
+      from: 'active',
+      to: 'inactive',
+      anchorElapsedMinutes: 2,
+      deadlineElapsedMinutes: 6,
+      amount: 4,
+      unit: 'minute' as const,
+      roll: { notation: '1d4', rolls: [4], total: 4 },
+    };
+    const throwingRng: Rng = {
+      nextInt: () => {
+        throw new Error('preserved timer must not roll');
+      },
+    };
+
+    const resolved = resolveItemStateTimers(
+      db,
+      'active',
+      [{ to: 'inactive', timer: { amount: '1d4', unit: 'minute' } }],
+      throwingRng,
+      { preserved: [preservedRolled] },
+    );
+
+    expect(resolved).toEqual([preservedRolled]);
     db.close();
   });
 

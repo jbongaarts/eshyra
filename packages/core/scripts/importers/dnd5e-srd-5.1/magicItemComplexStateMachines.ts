@@ -11,6 +11,7 @@ interface ComplexSpec {
   readonly phrases: readonly string[];
   readonly operations: readonly MagicItemOperation[];
   readonly effects?: readonly MagicItemEffect[];
+  readonly ambiguities?: MagicItemFamilyProjection['mechanics']['ambiguities'];
   readonly stateMachine: MagicItemStateMachine;
 }
 
@@ -274,11 +275,26 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
             to: `face-${i + 1}`,
             via: `press-face-${i + 1}`,
           })),
+          // Source: activating a face creates a barrier that lasts for 1
+          // minute, and pressing a *different* face resets that duration. The
+          // source never says what pressing the already-active face does, so
+          // the object form of resetsDuration gates it: it does not assert a
+          // reset, it records that whether one happens is unresolved. Both
+          // interpretations are retained for a campaign ruling.
           ...Array.from({ length: 5 }, (_, from) =>
             Array.from({ length: 5 }, (_, to) => ({
               from: `face-${from + 1}`,
               to: `face-${to + 1}`,
               via: `press-face-${to + 1}`,
+              ...(from === to
+                ? {
+                    resetsDuration: {
+                      kind: 'source-ambiguity' as const,
+                      ambiguityId:
+                        'ambiguity:cube-of-force-same-face-duration-reset',
+                    },
+                  }
+                : {}),
             })),
           ).flat(),
           ...Array.from({ length: 5 }, (_, i) => ({
@@ -304,6 +320,47 @@ const SPECS: ReadonlyMap<string, ComplexSpec> = new Map([
         duration: { amount: 1, unit: 'minute' },
         termination: 'one minute after last face press or depletion',
       },
+      ambiguities: [
+        {
+          id: 'ambiguity:cube-of-force-same-face-duration-reset',
+          question:
+            "whether pressing the already-active face restates the barrier's one-minute duration",
+          source: [
+            {
+              locator: 'p. 215, barrier duration',
+              clauseId: 'barrier-duration',
+            },
+            {
+              locator: 'p. 215, different-face reset',
+              clauseId: 'different-face-reset',
+            },
+          ],
+          affects: [
+            'face-1 -> face-1 via press-face-1',
+            'face-2 -> face-2 via press-face-2',
+            'face-3 -> face-3 via press-face-3',
+            'face-4 -> face-4 via press-face-4',
+            'face-5 -> face-5 via press-face-5',
+          ],
+          interpretations: [
+            {
+              id: 'same-face-resets',
+              summary:
+                'Pressing the already-active face restates the barrier duration.',
+            },
+            {
+              id: 'different-face-only-resets',
+              summary:
+                'Only pressing a different face resets the barrier duration.',
+            },
+          ],
+          canonicalResolution: null,
+          runtimeDisposition: {
+            status: 'engine-pending',
+            owner: 'campaign-ruling',
+          },
+        },
+      ],
     },
   ],
   [
@@ -854,6 +911,9 @@ export function projectMagicItemComplexStateMachine(
     mechanics: {
       operations: spec.operations,
       ...(spec.effects === undefined ? {} : { effects: spec.effects }),
+      ...(spec.ambiguities === undefined
+        ? {}
+        : { ambiguities: spec.ambiguities }),
       stateMachine: spec.stateMachine,
     },
     clauses: [

@@ -111,9 +111,33 @@ describe('complex M5 state-machine complement', () => {
         via: 'press-face-6',
       })),
     );
-    // The barrier "lasts for 1 minute", so every face state owns an executable
-    // timer back to 'inactive'; a face press re-enters a face state and thereby
-    // re-anchors it, which is the source's "resetting the duration".
+    // The source does not resolve whether pressing the active face restates
+    // the duration, so the five transitions remain ambiguity-gated.
+    expect(
+      cube?.mechanics.stateMachine?.transitions.filter(
+        ({ resetsDuration }) => resetsDuration !== undefined,
+      ),
+    ).toEqual(
+      [1, 2, 3, 4, 5].map((face) => ({
+        from: `face-${face}`,
+        to: `face-${face}`,
+        via: `press-face-${face}`,
+        resetsDuration: {
+          kind: 'source-ambiguity',
+          ambiguityId: 'ambiguity:cube-of-force-same-face-duration-reset',
+        },
+      })),
+    );
+    expect(cube?.mechanics.ambiguities).toEqual([
+      expect.objectContaining({
+        id: 'ambiguity:cube-of-force-same-face-duration-reset',
+        canonicalResolution: null,
+        runtimeDisposition: {
+          status: 'engine-pending',
+          owner: 'campaign-ruling',
+        },
+      }),
+    ]);
     expect(
       cube?.mechanics.stateMachine?.transitions.filter(
         ({ timer }) => timer !== undefined,

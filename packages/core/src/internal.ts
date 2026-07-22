@@ -1356,6 +1356,7 @@ export type {
 } from './state/itemState.js';
 export {
   createInitialItemState,
+  ItemStateAmbiguityError,
   ItemStateError,
   isStatefulMagicItem,
   readItemState,

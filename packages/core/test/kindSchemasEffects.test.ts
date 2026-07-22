@@ -6,6 +6,7 @@ import {
   type S1SummoningSpellKey,
 } from '../scripts/importers/dnd5e-srd-5.1/s1SummoningSpecs.js';
 import { validateRecordKindSchema } from '../src/rules/kindSchemas.js';
+import { validateAmbiguityReferences } from '../src/rules/rulesAmbiguities.js';
 import type { RulesRecord } from '../src/rules/types.js';
 
 /**
@@ -857,6 +858,18 @@ describe('mechanics effect payload contracts', () => {
 
     expect(() =>
       validateWithAmbiguities({ kind: 'cannotSee' }, createAmbiguities),
+    ).toThrow(/without an affected mechanic reference/);
+
+    expect(() =>
+      validateAmbiguityReferences(
+        {
+          metadata: {
+            ambiguityId: 'ambiguity:create-undead-ghast-wight-composition',
+          },
+        },
+        new Set(['ambiguity:create-undead-ghast-wight-composition']),
+        'records[0].data.mechanics',
+      ),
     ).toThrow(/without an affected mechanic reference/);
 
     const unguardedFamiliar = materializeS1SummoningEffect(

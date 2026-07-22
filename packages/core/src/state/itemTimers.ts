@@ -56,18 +56,28 @@ export function resolveItemStateTimers(
   from: string,
   declarations: readonly PendingItemTimerDeclaration[],
   rng: Rng | undefined,
-  anchorElapsedMinutes?: number,
+  options: {
+    readonly anchorElapsedMinutes?: number;
+    readonly preserved?: readonly ItemStateTimer[];
+  } = {},
 ): readonly ItemStateTimer[] {
   if (declarations.length === 0) return [];
-  const anchor =
-    anchorElapsedMinutes === undefined
-      ? currentElapsedMinutes(db)
-      : anchorElapsedMinutes;
-  if (!Number.isSafeInteger(anchor) || anchor < 0)
-    throw new ItemTimerError(
-      'item timer anchor must be a nonnegative safe integer',
-    );
+  let anchor = options.anchorElapsedMinutes;
+  const getAnchor = (): number => {
+    anchor ??= currentElapsedMinutes(db);
+    if (!Number.isSafeInteger(anchor) || anchor < 0)
+      throw new ItemTimerError(
+        'item timer anchor must be a nonnegative safe integer',
+      );
+    return anchor;
+  };
   return declarations.map(({ to, timer }) => {
+    // magicItemMechanics.ts rejects two timer-bearing transitions for this
+    // from/to pair, which makes this preserved-timer identity unambiguous.
+    const preserved = options.preserved?.find(
+      (candidate) => candidate.from === from && candidate.to === to,
+    );
+    if (preserved !== undefined) return preserved;
     if (timer.unit === 'round')
       throw new ItemTimerError(
         `item timer '${from}' -> '${to}' is round-based and requires the encounter-round scheduler`,
@@ -94,8 +104,9 @@ export function resolveItemStateTimers(
       throw new ItemTimerError(
         'item timer amount must be a nonnegative integer',
       );
+    const resolvedAnchor = getAnchor();
     const deadlineElapsedMinutes =
-      anchor + durationMinutes(resolved.amount, timer.unit);
+      resolvedAnchor + durationMinutes(resolved.amount, timer.unit);
     if (!Number.isSafeInteger(deadlineElapsedMinutes))
       throw new ItemTimerError(
         'item timer deadline exceeds elapsed-world range',
@@ -103,7 +114,7 @@ export function resolveItemStateTimers(
     return {
       from,
       to,
-      anchorElapsedMinutes: anchor,
+      anchorElapsedMinutes: resolvedAnchor,
       deadlineElapsedMinutes,
       amount: resolved.amount,
       unit: timer.unit,
@@ -114,7 +125,8 @@ export function resolveItemStateTimers(
 
 /**
  * A state machine has one current state, so timers from the state being left
- * are cancelled and re-entering a state replaces its prior deadline.
+ * are cancelled. Re-entry preserves matching pending timers unless the
+ * transition explicitly opts into resetting their duration.
  */
 export function reconcileItemStateTimers(
   transitionTo: string,
