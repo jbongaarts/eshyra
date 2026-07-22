@@ -511,7 +511,7 @@ const EFFECT_KIND_PROFILES: Readonly<
     concentration: 'allowed',
   },
   transformation: {
-    sourceKinds: ['spell', 'feature', 'ruling'],
+    sourceKinds: ['spell', 'magic-item', 'feature', 'creature-trait', 'ruling'],
     linkKinds: ['condition', 'form'],
     concentration: 'allowed',
   },
@@ -1484,6 +1484,13 @@ export function auditActiveEffectIntegrity(
         continue;
       }
       if (link.link_kind === 'zone') {
+        if (link.target_kind !== 'scope') {
+          issues.push({
+            effectId: row.effect_id,
+            issue: `zone link has invalid ${link.target_kind} holder '${link.target_ref}'; zones require scope holders`,
+          });
+          continue;
+        }
         const projection = db
           .prepare(
             'SELECT 1 FROM effect_spatial_zone WHERE campaign_id = ? AND zone_id = ? AND scope_ref = ?',
@@ -2929,6 +2936,14 @@ export function createActiveEffect(
           'zone projection sizeFeet must be a positive integer',
         );
       }
+      if (
+        zone.cleanupOnEnd === 'release' ||
+        zone.cleanupOnBreak === 'release'
+      ) {
+        throw new ActiveEffectError(
+          'zone projections require remove cleanup; released zones have no supported mutation lifecycle',
+        );
+      }
       if (seenZones.has(zone.zoneId))
         throw new ActiveEffectError(
           `duplicate zone projection '${zone.zoneId}'`,
@@ -2963,6 +2978,14 @@ export function createActiveEffect(
         'form projection target',
       );
       requireNonEmptyString(form.formRef, 'form projection formRef');
+      if (
+        form.cleanupOnEnd === 'release' ||
+        form.cleanupOnBreak === 'release'
+      ) {
+        throw new ActiveEffectError(
+          'form projections require remove cleanup; released forms have no supported mutation lifecycle',
+        );
+      }
       const key = `${form.target.kind}:${form.target.ref}`;
       if (seenForms.has(key))
         throw new ActiveEffectError(`duplicate form projection target ${key}`);

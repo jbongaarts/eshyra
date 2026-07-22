@@ -10,6 +10,8 @@ CREATE TABLE active_effect_link_new (
   removed_reason TEXT, removed_at TEXT, provenance TEXT NOT NULL,
   session_id TEXT NOT NULL, updated_at TEXT NOT NULL,
   PRIMARY KEY (campaign_id,effect_id,link_kind,target_kind,target_ref,projection_ref),
+  CHECK ((link_kind = 'zone' AND target_kind = 'scope')
+         OR (link_kind != 'zone' AND target_kind != 'scope')),
   CHECK (status = 'active' OR (removed_reason IS NOT NULL AND removed_at IS NOT NULL)),
   CHECK (status != 'active' OR (removed_reason IS NULL AND removed_at IS NULL))
 );

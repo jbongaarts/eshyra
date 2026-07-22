@@ -76,7 +76,7 @@ what an effect may declare (fail-closed):
 | `summoning` | spell, feature, ruling | condition, actor | record-derived |
 | `ward` | spell, magic-item, ruling | condition, zone | record-derived |
 | `curse` | spell, magic-item, creature-trait, ruling | condition | record-derived |
-| `transformation` | spell, feature, ruling | condition, form | record-derived |
+| `transformation` | spell, magic-item, feature, creature-trait, ruling | condition, form | record-derived |
 | `item-power` | magic-item | condition | declared |
 | `condition-package` | spell, creature-trait, hazard, ruling | condition | forbidden |
 
@@ -373,7 +373,8 @@ the historical `mutate_state` wrapper was deleted (audit §5).
 - **S3 wards / transformations / item lifecycles**: suppression tools are
   available, and `zone`/`form` link kinds use canonical S3/C1 projection
   stores through F3 cleanup: `remove` invokes the
-  canonical projection operation in the terminal transaction, while `release`
-  closes ownership and leaves the projection intact.
+  canonical projection operation in the terminal transaction. Zone and form
+  links currently require `remove`; `release` fails closed until a supported
+  clear/update/adopt lifecycle exists for unowned projections.
 - **F6 life state**: one-way reaction hook (see §5); the life-state machine
   stays in `hpLifecycle.ts`.

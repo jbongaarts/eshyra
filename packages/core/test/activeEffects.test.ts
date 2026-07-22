@@ -1336,34 +1336,82 @@ describe('cleanup ownership', () => {
     ).toBeUndefined();
   });
 
-  it('projects forms and reports release and missing cleanup', () => {
+  it('projects grounded creature-trait and magic-item forms', () => {
     const { db, pcId } = setup();
-    createActiveEffect(db, {
+    const trait = createActiveEffect(db, {
       campaignId: CAMPAIGN,
-      effectId: 'fx-form-release',
+      effectId: 'fx-form-trait',
       kind: 'transformation',
       displayName: 'Bear Form',
-      source: { kind: 'feature' },
+      source: { kind: 'creature-trait' },
       duration: { kind: 'until-removed' },
-      forms: [
-        {
-          target: { kind: 'character', ref: pcId },
-          formRef: 'bear',
-          cleanupOnEnd: 'release',
-        },
-      ],
+      forms: [{ target: { kind: 'character', ref: pcId }, formRef: 'bear' }],
       ...CTX,
     });
-    const released = endActiveEffect(db, {
+    expect(trait.effect.source.kind).toBe('creature-trait');
+    endActiveEffect(db, {
       campaignId: CAMPAIGN,
-      effectId: 'fx-form-release',
+      effectId: 'fx-form-trait',
       reason: 'source-removed',
       ...CTX,
     });
-    expect(released.cleanup.links[0]?.action).toBe('released');
-    db.prepare(
-      'DELETE FROM effect_transformation_form WHERE target_ref = ?',
-    ).run(pcId);
+    const item = createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-form-item',
+      kind: 'transformation',
+      displayName: 'Wolf Form',
+      source: { kind: 'magic-item' },
+      duration: { kind: 'until-removed' },
+      forms: [{ target: { kind: 'character', ref: pcId }, formRef: 'wolf' }],
+      ...CTX,
+    });
+    expect(item.effect.source.kind).toBe('magic-item');
+  });
+
+  it('rejects release policies for zones and forms', () => {
+    const { db, pcId } = setup();
+    expect(() =>
+      createActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId: 'fx-zone-release',
+        kind: 'ward',
+        displayName: 'Released Ward',
+        source: { kind: 'ruling' },
+        duration: { kind: 'until-removed' },
+        zones: [
+          {
+            zoneId: 'zone-release',
+            scopeRef: 'location:cellar',
+            shape: 'sphere',
+            sizeFeet: 20,
+            cleanupOnBreak: 'release',
+          },
+        ],
+        ...CTX,
+      }),
+    ).toThrow(/zone projections require remove cleanup/);
+    expect(() =>
+      createActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId: 'fx-form-release',
+        kind: 'transformation',
+        displayName: 'Released Form',
+        source: { kind: 'feature' },
+        duration: { kind: 'until-removed' },
+        forms: [
+          {
+            target: { kind: 'character', ref: pcId },
+            formRef: 'bear',
+            cleanupOnEnd: 'release',
+          },
+        ],
+        ...CTX,
+      }),
+    ).toThrow(/form projections require remove cleanup/);
+  });
+
+  it('reports missing form projections during canonical cleanup', () => {
+    const { db, pcId } = setup();
     createActiveEffect(db, {
       campaignId: CAMPAIGN,
       effectId: 'fx-form-missing',
@@ -1374,6 +1422,7 @@ describe('cleanup ownership', () => {
       forms: [{ target: { kind: 'character', ref: pcId }, formRef: 'wolf' }],
       ...CTX,
     });
+    // Simulate corrupt external deletion to exercise F3's fail-closed audit outcome.
     db.prepare(
       'DELETE FROM effect_transformation_form WHERE target_ref = ?',
     ).run(pcId);
@@ -4158,6 +4207,42 @@ describe('integrity audit corruption coverage', () => {
         .map((entry) => entry.issue)
         .join('\n'),
     ).toMatch(/'actor' link is not licensed for kind 'spell-effect'/);
+  });
+
+  it('reports a zone link forged with a non-scope holder', () => {
+    const { db, pcId } = setup();
+    createActiveEffect(db, {
+      campaignId: CAMPAIGN,
+      effectId: 'fx-zone-corrupt',
+      kind: 'ward',
+      displayName: 'Ward',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      zones: [
+        {
+          zoneId: 'zone-corrupt',
+          scopeRef: pcId,
+          shape: 'sphere',
+          sizeFeet: 10,
+        },
+      ],
+      ...CTX,
+    });
+    const forgeHolder = db.prepare(
+      `UPDATE active_effect_link SET target_kind = 'character'
+       WHERE campaign_id = ? AND effect_id = ? AND link_kind = 'zone'`,
+    );
+    expect(() => forgeHolder.run(CAMPAIGN, 'fx-zone-corrupt')).toThrow(
+      /CHECK constraint failed/,
+    );
+    db.pragma('ignore_check_constraints = ON');
+    forgeHolder.run(CAMPAIGN, 'fx-zone-corrupt');
+    db.pragma('ignore_check_constraints = OFF');
+    expect(
+      auditActiveEffectIntegrity(db, CAMPAIGN)
+        .map((entry) => entry.issue)
+        .join('\n'),
+    ).toMatch(/zone link has invalid character holder.*scope holders/);
   });
 });
 
