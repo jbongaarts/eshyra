@@ -136,6 +136,88 @@ describe('magic-item mechanics schema', () => {
     ).toThrow(/resetsDuration requires from and to to match/);
   });
 
+  it('gates source-ambiguous resets and requires operation transitions', () => {
+    const ambiguity = {
+      id: 'ambiguity:test-reset',
+      question: 'which reading applies?',
+      source: [{ locator: 'p. 1, clause', clauseId: 'source-clause' }],
+      affects: ['ready -> ready via activate'],
+      interpretations: [
+        { id: 'first-reading', summary: 'The first reading.' },
+        { id: 'second-reading', summary: 'The second reading.' },
+      ],
+      canonicalResolution: null,
+      runtimeDisposition: {
+        status: 'engine-pending',
+        owner: 'campaign-ruling',
+      },
+    };
+    expect(() =>
+      validate({
+        ambiguities: [ambiguity],
+        stateMachine: {
+          initial: 'ready',
+          states: [{ id: 'ready' }],
+          transitions: [
+            {
+              from: 'ready',
+              to: 'ready',
+              via: 'activate',
+              resetsDuration: {
+                kind: 'source-ambiguity',
+                ambiguityId: 'ambiguity:test-reset',
+              },
+            },
+          ],
+        },
+      }),
+    ).not.toThrow();
+    for (const trigger of ['timer', 'condition']) {
+      expect(() =>
+        validate({
+          stateMachine: {
+            initial: 'ready',
+            states: [{ id: 'ready' }],
+            transitions: [
+              {
+                from: 'ready',
+                to: 'ready',
+                [trigger]:
+                  trigger === 'timer'
+                    ? { amount: 1, unit: 'minute' }
+                    : 'the condition holds',
+                resetsDuration: true,
+              },
+            ],
+          },
+        }),
+      ).toThrow(/resetsDuration requires via to be declared/);
+    }
+  });
+
+  it('rejects duplicate timer declarations for one state pair', () => {
+    expect(() =>
+      validate({
+        stateMachine: {
+          initial: 'ready',
+          states: [{ id: 'ready' }, { id: 'done' }],
+          transitions: [
+            {
+              from: 'ready',
+              to: 'done',
+              timer: { amount: 1, unit: 'minute' },
+            },
+            {
+              from: 'ready',
+              to: 'done',
+              timer: { amount: 2, unit: 'minute' },
+            },
+          ],
+        },
+      }),
+    ).toThrow(/timer duplicates a timer-bearing transition.*ready.*done/);
+  });
+
   it('accepts staff-of-fire shared charges and operation/effect bindings', () => {
     const mechanics = {
       activation: { cost: 'action', commandWord: true },

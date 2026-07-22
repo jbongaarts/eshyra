@@ -1,3 +1,8 @@
+import {
+  optRulesAmbiguities,
+  type RulesAmbiguity,
+  validateAmbiguityReferences,
+} from './rulesAmbiguities.js';
 import { RulesPackError } from './types.js';
 
 type Obj = Record<string, unknown>;
@@ -96,7 +101,9 @@ export interface MagicItemStateMachine {
   readonly transitions: readonly {
     readonly from: string;
     readonly to: string;
-    readonly resetsDuration?: true;
+    readonly resetsDuration?:
+      | true
+      | { readonly kind: 'source-ambiguity'; readonly ambiguityId: string };
     readonly via?: string;
     readonly timer?: MagicItemDurationSpec;
     readonly condition?: string;
@@ -401,6 +408,7 @@ export interface MagicItemInterItem {
 
 /** Immutable, source-derived capabilities. Live per-instance values never belong here. */
 export interface MagicItemMechanics {
+  readonly ambiguities?: readonly RulesAmbiguity[];
   readonly activation?: MagicItemActivationSpec;
   readonly economies?: Readonly<Record<string, MagicItemEconomy>>;
   readonly operations?: readonly MagicItemOperation[];
@@ -862,6 +870,7 @@ function stateMachine(
   if (!Array.isArray(obj.transitions) || obj.transitions.length === 0) {
     throw new RulesPackError(`${path}.transitions must be a non-empty array`);
   }
+  const timerPairs = new Set<string>();
   obj.transitions.forEach((entry, index) => {
     const transitionPath = `${path}.transitions[${index}]`;
     const transition = object(entry, transitionPath);
@@ -895,13 +904,42 @@ function stateMachine(
         `${transitionPath} must declare exactly one of via, timer, or condition`,
       );
     if (transition.resetsDuration !== undefined) {
-      if (transition.resetsDuration !== true)
+      if (
+        transition.resetsDuration !== true &&
+        (typeof transition.resetsDuration !== 'object' ||
+          transition.resetsDuration === null ||
+          Array.isArray(transition.resetsDuration))
+      )
         throw new RulesPackError(
-          `${transitionPath}.resetsDuration must be true when declared`,
+          `${transitionPath}.resetsDuration must be true or a source-ambiguity reference`,
         );
+      if (transition.resetsDuration !== true) {
+        const reset = transition.resetsDuration as Obj;
+        only(
+          reset,
+          ['kind', 'ambiguityId'],
+          `${transitionPath}.resetsDuration`,
+        );
+        if (reset.kind !== 'source-ambiguity')
+          throw new RulesPackError(
+            `${transitionPath}.resetsDuration.kind must be source-ambiguity`,
+          );
+        const ambiguityId = string(
+          reset.ambiguityId,
+          `${transitionPath}.resetsDuration.ambiguityId`,
+        );
+        if (!/^ambiguity:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(ambiguityId))
+          throw new RulesPackError(
+            `${transitionPath}.resetsDuration.ambiguityId must be an ambiguity:<kebab-case> ID`,
+          );
+      }
       if (transition.from !== transition.to)
         throw new RulesPackError(
           `${transitionPath}.resetsDuration requires from and to to match`,
+        );
+      if (transition.via === undefined)
+        throw new RulesPackError(
+          `${transitionPath}.resetsDuration requires via to be declared`,
         );
     }
     if (transition.via !== undefined) {
@@ -916,8 +954,15 @@ function stateMachine(
         );
       }
     }
-    if (transition.timer !== undefined)
+    if (transition.timer !== undefined) {
       duration(transition.timer, `${transitionPath}.timer`);
+      const pair = `${transition.from}\u0000${transition.to}`;
+      if (timerPairs.has(pair))
+        throw new RulesPackError(
+          `${transitionPath}.timer duplicates a timer-bearing transition for ${JSON.stringify(transition.from)} -> ${JSON.stringify(transition.to)}`,
+        );
+      timerPairs.add(pair);
+    }
     if (transition.condition !== undefined)
       string(transition.condition, `${transitionPath}.condition`);
     if (transition.effects !== undefined && transition.onFailure !== undefined)
@@ -2210,6 +2255,7 @@ export function validateMagicItemMechanics(
   only(
     mechanics,
     [
+      'ambiguities',
       'activation',
       'economies',
       'operations',
@@ -2225,6 +2271,7 @@ export function validateMagicItemMechanics(
     ],
     path,
   );
+  const ambiguityIds = optRulesAmbiguities(mechanics, path);
   if (mechanics.activation !== undefined)
     activation(mechanics.activation, `${path}.activation`);
 
@@ -2342,6 +2389,7 @@ export function validateMagicItemMechanics(
   }
   if (mechanics.interItem !== undefined)
     interItem(mechanics.interItem, `${path}.interItem`);
+  validateAmbiguityReferences(mechanics, ambiguityIds, path);
 }
 
 /** Pure implementation of the stateful-singleton invariant from PR #408. */

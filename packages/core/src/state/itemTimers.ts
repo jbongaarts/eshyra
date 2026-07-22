@@ -72,6 +72,8 @@ export function resolveItemStateTimers(
     return anchor;
   };
   return declarations.map(({ to, timer }) => {
+    // magicItemMechanics.ts rejects two timer-bearing transitions for this
+    // from/to pair, which makes this preserved-timer identity unambiguous.
     const preserved = options.preserved?.find(
       (candidate) => candidate.from === from && candidate.to === to,
     );

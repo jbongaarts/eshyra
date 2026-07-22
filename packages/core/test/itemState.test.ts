@@ -396,6 +396,79 @@ describe('magic-item live instance state', () => {
     db.close();
   });
 
+  it('preserves timers and surfaces unresolved ambiguity-gated resets', () => {
+    const db = freshDbWithSession();
+    const gated = item('ambiguity-gated-timer', {
+      operations: [{ id: 'enter' }, { id: 'restate' }],
+      ambiguities: [
+        {
+          id: 'ambiguity:test-reset',
+          question: 'which reading applies?',
+          source: [{ locator: 'p. 1, clause', clauseId: 'source-clause' }],
+          affects: ['active -> active via restate'],
+          interpretations: [
+            { id: 'first-reading', summary: 'The first reading.' },
+            { id: 'second-reading', summary: 'The second reading.' },
+          ],
+          canonicalResolution: null,
+          runtimeDisposition: {
+            status: 'engine-pending',
+            owner: 'campaign-ruling',
+          },
+        },
+      ],
+      stateMachine: {
+        initial: 'inactive',
+        states: [{ id: 'inactive' }, { id: 'active' }, { id: 'expired' }],
+        transitions: [
+          { from: 'inactive', to: 'active', via: 'enter' },
+          {
+            from: 'active',
+            to: 'active',
+            via: 'restate',
+            resetsDuration: {
+              kind: 'source-ambiguity',
+              ambiguityId: 'ambiguity:test-reset',
+            },
+          },
+          {
+            from: 'active',
+            to: 'expired',
+            timer: { amount: 1, unit: 'minute' },
+          },
+        ],
+      },
+    });
+    const granted = giveItem(
+      db,
+      {
+        id: 'ignored',
+        name: 'Ambiguity Gated Timer',
+        packRef: gated.key,
+        stateful: true,
+      },
+      MUTATION,
+    );
+    writeItemState(
+      db,
+      granted.id,
+      createInitialItemState(gated.key, gated),
+      MUTATION,
+    );
+    const rulesPack = pack(gated);
+    useItem(db, useInput(rulesPack, granted.id, 'enter'));
+    const before = readItemState(db, granted.id)?.pendingTimers;
+    expect(
+      useItem(db, useInput(rulesPack, granted.id, 'restate')),
+    ).toMatchObject({
+      transition: {
+        unresolvedAmbiguityIds: ['ambiguity:test-reset'],
+      },
+    });
+    expect(readItemState(db, granted.id)?.pendingTimers).toEqual(before);
+    db.close();
+  });
+
   it('requires explicit destinations for ambiguous transitions and rolls invalid uses back', () => {
     const db = freshDbWithSession();
     const modal = item('modal-test', {

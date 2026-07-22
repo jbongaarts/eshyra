@@ -84,6 +84,7 @@ export interface MagicItemFamilyProjection {
 }
 
 const SINGLETON_BLOCKS = [
+  'ambiguities',
   'activation',
   'stateMachine',
   'entityGrant',

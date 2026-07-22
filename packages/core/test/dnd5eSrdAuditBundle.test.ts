@@ -231,7 +231,7 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
 
   it('surfaces the exact unresolved source ambiguities in gameplay readiness', () => {
     const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
-    expect(report.sourceAmbiguities.total).toBe(2);
+    expect(report.sourceAmbiguities.total).toBe(3);
     expect(
       report.sourceAmbiguities.entries.map(({ recordKey, ambiguity }) => ({
         recordKey,
@@ -246,6 +246,16 @@ describe('D&D SRD audit bundle gameplay-readiness report', () => {
         id: 'ambiguity:create-undead-ghast-wight-composition',
         canonicalResolution: null,
         interpretationIds: ['homogeneous-alternative', 'mixed-within-total'],
+        disposition: {
+          status: 'engine-pending',
+          owner: 'campaign-ruling',
+        },
+      },
+      {
+        recordKey: 'magic-item:cube-of-force',
+        id: 'ambiguity:cube-of-force-same-face-duration-reset',
+        canonicalResolution: null,
+        interpretationIds: ['same-face-resets', 'different-face-only-resets'],
         disposition: {
           status: 'engine-pending',
           owner: 'campaign-ruling',

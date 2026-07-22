@@ -93602,6 +93602,44 @@
       "requiresAttunement": true,
       "description": "This cube is about an inch across. Each face has a distinct marking on it that can be pressed. The cube starts with 36 charges, and it regains 1d20 expended charges daily at dawn. You can use an action to press one of the cube’s faces, expending a number of charges based on the chosen face, as shown in the Cube of Force Faces table. Each face has a different effect. If the cube has insufficient charges remaining, nothing happens. Otherwise, a barrier of invisible force springs into existence, forming a cube 15 feet on a side. The barrier is centered on you, moves with you, and lasts for 1 minute, until you use an action to press the cube’s sixth face, or the cube runs out of charges. You can change the barrier’s effect by pressing a different face of the cube and expending the requisite number of charges, resetting the duration. If your movement causes the barrier to come into contact with a solid object that can’t pass through the cube, you can’t move any closer to that object as long as the barrier remains. The cube loses charges when the barrier is targeted by certain spells or comes into contact with certain spell or magic item effects, as shown in the table below.",
       "mechanics": {
+        "ambiguities": [
+          {
+            "id": "ambiguity:cube-of-force-same-face-duration-reset",
+            "question": "whether pressing the already-active face restates the barrier's one-minute duration",
+            "source": [
+              {
+                "locator": "p. 215, barrier duration",
+                "clauseId": "barrier-duration"
+              },
+              {
+                "locator": "p. 215, different-face reset",
+                "clauseId": "different-face-reset"
+              }
+            ],
+            "affects": [
+              "face-1 -> face-1 via press-face-1",
+              "face-2 -> face-2 via press-face-2",
+              "face-3 -> face-3 via press-face-3",
+              "face-4 -> face-4 via press-face-4",
+              "face-5 -> face-5 via press-face-5"
+            ],
+            "interpretations": [
+              {
+                "id": "same-face-resets",
+                "summary": "Pressing the already-active face restates the barrier duration."
+              },
+              {
+                "id": "different-face-only-resets",
+                "summary": "Only pressing a different face resets the barrier duration."
+              }
+            ],
+            "canonicalResolution": null,
+            "runtimeDisposition": {
+              "status": "engine-pending",
+              "owner": "campaign-ruling"
+            }
+          }
+        ],
         "stateMachine": {
           "initial": "inactive",
           "states": [
@@ -93674,7 +93712,10 @@
               "from": "face-1",
               "to": "face-1",
               "via": "press-face-1",
-              "resetsDuration": true
+              "resetsDuration": {
+                "kind": "source-ambiguity",
+                "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+              }
             },
             {
               "from": "face-1",
@@ -93705,7 +93746,10 @@
               "from": "face-2",
               "to": "face-2",
               "via": "press-face-2",
-              "resetsDuration": true
+              "resetsDuration": {
+                "kind": "source-ambiguity",
+                "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+              }
             },
             {
               "from": "face-2",
@@ -93736,7 +93780,10 @@
               "from": "face-3",
               "to": "face-3",
               "via": "press-face-3",
-              "resetsDuration": true
+              "resetsDuration": {
+                "kind": "source-ambiguity",
+                "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+              }
             },
             {
               "from": "face-3",
@@ -93767,7 +93814,10 @@
               "from": "face-4",
               "to": "face-4",
               "via": "press-face-4",
-              "resetsDuration": true
+              "resetsDuration": {
+                "kind": "source-ambiguity",
+                "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+              }
             },
             {
               "from": "face-4",
@@ -93798,7 +93848,10 @@
               "from": "face-5",
               "to": "face-5",
               "via": "press-face-5",
-              "resetsDuration": true
+              "resetsDuration": {
+                "kind": "source-ambiguity",
+                "ambiguityId": "ambiguity:cube-of-force-same-face-duration-reset"
+              }
             },
             {
               "from": "face-1",

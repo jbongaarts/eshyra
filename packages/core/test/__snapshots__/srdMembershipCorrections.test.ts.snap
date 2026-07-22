@@ -2221,7 +2221,7 @@ exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact ge
 ]
 `;
 
-exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated ambiguity payload and exact two-record membership > spell:create-undead ambiguities 1`] = `
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated ambiguity payload and exact three-record membership > spell:create-undead ambiguities 1`] = `
 [
   {
     "affects": [
@@ -2255,7 +2255,7 @@ exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact ge
 ]
 `;
 
-exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated ambiguity payload and exact two-record membership > spell:find-familiar ambiguities 1`] = `
+exports[`corrected metadata-only spells (eshyra-o9bd.18.7.9) > pins the exact generated ambiguity payload and exact three-record membership > spell:find-familiar ambiguities 1`] = `
 [
   {
     "affects": [

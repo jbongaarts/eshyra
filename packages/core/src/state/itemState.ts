@@ -127,6 +127,8 @@ export interface UseItemResult {
       readonly to: string;
       readonly timer: MagicItemDurationSpec;
     }[];
+    /** Source ambiguities that gate a duration reset pending campaign ruling. */
+    readonly unresolvedAmbiguityIds?: readonly string[];
     readonly duration?: MagicItemDurationSpec;
   };
   readonly state?: ItemInstanceState;
@@ -1279,6 +1281,7 @@ function validateRecordReferences(
 interface SelectedStateTransition {
   readonly nextState: string;
   readonly resetsDuration: boolean;
+  readonly unresolvedAmbiguityIds: readonly string[];
   readonly effectIds: readonly string[];
   readonly result: NonNullable<UseItemResult['transition']>;
 }
@@ -1390,6 +1393,15 @@ function selectStateTransition(
       : (selected.transition.onFailure as NonNullable<
           NonNullable<UseItemResult['transition']>['onFailure']
         >);
+  const unresolvedAmbiguityIds =
+    typeof selected.transition.resetsDuration === 'object' &&
+    selected.transition.resetsDuration !== null &&
+    !Array.isArray(selected.transition.resetsDuration)
+      ? [
+          (selected.transition.resetsDuration as { ambiguityId: string })
+            .ambiguityId,
+        ]
+      : [];
   const pendingTimers = transitions.flatMap((transition) =>
     transition.from === selected.destination &&
     typeof transition.to === 'string' &&
@@ -1405,6 +1417,7 @@ function selectStateTransition(
   return {
     nextState: selected.destination,
     resetsDuration: selected.transition.resetsDuration === true,
+    unresolvedAmbiguityIds,
     effectIds: Array.isArray(selected.transition.effects)
       ? (selected.transition.effects as string[])
       : [],
@@ -1414,6 +1427,9 @@ function selectStateTransition(
       outcome,
       ...(failure === undefined ? {} : { onFailure: failure }),
       ...(pendingTimers.length === 0 ? {} : { pendingTimers }),
+      ...(unresolvedAmbiguityIds.length === 0
+        ? {}
+        : { unresolvedAmbiguityIds }),
       ...(machine.duration === undefined
         ? {}
         : { duration: machine.duration as MagicItemDurationSpec }),

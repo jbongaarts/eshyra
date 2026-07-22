@@ -62,12 +62,15 @@ reaches `inactive` by pressing face six *and* when its minute runs out), and the
 operation transition never satisfies a pending timer. Re-entry into the
 same state preserves matching pending timers by default; a self-transition may
 declare `resetsDuration: true` when the source says that action restarts the
-duration. Cross-state transitions always anchor the entered state's timers
-fresh. Timer effects and destruction attunement evidence are returned with
-the resolution. A round-based timer, a timer that would expire no later than the
+duration. A source-ambiguity reset is preserved by the engine until a campaign
+ruling selects an interpretation, and its ambiguity ID is returned on the
+transition result for the DM/campaign layer. Preserving is a provisional engine
+default pending campaign-ruling ownership, not a canonical reading of the
+source. Cross-state transitions always anchor the entered state's timers fresh.
+Timer effects and destruction attunement evidence are returned with the
+resolution. A round-based timer, a timer that would expire no later than the
 transition entering its state, a dice amount without seeded RNG, or any reset
 shape outside the implemented pack contract throws with the pack reference and
-leaves the transaction rolled back. A state-machine duration
-with no timer transition is left unscheduled and unexecuted until its importer
-finding is repaired. The executor never silently approximates unknown pack
-semantics.
+leaves the transaction rolled back. A state-machine duration with no timer
+transition is left unscheduled and unexecuted until its importer finding is
+repaired. The executor never silently approximates unknown pack semantics.

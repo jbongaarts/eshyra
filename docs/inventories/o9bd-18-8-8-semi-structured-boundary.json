@@ -9,10 +9,10 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1782,
+  "rowCount": 1793,
   "dispositionCounts": {
-    "complete": 382,
-    "model-adjudicated": 1199,
+    "complete": 383,
+    "model-adjudicated": 1209,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 2,
     "unsupported": 6
@@ -15954,6 +15954,194 @@
       "recordKinds": [
         "magic-item"
       ],
+      "fieldPath": "data.mechanics.ambiguities[].affects[]",
+      "representativeValues": [
+        "face-1 -> face-1 via press-face-1",
+        "face-2 -> face-2 via press-face-2",
+        "face-3 -> face-3 via press-face-3",
+        "face-4 -> face-4 via press-face-4",
+        "face-5 -> face-5 via press-face-5"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.ambiguities[].affects[]",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.ambiguities[].id",
+      "representativeValues": [
+        "ambiguity:cube-of-force-same-face-duration-reset"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.ambiguities[].id",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.ambiguities[].interpretations[].id",
+      "representativeValues": [
+        "same-face-resets",
+        "different-face-only-resets"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.ambiguities[].interpretations[].id",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.ambiguities[].interpretations[].summary",
+      "representativeValues": [
+        "Pressing the already-active face restates the barrier duration.",
+        "Only pressing a different face resets the barrier duration."
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.ambiguities[].interpretations[].summary",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.ambiguities[].question",
+      "representativeValues": [
+        "whether pressing the already-active face restates the barrier's one-minute duration"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.ambiguities[].question",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.ambiguities[].runtimeDisposition.owner",
+      "representativeValues": [
+        "campaign-ruling"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.ambiguities[].runtimeDisposition.owner",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.ambiguities[].runtimeDisposition.status",
+      "representativeValues": [
+        "engine-pending"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.ambiguities[].runtimeDisposition.status",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.ambiguities[].source[].clauseId",
+      "representativeValues": [
+        "barrier-duration",
+        "different-face-reset"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.ambiguities[].source[].clauseId",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.ambiguities[].source[].locator",
+      "representativeValues": [
+        "p. 215, barrier duration",
+        "p. 215, different-face reset"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.ambiguities[].source[].locator",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
       "fieldPath": "data.mechanics.containment.cells.environment",
       "representativeValues": [
         "infinite expanse of thick fog; visibility 10 feet"
@@ -25437,6 +25625,46 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; no deterministic consumer owns this qualifier",
       "currentAuditReadiness": "qualifier remains source/entry prose and is not claimed as typed gameplay support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.stateMachine.transitions[].resetsDuration.ambiguityId",
+      "representativeValues": [
+        "ambiguity:cube-of-force-same-face-duration-reset"
+      ],
+      "population": 5,
+      "valueClass": "identifier-like",
+      "currentSchemaValidation": "domain-specific mechanics schema validates the reference-bearing field",
+      "deterministicConsumers": "RulesAmbiguity.id availability/transition contract",
+      "currentAuditReadiness": "reference reachability and mechanics audits validate the declared target",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "domain-specific mechanics reference contract",
+      "retainedProseBoundary": null,
+      "owner": "mechanicsProjections.ts and the owning rules/audit domain",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "magic-item"
+      ],
+      "fieldPath": "data.mechanics.stateMachine.transitions[].resetsDuration.kind",
+      "representativeValues": [
+        "source-ambiguity"
+      ],
+      "population": 5,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.stateMachine.transitions[].resetsDuration.kind",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
