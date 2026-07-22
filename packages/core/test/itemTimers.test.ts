@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Rng } from '../src/orchestrator/rng.js';
 import {
   ItemTimerError,
   reconcileItemStateTimers,
@@ -92,6 +93,35 @@ describe('magic-item elapsed-world timers', () => {
       },
     ]);
     expect(reconcileItemStateTimers('inactive', [])).toEqual([]);
+    db.close();
+  });
+
+  it('preserves matching dice-defined timers without consuming RNG', () => {
+    const db = freshDbWithSession();
+    const preservedRolled = {
+      from: 'active',
+      to: 'inactive',
+      anchorElapsedMinutes: 2,
+      deadlineElapsedMinutes: 6,
+      amount: 4,
+      unit: 'minute' as const,
+      roll: { notation: '1d4', rolls: [4], total: 4 },
+    };
+    const throwingRng: Rng = {
+      nextInt: () => {
+        throw new Error('preserved timer must not roll');
+      },
+    };
+
+    const resolved = resolveItemStateTimers(
+      db,
+      'active',
+      [{ to: 'inactive', timer: { amount: '1d4', unit: 'minute' } }],
+      throwingRng,
+      { preserved: [preservedRolled] },
+    );
+
+    expect(resolved).toEqual([preservedRolled]);
     db.close();
   });
 
