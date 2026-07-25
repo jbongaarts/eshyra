@@ -1,0 +1,168 @@
+{
+  "status": "NON-AUTHORITATIVE",
+  "authoritativeLedger": "eshyra-o9bd.19.5.12",
+  "snapshotCommit": "4384f25",
+  "sources": [
+    "records.data.executionReadiness in the committed SRD pack",
+    "2026-07-06 execution-boundary, engine-coverage, rule-classification, and magic-item inventories",
+    "current @eshyra/core implementation and current open/closed beads",
+    "2026-07-24 accepted multi-model audit findings",
+    "source clauses identified by those findings but absent from current projection"
+  ],
+  "rows": [
+    {
+      "capabilityId": "engine:F1",
+      "requirement": "Eligibility predicates, condition relations, and seeded deterministic selection",
+      "discoveredBy": [
+        "readiness-artifacts",
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24"
+      ],
+      "packEvidence": "Generated query: records.data.executionReadiness.clauses[].engineHooks[].engine == engine:F1; rule and item inventories identify eligibility/selection hooks.",
+      "codeEvidence": "Condition relations and seeded selection primitives exist; the clause-wide provider-neutral execution contract is not yet certified.",
+      "owningBead": "eshyra-o9bd.19.5.2",
+      "ownershipStatus": "owned",
+      "notes": "Family owner is the existing Engine F1 epic; exact membership is deliberately query-derived."
+    },
+    {
+      "capabilityId": "engine:F2",
+      "requirement": "Activation and action-economy budgets, including legendary-action allowance and per-option cost",
+      "discoveredBy": [
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24",
+        "missing-source-clause"
+      ],
+      "packEvidence": "Generated query finds engine:F2 hooks in records.data.executionReadiness; the projected mechanics do not contain a legendary-action budget for every source clause.",
+      "codeEvidence": "packages/core/src/state/actionEconomy.ts models legendaryActionAllowance, usage, turn-window legality, and option costs.",
+      "owningBead": "eshyra-o9bd.19.5.3",
+      "ownershipStatus": "owned",
+      "notes": "Non-pack-only proof row: the legendary budget requirement is revealed by source/audit/code, not by projected mechanics alone."
+    },
+    {
+      "capabilityId": "engine:F3",
+      "requirement": "Concentration, active effects, duration termination, and controlled-entity lifecycle",
+      "discoveredBy": [
+        "readiness-artifacts",
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24"
+      ],
+      "packEvidence": "Generated query over data.executionReadiness engineHooks; creature and magic-item inventories identify concentration and entity-lifecycle clauses.",
+      "codeEvidence": "Active-effect and concentration state modules exist, but cross-record lifecycle conformance remains an engine capability requirement.",
+      "owningBead": "eshyra-o9bd.19.5.4",
+      "ownershipStatus": "owned",
+      "notes": "Includes summon/revert/termination timing where the source clause makes it executable."
+    },
+    {
+      "capabilityId": "engine:F4",
+      "requirement": "Canonical spell execution with caster-of-record, slot gate, and upcast semantics",
+      "discoveredBy": [
+        "readiness-artifacts",
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24",
+        "missing-source-clause"
+      ],
+      "packEvidence": "Generated query over data.executionReadiness engineHooks; the audit names shallow spell procedures and higher-level alternatives.",
+      "codeEvidence": "Spell-slot and spellcasting derivation code exists; canonical caster/tool execution is not a complete reference-engine contract.",
+      "owningBead": "eshyra-o9bd.19.5.5",
+      "ownershipStatus": "owned",
+      "notes": "The owner is the existing Engine F4 family epic, not the historically same-numbered 2n1t bead."
+    },
+    {
+      "capabilityId": "engine:F5",
+      "requirement": "Item-instance use, charges, cooldowns, attunement, curse, and persistent state",
+      "discoveredBy": [
+        "readiness-artifacts",
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24"
+      ],
+      "packEvidence": "Generated query over data.executionReadiness engineHooks; magic-item inventory separates usage economies from persistent state and attunement.",
+      "codeEvidence": "magicItemMechanics.ts, item state, custody, attunement, and usage-counter paths implement substantial primitives.",
+      "owningBead": "eshyra-o9bd.19.5.6",
+      "ownershipStatus": "owned",
+      "notes": "Exact clause ownership must be generated from the clause-complete corpus later."
+    },
+    {
+      "capabilityId": "engine:F6",
+      "requirement": "Hit points, healing, temporary HP, conditions, curses, death, dying, and suffocation lifecycle",
+      "discoveredBy": [
+        "readiness-artifacts",
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24",
+        "missing-source-clause"
+      ],
+      "packEvidence": "Generated query over data.executionReadiness engineHooks; amended audit findings include ongoing damage and half-damage branches that require lifecycle state.",
+      "codeEvidence": "HP, condition, death/dying, and temporary-HP state paths exist; complete clause-driven conformance is still owned by this family.",
+      "owningBead": "eshyra-o9bd.19.5.7",
+      "ownershipStatus": "owned",
+      "notes": "Suffocation and recurring damage are included as lifecycle requirements when their source clauses are deterministic."
+    },
+    {
+      "capabilityId": "engine:F7",
+      "requirement": "Rest, elapsed time, duration counters, reset orchestration, and planar-return clocks",
+      "discoveredBy": [
+        "readiness-artifacts",
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24"
+      ],
+      "packEvidence": "Generated query over data.executionReadiness engineHooks; rule and magic-item inventories identify dawn, rest, duration, and cooldown triggers.",
+      "codeEvidence": "Clock, rest, timer, and reset orchestration primitives exist but require clause-level reference-engine coverage.",
+      "owningBead": "eshyra-o9bd.19.5.8",
+      "ownershipStatus": "owned",
+      "notes": "Reset triggers are represented as semantic procedures, not copied totals."
+    },
+    {
+      "capabilityId": "engine:F8",
+      "requirement": "Checks, saves, attacks, DCs, proficiency, and derived modifiers",
+      "discoveredBy": [
+        "readiness-artifacts",
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24",
+        "missing-source-clause"
+      ],
+      "packEvidence": "Generated query over data.executionReadiness engineHooks; multi-save entries and save-dependent outcomes are explicit amended audit gaps.",
+      "codeEvidence": "Dice, checks, saves, attack resolution, and character-derived modifiers exist, with multi-save and source-qualifier coverage still required.",
+      "owningBead": "eshyra-o9bd.19.5.9",
+      "ownershipStatus": "owned",
+      "notes": "The requirement is the full structured outcome, not merely presence of a DC field."
+    },
+    {
+      "capabilityId": "engine:F9",
+      "requirement": "Geometry, targeting, point-origin areas, damage alternatives, riders, half-damage branches, movement, contests, and object interaction",
+      "discoveredBy": [
+        "readiness-artifacts",
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24",
+        "missing-source-clause"
+      ],
+      "packEvidence": "Generated query over data.executionReadiness engineHooks; current inventories identify geometry and derived-math hooks but not every source branch.",
+      "codeEvidence": "Dice and derived math exist; complete geometry, rider, alternative, and object-damage execution is not certified.",
+      "owningBead": "eshyra-o9bd.19.5.10",
+      "ownershipStatus": "owned",
+      "notes": "Missing-source examples include point-origin geometry, rider damage, half-damage success branches, and pit variants."
+    },
+    {
+      "capabilityId": "engine:F10",
+      "requirement": "Downtime, currency, inventory, XP, property, and deterministic asset creation",
+      "discoveredBy": [
+        "readiness-artifacts",
+        "current-code",
+        "current-beads",
+        "audit-2026-07-24"
+      ],
+      "packEvidence": "Generated query over data.executionReadiness engineHooks; the 2026-07-06 boundary inventory routes economy and asset procedures to F10.",
+      "codeEvidence": "Currency and character progression modules exist; a DM-facing canonical tool surface and complete asset procedure remain capability work.",
+      "owningBead": "eshyra-o9bd.19.5.11",
+      "ownershipStatus": "owned",
+      "notes": "Includes equipment/property arithmetic only where a source clause requires deterministic mutation."
+    }
+  ]
+}
