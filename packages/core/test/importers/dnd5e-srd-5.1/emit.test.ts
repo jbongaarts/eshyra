@@ -337,7 +337,7 @@ describe('buildPack — validation', () => {
       .map((r) => r.key);
     expect(ruleKeys).toEqual(['rule:cover']);
     const cover = pack.records.find((r) => r.key === 'rule:cover');
-    expect((cover?.data as Record<string, unknown>).text).toMatch(
+    expect((cover?.data as Record<string, unknown>)?.text).toMatch(
       /provide cover during combat/i,
     );
     expect(pack.meta.description).toMatch(

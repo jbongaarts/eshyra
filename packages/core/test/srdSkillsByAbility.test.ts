@@ -51,7 +51,7 @@ describe('rule:skills — skillsByAbility', () => {
   it('resolves every one of the 18 canonical SRD skills to exactly one ability', () => {
     const byAbility = (
       rulesSkills?.data as { skillsByAbility: Record<string, string[]> }
-    ).skillsByAbility;
+    )?.skillsByAbility;
     const owners = new Map<string, string>();
     for (const [ability, skills] of Object.entries(byAbility)) {
       for (const skill of skills) {
@@ -69,7 +69,7 @@ describe('rule:skills — skillsByAbility', () => {
     // The SRD's operative statement of what skill proficiency does, printed
     // after the final Charisma bullet: it must survive the excluded bullet
     // captions and land back in rule:skills.
-    const text = String((rulesSkills?.data as { text?: unknown }).text);
+    const text = String((rulesSkills?.data as { text?: unknown })?.text);
     expect(text).toContain(
       'proficiency in a skill means an individual can add his or her proficiency bonus to ability checks that involve that skill',
     );

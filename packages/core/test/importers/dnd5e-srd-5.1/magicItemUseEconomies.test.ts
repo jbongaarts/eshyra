@@ -73,7 +73,7 @@ describe('magic-item C1 non-charge use economies', () => {
                 magicItems.find((record) => record.name === name)?.data as {
                   variants: readonly MagicItemVariant[];
                 }
-              ).variants.find(
+              )?.variants.find(
                 (variant) => variant.name === 'Crystal Ball of Telepathy',
               ) as MagicItemVariant,
             )
@@ -108,7 +108,7 @@ describe('magic-item C1 non-charge use economies', () => {
       magicItems.find((record) => record.name === 'Crystal Ball')?.data as {
         variants: readonly MagicItemVariant[];
       }
-    ).variants;
+    )?.variants;
     expect(projectMagicItemUseEconomies(named('Crystal Ball'))).toBeUndefined();
     expect(
       variants.map((variant) =>

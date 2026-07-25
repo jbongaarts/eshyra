@@ -222,36 +222,35 @@ describe('E5 epic verification', () => {
       category: 'death_save',
       expected: 'Death save (death save)',
     },
-  ] as const)('surfaces $reason rolls in final narration', async ({
-    reason,
-    category,
-    expected,
-  }) => {
-    const db = freshDbWithSession({
-      campaignId: CAMPAIGN,
-      sessionId: SESSION,
-    });
-    openCurrentScene(db);
-    const model = new ScriptedModel([
-      toolCall('roll', {
-        dice: '1d20+3',
-        reason,
-        visibility: 'player_visible',
-        category,
-      }),
-      'The exchange resolves.',
-    ]);
+  ] as const)(
+    'surfaces $reason rolls in final narration',
+    async ({ reason, category, expected }) => {
+      const db = freshDbWithSession({
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+      });
+      openCurrentScene(db);
+      const model = new ScriptedModel([
+        toolCall('roll', {
+          dice: '1d20+3',
+          reason,
+          visibility: 'player_visible',
+          category,
+        }),
+        'The exchange resolves.',
+      ]);
 
-    const result = await runTurn(
-      { db, model, registry: createDefaultToolRegistry() },
-      baseInput({ seed: 9090 }),
-    );
+      const result = await runTurn(
+        { db, model, registry: createDefaultToolRegistry() },
+        baseInput({ seed: 9090 }),
+      );
 
-    expect(result.ok).toBe(true);
-    expect(result.narration).toContain('Rolls:');
-    expect(result.narration).toContain(expected);
-    db.close();
-  });
+      expect(result.ok).toBe(true);
+      expect(result.narration).toContain('Rolls:');
+      expect(result.narration).toContain(expected);
+      db.close();
+    },
+  );
 
   it('does not surface hidden ambush checks in final narration', async () => {
     const db = freshDbWithSession({

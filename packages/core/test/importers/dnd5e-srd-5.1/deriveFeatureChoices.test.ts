@@ -86,7 +86,7 @@ function featureChoices(
   key: string,
 ): Array<Record<string, unknown>> {
   const feature = records.find((r) => r.key === key);
-  const choices = (feature?.data as { choices?: unknown }).choices;
+  const choices = (feature?.data as { choices?: unknown })?.choices;
   return Array.isArray(choices)
     ? (choices as Array<Record<string, unknown>>)
     : [];

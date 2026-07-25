@@ -1644,7 +1644,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         expect(record?.kind).toBe('rule');
         expect(record?.source).toBe(`SRD 5.1 ${expected.page}`);
         expect(record?.provenance?.locator).toBe(expected.page);
-        expect((record?.data as { text?: string }).text).toContain(
+        expect((record?.data as { text?: string })?.text).toContain(
           expected.text,
         );
       }
@@ -1746,21 +1746,21 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         expect(record, `expected ${key} in the committed pack`).toBeDefined();
         expect(record?.kind).toBe('rule');
         expect(record?.name).toBe(name);
-        const text = String((record?.data as { text?: unknown }).text ?? '');
+        const text = String((record?.data as { text?: unknown })?.text ?? '');
         expect(text, `${key} sentinel`).toContain(sentinel);
       }
     });
 
     it('does not let the Feats/Conditions intros absorb their first child entry', () => {
       const feats = pack.records.find((r) => r.key === 'rule:feats');
-      const featsText = String((feats?.data as { text?: unknown }).text ?? '');
+      const featsText = String((feats?.data as { text?: unknown })?.text ?? '');
       // The Grappler feat is its own `feat:grappler` record, not part of the
       // general feats rule.
       expect(featsText).not.toContain('You’ve developed the skills necessary');
 
       const conditions = pack.records.find((r) => r.key === 'rule:conditions');
       const conditionsText = String(
-        (conditions?.data as { text?: unknown }).text ?? '',
+        (conditions?.data as { text?: unknown })?.text ?? '',
       );
       // The 15 individual conditions are their own records; the general rule
       // stops at the first condition heading.
@@ -1771,7 +1771,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (r) => r.key === 'rule:magic-items-a-z',
       );
       const magicItemsAzText = String(
-        (magicItemsAz?.data as { text?: unknown }).text ?? '',
+        (magicItemsAz?.data as { text?: unknown })?.text ?? '',
       );
       // The 240 individual magic items remain their own records; the A-Z intro
       // stops at the first item heading.
@@ -1781,7 +1781,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (r) => r.key === 'rule:sample-traps',
       );
       const sampleTrapsText = String(
-        (sampleTraps?.data as { text?: unknown }).text ?? '',
+        (sampleTraps?.data as { text?: unknown })?.text ?? '',
       );
       // The 8 sample traps remain hazard records; the group intro stops at the
       // first trap heading.
@@ -2011,7 +2011,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(rule?.kind).toBe('rule');
       expect(rule?.name).toBe('Appendix MM-A: Miscellaneous Creatures');
       expect(rule?.source).toBe('SRD 5.1 p. 366');
-      const text = String((rule?.data as { text?: unknown }).text ?? '');
+      const text = String((rule?.data as { text?: unknown })?.text ?? '');
       expect(text).toContain(
         'This appendix contains statistics for various animals, vermin, and other critters.',
       );
@@ -2212,7 +2212,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (record) => record.key === 'subclass:oath-of-devotion',
       );
       const spellTableRefs = (oath?.data as { spellTableRefs?: unknown })
-        .spellTableRefs;
+        ?.spellTableRefs;
       expect(Array.isArray(spellTableRefs)).toBe(true);
       expect(spellTableRefs).toContain('table:oath-of-devotion-spells');
     });
@@ -2221,7 +2221,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const text = (key: string): string => {
         const record = pack.records.find((candidate) => candidate.key === key);
         expect(record, `expected ${key}`).toBeDefined();
-        return (record?.data as { text: string }).text;
+        return (record?.data as { text: string })?.text;
       };
       const oath = text('rule:oath-of-devotion-oath-spells');
       expect(oath).toContain(
@@ -2370,12 +2370,12 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const record = byKey.get(key);
       expect(record, `expected ${key} in the committed pack`).toBeDefined();
       const description = (record?.data as { description?: unknown })
-        .description;
+        ?.description;
       expect(typeof description).toBe('string');
       return description as string;
     };
     const levelOf = (key: string): unknown =>
-      (byKey.get(key)?.data as { level?: unknown }).level;
+      (byKey.get(key)?.data as { level?: unknown })?.level;
 
     const SETUP_LABEL = /\b(?:Armor|Weapons|Tools|Saving Throws|Skills):/;
 
@@ -2537,9 +2537,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     const features = pack.records.filter((record) => record.kind === 'feature');
     const byKey = new Map(features.map((record) => [record.key, record]));
     const levelOf = (key: string): unknown =>
-      (byKey.get(key)?.data as { level?: unknown }).level;
+      (byKey.get(key)?.data as { level?: unknown })?.level;
     const descOf = (key: string): string =>
-      (byKey.get(key)?.data as { description?: unknown }).description as string;
+      (byKey.get(key)?.data as { description?: unknown })
+        ?.description as string;
 
     it('emits Fighter Indomitable under its canonical heading at its earliest grant', () => {
       expect(byKey.has('feature:fighter:indomitable')).toBe(true);
@@ -2596,9 +2597,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     const features = pack.records.filter((record) => record.kind === 'feature');
     const byKey = new Map(features.map((record) => [record.key, record]));
     const levelOf = (key: string): unknown =>
-      (byKey.get(key)?.data as { level?: unknown }).level;
+      (byKey.get(key)?.data as { level?: unknown })?.level;
     const descOf = (key: string): string =>
-      (byKey.get(key)?.data as { description?: unknown }).description as string;
+      (byKey.get(key)?.data as { description?: unknown })
+        ?.description as string;
 
     it('emits College of Lore Bonus Proficiencies at its 3rd-level entry grant', () => {
       expect(byKey.has('feature:college-of-lore:bonus-proficiencies')).toBe(
@@ -2724,7 +2726,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (r) => r.key === 'table:draconic-ancestry',
       );
       expect(linked?.kind).toBe('table');
-      expect((linked?.data as { rows: unknown[] }).rows).toHaveLength(10);
+      expect((linked?.data as { rows: unknown[] })?.rows).toHaveLength(10);
     });
 
     it('every ancestry trait that names an option table carries a tableRefs link', () => {
@@ -3967,7 +3969,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       );
       expect(burglars?.data).toMatchObject({ category: 'pack', cost: '16 gp' });
       const description = (burglars?.data as { description?: unknown })
-        .description;
+        ?.description;
       expect(typeof description).toBe('string');
       expect(description).toContain('Includes a backpack');
       expect(description).toContain('strapped to the side of it');
@@ -3977,7 +3979,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const description = (key: string): string => {
         const record = pack.records.find((candidate) => candidate.key === key);
         expect(record, `expected ${key}`).toBeDefined();
-        return (record?.data as { description: string }).description;
+        return (record?.data as { description: string })?.description;
       };
       expect(description('equipment:acid-vial')).toContain('2d6 acid damage');
       expect(description('equipment:alchemists-fire-flask')).toContain(
@@ -4053,7 +4055,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (record) => record.key === 'spell:hunters-mark',
       );
       expect(huntersMark?.name).toBe('Hunter’s Mark');
-      expect((huntersMark?.data as { classes?: unknown }).classes).toEqual([
+      expect((huntersMark?.data as { classes?: unknown })?.classes).toEqual([
         'Ranger',
       ]);
     });
@@ -4129,7 +4131,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     function refsFor(spellKey: string): readonly string[] {
       const spell = pack.records.find((record) => record.key === spellKey);
       expect(spell, `expected ${spellKey} in the committed pack`).toBeDefined();
-      return (spell?.data as { tableRefs?: readonly string[] }).tableRefs ?? [];
+      return (
+        (spell?.data as { tableRefs?: readonly string[] })?.tableRefs ?? []
+      );
     }
 
     it('links every affected spell to its exact embedded table set', () => {
@@ -4187,7 +4191,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (record) => record.key === 'spell:animate-objects',
       );
       const description = (animateObjects?.data as { description?: string })
-        .description;
+        ?.description;
       // Authored prose is preserved on both sides of where the table sat.
       expect(description).toContain('Objects come to life at your command.');
       expect(description).toContain(
@@ -4198,7 +4202,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(description).not.toContain('Animated Object Statistics');
       expect(description).not.toContain('Tiny 20 18');
       expect(
-        (animateObjects?.data as { tableRefs?: readonly string[] }).tableRefs,
+        (animateObjects?.data as { tableRefs?: readonly string[] })?.tableRefs,
       ).toContain('table:animated-object-statistics');
     });
   });
@@ -4257,7 +4261,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           tableRecord('table:necklace-of-prayer-beads')?.data as {
             rows: unknown[][];
           }
-        ).rows,
+        )?.rows,
       ).toContainEqual(['20', 'Wind walking', 'Wind walk']);
       expect(tableRecord('table:deck-of-many-things')?.data).toMatchObject({
         columns: ['Playing Card', 'Card'],
@@ -4364,7 +4368,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
   describe('Monsters family taxonomy (eshyra-4a7.10.2)', () => {
     function familyPath(key: string): readonly string[] | undefined {
       const record = pack.records.find((candidate) => candidate.key === key);
-      return (record?.data as { familyPath?: readonly string[] }).familyPath;
+      return (record?.data as { familyPath?: readonly string[] })?.familyPath;
     }
 
     it('emits ordinary, multi-member, nested-dragon, and late family paths', () => {
@@ -4447,7 +4451,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       });
       // Boundary guard: the slice is truncated before the first NPC stat block
       // ("Acolyte"), so none of its stat-block lines may appear in the body.
-      const text = (rule?.data as { text?: string }).text ?? '';
+      const text = (rule?.data as { text?: string })?.text ?? '';
       expect(text).not.toContain('Acolyte');
       expect(text).not.toContain('Armor Class 10');
       expect(text).not.toContain('Challenge 1/4');
@@ -4470,7 +4474,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const owner = (key: string) => {
         const record = pack.records.find((candidate) => candidate.key === key);
         expect(record, `expected ${key} in the committed pack`).toBeDefined();
-        return (record?.data as { tableRefs?: string[] }).tableRefs;
+        return (record?.data as { tableRefs?: string[] })?.tableRefs;
       };
       // Single-table magic item and a 1:1 economy rule.
       expect(owner('magic-item:wand-of-wonder')).toEqual([
@@ -4499,7 +4503,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const owner = (key: string) => {
         const record = pack.records.find((candidate) => candidate.key === key);
         expect(record, `expected ${key} in the committed pack`).toBeDefined();
-        return (record?.data as { tableRefs?: string[] }).tableRefs;
+        return (record?.data as { tableRefs?: string[] })?.tableRefs;
       };
       // Multiclassing rules name their table verbatim in prose.
       expect(owner('rule:prerequisites')).toEqual([
@@ -4551,7 +4555,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const owner = (key: string) => {
         const record = pack.records.find((candidate) => candidate.key === key);
         expect(record, `expected ${key} in the committed pack`).toBeDefined();
-        return (record?.data as { tableRefs?: string[] }).tableRefs;
+        return (record?.data as { tableRefs?: string[] })?.tableRefs;
       };
       // Each pantheon rule owns its deity table.
       expect(owner('rule:the-celtic-pantheon')).toEqual([
@@ -4577,7 +4581,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const refsFor = (key: string) => {
         const record = pack.records.find((candidate) => candidate.key === key);
         expect(record, `expected ${key} in the committed pack`).toBeDefined();
-        return (record?.data as { tableRefs?: string[] }).tableRefs;
+        return (record?.data as { tableRefs?: string[] })?.tableRefs;
       };
 
       expect(SRD_5_1_TABLE_ADDITIONAL_REFERRERS).toEqual({
@@ -4983,7 +4987,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['91–100', 'The character falls unconscious.'],
         ]),
       });
-      expect((shortTerm?.data as { rows: unknown[] }).rows).toHaveLength(10);
+      expect((shortTerm?.data as { rows: unknown[] })?.rows).toHaveLength(10);
       expect(shortTerm?.provenance.locator).toBe('p. 201');
 
       expect(longTerm?.data).toMatchObject({
@@ -4992,14 +4996,14 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['91–95', 'The character loses the ability to speak.'],
         ]),
       });
-      expect((longTerm?.data as { rows: unknown[] }).rows).toHaveLength(12);
+      expect((longTerm?.data as { rows: unknown[] })?.rows).toHaveLength(12);
       expect(longTerm?.provenance.locator).toBe('p. 201');
 
       expect(indefinite?.data).toMatchObject({
         columns: ['d100', 'Flaw'],
         rows: expect.arrayContaining([['16–25', '“I keep whatever I find.”']]),
       });
-      expect((indefinite?.data as { rows: unknown[] }).rows).toHaveLength(12);
+      expect((indefinite?.data as { rows: unknown[] })?.rows).toHaveLength(12);
       expect(indefinite?.provenance.locator).toBe('p. 202');
     });
 
@@ -5025,7 +5029,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ]),
         },
       });
-      expect((armorClass?.data as { rows: unknown[] }).rows).toHaveLength(7);
+      expect((armorClass?.data as { rows: unknown[] })?.rows).toHaveLength(7);
       expect(armorClass?.provenance.locator).toBe('p. 203');
 
       const hitPoints = table('table:object-hit-points');
@@ -5047,7 +5051,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ]),
         },
       });
-      expect((hitPoints?.data as { rows: unknown[] }).rows).toHaveLength(4);
+      expect((hitPoints?.data as { rows: unknown[] })?.rows).toHaveLength(4);
       expect(hitPoints?.provenance.locator).toBe('p. 203');
     });
 
@@ -5061,7 +5065,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           [355000, 20, '+6'],
         ]),
       });
-      expect((advancement?.data as { rows: unknown[] }).rows).toHaveLength(20);
+      expect((advancement?.data as { rows: unknown[] })?.rows).toHaveLength(20);
       expect(advancement?.provenance.locator).toBe('p. 56');
 
       const prerequisites = table('table:multiclassing-prerequisites');
@@ -5072,7 +5076,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Monk', 'Dexterity 13 and Wisdom 13'],
         ]),
       });
-      expect((prerequisites?.data as { rows: unknown[] }).rows).toHaveLength(
+      expect((prerequisites?.data as { rows: unknown[] })?.rows).toHaveLength(
         12,
       );
       expect(prerequisites?.provenance.locator).toBe('p. 56');
@@ -5090,7 +5094,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Sorcerer', '—'],
         ]),
       });
-      expect((proficiencies?.data as { rows: unknown[] }).rows).toHaveLength(
+      expect((proficiencies?.data as { rows: unknown[] })?.rows).toHaveLength(
         12,
       );
       expect(proficiencies?.provenance.locator).toBe('p. 57');
@@ -5112,7 +5116,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ]),
         },
       });
-      expect((standard?.data as { rows: unknown[] }).rows).toHaveLength(8);
+      expect((standard?.data as { rows: unknown[] })?.rows).toHaveLength(8);
       expect(standard?.provenance.locator).toBe('p. 59');
 
       const exotic = table('table:exotic-languages');
@@ -5135,7 +5139,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ]),
         },
       });
-      expect((exotic?.data as { rows: unknown[] }).rows).toHaveLength(8);
+      expect((exotic?.data as { rows: unknown[] })?.rows).toHaveLength(8);
       expect(exotic?.provenance.locator).toBe('p. 59');
     });
 
@@ -5167,7 +5171,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['20th', 4, 3, 3, 3, 3, 2, 2, 1, 1],
         ]),
       });
-      expect((slots?.data as { rows: unknown[] }).rows).toHaveLength(20);
+      expect((slots?.data as { rows: unknown[] })?.rows).toHaveLength(20);
       expect(slots?.provenance.locator).toBe('p. 58');
     });
 
@@ -5180,7 +5184,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Copper (cp)', '1', '1/10', '1/50', '1/100', '1/1,000'],
         ]),
       });
-      expect((exchange?.data as { rows: unknown[] }).rows).toHaveLength(5);
+      expect((exchange?.data as { rows: unknown[] })?.rows).toHaveLength(5);
       expect(exchange?.provenance.locator).toBe('p. 62');
 
       const trade = table('table:trade-goods');
@@ -5191,7 +5195,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['500 gp', '1 lb. of platinum'],
         ]),
       });
-      expect((trade?.data as { rows: unknown[] }).rows).toHaveLength(13);
+      expect((trade?.data as { rows: unknown[] })?.rows).toHaveLength(13);
       expect(trade?.provenance.locator).toBe('p. 72');
 
       const lifestyle = table('table:lifestyle-expenses');
@@ -5204,7 +5208,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Aristocratic', '10 gp minimum'],
         ]),
       });
-      expect((lifestyle?.data as { rows: unknown[] }).rows).toHaveLength(7);
+      expect((lifestyle?.data as { rows: unknown[] })?.rows).toHaveLength(7);
       expect(lifestyle?.provenance.locator).toBe('p. 72');
 
       const food = table('table:food-drink-and-lodging');
@@ -5219,7 +5223,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Wine, fine (bottle)', '10 gp'],
         ]),
       });
-      expect((food?.data as { rows: unknown[] }).rows).toHaveLength(20);
+      expect((food?.data as { rows: unknown[] })?.rows).toHaveLength(20);
       expect(food?.provenance.locator).toBe('p. 73');
 
       const services = table('table:services');
@@ -5231,7 +5235,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Messenger', '2 cp per mile'],
         ]),
       });
-      expect((services?.data as { rows: unknown[] }).rows).toHaveLength(7);
+      expect((services?.data as { rows: unknown[] })?.rows).toHaveLength(7);
       expect(services?.provenance.locator).toBe('p. 74');
     });
 
@@ -5248,7 +5252,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Gargantuan', '20 by 20 ft. or larger', 'Kraken, purple worm'],
         ]),
       });
-      expect((sizes?.data as { rows: unknown[] }).rows).toHaveLength(6);
+      expect((sizes?.data as { rows: unknown[] })?.rows).toHaveLength(6);
       expect(sizes?.provenance.locator).toBe('p. 254');
 
       const hitDice = table('table:hit-dice-by-size');
@@ -5260,7 +5264,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Gargantuan', 'd20', '10½'],
         ]),
       });
-      expect((hitDice?.data as { rows: unknown[] }).rows).toHaveLength(6);
+      expect((hitDice?.data as { rows: unknown[] })?.rows).toHaveLength(6);
       expect(hitDice?.provenance.locator).toBe('p. 256');
 
       // The two paired-column tables print two logical rows per physical
@@ -5276,7 +5280,8 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['30', '+9'],
         ]),
       });
-      const proficiencyRows = (proficiency?.data as { rows: unknown[][] }).rows;
+      const proficiencyRows = (proficiency?.data as { rows: unknown[][] })
+        ?.rows;
       expect(proficiencyRows).toHaveLength(34);
       // Left pair (CR 0-13) precedes right pair (CR 14-30) in order.
       expect(proficiencyRows[0]).toEqual(['0', '+2']);
@@ -5297,7 +5302,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['30', '155,000'],
         ]),
       });
-      const xpRows = (xp?.data as { rows: unknown[][] }).rows;
+      const xpRows = (xp?.data as { rows: unknown[][] })?.rows;
       expect(xpRows).toHaveLength(34);
       expect(xpRows[0]).toEqual(['0', '0 or 10']);
       expect(xpRows[17]).toEqual(['14', '11,500']);
@@ -5321,7 +5326,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['30', '+10'],
         ]),
       });
-      expect((modifiers?.data as { rows: unknown[] }).rows).toHaveLength(16);
+      expect((modifiers?.data as { rows: unknown[] })?.rows).toHaveLength(16);
       expect(modifiers?.provenance.locator).toBe('p. 76');
 
       // Travel Pace rows span three extracted lines each (numeric row, the
@@ -5392,7 +5397,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         },
       });
       expect(
-        (ancestry?.data as { projection?: { rows?: unknown[] } }).projection
+        (ancestry?.data as { projection?: { rows?: unknown[] } })?.projection
           ?.rows,
       ).toHaveLength(10);
       // eshyra-lpk9: the table's page-5 caption is followed by Dragonborn
@@ -5408,10 +5413,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['White', 'Cold'],
         ]),
       });
-      expect((bloodline?.data as { projection?: unknown }).projection).toBe(
+      expect((bloodline?.data as { projection?: unknown })?.projection).toBe(
         undefined,
       );
-      expect((bloodline?.data as { rows: unknown[] }).rows).toHaveLength(10);
+      expect((bloodline?.data as { rows: unknown[] })?.rows).toHaveLength(10);
       expect(bloodline?.provenance.locator).toBe('p. 44');
     });
 
@@ -5436,7 +5441,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['20th', '+6', 'Primal Champion', 'Unlimited', '+4'],
         ]),
       });
-      expect((barbarian?.data as { rows: unknown[] }).rows).toHaveLength(20);
+      expect((barbarian?.data as { rows: unknown[] })?.rows).toHaveLength(20);
       expect(barbarian?.provenance.locator).toBe('p. 8');
     });
 
@@ -5698,7 +5703,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
 
     it('projects price and service tables to copper-normalized rows (eshyra-o9bd.7.1)', () => {
       const exchange = table('table:standard-exchange-rates');
-      expect((exchange?.data as { projection?: unknown }).projection).toEqual({
+      expect((exchange?.data as { projection?: unknown })?.projection).toEqual({
         kind: 'coinExchangeRates',
         rows: [
           { coin: 'cp', valueInCopper: 1 },
@@ -5711,7 +5716,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
 
       const trade = table('table:trade-goods');
       expect(
-        (trade?.data as { projection: { rows: unknown[] } }).projection.rows,
+        (trade?.data as { projection: { rows: unknown[] } })?.projection.rows,
       ).toEqual(
         expect.arrayContaining([
           {
@@ -5725,7 +5730,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
 
       const food = table('table:food-drink-and-lodging');
       expect(
-        (food?.data as { projection: { rows: unknown[] } }).projection.rows,
+        (food?.data as { projection: { rows: unknown[] } })?.projection.rows,
       ).toEqual(
         expect.arrayContaining([
           { item: 'Ale, mug', cost: '4 cp', costCopper: 4 },
@@ -5736,7 +5741,8 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // Services carry a parsed pay unit (flat / per mile / per day).
       const services = table('table:services');
       expect(
-        (services?.data as { projection: { rows: unknown[] } }).projection.rows,
+        (services?.data as { projection: { rows: unknown[] } })?.projection
+          .rows,
       ).toEqual(
         expect.arrayContaining([
           {
@@ -5757,7 +5763,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // Lifestyle Wretched is free ("—"); Aristocratic is a minimum.
       const lifestyle = table('table:lifestyle-expenses');
       expect(
-        (lifestyle?.data as { projection: { rows: unknown[] } }).projection
+        (lifestyle?.data as { projection: { rows: unknown[] } })?.projection
           .rows,
       ).toEqual(
         expect.arrayContaining([
@@ -5779,7 +5785,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
 
     it('projects subclass spell tables to level/spell-list rows (eshyra-o9bd.7.3)', () => {
       const fiend = table('table:fiend-expanded-spells');
-      expect((fiend?.data as { projection?: unknown }).projection).toEqual({
+      expect((fiend?.data as { projection?: unknown })?.projection).toEqual({
         kind: 'subclassSpellGrants',
         rows: [
           { level: 1, spells: ['burning hands', 'command'] },
@@ -5795,7 +5801,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const swamp = table('table:circle-of-the-land-swamp');
       expect(
         (swamp?.data as { projection: { kind: string; rows: unknown[] } })
-          .projection,
+          ?.projection,
       ).toMatchObject({
         kind: 'subclassSpellGrants',
         rows: expect.arrayContaining([
@@ -5807,7 +5813,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const lifeDomain = table('table:life-domain-spells');
       expect(
         (lifeDomain?.data as { projection: { rows: { level: number }[] } })
-          .projection.rows[0],
+          ?.projection.rows[0],
       ).toEqual({ level: 1, spells: ['bless', 'cure wounds'] });
     });
 
@@ -5822,7 +5828,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // both conventions so a future change that fabricates or drops a dash
       // fails loudly. (Raised in PR #205 review.)
       const rowsOf = (key: string) =>
-        (table(key)?.data as { rows: string[][] }).rows;
+        (table(key)?.data as { rows: string[][] })?.rows;
 
       // --- genuine source em dashes are preserved verbatim ---
       // Monk L1: no Ki Points, no Unarmored Movement bonus yet.
@@ -5902,7 +5908,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['9th', 'mass cure wounds, raise dead'],
         ]),
       });
-      expect((life?.data as { rows: unknown[] }).rows).toHaveLength(5);
+      expect((life?.data as { rows: unknown[] })?.rows).toHaveLength(5);
 
       // The Desert circle's 5th-level spells cell wraps across two extracted
       // lines ("protection from / energy") and must re-join.
@@ -5914,14 +5920,14 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['5th', 'create food and water, protection from energy'],
         ]),
       });
-      expect((desert?.data as { rows: unknown[] }).rows).toHaveLength(4);
+      expect((desert?.data as { rows: unknown[] })?.rows).toHaveLength(4);
 
       const fiend = table('table:fiend-expanded-spells');
       expect(fiend?.data).toMatchObject({
         columns: ['Spell Level', 'Spells'],
         rows: expect.arrayContaining([['1st', 'burning hands, command']]),
       });
-      expect((fiend?.data as { rows: unknown[] }).rows).toHaveLength(5);
+      expect((fiend?.data as { rows: unknown[] })?.rows).toHaveLength(5);
     });
 
     it('pins the Sorcerer Creating Spell Slots table (eshyra-4a7.3)', () => {
@@ -5957,10 +5963,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       });
       expect(gray?.provenance.locator).toBe('p. 210');
       expect(
-        (table('table:rust-bag-of-tricks')?.data as { rows: unknown[] }).rows,
+        (table('table:rust-bag-of-tricks')?.data as { rows: unknown[] })?.rows,
       ).toHaveLength(8);
       expect(
-        (table('table:tan-bag-of-tricks')?.data as { rows: unknown[] }).rows,
+        (table('table:tan-bag-of-tricks')?.data as { rows: unknown[] })?.rows,
       ).toHaveLength(8);
 
       // Caption-less variety tables named after their owning items; the two
@@ -5973,7 +5979,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Storm giant', 29, 'Legendary'],
         ]),
       });
-      expect((belt?.data as { rows: unknown[] }).rows).toHaveLength(5);
+      expect((belt?.data as { rows: unknown[] })?.rows).toHaveLength(5);
 
       const potion = table('table:potion-of-giant-strength');
       expect(potion?.data).toMatchObject({
@@ -5983,7 +5989,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           ['Storm giant', 29, 'Legendary'],
         ]),
       });
-      expect((potion?.data as { rows: unknown[] }).rows).toHaveLength(5);
+      expect((potion?.data as { rows: unknown[] })?.rows).toHaveLength(5);
 
       const healing = table('table:potions-of-healing');
       expect(healing?.data).toMatchObject({
@@ -6003,7 +6009,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       // and following cell lines re-join into the effect cell.
       const beans = table('table:bag-of-beans');
       expect(beans?.data).toMatchObject({ columns: ['d100', 'Effect'] });
-      const beanRows = (beans?.data as { rows: [string, string][] }).rows;
+      const beanRows = (beans?.data as { rows: [string, string][] })?.rows;
       expect(beanRows).toHaveLength(12);
       expect(beanRows.map((row) => row[0])).toEqual([
         '01',
@@ -6027,14 +6033,14 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
 
       const robe = table('table:robe-of-useful-items');
       expect(robe?.data).toMatchObject({ columns: ['d100', 'Patch'] });
-      const robeRows = (robe?.data as { rows: [string, string][] }).rows;
+      const robeRows = (robe?.data as { rows: [string, string][] })?.rows;
       expect(robeRows).toHaveLength(13);
       expect(robeRows[0]).toEqual(['01–08', 'Bag of 100 gp']);
       expect(robeRows[12]).toEqual(['97–00', 'Portable ram']);
 
       const wand = table('table:wand-of-wonder');
       expect(wand?.data).toMatchObject({ columns: ['d100', 'Effect'] });
-      const wandRows = (wand?.data as { rows: [string, string][] }).rows;
+      const wandRows = (wand?.data as { rows: [string, string][] })?.rows;
       expect(wandRows).toHaveLength(22);
       expect(wandRows[0]).toEqual(['01–05', 'You cast slow.']);
       expect(wandRows[21][0]).toBe('98–00');
@@ -6065,7 +6071,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       ).toBeDefined();
       expect(rule?.kind).toBe('rule');
       expect(rule?.name).toBe('Spellcasting Services');
-      const text = (rule?.data as { text: string }).text;
+      const text = (rule?.data as { text: string })?.text;
       expect(text).toContain('no established pay rates exist');
       expect(text).toContain('10 to 50 gold pieces');
       // The body is one reflowed block bounded by the Feats chapter — no
@@ -6214,7 +6220,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (candidate) => candidate.kind === 'rule' && candidate.key === key,
       );
       expect(record, `expected ${key} in the committed pack`).toBeDefined();
-      return (record?.data as { text: string }).text;
+      return (record?.data as { text: string })?.text;
     }
 
     it('emits the chapter intro as the character-advancement rule', () => {
@@ -6337,7 +6343,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     }
 
     function ruleText(key: string): string {
-      return (ruleRecord(key)?.data as { text: string }).text;
+      return (ruleRecord(key)?.data as { text: string })?.text;
     }
 
     it('emits the chapter intro as rule:magic-items with p206 provenance', () => {
@@ -6417,7 +6423,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     }
 
     function ruleText(key: string): string {
-      return (ruleRecord(key)?.data as { text: string }).text;
+      return (ruleRecord(key)?.data as { text: string })?.text;
     }
 
     it('emits the chapter intro as rule:traps with p195 provenance', () => {
@@ -6495,7 +6501,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     }
 
     function ruleText(key: string): string {
-      return (ruleRecord(key)?.data as { text: string }).text;
+      return (ruleRecord(key)?.data as { text: string })?.text;
     }
 
     it('emits the chapter intro as rule:monsters with p254 provenance', () => {
@@ -6697,7 +6703,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (candidate) => candidate.kind === 'rule' && candidate.key === key,
       );
       expect(record, `expected ${key} in the committed pack`).toBeDefined();
-      return (record?.data as { text: string }).text;
+      return (record?.data as { text: string })?.text;
     }
 
     it('emits Acolyte as the only background record with p60-61 provenance', () => {
@@ -6800,7 +6806,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       const personality = pack.records.find(
         (record) => record.key === 'table:acolyte-personality-traits',
       );
-      const rows = (personality?.data as { rows: readonly unknown[][] }).rows;
+      const rows = (personality?.data as { rows: readonly unknown[][] })?.rows;
       expect(rows[0][1]).toBe(
         'I idolize a particular hero of my faith, and constantly refer to that person’s deeds and example.',
       );
@@ -7061,7 +7067,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
             options?: { id?: string; prerequisites?: Clause[] }[];
           }[];
         }
-      ).choices ?? []
+      )?.choices ?? []
     ).flatMap((c) => c.options ?? []);
     const byId = new Map(invocationOptions.map((o) => [o.id, o]));
 
@@ -7076,7 +7082,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (
           pack.records.find((r) => r.key === 'feature:warlock:pact-boon')
             ?.data as { choices?: { options?: { id?: string }[] }[] }
-        ).choices ?? []
+        )?.choices ?? []
       ).flatMap((c) => (c.options ?? []).map((o) => o.id)),
     );
 
@@ -7273,7 +7279,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
           classByKey.get(key)?.data as {
             spellPreparation?: { preparationFormula?: Record<string, unknown> };
           }
-        ).spellPreparation;
+        )?.spellPreparation;
         expect(prep?.preparationFormula, key).toBeDefined();
         expect(typeof prep?.preparationFormula?.classLevelDivisor, key).toBe(
           'number',
@@ -7334,7 +7340,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
             pack.records.find((r) => r.key === key)?.data as {
               choices?: Record<string, unknown>[];
             }
-          ).choices ?? []
+          )?.choices ?? []
         ).find((c) => c.id === 'expertise')?.from;
       expect(expertiseFrom('feature:bard:expertise')).toEqual({
         kind: 'characterStateFilter',

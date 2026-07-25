@@ -113,7 +113,8 @@ describe('SRD equipment mechanics inventory', () => {
     for (const spec of EQUIPMENT_MECHANICS_SPECS) {
       const record = byKey.get(spec.recordKey);
       expect(record).toBeDefined();
-      const description = (record?.data as { description: string }).description;
+      const description = (record?.data as { description: string })
+        ?.description;
       for (const clause of spec.clauses)
         expect(description).toContain(clause.sourcePhrase);
       const inventoryRow = inventory.records.find(
@@ -169,7 +170,7 @@ describe('SRD equipment mechanics inventory', () => {
         byKey.get(key)?.data as {
           useProfile: { clauses: Array<{ semantics: unknown }> };
         }
-      ).useProfile.clauses.map((entry) => entry.semantics);
+      )?.useProfile.clauses.map((entry) => entry.semantics);
 
     expect(semantics('equipment:case-crossbow-bolt')).toEqual([
       { capacity: { item: 'crossbow-bolt', maximum: 20 } },
@@ -275,7 +276,7 @@ describe('closed armor and weapon table semantics', () => {
         byKey.get('equipment:net')?.data as {
           useProfile: { clauses: Array<{ id: string }> };
         }
-      ).useProfile.clauses.map((clause) => clause.id),
+      )?.useProfile.clauses.map((clause) => clause.id),
     ).toEqual(['restrain', 'ineffective', 'escape', 'destroy', 'one-attack']);
   });
 });
@@ -288,7 +289,7 @@ describe('equipment use-profile schema', () => {
         byKey.get(key)?.data as {
           useProfile: { consumption: { kind: string } };
         }
-      ).useProfile.consumption.kind;
+      )?.useProfile.consumption.kind;
     expect(kind('equipment:acid-vial')).toBe('inventory-unit');
     expect(kind('equipment:healers-kit')).toBe('finite-uses');
     expect(kind('equipment:net')).toBe('not-consumed');
@@ -298,7 +299,7 @@ describe('equipment use-profile schema', () => {
         byKey.get('equipment:healers-kit')?.data as {
           useProfile: { consumption: { maximum: number; reset: string } };
         }
-      ).useProfile.consumption,
+      )?.useProfile.consumption,
     ).toMatchObject({ maximum: 10, reset: 'none' });
   });
 

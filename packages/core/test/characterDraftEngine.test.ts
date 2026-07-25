@@ -72,18 +72,21 @@ describe('character creation draft engine', () => {
     ['classes', ['Fighter', 'Wizard']],
     ['classLevels', { 'class:fighter': 1, 'class:wizard': 1 }],
     ['targetClass', 'Wizard'],
-  ])('rejects %s nested in creation input selections before it is spread', (field, value) => {
-    expect(() =>
-      engine.createDraft({
-        id: 'draft-1',
-        mode: 'concept-first',
-        selections: {
-          className: 'Fighter',
-          [field]: value,
-        },
-      } as Parameters<typeof engine.createDraft>[0]),
-    ).toThrow(UnsupportedCharacterBuildError);
-  });
+  ])(
+    'rejects %s nested in creation input selections before it is spread',
+    (field, value) => {
+      expect(() =>
+        engine.createDraft({
+          id: 'draft-1',
+          mode: 'concept-first',
+          selections: {
+            className: 'Fighter',
+            [field]: value,
+          },
+        } as Parameters<typeof engine.createDraft>[0]),
+      ).toThrow(UnsupportedCharacterBuildError);
+    },
+  );
 
   it('preserves prior answers when name changes', () => {
     let draft = fullValidDraft();

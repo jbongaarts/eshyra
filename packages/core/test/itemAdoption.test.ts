@@ -1423,73 +1423,76 @@ describe('legacy magic-item adoption', () => {
   it.each([
     ['invalid JSON', '{', 'contains invalid JSON'],
     ['non-object JSON', '[]', 'must be an object'],
-  ])('quarantines %s properties and keeps assembled context readable', (_case, rawProperties, expectedMessage) => {
-    const s = setup();
-    insertLegacy(s);
-    s.db
-      .prepare('UPDATE inventory SET properties_json=? WHERE id=?')
-      .run(rawProperties, 'legacy-item');
+  ])(
+    'quarantines %s properties and keeps assembled context readable',
+    (_case, rawProperties, expectedMessage) => {
+      const s = setup();
+      insertLegacy(s);
+      s.db
+        .prepare('UPDATE inventory SET properties_json=? WHERE id=?')
+        .run(rawProperties, 'legacy-item');
 
-    const result = createDefaultToolRegistry().invoke(
-      'adopt_item',
-      { id: 'legacy-item', packRef: 'magic-item:necklace-of-fireballs' },
-      s.ctx,
-    );
-    expect(result).toMatchObject({
-      ok: true,
-      data: {
-        adopted: false,
-        reviewRequired: true,
-        reason: expect.stringContaining(expectedMessage),
-      },
-    });
-    expect(
-      s.db
-        .prepare(
-          'SELECT quantity, pack_ref, properties_json FROM inventory WHERE id=?',
-        )
-        .get('legacy-item'),
-    ).toEqual({
-      quantity: 1,
-      pack_ref: null,
-      properties_json: '{}',
-    });
-    expect(adoptionReview(s.db, 'legacy-item')).toMatchObject({
-      raw_properties_json: rawProperties,
-      reason: expect.stringContaining(expectedMessage),
-    });
-    expect(
-      s.db
-        .prepare('SELECT 1 FROM item_state WHERE inventory_id=?')
-        .get('legacy-item'),
-    ).toBeUndefined();
-    const rendered = renderContextMessage(
-      assembleContext({
-        db: s.db,
-        campaignId: 'campaign-1',
-        sessionId: 'session-1',
-        playerInput: 'Inspect the legacy item.',
-      }),
-    );
-    expect(rendered).toContain('adoption=gm-review-required');
-    expect(rendered).toContain(expectedMessage);
-    expect(rendered).not.toContain(rawProperties);
-    expect(
-      createDefaultToolRegistry().invoke(
+      const result = createDefaultToolRegistry().invoke(
         'adopt_item',
-        {
-          id: 'legacy-item',
-          packRef: 'magic-item:necklace-of-fireballs',
-          resolution: {
-            action: 'discard-evidence',
-            evidence: 'The GM discarded the malformed legacy projection.',
-          },
-        },
+        { id: 'legacy-item', packRef: 'magic-item:necklace-of-fireballs' },
         s.ctx,
-      ),
-    ).toMatchObject({ ok: true, data: { adopted: true } });
-    expect(adoptionReview(s.db, 'legacy-item')).toBeUndefined();
-  });
+      );
+      expect(result).toMatchObject({
+        ok: true,
+        data: {
+          adopted: false,
+          reviewRequired: true,
+          reason: expect.stringContaining(expectedMessage),
+        },
+      });
+      expect(
+        s.db
+          .prepare(
+            'SELECT quantity, pack_ref, properties_json FROM inventory WHERE id=?',
+          )
+          .get('legacy-item'),
+      ).toEqual({
+        quantity: 1,
+        pack_ref: null,
+        properties_json: '{}',
+      });
+      expect(adoptionReview(s.db, 'legacy-item')).toMatchObject({
+        raw_properties_json: rawProperties,
+        reason: expect.stringContaining(expectedMessage),
+      });
+      expect(
+        s.db
+          .prepare('SELECT 1 FROM item_state WHERE inventory_id=?')
+          .get('legacy-item'),
+      ).toBeUndefined();
+      const rendered = renderContextMessage(
+        assembleContext({
+          db: s.db,
+          campaignId: 'campaign-1',
+          sessionId: 'session-1',
+          playerInput: 'Inspect the legacy item.',
+        }),
+      );
+      expect(rendered).toContain('adoption=gm-review-required');
+      expect(rendered).toContain(expectedMessage);
+      expect(rendered).not.toContain(rawProperties);
+      expect(
+        createDefaultToolRegistry().invoke(
+          'adopt_item',
+          {
+            id: 'legacy-item',
+            packRef: 'magic-item:necklace-of-fireballs',
+            resolution: {
+              action: 'discard-evidence',
+              evidence: 'The GM discarded the malformed legacy projection.',
+            },
+          },
+          s.ctx,
+        ),
+      ).toMatchObject({ ok: true, data: { adopted: true } });
+      expect(adoptionReview(s.db, 'legacy-item')).toBeUndefined();
+    },
+  );
 
   it('rolls back binding, splitting, and attunement rewrites when initialization fails', () => {
     const s = setup({

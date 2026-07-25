@@ -30,7 +30,7 @@ interface Choice {
 }
 function choicesOf(key: string): readonly Choice[] {
   const record = byKey.get(key) as RulesRecord | undefined;
-  return ((record?.data as { choices?: Choice[] }).choices ?? []) as Choice[];
+  return ((record?.data as { choices?: Choice[] })?.choices ?? []) as Choice[];
 }
 
 describe('ancestry creation choices', () => {

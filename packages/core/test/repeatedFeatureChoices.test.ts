@@ -265,15 +265,20 @@ describe('committed SRD pack: repeated feature choices (eshyra-qhac)', () => {
     'feature:barbarian:ability-score-improvement',
     'feature:cleric:ability-score-improvement',
     'feature:rogue:ability-score-improvement',
-  ])('%s: every grant level produces an instance with level overridden', (key) => {
-    const feature = featureRecord(srdPack, key);
-    const grantLevels = featureGrantLevels(srdPack, key);
-    expect(grantLevels.length).toBeGreaterThan(1);
-    const instances = deriveFeatureChoiceInstances(srdPack, feature);
-    const grantLevelsCovered = new Set(instances.map((i) => i.grantLevel));
-    expect([...grantLevelsCovered].sort((a, b) => a - b)).toEqual(grantLevels);
-    for (const i of instances) expect(i.choice.level).toBe(i.grantLevel);
-  });
+  ])(
+    '%s: every grant level produces an instance with level overridden',
+    (key) => {
+      const feature = featureRecord(srdPack, key);
+      const grantLevels = featureGrantLevels(srdPack, key);
+      expect(grantLevels.length).toBeGreaterThan(1);
+      const instances = deriveFeatureChoiceInstances(srdPack, feature);
+      const grantLevelsCovered = new Set(instances.map((i) => i.grantLevel));
+      expect([...grantLevelsCovered].sort((a, b) => a - b)).toEqual(
+        grantLevels,
+      );
+      for (const i of instances) expect(i.choice.level).toBe(i.grantLevel);
+    },
+  );
 
   it('Cleric Channel Divinity (2, 6, 18): repeats the level-2 template at 6 and 18', () => {
     const key = 'feature:cleric:channel-divinity';

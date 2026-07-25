@@ -280,7 +280,7 @@ describe('targeted creation/level-up choice cases (eshyra-o9bd.12)', () => {
         featureByKey.get('feature:wizard:spellcasting')?.data as {
           choices?: { id: string; category: string; choose?: number }[];
         }
-      ).choices ?? [];
+      )?.choices ?? [];
     const castingById = new Map(castingChoices.map((c) => [c.id, c]));
     expect(castingById.get('cantrips')?.choose).toBe(3); // 3 starting cantrips
     expect(castingById.get('prepared-spells')?.category).toBe('spell');
@@ -291,7 +291,7 @@ describe('targeted creation/level-up choice cases (eshyra-o9bd.12)', () => {
         featureByKey.get('feature:wizard:spellbook')?.data as {
           choices?: { id: string; choose?: number }[];
         }
-      ).choices ?? [];
+      )?.choices ?? [];
     const spellbookById = new Map(spellbookChoices.map((c) => [c.id, c]));
     expect(spellbookById.get('spellbook-initial')?.choose).toBe(6); // 6-spell start
     expect(spellbookById.get('spellbook-growth')?.choose).toBe(2); // +2 per level
@@ -356,7 +356,7 @@ describe('targeted creation/level-up choice cases (eshyra-o9bd.12)', () => {
     );
     expect(asiFeature?.data).toBeDefined();
     const choices = (asiFeature?.data as { choices?: { category: string }[] })
-      .choices;
+      ?.choices;
     expect(choices?.some((c) => c.category === 'asiOrFeat')).toBe(true);
     // The pack grants it at level 4.
     const level4 = resolver.resolveClassLevel('class:fighter', 4);

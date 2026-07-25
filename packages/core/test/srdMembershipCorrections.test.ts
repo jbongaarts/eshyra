@@ -35,7 +35,7 @@ function spellEffects(key: string): unknown[] {
     (candidate) => candidate.key === key,
   );
   expect(record, `${key} must exist`).toBeDefined();
-  const mechanics = (record?.data as Record<string, unknown>).mechanics as {
+  const mechanics = (record?.data as Record<string, unknown>)?.mechanics as {
     effects?: unknown[];
   };
   expect(mechanics.effects, `${key} must carry typed effects`).toBeDefined();
@@ -47,7 +47,7 @@ function spellAmbiguities(key: string): unknown[] | undefined {
     (candidate) => candidate.key === key,
   );
   expect(record, `${key} must exist`).toBeDefined();
-  const mechanics = (record?.data as Record<string, unknown>).mechanics as {
+  const mechanics = (record?.data as Record<string, unknown>)?.mechanics as {
     ambiguities?: unknown[];
   };
   return mechanics.ambiguities;
@@ -1854,17 +1854,17 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
     );
     expect(
       (
-        (privateRecord?.data as Record<string, unknown>).mechanics as {
+        (privateRecord?.data as Record<string, unknown>)?.mechanics as {
           area?: unknown;
         }
-      ).area,
+      )?.area,
     ).toBeUndefined();
     expect(
       (
-        (tinyRecord?.data as Record<string, unknown>).mechanics as {
+        (tinyRecord?.data as Record<string, unknown>)?.mechanics as {
           area?: unknown;
         }
-      ).area,
+      )?.area,
     ).toEqual({
       shape: 'hemisphere',
       size: 10,
@@ -1877,7 +1877,7 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
       );
       const effects =
         (
-          (record?.data as Record<string, unknown>).mechanics as
+          (record?.data as Record<string, unknown>)?.mechanics as
             | { effects?: unknown[] }
             | undefined
         )?.effects ?? [];
@@ -2124,8 +2124,8 @@ describe('corrected metadata-only spells (eshyra-o9bd.18.7.9)', () => {
             string,
             unknown
           >
-        ).mechanics as Record<string, unknown>
-      ).conditions;
+        )?.mechanics as Record<string, unknown>
+      )?.conditions;
     // "The infected creature gains one level of exhaustion" — applies.
     expect(conditionsOf('hazard:cackle-fever')).toEqual([
       { condition: 'exhaustion', relation: 'applies' },

@@ -206,7 +206,7 @@ describe('M9 spell interop and M10 roll manipulation family projection', () => {
           string,
           unknown
         >
-      ).contracts,
+      )?.contracts,
     ).toEqual([
       expect.objectContaining({
         kind: 'spell-storage',
@@ -222,7 +222,7 @@ describe('M9 spell interop and M10 roll manipulation family projection', () => {
           string,
           unknown
         >
-      ).contracts,
+      )?.contracts,
     ).toEqual([
       expect.objectContaining({
         lifetimeCapacityLevels: 20,
@@ -233,7 +233,7 @@ describe('M9 spell interop and M10 roll manipulation family projection', () => {
       (
         projectVariant('Greater Absorption')?.mechanics
           .spellStore as unknown as Record<string, unknown>
-      ).contracts,
+      )?.contracts,
     ).toEqual([
       expect.objectContaining({
         lifetimeCapacityLevels: 50,
