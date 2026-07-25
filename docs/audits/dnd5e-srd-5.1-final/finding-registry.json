@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "rows": [
+    {
+      "canonicalId": "source-authority",
+      "aliases": [
+        "opus:F-19",
+        "opus:F-20",
+        "sol:CAP-008",
+        "fable:F1",
+        "fable:F5",
+        "fable:F7",
+        "indep:011"
+      ],
+      "title": "Source authority and compiler-authored claims are explicit",
+      "status": "accepted",
+      "membershipQuery": "recordsWithSourceAuthorityRisk",
+      "owningBead": "eshyra-o9bd.19.2.1",
+      "packBoundary": "Every source-backed value is sourced, derived, supplemental, or explicitly unresolved.",
+      "engineBoundary": "none",
+      "regressionForm": "Source/license and composed-label predicates reject unsupported or falsely quoted output."
+    },
+    {
+      "canonicalId": "segmentation-and-locators",
+      "aliases": [
+        "indep:008",
+        "indep:009",
+        "indep:010",
+        "indep:012",
+        "opus:F-15",
+        "opus:F-17",
+        "opus:F-30",
+        "sol:CAP-010",
+        "sol:CAP-012",
+        "fable:F4"
+      ],
+      "title": "Source segmentation, ownership, continuations, and locators are complete",
+      "status": "accepted",
+      "membershipQuery": "recordsWithLocatorOrOwnershipEvidence",
+      "owningBead": "eshyra-o9bd.19.2.2",
+      "packBoundary": "Record and field boundaries retain complete source ownership and locators.",
+      "engineBoundary": "none",
+      "regressionForm": "Boundary, continuation, and provenance predicates cover every affected record family."
+    },
+    {
+      "canonicalId": "taxonomy-and-structured-fields",
+      "aliases": [
+        "opus:F-10",
+        "opus:F-13",
+        "opus:F-14",
+        "opus:F-16",
+        "opus:F-34",
+        "sol:CAP-013",
+        "fable:F6"
+      ],
+      "title": "Taxonomy, identifiers, tables, and structured field shapes are stable",
+      "status": "accepted",
+      "membershipQuery": "recordsByKind",
+      "owningBead": "eshyra-o9bd.19.2.3",
+      "packBoundary": "Structured values preserve source qualifiers, empty cells, grouping, and typed identifiers.",
+      "engineBoundary": "none",
+      "regressionForm": "Corpus-wide field-shape and taxonomy predicates reject drift."
+    },
+    {
+      "canonicalId": "canonical-discovery",
+      "aliases": ["opus:F-22", "sol:CAP-011", "fable:F8"],
+      "title": "Canonical relationships and non-exact discovery are durable",
+      "status": "accepted",
+      "membershipQuery": "recordsByKind",
+      "owningBead": "eshyra-o9bd.19.2.4",
+      "packBoundary": "Canonical owners, aliases, topics, and qualified duplicate names are discoverable.",
+      "engineBoundary": "none",
+      "regressionForm": "Lookup predicates resolve canonical records without exact kind/title knowledge."
+    },
+    {
+      "canonicalId": "semantic-completeness-contract",
+      "aliases": ["indep:001", "opus:F-06", "opus:F-27", "sol:CAP-001"],
+      "title": "Atom presence cannot stand in for clause-complete procedures",
+      "status": "accepted",
+      "membershipQuery": "recordsWithExecutionReadiness",
+      "owningBead": "eshyra-o9bd.19.1.1",
+      "packBoundary": "Captured, projected, supported, and discoverable are separate clause dimensions.",
+      "engineBoundary": "none",
+      "regressionForm": "A clause-level completeness predicate fails partial and atom-only representations."
+    },
+    {
+      "canonicalId": "option-and-variant-procedures",
+      "aliases": [
+        "indep:002",
+        "opus:F-02",
+        "opus:F-07",
+        "opus:F-33",
+        "opus:F-35",
+        "sol:CAP-005"
+      ],
+      "title": "Choices, alternatives, variants, and option-local behavior remain distinct",
+      "status": "accepted",
+      "membershipQuery": "recordsWithExecutionReadiness",
+      "owningBead": "eshyra-o9bd.19.3.1",
+      "packBoundary": "Mutually exclusive choices and variants retain stable identity, prerequisites, and local behavior.",
+      "engineBoundary": "engine:F1",
+      "regressionForm": "Option-selection tests prove sibling alternatives are not cumulative."
+    },
+    {
+      "canonicalId": "feature-and-progression-procedures",
+      "aliases": [
+        "indep:003",
+        "opus:F-03",
+        "opus:F-04",
+        "opus:F-05",
+        "opus:F-12",
+        "opus:F-24"
+      ],
+      "title": "Class features, feats, resources, resets, and scaling are executable",
+      "status": "accepted",
+      "membershipQuery": "recordsWithExecutionReadiness",
+      "owningBead": "eshyra-o9bd.19.3.2",
+      "packBoundary": "Deterministic feature procedures preserve use counts, resets, scaling, and lifecycle.",
+      "engineBoundary": "engine:F2",
+      "regressionForm": "Feature procedure and progression tests exercise each governing clause."
+    },
+    {
+      "canonicalId": "condition-structure-no-regression",
+      "aliases": ["sol:CAP-002", "opus:F-09"],
+      "title": "Rule, action, and condition procedures are explicit without regressing typed effects",
+      "status": "narrowed",
+      "statusReasoning": "CAP-002 overstates the condition deficit: existing typed condition effects are exact against source. Repair only proven structural gaps and preserve those effects.",
+      "membershipQuery": "recordsWithExecutionReadiness",
+      "owningBead": "eshyra-o9bd.19.3.4",
+      "packBoundary": "Rule and condition clauses expose readiness and lifecycle while preserving correct typed effects.",
+      "engineBoundary": "engine:F6",
+      "regressionForm": "Condition exactness and no-regression tests run beside structural readiness predicates."
+    },
+    {
+      "canonicalId": "ancestry-background-equipment",
+      "aliases": ["indep:004", "opus:F-18", "sol:CAP-006"],
+      "title": "Ancestry, background, equipment, and grants retain deterministic semantics",
+      "status": "accepted",
+      "membershipQuery": "recordsByKind",
+      "owningBead": "eshyra-o9bd.19.3.3",
+      "packBoundary": "Grants, choices, constraints, uses, and embedded choices/currency are typed.",
+      "engineBoundary": "engine:F10",
+      "regressionForm": "Grant and equipment procedures assert source-supported values and choices."
+    },
+    {
+      "canonicalId": "spell-procedures",
+      "aliases": [
+        "indep:005",
+        "opus:F-08",
+        "opus:F-11",
+        "sol:CAP-003",
+        "fable:F2",
+        "sol:CAP-009"
+      ],
+      "title": "Spell procedures include complete geometry, pools, branches, and lifecycle",
+      "status": "accepted",
+      "membershipQuery": "recordsWithExecutionReadiness",
+      "owningBead": "eshyra-o9bd.19.4.1",
+      "packBoundary": "Every deterministic spell clause has complete representation or explicit non-engine disposition.",
+      "engineBoundary": "engine:F9",
+      "regressionForm": "Spell corpus predicates cover geometry, targeting, saves, pools, and termination."
+    },
+    {
+      "canonicalId": "creature-procedures",
+      "aliases": [
+        "indep:006",
+        "opus:F-25",
+        "opus:F-26",
+        "opus:F-28",
+        "opus:F-29",
+        "opus:F-31",
+        "opus:F-32",
+        "sol:CAP-004",
+        "fable:F3"
+      ],
+      "title": "Creature attacks, saves, outcomes, variants, and legendary economy are complete",
+      "status": "accepted",
+      "membershipQuery": "engineHookReferences",
+      "owningBead": "eshyra-o9bd.19.4.3",
+      "packBoundary": "Creature clauses preserve alternate modes, riders, saves, timing, lifecycle, and budgets.",
+      "engineBoundary": "engine:F8",
+      "regressionForm": "Exhaustive creature clause predicates cover alternate attacks, saves, damage, and lifecycle."
+    },
+    {
+      "canonicalId": "hazard-procedures",
+      "aliases": ["indep:007", "opus:F-01", "opus:F-23"],
+      "title": "Hazards, pits, poisons, diseases, and traps are stateful procedures",
+      "status": "accepted",
+      "membershipQuery": "recordsWithExecutionReadiness",
+      "owningBead": "eshyra-o9bd.19.4.4",
+      "packBoundary": "Hazard detection, triggers, branches, geometry, recurrence, cure, and termination are represented.",
+      "engineBoundary": "engine:F9",
+      "regressionForm": "Hazard-family predicates exercise success branches and variant procedures."
+    },
+    {
+      "canonicalId": "magic-item-procedures",
+      "aliases": ["opus:residual-unverified-effects-semantics"],
+      "title": "Magic-item clauses are decomposed and their execution boundary is honest",
+      "status": "disclosed-dependency",
+      "statusReasoning": "Pack projection can enumerate item clauses, but complete execution remains dependent on the engine capability families and their owning beads.",
+      "membershipQuery": "magicItemClauses",
+      "owningBead": "eshyra-o9bd.19.4.5",
+      "packBoundary": "All magic-item source clauses are represented, with green clauses proven complete and pending clauses disclosed.",
+      "engineBoundary": "engine:F5",
+      "regressionForm": "Every item clause is enumerated and readiness/engine dependencies are generated."
+    },
+    {
+      "canonicalId": "readiness-integrity",
+      "aliases": ["opus:F-21"],
+      "title": "Readiness metadata reflects semantic completeness",
+      "status": "accepted",
+      "membershipQuery": "pendingExecutionClauses",
+      "owningBead": "eshyra-o9bd.19.1.5",
+      "packBoundary": "Partial, pending, unimplemented, and design-blocked clauses cannot be reported as green.",
+      "engineBoundary": "none",
+      "regressionForm": "Generated readiness predicates fail hidden pending clauses and stale zero-finding metadata."
+    },
+    {
+      "canonicalId": "engine-capability-ownership",
+      "aliases": ["sol:CAP-007", "sol:CAP-014"],
+      "title": "Every required engine capability has qualified ownership",
+      "status": "disclosed-dependency",
+      "statusReasoning": "Capability membership is generated from the pack and completion is owned by the engine:F1 through engine:F10 family beads; the registry records the dependency until those families certify.",
+      "membershipQuery": "engineHookReferences",
+      "owningBead": "eshyra-o9bd.19.5",
+      "packBoundary": "Each deterministic clause exposes required engine capabilities and fail-closed ownership.",
+      "engineBoundary": "engine:F1",
+      "regressionForm": "Generated hook queries and bead-reference checks reject unowned capability gaps."
+    }
+  ]
+}
