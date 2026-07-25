@@ -1212,7 +1212,7 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
       (r) => r.key === 'ancestry:lightfoot-halfling',
     );
     expect(lightfoot?.name).toBe('Lightfoot Halfling');
-    expect((lightfoot?.data as Record<string, unknown>).subraceOf).toBe(
+    expect((lightfoot?.data as Record<string, unknown>)?.subraceOf).toBe(
       'ancestry:halfling',
     );
     const stout = pack.records.find((r) => r.key === 'ancestry:stout-halfling');
@@ -1269,11 +1269,11 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     const acolyteIdeals = pack.records.find(
       (r) => r.key === 'table:acolyte-ideals',
     );
-    expect((acolyteIdeals?.data as Record<string, unknown>).columns).toEqual([
+    expect((acolyteIdeals?.data as Record<string, unknown>)?.columns).toEqual([
       'd6',
       'Ideal',
     ]);
-    expect((acolyteIdeals?.data as Record<string, unknown>).rows).toEqual([
+    expect((acolyteIdeals?.data as Record<string, unknown>)?.rows).toEqual([
       [
         1,
         'Tradition. The ancient traditions of worship and sacrifice must be preserved and upheld. (Lawful)',
@@ -1358,7 +1358,7 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
       (r) => r.key === 'table:object-hit-points',
     );
     expect(
-      (objectHitPoints?.data as Record<string, unknown>).rows,
+      (objectHitPoints?.data as Record<string, unknown>)?.rows,
     ).toHaveLength(4);
 
     const mm = pack.records.find((r) => r.key === 'spell:magic-missile');
@@ -1518,11 +1518,10 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     const difficultyTable = pack.records.find(
       (r) => r.key === 'table:difficulty-classes',
     );
-    expect((difficultyTable?.data as Record<string, unknown>).columns).toEqual([
-      'Task Difficulty',
-      'DC',
-    ]);
-    expect((difficultyTable?.data as Record<string, unknown>).rows).toEqual([
+    expect((difficultyTable?.data as Record<string, unknown>)?.columns).toEqual(
+      ['Task Difficulty', 'DC'],
+    );
+    expect((difficultyTable?.data as Record<string, unknown>)?.rows).toEqual([
       ['Very easy', 5],
       ['Easy', 10],
       ['Medium', 15],
@@ -1534,10 +1533,10 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     const xpThresholdTable = pack.records.find(
       (r) => r.key === 'table:xp-thresholds-by-character-level',
     );
-    expect((xpThresholdTable?.data as Record<string, unknown>).columns).toEqual(
-      ['Character Level', 'Easy', 'Medium', 'Hard', 'Deadly'],
-    );
-    expect((xpThresholdTable?.data as Record<string, unknown>).rows).toEqual([
+    expect(
+      (xpThresholdTable?.data as Record<string, unknown>)?.columns,
+    ).toEqual(['Character Level', 'Easy', 'Medium', 'Hard', 'Deadly']);
+    expect((xpThresholdTable?.data as Record<string, unknown>)?.rows).toEqual([
       ['1st', 25, 50, 75, 100],
       ['2nd', 50, 100, 150, 200],
       ['3rd', 75, 150, 225, 400],
@@ -1548,10 +1547,10 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
       (r) => r.key === 'table:individual-treasure-challenge-0-4',
     );
     expect(
-      (individualTreasureTable?.data as Record<string, unknown>).columns,
+      (individualTreasureTable?.data as Record<string, unknown>)?.columns,
     ).toEqual(['d100', 'CP', 'SP', 'EP', 'GP', 'PP']);
     expect(
-      (individualTreasureTable?.data as Record<string, unknown>).rows,
+      (individualTreasureTable?.data as Record<string, unknown>)?.rows,
     ).toEqual([
       ['01-30', '5d6 (17)', null, null, null, null],
       ['31-60', null, '4d6 (14)', null, null, null],
@@ -1562,34 +1561,36 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
       (r) => r.key === 'table:treasure-hoard-challenge-0-4',
     );
     expect(
-      (treasureHoardTable?.data as Record<string, unknown>).columns,
+      (treasureHoardTable?.data as Record<string, unknown>)?.columns,
     ).toEqual(['d100', 'CP', 'SP', 'GP', 'Gems or Art Objects', 'Magic Items']);
-    expect((treasureHoardTable?.data as Record<string, unknown>).rows).toEqual([
+    expect((treasureHoardTable?.data as Record<string, unknown>)?.rows).toEqual(
       [
-        '01-06',
-        '6d6 x 100 (2,100)',
-        '3d6 x 100 (1,050)',
-        '2d6 x 10 (70)',
-        null,
-        null,
+        [
+          '01-06',
+          '6d6 x 100 (2,100)',
+          '3d6 x 100 (1,050)',
+          '2d6 x 10 (70)',
+          null,
+          null,
+        ],
+        [
+          '07-16',
+          '6d6 x 100 (2,100)',
+          '3d6 x 100 (1,050)',
+          '2d6 x 10 (70)',
+          '2d6 (7) 10 gp gems',
+          null,
+        ],
+        [
+          '17-26',
+          '6d6 x 100 (2,100)',
+          '3d6 x 100 (1,050)',
+          '2d6 x 10 (70)',
+          '2d4 (5) 25 gp art objects',
+          'Table A',
+        ],
       ],
-      [
-        '07-16',
-        '6d6 x 100 (2,100)',
-        '3d6 x 100 (1,050)',
-        '2d6 x 10 (70)',
-        '2d6 (7) 10 gp gems',
-        null,
-      ],
-      [
-        '17-26',
-        '6d6 x 100 (2,100)',
-        '3d6 x 100 (1,050)',
-        '2d6 x 10 (70)',
-        '2d4 (5) 25 gp art objects',
-        'Table A',
-      ],
-    ]);
+    );
   });
 
   it('fails closed when the expected rule-key set omits a parsed key', async () => {
@@ -2476,7 +2477,7 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     // The monster creature carries NO category field (its absence means
     // "monster"), so it stays byte-identical to the pre-NPC pack.
     const goblin = pack.records.find((r) => r.key === 'creature:goblin');
-    expect((goblin?.data as Record<string, unknown>).category).toBeUndefined();
+    expect((goblin?.data as Record<string, unknown>)?.category).toBeUndefined();
   });
 
   it('fails closed when expectedNpcNames is supplied but the NPC parse drifts', async () => {

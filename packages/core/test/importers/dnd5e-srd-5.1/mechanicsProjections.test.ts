@@ -66,13 +66,14 @@ describe('deriveCreatureEntryMechanics Reckless grammar (eshyra-o9bd.18.7.9.10)'
       'At the start of its turn, the minotaur can gain advantage on all melee weapon attack rolls it makes during that turn, but attack rolls against it have advantage until the start of its next turn.',
   };
 
-  it.each(
-    Object.entries(texts),
-  )('projects the exact %s source variant', (_, text) => {
-    expect(deriveCreatureEntryMechanics('Reckless', text).effects).toEqual([
-      expected,
-    ]);
-  });
+  it.each(Object.entries(texts))(
+    'projects the exact %s source variant',
+    (_, text) => {
+      expect(deriveCreatureEntryMechanics('Reckless', text).effects).toEqual([
+        expected,
+      ]);
+    },
+  );
 
   it.each([
     [
@@ -390,24 +391,24 @@ describe('deriveCreatureEntryMechanics Rampage (eshyra-o9bd.18.7.9 C8)', () => {
   const rampage = (actor: 'hyena' | 'gnoll') =>
     `When the ${actor} reduces a creature to 0 hit points with a melee attack on its turn, the ${actor} can take a bonus action to move up to half its speed and make a bite attack.`;
 
-  it.each([
-    'hyena',
-    'gnoll',
-  ] as const)('projects %s Rampage as one trigger-linked bonus action', (actor) => {
-    expect(
-      deriveCreatureEntryMechanics('Rampage', rampage(actor)).effects,
-    ).toEqual([
-      {
-        kind: 'triggeredBonusAction',
-        trigger: {
-          event: 'reduce-creature-to-0-hit-points',
-          attackType: 'melee',
-          timing: 'on-its-turn',
+  it.each(['hyena', 'gnoll'] as const)(
+    'projects %s Rampage as one trigger-linked bonus action',
+    (actor) => {
+      expect(
+        deriveCreatureEntryMechanics('Rampage', rampage(actor)).effects,
+      ).toEqual([
+        {
+          kind: 'triggeredBonusAction',
+          trigger: {
+            event: 'reduce-creature-to-0-hit-points',
+            attackType: 'melee',
+            timing: 'on-its-turn',
+          },
+          action: { movement: 'up-to-half-speed', attack: 'bite' },
         },
-        action: { movement: 'up-to-half-speed', attack: 'bite' },
-      },
-    ]);
-  });
+      ]);
+    },
+  );
 
   it.each([
     rampage('hyena').replace('melee attack', 'ranged attack'),
@@ -1652,22 +1653,25 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
         },
       ],
     ],
-  ])('projects reviewed S3a %s semantics exactly', (name, description, effects) => {
-    expect(
-      deriveSpellMechanics(
-        baseSpell({
-          name,
-          description,
-          ...(name === 'Contingency'
-            ? {
-                componentMaterials:
-                  'a statuette of yourself carved from ivory and decorated with gems worth at least 1,500 gp',
-              }
-            : {}),
-        }),
-      ).effects,
-    ).toEqual(effects);
-  });
+  ])(
+    'projects reviewed S3a %s semantics exactly',
+    (name, description, effects) => {
+      expect(
+        deriveSpellMechanics(
+          baseSpell({
+            name,
+            description,
+            ...(name === 'Contingency'
+              ? {
+                  componentMaterials:
+                    'a statuette of yourself carved from ivory and decorated with gems worth at least 1,500 gp',
+                }
+              : {}),
+          }),
+        ).effects,
+      ).toEqual(effects);
+    },
+  );
 
   it('projects nothing for non-S3a spell names', () => {
     expect(
@@ -1684,13 +1688,18 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
     ['Alarm', '20-foot-cube ward boundary'],
     ['Magic Mouth', '25-word message limit'],
     ['Contingency', 'stored spell level no higher than 5'],
-  ])('fails closed for S3a %s when a reviewed clause disappears', (name, label) => {
-    expect(() =>
-      deriveSpellMechanics(baseSpell({ name, description: 'changed source' })),
-    ).toThrow(
-      `S3a spell projection for ${name} is missing reviewed source clause: ${label}`,
-    );
-  });
+  ])(
+    'fails closed for S3a %s when a reviewed clause disappears',
+    (name, label) => {
+      expect(() =>
+        deriveSpellMechanics(
+          baseSpell({ name, description: 'changed source' }),
+        ),
+      ).toThrow(
+        `S3a spell projection for ${name} is missing reviewed source clause: ${label}`,
+      );
+    },
+  );
 
   const privateSanctumDescription =
     'You make an area within range magically secure. The area is a cube that can be as small as 5 feet to as large as 100 feet on each side. The spell lasts for the duration or until you use an action to dismiss it. When you cast the spell, you decide what sort of security the spell provides, choosing any or all of the following properties: • Sound can’t pass through the barrier at the edge of the warded area. • The barrier of the warded area appears dark and foggy, preventing vision (including darkvision) through it. • Sensors created by divination spells can’t appear inside the protected area or pass through the barrier at its perimeter. • Creatures in the area can’t be targeted by divination spells. • Nothing can teleport into or out of the warded area. • Planar travel is blocked within the warded area. Casting this spell on the same spot every day for a year makes this effect permanent.';
@@ -1997,53 +2006,49 @@ describe('spell effect projections (eshyra-o9bd.18.7.4)', () => {
     );
   });
 
-  it.each([
-    'Gate!',
-    'Gate-Portal',
-    'Demiplane!',
-    'Passwall!',
-  ])('does not project punctuation or hyphen variant %s', (name) => {
-    expect(
-      deriveSpellMechanics(
-        baseSpell({
-          name,
-          description: `${gateDescription} ${demiplaneDescription} ${passwallDescription}`,
-        }),
-      ).effects,
-    ).toBeUndefined();
-  });
+  it.each(['Gate!', 'Gate-Portal', 'Demiplane!', 'Passwall!'])(
+    'does not project punctuation or hyphen variant %s',
+    (name) => {
+      expect(
+        deriveSpellMechanics(
+          baseSpell({
+            name,
+            description: `${gateDescription} ${demiplaneDescription} ${passwallDescription}`,
+          }),
+        ).effects,
+      ).toBeUndefined();
+    },
+  );
 
-  it.each([
-    'Private Sanctum!',
-    'Private-Sanctum',
-    'Tiny Hut!',
-    'Tiny-Hut',
-  ])('does not accidentally project punctuation-variant spell name %s', (name) => {
-    expect(
-      deriveSpellMechanics(
-        baseSpell({
-          name,
-          range: 'Self (10-foot-radius hemisphere)',
-          description: `${privateSanctumDescription} ${tinyHutDescription}`,
-        }),
-      ).effects,
-    ).toBeUndefined();
-  });
+  it.each(['Private Sanctum!', 'Private-Sanctum', 'Tiny Hut!', 'Tiny-Hut'])(
+    'does not accidentally project punctuation-variant spell name %s',
+    (name) => {
+      expect(
+        deriveSpellMechanics(
+          baseSpell({
+            name,
+            range: 'Self (10-foot-radius hemisphere)',
+            description: `${privateSanctumDescription} ${tinyHutDescription}`,
+          }),
+        ).effects,
+      ).toBeUndefined();
+    },
+  );
 
-  it.each([
-    undefined,
-    'a statuette of yourself carved from bone',
-  ])('fails closed for Contingency when the ivory statuette component identity is %s', (componentMaterials) => {
-    const description =
-      'Choose a spell of 5th level or lower that you can cast, that has a casting time of 1 action, and that can target you. Instead, it takes effect when a certain circumstance occurs. The contingent spell takes effect immediately after the circumstance is met for the first time, whether or not you want it to, and then contingency ends. You can use only one contingency spell at a time. If you cast this spell again, the effect of another contingency spell on you ends. Also, contingency ends on you if its material component is ever not on your person.';
-    expect(() =>
-      deriveSpellMechanics(
-        baseSpell({ name: 'Contingency', description, componentMaterials }),
-      ),
-    ).toThrow(
-      'S3a spell projection for Contingency is missing reviewed source clause: ivory statuette component identity',
-    );
-  });
+  it.each([undefined, 'a statuette of yourself carved from bone'])(
+    'fails closed for Contingency when the ivory statuette component identity is %s',
+    (componentMaterials) => {
+      const description =
+        'Choose a spell of 5th level or lower that you can cast, that has a casting time of 1 action, and that can target you. Instead, it takes effect when a certain circumstance occurs. The contingent spell takes effect immediately after the circumstance is met for the first time, whether or not you want it to, and then contingency ends. You can use only one contingency spell at a time. If you cast this spell again, the effect of another contingency spell on you ends. Also, contingency ends on you if its material component is ever not on your person.';
+      expect(() =>
+        deriveSpellMechanics(
+          baseSpell({ name: 'Contingency', description, componentMaterials }),
+        ),
+      ).toThrow(
+        'S3a spell projection for Contingency is missing reviewed source clause: ivory statuette component identity',
+      );
+    },
+  );
 
   it('parses structured durations from the closed SRD vocabulary', () => {
     expect(

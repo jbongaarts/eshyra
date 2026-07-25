@@ -897,41 +897,40 @@ describe('applyLevelUp — F6 life-state gate (eshyra-2n1t.8)', () => {
     }
   }
 
-  it.each([
-    'dying',
-    'stable',
-    'dead',
-  ] as const)('refuses to apply a level-up to a %s character, leaving all state untouched', (lifeState) => {
-    const db = bareDb();
-    const store = createSqliteCharacterSheetStore(db, () => AT);
-    store.save(
-      'pc-1',
-      buildSheet({ maxHitPoints: 12, modifiers: { constitution: 2 } }),
-    );
-    seedLiveHp(db, 12, 0);
-    seedLifeState(db, lifeState, 2);
+  it.each(['dying', 'stable', 'dead'] as const)(
+    'refuses to apply a level-up to a %s character, leaving all state untouched',
+    (lifeState) => {
+      const db = bareDb();
+      const store = createSqliteCharacterSheetStore(db, () => AT);
+      store.save(
+        'pc-1',
+        buildSheet({ maxHitPoints: 12, modifiers: { constitution: 2 } }),
+      );
+      seedLiveHp(db, 12, 0);
+      seedLifeState(db, lifeState, 2);
 
-    expect(() => applyLevelUp(db, { store, ...APPLY })).toThrow(
-      LevelUpEngineError,
-    );
+      expect(() => applyLevelUp(db, { store, ...APPLY })).toThrow(
+        LevelUpEngineError,
+      );
 
-    // Nothing advanced: sheet, live row, and ledger are all untouched.
-    expect(store.load('pc-1')?.level).toBe(1);
-    const row = db
-      .prepare(
-        `SELECT level, hp_current, life_state, death_save_failures
+      // Nothing advanced: sheet, live row, and ledger are all untouched.
+      expect(store.load('pc-1')?.level).toBe(1);
+      const row = db
+        .prepare(
+          `SELECT level, hp_current, life_state, death_save_failures
            FROM character WHERE id = 'pc-1'`,
-      )
-      .get() as Record<string, unknown>;
-    expect(row).toEqual({
-      level: 1,
-      hp_current: 0,
-      life_state: lifeState,
-      death_save_failures: 2,
-    });
-    expect(listProgressionEvents(db)).toHaveLength(0);
-    db.close();
-  });
+        )
+        .get() as Record<string, unknown>;
+      expect(row).toEqual({
+        level: 1,
+        hp_current: 0,
+        life_state: lifeState,
+        death_save_failures: 2,
+      });
+      expect(listProgressionEvents(db)).toHaveLength(0);
+      db.close();
+    },
+  );
 
   it('still applies normally to an alive character at low HP', () => {
     const db = bareDb();

@@ -240,79 +240,80 @@ describe('orchestrator turn loop', () => {
   it.each([
     { provider: 'Anthropic', callId: 'toolu_01ABC' },
     { provider: 'OpenAI', callId: 'call_01XYZ' },
-  ])('executes a representative $provider native tool call and returns a correlated result', async ({
-    callId,
-  }) => {
-    const db = freshDbWithSession();
-    withOpenScene(db);
-    db.prepare(
-      `UPDATE character SET hp_max = 20, hp_current = 15 WHERE id = 'pc-1'`,
-    ).run();
-    const model = new StructuredScriptedModel([
-      {
-        text: 'You take a hard hit.',
-        toolCalls: [{ id: callId, name: 'adjust_hp', args: { amount: -3 } }],
+  ])(
+    'executes a representative $provider native tool call and returns a correlated result',
+    async ({ callId }) => {
+      const db = freshDbWithSession();
+      withOpenScene(db);
+      db.prepare(
+        `UPDATE character SET hp_max = 20, hp_current = 15 WHERE id = 'pc-1'`,
+      ).run();
+      const model = new StructuredScriptedModel([
+        {
+          text: 'You take a hard hit.',
+          toolCalls: [{ id: callId, name: 'adjust_hp', args: { amount: -3 } }],
+          stopReason: 'tool_use',
+        },
+        {
+          text: 'Pain flashes through you, but you remain standing.',
+          stopReason: 'end_turn',
+        },
+      ]);
+
+      const result = await runTurn(
+        { db, model, registry: createDefaultToolRegistry() },
+        baseInput(),
+      );
+
+      expect(result.ok).toBe(true);
+      expect(result.narration).toContain('remain standing');
+      expect(result.toolCalls).toMatchObject([
+        {
+          tool: 'adjust_hp',
+          args: { amount: -3 },
+          source: 'native',
+          callId,
+          stopReason: 'tool_use',
+          result: { ok: true },
+        },
+      ]);
+      const row = db
+        .prepare(`SELECT hp_current FROM character WHERE id = 'pc-1'`)
+        .get() as { hp_current: number };
+      expect(row.hp_current).toBe(12);
+
+      const secondCall = model.seen[1];
+      expect(secondCall.messages.at(-2)).toMatchObject({
+        role: 'assistant',
+        content: 'You take a hard hit.',
         stopReason: 'tool_use',
-      },
-      {
-        text: 'Pain flashes through you, but you remain standing.',
-        stopReason: 'end_turn',
-      },
-    ]);
+        toolCalls: [{ id: callId, name: 'adjust_hp' }],
+      });
+      expect(secondCall.messages.at(-1)).toMatchObject({
+        role: 'user',
+        toolResults: [
+          {
+            callId,
+            name: 'adjust_hp',
+            result: { ok: true },
+          },
+        ],
+      });
 
-    const result = await runTurn(
-      { db, model, registry: createDefaultToolRegistry() },
-      baseInput(),
-    );
-
-    expect(result.ok).toBe(true);
-    expect(result.narration).toContain('remain standing');
-    expect(result.toolCalls).toMatchObject([
-      {
+      const trace = getTurnTrace(db, {
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+        turnId: 'turn-1',
+      });
+      expect(trace?.toolCalls[0]).toMatchObject({
         tool: 'adjust_hp',
-        args: { amount: -3 },
         source: 'native',
         callId,
         stopReason: 'tool_use',
-        result: { ok: true },
-      },
-    ]);
-    const row = db
-      .prepare(`SELECT hp_current FROM character WHERE id = 'pc-1'`)
-      .get() as { hp_current: number };
-    expect(row.hp_current).toBe(12);
-
-    const secondCall = model.seen[1];
-    expect(secondCall.messages.at(-2)).toMatchObject({
-      role: 'assistant',
-      content: 'You take a hard hit.',
-      stopReason: 'tool_use',
-      toolCalls: [{ id: callId, name: 'adjust_hp' }],
-    });
-    expect(secondCall.messages.at(-1)).toMatchObject({
-      role: 'user',
-      toolResults: [
-        {
-          callId,
-          name: 'adjust_hp',
-          result: { ok: true },
-        },
-      ],
-    });
-
-    const trace = getTurnTrace(db, {
-      campaignId: CAMPAIGN,
-      sessionId: SESSION,
-      turnId: 'turn-1',
-    });
-    expect(trace?.toolCalls[0]).toMatchObject({
-      tool: 'adjust_hp',
-      source: 'native',
-      callId,
-      stopReason: 'tool_use',
-    });
-    db.close();
-  });
+      });
+      db.close();
+    },
+  );
 
   it('does not accept narration when native toolCalls are present without a stop reason', async () => {
     const db = freshDbWithSession();

@@ -518,43 +518,43 @@ describe('ModelTurnAuditor', () => {
     { quantity: 10, expected: 'accept' },
     { quantity: 1, expected: 'reject' },
     { quantity: undefined, expected: 'reject' },
-  ] as const)('accepts a 10-torch claim only with quantity 10 evidence ($quantity)', async ({
-    quantity,
-    expected,
-  }) => {
-    const model = new QuantityEvidenceAuditModel();
-    const auditor = new ModelTurnAuditor(model, 'm');
-    const args = {
-      id: 'torch',
-      name: 'Torch',
-      ...(quantity === undefined ? {} : { quantity }),
-    };
+  ] as const)(
+    'accepts a 10-torch claim only with quantity 10 evidence ($quantity)',
+    async ({ quantity, expected }) => {
+      const model = new QuantityEvidenceAuditModel();
+      const auditor = new ModelTurnAuditor(model, 'm');
+      const args = {
+        id: 'torch',
+        name: 'Torch',
+        ...(quantity === undefined ? {} : { quantity }),
+      };
 
-    const verdict = await auditor.audit({
-      playerInput: 'Give Bob ten torches.',
-      candidateResponse: 'Bob now has 10 torches.',
-      providedToolNames: ['give_item'],
-      executedToolCalls: [
-        {
-          tool: 'give_item',
-          args,
-          result: {
-            ok: true,
-            data: {
-              applied: true,
-              id: 'torch',
-              name: 'Torch',
-              quantity: quantity ?? 1,
+      const verdict = await auditor.audit({
+        playerInput: 'Give Bob ten torches.',
+        candidateResponse: 'Bob now has 10 torches.',
+        providedToolNames: ['give_item'],
+        executedToolCalls: [
+          {
+            tool: 'give_item',
+            args,
+            result: {
+              ok: true,
+              data: {
+                applied: true,
+                id: 'torch',
+                name: 'Torch',
+                quantity: quantity ?? 1,
+              },
             },
+            mutates: true,
+            source: 'native-mcp',
           },
-          mutates: true,
-          source: 'native-mcp',
-        },
-      ],
-    });
+        ],
+      });
 
-    expect(verdict.verdict).toBe(expected);
-  });
+      expect(verdict.verdict).toBe(expected);
+    },
+  );
 
   it('bounds and redacts original tool arguments in audit evidence', () => {
     const message = buildAuditUserMessage({

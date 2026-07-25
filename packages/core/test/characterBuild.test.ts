@@ -68,11 +68,12 @@ describe('single-class character-build boundary', () => {
     expectUnsupported({ selections: { [field]: value } });
   });
 
-  it.each([
-    0, -1, 1.5,
-  ])('rejects a non-positive or non-integer level (%s)', (level) => {
-    expectUnsupported(sheet({ level }));
-  });
+  it.each([0, -1, 1.5])(
+    'rejects a non-positive or non-integer level (%s)',
+    (level) => {
+      expectUnsupported(sheet({ level }));
+    },
+  );
 
   it('rejects total/sole-class level claims that disagree with schema-v1 level', () => {
     expectUnsupported(sheet({ totalLevel: 2 }));

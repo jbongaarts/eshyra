@@ -585,51 +585,60 @@ describe('lookup_rules tool', () => {
   it.each([
     ['action', 'Hide'],
     ['rule', 'Hide'],
-  ])('resolves cross-kind duplicate name %s:Hide unambiguously by kind', (kind, name) => {
-    const result = createDefaultToolRegistry().invoke(
-      'lookup_rules',
-      { kind, name },
-      ctx(),
-    );
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      const data = result.data as { card: { kind: string; name: string } };
-      expect(data.card.kind).toBe(kind);
-    }
-  });
+  ])(
+    'resolves cross-kind duplicate name %s:Hide unambiguously by kind',
+    (kind, name) => {
+      const result = createDefaultToolRegistry().invoke(
+        'lookup_rules',
+        { kind, name },
+        ctx(),
+      );
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const data = result.data as { card: { kind: string; name: string } };
+        expect(data.card.kind).toBe(kind);
+      }
+    },
+  );
 
   it.each([
     ['spell', 'Shield'],
     ['equipment', 'Shield'],
-  ])('resolves cross-kind duplicate name %s:Shield unambiguously by kind', (kind, name) => {
-    const result = createDefaultToolRegistry().invoke(
-      'lookup_rules',
-      { kind, name },
-      ctx(),
-    );
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      const data = result.data as { card: { kind: string; name: string } };
-      expect(data.card.kind).toBe(kind);
-    }
-  });
+  ])(
+    'resolves cross-kind duplicate name %s:Shield unambiguously by kind',
+    (kind, name) => {
+      const result = createDefaultToolRegistry().invoke(
+        'lookup_rules',
+        { kind, name },
+        ctx(),
+      );
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const data = result.data as { card: { kind: string; name: string } };
+        expect(data.card.kind).toBe(kind);
+      }
+    },
+  );
 
   it.each([
     ['equipment', 'equipment:potion-of-healing'],
     ['magic-item', 'magic-item:potion-of-healing'],
-  ])('resolves near-duplicate name "Potion of Healing" (%s) by kind, distinct from the other kind', (kind, expectedKey) => {
-    const result = createDefaultToolRegistry().invoke(
-      'lookup_rules',
-      { kind, name: 'Potion of Healing' },
-      ctx(),
-    );
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      const data = result.data as { card: { key: string; kind: string } };
-      expect(data.card.key).toBe(expectedKey);
-      expect(data.card.kind).toBe(kind);
-    }
-  });
+  ])(
+    'resolves near-duplicate name "Potion of Healing" (%s) by kind, distinct from the other kind',
+    (kind, expectedKey) => {
+      const result = createDefaultToolRegistry().invoke(
+        'lookup_rules',
+        { kind, name: 'Potion of Healing' },
+        ctx(),
+      );
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const data = result.data as { card: { key: string; kind: string } };
+        expect(data.card.key).toBe(expectedKey);
+        expect(data.card.kind).toBe(kind);
+      }
+    },
+  );
 
   it('honors an explicit systemId override to resolve against a different bundled system', () => {
     const result = createDefaultToolRegistry().invoke(

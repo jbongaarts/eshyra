@@ -1005,14 +1005,13 @@ describe('deriveMagicItemMechanics exhaustive coverage (eshyra-o9bd.18.7.7.5)', 
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it.each(COVERAGE_CASES)('projects the exact reviewed mechanics for $name', ({
-    name,
-    description,
-    expectedMechanics,
-  }) => {
-    const mechanics = deriveMagicItemMechanics(item(name, description));
-    expect(withoutEffectIds(mechanics)).toEqual(expectedMechanics);
-  });
+  it.each(COVERAGE_CASES)(
+    'projects the exact reviewed mechanics for $name',
+    ({ name, description, expectedMechanics }) => {
+      const mechanics = deriveMagicItemMechanics(item(name, description));
+      expect(withoutEffectIds(mechanics)).toEqual(expectedMechanics);
+    },
+  );
 
   it('covers exactly the 58 uniquely M2/M3-tagged items (23 M2 + 38 M3 rows, 3 tagged both)', () => {
     expect(COVERAGE_CASES).toHaveLength(58);
