@@ -92,6 +92,56 @@ especially compelling cases. (Workflow ported from chopcli, 2026-07-18.)
   session. `bd update`'s note-append flag is `--append-notes`. Run
   `bd dolt push` after any bead changes.
 
+## Heartbeating a dispatch (the output pane is 4 fixed lines)
+
+`setsid` removes the dispatch from the harness process tree, so it never appears
+as a background task in the UI and the user has **no** view of it except what
+your own monitor prints. `pgrep -f 'codex exec'` will not find your monitor
+either — query `.worktrees/.dispatch/*.pgid`, which is the tracking mechanism.
+
+The monitor's output pane is a **fixed 4-line, non-scrollable, head-truncated**
+view of the task's captured stdout. Appending is therefore useless for currency:
+every tick pushes the live state further out of view, and the user is left
+staring at the oldest lines. Do not "fix" this by lengthening the interval, and
+never by removing periodic output — that deletes the signal while appearing to
+address the complaint. (Both were tried on 2026-07-26 and both were wrong.)
+
+**Overwrite the output file instead.** A background task can locate its own
+captured-output file by printing a unique marker and grepping the tasks
+directory for it, then truncate-and-rewrite that file every tick:
+
+```bash
+m="MON-$$-$RANDOM"; echo "$m"; sleep 3
+out=$(grep -l "$m" /tmp/claude-*/*/*/tasks/*.output 2>/dev/null | head -1)
+render() { printf '%s\n' "$@" > "$out"; }   # truncating write, not append
+while ps -p "$pgid" >/dev/null 2>&1; do
+  render "<child> RUNNING $(date +%H:%M:%S)" \
+         "elapsed … log <KB> growth +<KB>/30s load $(cut -d' ' -f1 /proc/loadavg)" \
+         "$(tail -1 "$reg/<child>.log" | cut -c1-110)" \
+         "growth +0KB across two ticks = wedged; else healthy"
+  sleep 30
+done
+```
+
+Rules that make it work:
+
+- After self-locating, write **only** to `$out`. Any further stdout is appended
+  below your rewritten content and reintroduces the scroll problem.
+- Keep it to 4 lines, and spend the last one on the interpretation rule so the
+  pane is self-describing.
+- **Log growth since the previous tick is the load-bearing signal.** A detached
+  process that is wedged still shows increasing elapsed time; only stalled
+  growth reveals it, and neither the completion notification nor `ps` will.
+- Overwriting removes the cost of frequency, so use a short interval (~30s).
+- Heartbeat ticks cost no model inference — the harness writes the file and the
+  UI reads it. You are only invoked on completion, or when you `Read` the file
+  yourself. Polling in the model loop is the expensive mistake.
+
+Prefer waiting on process exit over waiting for a string to appear in a log. A
+predicate like `grep -c … | grep -qE "[2-9]"` cannot distinguish "not finished"
+from "finished differently than I assumed", and will spin forever when a run
+fails in an unanticipated way.
+
 ## Dispatches outlive this session
 
 Codex children are billed and rate-limited separately from the supervisor, so
