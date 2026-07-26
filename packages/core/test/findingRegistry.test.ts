@@ -52,6 +52,38 @@ describe('finding registry v1', () => {
     );
   });
 
+  it('rejects a non-accepted row without status reasoning', () => {
+    const registry = loadFindingRegistry();
+    const malformed = {
+      ...registry,
+      rows: registry.rows.map((row) => {
+        if (row.status === 'accepted') return row;
+        const { statusReasoning: _statusReasoning, ...withoutReasoning } = row;
+        return withoutReasoning;
+      }),
+    };
+    expect(() => validateFindingRegistry(malformed)).toThrow(
+      /statusReasoning.*(?:required|non-empty)/i,
+    );
+  });
+
+  it('uses a discriminating query per row unless sharing is justified', () => {
+    const registry = loadFindingRegistry();
+    const queryRows = new Map<string, typeof registry.rows>();
+    for (const row of registry.rows) {
+      const rows = queryRows.get(row.membershipQuery) ?? [];
+      rows.push(row);
+      queryRows.set(row.membershipQuery, rows);
+    }
+    for (const [query, rows] of queryRows) {
+      if (rows.length > 1) {
+        expect(rows.every((row) => row.sharedQueryJustification)).toBe(true);
+      }
+      expect(query).toMatch(/^finding:/);
+    }
+    expect(queryRows.size).toBe(registry.rows.length);
+  });
+
   it('executes every named membership query against the committed pack', () => {
     const registry = loadFindingRegistry();
     const results = registry.rows.map((row) =>
