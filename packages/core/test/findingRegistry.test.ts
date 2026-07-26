@@ -4,6 +4,8 @@ import {
   aliasIndex,
   checkBeadReferences,
   evaluateMembershipQuery,
+  findingRegistryClosureBlockers,
+  findingRegistryClosureReady,
   generateMembershipSnapshot,
   loadFindingRegistry,
   validateFindingRegistry,
@@ -55,6 +57,32 @@ describe('durable finding registry', () => {
     );
   });
 
+  it('distinguishes executable membership from prose-scoped membership', () => {
+    const registry = loadFindingRegistry();
+    const derived = registry.rows
+      .filter((row) => row.membershipStatus === 'derived')
+      .map((row) => row.canonicalId);
+    expect(derived.sort()).toEqual([
+      'engine-capability-ownership',
+      'half-damage-branches',
+      'rule-corpus-procedures',
+      'spell-completeness',
+    ]);
+
+    const underived = registry.rows.filter(
+      (row) => row.membershipStatus === 'underived',
+    );
+    expect(underived).toHaveLength(64);
+    expect(new Set(underived.map((row) => row.underivedReason)).size).toBe(
+      underived.length,
+    );
+    for (const row of underived) {
+      expect(row.underivedReason).toBeTruthy();
+      expect(row.underivedReason).not.toContain(row.canonicalId);
+      expect(row.owningDerivationBead).toBe('eshyra-o9bd.19.1.7');
+    }
+  });
+
   it('uses one exact durable target per row and never a generic search', () => {
     const registry = loadFindingRegistry();
     for (const row of registry.rows) {
@@ -99,12 +127,25 @@ describe('durable finding registry', () => {
       /exact selector|structured data path/i,
     );
 
-    const withoutSmallPopulationJustification = structuredClone(registry);
-    withoutSmallPopulationJustification.rows[0].exemplarJustification =
-      undefined;
-    expect(() =>
-      validateFindingRegistry(withoutSmallPopulationJustification),
-    ).toThrow(/exemplarJustification/i);
+    const duplicateReason = structuredClone(registry);
+    const underivedRows = duplicateReason.rows.filter(
+      (row) => row.membershipStatus === 'underived',
+    );
+    underivedRows[1].underivedReason = underivedRows[0].underivedReason;
+    expect(() => validateFindingRegistry(duplicateReason)).toThrow(
+      /underivedReason is shared/i,
+    );
+
+    const templatedReason = structuredClone(registry);
+    const templatedRow = templatedReason.rows.find(
+      (row) => row.membershipStatus === 'underived',
+    );
+    if (templatedRow === undefined)
+      throw new Error('fixture must contain an underived row');
+    templatedRow.underivedReason = `Membership for ${templatedRow.canonicalId} remains underived.`;
+    expect(() => validateFindingRegistry(templatedReason)).toThrow(
+      /canonicalId template/i,
+    );
 
     const templated = structuredClone(registry);
     for (const row of templated.rows) {
@@ -254,6 +295,40 @@ describe('durable finding registry', () => {
         (match) => match.status === 'engine-pending',
       ),
     ).toBe(true);
+
+    const missingDerivedMember = structuredClone(registry);
+    const derivedRow = missingDerivedMember.rows.find(
+      (row) => row.membershipStatus === 'derived',
+    );
+    if (derivedRow === undefined)
+      throw new Error('fixture must contain a derived row');
+    derivedRow.baselineMembership.members.pop();
+    derivedRow.target.selector.members.pop();
+    expect(() => validateFindingRegistry(missingDerivedMember)).toThrow(
+      /derived membership does not match its executable query/i,
+    );
+  });
+
+  it('blocks closure while membership remains underived', () => {
+    const registry = loadFindingRegistry();
+    const blockers = findingRegistryClosureBlockers(registry);
+    expect(findingRegistryClosureReady(registry)).toBe(false);
+    expect(blockers).toHaveLength(64);
+    expect(blockers).toEqual(
+      registry.rows
+        .filter((row) => row.membershipStatus === 'underived')
+        .map((row) => row.canonicalId),
+    );
+
+    const allDerived = structuredClone(registry);
+    allDerived.rows = allDerived.rows.map((row) => ({
+      ...row,
+      membershipStatus: 'derived' as const,
+      underivedReason: undefined,
+      owningDerivationBead: undefined,
+    }));
+    expect(findingRegistryClosureBlockers(allDerived)).toEqual([]);
+    expect(findingRegistryClosureReady(allDerived)).toBe(true);
   });
 
   it('fails when any declared baseline member disappears', () => {

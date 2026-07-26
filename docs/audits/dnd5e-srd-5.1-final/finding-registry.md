@@ -25,14 +25,30 @@ Every row separates the durable obligation from the current defect:
 It is evidence, not a copied total. `membershipDerivation` records how the
 snapshot was generated from the committed corpus (record-kind, readiness-clause,
 half-damage-branch, or artifact enumeration) and names the source authority.
-Large populations are enumerated in full; a small population must carry an
-explicit reviewed `exemplarJustification`. `evaluateMembershipQuery` joins the
-durable expected identities to the current pack and artifact files, returning
-expected, current, and missing identities separately. Validation compares the
-complete sets, so losing one member fails rather than merely remaining
-non-empty. The one `may-be-missing-until-repair` policy is reserved for the
-source clause explicitly documented as absent pending the clause-IR follow-up;
-it is not a general empty-membership escape hatch.
+`evaluateMembershipQuery` joins the durable expected identities to the current
+pack and artifact files, returning expected, current, and missing identities
+separately. Validation compares the complete sets, so losing one member fails
+rather than merely remaining non-empty.
+
+## Membership derivation and closure
+
+Rows have one of two mechanically enforced membership statuses:
+
+- `derived` means a named executable query is the authority for the baseline.
+  Validation reruns that query against the committed pack and requires the
+  complete identity set to match the stored snapshot. A single-record result
+  is valid only when the query proves that it is the complete result.
+- `underived` means the complete population still requires reconciliation to
+  the prose of the four audit reviews. It carries a distinct
+  `underivedReason` describing the interpretation still needed for that row and
+  names `eshyra-o9bd.19.1.7`, which owns that derivation work. A reason may not
+  be a canonical-ID template or be reused by another underived row.
+
+`findingRegistryClosureReady()` is the fail-closed gate: it returns false
+while any row is underived. `findingRegistryClosureBlockers()` returns the
+offending canonical IDs. The gate becomes true only after every row is
+classified as derived; underived snapshots therefore cannot masquerade as
+closure evidence.
 
 Record identities can include an exact clause ID or data path. Artifact
 identities can include an exact artifact path and JSON path, which allows
@@ -42,7 +58,7 @@ observable.
 The validator rejects duplicate canonical IDs, duplicate aliases, malformed
 obligation IDs, pack self-authority, generic selectors, malformed nested
 identities, baseline/selector drift, partial current membership, templated
-invariants, unjustified small populations, and forbidden hand-copied totals.
+invariants, non-specific underived reasons, and forbidden hand-copied totals.
 Empty current violation membership is governed by the typed
 `violation.expectedAfterRepair` contract; there is no free-form
 `zeroMemberPolicy` escape hatch.

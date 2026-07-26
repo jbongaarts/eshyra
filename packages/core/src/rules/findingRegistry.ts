@@ -10,6 +10,8 @@ export type FindingStatus =
   | 'ambiguous'
   | 'disclosed-dependency';
 
+export type MembershipStatus = 'derived' | 'underived';
+
 export type EvidenceKind =
   | 'source-span'
   | 'authoritative-input'
@@ -35,6 +37,13 @@ export type MembershipGenerator =
   | 'pack-engine-pending-clauses'
   | 'audited-artifact-set';
 
+const executableMembershipGenerators = new Set<MembershipGenerator>([
+  'pack-record-kind',
+  'pack-half-damage-branches',
+  'pack-readiness-clauses',
+  'pack-engine-pending-clauses',
+]);
+
 export interface MembershipIdentity {
   recordKey?: string;
   clauseId?: string;
@@ -53,6 +62,9 @@ export interface FindingRow {
   aliases: string[];
   title: string;
   status: FindingStatus;
+  membershipStatus: MembershipStatus;
+  underivedReason?: string;
+  owningDerivationBead?: string;
   statusReasoning?: string;
   obligation: {
     obligationId: string;
@@ -78,7 +90,6 @@ export interface FindingRow {
     authority: string;
     currentMatch: 'required' | 'may-be-missing-until-repair';
   };
-  exemplarJustification?: string;
   owningBead: string;
   regression: {
     evidenceKind: EvidenceKind;
@@ -386,6 +397,41 @@ function parseRegistry(value: unknown): FindingRegistry {
     ) {
       throw new Error(`${path}.status is invalid`);
     }
+    const membershipStatus = requiredString(
+      raw.membershipStatus,
+      `${path}.membershipStatus`,
+    ) as MembershipStatus;
+    if (membershipStatus !== 'derived' && membershipStatus !== 'underived') {
+      throw new Error(`${path}.membershipStatus is invalid`);
+    }
+    const underivedReason =
+      raw.underivedReason === undefined
+        ? undefined
+        : requiredString(raw.underivedReason, `${path}.underivedReason`);
+    const owningDerivationBead =
+      raw.owningDerivationBead === undefined
+        ? undefined
+        : requiredString(
+            raw.owningDerivationBead,
+            `${path}.owningDerivationBead`,
+          );
+    if (membershipStatus === 'underived') {
+      if (underivedReason === undefined) {
+        throw new Error(`${path}.underivedReason is required`);
+      }
+      if (owningDerivationBead !== 'eshyra-o9bd.19.1.7') {
+        throw new Error(
+          `${path}.owningDerivationBead must be eshyra-o9bd.19.1.7`,
+        );
+      }
+    } else if (
+      underivedReason !== undefined ||
+      owningDerivationBead !== undefined
+    ) {
+      throw new Error(
+        `${path}.underivedReason and owningDerivationBead are only valid for underived rows`,
+      );
+    }
     const aliases = stringArray(raw.aliases, `${path}.aliases`);
     for (const alias of aliases) {
       if (
@@ -511,18 +557,6 @@ function parseRegistry(value: unknown): FindingRegistry {
     ) {
       throw new Error(`${path}.membershipDerivation.currentMatch is invalid`);
     }
-    const exemplarJustification =
-      raw.exemplarJustification === undefined
-        ? undefined
-        : requiredString(
-            raw.exemplarJustification,
-            `${path}.exemplarJustification`,
-          );
-    if (baselineMembers.length <= 2 && exemplarJustification === undefined) {
-      throw new Error(
-        `${path}.exemplarJustification is required for a small generated population`,
-      );
-    }
     if (generator === 'audited-singleton' && baselineMembers.length !== 1) {
       throw new Error(
         `${path}.membershipDerivation.generator audited-singleton requires one member`,
@@ -547,6 +581,9 @@ function parseRegistry(value: unknown): FindingRegistry {
       aliases,
       title: requiredString(raw.title, `${path}.title`),
       status,
+      membershipStatus,
+      ...(underivedReason === undefined ? {} : { underivedReason }),
+      ...(owningDerivationBead === undefined ? {} : { owningDerivationBead }),
       ...(raw.statusReasoning === undefined
         ? {}
         : {
@@ -572,7 +609,6 @@ function parseRegistry(value: unknown): FindingRegistry {
         authority: derivationAuthority,
         currentMatch,
       },
-      ...(exemplarJustification === undefined ? {} : { exemplarJustification }),
       owningBead: requiredString(raw.owningBead, `${path}.owningBead`),
       regression: {
         evidenceKind: evidenceKind(
@@ -620,6 +656,26 @@ function parseRegistry(value: unknown): FindingRegistry {
         `violation query ${query} is shared without sharedQueryJustification`,
       );
     }
+  }
+  const underivedReasons = new Map<string, string>();
+  for (const row of rows) {
+    if (row.membershipStatus !== 'underived') continue;
+    const reason = row.underivedReason;
+    if (reason === undefined) {
+      throw new Error(`${row.canonicalId} underivedReason is required`);
+    }
+    if (reason.includes(row.canonicalId)) {
+      throw new Error(
+        `${row.canonicalId} underivedReason must not be a canonicalId template`,
+      );
+    }
+    const previous = underivedReasons.get(reason);
+    if (previous !== undefined) {
+      throw new Error(
+        `underivedReason is shared by ${previous} and ${row.canonicalId}`,
+      );
+    }
+    underivedReasons.set(reason, row.canonicalId);
   }
   const invariantShapes = new Set(
     rows.map((row) =>
@@ -956,12 +1012,41 @@ function sameIdentitySet(
   );
 }
 
+export function findingRegistryClosureBlockers(
+  registry = loadFindingRegistry(),
+): string[] {
+  return registry.rows
+    .filter((row) => row.membershipStatus === 'underived')
+    .map((row) => row.canonicalId);
+}
+
+export function findingRegistryClosureReady(
+  registry = loadFindingRegistry(),
+): boolean {
+  return findingRegistryClosureBlockers(registry).length === 0;
+}
+
 export function validateFindingRegistry(
   registry = loadFindingRegistry(),
   records = getDefaultRecords(),
 ): void {
   const parsed = parseRegistry(registry);
   for (const row of parsed.rows) {
+    if (row.membershipStatus === 'derived') {
+      if (
+        !executableMembershipGenerators.has(row.membershipDerivation.generator)
+      ) {
+        throw new Error(
+          `${row.canonicalId} derived membership must use an executable query generator`,
+        );
+      }
+      const generated = generateMembershipSnapshot(row, records);
+      if (!sameIdentitySet(row.baselineMembership.members, generated)) {
+        throw new Error(
+          `${row.canonicalId} derived membership does not match its executable query`,
+        );
+      }
+    }
     const evaluation = evaluateMembershipQuery(
       row.violation.queryId,
       records,
