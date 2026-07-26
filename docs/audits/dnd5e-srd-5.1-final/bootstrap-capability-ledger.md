@@ -10,13 +10,28 @@ the committed pack; the 2026-07-06 execution-boundary, engine-coverage,
 rule-classification, and magic-item inventories; current code and open/closed
 beads; accepted findings in the 2026-07-24 audit repair plan; and source
 clauses named by those findings that the current projection omits. Membership
-is represented by structured, stable query IDs in `packEvidence`. The validator
-executes their registered evaluator against the committed `records.json`, which
-emits `{recordKey, clauseId, path, sourceSpan}` identities. A query cannot
-silently target another engine family. The source-negative rows also state
-explicitly when the reproducible second input is unavailable and name the
-follow-up that will supply it; their projected-side query is not presented as
-a source comparison.
+is represented by a row-owned `evidence` array. Evidence is a closed,
+discriminated union: `readiness-artifact`, `code`, `bead`, `audit-finding`, and
+`known-missing-source-clause`. Each item also carries the locally duplicated
+cross-PR obligation identity (`obl:::` plus an explicit obligation kind). The
+temporary duplication is deliberate: #475 and #476 integrate at the shared
+ledger boundary later, while this bootstrap artifact must remain independently
+loadable today. No one `sourceSpan` field is overloaded across evidence types.
+
+Readiness artifacts use a registered query ID and an exact structured hook
+selector: `engineHooks[].engine` and the hook's `name`/`id`/legacy `hook` value
+must equal the selector. There is no substring matching. The evaluator emits
+`{recordKey, clauseId, path, sourceSpan: {source, locator}, hook}` identities
+and fails when a required baseline is empty. An explicitly reviewed absent
+selector returns an absence result rather than silently passing an empty query.
+
+The other resolvers are independent: code checks the named module and symbol
+in `@eshyra/core`; bead evidence checks through `bd` and skips only when the
+binary is absent; audit evidence resolves a fully qualified known finding
+alias; and known-missing-source evidence scans the pack and returns a positive
+absence proof with scanned-record and scanned-clause coverage. Source-negative
+rows still state the source locator and the reason their pack clause is absent;
+their absence proof is not confused with a readiness query.
 
 Rows are at primitive granularity. A family such as `engine:F5` therefore has
 separate rows for instance spend, recharge scheduling, attunement/curse
@@ -64,8 +79,9 @@ per-round budget and per-option costs, while the current projected mechanics
 cannot reveal that missing source clause by themselves.
 
 Snapshot provenance: commit `4384f25`. No fixed total or arbitrary per-family
-upper bound is part of the validator contract. Consumers should execute the
-registered queries in `packEvidence` against the current corpus. The validator
-requires at least two rows per family, unique primitives, and unique
-family/primitive pairs. This ledger is a bootstrap inventory, not a claim that
-the current pack is clause-complete.
+upper bound is part of the validator contract. Consumers should execute every
+row's evidence array against the current corpus and retain the row/query
+identity in the result. The validator requires at least two rows per family,
+unique primitives, unique family/primitive pairs, one unambiguous owner for
+each query ID, and evidence for every source named by a row. This ledger is a
+bootstrap inventory, not a claim that the current pack is clause-complete.

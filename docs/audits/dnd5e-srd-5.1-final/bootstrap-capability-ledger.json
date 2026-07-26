@@ -20,15 +20,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F1:condition-and-eligibility-relations",
-        "engine": "engine:F1",
-        "hookTerms": ["condition", "eligibility"]
-      },
-      "codeEvidence": "Structured condition relations and eligibility checks exist in the core state and rules paths, but every source clause still needs a provider-neutral execution owner.",
       "owningBead": "eshyra-o9bd.19.5.2",
       "ownershipStatus": "owned",
-      "notes": "Primitive owner is the existing Engine F1 epic; exact clause membership remains query-derived."
+      "notes": "Primitive owner is the existing Engine F1 epic; exact clause membership remains query-derived.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::condition-and-eligibility-relations:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F1:condition-and-eligibility-relations",
+          "engine": "engine:F1",
+          "hookSelector": {
+            "engine": "F1",
+            "name": "condition and eligibility relations"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::condition-and-eligibility-relations:code",
+          "obligationKind": "code",
+          "module": "rules/conditionRelations.ts",
+          "symbol": "classifyConditionRelation",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::condition-and-eligibility-relations:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.2",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::condition-and-eligibility-relations:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:001",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F1",
@@ -40,15 +70,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F1:seeded-selection-and-roll-replacement",
-        "engine": "engine:F1",
-        "hookTerms": ["seeded", "percentage", "table", "pool", "replacement"]
-      },
-      "codeEvidence": "Seeded dice, table, pool, and replacement selection are available through the deterministic roll surface; source-specific selection ownership is not yet clause-complete.",
       "owningBead": "eshyra-o9bd.19.5.2",
       "ownershipStatus": "owned",
-      "notes": "This is F1's selection primitive even when an old engine epic used a dice-grammar label; do not infer ownership from matching numbers."
+      "notes": "This is F1's selection primitive even when an old engine epic used a dice-grammar label; do not infer ownership from matching numbers.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::seeded-selection-and-roll-replacement:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F1:seeded-selection-and-roll-replacement",
+          "engine": "engine:F1",
+          "hookSelector": {
+            "engine": "F1",
+            "name": "seeded dice, percentage, table, and pool selection"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::seeded-selection-and-roll-replacement:code",
+          "obligationKind": "code",
+          "module": "orchestrator/rng.ts",
+          "symbol": "createSeededRng",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::seeded-selection-and-roll-replacement:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.2",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::seeded-selection-and-roll-replacement:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:002",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F2",
@@ -60,15 +120,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F2:turn-action-and-free-interaction-budget",
-        "engine": "engine:F2",
-        "hookTerms": ["action-economy", "activation"]
-      },
-      "codeEvidence": "packages/core/src/state/actionEconomy.ts provides durable turn-budget state, turn reset, surprise guards, and reaction allowances; item and feature callers still need clause-level wiring.",
       "owningBead": "eshyra-o9bd.19.5.3",
       "ownershipStatus": "owned",
-      "notes": "Existing F2 family epic owns the shared budget; this does not claim a full action-legality engine."
+      "notes": "Existing F2 family epic owns the shared budget; this does not claim a full action-legality engine.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::turn-action-and-free-interaction-budget:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F2:turn-action-and-free-interaction-budget",
+          "engine": "engine:F2",
+          "hookSelector": {
+            "engine": "F2",
+            "name": "activation action economy"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::turn-action-and-free-interaction-budget:code",
+          "obligationKind": "code",
+          "module": "state/actionEconomy.ts",
+          "symbol": "beginTurn",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::turn-action-and-free-interaction-budget:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.3",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::turn-action-and-free-interaction-budget:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:003",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F2",
@@ -80,20 +170,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F2:reaction-and-item-activation-ownership",
-        "engine": "engine:F2",
-        "hookTerms": [
-          "reaction",
-          "controlled-entity",
-          "item activation",
-          "action-budget"
-        ]
-      },
-      "codeEvidence": "Turn-budget and usage primitives exist, but magic-item and owned-entity activation callers are not uniformly wired to one canonical spend owner.",
       "owningBead": "eshyra-o9bd.19.5.3",
       "ownershipStatus": "owned",
-      "notes": "The old eshyra-2n1t.4 bead is historical context only; the qualified pack family is owned by the open F2 epic."
+      "notes": "The old eshyra-2n1t.4 bead is historical context only; the qualified pack family is owned by the open F2 epic.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::reaction-and-item-activation-ownership:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F2:reaction-and-item-activation-ownership",
+          "engine": "engine:F2",
+          "hookSelector": {
+            "engine": "F2",
+            "name": "reaction and action economy"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::reaction-and-item-activation-ownership:code",
+          "obligationKind": "code",
+          "module": "state/actionEconomy.ts",
+          "symbol": "setReactionAllowance",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::reaction-and-item-activation-ownership:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.3",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::reaction-and-item-activation-ownership:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:004",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F2",
@@ -105,21 +220,41 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F2:legendary-action-allowance-and-option-cost",
-        "engine": "engine:F2",
-        "hookTerms": [],
-        "matchAll": true,
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "actionEconomy.ts and usageCounters.ts contain allowance, cost, and per-round reset primitives, but the source-defined legendary budget and every option are not projected into the pack execution path.",
       "owningBead": "eshyra-o9bd.19.5.3",
       "ownershipStatus": "owned",
-      "notes": "Worked non-pack-discovery example: the source clause and audit expose the budget even where the projected mechanics do not."
+      "notes": "Worked non-pack-discovery example: the source clause and audit expose the budget even where the projected mechanics do not.",
+      "evidence": [
+        {
+          "kind": "code",
+          "obligationId": "obl:::legendary-action-allowance-and-option-cost:code",
+          "obligationKind": "code",
+          "module": "state/actionEconomy.ts",
+          "symbol": "readCombatTurnState",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::legendary-action-allowance-and-option-cost:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.3",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::legendary-action-allowance-and-option-cost:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:005",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::legendary-action-allowance-and-option-cost:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:legendary-action-allowance-and-option-cost",
+          "locator": "known-missing/engine:F2/legendary-action-allowance-and-option-cost",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F3",
@@ -131,15 +266,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F3:concentration-owner-and-damage-save",
-        "engine": "engine:F3",
-        "hookTerms": ["concentration"]
-      },
-      "codeEvidence": "activeEffects.ts and the HP mutation seams implement concentration ownership, damage-save evidence, incapacitation breaks, and terminal cleanup; remaining work is clause-wide integration.",
       "owningBead": "eshyra-o9bd.19.5.4",
       "ownershipStatus": "owned",
-      "notes": "The old eshyra-2n1t.5 acceptance covered this foundation, not every F3 hook in the later clause-complete pack."
+      "notes": "The old eshyra-2n1t.5 acceptance covered this foundation, not every F3 hook in the later clause-complete pack.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::concentration-owner-and-damage-save:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F3:concentration-owner-and-damage-save",
+          "engine": "engine:F3",
+          "hookSelector": {
+            "engine": "F3",
+            "name": "concentration lifecycle"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::concentration-owner-and-damage-save:code",
+          "obligationKind": "code",
+          "module": "state/activeEffects.ts",
+          "symbol": "resolveConcentrationCheck",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::concentration-owner-and-damage-save:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.4",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::concentration-owner-and-damage-save:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:006",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F3",
@@ -151,15 +316,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F3:active-effect-duration-and-termination",
-        "engine": "engine:F3",
-        "hookTerms": ["duration", "active-effect", "lifecycle"]
-      },
-      "codeEvidence": "The active-effect state machine owns typed timers, suppression, refresh, target cleanup, and terminal transitions; summoned and item-created entities still need complete source-clause wiring.",
       "owningBead": "eshyra-o9bd.19.5.4",
       "ownershipStatus": "owned",
-      "notes": "Duration state is a specific primitive, not a family-level claim."
+      "notes": "Duration state is a specific primitive, not a family-level claim.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::active-effect-duration-and-termination:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F3:active-effect-duration-and-termination",
+          "engine": "engine:F3",
+          "hookSelector": {
+            "engine": "F3",
+            "name": "active effect duration and termination"
+          },
+          "expected": "absent-from-pack"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::active-effect-duration-and-termination:code",
+          "obligationKind": "code",
+          "module": "state/activeEffects.ts",
+          "symbol": "createActiveEffect",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::active-effect-duration-and-termination:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.4",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::active-effect-duration-and-termination:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:007",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F3",
@@ -171,21 +366,41 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F3:owned-entity-and-repeat-trigger-lifecycle",
-        "engine": "engine:F3",
-        "hookTerms": [],
-        "matchAll": true,
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "Entity links and active-effect cleanup exist, but repeat-on-damage/repeat-save and all created-entity ownership clauses are not one complete execution contract.",
       "owningBead": "eshyra-o9bd.19.5.4",
       "ownershipStatus": "owned",
-      "notes": "The audit's missing repeat and entity clauses are evidence of incomplete integration, not evidence that the F3 bead's narrower acceptance was false."
+      "notes": "The audit's missing repeat and entity clauses are evidence of incomplete integration, not evidence that the F3 bead's narrower acceptance was false.",
+      "evidence": [
+        {
+          "kind": "code",
+          "obligationId": "obl:::owned-entity-and-repeat-trigger-lifecycle:code",
+          "obligationKind": "code",
+          "module": "state/encounterCombatants.ts",
+          "symbol": "ensureCampaignActorFromCombatant",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::owned-entity-and-repeat-trigger-lifecycle:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.4",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::owned-entity-and-repeat-trigger-lifecycle:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:008",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::owned-entity-and-repeat-trigger-lifecycle:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:owned-entity-and-repeat-trigger-lifecycle",
+          "locator": "known-missing/engine:F3/owned-entity-and-repeat-trigger-lifecycle",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F4",
@@ -197,15 +412,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F4:caster-of-record-and-canonical-spell-execution",
-        "engine": "engine:F4",
-        "hookTerms": ["canonical spell", "caster", "spell-effect"]
-      },
-      "codeEvidence": "Spellcasting derivation, upcast, and slot primitives exist, but item casts, stored spells, and every source spell procedure do not yet share a complete canonical execution seam.",
       "owningBead": "eshyra-o9bd.19.5.5",
       "ownershipStatus": "owned",
-      "notes": "The owner is the qualified F4 epic, not historical eshyra-2n1t.6."
+      "notes": "The owner is the qualified F4 epic, not historical eshyra-2n1t.6.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::caster-of-record-and-canonical-spell-execution:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F4:caster-of-record-and-canonical-spell-execution",
+          "engine": "engine:F4",
+          "hookSelector": {
+            "engine": "F4",
+            "name": "canonical spell execution"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::caster-of-record-and-canonical-spell-execution:code",
+          "obligationKind": "code",
+          "module": "orchestrator/spellUpcast.ts",
+          "symbol": "resolveSpellUpcast",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::caster-of-record-and-canonical-spell-execution:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.5",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::caster-of-record-and-canonical-spell-execution:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:009",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F4",
@@ -218,15 +463,53 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F4:spell-slot-gate-and-upcast-transform",
-        "engine": "engine:F4",
-        "hookTerms": ["slot", "casting", "stored-spell"]
-      },
-      "codeEvidence": "spellSlots.ts and spellUpcast.ts implement single-class slot state and upcast contracts; complete pack wiring and caster ownership remain open.",
       "owningBead": "eshyra-o9bd.19.5.5",
       "ownershipStatus": "owned",
-      "notes": "The old F4 bead supplied a slot primitive; it did not close the pack's entire canonical-spell family."
+      "notes": "The old F4 bead supplied a slot primitive; it did not close the pack's entire canonical-spell family.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F4:spell-slot-gate-and-upcast-transform",
+          "engine": "engine:F4",
+          "hookSelector": {
+            "engine": "F4",
+            "name": "shared spell-slot, spell-casting, and caster-of-record execution"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:code",
+          "obligationKind": "code",
+          "module": "state/spellSlots.ts",
+          "symbol": "spendSpellSlot",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.5",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:010",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:spell-slot-gate-and-upcast-transform",
+          "locator": "known-missing/engine:F4/spell-slot-gate-and-upcast-transform",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F4",
@@ -238,20 +521,46 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F4:spellbook-copy-cost-and-asset-ledger",
-        "engine": "engine:F4",
-        "hookTerms": ["spellbook", "copy"],
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "Spellbook and currency primitives exist separately, but no single provider-neutral procedure owns the complete copying cost, time, eligibility, and retained asset mutation.",
       "owningBead": "eshyra-o9bd.19.5.5.3",
       "ownershipStatus": "owned",
-      "notes": "Proposed title and parent: no existing open family bead owns this cross-family spellbook-copy procedure as one primitive. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task."
+      "notes": "Proposed title and parent: no existing open family bead owns this cross-family spellbook-copy procedure as one primitive. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::spellbook-copy-cost-and-asset-ledger:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F4:spellbook-copy-cost-and-asset-ledger",
+          "engine": "engine:F4",
+          "hookSelector": {
+            "engine": "F4",
+            "name": "wizard spellbook copying procedure"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::spellbook-copy-cost-and-asset-ledger:code",
+          "obligationKind": "code",
+          "module": "character/spellcastingDerivation.ts",
+          "symbol": "deriveSpellcastingValues",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::spellbook-copy-cost-and-asset-ledger:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:011",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::spellbook-copy-cost-and-asset-ledger:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:spellbook-copy-cost-and-asset-ledger",
+          "locator": "known-missing/engine:F4/spellbook-copy-cost-and-asset-ledger",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F5",
@@ -263,15 +572,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F5:per-instance-usage-and-charge-spend",
-        "engine": "engine:F5",
-        "hookTerms": ["per-item", "charge", "usage"]
-      },
-      "codeEvidence": "usageCounters.ts and item-state/custody paths provide per-owner counters and spend validation, while the pack still contains engine-pending item clauses.",
       "owningBead": "eshyra-o9bd.19.5.6",
       "ownershipStatus": "owned",
-      "notes": "Specific instance spend is separate from reset scheduling, attunement, and curse state."
+      "notes": "Specific instance spend is separate from reset scheduling, attunement, and curse state.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::per-instance-usage-and-charge-spend:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F5:per-instance-usage-and-charge-spend",
+          "engine": "engine:F5",
+          "hookSelector": {
+            "engine": "F5",
+            "name": "per-item storage, charge, and reset state"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::per-instance-usage-and-charge-spend:code",
+          "obligationKind": "code",
+          "module": "state/usageCounters.ts",
+          "symbol": "spendUsage",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::per-instance-usage-and-charge-spend:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.6",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::per-instance-usage-and-charge-spend:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:012",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F5",
@@ -283,15 +622,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F5:recharge-and-reset-scheduling",
-        "engine": "engine:F5",
-        "hookTerms": ["recharge", "dawn", "reset", "cooldown"]
-      },
-      "codeEvidence": "Usage reset events and recharge rolls exist, but all source-defined reset timing and item-instance integrations are not yet certified together.",
       "owningBead": "eshyra-o9bd.19.5.6",
       "ownershipStatus": "owned",
-      "notes": "Reset scheduling is not interchangeable with F7's rest orchestration."
+      "notes": "Reset scheduling is not interchangeable with F7's rest orchestration.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::recharge-and-reset-scheduling:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F5:recharge-and-reset-scheduling",
+          "engine": "engine:F5",
+          "hookSelector": {
+            "engine": "F5",
+            "name": "magic-item-usage-recharge"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::recharge-and-reset-scheduling:code",
+          "obligationKind": "code",
+          "module": "state/usageCounters.ts",
+          "symbol": "resetUsage",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::recharge-and-reset-scheduling:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.6",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::recharge-and-reset-scheduling:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:001",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F5",
@@ -303,15 +672,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F5:attunement-curse-and-identity-constraints",
-        "engine": "engine:F5",
-        "hookTerms": ["attunement", "curse", "item-instance"]
-      },
-      "codeEvidence": "attunement.ts, custody, compatibility, and curse-adjacent state paths implement substantial lifecycle checks, but not every source clause is wired to the same instance owner.",
       "owningBead": "eshyra-o9bd.19.5.6",
       "ownershipStatus": "owned",
-      "notes": "The old eshyra-2n1t.7 acceptance is evidence for primitives, not for clause-complete integration."
+      "notes": "The old eshyra-2n1t.7 acceptance is evidence for primitives, not for clause-complete integration.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::attunement-curse-and-identity-constraints:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F5:attunement-curse-and-identity-constraints",
+          "engine": "engine:F5",
+          "hookSelector": {
+            "engine": "F5",
+            "name": "attunement, curse, and item-instance state constraints"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::attunement-curse-and-identity-constraints:code",
+          "obligationKind": "code",
+          "module": "state/attunement.ts",
+          "symbol": "resolveCanonicalAttunementContract",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::attunement-curse-and-identity-constraints:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.6",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::attunement-curse-and-identity-constraints:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:002",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F5",
@@ -323,20 +722,41 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F5:containment-portal-and-card-pool-instance-state",
-        "engine": "engine:F5",
-        "hookTerms": ["containment", "portal", "card-pool"],
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "Item custody and persistent state primitives exist, but the complete containment/portal/card-pool execution contract has no exact existing owner in the current family decomposition.",
       "owningBead": "eshyra-o9bd.19.5.6.3",
       "ownershipStatus": "owned",
-      "notes": "Proposed title and parent: this is a cross-item state primitive not named as a complete deliverable by an existing open bead. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task."
+      "notes": "Proposed title and parent: this is a cross-item state primitive not named as a complete deliverable by an existing open bead. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task.",
+      "evidence": [
+        {
+          "kind": "code",
+          "obligationId": "obl:::containment-portal-and-card-pool-instance-state:code",
+          "obligationKind": "code",
+          "module": "state/itemState.ts",
+          "symbol": "createInitialItemState",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::containment-portal-and-card-pool-instance-state:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.6.3",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::containment-portal-and-card-pool-instance-state:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:003",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::containment-portal-and-card-pool-instance-state:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:containment-portal-and-card-pool-instance-state",
+          "locator": "known-missing/engine:F5/containment-portal-and-card-pool-instance-state",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F6",
@@ -348,15 +768,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F6:hp-healing-and-temporary-buffer",
-        "engine": "engine:F6",
-        "hookTerms": ["hit-point", "healing", "temporary-hit-point"]
-      },
-      "codeEvidence": "hpLifecycle.ts implements HP writes, healing restrictions, temporary HP ownership, and durable life state; complete source-clause integration remains open.",
       "owningBead": "eshyra-o9bd.19.5.7",
       "ownershipStatus": "owned",
-      "notes": "The primitive is narrower than the F6 family label and includes no hand-copied readiness total."
+      "notes": "The primitive is narrower than the F6 family label and includes no hand-copied readiness total.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::hp-healing-and-temporary-buffer:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F6:hp-healing-and-temporary-buffer",
+          "engine": "engine:F6",
+          "hookSelector": {
+            "engine": "F6",
+            "name": "hit points and condition lifecycle"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::hp-healing-and-temporary-buffer:code",
+          "obligationKind": "code",
+          "module": "state/hpLifecycle.ts",
+          "symbol": "adjustHp",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::hp-healing-and-temporary-buffer:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.7",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::hp-healing-and-temporary-buffer:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:004",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F6",
@@ -368,15 +818,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F6:death-save-dying-and-stable-transitions",
-        "engine": "engine:F6",
-        "hookTerms": ["death", "dying", "death-save", "stabilization"]
-      },
-      "codeEvidence": "The death-save and life-state machine exists on the HP write path; follow-up recovery and source-specific clauses still need the clause-complete engine contract.",
       "owningBead": "eshyra-o9bd.19.5.7",
       "ownershipStatus": "owned",
-      "notes": "The old eshyra-2n1t.8 close reason proves its stated state machine landed, not that all F6 source clauses are integrated."
+      "notes": "The old eshyra-2n1t.8 close reason proves its stated state machine landed, not that all F6 source clauses are integrated.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::death-save-dying-and-stable-transitions:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F6:death-save-dying-and-stable-transitions",
+          "engine": "engine:F6",
+          "hookSelector": {
+            "engine": "F6",
+            "name": "hit-point and condition mutation"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::death-save-dying-and-stable-transitions:code",
+          "obligationKind": "code",
+          "module": "state/hpLifecycle.ts",
+          "symbol": "recordDeathSave",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::death-save-dying-and-stable-transitions:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.7",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::death-save-dying-and-stable-transitions:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:005",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F6",
@@ -388,21 +868,41 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F6:suffocation-and-ongoing-damage-state",
-        "engine": "engine:F6",
-        "hookTerms": [],
-        "matchAll": true,
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "HP and condition mutation seams exist, but a complete source-grounded suffocation countdown and recurring-damage lifecycle is not certified in the current core.",
       "owningBead": "eshyra-o9bd.19.5.7",
       "ownershipStatus": "owned",
-      "notes": "Missing-source clauses explain the non-pack discovery; they do not make the prior F6 bead's narrower close objectively false."
+      "notes": "Missing-source clauses explain the non-pack discovery; they do not make the prior F6 bead's narrower close objectively false.",
+      "evidence": [
+        {
+          "kind": "code",
+          "obligationId": "obl:::suffocation-and-ongoing-damage-state:code",
+          "obligationKind": "code",
+          "module": "state/hpLifecycle.ts",
+          "symbol": "resolveStableRecoveries",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::suffocation-and-ongoing-damage-state:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.7",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::suffocation-and-ongoing-damage-state:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:006",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::suffocation-and-ongoing-damage-state:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:suffocation-and-ongoing-damage-state",
+          "locator": "known-missing/engine:F6/suffocation-and-ongoing-damage-state",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F7",
@@ -414,15 +914,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F7:short-rest-hit-dice-recovery",
-        "engine": "engine:F7",
-        "hookTerms": ["short-rest", "hit-dice", "recovery"]
-      },
-      "codeEvidence": "rest.ts and the hit-dice ledger implement durable short-rest recovery; the complete dependency and source-clause inventory remains under the F7 epic.",
       "owningBead": "eshyra-o9bd.19.5.8",
       "ownershipStatus": "owned",
-      "notes": "Short-rest recovery is a primitive, not a synonym for the whole rest engine."
+      "notes": "Short-rest recovery is a primitive, not a synonym for the whole rest engine.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::short-rest-hit-dice-recovery:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F7:short-rest-hit-dice-recovery",
+          "engine": "engine:F7",
+          "hookSelector": {
+            "engine": "F7",
+            "name": "short-rest hit-dice recovery"
+          },
+          "expected": "absent-from-pack"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::short-rest-hit-dice-recovery:code",
+          "obligationKind": "code",
+          "module": "state/rest.ts",
+          "symbol": "completeShortRest",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::short-rest-hit-dice-recovery:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.8",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::short-rest-hit-dice-recovery:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:007",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F7",
@@ -434,15 +964,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F7:long-rest-reset-orchestration",
-        "engine": "engine:F7",
-        "hookTerms": ["long-rest", "reset", "early-reuse"]
-      },
-      "codeEvidence": "Rest orchestration and reset hooks exist with durable world time and rollback tests, but pack clauses still require complete integration and ownership proof.",
       "owningBead": "eshyra-o9bd.19.5.8",
       "ownershipStatus": "owned",
-      "notes": "The old eshyra-2n1t.9 close evidence establishes the rest foundation; it does not erase current engine-pending item hooks."
+      "notes": "The old eshyra-2n1t.9 close evidence establishes the rest foundation; it does not erase current engine-pending item hooks.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::long-rest-reset-orchestration:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F7:long-rest-reset-orchestration",
+          "engine": "engine:F7",
+          "hookSelector": {
+            "engine": "F7",
+            "name": "long-rest reset"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::long-rest-reset-orchestration:code",
+          "obligationKind": "code",
+          "module": "state/rest.ts",
+          "symbol": "completeLongRest",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::long-rest-reset-orchestration:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.8",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::long-rest-reset-orchestration:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:008",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F7",
@@ -454,25 +1014,41 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F7:planar-return-and-declared-window-clocks",
-        "engine": "engine:F7",
-        "hookTerms": [
-          "planar-return",
-          "declared-window",
-          "duration",
-          "deadline"
-        ],
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "Elapsed world timers and expiry sweeps exist, but the source-specific planar-return and declared-window procedures have no exact existing owner as one tested primitive.",
       "owningBead": "eshyra-o9bd.19.5.8.3",
       "ownershipStatus": "owned",
-      "notes": "Proposed title and parent: existing F7 owns generic rest/time orchestration but not this cross-record source-clock contract. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task."
+      "notes": "Proposed title and parent: existing F7 owns generic rest/time orchestration but not this cross-record source-clock contract. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task.",
+      "evidence": [
+        {
+          "kind": "code",
+          "obligationId": "obl:::planar-return-and-declared-window-clocks:code",
+          "obligationKind": "code",
+          "module": "state/turnClock.ts",
+          "symbol": "readCompletedTurns",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::planar-return-and-declared-window-clocks:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.8.3",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::planar-return-and-declared-window-clocks:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:009",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::planar-return-and-declared-window-clocks:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:planar-return-and-declared-window-clocks",
+          "locator": "known-missing/engine:F7/planar-return-and-declared-window-clocks",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F8",
@@ -484,15 +1060,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F8:save-dc-and-spell-attack-modifier-resolution",
-        "engine": "engine:F8",
-        "hookTerms": ["save-dc", "spell attack", "derived combat modifier"]
-      },
-      "codeEvidence": "Derived values, spellcasting derivation, and resolution tools implement the basic modifier paths; special source qualifiers and item bonuses remain clause work.",
       "owningBead": "eshyra-o9bd.19.5.9",
       "ownershipStatus": "owned",
-      "notes": "The old F8 character-build bead is not the owner; the qualified pack F8 epic is."
+      "notes": "The old F8 character-build bead is not the owner; the qualified pack F8 epic is.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::save-dc-and-spell-attack-modifier-resolution:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F8:save-dc-and-spell-attack-modifier-resolution",
+          "engine": "engine:F8",
+          "hookSelector": {
+            "engine": "F8",
+            "name": "save DC and spell attack resolution"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::save-dc-and-spell-attack-modifier-resolution:code",
+          "obligationKind": "code",
+          "module": "character/spellcastingDerivation.ts",
+          "symbol": "deriveSpellcastingValues",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::save-dc-and-spell-attack-modifier-resolution:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.9",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::save-dc-and-spell-attack-modifier-resolution:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:010",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F8",
@@ -505,20 +1111,53 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F8:multi-save-and-ability-choice-outcomes",
-        "engine": "engine:F8",
-        "hookTerms": ["save", "ability-choice", "targeting"],
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "Checks and saves have typed resolution primitives, but the audit's multi-save and ability-choice branches are not uniformly represented in the source projection.",
       "owningBead": "eshyra-o9bd.19.5.9",
       "ownershipStatus": "owned",
-      "notes": "A DC field alone is not evidence that the complete structured save outcome exists."
+      "notes": "A DC field alone is not evidence that the complete structured save outcome exists.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F8:multi-save-and-ability-choice-outcomes",
+          "engine": "engine:F8",
+          "hookSelector": {
+            "engine": "F8",
+            "name": "multi-save and ability-choice outcomes"
+          },
+          "expected": "absent-from-pack"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:code",
+          "obligationKind": "code",
+          "module": "orchestrator/toolResolveCheck.ts",
+          "symbol": "resolveCheckTool",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.9",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:011",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:multi-save-and-ability-choice-outcomes",
+          "locator": "known-missing/engine:F8/multi-save-and-ability-choice-outcomes",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F8",
@@ -530,20 +1169,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F8:derived-attack-ac-and-proficiency-modifiers",
-        "engine": "engine:F8",
-        "hookTerms": [
-          "attack",
-          "damage",
-          "roll mode",
-          "derived combat modifier"
-        ]
-      },
-      "codeEvidence": "Derived-value and D20 resolution primitives exist, but item, class, and conditional modifier ownership is not yet clause-complete.",
       "owningBead": "eshyra-o9bd.19.5.9",
       "ownershipStatus": "owned",
-      "notes": "This row separates modifier application from the save/DC row and keeps source qualifiers visible."
+      "notes": "This row separates modifier application from the save/DC row and keeps source qualifiers visible.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::derived-attack-ac-and-proficiency-modifiers:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F8:derived-attack-ac-and-proficiency-modifiers",
+          "engine": "engine:F8",
+          "hookSelector": {
+            "engine": "F8",
+            "name": "attack and damage modifier application"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::derived-attack-ac-and-proficiency-modifiers:code",
+          "obligationKind": "code",
+          "module": "character/derivedValues.ts",
+          "symbol": "deriveLevel1Values",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::derived-attack-ac-and-proficiency-modifiers:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.9",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::derived-attack-ac-and-proficiency-modifiers:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:012",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F9",
@@ -555,20 +1219,41 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F9:point-origin-area-geometry-and-targeting",
-        "engine": "engine:F9",
-        "hookTerms": ["geometry", "targeting"],
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "Deterministic checks and movement arithmetic exist, but the core has no complete point-origin geometry and source-variant targeting contract.",
       "owningBead": "eshyra-o9bd.19.5.10",
       "ownershipStatus": "owned",
-      "notes": "Point-origin geometry is a source-clause gap even though the existing F9 epic is the appropriate broad engine owner."
+      "notes": "Point-origin geometry is a source-clause gap even though the existing F9 epic is the appropriate broad engine owner.",
+      "evidence": [
+        {
+          "kind": "code",
+          "obligationId": "obl:::point-origin-area-geometry-and-targeting:code",
+          "obligationKind": "code",
+          "module": "orchestrator/calc.ts",
+          "symbol": "evaluateCalc",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::point-origin-area-geometry-and-targeting:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.10",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::point-origin-area-geometry-and-targeting:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:001",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::point-origin-area-geometry-and-targeting:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:point-origin-area-geometry-and-targeting",
+          "locator": "known-missing/engine:F9/point-origin-area-geometry-and-targeting",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F9",
@@ -580,20 +1265,41 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F9:damage-rider-and-half-damage-branch-resolution",
-        "engine": "engine:F9",
-        "hookTerms": ["damage", "rider"],
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "resolve_damage provides typed packet and resistance/vulnerability math, but source-defined riders, recurring branches, and every half-damage alternative are not integrated.",
       "owningBead": "eshyra-o9bd.19.5.10",
       "ownershipStatus": "owned",
-      "notes": "The audit's creature and hazard half-damage branches are source evidence, not a copied ledger count."
+      "notes": "The audit's creature and hazard half-damage branches are source evidence, not a copied ledger count.",
+      "evidence": [
+        {
+          "kind": "code",
+          "obligationId": "obl:::damage-rider-and-half-damage-branch-resolution:code",
+          "obligationKind": "code",
+          "module": "orchestrator/toolResolveDamage.ts",
+          "symbol": "resolveDamageTool",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::damage-rider-and-half-damage-branch-resolution:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.10",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::damage-rider-and-half-damage-branch-resolution:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:002",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::damage-rider-and-half-damage-branch-resolution:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:damage-rider-and-half-damage-branch-resolution",
+          "locator": "known-missing/engine:F9/damage-rider-and-half-damage-branch-resolution",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F9",
@@ -605,21 +1311,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F9:forced-movement-contest-and-object-interaction",
-        "engine": "engine:F9",
-        "hookTerms": [
-          "movement",
-          "contest",
-          "escape",
-          "destruction",
-          "interaction"
-        ]
-      },
-      "codeEvidence": "resolve_contest, calc, and damage primitives exist, but object and source-specific movement procedures still require canonical wiring.",
       "owningBead": "eshyra-o9bd.19.5.10",
       "ownershipStatus": "owned",
-      "notes": "The row names the actual resolution primitive rather than repeating the F9 family label."
+      "notes": "The row names the actual resolution primitive rather than repeating the F9 family label.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::forced-movement-contest-and-object-interaction:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F9:forced-movement-contest-and-object-interaction",
+          "engine": "engine:F9",
+          "hookSelector": {
+            "engine": "F9",
+            "name": "deterministic checks, forced movement, and interaction resolution"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::forced-movement-contest-and-object-interaction:code",
+          "obligationKind": "code",
+          "module": "orchestrator/toolResolveContest.ts",
+          "symbol": "resolveContestTool",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::forced-movement-contest-and-object-interaction:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.10",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::forced-movement-contest-and-object-interaction:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:003",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F9",
@@ -631,15 +1361,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F9:capacity-and-variant-arithmetic",
-        "engine": "engine:F9",
-        "hookTerms": ["capacity", "coverage", "time", "volume", "size-scaled"]
-      },
-      "codeEvidence": "The calc primitive covers several SRD formulas, but complete source-variant semantics and object/property callers are not certified.",
       "owningBead": "eshyra-o9bd.19.5.10",
       "ownershipStatus": "owned",
-      "notes": "Arithmetic formula presence is not proof of every surrounding execution branch."
+      "notes": "Arithmetic formula presence is not proof of every surrounding execution branch.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::capacity-and-variant-arithmetic:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F9:capacity-and-variant-arithmetic",
+          "engine": "engine:F9",
+          "hookSelector": {
+            "engine": "F9",
+            "name": "variant targeting, movement, and capacity arithmetic"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::capacity-and-variant-arithmetic:code",
+          "obligationKind": "code",
+          "module": "orchestrator/calc.ts",
+          "symbol": "CALC_FORMULAS",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::capacity-and-variant-arithmetic:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.10",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::capacity-and-variant-arithmetic:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:004",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F10",
@@ -651,15 +1411,45 @@
         "current-beads",
         "audit-2026-07-24"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F10:canonical-currency-mutation",
-        "engine": "engine:F10",
-        "hookTerms": ["currency", "property", "inventory", "xp"]
-      },
-      "codeEvidence": "character/currency.ts and CLI money commands implement denomination conversion, but the DM-facing canonical mutation/context surface is not complete.",
       "owningBead": "eshyra-o9bd.19.5.11",
       "ownershipStatus": "owned",
-      "notes": "The old eshyra-2n1t.12 close reason is evidence for the currency surface slice, not all F10 asset procedures."
+      "notes": "The old eshyra-2n1t.12 close reason is evidence for the currency surface slice, not all F10 asset procedures.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::canonical-currency-mutation:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F10:canonical-currency-mutation",
+          "engine": "engine:F10",
+          "hookSelector": {
+            "engine": "F10",
+            "name": "currency, property, inventory, and XP ledger outcomes"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::canonical-currency-mutation:code",
+          "obligationKind": "code",
+          "module": "character/currency.ts",
+          "symbol": "adjustCharacterCurrency",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::canonical-currency-mutation:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.11",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::canonical-currency-mutation:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:005",
+          "expected": "known"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F10",
@@ -672,22 +1462,53 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F10:downtime-study-expense-and-training-ledger",
-        "engine": "engine:F10",
-        "hookTerms": [
-          "downtime",
-          "study",
-          "expense",
-          "profession",
-          "research",
-          "training"
-        ]
-      },
-      "codeEvidence": "Currency primitives can support these calculations, but no complete canonical DM tool owns their source-defined time and ledger outcomes.",
       "owningBead": "eshyra-o9bd.19.5.11",
       "ownershipStatus": "owned",
-      "notes": "Trade pacing remains a DM ruling; this row covers only deterministic ledger mutations named by source clauses."
+      "notes": "Trade pacing remains a DM ruling; this row covers only deterministic ledger mutations named by source clauses.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::downtime-study-expense-and-training-ledger:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F10:downtime-study-expense-and-training-ledger",
+          "engine": "engine:F10",
+          "hookSelector": {
+            "engine": "F10",
+            "name": "downtime study window"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::downtime-study-expense-and-training-ledger:code",
+          "obligationKind": "code",
+          "module": "orchestrator/toolUpdateClock.ts",
+          "symbol": "updateClockTool",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::downtime-study-expense-and-training-ledger:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.11",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::downtime-study-expense-and-training-ledger:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:006",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::downtime-study-expense-and-training-ledger:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:downtime-study-expense-and-training-ledger",
+          "locator": "known-missing/engine:F10/downtime-study-expense-and-training-ledger",
+          "expected": "absent-from-pack"
+        }
+      ]
     },
     {
       "capabilityId": "engine:F10",
@@ -700,20 +1521,53 @@
         "audit-2026-07-24",
         "missing-source-clause"
       ],
-      "packEvidence": {
-        "queryId": "bootstrap:engine:F10:retained-inventory-property-xp-asset-creation",
-        "engine": "engine:F10",
-        "hookTerms": ["asset", "inventory", "property", "xp"],
-        "sourceComparison": {
-          "status": "second-input-unavailable",
-          "gap": "The committed rules pack contains projected clauses only; this branch has no reproducible machine-readable source-clause inventory for this comparison.",
-          "followUp": "The authoritative ledger must provide the second source input and join it with these query identities by recordKey, clauseId/path, and sourceSpan."
-        }
-      },
-      "codeEvidence": "Character progression and inventory structures exist, but there is no exact existing owner for the full retained-asset creation and provenance contract.",
       "owningBead": "eshyra-o9bd.19.5.11.3",
       "ownershipStatus": "owned",
-      "notes": "Proposed title and parent: current F10 owns currency/downtime surface, but retained asset creation and provenance cross its existing boundary. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task."
+      "notes": "Proposed title and parent: current F10 owns currency/downtime surface, but retained asset creation and provenance cross its existing boundary. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task.",
+      "evidence": [
+        {
+          "kind": "readiness-artifact",
+          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:source-span",
+          "obligationKind": "source-span",
+          "queryId": "bootstrap:engine:F10:retained-inventory-property-xp-asset-creation",
+          "engine": "engine:F10",
+          "hookSelector": {
+            "engine": "F10",
+            "name": "canonical asset creation when retained"
+          },
+          "expected": "non-empty"
+        },
+        {
+          "kind": "code",
+          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:code",
+          "obligationKind": "code",
+          "module": "state/itemState.ts",
+          "symbol": "createInitialItemState",
+          "expected": "exists"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:bead",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.11.3",
+          "expected": "exists"
+        },
+        {
+          "kind": "audit-finding",
+          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:audit-finding",
+          "obligationKind": "audit-finding",
+          "findingAlias": "indep:007",
+          "expected": "known"
+        },
+        {
+          "kind": "known-missing-source-clause",
+          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:missing-source-clause",
+          "obligationKind": "known-missing-source-clause",
+          "sourceRef": "SRD5.1:retained-inventory-property-xp-asset-creation",
+          "locator": "known-missing/engine:F10/retained-inventory-property-xp-asset-creation",
+          "expected": "absent-from-pack"
+        }
+      ]
     }
   ]
 }
