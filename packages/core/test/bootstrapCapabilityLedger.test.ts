@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  CANONICAL_PRIMITIVE_ROSTER,
   evaluateReadinessArtifact,
   evaluateRowEvidence,
   loadBootstrapCapabilityLedger,
@@ -74,6 +75,82 @@ describe('bootstrap capability ledger', () => {
     expect(nonPackRows.map((row) => row.primitive)).toEqual(
       NON_PACK_DISCOVERY_PRIMITIVES,
     );
+  });
+
+  it('enforces the canonical primitive roster in both directions', () => {
+    const ledger = loadBootstrapCapabilityLedger();
+    expect(ledger.rows.map((row) => [row.capabilityId, row.primitive])).toEqual(
+      CANONICAL_PRIMITIVE_ROSTER,
+    );
+    expect(() =>
+      validateBootstrapCapabilityLedger(
+        { ...ledger, rows: ledger.rows.slice(1) },
+        { checkBeads: false },
+      ),
+    ).toThrow(/roster/);
+    expect(() =>
+      validateBootstrapCapabilityLedger(
+        {
+          ...ledger,
+          rows: ledger.rows.map((row, index) =>
+            index === 0 ? { ...row, primitive: 'unexpected-primitive' } : row,
+          ),
+        },
+        { checkBeads: false },
+      ),
+    ).toThrow(/roster|queryId/);
+  });
+
+  it('requires audit relevance to quote the canonical subject and remain row-specific', () => {
+    const ledger = loadBootstrapCapabilityLedger();
+    const firstAudit = ledger.rows[0].evidence.find(
+      (item) => item.kind === 'audit-finding',
+    );
+    if (firstAudit?.kind !== 'audit-finding')
+      throw new Error('fixture needs audit evidence');
+    expect(() =>
+      validateBootstrapCapabilityLedger(
+        {
+          ...ledger,
+          rows: ledger.rows.map((row, index) =>
+            index === 1
+              ? {
+                  ...row,
+                  evidence: row.evidence.map((item) =>
+                    item.kind === 'audit-finding'
+                      ? { ...item, relevance: firstAudit.relevance }
+                      : item,
+                  ),
+                }
+              : row,
+          ),
+        },
+        { checkBeads: false },
+      ),
+    ).toThrow(/subject|relevance/);
+    expect(() =>
+      validateBootstrapCapabilityLedger(
+        {
+          ...ledger,
+          rows: ledger.rows.map((row, index) =>
+            index === 0
+              ? {
+                  ...row,
+                  evidence: row.evidence.map((item) =>
+                    item.kind === 'audit-finding'
+                      ? {
+                          ...item,
+                          relevance: `The accepted finding subject 'condition/action/feat structural gaps' is relevant because this row inventories the ${row.primitive} execution boundary exposed by that finding.`,
+                        }
+                      : item,
+                  ),
+                }
+              : row,
+          ),
+        },
+        { checkBeads: false },
+      ),
+    ).toThrow(/mechanically derived/);
   });
 
   it('matches exact structured hook identity, never a near-match', () => {
@@ -153,15 +230,38 @@ describe('bootstrap capability ledger', () => {
     const result = resolveEvidence(evidence, loadPackRecords());
     expect(result.status).toBe('satisfied');
     expect(result.scannedClauses).toBeGreaterThan(0);
+    const anchor = loadPackRecords().find(
+      (record) =>
+        typeof record === 'object' &&
+        record !== null &&
+        (record as { key?: unknown }).key === evidence.sourceRecordKey,
+    );
+    if (!anchor) throw new Error('fixture needs source anchor');
+    const record = anchor as Record<string, unknown>;
+    const data = (record.data ?? {}) as Record<string, unknown>;
     expect(() =>
       resolveEvidence(evidence, [
         {
+          ...record,
           data: {
-            executionReadiness: { clauses: [{ marker: evidence.locator }] },
+            ...data,
+            executionReadiness: {
+              clauses: [
+                {
+                  clauseId: 'fixture/projected-clause',
+                  engineHooks: [
+                    {
+                      engine: 'F2',
+                      hook: 'legendary actions: per-round allowance and per-option cost',
+                    },
+                  ],
+                },
+              ],
+            },
           },
         },
       ]),
-    ).toThrow(/unexpectedly present/);
+    ).toThrow(/projected clause/);
   });
 
   it('represents a proposed row without inventing an owner', () => {
@@ -249,6 +349,84 @@ describe('bootstrap capability ledger', () => {
         { checkBeads: false },
       ),
     ).toThrow(/non-pack|readiness|source-span/);
+    const rowWithQuery = ledger.rows.find((row) =>
+      row.evidence.some((item) => item.kind === 'readiness-artifact'),
+    );
+    if (!rowWithQuery) throw new Error('fixture needs readiness row');
+    const readiness = rowWithQuery.evidence.find(
+      (item) => item.kind === 'readiness-artifact',
+    );
+    if (readiness?.kind !== 'readiness-artifact')
+      throw new Error('fixture needs readiness evidence');
+    expect(() =>
+      validateBootstrapCapabilityLedger(
+        {
+          ...ledger,
+          rows: ledger.rows.map((row) =>
+            row === rowWithQuery
+              ? {
+                  ...row,
+                  evidence: [
+                    ...row.evidence,
+                    {
+                      ...readiness,
+                      obligationId: 'obl:::SRD5.1:::duplicate:::readiness-hook',
+                    },
+                  ],
+                }
+              : row,
+          ),
+        },
+        { checkBeads: false },
+      ),
+    ).toThrow(/repeats queryId/);
+  });
+
+  it('binds each owned row owner to resolving bead evidence', () => {
+    const ledger = loadBootstrapCapabilityLedger();
+    expect(() =>
+      validateBootstrapCapabilityLedger(
+        {
+          ...ledger,
+          rows: ledger.rows.map((row, index) =>
+            index === 0
+              ? {
+                  ...row,
+                  owningBead: 'eshyra-o9bd.19.5.3',
+                }
+              : row,
+          ),
+        },
+        { checkBeads: false },
+      ),
+    ).toThrow(/bound to bead evidence/);
+  });
+
+  it('rejects empty obligation identity segments', () => {
+    const ledger = loadBootstrapCapabilityLedger();
+    expect(() =>
+      validateBootstrapCapabilityLedger(
+        {
+          ...ledger,
+          rows: ledger.rows.map((row, index) =>
+            index === 0
+              ? {
+                  ...row,
+                  evidence: row.evidence.map((item, itemIndex) =>
+                    itemIndex === 0
+                      ? {
+                          ...item,
+                          obligationId: 'obl:::SRD5.1::::::readiness-hook',
+                        }
+                      : item,
+                  ),
+                }
+              : row,
+          ),
+        },
+        { checkBeads: false },
+      ),
+    ).toThrow(/four non-empty segments|malformed/);
   });
 
   it('rejects the old overloaded pack evidence and copied counts', () => {

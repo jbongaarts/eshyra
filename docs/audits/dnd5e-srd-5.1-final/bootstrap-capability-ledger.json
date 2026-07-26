@@ -26,7 +26,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::condition-and-eligibility-relations:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F1:condition-and-eligibility-relations:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F1:condition-and-eligibility-relations",
           "engine": "engine:F1",
@@ -38,7 +38,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::condition-and-eligibility-relations:code",
+          "obligationId": "obl:::@eshyra/core:::rules/conditionRelations.ts#classifyConditionRelation:::code-symbol",
           "obligationKind": "code",
           "module": "rules/conditionRelations.ts",
           "symbol": "classifyConditionRelation",
@@ -46,17 +46,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::condition-and-eligibility-relations:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.2:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.2",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::condition-and-eligibility-relations:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:001:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:001",
-          "expected": "known"
+          "findingAlias": "sol:CAP-002",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'condition/action/feat structural gaps' is relevant because the requirement 'Evaluate condition and eligibility relations as a deterministic predicate before an effect or option is selected' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -76,7 +77,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::seeded-selection-and-roll-replacement:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F1:seeded-selection-and-roll-replacement:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F1:seeded-selection-and-roll-replacement",
           "engine": "engine:F1",
@@ -88,7 +89,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::seeded-selection-and-roll-replacement:code",
+          "obligationId": "obl:::@eshyra/core:::orchestrator/rng.ts#createSeededRng:::code-symbol",
           "obligationKind": "code",
           "module": "orchestrator/rng.ts",
           "symbol": "createSeededRng",
@@ -96,17 +97,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::seeded-selection-and-roll-replacement:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.2:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.2",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::seeded-selection-and-roll-replacement:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:002:::primitive-relevance",
           "obligationKind": "audit-finding",
           "findingAlias": "indep:002",
-          "expected": "known"
+          "expected": "known",
+          "relevance": "The accepted finding subject 'choice behavior absent or hoisted to parent' is relevant because the requirement 'Select a seeded table, pool, percentage, or shared roll replacement deterministically' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -126,7 +128,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::turn-action-and-free-interaction-budget:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F2:turn-action-and-free-interaction-budget:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F2:turn-action-and-free-interaction-budget",
           "engine": "engine:F2",
@@ -138,7 +140,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::turn-action-and-free-interaction-budget:code",
+          "obligationId": "obl:::@eshyra/core:::state/actionEconomy.ts#beginTurn:::code-symbol",
           "obligationKind": "code",
           "module": "state/actionEconomy.ts",
           "symbol": "beginTurn",
@@ -146,17 +148,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::turn-action-and-free-interaction-budget:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.3:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.3",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::turn-action-and-free-interaction-budget:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:003:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:003",
-          "expected": "known"
+          "findingAlias": "sol:CAP-002",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'condition/action/feat structural gaps' is relevant because the requirement 'Own one combatant's action, bonus-action, reaction, movement note, and free object interaction for the turn window' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -176,7 +179,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::reaction-and-item-activation-ownership:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F2:reaction-and-item-activation-ownership:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F2:reaction-and-item-activation-ownership",
           "engine": "engine:F2",
@@ -188,7 +191,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::reaction-and-item-activation-ownership:code",
+          "obligationId": "obl:::@eshyra/core:::state/actionEconomy.ts#setReactionAllowance:::code-symbol",
           "obligationKind": "code",
           "module": "state/actionEconomy.ts",
           "symbol": "setReactionAllowance",
@@ -196,17 +199,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::reaction-and-item-activation-ownership:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.3:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.3",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::reaction-and-item-activation-ownership:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:004:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:004",
-          "expected": "known"
+          "findingAlias": "sol:CAP-002",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'condition/action/feat structural gaps' is relevant because the requirement 'Spend and validate reaction, item-activation, and controlled-entity command budgets at their canonical owner' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -226,7 +230,7 @@
       "evidence": [
         {
           "kind": "code",
-          "obligationId": "obl:::legendary-action-allowance-and-option-cost:code",
+          "obligationId": "obl:::@eshyra/core:::state/actionEconomy.ts#readCombatTurnState:::code-symbol",
           "obligationKind": "code",
           "module": "state/actionEconomy.ts",
           "symbol": "readCombatTurnState",
@@ -234,25 +238,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::legendary-action-allowance-and-option-cost:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.3:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.3",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::legendary-action-allowance-and-option-cost:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:005:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:005",
-          "expected": "known"
+          "findingAlias": "opus:F-26",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'legendary budget and action costs unmodeled' is relevant because the requirement 'Track a legendary creature's per-round allowance, per-option cost, spend window, and start-of-turn recovery' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::legendary-action-allowance-and-option-cost:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::creature:aboleth#p. 261:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:legendary-action-allowance-and-option-cost",
-          "locator": "known-missing/engine:F2/legendary-action-allowance-and-option-cost",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 261",
+          "locator": "p. 261",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "creature:aboleth",
+          "projectionQueryId": "bootstrap:projection:engine:F2:legendary-action-allowance-and-option-cost"
         }
       ]
     },
@@ -272,7 +279,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::concentration-owner-and-damage-save:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F3:concentration-owner-and-damage-save:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F3:concentration-owner-and-damage-save",
           "engine": "engine:F3",
@@ -284,7 +291,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::concentration-owner-and-damage-save:code",
+          "obligationId": "obl:::@eshyra/core:::state/activeEffects.ts#resolveConcentrationCheck:::code-symbol",
           "obligationKind": "code",
           "module": "state/activeEffects.ts",
           "symbol": "resolveConcentrationCheck",
@@ -292,17 +299,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::concentration-owner-and-damage-save:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.4:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.4",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::concentration-owner-and-damage-save:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:006:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:006",
-          "expected": "known"
+          "findingAlias": "sol:CAP-004",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'creature/stat-block mechanics incomplete' is relevant because the requirement 'Maintain one concentration effect per owner and resolve the damage-triggered concentration save with a source-grounded DC' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -322,7 +330,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::active-effect-duration-and-termination:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F3:active-effect-duration-and-termination:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F3:active-effect-duration-and-termination",
           "engine": "engine:F3",
@@ -334,7 +342,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::active-effect-duration-and-termination:code",
+          "obligationId": "obl:::@eshyra/core:::state/activeEffects.ts#createActiveEffect:::code-symbol",
           "obligationKind": "code",
           "module": "state/activeEffects.ts",
           "symbol": "createActiveEffect",
@@ -342,17 +350,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::active-effect-duration-and-termination:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.4:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.4",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::active-effect-duration-and-termination:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:007:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:007",
-          "expected": "known"
+          "findingAlias": "sol:CAP-001",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'rule corpus not executable' is relevant because the requirement 'Create, expire, suppress, refresh, and terminate duration-bearing active effects at the canonical lifecycle seam' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -372,7 +381,7 @@
       "evidence": [
         {
           "kind": "code",
-          "obligationId": "obl:::owned-entity-and-repeat-trigger-lifecycle:code",
+          "obligationId": "obl:::@eshyra/core:::state/encounterCombatants.ts#ensureCampaignActorFromCombatant:::code-symbol",
           "obligationKind": "code",
           "module": "state/encounterCombatants.ts",
           "symbol": "ensureCampaignActorFromCombatant",
@@ -380,25 +389,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::owned-entity-and-repeat-trigger-lifecycle:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.4:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.4",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::owned-entity-and-repeat-trigger-lifecycle:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:008:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:008",
-          "expected": "known"
+          "findingAlias": "sol:CAP-004",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'creature/stat-block mechanics incomplete' is relevant because the requirement 'Own summoned or created entities and their repeat-save, repeat-damage, cleanup, and termination triggers' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::owned-entity-and-repeat-trigger-lifecycle:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::creature:aboleth#p. 261:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:owned-entity-and-repeat-trigger-lifecycle",
-          "locator": "known-missing/engine:F3/owned-entity-and-repeat-trigger-lifecycle",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 261",
+          "locator": "p. 261",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "creature:aboleth",
+          "projectionQueryId": "bootstrap:projection:engine:F3:owned-entity-and-repeat-trigger-lifecycle"
         }
       ]
     },
@@ -418,7 +430,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::caster-of-record-and-canonical-spell-execution:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F4:caster-of-record-and-canonical-spell-execution:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F4:caster-of-record-and-canonical-spell-execution",
           "engine": "engine:F4",
@@ -430,7 +442,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::caster-of-record-and-canonical-spell-execution:code",
+          "obligationId": "obl:::@eshyra/core:::orchestrator/spellUpcast.ts#resolveSpellUpcast:::code-symbol",
           "obligationKind": "code",
           "module": "orchestrator/spellUpcast.ts",
           "symbol": "resolveSpellUpcast",
@@ -438,17 +450,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::caster-of-record-and-canonical-spell-execution:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.5:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.5",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::caster-of-record-and-canonical-spell-execution:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:009:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:009",
-          "expected": "known"
+          "findingAlias": "indep:005",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'spell procedure incompleteness' is relevant because the requirement 'Resolve a spell with one caster of record, source-grounded ability/DC/attack context, and an explicit effect application path' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -469,7 +482,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F4:spell-slot-gate-and-upcast-transform:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F4:spell-slot-gate-and-upcast-transform",
           "engine": "engine:F4",
@@ -481,7 +494,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:code",
+          "obligationId": "obl:::@eshyra/core:::state/spellSlots.ts#spendSpellSlot:::code-symbol",
           "obligationKind": "code",
           "module": "state/spellSlots.ts",
           "symbol": "spendSpellSlot",
@@ -489,25 +502,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.5:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.5",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:010:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:010",
-          "expected": "known"
+          "findingAlias": "indep:005",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'spell procedure incompleteness' is relevant because the requirement 'Validate the spell slot level and apply deterministic upcast scaling before spell resolution' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::spell-slot-gate-and-upcast-transform:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::class:wizard#p. 52:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:spell-slot-gate-and-upcast-transform",
-          "locator": "known-missing/engine:F4/spell-slot-gate-and-upcast-transform",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 52",
+          "locator": "p. 52",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "class:wizard",
+          "projectionQueryId": "bootstrap:projection:engine:F4:spell-slot-gate-and-upcast-transform"
         }
       ]
     },
@@ -519,7 +535,8 @@
         "readiness-artifacts",
         "current-code",
         "audit-2026-07-24",
-        "missing-source-clause"
+        "missing-source-clause",
+        "current-beads"
       ],
       "owningBead": "eshyra-o9bd.19.5.5.3",
       "ownershipStatus": "owned",
@@ -527,7 +544,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::spellbook-copy-cost-and-asset-ledger:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F4:spellbook-copy-cost-and-asset-ledger:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F4:spellbook-copy-cost-and-asset-ledger",
           "engine": "engine:F4",
@@ -539,7 +556,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::spellbook-copy-cost-and-asset-ledger:code",
+          "obligationId": "obl:::@eshyra/core:::character/spellcastingDerivation.ts#deriveSpellcastingValues:::code-symbol",
           "obligationKind": "code",
           "module": "character/spellcastingDerivation.ts",
           "symbol": "deriveSpellcastingValues",
@@ -547,18 +564,28 @@
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::spellbook-copy-cost-and-asset-ledger:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:011:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:011",
-          "expected": "known"
+          "findingAlias": "sol:CAP-007",
+          "expected": "known",
+          "relevance": "The accepted finding subject '221 magic items blocked by engine' is relevant because the requirement 'Resolve wizard spellbook copying as a spell eligibility, time, and currency/asset mutation procedure' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::spellbook-copy-cost-and-asset-ledger:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::feature:wizard:spellbook#p. 52:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:spellbook-copy-cost-and-asset-ledger",
-          "locator": "known-missing/engine:F4/spellbook-copy-cost-and-asset-ledger",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 52",
+          "locator": "p. 52",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "feature:wizard:spellbook",
+          "projectionQueryId": "bootstrap:projection:engine:F4:spellbook-copy-cost-and-asset-ledger"
+        },
+        {
+          "kind": "bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.5.3:::ownership",
+          "obligationKind": "bead",
+          "beadId": "eshyra-o9bd.19.5.5.3",
+          "expected": "exists"
         }
       ]
     },
@@ -578,7 +605,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::per-instance-usage-and-charge-spend:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F5:per-instance-usage-and-charge-spend:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F5:per-instance-usage-and-charge-spend",
           "engine": "engine:F5",
@@ -590,7 +617,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::per-instance-usage-and-charge-spend:code",
+          "obligationId": "obl:::@eshyra/core:::state/usageCounters.ts#spendUsage:::code-symbol",
           "obligationKind": "code",
           "module": "state/usageCounters.ts",
           "symbol": "spendUsage",
@@ -598,17 +625,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::per-instance-usage-and-charge-spend:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.6:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.6",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::per-instance-usage-and-charge-spend:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:012:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:012",
-          "expected": "known"
+          "findingAlias": "sol:CAP-007",
+          "expected": "known",
+          "relevance": "The accepted finding subject '221 magic items blocked by engine' is relevant because the requirement 'Spend item-instance uses or charges against the owning instance with a durable remaining-use state' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -628,7 +656,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::recharge-and-reset-scheduling:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F5:recharge-and-reset-scheduling:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F5:recharge-and-reset-scheduling",
           "engine": "engine:F5",
@@ -640,7 +668,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::recharge-and-reset-scheduling:code",
+          "obligationId": "obl:::@eshyra/core:::state/usageCounters.ts#resetUsage:::code-symbol",
           "obligationKind": "code",
           "module": "state/usageCounters.ts",
           "symbol": "resetUsage",
@@ -648,17 +676,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::recharge-and-reset-scheduling:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.6:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.6",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::recharge-and-reset-scheduling:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:001:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:001",
-          "expected": "known"
+          "findingAlias": "opus:F-04",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'Arcane Recovery reset wrong' is relevant because the requirement 'Apply turn-start recharge, dawn, short-rest, long-rest, and elapsed-time reset events to the correct counter' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -678,7 +707,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::attunement-curse-and-identity-constraints:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F5:attunement-curse-and-identity-constraints:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F5:attunement-curse-and-identity-constraints",
           "engine": "engine:F5",
@@ -690,7 +719,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::attunement-curse-and-identity-constraints:code",
+          "obligationId": "obl:::@eshyra/core:::state/attunement.ts#resolveCanonicalAttunementContract:::code-symbol",
           "obligationKind": "code",
           "module": "state/attunement.ts",
           "symbol": "resolveCanonicalAttunementContract",
@@ -698,17 +727,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::attunement-curse-and-identity-constraints:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.6:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.6",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::attunement-curse-and-identity-constraints:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:002:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:002",
-          "expected": "known"
+          "findingAlias": "sol:CAP-007",
+          "expected": "known",
+          "relevance": "The accepted finding subject '221 magic items blocked by engine' is relevant because the requirement 'Enforce attunement slots, duplicate/identity constraints, ending conditions, and curse persistence on an item instance' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -728,7 +758,7 @@
       "evidence": [
         {
           "kind": "code",
-          "obligationId": "obl:::containment-portal-and-card-pool-instance-state:code",
+          "obligationId": "obl:::@eshyra/core:::state/itemState.ts#createInitialItemState:::code-symbol",
           "obligationKind": "code",
           "module": "state/itemState.ts",
           "symbol": "createInitialItemState",
@@ -736,25 +766,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::containment-portal-and-card-pool-instance-state:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.6.3:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.6.3",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::containment-portal-and-card-pool-instance-state:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:003:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:003",
-          "expected": "known"
+          "findingAlias": "sol:CAP-007",
+          "expected": "known",
+          "relevance": "The accepted finding subject '221 magic items blocked by engine' is relevant because the requirement 'Persist per-instance containment/portal ownership and licensed random/card-pool state across item operations' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::containment-portal-and-card-pool-instance-state:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::magic-item:bag-of-holding#p. 210:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:containment-portal-and-card-pool-instance-state",
-          "locator": "known-missing/engine:F5/containment-portal-and-card-pool-instance-state",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 210",
+          "locator": "p. 210",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "magic-item:bag-of-holding",
+          "projectionQueryId": "bootstrap:projection:engine:F5:containment-portal-and-card-pool-instance-state"
         }
       ]
     },
@@ -774,7 +807,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::hp-healing-and-temporary-buffer:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F6:hp-healing-and-temporary-buffer:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F6:hp-healing-and-temporary-buffer",
           "engine": "engine:F6",
@@ -786,7 +819,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::hp-healing-and-temporary-buffer:code",
+          "obligationId": "obl:::@eshyra/core:::state/hpLifecycle.ts#adjustHp:::code-symbol",
           "obligationKind": "code",
           "module": "state/hpLifecycle.ts",
           "symbol": "adjustHp",
@@ -794,17 +827,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::hp-healing-and-temporary-buffer:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.7:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.7",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::hp-healing-and-temporary-buffer:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:004:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:004",
-          "expected": "known"
+          "findingAlias": "sol:CAP-004",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'creature/stat-block mechanics incomplete' is relevant because the requirement 'Apply damage, healing, maximum HP, temporary HP consumption, and dead/healing restrictions at the HP seam' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -824,7 +858,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::death-save-dying-and-stable-transitions:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F6:death-save-dying-and-stable-transitions:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F6:death-save-dying-and-stable-transitions",
           "engine": "engine:F6",
@@ -836,7 +870,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::death-save-dying-and-stable-transitions:code",
+          "obligationId": "obl:::@eshyra/core:::state/hpLifecycle.ts#recordDeathSave:::code-symbol",
           "obligationKind": "code",
           "module": "state/hpLifecycle.ts",
           "symbol": "recordDeathSave",
@@ -844,17 +878,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::death-save-dying-and-stable-transitions:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.7:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.7",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::death-save-dying-and-stable-transitions:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:005:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:005",
-          "expected": "known"
+          "findingAlias": "sol:CAP-004",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'creature/stat-block mechanics incomplete' is relevant because the requirement 'Resolve death-save results, instant-death overflow, stable recovery, and dying/dead transitions durably' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -874,7 +909,7 @@
       "evidence": [
         {
           "kind": "code",
-          "obligationId": "obl:::suffocation-and-ongoing-damage-state:code",
+          "obligationId": "obl:::@eshyra/core:::state/hpLifecycle.ts#resolveStableRecoveries:::code-symbol",
           "obligationKind": "code",
           "module": "state/hpLifecycle.ts",
           "symbol": "resolveStableRecoveries",
@@ -882,25 +917,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::suffocation-and-ongoing-damage-state:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.7:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.7",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::suffocation-and-ongoing-damage-state:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:006:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:006",
-          "expected": "known"
+          "findingAlias": "fable:F3",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'creature rider/ongoing damage untyped' is relevant because the requirement 'Advance suffocation and recurring damage state to the correct HP/life/condition transition with fail-closed timing' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::suffocation-and-ongoing-damage-state:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::rule:suffocating#p. 86:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:suffocation-and-ongoing-damage-state",
-          "locator": "known-missing/engine:F6/suffocation-and-ongoing-damage-state",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 86",
+          "locator": "p. 86",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "rule:suffocating",
+          "projectionQueryId": "bootstrap:projection:engine:F6:suffocation-and-ongoing-damage-state"
         }
       ]
     },
@@ -920,7 +958,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::short-rest-hit-dice-recovery:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F7:short-rest-hit-dice-recovery:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F7:short-rest-hit-dice-recovery",
           "engine": "engine:F7",
@@ -932,7 +970,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::short-rest-hit-dice-recovery:code",
+          "obligationId": "obl:::@eshyra/core:::state/rest.ts#completeShortRest:::code-symbol",
           "obligationKind": "code",
           "module": "state/rest.ts",
           "symbol": "completeShortRest",
@@ -940,17 +978,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::short-rest-hit-dice-recovery:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.8:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.8",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::short-rest-hit-dice-recovery:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:007:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:007",
-          "expected": "known"
+          "findingAlias": "opus:F-05",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'Natural Recovery reset wrong' is relevant because the requirement 'Spend a durable hit-dice pool during a bounded short rest and restore HP from the source-defined die procedure' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -970,7 +1009,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::long-rest-reset-orchestration:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F7:long-rest-reset-orchestration:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F7:long-rest-reset-orchestration",
           "engine": "engine:F7",
@@ -982,7 +1021,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::long-rest-reset-orchestration:code",
+          "obligationId": "obl:::@eshyra/core:::state/rest.ts#completeLongRest:::code-symbol",
           "obligationKind": "code",
           "module": "state/rest.ts",
           "symbol": "completeLongRest",
@@ -990,17 +1029,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::long-rest-reset-orchestration:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.8:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.8",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::long-rest-reset-orchestration:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:008:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:008",
-          "expected": "known"
+          "findingAlias": "opus:F-04",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'Arcane Recovery reset wrong' is relevant because the requirement 'Enforce long-rest duration/eligibility gates and orchestrate F4, F5, F6, and active-effect reset hooks' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -1020,7 +1060,7 @@
       "evidence": [
         {
           "kind": "code",
-          "obligationId": "obl:::planar-return-and-declared-window-clocks:code",
+          "obligationId": "obl:::@eshyra/core:::state/turnClock.ts#readCompletedTurns:::code-symbol",
           "obligationKind": "code",
           "module": "state/turnClock.ts",
           "symbol": "readCompletedTurns",
@@ -1028,25 +1068,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::planar-return-and-declared-window-clocks:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.8.3:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.8.3",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::planar-return-and-declared-window-clocks:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:009:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:009",
-          "expected": "known"
+          "findingAlias": "sol:CAP-007",
+          "expected": "known",
+          "relevance": "The accepted finding subject '221 magic items blocked by engine' is relevant because the requirement 'Persist elapsed-time clocks for planar return, declared draws, timed curses, and other source-defined deadlines' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::planar-return-and-declared-window-clocks:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::magic-item:robe-of-stars#p. 239:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:planar-return-and-declared-window-clocks",
-          "locator": "known-missing/engine:F7/planar-return-and-declared-window-clocks",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 239",
+          "locator": "p. 239",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "magic-item:robe-of-stars",
+          "projectionQueryId": "bootstrap:projection:engine:F7:planar-return-and-declared-window-clocks"
         }
       ]
     },
@@ -1066,7 +1109,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::save-dc-and-spell-attack-modifier-resolution:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F8:save-dc-and-spell-attack-modifier-resolution:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F8:save-dc-and-spell-attack-modifier-resolution",
           "engine": "engine:F8",
@@ -1078,7 +1121,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::save-dc-and-spell-attack-modifier-resolution:code",
+          "obligationId": "obl:::@eshyra/core:::character/spellcastingDerivation.ts#deriveSpellcastingValues:::code-symbol",
           "obligationKind": "code",
           "module": "character/spellcastingDerivation.ts",
           "symbol": "deriveSpellcastingValues",
@@ -1086,17 +1129,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::save-dc-and-spell-attack-modifier-resolution:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.9:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.9",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::save-dc-and-spell-attack-modifier-resolution:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:010:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:010",
-          "expected": "known"
+          "findingAlias": "opus:F-12",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'Ki abilities and save DC swallowed by prose' is relevant because the requirement 'Derive save DC and spell attack modifiers from the qualified ability, proficiency, and item effects' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -1117,7 +1161,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F8:multi-save-and-ability-choice-outcomes:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F8:multi-save-and-ability-choice-outcomes",
           "engine": "engine:F8",
@@ -1129,7 +1173,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:code",
+          "obligationId": "obl:::@eshyra/core:::orchestrator/toolResolveCheck.ts#resolveCheckTool:::code-symbol",
           "obligationKind": "code",
           "module": "orchestrator/toolResolveCheck.ts",
           "symbol": "resolveCheckTool",
@@ -1137,25 +1181,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.9:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.9",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:011:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:011",
-          "expected": "known"
+          "findingAlias": "opus:F-32",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'multi-save entries type only first save' is relevant because the requirement 'Represent multiple saves, alternative save abilities, repeat saves, and save-dependent outcomes without dropping later branches' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::multi-save-and-ability-choice-outcomes:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::rule:saving-throws#p. 83:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:multi-save-and-ability-choice-outcomes",
-          "locator": "known-missing/engine:F8/multi-save-and-ability-choice-outcomes",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 83",
+          "locator": "p. 83",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "rule:saving-throws",
+          "projectionQueryId": "bootstrap:projection:engine:F8:multi-save-and-ability-choice-outcomes"
         }
       ]
     },
@@ -1175,7 +1222,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::derived-attack-ac-and-proficiency-modifiers:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F8:derived-attack-ac-and-proficiency-modifiers:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F8:derived-attack-ac-and-proficiency-modifiers",
           "engine": "engine:F8",
@@ -1187,7 +1234,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::derived-attack-ac-and-proficiency-modifiers:code",
+          "obligationId": "obl:::@eshyra/core:::character/derivedValues.ts#deriveLevel1Values:::code-symbol",
           "obligationKind": "code",
           "module": "character/derivedValues.ts",
           "symbol": "deriveLevel1Values",
@@ -1195,17 +1242,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::derived-attack-ac-and-proficiency-modifiers:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.9:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.9",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::derived-attack-ac-and-proficiency-modifiers:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:012:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:012",
-          "expected": "known"
+          "findingAlias": "opus:F-34",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'inconsistent flat/dice damage field names' is relevant because the requirement 'Apply source-qualified attack, AC, proficiency, advantage, and disadvantage modifiers exactly once' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -1225,7 +1273,7 @@
       "evidence": [
         {
           "kind": "code",
-          "obligationId": "obl:::point-origin-area-geometry-and-targeting:code",
+          "obligationId": "obl:::@eshyra/core:::orchestrator/calc.ts#evaluateCalc:::code-symbol",
           "obligationKind": "code",
           "module": "orchestrator/calc.ts",
           "symbol": "evaluateCalc",
@@ -1233,25 +1281,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::point-origin-area-geometry-and-targeting:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.10:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.10",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::point-origin-area-geometry-and-targeting:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:001:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:001",
-          "expected": "known"
+          "findingAlias": "fable:F2",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'point-origin areas absent' is relevant because the requirement 'Resolve point-origin areas, range, cover, targets, and forced-movement geometry with source-defined variants' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::point-origin-area-geometry-and-targeting:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::rule:areas-of-effect#pp. 102, 103:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:point-origin-area-geometry-and-targeting",
-          "locator": "known-missing/engine:F9/point-origin-area-geometry-and-targeting",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 pp. 102, 103",
+          "locator": "pp. 102, 103",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "rule:areas-of-effect",
+          "projectionQueryId": "bootstrap:projection:engine:F9:point-origin-area-geometry-and-targeting"
         }
       ]
     },
@@ -1271,7 +1322,7 @@
       "evidence": [
         {
           "kind": "code",
-          "obligationId": "obl:::damage-rider-and-half-damage-branch-resolution:code",
+          "obligationId": "obl:::@eshyra/core:::orchestrator/toolResolveDamage.ts#resolveDamageTool:::code-symbol",
           "obligationKind": "code",
           "module": "orchestrator/toolResolveDamage.ts",
           "symbol": "resolveDamageTool",
@@ -1279,25 +1330,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::damage-rider-and-half-damage-branch-resolution:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.10:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.10",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::damage-rider-and-half-damage-branch-resolution:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:002:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:002",
-          "expected": "known"
+          "findingAlias": "fable:F3",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'creature rider/ongoing damage untyped' is relevant because the requirement 'Resolve typed damage riders, resistance/vulnerability, ongoing damage, and half-damage-on-success alternatives' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::damage-rider-and-half-damage-branch-resolution:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::rule:damage-resistance-and-vulnerability#p. 97:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:damage-rider-and-half-damage-branch-resolution",
-          "locator": "known-missing/engine:F9/damage-rider-and-half-damage-branch-resolution",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 97",
+          "locator": "p. 97",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "rule:damage-resistance-and-vulnerability",
+          "projectionQueryId": "bootstrap:projection:engine:F9:damage-rider-and-half-damage-branch-resolution"
         }
       ]
     },
@@ -1317,7 +1371,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::forced-movement-contest-and-object-interaction:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F9:forced-movement-contest-and-object-interaction:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F9:forced-movement-contest-and-object-interaction",
           "engine": "engine:F9",
@@ -1329,7 +1383,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::forced-movement-contest-and-object-interaction:code",
+          "obligationId": "obl:::@eshyra/core:::orchestrator/toolResolveContest.ts#resolveContestTool:::code-symbol",
           "obligationKind": "code",
           "module": "orchestrator/toolResolveContest.ts",
           "symbol": "resolveContestTool",
@@ -1337,17 +1391,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::forced-movement-contest-and-object-interaction:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.10:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.10",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::forced-movement-contest-and-object-interaction:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:003:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:003",
-          "expected": "known"
+          "findingAlias": "opus:F-35",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'targeting qualifiers truncated' is relevant because the requirement 'Resolve deterministic contests, escapes, forced movement, destruction, and object interaction outcomes' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -1367,7 +1422,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::capacity-and-variant-arithmetic:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F9:capacity-and-variant-arithmetic:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F9:capacity-and-variant-arithmetic",
           "engine": "engine:F9",
@@ -1379,7 +1434,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::capacity-and-variant-arithmetic:code",
+          "obligationId": "obl:::@eshyra/core:::orchestrator/calc.ts#CALC_FORMULAS:::code-symbol",
           "obligationKind": "code",
           "module": "orchestrator/calc.ts",
           "symbol": "CALC_FORMULAS",
@@ -1387,17 +1442,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::capacity-and-variant-arithmetic:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.10:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.10",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::capacity-and-variant-arithmetic:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:004:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:004",
-          "expected": "known"
+          "findingAlias": "opus:F-02",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'four Pit variants collapsed' is relevant because the requirement 'Compute carrying, vehicle pull, coverage, time, volume, and source-defined variant quantities deterministically' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -1417,7 +1473,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::canonical-currency-mutation:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F10:canonical-currency-mutation:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F10:canonical-currency-mutation",
           "engine": "engine:F10",
@@ -1429,7 +1485,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::canonical-currency-mutation:code",
+          "obligationId": "obl:::@eshyra/core:::character/currency.ts#adjustCharacterCurrency:::code-symbol",
           "obligationKind": "code",
           "module": "character/currency.ts",
           "symbol": "adjustCharacterCurrency",
@@ -1437,17 +1493,18 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::canonical-currency-mutation:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.11:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.11",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::canonical-currency-mutation:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:005:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:005",
-          "expected": "known"
+          "findingAlias": "sol:CAP-013",
+          "expected": "known",
+          "relevance": "The accepted finding subject 'Tack/Harness/Drawn Vehicles taxonomy lost' is relevant because the requirement 'Read, earn, spend, convert, and audit currency mutations through the canonical gameplay surface' is the concrete execution consequence that this audit gap leaves unowned."
         }
       ]
     },
@@ -1468,7 +1525,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::downtime-study-expense-and-training-ledger:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F10:downtime-study-expense-and-training-ledger:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F10:downtime-study-expense-and-training-ledger",
           "engine": "engine:F10",
@@ -1480,7 +1537,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::downtime-study-expense-and-training-ledger:code",
+          "obligationId": "obl:::@eshyra/core:::orchestrator/toolUpdateClock.ts#updateClockTool:::code-symbol",
           "obligationKind": "code",
           "module": "orchestrator/toolUpdateClock.ts",
           "symbol": "updateClockTool",
@@ -1488,25 +1545,28 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::downtime-study-expense-and-training-ledger:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.11:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.11",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::downtime-study-expense-and-training-ledger:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:006:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:006",
-          "expected": "known"
+          "findingAlias": "sol:CAP-007",
+          "expected": "known",
+          "relevance": "The accepted finding subject '221 magic items blocked by engine' is relevant because the requirement 'Apply deterministic downtime study, lifestyle expense, profession, research, and training ledger transformations' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::downtime-study-expense-and-training-ledger:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::rule:downtime-activities#p. 88:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:downtime-study-expense-and-training-ledger",
-          "locator": "known-missing/engine:F10/downtime-study-expense-and-training-ledger",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 88",
+          "locator": "p. 88",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "rule:downtime-activities",
+          "projectionQueryId": "bootstrap:projection:engine:F10:downtime-study-expense-and-training-ledger"
         }
       ]
     },
@@ -1527,7 +1587,7 @@
       "evidence": [
         {
           "kind": "readiness-artifact",
-          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:source-span",
+          "obligationId": "obl:::SRD5.1:::bootstrap:engine:F10:retained-inventory-property-xp-asset-creation:::readiness-hook",
           "obligationKind": "source-span",
           "queryId": "bootstrap:engine:F10:retained-inventory-property-xp-asset-creation",
           "engine": "engine:F10",
@@ -1539,7 +1599,7 @@
         },
         {
           "kind": "code",
-          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:code",
+          "obligationId": "obl:::@eshyra/core:::state/itemState.ts#createInitialItemState:::code-symbol",
           "obligationKind": "code",
           "module": "state/itemState.ts",
           "symbol": "createInitialItemState",
@@ -1547,27 +1607,137 @@
         },
         {
           "kind": "bead",
-          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:bead",
+          "obligationId": "obl:::beads:::eshyra-o9bd.19.5.11.3:::ownership",
           "obligationKind": "bead",
           "beadId": "eshyra-o9bd.19.5.11.3",
           "expected": "exists"
         },
         {
           "kind": "audit-finding",
-          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:audit-finding",
+          "obligationId": "obl:::2026-07-24-audit:::indep:007:::primitive-relevance",
           "obligationKind": "audit-finding",
-          "findingAlias": "indep:007",
-          "expected": "known"
+          "findingAlias": "sol:CAP-007",
+          "expected": "known",
+          "relevance": "The accepted finding subject '221 magic items blocked by engine' is relevant because the requirement 'Create and retain canonical inventory, property, XP, and other source-defined assets with auditable ownership' is the concrete execution consequence that this audit gap leaves unowned."
         },
         {
           "kind": "known-missing-source-clause",
-          "obligationId": "obl:::retained-inventory-property-xp-asset-creation:missing-source-clause",
+          "obligationId": "obl:::SRD5.1:::magic-item:marvelous-pigments#p. 230:::projection-absence",
           "obligationKind": "known-missing-source-clause",
-          "sourceRef": "SRD5.1:retained-inventory-property-xp-asset-creation",
-          "locator": "known-missing/engine:F10/retained-inventory-property-xp-asset-creation",
-          "expected": "absent-from-pack"
+          "sourceRef": "SRD 5.1 p. 230",
+          "locator": "p. 230",
+          "expected": "absent-from-pack",
+          "sourceRecordKey": "magic-item:marvelous-pigments",
+          "projectionQueryId": "bootstrap:projection:engine:F10:retained-inventory-property-xp-asset-creation"
         }
       ]
     }
-  ]
+  ],
+  "primitiveRoster": {
+    "version": "bootstrap-capability-roster-v1",
+    "entries": [
+      ["engine:F1", "condition-and-eligibility-relations"],
+      ["engine:F1", "seeded-selection-and-roll-replacement"],
+      ["engine:F2", "turn-action-and-free-interaction-budget"],
+      ["engine:F2", "reaction-and-item-activation-ownership"],
+      ["engine:F2", "legendary-action-allowance-and-option-cost"],
+      ["engine:F3", "concentration-owner-and-damage-save"],
+      ["engine:F3", "active-effect-duration-and-termination"],
+      ["engine:F3", "owned-entity-and-repeat-trigger-lifecycle"],
+      ["engine:F4", "caster-of-record-and-canonical-spell-execution"],
+      ["engine:F4", "spell-slot-gate-and-upcast-transform"],
+      ["engine:F4", "spellbook-copy-cost-and-asset-ledger"],
+      ["engine:F5", "per-instance-usage-and-charge-spend"],
+      ["engine:F5", "recharge-and-reset-scheduling"],
+      ["engine:F5", "attunement-curse-and-identity-constraints"],
+      ["engine:F5", "containment-portal-and-card-pool-instance-state"],
+      ["engine:F6", "hp-healing-and-temporary-buffer"],
+      ["engine:F6", "death-save-dying-and-stable-transitions"],
+      ["engine:F6", "suffocation-and-ongoing-damage-state"],
+      ["engine:F7", "short-rest-hit-dice-recovery"],
+      ["engine:F7", "long-rest-reset-orchestration"],
+      ["engine:F7", "planar-return-and-declared-window-clocks"],
+      ["engine:F8", "save-dc-and-spell-attack-modifier-resolution"],
+      ["engine:F8", "multi-save-and-ability-choice-outcomes"],
+      ["engine:F8", "derived-attack-ac-and-proficiency-modifiers"],
+      ["engine:F9", "point-origin-area-geometry-and-targeting"],
+      ["engine:F9", "damage-rider-and-half-damage-branch-resolution"],
+      ["engine:F9", "forced-movement-contest-and-object-interaction"],
+      ["engine:F9", "capacity-and-variant-arithmetic"],
+      ["engine:F10", "canonical-currency-mutation"],
+      ["engine:F10", "downtime-study-expense-and-training-ledger"],
+      ["engine:F10", "retained-inventory-property-xp-asset-creation"]
+    ]
+  },
+  "auditFindingSubjects": {
+    "indep:001": "atom presence mistaken for complete procedures",
+    "indep:002": "choice behavior absent or hoisted to parent",
+    "indep:003": "incomplete class feature and feat procedures",
+    "indep:004": "ancestry deterministic omissions",
+    "indep:005": "spell procedure incompleteness",
+    "indep:006": "creature trigger/branch/timing/lifecycle gaps",
+    "indep:007": "hazards not deterministically executable",
+    "indep:008": "23 incomplete locators",
+    "indep:009": "ambiguous/unresolved counted as complete",
+    "indep:010": "Rock Gnome trait boundary",
+    "indep:011": "falsely closed language universe",
+    "indep:012": "equipment/material/potion/report issues",
+    "opus:F-01": "hazard success-damage branches omitted",
+    "opus:F-02": "four Pit variants collapsed",
+    "opus:F-03": "Indomitable use scaling wrong",
+    "opus:F-04": "Arcane Recovery reset wrong",
+    "opus:F-05": "Natural Recovery reset wrong",
+    "opus:F-06": "phantom feature resources",
+    "opus:F-07": "Eldritch Invocation effects hoisted",
+    "opus:F-08": "spell areas limited to self-origin",
+    "opus:F-09": "rules prose-only with no in-band readiness",
+    "opus:F-10": "advancement scaling qualifiers dropped",
+    "opus:F-11": "Magic Missile base projectile count missing",
+    "opus:F-12": "Ki abilities and save DC swallowed by prose",
+    "opus:F-13": "proficiency grants free-text",
+    "opus:F-14": "inconsistent choice identifiers/catalogs",
+    "opus:F-15": "inconsistent Spellcasting subfeature granularity",
+    "opus:F-16": "madness durations dropped",
+    "opus:F-17": "Vehicles tool row missing",
+    "opus:F-18": "background equipment unstructured",
+    "opus:F-19": "composed spellPreparation sourceText presented as quotation",
+    "opus:F-20": "stale loreweaver manifest reference",
+    "opus:F-21": "zero-finding metadata contradicts readiness",
+    "opus:F-22": "duplicate display names lack qualification",
+    "opus:F-23": "Sphere of Annihilation prose-only",
+    "opus:F-24": "Divine Sense use count missing",
+    "opus:F-25": "79 creature + 8 hazard half-damage branches omitted",
+    "opus:F-26": "legendary budget and action costs unmodeled",
+    "opus:F-27": "mutually exclusive damage alternatives flattened",
+    "opus:F-28": "Druid/Dryad attacks lack attack objects",
+    "opus:F-29": "Unicode-minus damage silently dropped",
+    "opus:F-30": "Wererat Hand Crossbow swallowed",
+    "opus:F-31": "ranged attacks lack range under alternate notation",
+    "opus:F-32": "multi-save entries type only first save",
+    "opus:F-33": "Bulette ability alternative/DC lost",
+    "opus:F-34": "inconsistent flat/dice damage field names",
+    "opus:F-35": "targeting qualifiers truncated",
+    "sol:CAP-001": "rule corpus not executable",
+    "sol:CAP-002": "condition/action/feat structural gaps",
+    "sol:CAP-003": "spell mechanics shallower than source",
+    "sol:CAP-004": "creature/stat-block mechanics incomplete",
+    "sol:CAP-005": "ancestry/feature/progression/choice losses",
+    "sol:CAP-006": "hazards incomplete and healing potion prose-only",
+    "sol:CAP-007": "221 magic items blocked by engine",
+    "sol:CAP-008": "Bag of Beans wrong successful-save outcome",
+    "sol:CAP-009": "Animal Friendship unsupported correction",
+    "sol:CAP-010": "structured fields omit actual source provenance",
+    "sol:CAP-011": "DM discovery/canonical relationships inadequate",
+    "sol:CAP-012": "Rock Gnome owner boundary",
+    "sol:CAP-013": "Tack/Harness/Drawn Vehicles taxonomy lost",
+    "sol:CAP-014": "readiness artifacts contradict corpus",
+    "fable:F1": "unsupported Starting Wealth table",
+    "fable:F2": "point-origin areas absent",
+    "fable:F3": "creature rider/ongoing damage untyped",
+    "fable:F4": "container continuation under-citation",
+    "fable:F5": "synthesized table headers not distinguished",
+    "fable:F6": "inconsistent table empty cells",
+    "fable:F7": "synthesized choice sourceText labels",
+    "fable:F8": "rule keying/duplication hygiene"
+  }
 }
