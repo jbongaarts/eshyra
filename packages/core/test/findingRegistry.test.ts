@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   aliasIndex,
@@ -26,10 +27,11 @@ function expectedAliases(): string[] {
   ].sort();
 }
 
-describe('finding registry v1', () => {
+describe('durable finding registry', () => {
   it('loads and validates the checked-in schema', () => {
     const registry = loadFindingRegistry();
     expect(registry.version).toBe(1);
+    expect(registry.rows).toHaveLength(68);
     expect(() => validateFindingRegistry(registry)).not.toThrow();
   });
 
@@ -52,68 +54,124 @@ describe('finding registry v1', () => {
     );
   });
 
-  it('rejects a non-accepted row without status reasoning', () => {
+  it('uses one exact durable target per row and never a generic search', () => {
     const registry = loadFindingRegistry();
-    const malformed = {
-      ...registry,
-      rows: registry.rows.map((row) => {
-        if (row.status === 'accepted') return row;
-        const { statusReasoning: _statusReasoning, ...withoutReasoning } = row;
-        return withoutReasoning;
-      }),
-    };
-    expect(() => validateFindingRegistry(malformed)).toThrow(
-      /statusReasoning.*(?:required|non-empty)/i,
-    );
-  });
-
-  it('uses a discriminating query per row unless sharing is justified', () => {
-    const registry = loadFindingRegistry();
-    const queryRows = new Map<string, typeof registry.rows>();
     for (const row of registry.rows) {
-      const rows = queryRows.get(row.membershipQuery) ?? [];
-      rows.push(row);
-      queryRows.set(row.membershipQuery, rows);
-    }
-    for (const [query, rows] of queryRows) {
-      if (rows.length > 1) {
-        expect(rows.every((row) => row.sharedQueryJustification)).toBe(true);
+      expect(row.obligation.obligationId).toMatch(/^obl:::/);
+      expect(row.obligation.authority).not.toMatch(/^(?:pack|current-pack):/i);
+      expect(row.target.selector.members).toEqual(
+        row.baselineMembership.members,
+      );
+      expect(row.baselineMembership.capturedAtCommit).toMatch(
+        /^[0-9a-f]{7,64}$/,
+      );
+      for (const member of row.baselineMembership.members) {
+        expect(JSON.stringify(member)).not.toMatch(
+          /\*|\?|substring|prefix|regex|contains/i,
+        );
       }
-      expect(query).toMatch(/^finding:/);
     }
-    expect(queryRows.size).toBe(registry.rows.length);
   });
 
-  it('executes every named membership query against the committed pack', () => {
+  it('rejects malformed rows without status reasoning or exact selector identities', () => {
+    const registry = loadFindingRegistry();
+    const nonAccepted = registry.rows.find((row) => row.status !== 'accepted');
+    if (nonAccepted === undefined)
+      throw new Error('fixture must contain a non-accepted row');
+    const withoutReasoning = {
+      ...registry,
+      rows: registry.rows.map((row) =>
+        row === nonAccepted ? { ...row, statusReasoning: undefined } : row,
+      ),
+    };
+    expect(() => validateFindingRegistry(withoutReasoning)).toThrow(
+      /statusReasoning/i,
+    );
+
+    const generic = structuredClone(registry);
+    generic.rows[0].target.selector.members[0].path = 'data.description~spell';
+    expect(() => validateFindingRegistry(generic)).toThrow(
+      /exact selector|structured data path/i,
+    );
+  });
+
+  it('keeps violation queries separate from durable baseline membership', () => {
+    const registry = loadFindingRegistry();
+    expect(
+      registry.rows.every((row) =>
+        row.violation.queryId.startsWith('finding:'),
+      ),
+    ).toBe(true);
+    expect(
+      registry.rows.every(
+        (row) =>
+          row.violation.expectedAfterRepair === 'empty' ||
+          row.violation.expectedAfterRepair === 'stable',
+      ),
+    ).toBe(true);
+    expect(JSON.stringify(registry)).not.toMatch(/"currentMembership"/);
+  });
+
+  it('enumerates exact current identities for all rows', () => {
     const registry = loadFindingRegistry();
     for (const row of registry.rows) {
-      const result = executeMembershipQuery(row.membershipQuery);
-      if (row.zeroMemberPolicy === undefined)
-        expect(result.length).toBeGreaterThan(0);
-      expect(result.every((member) => member.recordKey.length > 0)).toBe(true);
-      expect(
-        result.every(
-          (member) =>
-            member.sourceSpan !== undefined ||
-            member.clauseId !== undefined ||
-            member.path !== undefined,
-        ),
-      ).toBe(true);
+      const result = executeMembershipQuery(row.violation.queryId);
+      if (
+        row.statusReasoning?.startsWith('Reviewed empty current membership:')
+      ) {
+        expect(result).toHaveLength(0);
+      } else {
+        expect(result).toEqual(row.baselineMembership.members);
+      }
     }
   });
 
-  it('returns nested identities instead of whole records for readiness clauses', () => {
-    const members = executeMembershipQuery(
-      'finding:engine-capability-ownership',
-    );
-    expect(members.length).toBeGreaterThan(0);
-    expect(members.every((member) => member.clauseId)).toBe(true);
+  it('represents nested, artifact, narrowed, capability, and cross-kind cases', () => {
+    const registry = loadFindingRegistry();
+    const byAlias = (alias: string) => {
+      const row = registry.rows.find((candidate) =>
+        candidate.aliases.includes(alias),
+      );
+      if (row === undefined) throw new Error(`missing fixture alias ${alias}`);
+      return row;
+    };
     expect(
-      members.every((member) => member.recordKey && member.sourceSpan),
-    ).toBe(true);
+      byAlias('opus:F-20').baselineMembership.members[0].artifactPath,
+    ).toBe('manifest.json');
+    expect(
+      byAlias('sol:CAP-008').baselineMembership.members[0].clauseId,
+    ).toBeTruthy();
+    expect(byAlias('sol:CAP-002').status).toBe('narrowed');
+    expect(byAlias('sol:CAP-007').obligation.evidenceKind).toBe('code');
+    expect(
+      byAlias('opus:F-25').baselineMembership.members.map(
+        (member) => member.recordKey,
+      ),
+    ).toEqual(['creature:bulette', 'hazard:pits']);
   });
 
-  it('rejects a duplicate canonical ID', () => {
+  it('fails when any declared baseline member disappears', () => {
+    const registry = loadFindingRegistry();
+    const records = structuredClone(
+      JSON.parse(
+        JSON.stringify(
+          // Keep this fixture derived from the checked-in pack rather than a copied count.
+          requireRecords(),
+        ),
+      ),
+    );
+    records.splice(
+      records.findIndex(
+        (record: { key?: unknown }) => record.key === 'hazard:pits',
+      ),
+      1,
+    );
+    expect(() => validateFindingRegistry(registry, records)).toThrow(
+      /lost one or more baseline membership identities/,
+    );
+  });
+
+  it('rejects a duplicate canonical ID with a real set', () => {
     const registry = loadFindingRegistry();
     const malformed = {
       ...registry,
@@ -140,3 +198,16 @@ describe('finding registry v1', () => {
     if (!result.skipped) expect(result.missing).toEqual([]);
   });
 });
+
+function requireRecords(): unknown[] {
+  // This keeps the test's mutation fixture tied to the same pack the registry evaluates.
+  return JSON.parse(
+    readFileSync(
+      new URL(
+        '../data/rules-packs/rules__dnd5e-srd-5.1/records.json',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+  ) as unknown[];
+}

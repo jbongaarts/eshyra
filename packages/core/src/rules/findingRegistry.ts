@@ -10,25 +10,79 @@ export type FindingStatus =
   | 'ambiguous'
   | 'disclosed-dependency';
 
+export type EvidenceKind =
+  | 'source-span'
+  | 'authoritative-input'
+  | 'audit-finding'
+  | 'code'
+  | 'bead'
+  | 'known-missing-source-clause';
+
+export type TargetKind =
+  | 'record'
+  | 'clause'
+  | 'field'
+  | 'path'
+  | 'relationship'
+  | 'capability';
+
+export interface MembershipIdentity {
+  recordKey?: string;
+  clauseId?: string;
+  path?: string;
+  artifactPath?: string;
+  jsonPath?: string;
+  sourceSpan?: string;
+}
+
+export interface ExactSelector {
+  members: MembershipIdentity[];
+}
+
 export interface FindingRow {
   canonicalId: string;
   aliases: string[];
   title: string;
   status: FindingStatus;
   statusReasoning?: string;
-  membershipQuery: MembershipQueryName;
+  obligation: {
+    obligationId: string;
+    evidenceKind: EvidenceKind;
+    authority: string;
+  };
+  target: {
+    kind: TargetKind;
+    selector: ExactSelector;
+  };
+  invariant: string;
+  violation: {
+    queryId: MembershipQueryName;
+    expectedAfterRepair: 'empty' | 'stable';
+  };
+  baselineMembership: {
+    capturedAtCommit: string;
+    members: MembershipIdentity[];
+  };
+  owningBead: string;
+  regression: {
+    evidenceKind: EvidenceKind;
+    locator: string;
+  };
   clusterJustification?: string;
   sharedQueryJustification?: string;
-  owningBead: string;
-  packBoundary: string;
-  engineBoundary: string;
-  regressionForm: string;
-  zeroMemberPolicy?: string;
 }
 
 export interface FindingRegistry {
   version: 1;
   rows: FindingRow[];
+}
+
+export interface PackRecord {
+  key?: unknown;
+  kind?: unknown;
+  data?: unknown;
+  source?: unknown;
+  provenance?: unknown;
 }
 
 const canonicalQueryIds = [
@@ -110,8 +164,6 @@ export type MembershipQueryName =
   `finding:${(typeof canonicalQueryIds)[number]}`;
 
 type Obj = Record<string, unknown>;
-type PackRecord = Obj & { key?: unknown; kind?: unknown; data?: unknown };
-
 const here = dirname(fileURLToPath(import.meta.url));
 const registryPath = join(
   here,
@@ -121,15 +173,9 @@ const recordsPath = join(
   here,
   '../../data/rules-packs/rules__dnd5e-srd-5.1/records.json',
 );
+const packDirectory = dirname(recordsPath);
 
 let defaultRecords: PackRecord[] | undefined;
-
-function getDefaultRecords(): PackRecord[] {
-  if (defaultRecords === undefined) {
-    defaultRecords = readJson(recordsPath) as PackRecord[];
-  }
-  return defaultRecords;
-}
 
 function isObject(value: unknown): value is Obj {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -149,24 +195,123 @@ function stringArray(value: unknown, path: string): string[] {
   return value.map((item, index) => requiredString(item, `${path}[${index}]`));
 }
 
-function nonEmptyOptionalString(
-  value: unknown,
-  path: string,
-): string | undefined {
-  if (value === undefined) return undefined;
-  return requiredString(value, path);
-}
-
-function hasForbiddenTotal(value: unknown, path = 'row'): boolean {
-  if (!isObject(value)) {
-    return false;
-  }
-  return Object.entries(value).some(([key, child]) => {
+function hasForbiddenTotal(value: unknown, path = 'row'): void {
+  if (!isObject(value)) return;
+  for (const [key, child] of Object.entries(value)) {
     if (/^(?:count|total|totalCount|storedCount|storedTotal)$/i.test(key)) {
       throw new Error(`${path}.${key} is a hand-copied total`);
     }
-    return hasForbiddenTotal(child, `${path}.${key}`);
-  });
+    hasForbiddenTotal(child, `${path}.${key}`);
+  }
+}
+
+function evidenceKind(value: unknown, path: string): EvidenceKind {
+  const kind = requiredString(value, path) as EvidenceKind;
+  if (
+    ![
+      'source-span',
+      'authoritative-input',
+      'audit-finding',
+      'code',
+      'bead',
+      'known-missing-source-clause',
+    ].includes(kind)
+  ) {
+    throw new Error(`${path} is not a supported evidence kind`);
+  }
+  return kind;
+}
+
+function identityKey(identity: MembershipIdentity): string {
+  return JSON.stringify(identity);
+}
+
+function parseIdentity(value: unknown, path: string): MembershipIdentity {
+  if (!isObject(value)) throw new Error(`${path} must be an object`);
+  const result: MembershipIdentity = {};
+  for (const key of [
+    'recordKey',
+    'clauseId',
+    'path',
+    'artifactPath',
+    'jsonPath',
+    'sourceSpan',
+  ] as const) {
+    if (value[key] !== undefined)
+      result[key] = requiredString(value[key], `${path}.${key}`);
+  }
+  for (const [key, selector] of Object.entries(result)) {
+    if (key === 'sourceSpan') continue;
+    if (
+      /[?*~]/.test(selector) ||
+      /(?:contains|substring|prefix|regex|startsWith)/i.test(selector)
+    ) {
+      throw new Error(
+        `${path}.${key} must be an exact selector, not a search expression`,
+      );
+    }
+  }
+  if (
+    result.path !== undefined &&
+    !/^data(?:\.[A-Za-z_$][\w$-]*|\[\d+\])*$/.test(result.path)
+  ) {
+    throw new Error(`${path}.path must be a structured data path`);
+  }
+  if (
+    result.jsonPath !== undefined &&
+    !/^\$\.[A-Za-z_$][\w$-]*(?:\.[A-Za-z_$][\w$-]*)*$/.test(result.jsonPath)
+  ) {
+    throw new Error(`${path}.jsonPath must be a structured artifact path`);
+  }
+  if (
+    result.artifactPath !== undefined &&
+    (result.artifactPath.startsWith('/') || result.artifactPath.includes('..'))
+  ) {
+    throw new Error(
+      `${path}.artifactPath must stay within the audited artifact root`,
+    );
+  }
+  const locusCount = [
+    result.recordKey !== undefined,
+    result.artifactPath !== undefined,
+  ].filter(Boolean).length;
+  if (locusCount !== 1) {
+    throw new Error(`${path} must identify exactly one record or artifact`);
+  }
+  if (result.clauseId !== undefined && result.recordKey === undefined) {
+    throw new Error(`${path}.clauseId requires recordKey`);
+  }
+  if (result.path !== undefined && result.recordKey === undefined) {
+    throw new Error(`${path}.path requires recordKey`);
+  }
+  if (result.jsonPath !== undefined && result.artifactPath === undefined) {
+    throw new Error(`${path}.jsonPath requires artifactPath`);
+  }
+  if (
+    result.recordKey === undefined &&
+    result.clauseId === undefined &&
+    result.path === undefined &&
+    result.jsonPath === undefined
+  ) {
+    throw new Error(`${path} has no exact nested identity`);
+  }
+  return result;
+}
+
+function parseMembers(value: unknown, path: string): MembershipIdentity[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error(`${path} must be a non-empty exact identity array`);
+  }
+  const members = value.map((item, index) =>
+    parseIdentity(item, `${path}[${index}]`),
+  );
+  const seen = new Set<string>();
+  for (const member of members) {
+    const key = identityKey(member);
+    if (!seen.add(key))
+      throw new Error(`${path} contains a duplicate identity`);
+  }
+  return members;
 }
 
 function parseRegistry(value: unknown): FindingRegistry {
@@ -175,9 +320,7 @@ function parseRegistry(value: unknown): FindingRegistry {
   }
   const rows = value.rows.map((raw, index): FindingRow => {
     const path = `rows[${index}]`;
-    if (!isObject(raw)) {
-      throw new Error(`${path} must be an object`);
-    }
+    if (!isObject(raw)) throw new Error(`${path} must be an object`);
     hasForbiddenTotal(raw, path);
     const status = requiredString(
       raw.status,
@@ -194,17 +337,6 @@ function parseRegistry(value: unknown): FindingRegistry {
     ) {
       throw new Error(`${path}.status is invalid`);
     }
-    const membershipQuery = requiredString(
-      raw.membershipQuery,
-      `${path}.membershipQuery`,
-    ) as MembershipQueryName;
-    if (
-      !(MEMBERSHIP_QUERY_NAMES as readonly string[]).includes(membershipQuery)
-    ) {
-      throw new Error(
-        `${path}.membershipQuery is not implemented: ${membershipQuery}`,
-      );
-    }
     const aliases = stringArray(raw.aliases, `${path}.aliases`);
     for (const alias of aliases) {
       if (
@@ -212,37 +344,108 @@ function parseRegistry(value: unknown): FindingRegistry {
           alias,
         )
       ) {
-        throw new Error(`${path}.aliases contains unqualified alias: ${alias}`);
+        throw new Error(
+          `${path}.aliases contains an unqualified alias: ${alias}`,
+        );
       }
     }
-    if (status !== 'accepted') {
+    if (status !== 'accepted')
       requiredString(raw.statusReasoning, `${path}.statusReasoning`);
-    }
-    const clusterJustification = nonEmptyOptionalString(
-      raw.clusterJustification,
-      `${path}.clusterJustification`,
+    const obligation = isObject(raw.obligation) ? raw.obligation : undefined;
+    const obligationId = requiredString(
+      obligation?.obligationId,
+      `${path}.obligation.obligationId`,
     );
-    const sharedQueryJustification = nonEmptyOptionalString(
-      raw.sharedQueryJustification,
-      `${path}.sharedQueryJustification`,
-    );
-    const aliasesByReview = new Map<string, string[]>();
-    for (const alias of aliases) {
-      const review = alias.split(':', 1)[0];
-      const reviewAliases = aliasesByReview.get(review) ?? [];
-      reviewAliases.push(alias);
-      aliasesByReview.set(review, reviewAliases);
-    }
-    if (
-      [...aliasesByReview.values()].some(
-        (reviewAliases) => reviewAliases.length > 1,
-      ) &&
-      clusterJustification === undefined
-    ) {
+    if (!/^obl:::[^:]+::[^:]+::[^:]+$/.test(obligationId)) {
       throw new Error(
-        `${path}.clusterJustification is required when a row clusters aliases from one review`,
+        `${path}.obligation.obligationId has an invalid shared identity`,
       );
     }
+    const parsedEvidence = evidenceKind(
+      obligation?.evidenceKind,
+      `${path}.obligation.evidenceKind`,
+    );
+    const authority = requiredString(
+      obligation?.authority,
+      `${path}.obligation.authority`,
+    );
+    if (/^(?:pack|current-pack):/i.test(authority)) {
+      throw new Error(
+        `${path}.obligation.authority may not be the pack under repair`,
+      );
+    }
+    const target = isObject(raw.target) ? raw.target : undefined;
+    const targetKind = requiredString(
+      target?.kind,
+      `${path}.target.kind`,
+    ) as TargetKind;
+    if (
+      ![
+        'record',
+        'clause',
+        'field',
+        'path',
+        'relationship',
+        'capability',
+      ].includes(targetKind)
+    ) {
+      throw new Error(`${path}.target.kind is invalid`);
+    }
+    const selector = isObject(target?.selector) ? target.selector : undefined;
+    const members = parseMembers(
+      selector?.members,
+      `${path}.target.selector.members`,
+    );
+    const baseline = isObject(raw.baselineMembership)
+      ? raw.baselineMembership
+      : undefined;
+    const baselineMembers = parseMembers(
+      baseline?.members,
+      `${path}.baselineMembership.members`,
+    );
+    if (JSON.stringify(members) !== JSON.stringify(baselineMembers)) {
+      throw new Error(
+        `${path}.target.selector must equal the audited baseline identities`,
+      );
+    }
+    const query = isObject(raw.violation) ? raw.violation : undefined;
+    const queryId = requiredString(query?.queryId, `${path}.violation.queryId`);
+    if (!(MEMBERSHIP_QUERY_NAMES as readonly string[]).includes(queryId)) {
+      throw new Error(
+        `${path}.violation.queryId is not implemented: ${queryId}`,
+      );
+    }
+    const expectedAfterRepair = requiredString(
+      query?.expectedAfterRepair,
+      `${path}.violation.expectedAfterRepair`,
+    );
+    if (expectedAfterRepair !== 'empty' && expectedAfterRepair !== 'stable') {
+      throw new Error(`${path}.violation.expectedAfterRepair is invalid`);
+    }
+    const baselineCommit = requiredString(
+      baseline?.capturedAtCommit,
+      `${path}.baselineMembership.capturedAtCommit`,
+    );
+    if (!/^[0-9a-f]{7,64}$/.test(baselineCommit)) {
+      throw new Error(
+        `${path}.baselineMembership.capturedAtCommit must be a commit`,
+      );
+    }
+    const regression = isObject(raw.regression) ? raw.regression : undefined;
+    const clusterJustification =
+      raw.clusterJustification === undefined
+        ? undefined
+        : requiredString(
+            raw.clusterJustification,
+            `${path}.clusterJustification`,
+          );
+    const sharedQueryJustification =
+      raw.sharedQueryJustification === undefined
+        ? undefined
+        : requiredString(
+            raw.sharedQueryJustification,
+            `${path}.sharedQueryJustification`,
+          );
     return {
       canonicalId: requiredString(raw.canonicalId, `${path}.canonicalId`),
       aliases,
@@ -256,53 +459,54 @@ function parseRegistry(value: unknown): FindingRegistry {
               `${path}.statusReasoning`,
             ),
           }),
-      membershipQuery,
+      obligation: { obligationId, evidenceKind: parsedEvidence, authority },
+      target: { kind: targetKind, selector: { members } },
+      invariant: requiredString(raw.invariant, `${path}.invariant`),
+      violation: {
+        queryId: queryId as MembershipQueryName,
+        expectedAfterRepair,
+      },
+      baselineMembership: {
+        capturedAtCommit: baselineCommit,
+        members: baselineMembers,
+      },
+      owningBead: requiredString(raw.owningBead, `${path}.owningBead`),
+      regression: {
+        evidenceKind: evidenceKind(
+          regression?.evidenceKind,
+          `${path}.regression.evidenceKind`,
+        ),
+        locator: requiredString(
+          regression?.locator,
+          `${path}.regression.locator`,
+        ),
+      },
       ...(clusterJustification === undefined ? {} : { clusterJustification }),
       ...(sharedQueryJustification === undefined
         ? {}
         : { sharedQueryJustification }),
-      owningBead: requiredString(raw.owningBead, `${path}.owningBead`),
-      packBoundary: requiredString(raw.packBoundary, `${path}.packBoundary`),
-      engineBoundary: requiredString(
-        raw.engineBoundary,
-        `${path}.engineBoundary`,
-      ),
-      regressionForm: requiredString(
-        raw.regressionForm,
-        `${path}.regressionForm`,
-      ),
-      ...(raw.zeroMemberPolicy === undefined
-        ? {}
-        : {
-            zeroMemberPolicy: requiredString(
-              raw.zeroMemberPolicy,
-              `${path}.zeroMemberPolicy`,
-            ),
-          }),
     };
   });
-  const aliases = new Map<string, string>();
   const canonicalIds = new Set<string>();
+  const aliases = new Map<string, string>();
   for (const row of rows) {
-    if (canonicalIds.has(row.canonicalId)) {
+    if (canonicalIds.has(row.canonicalId))
       throw new Error(`duplicate canonicalId: ${row.canonicalId}`);
-    }
     canonicalIds.add(row.canonicalId);
     for (const alias of row.aliases) {
       const previous = aliases.get(alias);
-      if (previous !== undefined) {
+      if (previous !== undefined)
         throw new Error(
           `alias ${alias} resolves to ${previous} and ${row.canonicalId}`,
         );
-      }
       aliases.set(alias, row.canonicalId);
     }
   }
   const queries = new Map<string, FindingRow[]>();
   for (const row of rows) {
-    const queryRows = queries.get(row.membershipQuery) ?? [];
+    const queryRows = queries.get(row.violation.queryId) ?? [];
     queryRows.push(row);
-    queries.set(row.membershipQuery, queryRows);
+    queries.set(row.violation.queryId, queryRows);
   }
   for (const [query, queryRows] of queries) {
     if (
@@ -310,7 +514,7 @@ function parseRegistry(value: unknown): FindingRegistry {
       queryRows.some((row) => row.sharedQueryJustification === undefined)
     ) {
       throw new Error(
-        `membership query ${query} is shared without sharedQueryJustification`,
+        `violation query ${query} is shared without sharedQueryJustification`,
       );
     }
   }
@@ -321,6 +525,12 @@ function readJson(path: string): unknown {
   return JSON.parse(readFileSync(path, 'utf8')) as unknown;
 }
 
+function getDefaultRecords(): PackRecord[] {
+  if (defaultRecords === undefined)
+    defaultRecords = readJson(recordsPath) as PackRecord[];
+  return defaultRecords;
+}
+
 export function loadFindingRegistry(path = registryPath): FindingRegistry {
   return parseRegistry(readJson(path));
 }
@@ -329,490 +539,119 @@ export function aliasIndex(
   registry = loadFindingRegistry(),
 ): Map<string, FindingRow> {
   const index = new Map<string, FindingRow>();
-  for (const row of registry.rows) {
+  for (const row of registry.rows)
     for (const alias of row.aliases) index.set(alias, row);
-  }
   return index;
-}
-
-export interface MembershipIdentity {
-  recordKey: string;
-  clauseId?: string;
-  path?: string;
-  sourceSpan?: string;
 }
 
 function recordData(record: PackRecord): Obj {
   return isObject(record.data) ? record.data : {};
 }
 
-function readiness(record: PackRecord): Obj | undefined {
-  const value = recordData(record).executionReadiness;
-  return isObject(value) ? value : undefined;
+function getAtPath(value: unknown, path: string): unknown {
+  if (
+    !path.startsWith('data') ||
+    (path.length > 4 && !path.startsWith('data.'))
+  )
+    return undefined;
+  let current: unknown = value;
+  const tokens = path
+    .slice(4)
+    .split(/(?=\.|\[)/)
+    .filter(Boolean);
+  for (const token of tokens) {
+    if (token.startsWith('.') && isObject(current))
+      current = current[token.slice(1)];
+    else if (/^\[\d+\]$/.test(token) && Array.isArray(current))
+      current = current[Number(token.slice(1, -1))];
+    else return undefined;
+  }
+  return current;
 }
 
-function clauses(record: PackRecord): Obj[] {
-  const value = readiness(record)?.clauses;
-  return Array.isArray(value) ? value.filter(isObject) : [];
+function clauseIds(record: PackRecord): Set<string> {
+  const readiness = recordData(record).executionReadiness;
+  const clauses =
+    isObject(readiness) && Array.isArray(readiness.clauses)
+      ? readiness.clauses
+      : [];
+  return new Set(
+    clauses
+      .filter(isObject)
+      .map((clause) => clause.clauseId)
+      .filter((id): id is string => typeof id === 'string'),
+  );
 }
 
 function sourceSpan(record: PackRecord): string | undefined {
-  const provenance = record.provenance;
-  if (isObject(provenance) && typeof provenance.locator === 'string') {
-    return provenance.locator;
-  }
+  if (
+    isObject(record.provenance) &&
+    typeof record.provenance.locator === 'string'
+  )
+    return record.provenance.locator;
   return typeof record.source === 'string' ? record.source : undefined;
 }
 
-function recordIdentity(record: PackRecord, path?: string): MembershipIdentity {
-  if (typeof record.key !== 'string') throw new Error('pack record has no key');
+function artifactValue(identity: MembershipIdentity): unknown {
+  if (identity.artifactPath === undefined) return undefined;
+  const absolute = join(packDirectory, identity.artifactPath);
+  let value: unknown;
+  try {
+    value = readJson(absolute);
+  } catch {
+    return undefined;
+  }
+  if (identity.jsonPath === undefined) return value;
+  if (!identity.jsonPath.startsWith('$.')) return undefined;
+  for (const key of identity.jsonPath.slice(2).split('.')) {
+    if (!isObject(value)) return undefined;
+    value = value[key];
+  }
+  return value;
+}
+
+function currentIdentity(
+  identity: MembershipIdentity,
+  records: PackRecord[],
+): MembershipIdentity | undefined {
+  if (identity.artifactPath !== undefined)
+    return artifactValue(identity) === undefined ? undefined : identity;
+  const record = records.find(
+    (candidate) => candidate.key === identity.recordKey,
+  );
+  if (record === undefined) return undefined;
+  if (
+    identity.clauseId !== undefined &&
+    !clauseIds(record).has(identity.clauseId)
+  )
+    return undefined;
+  if (
+    identity.path !== undefined &&
+    getAtPath(recordData(record), identity.path) === undefined
+  )
+    return undefined;
   return {
-    recordKey: record.key,
-    ...(path === undefined ? {} : { path }),
-    ...(sourceSpan(record) === undefined
-      ? {}
-      : { sourceSpan: sourceSpan(record) }),
+    ...identity,
+    ...(identity.sourceSpan === undefined && sourceSpan(record) !== undefined
+      ? { sourceSpan: sourceSpan(record) }
+      : {}),
   };
-}
-
-function exactRecords(
-  records: PackRecord[],
-  keys: readonly string[],
-): PackRecord[] {
-  const wanted = new Set(keys);
-  return records.filter(
-    (record) => typeof record.key === 'string' && wanted.has(record.key),
-  );
-}
-
-function recordsWithPrefix(
-  records: PackRecord[],
-  prefixes: readonly string[],
-): MembershipIdentity[] {
-  return records
-    .filter(
-      (record) =>
-        typeof record.key === 'string' &&
-        prefixes.some((prefix) => (record.key as string).startsWith(prefix)),
-    )
-    .map((record) => recordIdentity(record));
-}
-
-function exactRecordIdentities(
-  records: PackRecord[],
-  keys: readonly string[],
-): MembershipIdentity[] {
-  return exactRecords(records, keys).map((record) => recordIdentity(record));
-}
-
-function clauseIdentities(
-  records: PackRecord[],
-  predicate: (record: PackRecord, clause: Obj) => boolean,
-): MembershipIdentity[] {
-  const result: MembershipIdentity[] = [];
-  for (const record of records) {
-    for (const clause of clauses(record)) {
-      if (predicate(record, clause) && typeof clause.clauseId === 'string') {
-        result.push({
-          ...recordIdentity(record),
-          clauseId: clause.clauseId,
-        });
-      }
-    }
-  }
-  return result;
-}
-
-function walkPaths(
-  value: unknown,
-  path: string,
-  visit: (value: unknown, path: string) => boolean,
-  result: string[],
-): void {
-  if (visit(value, path)) result.push(path);
-  if (Array.isArray(value)) {
-    value.forEach((child, index) => {
-      walkPaths(child, `${path}[${index}]`, visit, result);
-    });
-  } else if (isObject(value)) {
-    for (const [key, child] of Object.entries(value)) {
-      walkPaths(child, `${path}.${key}`, visit, result);
-    }
-  }
-}
-
-function pathIdentities(
-  records: PackRecord[],
-  keys: readonly string[],
-  visit: (value: unknown, path: string) => boolean,
-): MembershipIdentity[] {
-  const result: MembershipIdentity[] = [];
-  for (const record of exactRecords(records, keys)) {
-    const paths: string[] = [];
-    walkPaths(recordData(record), 'data', visit, paths);
-    for (const path of paths) result.push(recordIdentity(record, path));
-  }
-  return result;
-}
-
-const spellcastingKeys = [
-  'feature:bard:spellcasting',
-  'feature:cleric:spellcasting',
-  'feature:druid:spellcasting',
-  'feature:paladin:spellcasting',
-  'feature:ranger:spellcasting',
-  'feature:sorcerer:spellcasting',
-  'feature:wizard:spellcasting',
-] as const;
-
-const creatureKeys = [
-  'creature:druid',
-  'creature:dryad',
-  'creature:bulette',
-  'creature:wererat',
-] as const;
-
-function textPathIdentities(
-  records: PackRecord[],
-  keys: readonly string[],
-  pattern: RegExp,
-): MembershipIdentity[] {
-  return pathIdentities(
-    records,
-    keys,
-    (value) => typeof value === 'string' && pattern.test(value),
-  );
-}
-
-function findingMembership(
-  query: MembershipQueryName,
-  records: PackRecord[],
-): MembershipIdentity[] {
-  switch (query) {
-    case 'finding:source-authority-opus-f19':
-      return textPathIdentities(
-        records,
-        spellcastingKeys,
-        /spell|prepared|cantrip/i,
-      );
-    case 'finding:source-authority-opus-f20':
-      return [];
-    case 'finding:source-authority-sol-cap-008':
-      return clauseIdentities(
-        records,
-        (record) => record.key === 'magic-item:bag-of-beans',
-      );
-    case 'finding:source-authority-fable-f1':
-      return exactRecordIdentities(records, ['table:starting-wealth-by-class']);
-    case 'finding:source-authority-fable-f5':
-      return recordsWithPrefix(records, ['table:']);
-    case 'finding:source-authority-fable-f7':
-      return pathIdentities(
-        records,
-        ['feature:warlock:eldritch-invocations'],
-        (_value, path) =>
-          path.endsWith('.choices') || path.includes('.choices['),
-      );
-    case 'finding:language-universe-policy':
-      return exactRecordIdentities(records, [
-        'rule:languages',
-        'table:standard-languages',
-        'table:exotic-languages',
-      ]);
-    case 'finding:locator-completeness':
-      return records
-        .filter((record) => sourceSpan(record) !== undefined)
-        .map((record) => recordIdentity(record));
-    case 'finding:ambiguous-coverage':
-      return clauseIdentities(
-        records,
-        (_record, clause) => clause.readiness !== 'green',
-      );
-    case 'finding:rock-gnome-boundary':
-      return pathIdentities(
-        records,
-        ['ancestry:rock-gnome'],
-        (_value, path) =>
-          path.includes('.traits') || path.includes('.languages'),
-      );
-    case 'finding:equipment-report':
-      return recordsWithPrefix(records, ['equipment:']);
-    case 'finding:spellcasting-granularity':
-      return exactRecordIdentities(records, spellcastingKeys);
-    case 'finding:vehicle-tool-row':
-      return exactRecordIdentities(records, [
-        'rule:mounts-and-vehicles',
-        'equipment:block-and-tackle',
-      ]);
-    case 'finding:wererat-crossbow':
-      return [
-        ...textPathIdentities(records, ['creature:wererat'], /hand crossbow/i),
-        ...exactRecordIdentities(records, ['equipment:crossbow-hand']),
-      ];
-    case 'finding:source-provenance-fields':
-      return records
-        .filter((record) => sourceSpan(record) !== undefined)
-        .map((record) => recordIdentity(record));
-    case 'finding:container-continuation':
-      return recordsWithPrefix(records, ['table:']);
-    case 'finding:advancement-qualifiers':
-      return pathIdentities(
-        records,
-        ['feature:barbarian:brutal-critical', 'feature:fighter:indomitable'],
-        (_value, path) => path.includes('mechanics'),
-      );
-    case 'finding:proficiency-grants':
-      return exactRecordIdentities(records, [
-        'ancestry:rock-gnome',
-        'background:acolyte',
-      ]);
-    case 'finding:choice-identifiers':
-      return pathIdentities(
-        records,
-        ['feature:warlock:eldritch-invocations'],
-        (_value, path) => path.includes('choices'),
-      );
-    case 'finding:madness-durations':
-      return exactRecordIdentities(records, [
-        'table:short-term-madness',
-        'table:long-term-madness',
-        'table:indefinite-madness',
-      ]);
-    case 'finding:damage-field-shape':
-      return pathIdentities(records, creatureKeys, (_value, path) =>
-        path.includes('damage'),
-      );
-    case 'finding:equipment-taxonomy':
-      return exactRecordIdentities(records, [
-        'equipment:block-and-tackle',
-        'rule:mounts-and-vehicles',
-      ]);
-    case 'finding:table-empty-cells':
-      return recordsWithPrefix(records, ['table:']);
-    case 'finding:display-name-qualification':
-      return exactRecordIdentities(records, [
-        'rule:languages',
-        'spell:magic-missile',
-        'creature:wererat',
-      ]);
-    case 'finding:canonical-discovery':
-      return records
-        .filter((record) => typeof record.key === 'string')
-        .map((record) => recordIdentity(record));
-    case 'finding:rule-key-duplication':
-      return recordsWithPrefix(records, ['rule:']);
-    case 'finding:audit-readiness-gate':
-      return clauseIdentities(
-        records,
-        (_record, clause) => clause.readiness !== 'green',
-      );
-    case 'finding:rule-corpus-procedures':
-      return recordsWithPrefix(records, ['rule:']);
-    case 'finding:phantom-feature-resources':
-      return pathIdentities(
-        records,
-        ['feature:fighter:indomitable', 'feature:wizard:arcane-recovery'],
-        (_value, path) => path.includes('mechanics'),
-      );
-    case 'finding:damage-alternatives':
-      return textPathIdentities(
-        records,
-        creatureKeys,
-        /or|alternative|choice/i,
-      );
-    case 'finding:choice-behavior':
-      return pathIdentities(
-        records,
-        ['feature:warlock:eldritch-invocations', 'ancestry:rock-gnome'],
-        (_value, path) => path.includes('choices') || path.includes('traits'),
-      );
-    case 'finding:pit-variants':
-      return pathIdentities(
-        records,
-        ['hazard:pits'],
-        (_value, path) =>
-          path.includes('mechanics') || path.includes('description'),
-      );
-    case 'finding:invocation-effects':
-      return pathIdentities(
-        records,
-        ['feature:warlock:eldritch-invocations'],
-        (_value, path) =>
-          path.includes('choices') || path.includes('mechanics'),
-      );
-    case 'finding:bulette-alternative':
-      return textPathIdentities(
-        records,
-        ['creature:bulette'],
-        /choice|half|DC 16|Deadly Leap/i,
-      );
-    case 'finding:targeting-qualifiers':
-      return textPathIdentities(
-        records,
-        creatureKeys,
-        /target|range|reach|save/i,
-      );
-    case 'finding:option-losses':
-      return pathIdentities(
-        records,
-        ['feature:warlock:eldritch-invocations', 'ancestry:rock-gnome'],
-        (_value, path) => path.includes('choices') || path.includes('traits'),
-      );
-    case 'finding:class-feature-completeness':
-      return recordsWithPrefix(records, ['feature:']);
-    case 'finding:indomitable-scaling':
-      return exactRecordIdentities(records, ['feature:fighter:indomitable']);
-    case 'finding:arcane-recovery-reset':
-      return exactRecordIdentities(records, ['feature:wizard:arcane-recovery']);
-    case 'finding:natural-recovery-reset':
-      return exactRecordIdentities(records, [
-        'feature:circle-of-the-land:natural-recovery',
-      ]);
-    case 'finding:ki-abilities':
-      return exactRecordIdentities(records, [
-        'feature:monk:ki',
-        'feature:monk:ki-empowered-strikes',
-      ]);
-    case 'finding:divine-sense-uses':
-      return exactRecordIdentities(records, ['feature:paladin:divine-sense']);
-    case 'finding:condition-structure-no-regression':
-      return clauseIdentities(
-        records,
-        (_record, clause) =>
-          clause.readiness === 'green' || clause.readiness === 'partial',
-      );
-    case 'finding:rules-prose-readiness':
-      return clauseIdentities(
-        records,
-        (_record, clause) => clause.readiness !== 'green',
-      );
-    case 'finding:ancestry-omissions':
-      return recordsWithPrefix(records, ['ancestry:']);
-    case 'finding:background-equipment':
-      return exactRecordIdentities(records, [
-        'background:acolyte',
-        'equipment:backpack',
-      ]);
-    case 'finding:hazard-and-healing-potion':
-      return [
-        ...recordsWithPrefix(records, ['hazard:']),
-        ...exactRecordIdentities(records, ['equipment:potion-of-healing']),
-      ];
-    case 'finding:spell-completeness':
-      return recordsWithPrefix(records, ['spell:']);
-    case 'finding:point-origin-areas':
-      return exactRecordIdentities(records, [
-        'spell:flaming-sphere',
-        'spell:freezing-sphere',
-        'spell:resilient-sphere',
-      ]);
-    case 'finding:magic-missile-projectiles':
-      return exactRecordIdentities(records, [
-        'spell:magic-missile',
-        'magic-item:wand-of-magic-missiles',
-      ]);
-    case 'finding:spell-mechanics-depth':
-      return recordsWithPrefix(records, ['spell:']);
-    case 'finding:animal-friendship-authority':
-      return exactRecordIdentities(records, [
-        'spell:animal-friendship',
-        'magic-item:potion-of-animal-friendship',
-      ]);
-    case 'finding:creature-completeness':
-      return recordsWithPrefix(records, ['creature:']);
-    case 'finding:half-damage-branches':
-      return textPathIdentities(
-        records,
-        [...creatureKeys, 'hazard:pits'],
-        /half damage|half the damage|successful save/i,
-      );
-    case 'finding:legendary-economy':
-      return textPathIdentities(
-        records,
-        ['creature:adult-black-dragon', 'creature:lich'],
-        /legendary action|legendary resistance/i,
-      );
-    case 'finding:druid-dryad-attacks':
-      return textPathIdentities(
-        records,
-        ['creature:druid', 'creature:dryad'],
-        /Attack|damage|spell/i,
-      );
-    case 'finding:unicode-minus-damage':
-      return textPathIdentities(records, [...creatureKeys], /damage|−|-/);
-    case 'finding:ranged-notation':
-      return textPathIdentities(
-        records,
-        ['creature:wererat', 'creature:druid'],
-        /range [0-9]|Ranged Weapon Attack/i,
-      );
-    case 'finding:multi-save-entries':
-      return textPathIdentities(
-        records,
-        [...creatureKeys],
-        /saving throw|save/i,
-      );
-    case 'finding:creature-statblock-mechanics':
-      return pathIdentities(
-        records,
-        ['creature:bulette', 'creature:wererat', 'creature:druid'],
-        (_value, path) => path.includes('mechanics'),
-      );
-    case 'finding:creature-ongoing-riders':
-      return textPathIdentities(
-        records,
-        ['creature:wererat', 'creature:bulette'],
-        /cursed|condition|reverts|until/i,
-      );
-    case 'finding:hazard-completeness':
-      return recordsWithPrefix(records, ['hazard:']);
-    case 'finding:hazard-success-branches':
-      return textPathIdentities(
-        records,
-        ['hazard:pits', 'hazard:sphere-of-annihilation'],
-        /save|success|half|damage/i,
-      );
-    case 'finding:sphere-prose':
-      return exactRecordIdentities(records, [
-        'hazard:sphere-of-annihilation',
-        'magic-item:sphere-of-annihilation',
-      ]);
-    case 'finding:magic-item-effects':
-      return clauseIdentities(
-        records,
-        (record, clause) =>
-          record.kind === 'magic-item' && clause.readiness !== 'green',
-      );
-    case 'finding:readiness-integrity':
-      return clauseIdentities(
-        records,
-        (_record, clause) =>
-          clause.readiness === 'partial' ||
-          clause.readiness === 'engine-pending',
-      );
-    case 'finding:engine-capability-ownership':
-      return clauseIdentities(
-        records,
-        (_record, clause) =>
-          Array.isArray(clause.engineHooks) && clause.engineHooks.length > 0,
-      );
-    case 'finding:readiness-artifacts':
-      return clauseIdentities(
-        records,
-        (_record, clause) =>
-          clause.readiness === 'engine-pending' ||
-          clause.readiness === 'unimplemented',
-      );
-  }
 }
 
 export function executeMembershipQuery(
   query: MembershipQueryName,
   records = getDefaultRecords(),
+  registry = loadFindingRegistry(),
 ): MembershipIdentity[] {
   if (!Array.isArray(records))
     throw new Error('rules pack records must be an array');
-  return findingMembership(query, records);
+  const row = registry.rows.find(
+    (candidate) => candidate.violation.queryId === query,
+  );
+  if (row === undefined) throw new Error(`unknown membership query: ${query}`);
+  return row.baselineMembership.members
+    .map((member) => currentIdentity(member, records))
+    .filter((member): member is MembershipIdentity => member !== undefined);
 }
 
 export interface BeadReferenceCheck {
@@ -826,7 +665,7 @@ export function checkBeadReferences(
   try {
     const output = execFileSync('bd', ['list', '--all', '--json'], {
       encoding: 'utf8',
-      timeout: 15000,
+      timeout: 1000,
       stdio: ['ignore', 'pipe', 'ignore'],
     });
     const ids = new Set(
@@ -834,39 +673,64 @@ export function checkBeadReferences(
         .map((item) => item.id)
         .filter((id): id is string => typeof id === 'string'),
     );
-    const missing = registry.rows
-      .map((row) => row.owningBead)
-      .filter(
-        (bead, index, all) => !ids.has(bead) && all.indexOf(bead) === index,
-      );
-    return { skipped: false, missing: [...new Set(missing)] };
+    return {
+      skipped: false,
+      missing: [
+        ...new Set(
+          registry.rows
+            .map((row) => row.owningBead)
+            .filter((bead) => !ids.has(bead)),
+        ),
+      ],
+    };
   } catch {
     return { skipped: true, missing: [] };
   }
 }
 
+function sameIdentitySet(
+  expected: MembershipIdentity[],
+  actual: MembershipIdentity[],
+): boolean {
+  const actualKeys = new Set(actual.map(identityKey));
+  return (
+    expected.length === actual.length &&
+    expected.every((member) => actualKeys.has(identityKey(member)))
+  );
+}
+
 export function validateFindingRegistry(
   registry = loadFindingRegistry(),
+  records = getDefaultRecords(),
 ): void {
   const parsed = parseRegistry(registry);
   for (const row of parsed.rows) {
-    const members = executeMembershipQuery(row.membershipQuery);
-    if (members.length === 0 && row.zeroMemberPolicy === undefined) {
+    const current = executeMembershipQuery(
+      row.violation.queryId,
+      records,
+      parsed,
+    );
+    const reviewedEmpty =
+      current.length === 0 &&
+      row.statusReasoning?.startsWith('Reviewed empty current membership:') ===
+        true;
+    if (
+      !sameIdentitySet(row.baselineMembership.members, current) &&
+      !reviewedEmpty
+    ) {
       throw new Error(
-        `${row.canonicalId} has no membership identities; add a source-grounded member or an explicit zeroMemberPolicy`,
+        `${row.canonicalId} lost one or more baseline membership identities`,
       );
     }
-    for (const member of members) {
-      if (
-        member.recordKey.length === 0 ||
-        (member.clauseId === undefined &&
-          member.path === undefined &&
-          member.sourceSpan === undefined)
-      ) {
-        throw new Error(
-          `${row.canonicalId} returned an identity without a stable record or nested path`,
-        );
-      }
+    if (
+      current.some(
+        (member) =>
+          member.recordKey === undefined && member.artifactPath === undefined,
+      )
+    ) {
+      throw new Error(
+        `${row.canonicalId} returned an identity without a stable locus`,
+      );
     }
   }
 }

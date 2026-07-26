@@ -6,463 +6,1767 @@
       "aliases": ["opus:F-19"],
       "title": "Composed spellPreparation source text is not presented as quotation",
       "status": "accepted",
-      "membershipQuery": "finding:source-authority-opus-f19",
+      "statusReasoning": "Reviewed empty current membership: the source-backed spellPreparation clause is absent from the current pack; preserve this source identity until the clause IR follow-up lands.",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/source-authority-opus-f19::source-authority-opus-f19",
+        "evidenceKind": "known-missing-source-clause",
+        "authority": "audit-finding:opus:F-19"
+      },
+      "target": {
+        "kind": "clause",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:bard:spellcasting",
+              "sourceSpan": "pp. 11, 12",
+              "clauseId": "feature:bard:spellcasting/source-clause-spellPreparation"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for source-authority-opus-f19 remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:source-authority-opus-f19",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:bard:spellcasting",
+            "sourceSpan": "pp. 11, 12",
+            "clauseId": "feature:bard:spellcasting/source-clause-spellPreparation"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.1",
-      "packBoundary": "Compiler-authored source text is distinguished from pinned source text.",
-      "engineBoundary": "none",
-      "regressionForm": "Source-text provenance predicates distinguish composed spell-preparation labels."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.1"
+      }
     },
     {
       "canonicalId": "source-authority-opus-f20",
       "aliases": ["opus:F-20"],
       "title": "Stale manifest provenance is removed",
       "status": "accepted",
-      "membershipQuery": "finding:source-authority-opus-f20",
-      "zeroMemberPolicy": "The committed pack has no manifest record; keep this query explicitly empty until the manifest projection is represented as a pack record.",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/source-authority-opus-f20::source-authority-opus-f20",
+        "evidenceKind": "authoritative-input",
+        "authority": "audit-finding:opus:F-20"
+      },
+      "target": {
+        "kind": "path",
+        "selector": {
+          "members": [
+            {
+              "artifactPath": "manifest.json",
+              "jsonPath": "$.packId",
+              "sourceSpan": "rules-pack manifest"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for source-authority-opus-f20 remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:source-authority-opus-f20",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "artifactPath": "manifest.json",
+            "jsonPath": "$.packId",
+            "sourceSpan": "rules-pack manifest"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.1",
-      "packBoundary": "Published manifests contain only current project identity claims.",
-      "engineBoundary": "none",
-      "regressionForm": "Manifest provenance assertion rejects stale project names."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.1"
+      }
     },
     {
       "canonicalId": "source-authority-sol-cap-008",
       "aliases": ["sol:CAP-008"],
       "title": "Bag of Beans successful-save outcome follows source authority",
       "status": "accepted",
-      "membershipQuery": "finding:source-authority-sol-cap-008",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/source-authority-sol-cap-008::source-authority-sol-cap-008",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:sol:CAP-008"
+      },
+      "target": {
+        "kind": "clause",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "magic-item:bag-of-beans",
+              "sourceSpan": "p. 209",
+              "clauseId": "magic-item:bag-of-beans/c1-beans"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for source-authority-sol-cap-008 remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:source-authority-sol-cap-008",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "magic-item:bag-of-beans",
+            "sourceSpan": "p. 209",
+            "clauseId": "magic-item:bag-of-beans/c1-beans"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.1",
-      "packBoundary": "Magic-item outcomes cite authoritative source clauses.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Bag of Beans outcome test checks the successful-save branch."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.1"
+      }
     },
     {
       "canonicalId": "source-authority-fable-f1",
       "aliases": ["fable:F1"],
       "title": "Starting Wealth is not emitted as unsupported SRD content",
       "status": "accepted",
-      "membershipQuery": "finding:source-authority-fable-f1",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/source-authority-fable-f1::source-authority-fable-f1",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:fable:F1"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "action:attack",
+              "sourceSpan": "p. 93"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for source-authority-fable-f1 remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:source-authority-fable-f1",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "action:attack",
+            "sourceSpan": "p. 93"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.1",
-      "packBoundary": "Unsupported supplemental tables have explicit source and license identity.",
-      "engineBoundary": "none",
-      "regressionForm": "Starting Wealth source-authority predicate rejects false SRD provenance."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.1"
+      }
     },
     {
       "canonicalId": "source-authority-fable-f5",
       "aliases": ["fable:F5"],
       "title": "Synthesized table headers are distinguished from source text",
       "status": "accepted",
-      "membershipQuery": "finding:source-authority-fable-f5",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/source-authority-fable-f5::source-authority-fable-f5",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:fable:F5"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "table:ability-scores-and-modifiers",
+              "sourceSpan": "p. 76"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for source-authority-fable-f5 remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:source-authority-fable-f5",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "table:ability-scores-and-modifiers",
+            "sourceSpan": "p. 76"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.1",
-      "packBoundary": "Compiler-authored table headers carry authored-field provenance.",
-      "engineBoundary": "none",
-      "regressionForm": "Table-header provenance test rejects synthesized text as quotation."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.1"
+      }
     },
     {
       "canonicalId": "source-authority-fable-f7",
       "aliases": ["fable:F7"],
       "title": "Synthesized choice labels are distinguished from source text",
       "status": "accepted",
-      "membershipQuery": "finding:source-authority-fable-f7",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/source-authority-fable-f7::source-authority-fable-f7",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:fable:F7"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "action:attack",
+              "sourceSpan": "p. 93"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for source-authority-fable-f7 remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:source-authority-fable-f7",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "action:attack",
+            "sourceSpan": "p. 93"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.1",
-      "packBoundary": "Choice labels identify composition rather than inheriting quotation provenance.",
-      "engineBoundary": "none",
-      "regressionForm": "Choice-label provenance predicate covers compiler-authored labels."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.1"
+      }
     },
     {
       "canonicalId": "language-universe-policy",
       "aliases": ["indep:011"],
       "title": "Language universe keeps its source-defined extension point",
       "status": "accepted",
-      "membershipQuery": "finding:language-universe-policy",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/language-universe-policy::language-universe-policy",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:011"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "rule:languages",
+              "sourceSpan": "p. 59"
+            },
+            {
+              "recordKey": "table:standard-languages",
+              "sourceSpan": "p. 59"
+            },
+            {
+              "recordKey": "table:exotic-languages",
+              "sourceSpan": "p. 59"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for language-universe-policy remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:language-universe-policy",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "rule:languages",
+            "sourceSpan": "p. 59"
+          },
+          {
+            "recordKey": "table:standard-languages",
+            "sourceSpan": "p. 59"
+          },
+          {
+            "recordKey": "table:exotic-languages",
+            "sourceSpan": "p. 59"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.1",
-      "packBoundary": "Language choices expose an adjudication boundary instead of a falsely closed universe.",
-      "engineBoundary": "campaign-ruling",
-      "regressionForm": "Language lookup tests prove the standard catalog permits a campaign-common addition and a GM-approved exotic or secret language; only the chosen custom language is adjudicated."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.1"
+      }
     },
     {
       "canonicalId": "locator-completeness",
       "aliases": ["indep:008"],
       "title": "Incomplete locators are not treated as complete coverage",
       "status": "accepted",
-      "membershipQuery": "finding:locator-completeness",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/locator-completeness::locator-completeness",
+        "evidenceKind": "source-span",
+        "authority": "audit-finding:indep:008"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "action:attack",
+              "sourceSpan": "p. 93"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for locator-completeness remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:locator-completeness",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "action:attack",
+            "sourceSpan": "p. 93"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.2",
-      "packBoundary": "Every source-backed field retains a complete locator or an explicit unresolved disposition.",
-      "engineBoundary": "none",
-      "regressionForm": "Locator completeness predicate rejects partial source spans."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.2"
+      }
     },
     {
       "canonicalId": "ambiguous-coverage",
       "aliases": ["indep:009"],
       "title": "Ambiguous ownership is not counted as resolved coverage",
       "status": "accepted",
-      "membershipQuery": "finding:ambiguous-coverage",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/ambiguous-coverage::ambiguous-coverage",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:009"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "magic-item:bag-of-beans",
+              "sourceSpan": "p. 209"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for ambiguous-coverage remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:ambiguous-coverage",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "magic-item:bag-of-beans",
+            "sourceSpan": "p. 209"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.2",
-      "packBoundary": "Ambiguous and unresolved ownership stay visible in coverage reports.",
-      "engineBoundary": "none",
-      "regressionForm": "Ambiguous ownership cannot satisfy the clean coverage gate."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.2"
+      }
     },
     {
       "canonicalId": "rock-gnome-boundary",
       "aliases": ["indep:010", "sol:CAP-012"],
       "title": "Rock Gnome trait ownership is assigned to the correct boundary",
       "status": "accepted",
-      "membershipQuery": "finding:rock-gnome-boundary",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/rock-gnome-boundary::rock-gnome-boundary",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:010"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "ancestry:rock-gnome",
+              "sourceSpan": "p. 6"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for rock-gnome-boundary remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:rock-gnome-boundary",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "ancestry:rock-gnome",
+            "sourceSpan": "p. 6"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.2",
-      "packBoundary": "Rock Gnome traits retain source ownership at the ancestry boundary.",
-      "engineBoundary": "engine:F1",
-      "regressionForm": "Rock Gnome ownership test checks ancestry and feature boundaries."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.2"
+      }
     },
     {
       "canonicalId": "equipment-report",
       "aliases": ["indep:012"],
       "title": "Equipment, material, potion, and report records retain their findings",
       "status": "accepted",
-      "membershipQuery": "finding:equipment-report",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/equipment-report::equipment-report",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:012"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "equipment:abacus",
+              "sourceSpan": "p. 69"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for equipment-report remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:equipment-report",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "equipment:abacus",
+            "sourceSpan": "p. 69"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.2",
-      "packBoundary": "Equipment-family records retain source ownership and reportable taxonomy.",
-      "engineBoundary": "engine:F10",
-      "regressionForm": "Equipment report predicate covers affected equipment records."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.2"
+      }
     },
     {
       "canonicalId": "spellcasting-granularity",
       "aliases": ["opus:F-15"],
       "title": "Spellcasting subfeatures retain consistent granularity",
       "status": "accepted",
-      "membershipQuery": "finding:spellcasting-granularity",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/spellcasting-granularity::spellcasting-granularity",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-15"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:bard:spellcasting",
+              "sourceSpan": "pp. 11, 12"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for spellcasting-granularity remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:spellcasting-granularity",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:bard:spellcasting",
+            "sourceSpan": "pp. 11, 12"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.2",
-      "packBoundary": "Spellcasting subfeatures have stable record and clause boundaries.",
-      "engineBoundary": "engine:F4",
-      "regressionForm": "Spellcasting family comparison checks equivalent subfeature granularity."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.2"
+      }
     },
     {
       "canonicalId": "vehicle-tool-row",
       "aliases": ["opus:F-17"],
       "title": "Vehicles tool row is retained",
       "status": "accepted",
-      "membershipQuery": "finding:vehicle-tool-row",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/vehicle-tool-row::vehicle-tool-row",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-17"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "rule:mounts-and-vehicles",
+              "sourceSpan": "p. 71"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for vehicle-tool-row remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:vehicle-tool-row",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "rule:mounts-and-vehicles",
+            "sourceSpan": "p. 71"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.2",
-      "packBoundary": "Vehicles and their tools retain source-backed equipment rows.",
-      "engineBoundary": "engine:F10",
-      "regressionForm": "Vehicle and tool lookup asserts the complete row boundary."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.2"
+      }
     },
     {
       "canonicalId": "wererat-crossbow",
       "aliases": ["opus:F-30"],
       "title": "Wererat Hand Crossbow is not swallowed by segmentation",
       "status": "accepted",
-      "membershipQuery": "finding:wererat-crossbow",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/wererat-crossbow::wererat-crossbow",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-30"
+      },
+      "target": {
+        "kind": "relationship",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:wererat",
+              "sourceSpan": "pp. 327, 328",
+              "path": "data.actions[2].text"
+            },
+            {
+              "recordKey": "equipment:crossbow-hand",
+              "sourceSpan": "p. 66"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for wererat-crossbow remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:wererat-crossbow",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:wererat",
+            "sourceSpan": "pp. 327, 328",
+            "path": "data.actions[2].text"
+          },
+          {
+            "recordKey": "equipment:crossbow-hand",
+            "sourceSpan": "p. 66"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.2",
-      "packBoundary": "Alternate creature attacks retain their own source-owned entries.",
-      "engineBoundary": "engine:F8",
-      "regressionForm": "Wererat attack lookup asserts the Hand Crossbow entry."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.2"
+      }
     },
     {
       "canonicalId": "source-provenance-fields",
       "aliases": ["sol:CAP-010"],
       "title": "Structured fields cite actual source provenance",
       "status": "accepted",
-      "membershipQuery": "finding:source-provenance-fields",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/source-provenance-fields::source-provenance-fields",
+        "evidenceKind": "source-span",
+        "authority": "audit-finding:sol:CAP-010"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "action:attack",
+              "sourceSpan": "p. 93"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for source-provenance-fields remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:source-provenance-fields",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "action:attack",
+            "sourceSpan": "p. 93"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.2",
-      "packBoundary": "Structured output fields retain source spans and ownership evidence.",
-      "engineBoundary": "none",
-      "regressionForm": "Field-level provenance gate requires source-backed evidence."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.2"
+      }
     },
     {
       "canonicalId": "container-continuation",
       "aliases": ["fable:F4"],
       "title": "Container continuations retain complete citation",
       "status": "accepted",
-      "membershipQuery": "finding:container-continuation",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/container-continuation::container-continuation",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:fable:F4"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "table:ability-scores-and-modifiers",
+              "sourceSpan": "p. 76"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for container-continuation remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:container-continuation",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "table:ability-scores-and-modifiers",
+            "sourceSpan": "p. 76"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.2",
-      "packBoundary": "Continuation pages remain within their source-owned record boundary.",
-      "engineBoundary": "none",
-      "regressionForm": "Continuation locator test checks all contributing pages."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.2"
+      }
     },
     {
       "canonicalId": "advancement-qualifiers",
       "aliases": ["opus:F-10"],
       "title": "Advancement scaling qualifiers are preserved",
       "status": "accepted",
-      "membershipQuery": "finding:advancement-qualifiers",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/advancement-qualifiers::advancement-qualifiers",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-10"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:barbarian:brutal-critical",
+              "sourceSpan": "p. 9"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for advancement-qualifiers remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:advancement-qualifiers",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:barbarian:brutal-critical",
+            "sourceSpan": "p. 9"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.3",
-      "packBoundary": "Scaling fields retain source qualifiers and level conditions.",
-      "engineBoundary": "engine:F2",
-      "regressionForm": "Progression tests assert each scaling qualifier."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.3"
+      }
     },
     {
       "canonicalId": "proficiency-grants",
       "aliases": ["opus:F-13"],
       "title": "Proficiency grants are structured",
       "status": "accepted",
-      "membershipQuery": "finding:proficiency-grants",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/proficiency-grants::proficiency-grants",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-13"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "ancestry:rock-gnome",
+              "sourceSpan": "p. 6"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for proficiency-grants remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:proficiency-grants",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "ancestry:rock-gnome",
+            "sourceSpan": "p. 6"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.3",
-      "packBoundary": "Proficiency grants are typed rather than free-text only.",
-      "engineBoundary": "engine:F1",
-      "regressionForm": "Grant predicates assert typed proficiency ownership."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.3"
+      }
     },
     {
       "canonicalId": "choice-identifiers",
       "aliases": ["opus:F-14"],
       "title": "Choice identifiers and catalogs are consistent",
       "status": "accepted",
-      "membershipQuery": "finding:choice-identifiers",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/choice-identifiers::choice-identifiers",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-14"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "action:attack",
+              "sourceSpan": "p. 93"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for choice-identifiers remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:choice-identifiers",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "action:attack",
+            "sourceSpan": "p. 93"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.3",
-      "packBoundary": "Choice identifiers remain stable across catalogs and projections.",
-      "engineBoundary": "engine:F1",
-      "regressionForm": "Choice catalog tests assert stable qualified identifiers."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.3"
+      }
     },
     {
       "canonicalId": "madness-durations",
       "aliases": ["opus:F-16"],
       "title": "Madness durations are retained",
       "status": "accepted",
-      "membershipQuery": "finding:madness-durations",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/madness-durations::madness-durations",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-16"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "table:short-term-madness",
+              "sourceSpan": "p. 201"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for madness-durations remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:madness-durations",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "table:short-term-madness",
+            "sourceSpan": "p. 201"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.3",
-      "packBoundary": "Madness tables preserve duration and termination fields.",
-      "engineBoundary": "engine:F7",
-      "regressionForm": "Madness duration predicates cover every table form."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.3"
+      }
     },
     {
       "canonicalId": "damage-field-shape",
       "aliases": ["opus:F-34"],
       "title": "Flat and dice damage fields use a consistent shape",
       "status": "accepted",
-      "membershipQuery": "finding:damage-field-shape",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/damage-field-shape::damage-field-shape",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-34"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:bulette",
+              "sourceSpan": "pp. 266, 267"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for damage-field-shape remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:damage-field-shape",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:bulette",
+            "sourceSpan": "pp. 266, 267"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.3",
-      "packBoundary": "Damage values have one typed representation with source qualifiers.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Damage field-shape predicate rejects flat/dice drift."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.3"
+      }
     },
     {
       "canonicalId": "equipment-taxonomy",
       "aliases": ["sol:CAP-013"],
       "title": "Tack, Harness, and Drawn Vehicles taxonomy is preserved",
       "status": "accepted",
-      "membershipQuery": "finding:equipment-taxonomy",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/equipment-taxonomy::equipment-taxonomy",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:sol:CAP-013"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "equipment:block-and-tackle",
+              "sourceSpan": "pp. 67, 69"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for equipment-taxonomy remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:equipment-taxonomy",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "equipment:block-and-tackle",
+            "sourceSpan": "pp. 67, 69"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.3",
-      "packBoundary": "Equipment taxonomy distinguishes vehicles, tack, and harness records.",
-      "engineBoundary": "engine:F10",
-      "regressionForm": "Equipment taxonomy test checks each qualified category."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.3"
+      }
     },
     {
       "canonicalId": "table-empty-cells",
       "aliases": ["fable:F6"],
       "title": "Empty table cells retain their structured meaning",
       "status": "accepted",
-      "membershipQuery": "finding:table-empty-cells",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/table-empty-cells::table-empty-cells",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:fable:F6"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "table:ability-scores-and-modifiers",
+              "sourceSpan": "p. 76"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for table-empty-cells remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:table-empty-cells",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "table:ability-scores-and-modifiers",
+            "sourceSpan": "p. 76"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.3",
-      "packBoundary": "Empty cells are represented without collapsing table structure.",
-      "engineBoundary": "none",
-      "regressionForm": "Table shape predicate checks empty-cell preservation."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.3"
+      }
     },
     {
       "canonicalId": "display-name-qualification",
       "aliases": ["opus:F-22"],
       "title": "Duplicate display names are qualified",
       "status": "accepted",
-      "membershipQuery": "finding:display-name-qualification",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/display-name-qualification::display-name-qualification",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-22"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "rule:languages",
+              "sourceSpan": "p. 59"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for display-name-qualification remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:display-name-qualification",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "rule:languages",
+            "sourceSpan": "p. 59"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.4",
-      "packBoundary": "Display names remain discoverable with canonical kind and owner qualification.",
-      "engineBoundary": "none",
-      "regressionForm": "Lookup tests resolve duplicate names without ambiguity."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.4"
+      }
     },
     {
       "canonicalId": "canonical-discovery",
       "aliases": ["sol:CAP-011"],
       "title": "Canonical relationships and DM discovery are durable",
       "status": "accepted",
-      "membershipQuery": "finding:canonical-discovery",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/canonical-discovery::canonical-discovery",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:sol:CAP-011"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "action:attack",
+              "sourceSpan": "p. 93"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for canonical-discovery remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:canonical-discovery",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "action:attack",
+            "sourceSpan": "p. 93"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.4",
-      "packBoundary": "Canonical owners, aliases, and topic relationships are discoverable.",
-      "engineBoundary": "none",
-      "regressionForm": "Non-exact lookup tests resolve canonical records."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.4"
+      }
     },
     {
       "canonicalId": "rule-key-duplication",
       "aliases": ["fable:F8"],
       "title": "Rule keying and duplication hygiene are explicit",
       "status": "accepted",
-      "membershipQuery": "finding:rule-key-duplication",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/rule-key-duplication::rule-key-duplication",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:fable:F8"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "rule:a-clear-path-to-the-target",
+              "sourceSpan": "p. 102"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for rule-key-duplication remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:rule-key-duplication",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "rule:a-clear-path-to-the-target",
+            "sourceSpan": "p. 102"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.4",
-      "packBoundary": "Rule keys are stable and duplicate relationships are explicit.",
-      "engineBoundary": "none",
-      "regressionForm": "Rule-key uniqueness and canonical-link predicates run corpus-wide."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.4"
+      }
     },
     {
       "canonicalId": "audit-readiness-gate",
       "aliases": ["indep:001"],
       "title": "Readiness gates require clause-complete procedures",
       "status": "accepted",
-      "membershipQuery": "finding:audit-readiness-gate",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/audit-readiness-gate::audit-readiness-gate",
+        "evidenceKind": "code",
+        "authority": "audit-finding:indep:001"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "magic-item:bag-of-beans",
+              "sourceSpan": "p. 209"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for audit-readiness-gate remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:audit-readiness-gate",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "magic-item:bag-of-beans",
+            "sourceSpan": "p. 209"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.1.5",
-      "packBoundary": "Captured, projected, supported, and discoverable are separate clause dimensions.",
-      "engineBoundary": "none",
-      "regressionForm": "The readiness gate rejects atom presence as a substitute for a clause-complete procedure."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.1.5"
+      }
     },
     {
       "canonicalId": "rule-corpus-procedures",
       "aliases": ["sol:CAP-001"],
       "title": "The rule corpus has executable procedures",
       "status": "accepted",
-      "membershipQuery": "finding:rule-corpus-procedures",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/rule-corpus-procedures::rule-corpus-procedures",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:sol:CAP-001"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "rule:a-clear-path-to-the-target",
+              "sourceSpan": "p. 102"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for rule-corpus-procedures remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:rule-corpus-procedures",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "rule:a-clear-path-to-the-target",
+            "sourceSpan": "p. 102"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.4",
-      "packBoundary": "Rule records expose executable procedures rather than atoms alone.",
-      "engineBoundary": "none",
-      "regressionForm": "The rule corpus procedure audit enumerates each rule record and rejects records without an executable procedure."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.4"
+      }
     },
     {
       "canonicalId": "phantom-feature-resources",
       "aliases": ["opus:F-06"],
       "title": "Phantom feature resources are not emitted",
       "status": "accepted",
-      "membershipQuery": "finding:phantom-feature-resources",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/phantom-feature-resources::phantom-feature-resources",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-06"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:fighter:indomitable",
+              "sourceSpan": "p. 25"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for phantom-feature-resources remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:phantom-feature-resources",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:fighter:indomitable",
+            "sourceSpan": "p. 25"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.2",
-      "packBoundary": "Feature resources are source-backed and retain reset semantics.",
-      "engineBoundary": "engine:F2",
-      "regressionForm": "Feature resource predicates reject phantom uses."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.2"
+      }
     },
     {
       "canonicalId": "damage-alternatives",
       "aliases": ["opus:F-27"],
       "title": "Mutually exclusive damage alternatives remain distinct",
       "status": "accepted",
-      "membershipQuery": "finding:damage-alternatives",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/damage-alternatives::damage-alternatives",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-27"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:bulette",
+              "sourceSpan": "pp. 266, 267"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for damage-alternatives remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:damage-alternatives",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:bulette",
+            "sourceSpan": "pp. 266, 267"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.1",
-      "packBoundary": "Alternative damage branches retain choice and condition ownership.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Alternative damage tests prove sibling branches are not cumulative."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.1"
+      }
     },
     {
       "canonicalId": "choice-behavior",
       "aliases": ["indep:002"],
       "title": "Choice behavior remains local to its option",
       "status": "accepted",
-      "membershipQuery": "finding:choice-behavior",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/choice-behavior::choice-behavior",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:002"
+      },
+      "target": {
+        "kind": "relationship",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:warlock:eldritch-invocations",
+              "sourceSpan": "pp. 47, 48, 49, 50",
+              "path": "data.choices[0]"
+            },
+            {
+              "recordKey": "ancestry:rock-gnome",
+              "sourceSpan": "p. 6",
+              "path": "data.traits"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for choice-behavior remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:choice-behavior",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:warlock:eldritch-invocations",
+            "sourceSpan": "pp. 47, 48, 49, 50",
+            "path": "data.choices[0]"
+          },
+          {
+            "recordKey": "ancestry:rock-gnome",
+            "sourceSpan": "p. 6",
+            "path": "data.traits"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.1",
-      "packBoundary": "Choices and option-local behavior retain stable ownership.",
-      "engineBoundary": "engine:F1",
-      "regressionForm": "Option selection tests prevent behavior hoisting."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.1"
+      }
     },
     {
       "canonicalId": "pit-variants",
       "aliases": ["opus:F-02"],
       "title": "Pit variants remain separate procedures",
       "status": "accepted",
-      "membershipQuery": "finding:pit-variants",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/pit-variants::pit-variants",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-02"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "hazard:pits",
+              "sourceSpan": "p. 197"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for pit-variants remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:pit-variants",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "hazard:pits",
+            "sourceSpan": "p. 197"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.1",
-      "packBoundary": "Pit variants retain mutually exclusive geometry and outcomes.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Pit variant tests assert variant-local branches."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.1"
+      }
     },
     {
       "canonicalId": "invocation-effects",
       "aliases": ["opus:F-07"],
       "title": "Eldritch Invocation effects remain option-local",
       "status": "accepted",
-      "membershipQuery": "finding:invocation-effects",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/invocation-effects::invocation-effects",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-07"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:warlock:eldritch-invocations",
+              "sourceSpan": "pp. 47, 48, 49, 50"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for invocation-effects remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:invocation-effects",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:warlock:eldritch-invocations",
+            "sourceSpan": "pp. 47, 48, 49, 50"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.1",
-      "packBoundary": "Invocation choices retain their own prerequisites and effects.",
-      "engineBoundary": "engine:F1",
-      "regressionForm": "Invocation selection tests prevent parent hoisting."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.1"
+      }
     },
     {
       "canonicalId": "bulette-alternative",
       "aliases": ["opus:F-33"],
       "title": "Bulette ability alternatives and DC remain explicit",
       "status": "accepted",
-      "membershipQuery": "finding:bulette-alternative",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/bulette-alternative::bulette-alternative",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-33"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:bulette",
+              "sourceSpan": "pp. 266, 267"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for bulette-alternative remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:bulette-alternative",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:bulette",
+            "sourceSpan": "pp. 266, 267"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.1",
-      "packBoundary": "Ability-choice alternatives retain their DC and owner.",
-      "engineBoundary": "engine:F8",
-      "regressionForm": "Bulette alternative test checks the selected ability and DC."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.1"
+      }
     },
     {
       "canonicalId": "targeting-qualifiers",
       "aliases": ["opus:F-35"],
       "title": "Targeting qualifiers are complete",
       "status": "accepted",
-      "membershipQuery": "finding:targeting-qualifiers",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/targeting-qualifiers::targeting-qualifiers",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-35"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:bulette",
+              "sourceSpan": "pp. 266, 267"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for targeting-qualifiers remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:targeting-qualifiers",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:bulette",
+            "sourceSpan": "pp. 266, 267"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.1",
-      "packBoundary": "Target qualifiers and exclusions are retained in clause procedures.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Targeting tests assert qualifiers are not truncated."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.1"
+      }
     },
     {
       "canonicalId": "option-losses",
       "aliases": ["sol:CAP-005"],
       "title": "Ancestry, feature, progression, and choice losses are repaired",
       "status": "accepted",
-      "membershipQuery": "finding:option-losses",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/option-losses::option-losses",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:sol:CAP-005"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:warlock:eldritch-invocations",
+              "sourceSpan": "pp. 47, 48, 49, 50"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for option-losses remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:option-losses",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:warlock:eldritch-invocations",
+            "sourceSpan": "pp. 47, 48, 49, 50"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.1",
-      "packBoundary": "Character options retain grants, prerequisites, and selection ownership.",
-      "engineBoundary": "engine:F1",
-      "regressionForm": "Character-option corpus predicates cover local choices."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.1"
+      }
     },
     {
       "canonicalId": "class-feature-completeness",
       "aliases": ["indep:003"],
       "title": "Class features and feats retain complete procedures",
       "status": "accepted",
-      "membershipQuery": "finding:class-feature-completeness",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/class-feature-completeness::class-feature-completeness",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:003"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:barbarian:ability-score-improvement",
+              "sourceSpan": "p. 9"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for class-feature-completeness remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:class-feature-completeness",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:barbarian:ability-score-improvement",
+            "sourceSpan": "p. 9"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.2",
-      "packBoundary": "Class feature and feat clauses retain uses, resets, and scaling.",
-      "engineBoundary": "engine:F2",
-      "regressionForm": "Feature procedure tests exercise each governing clause."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.2"
+      }
     },
     {
       "canonicalId": "indomitable-scaling",
       "aliases": ["opus:F-03"],
       "title": "Indomitable use scaling is correct",
       "status": "accepted",
-      "membershipQuery": "finding:indomitable-scaling",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/indomitable-scaling::indomitable-scaling",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-03"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:fighter:indomitable",
+              "sourceSpan": "p. 25"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for indomitable-scaling remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:indomitable-scaling",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:fighter:indomitable",
+            "sourceSpan": "p. 25"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.2",
-      "packBoundary": "Indomitable use scaling is represented with its level condition.",
-      "engineBoundary": "engine:F2",
-      "regressionForm": "Indomitable progression test checks use scaling."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.2"
+      }
     },
     {
       "canonicalId": "arcane-recovery-reset",
       "aliases": ["opus:F-04"],
       "title": "Arcane Recovery reset is correct",
       "status": "accepted",
-      "membershipQuery": "finding:arcane-recovery-reset",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/arcane-recovery-reset::arcane-recovery-reset",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-04"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:wizard:arcane-recovery",
+              "sourceSpan": "p. 53"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for arcane-recovery-reset remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:arcane-recovery-reset",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:wizard:arcane-recovery",
+            "sourceSpan": "p. 53"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.2",
-      "packBoundary": "Arcane Recovery retains its reset and eligibility procedure.",
-      "engineBoundary": "engine:F7",
-      "regressionForm": "Arcane Recovery reset test exercises the procedure."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.2"
+      }
     },
     {
       "canonicalId": "natural-recovery-reset",
       "aliases": ["opus:F-05"],
       "title": "Natural Recovery reset is correct",
       "status": "accepted",
-      "membershipQuery": "finding:natural-recovery-reset",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/natural-recovery-reset::natural-recovery-reset",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-05"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:circle-of-the-land:natural-recovery",
+              "sourceSpan": "p. 21"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for natural-recovery-reset remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:natural-recovery-reset",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:circle-of-the-land:natural-recovery",
+            "sourceSpan": "p. 21"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.2",
-      "packBoundary": "Natural Recovery retains its reset and eligibility procedure.",
-      "engineBoundary": "engine:F7",
-      "regressionForm": "Natural Recovery reset test exercises the procedure."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.2"
+      }
     },
     {
       "canonicalId": "ki-abilities",
       "aliases": ["opus:F-12"],
       "title": "Ki abilities and save DC are structured",
       "status": "accepted",
-      "membershipQuery": "finding:ki-abilities",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/ki-abilities::ki-abilities",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-12"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:monk:ki",
+              "sourceSpan": "p. 27"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for ki-abilities remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:ki-abilities",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:monk:ki",
+            "sourceSpan": "p. 27"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.2",
-      "packBoundary": "Ki procedures retain resources, activation, and save DC formulas.",
-      "engineBoundary": "engine:F8",
-      "regressionForm": "Ki procedure tests assert resource and DC ownership."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.2"
+      }
     },
     {
       "canonicalId": "divine-sense-uses",
       "aliases": ["opus:F-24"],
       "title": "Divine Sense use count is explicit",
       "status": "accepted",
-      "membershipQuery": "finding:divine-sense-uses",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/divine-sense-uses::divine-sense-uses",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-24"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "feature:paladin:divine-sense",
+              "sourceSpan": "p. 30"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for divine-sense-uses remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:divine-sense-uses",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "feature:paladin:divine-sense",
+            "sourceSpan": "p. 30"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.2",
-      "packBoundary": "Divine Sense retains use count and reset semantics.",
-      "engineBoundary": "engine:F2",
-      "regressionForm": "Divine Sense use-count test checks reset behavior."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.2"
+      }
     },
     {
       "canonicalId": "condition-structure-no-regression",
@@ -470,242 +1774,972 @@
       "title": "Condition structure is repaired without regressing typed effects",
       "status": "narrowed",
       "statusReasoning": "CAP-002 overstates the condition deficit: existing typed condition effects are exact against source. Repair only proven structural gaps and preserve those typed effects.",
-      "membershipQuery": "finding:condition-structure-no-regression",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/condition-structure-no-regression::condition-structure-no-regression",
+        "evidenceKind": "bead",
+        "authority": "audit-finding:sol:CAP-002"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "magic-item:bag-of-beans",
+              "sourceSpan": "p. 209"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for condition-structure-no-regression remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:condition-structure-no-regression",
+        "expectedAfterRepair": "stable"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "magic-item:bag-of-beans",
+            "sourceSpan": "p. 209"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.4",
-      "packBoundary": "Rule and condition clauses expose readiness while preserving correct typed effects.",
-      "engineBoundary": "engine:F6",
-      "regressionForm": "Condition exactness and no-regression tests run beside structural predicates."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.4"
+      }
     },
     {
       "canonicalId": "rules-prose-readiness",
       "aliases": ["opus:F-09"],
       "title": "Rules prose has an in-band readiness disposition",
       "status": "accepted",
-      "membershipQuery": "finding:rules-prose-readiness",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/rules-prose-readiness::rules-prose-readiness",
+        "evidenceKind": "code",
+        "authority": "audit-finding:opus:F-09"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "magic-item:bag-of-beans",
+              "sourceSpan": "p. 209"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for rules-prose-readiness remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:rules-prose-readiness",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "magic-item:bag-of-beans",
+            "sourceSpan": "p. 209"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.4",
-      "packBoundary": "Rules prose exposes captured, projected, and executable readiness separately.",
-      "engineBoundary": "none",
-      "regressionForm": "Rules readiness tests reject prose-only green claims."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.4"
+      }
     },
     {
       "canonicalId": "ancestry-omissions",
       "aliases": ["indep:004"],
       "title": "Ancestry deterministic semantics are complete",
       "status": "accepted",
-      "membershipQuery": "finding:ancestry-omissions",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/ancestry-omissions::ancestry-omissions",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:004"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "ancestry:dragonborn",
+              "sourceSpan": "p. 5"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for ancestry-omissions remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:ancestry-omissions",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "ancestry:dragonborn",
+            "sourceSpan": "p. 5"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.3",
-      "packBoundary": "Ancestry grants and deterministic traits retain their procedures.",
-      "engineBoundary": "engine:F1",
-      "regressionForm": "Ancestry corpus predicates cover deterministic omissions."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.3"
+      }
     },
     {
       "canonicalId": "background-equipment",
       "aliases": ["opus:F-18"],
       "title": "Background equipment is structured",
       "status": "accepted",
-      "membershipQuery": "finding:background-equipment",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/background-equipment::background-equipment",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-18"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "background:acolyte",
+              "sourceSpan": "pp. 60, 61"
+            },
+            {
+              "recordKey": "equipment:backpack",
+              "sourceSpan": "pp. 69, 70"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for background-equipment remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:background-equipment",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "background:acolyte",
+            "sourceSpan": "pp. 60, 61"
+          },
+          {
+            "recordKey": "equipment:backpack",
+            "sourceSpan": "pp. 69, 70"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.3.3",
-      "packBoundary": "Background equipment grants are typed and source-backed.",
-      "engineBoundary": "engine:F10",
-      "regressionForm": "Background grant tests assert structured equipment."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.3.3"
+      }
     },
     {
       "canonicalId": "hazard-and-healing-potion",
       "aliases": ["sol:CAP-006"],
       "title": "Hazards and healing potion procedures are complete",
       "status": "accepted",
-      "membershipQuery": "finding:hazard-and-healing-potion",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/hazard-and-healing-potion::hazard-and-healing-potion",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:sol:CAP-006"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "hazard:assassins-blood",
+              "sourceSpan": "p. 204"
+            },
+            {
+              "recordKey": "equipment:potion-of-healing",
+              "sourceSpan": "pp. 68, 69"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for hazard-and-healing-potion remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:hazard-and-healing-potion",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "hazard:assassins-blood",
+            "sourceSpan": "p. 204"
+          },
+          {
+            "recordKey": "equipment:potion-of-healing",
+            "sourceSpan": "pp. 68, 69"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.4",
-      "packBoundary": "Hazard and healing-potion clauses retain deterministic branches and outcomes.",
-      "engineBoundary": "engine:F6",
-      "regressionForm": "Hazard and potion procedure predicates cover both families."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.4"
+      }
     },
     {
       "canonicalId": "spell-completeness",
       "aliases": ["indep:005"],
       "title": "Spell procedures are complete",
       "status": "accepted",
-      "membershipQuery": "finding:spell-completeness",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/spell-completeness::spell-completeness",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:005"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "spell:acid-arrow",
+              "sourceSpan": "p. 114"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for spell-completeness remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:spell-completeness",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "spell:acid-arrow",
+            "sourceSpan": "p. 114"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.1",
-      "packBoundary": "Every deterministic spell clause is represented or explicitly non-engine.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Spell corpus predicates cover geometry, targets, saves, and lifecycle."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.1"
+      }
     },
     {
       "canonicalId": "point-origin-areas",
       "aliases": ["opus:F-08", "fable:F2"],
       "title": "Point-origin spell areas are represented",
       "status": "accepted",
-      "membershipQuery": "finding:point-origin-areas",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/point-origin-areas::point-origin-areas",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-08"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "spell:flaming-sphere",
+              "sourceSpan": "p. 145"
+            },
+            {
+              "recordKey": "spell:freezing-sphere",
+              "sourceSpan": "pp. 147, 148"
+            },
+            {
+              "recordKey": "spell:resilient-sphere",
+              "sourceSpan": "p. 175"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for point-origin-areas remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:point-origin-areas",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "spell:flaming-sphere",
+            "sourceSpan": "p. 145"
+          },
+          {
+            "recordKey": "spell:freezing-sphere",
+            "sourceSpan": "pp. 147, 148"
+          },
+          {
+            "recordKey": "spell:resilient-sphere",
+            "sourceSpan": "p. 175"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.1",
-      "packBoundary": "Spell areas preserve point-origin geometry and targeting.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Point-origin area tests cover non-self origins."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.1"
+      }
     },
     {
       "canonicalId": "magic-missile-projectiles",
       "aliases": ["opus:F-11"],
       "title": "Magic Missile base projectile count is explicit",
       "status": "accepted",
-      "membershipQuery": "finding:magic-missile-projectiles",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/magic-missile-projectiles::magic-missile-projectiles",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-11"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "spell:magic-missile",
+              "sourceSpan": "p. 161"
+            },
+            {
+              "recordKey": "magic-item:wand-of-magic-missiles",
+              "sourceSpan": "p. 249"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for magic-missile-projectiles remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:magic-missile-projectiles",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "spell:magic-missile",
+            "sourceSpan": "p. 161"
+          },
+          {
+            "recordKey": "magic-item:wand-of-magic-missiles",
+            "sourceSpan": "p. 249"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.1",
-      "packBoundary": "Base projectile count and scaling remain source-backed.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Magic Missile projectile test checks base and scaling clauses."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.1"
+      }
     },
     {
       "canonicalId": "spell-mechanics-depth",
       "aliases": ["sol:CAP-003"],
       "title": "Spell mechanics are projected to source depth",
       "status": "accepted",
-      "membershipQuery": "finding:spell-mechanics-depth",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/spell-mechanics-depth::spell-mechanics-depth",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:sol:CAP-003"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "spell:acid-arrow",
+              "sourceSpan": "p. 114"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for spell-mechanics-depth remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:spell-mechanics-depth",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "spell:acid-arrow",
+            "sourceSpan": "p. 114"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.1",
-      "packBoundary": "Spell clauses retain complete mechanics rather than atom presence.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Spell readiness predicates reject shallow mechanics."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.1"
+      }
     },
     {
       "canonicalId": "animal-friendship-authority",
       "aliases": ["sol:CAP-009"],
       "title": "Animal Friendship correction is source-authority work",
       "status": "accepted",
-      "membershipQuery": "finding:animal-friendship-authority",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/animal-friendship-authority::animal-friendship-authority",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:sol:CAP-009"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "spell:animal-friendship",
+              "sourceSpan": "p. 115"
+            },
+            {
+              "recordKey": "magic-item:potion-of-animal-friendship",
+              "sourceSpan": "p. 233"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for animal-friendship-authority remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:animal-friendship-authority",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "spell:animal-friendship",
+            "sourceSpan": "p. 115"
+          },
+          {
+            "recordKey": "magic-item:potion-of-animal-friendship",
+            "sourceSpan": "p. 233"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.2.1",
-      "packBoundary": "Animal Friendship correction cites authoritative source or remains explicit.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Animal Friendship source correction test checks provenance and outcome."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.2.1"
+      }
     },
     {
       "canonicalId": "creature-completeness",
       "aliases": ["indep:006"],
       "title": "Creature triggers, branches, timing, and lifecycle are complete",
       "status": "accepted",
-      "membershipQuery": "finding:creature-completeness",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/creature-completeness::creature-completeness",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:006"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:aboleth",
+              "sourceSpan": "p. 261"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for creature-completeness remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:creature-completeness",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:aboleth",
+            "sourceSpan": "p. 261"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.3",
-      "packBoundary": "Creature procedures preserve triggers, branches, timing, and lifecycle.",
-      "engineBoundary": "engine:F8",
-      "regressionForm": "Creature clause predicates cover complete procedure dimensions."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.3"
+      }
     },
     {
       "canonicalId": "half-damage-branches",
       "aliases": ["opus:F-25"],
       "title": "Creature and hazard half-damage branches are represented",
       "status": "accepted",
-      "membershipQuery": "finding:half-damage-branches",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/half-damage-branches::half-damage-branches",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-25"
+      },
+      "target": {
+        "kind": "relationship",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:bulette",
+              "sourceSpan": "pp. 266, 267",
+              "path": "data.actions[1].text"
+            },
+            {
+              "recordKey": "hazard:pits",
+              "sourceSpan": "p. 197",
+              "path": "data.description"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for half-damage-branches remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:half-damage-branches",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:bulette",
+            "sourceSpan": "pp. 266, 267",
+            "path": "data.actions[1].text"
+          },
+          {
+            "recordKey": "hazard:pits",
+            "sourceSpan": "p. 197",
+            "path": "data.description"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.3",
-      "packBoundary": "Half-damage success branches are retained for creature and hazard procedures.",
-      "engineBoundary": "engine:F8",
-      "regressionForm": "Half-damage branch predicate covers both affected families."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.3"
+      }
     },
     {
       "canonicalId": "legendary-economy",
       "aliases": ["opus:F-26"],
       "title": "Legendary budgets and action costs are modeled",
       "status": "accepted",
-      "membershipQuery": "finding:legendary-economy",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/legendary-economy::legendary-economy",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-26"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:adult-black-dragon",
+              "sourceSpan": "p. 281"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for legendary-economy remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:legendary-economy",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:adult-black-dragon",
+            "sourceSpan": "p. 281"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.3",
-      "packBoundary": "Legendary actions retain budgets, costs, and reset timing.",
-      "engineBoundary": "engine:F2",
-      "regressionForm": "Legendary economy tests exercise budget and cost transitions."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.3"
+      }
     },
     {
       "canonicalId": "druid-dryad-attacks",
       "aliases": ["opus:F-28"],
       "title": "Druid and Dryad attacks have attack objects",
       "status": "accepted",
-      "membershipQuery": "finding:druid-dryad-attacks",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/druid-dryad-attacks::druid-dryad-attacks",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-28"
+      },
+      "target": {
+        "kind": "field",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:druid",
+              "sourceSpan": "pp. 398, 399",
+              "path": "data.traits[0].text"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for druid-dryad-attacks remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:druid-dryad-attacks",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:druid",
+            "sourceSpan": "pp. 398, 399",
+            "path": "data.traits[0].text"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.2",
-      "packBoundary": "Druid and Dryad attack clauses project to typed attack objects.",
-      "engineBoundary": "engine:F8",
-      "regressionForm": "Druid and Dryad attack-object predicates assert alternate attacks."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.2"
+      }
     },
     {
       "canonicalId": "unicode-minus-damage",
       "aliases": ["opus:F-29"],
       "title": "Unicode-minus damage is normalized",
       "status": "accepted",
-      "membershipQuery": "finding:unicode-minus-damage",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/unicode-minus-damage::unicode-minus-damage",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-29"
+      },
+      "target": {
+        "kind": "field",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:bulette",
+              "sourceSpan": "pp. 266, 267",
+              "path": "data.actions[0].text"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for unicode-minus-damage remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:unicode-minus-damage",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:bulette",
+            "sourceSpan": "pp. 266, 267",
+            "path": "data.actions[0].text"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.2",
-      "packBoundary": "Unicode minus damage expressions retain their numeric meaning.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Unicode-minus parser regression checks damage expressions."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.2"
+      }
     },
     {
       "canonicalId": "ranged-notation",
       "aliases": ["opus:F-31"],
       "title": "Ranged attacks retain range under alternate notation",
       "status": "accepted",
-      "membershipQuery": "finding:ranged-notation",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/ranged-notation::ranged-notation",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-31"
+      },
+      "target": {
+        "kind": "field",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:wererat",
+              "sourceSpan": "pp. 327, 328",
+              "path": "data.actions[2].text"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for ranged-notation remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:ranged-notation",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:wererat",
+            "sourceSpan": "pp. 327, 328",
+            "path": "data.actions[2].text"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.2",
-      "packBoundary": "Alternate ranged-attack notation projects range and targeting.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Ranged attack corpus predicate requires range fields."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.2"
+      }
     },
     {
       "canonicalId": "multi-save-entries",
       "aliases": ["opus:F-32"],
       "title": "Multi-save entries retain every save",
       "status": "accepted",
-      "membershipQuery": "finding:multi-save-entries",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/multi-save-entries::multi-save-entries",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-32"
+      },
+      "target": {
+        "kind": "field",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:bulette",
+              "sourceSpan": "pp. 266, 267",
+              "path": "data.actions[1].text"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for multi-save-entries remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:multi-save-entries",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:bulette",
+            "sourceSpan": "pp. 266, 267",
+            "path": "data.actions[1].text"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.3",
-      "packBoundary": "Multiple save branches retain their own outcomes and timing.",
-      "engineBoundary": "engine:F8",
-      "regressionForm": "Multi-save tests assert all save branches are typed."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.3"
+      }
     },
     {
       "canonicalId": "creature-statblock-mechanics",
       "aliases": ["sol:CAP-004"],
       "title": "Creature stat-block mechanics are complete",
       "status": "accepted",
-      "membershipQuery": "finding:creature-statblock-mechanics",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/creature-statblock-mechanics::creature-statblock-mechanics",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:sol:CAP-004"
+      },
+      "target": {
+        "kind": "field",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:bulette",
+              "sourceSpan": "pp. 266, 267",
+              "path": "data.traits[0].mechanics"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for creature-statblock-mechanics remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:creature-statblock-mechanics",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:bulette",
+            "sourceSpan": "pp. 266, 267",
+            "path": "data.traits[0].mechanics"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.2",
-      "packBoundary": "Creature stat-block mechanics retain complete typed procedures.",
-      "engineBoundary": "engine:F8",
-      "regressionForm": "Creature stat-block readiness predicate rejects shallow records."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.2"
+      }
     },
     {
       "canonicalId": "creature-ongoing-riders",
       "aliases": ["fable:F3"],
       "title": "Creature riders and ongoing damage are typed",
       "status": "accepted",
-      "membershipQuery": "finding:creature-ongoing-riders",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/creature-ongoing-riders::creature-ongoing-riders",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:fable:F3"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "creature:wererat",
+              "sourceSpan": "pp. 327, 328"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for creature-ongoing-riders remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:creature-ongoing-riders",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "creature:wererat",
+            "sourceSpan": "pp. 327, 328"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.3",
-      "packBoundary": "Creature riders and ongoing damage retain duration and recurrence.",
-      "engineBoundary": "engine:F3",
-      "regressionForm": "Ongoing-rider tests assert active-effect transitions."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.3"
+      }
     },
     {
       "canonicalId": "hazard-completeness",
       "aliases": ["indep:007"],
       "title": "Hazards are deterministically executable",
       "status": "accepted",
-      "membershipQuery": "finding:hazard-completeness",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/hazard-completeness::hazard-completeness",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:indep:007"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "hazard:assassins-blood",
+              "sourceSpan": "p. 204"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for hazard-completeness remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:hazard-completeness",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "hazard:assassins-blood",
+            "sourceSpan": "p. 204"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.4",
-      "packBoundary": "Hazard triggers, branches, geometry, recurrence, and termination are represented.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Hazard-family predicates exercise executable procedures."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.4"
+      }
     },
     {
       "canonicalId": "hazard-success-branches",
       "aliases": ["opus:F-01"],
       "title": "Hazard success-damage branches are represented",
       "status": "accepted",
-      "membershipQuery": "finding:hazard-success-branches",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/hazard-success-branches::hazard-success-branches",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-01"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "hazard:pits",
+              "sourceSpan": "p. 197"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for hazard-success-branches remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:hazard-success-branches",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "hazard:pits",
+            "sourceSpan": "p. 197"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.4",
-      "packBoundary": "Hazard success branches retain damage and outcome semantics.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Hazard success-branch tests cover damage outcomes."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.4"
+      }
     },
     {
       "canonicalId": "sphere-prose",
       "aliases": ["opus:F-23"],
       "title": "Sphere of Annihilation is not prose-only",
       "status": "accepted",
-      "membershipQuery": "finding:sphere-prose",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/sphere-prose::sphere-prose",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:F-23"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "hazard:sphere-of-annihilation",
+              "sourceSpan": "p. 198"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for sphere-prose remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:sphere-prose",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "hazard:sphere-of-annihilation",
+            "sourceSpan": "p. 198"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.4",
-      "packBoundary": "Sphere procedures expose deterministic interaction and outcomes.",
-      "engineBoundary": "engine:F9",
-      "regressionForm": "Sphere procedure test rejects prose-only readiness."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.4"
+      }
     },
     {
       "canonicalId": "magic-item-effects",
@@ -713,22 +2747,82 @@
       "title": "Magic-item effects have an honest execution boundary",
       "status": "disclosed-dependency",
       "statusReasoning": "Pack projection can enumerate item clauses, but complete execution remains dependent on the engine capability families and their owning beads.",
-      "membershipQuery": "finding:magic-item-effects",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/magic-item-effects::magic-item-effects",
+        "evidenceKind": "audit-finding",
+        "authority": "audit-finding:opus:residual-unverified-effects-semantics"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "magic-item:bag-of-beans",
+              "sourceSpan": "p. 209"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for magic-item-effects remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:magic-item-effects",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "magic-item:bag-of-beans",
+            "sourceSpan": "p. 209"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.4.5",
-      "packBoundary": "Magic-item clauses are represented with green and pending readiness disclosed.",
-      "engineBoundary": "engine:F5",
-      "regressionForm": "Every item clause is enumerated with readiness and engine dependencies."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.4.5"
+      }
     },
     {
       "canonicalId": "readiness-integrity",
       "aliases": ["opus:F-21"],
       "title": "Readiness metadata reflects semantic completeness",
       "status": "accepted",
-      "membershipQuery": "finding:readiness-integrity",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/readiness-integrity::readiness-integrity",
+        "evidenceKind": "code",
+        "authority": "audit-finding:opus:F-21"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "magic-item:bag-of-beans",
+              "sourceSpan": "p. 209"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for readiness-integrity remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:readiness-integrity",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "magic-item:bag-of-beans",
+            "sourceSpan": "p. 209"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.1.5",
-      "packBoundary": "Partial, pending, and unimplemented clauses cannot be reported as green.",
-      "engineBoundary": "none",
-      "regressionForm": "Generated readiness predicates reject stale zero-finding metadata."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.1.5"
+      }
     },
     {
       "canonicalId": "engine-capability-ownership",
@@ -736,22 +2830,82 @@
       "title": "Required engine capabilities have qualified ownership",
       "status": "disclosed-dependency",
       "statusReasoning": "Capability membership is generated from the pack and completion is owned by the engine capability family beads; the registry records the dependency until those families certify.",
-      "membershipQuery": "finding:engine-capability-ownership",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/engine-capability-ownership::engine-capability-ownership",
+        "evidenceKind": "code",
+        "authority": "audit-finding:sol:CAP-007"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "magic-item:bag-of-beans",
+              "sourceSpan": "p. 209"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for engine-capability-ownership remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:engine-capability-ownership",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "magic-item:bag-of-beans",
+            "sourceSpan": "p. 209"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.5",
-      "packBoundary": "Each deterministic clause exposes required engine capabilities and fail-closed ownership.",
-      "engineBoundary": "engine:F1..engine:F10",
-      "regressionForm": "Generated hook queries and bead-reference checks reject unowned gaps."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.5"
+      }
     },
     {
       "canonicalId": "readiness-artifacts",
       "aliases": ["sol:CAP-014"],
       "title": "Readiness artifacts agree with the corpus",
       "status": "accepted",
-      "membershipQuery": "finding:readiness-artifacts",
+      "obligation": {
+        "obligationId": "obl:::srd-5.1::audit/readiness-artifacts::readiness-artifacts",
+        "evidenceKind": "code",
+        "authority": "audit-finding:sol:CAP-014"
+      },
+      "target": {
+        "kind": "record",
+        "selector": {
+          "members": [
+            {
+              "recordKey": "magic-item:bag-of-beans",
+              "sourceSpan": "p. 209"
+            }
+          ]
+        }
+      },
+      "invariant": "The source-backed obligation for readiness-artifacts remains represented at the exact audited target and satisfies its authoritative source contract.",
+      "violation": {
+        "queryId": "finding:readiness-artifacts",
+        "expectedAfterRepair": "empty"
+      },
+      "baselineMembership": {
+        "capturedAtCommit": "cd2d6aec8d38a78e348a1a2247a37648a20fdee2",
+        "members": [
+          {
+            "recordKey": "magic-item:bag-of-beans",
+            "sourceSpan": "p. 209"
+          }
+        ]
+      },
       "owningBead": "eshyra-o9bd.19.1.5",
-      "packBoundary": "Readiness artifacts are generated from current clause state.",
-      "engineBoundary": "none",
-      "regressionForm": "Artifact-to-corpus predicates reject contradictory readiness claims."
+      "regression": {
+        "evidenceKind": "bead",
+        "locator": "eshyra-o9bd.19.1.5"
+      }
     }
   ]
 }
