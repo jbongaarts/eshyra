@@ -22,19 +22,29 @@ Every row separates the durable obligation from the current defect:
   repair. A disappearing violation therefore does not erase the obligation.
 
 `baselineMembership` is the audited, checked-in snapshot of exact identities.
-It is evidence, not a copied total. `executeMembershipQuery` resolves those
-identities against the current pack and artifact files; validation compares the
+It is evidence, not a copied total. `membershipDerivation` records how the
+snapshot was generated from the committed corpus (record-kind, readiness-clause,
+half-damage-branch, or artifact enumeration) and names the source authority.
+Large populations are enumerated in full; a small population must carry an
+explicit reviewed `exemplarJustification`. `evaluateMembershipQuery` joins the
+durable expected identities to the current pack and artifact files, returning
+expected, current, and missing identities separately. Validation compares the
 complete sets, so losing one member fails rather than merely remaining
-non-empty. Record identities can include an exact clause ID or data path.
-Artifact identities can include an exact artifact path and JSON path, which
-allows findings outside `records.json`—such as manifest provenance—to remain
+non-empty. The one `may-be-missing-until-repair` policy is reserved for the
+source clause explicitly documented as absent pending the clause-IR follow-up;
+it is not a general empty-membership escape hatch.
+
+Record identities can include an exact clause ID or data path. Artifact
+identities can include an exact artifact path and JSON path, which allows
+findings outside `records.json`—such as manifest provenance—to remain
 observable.
 
 The validator rejects duplicate canonical IDs, duplicate aliases, malformed
 obligation IDs, pack self-authority, generic selectors, malformed nested
-identities, baseline/selector drift, partial current membership, and forbidden
-hand-copied totals. Empty current violation membership is governed by the
-typed `violation.expectedAfterRepair` contract; there is no free-form
+identities, baseline/selector drift, partial current membership, templated
+invariants, unjustified small populations, and forbidden hand-copied totals.
+Empty current violation membership is governed by the typed
+`violation.expectedAfterRepair` contract; there is no free-form
 `zeroMemberPolicy` escape hatch.
 
 ## Coverage classes

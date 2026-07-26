@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   aliasIndex,
   checkBeadReferences,
-  executeMembershipQuery,
+  evaluateMembershipQuery,
+  generateMembershipSnapshot,
   loadFindingRegistry,
   validateFindingRegistry,
 } from '../src/rules/findingRegistry.js';
@@ -65,6 +66,10 @@ describe('durable finding registry', () => {
       expect(row.baselineMembership.capturedAtCommit).toMatch(
         /^[0-9a-f]{7,64}$/,
       );
+      expect(row.membershipDerivation.sourceScope).toBeTruthy();
+      expect(row.membershipDerivation.currentMatch).toMatch(
+        /^(required|may-be-missing-until-repair)$/,
+      );
       for (const member of row.baselineMembership.members) {
         expect(JSON.stringify(member)).not.toMatch(
           /\*|\?|substring|prefix|regex|contains/i,
@@ -93,6 +98,21 @@ describe('durable finding registry', () => {
     expect(() => validateFindingRegistry(generic)).toThrow(
       /exact selector|structured data path/i,
     );
+
+    const withoutSmallPopulationJustification = structuredClone(registry);
+    withoutSmallPopulationJustification.rows[0].exemplarJustification =
+      undefined;
+    expect(() =>
+      validateFindingRegistry(withoutSmallPopulationJustification),
+    ).toThrow(/exemplarJustification/i);
+
+    const templated = structuredClone(registry);
+    for (const row of templated.rows) {
+      row.invariant = `The source-backed obligation for ${row.canonicalId} remains represented at the exact audited target.`;
+    }
+    expect(() => validateFindingRegistry(templated)).toThrow(
+      /defect-specific|template/i,
+    );
   });
 
   it('keeps violation queries separate from durable baseline membership', () => {
@@ -115,18 +135,20 @@ describe('durable finding registry', () => {
   it('enumerates exact current identities for all rows', () => {
     const registry = loadFindingRegistry();
     for (const row of registry.rows) {
-      const result = executeMembershipQuery(row.violation.queryId);
-      if (
-        row.statusReasoning?.startsWith('Reviewed empty current membership:')
-      ) {
-        expect(result).toHaveLength(0);
+      const evaluation = evaluateMembershipQuery(row.violation.queryId);
+      expect(evaluation.expected).toEqual(row.baselineMembership.members);
+      if (row.membershipDerivation.currentMatch === 'required') {
+        expect(evaluation.current).toEqual(row.baselineMembership.members);
+        expect(evaluation.missing).toHaveLength(0);
       } else {
-        expect(result).toEqual(row.baselineMembership.members);
+        expect(evaluation.current.length).toBeLessThanOrEqual(
+          evaluation.expected.length,
+        );
       }
     }
   });
 
-  it('represents nested, artifact, narrowed, capability, and cross-kind cases', () => {
+  it('represents ten required target cases with matching kinds and selectors', () => {
     const registry = loadFindingRegistry();
     const byAlias = (alias: string) => {
       const row = registry.rows.find((candidate) =>
@@ -138,16 +160,100 @@ describe('durable finding registry', () => {
     expect(
       byAlias('opus:F-20').baselineMembership.members[0].artifactPath,
     ).toBe('manifest.json');
-    expect(
-      byAlias('sol:CAP-008').baselineMembership.members[0].clauseId,
-    ).toBeTruthy();
+    const cases = [
+      ['opus:F-19', 'clause', 'feature:bard:spellcasting', 'clauseId'],
+      ['opus:F-20', 'path', 'manifest.json', 'artifactPath'],
+      ['sol:CAP-008', 'clause', 'magic-item:bag-of-beans', 'clauseId'],
+      ['sol:CAP-002', 'record', 'magic-item:bag-of-beans', 'recordKey'],
+      ['sol:CAP-007', 'capability', 'magic-item:bag-of-beans', 'clauseId'],
+      ['opus:F-30', 'relationship', 'creature:wererat', 'path'],
+      ['opus:F-28', 'field', 'creature:druid', 'path'],
+      ['opus:F-25', 'relationship', 'hazard:pits', 'path'],
+      ['opus:F-08', 'record', 'spell:flaming-sphere', 'recordKey'],
+      ['fable:F4', 'record', 'table:ability-scores-and-modifiers', 'recordKey'],
+    ] as const;
+    for (const [alias, kind, locus, nestedKey] of cases) {
+      const row = byAlias(alias);
+      expect(row.target.kind, alias).toBe(kind);
+      expect(
+        row.target.selector.members.some(
+          (member) =>
+            member.recordKey === locus || member.artifactPath === locus,
+        ),
+        alias,
+      ).toBe(true);
+      expect(
+        row.target.selector.members.some(
+          (member) => member[nestedKey] !== undefined,
+        ),
+        alias,
+      ).toBe(true);
+    }
     expect(byAlias('sol:CAP-002').status).toBe('narrowed');
     expect(byAlias('sol:CAP-007').obligation.evidenceKind).toBe('code');
     expect(
-      byAlias('opus:F-25').baselineMembership.members.map(
-        (member) => member.recordKey,
+      byAlias('sol:CAP-007').baselineMembership.members.every(
+        (member) => member.clauseId,
       ),
-    ).toEqual(['creature:bulette', 'hazard:pits']);
+    ).toBe(true);
+    expect(
+      byAlias('sol:CAP-007').baselineMembership.members.length,
+    ).toBeGreaterThan(byAlias('sol:CAP-008').baselineMembership.members.length);
+  });
+
+  it('derives corpus populations rather than retaining exemplars', () => {
+    const registry = loadFindingRegistry();
+    const records = requireRecords() as Array<{ key?: unknown }>;
+    const row = (canonicalId: string) => {
+      const result = registry.rows.find(
+        (candidate) => candidate.canonicalId === canonicalId,
+      );
+      if (result === undefined) throw new Error(`missing row ${canonicalId}`);
+      return result;
+    };
+    expect(
+      row('rule-corpus-procedures').baselineMembership.members.length,
+    ).toBe(
+      records.filter(
+        (record) =>
+          typeof record.key === 'string' && record.key.startsWith('rule:'),
+      ).length,
+    );
+    expect(row('spell-completeness').baselineMembership.members.length).toBe(
+      records.filter(
+        (record) =>
+          typeof record.key === 'string' && record.key.startsWith('spell:'),
+      ).length,
+    );
+    expect(row('engine-capability-ownership').target.kind).toBe('capability');
+    expect(
+      row('engine-capability-ownership').baselineMembership.members.every(
+        (member) =>
+          member.recordKey?.startsWith('magic-item:') && member.clauseId,
+      ),
+    ).toBe(true);
+    for (const canonicalId of [
+      'rule-corpus-procedures',
+      'spell-completeness',
+      'half-damage-branches',
+      'audit-readiness-gate',
+      'readiness-integrity',
+      'engine-capability-ownership',
+      'magic-item-effects',
+    ]) {
+      const finding = row(canonicalId);
+      expect(generateMembershipSnapshot(finding)).toEqual(
+        finding.baselineMembership.members,
+      );
+    }
+    const evaluation = evaluateMembershipQuery(
+      'finding:engine-capability-ownership',
+    );
+    expect(
+      evaluation.currentStatus.every(
+        (match) => match.status === 'engine-pending',
+      ),
+    ).toBe(true);
   });
 
   it('fails when any declared baseline member disappears', () => {

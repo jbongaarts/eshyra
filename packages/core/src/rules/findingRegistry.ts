@@ -26,6 +26,15 @@ export type TargetKind =
   | 'relationship'
   | 'capability';
 
+export type MembershipGenerator =
+  | 'audited-singleton'
+  | 'audited-exact-set'
+  | 'pack-record-kind'
+  | 'pack-half-damage-branches'
+  | 'pack-readiness-clauses'
+  | 'pack-engine-pending-clauses'
+  | 'audited-artifact-set';
+
 export interface MembershipIdentity {
   recordKey?: string;
   clauseId?: string;
@@ -63,6 +72,13 @@ export interface FindingRow {
     capturedAtCommit: string;
     members: MembershipIdentity[];
   };
+  membershipDerivation: {
+    generator: MembershipGenerator;
+    sourceScope: string;
+    authority: string;
+    currentMatch: 'required' | 'may-be-missing-until-repair';
+  };
+  exemplarJustification?: string;
   owningBead: string;
   regression: {
     evidenceKind: EvidenceKind;
@@ -226,7 +242,40 @@ function identityKey(identity: MembershipIdentity): string {
   return JSON.stringify(identity);
 }
 
+function membershipGenerator(
+  value: unknown,
+  path: string,
+): MembershipGenerator {
+  const generator = requiredString(value, path) as MembershipGenerator;
+  if (
+    ![
+      'audited-singleton',
+      'audited-exact-set',
+      'pack-record-kind',
+      'pack-half-damage-branches',
+      'pack-readiness-clauses',
+      'pack-engine-pending-clauses',
+      'audited-artifact-set',
+    ].includes(generator)
+  ) {
+    throw new Error(`${path} is not a supported membership generator`);
+  }
+  return generator;
+}
+
 function parseIdentity(value: unknown, path: string): MembershipIdentity {
+  if (typeof value === 'string') {
+    const [kind, locus, nested] = value.split('|');
+    if (kind === 'r' && locus !== undefined && nested === undefined)
+      return parseIdentity({ recordKey: locus }, path);
+    if (kind === 'c' && locus !== undefined && nested !== undefined)
+      return parseIdentity({ recordKey: locus, clauseId: nested }, path);
+    if (kind === 'p' && locus !== undefined && nested !== undefined)
+      return parseIdentity({ recordKey: locus, path: nested }, path);
+    if (kind === 'a' && locus !== undefined && nested !== undefined)
+      return parseIdentity({ artifactPath: locus, jsonPath: nested }, path);
+    throw new Error(`${path} is not a valid compact exact identity`);
+  }
   if (!isObject(value)) throw new Error(`${path} must be an object`);
   const result: MembershipIdentity = {};
   for (const key of [
@@ -432,6 +481,53 @@ function parseRegistry(value: unknown): FindingRegistry {
       );
     }
     const regression = isObject(raw.regression) ? raw.regression : undefined;
+    const membershipDerivation = isObject(raw.membershipDerivation)
+      ? raw.membershipDerivation
+      : undefined;
+    const generator = membershipGenerator(
+      membershipDerivation?.generator,
+      `${path}.membershipDerivation.generator`,
+    );
+    const sourceScope = requiredString(
+      membershipDerivation?.sourceScope,
+      `${path}.membershipDerivation.sourceScope`,
+    );
+    const derivationAuthority = requiredString(
+      membershipDerivation?.authority,
+      `${path}.membershipDerivation.authority`,
+    );
+    if (/^(?:pack|current-pack):/i.test(derivationAuthority)) {
+      throw new Error(
+        `${path}.membershipDerivation.authority may not be the pack under repair`,
+      );
+    }
+    const currentMatch = requiredString(
+      membershipDerivation?.currentMatch,
+      `${path}.membershipDerivation.currentMatch`,
+    );
+    if (
+      currentMatch !== 'required' &&
+      currentMatch !== 'may-be-missing-until-repair'
+    ) {
+      throw new Error(`${path}.membershipDerivation.currentMatch is invalid`);
+    }
+    const exemplarJustification =
+      raw.exemplarJustification === undefined
+        ? undefined
+        : requiredString(
+            raw.exemplarJustification,
+            `${path}.exemplarJustification`,
+          );
+    if (baselineMembers.length <= 2 && exemplarJustification === undefined) {
+      throw new Error(
+        `${path}.exemplarJustification is required for a small generated population`,
+      );
+    }
+    if (generator === 'audited-singleton' && baselineMembers.length !== 1) {
+      throw new Error(
+        `${path}.membershipDerivation.generator audited-singleton requires one member`,
+      );
+    }
     const clusterJustification =
       raw.clusterJustification === undefined
         ? undefined
@@ -470,6 +566,13 @@ function parseRegistry(value: unknown): FindingRegistry {
         capturedAtCommit: baselineCommit,
         members: baselineMembers,
       },
+      membershipDerivation: {
+        generator,
+        sourceScope,
+        authority: derivationAuthority,
+        currentMatch,
+      },
+      ...(exemplarJustification === undefined ? {} : { exemplarJustification }),
       owningBead: requiredString(raw.owningBead, `${path}.owningBead`),
       regression: {
         evidenceKind: evidenceKind(
@@ -517,6 +620,16 @@ function parseRegistry(value: unknown): FindingRegistry {
         `violation query ${query} is shared without sharedQueryJustification`,
       );
     }
+  }
+  const invariantShapes = new Set(
+    rows.map((row) =>
+      row.invariant.replaceAll(row.canonicalId, '<canonicalId>'),
+    ),
+  );
+  if (invariantShapes.size !== rows.length) {
+    throw new Error(
+      'invariants must remain defect-specific; a canonicalId template was detected',
+    );
   }
   return { version: 1, rows };
 }
@@ -583,15 +696,6 @@ function clauseIds(record: PackRecord): Set<string> {
   );
 }
 
-function sourceSpan(record: PackRecord): string | undefined {
-  if (
-    isObject(record.provenance) &&
-    typeof record.provenance.locator === 'string'
-  )
-    return record.provenance.locator;
-  return typeof record.source === 'string' ? record.source : undefined;
-}
-
 function artifactValue(identity: MembershipIdentity): unknown {
   if (identity.artifactPath === undefined) return undefined;
   const absolute = join(packDirectory, identity.artifactPath);
@@ -608,6 +712,100 @@ function artifactValue(identity: MembershipIdentity): unknown {
     value = value[key];
   }
   return value;
+}
+
+function recordIdentity(
+  record: PackRecord,
+  nested: { clauseId?: string; path?: string } = {},
+): MembershipIdentity {
+  if (typeof record.key !== 'string') throw new Error('pack record has no key');
+  return { recordKey: record.key, ...nested };
+}
+
+function generatedReadinessMembers(
+  records: PackRecord[],
+  predicate: (clause: Obj) => boolean,
+): MembershipIdentity[] {
+  return records.flatMap((record) => {
+    const readiness = recordData(record).executionReadiness;
+    const clauses =
+      isObject(readiness) && Array.isArray(readiness.clauses)
+        ? readiness.clauses.filter(isObject)
+        : [];
+    return clauses.filter(predicate).map((clause) =>
+      recordIdentity(record, {
+        clauseId: requiredString(clause.clauseId, 'pack clauseId'),
+      }),
+    );
+  });
+}
+
+function generatedHalfDamageMembers(
+  records: PackRecord[],
+): MembershipIdentity[] {
+  const result: MembershipIdentity[] = [];
+  const matches = (value: unknown): value is string =>
+    typeof value === 'string' &&
+    /half as much damage|half the damage|half damage/i.test(value);
+  const inspect = (record: PackRecord, path: string, value: unknown): void => {
+    if (matches(value)) result.push(recordIdentity(record, { path }));
+  };
+  records
+    .filter((record) => record.kind === 'creature' || record.kind === 'hazard')
+    .forEach((record) => {
+      const data = recordData(record);
+      if (record.kind === 'hazard')
+        inspect(record, 'data.description', data.description);
+      if (Array.isArray(data.actions))
+        data.actions.forEach((action, index) => {
+          if (isObject(action))
+            inspect(record, `data.actions[${index}].text`, action.text);
+        });
+      if (Array.isArray(data.traits))
+        data.traits.forEach((trait, index) => {
+          if (isObject(trait))
+            inspect(record, `data.traits[${index}].text`, trait.text);
+        });
+      const legendaryActions = data.legendaryActions;
+      if (isObject(legendaryActions) && Array.isArray(legendaryActions.entries))
+        legendaryActions.entries.forEach((entry, index) => {
+          if (isObject(entry))
+            inspect(
+              record,
+              `data.legendaryActions.entries[${index}].text`,
+              entry.text,
+            );
+        });
+    });
+  return result;
+}
+
+/** Generate the committed-pack portion of a durable membership snapshot. */
+export function generateMembershipSnapshot(
+  row: FindingRow,
+  records = getDefaultRecords(),
+): MembershipIdentity[] {
+  switch (row.membershipDerivation.generator) {
+    case 'pack-record-kind': {
+      const kind = row.canonicalId === 'spell-completeness' ? 'spell' : 'rule';
+      return records
+        .filter((record) => record.kind === kind)
+        .map((record) => recordIdentity(record));
+    }
+    case 'pack-half-damage-branches':
+      return generatedHalfDamageMembers(records);
+    case 'pack-readiness-clauses':
+      return generatedReadinessMembers(records, () => true);
+    case 'pack-engine-pending-clauses':
+      return generatedReadinessMembers(
+        records,
+        (clause) => clause.readiness === 'engine-pending',
+      );
+    case 'audited-singleton':
+    case 'audited-exact-set':
+    case 'audited-artifact-set':
+      return row.baselineMembership.members;
+  }
 }
 
 function currentIdentity(
@@ -630,12 +828,7 @@ function currentIdentity(
     getAtPath(recordData(record), identity.path) === undefined
   )
     return undefined;
-  return {
-    ...identity,
-    ...(identity.sourceSpan === undefined && sourceSpan(record) !== undefined
-      ? { sourceSpan: sourceSpan(record) }
-      : {}),
-  };
+  return identity;
 }
 
 export function executeMembershipQuery(
@@ -649,9 +842,73 @@ export function executeMembershipQuery(
     (candidate) => candidate.violation.queryId === query,
   );
   if (row === undefined) throw new Error(`unknown membership query: ${query}`);
-  return row.baselineMembership.members
-    .map((member) => currentIdentity(member, records))
-    .filter((member): member is MembershipIdentity => member !== undefined);
+  return evaluateMembershipQuery(query, records, registry).current;
+}
+
+export interface MembershipEvaluation {
+  expected: MembershipIdentity[];
+  current: MembershipIdentity[];
+  missing: MembershipIdentity[];
+  currentStatus: Array<{
+    identity: MembershipIdentity;
+    status: string;
+  }>;
+}
+
+function currentStatus(
+  identity: MembershipIdentity,
+  records: PackRecord[],
+): string {
+  if (identity.artifactPath !== undefined) {
+    return artifactValue(identity) === undefined ? 'missing' : 'present';
+  }
+  const record = records.find(
+    (candidate) => candidate.key === identity.recordKey,
+  );
+  if (record === undefined) return 'missing';
+  if (identity.clauseId !== undefined) {
+    const readiness = recordData(record).executionReadiness;
+    const readinessClauses =
+      isObject(readiness) && Array.isArray(readiness.clauses)
+        ? readiness.clauses.filter(isObject)
+        : [];
+    const clause = readinessClauses.find(
+      (candidate) => candidate.clauseId === identity.clauseId,
+    );
+    return typeof clause?.readiness === 'string' ? clause.readiness : 'present';
+  }
+  return 'present';
+}
+
+/**
+ * Join the durable source/audit snapshot to the current pack. The expected
+ * identities never come from the current violation predicate, so repairing a
+ * clause changes its status without erasing the obligation's membership.
+ */
+export function evaluateMembershipQuery(
+  query: MembershipQueryName,
+  records = getDefaultRecords(),
+  registry = loadFindingRegistry(),
+): MembershipEvaluation {
+  if (!Array.isArray(records))
+    throw new Error('rules pack records must be an array');
+  const row = registry.rows.find(
+    (candidate) => candidate.violation.queryId === query,
+  );
+  if (row === undefined) throw new Error(`unknown membership query: ${query}`);
+  const expected = row.baselineMembership.members;
+  const joined = expected.map((member) => currentIdentity(member, records));
+  return {
+    expected,
+    current: joined.filter(
+      (member): member is MembershipIdentity => member !== undefined,
+    ),
+    missing: expected.filter((_, index) => joined[index] === undefined),
+    currentStatus: expected.map((identity, index) => ({
+      identity: joined[index] ?? identity,
+      status: currentStatus(identity, records),
+    })),
+  };
 }
 
 export interface BeadReferenceCheck {
@@ -705,25 +962,21 @@ export function validateFindingRegistry(
 ): void {
   const parsed = parseRegistry(registry);
   for (const row of parsed.rows) {
-    const current = executeMembershipQuery(
+    const evaluation = evaluateMembershipQuery(
       row.violation.queryId,
       records,
       parsed,
     );
-    const reviewedEmpty =
-      current.length === 0 &&
-      row.statusReasoning?.startsWith('Reviewed empty current membership:') ===
-        true;
     if (
-      !sameIdentitySet(row.baselineMembership.members, current) &&
-      !reviewedEmpty
+      row.membershipDerivation.currentMatch === 'required' &&
+      !sameIdentitySet(evaluation.expected, evaluation.current)
     ) {
       throw new Error(
         `${row.canonicalId} lost one or more baseline membership identities`,
       );
     }
     if (
-      current.some(
+      evaluation.current.some(
         (member) =>
           member.recordKey === undefined && member.artifactPath === undefined,
       )
