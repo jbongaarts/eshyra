@@ -14,12 +14,15 @@ export type OwnershipStatus = 'owned' | 'proposed-new-bead' | 'disputed';
 
 export interface BootstrapCapabilityRow {
   readonly capabilityId: string;
+  readonly primitive: string;
   readonly requirement: string;
   readonly discoveredBy: readonly string[];
   readonly packEvidence: string;
   readonly codeEvidence: string;
   readonly owningBead: string;
   readonly ownershipStatus: OwnershipStatus;
+  readonly proposedTitle?: string;
+  readonly proposedParent?: string;
   readonly notes: string;
 }
 
@@ -74,6 +77,7 @@ function validateRow(value: unknown, index: number): BootstrapCapabilityRow {
   const row = value as Record<string, unknown>;
   for (const field of [
     'capabilityId',
+    'primitive',
     'requirement',
     'packEvidence',
     'codeEvidence',
@@ -85,6 +89,9 @@ function validateRow(value: unknown, index: number): BootstrapCapabilityRow {
   requiredStringArray(row.discoveredBy, `rows[${index}].discoveredBy`);
   if (!ENGINE_CAPABILITY_ID.test(row.capabilityId as string)) {
     fail(`rows[${index}].capabilityId must use engine:F1..engine:F10`);
+  }
+  if (row.primitive === row.capabilityId) {
+    fail(`rows[${index}].primitive must identify a specific primitive`);
   }
   if (
     !(row.discoveredBy as readonly string[]).every((source) =>
@@ -109,7 +116,11 @@ function validateRow(value: unknown, index: number): BootstrapCapabilityRow {
   }
   if (
     row.ownershipStatus === 'proposed-new-bead' &&
-    !/proposed title|parent/i.test(row.notes as string)
+    (typeof row.proposedTitle !== 'string' ||
+      row.proposedTitle.trim() === '' ||
+      typeof row.proposedParent !== 'string' ||
+      !BEAD_ID.test(row.proposedParent) ||
+      !/proposed title|parent/i.test(row.notes as string))
   ) {
     fail(`rows[${index}] proposed ownership must name its title and parent`);
   }
@@ -133,26 +144,57 @@ export function validateBootstrapCapabilityLedger(
   if (!Array.isArray(root.rows) || root.rows.length === 0)
     fail('rows must be a non-empty array');
   const rows = root.rows.map(validateRow);
-  const families = new Set(rows.map((row) => row.capabilityId));
-  for (let family = 1; family <= 10; family += 1) {
-    if (!families.has(`engine:F${family}`)) fail(`missing engine:F${family}`);
+  const familyRows = new Map<string, number>();
+  for (const row of rows) {
+    familyRows.set(
+      row.capabilityId,
+      (familyRows.get(row.capabilityId) ?? 0) + 1,
+    );
   }
-  if (!rows.some((row) => !row.discoveredBy.includes('readiness-artifacts'))) {
-    fail('missing non-pack-only discovery row');
+  for (let family = 1; family <= 10; family += 1) {
+    const capabilityId = `engine:F${family}`;
+    if (!familyRows.has(capabilityId)) fail(`missing ${capabilityId}`);
+    if ((familyRows.get(capabilityId) ?? 0) < 2) {
+      fail(`${capabilityId} needs multiple primitive rows`);
+    }
+  }
+  if (
+    rows.filter((row) => !row.discoveredBy.includes('readiness-artifacts'))
+      .length < 3
+  ) {
+    fail('fewer than three non-pack-only discovery rows');
+  }
+  const ownershipStatuses = new Set(rows.map((row) => row.ownershipStatus));
+  if (
+    !ownershipStatuses.has('owned') ||
+    !ownershipStatuses.has('proposed-new-bead')
+  ) {
+    fail('ownershipStatus must vary between owned and proposed-new-bead');
   }
   if (options.checkBeads !== false && commandExists('bd')) {
-    for (const row of rows) {
-      if (row.ownershipStatus !== 'owned') continue;
-      const cached = beadExistence.get(row.owningBead);
-      if (cached === true) continue;
-      if (cached === false)
-        fail(`owning bead does not exist: ${row.owningBead}`);
+    const beadIds = [
+      ...new Set(
+        rows
+          .filter((row) => row.ownershipStatus === 'owned')
+          .map((row) => row.owningBead),
+      ),
+    ].filter((beadId) => beadExistence.get(beadId) !== true);
+    if (beadIds.length > 0) {
       try {
-        execFileSync('bd', ['show', row.owningBead], { stdio: 'ignore' });
-        beadExistence.set(row.owningBead, true);
+        execFileSync('bd', ['show', ...beadIds], { stdio: 'ignore' });
+        for (const beadId of beadIds) beadExistence.set(beadId, true);
       } catch {
-        beadExistence.set(row.owningBead, false);
-        fail(`owning bead does not exist: ${row.owningBead}`);
+        for (const beadId of beadIds) {
+          if (beadExistence.get(beadId) === false)
+            fail(`owning bead does not exist: ${beadId}`);
+          try {
+            execFileSync('bd', ['show', beadId], { stdio: 'ignore' });
+            beadExistence.set(beadId, true);
+          } catch {
+            beadExistence.set(beadId, false);
+            fail(`owning bead does not exist: ${beadId}`);
+          }
+        }
       }
     }
   }
