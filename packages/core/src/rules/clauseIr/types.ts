@@ -1,8 +1,7 @@
 /**
- * The source-clause semantic IR. This is deliberately a contract vocabulary,
- * not a universal rules language: projectors may compose these primitives or
- * retain a clause for model adjudication when a deterministic representation
- * is not available.
+ * The source-clause semantic IR. This is a narrow contract vocabulary, not a
+ * universal rules language. A clause references source obligations; it never
+ * defines the requirements by which those obligations are judged.
  */
 
 export type ClauseKind =
@@ -21,23 +20,6 @@ export type ClauseKind =
   | 'ledger'
   | 'model-adjudication';
 
-export type MechanicsRecordFamily =
-  | 'rule'
-  | 'feature'
-  | 'spell'
-  | 'creature'
-  | 'hazard'
-  | 'equipment'
-  | 'magic-item'
-  | 'ancestry'
-  | 'background'
-  | 'condition'
-  | 'action'
-  | 'feat'
-  | 'class'
-  | 'subclass'
-  | 'table';
-
 export type BranchName = 'success' | 'failure' | 'partialSuccess';
 
 export type ClauseField =
@@ -47,7 +29,7 @@ export type ClauseField =
   | 'semanticOwner'
   | 'recordOwner'
   | 'kind'
-  | 'sourceObligations'
+  | 'sourceObligationIds'
   | 'trigger'
   | 'eligibility'
   | 'activationCost'
@@ -73,43 +55,62 @@ export type ClauseField =
   | 'readiness'
   | 'regressionEvidence';
 
-export type ClauseRequirementPredicate =
-  | {
-      readonly kind: 'field';
-      readonly field: ClauseField;
-      readonly cardinality: 'present' | 'non-empty';
-    }
-  | {
-      readonly kind: 'branch';
-      readonly branch: BranchName;
-    }
-  | {
-      readonly kind: 'field-group';
-      readonly fields: readonly ClauseField[];
-      readonly minCount: number;
-      readonly maxCount?: number;
-    };
+export type MechanicsRecordFamily =
+  | 'rule'
+  | 'feature'
+  | 'spell'
+  | 'creature'
+  | 'hazard'
+  | 'equipment'
+  | 'magic-item'
+  | 'ancestry'
+  | 'background'
+  | 'condition'
+  | 'action'
+  | 'feat'
+  | 'class'
+  | 'subclass'
+  | 'table';
 
-export interface ClauseRequirement {
-  readonly id: string;
-  readonly sourceText: string;
-  readonly predicate: ClauseRequirementPredicate;
-}
+export type ObligationId = string;
 
-/** A source-backed semantic obligation, including composed child contracts. */
-export interface SourceObligation {
-  readonly id: string;
-  readonly sourceText: string;
-  readonly sourceSpanLocators: readonly [string, ...string[]];
-  readonly contractKind: ClauseKind;
-  readonly requirements: readonly ClauseRequirement[];
-}
+/** The shared facet vocabulary used by PRs #475, #476, and #477. */
+export type SemanticFacet =
+  | 'save'
+  | 'save-with-damage'
+  | 'save-without-damage'
+  | 'save-with-alternate-outcomes'
+  | 'attack'
+  | 'attack-with-one-damage-mode'
+  | 'attack-with-conditional-alternatives'
+  | 'check'
+  | 'branch'
+  | 'action-economy'
+  | 'resource-use'
+  | 'resource-with-reset'
+  | 'resource-without-reset'
+  | 'duration'
+  | 'duration-with-concentration'
+  | 'duration-without-concentration'
+  | 'effect'
+  | 'effect-with-lifecycle'
+  | 'effect-without-lifecycle'
+  | 'geometry'
+  | 'choice'
+  | 'variant'
+  | 'entity-lifecycle'
+  | 'ledger'
+  | 'model-adjudication'
+  | 'repeat-check'
+  | 'termination';
 
-export interface ClauseIdentity {
-  readonly id: string;
-  readonly canonicalKey: string;
-  readonly revision: string;
-}
+export type EvidenceKind =
+  | 'source-span'
+  | 'authoritative-input'
+  | 'audit-finding'
+  | 'code'
+  | 'bead'
+  | 'known-missing-source-clause';
 
 export interface SourceSpan {
   readonly sourceRef: string;
@@ -117,6 +118,72 @@ export interface SourceSpan {
   readonly start: number;
   readonly end: number;
   readonly text: string;
+}
+
+export interface SourceSpanEvidence {
+  readonly kind: 'source-span';
+  readonly sourceRef: string;
+  readonly locator: string;
+  readonly start: number;
+  readonly end: number;
+  readonly text: string;
+}
+
+export interface AuthoritativeInputEvidence {
+  readonly kind: 'authoritative-input';
+  readonly sourceRef: string;
+  readonly locator: string;
+  readonly inputId: string;
+  readonly digest: string;
+}
+
+export interface AuditFindingEvidence {
+  readonly kind: 'audit-finding';
+  readonly findingId: string;
+}
+
+export interface CodeEvidence {
+  readonly kind: 'code';
+  readonly path: string;
+  readonly symbol: string;
+}
+
+export interface BeadEvidence {
+  readonly kind: 'bead';
+  readonly beadId: string;
+}
+
+export interface KnownMissingSourceClauseEvidence {
+  readonly kind: 'known-missing-source-clause';
+  readonly sourceRef: string;
+  readonly locator: string;
+  readonly findingId: string;
+}
+
+export type ObligationEvidence =
+  | SourceSpanEvidence
+  | AuthoritativeInputEvidence
+  | AuditFindingEvidence
+  | CodeEvidence
+  | BeadEvidence
+  | KnownMissingSourceClauseEvidence;
+
+export type ObligationOrigin =
+  | 'source-extraction'
+  | 'curated-specification'
+  | 'audit-finding';
+
+export interface SourceObligationRecord {
+  readonly obligationId: ObligationId;
+  readonly origin: ObligationOrigin;
+  readonly evidence: readonly [ObligationEvidence, ...ObligationEvidence[]];
+  readonly requiredFacets: readonly [SemanticFacet, ...SemanticFacet[]];
+}
+
+export interface ClauseIdentity {
+  readonly id: string;
+  readonly canonicalKey: string;
+  readonly revision: string;
 }
 
 export interface ClauseProvenance {
@@ -274,6 +341,7 @@ export interface StateTransitionSpec {
 export interface DurationSpec {
   readonly amount: string;
   readonly unit: 'round' | 'minute' | 'hour' | 'day' | 'permanent' | 'special';
+  readonly concentration: boolean;
 }
 
 export interface RecurrenceSpec {
@@ -304,33 +372,35 @@ export interface TerminationSpec {
   readonly outcome: string;
 }
 
-export type EngineCapability =
-  | 'engine:F1'
-  | 'engine:F2'
-  | 'engine:F3'
-  | 'engine:F4'
-  | 'engine:F5'
-  | 'engine:F6'
-  | 'engine:F7'
-  | 'engine:F8'
-  | 'engine:F9'
-  | 'engine:F10';
+export type EngineCapability = string;
 
-export interface ExecutionOwner {
-  readonly kind: 'engine' | 'model' | 'rules-pack' | 'projector';
-  readonly id: string;
+export interface CapabilityReference {
+  readonly capability: EngineCapability;
+  readonly owningBead: string;
+}
+
+export interface DiscoveryReference {
+  readonly resolverId: string;
+  readonly path: string;
+}
+
+/** Readiness is evidence, never four producer-authored booleans. */
+export interface ClauseReadinessEvidence {
+  readonly captured: readonly ObligationEvidence[];
+  readonly supported: readonly CapabilityReference[];
+  readonly discoverable: readonly DiscoveryReference[];
 }
 
 export interface ClauseDimensions {
-  readonly captured: boolean;
-  readonly projected: boolean;
-  readonly supported: boolean;
-  readonly discoverable: boolean;
+  readonly captured: 'satisfied' | 'failed';
+  readonly projected: 'satisfied' | 'failed';
+  readonly supported: 'satisfied' | 'failed';
+  readonly discoverable: 'satisfied' | 'failed';
 }
 
-export interface ClauseReadiness {
-  readonly dimensions: ClauseDimensions;
-  readonly note: string | null;
+export interface ExecutionOwner {
+  readonly kind: 'engine' | 'model';
+  readonly id: string;
 }
 
 export interface RegressionEvidence {
@@ -347,11 +417,8 @@ export interface Clause {
   readonly semanticOwner: SemanticOwner;
   readonly recordOwner: RecordOwner;
   readonly kind: ClauseKind;
-  /** The source, rather than the selected kind, determines these obligations. */
-  readonly sourceObligations: readonly [
-    SourceObligation,
-    ...SourceObligation[],
-  ];
+  /** IDs only: the authoritative records live in an independent registry. */
+  readonly sourceObligationIds: readonly ObligationId[];
   readonly trigger: ClausePredicate | null;
   readonly eligibility: ClausePredicate | null;
   readonly activationCost: ActionEconomyCost | null;
@@ -373,7 +440,7 @@ export interface Clause {
   readonly immunityWindows: readonly ImmunityWindowSpec[];
   readonly termination: TerminationSpec | null;
   readonly executionOwner: ExecutionOwner;
-  readonly requiredEngineCapabilities: readonly EngineCapability[];
-  readonly readiness: ClauseReadiness;
+  readonly requiredEngineCapabilities: readonly CapabilityReference[];
+  readonly readiness: ClauseReadinessEvidence;
   readonly regressionEvidence: readonly RegressionEvidence[];
 }

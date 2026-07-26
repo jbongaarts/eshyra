@@ -1,145 +1,143 @@
-# ADR 0020: Source-Clause Semantic IR and Completeness Contracts
+# ADR 0020: Source-Clause Semantic IR and the Obligation Boundary
 
 - **Status:** Accepted
-- **Date:** 2026-07-25
-- **Bead:** eshyra-o9bd.19.1.1
+- **Date:** 2026-07-26
+- **Bead:** eshyra-o9bd.19.1.1.3 (correction of PR #475)
 - **Refines:** [ADR 0017](0017-rules-pack-compiler-and-executable-curation-architecture.md)
 - **Guidance:** [The Rules-Pack Compiler and Executable Curation](../rules-pack-compiler.md)
 
 ## Context
 
-[ADR 0017](0017-rules-pack-compiler-and-executable-curation-architecture.md)
-establishes the rules-pack as both a source-faithful reference substrate and a
-semantic substrate for the model/engine boundary. The existing record-shaped
-view has no semantic unit smaller than a record, so a projector can recognize a
-mechanic and emit a plausible-looking record without proving that the mechanic
-was represented completely.
+The rules-pack is both a source-faithful reference substrate and a semantic
+substrate for the model/engine boundary. A record-shaped projection can still
+look plausible while omitting a repeated save, option-local alternative,
+duration, termination, or lifecycle transition. A projector-selected kind is
+not an authority for what its source clause contains.
 
-The semantic unit is therefore a source-backed **clause**, not a record. A
-record remains a materialized view that groups clauses for the current consumer
-surface. This preserves record lookup and presentation while making clause
-identity, ownership, provenance, execution, and completeness independently
-auditable.
-
-The 2026-07-24 audit evidence demonstrates why atom presence is insufficient:
-
-- alternative damage modes were stored as parallel damage without their
-  mutually exclusive choice;
-- recharge triggers were read as reset periods, losing the trigger semantics;
-- partial saves were treated as complete saves;
-- legendary actions lacked their budget or per-option cost;
-- option mechanics were hoisted onto parent features instead of remaining
-  option-local; and
-- typed records omitted branching, timing, or termination.
-
-These are contract failures, not merely missing fields. A clause can be
-captured and partly projected while still lacking the semantics an engine or
-model boundary requires. The selected clause kind cannot be the source of
-truth for those obligations: one source clause may compose several semantic
-contracts.
+The correction to PR #475 establishes an authority boundary. Source-derived
+obligations are registered independently of projected clauses. A clause may
+reference obligation IDs, but it cannot carry the requirements used to grade
+those obligations. This is the protection against omission, kind narrowing,
+and weakened requirement lists.
 
 ## Decision
 
-### 1. Clauses are the semantic unit
+### Clause and obligation identity
 
-Every clause has a stable identity, exact source span or spans, source
-provenance, semantic and record owners, a clause kind, predicates for trigger
-and eligibility, activation/action-economy cost, targets and geometry,
-checks/attacks/saves, mutually exclusive alternatives, outcome branches,
-effects, timing, execution ownership, required capabilities, readiness, and
-regression evidence. It also declares non-empty, source-backed obligations:
-each obligation names the source text, the contract kind it invokes, and any
-additional predicates detected in that source text, and points to one or more
-of the clause's exact source-span locators. Records group these
-clauses as materialized views; no consumer-facing record surface is removed by
-this representation.
+The semantic unit is a source-backed clause; a record remains a materialized
+view grouping clauses. A clause retains identity, exact source spans,
+provenance, semantic and record ownership, normalized semantic fields,
+execution ownership, capability references, readiness evidence, and regression
+evidence. Its `sourceObligationIds` field is IDs only.
 
-### 2. Four dimensions are independent
+The independent registry contains `SourceObligationRecord` values with:
 
-The overloaded word “modeled” is retired as a gate. Clause readiness records
-four separate dimensions:
+- `obligationId`, using the shared identity
+  `obl:::${sourceRef}:::${locator}:::${facet}`;
+- a closed non-projector origin: `source-extraction`,
+  `curated-specification`, or `audit-finding`;
+- resolvable evidence appropriate to that origin; and
+- one or more canonical `requiredFacets`.
 
-1. **CAPTURED** — authoritative source text and provenance are present.
-2. **PROJECTED** — structured semantic fields exist for the clause.
-3. **SUPPORTED** — an engine capability or an explicitly supported model
-   adjudication can execute the clause.
-4. **DISCOVERABLE** — runtime lookup can find the canonical clause.
+The shared cross-PR evidence union is also fixed here: `source-span`,
+`authoritative-input`, `audit-finding`, `code`, `bead`, and
+`known-missing-source-clause`. PR #475 owns source-span and authoritative-input
+semantics in depth. PRs #476 and #477 duplicate these small types locally and
+align to the identity; they do not import across branches. The integration
+boundary is the shared identity/evidence contract, not a shared implementation
+file.
 
-They are orthogonal. A clause can be CAPTURED and PROJECTED yet not SUPPORTED
-or DISCOVERABLE. Semantic completeness is the source-obligation evaluation
-plus CAPTURED and PROJECTED; readiness reports all four dimension gates
-independently. No gate may collapse these dimensions into one informal
-verdict. The IR stores dimensions and evidence, while the evaluator result is
-the authoritative semantic/readiness artifact; it stores no derived
-disposition that could contradict the dimensions. Required engine capabilities use qualified values in the form
-`engine:F1` through `engine:F10`; no unqualified engine-family label is valid.
+Registry construction validates origin, evidence shape, duplicate IDs,
+unknown facets, and contradictory facet selections. An absent registry ID
+fails closed.
 
-### 3. The universal layer has a narrow scope
+### Facets own canonical requirements
 
-The universal layer contains only clause identity, semantic ownership,
-completeness requirements, alternatives and branching, provenance, capability
-requirements, and readiness state. It explicitly permits shared normalized
-primitives, kind-specific composition on top of those primitives,
-source-backed curated specifications, and explicit unsupported or adjudicated
-clauses. It is not a universal rules DSL and does not require every D&D
-mechanic to compile into one generic runtime language.
+Requirements are derived inside the evaluator from registry facets. They are
+not supplied as a contract by an ordinary caller. The facet vocabulary is
+composable and includes, among others:
 
-### 4. Silent partial projection is forbidden
+- save with damage, save without damage, and save with alternate outcomes;
+- attack with one damage mode and attack with conditional/mutually exclusive
+  alternatives;
+- resource use with reset and without reset;
+- duration with concentration and without concentration; and
+- effect with lifecycle state and without lifecycle state.
 
-When a projector recognizes that a deterministic clause exists but cannot
-represent it completely, it MUST emit an explicit clause whose source
-obligations expose the missing semantic requirements. The pure evaluator
-returns an **INCOMPLETE** semantic result with a structured reason for every
-failed requirement; the appropriate semantic/readiness gate must fail. It must
-never emit a superficially valid partial record. Family-specific projectors
-and curated source-backed specifications remain appropriate; the invariant
-forbids only silent partial projection.
+These facets replace false universal kind assumptions. A save does not
+universally deal damage; an attack does not universally use exactly one attack
+mode; a duration does not universally have concentration, termination, or
+success/failure branches. Each source obligation names the exact facets the
+source demands. Canonical requirements enforce cardinality and cross-field
+relationships. When multiple obligations demand the same atom family, the
+evaluator enforces aggregate multiplicity so one projected atom cannot
+discharge two source obligations. Extensions are additive
+`additionalRequirements`; no extension can remove or replace a canonical
+requirement. Unknown or contradictory selection fails closed.
 
-### 5. Completeness contracts are executable data
+### Applicability, membership, completeness, and closure
 
-`packages/core/src/rules/clauseIr/contracts.ts` stores kind-specific contracts
-as data and evaluates a clause against its contract with a pure function. A
-requirement is a predicate, not a nullable-field check: it can require a
-non-empty collection or a bounded field-group alternative (including an
-attack-roll XOR saving-throw shape). The contract vocabulary covers attacks,
-saves, checks, branches, action economy, resources, durations, state
-transitions, geometry, choices, variants, entity lifecycles, ledgers, and model
-adjudication. A source obligation can invoke several of these contracts and
-add source-specific predicates, so selecting `save` cannot silently discard a
-duration, repeat-check, or termination obligation. It also documents a clause
-schema for each mechanics-bearing record family: rule, feature, spell,
-creature, hazard, equipment, magic-item, ancestry, background, condition,
-action, feat, class, subclass, and table.
+Four concepts remain distinct:
 
-The evaluator checks every declared source obligation, including cardinality
-and composed-contract requirements. Atom presence alone cannot produce a
-complete semantic result. Its result separates semantic status from the four
-readiness gates, and every incomplete semantic result carries structured,
-source-linked reasons.
+1. **Family applicability** says which record family and record key are in
+   scope. The family list is only an applicability vocabulary.
+2. **Source-derived obligation membership** is the independently enumerated
+   set of registry IDs in an `ObligationScope`.
+3. **Per-obligation completeness** evaluates the projected clause against the
+   registry record's canonical facets.
+4. **Aggregate family closure** evaluates the scope against the clauses. Each
+   expected obligation is `satisfied`, `claimed-incomplete`, or `UNCLAIMED`.
+
+`evaluateObligationClosure` takes the registry, clauses, and an independently
+constructed scope. An applicable family array never establishes closure.
+Unclaimed obligations make source omission visible even when every emitted
+clause looks locally complete.
+
+### Evidence-backed readiness
+
+Readiness has four independent dimensions:
+
+1. **CAPTURED** requires inspectable source-span or authoritative-input
+   evidence that resolves and is tied to the registry obligation.
+2. **PROJECTED** is derived from canonical semantic evaluation; it is not a
+   caller-settable boolean.
+3. **SUPPORTED** requires a capability identity and owning bead, resolved by an
+   injected `CapabilityResolver`; unresolved, unowned, or unimplemented
+   capabilities fail.
+4. **DISCOVERABLE** requires an injected resolver/index/path reference that
+   resolves to the clause.
+
+The evaluator consumes resolver interfaces and test doubles; this correction
+does not build the engine capability registry or discovery index. Semantic
+completeness is captured plus projected. Supported and discoverable remain
+readiness results and never turn a captured/projected clause into a semantic
+omission. The evaluator result is authoritative and the IR carries no mutable
+disposition that can contradict it.
 
 ## Consequences
 
-- Source coverage, semantic projection, engine support, and runtime lookup can
-  be audited without conflating their failure modes.
-- Partial projections fail closed and retain their source evidence for later
-  parser, curated-specification, engine, or model-adjudication work.
-- Shared primitives are available to sibling implementations, but this ADR
-  does not build an importer migration, a universal mechanics interpreter, or
-  an engine subsystem.
-- Curated specifications remain compiler inputs only when they satisfy ADR
-  0017's source-grounding, determinism, validation, reference-resolution,
-  drift-failure, and regeneration requirements. Generated records remain
-  compiler output and are never hand-edited.
+Silent partial projection fails closed while retaining source evidence for
+parser, curated-specification, engine, or model-adjudication work. Shared
+normalized primitives and kind-specific composition remain allowed; this ADR
+does not create a universal rules DSL, importer migration, generated pack, or
+engine subsystem. Generated records remain compiler output and are never
+hand-edited.
+
+The registry and resolver implementations here are contract/type scope. The
+authoritative capability ledger, production source census, family projectors,
+discovery index, and engine conformance implementations remain deferred to the
+owning beads and integrate through the identity/evidence boundary above.
 
 ## Rejected alternatives
 
-- **Treat records as the semantic unit.** Rejected because record-level
-  projection hides option-local and branch-local omissions.
-- **Use one `modeled` or `ready` flag.** Rejected because capture,
-  projection, support, and discoverability fail independently.
-- **Infer completeness from populated atoms.** Rejected because the audit
-  examples show that the same atoms mean different things under different
-  clause kinds and can omit required branches, timing, or ownership.
-- **Build a universal rules DSL now.** Rejected by the scope guard and ADR
-  0017's implementation hierarchy; normalized primitives and kind-specific
-  composition are sufficient for this contract.
+- Letting a clause carry its own obligations: rejected because the producer
+  could omit or weaken the standard used to grade its output.
+- Passing a caller-selected contract: rejected because an empty or laxer
+  contract certifies partial output.
+- Universal contracts by `ClauseKind`: rejected because valid sibling mechanics
+  differ, including non-damaging saves and non-concentrating durations.
+- Family required-kind arrays as closure: rejected because applicability does
+  not enumerate source membership.
+- Four readiness booleans or a single disposition: rejected because evidence,
+  semantic projection, engine support, and lookup discoverability fail
+  independently.

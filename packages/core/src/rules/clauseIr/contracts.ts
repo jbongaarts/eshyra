@@ -1,282 +1,281 @@
+import type { ObligationRegistry } from './obligations.js';
 import type {
   BranchName,
   Clause,
   ClauseDimensions,
   ClauseField,
-  ClauseKind,
-  ClauseRequirement,
-  ClauseRequirementPredicate,
-  MechanicsRecordFamily,
-  SourceObligation,
+  ObligationEvidence,
+  SemanticFacet,
 } from './types.js';
 
-export type {
-  BranchName,
-  ClauseField,
-  ClauseRequirement,
-  ClauseRequirementPredicate,
-} from './types.js';
 export type DimensionName = keyof ClauseDimensions;
+export type { BranchName, ClauseField, SemanticFacet } from './types.js';
 
-export interface ClauseCompletenessContract {
+export type RequirementPredicate =
+  | {
+      readonly kind: 'field';
+      readonly field: ClauseField;
+      readonly cardinality: 'present' | 'non-empty' | 'empty';
+    }
+  | {
+      readonly kind: 'field-count';
+      readonly field: ClauseField;
+      readonly minCount: number;
+      readonly maxCount?: number;
+    }
+  | {
+      readonly kind: 'branch-count';
+      readonly minCount: number;
+      readonly maxCount?: number;
+    }
+  | {
+      readonly kind: 'field-group';
+      readonly fields: readonly ClauseField[];
+      readonly minCount: number;
+      readonly maxCount?: number;
+    }
+  | { readonly kind: 'duration-concentration'; readonly expected: boolean }
+  | {
+      readonly kind: 'mutually-exclusive-alternatives';
+      readonly minCount: number;
+    };
+
+export interface CanonicalRequirement {
   readonly id: string;
-  readonly kind: ClauseKind;
-  readonly requirements: readonly ClauseRequirement[];
+  readonly facet: SemanticFacet;
+  readonly sourceText: string;
+  readonly predicate: RequirementPredicate;
 }
 
-export interface RecordFamilyCompletenessContract {
-  readonly family: MechanicsRecordFamily;
-  /** The clause kinds that the family-specific schema must account for. */
-  readonly requiredClauseKinds: readonly ClauseKind[];
-  /** The data contracts applied to clauses materialized into this family. */
-  readonly clauseContracts: readonly string[];
+export interface AdditionalRequirement {
+  readonly id: string;
+  readonly obligationId?: string;
+  readonly sourceText: string;
+  readonly predicate: RequirementPredicate;
 }
 
 const field = (
-  id: string,
+  facet: SemanticFacet,
   fieldName: ClauseField,
-  cardinality: 'present' | 'non-empty',
-  sourceText = `the ${fieldName} is represented`,
-): ClauseRequirement => ({
-  id,
-  sourceText,
+  cardinality: 'present' | 'non-empty' | 'empty',
+): CanonicalRequirement => ({
+  id: `${facet}:field:${fieldName}:${cardinality}`,
+  facet,
+  sourceText: `the ${fieldName} is ${cardinality}`,
   predicate: { kind: 'field', field: fieldName, cardinality },
 });
 
-const present = (fieldName: ClauseField): ClauseRequirement =>
-  field(`field:${fieldName}`, fieldName, 'present');
-
-const nonEmpty = (fieldName: ClauseField): ClauseRequirement =>
-  field(`field:${fieldName}:non-empty`, fieldName, 'non-empty');
-
-const branch = (branchName: BranchName): ClauseRequirement => ({
-  id: `branch:${branchName}`,
-  sourceText: `the ${branchName} outcome is represented`,
-  predicate: { kind: 'branch', branch: branchName },
+const count = (
+  facet: SemanticFacet,
+  fieldName: ClauseField,
+  minCount: number,
+  maxCount?: number,
+): CanonicalRequirement => ({
+  id: `${facet}:count:${fieldName}`,
+  facet,
+  sourceText: `the ${fieldName} has the required source multiplicity`,
+  predicate: { kind: 'field-count', field: fieldName, minCount, maxCount },
 });
 
-const fieldGroup = (
-  id: string,
+const group = (
+  facet: SemanticFacet,
   fields: readonly ClauseField[],
   minCount: number,
   maxCount?: number,
-): ClauseRequirement => ({
-  id,
-  sourceText: `one of ${fields.join(', ')} is represented`,
+): CanonicalRequirement => ({
+  id: `${facet}:group:${fields.join('|')}`,
+  facet,
+  sourceText: 'the source-backed field group is represented',
   predicate: { kind: 'field-group', fields, minCount, maxCount },
 });
 
-const BASE_REQUIREMENTS: readonly ClauseRequirement[] = [
-  present('identity'),
-  nonEmpty('sourceSpans'),
-  present('provenance'),
-  present('semanticOwner'),
-  present('recordOwner'),
-  present('kind'),
-  nonEmpty('sourceObligations'),
-  present('executionOwner'),
-  present('requiredEngineCapabilities'),
-  present('readiness'),
-  nonEmpty('regressionEvidence'),
-];
+const branchRequirement = (
+  facet: SemanticFacet,
+  minCount: number,
+  maxCount?: number,
+): CanonicalRequirement => ({
+  id: `${facet}:branch-count`,
+  facet,
+  sourceText: 'the source-backed outcome branches are represented',
+  predicate: { kind: 'branch-count', minCount, maxCount },
+});
 
-function contract(
-  kind: ClauseKind,
-  requirements: readonly ClauseRequirement[],
-): ClauseCompletenessContract {
-  return {
-    id: `clause:${kind}`,
-    kind,
-    requirements: [...BASE_REQUIREMENTS, ...requirements],
+const requirements = (
+  facet: SemanticFacet,
+  ...items: CanonicalRequirement[]
+): readonly CanonicalRequirement[] =>
+  Object.freeze(items.length === 0 ? [field(facet, 'kind', 'present')] : items);
+
+export const FACET_REQUIREMENTS: Readonly<
+  Record<SemanticFacet, readonly CanonicalRequirement[]>
+> = {
+  save: requirements('save', count('save', 'saves', 1)),
+  'save-with-damage': requirements(
+    'save-with-damage',
+    count('save-with-damage', 'damage', 1),
+  ),
+  'save-without-damage': requirements(
+    'save-without-damage',
+    field('save-without-damage', 'damage', 'empty'),
+  ),
+  'save-with-alternate-outcomes': requirements(
+    'save-with-alternate-outcomes',
+    branchRequirement('save-with-alternate-outcomes', 2),
+  ),
+  attack: requirements('attack', count('attack', 'attacks', 1)),
+  'attack-with-one-damage-mode': requirements(
+    'attack-with-one-damage-mode',
+    count('attack-with-one-damage-mode', 'damage', 1, 1),
+  ),
+  'attack-with-conditional-alternatives': requirements(
+    'attack-with-conditional-alternatives',
+    {
+      id: 'attack-with-conditional-alternatives:alternatives',
+      facet: 'attack-with-conditional-alternatives',
+      sourceText: 'conditional alternatives are mutually exclusive',
+      predicate: { kind: 'mutually-exclusive-alternatives', minCount: 2 },
+    },
+  ),
+  check: requirements('check', count('check', 'checks', 1)),
+  branch: requirements('branch', branchRequirement('branch', 1)),
+  'action-economy': requirements(
+    'action-economy',
+    field('action-economy', 'activationCost', 'present'),
+  ),
+  'resource-use': requirements(
+    'resource-use',
+    count('resource-use', 'ledgerChanges', 1),
+  ),
+  'resource-with-reset': requirements(
+    'resource-with-reset',
+    field('resource-with-reset', 'recurrence', 'present'),
+  ),
+  'resource-without-reset': requirements(
+    'resource-without-reset',
+    field('resource-without-reset', 'recurrence', 'empty'),
+  ),
+  duration: requirements('duration', field('duration', 'duration', 'present')),
+  'duration-with-concentration': requirements('duration-with-concentration', {
+    id: 'duration-with-concentration:state',
+    facet: 'duration-with-concentration',
+    sourceText: 'duration concentration is represented',
+    predicate: { kind: 'duration-concentration', expected: true },
+  }),
+  'duration-without-concentration': requirements(
+    'duration-without-concentration',
+    {
+      id: 'duration-without-concentration:state',
+      facet: 'duration-without-concentration',
+      sourceText: 'duration does not require concentration',
+      predicate: { kind: 'duration-concentration', expected: false },
+    },
+  ),
+  effect: requirements(
+    'effect',
+    group(
+      'effect',
+      ['damage', 'healing', 'grants', 'ledgerChanges', 'stateTransitions'],
+      1,
+    ),
+  ),
+  'effect-with-lifecycle': requirements(
+    'effect-with-lifecycle',
+    count('effect-with-lifecycle', 'stateTransitions', 1),
+  ),
+  'effect-without-lifecycle': requirements(
+    'effect-without-lifecycle',
+    field('effect-without-lifecycle', 'stateTransitions', 'empty'),
+  ),
+  geometry: requirements('geometry', field('geometry', 'geometry', 'present')),
+  choice: requirements('choice', count('choice', 'alternatives', 1)),
+  variant: requirements('variant', count('variant', 'alternatives', 1)),
+  'entity-lifecycle': requirements(
+    'entity-lifecycle',
+    count('entity-lifecycle', 'stateTransitions', 1),
+  ),
+  ledger: requirements('ledger', count('ledger', 'ledgerChanges', 1)),
+  'model-adjudication': requirements(
+    'model-adjudication',
+    field('model-adjudication', 'trigger', 'present'),
+  ),
+  'repeat-check': requirements(
+    'repeat-check',
+    count('repeat-check', 'repeatChecks', 1),
+  ),
+  termination: requirements(
+    'termination',
+    field('termination', 'termination', 'present'),
+  ),
+};
+
+export function getFacetRequirements(
+  facet: SemanticFacet,
+): readonly CanonicalRequirement[] {
+  return FACET_REQUIREMENTS[facet];
+}
+
+export interface SourceEvidenceResolver {
+  resolve(evidence: ObligationEvidence): {
+    readonly status: 'resolved' | 'unresolved';
   };
 }
 
-/**
- * Completeness contracts are executable data. A clause kind gets its own
- * required semantic slots; atom presence is never substituted for this
- * contract lookup.
- */
-export const CLAUSE_COMPLETENESS_CONTRACTS: Readonly<
-  Record<ClauseKind, ClauseCompletenessContract>
-> = {
-  attack: contract('attack', [
-    present('trigger'),
-    present('eligibility'),
-    present('activationCost'),
-    present('targets'),
-    fieldGroup('attack-or-save', ['attacks', 'saves'], 1, 1),
-    nonEmpty('damage'),
-    branch('success'),
-    branch('failure'),
-  ]),
-  save: contract('save', [
-    present('trigger'),
-    present('eligibility'),
-    present('activationCost'),
-    present('targets'),
-    nonEmpty('saves'),
-    nonEmpty('damage'),
-    branch('success'),
-    branch('failure'),
-  ]),
-  check: contract('check', [
-    present('trigger'),
-    present('eligibility'),
-    nonEmpty('checks'),
-    branch('success'),
-    branch('failure'),
-  ]),
-  branch: contract('branch', [branch('success'), branch('failure')]),
-  'action-economy': contract('action-economy', [
-    present('activationCost'),
-    present('trigger'),
-  ]),
-  resource: contract('resource', [
-    present('activationCost'),
-    nonEmpty('ledgerChanges'),
-    present('recurrence'),
-  ]),
-  duration: contract('duration', [
-    present('duration'),
-    present('termination'),
-    branch('success'),
-    branch('failure'),
-  ]),
-  'state-transition': contract('state-transition', [
-    present('trigger'),
-    nonEmpty('stateTransitions'),
-    present('termination'),
-    branch('success'),
-    branch('failure'),
-  ]),
-  geometry: contract('geometry', [present('targets'), present('geometry')]),
-  choice: contract('choice', [
-    present('eligibility'),
-    nonEmpty('alternatives'),
-    branch('success'),
-  ]),
-  variant: contract('variant', [
-    nonEmpty('alternatives'),
-    nonEmpty('stateTransitions'),
-    branch('success'),
-  ]),
-  'entity-lifecycle': contract('entity-lifecycle', [
-    present('trigger'),
-    nonEmpty('grants'),
-    present('duration'),
-    present('termination'),
-    nonEmpty('stateTransitions'),
-    branch('success'),
-    branch('failure'),
-  ]),
-  ledger: contract('ledger', [nonEmpty('ledgerChanges')]),
-  'model-adjudication': contract('model-adjudication', [
-    present('trigger'),
-    present('eligibility'),
-    present('targets'),
-    branch('success'),
-    branch('failure'),
-  ]),
-};
+export interface CapabilityResolver {
+  resolve(reference: {
+    readonly capability: string;
+    readonly owningBead: string;
+  }): {
+    readonly status: 'resolved' | 'unresolved';
+    readonly capability: string;
+    readonly owningBead: string | null;
+    readonly implemented: boolean;
+  };
+}
 
-const FAMILY_CONTRACT = (
-  family: MechanicsRecordFamily,
-  requiredClauseKinds: readonly ClauseKind[],
-): RecordFamilyCompletenessContract => ({
-  family,
-  requiredClauseKinds,
-  clauseContracts: requiredClauseKinds.map((kind) => `clause:${kind}`),
-});
+export interface DiscoveryResolver {
+  resolve(reference: { readonly resolverId: string; readonly path: string }): {
+    readonly status: 'resolved' | 'unresolved';
+    readonly clauseId: string | null;
+  };
+}
 
-/**
- * Every mechanics-bearing record family has a schema contract. Records remain
- * materialized views: these entries describe the clause kinds they must group,
- * not a second record model.
- */
-export const RECORD_FAMILY_COMPLETENESS_CONTRACTS: readonly RecordFamilyCompletenessContract[] =
-  [
-    FAMILY_CONTRACT('rule', ['check', 'branch', 'model-adjudication']),
-    FAMILY_CONTRACT('feature', ['action-economy', 'resource', 'branch']),
-    FAMILY_CONTRACT('spell', [
-      'action-economy',
-      'attack',
-      'save',
-      'duration',
-      'branch',
-    ]),
-    FAMILY_CONTRACT('creature', [
-      'attack',
-      'save',
-      'action-economy',
-      'variant',
-      'entity-lifecycle',
-    ]),
-    FAMILY_CONTRACT('hazard', [
-      'check',
-      'save',
-      'geometry',
-      'state-transition',
-    ]),
-    FAMILY_CONTRACT('equipment', ['choice', 'variant', 'ledger']),
-    FAMILY_CONTRACT('magic-item', [
-      'action-economy',
-      'resource',
-      'duration',
-      'state-transition',
-    ]),
-    FAMILY_CONTRACT('ancestry', ['choice', 'variant', 'state-transition']),
-    FAMILY_CONTRACT('background', ['choice', 'variant', 'ledger']),
-    FAMILY_CONTRACT('condition', [
-      'state-transition',
-      'duration',
-      'model-adjudication',
-    ]),
-    FAMILY_CONTRACT('action', [
-      'action-economy',
-      'attack',
-      'save',
-      'check',
-      'branch',
-    ]),
-    FAMILY_CONTRACT('feat', ['choice', 'variant', 'action-economy', 'branch']),
-    FAMILY_CONTRACT('class', [
-      'choice',
-      'resource',
-      'state-transition',
-      'variant',
-    ]),
-    FAMILY_CONTRACT('subclass', [
-      'choice',
-      'resource',
-      'state-transition',
-      'variant',
-    ]),
-    FAMILY_CONTRACT('table', ['choice', 'variant', 'ledger']),
-  ];
+export interface CompletenessEvaluationOptions {
+  readonly additionalRequirements?: readonly AdditionalRequirement[];
+  /** Contract selection is intentionally unsupported; supplying one fails closed. */
+  readonly contractId?: string;
+  readonly sourceEvidenceResolver?: SourceEvidenceResolver;
+  readonly capabilityResolver?: CapabilityResolver;
+  readonly discoveryResolver?: DiscoveryResolver;
+}
 
 export interface CompletenessReason {
   readonly code:
-    | 'wrong-contract-kind'
-    | 'missing-source-obligation'
-    | 'unbound-source-obligation'
-    | 'unknown-source-contract'
+    | 'unknown-obligation'
+    | 'unknown-facet'
+    | 'contradictory-facets'
+    | 'duplicate-obligation-reference'
+    | 'missing-obligation-reference'
+    | 'stale-evidence'
     | 'missing-field'
     | 'empty-required-collection'
+    | 'wrong-cardinality'
     | 'unsatisfied-alternative'
     | 'missing-branch'
-    | 'dimension-not-captured'
-    | 'dimension-not-projected';
+    | 'invalid-contract-selection'
+    | 'invalid-projection-identity'
+    | 'dimension-not-captured';
   readonly message: string;
   readonly obligationId?: string;
   readonly requirementId?: string;
   readonly sourceText?: string;
-  readonly predicate?: ClauseRequirementPredicate;
+  readonly predicate?: RequirementPredicate;
   readonly field?: ClauseField;
   readonly branch?: BranchName;
 }
 
 export interface DimensionEvaluation {
   readonly status: 'satisfied' | 'failed';
+  readonly reasons: readonly string[];
 }
 
 export type ReadinessEvaluation = Readonly<
@@ -284,10 +283,7 @@ export type ReadinessEvaluation = Readonly<
 >;
 
 export type SemanticEvaluation =
-  | {
-      readonly status: 'complete';
-      readonly reasons: readonly [];
-    }
+  | { readonly status: 'complete'; readonly reasons: readonly [] }
   | {
       readonly status: 'incomplete';
       readonly reasons: readonly [CompletenessReason, ...CompletenessReason[]];
@@ -295,229 +291,449 @@ export type SemanticEvaluation =
 
 export interface CompletenessResult {
   readonly clauseId: string;
-  readonly contractId: string;
-  /** Semantic completeness is intentionally separate from execution readiness. */
   readonly semantic: SemanticEvaluation;
-  readonly dimensions: ClauseDimensions;
+  readonly dimensions: Readonly<Record<DimensionName, 'satisfied' | 'failed'>>;
   readonly readiness: ReadinessEvaluation;
 }
 
-function dimensionReason(
-  dimension: 'captured' | 'projected',
-): CompletenessReason {
-  return {
-    code: `dimension-not-${dimension}`,
-    message: `clause is not ${dimension}`,
-  };
+function populated(value: unknown): boolean {
+  return (
+    value !== null &&
+    value !== undefined &&
+    (!Array.isArray(value) || value.length > 0)
+  );
 }
 
-function valueSatisfiesField(
-  clause: Clause,
-  fieldName: ClauseField,
-  cardinality: 'present' | 'non-empty',
-): boolean {
+function countFor(clause: Clause, fieldName: ClauseField): number {
   const value = clause[fieldName];
-  if (value === null || value === undefined) return false;
-  if (cardinality === 'non-empty' && Array.isArray(value)) {
-    return value.length > 0;
-  }
-  return true;
+  return Array.isArray(value) ? value.length : populated(value) ? 1 : 0;
 }
 
-function requirementFailure(
-  obligation: SourceObligation,
-  requirement: ClauseRequirement,
+function reasonFor(
+  obligationId: string,
+  requirement: {
+    readonly id: string;
+    readonly sourceText: string;
+    readonly predicate: RequirementPredicate;
+  },
   code: CompletenessReason['code'],
   message: string,
-  details: Pick<CompletenessReason, 'field' | 'branch'> = {},
+  field?: ClauseField,
 ): CompletenessReason {
   return {
     code,
     message,
-    obligationId: obligation.id,
+    obligationId,
     requirementId: requirement.id,
     sourceText: requirement.sourceText,
     predicate: requirement.predicate,
-    ...details,
+    ...(field === undefined ? {} : { field }),
   };
 }
 
-function evaluateRequirement(
+function countBranches(clause: Clause): number {
+  return Object.values(clause.branches).filter((branch) => branch !== null)
+    .length;
+}
+
+function evaluateOne(
   clause: Clause,
-  obligation: SourceObligation,
-  requirement: ClauseRequirement,
+  obligationId: string,
+  requirement: {
+    readonly id: string;
+    readonly sourceText: string;
+    readonly predicate: RequirementPredicate;
+  },
 ): CompletenessReason | null {
   const predicate = requirement.predicate;
   if (predicate.kind === 'field') {
-    if (valueSatisfiesField(clause, predicate.field, predicate.cardinality)) {
-      return null;
-    }
-    const isEmptyCollection =
-      predicate.cardinality === 'non-empty' &&
-      Array.isArray(clause[predicate.field]);
-    return requirementFailure(
-      obligation,
+    const value = clause[predicate.field];
+    const actual = countFor(clause, predicate.field);
+    const okay =
+      predicate.cardinality === 'present'
+        ? value !== null && value !== undefined
+        : predicate.cardinality === 'non-empty'
+          ? actual > 0
+          : actual === 0;
+    if (okay) return null;
+    return reasonFor(
+      obligationId,
       requirement,
-      isEmptyCollection ? 'empty-required-collection' : 'missing-field',
-      isEmptyCollection
-        ? `required ${predicate.field} collection is empty`
-        : `required ${predicate.field} field is absent`,
-      { field: predicate.field },
+      predicate.cardinality === 'non-empty'
+        ? 'empty-required-collection'
+        : 'missing-field',
+      `required ${predicate.field} is not ${predicate.cardinality}`,
+      predicate.field,
     );
   }
-
-  if (predicate.kind === 'branch') {
-    if (clause.branches[predicate.branch] !== null) return null;
-    return requirementFailure(
-      obligation,
+  if (predicate.kind === 'field-count') {
+    const actual = countFor(clause, predicate.field);
+    if (
+      actual >= predicate.minCount &&
+      (predicate.maxCount === undefined || actual <= predicate.maxCount)
+    )
+      return null;
+    return reasonFor(
+      obligationId,
+      requirement,
+      'wrong-cardinality',
+      `required ${predicate.field} count is ${predicate.minCount}${predicate.maxCount === undefined ? '+' : `..${predicate.maxCount}`}, found ${actual}`,
+      predicate.field,
+    );
+  }
+  if (predicate.kind === 'branch-count') {
+    const actual = countBranches(clause);
+    if (
+      actual >= predicate.minCount &&
+      (predicate.maxCount === undefined || actual <= predicate.maxCount)
+    )
+      return null;
+    return reasonFor(
+      obligationId,
       requirement,
       'missing-branch',
-      `required ${predicate.branch} branch is absent`,
-      { branch: predicate.branch },
+      `required at least ${predicate.minCount} represented branches, found ${actual}`,
     );
   }
-
-  const populatedCount = predicate.fields.filter((fieldName) => {
-    const value = clause[fieldName];
-    return (
-      value !== null &&
-      value !== undefined &&
-      (!Array.isArray(value) || value.length > 0)
+  if (predicate.kind === 'field-group') {
+    const actual = predicate.fields.filter((fieldName) =>
+      populated(clause[fieldName]),
+    ).length;
+    if (
+      actual >= predicate.minCount &&
+      (predicate.maxCount === undefined || actual <= predicate.maxCount)
+    )
+      return null;
+    return reasonFor(
+      obligationId,
+      requirement,
+      'unsatisfied-alternative',
+      `required field-group cardinality is ${predicate.minCount}${predicate.maxCount === undefined ? '+' : `..${predicate.maxCount}`}, found ${actual}`,
     );
-  }).length;
-  const withinMinimum = populatedCount >= predicate.minCount;
-  const withinMaximum =
-    predicate.maxCount === undefined || populatedCount <= predicate.maxCount;
-  if (withinMinimum && withinMaximum) return null;
-  const range =
-    predicate.maxCount === undefined
-      ? `at least ${predicate.minCount}`
-      : `between ${predicate.minCount} and ${predicate.maxCount}`;
-  return requirementFailure(
-    obligation,
+  }
+  if (predicate.kind === 'duration-concentration') {
+    if (
+      clause.duration !== null &&
+      clause.duration.concentration === predicate.expected
+    )
+      return null;
+    return reasonFor(
+      obligationId,
+      requirement,
+      'missing-field',
+      `duration concentration must be ${predicate.expected}`,
+    );
+  }
+  const ids = clause.alternatives.map(({ id }) => id);
+  const unique = new Set(ids);
+  const mutuallyExclusive = clause.alternatives.every((alternative) =>
+    alternative.mutuallyExclusiveWith.some((other) => unique.has(other)),
+  );
+  if (
+    clause.alternatives.length >= predicate.minCount &&
+    unique.size === ids.length &&
+    mutuallyExclusive
+  )
+    return null;
+  return reasonFor(
+    obligationId,
     requirement,
     'unsatisfied-alternative',
-    `expected ${range} populated alternatives, found ${populatedCount}`,
+    'alternatives are not distinct and mutually exclusive',
   );
 }
 
-function evaluateObligation(
+function evidenceKey(evidence: ObligationEvidence): string {
+  return JSON.stringify(evidence);
+}
+
+function sourceSpanKey(span: {
+  readonly sourceRef: string;
+  readonly locator: string;
+  readonly start: number;
+  readonly end: number;
+  readonly text: string;
+}): string {
+  return JSON.stringify({ kind: 'source-span', ...span });
+}
+
+function projectionIdentityReasons(clause: Clause): CompletenessReason[] {
+  const reasons: CompletenessReason[] = [];
+  const ids = new Set<string>();
+  const collections: readonly (readonly { readonly id: string }[])[] = [
+    clause.checks,
+    clause.attacks,
+    clause.saves,
+    clause.alternatives,
+    clause.damage,
+    clause.healing,
+    clause.grants,
+    clause.ledgerChanges,
+    clause.stateTransitions,
+  ];
+  for (const collection of collections) {
+    for (const atom of collection) {
+      if (ids.has(atom.id))
+        reasons.push({
+          code: 'invalid-projection-identity',
+          message: `projected atom id ${atom.id} is reused`,
+        });
+      ids.add(atom.id);
+    }
+  }
+  if (
+    new Set(clause.sourceObligationIds).size !==
+    clause.sourceObligationIds.length
+  ) {
+    reasons.push({
+      code: 'duplicate-obligation-reference',
+      message: 'clause repeats a source obligation id',
+    });
+  }
+  return reasons;
+}
+
+function evaluateCaptured(
   clause: Clause,
-  obligation: SourceObligation,
-  contract: ClauseCompletenessContract,
+  obligationIds: readonly string[],
+  registry: ObligationRegistry,
+  options: CompletenessEvaluationOptions,
 ): CompletenessReason[] {
-  return [...contract.requirements, ...obligation.requirements]
-    .map((requirement) => evaluateRequirement(clause, obligation, requirement))
-    .filter((reason): reason is CompletenessReason => reason !== null);
+  if (clause.readiness.captured.length === 0)
+    return [
+      { code: 'dimension-not-captured', message: 'captured has no evidence' },
+    ];
+  const captured = new Set(clause.readiness.captured.map(evidenceKey));
+  const spans = new Set(clause.sourceSpans.map(sourceSpanKey));
+  const reasons: CompletenessReason[] = [];
+  for (const obligationId of obligationIds) {
+    const record = registry.get(obligationId);
+    if (record === undefined) continue;
+    const resolved = record.evidence.some((evidence) => {
+      if (!captured.has(evidenceKey(evidence))) return false;
+      if (evidence.kind === 'source-span')
+        return spans.has(evidenceKey(evidence));
+      return (
+        options.sourceEvidenceResolver?.resolve(evidence).status === 'resolved'
+      );
+    });
+    if (!resolved)
+      reasons.push({
+        code: 'stale-evidence',
+        obligationId,
+        message:
+          'obligation evidence is not resolvable from readiness evidence',
+      });
+  }
+  return reasons;
+}
+
+function dimension(
+  status: boolean,
+  reasons: readonly string[],
+): DimensionEvaluation {
+  return { status: status ? 'satisfied' : 'failed', reasons };
 }
 
 /**
- * Evaluate semantic completeness and readiness independently. The returned
- * artifact is authoritative; ClauseReadiness intentionally stores no derived
- * disposition that could contradict these results.
+ * Canonical requirements are resolved from the independent registry. The
+ * caller may add requirements, but cannot replace, select, or weaken them.
  */
 export function evaluateClauseCompleteness(
   clause: Clause,
-  completenessContract: ClauseCompletenessContract,
+  registry: ObligationRegistry,
+  options: CompletenessEvaluationOptions = {},
 ): CompletenessResult {
   const reasons: CompletenessReason[] = [];
-
-  if (clause.kind !== completenessContract.kind) {
+  if (options.contractId !== undefined) {
     reasons.push({
-      code: 'wrong-contract-kind',
-      message: `clause kind ${clause.kind} does not match ${completenessContract.kind}`,
+      code: 'invalid-contract-selection',
+      message: `contract selection is not part of the evaluator: ${options.contractId}`,
     });
   }
-
-  const selectedObligation = clause.sourceObligations.find(
-    ({ contractKind }) => contractKind === completenessContract.kind,
-  );
-  if (selectedObligation === undefined) {
+  if (clause.sourceObligationIds.length === 0)
     reasons.push({
-      code: 'missing-source-obligation',
-      message: `source clause does not declare the ${completenessContract.kind} obligation`,
+      code: 'missing-obligation-reference',
+      message: 'clause has no source obligation references',
     });
-  }
-
-  for (const obligation of clause.sourceObligations) {
-    const obligationContract =
-      obligation.contractKind === completenessContract.kind
-        ? completenessContract
-        : CLAUSE_COMPLETENESS_CONTRACTS[obligation.contractKind];
-    if (obligationContract === undefined) {
+  const records = clause.sourceObligationIds.map((id) => registry.get(id));
+  clause.sourceObligationIds.forEach((id, index) => {
+    if (records[index] === undefined)
       reasons.push({
-        code: 'unknown-source-contract',
-        obligationId: obligation.id,
-        sourceText: obligation.sourceText,
-        message: `source obligation names unknown contract ${obligation.contractKind}`,
+        code: 'unknown-obligation',
+        obligationId: id,
+        message: `unknown source obligation ${id}`,
       });
+  });
+  reasons.push(...projectionIdentityReasons(clause));
+  reasons.push(
+    ...evaluateCaptured(clause, clause.sourceObligationIds, registry, options),
+  );
+
+  const requirementsByField = new Map<
+    ClauseField,
+    {
+      readonly id: string;
+      readonly sourceText: string;
+      readonly predicate: Extract<
+        RequirementPredicate,
+        { kind: 'field-count' }
+      >;
+      readonly obligationId: string;
+    }[]
+  >();
+  for (const record of records) {
+    if (record === undefined) continue;
+    for (const facet of record.requiredFacets) {
+      const facetRequirements = FACET_REQUIREMENTS[facet];
+      if (facetRequirements === undefined) {
+        reasons.push({
+          code: 'unknown-facet',
+          obligationId: record.obligationId,
+          message: `unknown facet ${facet}`,
+        });
+        continue;
+      }
+      for (const requirement of facetRequirements) {
+        if (requirement.predicate.kind !== 'field-count') continue;
+        const existing =
+          requirementsByField.get(requirement.predicate.field) ?? [];
+        existing.push({
+          ...requirement,
+          predicate: requirement.predicate,
+          obligationId: record.obligationId,
+        });
+        requirementsByField.set(requirement.predicate.field, existing);
+      }
+    }
+  }
+  for (const [fieldName, demands] of requirementsByField) {
+    const minimum = demands.reduce(
+      (sum, demand) => sum + demand.predicate.minCount,
+      0,
+    );
+    if (countFor(clause, fieldName) < minimum) {
+      for (const demand of demands)
+        reasons.push(
+          reasonFor(
+            demand.obligationId,
+            demand,
+            'wrong-cardinality',
+            `source obligations require ${minimum} ${fieldName} atoms, found ${countFor(clause, fieldName)}`,
+            fieldName,
+          ),
+        );
+    }
+  }
+  for (const record of records) {
+    if (record === undefined) continue;
+    for (const facet of record.requiredFacets) {
+      for (const requirement of FACET_REQUIREMENTS[facet] ?? []) {
+        if (requirement.predicate.kind === 'field-count') continue;
+        const failure = evaluateOne(clause, record.obligationId, requirement);
+        if (failure !== null) reasons.push(failure);
+      }
+    }
+  }
+  for (const requirement of options.additionalRequirements ?? []) {
+    const targetIds =
+      requirement.obligationId === undefined
+        ? clause.sourceObligationIds
+        : [requirement.obligationId];
+    for (const obligationId of targetIds) {
+      const failure = evaluateOne(clause, obligationId, requirement);
+      if (failure !== null) reasons.push(failure);
+    }
+  }
+
+  const capturedReasons = reasons.filter(
+    (reason) =>
+      reason.code === 'dimension-not-captured' ||
+      reason.code === 'stale-evidence',
+  );
+  const projectedReasons = reasons.filter(
+    (reason) => !capturedReasons.includes(reason),
+  );
+  const semanticReasons = [...capturedReasons, ...projectedReasons];
+  const semantic: SemanticEvaluation =
+    semanticReasons.length === 0
+      ? { status: 'complete', reasons: [] }
+      : {
+          status: 'incomplete',
+          reasons: semanticReasons as [
+            CompletenessReason,
+            ...CompletenessReason[],
+          ],
+        };
+
+  const supportedFailures: string[] = [];
+  if (clause.requiredEngineCapabilities.length === 0)
+    supportedFailures.push('no capability evidence');
+  for (const reference of clause.requiredEngineCapabilities) {
+    if (
+      reference.capability.trim().length === 0 ||
+      reference.owningBead.trim().length === 0
+    ) {
+      supportedFailures.push('capability reference is unowned or empty');
       continue;
     }
-    if (obligation.sourceText.trim().length === 0) {
-      reasons.push({
-        code: 'missing-source-obligation',
-        obligationId: obligation.id,
-        message: 'source obligation has no source text',
-      });
-    }
-    const clauseLocators = new Set(
-      clause.sourceSpans.map(({ locator }) => locator),
-    );
+    const resolution = options.capabilityResolver?.resolve(reference);
     if (
-      obligation.sourceSpanLocators.some(
-        (locator) => !clauseLocators.has(locator),
-      )
+      resolution?.status !== 'resolved' ||
+      !resolution.implemented ||
+      resolution.owningBead !== reference.owningBead ||
+      resolution.capability !== reference.capability
     ) {
-      reasons.push({
-        code: 'unbound-source-obligation',
-        obligationId: obligation.id,
-        sourceText: obligation.sourceText,
-        message: 'source obligation does not point to a clause source span',
-      });
+      supportedFailures.push(
+        `capability ${reference.capability} is unresolved, unowned, or unimplemented`,
+      );
     }
-    reasons.push(...evaluateObligation(clause, obligation, obligationContract));
   }
-
-  if (!clause.readiness.dimensions.captured) {
-    reasons.push(dimensionReason('captured'));
+  const discoverableFailures: string[] = [];
+  if (clause.readiness.discoverable.length === 0)
+    discoverableFailures.push('no discovery evidence');
+  for (const reference of clause.readiness.discoverable) {
+    const resolution = options.discoveryResolver?.resolve(reference);
+    if (
+      resolution?.status !== 'resolved' ||
+      resolution.clauseId !== clause.identity.id
+    )
+      discoverableFailures.push(
+        `discovery reference ${reference.path} is unresolved`,
+      );
   }
-  if (!clause.readiness.dimensions.projected) {
-    reasons.push(dimensionReason('projected'));
-  }
-
-  const semantic =
-    reasons.length > 0
-      ? {
-          status: 'incomplete' as const,
-          reasons: reasons as [CompletenessReason, ...CompletenessReason[]],
-        }
-      : { status: 'complete' as const, reasons: [] as const };
+  const capturedFailures = semanticReasons
+    .filter(
+      (reason) =>
+        reason.code === 'dimension-not-captured' ||
+        reason.code === 'stale-evidence',
+    )
+    .map(({ message }) => message);
+  const projectedFailures = semanticReasons
+    .filter(
+      (reason) =>
+        reason.code !== 'dimension-not-captured' &&
+        reason.code !== 'stale-evidence',
+    )
+    .map(({ message }) => message);
+  const readiness: ReadinessEvaluation = {
+    captured: dimension(capturedFailures.length === 0, capturedFailures),
+    projected: dimension(projectedFailures.length === 0, projectedFailures),
+    supported: dimension(supportedFailures.length === 0, supportedFailures),
+    discoverable: dimension(
+      discoverableFailures.length === 0,
+      discoverableFailures,
+    ),
+  };
   return {
     clauseId: clause.identity.id,
-    contractId: completenessContract.id,
     semantic,
-    dimensions: clause.readiness.dimensions,
-    readiness: {
-      captured: {
-        status: clause.readiness.dimensions.captured ? 'satisfied' : 'failed',
-      },
-      projected: {
-        status: clause.readiness.dimensions.projected ? 'satisfied' : 'failed',
-      },
-      supported: {
-        status: clause.readiness.dimensions.supported ? 'satisfied' : 'failed',
-      },
-      discoverable: {
-        status: clause.readiness.dimensions.discoverable
-          ? 'satisfied'
-          : 'failed',
-      },
+    dimensions: {
+      captured: readiness.captured.status,
+      projected: readiness.projected.status,
+      supported: readiness.supported.status,
+      discoverable: readiness.discoverable.status,
     },
+    readiness,
   };
-}
-
-export function getClauseCompletenessContract(
-  kind: ClauseKind,
-): ClauseCompletenessContract {
-  return CLAUSE_COMPLETENESS_CONTRACTS[kind];
 }
