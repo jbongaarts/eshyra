@@ -34,6 +34,7 @@ export interface BootstrapCapabilityLedger {
   readonly rows: readonly BootstrapCapabilityRow[];
 }
 
+const ENGINE_EPIC = 'eshyra-olc5';
 const ENGINE_CAPABILITY_ID = /^engine:F(?:[1-9]|10)$/;
 const BEAD_ID = /^eshyra-[a-z0-9]+(?:\.[a-z0-9]+)*$/;
 const SOURCE_NAMES = new Set([
@@ -164,12 +165,16 @@ export function validateBootstrapCapabilityLedger(
   ) {
     fail('fewer than three non-pack-only discovery rows');
   }
-  const ownershipStatuses = new Set(rows.map((row) => row.ownershipStatus));
-  if (
-    !ownershipStatuses.has('owned') ||
-    !ownershipStatuses.has('proposed-new-bead')
-  ) {
-    fail('ownershipStatus must vary between owned and proposed-new-bead');
+  // Ownership by a family epic is legitimate before decomposition runs, since
+  // the implementation children deliberately do not exist yet. Falling back to
+  // the engine epic root is not: it means no family owns the primitive, which
+  // is the condition `proposed-new-bead` exists to record.
+  for (const row of rows) {
+    if (row.owningBead === ENGINE_EPIC) {
+      fail(
+        `${row.primitive} names the engine epic as its owner; use a family epic, a real bead, or ownershipStatus=proposed-new-bead`,
+      );
+    }
   }
   if (options.checkBeads !== false && commandExists('bd')) {
     const beadIds = [

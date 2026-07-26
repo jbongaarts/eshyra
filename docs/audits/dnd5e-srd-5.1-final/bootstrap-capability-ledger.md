@@ -17,10 +17,27 @@ Rows are at primitive granularity. A family such as `engine:F5` therefore has
 separate rows for instance spend, recharge scheduling, attunement/curse
 constraints, and containment/card-pool state. `capabilityId` is the qualified
 family routing key; `primitive` is the actual implementation requirement.
-Ownership intentionally varies: existing open family epics are `owned`,
-while cross-family gaps without an exact existing owner are
-`proposed-new-bead` records. Proposed rows name a title and parent as data;
-this bootstrap task does not create beads.
+Every row names a specific owning bead. Most are owned by the open family epics
+`eshyra-o9bd.19.5.2` through `.11`; that is correct before decomposition runs,
+since the implementation children deliberately do not exist yet. What a row may
+never do is fall back to the engine epic root `eshyra-olc5`, which would mean no
+family owns the primitive at all.
+
+Four cross-family primitives had no exact owner when this bootstrap ledger was
+first assembled and were recorded as `proposed-new-bead` with a title and parent
+as data — the bootstrap task itself does not create beads. Those four beads were
+subsequently created by the supervisor and the rows now point at them:
+
+| Primitive | Bead |
+| --- | --- |
+| `spellbook-copy-cost-and-asset-ledger` | `eshyra-o9bd.19.5.5.3` |
+| `containment-portal-and-card-pool-instance-state` | `eshyra-o9bd.19.5.6.3` |
+| `planar-return-and-declared-window-clocks` | `eshyra-o9bd.19.5.8.3` |
+| `retained-inventory-property-xp-asset-creation` | `eshyra-o9bd.19.5.11.3` |
+
+Each is blocked by its family's decomposition task, so decomposition reconciles
+against it rather than re-creating it. A later pass that discovers another
+unowned primitive should record it as `proposed-new-bead` the same way.
 
 The non-pack-discovery proof is not a single family row. Several rows are
 discovered from source/audit/code evidence without a corresponding complete

@@ -44,8 +44,13 @@ each historical close reason.
 
 The bootstrap ledger assigns qualified primitives to the open
 `eshyra-o9bd.19.5.2` through `.11` family epics where an exact owner exists.
-It records proposed new titles under `eshyra-olc5` for cross-family
+Four cross-family primitives had no exact existing owner —
 spellbook-copy/asset-cost, containment/portal/card-pool, planar-return/deadline
-clock, and retained-asset/provenance primitives. No old bead is reopened,
-closed, or modified here. The authoritative ledger and its decomposition gate
-remain the supervisor's follow-up work.
+clock, and retained-asset/provenance. The ledger recorded them as proposed, and
+the supervisor has since created them as `eshyra-o9bd.19.5.5.3`, `.19.5.6.3`,
+`.19.5.8.3` and `.19.5.11.3`, each blocked by its family's decomposition task.
+The `INCOMPLETE INTEGRATION` findings above for `eshyra-2n1t.7` and
+`eshyra-2n1t.12` route to those beads.
+
+No old bead is reopened, closed, or modified here. The authoritative ledger
+(`eshyra-o9bd.19.5.12`) and its decomposition gate remain follow-up work.

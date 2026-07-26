@@ -183,11 +183,9 @@
       ],
       "packEvidence": "Generated query over records[]: emit record.key for data.executionReadiness hooks qualified as engine:F4 with wizard spellbook copying semantics; compare with the source clause's economy and asset requirements rather than relying on a family row.",
       "codeEvidence": "Spellbook and currency primitives exist separately, but no single provider-neutral procedure owns the complete copying cost, time, eligibility, and retained asset mutation.",
-      "owningBead": "eshyra-olc5",
-      "ownershipStatus": "proposed-new-bead",
-      "proposedTitle": "Define canonical spellbook-copy execution and asset-cost ownership",
-      "proposedParent": "eshyra-olc5",
-      "notes": "Proposed title and parent: no existing open family bead owns this cross-family spellbook-copy procedure as one primitive."
+      "owningBead": "eshyra-o9bd.19.5.5.3",
+      "ownershipStatus": "owned",
+      "notes": "Proposed title and parent: no existing open family bead owns this cross-family spellbook-copy procedure as one primitive. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task."
     },
     {
       "capabilityId": "engine:F5",
@@ -249,11 +247,9 @@
       ],
       "packEvidence": "Generated query over records[]: emit record.key for projected data.executionReadiness hooks qualified as engine:F5 with containment, portal, or card-pool text, then compare against source inventory clauses named by the audit.",
       "codeEvidence": "Item custody and persistent state primitives exist, but the complete containment/portal/card-pool execution contract has no exact existing owner in the current family decomposition.",
-      "owningBead": "eshyra-olc5",
-      "ownershipStatus": "proposed-new-bead",
-      "proposedTitle": "Own persistent containment, portal, and licensed item-pool state",
-      "proposedParent": "eshyra-olc5",
-      "notes": "Proposed title and parent: this is a cross-item state primitive not named as a complete deliverable by an existing open bead."
+      "owningBead": "eshyra-o9bd.19.5.6.3",
+      "ownershipStatus": "owned",
+      "notes": "Proposed title and parent: this is a cross-item state primitive not named as a complete deliverable by an existing open bead. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task."
     },
     {
       "capabilityId": "engine:F6",
@@ -347,11 +343,9 @@
       ],
       "packEvidence": "Generated query over records[]: emit record.key for data.executionReadiness hooks qualified as engine:F7 with planar-return, declared-window, duration, or deadline semantics; compare with source clauses named by the audit.",
       "codeEvidence": "Elapsed world timers and expiry sweeps exist, but the source-specific planar-return and declared-window procedures have no exact existing owner as one tested primitive.",
-      "owningBead": "eshyra-olc5",
-      "ownershipStatus": "proposed-new-bead",
-      "proposedTitle": "Implement source-defined planar-return and deadline clock procedures",
-      "proposedParent": "eshyra-olc5",
-      "notes": "Proposed title and parent: existing F7 owns generic rest/time orchestration but not this cross-record source-clock contract."
+      "owningBead": "eshyra-o9bd.19.5.8.3",
+      "ownershipStatus": "owned",
+      "notes": "Proposed title and parent: existing F7 owns generic rest/time orchestration but not this cross-record source-clock contract. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task."
     },
     {
       "capabilityId": "engine:F8",
@@ -512,11 +506,9 @@
       ],
       "packEvidence": "Generated query over records[]: emit record.key for data.executionReadiness hooks qualified as engine:F10 with retained asset creation, inventory, property, or XP semantics; source omissions are compared separately.",
       "codeEvidence": "Character progression and inventory structures exist, but there is no exact existing owner for the full retained-asset creation and provenance contract.",
-      "owningBead": "eshyra-olc5",
-      "ownershipStatus": "proposed-new-bead",
-      "proposedTitle": "Define retained asset creation and provenance ledger semantics",
-      "proposedParent": "eshyra-olc5",
-      "notes": "Proposed title and parent: current F10 owns currency/downtime surface, but retained asset creation and provenance cross its existing boundary."
+      "owningBead": "eshyra-o9bd.19.5.11.3",
+      "ownershipStatus": "owned",
+      "notes": "Proposed title and parent: current F10 owns currency/downtime surface, but retained asset creation and provenance cross its existing boundary. Bead created 2026-07-25 from this ledger row (was proposed-new-bead); it is blocked by its family decomposition task."
     }
   ]
 }
