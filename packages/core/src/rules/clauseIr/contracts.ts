@@ -4,8 +4,10 @@ import type {
   Clause,
   ClauseDimensions,
   ClauseField,
+  MechanicsRecordFamily,
   ObligationEvidence,
   SemanticFacet,
+  SourceSpan,
 } from './types.js';
 
 export type DimensionName = keyof ClauseDimensions;
@@ -38,11 +40,12 @@ export type RequirementPredicate =
   | {
       readonly kind: 'mutually-exclusive-alternatives';
       readonly minCount: number;
-    };
+    }
+  | { readonly kind: 'canonical-base'; readonly field: ClauseField };
 
 export interface CanonicalRequirement {
   readonly id: string;
-  readonly facet: SemanticFacet;
+  readonly facet: SemanticFacet | 'canonical-base';
   readonly sourceText: string;
   readonly predicate: RequirementPredicate;
 }
@@ -101,10 +104,46 @@ const branchRequirement = (
 });
 
 const requirements = (
-  facet: SemanticFacet,
+  _facet: SemanticFacet,
   ...items: CanonicalRequirement[]
-): readonly CanonicalRequirement[] =>
-  Object.freeze(items.length === 0 ? [field(facet, 'kind', 'present')] : items);
+): readonly CanonicalRequirement[] => Object.freeze(items);
+
+/** Requirements that are never removable by a facet or a caller extension. */
+export const BASE_REQUIREMENTS: readonly CanonicalRequirement[] = Object.freeze(
+  (
+    [
+      ['identity', 'identity is stable and complete'],
+      ['sourceSpans', 'source spans are exact and non-empty'],
+      ['provenance', 'provenance identifies the extraction authority'],
+      ['semanticOwner', 'semantic ownership is complete'],
+      ['recordOwner', 'record ownership is complete'],
+    ] as const
+  ).map(([fieldName, sourceText]) => ({
+    id: `canonical-base:${fieldName}`,
+    facet: 'canonical-base' as const,
+    sourceText,
+    predicate: {
+      kind: 'canonical-base' as const,
+      field: fieldName as ClauseField,
+    },
+  })),
+);
+
+export const FACET_IMPLICATIONS: Readonly<
+  Partial<Record<SemanticFacet, readonly SemanticFacet[]>>
+> = Object.freeze({
+  'save-with-damage': ['save'],
+  'save-without-damage': ['save'],
+  'save-with-alternate-outcomes': ['save'],
+  'attack-with-one-damage-mode': ['attack'],
+  'attack-with-conditional-alternatives': ['attack'],
+  'resource-with-reset': ['resource-use'],
+  'resource-without-reset': ['resource-use'],
+  'duration-with-concentration': ['duration'],
+  'duration-without-concentration': ['duration'],
+  'effect-with-lifecycle': ['effect'],
+  'effect-without-lifecycle': ['effect'],
+});
 
 export const FACET_REQUIREMENTS: Readonly<
   Record<SemanticFacet, readonly CanonicalRequirement[]>
@@ -132,7 +171,8 @@ export const FACET_REQUIREMENTS: Readonly<
     {
       id: 'attack-with-conditional-alternatives:alternatives',
       facet: 'attack-with-conditional-alternatives',
-      sourceText: 'conditional alternatives are mutually exclusive',
+      sourceText:
+        'conditional alternatives form a complete exclusion partition',
       predicate: { kind: 'mutually-exclusive-alternatives', minCount: 2 },
     },
   ),
@@ -198,6 +238,14 @@ export const FACET_REQUIREMENTS: Readonly<
     'model-adjudication',
     field('model-adjudication', 'trigger', 'present'),
   ),
+  recurrence: requirements(
+    'recurrence',
+    field('recurrence', 'recurrence', 'present'),
+  ),
+  'immunity-window': requirements(
+    'immunity-window',
+    count('immunity-window', 'immunityWindows', 1),
+  ),
   'repeat-check': requirements(
     'repeat-check',
     count('repeat-check', 'repeatChecks', 1),
@@ -254,15 +302,23 @@ export interface CompletenessReason {
     | 'unknown-facet'
     | 'contradictory-facets'
     | 'duplicate-obligation-reference'
+    | 'multiple-obligation-references'
     | 'missing-obligation-reference'
     | 'stale-evidence'
+    | 'non-capturable-evidence'
     | 'missing-field'
     | 'empty-required-collection'
     | 'wrong-cardinality'
     | 'unsatisfied-alternative'
+    | 'invalid-alternative-graph'
+    | 'unbound-alternative'
     | 'missing-branch'
+    | 'invalid-branch'
     | 'invalid-contract-selection'
     | 'invalid-projection-identity'
+    | 'invalid-base-field'
+    | 'invalid-capability-reference'
+    | 'mismatched-capability-evidence'
     | 'dimension-not-captured';
   readonly message: string;
   readonly obligationId?: string;
@@ -296,12 +352,34 @@ export interface CompletenessResult {
   readonly readiness: ReadinessEvaluation;
 }
 
+const RECORD_FAMILIES = new Set<MechanicsRecordFamily>([
+  'rule',
+  'feature',
+  'spell',
+  'creature',
+  'hazard',
+  'equipment',
+  'magic-item',
+  'ancestry',
+  'background',
+  'condition',
+  'action',
+  'feat',
+  'class',
+  'subclass',
+  'table',
+]);
+
 function populated(value: unknown): boolean {
   return (
     value !== null &&
     value !== undefined &&
     (!Array.isArray(value) || value.length > 0)
   );
+}
+
+function nonEmpty(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function countFor(clause: Clause, fieldName: ClauseField): number {
@@ -331,9 +409,86 @@ function reasonFor(
   };
 }
 
+function exactSpan(a: SourceSpan, b: SourceSpan): boolean {
+  return (
+    a.sourceRef === b.sourceRef &&
+    a.locator === b.locator &&
+    a.start === b.start &&
+    a.end === b.end &&
+    a.text === b.text
+  );
+}
+
 function countBranches(clause: Clause): number {
   return Object.values(clause.branches).filter((branch) => branch !== null)
     .length;
+}
+
+function atomIds(clause: Clause): Set<string> {
+  const ids = new Set<string>();
+  const collections = [
+    clause.checks ?? [],
+    clause.attacks ?? [],
+    clause.saves ?? [],
+    clause.alternatives ?? [],
+    clause.damage ?? [],
+    clause.healing ?? [],
+    clause.grants ?? [],
+    clause.ledgerChanges ?? [],
+    clause.stateTransitions ?? [],
+    (clause.repeatChecks ?? []).map(({ check }) => check),
+    clause.immunityWindows ?? [],
+  ];
+  for (const collection of collections) {
+    for (const atom of collection) {
+      if ('id' in atom && typeof atom.id === 'string') ids.add(atom.id);
+    }
+  }
+  for (const branch of Object.values(clause.branches)) {
+    if (branch !== null) ids.add(branch.id);
+  }
+  return ids;
+}
+
+function canonicalBaseReasons(clause: Clause): CompletenessReason[] {
+  const reasons: CompletenessReason[] = [];
+  const fail = (field: ClauseField, message: string) =>
+    reasons.push({ code: 'invalid-base-field', field, message });
+  if (
+    !nonEmpty(clause.identity?.id) ||
+    !nonEmpty(clause.identity?.canonicalKey) ||
+    !nonEmpty(clause.identity?.revision)
+  )
+    fail('identity', 'identity id, canonicalKey, and revision are required');
+  if (
+    !Array.isArray(clause.sourceSpans) ||
+    clause.sourceSpans.length === 0 ||
+    clause.sourceSpans.some(
+      (span) =>
+        !nonEmpty(span.sourceRef) ||
+        !nonEmpty(span.locator) ||
+        span.start < 0 ||
+        span.end <= span.start ||
+        !nonEmpty(span.text),
+    )
+  )
+    fail('sourceSpans', 'sourceSpans must contain exact non-empty spans');
+  if (
+    !nonEmpty(clause.provenance?.sourceRef) ||
+    !nonEmpty(clause.provenance?.extraction) ||
+    !Array.isArray(clause.provenance?.evidence) ||
+    clause.provenance.evidence.length === 0 ||
+    clause.provenance.evidence.some((item) => !nonEmpty(item))
+  )
+    fail('provenance', 'provenance source and evidence are required');
+  if (!nonEmpty(clause.semanticOwner?.id))
+    fail('semanticOwner', 'semanticOwner id is required');
+  if (
+    !nonEmpty(clause.recordOwner?.key) ||
+    !RECORD_FAMILIES.has(clause.recordOwner?.family)
+  )
+    fail('recordOwner', 'recordOwner family and key are required');
+  return reasons;
 }
 
 function evaluateOne(
@@ -346,6 +501,7 @@ function evaluateOne(
   },
 ): CompletenessReason | null {
   const predicate = requirement.predicate;
+  if (predicate.kind === 'canonical-base') return null;
   if (predicate.kind === 'field') {
     const value = clause[predicate.field];
     const actual = countFor(clause, predicate.field);
@@ -424,56 +580,64 @@ function evaluateOne(
       `duration concentration must be ${predicate.expected}`,
     );
   }
-  const ids = clause.alternatives.map(({ id }) => id);
+  const ids = (clause.alternatives ?? []).map(({ id }) => id);
   const unique = new Set(ids);
-  const mutuallyExclusive = clause.alternatives.every((alternative) =>
-    alternative.mutuallyExclusiveWith.some((other) => unique.has(other)),
+  const alternatives = clause.alternatives ?? [];
+  const completePartition = alternatives.every((alternative) =>
+    alternatives.every(
+      (other) =>
+        other.id === alternative.id ||
+        alternative.mutuallyExclusiveWith.includes(other.id),
+    ),
   );
   if (
-    clause.alternatives.length >= predicate.minCount &&
+    alternatives.length >= predicate.minCount &&
     unique.size === ids.length &&
-    mutuallyExclusive
+    completePartition
   )
     return null;
   return reasonFor(
     obligationId,
     requirement,
     'unsatisfied-alternative',
-    'alternatives are not distinct and mutually exclusive',
+    'alternatives are not a complete mutually-exclusive partition',
   );
 }
 
-function evidenceKey(evidence: ObligationEvidence): string {
-  return JSON.stringify(evidence);
-}
-
-function sourceSpanKey(span: {
-  readonly sourceRef: string;
-  readonly locator: string;
-  readonly start: number;
-  readonly end: number;
-  readonly text: string;
-}): string {
-  return JSON.stringify({ kind: 'source-span', ...span });
+function effectiveFacets(facets: readonly SemanticFacet[]): SemanticFacet[] {
+  const result = new Set<SemanticFacet>();
+  const visit = (facet: SemanticFacet) => {
+    if (result.has(facet)) return;
+    result.add(facet);
+    for (const implied of FACET_IMPLICATIONS[facet] ?? []) visit(implied);
+  };
+  facets.forEach(visit);
+  return [...result];
 }
 
 function projectionIdentityReasons(clause: Clause): CompletenessReason[] {
   const reasons: CompletenessReason[] = [];
   const ids = new Set<string>();
-  const collections: readonly (readonly { readonly id: string }[])[] = [
-    clause.checks,
-    clause.attacks,
-    clause.saves,
-    clause.alternatives,
-    clause.damage,
-    clause.healing,
-    clause.grants,
-    clause.ledgerChanges,
-    clause.stateTransitions,
+  const collections = [
+    clause.checks ?? [],
+    clause.attacks ?? [],
+    clause.saves ?? [],
+    clause.alternatives ?? [],
+    clause.damage ?? [],
+    clause.healing ?? [],
+    clause.grants ?? [],
+    clause.ledgerChanges ?? [],
+    clause.stateTransitions ?? [],
+    (clause.repeatChecks ?? []).map(({ check }) => check),
   ];
   for (const collection of collections) {
     for (const atom of collection) {
-      if (ids.has(atom.id))
+      if (!nonEmpty(atom.id))
+        reasons.push({
+          code: 'invalid-projection-identity',
+          message: 'every projected atom needs a non-empty identity',
+        });
+      else if (ids.has(atom.id))
         reasons.push({
           code: 'invalid-projection-identity',
           message: `projected atom id ${atom.id} is reused`,
@@ -482,20 +646,105 @@ function projectionIdentityReasons(clause: Clause): CompletenessReason[] {
     }
   }
   if (
-    new Set(clause.sourceObligationIds).size !==
-    clause.sourceObligationIds.length
-  ) {
+    new Set(clause.sourceObligationIds ?? []).size !==
+    (clause.sourceObligationIds ?? []).length
+  )
     reasons.push({
       code: 'duplicate-obligation-reference',
       message: 'clause repeats a source obligation id',
     });
+  return reasons;
+}
+
+function alternativeAndBranchReasons(clause: Clause): CompletenessReason[] {
+  const reasons: CompletenessReason[] = [];
+  const ids = atomIds(clause);
+  const alternatives = clause.alternatives ?? [];
+  const alternativeIds = new Set(alternatives.map(({ id }) => id));
+  for (const alternative of alternatives) {
+    if (
+      !nonEmpty(alternative.id) ||
+      alternativeIds.size !== alternatives.length
+    )
+      reasons.push({
+        code: 'invalid-alternative-graph',
+        message: 'alternative IDs must be unique and non-empty',
+      });
+    if (alternative.clauseIds.length === 0)
+      reasons.push({
+        code: 'unbound-alternative',
+        message: `alternative ${alternative.id} has no projected atom binding`,
+      });
+    for (const projectedId of alternative.clauseIds) {
+      if (!ids.has(projectedId))
+        reasons.push({
+          code: 'unbound-alternative',
+          message: `alternative ${alternative.id} binds unknown atom ${projectedId}`,
+        });
+    }
+    if (alternative.mutuallyExclusiveWith.includes(alternative.id))
+      reasons.push({
+        code: 'invalid-alternative-graph',
+        message: `alternative ${alternative.id} excludes itself`,
+      });
+    for (const other of alternative.mutuallyExclusiveWith) {
+      const counterpart = alternatives.find(({ id }) => id === other);
+      if (
+        counterpart === undefined ||
+        !counterpart.mutuallyExclusiveWith.includes(alternative.id)
+      )
+        reasons.push({
+          code: 'invalid-alternative-graph',
+          message: `alternative exclusion edge ${alternative.id}<->${other} is not symmetric`,
+        });
+    }
+  }
+  for (const [branchName, branch] of Object.entries(clause.branches ?? {}) as [
+    BranchName,
+    Clause['branches'][BranchName],
+  ][]) {
+    if (branch === null) continue;
+    if (!nonEmpty(branch.id) || !nonEmpty(branch.outcome))
+      reasons.push({
+        code: 'invalid-branch',
+        branch: branchName,
+        message: `branch ${branchName} needs an identity and source-backed outcome`,
+      });
+    if (
+      !(clause.sourceSpans ?? []).some((span) =>
+        exactSpan(span, branch.sourceSpan),
+      )
+    )
+      reasons.push({
+        code: 'invalid-branch',
+        branch: branchName,
+        message: `branch ${branchName} is not bound to a clause source span`,
+      });
+    if (branch.projectedAtomIds.length === 0)
+      reasons.push({
+        code: 'invalid-branch',
+        branch: branchName,
+        message: `branch ${branchName} has no projected atom binding`,
+      });
+    for (const projectedId of branch.projectedAtomIds) {
+      if (!ids.has(projectedId))
+        reasons.push({
+          code: 'invalid-branch',
+          branch: branchName,
+          message: `branch ${branchName} binds unknown atom ${projectedId}`,
+        });
+    }
   }
   return reasons;
 }
 
+function evidenceKey(evidence: ObligationEvidence): string {
+  return JSON.stringify(evidence);
+}
+
 function evaluateCaptured(
   clause: Clause,
-  obligationIds: readonly string[],
+  obligationId: string,
   registry: ObligationRegistry,
   options: CompletenessEvaluationOptions,
 ): CompletenessReason[] {
@@ -503,27 +752,38 @@ function evaluateCaptured(
     return [
       { code: 'dimension-not-captured', message: 'captured has no evidence' },
     ];
+  const record = registry.get(obligationId);
+  if (record === undefined) return [];
   const captured = new Set(clause.readiness.captured.map(evidenceKey));
-  const spans = new Set(clause.sourceSpans.map(sourceSpanKey));
   const reasons: CompletenessReason[] = [];
-  for (const obligationId of obligationIds) {
-    const record = registry.get(obligationId);
-    if (record === undefined) continue;
-    const resolved = record.evidence.some((evidence) => {
-      if (!captured.has(evidenceKey(evidence))) return false;
-      if (evidence.kind === 'source-span')
-        return spans.has(evidenceKey(evidence));
-      return (
-        options.sourceEvidenceResolver?.resolve(evidence).status === 'resolved'
+  const resolved = record.evidence.some((evidence) => {
+    if (
+      evidence.kind !== 'source-span' &&
+      evidence.kind !== 'authoritative-input'
+    )
+      return false;
+    if (!captured.has(evidenceKey(evidence))) return false;
+    if (evidence.kind === 'source-span')
+      return (clause.sourceSpans ?? []).some((span) =>
+        exactSpan(span, evidence),
       );
+    return (
+      options.sourceEvidenceResolver?.resolve(evidence).status === 'resolved'
+    );
+  });
+  if (!resolved) {
+    const hasGapEvidence = record.evidence.some(
+      (evidence) =>
+        evidence.kind === 'audit-finding' ||
+        evidence.kind === 'known-missing-source-clause',
+    );
+    reasons.push({
+      code: hasGapEvidence ? 'non-capturable-evidence' : 'stale-evidence',
+      obligationId,
+      message: hasGapEvidence
+        ? 'audit or known-missing evidence identifies a gap and cannot satisfy CAPTURED'
+        : 'obligation evidence is not resolvable from readiness evidence',
     });
-    if (!resolved)
-      reasons.push({
-        code: 'stale-evidence',
-        obligationId,
-        message:
-          'obligation evidence is not resolvable from readiness evidence',
-      });
   }
   return reasons;
 }
@@ -535,56 +795,66 @@ function dimension(
   return { status: status ? 'satisfied' : 'failed', reasons };
 }
 
+function capabilityKey(reference: {
+  capability: string;
+  owningBead: string;
+}): string {
+  return `${reference.capability}::${reference.owningBead}`;
+}
+
+function validCapability(reference: {
+  capability: string;
+  owningBead: string;
+}): boolean {
+  return (
+    /^engine:F(?:[1-9]|10)$/.test(reference.capability) &&
+    reference.owningBead.startsWith('eshyra-olc5')
+  );
+}
+
 /**
- * Canonical requirements are resolved from the independent registry. The
- * caller may add requirements, but cannot replace, select, or weaken them.
+ * Evaluate a clause against immutable registry authority. Semantic
+ * completeness is CAPTURED + PROJECTED; supported and discoverable remain
+ * independent readiness dimensions.
  */
 export function evaluateClauseCompleteness(
   clause: Clause,
   registry: ObligationRegistry,
   options: CompletenessEvaluationOptions = {},
 ): CompletenessResult {
-  const reasons: CompletenessReason[] = [];
-  if (options.contractId !== undefined) {
+  const reasons: CompletenessReason[] = [...canonicalBaseReasons(clause)];
+  const sourceObligationIds = Array.isArray(clause.sourceObligationIds)
+    ? clause.sourceObligationIds
+    : [];
+  if (options.contractId !== undefined)
     reasons.push({
       code: 'invalid-contract-selection',
       message: `contract selection is not part of the evaluator: ${options.contractId}`,
     });
-  }
-  if (clause.sourceObligationIds.length === 0)
+  if (sourceObligationIds.length === 0)
     reasons.push({
       code: 'missing-obligation-reference',
-      message: 'clause has no source obligation references',
+      message: 'each clause must name exactly one source obligation',
     });
-  const records = clause.sourceObligationIds.map((id) => registry.get(id));
-  clause.sourceObligationIds.forEach((id, index) => {
-    if (records[index] === undefined)
-      reasons.push({
-        code: 'unknown-obligation',
-        obligationId: id,
-        message: `unknown source obligation ${id}`,
-      });
-  });
+  if (sourceObligationIds.length > 1)
+    reasons.push({
+      code: 'multiple-obligation-references',
+      message: 'one clause may discharge exactly one source obligation',
+    });
+  const obligationId = sourceObligationIds[0];
+  const record =
+    obligationId === undefined ? undefined : registry.get(obligationId);
+  if (obligationId !== undefined && record === undefined)
+    reasons.push({
+      code: 'unknown-obligation',
+      obligationId,
+      message: `unknown source obligation ${obligationId}`,
+    });
   reasons.push(...projectionIdentityReasons(clause));
-  reasons.push(
-    ...evaluateCaptured(clause, clause.sourceObligationIds, registry, options),
-  );
-
-  const requirementsByField = new Map<
-    ClauseField,
-    {
-      readonly id: string;
-      readonly sourceText: string;
-      readonly predicate: Extract<
-        RequirementPredicate,
-        { kind: 'field-count' }
-      >;
-      readonly obligationId: string;
-    }[]
-  >();
-  for (const record of records) {
-    if (record === undefined) continue;
-    for (const facet of record.requiredFacets) {
+  reasons.push(...alternativeAndBranchReasons(clause));
+  if (record !== undefined) {
+    const facets = effectiveFacets(record.requiredFacets);
+    for (const facet of facets) {
       const facetRequirements = FACET_REQUIREMENTS[facet];
       if (facetRequirements === undefined) {
         reasons.push({
@@ -595,61 +865,84 @@ export function evaluateClauseCompleteness(
         continue;
       }
       for (const requirement of facetRequirements) {
-        if (requirement.predicate.kind !== 'field-count') continue;
-        const existing =
-          requirementsByField.get(requirement.predicate.field) ?? [];
-        existing.push({
-          ...requirement,
-          predicate: requirement.predicate,
-          obligationId: record.obligationId,
-        });
-        requirementsByField.set(requirement.predicate.field, existing);
-      }
-    }
-  }
-  for (const [fieldName, demands] of requirementsByField) {
-    const minimum = demands.reduce(
-      (sum, demand) => sum + demand.predicate.minCount,
-      0,
-    );
-    if (countFor(clause, fieldName) < minimum) {
-      for (const demand of demands)
-        reasons.push(
-          reasonFor(
-            demand.obligationId,
-            demand,
-            'wrong-cardinality',
-            `source obligations require ${minimum} ${fieldName} atoms, found ${countFor(clause, fieldName)}`,
-            fieldName,
-          ),
-        );
-    }
-  }
-  for (const record of records) {
-    if (record === undefined) continue;
-    for (const facet of record.requiredFacets) {
-      for (const requirement of FACET_REQUIREMENTS[facet] ?? []) {
-        if (requirement.predicate.kind === 'field-count') continue;
         const failure = evaluateOne(clause, record.obligationId, requirement);
         if (failure !== null) reasons.push(failure);
       }
     }
+    if (obligationId !== undefined)
+      reasons.push(
+        ...evaluateCaptured(clause, obligationId, registry, options),
+      );
   }
   for (const requirement of options.additionalRequirements ?? []) {
-    const targetIds =
-      requirement.obligationId === undefined
-        ? clause.sourceObligationIds
-        : [requirement.obligationId];
-    for (const obligationId of targetIds) {
-      const failure = evaluateOne(clause, obligationId, requirement);
+    const target = requirement.obligationId ?? obligationId;
+    if (target !== undefined) {
+      const failure = evaluateOne(clause, target, requirement);
       if (failure !== null) reasons.push(failure);
     }
   }
 
+  const supportedFailures: string[] = [];
+  const requiredCapabilities = clause.requiredEngineCapabilities;
+  const supportedCapabilities = clause.readiness.supported;
+  const requiredKeys = new Set(requiredCapabilities.map(capabilityKey));
+  const supportedKeys = new Set(supportedCapabilities.map(capabilityKey));
+  if (requiredCapabilities.length === 0)
+    supportedFailures.push('no capability evidence');
+  if (
+    requiredKeys.size !== requiredCapabilities.length ||
+    supportedKeys.size !== supportedCapabilities.length
+  )
+    supportedFailures.push('capability evidence contains duplicate references');
+  if (
+    requiredKeys.size !== supportedKeys.size ||
+    [...requiredKeys].some((key) => !supportedKeys.has(key))
+  )
+    reasons.push({
+      code: 'mismatched-capability-evidence',
+      message:
+        'requiredEngineCapabilities and readiness.supported must match exactly',
+    });
+  for (const reference of requiredCapabilities) {
+    if (!validCapability(reference)) {
+      supportedFailures.push(
+        `capability ${reference.capability} is not a qualified owned capability`,
+      );
+      reasons.push({
+        code: 'invalid-capability-reference',
+        message: `invalid capability reference ${reference.capability}/${reference.owningBead}`,
+      });
+      continue;
+    }
+    const resolution = options.capabilityResolver?.resolve(reference);
+    if (
+      resolution?.status !== 'resolved' ||
+      !resolution.implemented ||
+      resolution.owningBead !== reference.owningBead ||
+      resolution.capability !== reference.capability
+    )
+      supportedFailures.push(
+        `capability ${reference.capability} is unresolved, unowned, or unimplemented`,
+      );
+  }
+  const discoverableFailures: string[] = [];
+  if (clause.readiness.discoverable.length === 0)
+    discoverableFailures.push('no discovery evidence');
+  for (const reference of clause.readiness.discoverable) {
+    const resolution = options.discoveryResolver?.resolve(reference);
+    if (
+      resolution?.status !== 'resolved' ||
+      resolution.clauseId !== clause.identity?.id
+    )
+      discoverableFailures.push(
+        `discovery reference ${reference.path} is unresolved`,
+      );
+  }
   const capturedReasons = reasons.filter(
-    (reason) =>
-      reason.code === 'dimension-not-captured' ||
-      reason.code === 'stale-evidence',
+    ({ code }) =>
+      code === 'dimension-not-captured' ||
+      code === 'stale-evidence' ||
+      code === 'non-capturable-evidence',
   );
   const projectedReasons = reasons.filter(
     (reason) => !capturedReasons.includes(reason),
@@ -665,57 +958,8 @@ export function evaluateClauseCompleteness(
             ...CompletenessReason[],
           ],
         };
-
-  const supportedFailures: string[] = [];
-  if (clause.requiredEngineCapabilities.length === 0)
-    supportedFailures.push('no capability evidence');
-  for (const reference of clause.requiredEngineCapabilities) {
-    if (
-      reference.capability.trim().length === 0 ||
-      reference.owningBead.trim().length === 0
-    ) {
-      supportedFailures.push('capability reference is unowned or empty');
-      continue;
-    }
-    const resolution = options.capabilityResolver?.resolve(reference);
-    if (
-      resolution?.status !== 'resolved' ||
-      !resolution.implemented ||
-      resolution.owningBead !== reference.owningBead ||
-      resolution.capability !== reference.capability
-    ) {
-      supportedFailures.push(
-        `capability ${reference.capability} is unresolved, unowned, or unimplemented`,
-      );
-    }
-  }
-  const discoverableFailures: string[] = [];
-  if (clause.readiness.discoverable.length === 0)
-    discoverableFailures.push('no discovery evidence');
-  for (const reference of clause.readiness.discoverable) {
-    const resolution = options.discoveryResolver?.resolve(reference);
-    if (
-      resolution?.status !== 'resolved' ||
-      resolution.clauseId !== clause.identity.id
-    )
-      discoverableFailures.push(
-        `discovery reference ${reference.path} is unresolved`,
-      );
-  }
-  const capturedFailures = semanticReasons
-    .filter(
-      (reason) =>
-        reason.code === 'dimension-not-captured' ||
-        reason.code === 'stale-evidence',
-    )
-    .map(({ message }) => message);
-  const projectedFailures = semanticReasons
-    .filter(
-      (reason) =>
-        reason.code !== 'dimension-not-captured' &&
-        reason.code !== 'stale-evidence',
-    )
-    .map(({ message }) => message);
+  const capturedFailures = capturedReasons.map(({ message }) => message);
+  const projectedFailures = projectedReasons.map(({ message }) => message);
   const readiness: ReadinessEvaluation = {
     captured: dimension(capturedFailures.length === 0, capturedFailures),
     projected: dimension(projectedFailures.length === 0, projectedFailures),
@@ -726,7 +970,7 @@ export function evaluateClauseCompleteness(
     ),
   };
   return {
-    clauseId: clause.identity.id,
+    clauseId: clause.identity?.id ?? '',
     semantic,
     dimensions: {
       captured: readiness.captured.status,

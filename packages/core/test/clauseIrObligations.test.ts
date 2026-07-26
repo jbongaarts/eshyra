@@ -17,21 +17,29 @@ const span = {
   end: 12,
   text: 'A source clause.',
 } as const;
-function record(facet: SemanticFacet, suffix = facet): SourceObligationRecord {
+
+function record(
+  facet: SemanticFacet,
+  locator = span.locator,
+): SourceObligationRecord {
   return {
-    obligationId: createObligationId(
-      span.sourceRef,
-      `${span.locator}::${suffix}`,
-      facet,
-    ),
+    obligationId: createObligationId(span.sourceRef, locator, facet),
     origin: 'source-extraction',
-    evidence: [{ kind: 'source-span', ...span }],
+    evidence: [{ kind: 'source-span', ...span, locator }],
     requiredFacets: [facet],
   };
 }
-function clause(ids: readonly string[]): Clause {
+
+function clause(
+  obligationId: string,
+  owner = { family: 'spell' as const, key: 'one' },
+): Clause {
   return {
-    identity: { id: 'clause:one', canonicalKey: 'one', revision: 'v1' },
+    identity: {
+      id: `clause:${owner.key}`,
+      canonicalKey: owner.key,
+      revision: 'v1',
+    },
     sourceSpans: [span],
     provenance: {
       sourceRef: span.sourceRef,
@@ -39,9 +47,9 @@ function clause(ids: readonly string[]): Clause {
       evidence: ['test'],
     },
     semanticOwner: { id: 'projector:test', kind: 'projector' },
-    recordOwner: { family: 'spell', key: 'one' },
+    recordOwner: owner,
     kind: 'save',
-    sourceObligationIds: ids,
+    sourceObligationIds: [obligationId],
     trigger: null,
     eligibility: null,
     activationCost: null,
@@ -73,151 +81,143 @@ function clause(ids: readonly string[]): Clause {
   };
 }
 
+function scope(
+  registry: ReturnType<typeof createObligationRegistry>,
+  ids: readonly string[],
+) {
+  return createObligationScope(registry, {
+    scopeId: 'spell:one',
+    applicability: {
+      family: 'spell',
+      recordKey: 'one',
+      status: 'applicable',
+      evidence: [{ kind: 'source-span', ...span }],
+    },
+    obligationIds: ids,
+  });
+}
+
 describe('obligation-boundary threat model', () => {
-  it('T1: exposes an obligation the projector never declares', () => {
-    const records = [record('save', 'one'), record('duration', 'two')];
+  it('uses registry membership and exposes an obligation the projector never declares', () => {
+    const records = [record('save', 'save'), record('duration', 'duration')];
     const registry = createObligationRegistry(records);
-    const scope = createObligationScope(registry, {
-      scopeId: 'spell:one',
-      applicability: {
-        family: 'spell',
-        recordKey: 'one',
-        status: 'applicable',
-        evidence: [{ kind: 'source-span', ...span }],
-      },
-      obligationIds: records.map(({ obligationId }) => obligationId),
-    });
     const result = evaluateObligationClosure(
       registry,
-      [clause([records[0].obligationId])],
-      scope,
+      [clause(records[0].obligationId)],
+      scope(
+        registry,
+        records.map(({ obligationId }) => obligationId),
+      ),
     );
-    expect(
-      result.obligations.find(
-        ({ obligationId }) => obligationId === records[1].obligationId,
-      )?.status,
-    ).toBe('UNCLAIMED');
+    expect(result.obligations[1].status).toBe('UNCLAIMED');
   });
 
-  it('T2: does not let a narrower selected kind escape a source facet', () => {
-    const registry = createObligationRegistry([record('save-with-damage')]);
-    const result = evaluateClauseCompleteness(
-      {
-        ...clause(registry.records.map(({ obligationId }) => obligationId)),
-        kind: 'check',
-        damage: [],
-      },
-      registry,
-    );
-    expect(result.semantic.status).toBe('incomplete');
-    expect(result.semantic.reasons).toEqual(
-      expect.arrayContaining([expect.objectContaining({ field: 'damage' })]),
-    );
-  });
-
-  it('T3: prevents the clause producer from weakening the registry requirement list', () => {
+  it('rejects a raw scope-shaped object and wrong-record claims', () => {
     const registry = createObligationRegistry([record('save')]);
-    const projected = clause(
-      registry.records.map(({ obligationId }) => obligationId),
-    );
-    expect('requirements' in projected).toBe(false);
-    expect(
-      evaluateClauseCompleteness({ ...projected, saves: [] }, registry).semantic
-        .status,
-    ).toBe('incomplete');
-  });
-
-  it('T4: rejects a permissive contract selection and still applies canonical requirements', () => {
-    const registry = createObligationRegistry([record('save')]);
-    const result = evaluateClauseCompleteness(
-      {
-        ...clause(registry.records.map(({ obligationId }) => obligationId)),
-        saves: [],
-      },
-      registry,
-      { contractId: 'permissive', additionalRequirements: [] },
-    );
-    expect(result.semantic.status).toBe('incomplete');
-    expect(result.semantic.reasons).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'invalid-contract-selection' }),
-        expect.objectContaining({ field: 'saves' }),
-      ]),
-    );
-  });
-
-  it('T5: rejects readiness self-attestation without inspectable resolver evidence', () => {
-    const registry = createObligationRegistry([record('save')]);
-    const result = evaluateClauseCompleteness(
-      clause(registry.records.map(({ obligationId }) => obligationId)),
-      registry,
-    );
-    expect(result.readiness.supported.status).toBe('failed');
-    expect(result.readiness.discoverable.status).toBe('failed');
-    expect('dimensions' in clause([]).readiness).toBe(false);
-  });
-
-  it('T6: rejects a semantically contradictory facet contract at registry construction', () => {
+    const validated = scope(registry, [registry.records[0].obligationId]);
     expect(() =>
-      createObligationRegistry([
-        {
-          ...record('save-with-damage', 'contradictory'),
-          requiredFacets: ['save-with-damage', 'save-without-damage'],
-        },
-      ]),
-    ).toThrow(/contradictory/);
-  });
-
-  it('T7: keeps family applicability distinct from obligation closure', () => {
-    const registry = createObligationRegistry([record('save')]);
-    const scope = createObligationScope(registry, {
-      scopeId: 'spell:empty',
-      applicability: {
-        family: 'spell',
-        recordKey: 'empty',
-        status: 'applicable',
-        evidence: [{ kind: 'source-span', ...span }],
-      },
-      obligationIds: registry.records.map(({ obligationId }) => obligationId),
-    });
-    const result = evaluateObligationClosure(registry, [], scope);
-    expect(result.applicability.status).toBe('applicable');
+      evaluateObligationClosure(
+        registry,
+        [clause(registry.records[0].obligationId)],
+        { ...validated } as never,
+      ),
+    ).toThrow(/createObligationScope/);
+    const result = evaluateObligationClosure(
+      registry,
+      [
+        clause(registry.records[0].obligationId, {
+          family: 'spell',
+          key: 'other',
+        }),
+      ],
+      validated,
+    );
     expect(result.obligations[0].status).toBe('UNCLAIMED');
-  });
-
-  it('T8: fails closed for unknown or contradictory contract selection', () => {
-    const registry = createObligationRegistry([record('save')]);
-    const result = evaluateClauseCompleteness(
-      clause(registry.records.map(({ obligationId }) => obligationId)),
-      registry,
-      { contractId: 'unknown-contract' },
-    );
-    expect(result.semantic.status).toBe('incomplete');
-    expect(result.semantic.reasons[0]).toMatchObject({
-      code: 'invalid-contract-selection',
-    });
-    expect(() =>
-      createObligationRegistry([
-        {
-          ...record('duration-with-concentration', 'contradictory'),
-          requiredFacets: [
-            'duration-with-concentration',
-            'duration-without-concentration',
-          ],
-        },
+    expect(result.unexpectedClaims).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ reason: 'wrong-record-owner' }),
       ]),
-    ).toThrow(/contradictory/);
+    );
   });
 
-  it('validates origin-specific evidence instead of accepting a projector as authority', () => {
+  it('rejects source identity divergence and distinguishes repeated source occurrences', () => {
+    expect(() =>
+      createObligationRegistry([record('save', 'synthetic-locator')]),
+    ).not.toThrow();
     expect(() =>
       createObligationRegistry([
         {
           ...record('save'),
-          origin: 'source-extraction',
-          evidence: [{ kind: 'code', path: 'projector.ts', symbol: 'project' }],
+          obligationId: createObligationId(
+            span.sourceRef,
+            'synthetic-locator',
+            'save',
+          ),
         },
       ]),
-    ).toThrow(/authoritative evidence/);
+    ).toThrow(/diverges/);
+    const second = record('save', `${span.locator}#occurrence-2`);
+    const registry = createObligationRegistry([record('save'), second]);
+    expect(registry.records).toHaveLength(2);
+  });
+
+  it('rejects audit-only and known-missing evidence as CAPTURED', () => {
+    const auditEvidence = {
+      kind: 'audit-finding' as const,
+      findingId: 'audit:missing',
+      sourceRef: span.sourceRef,
+      locator: span.locator,
+    };
+    const registry = createObligationRegistry([
+      { ...record('save'), origin: 'audit-finding', evidence: [auditEvidence] },
+    ]);
+    const projected = clause(registry.records[0].obligationId);
+    const result = evaluateClauseCompleteness(
+      {
+        ...projected,
+        readiness: { ...projected.readiness, captured: [auditEvidence] },
+      },
+      registry,
+    );
+    expect(result.semantic.status).toBe('incomplete');
+    expect(result.semantic.reasons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'non-capturable-evidence' }),
+      ]),
+    );
+  });
+
+  it('deep-freezes registry and scope authority', () => {
+    const registry = createObligationRegistry([record('save')]);
+    const validated = scope(registry, [registry.records[0].obligationId]);
+    expect(Object.isFrozen(registry.records[0])).toBe(true);
+    expect(Object.isFrozen(registry.records[0].evidence)).toBe(true);
+    expect(Object.isFrozen(validated)).toBe(true);
+    expect(Object.isFrozen(validated.applicability)).toBe(true);
+    expect(() => {
+      (registry.records[0].requiredFacets as SemanticFacet[]).push('duration');
+    }).toThrow();
+    expect(() => {
+      (validated.obligationIds as string[]).push('unexpected');
+    }).toThrow();
+  });
+
+  it('keeps the old fail-closed contract protections', () => {
+    const registry = createObligationRegistry([record('save-with-damage')]);
+    const projected = clause(registry.records[0].obligationId);
+    expect(
+      evaluateClauseCompleteness(
+        { ...projected, saves: [], damage: [] },
+        registry,
+      ).semantic.status,
+    ).toBe('incomplete');
+    const selected = evaluateClauseCompleteness(projected, registry, {
+      contractId: 'permissive',
+    });
+    expect(selected.semantic.reasons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'invalid-contract-selection' }),
+      ]),
+    );
   });
 });

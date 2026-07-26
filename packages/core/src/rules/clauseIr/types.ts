@@ -101,6 +101,8 @@ export type SemanticFacet =
   | 'entity-lifecycle'
   | 'ledger'
   | 'model-adjudication'
+  | 'recurrence'
+  | 'immunity-window'
   | 'repeat-check'
   | 'termination';
 
@@ -140,6 +142,9 @@ export interface AuthoritativeInputEvidence {
 export interface AuditFindingEvidence {
   readonly kind: 'audit-finding';
   readonly findingId: string;
+  /** The source occurrence identified by the audit finding. */
+  readonly sourceRef: string;
+  readonly locator: string;
 }
 
 export interface CodeEvidence {
@@ -291,6 +296,10 @@ export interface BranchSpec {
   readonly id: string;
   readonly outcome: string;
   readonly condition: ClausePredicate | null;
+  /** The source occurrence that proves this outcome is not a shell. */
+  readonly sourceSpan: SourceSpan;
+  /** IDs of projected atoms this outcome controls. */
+  readonly projectedAtomIds: readonly string[];
 }
 
 export interface BranchSet {
@@ -372,7 +381,17 @@ export interface TerminationSpec {
   readonly outcome: string;
 }
 
-export type EngineCapability = string;
+export type EngineCapability =
+  | 'engine:F1'
+  | 'engine:F2'
+  | 'engine:F3'
+  | 'engine:F4'
+  | 'engine:F5'
+  | 'engine:F6'
+  | 'engine:F7'
+  | 'engine:F8'
+  | 'engine:F9'
+  | 'engine:F10';
 
 export interface CapabilityReference {
   readonly capability: EngineCapability;

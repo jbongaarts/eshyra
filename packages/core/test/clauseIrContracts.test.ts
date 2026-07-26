@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BASE_REQUIREMENTS,
   type Clause,
   createObligationId,
   createObligationRegistry,
@@ -18,31 +19,51 @@ const span = {
 
 function record(
   facet: SemanticFacet,
-  id = createObligationId(span.sourceRef, span.locator, facet),
+  locator = span.locator,
+  origin: SourceObligationRecord['origin'] = 'source-extraction',
 ): SourceObligationRecord {
+  const obligationId = createObligationId(span.sourceRef, locator, facet);
   return {
-    obligationId: id,
-    origin: 'source-extraction',
-    evidence: [{ kind: 'source-span', ...span }],
+    obligationId,
+    origin,
+    evidence:
+      origin === 'source-extraction'
+        ? [{ kind: 'source-span', ...span, locator }]
+        : origin === 'curated-specification'
+          ? [
+              {
+                kind: 'authoritative-input',
+                sourceRef: span.sourceRef,
+                locator,
+                inputId: 'curated:fireball',
+                digest: 'sha256:fixture',
+              },
+            ]
+          : [
+              {
+                kind: 'audit-finding',
+                findingId: 'audit:missing',
+                sourceRef: span.sourceRef,
+                locator,
+              },
+            ],
     requiredFacets: [facet],
   };
 }
 
-function registry(...facets: SemanticFacet[]) {
-  return createObligationRegistry(
-    facets.map((facet, index) =>
-      record(
-        facet,
-        createObligationId(span.sourceRef, `${span.locator}::${index}`, facet),
-      ),
-    ),
-  );
+function registry(
+  facet: SemanticFacet,
+  locator = span.locator,
+  origin: SourceObligationRecord['origin'] = 'source-extraction',
+) {
+  return createObligationRegistry([record(facet, locator, origin)]);
 }
 
 function makeClause(
-  obligationRegistry = registry('save'),
+  obligations = registry('save'),
   overrides: Partial<Clause> = {},
 ): Clause {
+  const obligation = obligations.records[0];
   return {
     identity: { id: 'clause:fixture', canonicalKey: 'fixture', revision: 'v1' },
     sourceSpans: [span],
@@ -54,25 +75,15 @@ function makeClause(
     semanticOwner: { id: 'projector:fixture', kind: 'projector' },
     recordOwner: { family: 'spell', key: 'spell:fixture' },
     kind: 'save',
-    sourceObligationIds: obligationRegistry.records.map(
-      ({ obligationId }) => obligationId,
-    ),
+    sourceObligationIds:
+      obligation === undefined ? [] : [obligation.obligationId],
     trigger: {
       id: 'trigger',
       summary: 'activation',
       sourceText: 'when activated',
     },
-    eligibility: {
-      id: 'eligibility',
-      summary: 'target',
-      sourceText: 'a target',
-    },
-    activationCost: {
-      kind: 'action',
-      amount: 1,
-      trigger: null,
-      sourceText: 'as an action',
-    },
+    eligibility: null,
+    activationCost: null,
     targets: { mode: 'single', count: 1, description: 'one target' },
     geometry: null,
     checks: [],
@@ -86,19 +97,7 @@ function makeClause(
       },
     ],
     alternatives: [],
-    branches: {
-      success: {
-        id: 'branch:success',
-        outcome: 'half effect',
-        condition: null,
-      },
-      failure: {
-        id: 'branch:failure',
-        outcome: 'full effect',
-        condition: null,
-      },
-      partialSuccess: null,
-    },
+    branches: { success: null, failure: null, partialSuccess: null },
     damage: [
       { id: 'damage:1', damageType: 'fire', amount: '2d6', on: 'failure' },
     ],
@@ -113,11 +112,11 @@ function makeClause(
     termination: null,
     executionOwner: { kind: 'engine', id: 'save-resolution' },
     requiredEngineCapabilities: [
-      { capability: 'engine:save', owningBead: 'eshyra-cap-save' },
+      { capability: 'engine:F1', owningBead: 'eshyra-olc5.f1' },
     ],
     readiness: {
-      captured: obligationRegistry.records.flatMap(({ evidence }) => evidence),
-      supported: [{ capability: 'engine:save', owningBead: 'eshyra-cap-save' }],
+      captured: obligation?.evidence ?? [],
+      supported: [{ capability: 'engine:F1', owningBead: 'eshyra-olc5.f1' }],
       discoverable: [{ resolverId: 'rules-index', path: 'spell:fixture' }],
     },
     regressionEvidence: [
@@ -150,238 +149,265 @@ const resolvers = {
   },
 };
 
-describe('source-clause canonical facet contracts', () => {
-  it('does not let the selected kind define source obligations', () => {
-    const obligations = registry('save-without-damage');
-    const result = evaluateClauseCompleteness(
-      makeClause(obligations, { kind: 'attack', damage: [] }),
-      obligations,
-      resolvers,
-    );
-    expect(result.semantic.status).toBe('complete');
-    expect(result.dimensions.projected).toBe('satisfied');
-  });
+function complete(
+  facet: SemanticFacet,
+  overrides: Partial<Clause> = {},
+): { clause: Clause; result: ReturnType<typeof evaluateClauseCompleteness> } {
+  const obligations = registry(facet);
+  const clause = makeClause(obligations, overrides);
+  return {
+    clause,
+    result: evaluateClauseCompleteness(clause, obligations, resolvers),
+  };
+}
 
-  it('uses source multiplicity so one projected atom cannot discharge two obligations', () => {
-    const obligations = registry('save', 'save');
-    const result = evaluateClauseCompleteness(
-      makeClause(obligations),
-      obligations,
-      resolvers,
-    );
-    expect(result.semantic.status).toBe('incomplete');
-    expect(result.semantic.reasons).toEqual(
+describe('source-clause canonical contracts', () => {
+  it('enforces one obligation per clause while allowing many facets on that obligation', () => {
+    const obligations = createObligationRegistry([
+      { ...record('save'), requiredFacets: ['save', 'duration'] },
+    ]);
+    const clause = makeClause(obligations, {
+      duration: { amount: '1', unit: 'minute', concentration: false },
+    });
+    expect(
+      evaluateClauseCompleteness(clause, obligations, resolvers).semantic
+        .status,
+    ).toBe('complete');
+    expect(
+      evaluateClauseCompleteness(
+        {
+          ...clause,
+          sourceObligationIds: [
+            clause.sourceObligationIds[0],
+            'obl:::srd-5.1:::other:::duration',
+          ],
+        },
+        obligations,
+        resolvers,
+      ).semantic.reasons,
+    ).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ code: 'wrong-cardinality', field: 'saves' }),
+        expect.objectContaining({ code: 'multiple-obligation-references' }),
       ]),
     );
   });
 
-  it('represents save-with-damage and save-without-damage without a universal damage rule', () => {
-    const damaging = registry('save-with-damage');
-    expect(
-      evaluateClauseCompleteness(makeClause(damaging), damaging, resolvers)
-        .semantic.status,
-    ).toBe('complete');
-    const nonDamaging = registry('save-without-damage');
-    expect(
-      evaluateClauseCompleteness(
-        makeClause(nonDamaging, { damage: [] }),
-        nonDamaging,
-        resolvers,
-      ).semantic.status,
-    ).toBe('complete');
+  it('applies unremovable canonical base requirements to every facet', () => {
+    expect(BASE_REQUIREMENTS).toHaveLength(5);
+    const fields: Array<[keyof Clause, unknown]> = [
+      ['identity', { id: '', canonicalKey: 'fixture', revision: 'v1' }],
+      ['sourceSpans', []],
+      [
+        'provenance',
+        { sourceRef: '', extraction: 'structural-parser', evidence: [] },
+      ],
+      ['semanticOwner', { id: '', kind: 'projector' }],
+      ['recordOwner', { family: 'spell', key: '' }],
+    ];
+    for (const [field, value] of fields) {
+      const { result } = complete('save', {
+        [field]: value,
+      } as Partial<Clause>);
+      expect(result.semantic.status, field).toBe('incomplete');
+      expect(result.semantic.reasons).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'invalid-base-field', field }),
+        ]),
+      );
+    }
   });
 
-  it('represents alternate saves, attack damage modes, and conditional alternatives', () => {
-    const alternateSave = registry('save-with-alternate-outcomes');
+  it.each([
+    ['save-with-damage', 'saves', { saves: [] }],
+    ['save-without-damage', 'saves', { saves: [], damage: [] }],
+    ['save-with-alternate-outcomes', 'saves', { saves: [] }],
+    ['attack-with-one-damage-mode', 'attacks', { attacks: [] }],
+    ['attack-with-conditional-alternatives', 'attacks', { attacks: [] }],
+    [
+      'resource-with-reset',
+      'ledgerChanges',
+      {
+        ledgerChanges: [],
+        recurrence: { interval: 'uses', reset: 'long-rest' },
+      },
+    ],
+    [
+      'resource-without-reset',
+      'ledgerChanges',
+      { ledgerChanges: [], recurrence: null },
+    ],
+    ['duration-with-concentration', 'duration', { duration: null }],
+    ['duration-without-concentration', 'duration', { duration: null }],
+    [
+      'effect-with-lifecycle',
+      'stateTransitions',
+      { damage: [], stateTransitions: [] },
+    ],
+    [
+      'effect-without-lifecycle',
+      'damage',
+      { damage: [], stateTransitions: [] },
+    ],
+  ] as const)('requires the base facet for %s', (facet, field, overrides) => {
+    const { result } = complete(facet, overrides as Partial<Clause>);
+    expect(result.semantic.status, field).toBe('incomplete');
+    expect(result.semantic.reasons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ...(field === 'damage'
+            ? { code: 'unsatisfied-alternative' }
+            : { field }),
+        }),
+      ]),
+    );
+  });
+
+  it('represents recurrence and immunity windows as canonical facets', () => {
     expect(
-      evaluateClauseCompleteness(
-        makeClause(alternateSave, {
-          branches: {
-            success: { id: 'success', outcome: 'one', condition: null },
-            failure: { id: 'failure', outcome: 'two', condition: null },
-            partialSuccess: {
-              id: 'partial',
-              outcome: 'three',
-              condition: null,
-            },
+      complete('recurrence', {
+        recurrence: { interval: 'round', reset: 'round' },
+      }).result.semantic.status,
+    ).toBe('complete');
+    expect(
+      complete('immunity-window', {
+        immunityWindows: [
+          { subject: 'target', immunity: 'fire', duration: null },
+        ],
+      }).result.semantic.status,
+    ).toBe('complete');
+    expect(
+      complete('recurrence', { recurrence: null }).result.semantic.status,
+    ).toBe('incomplete');
+  });
+
+  it('requires symmetric exclusion partitions and projected atom bindings', () => {
+    const valid = {
+      a: {
+        id: 'a',
+        label: 'near',
+        mutuallyExclusiveWith: ['b'],
+        clauseIds: ['damage:1'],
+      },
+      b: {
+        id: 'b',
+        label: 'far',
+        mutuallyExclusiveWith: ['a'],
+        clauseIds: ['save:1'],
+      },
+    };
+    expect(
+      complete('attack-with-conditional-alternatives', {
+        attacks: [
+          {
+            id: 'attack:1',
+            attackType: 'melee',
+            defense: 'armor-class',
+            attackBonus: '+5',
+            purpose: 'hit',
           },
-        }),
-        alternateSave,
-        resolvers,
-      ).semantic.status,
+        ],
+        alternatives: Object.values(valid),
+      }).result.semantic.status,
     ).toBe('complete');
-    const attack = registry('attack-with-one-damage-mode');
     expect(
-      evaluateClauseCompleteness(
-        makeClause(attack, {
-          kind: 'attack',
-          saves: [],
-          attacks: [
-            {
-              id: 'attack:1',
-              attackType: 'melee',
-              defense: 'armor-class',
-              attackBonus: '+5',
-              purpose: 'hit',
-            },
-          ],
-        }),
-        attack,
-        resolvers,
-      ).semantic.status,
-    ).toBe('complete');
-    const conditional = registry('attack-with-conditional-alternatives');
+      complete('attack-with-conditional-alternatives', {
+        alternatives: [
+          { ...valid.a, mutuallyExclusiveWith: ['b'], clauseIds: [] },
+          valid.b,
+        ],
+      }).result.semantic.status,
+    ).toBe('incomplete');
     expect(
-      evaluateClauseCompleteness(
-        makeClause(conditional, {
-          kind: 'attack',
-          alternatives: [
-            {
-              id: 'a',
-              label: 'if near',
-              mutuallyExclusiveWith: ['b'],
-              clauseIds: [],
-            },
-            {
-              id: 'b',
-              label: 'otherwise',
-              mutuallyExclusiveWith: ['a'],
-              clauseIds: [],
-            },
-          ],
-        }),
-        conditional,
-        resolvers,
-      ).semantic.status,
-    ).toBe('complete');
+      complete('attack-with-conditional-alternatives', {
+        alternatives: [{ ...valid.a, mutuallyExclusiveWith: [] }, valid.b],
+      }).result.semantic.reasons,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'invalid-alternative-graph' }),
+      ]),
+    );
   });
 
-  it('represents reset/no-reset resources, concentration/no-concentration duration, and lifecycle/no-lifecycle effects', () => {
-    const reset = registry('resource-use', 'resource-with-reset');
+  it('requires branches to bind source spans and projected atoms', () => {
+    const branch = {
+      id: 'success',
+      outcome: 'half damage',
+      condition: null,
+      sourceSpan: span,
+      projectedAtomIds: ['damage:1'],
+    };
     expect(
-      evaluateClauseCompleteness(
-        makeClause(reset, {
-          recurrence: { interval: 'uses', reset: 'long-rest' },
-          ledgerChanges: [
-            {
-              id: 'ledger:1',
-              ledger: 'uses',
-              operation: 'decrease',
-              amount: '1',
-            },
-          ],
-        }),
-        reset,
-        resolvers,
-      ).semantic.status,
+      complete('save-with-alternate-outcomes', {
+        branches: {
+          success: branch,
+          failure: { ...branch, id: 'failure', outcome: 'full damage' },
+          partialSuccess: null,
+        },
+      }).result.semantic.status,
     ).toBe('complete');
-    const noReset = registry('resource-use', 'resource-without-reset');
     expect(
-      evaluateClauseCompleteness(
-        makeClause(noReset, {
-          recurrence: null,
-          ledgerChanges: [
-            {
-              id: 'ledger:1',
-              ledger: 'uses',
-              operation: 'decrease',
-              amount: '1',
-            },
-          ],
-        }),
-        noReset,
-        resolvers,
-      ).semantic.status,
-    ).toBe('complete');
-    const concentration = registry('duration', 'duration-with-concentration');
-    expect(
-      evaluateClauseCompleteness(
-        makeClause(concentration, {
-          duration: { amount: '1', unit: 'minute', concentration: true },
-        }),
-        concentration,
-        resolvers,
-      ).semantic.status,
-    ).toBe('complete');
-    const noConcentration = registry(
-      'duration',
-      'duration-without-concentration',
-    );
-    expect(
-      evaluateClauseCompleteness(
-        makeClause(noConcentration, {
-          duration: { amount: '1', unit: 'minute', concentration: false },
-        }),
-        noConcentration,
-        resolvers,
-      ).semantic.status,
-    ).toBe('complete');
-    const lifecycle = registry('effect', 'effect-with-lifecycle');
-    expect(
-      evaluateClauseCompleteness(
-        makeClause(lifecycle, {
-          stateTransitions: [
-            {
-              id: 'state:1',
-              state: 'frightened',
-              from: null,
-              to: 'active',
-              condition: null,
-            },
-          ],
-        }),
-        lifecycle,
-        resolvers,
-      ).semantic.status,
-    ).toBe('complete');
-    const noLifecycle = registry('effect', 'effect-without-lifecycle');
-    expect(
-      evaluateClauseCompleteness(
-        makeClause(noLifecycle),
-        noLifecycle,
-        resolvers,
-      ).semantic.status,
-    ).toBe('complete');
+      complete('save-with-alternate-outcomes', {
+        branches: {
+          success: { ...branch, projectedAtomIds: [] },
+          failure: null,
+          partialSuccess: null,
+        },
+      }).result.semantic.status,
+    ).toBe('incomplete');
   });
 
-  it('keeps capture/project/readiness independent and derives projected from evaluation', () => {
-    const obligations = registry('save');
-    const result = evaluateClauseCompleteness(
-      makeClause(obligations, {
-        readiness: { captured: [], supported: [], discoverable: [] },
-        requiredEngineCapabilities: [],
-        damage: [],
-      }),
-      obligations,
-      resolvers,
-    );
-    expect(result.semantic.status).toBe('incomplete');
-    expect(result.readiness.captured.status).toBe('failed');
+  it('keeps semantic completeness independent from unsupported readiness', () => {
+    const { result } = complete('save', {
+      requiredEngineCapabilities: [],
+      readiness: {
+        captured: [{ kind: 'source-span', ...span }],
+        supported: [],
+        discoverable: [],
+      },
+    });
+    expect(result.semantic.status).toBe('complete');
     expect(result.readiness.projected.status).toBe('satisfied');
     expect(result.readiness.supported.status).toBe('failed');
     expect(result.readiness.discoverable.status).toBe('failed');
   });
 
-  it('preserves cardinality regression coverage for empty required collections', () => {
-    const obligations = registry('save');
-    const result = evaluateClauseCompleteness(
-      makeClause(obligations, { saves: [], damage: [] }),
-      obligations,
-      resolvers,
-    );
-    expect(result.semantic.status).toBe('incomplete');
+  it('reconciles closed capability identity and both capability evidence surfaces', () => {
+    expect(
+      complete('save', {
+        requiredEngineCapabilities: [
+          { capability: 'engine:save' as never, owningBead: 'eshyra-cap-save' },
+        ],
+      }).result.semantic.status,
+    ).toBe('incomplete');
+    const { result } = complete('save', {
+      readiness: {
+        captured: [{ kind: 'source-span', ...span }],
+        supported: [],
+        discoverable: [{ resolverId: 'rules-index', path: 'spell:fixture' }],
+      },
+    });
     expect(result.semantic.reasons).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ code: 'wrong-cardinality', field: 'saves' }),
+        expect.objectContaining({ code: 'mismatched-capability-evidence' }),
       ]),
     );
   });
 
-  it('does not store a mutable disposition on the clause', () => {
-    const clause = makeClause();
-    expect('disposition' in clause).toBe(false);
-    expect('dimensions' in clause.readiness).toBe(false);
+  it('restricts CAPTURED to source or authoritative evidence', () => {
+    const obligations = registry('save', span.locator, 'audit-finding');
+    const clause = makeClause(obligations, {
+      readiness: {
+        captured: obligations.records[0].evidence,
+        supported: [{ capability: 'engine:F1', owningBead: 'eshyra-olc5.f1' }],
+        discoverable: [],
+      },
+    });
+    const result = evaluateClauseCompleteness(clause, obligations, resolvers);
+    expect(result.semantic.status).toBe('incomplete');
+    expect(result.semantic.reasons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'non-capturable-evidence' }),
+      ]),
+    );
   });
 });

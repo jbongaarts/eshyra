@@ -14,7 +14,9 @@ export type {
   SourceEvidenceResolver,
 } from './contracts.js';
 export {
+  BASE_REQUIREMENTS,
   evaluateClauseCompleteness,
+  FACET_IMPLICATIONS,
   FACET_REQUIREMENTS,
   getFacetRequirements,
 } from './contracts.js';
@@ -25,6 +27,8 @@ export type {
   ObligationMembership,
   ObligationRegistry,
   ObligationScope,
+  ObligationScopeInput,
+  UnexpectedObligationClaim,
 } from './obligations.js';
 export {
   createObligationId,

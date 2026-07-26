@@ -9,11 +9,6 @@ import type {
   SourceObligationRecord,
 } from './types.js';
 
-export interface ObligationRegistry {
-  readonly records: readonly SourceObligationRecord[];
-  get(obligationId: ObligationId): SourceObligationRecord | undefined;
-}
-
 const FACETS = new Set<SemanticFacet>([
   'save',
   'save-with-damage',
@@ -40,8 +35,28 @@ const FACETS = new Set<SemanticFacet>([
   'entity-lifecycle',
   'ledger',
   'model-adjudication',
+  'recurrence',
+  'immunity-window',
   'repeat-check',
   'termination',
+]);
+
+const FAMILIES = new Set<MechanicsRecordFamily>([
+  'rule',
+  'feature',
+  'spell',
+  'creature',
+  'hazard',
+  'equipment',
+  'magic-item',
+  'ancestry',
+  'background',
+  'condition',
+  'action',
+  'feat',
+  'class',
+  'subclass',
+  'table',
 ]);
 
 function nonEmpty(value: string, label: string): void {
@@ -66,7 +81,11 @@ function evidenceIsResolvable(evidence: ObligationEvidence): boolean {
         evidence.digest.trim().length > 0
       );
     case 'audit-finding':
-      return evidence.findingId.trim().length > 0;
+      return (
+        evidence.findingId.trim().length > 0 &&
+        evidence.sourceRef.trim().length > 0 &&
+        evidence.locator.trim().length > 0
+      );
     case 'code':
       return (
         evidence.path.trim().length > 0 && evidence.symbol.trim().length > 0
@@ -80,6 +99,51 @@ function evidenceIsResolvable(evidence: ObligationEvidence): boolean {
         evidence.findingId.trim().length > 0
       );
   }
+}
+
+function identityParts(obligationId: ObligationId): {
+  readonly sourceRef: string;
+  readonly locator: string;
+  readonly facet: SemanticFacet;
+} {
+  const parts = obligationId.split(':::');
+  if (
+    parts.length !== 4 ||
+    parts[0] !== 'obl' ||
+    !FACETS.has(parts[3] as SemanticFacet)
+  )
+    throw new Error(`invalid obligation identity ${obligationId}`);
+  const sourceRef = parts[1];
+  const locator = parts[2];
+  nonEmpty(sourceRef, 'obligation sourceRef');
+  nonEmpty(locator, 'obligation locator');
+  return { sourceRef, locator, facet: parts[3] as SemanticFacet };
+}
+
+function identityMatchesEvidence(
+  identity: ReturnType<typeof identityParts>,
+  origin: ObligationOrigin,
+  evidence: readonly ObligationEvidence[],
+): boolean {
+  return evidence.some((item) => {
+    if (origin === 'source-extraction')
+      return (
+        item.kind === 'source-span' &&
+        item.sourceRef === identity.sourceRef &&
+        item.locator === identity.locator
+      );
+    if (origin === 'curated-specification')
+      return (
+        item.kind === 'authoritative-input' &&
+        item.sourceRef === identity.sourceRef &&
+        item.locator === identity.locator
+      );
+    return (
+      item.kind === 'audit-finding' &&
+      item.sourceRef === identity.sourceRef &&
+      item.locator === identity.locator
+    );
+  });
 }
 
 function validateOriginEvidence(
@@ -100,26 +164,17 @@ function validateOriginEvidence(
 }
 
 function validateRecord(record: SourceObligationRecord): void {
-  nonEmpty(record.obligationId, 'obligationId');
-  if (!record.obligationId.startsWith('obl:::'))
-    throw new Error(`invalid obligation identity ${record.obligationId}`);
-  const identityParts = record.obligationId.split(':::');
-  if (
-    identityParts.length !== 4 ||
-    !record.requiredFacets.includes(identityParts[3] as SemanticFacet)
-  ) {
+  const identity = identityParts(record.obligationId);
+  if (!record.requiredFacets.includes(identity.facet))
     throw new Error(
       `obligation ${record.obligationId} does not match its canonical facet identity`,
     );
-  }
-  if (record.evidence.length === 0 || record.requiredFacets.length === 0) {
+  if (record.evidence.length === 0 || record.requiredFacets.length === 0)
     throw new Error(
       `obligation ${record.obligationId} must have evidence and facets`,
     );
-  }
-  if (new Set(record.requiredFacets).size !== record.requiredFacets.length) {
+  if (new Set(record.requiredFacets).size !== record.requiredFacets.length)
     throw new Error(`obligation ${record.obligationId} repeats a facet`);
-  }
   for (const facet of record.requiredFacets) {
     if (!FACETS.has(facet))
       throw new Error(
@@ -137,17 +192,37 @@ function validateRecord(record: SourceObligationRecord): void {
       group.every((facet) =>
         record.requiredFacets.includes(facet as SemanticFacet),
       )
-    ) {
+    )
       throw new Error(
         `obligation ${record.obligationId} has contradictory facets`,
       );
-    }
   }
   for (const item of record.evidence) {
     if (!evidenceIsResolvable(item))
       throw new Error(`obligation ${record.obligationId} has stale evidence`);
   }
   validateOriginEvidence(record.origin, record.evidence);
+  if (!identityMatchesEvidence(identity, record.origin, record.evidence))
+    throw new Error(
+      `obligation ${record.obligationId} diverges from its authoritative evidence`,
+    );
+}
+
+function cloneAndFreeze<T>(value: T): T {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    const copy = value.map((item) => cloneAndFreeze(item));
+    return Object.freeze(copy) as T;
+  }
+  const copy = Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, cloneAndFreeze(item)]),
+  ) as T;
+  return Object.freeze(copy);
+}
+
+export interface ObligationRegistry {
+  readonly records: readonly SourceObligationRecord[];
+  get(obligationId: ObligationId): SourceObligationRecord | undefined;
 }
 
 export function createObligationId(
@@ -157,6 +232,8 @@ export function createObligationId(
 ): ObligationId {
   nonEmpty(sourceRef, 'sourceRef');
   nonEmpty(locator, 'locator');
+  if (sourceRef.includes(':::') || locator.includes(':::'))
+    throw new Error('sourceRef and locator cannot contain :::');
   if (!FACETS.has(facet)) throw new Error(`unknown semantic facet ${facet}`);
   return `obl:::${sourceRef}:::${locator}:::${facet}`;
 }
@@ -172,17 +249,7 @@ export function createObligationRegistry(
     ids.add(record.obligationId);
   }
   const frozenRecords = Object.freeze(
-    records.map((record) => {
-      const copied: SourceObligationRecord = {
-        ...record,
-        evidence: [record.evidence[0], ...record.evidence.slice(1)],
-        requiredFacets: [
-          record.requiredFacets[0],
-          ...record.requiredFacets.slice(1),
-        ],
-      };
-      return Object.freeze(copied);
-    }),
+    records.map((record) => cloneAndFreeze(record)),
   );
   const byId = new Map(
     frozenRecords.map((record) => [record.obligationId, record]),
@@ -200,34 +267,46 @@ export interface FamilyApplicability {
   readonly evidence: readonly ObligationEvidence[];
 }
 
-export interface ObligationScope {
+export interface ObligationScopeInput {
   readonly scopeId: string;
   readonly applicability: FamilyApplicability;
   /** Source-derived membership, never inferred from the clauses under test. */
   readonly obligationIds: readonly ObligationId[];
 }
 
-export interface ObligationMembership {
-  readonly clauseId: string;
-  readonly obligationIds: readonly ObligationId[];
+const OBLIGATION_SCOPE_BRAND: unique symbol = Symbol(
+  'validated-obligation-scope',
+);
+export interface ObligationScope extends ObligationScopeInput {
+  readonly [OBLIGATION_SCOPE_BRAND]: true;
+}
+
+function isValidatedScope(scope: ObligationScope): boolean {
+  return (
+    (scope as unknown as Record<symbol, unknown>)[OBLIGATION_SCOPE_BRAND] ===
+    true
+  );
 }
 
 export function createObligationScope(
   registry: ObligationRegistry,
-  scope: ObligationScope,
+  scope: ObligationScopeInput,
 ): ObligationScope {
   nonEmpty(scope.scopeId, 'scopeId');
   nonEmpty(scope.applicability.recordKey, 'recordKey');
+  if (!FAMILIES.has(scope.applicability.family))
+    throw new Error(`scope ${scope.scopeId} has an unknown record family`);
   if (scope.applicability.evidence.length === 0)
     throw new Error(`scope ${scope.scopeId} has no applicability evidence`);
+  if (scope.applicability.evidence.some((item) => !evidenceIsResolvable(item)))
+    throw new Error(`scope ${scope.scopeId} has stale applicability evidence`);
   if (
     scope.applicability.status === 'applicable' &&
     scope.obligationIds.length === 0
-  ) {
+  )
     throw new Error(
       `applicable scope ${scope.scopeId} has no source obligations`,
     );
-  }
   if (new Set(scope.obligationIds).size !== scope.obligationIds.length)
     throw new Error(`scope ${scope.scopeId} repeats an obligation`);
   for (const obligationId of scope.obligationIds) {
@@ -236,10 +315,16 @@ export function createObligationScope(
         `scope ${scope.scopeId} names unknown obligation ${obligationId}`,
       );
   }
-  return Object.freeze({
-    ...scope,
-    obligationIds: Object.freeze([...scope.obligationIds]),
+  const copied = {
+    scopeId: scope.scopeId,
+    applicability: cloneAndFreeze(scope.applicability),
+    obligationIds: cloneAndFreeze([...scope.obligationIds]),
+  } as ObligationScopeInput & { [OBLIGATION_SCOPE_BRAND]?: true };
+  Object.defineProperty(copied, OBLIGATION_SCOPE_BRAND, {
+    value: true,
+    enumerable: false,
   });
+  return Object.freeze(copied) as ObligationScope;
 }
 
 export type ClosureStatus = 'satisfied' | 'claimed-incomplete' | 'UNCLAIMED';
@@ -250,26 +335,63 @@ export interface ObligationClosureEntry {
   readonly clauseIds: readonly string[];
 }
 
+export interface UnexpectedObligationClaim {
+  readonly clauseId: string;
+  readonly obligationIds: readonly ObligationId[];
+  readonly reason: 'wrong-record-owner' | 'outside-scope';
+}
+
 export interface ObligationClosureResult {
   readonly scopeId: string;
   readonly applicability: FamilyApplicability;
   readonly membership: readonly ObligationMembership[];
   readonly obligations: readonly ObligationClosureEntry[];
+  readonly unexpectedClaims: readonly UnexpectedObligationClaim[];
 }
 
-/** Closure is over an independently supplied source scope, not a family array. */
+export interface ObligationMembership {
+  readonly clauseId: string;
+  readonly obligationIds: readonly ObligationId[];
+}
+
+/** Closure is over an independently supplied, validated source scope. */
 export function evaluateObligationClosure(
   registry: ObligationRegistry,
   clauses: readonly Clause[],
   scope: ObligationScope,
 ): ObligationClosureResult {
+  if (!isValidatedScope(scope))
+    throw new Error(
+      'obligation closure requires a scope created by createObligationScope',
+    );
   const expected = new Set(scope.obligationIds);
   const membership = clauses.map((clause) => ({
     clauseId: clause.identity.id,
     obligationIds: Object.freeze([...clause.sourceObligationIds]),
   }));
   const claimers = new Map<ObligationId, string[]>();
+  const unexpectedClaims: UnexpectedObligationClaim[] = [];
   for (const clause of clauses) {
+    const ownerMatches =
+      clause.recordOwner.family === scope.applicability.family &&
+      clause.recordOwner.key === scope.applicability.recordKey;
+    const unexpectedIds = clause.sourceObligationIds.filter(
+      (obligationId) =>
+        !expected.has(obligationId) || registry.get(obligationId) === undefined,
+    );
+    if (!ownerMatches && clause.sourceObligationIds.length > 0)
+      unexpectedClaims.push({
+        clauseId: clause.identity.id,
+        obligationIds: Object.freeze([...clause.sourceObligationIds]),
+        reason: 'wrong-record-owner',
+      });
+    else if (unexpectedIds.length > 0)
+      unexpectedClaims.push({
+        clauseId: clause.identity.id,
+        obligationIds: Object.freeze([...unexpectedIds]),
+        reason: 'outside-scope',
+      });
+    if (!ownerMatches) continue;
     for (const obligationId of clause.sourceObligationIds) {
       if (
         !expected.has(obligationId) ||
@@ -281,14 +403,17 @@ export function evaluateObligationClosure(
       claimers.set(obligationId, entries);
     }
   }
-  return {
+  const result = {
     scopeId: scope.scopeId,
     applicability: scope.applicability,
     membership,
     obligations: scope.obligationIds.map((obligationId) => {
       const clauseIds = claimers.get(obligationId) ?? [];
-      const claimedClauses = clauses.filter((clause) =>
-        clause.sourceObligationIds.includes(obligationId),
+      const claimedClauses = clauses.filter(
+        (clause) =>
+          clause.recordOwner.family === scope.applicability.family &&
+          clause.recordOwner.key === scope.applicability.recordKey &&
+          clause.sourceObligationIds.includes(obligationId),
       );
       const satisfied =
         claimedClauses.length > 0 &&
@@ -308,7 +433,9 @@ export function evaluateObligationClosure(
         clauseIds: Object.freeze([...clauseIds]),
       };
     }),
-  };
+    unexpectedClaims,
+  } satisfies ObligationClosureResult;
+  return cloneAndFreeze(result);
 }
 
 export const RECORD_FAMILY_APPLICABILITY: readonly MechanicsRecordFamily[] = [
