@@ -5,11 +5,12 @@ invariant per row and every qualified alias used by the four July 2026 reviews.
 
 To add a finding, add its fully qualified review alias to exactly one row, use an
 existing owning bead, and give the row its own generated membership query named
-`finding:<canonicalId>`, implemented by `findingRegistry.ts`. The query must
-enumerate that row's exact record membership using record keys and, where
-relevant, `record.data.executionReadiness` and its clauses. Do not add a copied
-count: query results are snapshots of the committed pack and must be recomputed
-at runtime.
+`finding:<canonicalId>`, implemented by `findingRegistry.ts`. Query results are
+stable membership identities: every result has a `recordKey`, and nested units
+also have an exact `clauseId` or JSON `path` plus the record's source locator.
+Record-only membership is reserved for findings whose unit is the complete
+source-backed record. Do not add a copied count: identities are recomputed at
+runtime from the committed pack.
 
 Aliases from the same review may share a row only when they name the same defect;
 such a row must carry `clusterJustification`. Query names may not be shared
@@ -35,11 +36,17 @@ Bare `F1`, `CAP-001`, and `SOL-001` aliases are invalid.
 Membership queries replace totals because the pack changes as repairs land and
 because conflicting review counts are evidence that a stored number is not a
 stable contract. The validator also checks aliases, same-review clustering,
-query uniqueness, required status reasoning, hard-coded totals, schema shape,
-and bead references (the latter is skipped when `bd` is not installed).
+query uniqueness, required status reasoning, duplicate canonical IDs,
+hard-coded totals, stable identity shape, per-row non-empty membership, explicit
+zero-member policies, and bead references (the latter is skipped when `bd` is
+not installed).
 
-`indep:011` has its own ambiguous row owned by
-`eshyra-o9bd.19.3.1`: the language universe is a campaign-ruling/adjudication
-question, not a source-authority or projection defect. `sol:CAP-009` is owned by
+`indep:011` is accepted and owned by `eshyra-o9bd.19.3.1`: the source-defined
+language universe must expose the standard catalog plus a campaign-common
+extension and a GM-approved exotic/secret extension; only the chosen custom
+language is adjudicated. The absent manifest query is explicitly empty because
+the current pack has no manifest record. `indep:001` and `sol:CAP-001` have
+separate rows because the readiness gate and the rule corpus can regress
+independently. `sol:CAP-009` is owned by
 `eshyra-o9bd.19.2.1` because the plan routes the Animal Friendship correction
 through source authority (with spell and provenance coordination).

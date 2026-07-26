@@ -18,6 +18,7 @@
       "title": "Stale manifest provenance is removed",
       "status": "accepted",
       "membershipQuery": "finding:source-authority-opus-f20",
+      "zeroMemberPolicy": "The committed pack has no manifest record; keep this query explicitly empty until the manifest projection is represented as a pack record.",
       "owningBead": "eshyra-o9bd.19.2.1",
       "packBoundary": "Published manifests contain only current project identity claims.",
       "engineBoundary": "none",
@@ -70,14 +71,13 @@
     {
       "canonicalId": "language-universe-policy",
       "aliases": ["indep:011"],
-      "title": "Language universe remains an explicit campaign policy question",
-      "status": "ambiguous",
-      "statusReasoning": "This is a policy/adjudication decision routed to campaign rulings, not a projection defect. The open language-choice universe must remain an explicit ruling boundary.",
+      "title": "Language universe keeps its source-defined extension point",
+      "status": "accepted",
       "membershipQuery": "finding:language-universe-policy",
       "owningBead": "eshyra-o9bd.19.3.1",
       "packBoundary": "Language choices expose an adjudication boundary instead of a falsely closed universe.",
       "engineBoundary": "campaign-ruling",
-      "regressionForm": "Language lookup tests preserve the open policy extension point."
+      "regressionForm": "Language lookup tests prove the standard catalog permits a campaign-common addition and a GM-approved exotic or secret language; only the chosen custom language is adjudicated."
     },
     {
       "canonicalId": "locator-completeness",
@@ -289,15 +289,26 @@
       "regressionForm": "Rule-key uniqueness and canonical-link predicates run corpus-wide."
     },
     {
-      "canonicalId": "clause-completeness",
-      "aliases": ["indep:001", "sol:CAP-001"],
-      "title": "Atom presence cannot stand in for clause-complete procedures",
+      "canonicalId": "audit-readiness-gate",
+      "aliases": ["indep:001"],
+      "title": "Readiness gates require clause-complete procedures",
       "status": "accepted",
-      "membershipQuery": "finding:clause-completeness",
-      "owningBead": "eshyra-o9bd.19.1.1",
+      "membershipQuery": "finding:audit-readiness-gate",
+      "owningBead": "eshyra-o9bd.19.1.5",
       "packBoundary": "Captured, projected, supported, and discoverable are separate clause dimensions.",
       "engineBoundary": "none",
-      "regressionForm": "Clause completeness rejects atom-only and partial representations."
+      "regressionForm": "The readiness gate rejects atom presence as a substitute for a clause-complete procedure."
+    },
+    {
+      "canonicalId": "rule-corpus-procedures",
+      "aliases": ["sol:CAP-001"],
+      "title": "The rule corpus has executable procedures",
+      "status": "accepted",
+      "membershipQuery": "finding:rule-corpus-procedures",
+      "owningBead": "eshyra-o9bd.19.3.4",
+      "packBoundary": "Rule records expose executable procedures rather than atoms alone.",
+      "engineBoundary": "none",
+      "regressionForm": "The rule corpus procedure audit enumerates each rule record and rejects records without an executable procedure."
     },
     {
       "canonicalId": "phantom-feature-resources",

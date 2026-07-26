@@ -86,11 +86,46 @@ describe('finding registry v1', () => {
 
   it('executes every named membership query against the committed pack', () => {
     const registry = loadFindingRegistry();
-    const results = registry.rows.map((row) =>
-      executeMembershipQuery(row.membershipQuery),
+    for (const row of registry.rows) {
+      const result = executeMembershipQuery(row.membershipQuery);
+      if (row.zeroMemberPolicy === undefined)
+        expect(result.length).toBeGreaterThan(0);
+      expect(result.every((member) => member.recordKey.length > 0)).toBe(true);
+      expect(
+        result.every(
+          (member) =>
+            member.sourceSpan !== undefined ||
+            member.clauseId !== undefined ||
+            member.path !== undefined,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it('returns nested identities instead of whole records for readiness clauses', () => {
+    const members = executeMembershipQuery(
+      'finding:engine-capability-ownership',
     );
-    expect(results.every((result) => Array.isArray(result))).toBe(true);
-    expect(results.some((result) => result.length > 0)).toBe(true);
+    expect(members.length).toBeGreaterThan(0);
+    expect(members.every((member) => member.clauseId)).toBe(true);
+    expect(
+      members.every((member) => member.recordKey && member.sourceSpan),
+    ).toBe(true);
+  });
+
+  it('rejects a duplicate canonical ID', () => {
+    const registry = loadFindingRegistry();
+    const malformed = {
+      ...registry,
+      rows: [
+        registry.rows[0],
+        { ...registry.rows[1], canonicalId: registry.rows[0].canonicalId },
+        ...registry.rows.slice(2),
+      ],
+    };
+    expect(() => validateFindingRegistry(malformed)).toThrow(
+      /duplicate canonicalId/,
+    );
   });
 
   it('does not store hand-copied totals', () => {
