@@ -11,13 +11,39 @@ export const BOOTSTRAP_LEDGER_PATH = fileURLToPath(
 );
 
 export type OwnershipStatus = 'owned' | 'proposed-new-bead' | 'disputed';
-export type ObligationKind =
-  | 'source-span'
-  | 'authoritative-input'
-  | 'audit-finding'
-  | 'code'
-  | 'bead'
-  | 'known-missing-source-clause';
+export const CANONICAL_SEMANTIC_FACETS = [
+  'save',
+  'save-with-damage',
+  'save-without-damage',
+  'save-with-alternate-outcomes',
+  'attack',
+  'attack-with-one-damage-mode',
+  'attack-with-conditional-alternatives',
+  'check',
+  'branch',
+  'action-economy',
+  'resource-use',
+  'resource-with-reset',
+  'resource-without-reset',
+  'duration',
+  'duration-with-concentration',
+  'duration-without-concentration',
+  'effect',
+  'effect-with-lifecycle',
+  'effect-without-lifecycle',
+  'geometry',
+  'choice',
+  'variant',
+  'entity-lifecycle',
+  'ledger',
+  'model-adjudication',
+  'recurrence',
+  'immunity-window',
+  'repeat-check',
+  'termination',
+] as const;
+
+export type SemanticFacet = (typeof CANONICAL_SEMANTIC_FACETS)[number];
 export type EvidenceExpected =
   | 'non-empty'
   | 'absent-from-pack'
@@ -25,8 +51,7 @@ export type EvidenceExpected =
   | 'known';
 
 export interface ObligationIdentity {
-  readonly obligationId: string;
-  readonly obligationKind: ObligationKind;
+  readonly evidenceId: string;
 }
 
 export interface HookSelector {
@@ -64,10 +89,14 @@ export interface AuditFindingEvidence extends ObligationIdentity {
 
 export interface KnownMissingSourceClauseEvidence extends ObligationIdentity {
   readonly kind: 'known-missing-source-clause';
+  readonly obligationId: string;
   readonly sourceRef: string;
   readonly locator: string;
   readonly sourceRecordKey: string;
+  readonly sourcePath: string;
+  readonly sourceTerms: readonly string[];
   readonly projectionQueryId: string;
+  readonly projectionTerms: readonly string[];
   readonly expected: 'absent-from-pack';
 }
 
@@ -91,11 +120,18 @@ export interface ReadinessArtifactMatch {
 
 export interface EvidenceResolution {
   readonly evidence: BootstrapEvidence;
-  readonly status: 'satisfied' | 'skipped';
+  readonly status: 'satisfied' | 'evidence-underived' | 'skipped';
   readonly matches?: readonly ReadinessArtifactMatch[];
   readonly scannedRecords?: number;
   readonly scannedClauses?: number;
+  readonly projectionMatches?: readonly ProjectionMatch[];
   readonly reason?: string;
+}
+
+export interface ProjectionMatch {
+  readonly recordKey: string;
+  readonly clauseId: string;
+  readonly terms: readonly string[];
 }
 
 export interface BootstrapCapabilityRow {
@@ -116,6 +152,9 @@ export interface BootstrapCapabilityLedger {
   readonly authoritativeLedger: string;
   readonly snapshotCommit: string;
   readonly sources: readonly string[];
+  readonly auditFindingPrimitiveRelations: Readonly<
+    Record<string, readonly string[]>
+  >;
   readonly rows: readonly BootstrapCapabilityRow[];
 }
 
@@ -233,6 +272,7 @@ const ENGINE_EPIC = 'eshyra-olc5';
 const ENGINE_CAPABILITY_ID = /^engine:F(?:[1-9]|10)$/;
 const BEAD_ID = /^eshyra-[a-z0-9]+(?:\.[a-z0-9]+)*$/;
 const OBLIGATION_ID = /^obl:::.+:::.+:::.+$/;
+const EVIDENCE_ID = /^ev:::.+:::.+:::.+$/;
 const FINDING_ALIAS =
   /^(?:engine:F(?:[1-9]|10)|fable:F[1-8]|opus:F-(?:0[1-9]|[12][0-9]|3[0-5])|sol:CAP-(?:00[1-9]|0[1-9][0-9]|1[0-4])|indep:(?:00[1-9]|01[0-2]))$/;
 const STORED_COUNT_FIELD =
@@ -245,6 +285,49 @@ const SOURCE_NAMES = new Set([
   'missing-source-clause',
 ]);
 const beadExistence = new Map<string, boolean>();
+
+export const AUDIT_FINDING_PRIMITIVE_RELATIONS: Readonly<
+  Record<string, readonly string[]>
+> = {
+  'indep:002': ['seeded-selection-and-roll-replacement'],
+  'indep:005': [
+    'caster-of-record-and-canonical-spell-execution',
+    'spell-slot-gate-and-upcast-transform',
+  ],
+  'fable:F2': ['point-origin-area-geometry-and-targeting'],
+  'fable:F3': [
+    'suffocation-and-ongoing-damage-state',
+    'damage-rider-and-half-damage-branch-resolution',
+  ],
+  'opus:F-02': ['capacity-and-variant-arithmetic'],
+  'opus:F-04': [
+    'recharge-and-reset-scheduling',
+    'long-rest-reset-orchestration',
+  ],
+  'opus:F-12': ['save-dc-and-spell-attack-modifier-resolution'],
+  'opus:F-26': ['legendary-action-allowance-and-option-cost'],
+  'opus:F-32': ['multi-save-and-ability-choice-outcomes'],
+  'opus:F-35': ['forced-movement-contest-and-object-interaction'],
+  'sol:CAP-001': ['active-effect-duration-and-termination'],
+  'sol:CAP-002': [
+    'condition-and-eligibility-relations',
+    'turn-action-and-free-interaction-budget',
+    'reaction-and-item-activation-ownership',
+  ],
+  'sol:CAP-004': [
+    'concentration-owner-and-damage-save',
+    'owned-entity-and-repeat-trigger-lifecycle',
+    'hp-healing-and-temporary-buffer',
+    'death-save-dying-and-stable-transitions',
+  ],
+  'sol:CAP-007': [
+    'per-instance-usage-and-charge-spend',
+    'attunement-curse-and-identity-constraints',
+    'containment-portal-and-card-pool-instance-state',
+    'planar-return-and-declared-window-clocks',
+    'retained-inventory-property-xp-asset-creation',
+  ],
+};
 
 export const NON_PACK_DISCOVERY_PRIMITIVES = [
   'legendary-action-allowance-and-option-cost',
@@ -566,6 +649,53 @@ const projectionSpecsById = new Map(
   PROJECTION_QUERY_SPECS.map((spec) => [spec.projectionQueryId, spec]),
 );
 
+const PROJECTION_TERMS_BY_PRIMITIVE: Readonly<
+  Record<string, readonly string[]>
+> = {
+  'legendary-action-allowance-and-option-cost': [
+    'legendary action allowance',
+    'legendaryActionCost',
+  ],
+  'owned-entity-and-repeat-trigger-lifecycle': [
+    'owned entity',
+    'repeat trigger',
+  ],
+  'spell-slot-gate-and-upcast-transform': ['spell slot gate', 'upcast'],
+  'spellbook-copy-cost-and-asset-ledger': ['spellbook copy', 'copy cost'],
+  'containment-portal-and-card-pool-instance-state': [
+    'containment',
+    'portal-state',
+  ],
+  'suffocation-and-ongoing-damage-state': [
+    'suffocation threshold',
+    'ongoing damage',
+  ],
+  'planar-return-and-declared-window-clocks': [
+    'planar-return',
+    'declared-window',
+  ],
+  'multi-save-and-ability-choice-outcomes': [
+    'multiple saves',
+    'ability-choice outcomes',
+  ],
+  'point-origin-area-geometry-and-targeting': [
+    'point-origin geometry',
+    'target selection',
+  ],
+  'damage-rider-and-half-damage-branch-resolution': [
+    'damage riders',
+    'half-damage branches',
+  ],
+  'downtime-study-expense-and-training-ledger': [
+    'downtime study',
+    'training ledger',
+  ],
+  'retained-inventory-property-xp-asset-creation': [
+    'retained inventory',
+    'asset creation',
+  ],
+};
+
 const KNOWN_AUDIT_FINDINGS = new Set<string>([
   ...Array.from({ length: 8 }, (_, i) => `fable:F${i + 1}`),
   ...Array.from(
@@ -627,29 +757,45 @@ function rejectStoredCountFields(value: unknown, path: string): void {
   }
 }
 
-function validateIdentity(
+function validateEvidenceIdentity(
   value: Record<string, unknown>,
   field: string,
-  kind: ObligationKind,
+): void {
+  requiredString(value.evidenceId, `${field}.evidenceId`);
+  if (!EVIDENCE_ID.test(value.evidenceId))
+    fail(`${field}.evidenceId must use the ev::: evidence namespace`);
+  if (value.evidenceId.split(':::').some((segment) => segment.trim() === ''))
+    fail(`${field}.evidenceId must have four non-empty segments`);
+}
+
+function validateSourceObligation(
+  value: Record<string, unknown>,
+  field: string,
+  evidence: KnownMissingSourceClauseEvidence,
 ): void {
   requiredString(value.obligationId, `${field}.obligationId`);
   if (!OBLIGATION_ID.test(value.obligationId))
-    fail(`${field}.obligationId is malformed`);
+    fail(
+      `${field}.obligationId must use the obl::: source-obligation namespace`,
+    );
   const segments = value.obligationId.split(':::');
   if (
     segments.length !== 4 ||
-    segments.some((segment) => segment.trim() === '')
+    segments.some((segment) => segment.trim() === '') ||
+    !CANONICAL_SEMANTIC_FACETS.includes(segments[3] as SemanticFacet)
   )
-    fail(`${field}.obligationId must have four non-empty segments`);
-  if (value.obligationKind !== kind)
-    fail(`${field}.obligationKind must be ${kind}`);
+    fail(`${field}.obligationId must have a canonical semantic facet`);
+  if (segments[1] !== evidence.sourceRef || segments[2] !== evidence.locator)
+    fail(
+      `${field}.obligationId diverges from its authoritative source evidence`,
+    );
 }
 
 function validateReadinessEvidence(
   value: Record<string, unknown>,
   field: string,
 ): ReadinessArtifactEvidence {
-  validateIdentity(value, field, 'source-span');
+  validateEvidenceIdentity(value, field);
   requiredString(value.queryId, `${field}.queryId`);
   requiredString(value.engine, `${field}.engine`);
   if (!['non-empty', 'absent-from-pack'].includes(value.expected as string))
@@ -672,11 +818,18 @@ function validateReadinessEvidence(
 function validateEvidence(value: unknown, field: string): BootstrapEvidence {
   const evidence = objectRecord(value);
   if (!evidence) fail(`${field} must be an evidence object`);
+  if ('obligationKind' in evidence)
+    fail(`${field} uses the retired obligationKind evidence field`);
+  if (
+    evidence.kind !== 'known-missing-source-clause' &&
+    'obligationId' in evidence
+  )
+    fail(`${field} invents a source obligation for an evidence item`);
   switch (evidence.kind) {
     case 'readiness-artifact':
       return validateReadinessEvidence(evidence, field);
     case 'code':
-      validateIdentity(evidence, field, 'code');
+      validateEvidenceIdentity(evidence, field);
       requiredString(evidence.module, `${field}.module`);
       requiredString(evidence.symbol, `${field}.symbol`);
       if (evidence.expected !== 'exists')
@@ -685,14 +838,14 @@ function validateEvidence(value: unknown, field: string): BootstrapEvidence {
         fail(`${field}.module must be @eshyra/core-relative`);
       return evidence as unknown as CodeEvidence;
     case 'bead':
-      validateIdentity(evidence, field, 'bead');
+      validateEvidenceIdentity(evidence, field);
       requiredString(evidence.beadId, `${field}.beadId`);
       if (!BEAD_ID.test(evidence.beadId)) fail(`${field}.beadId is invalid`);
       if (evidence.expected !== 'exists')
         fail(`${field}.expected must be exists`);
       return evidence as unknown as BeadEvidence;
     case 'audit-finding':
-      validateIdentity(evidence, field, 'audit-finding');
+      validateEvidenceIdentity(evidence, field);
       requiredString(evidence.findingAlias, `${field}.findingAlias`);
       if (
         !FINDING_ALIAS.test(evidence.findingAlias) ||
@@ -704,11 +857,19 @@ function validateEvidence(value: unknown, field: string): BootstrapEvidence {
         fail(`${field}.expected must be known`);
       return evidence as unknown as AuditFindingEvidence;
     case 'known-missing-source-clause':
-      validateIdentity(evidence, field, 'known-missing-source-clause');
+      validateEvidenceIdentity(evidence, field);
       requiredString(evidence.sourceRef, `${field}.sourceRef`);
       requiredString(evidence.locator, `${field}.locator`);
       requiredString(evidence.sourceRecordKey, `${field}.sourceRecordKey`);
+      requiredString(evidence.sourcePath, `${field}.sourcePath`);
+      requiredStringArray(evidence.sourceTerms, `${field}.sourceTerms`);
       requiredString(evidence.projectionQueryId, `${field}.projectionQueryId`);
+      requiredStringArray(evidence.projectionTerms, `${field}.projectionTerms`);
+      validateSourceObligation(
+        evidence,
+        field,
+        evidence as unknown as KnownMissingSourceClauseEvidence,
+      );
       if (!projectionSpecsById.has(evidence.projectionQueryId))
         fail(`${field}.projectionQueryId is not registered`);
       if (evidence.expected !== 'absent-from-pack')
@@ -767,23 +928,26 @@ function validateRow(value: unknown, index: number): BootstrapCapabilityRow {
     if (!evidenceKinds.has(kind as BootstrapEvidence['kind']))
       fail(`rows[${index}] is missing executable evidence for ${source}`);
   }
-  const obligationIds = new Set<string>();
-  for (const item of evidence) {
-    if (obligationIds.has(item.obligationId))
-      fail(
-        `rows[${index}] duplicates obligation identity ${item.obligationId}`,
-      );
-    obligationIds.add(item.obligationId);
-  }
   const readiness = evidence.filter(
     (item): item is ReadinessArtifactEvidence =>
       item.kind === 'readiness-artifact',
   );
   const queryIds = new Set<string>();
+  for (const item of evidence) {
+    if (
+      item.kind !== 'readiness-artifact' &&
+      item.kind !== 'known-missing-source-clause'
+    )
+      continue;
+    const queryId =
+      item.kind === 'readiness-artifact'
+        ? item.queryId
+        : item.projectionQueryId;
+    if (queryIds.has(queryId))
+      fail(`${fieldForRow(index)} repeats queryId ${queryId}`);
+    queryIds.add(queryId);
+  }
   for (const item of readiness) {
-    if (queryIds.has(item.queryId))
-      fail(`${fieldForRow(index)} repeats queryId ${item.queryId}`);
-    queryIds.add(item.queryId);
     if (item.engine !== row.capabilityId)
       fail(
         `rows[${index}] readiness evidence targets ${item.engine}, not ${row.capabilityId}`,
@@ -798,6 +962,17 @@ function validateRow(value: unknown, index: number): BootstrapCapabilityRow {
     if (!projection || projection.primitive !== row.primitive)
       fail(
         `rows[${index}] known-missing projection does not target this primitive`,
+      );
+    const expectedTerms = PROJECTION_TERMS_BY_PRIMITIVE[row.primitive];
+    if (
+      !expectedTerms ||
+      item.projectionTerms.length !== expectedTerms.length ||
+      item.projectionTerms.some(
+        (term, termIndex) => term !== expectedTerms[termIndex],
+      )
+    )
+      fail(
+        `rows[${index}] known-missing projection terms are not the registered semantic query`,
       );
   }
   for (const item of evidence) {
@@ -817,6 +992,14 @@ function validateRow(value: unknown, index: number): BootstrapCapabilityRow {
     )
       fail(
         `rows[${index}] audit relevance is mechanically derived from the primitive name`,
+      );
+    if (
+      !AUDIT_FINDING_PRIMITIVE_RELATIONS[item.findingAlias]?.includes(
+        row.primitive as string,
+      )
+    )
+      fail(
+        `rows[${index}] audit finding ${item.findingAlias} is not reviewed as relevant to ${row.primitive}`,
       );
   }
   if (row.ownershipStatus === 'proposed-new-bead') {
@@ -979,8 +1162,7 @@ function verifyBeadIds(beadIds: readonly string[]): void {
     for (const beadId of unresolved)
       resolveBeadEvidence({
         kind: 'bead',
-        obligationId: 'obl:::validation:bead',
-        obligationKind: 'bead',
+        evidenceId: 'ev:::validation:::bead:::exists',
         beadId,
         expected: 'exists',
       });
@@ -1004,50 +1186,79 @@ function resolveKnownMissingSourceClause(
       `${evidence.sourceRef} ${evidence.locator} does not identify a real source anchor`,
     );
   const sourceRecordObject = objectRecord(sourceRecord);
+  if (!sourceRecordObject) fail('source anchor is not an object');
   const sourceData = objectRecord(sourceRecordObject?.data);
   if (!sourceData || Object.keys(sourceData).length === 0)
     fail(
       `${evidence.sourceRef} ${evidence.locator} does not contain source material`,
     );
-  const projection = projectionSpecsById.get(evidence.projectionQueryId);
-  if (!projection)
-    fail(`unknown projection query ${evidence.projectionQueryId}`);
-  const projectionEvidence: ReadinessArtifactEvidence = {
-    kind: 'readiness-artifact',
-    obligationId: 'obl:::pack:::executionReadiness:::projection-absence',
-    obligationKind: 'source-span',
-    queryId: `projection:${evidence.projectionQueryId}`,
-    engine: projection.engine,
-    hookSelector: projection.hookSelector,
-    expected: 'absent-from-pack',
-  };
+  const sourceValue = readPath(sourceRecordObject, evidence.sourcePath);
+  if (sourceValue === undefined || sourceValue === null)
+    fail(
+      `${evidence.sourceRef} ${evidence.locator} has no source material at ${evidence.sourcePath}`,
+    );
+  const sourceText = JSON.stringify(sourceValue);
+  if (!evidence.sourceTerms.every((term) => sourceText.includes(term)))
+    fail(
+      `${evidence.sourceRef} ${evidence.locator} source anchor does not contain its recorded source terms`,
+    );
+  if (evidence.projectionTerms.length === 0)
+    fail(`${evidence.projectionQueryId} has no semantic absence terms`);
   let scannedClauses = 0;
+  const projectionMatches: ProjectionMatch[] = [];
   for (const recordValue of records) {
     const record = objectRecord(recordValue);
     const clauses = objectRecord(
       objectRecord(record?.data)?.executionReadiness,
     )?.clauses;
     if (!Array.isArray(clauses)) continue;
-    scannedClauses += clauses.length;
+    for (const clauseValue of clauses) {
+      scannedClauses += 1;
+      const clause = objectRecord(clauseValue);
+      if (typeof clause?.clauseId !== 'string') continue;
+      const serialized = JSON.stringify(clause).toLowerCase();
+      const terms = evidence.projectionTerms.filter((term) =>
+        serialized.includes(term.toLowerCase()),
+      );
+      if (terms.length > 0) {
+        projectionMatches.push({
+          recordKey:
+            typeof record?.key === 'string' ? record.key : '<unknown-record>',
+          clauseId: clause.clauseId,
+          terms,
+        });
+      }
+    }
   }
-  let projectionMatches: readonly ReadinessArtifactMatch[];
-  try {
-    projectionMatches = evaluateReadinessArtifact(projectionEvidence, records);
-  } catch (cause) {
+  if (scannedClauses === 0)
     fail(
-      `${evidence.sourceRef} ${evidence.locator} has a projected clause: ${(cause as Error).message}`,
-    );
-  }
-  if (projectionMatches.length > 0)
-    fail(
-      `${evidence.sourceRef} ${evidence.locator} has a projected clause at the expected identity`,
+      `${evidence.projectionQueryId} could not inspect any projected clauses`,
     );
   return {
     evidence,
-    status: 'satisfied',
+    status: projectionMatches.length === 0 ? 'satisfied' : 'evidence-underived',
     scannedRecords: records.length,
     scannedClauses,
+    projectionMatches,
+    reason:
+      projectionMatches.length === 0
+        ? undefined
+        : 'semantic projection terms are present; absence is not provable',
   };
+}
+
+function readPath(value: Record<string, unknown>, path: string): unknown {
+  let current: unknown = value;
+  for (const segment of path.split('.')) {
+    if (current === null || typeof current !== 'object') return undefined;
+    if (/^\d+$/.test(segment)) {
+      if (!Array.isArray(current)) return undefined;
+      current = current[Number(segment)];
+    } else {
+      current = (current as Record<string, unknown>)[segment];
+    }
+  }
+  return current;
 }
 
 export function resolveEvidence(
@@ -1129,6 +1340,25 @@ export function validateBootstrapCapabilityLedger(
     )
   )
     fail('auditFindingSubjects does not match the committed finding registry');
+  const findingRelations = objectRecord(root.auditFindingPrimitiveRelations);
+  if (!findingRelations)
+    fail('auditFindingPrimitiveRelations must be an object');
+  const relationKeys = Object.keys(AUDIT_FINDING_PRIMITIVE_RELATIONS);
+  if (
+    Object.keys(findingRelations).length !== relationKeys.length ||
+    relationKeys.some((alias) => {
+      const actual = findingRelations[alias];
+      const expected = AUDIT_FINDING_PRIMITIVE_RELATIONS[alias];
+      return (
+        !Array.isArray(actual) ||
+        actual.length !== expected.length ||
+        actual.some((primitive, index) => primitive !== expected[index])
+      );
+    })
+  )
+    fail(
+      'auditFindingPrimitiveRelations does not match the reviewed finding registry',
+    );
   requiredString(root.authoritativeLedger, 'authoritativeLedger');
   requiredString(root.snapshotCommit, 'snapshotCommit');
   requiredStringArray(root.sources, 'sources');
@@ -1142,6 +1372,8 @@ export function validateBootstrapCapabilityLedger(
   const queryOwners = new Map<string, string>();
   const familyRows = new Map<string, number>();
   const auditRelevances = new Set<string>();
+  const evidenceIds = new Set<string>();
+  const sourceObligationIds = new Set<string>();
   for (const row of rows) {
     if (primitives.has(row.primitive))
       fail(`duplicate primitive: ${row.primitive}`);
@@ -1157,18 +1389,36 @@ export function validateBootstrapCapabilityLedger(
       (familyRows.get(row.capabilityId) ?? 0) + 1,
     );
     for (const item of row.evidence) {
+      if (evidenceIds.has(item.evidenceId))
+        fail(`duplicate evidence identity registry-wide: ${item.evidenceId}`);
+      evidenceIds.add(item.evidenceId);
+      if (item.kind === 'known-missing-source-clause') {
+        if (sourceObligationIds.has(item.obligationId))
+          fail(
+            `duplicate source obligation identity registry-wide: ${item.obligationId}`,
+          );
+        sourceObligationIds.add(item.obligationId);
+      }
       if (item.kind === 'audit-finding') {
         if (auditRelevances.has(item.relevance))
           fail('audit relevance statements must be unique per row');
         auditRelevances.add(item.relevance);
       }
-      if (item.kind !== 'readiness-artifact') continue;
-      const owner = queryOwners.get(item.queryId);
+      if (
+        item.kind !== 'readiness-artifact' &&
+        item.kind !== 'known-missing-source-clause'
+      )
+        continue;
+      const queryId =
+        item.kind === 'readiness-artifact'
+          ? item.queryId
+          : item.projectionQueryId;
+      const owner = queryOwners.get(queryId);
       if (owner && owner !== row.primitive)
         fail(
-          `queryId ${item.queryId} is ambiguously owned by ${owner} and ${row.primitive}`,
+          `queryId ${queryId} is ambiguously owned by ${owner} and ${row.primitive}`,
         );
-      queryOwners.set(item.queryId, row.primitive);
+      queryOwners.set(queryId, row.primitive);
     }
   }
   const rowRosterEntries = rows.map(

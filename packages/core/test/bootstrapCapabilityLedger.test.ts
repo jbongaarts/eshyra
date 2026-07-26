@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   CANONICAL_PRIMITIVE_ROSTER,
+  CANONICAL_SEMANTIC_FACETS,
   evaluateReadinessArtifact,
   evaluateRowEvidence,
   loadBootstrapCapabilityLedger,
@@ -50,7 +51,9 @@ describe('bootstrap capability ledger', () => {
       expect(
         resolutions.every(
           (result) =>
-            result.status === 'satisfied' || result.status === 'skipped',
+            result.status === 'satisfied' ||
+            result.status === 'evidence-underived' ||
+            result.status === 'skipped',
         ),
       ).toBe(true);
       for (const result of resolutions) {
@@ -65,7 +68,81 @@ describe('bootstrap capability ledger', () => {
         }
       }
     }
+    const underived = ledger.rows.flatMap((row) =>
+      evaluateRowEvidence(row, records).filter(
+        (result) => result.status === 'evidence-underived',
+      ),
+    );
+    expect(underived).toHaveLength(5);
+    expect(
+      underived.every(
+        (result) => result.evidence.kind === 'known-missing-source-clause',
+      ),
+    ).toBe(true);
   }, 30_000);
+
+  it('pins the canonical semantic-facet vocabulary used by source obligations', () => {
+    expect(CANONICAL_SEMANTIC_FACETS).toEqual([
+      'save',
+      'save-with-damage',
+      'save-without-damage',
+      'save-with-alternate-outcomes',
+      'attack',
+      'attack-with-one-damage-mode',
+      'attack-with-conditional-alternatives',
+      'check',
+      'branch',
+      'action-economy',
+      'resource-use',
+      'resource-with-reset',
+      'resource-without-reset',
+      'duration',
+      'duration-with-concentration',
+      'duration-without-concentration',
+      'effect',
+      'effect-with-lifecycle',
+      'effect-without-lifecycle',
+      'geometry',
+      'choice',
+      'variant',
+      'entity-lifecycle',
+      'ledger',
+      'model-adjudication',
+      'recurrence',
+      'immunity-window',
+      'repeat-check',
+      'termination',
+    ]);
+  });
+
+  it('keeps source obligations and evidence identities in separate namespaces', () => {
+    const ledger = loadBootstrapCapabilityLedger();
+    const allEvidence = ledger.rows.flatMap((row) => row.evidence);
+    expect(
+      allEvidence.every((item) => item.evidenceId.startsWith('ev:::')),
+    ).toBe(true);
+    const sourceObligations = allEvidence.filter(
+      (item) => item.kind === 'known-missing-source-clause',
+    );
+    expect(sourceObligations).toHaveLength(12);
+    expect(
+      sourceObligations.every((item) => item.obligationId.startsWith('obl:::')),
+    ).toBe(true);
+    expect(allEvidence.every((item) => !('obligationKind' in item))).toBe(true);
+    for (const primitive of [
+      'spellbook-copy-cost-and-asset-ledger',
+      'short-rest-hit-dice-recovery',
+      'derived-attack-ac-and-proficiency-modifiers',
+      'canonical-currency-mutation',
+      'downtime-study-expense-and-training-ledger',
+    ]) {
+      expect(
+        ledger.rows
+          .find((row) => row.primitive === primitive)
+          ?.evidence.some((item) => item.kind === 'audit-finding'),
+      ).toBe(false);
+    }
+  });
 
   it('pins the exact seven primitive non-pack discovery set', () => {
     const ledger = loadBootstrapCapabilityLedger();
@@ -239,29 +316,33 @@ describe('bootstrap capability ledger', () => {
     if (!anchor) throw new Error('fixture needs source anchor');
     const record = anchor as Record<string, unknown>;
     const data = (record.data ?? {}) as Record<string, unknown>;
-    expect(() =>
-      resolveEvidence(evidence, [
-        {
-          ...record,
-          data: {
-            ...data,
-            executionReadiness: {
-              clauses: [
-                {
-                  clauseId: 'fixture/projected-clause',
-                  engineHooks: [
-                    {
-                      engine: 'F2',
-                      hook: 'legendary actions: per-round allowance and per-option cost',
-                    },
-                  ],
+    const underived = resolveEvidence(evidence, [
+      {
+        ...record,
+        data: {
+          ...data,
+          executionReadiness: {
+            clauses: [
+              {
+                clauseId: 'fixture/projected-clause',
+                representation: {
+                  semantic: evidence.projectionTerms[0],
                 },
-              ],
-            },
+                engineHooks: [],
+              },
+            ],
           },
         },
-      ]),
-    ).toThrow(/projected clause/);
+      },
+    ]);
+    expect(underived.status).toBe('evidence-underived');
+    expect(underived.projectionMatches).toHaveLength(1);
+    expect(() =>
+      resolveEvidence(
+        { ...evidence, sourcePath: 'data.not-a-source-path' },
+        loadPackRecords(),
+      ),
+    ).toThrow(/source material/);
   });
 
   it('represents a proposed row without inventing an owner', () => {
@@ -370,7 +451,43 @@ describe('bootstrap capability ledger', () => {
                     ...row.evidence,
                     {
                       ...readiness,
-                      obligationId: 'obl:::SRD5.1:::duplicate:::readiness-hook',
+                      evidenceId: 'ev:::SRD5.1:::duplicate:::readiness-hook',
+                    },
+                  ],
+                }
+              : row,
+          ),
+        },
+        { checkBeads: false },
+      ),
+    ).toThrow(/repeats queryId/);
+
+    const rowWithProjection = ledger.rows.find((row) =>
+      row.evidence.some((item) => item.kind === 'known-missing-source-clause'),
+    );
+    if (!rowWithProjection) throw new Error('fixture needs projection row');
+    const projection = rowWithProjection.evidence.find(
+      (item) => item.kind === 'known-missing-source-clause',
+    );
+    if (projection?.kind !== 'known-missing-source-clause')
+      throw new Error('fixture needs projection evidence');
+    expect(() =>
+      validateBootstrapCapabilityLedger(
+        {
+          ...ledger,
+          rows: ledger.rows.map((row) =>
+            row === rowWithProjection
+              ? {
+                  ...row,
+                  evidence: [
+                    ...row.evidence,
+                    {
+                      ...projection,
+                      evidenceId: 'ev:::duplicate:::projection:::2',
+                      obligationId: projection.obligationId.replace(
+                        ':::action-economy',
+                        ':::branch',
+                      ),
                     },
                   ],
                 }
@@ -416,7 +533,7 @@ describe('bootstrap capability ledger', () => {
                     itemIndex === 0
                       ? {
                           ...item,
-                          obligationId: 'obl:::SRD5.1::::::readiness-hook',
+                          evidenceId: 'ev:::SRD5.1::::::readiness-hook',
                         }
                       : item,
                   ),
@@ -426,7 +543,7 @@ describe('bootstrap capability ledger', () => {
         },
         { checkBeads: false },
       ),
-    ).toThrow(/four non-empty segments|malformed/);
+    ).toThrow(/evidenceId|namespace|four non-empty segments|malformed/);
   });
 
   it('rejects the old overloaded pack evidence and copied counts', () => {

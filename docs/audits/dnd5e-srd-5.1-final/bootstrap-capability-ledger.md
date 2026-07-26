@@ -13,10 +13,13 @@ clauses named by those findings that the current projection omits. Membership
 is represented by a row-owned `evidence` array and checked against the
 versioned `primitiveRoster` exactly in both directions. Evidence is a closed,
 discriminated union: `readiness-artifact`, `code`, `bead`, `audit-finding`, and
-`known-missing-source-clause`. Each item uses the shared four-segment
-obligation identity `obl:::sourceRef:::locator:::semanticFacet`; empty source or
-locator segments are invalid. No one `sourceSpan` field is overloaded across
-evidence types.
+`known-missing-source-clause`. Evidence items use a distinct, registry-wide
+`ev:::...:::...:::...` identity. Only genuine source-negative obligations use
+the shared four-segment `obl:::sourceRef:::locator:::semanticFacet` identity,
+and the source and locator must match that item's authoritative anchor. The
+facet vocabulary is duplicated from the clause-IR contract and parity-tested;
+empty or non-canonical segments are invalid. No one `sourceSpan` field is
+overloaded across evidence types.
 
 Readiness artifacts use a registered query ID and an exact structured hook
 selector: `engineHooks[].engine` and the hook's `name`/`id`/legacy `hook` value
@@ -28,13 +31,14 @@ selector returns an absence result rather than silently passing an empty query.
 The other resolvers are independent: code checks the named module and symbol
 in `@eshyra/core`; bead evidence checks through `bd` and skips only when the
 binary is absent; audit evidence resolves a fully qualified known finding
-alias against the committed `auditFindingSubjects` table and requires a
-unique, row-specific relevance statement; and known-missing-source evidence
-first resolves a real SRD record/source/locator anchor, then evaluates a
-registered exact complete-projection identity and returns a positive absence
-proof with scanned-record and scanned-clause coverage. Source-negative rows
-therefore prove both source presence and projection absence; they do not search
-for invented sentinel strings.
+alias against the committed `auditFindingSubjects` and reviewed
+`auditFindingPrimitiveRelations` tables and requires a unique, row-specific
+relevance statement; and known-missing-source evidence resolves a real SRD
+record/source/locator anchor plus recorded source terms, then scans every
+projected readiness clause for registered semantic terms. It returns a
+positive absence proof only when no equivalent or partial projected shape is
+found. If a partial shape is present, it returns `evidence-underived`, which
+blocks closure. It never searches for invented sentinel strings.
 
 Rows are at primitive granularity. A family such as `engine:F5` therefore has
 separate rows for instance spend, recharge scheduling, attunement/curse
@@ -83,9 +87,16 @@ cannot reveal that missing source clause by themselves.
 
 Snapshot provenance: commit `4384f25`. The validator requires exact equality
 with `bootstrap-capability-roster-v1`, at least two rows per family, unique
-primitives, unique family/primitive pairs, one unambiguous owner for each query
-ID, no same-row query duplicates, matching owner/bead evidence, semantically
-resolved audit relevance, and evidence for every source named by a row.
+primitives, unique family/primitive pairs, registry-wide evidence and source
+obligation identities, one unambiguous owner for every readiness or projection
+query ID, no same-row query duplicates across either query kind, matching
+owner/bead evidence, semantically resolved audit relevance, and evidence for
+every source named by a row. Five unsupported audit citations are deliberately
+dropped: spellbook copying, short-rest Hit Dice recovery, derived attack/AC/
+proficiency modifiers, canonical currency mutation, and downtime procedures.
+The current pack contains partial projected shapes for five source-negative
+primitives; those rows remain inventory-visible but resolve as
+`evidence-underived` until a clause-complete absence proof exists.
 Consumers should execute every row's evidence array against the current corpus
 and retain the row/query identity in the result. This ledger is a bootstrap
 inventory, not a claim that the current pack is clause-complete.
