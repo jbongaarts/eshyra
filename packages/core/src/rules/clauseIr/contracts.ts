@@ -1,51 +1,27 @@
 import type {
+  BranchName,
   Clause,
   ClauseDimensions,
+  ClauseField,
   ClauseKind,
+  ClauseRequirement,
+  ClauseRequirementPredicate,
   MechanicsRecordFamily,
+  SourceObligation,
 } from './types.js';
 
-export type ClauseField =
-  | 'identity'
-  | 'sourceSpans'
-  | 'provenance'
-  | 'semanticOwner'
-  | 'recordOwner'
-  | 'kind'
-  | 'trigger'
-  | 'eligibility'
-  | 'activationCost'
-  | 'targets'
-  | 'geometry'
-  | 'checks'
-  | 'attacks'
-  | 'saves'
-  | 'alternatives'
-  | 'branches'
-  | 'damage'
-  | 'healing'
-  | 'grants'
-  | 'ledgerChanges'
-  | 'stateTransitions'
-  | 'duration'
-  | 'recurrence'
-  | 'repeatChecks'
-  | 'immunityWindows'
-  | 'termination'
-  | 'executionOwner'
-  | 'requiredEngineCapabilities'
-  | 'readiness'
-  | 'regressionEvidence';
-
-export type BranchName = 'success' | 'failure' | 'partialSuccess';
+export type {
+  BranchName,
+  ClauseField,
+  ClauseRequirement,
+  ClauseRequirementPredicate,
+} from './types.js';
 export type DimensionName = keyof ClauseDimensions;
 
 export interface ClauseCompletenessContract {
   readonly id: string;
   readonly kind: ClauseKind;
-  readonly requiredFields: readonly ClauseField[];
-  readonly requiredBranches: readonly BranchName[];
-  readonly requiredDimensions: readonly DimensionName[];
+  readonly requirements: readonly ClauseRequirement[];
 }
 
 export interface RecordFamilyCompletenessContract {
@@ -56,37 +32,62 @@ export interface RecordFamilyCompletenessContract {
   readonly clauseContracts: readonly string[];
 }
 
-const BASE_FIELDS: readonly ClauseField[] = [
-  'identity',
-  'sourceSpans',
-  'provenance',
-  'semanticOwner',
-  'recordOwner',
-  'kind',
-  'executionOwner',
-  'requiredEngineCapabilities',
-  'readiness',
-  'regressionEvidence',
-];
+const field = (
+  id: string,
+  fieldName: ClauseField,
+  cardinality: 'present' | 'non-empty',
+  sourceText = `the ${fieldName} is represented`,
+): ClauseRequirement => ({
+  id,
+  sourceText,
+  predicate: { kind: 'field', field: fieldName, cardinality },
+});
 
-const ALL_DIMENSIONS: readonly DimensionName[] = [
-  'captured',
-  'projected',
-  'supported',
-  'discoverable',
+const present = (fieldName: ClauseField): ClauseRequirement =>
+  field(`field:${fieldName}`, fieldName, 'present');
+
+const nonEmpty = (fieldName: ClauseField): ClauseRequirement =>
+  field(`field:${fieldName}:non-empty`, fieldName, 'non-empty');
+
+const branch = (branchName: BranchName): ClauseRequirement => ({
+  id: `branch:${branchName}`,
+  sourceText: `the ${branchName} outcome is represented`,
+  predicate: { kind: 'branch', branch: branchName },
+});
+
+const fieldGroup = (
+  id: string,
+  fields: readonly ClauseField[],
+  minCount: number,
+  maxCount?: number,
+): ClauseRequirement => ({
+  id,
+  sourceText: `one of ${fields.join(', ')} is represented`,
+  predicate: { kind: 'field-group', fields, minCount, maxCount },
+});
+
+const BASE_REQUIREMENTS: readonly ClauseRequirement[] = [
+  present('identity'),
+  nonEmpty('sourceSpans'),
+  present('provenance'),
+  present('semanticOwner'),
+  present('recordOwner'),
+  present('kind'),
+  nonEmpty('sourceObligations'),
+  present('executionOwner'),
+  present('requiredEngineCapabilities'),
+  present('readiness'),
+  nonEmpty('regressionEvidence'),
 ];
 
 function contract(
   kind: ClauseKind,
-  fields: readonly ClauseField[],
-  requiredBranches: readonly BranchName[] = [],
+  requirements: readonly ClauseRequirement[],
 ): ClauseCompletenessContract {
   return {
     id: `clause:${kind}`,
     kind,
-    requiredFields: [...BASE_FIELDS, ...fields],
-    requiredBranches,
-    requiredDimensions: ALL_DIMENSIONS,
+    requirements: [...BASE_REQUIREMENTS, ...requirements],
   };
 }
 
@@ -98,88 +99,84 @@ function contract(
 export const CLAUSE_COMPLETENESS_CONTRACTS: Readonly<
   Record<ClauseKind, ClauseCompletenessContract>
 > = {
-  attack: contract(
-    'attack',
-    [
-      'trigger',
-      'eligibility',
-      'activationCost',
-      'targets',
-      'attacks',
-      'damage',
-      'branches',
-    ],
-    ['success', 'failure'],
-  ),
-  save: contract(
-    'save',
-    [
-      'trigger',
-      'eligibility',
-      'activationCost',
-      'targets',
-      'saves',
-      'damage',
-      'branches',
-    ],
-    ['success', 'failure'],
-  ),
-  check: contract(
-    'check',
-    ['trigger', 'eligibility', 'checks', 'branches'],
-    ['success', 'failure'],
-  ),
-  branch: contract('branch', ['branches'], ['success', 'failure']),
+  attack: contract('attack', [
+    present('trigger'),
+    present('eligibility'),
+    present('activationCost'),
+    present('targets'),
+    fieldGroup('attack-or-save', ['attacks', 'saves'], 1, 1),
+    nonEmpty('damage'),
+    branch('success'),
+    branch('failure'),
+  ]),
+  save: contract('save', [
+    present('trigger'),
+    present('eligibility'),
+    present('activationCost'),
+    present('targets'),
+    nonEmpty('saves'),
+    nonEmpty('damage'),
+    branch('success'),
+    branch('failure'),
+  ]),
+  check: contract('check', [
+    present('trigger'),
+    present('eligibility'),
+    nonEmpty('checks'),
+    branch('success'),
+    branch('failure'),
+  ]),
+  branch: contract('branch', [branch('success'), branch('failure')]),
   'action-economy': contract('action-economy', [
-    'activationCost',
-    'trigger',
-    'branches',
+    present('activationCost'),
+    present('trigger'),
   ]),
   resource: contract('resource', [
-    'activationCost',
-    'ledgerChanges',
-    'recurrence',
-    'branches',
+    present('activationCost'),
+    nonEmpty('ledgerChanges'),
+    present('recurrence'),
   ]),
-  duration: contract(
-    'duration',
-    ['duration', 'termination', 'branches'],
-    ['success', 'failure'],
-  ),
-  'state-transition': contract(
-    'state-transition',
-    ['trigger', 'stateTransitions', 'termination', 'branches'],
-    ['success', 'failure'],
-  ),
-  geometry: contract('geometry', ['targets', 'geometry', 'branches']),
-  choice: contract(
-    'choice',
-    ['eligibility', 'alternatives', 'branches'],
-    ['success'],
-  ),
-  variant: contract(
-    'variant',
-    ['alternatives', 'stateTransitions', 'branches'],
-    ['success'],
-  ),
-  'entity-lifecycle': contract(
-    'entity-lifecycle',
-    [
-      'trigger',
-      'grants',
-      'duration',
-      'termination',
-      'stateTransitions',
-      'branches',
-    ],
-    ['success', 'failure'],
-  ),
-  ledger: contract('ledger', ['ledgerChanges', 'branches']),
-  'model-adjudication': contract(
-    'model-adjudication',
-    ['trigger', 'eligibility', 'targets', 'branches'],
-    ['success', 'failure'],
-  ),
+  duration: contract('duration', [
+    present('duration'),
+    present('termination'),
+    branch('success'),
+    branch('failure'),
+  ]),
+  'state-transition': contract('state-transition', [
+    present('trigger'),
+    nonEmpty('stateTransitions'),
+    present('termination'),
+    branch('success'),
+    branch('failure'),
+  ]),
+  geometry: contract('geometry', [present('targets'), present('geometry')]),
+  choice: contract('choice', [
+    present('eligibility'),
+    nonEmpty('alternatives'),
+    branch('success'),
+  ]),
+  variant: contract('variant', [
+    nonEmpty('alternatives'),
+    nonEmpty('stateTransitions'),
+    branch('success'),
+  ]),
+  'entity-lifecycle': contract('entity-lifecycle', [
+    present('trigger'),
+    nonEmpty('grants'),
+    present('duration'),
+    present('termination'),
+    nonEmpty('stateTransitions'),
+    branch('success'),
+    branch('failure'),
+  ]),
+  ledger: contract('ledger', [nonEmpty('ledgerChanges')]),
+  'model-adjudication': contract('model-adjudication', [
+    present('trigger'),
+    present('eligibility'),
+    present('targets'),
+    branch('success'),
+    branch('failure'),
+  ]),
 };
 
 const FAMILY_CONTRACT = (
@@ -260,51 +257,165 @@ export const RECORD_FAMILY_COMPLETENESS_CONTRACTS: readonly RecordFamilyComplete
 export interface CompletenessReason {
   readonly code:
     | 'wrong-contract-kind'
+    | 'missing-source-obligation'
+    | 'unbound-source-obligation'
+    | 'unknown-source-contract'
     | 'missing-field'
+    | 'empty-required-collection'
+    | 'unsatisfied-alternative'
     | 'missing-branch'
     | 'dimension-not-captured'
-    | 'dimension-not-projected'
-    | 'dimension-not-supported'
-    | 'dimension-not-discoverable';
+    | 'dimension-not-projected';
   readonly message: string;
+  readonly obligationId?: string;
+  readonly requirementId?: string;
+  readonly sourceText?: string;
+  readonly predicate?: ClauseRequirementPredicate;
   readonly field?: ClauseField;
   readonly branch?: BranchName;
-  readonly dimension?: DimensionName;
 }
 
-export type CompletenessResult =
+export interface DimensionEvaluation {
+  readonly status: 'satisfied' | 'failed';
+}
+
+export type ReadinessEvaluation = Readonly<
+  Record<DimensionName, DimensionEvaluation>
+>;
+
+export type SemanticEvaluation =
   | {
       readonly status: 'complete';
-      readonly clauseId: string;
-      readonly contractId: string;
-      readonly dimensions: ClauseDimensions;
       readonly reasons: readonly [];
     }
   | {
       readonly status: 'incomplete';
-      readonly clauseId: string;
-      readonly contractId: string;
-      readonly dimensions: ClauseDimensions;
       readonly reasons: readonly [CompletenessReason, ...CompletenessReason[]];
     };
 
-function hasField(clause: Clause, field: ClauseField): boolean {
-  const value = clause[field];
-  if (field === 'sourceSpans') {
-    return Array.isArray(value) && value.length > 0;
-  }
-  return value !== null && value !== undefined;
+export interface CompletenessResult {
+  readonly clauseId: string;
+  readonly contractId: string;
+  /** Semantic completeness is intentionally separate from execution readiness. */
+  readonly semantic: SemanticEvaluation;
+  readonly dimensions: ClauseDimensions;
+  readonly readiness: ReadinessEvaluation;
 }
 
-function dimensionReason(dimension: DimensionName): CompletenessReason {
+function dimensionReason(
+  dimension: 'captured' | 'projected',
+): CompletenessReason {
   return {
     code: `dimension-not-${dimension}`,
-    dimension,
     message: `clause is not ${dimension}`,
-  } as CompletenessReason;
+  };
 }
 
-/** Evaluate a clause against its kind contract without consulting global state. */
+function valueSatisfiesField(
+  clause: Clause,
+  fieldName: ClauseField,
+  cardinality: 'present' | 'non-empty',
+): boolean {
+  const value = clause[fieldName];
+  if (value === null || value === undefined) return false;
+  if (cardinality === 'non-empty' && Array.isArray(value)) {
+    return value.length > 0;
+  }
+  return true;
+}
+
+function requirementFailure(
+  obligation: SourceObligation,
+  requirement: ClauseRequirement,
+  code: CompletenessReason['code'],
+  message: string,
+  details: Pick<CompletenessReason, 'field' | 'branch'> = {},
+): CompletenessReason {
+  return {
+    code,
+    message,
+    obligationId: obligation.id,
+    requirementId: requirement.id,
+    sourceText: requirement.sourceText,
+    predicate: requirement.predicate,
+    ...details,
+  };
+}
+
+function evaluateRequirement(
+  clause: Clause,
+  obligation: SourceObligation,
+  requirement: ClauseRequirement,
+): CompletenessReason | null {
+  const predicate = requirement.predicate;
+  if (predicate.kind === 'field') {
+    if (valueSatisfiesField(clause, predicate.field, predicate.cardinality)) {
+      return null;
+    }
+    const isEmptyCollection =
+      predicate.cardinality === 'non-empty' &&
+      Array.isArray(clause[predicate.field]);
+    return requirementFailure(
+      obligation,
+      requirement,
+      isEmptyCollection ? 'empty-required-collection' : 'missing-field',
+      isEmptyCollection
+        ? `required ${predicate.field} collection is empty`
+        : `required ${predicate.field} field is absent`,
+      { field: predicate.field },
+    );
+  }
+
+  if (predicate.kind === 'branch') {
+    if (clause.branches[predicate.branch] !== null) return null;
+    return requirementFailure(
+      obligation,
+      requirement,
+      'missing-branch',
+      `required ${predicate.branch} branch is absent`,
+      { branch: predicate.branch },
+    );
+  }
+
+  const populatedCount = predicate.fields.filter((fieldName) => {
+    const value = clause[fieldName];
+    return (
+      value !== null &&
+      value !== undefined &&
+      (!Array.isArray(value) || value.length > 0)
+    );
+  }).length;
+  const withinMinimum = populatedCount >= predicate.minCount;
+  const withinMaximum =
+    predicate.maxCount === undefined || populatedCount <= predicate.maxCount;
+  if (withinMinimum && withinMaximum) return null;
+  const range =
+    predicate.maxCount === undefined
+      ? `at least ${predicate.minCount}`
+      : `between ${predicate.minCount} and ${predicate.maxCount}`;
+  return requirementFailure(
+    obligation,
+    requirement,
+    'unsatisfied-alternative',
+    `expected ${range} populated alternatives, found ${populatedCount}`,
+  );
+}
+
+function evaluateObligation(
+  clause: Clause,
+  obligation: SourceObligation,
+  contract: ClauseCompletenessContract,
+): CompletenessReason[] {
+  return [...contract.requirements, ...obligation.requirements]
+    .map((requirement) => evaluateRequirement(clause, obligation, requirement))
+    .filter((reason): reason is CompletenessReason => reason !== null);
+}
+
+/**
+ * Evaluate semantic completeness and readiness independently. The returned
+ * artifact is authoritative; ClauseReadiness intentionally stores no derived
+ * disposition that could contradict these results.
+ */
 export function evaluateClauseCompleteness(
   clause: Clause,
   completenessContract: ClauseCompletenessContract,
@@ -318,48 +429,90 @@ export function evaluateClauseCompleteness(
     });
   }
 
-  for (const field of completenessContract.requiredFields) {
-    if (!hasField(clause, field)) {
+  const selectedObligation = clause.sourceObligations.find(
+    ({ contractKind }) => contractKind === completenessContract.kind,
+  );
+  if (selectedObligation === undefined) {
+    reasons.push({
+      code: 'missing-source-obligation',
+      message: `source clause does not declare the ${completenessContract.kind} obligation`,
+    });
+  }
+
+  for (const obligation of clause.sourceObligations) {
+    const obligationContract =
+      obligation.contractKind === completenessContract.kind
+        ? completenessContract
+        : CLAUSE_COMPLETENESS_CONTRACTS[obligation.contractKind];
+    if (obligationContract === undefined) {
       reasons.push({
-        code: 'missing-field',
-        field,
-        message: `required ${field} field is absent`,
+        code: 'unknown-source-contract',
+        obligationId: obligation.id,
+        sourceText: obligation.sourceText,
+        message: `source obligation names unknown contract ${obligation.contractKind}`,
+      });
+      continue;
+    }
+    if (obligation.sourceText.trim().length === 0) {
+      reasons.push({
+        code: 'missing-source-obligation',
+        obligationId: obligation.id,
+        message: 'source obligation has no source text',
       });
     }
-  }
-
-  for (const branch of completenessContract.requiredBranches) {
-    if (clause.branches[branch] === null) {
+    const clauseLocators = new Set(
+      clause.sourceSpans.map(({ locator }) => locator),
+    );
+    if (
+      obligation.sourceSpanLocators.some(
+        (locator) => !clauseLocators.has(locator),
+      )
+    ) {
       reasons.push({
-        code: 'missing-branch',
-        branch,
-        message: `required ${branch} branch is absent from the ${clause.kind} contract`,
+        code: 'unbound-source-obligation',
+        obligationId: obligation.id,
+        sourceText: obligation.sourceText,
+        message: 'source obligation does not point to a clause source span',
       });
     }
+    reasons.push(...evaluateObligation(clause, obligation, obligationContract));
   }
 
-  for (const dimension of completenessContract.requiredDimensions) {
-    if (!clause.readiness.dimensions[dimension]) {
-      reasons.push(dimensionReason(dimension));
-    }
+  if (!clause.readiness.dimensions.captured) {
+    reasons.push(dimensionReason('captured'));
+  }
+  if (!clause.readiness.dimensions.projected) {
+    reasons.push(dimensionReason('projected'));
   }
 
-  if (reasons.length > 0) {
-    return {
-      status: 'incomplete',
-      clauseId: clause.identity.id,
-      contractId: completenessContract.id,
-      dimensions: clause.readiness.dimensions,
-      reasons: reasons as [CompletenessReason, ...CompletenessReason[]],
-    };
-  }
-
+  const semantic =
+    reasons.length > 0
+      ? {
+          status: 'incomplete' as const,
+          reasons: reasons as [CompletenessReason, ...CompletenessReason[]],
+        }
+      : { status: 'complete' as const, reasons: [] as const };
   return {
-    status: 'complete',
     clauseId: clause.identity.id,
     contractId: completenessContract.id,
+    semantic,
     dimensions: clause.readiness.dimensions,
-    reasons: [],
+    readiness: {
+      captured: {
+        status: clause.readiness.dimensions.captured ? 'satisfied' : 'failed',
+      },
+      projected: {
+        status: clause.readiness.dimensions.projected ? 'satisfied' : 'failed',
+      },
+      supported: {
+        status: clause.readiness.dimensions.supported ? 'satisfied' : 'failed',
+      },
+      discoverable: {
+        status: clause.readiness.dimensions.discoverable
+          ? 'satisfied'
+          : 'failed',
+      },
+    },
   };
 }
 

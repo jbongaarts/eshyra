@@ -31,6 +31,15 @@ function makeClause(overrides: Partial<Clause> = {}): Clause {
     semanticOwner: { id: 'projector:fixture', kind: 'projector' },
     recordOwner: { family: 'spell', key: 'spell:fixture' },
     kind: 'save',
+    sourceObligations: [
+      {
+        id: 'obligation:save',
+        sourceText: 'The target makes a saving throw.',
+        sourceSpanLocators: ['p. 1, paragraph 2'],
+        contractKind: 'save',
+        requirements: [],
+      },
+    ],
     trigger: {
       id: 'trigger:fixture',
       summary: 'when activated',
@@ -93,7 +102,6 @@ function makeClause(overrides: Partial<Clause> = {}): Clause {
     executionOwner: { kind: 'engine', id: 'save-resolution' },
     requiredEngineCapabilities: ['engine:F1', 'engine:F9'],
     readiness: {
-      disposition: 'complete',
       dimensions: {
         captured: true,
         projected: true,
@@ -167,7 +175,7 @@ describe('source-clause completeness contracts', () => {
     for (const kind of kinds) {
       expect(getClauseCompletenessContract(kind).kind).toBe(kind);
       expect(
-        getClauseCompletenessContract(kind).requiredFields.length,
+        getClauseCompletenessContract(kind).requirements.length,
       ).toBeGreaterThan(0);
     }
     expect(Object.keys(CLAUSE_COMPLETENESS_CONTRACTS)).toEqual(
@@ -178,7 +186,6 @@ describe('source-clause completeness contracts', () => {
   it('represents captured, projected, supported, and discoverable independently', () => {
     const clause = makeClause({
       readiness: {
-        disposition: 'engine-pending',
         dimensions: {
           captured: true,
           projected: true,
@@ -199,15 +206,190 @@ describe('source-clause completeness contracts', () => {
       clause,
       getClauseCompletenessContract('save'),
     );
-    expect(result.status).toBe('incomplete');
-    if (result.status === 'incomplete') {
-      expect(result.reasons.map(({ code }) => code)).toEqual(
-        expect.arrayContaining([
-          'dimension-not-supported',
-          'dimension-not-discoverable',
-        ]),
-      );
-    }
+    expect(result.semantic.status).toBe('complete');
+    expect(result.readiness).toEqual({
+      captured: { status: 'satisfied' },
+      projected: { status: 'satisfied' },
+      supported: { status: 'failed' },
+      discoverable: { status: 'failed' },
+    });
+  });
+
+  it('fails closed when source obligations compose save, duration, repeat, and termination semantics', () => {
+    const composedSourceClause = makeClause({
+      sourceSpans: [
+        {
+          ...sourceSpan,
+          text: 'The target makes a save, repeats it each round, lasts 1 minute, and ends when it succeeds.',
+        },
+      ],
+      sourceObligations: [
+        {
+          id: 'obligation:save',
+          sourceText: 'The target makes a save.',
+          sourceSpanLocators: ['p. 1, paragraph 2'],
+          contractKind: 'save',
+          requirements: [],
+        },
+        {
+          id: 'obligation:duration',
+          sourceText:
+            'The effect lasts 1 minute and ends when the target succeeds.',
+          sourceSpanLocators: ['p. 1, paragraph 2'],
+          contractKind: 'duration',
+          requirements: [],
+        },
+        {
+          id: 'obligation:repeat-save',
+          sourceText: 'The target repeats the save each round.',
+          sourceSpanLocators: ['p. 1, paragraph 2'],
+          contractKind: 'save',
+          requirements: [
+            {
+              id: 'requirement:repeat-save',
+              sourceText: 'the save repeats each round',
+              predicate: {
+                kind: 'field',
+                field: 'repeatChecks',
+                cardinality: 'non-empty',
+              },
+            },
+          ],
+        },
+      ],
+      duration: null,
+      termination: null,
+      repeatChecks: [],
+    });
+
+    const result = evaluateClauseCompleteness(
+      composedSourceClause,
+      getClauseCompletenessContract('save'),
+    );
+
+    expect(result.semantic.status).toBe('incomplete');
+    expect(result.semantic.reasons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          obligationId: 'obligation:duration',
+          field: 'duration',
+          code: 'missing-field',
+        }),
+        expect.objectContaining({
+          obligationId: 'obligation:duration',
+          field: 'termination',
+          code: 'missing-field',
+        }),
+        expect.objectContaining({
+          obligationId: 'obligation:repeat-save',
+          field: 'repeatChecks',
+          code: 'empty-required-collection',
+        }),
+      ]),
+    );
+  });
+
+  it('rejects empty required collections instead of treating them as present', () => {
+    const emptySave = makeClause({ saves: [], damage: [] });
+    const result = evaluateClauseCompleteness(
+      emptySave,
+      getClauseCompletenessContract('save'),
+    );
+
+    expect(result.semantic.status).toBe('incomplete');
+    expect(
+      result.semantic.reasons.map(({ code, field }) => ({ code, field })),
+    ).toEqual(
+      expect.arrayContaining([
+        { code: 'empty-required-collection', field: 'saves' },
+        { code: 'empty-required-collection', field: 'damage' },
+      ]),
+    );
+  });
+
+  it('supports source-backed cross-field alternatives with fail-closed cardinality', () => {
+    const attackContract = getClauseCompletenessContract('attack');
+    const bothAttackModes = makeClause({
+      kind: 'attack',
+      attacks: [
+        {
+          id: 'attack:fixture',
+          attackType: 'spell',
+          defense: 'armor-class',
+          attackBonus: '+5',
+          purpose: 'hit the target',
+        },
+      ],
+      sourceObligations: [
+        {
+          id: 'obligation:attack',
+          sourceText: 'The attack uses either an attack roll or a save.',
+          sourceSpanLocators: ['p. 1, paragraph 2'],
+          contractKind: 'attack',
+          requirements: [],
+        },
+      ],
+      saves: [
+        {
+          id: 'save:fixture',
+          ability: 'Dexterity',
+          dc: 'spell DC',
+          purpose: 'avoid damage',
+        },
+      ],
+    });
+    const result = evaluateClauseCompleteness(bothAttackModes, attackContract);
+
+    expect(result.semantic.status).toBe('incomplete');
+    expect(result.semantic.reasons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'unsatisfied-alternative',
+          requirementId: 'attack-or-save',
+        }),
+      ]),
+    );
+  });
+
+  it('rejects missing source obligations even when the selected kind is populated', () => {
+    const result = evaluateClauseCompleteness(
+      makeClause({
+        sourceObligations: [] as unknown as Clause['sourceObligations'],
+      }),
+      getClauseCompletenessContract('save'),
+    );
+
+    expect(result.semantic.status).toBe('incomplete');
+    expect(result.semantic.reasons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'missing-source-obligation' }),
+      ]),
+    );
+  });
+
+  it('returns structured failures from the evaluator instead of a mutable disposition', () => {
+    const incompleteClause = makeClause({
+      readiness: {
+        dimensions: {
+          captured: true,
+          projected: true,
+          supported: false,
+          discoverable: true,
+        },
+        note: 'The source clause is recognized but its timing is not represented.',
+      },
+      duration: null,
+    });
+
+    const result = evaluateClauseCompleteness(
+      incompleteClause,
+      getClauseCompletenessContract('save'),
+    );
+
+    expect(result.semantic.status).toBe('complete');
+    expect(result.semantic.reasons).toEqual([]);
+    expect(result.readiness.supported.status).toBe('failed');
+    expect('disposition' in incompleteClause.readiness).toBe(false);
   });
 
   it('rejects a superficially populated clause when its required branch is missing', () => {
@@ -224,36 +406,12 @@ describe('source-clause completeness contracts', () => {
       getClauseCompletenessContract('save'),
     );
 
-    expect(result.status).toBe('incomplete');
-    if (result.status === 'incomplete') {
-      expect(result.reasons).toContainEqual({
+    expect(result.semantic.status).toBe('incomplete');
+    expect(result.semantic.reasons).toContainEqual(
+      expect.objectContaining({
         code: 'missing-branch',
         branch: 'failure',
-        message: 'required failure branch is absent from the save contract',
-      });
-    }
-  });
-
-  it('lets a projector mark deterministic partial representation only as explicit incomplete', () => {
-    const incompleteClause = makeClause({
-      readiness: {
-        disposition: 'incomplete',
-        dimensions: {
-          captured: true,
-          projected: true,
-          supported: false,
-          discoverable: true,
-        },
-        note: 'The source clause is recognized but its timing is not represented.',
-      },
-    });
-
-    expect(incompleteClause.readiness.disposition).toBe('incomplete');
-    expect(
-      evaluateClauseCompleteness(
-        incompleteClause,
-        getClauseCompletenessContract('save'),
-      ).status,
-    ).toBe('incomplete');
+      }),
+    );
   });
 });

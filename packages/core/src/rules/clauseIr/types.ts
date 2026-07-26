@@ -38,6 +38,73 @@ export type MechanicsRecordFamily =
   | 'subclass'
   | 'table';
 
+export type BranchName = 'success' | 'failure' | 'partialSuccess';
+
+export type ClauseField =
+  | 'identity'
+  | 'sourceSpans'
+  | 'provenance'
+  | 'semanticOwner'
+  | 'recordOwner'
+  | 'kind'
+  | 'sourceObligations'
+  | 'trigger'
+  | 'eligibility'
+  | 'activationCost'
+  | 'targets'
+  | 'geometry'
+  | 'checks'
+  | 'attacks'
+  | 'saves'
+  | 'alternatives'
+  | 'branches'
+  | 'damage'
+  | 'healing'
+  | 'grants'
+  | 'ledgerChanges'
+  | 'stateTransitions'
+  | 'duration'
+  | 'recurrence'
+  | 'repeatChecks'
+  | 'immunityWindows'
+  | 'termination'
+  | 'executionOwner'
+  | 'requiredEngineCapabilities'
+  | 'readiness'
+  | 'regressionEvidence';
+
+export type ClauseRequirementPredicate =
+  | {
+      readonly kind: 'field';
+      readonly field: ClauseField;
+      readonly cardinality: 'present' | 'non-empty';
+    }
+  | {
+      readonly kind: 'branch';
+      readonly branch: BranchName;
+    }
+  | {
+      readonly kind: 'field-group';
+      readonly fields: readonly ClauseField[];
+      readonly minCount: number;
+      readonly maxCount?: number;
+    };
+
+export interface ClauseRequirement {
+  readonly id: string;
+  readonly sourceText: string;
+  readonly predicate: ClauseRequirementPredicate;
+}
+
+/** A source-backed semantic obligation, including composed child contracts. */
+export interface SourceObligation {
+  readonly id: string;
+  readonly sourceText: string;
+  readonly sourceSpanLocators: readonly [string, ...string[]];
+  readonly contractKind: ClauseKind;
+  readonly requirements: readonly ClauseRequirement[];
+}
+
 export interface ClauseIdentity {
   readonly id: string;
   readonly canonicalKey: string;
@@ -254,14 +321,6 @@ export interface ExecutionOwner {
   readonly id: string;
 }
 
-export type ClauseReadinessDisposition =
-  | 'complete'
-  | 'incomplete'
-  | 'engine-pending'
-  | 'model-adjudicated-supported'
-  | 'unsupported'
-  | 'undiscoverable';
-
 export interface ClauseDimensions {
   readonly captured: boolean;
   readonly projected: boolean;
@@ -270,7 +329,6 @@ export interface ClauseDimensions {
 }
 
 export interface ClauseReadiness {
-  readonly disposition: ClauseReadinessDisposition;
   readonly dimensions: ClauseDimensions;
   readonly note: string | null;
 }
@@ -289,6 +347,11 @@ export interface Clause {
   readonly semanticOwner: SemanticOwner;
   readonly recordOwner: RecordOwner;
   readonly kind: ClauseKind;
+  /** The source, rather than the selected kind, determines these obligations. */
+  readonly sourceObligations: readonly [
+    SourceObligation,
+    ...SourceObligation[],
+  ];
   readonly trigger: ClausePredicate | null;
   readonly eligibility: ClausePredicate | null;
   readonly activationCost: ActionEconomyCost | null;

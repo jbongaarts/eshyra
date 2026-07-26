@@ -34,7 +34,9 @@ The 2026-07-24 audit evidence demonstrates why atom presence is insufficient:
 
 These are contract failures, not merely missing fields. A clause can be
 captured and partly projected while still lacking the semantics an engine or
-model boundary requires.
+model boundary requires. The selected clause kind cannot be the source of
+truth for those obligations: one source clause may compose several semantic
+contracts.
 
 ## Decision
 
@@ -45,8 +47,12 @@ provenance, semantic and record owners, a clause kind, predicates for trigger
 and eligibility, activation/action-economy cost, targets and geometry,
 checks/attacks/saves, mutually exclusive alternatives, outcome branches,
 effects, timing, execution ownership, required capabilities, readiness, and
-regression evidence. Records group these clauses as materialized views; no
-consumer-facing record surface is removed by this representation.
+regression evidence. It also declares non-empty, source-backed obligations:
+each obligation names the source text, the contract kind it invokes, and any
+additional predicates detected in that source text, and points to one or more
+of the clause's exact source-span locators. Records group these
+clauses as materialized views; no consumer-facing record surface is removed by
+this representation.
 
 ### 2. Four dimensions are independent
 
@@ -60,8 +66,12 @@ four separate dimensions:
 4. **DISCOVERABLE** — runtime lookup can find the canonical clause.
 
 They are orthogonal. A clause can be CAPTURED and PROJECTED yet not SUPPORTED
-or DISCOVERABLE. No gate may collapse these dimensions into one informal
-verdict. Required engine capabilities use qualified values in the form
+or DISCOVERABLE. Semantic completeness is the source-obligation evaluation
+plus CAPTURED and PROJECTED; readiness reports all four dimension gates
+independently. No gate may collapse these dimensions into one informal
+verdict. The IR stores dimensions and evidence, while the evaluator result is
+the authoritative semantic/readiness artifact; it stores no derived
+disposition that could contradict the dimensions. Required engine capabilities use qualified values in the form
 `engine:F1` through `engine:F10`; no unqualified engine-family label is valid.
 
 ### 3. The universal layer has a narrow scope
@@ -77,28 +87,35 @@ mechanic to compile into one generic runtime language.
 ### 4. Silent partial projection is forbidden
 
 When a projector recognizes that a deterministic clause exists but cannot
-represent it completely, it MUST emit an explicit **INCOMPLETE** clause,
-naming each failed contract requirement and why it failed. The appropriate
-completeness/readiness gate must fail. It must never emit a superficially valid
-partial record. Family-specific projectors and curated source-backed
-specifications remain appropriate; the invariant forbids only silent partial
-projection.
+represent it completely, it MUST emit an explicit clause whose source
+obligations expose the missing semantic requirements. The pure evaluator
+returns an **INCOMPLETE** semantic result with a structured reason for every
+failed requirement; the appropriate semantic/readiness gate must fail. It must
+never emit a superficially valid partial record. Family-specific projectors
+and curated source-backed specifications remain appropriate; the invariant
+forbids only silent partial projection.
 
 ### 5. Completeness contracts are executable data
 
 `packages/core/src/rules/clauseIr/contracts.ts` stores kind-specific contracts
-as data and evaluates a clause against its contract with a pure function. The
-contract vocabulary covers attacks, saves, checks, branches, action economy,
-resources, durations, state transitions, geometry, choices, variants, entity
-lifecycles, ledgers, and model adjudication. It also documents a clause schema
-for each mechanics-bearing record family: rule, feature, spell, creature,
-hazard, equipment, magic-item, ancestry, background, condition, action, feat,
-class, subclass, and table.
+as data and evaluates a clause against its contract with a pure function. A
+requirement is a predicate, not a nullable-field check: it can require a
+non-empty collection or a bounded field-group alternative (including an
+attack-roll XOR saving-throw shape). The contract vocabulary covers attacks,
+saves, checks, branches, action economy, resources, durations, state
+transitions, geometry, choices, variants, entity lifecycles, ledgers, and model
+adjudication. A source obligation can invoke several of these contracts and
+add source-specific predicates, so selecting `save` cannot silently discard a
+duration, repeat-check, or termination obligation. It also documents a clause
+schema for each mechanics-bearing record family: rule, feature, spell,
+creature, hazard, equipment, magic-item, ancestry, background, condition,
+action, feat, class, subclass, and table.
 
-The evaluator checks the clause kind's required fields and branches as well as
-each readiness dimension. Therefore atom presence alone cannot produce
-`complete`; the kind contract is the authority, and an explicit
-`incomplete` result carries named reasons.
+The evaluator checks every declared source obligation, including cardinality
+and composed-contract requirements. Atom presence alone cannot produce a
+complete semantic result. Its result separates semantic status from the four
+readiness gates, and every incomplete semantic result carries structured,
+source-linked reasons.
 
 ## Consequences
 
