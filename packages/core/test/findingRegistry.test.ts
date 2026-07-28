@@ -519,6 +519,45 @@ describe('durable finding registry', () => {
     );
   });
 
+  it('rejects reasons that share a template across rows', () => {
+    // The guard this protects has failed three times in this program, each time
+    // by a required field being filled mechanically: one identical
+    // exemplarJustification across 61 rows, round-robin audit aliases in the
+    // capability ledger, and title-substituted reasons here. Equality checks
+    // miss all three, so the guard normalises row-specific tokens away and
+    // compares the residual skeleton. Without this test a later change could
+    // relax TEMPLATE_COLLISION_LIMIT or blunt the normaliser and nothing would
+    // notice.
+    const registry = loadFindingRegistry();
+    const underived = registry.rows.filter(
+      (row) => row.membershipStatus === 'underived',
+    );
+    const [first, second] = underived;
+
+    // Two rows differing only by their interpolated title: the reason text is
+    // the same sentence skeleton with each row's own title substituted in.
+    const templated = {
+      ...registry,
+      rows: registry.rows.map((row) => {
+        if (row.canonicalId === first.canonicalId)
+          return {
+            ...row,
+            underivedReason: `Membership for ${row.title} awaits corpus reconciliation.`,
+          };
+        if (row.canonicalId === second.canonicalId)
+          return {
+            ...row,
+            underivedReason: `Membership for ${row.title} awaits corpus reconciliation.`,
+          };
+        return row;
+      }),
+    };
+
+    expect(() => validateFindingRegistry(templated)).toThrow(
+      /shared template across rows/,
+    );
+  });
+
   it('does not store hand-copied totals', () => {
     const registry = loadFindingRegistry();
     expect(JSON.stringify(registry)).not.toMatch(
