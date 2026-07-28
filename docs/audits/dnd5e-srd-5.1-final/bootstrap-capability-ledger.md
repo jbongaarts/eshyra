@@ -34,13 +34,16 @@ binary is absent; audit evidence resolves a fully qualified known finding
 alias against the committed `auditFindingSubjects` and reviewed
 `auditFindingPrimitiveRelations` tables and requires a unique, row-specific
 relevance statement; and known-missing-source evidence resolves a real SRD
-record/source/locator anchor plus recorded source terms, then evaluates the
-registered semantic shape across every structured surface of that source
-record, including mechanics, state, effects, and readiness representations.
-It returns a positive absence proof only when no equivalent or partial
-projected shape is found. If a partial shape is present, it returns
-`evidence-underived`, which blocks the exported fail-closed closure predicate.
-It never searches for invented sentinel strings or relies on phrase absence.
+record/source/locator anchor plus recorded source terms, then evaluates a
+closed predicate across every structured projection surface in every pack
+record. Predicates see exact schema/path keys, so sibling fields and
+projections owned by a different record are evaluated together rather than
+being hidden behind the source anchor. A recognized, partial, or
+applicable-but-unrecognized shape returns `evidence-underived`; only a
+complete scan with no applicable structure can prove absence, and underived
+results block the exported fail-closed closure predicate. It never searches
+for invented sentinel strings, uses substring aliases, or treats inability to
+recognize a structure as evidence of absence.
 
 Rows are at primitive granularity. A family such as `engine:F5` therefore has
 separate rows for instance spend, recharge scheduling, attunement/curse
@@ -96,8 +99,8 @@ owner/bead evidence, semantically resolved audit relevance, and evidence for
 every source named by a row. Five unsupported audit citations are deliberately
 dropped: spellbook copying, short-rest Hit Dice recovery, derived attack/AC/
 proficiency modifiers, canonical currency mutation, and downtime procedures.
-The current pack contains partial projected shapes for source-negative
-primitives; those rows remain inventory-visible but resolve as
+The current pack contains partial projected shapes for all twelve
+source-negative primitives; those rows remain inventory-visible but resolve as
 `evidence-underived` until a clause-complete absence proof exists. Consumers
 should execute every row's evidence array against the current corpus and pass
 the resolutions to `evaluateBootstrapLedgerClosure`; its blockers name the

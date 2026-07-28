@@ -87,10 +87,15 @@ describe('bootstrap capability ledger', () => {
     ).toEqual([
       'engine:F2/legendary-action-allowance-and-option-cost/ev:::legendary-action-allowance-and-option-cost:::known-missing-source-clause:::4',
       'engine:F3/owned-entity-and-repeat-trigger-lifecycle/ev:::owned-entity-and-repeat-trigger-lifecycle:::known-missing-source-clause:::4',
+      'engine:F4/spell-slot-gate-and-upcast-transform/ev:::spell-slot-gate-and-upcast-transform:::known-missing-source-clause:::5',
+      'engine:F4/spellbook-copy-cost-and-asset-ledger/ev:::spellbook-copy-cost-and-asset-ledger:::known-missing-source-clause:::4',
       'engine:F5/containment-portal-and-card-pool-instance-state/ev:::containment-portal-and-card-pool-instance-state:::known-missing-source-clause:::4',
+      'engine:F6/suffocation-and-ongoing-damage-state/ev:::suffocation-and-ongoing-damage-state:::known-missing-source-clause:::4',
       'engine:F7/planar-return-and-declared-window-clocks/ev:::planar-return-and-declared-window-clocks:::known-missing-source-clause:::4',
       'engine:F8/multi-save-and-ability-choice-outcomes/ev:::multi-save-and-ability-choice-outcomes:::known-missing-source-clause:::5',
+      'engine:F9/point-origin-area-geometry-and-targeting/ev:::point-origin-area-geometry-and-targeting:::known-missing-source-clause:::4',
       'engine:F9/damage-rider-and-half-damage-branch-resolution/ev:::damage-rider-and-half-damage-branch-resolution:::known-missing-source-clause:::4',
+      'engine:F10/downtime-study-expense-and-training-ledger/ev:::downtime-study-expense-and-training-ledger:::known-missing-source-clause:::5',
       'engine:F10/retained-inventory-property-xp-asset-creation/ev:::retained-inventory-property-xp-asset-creation:::known-missing-source-clause:::5',
     ]);
     expect(
@@ -343,7 +348,7 @@ describe('bootstrap capability ledger', () => {
     ).toHaveLength(1);
   });
 
-  it('proves semantic source absence and rejects equivalent partial projections', () => {
+  it('keeps pack-wide partial projections underived and rejects unknown shapes', () => {
     const ledger = loadBootstrapCapabilityLedger();
     const row = ledger.rows.find(
       (item) => item.primitive === 'downtime-study-expense-and-training-ledger',
@@ -355,8 +360,13 @@ describe('bootstrap capability ledger', () => {
     if (evidence?.kind !== 'known-missing-source-clause')
       throw new Error('fixture needs missing-source evidence');
     const result = resolveEvidence(evidence, loadPackRecords());
-    expect(result.status).toBe('satisfied');
+    expect(result.status).toBe('evidence-underived');
     expect(result.scannedClauses).toBeGreaterThan(0);
+    expect(
+      result.projectionMatches?.some((match) =>
+        match.recordKey.startsWith('magic-item:'),
+      ),
+    ).toBe(true);
     const anchor = loadPackRecords().find(
       (record) =>
         typeof record === 'object' &&
@@ -390,7 +400,7 @@ describe('bootstrap capability ledger', () => {
     ]);
     expect(underived.status).toBe('evidence-underived');
     expect(underived.projectionMatches?.[0]).toMatchObject({
-      path: 'data.mechanics',
+      path: 'data.mechanics.research',
     });
     expect(() =>
       resolveEvidence(
@@ -398,6 +408,104 @@ describe('bootstrap capability ledger', () => {
         loadPackRecords(),
       ),
     ).toThrow(/source material/);
+  });
+
+  it('matches split-sibling and cross-record projection structures', () => {
+    const ledger = loadBootstrapCapabilityLedger();
+    const row = ledger.rows.find(
+      (item) => item.primitive === 'legendary-action-allowance-and-option-cost',
+    );
+    const evidence = row?.evidence.find(
+      (item) => item.kind === 'known-missing-source-clause',
+    );
+    if (evidence?.kind !== 'known-missing-source-clause')
+      throw new Error('fixture needs legendary-action source evidence');
+    const anchor = loadPackRecords().find(
+      (record) =>
+        typeof record === 'object' &&
+        record !== null &&
+        (record as { key?: unknown }).key === evidence.sourceRecordKey,
+    );
+    if (!anchor || typeof anchor !== 'object')
+      throw new Error('fixture needs source anchor');
+    const anchorRecord = anchor as Record<string, unknown>;
+    const anchorData = (anchorRecord.data ?? {}) as Record<string, unknown>;
+    const result = resolveEvidence(evidence, [
+      {
+        ...anchorRecord,
+        data: {
+          ...anchorData,
+          executionReadiness: {
+            clauses: [{ clauseId: 'fixture/source', engineHooks: [] }],
+          },
+        },
+      },
+      {
+        key: 'fixture:legendary-sibling',
+        source: 'fixture',
+        provenance: { locator: 'fixture locator' },
+        data: {
+          legendaryBudget: { points: 3 },
+          legendaryOptions: [{ points: 2 }],
+        },
+      },
+    ]);
+    expect(result.status).toBe('evidence-underived');
+    expect(result.scannedRecords).toBe(2);
+    expect(result.projectionMatches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          recordKey: 'fixture:legendary-sibling',
+          path: 'data.legendaryBudget',
+        }),
+        expect.objectContaining({
+          recordKey: 'fixture:legendary-sibling',
+          path: 'data.legendaryOptions[0]',
+        }),
+      ]),
+    );
+  });
+
+  it('fails closed for an applicable but unrecognized structure', () => {
+    const ledger = loadBootstrapCapabilityLedger();
+    const row = ledger.rows.find(
+      (item) => item.primitive === 'downtime-study-expense-and-training-ledger',
+    );
+    const evidence = row?.evidence.find(
+      (item) => item.kind === 'known-missing-source-clause',
+    );
+    if (evidence?.kind !== 'known-missing-source-clause')
+      throw new Error('fixture needs downtime source evidence');
+    const anchor = loadPackRecords().find(
+      (record) =>
+        typeof record === 'object' &&
+        record !== null &&
+        (record as { key?: unknown }).key === evidence.sourceRecordKey,
+    );
+    if (!anchor || typeof anchor !== 'object')
+      throw new Error('fixture needs source anchor');
+    const record = anchor as Record<string, unknown>;
+    const result = resolveEvidence(evidence, [
+      {
+        ...record,
+        data: {
+          ...(record.data as Record<string, unknown>),
+          downtimeActivity: { unmodeledField: true },
+          executionReadiness: {
+            clauses: [{ clauseId: 'fixture/source', engineHooks: [] }],
+          },
+        },
+      },
+    ]);
+    expect(result.status).toBe('evidence-underived');
+    expect(result.projectionMatches).toEqual([
+      expect.objectContaining({
+        path: 'data.downtimeActivity',
+        signals: [
+          'unrecognized applicable downtime-study-training-ledger projection',
+        ],
+      }),
+    ]);
   });
 
   it('represents a proposed row without inventing an owner', () => {

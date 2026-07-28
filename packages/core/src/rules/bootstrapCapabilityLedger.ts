@@ -1123,280 +1123,423 @@ function resolveBeadEvidence(evidence: BeadEvidence): EvidenceResolution {
   }
 }
 
-const TEXTUAL_PROJECTION_FIELDS = new Set([
-  'description',
-  'text',
-  'sourcetext',
-  'prompt',
-  'note',
-  'relevance',
-  'requirement',
-]);
-
-function projectionToken(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+interface ProjectionNode {
+  readonly recordKey: string;
+  readonly path: string;
+  readonly pathSegments: readonly string[];
+  readonly value: Record<string, unknown>;
+  readonly clauseId?: string;
 }
 
-function structuredProjectionTokens(value: unknown): Set<string> {
-  const tokens = new Set<string>();
-  const visit = (current: unknown, field?: string): void => {
-    if (Array.isArray(current)) {
-      current.forEach((item) => {
-        visit(item);
-      });
-      return;
-    }
-    if (typeof current !== 'object' || current === null) {
-      if (!field || TEXTUAL_PROJECTION_FIELDS.has(field)) return;
-      if (typeof current === 'string' || typeof current === 'number')
-        tokens.add(projectionToken(String(current)));
-      return;
-    }
-    for (const [key, child] of Object.entries(current)) {
-      const normalizedKey = projectionToken(key);
-      tokens.add(normalizedKey);
-      if (!TEXTUAL_PROJECTION_FIELDS.has(normalizedKey))
-        visit(child, normalizedKey);
-    }
-  };
-  visit(value);
-  return tokens;
+interface ProjectionShapeDefinition {
+  readonly description: string;
+  readonly applicable: (
+    node: ProjectionNode,
+    nodes: readonly ProjectionNode[],
+  ) => boolean;
+  readonly recognized: (
+    node: ProjectionNode,
+    nodes: readonly ProjectionNode[],
+  ) => boolean;
 }
 
-function hasProjectionToken(
-  tokens: ReadonlySet<string>,
-  aliases: readonly string[],
+function pathSegments(path: string): readonly string[] {
+  return path
+    .split(/[.[\]]/u)
+    .filter((segment) => segment.length > 0 && !/^\d+$/u.test(segment));
+}
+
+function pathHasSuffix(
+  node: ProjectionNode,
+  suffix: readonly string[],
 ): boolean {
-  return aliases.some((alias) => {
-    const normalized = projectionToken(alias);
-    return Array.from(tokens).some(
-      (token) => token === normalized || token.includes(normalized),
-    );
-  });
+  return (
+    node.pathSegments.length >= suffix.length &&
+    suffix.every(
+      (segment, index) =>
+        node.pathSegments[node.pathSegments.length - suffix.length + index] ===
+        segment,
+    )
+  );
 }
 
-function projectionShapeSignals(
+function pathKey(node: ProjectionNode): string {
+  return node.pathSegments[node.pathSegments.length - 1] ?? '';
+}
+
+function hasAnyOwnKey(
+  value: Record<string, unknown>,
+  keys: readonly string[],
+): boolean {
+  return keys.some((key) => Object.hasOwn(value, key));
+}
+
+function stringField(
+  value: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  return typeof value[key] === 'string' ? value[key] : undefined;
+}
+
+function numericField(value: Record<string, unknown>, key: string): boolean {
+  return typeof value[key] === 'number' && Number.isFinite(value[key]);
+}
+
+function nodeHasExactPathKey(
+  node: ProjectionNode,
+  keys: readonly string[],
+): boolean {
+  return keys.includes(pathKey(node));
+}
+
+function nodeHasBlock(
+  node: ProjectionNode,
+  blocks: readonly string[],
+): boolean {
+  return (
+    pathKey(node) === 'representation' &&
+    blocks.includes(stringField(node.value, 'block') ?? '')
+  );
+}
+
+function nodeHasExactValue(
+  node: ProjectionNode,
+  key: string,
+  values: readonly string[],
+): boolean {
+  return values.includes(stringField(node.value, key) ?? '');
+}
+
+function projectionShapeDefinition(
   shape: ProjectionShape,
-  tokens: ReadonlySet<string>,
-): readonly string[] {
-  const any = (aliases: readonly string[]) =>
-    hasProjectionToken(tokens, aliases);
+): ProjectionShapeDefinition {
   switch (shape) {
     case 'legendary-action-budget':
-      return any([
-        'legendary-actions',
-        'legendary-action',
-        'mythic-action',
-        'round-budget',
-      ]) && any(['entries', 'allowance', 'cost', 'per-round', 'usage', 'spend'])
-        ? ['legendary action budget or option cost']
-        : [];
+      return {
+        description: 'legendary action budget or option cost',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'legendaryActions',
+            'legendaryBudget',
+            'legendaryActionBudget',
+            'legendaryOptions',
+            'legendaryActionOptions',
+          ]) ||
+          nodeHasBlock(node, [
+            'legendaryActions',
+            'legendaryActionBudget',
+            'legendaryActionOptions',
+          ]),
+        recognized: (node, nodes) =>
+          (nodeHasExactPathKey(node, ['legendaryActions']) &&
+            Array.isArray(node.value.entries)) ||
+          (nodeHasExactPathKey(node, [
+            'legendaryBudget',
+            'legendaryActionBudget',
+          ]) &&
+            (numericField(node.value, 'points') ||
+              numericField(node.value, 'total') ||
+              numericField(node.value, 'perRound')) &&
+            nodes.some(
+              (candidate) =>
+                nodeHasExactPathKey(candidate, [
+                  'legendaryOptions',
+                  'legendaryActionOptions',
+                ]) && numericField(candidate.value, 'points'),
+            )) ||
+          (nodeHasExactPathKey(node, ['usage']) &&
+            numericField(node.value, 'legendaryActionCost')),
+      };
     case 'owned-entity-repeat-lifecycle':
-      return (any(['save', 'saves', 'check']) &&
-        any(['condition', 'effect', 'trigger', 'lifecycle', 'transition'])) ||
-        (any(['owner', 'owned', 'control', 'controller', 'created-by']) &&
-          any([
+      return {
+        description: 'owned entity or repeat-trigger lifecycle',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'ownedEntity',
+            'ownedEntities',
+            'entityLifecycle',
+            'repeatTrigger',
+            'repeatTriggers',
+            'deathTrigger',
+            'controller',
+            'createdBy',
+          ]) ||
+          hasAnyOwnKey(node.value, [
+            'owner',
+            'controller',
+            'createdBy',
+            'repeatTrigger',
+            'deathTrigger',
             'lifecycle',
-            'transition',
-            'repeat',
             'recurrence',
-            'death-trigger',
-            'destroy',
-            'termination',
-          ]))
-        ? ['owned entity or repeat-trigger lifecycle']
-        : [];
+            'transitions',
+          ]),
+        recognized: (node) =>
+          hasAnyOwnKey(node.value, [
+            'owner',
+            'controller',
+            'createdBy',
+            'repeatTrigger',
+            'deathTrigger',
+            'lifecycle',
+            'recurrence',
+            'transitions',
+          ]),
+      };
     case 'spell-slot-upcast-procedure':
-      return any([
-        'spell-slot',
-        'spell-slots',
-        'spellcasting-progression',
-        'slot-level',
-        'slot-pool',
-        'upcast',
-        'cast-at-higher-level',
-        'higher-level',
-      ]) && any(['spell', 'level', 'cast', 'resource', 'cast-level'])
-        ? ['spell-slot gate or upcast transform']
-        : [];
+      return {
+        description: 'spell-slot gate or upcast transform',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'spellStore',
+            'spellSlots',
+            'spellSlot',
+            'spellcastingProgression',
+            'slotLevel',
+            'upcast',
+            'castLevel',
+            'higherLevels',
+          ]) ||
+          nodeHasBlock(node, ['spellStore', 'spellSlots', 'spellcasting']),
+        recognized: (node) =>
+          nodeHasExactPathKey(node, ['spellStore']) ||
+          hasAnyOwnKey(node.value, [
+            'spellSlots',
+            'slotLevel',
+            'upcast',
+            'castLevel',
+            'higherLevels',
+          ]),
+      };
     case 'spellbook-copy-procedure':
-      return any(['spellbook', 'spell-store', 'spellstore']) &&
-        any([
-          'copy',
-          'copied',
-          'transcribe',
-          'transcription',
-          'cost',
-          'gold',
-          'time',
-          'hours',
-          'ledger',
-        ])
-        ? ['spellbook copy, time, cost, or asset ledger']
-        : [];
+      return {
+        description: 'spellbook copy, time, cost, or asset ledger',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'spellbook',
+            'spellBook',
+            'spellbookCopy',
+            'copyingProcedure',
+            'scrollCopyingProcedure',
+          ]) ||
+          nodeHasExactValue(node, 'id', [
+            'scroll-copying-procedure',
+            'spellbook-copy-procedure',
+          ]) ||
+          nodeHasBlock(node, ['spellbook', 'spellbookCopy']) ||
+          (pathKey(node) === 'effects' &&
+            node.value.kind === 'makeAbilityCheck' &&
+            node.value.skill === 'arcana'),
+        recognized: (node) =>
+          nodeHasExactValue(node, 'id', [
+            'scroll-copying-procedure',
+            'spellbook-copy-procedure',
+          ]) ||
+          (node.value.kind === 'makeAbilityCheck' &&
+            node.value.skill === 'arcana'),
+      };
     case 'containment-portal-card-pool':
-      return any([
-        'containment',
-        'container',
-        'occupancy',
-        'portal',
-        'extradimensional',
-        'contents',
-        'card-pool',
-        'draw-pool',
-        'remaining-card-ids',
-      ]) &&
-        any([
-          'instance',
-          'occupancy',
-          'portal',
-          'card',
-          'pool',
-          'pool-state',
-          'nesting',
-        ])
-        ? ['containment, portal, or card-pool state']
-        : [];
+      return {
+        description: 'containment, portal, or card-pool state',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'containment',
+            'interItem',
+            'nestingHazard',
+            'portal',
+            'cardPool',
+            'drawPool',
+            'remainingCardIds',
+            'occupancy',
+          ]) || nodeHasBlock(node, ['containment', 'cardPool']),
+        recognized: (node) =>
+          nodeHasExactPathKey(node, ['containment', 'interItem']) ||
+          hasAnyOwnKey(node.value, [
+            'tracksOccupancy',
+            'nestingHazard',
+            'portal',
+            'remainingCardIds',
+          ]),
+      };
     case 'suffocation-ongoing-damage':
-      return any([
-        'suffocation',
-        'suffocating',
-        'air-minutes',
-        'oxygen',
-        'breath',
-      ]) &&
-        any([
-          'hit-points',
-          'hit-point',
-          'hp',
-          'damage',
-          'dying',
-          'zero-hp',
-          'round',
-          'threshold',
-        ])
-        ? ['suffocation or ongoing-damage state']
-        : [];
+      return {
+        description: 'suffocation or ongoing-damage state',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'suffocation',
+            'suffocating',
+            'airMinutes',
+            'oxygen',
+            'breath',
+            'ongoingDamage',
+          ]),
+        recognized: (node) =>
+          nodeHasExactPathKey(node, ['suffocation', 'ongoingDamage']) ||
+          hasAnyOwnKey(node.value, [
+            'airMinutes',
+            'dividedByOccupants',
+            'minimumMinutes',
+            'hitPoints',
+            'damagePerRound',
+            'dropsToZeroHitPoints',
+          ]),
+      };
     case 'planar-return-window-clock':
-      return any(['planar', 'astral-plane', 'plane', 'return', 'teleport']) &&
-        any([
-          'clock',
-          'deadline',
-          'duration',
-          'window',
-          'time-window',
-          'return-action',
-          'until',
-          'exit',
-          'destination',
-        ])
-        ? ['planar return or declared-window clock']
-        : [];
+      return {
+        description: 'planar return or declared-window clock',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'planarTravel',
+            'planarReturn',
+            'returnWindow',
+            'declaredWindow',
+            'deadline',
+            'clock',
+          ]) ||
+          (nodeHasExactPathKey(node, ['containment']) &&
+            stringField(node.value, 'mode') === 'planar-travel') ||
+          nodeHasBlock(node, ['planarTravel', 'containment']),
+        recognized: (node) =>
+          stringField(node.value, 'mode') === 'planar-travel' ||
+          hasAnyOwnKey(node.value, [
+            'deadline',
+            'returnWindow',
+            'declaredWindow',
+            'destination',
+            'clock',
+          ]),
+      };
     case 'multi-save-ability-choice':
-      return any(['save', 'saves', 'saving-throw']) &&
-        any([
-          'ability',
-          'choice',
-          'multiple',
-          'second',
-          'repeat-save',
-          'save-abilities',
-          'damage',
-          'condition',
-          'alternate',
-        ])
-        ? ['multi-save or ability-choice outcome']
-        : [];
+      return {
+        description: 'multi-save or ability-choice outcome',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'multiSave',
+            'multipleSaves',
+            'abilityChoice',
+            'alternateOutcomes',
+            'saveAbilities',
+          ]) ||
+          (nodeHasExactPathKey(node, ['saves']) &&
+            (pathHasSuffix(node, ['actions', 'mechanics', 'saves']) ||
+              pathHasSuffix(node, ['traits', 'mechanics', 'saves']))),
+        recognized: (node) =>
+          Array.isArray(node.value) ||
+          hasAnyOwnKey(node.value, [
+            'abilities',
+            'choice',
+            'alternateOutcomes',
+            'onSuccess',
+            'onFailure',
+          ]),
+      };
     case 'point-origin-area-geometry':
-      return any([
-        'origin',
-        'origin-point',
-        'point',
-        'area',
-        'shape',
-        'area-shape',
-        'geometry',
-        'line-of-effect',
-      ]) &&
-        any([
-          'target',
-          'targeting',
-          'straight',
-          'cover',
-          'line',
-          'selection',
-          'range',
-        ])
-        ? ['point-origin area geometry or targeting']
-        : [];
+      return {
+        description: 'point-origin area geometry or targeting',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'geometry',
+            'area',
+            'areaShape',
+            'origin',
+            'pointOfOrigin',
+            'targeting',
+            'lineOfEffect',
+          ]) || nodeHasBlock(node, ['geometry', 'targeting', 'area']),
+        recognized: (node) =>
+          hasAnyOwnKey(node.value, [
+            'origin',
+            'pointOfOrigin',
+            'shape',
+            'lineOfEffect',
+            'targets',
+            'range',
+          ]),
+      };
     case 'damage-rider-half-damage-branch':
-      return any([
-        'damage',
-        'damage-rider',
-        'damage-components',
-        'extra-damage',
-      ]) &&
-        any([
-          'save',
-          'resistance',
-          'vulnerability',
-          'half',
-          'half-damage',
-          'success-branch',
-          'reduced',
-          'rider',
-          'branch',
-        ])
-        ? ['damage rider or half-damage branch']
-        : [];
+      return {
+        description: 'damage rider or half-damage branch',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'damageRider',
+            'halfDamage',
+            'successBranch',
+            'damageBranch',
+            'rider',
+          ]) ||
+          (nodeHasExactPathKey(node, ['mechanics']) &&
+            Array.isArray(node.value.damage) &&
+            (Array.isArray(node.value.saves) ||
+              Array.isArray(node.value.effects) ||
+              Array.isArray(node.value.conditions))),
+        recognized: (node) =>
+          hasAnyOwnKey(node.value, [
+            'halfDamage',
+            'successBranch',
+            'failureBranch',
+            'damageRider',
+            'rider',
+          ]) ||
+          (Array.isArray(node.value.damage) &&
+            (Array.isArray(node.value.saves) ||
+              Array.isArray(node.value.effects))),
+      };
     case 'downtime-study-training-ledger':
-      return any([
-        'downtime',
-        'study',
-        'research',
-        'training',
-        'instruction',
-        'activity',
-      ]) &&
-        any([
-          'day',
-          'time',
-          'cost',
-          'expense',
-          'benefit',
-          'ledger',
-          'work-window',
-        ])
-        ? ['downtime study, expense, or training ledger']
-        : [];
+      return {
+        description: 'downtime study, expense, or training ledger',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'downtime',
+            'study',
+            'training',
+            'research',
+            'workWindow',
+            'downtimeActivity',
+          ]) ||
+          nodeHasBlock(node, ['downtime', 'study', 'training']) ||
+          (nodeHasExactPathKey(node, ['representation']) &&
+            stringField(node.value, 'economyId') === 'study'),
+        recognized: (node) =>
+          nodeHasExactPathKey(node, ['study', 'training', 'workWindow']) ||
+          hasAnyOwnKey(node.value, [
+            'days',
+            'dayCount',
+            'expense',
+            'benefit',
+            'budget',
+            'reset',
+          ]),
+      };
     case 'retained-asset-creation':
-      return any([
-        'state-machine',
-        'transition',
-        'asset',
-        'asset-ledger',
-        'inventory',
-        'property',
-        'xp',
-        'experience',
-        'object-interaction',
-        'realized-object',
-        'creation',
-      ]) &&
-        any(['real', 'retained', 'creation', 'value', 'transition', 'property'])
-        ? ['retained asset or property creation']
-        : [];
+      return {
+        description: 'retained asset or property creation',
+        applicable: (node) =>
+          nodeHasExactPathKey(node, [
+            'stateMachine',
+            'realizedObject',
+            'assetCreation',
+            'retainedAsset',
+            'assetLedger',
+          ]) ||
+          (nodeHasExactPathKey(node, ['effects']) &&
+            stringField(node.value, 'kind') === 'objectInteraction') ||
+          nodeHasBlock(node, ['stateMachine', 'assetCreation']),
+        recognized: (node) =>
+          nodeHasExactPathKey(node, ['stateMachine', 'assetCreation']) ||
+          (stringField(node.value, 'kind') === 'objectInteraction' &&
+            hasAnyOwnKey(node.value, [
+              'result',
+              'maximumValueGp',
+              'energyResult',
+            ])),
+      };
   }
-}
-
-interface ProjectionNode {
-  readonly path: string;
-  readonly value: Record<string, unknown>;
 }
 
 function projectionNodes(
   value: unknown,
   path: string,
+  recordKey: string,
 ): readonly ProjectionNode[] {
   const nodes: ProjectionNode[] = [];
   const visit = (current: unknown, currentPath: string): void => {
@@ -1409,14 +1552,47 @@ function projectionNodes(
     const object = objectRecord(current);
     if (!object) return;
     if (currentPath !== 'data')
-      nodes.push({ path: currentPath, value: object });
+      nodes.push({
+        recordKey,
+        path: currentPath,
+        pathSegments: pathSegments(currentPath),
+        value: object,
+        clauseId:
+          typeof object.clauseId === 'string' ? object.clauseId : undefined,
+      });
     for (const [key, child] of Object.entries(object)) {
-      if (!TEXTUAL_PROJECTION_FIELDS.has(projectionToken(key)))
+      if (
+        typeof child === 'object' &&
+        child !== null &&
+        !['description', 'text', 'sourceText', 'prompt', 'note'].includes(key)
+      )
         visit(child, `${currentPath}.${key}`);
     }
   };
   visit(value, path);
   return nodes;
+}
+
+function projectionShapeSignals(
+  shape: ProjectionShape,
+  nodes: readonly ProjectionNode[],
+): readonly ProjectionMatch[] {
+  const definition = projectionShapeDefinition(shape);
+  const applicable = nodes.filter((node) => definition.applicable(node, nodes));
+  if (applicable.length === 0) return [];
+  const recognized = applicable.some((node) =>
+    definition.recognized(node, nodes),
+  );
+  return applicable.map((node) => ({
+    recordKey: node.recordKey,
+    clauseId: node.clauseId,
+    path: node.path,
+    signals: [
+      recognized
+        ? definition.description
+        : `unrecognized applicable ${shape} projection`,
+    ],
+  }));
 }
 
 function verifyBeadIds(beadIds: readonly string[]): void {
@@ -1499,20 +1675,18 @@ function resolveKnownMissingSourceClause(
     if (Array.isArray(clauses)) scannedClauses += clauses.length;
   }
   const projectionMatches: ProjectionMatch[] = [];
-  for (const node of projectionNodes(sourceData, 'data')) {
-    const signals = projectionShapeSignals(
-      evidence.projectionShape,
-      structuredProjectionTokens(node.value),
+  for (const recordValue of records) {
+    const record = objectRecord(recordValue);
+    if (!record) continue;
+    requiredString(record.key, 'pack record.key');
+    const data = objectRecord(record.data);
+    if (!data) continue;
+    projectionMatches.push(
+      ...projectionShapeSignals(
+        evidence.projectionShape,
+        projectionNodes(data, 'data', record.key),
+      ),
     );
-    if (signals.length === 0) continue;
-    const clauseId =
-      typeof node.value.clauseId === 'string' ? node.value.clauseId : undefined;
-    projectionMatches.push({
-      recordKey: evidence.sourceRecordKey,
-      clauseId,
-      path: node.path,
-      signals,
-    });
   }
   if (scannedClauses === 0)
     fail(
@@ -1527,7 +1701,7 @@ function resolveKnownMissingSourceClause(
     reason:
       projectionMatches.length === 0
         ? undefined
-        : 'semantic projection shape is present; absence is not provable',
+        : 'an applicable projection shape is present or unrecognized; absence is not provable',
   };
 }
 
