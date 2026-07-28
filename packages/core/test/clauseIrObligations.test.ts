@@ -161,6 +161,36 @@ describe('obligation-boundary threat model', () => {
     expect(registry.records).toHaveLength(2);
   });
 
+  it('rejects divergent authoritative evidence instead of accepting one matching item', () => {
+    const divergent = {
+      ...span,
+      locator: 'p.104#different-clause',
+    };
+    expect(() =>
+      createObligationRegistry([
+        {
+          ...record('save'),
+          evidence: [
+            { kind: 'source-span', ...span },
+            { kind: 'source-span', ...divergent },
+          ],
+        },
+      ]),
+    ).toThrow(/diverges/);
+  });
+
+  it('rejects evidence kinds that do not belong to the declared origin', () => {
+    expect(() =>
+      createObligationRegistry([
+        {
+          ...record('save'),
+          origin: 'curated-specification',
+          evidence: [{ kind: 'source-span', ...span }],
+        },
+      ]),
+    ).toThrow(/authoritative evidence/);
+  });
+
   it('rejects audit-only and known-missing evidence as CAPTURED', () => {
     const auditEvidence = {
       kind: 'audit-finding' as const,

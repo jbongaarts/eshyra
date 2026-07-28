@@ -4,6 +4,7 @@ import type {
   Clause,
   ClauseDimensions,
   ClauseField,
+  EngineCapability,
   MechanicsRecordFamily,
   ObligationEvidence,
   SemanticFacet,
@@ -280,6 +281,26 @@ export interface CapabilityResolver {
   };
 }
 
+/**
+ * Capability ownership is a closed repository fact. The family epics retain
+ * their historical IDs even though they are grouped under eshyra-olc5; the
+ * namespace is therefore not evidence of ownership.
+ */
+export const ENGINE_CAPABILITY_OWNERS: Readonly<
+  Record<EngineCapability, string>
+> = Object.freeze({
+  'engine:F1': 'eshyra-o9bd.19.5.2',
+  'engine:F2': 'eshyra-o9bd.19.5.3',
+  'engine:F3': 'eshyra-o9bd.19.5.4',
+  'engine:F4': 'eshyra-o9bd.19.5.5',
+  'engine:F5': 'eshyra-o9bd.19.5.6',
+  'engine:F6': 'eshyra-o9bd.19.5.7',
+  'engine:F7': 'eshyra-o9bd.19.5.8',
+  'engine:F8': 'eshyra-o9bd.19.5.9',
+  'engine:F9': 'eshyra-o9bd.19.5.10',
+  'engine:F10': 'eshyra-o9bd.19.5.11',
+});
+
 export interface DiscoveryResolver {
   resolve(reference: { readonly resolverId: string; readonly path: string }): {
     readonly status: 'resolved' | 'unresolved';
@@ -430,7 +451,6 @@ function atomIds(clause: Clause): Set<string> {
     clause.checks ?? [],
     clause.attacks ?? [],
     clause.saves ?? [],
-    clause.alternatives ?? [],
     clause.damage ?? [],
     clause.healing ?? [],
     clause.grants ?? [],
@@ -444,9 +464,22 @@ function atomIds(clause: Clause): Set<string> {
       if ('id' in atom && typeof atom.id === 'string') ids.add(atom.id);
     }
   }
-  for (const branch of Object.values(clause.branches)) {
-    if (branch !== null) ids.add(branch.id);
-  }
+  const scalarMechanics: readonly [string, unknown][] = [
+    ['trigger', clause.trigger],
+    ['eligibility', clause.eligibility],
+    ['activationCost', clause.activationCost],
+    ['targets', clause.targets],
+    ['geometry', clause.geometry],
+    ['duration', clause.duration],
+    ['recurrence', clause.recurrence],
+    ['termination', clause.termination],
+  ];
+  scalarMechanics.forEach(([name, value]) => {
+    if (populated(value)) ids.add(`scalar:${name}`);
+  });
+  clause.immunityWindows.forEach((window, index) => {
+    if (populated(window)) ids.add(`scalar:immunityWindow:${index}`);
+  });
   return ids;
 }
 
@@ -463,7 +496,7 @@ function canonicalBaseReasons(clause: Clause): CompletenessReason[] {
   if (
     !Array.isArray(clause.sourceSpans) ||
     clause.sourceSpans.length === 0 ||
-    clause.sourceSpans.some(
+    (clause.sourceSpans ?? []).some(
       (span) =>
         !nonEmpty(span.sourceRef) ||
         !nonEmpty(span.locator) ||
@@ -473,15 +506,42 @@ function canonicalBaseReasons(clause: Clause): CompletenessReason[] {
     )
   )
     fail('sourceSpans', 'sourceSpans must contain exact non-empty spans');
+  const extractionKinds = new Set([
+    'structural-parser',
+    'semantic-grammar',
+    'curated-specification',
+    'manual-review',
+  ]);
   if (
     !nonEmpty(clause.provenance?.sourceRef) ||
-    !nonEmpty(clause.provenance?.extraction) ||
+    !extractionKinds.has(clause.provenance?.extraction) ||
     !Array.isArray(clause.provenance?.evidence) ||
     clause.provenance.evidence.length === 0 ||
     clause.provenance.evidence.some((item) => !nonEmpty(item))
   )
     fail('provenance', 'provenance source and evidence are required');
-  if (!nonEmpty(clause.semanticOwner?.id))
+  if (
+    !nonEmpty(clause.provenance?.sourceRef) ||
+    (clause.sourceSpans ?? []).some(
+      (span) => span.sourceRef !== clause.provenance.sourceRef,
+    )
+  )
+    fail(
+      'provenance',
+      'provenance sourceRef must match every clause source span',
+    );
+  const semanticOwnerKinds = new Set([
+    'rules-pack',
+    'projector',
+    'engine',
+    'model',
+    'curator',
+  ]);
+  if (
+    !nonEmpty(clause.semanticOwner?.id) ||
+    !semanticOwnerKinds.has(clause.semanticOwner?.kind) ||
+    !clause.semanticOwner?.id.startsWith(`${clause.semanticOwner.kind}:`)
+  )
     fail('semanticOwner', 'semanticOwner id is required');
   if (
     !nonEmpty(clause.recordOwner?.key) ||
@@ -807,8 +867,9 @@ function validCapability(reference: {
   owningBead: string;
 }): boolean {
   return (
-    /^engine:F(?:[1-9]|10)$/.test(reference.capability) &&
-    reference.owningBead.startsWith('eshyra-olc5')
+    reference.capability in ENGINE_CAPABILITY_OWNERS &&
+    ENGINE_CAPABILITY_OWNERS[reference.capability as EngineCapability] ===
+      reference.owningBead
   );
 }
 
@@ -898,20 +959,14 @@ export function evaluateClauseCompleteness(
     requiredKeys.size !== supportedKeys.size ||
     [...requiredKeys].some((key) => !supportedKeys.has(key))
   )
-    reasons.push({
-      code: 'mismatched-capability-evidence',
-      message:
-        'requiredEngineCapabilities and readiness.supported must match exactly',
-    });
+    supportedFailures.push(
+      'requiredEngineCapabilities and readiness.supported must match exactly',
+    );
   for (const reference of requiredCapabilities) {
     if (!validCapability(reference)) {
       supportedFailures.push(
         `capability ${reference.capability} is not a qualified owned capability`,
       );
-      reasons.push({
-        code: 'invalid-capability-reference',
-        message: `invalid capability reference ${reference.capability}/${reference.owningBead}`,
-      });
       continue;
     }
     const resolution = options.capabilityResolver?.resolve(reference);
@@ -923,6 +978,12 @@ export function evaluateClauseCompleteness(
     )
       supportedFailures.push(
         `capability ${reference.capability} is unresolved, unowned, or unimplemented`,
+      );
+  }
+  for (const reference of supportedCapabilities) {
+    if (!validCapability(reference))
+      supportedFailures.push(
+        `supported evidence names an invalid capability ${reference.capability}/${reference.owningBead}`,
       );
   }
   const discoverableFailures: string[] = [];

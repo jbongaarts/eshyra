@@ -86,14 +86,14 @@ mutation cannot change an evaluation result.
 
 ## Cross-PR identity honesty
 
-The current repositories share the spelling convention for `obl:::` IDs and
-the evidence-kind vocabulary, but they do not yet share a mechanically
-validated implementation. PR #476 currently has
-`MembershipIdentity{recordKey, clauseId?, path?, sourceSpan?}` and no
-`obligationId`; PR #477 currently accepts a broad `obl:::` string. The
-obligation ID/evidence contract in this ADR is therefore not claimed as an
-existing integration boundary. Validated adapters or parity tests are required
-before #475, #476, and #477 can treat it as one.
+PR #475 and PR #477 share the mechanically joinable obligation identity
+`obl:::<sourceRef>:::<locator>:::<facet>` and the corresponding validated
+evidence shape. PR #477 emits and validates that same identity at its current
+head, so the two PRs join on `obligationId`. PR #476 does not participate in
+that boundary: it uses
+`MembershipIdentity{recordKey, clauseId?, path?, sourceSpan?}` without an
+`obligationId`. Bridging #476 to this identity remains the responsibility of
+`eshyra-o9bd.19.1.7`; this ADR does not claim alignment that does not exist.
 
 ## Consequences and scope
 

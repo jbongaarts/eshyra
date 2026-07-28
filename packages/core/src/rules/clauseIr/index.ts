@@ -15,6 +15,7 @@ export type {
 } from './contracts.js';
 export {
   BASE_REQUIREMENTS,
+  ENGINE_CAPABILITY_OWNERS,
   evaluateClauseCompleteness,
   FACET_IMPLICATIONS,
   FACET_REQUIREMENTS,

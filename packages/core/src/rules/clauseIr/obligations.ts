@@ -125,41 +125,72 @@ function identityMatchesEvidence(
   origin: ObligationOrigin,
   evidence: readonly ObligationEvidence[],
 ): boolean {
-  return evidence.some((item) => {
-    if (origin === 'source-extraction')
+  const authoritativeEvidence = evidence.filter(
+    (item) =>
+      item.kind === 'source-span' ||
+      item.kind === 'authoritative-input' ||
+      item.kind === 'audit-finding',
+  );
+  return (
+    authoritativeEvidence.length > 0 &&
+    authoritativeEvidence.every((item) => {
+      if (origin === 'source-extraction')
+        return (
+          item.kind === 'source-span' &&
+          item.sourceRef === identity.sourceRef &&
+          item.locator === identity.locator
+        );
+      if (origin === 'curated-specification')
+        return (
+          item.kind === 'authoritative-input' &&
+          item.sourceRef === identity.sourceRef &&
+          item.locator === identity.locator
+        );
       return (
-        item.kind === 'source-span' &&
+        item.kind === 'audit-finding' &&
         item.sourceRef === identity.sourceRef &&
         item.locator === identity.locator
       );
-    if (origin === 'curated-specification')
-      return (
-        item.kind === 'authoritative-input' &&
-        item.sourceRef === identity.sourceRef &&
-        item.locator === identity.locator
-      );
-    return (
-      item.kind === 'audit-finding' &&
-      item.sourceRef === identity.sourceRef &&
-      item.locator === identity.locator
-    );
-  });
+    })
+  );
+}
+
+function expectedEvidenceKind(
+  origin: ObligationOrigin,
+): ObligationEvidence['kind'] {
+  switch (origin) {
+    case 'source-extraction':
+      return 'source-span';
+    case 'curated-specification':
+      return 'authoritative-input';
+    case 'audit-finding':
+      return 'audit-finding';
+  }
 }
 
 function validateOriginEvidence(
   origin: ObligationOrigin,
   evidence: readonly ObligationEvidence[],
 ): void {
-  const valid = evidence.some((item) =>
-    origin === 'source-extraction'
-      ? item.kind === 'source-span'
-      : origin === 'curated-specification'
-        ? item.kind === 'authoritative-input'
-        : item.kind === 'audit-finding',
-  );
+  const expectedKind = expectedEvidenceKind(origin);
+  const sourceLocatedKinds = new Set<ObligationEvidence['kind']>([
+    'source-span',
+    'authoritative-input',
+    'audit-finding',
+    'known-missing-source-clause',
+  ]);
+  const valid = evidence.some((item) => item.kind === expectedKind);
   if (!valid)
     throw new Error(
       `obligation origin ${origin} has no authoritative evidence`,
+    );
+  if (
+    evidence.some(
+      (item) => sourceLocatedKinds.has(item.kind) && item.kind !== expectedKind,
+    )
+  )
+    throw new Error(
+      `obligation origin ${origin} has evidence of an incompatible kind`,
     );
 }
 

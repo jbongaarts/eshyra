@@ -4,6 +4,7 @@ import {
   type Clause,
   createObligationId,
   createObligationRegistry,
+  ENGINE_CAPABILITY_OWNERS,
   evaluateClauseCompleteness,
   type SemanticFacet,
   type SourceObligationRecord,
@@ -112,11 +113,19 @@ function makeClause(
     termination: null,
     executionOwner: { kind: 'engine', id: 'save-resolution' },
     requiredEngineCapabilities: [
-      { capability: 'engine:F1', owningBead: 'eshyra-olc5.f1' },
+      {
+        capability: 'engine:F1',
+        owningBead: ENGINE_CAPABILITY_OWNERS['engine:F1'],
+      },
     ],
     readiness: {
       captured: obligation?.evidence ?? [],
-      supported: [{ capability: 'engine:F1', owningBead: 'eshyra-olc5.f1' }],
+      supported: [
+        {
+          capability: 'engine:F1',
+          owningBead: ENGINE_CAPABILITY_OWNERS['engine:F1'],
+        },
+      ],
       discoverable: [{ resolverId: 'rules-index', path: 'spell:fixture' }],
     },
     regressionEvidence: [
@@ -212,6 +221,42 @@ describe('source-clause canonical contracts', () => {
       expect(result.semantic.reasons).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ code: 'invalid-base-field', field }),
+        ]),
+      );
+    }
+  });
+
+  it('rejects contradictory provenance and semantic-owner authority', () => {
+    for (const overrides of [
+      {
+        provenance: {
+          sourceRef: 'other-source',
+          extraction: 'structural-parser' as const,
+          evidence: ['fixture'],
+        },
+      },
+      {
+        provenance: {
+          sourceRef: span.sourceRef,
+          extraction: 'not-a-real-extractor' as never,
+          evidence: ['fixture'],
+        },
+      },
+      {
+        semanticOwner: {
+          id: 'projector:fixture',
+          kind: 'not-an-owner' as never,
+        },
+      },
+      {
+        semanticOwner: { id: 'model:fixture', kind: 'projector' as const },
+      },
+    ] as const) {
+      const { result } = complete('save', overrides as Partial<Clause>);
+      expect(result.semantic.status).toBe('incomplete');
+      expect(result.semantic.reasons).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'invalid-base-field' }),
         ]),
       );
     }
@@ -371,14 +416,29 @@ describe('source-clause canonical contracts', () => {
     expect(result.readiness.discoverable.status).toBe('failed');
   });
 
-  it('reconciles closed capability identity and both capability evidence surfaces', () => {
+  it('assigns every capability failure only to SUPPORTED', () => {
     expect(
       complete('save', {
         requiredEngineCapabilities: [
           { capability: 'engine:save' as never, owningBead: 'eshyra-cap-save' },
         ],
       }).result.semantic.status,
-    ).toBe('incomplete');
+    ).toBe('complete');
+    expect(
+      complete('save', {
+        requiredEngineCapabilities: [
+          {
+            capability: 'engine:F1',
+            owningBead: ENGINE_CAPABILITY_OWNERS['engine:F1'],
+          },
+        ],
+        readiness: {
+          captured: [{ kind: 'source-span', ...span }],
+          supported: [],
+          discoverable: [{ resolverId: 'rules-index', path: 'spell:fixture' }],
+        },
+      }).result.semantic.status,
+    ).toBe('complete');
     const { result } = complete('save', {
       readiness: {
         captured: [{ kind: 'source-span', ...span }],
@@ -386,11 +446,35 @@ describe('source-clause canonical contracts', () => {
         discoverable: [{ resolverId: 'rules-index', path: 'spell:fixture' }],
       },
     });
-    expect(result.semantic.reasons).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'mismatched-capability-evidence' }),
-      ]),
-    );
+    expect(result.semantic.status).toBe('complete');
+    expect(result.readiness.projected.status).toBe('satisfied');
+    expect(result.readiness.supported.status).toBe('failed');
+  });
+
+  it.each([
+    ['unqualified', 'eshyra-olc5.f1'],
+    ['wrong owner', 'eshyra-o9bd.19.5.3'],
+    ['stale owner', 'eshyra-o9bd.19.5.1'],
+    ['nonexistent owner', 'eshyra-o9bd.19.5.999'],
+  ])(
+    'rejects %s capability ownership by exact identity',
+    (_label, owningBead) => {
+      const { result } = complete('save', {
+        requiredEngineCapabilities: [{ capability: 'engine:F1', owningBead }],
+        readiness: {
+          captured: [{ kind: 'source-span', ...span }],
+          supported: [{ capability: 'engine:F1', owningBead }],
+          discoverable: [{ resolverId: 'rules-index', path: 'spell:fixture' }],
+        },
+      });
+      expect(result.semantic.status).toBe('complete');
+      expect(result.readiness.supported.status).toBe('failed');
+    },
+  );
+
+  it('accepts the actual reparented family epic for a capability', () => {
+    const { result } = complete('save');
+    expect(result.readiness.supported.status).toBe('satisfied');
   });
 
   it('restricts CAPTURED to source or authoritative evidence', () => {
@@ -409,5 +493,44 @@ describe('source-clause canonical contracts', () => {
         expect.objectContaining({ code: 'non-capturable-evidence' }),
       ]),
     );
+  });
+
+  it('binds branch and alternative outcomes to scalar mechanics', () => {
+    const duration = {
+      amount: '1',
+      unit: 'minute' as const,
+      concentration: false,
+    };
+    const branch = {
+      id: 'success',
+      outcome: 'duration applies',
+      condition: null,
+      sourceSpan: span,
+      projectedAtomIds: ['scalar:duration'],
+    };
+    expect(
+      complete('duration', {
+        duration,
+        branches: { success: branch, failure: null, partialSuccess: null },
+      }).result.semantic.status,
+    ).toBe('complete');
+
+    const alternatives = [
+      {
+        id: 'short',
+        label: 'short duration',
+        mutuallyExclusiveWith: ['long'],
+        clauseIds: ['scalar:duration'],
+      },
+      {
+        id: 'long',
+        label: 'long duration',
+        mutuallyExclusiveWith: ['short'],
+        clauseIds: ['scalar:duration'],
+      },
+    ];
+    expect(
+      complete('choice', { duration, alternatives }).result.semantic.status,
+    ).toBe('complete');
   });
 });
