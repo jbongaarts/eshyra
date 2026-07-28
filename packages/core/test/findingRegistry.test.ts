@@ -242,6 +242,117 @@ describe('durable finding registry', () => {
     ).toBeGreaterThan(byAlias('sol:CAP-008').baselineMembership.members.length);
   });
 
+  it('qualifies every capability membership with the ledger identity and family owner', () => {
+    const registry = loadFindingRegistry();
+    const engine = registry.rows.find(
+      (row) => row.canonicalId === 'engine-capability-ownership',
+    );
+    if (engine === undefined) throw new Error('missing engine capability row');
+    expect(engine.target.kind).toBe('capability');
+    expect(engine.target.selector.members.length).toBeGreaterThan(0);
+    expect(
+      new Set(
+        engine.target.selector.members.map(
+          (member) => member.capability?.capabilityId,
+        ),
+      ),
+    ).toEqual(
+      new Set(Array.from({ length: 10 }, (_, index) => `engine:F${index + 1}`)),
+    );
+    expect(
+      engine.target.selector.members.every((member) => {
+        const capability = member.capability;
+        const expectedOwner =
+          capability === undefined
+            ? undefined
+            : {
+                'engine:F1': 'eshyra-o9bd.19.5.2',
+                'engine:F2': 'eshyra-o9bd.19.5.3',
+                'engine:F3': 'eshyra-o9bd.19.5.4',
+                'engine:F4': 'eshyra-o9bd.19.5.5',
+                'engine:F5': 'eshyra-o9bd.19.5.6',
+                'engine:F6': 'eshyra-o9bd.19.5.7',
+                'engine:F7': 'eshyra-o9bd.19.5.8',
+                'engine:F8': 'eshyra-o9bd.19.5.9',
+                'engine:F9': 'eshyra-o9bd.19.5.10',
+                'engine:F10': 'eshyra-o9bd.19.5.11',
+              }[capability.capabilityId];
+        return (
+          capability !== undefined &&
+          capability.hookSelector?.engine ===
+            capability.capabilityId.slice('engine:'.length) &&
+          capability.primitive.length > 0 &&
+          capability.owningBead === expectedOwner
+        );
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects unqualified families, unknown primitives, missing owners, and wrong owners', () => {
+    const registry = loadFindingRegistry();
+    const engine = registry.rows.find(
+      (row) => row.canonicalId === 'engine-capability-ownership',
+    );
+    if (engine === undefined) throw new Error('missing engine capability row');
+    const memberIndex = engine.target.selector.members.findIndex(
+      (member) => member.capability !== undefined,
+    );
+    if (memberIndex < 0) throw new Error('fixture needs a capability member');
+
+    const cases = [
+      {
+        name: 'unqualified family',
+        mutate: (capability: Record<string, unknown>) =>
+          Object.assign(capability, { capabilityId: 'F1' }),
+        error: /engine:F1\.\.engine:F10/,
+      },
+      {
+        name: 'unknown primitive',
+        mutate: (capability: Record<string, unknown>) =>
+          Object.assign(capability, { primitive: 'unknown-primitive' }),
+        error: /primitive is unknown/,
+      },
+      {
+        name: 'missing owner',
+        mutate: (capability: Record<string, unknown>) =>
+          Reflect.deleteProperty(capability, 'owningBead'),
+        error: /owningBead must be a non-empty string/,
+      },
+      {
+        name: 'wrong owner',
+        mutate: (capability: Record<string, unknown>) =>
+          Object.assign(capability, { owningBead: 'eshyra-olc5' }),
+        error: /owningBead must be the engine:F/,
+      },
+    ];
+
+    for (const testCase of cases) {
+      const malformed = structuredClone(registry);
+      const malformedEngine = malformed.rows.find(
+        (row) => row.canonicalId === 'engine-capability-ownership',
+      );
+      if (malformedEngine === undefined)
+        throw new Error(`missing engine row for ${testCase.name}`);
+      const targetMember = malformedEngine.target.selector.members[memberIndex];
+      const baselineMember =
+        malformedEngine.baselineMembership.members[memberIndex];
+      if (
+        targetMember.capability === undefined ||
+        baselineMember.capability === undefined
+      )
+        throw new Error(`fixture lost capability for ${testCase.name}`);
+      testCase.mutate(
+        targetMember.capability as unknown as Record<string, unknown>,
+      );
+      testCase.mutate(
+        baselineMember.capability as unknown as Record<string, unknown>,
+      );
+      expect(() => validateFindingRegistry(malformed), testCase.name).toThrow(
+        testCase.error,
+      );
+    }
+  });
+
   it('derives corpus populations rather than retaining exemplars', () => {
     const registry = loadFindingRegistry();
     const records = requireRecords() as Array<{ key?: unknown }>;

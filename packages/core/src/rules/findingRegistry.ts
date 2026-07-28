@@ -12,6 +12,27 @@ export type FindingStatus =
 
 export type MembershipStatus = 'derived' | 'underived';
 
+/**
+ * This local copy intentionally mirrors the bootstrap capability ledger's
+ * small identity shape.  The ledger lives on a different PR; importing it
+ * would make this registry branch-dependent rather than mechanically
+ * joinable at the serialized boundary.
+ */
+export type EngineCapabilityId =
+  `engine:F${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10}`;
+
+export interface CapabilityHookSelector {
+  engine: string;
+  name: string;
+}
+
+export interface CapabilityIdentity {
+  capabilityId: EngineCapabilityId;
+  primitive: string;
+  hookSelector?: CapabilityHookSelector;
+  owningBead: string;
+}
+
 export type EvidenceKind =
   | 'source-span'
   | 'authoritative-input'
@@ -51,10 +72,12 @@ export interface MembershipIdentity {
   artifactPath?: string;
   jsonPath?: string;
   sourceSpan?: string;
+  capability?: CapabilityIdentity;
 }
 
 export interface ExactSelector {
   members: MembershipIdentity[];
+  capabilityCatalog?: CapabilityIdentity[];
 }
 
 export interface FindingRow {
@@ -191,6 +214,171 @@ export type MembershipQueryName =
   `finding:${(typeof canonicalQueryIds)[number]}`;
 
 type Obj = Record<string, unknown>;
+
+const ENGINE_FAMILY_OWNERS: Readonly<Record<EngineCapabilityId, string>> = {
+  'engine:F1': 'eshyra-o9bd.19.5.2',
+  'engine:F2': 'eshyra-o9bd.19.5.3',
+  'engine:F3': 'eshyra-o9bd.19.5.4',
+  'engine:F4': 'eshyra-o9bd.19.5.5',
+  'engine:F5': 'eshyra-o9bd.19.5.6',
+  'engine:F6': 'eshyra-o9bd.19.5.7',
+  'engine:F7': 'eshyra-o9bd.19.5.8',
+  'engine:F8': 'eshyra-o9bd.19.5.9',
+  'engine:F9': 'eshyra-o9bd.19.5.10',
+  'engine:F10': 'eshyra-o9bd.19.5.11',
+};
+
+/** The 31 primitive spellings used by the bootstrap ledger. */
+const CANONICAL_ENGINE_PRIMITIVES = [
+  ['engine:F1', 'condition-and-eligibility-relations'],
+  ['engine:F1', 'seeded-selection-and-roll-replacement'],
+  ['engine:F2', 'turn-action-and-free-interaction-budget'],
+  ['engine:F2', 'reaction-and-item-activation-ownership'],
+  ['engine:F2', 'legendary-action-allowance-and-option-cost'],
+  ['engine:F3', 'concentration-owner-and-damage-save'],
+  ['engine:F3', 'active-effect-duration-and-termination'],
+  ['engine:F3', 'owned-entity-and-repeat-trigger-lifecycle'],
+  ['engine:F4', 'caster-of-record-and-canonical-spell-execution'],
+  ['engine:F4', 'spell-slot-gate-and-upcast-transform'],
+  ['engine:F4', 'spellbook-copy-cost-and-asset-ledger'],
+  ['engine:F5', 'per-instance-usage-and-charge-spend'],
+  ['engine:F5', 'recharge-and-reset-scheduling'],
+  ['engine:F5', 'attunement-curse-and-identity-constraints'],
+  ['engine:F5', 'containment-portal-and-card-pool-instance-state'],
+  ['engine:F6', 'hp-healing-and-temporary-buffer'],
+  ['engine:F6', 'death-save-dying-and-stable-transitions'],
+  ['engine:F6', 'suffocation-and-ongoing-damage-state'],
+  ['engine:F7', 'short-rest-hit-dice-recovery'],
+  ['engine:F7', 'long-rest-reset-orchestration'],
+  ['engine:F7', 'planar-return-and-declared-window-clocks'],
+  ['engine:F8', 'save-dc-and-spell-attack-modifier-resolution'],
+  ['engine:F8', 'multi-save-and-ability-choice-outcomes'],
+  ['engine:F8', 'derived-attack-ac-and-proficiency-modifiers'],
+  ['engine:F9', 'point-origin-area-geometry-and-targeting'],
+  ['engine:F9', 'damage-rider-and-half-damage-branch-resolution'],
+  ['engine:F9', 'forced-movement-contest-and-object-interaction'],
+  ['engine:F9', 'capacity-and-variant-arithmetic'],
+  ['engine:F10', 'canonical-currency-mutation'],
+  ['engine:F10', 'downtime-study-expense-and-training-ledger'],
+  ['engine:F10', 'retained-inventory-property-xp-asset-creation'],
+] as const;
+
+const CANONICAL_PRIMITIVES_BY_ENGINE = new Map<
+  EngineCapabilityId,
+  ReadonlySet<string>
+>(
+  Array.from(
+    new Set(CANONICAL_ENGINE_PRIMITIVES.map(([engine]) => engine)),
+    (engine) => [
+      engine,
+      new Set(
+        CANONICAL_ENGINE_PRIMITIVES.filter(
+          ([candidate]) => candidate === engine,
+        ).map(([, primitive]) => primitive),
+      ),
+    ],
+  ),
+);
+
+function engineCapabilityId(engine: string, path: string): EngineCapabilityId {
+  const capabilityId = `engine:${engine}`;
+  if (!(capabilityId in ENGINE_FAMILY_OWNERS)) {
+    throw new Error(`${path} must use engine:F1..engine:F10`);
+  }
+  return capabilityId as EngineCapabilityId;
+}
+
+function primitiveForHook(
+  capabilityId: EngineCapabilityId,
+  hook: string,
+): string {
+  const lower = hook.toLowerCase();
+  const canonicalHookPrimitive = new Map<string, string>([
+    [
+      'engine:F3\0active effect duration and termination',
+      'active-effect-duration-and-termination',
+    ],
+    [
+      'engine:F5\0per-item storage, charge, and reset state',
+      'per-instance-usage-and-charge-spend',
+    ],
+    [
+      'engine:F6\0hit-point and condition mutation',
+      'death-save-dying-and-stable-transitions',
+    ],
+    [
+      'engine:F9\0geometry, targeting, movement, and contest resolution',
+      'forced-movement-contest-and-object-interaction',
+    ],
+  ]);
+  const exactPrimitive = canonicalHookPrimitive.get(`${capabilityId}\0${hook}`);
+  if (exactPrimitive !== undefined) return exactPrimitive;
+  const primitive = (() => {
+    switch (capabilityId) {
+      case 'engine:F1':
+        return lower.includes('seeded')
+          ? 'seeded-selection-and-roll-replacement'
+          : 'condition-and-eligibility-relations';
+      case 'engine:F2':
+        return /reaction|item activation/.test(lower)
+          ? 'reaction-and-item-activation-ownership'
+          : 'turn-action-and-free-interaction-budget';
+      case 'engine:F3':
+        return lower.includes('concentration')
+          ? 'concentration-owner-and-damage-save'
+          : 'owned-entity-and-repeat-trigger-lifecycle';
+      case 'engine:F4':
+        if (lower.includes('wizard spellbook'))
+          return 'spellbook-copy-cost-and-asset-ledger';
+        if (lower.includes('slot'))
+          return 'spell-slot-gate-and-upcast-transform';
+        return 'caster-of-record-and-canonical-spell-execution';
+      case 'engine:F5':
+        if (/containment|portal|card-pool/.test(lower))
+          return 'containment-portal-and-card-pool-instance-state';
+        if (/attunement|curse/.test(lower))
+          return 'attunement-curse-and-identity-constraints';
+        if (/reset|recharge|cooldown|dawn|usage/.test(lower))
+          return 'recharge-and-reset-scheduling';
+        return 'per-instance-usage-and-charge-spend';
+      case 'engine:F6':
+        if (lower.includes('suffocation'))
+          return 'suffocation-and-ongoing-damage-state';
+        if (/death|dying|stable/.test(lower))
+          return 'death-save-dying-and-stable-transitions';
+        return 'hp-healing-and-temporary-buffer';
+      case 'engine:F7':
+        if (lower.includes('short-rest')) return 'short-rest-hit-dice-recovery';
+        if (/planar|deadline|declared-draw/.test(lower))
+          return 'planar-return-and-declared-window-clocks';
+        return 'long-rest-reset-orchestration';
+      case 'engine:F8':
+        if (/multi-save|ability-choice/.test(lower))
+          return 'multi-save-and-ability-choice-outcomes';
+        if (/save dc|spell attack/.test(lower))
+          return 'save-dc-and-spell-attack-modifier-resolution';
+        return 'derived-attack-ac-and-proficiency-modifiers';
+      case 'engine:F9':
+        if (/area|geometry/.test(lower))
+          return 'point-origin-area-geometry-and-targeting';
+        if (/damage|rider|resistance|vulnerability/.test(lower))
+          return 'damage-rider-and-half-damage-branch-resolution';
+        if (/capacity|quantity|coverage|volume|variant/.test(lower))
+          return 'capacity-and-variant-arithmetic';
+        return 'forced-movement-contest-and-object-interaction';
+      case 'engine:F10':
+        if (lower.includes('downtime'))
+          return 'downtime-study-expense-and-training-ledger';
+        if (lower.includes('asset'))
+          return 'retained-inventory-property-xp-asset-creation';
+        return 'canonical-currency-mutation';
+    }
+  })();
+  if (!CANONICAL_PRIMITIVES_BY_ENGINE.get(capabilityId)?.has(primitive)) {
+    throw new Error(`no canonical primitive for ${capabilityId}/${hook}`);
+  }
+  return primitive;
+}
 const here = dirname(fileURLToPath(import.meta.url));
 const registryPath = join(
   here,
@@ -253,6 +441,69 @@ function identityKey(identity: MembershipIdentity): string {
   return JSON.stringify(identity);
 }
 
+function parseCapabilityIdentity(
+  value: unknown,
+  path: string,
+): CapabilityIdentity {
+  if (!isObject(value)) throw new Error(`${path} must be an object`);
+  const capabilityId = requiredString(
+    value.capabilityId,
+    `${path}.capabilityId`,
+  );
+  if (!(capabilityId in ENGINE_FAMILY_OWNERS)) {
+    throw new Error(`${path}.capabilityId must use engine:F1..engine:F10`);
+  }
+  const typedCapabilityId = capabilityId as EngineCapabilityId;
+  const primitive = requiredString(value.primitive, `${path}.primitive`);
+  if (!CANONICAL_PRIMITIVES_BY_ENGINE.get(typedCapabilityId)?.has(primitive)) {
+    throw new Error(
+      `${path}.primitive is unknown for ${typedCapabilityId}: ${primitive}`,
+    );
+  }
+  const hookValue = value.hookSelector;
+  let hookSelector: CapabilityHookSelector | undefined;
+  if (hookValue !== undefined) {
+    if (!isObject(hookValue))
+      throw new Error(`${path}.hookSelector must be an object`);
+    const hookEngine = requiredString(
+      hookValue.engine,
+      `${path}.hookSelector.engine`,
+    );
+    const expectedEngine = typedCapabilityId.slice('engine:'.length);
+    if (hookEngine !== expectedEngine) {
+      throw new Error(
+        `${path}.hookSelector.engine must match ${typedCapabilityId}`,
+      );
+    }
+    hookSelector = {
+      engine: hookEngine,
+      name: requiredString(hookValue.name, `${path}.hookSelector.name`),
+    };
+    const hookPrimitive = primitiveForHook(
+      typedCapabilityId,
+      hookSelector.name,
+    );
+    if (hookPrimitive !== primitive) {
+      throw new Error(
+        `${path}.hookSelector is not relevant to primitive ${primitive}`,
+      );
+    }
+  }
+  const owningBead = requiredString(value.owningBead, `${path}.owningBead`);
+  const expectedOwner = ENGINE_FAMILY_OWNERS[typedCapabilityId];
+  if (owningBead !== expectedOwner) {
+    throw new Error(
+      `${path}.owningBead must be the ${typedCapabilityId} family epic ${expectedOwner}`,
+    );
+  }
+  return {
+    capabilityId: typedCapabilityId,
+    primitive,
+    ...(hookSelector === undefined ? {} : { hookSelector }),
+    owningBead,
+  };
+}
+
 function membershipGenerator(
   value: unknown,
   path: string,
@@ -274,9 +525,13 @@ function membershipGenerator(
   return generator;
 }
 
-function parseIdentity(value: unknown, path: string): MembershipIdentity {
+function parseIdentity(
+  value: unknown,
+  path: string,
+  capabilityCatalog: readonly CapabilityIdentity[] = [],
+): MembershipIdentity {
   if (typeof value === 'string') {
-    const [kind, locus, nested] = value.split('|');
+    const [kind, locus, nested, capabilityRef, extra] = value.split('|');
     if (kind === 'r' && locus !== undefined && nested === undefined)
       return parseIdentity({ recordKey: locus }, path);
     if (kind === 'c' && locus !== undefined && nested !== undefined)
@@ -285,6 +540,28 @@ function parseIdentity(value: unknown, path: string): MembershipIdentity {
       return parseIdentity({ recordKey: locus, path: nested }, path);
     if (kind === 'a' && locus !== undefined && nested !== undefined)
       return parseIdentity({ artifactPath: locus, jsonPath: nested }, path);
+    if (
+      kind === 'k' &&
+      locus !== undefined &&
+      nested !== undefined &&
+      capabilityRef !== undefined &&
+      extra === undefined
+    ) {
+      if (!/^\d+$/.test(capabilityRef)) {
+        throw new Error(`${path} has an invalid capability catalog reference`);
+      }
+      const capability = capabilityCatalog[Number(capabilityRef)];
+      if (capability === undefined) {
+        throw new Error(
+          `${path} references a missing capability catalog entry`,
+        );
+      }
+      return parseIdentity(
+        { recordKey: locus, clauseId: nested, capability },
+        path,
+        capabilityCatalog,
+      );
+    }
     throw new Error(`${path} is not a valid compact exact identity`);
   }
   if (!isObject(value)) throw new Error(`${path} must be an object`);
@@ -301,7 +578,9 @@ function parseIdentity(value: unknown, path: string): MembershipIdentity {
       result[key] = requiredString(value[key], `${path}.${key}`);
   }
   for (const [key, selector] of Object.entries(result)) {
+    if (key === 'capability') continue;
     if (key === 'sourceSpan') continue;
+    if (typeof selector !== 'string') continue;
     if (
       /[?*~]/.test(selector) ||
       /(?:contains|substring|prefix|regex|startsWith)/i.test(selector)
@@ -355,16 +634,50 @@ function parseIdentity(value: unknown, path: string): MembershipIdentity {
   ) {
     throw new Error(`${path} has no exact nested identity`);
   }
+  if (value.capability !== undefined) {
+    if (result.recordKey === undefined || result.clauseId === undefined) {
+      throw new Error(`${path}.capability requires recordKey and clauseId`);
+    }
+    result.capability = parseCapabilityIdentity(
+      value.capability,
+      `${path}.capability`,
+    );
+  }
   return result;
 }
 
-function parseMembers(value: unknown, path: string): MembershipIdentity[] {
+function parseMembers(
+  value: unknown,
+  path: string,
+  capabilityCatalog: readonly CapabilityIdentity[] = [],
+): MembershipIdentity[] {
   if (!Array.isArray(value) || value.length === 0) {
     throw new Error(`${path} must be a non-empty exact identity array`);
   }
-  const members = value.map((item, index) =>
-    parseIdentity(item, `${path}[${index}]`),
-  );
+  const members = value.flatMap((item, index) => {
+    if (typeof item === 'string') {
+      const [kind, locus, nested, capabilityRefs, extra] = item.split('|');
+      if (
+        kind === 'k' &&
+        locus !== undefined &&
+        nested !== undefined &&
+        capabilityRefs !== undefined &&
+        extra === undefined &&
+        capabilityRefs.includes(',')
+      ) {
+        return capabilityRefs
+          .split(',')
+          .map((capabilityRef) =>
+            parseIdentity(
+              [kind, locus, nested, capabilityRef].join('|'),
+              `${path}[${index}]`,
+              capabilityCatalog,
+            ),
+          );
+      }
+    }
+    return [parseIdentity(item, `${path}[${index}]`, capabilityCatalog)];
+  });
   const seen = new Set<string>();
   for (const member of members) {
     const key = identityKey(member);
@@ -487,16 +800,69 @@ function parseRegistry(value: unknown): FindingRegistry {
       throw new Error(`${path}.target.kind is invalid`);
     }
     const selector = isObject(target?.selector) ? target.selector : undefined;
+    const capabilityCatalog =
+      targetKind === 'capability'
+        ? (() => {
+            if (
+              !Array.isArray(selector?.capabilityCatalog) ||
+              selector.capabilityCatalog.length === 0
+            ) {
+              throw new Error(
+                `${path}.target.selector.capabilityCatalog must be non-empty`,
+              );
+            }
+            const catalog = selector.capabilityCatalog.map((entry, index) =>
+              parseCapabilityIdentity(
+                entry,
+                `${path}.target.selector.capabilityCatalog[${index}]`,
+              ),
+            );
+            if (
+              new Set(catalog.map((entry) => JSON.stringify(entry))).size !==
+              catalog.length
+            ) {
+              throw new Error(
+                `${path}.target.selector.capabilityCatalog contains duplicates`,
+              );
+            }
+            return catalog;
+          })()
+        : undefined;
     const members = parseMembers(
       selector?.members,
       `${path}.target.selector.members`,
+      capabilityCatalog,
     );
+    const capabilityMembers = members.filter(
+      (member) => member.capability !== undefined,
+    );
+    if (targetKind === 'capability') {
+      if (capabilityMembers.length !== members.length) {
+        throw new Error(
+          `${path}.target.kind capability requires a qualified capability identity for every member`,
+        );
+      }
+      if (
+        capabilityMembers.some(
+          (member) => member.capability?.hookSelector === undefined,
+        )
+      ) {
+        throw new Error(
+          `${path}.target.kind capability requires the relevant hookSelector`,
+        );
+      }
+    } else if (capabilityMembers.length > 0) {
+      throw new Error(
+        `${path}.target.selector contains a capability identity for a non-capability target`,
+      );
+    }
     const baseline = isObject(raw.baselineMembership)
       ? raw.baselineMembership
       : undefined;
     const baselineMembers = parseMembers(
       baseline?.members,
       `${path}.baselineMembership.members`,
+      capabilityCatalog,
     );
     if (JSON.stringify(members) !== JSON.stringify(baselineMembers)) {
       throw new Error(
@@ -593,7 +959,13 @@ function parseRegistry(value: unknown): FindingRegistry {
             ),
           }),
       obligation: { obligationId, evidenceKind: parsedEvidence, authority },
-      target: { kind: targetKind, selector: { members } },
+      target: {
+        kind: targetKind,
+        selector: {
+          members,
+          ...(capabilityCatalog === undefined ? {} : { capabilityCatalog }),
+        },
+      },
       invariant: requiredString(raw.invariant, `${path}.invariant`),
       violation: {
         queryId: queryId as MembershipQueryName,
@@ -772,10 +1144,27 @@ function artifactValue(identity: MembershipIdentity): unknown {
 
 function recordIdentity(
   record: PackRecord,
-  nested: { clauseId?: string; path?: string } = {},
+  nested: {
+    clauseId?: string;
+    path?: string;
+    capability?: CapabilityIdentity;
+  } = {},
 ): MembershipIdentity {
   if (typeof record.key !== 'string') throw new Error('pack record has no key');
   return { recordKey: record.key, ...nested };
+}
+
+function capabilityIdentityForHook(
+  engine: string,
+  hook: string,
+): CapabilityIdentity {
+  const capabilityId = engineCapabilityId(engine, 'pack engine hook');
+  return {
+    capabilityId,
+    primitive: primitiveForHook(capabilityId, hook),
+    hookSelector: { engine, name: hook },
+    owningBead: ENGINE_FAMILY_OWNERS[capabilityId],
+  };
 }
 
 function generatedReadinessMembers(
@@ -793,6 +1182,49 @@ function generatedReadinessMembers(
         clauseId: requiredString(clause.clauseId, 'pack clauseId'),
       }),
     );
+  });
+}
+
+function generatedCapabilityMembers(
+  records: PackRecord[],
+): MembershipIdentity[] {
+  return records.flatMap((record) => {
+    const readiness = recordData(record).executionReadiness;
+    const clauses =
+      isObject(readiness) && Array.isArray(readiness.clauses)
+        ? readiness.clauses.filter(isObject)
+        : [];
+    return clauses.flatMap((clause) => {
+      if (clause.readiness !== 'engine-pending') return [];
+      const clauseId = requiredString(clause.clauseId, 'pack clauseId');
+      if (
+        !Array.isArray(clause.engineHooks) ||
+        clause.engineHooks.length === 0
+      ) {
+        throw new Error(
+          `${clauseId} engine-pending clause has no engine hooks`,
+        );
+      }
+      return clause.engineHooks.map((hookValue, hookIndex) => {
+        if (!isObject(hookValue)) {
+          throw new Error(
+            `${clauseId}.engineHooks[${hookIndex}] must be an object`,
+          );
+        }
+        const engine = requiredString(
+          hookValue.engine,
+          `${clauseId}.engineHooks[${hookIndex}].engine`,
+        );
+        const hook = requiredString(
+          hookValue.hook,
+          `${clauseId}.engineHooks[${hookIndex}].hook`,
+        );
+        return recordIdentity(record, {
+          clauseId,
+          capability: capabilityIdentityForHook(engine, hook),
+        });
+      });
+    });
   });
 }
 
@@ -853,10 +1285,12 @@ export function generateMembershipSnapshot(
     case 'pack-readiness-clauses':
       return generatedReadinessMembers(records, () => true);
     case 'pack-engine-pending-clauses':
-      return generatedReadinessMembers(
-        records,
-        (clause) => clause.readiness === 'engine-pending',
-      );
+      return row.target.kind === 'capability'
+        ? generatedCapabilityMembers(records)
+        : generatedReadinessMembers(
+            records,
+            (clause) => clause.readiness === 'engine-pending',
+          );
     case 'audited-singleton':
     case 'audited-exact-set':
     case 'audited-artifact-set':

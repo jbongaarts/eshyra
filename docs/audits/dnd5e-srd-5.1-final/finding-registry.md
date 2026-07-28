@@ -55,6 +55,17 @@ identities can include an exact artifact path and JSON path, which allows
 findings outside `records.json`—such as manifest provenance—to remain
 observable.
 
+Capability memberships add the bootstrap ledger's qualified identity fields to
+the exact record/clause locus: `capabilityId` (`engine:F1` through `engine:F10`),
+the canonical primitive, an exact `hookSelector` when the pack supplies one, and
+the owning family epic. A clause with multiple engine hooks produces one
+qualified membership per hook, preserving every family relationship. Ownership
+is checked against the ten historical family-epic bead IDs; it is not inferred
+from an ID prefix. The capability identity types and canonical primitive roster
+are intentionally duplicated locally until the bootstrap capability-ledger PR
+lands; the integration follow-up can replace this small duplicate at the
+serialized boundary without changing the identity spellings.
+
 The validator rejects duplicate canonical IDs, duplicate aliases, malformed
 obligation IDs, pack self-authority, generic selectors, malformed nested
 identities, baseline/selector drift, partial current membership, templated
