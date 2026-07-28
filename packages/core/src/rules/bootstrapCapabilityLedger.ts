@@ -96,9 +96,23 @@ export interface KnownMissingSourceClauseEvidence extends ObligationIdentity {
   readonly sourcePath: string;
   readonly sourceTerms: readonly string[];
   readonly projectionQueryId: string;
-  readonly projectionTerms: readonly string[];
+  readonly projectionShape: ProjectionShape;
   readonly expected: 'absent-from-pack';
 }
+
+export type ProjectionShape =
+  | 'legendary-action-budget'
+  | 'owned-entity-repeat-lifecycle'
+  | 'spell-slot-upcast-procedure'
+  | 'spellbook-copy-procedure'
+  | 'containment-portal-card-pool'
+  | 'suffocation-ongoing-damage'
+  | 'planar-return-window-clock'
+  | 'multi-save-ability-choice'
+  | 'point-origin-area-geometry'
+  | 'damage-rider-half-damage-branch'
+  | 'downtime-study-training-ledger'
+  | 'retained-asset-creation';
 
 export type BootstrapEvidence =
   | ReadinessArtifactEvidence
@@ -130,8 +144,9 @@ export interface EvidenceResolution {
 
 export interface ProjectionMatch {
   readonly recordKey: string;
-  readonly clauseId: string;
-  readonly terms: readonly string[];
+  readonly clauseId?: string;
+  readonly path: string;
+  readonly signals: readonly string[];
 }
 
 export interface BootstrapCapabilityRow {
@@ -649,52 +664,25 @@ const projectionSpecsById = new Map(
   PROJECTION_QUERY_SPECS.map((spec) => [spec.projectionQueryId, spec]),
 );
 
-const PROJECTION_TERMS_BY_PRIMITIVE: Readonly<
-  Record<string, readonly string[]>
-> = {
-  'legendary-action-allowance-and-option-cost': [
-    'legendary action allowance',
-    'legendaryActionCost',
-  ],
-  'owned-entity-and-repeat-trigger-lifecycle': [
-    'owned entity',
-    'repeat trigger',
-  ],
-  'spell-slot-gate-and-upcast-transform': ['spell slot gate', 'upcast'],
-  'spellbook-copy-cost-and-asset-ledger': ['spellbook copy', 'copy cost'],
-  'containment-portal-and-card-pool-instance-state': [
-    'containment',
-    'portal-state',
-  ],
-  'suffocation-and-ongoing-damage-state': [
-    'suffocation threshold',
-    'ongoing damage',
-  ],
-  'planar-return-and-declared-window-clocks': [
-    'planar-return',
-    'declared-window',
-  ],
-  'multi-save-and-ability-choice-outcomes': [
-    'multiple saves',
-    'ability-choice outcomes',
-  ],
-  'point-origin-area-geometry-and-targeting': [
-    'point-origin geometry',
-    'target selection',
-  ],
-  'damage-rider-and-half-damage-branch-resolution': [
-    'damage riders',
-    'half-damage branches',
-  ],
-  'downtime-study-expense-and-training-ledger': [
-    'downtime study',
-    'training ledger',
-  ],
-  'retained-inventory-property-xp-asset-creation': [
-    'retained inventory',
-    'asset creation',
-  ],
-};
+const PROJECTION_SHAPE_BY_PRIMITIVE: Readonly<Record<string, ProjectionShape>> =
+  {
+    'legendary-action-allowance-and-option-cost': 'legendary-action-budget',
+    'owned-entity-and-repeat-trigger-lifecycle':
+      'owned-entity-repeat-lifecycle',
+    'spell-slot-gate-and-upcast-transform': 'spell-slot-upcast-procedure',
+    'spellbook-copy-cost-and-asset-ledger': 'spellbook-copy-procedure',
+    'containment-portal-and-card-pool-instance-state':
+      'containment-portal-card-pool',
+    'suffocation-and-ongoing-damage-state': 'suffocation-ongoing-damage',
+    'planar-return-and-declared-window-clocks': 'planar-return-window-clock',
+    'multi-save-and-ability-choice-outcomes': 'multi-save-ability-choice',
+    'point-origin-area-geometry-and-targeting': 'point-origin-area-geometry',
+    'damage-rider-and-half-damage-branch-resolution':
+      'damage-rider-half-damage-branch',
+    'downtime-study-expense-and-training-ledger':
+      'downtime-study-training-ledger',
+    'retained-inventory-property-xp-asset-creation': 'retained-asset-creation',
+  };
 
 const KNOWN_AUDIT_FINDINGS = new Set<string>([
   ...Array.from({ length: 8 }, (_, i) => `fable:F${i + 1}`),
@@ -764,7 +752,11 @@ function validateEvidenceIdentity(
   requiredString(value.evidenceId, `${field}.evidenceId`);
   if (!EVIDENCE_ID.test(value.evidenceId))
     fail(`${field}.evidenceId must use the ev::: evidence namespace`);
-  if (value.evidenceId.split(':::').some((segment) => segment.trim() === ''))
+  const segments = value.evidenceId.split(':::');
+  if (
+    segments.length !== 4 ||
+    segments.some((segment) => segment.trim() === '')
+  )
     fail(`${field}.evidenceId must have four non-empty segments`);
 }
 
@@ -864,7 +856,7 @@ function validateEvidence(value: unknown, field: string): BootstrapEvidence {
       requiredString(evidence.sourcePath, `${field}.sourcePath`);
       requiredStringArray(evidence.sourceTerms, `${field}.sourceTerms`);
       requiredString(evidence.projectionQueryId, `${field}.projectionQueryId`);
-      requiredStringArray(evidence.projectionTerms, `${field}.projectionTerms`);
+      requiredString(evidence.projectionShape, `${field}.projectionShape`);
       validateSourceObligation(
         evidence,
         field,
@@ -872,6 +864,12 @@ function validateEvidence(value: unknown, field: string): BootstrapEvidence {
       );
       if (!projectionSpecsById.has(evidence.projectionQueryId))
         fail(`${field}.projectionQueryId is not registered`);
+      if (
+        !Object.values(PROJECTION_SHAPE_BY_PRIMITIVE).includes(
+          evidence.projectionShape as ProjectionShape,
+        )
+      )
+        fail(`${field}.projectionShape is not registered`);
       if (evidence.expected !== 'absent-from-pack')
         fail(`${field}.expected must be absent-from-pack`);
       return evidence as unknown as KnownMissingSourceClauseEvidence;
@@ -963,16 +961,10 @@ function validateRow(value: unknown, index: number): BootstrapCapabilityRow {
       fail(
         `rows[${index}] known-missing projection does not target this primitive`,
       );
-    const expectedTerms = PROJECTION_TERMS_BY_PRIMITIVE[row.primitive];
-    if (
-      !expectedTerms ||
-      item.projectionTerms.length !== expectedTerms.length ||
-      item.projectionTerms.some(
-        (term, termIndex) => term !== expectedTerms[termIndex],
-      )
-    )
+    const expectedShape = PROJECTION_SHAPE_BY_PRIMITIVE[row.primitive];
+    if (!expectedShape || item.projectionShape !== expectedShape)
       fail(
-        `rows[${index}] known-missing projection terms are not the registered semantic query`,
+        `rows[${index}] known-missing projection shape is not the registered semantic query`,
       );
   }
   for (const item of evidence) {
@@ -1131,6 +1123,302 @@ function resolveBeadEvidence(evidence: BeadEvidence): EvidenceResolution {
   }
 }
 
+const TEXTUAL_PROJECTION_FIELDS = new Set([
+  'description',
+  'text',
+  'sourcetext',
+  'prompt',
+  'note',
+  'relevance',
+  'requirement',
+]);
+
+function projectionToken(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function structuredProjectionTokens(value: unknown): Set<string> {
+  const tokens = new Set<string>();
+  const visit = (current: unknown, field?: string): void => {
+    if (Array.isArray(current)) {
+      current.forEach((item) => {
+        visit(item);
+      });
+      return;
+    }
+    if (typeof current !== 'object' || current === null) {
+      if (!field || TEXTUAL_PROJECTION_FIELDS.has(field)) return;
+      if (typeof current === 'string' || typeof current === 'number')
+        tokens.add(projectionToken(String(current)));
+      return;
+    }
+    for (const [key, child] of Object.entries(current)) {
+      const normalizedKey = projectionToken(key);
+      tokens.add(normalizedKey);
+      if (!TEXTUAL_PROJECTION_FIELDS.has(normalizedKey))
+        visit(child, normalizedKey);
+    }
+  };
+  visit(value);
+  return tokens;
+}
+
+function hasProjectionToken(
+  tokens: ReadonlySet<string>,
+  aliases: readonly string[],
+): boolean {
+  return aliases.some((alias) => {
+    const normalized = projectionToken(alias);
+    return Array.from(tokens).some(
+      (token) => token === normalized || token.includes(normalized),
+    );
+  });
+}
+
+function projectionShapeSignals(
+  shape: ProjectionShape,
+  tokens: ReadonlySet<string>,
+): readonly string[] {
+  const any = (aliases: readonly string[]) =>
+    hasProjectionToken(tokens, aliases);
+  switch (shape) {
+    case 'legendary-action-budget':
+      return any([
+        'legendary-actions',
+        'legendary-action',
+        'mythic-action',
+        'round-budget',
+      ]) && any(['entries', 'allowance', 'cost', 'per-round', 'usage', 'spend'])
+        ? ['legendary action budget or option cost']
+        : [];
+    case 'owned-entity-repeat-lifecycle':
+      return (any(['save', 'saves', 'check']) &&
+        any(['condition', 'effect', 'trigger', 'lifecycle', 'transition'])) ||
+        (any(['owner', 'owned', 'control', 'controller', 'created-by']) &&
+          any([
+            'lifecycle',
+            'transition',
+            'repeat',
+            'recurrence',
+            'death-trigger',
+            'destroy',
+            'termination',
+          ]))
+        ? ['owned entity or repeat-trigger lifecycle']
+        : [];
+    case 'spell-slot-upcast-procedure':
+      return any([
+        'spell-slot',
+        'spell-slots',
+        'spellcasting-progression',
+        'slot-level',
+        'slot-pool',
+        'upcast',
+        'cast-at-higher-level',
+        'higher-level',
+      ]) && any(['spell', 'level', 'cast', 'resource', 'cast-level'])
+        ? ['spell-slot gate or upcast transform']
+        : [];
+    case 'spellbook-copy-procedure':
+      return any(['spellbook', 'spell-store', 'spellstore']) &&
+        any([
+          'copy',
+          'copied',
+          'transcribe',
+          'transcription',
+          'cost',
+          'gold',
+          'time',
+          'hours',
+          'ledger',
+        ])
+        ? ['spellbook copy, time, cost, or asset ledger']
+        : [];
+    case 'containment-portal-card-pool':
+      return any([
+        'containment',
+        'container',
+        'occupancy',
+        'portal',
+        'extradimensional',
+        'contents',
+        'card-pool',
+        'draw-pool',
+        'remaining-card-ids',
+      ]) &&
+        any([
+          'instance',
+          'occupancy',
+          'portal',
+          'card',
+          'pool',
+          'pool-state',
+          'nesting',
+        ])
+        ? ['containment, portal, or card-pool state']
+        : [];
+    case 'suffocation-ongoing-damage':
+      return any([
+        'suffocation',
+        'suffocating',
+        'air-minutes',
+        'oxygen',
+        'breath',
+      ]) &&
+        any([
+          'hit-points',
+          'hit-point',
+          'hp',
+          'damage',
+          'dying',
+          'zero-hp',
+          'round',
+          'threshold',
+        ])
+        ? ['suffocation or ongoing-damage state']
+        : [];
+    case 'planar-return-window-clock':
+      return any(['planar', 'astral-plane', 'plane', 'return', 'teleport']) &&
+        any([
+          'clock',
+          'deadline',
+          'duration',
+          'window',
+          'time-window',
+          'return-action',
+          'until',
+          'exit',
+          'destination',
+        ])
+        ? ['planar return or declared-window clock']
+        : [];
+    case 'multi-save-ability-choice':
+      return any(['save', 'saves', 'saving-throw']) &&
+        any([
+          'ability',
+          'choice',
+          'multiple',
+          'second',
+          'repeat-save',
+          'save-abilities',
+          'damage',
+          'condition',
+          'alternate',
+        ])
+        ? ['multi-save or ability-choice outcome']
+        : [];
+    case 'point-origin-area-geometry':
+      return any([
+        'origin',
+        'origin-point',
+        'point',
+        'area',
+        'shape',
+        'area-shape',
+        'geometry',
+        'line-of-effect',
+      ]) &&
+        any([
+          'target',
+          'targeting',
+          'straight',
+          'cover',
+          'line',
+          'selection',
+          'range',
+        ])
+        ? ['point-origin area geometry or targeting']
+        : [];
+    case 'damage-rider-half-damage-branch':
+      return any([
+        'damage',
+        'damage-rider',
+        'damage-components',
+        'extra-damage',
+      ]) &&
+        any([
+          'save',
+          'resistance',
+          'vulnerability',
+          'half',
+          'half-damage',
+          'success-branch',
+          'reduced',
+          'rider',
+          'branch',
+        ])
+        ? ['damage rider or half-damage branch']
+        : [];
+    case 'downtime-study-training-ledger':
+      return any([
+        'downtime',
+        'study',
+        'research',
+        'training',
+        'instruction',
+        'activity',
+      ]) &&
+        any([
+          'day',
+          'time',
+          'cost',
+          'expense',
+          'benefit',
+          'ledger',
+          'work-window',
+        ])
+        ? ['downtime study, expense, or training ledger']
+        : [];
+    case 'retained-asset-creation':
+      return any([
+        'state-machine',
+        'transition',
+        'asset',
+        'asset-ledger',
+        'inventory',
+        'property',
+        'xp',
+        'experience',
+        'object-interaction',
+        'realized-object',
+        'creation',
+      ]) &&
+        any(['real', 'retained', 'creation', 'value', 'transition', 'property'])
+        ? ['retained asset or property creation']
+        : [];
+  }
+}
+
+interface ProjectionNode {
+  readonly path: string;
+  readonly value: Record<string, unknown>;
+}
+
+function projectionNodes(
+  value: unknown,
+  path: string,
+): readonly ProjectionNode[] {
+  const nodes: ProjectionNode[] = [];
+  const visit = (current: unknown, currentPath: string): void => {
+    if (Array.isArray(current)) {
+      current.forEach((item, index) => {
+        visit(item, `${currentPath}[${index}]`);
+      });
+      return;
+    }
+    const object = objectRecord(current);
+    if (!object) return;
+    if (currentPath !== 'data')
+      nodes.push({ path: currentPath, value: object });
+    for (const [key, child] of Object.entries(object)) {
+      if (!TEXTUAL_PROJECTION_FIELDS.has(projectionToken(key)))
+        visit(child, `${currentPath}.${key}`);
+    }
+  };
+  visit(value, path);
+  return nodes;
+}
+
 function verifyBeadIds(beadIds: readonly string[]): void {
   if (!commandExists('bd')) return;
   const unresolved = beadIds.filter(
@@ -1202,33 +1490,29 @@ function resolveKnownMissingSourceClause(
     fail(
       `${evidence.sourceRef} ${evidence.locator} source anchor does not contain its recorded source terms`,
     );
-  if (evidence.projectionTerms.length === 0)
-    fail(`${evidence.projectionQueryId} has no semantic absence terms`);
   let scannedClauses = 0;
-  const projectionMatches: ProjectionMatch[] = [];
   for (const recordValue of records) {
     const record = objectRecord(recordValue);
     const clauses = objectRecord(
       objectRecord(record?.data)?.executionReadiness,
     )?.clauses;
-    if (!Array.isArray(clauses)) continue;
-    for (const clauseValue of clauses) {
-      scannedClauses += 1;
-      const clause = objectRecord(clauseValue);
-      if (typeof clause?.clauseId !== 'string') continue;
-      const serialized = JSON.stringify(clause).toLowerCase();
-      const terms = evidence.projectionTerms.filter((term) =>
-        serialized.includes(term.toLowerCase()),
-      );
-      if (terms.length > 0) {
-        projectionMatches.push({
-          recordKey:
-            typeof record?.key === 'string' ? record.key : '<unknown-record>',
-          clauseId: clause.clauseId,
-          terms,
-        });
-      }
-    }
+    if (Array.isArray(clauses)) scannedClauses += clauses.length;
+  }
+  const projectionMatches: ProjectionMatch[] = [];
+  for (const node of projectionNodes(sourceData, 'data')) {
+    const signals = projectionShapeSignals(
+      evidence.projectionShape,
+      structuredProjectionTokens(node.value),
+    );
+    if (signals.length === 0) continue;
+    const clauseId =
+      typeof node.value.clauseId === 'string' ? node.value.clauseId : undefined;
+    projectionMatches.push({
+      recordKey: evidence.sourceRecordKey,
+      clauseId,
+      path: node.path,
+      signals,
+    });
   }
   if (scannedClauses === 0)
     fail(
@@ -1243,7 +1527,7 @@ function resolveKnownMissingSourceClause(
     reason:
       projectionMatches.length === 0
         ? undefined
-        : 'semantic projection terms are present; absence is not provable',
+        : 'semantic projection shape is present; absence is not provable',
   };
 }
 
@@ -1290,6 +1574,60 @@ export function evaluateRowEvidence(
   records: readonly unknown[],
 ): readonly EvidenceResolution[] {
   return row.evidence.map((evidence) => resolveEvidence(evidence, records));
+}
+
+export interface BootstrapLedgerClosureBlocker {
+  readonly rowIdentity: string;
+  readonly evidenceId: string;
+  readonly projectionQueryId?: string;
+  readonly reason: string;
+}
+
+export interface BootstrapLedgerClosure {
+  readonly ready: boolean;
+  readonly blockers: readonly BootstrapLedgerClosureBlocker[];
+}
+
+export function assessBootstrapLedgerClosure(
+  resolutions: readonly EvidenceResolution[],
+  rowByEvidenceId?: ReadonlyMap<string, BootstrapCapabilityRow>,
+): BootstrapLedgerClosure {
+  const blockers = resolutions.flatMap((resolution) => {
+    if (resolution.status !== 'evidence-underived') return [];
+    const evidence = resolution.evidence;
+    const row = rowByEvidenceId?.get(evidence.evidenceId);
+    return [
+      {
+        rowIdentity: row
+          ? `${row.capabilityId}/${row.primitive}`
+          : evidence.evidenceId,
+        evidenceId: evidence.evidenceId,
+        projectionQueryId:
+          evidence.kind === 'known-missing-source-clause'
+            ? evidence.projectionQueryId
+            : undefined,
+        reason:
+          resolution.reason ??
+          'evidence-underived source-negative proof blocks closure',
+      },
+    ];
+  });
+  return { ready: blockers.length === 0, blockers };
+}
+
+export function evaluateBootstrapLedgerClosure(
+  ledger: BootstrapCapabilityLedger,
+  records: readonly unknown[],
+): BootstrapLedgerClosure {
+  const rowByEvidenceId = new Map(
+    ledger.rows.flatMap((row) =>
+      row.evidence.map((evidence) => [evidence.evidenceId, row] as const),
+    ),
+  );
+  return assessBootstrapLedgerClosure(
+    ledger.rows.flatMap((row) => evaluateRowEvidence(row, records)),
+    rowByEvidenceId,
+  );
 }
 
 export function validateBootstrapCapabilityLedger(

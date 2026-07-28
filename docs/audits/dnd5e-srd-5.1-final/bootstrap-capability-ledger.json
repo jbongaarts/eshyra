@@ -242,11 +242,11 @@
           "evidenceId": "ev:::legendary-action-allowance-and-option-cost:::known-missing-source-clause:::4",
           "obligationId": "obl:::SRD 5.1 p. 261:::p. 261:::action-economy",
           "sourcePath": "data.legendaryActions.description",
-          "sourceTerms": ["legendary actions", "regains spent"],
-          "projectionTerms": [
-            "legendary action allowance",
-            "legendaryActionCost"
-          ]
+          "sourceTerms": [
+            "legendary actions",
+            "regains spent legendary actions"
+          ],
+          "projectionShape": "legendary-action-budget"
         }
       ]
     },
@@ -388,8 +388,11 @@
           "evidenceId": "ev:::owned-entity-and-repeat-trigger-lifecycle:::known-missing-source-clause:::4",
           "obligationId": "obl:::SRD 5.1 p. 261:::p. 261:::entity-lifecycle",
           "sourcePath": "data.actions.3.text",
-          "sourceTerms": ["repeat the saving throw", "until the aboleth dies"],
-          "projectionTerms": ["owned entity", "repeat trigger"]
+          "sourceTerms": [
+            "Whenever the charmed target takes damage",
+            "repeat the saving throw"
+          ],
+          "projectionShape": "owned-entity-repeat-lifecycle"
         }
       ]
     },
@@ -488,16 +491,19 @@
         },
         {
           "kind": "known-missing-source-clause",
-          "sourceRef": "SRD 5.1 p. 52",
-          "locator": "p. 52",
+          "sourceRef": "SRD 5.1 pp. 52, 53",
+          "locator": "pp. 52, 53",
           "expected": "absent-from-pack",
-          "sourceRecordKey": "class:wizard",
+          "sourceRecordKey": "feature:wizard:spellcasting",
           "projectionQueryId": "bootstrap:projection:engine:F4:spell-slot-gate-and-upcast-transform",
           "evidenceId": "ev:::spell-slot-gate-and-upcast-transform:::known-missing-source-clause:::5",
-          "obligationId": "obl:::SRD 5.1 p. 52:::p. 52:::resource-use",
-          "sourcePath": "data.progression",
-          "sourceTerms": ["spellcastingProgression", "slots"],
-          "projectionTerms": ["spell slot gate", "upcast"]
+          "obligationId": "obl:::SRD 5.1 pp. 52, 53:::pp. 52, 53:::resource-use",
+          "sourcePath": "data.description",
+          "sourceTerms": [
+            "To cast one of these spells, you must expend a slot of the spell’s level or higher",
+            "cast it using a 1st-level or a 2nd-level slot"
+          ],
+          "projectionShape": "spell-slot-upcast-procedure"
         }
       ]
     },
@@ -535,16 +541,19 @@
         },
         {
           "kind": "known-missing-source-clause",
-          "sourceRef": "SRD 5.1 p. 52",
-          "locator": "p. 52",
+          "sourceRef": "SRD 5.1 pp. 54, 55",
+          "locator": "pp. 54, 55",
           "expected": "absent-from-pack",
-          "sourceRecordKey": "feature:wizard:spellbook",
+          "sourceRecordKey": "rule:wizard-your-spellbook",
           "projectionQueryId": "bootstrap:projection:engine:F4:spellbook-copy-cost-and-asset-ledger",
           "evidenceId": "ev:::spellbook-copy-cost-and-asset-ledger:::known-missing-source-clause:::4",
-          "obligationId": "obl:::SRD 5.1 p. 52:::p. 52:::ledger",
-          "sourcePath": "data.choices.1.prompt",
-          "sourceTerms": ["Each time you gain a wizard level", "spellbook"],
-          "projectionTerms": ["spellbook copy", "copy cost"]
+          "obligationId": "obl:::SRD 5.1 pp. 54, 55:::pp. 54, 55:::ledger",
+          "sourcePath": "data.text",
+          "sourceTerms": [
+            "Copying a Spell into the Book",
+            "For each level of the spell, the process takes 2 hours and costs 50 gp"
+          ],
+          "projectionShape": "spellbook-copy-procedure"
         },
         {
           "kind": "bead",
@@ -740,7 +749,7 @@
           "obligationId": "obl:::SRD 5.1 p. 210:::p. 210:::entity-lifecycle",
           "sourcePath": "data.description",
           "sourceTerms": ["gate", "Astral Plane"],
-          "projectionTerms": ["containment", "portal-state"]
+          "projectionShape": "containment-portal-card-pool"
         }
       ]
     },
@@ -883,7 +892,7 @@
           "obligationId": "obl:::SRD 5.1 p. 86:::p. 86:::termination",
           "sourcePath": "data.text",
           "sourceTerms": ["starts suffocating", "drops to 0 hit points"],
-          "projectionTerms": ["suffocation threshold", "ongoing damage"]
+          "projectionShape": "suffocation-ongoing-damage"
         }
       ]
     },
@@ -1014,7 +1023,7 @@
           "obligationId": "obl:::SRD 5.1 p. 239:::p. 239:::duration",
           "sourcePath": "data.description",
           "sourceTerms": ["Astral Plane", "return to the plane"],
-          "projectionTerms": ["planar-return", "declared-window"]
+          "projectionShape": "planar-return-window-clock"
         }
       ]
     },
@@ -1113,16 +1122,20 @@
         },
         {
           "kind": "known-missing-source-clause",
-          "sourceRef": "SRD 5.1 p. 83",
-          "locator": "p. 83",
           "expected": "absent-from-pack",
-          "sourceRecordKey": "rule:saving-throws",
+          "sourceRef": "SRD 5.1 pp. 266, 267",
+          "locator": "pp. 266, 267",
+          "sourceRecordKey": "creature:bulette",
           "projectionQueryId": "bootstrap:projection:engine:F8:multi-save-and-ability-choice-outcomes",
           "evidenceId": "ev:::multi-save-and-ability-choice-outcomes:::known-missing-source-clause:::5",
-          "obligationId": "obl:::SRD 5.1 p. 83:::p. 83:::save-with-alternate-outcomes",
-          "sourcePath": "data.text",
-          "sourceTerms": ["saving throw", "successful save"],
-          "projectionTerms": ["multiple saves", "ability-choice outcomes"]
+          "obligationId": "obl:::SRD 5.1 pp. 266, 267:::pp. 266, 267:::save-with-alternate-outcomes",
+          "sourcePath": "data.actions.1.text",
+          "sourceTerms": [
+            "Strength or Dexterity saving throw",
+            "target’s choice",
+            "On a successful save"
+          ],
+          "projectionShape": "multi-save-ability-choice"
         }
       ]
     },
@@ -1206,7 +1219,7 @@
           "obligationId": "obl:::SRD 5.1 pp. 102, 103:::pp. 102, 103:::geometry",
           "sourcePath": "data.text",
           "sourceTerms": ["point of origin", "straight lines"],
-          "projectionTerms": ["point-origin geometry", "target selection"]
+          "projectionShape": "point-origin-area-geometry"
         }
       ]
     },
@@ -1246,16 +1259,19 @@
         },
         {
           "kind": "known-missing-source-clause",
-          "sourceRef": "SRD 5.1 p. 97",
-          "locator": "p. 97",
           "expected": "absent-from-pack",
-          "sourceRecordKey": "rule:damage-resistance-and-vulnerability",
+          "sourceRef": "SRD 5.1 pp. 266, 267",
+          "locator": "pp. 266, 267",
+          "sourceRecordKey": "creature:bulette",
           "projectionQueryId": "bootstrap:projection:engine:F9:damage-rider-and-half-damage-branch-resolution",
           "evidenceId": "ev:::damage-rider-and-half-damage-branch-resolution:::known-missing-source-clause:::4",
-          "obligationId": "obl:::SRD 5.1 p. 97:::p. 97:::branch",
-          "sourcePath": "data.text",
-          "sourceTerms": ["resistance", "halved"],
-          "projectionTerms": ["damage riders", "half-damage branches"]
+          "obligationId": "obl:::SRD 5.1 pp. 266, 267:::pp. 266, 267:::branch",
+          "sourcePath": "data.actions.1.text",
+          "sourceTerms": [
+            "take 14 (3d6 + 4) bludgeoning damage plus 14 (3d6 + 4) slashing damage",
+            "half the damage"
+          ],
+          "projectionShape": "damage-rider-half-damage-branch"
         }
       ]
     },
@@ -1437,7 +1453,7 @@
           "obligationId": "obl:::SRD 5.1 p. 88:::p. 88:::ledger",
           "sourcePath": "data.text",
           "sourceTerms": ["downtime activity", "days to complete"],
-          "projectionTerms": ["downtime study", "training ledger"]
+          "projectionShape": "downtime-study-training-ledger"
         }
       ]
     },
@@ -1498,7 +1514,7 @@
           "obligationId": "obl:::SRD 5.1 p. 230:::p. 230:::ledger",
           "sourcePath": "data.description",
           "sourceTerms": ["becomes a real", "25 gp"],
-          "projectionTerms": ["retained inventory", "asset creation"]
+          "projectionShape": "retained-asset-creation"
         }
       ]
     }

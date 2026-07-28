@@ -34,11 +34,13 @@ binary is absent; audit evidence resolves a fully qualified known finding
 alias against the committed `auditFindingSubjects` and reviewed
 `auditFindingPrimitiveRelations` tables and requires a unique, row-specific
 relevance statement; and known-missing-source evidence resolves a real SRD
-record/source/locator anchor plus recorded source terms, then scans every
-projected readiness clause for registered semantic terms. It returns a
-positive absence proof only when no equivalent or partial projected shape is
-found. If a partial shape is present, it returns `evidence-underived`, which
-blocks closure. It never searches for invented sentinel strings.
+record/source/locator anchor plus recorded source terms, then evaluates the
+registered semantic shape across every structured surface of that source
+record, including mechanics, state, effects, and readiness representations.
+It returns a positive absence proof only when no equivalent or partial
+projected shape is found. If a partial shape is present, it returns
+`evidence-underived`, which blocks the exported fail-closed closure predicate.
+It never searches for invented sentinel strings or relies on phrase absence.
 
 Rows are at primitive granularity. A family such as `engine:F5` therefore has
 separate rows for instance spend, recharge scheduling, attunement/curse
@@ -94,9 +96,10 @@ owner/bead evidence, semantically resolved audit relevance, and evidence for
 every source named by a row. Five unsupported audit citations are deliberately
 dropped: spellbook copying, short-rest Hit Dice recovery, derived attack/AC/
 proficiency modifiers, canonical currency mutation, and downtime procedures.
-The current pack contains partial projected shapes for five source-negative
+The current pack contains partial projected shapes for source-negative
 primitives; those rows remain inventory-visible but resolve as
-`evidence-underived` until a clause-complete absence proof exists.
-Consumers should execute every row's evidence array against the current corpus
-and retain the row/query identity in the result. This ledger is a bootstrap
+`evidence-underived` until a clause-complete absence proof exists. Consumers
+should execute every row's evidence array against the current corpus and pass
+the resolutions to `evaluateBootstrapLedgerClosure`; its blockers name the
+exact row/evidence identities that prevent closure. This ledger is a bootstrap
 inventory, not a claim that the current pack is clause-complete.
