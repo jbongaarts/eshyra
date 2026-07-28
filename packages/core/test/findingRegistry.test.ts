@@ -674,6 +674,38 @@ describe('durable finding registry', () => {
     );
   });
 
+  it('refuses to let a pack generator establish derived membership', () => {
+    // The pack under repair cannot be the authority for its own obligations: an
+    // obligation already omitted from it is invisible to a query over it, which
+    // is the exact case this registry exists to catch. The rule is enforced by
+    // membership in packDerivedGenerators, not by a `pack-` name prefix, so a
+    // generator added outside that naming convention cannot silently gain
+    // authority. Nothing previously failed with a message naming this rule.
+    const registry = loadFindingRegistry();
+    const row = registry.rows[0];
+    const promoted = {
+      ...registry,
+      rows: registry.rows.map((candidate) =>
+        candidate.canonicalId === row.canonicalId
+          ? {
+              ...candidate,
+              membershipStatus: 'derived' as const,
+              underivedReason: undefined,
+              owningDerivationBead: undefined,
+              membershipDerivation: {
+                ...candidate.membershipDerivation,
+                generator: 'pack-record-kind' as const,
+              },
+            }
+          : candidate,
+      ),
+    };
+
+    expect(() => validateFindingRegistry(promoted)).toThrow(
+      /may not establish derived membership/,
+    );
+  });
+
   it('rejects a duplicate canonical ID with a real set', () => {
     const registry = loadFindingRegistry();
     const malformed = {

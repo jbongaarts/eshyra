@@ -90,11 +90,34 @@ export type MembershipGenerator =
   | 'pack-engine-pending-clauses'
   | 'audited-artifact-set';
 
-const executableMembershipGenerators = new Set<MembershipGenerator>([
+/**
+ * Generators that read the pack currently under repair.
+ *
+ * Membership from these may report CURRENT membership for comparison against an
+ * independent authority, but can never ESTABLISH derived membership: an
+ * obligation already omitted from the pack is invisible to a query over that
+ * same pack, which is precisely the case the registry exists to catch.
+ *
+ * Enumerated explicitly rather than matched by a `pack-` name prefix. A naming
+ * convention is not an authority boundary — a pack generator added outside the
+ * convention would silently gain authority it must never have.
+ */
+const packDerivedGenerators = new Set<MembershipGenerator>([
   'pack-record-kind',
   'pack-half-damage-branches',
   'pack-readiness-clauses',
   'pack-engine-pending-clauses',
+]);
+
+/**
+ * Generators whose membership can be regenerated and diffed. Today every
+ * executable generator is also pack-derived, so no generator can currently
+ * establish derived membership; that is why all 68 rows are underived. Kept as a
+ * separate set so a future non-pack executable generator does not accidentally
+ * inherit pack-derived status.
+ */
+const executableMembershipGenerators = new Set<MembershipGenerator>([
+  ...packDerivedGenerators,
 ]);
 
 export interface MembershipIdentity {
@@ -1994,7 +2017,7 @@ function validateMembershipRow(
   registry: FindingRegistry,
 ): void {
   if (row.membershipStatus === 'derived') {
-    if (row.membershipDerivation.generator.startsWith('pack-')) {
+    if (packDerivedGenerators.has(row.membershipDerivation.generator)) {
       throw new Error(
         `${row.canonicalId} pack generator may report current membership but may not establish derived membership`,
       );
