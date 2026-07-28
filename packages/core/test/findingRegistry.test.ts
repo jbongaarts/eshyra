@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   aliasIndex,
+  capabilityIdentityForHook,
   checkBeadReferences,
   evaluateMembershipQuery,
   findingRegistryClosureBlockers,
@@ -59,20 +60,15 @@ describe('durable finding registry', () => {
 
   it('distinguishes executable membership from prose-scoped membership', () => {
     const registry = loadFindingRegistry();
-    const derived = registry.rows
-      .filter((row) => row.membershipStatus === 'derived')
-      .map((row) => row.canonicalId);
-    expect(derived.sort()).toEqual([
-      'engine-capability-ownership',
-      'half-damage-branches',
-      'rule-corpus-procedures',
-      'spell-completeness',
-    ]);
+    const derived = registry.rows.filter(
+      (row) => row.membershipStatus === 'derived',
+    );
+    expect(derived).toHaveLength(0);
 
     const underived = registry.rows.filter(
       (row) => row.membershipStatus === 'underived',
     );
-    expect(underived).toHaveLength(64);
+    expect(underived).toHaveLength(68);
     expect(new Set(underived.map((row) => row.underivedReason)).size).toBe(
       underived.length,
     );
@@ -151,16 +147,20 @@ describe('durable finding registry', () => {
     const reasonRows = titleReasonTemplates.rows.filter(
       (row) => row.membershipStatus === 'underived',
     );
-    reasonRows[0].underivedReason = `The unresolved boundary for ${reasonRows[0].title} still needs audit reconciliation.`;
-    reasonRows[1].underivedReason = `The unresolved boundary for ${reasonRows[1].title} still needs audit reconciliation.`;
+    reasonRows[0].underivedReason =
+      'The audit-derived membership boundary for spell preparation quotation limits still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.';
+    reasonRows[1].underivedReason =
+      'The audit-derived membership boundary for manifest provenance lineage still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.';
     expect(() => validateFindingRegistry(titleReasonTemplates)).toThrow(
       /underivedReason contains a shared template/i,
     );
 
     const titleInvariantTemplates = structuredClone(registry);
     const invariantRows = titleInvariantTemplates.rows.slice(0, 2);
-    invariantRows[0].invariant = `After repair, ${invariantRows[0].title} remains source-complete.`;
-    invariantRows[1].invariant = `After repair, ${invariantRows[1].title} remains source-complete.`;
+    invariantRows[0].invariant =
+      'The repair must preserve spell preparation quotation limits while satisfying the source-backed obligation at the exact audited target.';
+    invariantRows[1].invariant =
+      'The repair must preserve manifest provenance lineage while satisfying the source-backed obligation at the exact audited target.';
     expect(() => validateFindingRegistry(titleInvariantTemplates)).toThrow(
       /invariant contains a shared template/i,
     );
@@ -371,6 +371,27 @@ describe('durable finding registry', () => {
     }
   });
 
+  it('uses a closed hook relation, including the F2 legendary-action primitive', () => {
+    expect(
+      capabilityIdentityForHook(
+        'F2',
+        'legendary action allowance and option cost',
+      ).primitive,
+    ).toBe('legendary-action-allowance-and-option-cost');
+    for (const hook of [
+      'legendary action allowance and option costs',
+      'unrelated action economy',
+      'unknown hook',
+    ]) {
+      expect(() => capabilityIdentityForHook('F2', hook)).toThrow(
+        /unknown hook/,
+      );
+    }
+    expect(() => capabilityIdentityForHook('F10', 'currency mutation')).toThrow(
+      /unknown hook/,
+    );
+  });
+
   it('derives corpus populations rather than retaining exemplars', () => {
     const registry = loadFindingRegistry();
     const records = requireRecords() as Array<{ key?: unknown }>;
@@ -425,17 +446,11 @@ describe('durable finding registry', () => {
       ),
     ).toBe(true);
 
-    const missingDerivedMember = structuredClone(registry);
-    const derivedRow = missingDerivedMember.rows.find(
-      (row) => row.membershipStatus === 'derived',
-    );
-    if (derivedRow === undefined)
-      throw new Error('fixture must contain a derived row');
-    derivedRow.baselineMembership.members.pop();
-    derivedRow.target.selector.members.pop();
-    expect(() => validateFindingRegistry(missingDerivedMember)).toThrow(
-      /derived membership does not match its executable query/i,
-    );
+    expect(
+      registry.rows
+        .filter((row) => row.membershipDerivation.generator.startsWith('pack-'))
+        .every((row) => row.membershipStatus === 'underived'),
+    ).toBe(true);
   });
 
   it('blocks closure while membership remains underived', () => {
@@ -455,32 +470,25 @@ describe('durable finding registry', () => {
       owningDerivationBead: undefined,
     }));
     expect(findingRegistryClosureBlockers(allDerived)).toEqual(
-      underivedIds.filter(
-        (canonicalId) =>
-          ![
-            'audit-readiness-gate',
-            'magic-item-effects',
-            'readiness-integrity',
-          ].includes(canonicalId),
-      ),
+      underivedIds.filter((canonicalId) => {
+        const row = allDerived.rows.find(
+          (candidate) => candidate.canonicalId === canonicalId,
+        );
+        return row?.membershipDerivation.generator.startsWith('audited-');
+      }),
     );
     expect(findingRegistryClosureReady(allDerived)).toBe(false);
 
-    const validFixture = {
+    const deletedRow = registry.rows.at(-1);
+    if (deletedRow === undefined) throw new Error('fixture must have rows');
+    const deletedObligation = {
       version: 1 as const,
-      rows: registry.rows.filter((row) => row.membershipStatus === 'derived'),
+      rows: registry.rows.slice(0, -1),
     };
-    expect(findingRegistryClosureBlockers(validFixture)).toEqual([]);
-    expect(findingRegistryClosureReady(validFixture)).toBe(true);
-
-    const invalidSnapshot = structuredClone(validFixture);
-    const invalidRow = invalidSnapshot.rows[0];
-    invalidRow.baselineMembership.members.pop();
-    invalidRow.target.selector.members.pop();
-    expect(findingRegistryClosureBlockers(invalidSnapshot)).toEqual([
-      invalidRow.canonicalId,
-    ]);
-    expect(findingRegistryClosureReady(invalidSnapshot)).toBe(false);
+    const deletedBlockers = findingRegistryClosureBlockers(deletedObligation);
+    expect(deletedBlockers).toContain(`missing:${deletedRow.canonicalId}`);
+    expect(deletedBlockers).not.toEqual([]);
+    expect(findingRegistryClosureReady(deletedObligation)).toBe(false);
   });
 
   it('fails when any declared baseline member disappears', () => {
@@ -534,20 +542,23 @@ describe('durable finding registry', () => {
     );
     const [first, second] = underived;
 
-    // Two rows differing only by their interpolated title: the reason text is
-    // the same sentence skeleton with each row's own title substituted in.
+    // This is the checked-in pattern from the failed revision: the subject is
+    // paraphrased rather than copied from title, so literal-token stripping
+    // cannot catch it.
     const templated = {
       ...registry,
       rows: registry.rows.map((row) => {
         if (row.canonicalId === first.canonicalId)
           return {
             ...row,
-            underivedReason: `Membership for ${row.title} awaits corpus reconciliation.`,
+            underivedReason:
+              'The audit-derived membership boundary for spell preparation quotation limits still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.',
           };
         if (row.canonicalId === second.canonicalId)
           return {
             ...row,
-            underivedReason: `Membership for ${row.title} awaits corpus reconciliation.`,
+            underivedReason:
+              'The audit-derived membership boundary for manifest provenance lineage still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.',
           };
         return row;
       }),
@@ -562,6 +573,35 @@ describe('durable finding registry', () => {
     const registry = loadFindingRegistry();
     expect(JSON.stringify(registry)).not.toMatch(
       /"(?:count|total|storedCount|storedTotal)"\s*:/i,
+    );
+
+    const nestedMember = structuredClone(registry);
+    Object.assign(
+      nestedMember.rows[0].target.selector.members[0] as unknown as Record<
+        string,
+        unknown
+      >,
+      { total: 1 },
+    );
+    expect(() => validateFindingRegistry(nestedMember)).toThrow(
+      /hand-copied total/,
+    );
+
+    const nestedCapability = structuredClone(registry);
+    const capabilityRow = nestedCapability.rows.find(
+      (row) => row.canonicalId === 'engine-capability-ownership',
+    );
+    if (capabilityRow === undefined)
+      throw new Error('fixture must contain a capability row');
+    Object.assign(
+      capabilityRow.target.selector.capabilityCatalog?.[0] as unknown as Record<
+        string,
+        unknown
+      >,
+      { storedCount: 1 },
+    );
+    expect(() => validateFindingRegistry(nestedCapability)).toThrow(
+      /hand-copied total/,
     );
   });
 

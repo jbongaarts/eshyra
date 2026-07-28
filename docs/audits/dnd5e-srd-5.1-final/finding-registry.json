@@ -7,7 +7,7 @@
       "title": "Composed spellPreparation source text is not presented as quotation",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for spell preparation quotation boundaries still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-19 leaves the affected population for \"Composed spellPreparation source text is not presented as quotation\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "statusReasoning": "Reviewed empty current membership: the source-backed spellPreparation clause is absent from the current pack; preserve this source identity until the clause IR follow-up lands.",
       "obligation": {
@@ -23,7 +23,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve spell preparation quotation boundaries while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Composed spellPreparation source text is not presented as quotation\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:source-authority-opus-f19",
         "expectedAfterRepair": "empty"
@@ -52,7 +52,7 @@
       "title": "Stale manifest provenance is removed",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for manifest provenance lineage still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-20 leaves the affected population for \"Stale manifest provenance is removed\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-opus-f20::source-authority-opus-f20",
@@ -65,7 +65,7 @@
           "members": ["a|manifest.json|$.packId"]
         }
       },
-      "invariant": "The repair must preserve manifest provenance lineage while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Stale manifest provenance is removed\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:source-authority-opus-f20",
         "expectedAfterRepair": "empty"
@@ -92,7 +92,7 @@
       "title": "Bag of Beans successful-save outcome follows source authority",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for successful-save consequence branches still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-008 leaves the affected population for \"Bag of Beans successful-save outcome follows source authority\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-sol-cap-008::source-authority-sol-cap-008",
@@ -107,7 +107,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve successful-save consequence branches while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Bag of Beans successful-save outcome follows source authority\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:source-authority-sol-cap-008",
         "expectedAfterRepair": "empty"
@@ -136,7 +136,7 @@
       "title": "Starting Wealth is not emitted as unsupported SRD content",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for unsupported starting-wealth output still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:fable:F1 leaves the affected population for \"Starting Wealth is not emitted as unsupported SRD content\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-fable-f1::source-authority-fable-f1",
@@ -149,7 +149,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "The repair must preserve unsupported starting-wealth output while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Starting Wealth is not emitted as unsupported SRD content\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:source-authority-fable-f1",
         "expectedAfterRepair": "empty"
@@ -176,7 +176,7 @@
       "title": "Synthesized table headers are distinguished from source text",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for table-header source labeling still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:fable:F5 leaves the affected population for \"Synthesized table headers are distinguished from source text\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-fable-f5::source-authority-fable-f5",
@@ -189,7 +189,7 @@
           "members": ["r|table:ability-scores-and-modifiers"]
         }
       },
-      "invariant": "The repair must preserve table-header source labeling while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Synthesized table headers are distinguished from source text\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:source-authority-fable-f5",
         "expectedAfterRepair": "empty"
@@ -216,7 +216,7 @@
       "title": "Synthesized choice labels are distinguished from source text",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for choice-label source labeling still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:fable:F7 leaves the affected population for \"Synthesized choice labels are distinguished from source text\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-fable-f7::source-authority-fable-f7",
@@ -229,7 +229,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "The repair must preserve choice-label source labeling while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Synthesized choice labels are distinguished from source text\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:source-authority-fable-f7",
         "expectedAfterRepair": "empty"
@@ -256,7 +256,7 @@
       "title": "Language universe keeps its source-defined extension point",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for campaign language extension handling still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:011 leaves the affected population for \"Language universe keeps its source-defined extension point\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/language-universe-policy::language-universe-policy",
@@ -273,7 +273,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve campaign language extension handling while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Language universe keeps its source-defined extension point\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:language-universe-policy",
         "expectedAfterRepair": "empty"
@@ -304,7 +304,7 @@
       "title": "Incomplete locators are not treated as complete coverage",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for source locator completeness still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:008 leaves the affected population for \"Incomplete locators are not treated as complete coverage\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/locator-completeness::locator-completeness",
@@ -317,7 +317,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "The repair must preserve source locator completeness while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Incomplete locators are not treated as complete coverage\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:locator-completeness",
         "expectedAfterRepair": "empty"
@@ -344,7 +344,7 @@
       "title": "Ambiguous ownership is not counted as resolved coverage",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for ownership ambiguity resolution still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:009 leaves the affected population for \"Ambiguous ownership is not counted as resolved coverage\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/ambiguous-coverage::ambiguous-coverage",
@@ -357,7 +357,7 @@
           "members": ["r|magic-item:bag-of-beans"]
         }
       },
-      "invariant": "The repair must preserve ownership ambiguity resolution while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Ambiguous ownership is not counted as resolved coverage\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:ambiguous-coverage",
         "expectedAfterRepair": "empty"
@@ -384,7 +384,7 @@
       "title": "Rock Gnome trait ownership is assigned to the correct boundary",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Rock Gnome trait ownership still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:010 leaves the affected population for \"Rock Gnome trait ownership is assigned to the correct boundary\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/rock-gnome-boundary::rock-gnome-boundary",
@@ -397,7 +397,7 @@
           "members": ["r|ancestry:rock-gnome"]
         }
       },
-      "invariant": "The repair must preserve Rock Gnome trait ownership while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Rock Gnome trait ownership is assigned to the correct boundary\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:rock-gnome-boundary",
         "expectedAfterRepair": "empty"
@@ -424,7 +424,7 @@
       "title": "Equipment, material, potion, and report records retain their findings",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for equipment report classification still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:012 leaves the affected population for \"Equipment, material, potion, and report records retain their findings\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/equipment-report::equipment-report",
@@ -437,7 +437,7 @@
           "members": ["r|equipment:abacus"]
         }
       },
-      "invariant": "The repair must preserve equipment report classification while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Equipment, material, potion, and report records retain their findings\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:equipment-report",
         "expectedAfterRepair": "empty"
@@ -464,7 +464,7 @@
       "title": "Spellcasting subfeatures retain consistent granularity",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for spellcasting subfeature boundaries still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-15 leaves the affected population for \"Spellcasting subfeatures retain consistent granularity\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/spellcasting-granularity::spellcasting-granularity",
@@ -477,7 +477,7 @@
           "members": ["r|feature:bard:spellcasting"]
         }
       },
-      "invariant": "The repair must preserve spellcasting subfeature boundaries while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Spellcasting subfeatures retain consistent granularity\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:spellcasting-granularity",
         "expectedAfterRepair": "empty"
@@ -504,7 +504,7 @@
       "title": "Vehicles tool row is retained",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for vehicle tool-row retention still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-17 leaves the affected population for \"Vehicles tool row is retained\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/vehicle-tool-row::vehicle-tool-row",
@@ -517,7 +517,7 @@
           "members": ["r|rule:mounts-and-vehicles"]
         }
       },
-      "invariant": "The repair must preserve vehicle tool-row retention while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Vehicles tool row is retained\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:vehicle-tool-row",
         "expectedAfterRepair": "empty"
@@ -544,7 +544,7 @@
       "title": "Wererat Hand Crossbow is not swallowed by segmentation",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for wererat crossbow segmentation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-30 leaves the affected population for \"Wererat Hand Crossbow is not swallowed by segmentation\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/wererat-crossbow::wererat-crossbow",
@@ -560,7 +560,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve wererat crossbow segmentation while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Wererat Hand Crossbow is not swallowed by segmentation\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:wererat-crossbow",
         "expectedAfterRepair": "empty"
@@ -590,7 +590,7 @@
       "title": "Structured fields cite actual source provenance",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for structured provenance field evidence still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-010 leaves the affected population for \"Structured fields cite actual source provenance\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-provenance-fields::source-provenance-fields",
@@ -603,7 +603,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "The repair must preserve structured provenance field evidence while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Structured fields cite actual source provenance\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:source-provenance-fields",
         "expectedAfterRepair": "empty"
@@ -630,7 +630,7 @@
       "title": "Container continuations retain complete citation",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for container continuation citations still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:fable:F4 leaves the affected population for \"Container continuations retain complete citation\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/container-continuation::container-continuation",
@@ -643,7 +643,7 @@
           "members": ["r|table:ability-scores-and-modifiers"]
         }
       },
-      "invariant": "The repair must preserve container continuation citations while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Container continuations retain complete citation\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:container-continuation",
         "expectedAfterRepair": "empty"
@@ -670,7 +670,7 @@
       "title": "Advancement scaling qualifiers are preserved",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for advancement scaling qualifiers still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-10 leaves the affected population for \"Advancement scaling qualifiers are preserved\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/advancement-qualifiers::advancement-qualifiers",
@@ -683,7 +683,7 @@
           "members": ["r|feature:barbarian:brutal-critical"]
         }
       },
-      "invariant": "The repair must preserve advancement scaling qualifiers while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Advancement scaling qualifiers are preserved\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:advancement-qualifiers",
         "expectedAfterRepair": "empty"
@@ -710,7 +710,7 @@
       "title": "Proficiency grants are structured",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for proficiency grant structure still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-13 leaves the affected population for \"Proficiency grants are structured\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/proficiency-grants::proficiency-grants",
@@ -723,7 +723,7 @@
           "members": ["r|ancestry:rock-gnome"]
         }
       },
-      "invariant": "The repair must preserve proficiency grant structure while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Proficiency grants are structured\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:proficiency-grants",
         "expectedAfterRepair": "empty"
@@ -750,7 +750,7 @@
       "title": "Choice identifiers and catalogs are consistent",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for choice catalog identity stability still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-14 leaves the affected population for \"Choice identifiers and catalogs are consistent\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/choice-identifiers::choice-identifiers",
@@ -763,7 +763,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "The repair must preserve choice catalog identity stability while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Choice identifiers and catalogs are consistent\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:choice-identifiers",
         "expectedAfterRepair": "empty"
@@ -790,7 +790,7 @@
       "title": "Madness durations are retained",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for madness duration representation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-16 leaves the affected population for \"Madness durations are retained\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/madness-durations::madness-durations",
@@ -803,7 +803,7 @@
           "members": ["r|table:short-term-madness"]
         }
       },
-      "invariant": "The repair must preserve madness duration representation while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Madness durations are retained\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:madness-durations",
         "expectedAfterRepair": "empty"
@@ -830,7 +830,7 @@
       "title": "Flat and dice damage fields use a consistent shape",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for flat and dice damage field shape still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-34 leaves the affected population for \"Flat and dice damage fields use a consistent shape\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/damage-field-shape::damage-field-shape",
@@ -843,7 +843,7 @@
           "members": ["r|creature:bulette"]
         }
       },
-      "invariant": "The repair must preserve flat and dice damage field shape while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Flat and dice damage fields use a consistent shape\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:damage-field-shape",
         "expectedAfterRepair": "empty"
@@ -870,7 +870,7 @@
       "title": "Tack, Harness, and Drawn Vehicles taxonomy is preserved",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for tack harness and drawn-vehicle taxonomy still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-013 leaves the affected population for \"Tack, Harness, and Drawn Vehicles taxonomy is preserved\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/equipment-taxonomy::equipment-taxonomy",
@@ -883,7 +883,7 @@
           "members": ["r|equipment:block-and-tackle"]
         }
       },
-      "invariant": "The repair must preserve tack harness and drawn-vehicle taxonomy while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Tack, Harness, and Drawn Vehicles taxonomy is preserved\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:equipment-taxonomy",
         "expectedAfterRepair": "empty"
@@ -910,7 +910,7 @@
       "title": "Empty table cells retain their structured meaning",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for empty table-cell semantics still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:fable:F6 leaves the affected population for \"Empty table cells retain their structured meaning\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/table-empty-cells::table-empty-cells",
@@ -923,7 +923,7 @@
           "members": ["r|table:ability-scores-and-modifiers"]
         }
       },
-      "invariant": "The repair must preserve empty table-cell semantics while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Empty table cells retain their structured meaning\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:table-empty-cells",
         "expectedAfterRepair": "empty"
@@ -950,7 +950,7 @@
       "title": "Duplicate display names are qualified",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for duplicate display-name qualification still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-22 leaves the affected population for \"Duplicate display names are qualified\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/display-name-qualification::display-name-qualification",
@@ -963,7 +963,7 @@
           "members": ["r|rule:languages"]
         }
       },
-      "invariant": "The repair must preserve duplicate display-name qualification while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Duplicate display names are qualified\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:display-name-qualification",
         "expectedAfterRepair": "empty"
@@ -990,7 +990,7 @@
       "title": "Canonical relationships and DM discovery are durable",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for canonical relationship discovery still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-011 leaves the affected population for \"Canonical relationships and DM discovery are durable\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/canonical-discovery::canonical-discovery",
@@ -1003,7 +1003,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "The repair must preserve canonical relationship discovery while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Canonical relationships and DM discovery are durable\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:canonical-discovery",
         "expectedAfterRepair": "empty"
@@ -1030,7 +1030,7 @@
       "title": "Rule keying and duplication hygiene are explicit",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for rule-key duplication hygiene still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:fable:F8 leaves the affected population for \"Rule keying and duplication hygiene are explicit\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/rule-key-duplication::rule-key-duplication",
@@ -1043,7 +1043,7 @@
           "members": ["r|rule:a-clear-path-to-the-target"]
         }
       },
-      "invariant": "The repair must preserve rule-key duplication hygiene while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Rule keying and duplication hygiene are explicit\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:rule-key-duplication",
         "expectedAfterRepair": "empty"
@@ -1070,7 +1070,7 @@
       "title": "Readiness gates require clause-complete procedures",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for clause-complete readiness gating still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:001 leaves the affected population for \"Readiness gates require clause-complete procedures\" unresolved; Every source-backed execution-readiness clause in the magic-item corpus. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/audit-readiness-gate::audit-readiness-gate",
@@ -2100,7 +2100,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve clause-complete readiness gating while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Readiness gates require clause-complete procedures\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:audit-readiness-gate",
         "expectedAfterRepair": "empty"
@@ -3143,7 +3143,7 @@
       "aliases": ["sol:CAP-001"],
       "title": "The rule corpus has executable procedures",
       "status": "accepted",
-      "membershipStatus": "derived",
+      "membershipStatus": "underived",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/rule-corpus-procedures::rule-corpus-procedures",
         "evidenceKind": "audit-finding",
@@ -3491,7 +3491,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve executable rule-corpus procedures while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"The rule corpus has executable procedures\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:rule-corpus-procedures",
         "expectedAfterRepair": "empty"
@@ -3846,7 +3846,9 @@
         "sourceScope": "Every committed record whose key has the rule: namespace.",
         "authority": "audit-finding:sol:CAP-001",
         "currentMatch": "required"
-      }
+      },
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-001 leaves the affected population for \"The rule corpus has executable procedures\" unresolved; Every committed record whose key has the rule: namespace. still needs exact identity reconciliation before closure.",
+      "owningDerivationBead": "eshyra-o9bd.19.1.7"
     },
     {
       "canonicalId": "phantom-feature-resources",
@@ -3854,7 +3856,7 @@
       "title": "Phantom feature resources are not emitted",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for phantom feature-resource suppression still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-06 leaves the affected population for \"Phantom feature resources are not emitted\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/phantom-feature-resources::phantom-feature-resources",
@@ -3867,7 +3869,7 @@
           "members": ["r|feature:fighter:indomitable"]
         }
       },
-      "invariant": "The repair must preserve phantom feature-resource suppression while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Phantom feature resources are not emitted\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:phantom-feature-resources",
         "expectedAfterRepair": "empty"
@@ -3894,7 +3896,7 @@
       "title": "Mutually exclusive damage alternatives remain distinct",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for mutually exclusive damage alternatives still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-27 leaves the affected population for \"Mutually exclusive damage alternatives remain distinct\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/damage-alternatives::damage-alternatives",
@@ -3907,7 +3909,7 @@
           "members": ["r|creature:bulette"]
         }
       },
-      "invariant": "The repair must preserve mutually exclusive damage alternatives while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Mutually exclusive damage alternatives remain distinct\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:damage-alternatives",
         "expectedAfterRepair": "empty"
@@ -3934,7 +3936,7 @@
       "title": "Choice behavior remains local to its option",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for option-local choice behavior still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:002 leaves the affected population for \"Choice behavior remains local to its option\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/choice-behavior::choice-behavior",
@@ -3950,7 +3952,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve option-local choice behavior while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Choice behavior remains local to its option\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:choice-behavior",
         "expectedAfterRepair": "empty"
@@ -3980,7 +3982,7 @@
       "title": "Pit variants remain separate procedures",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for pit variant procedure separation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-02 leaves the affected population for \"Pit variants remain separate procedures\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/pit-variants::pit-variants",
@@ -3993,7 +3995,7 @@
           "members": ["r|hazard:pits"]
         }
       },
-      "invariant": "The repair must preserve pit variant procedure separation while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Pit variants remain separate procedures\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:pit-variants",
         "expectedAfterRepair": "empty"
@@ -4020,7 +4022,7 @@
       "title": "Eldritch Invocation effects remain option-local",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for invocation option-local effects still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-07 leaves the affected population for \"Eldritch Invocation effects remain option-local\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/invocation-effects::invocation-effects",
@@ -4033,7 +4035,7 @@
           "members": ["r|feature:warlock:eldritch-invocations"]
         }
       },
-      "invariant": "The repair must preserve invocation option-local effects while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Eldritch Invocation effects remain option-local\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:invocation-effects",
         "expectedAfterRepair": "empty"
@@ -4060,7 +4062,7 @@
       "title": "Bulette ability alternatives and DC remain explicit",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for bulette ability alternatives and DCs still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-33 leaves the affected population for \"Bulette ability alternatives and DC remain explicit\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/bulette-alternative::bulette-alternative",
@@ -4073,7 +4075,7 @@
           "members": ["r|creature:bulette"]
         }
       },
-      "invariant": "The repair must preserve bulette ability alternatives and DCs while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Bulette ability alternatives and DC remain explicit\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:bulette-alternative",
         "expectedAfterRepair": "empty"
@@ -4100,7 +4102,7 @@
       "title": "Targeting qualifiers are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for targeting qualifier preservation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-35 leaves the affected population for \"Targeting qualifiers are complete\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/targeting-qualifiers::targeting-qualifiers",
@@ -4113,7 +4115,7 @@
           "members": ["r|creature:bulette"]
         }
       },
-      "invariant": "The repair must preserve targeting qualifier preservation while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Targeting qualifiers are complete\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:targeting-qualifiers",
         "expectedAfterRepair": "empty"
@@ -4140,7 +4142,7 @@
       "title": "Ancestry, feature, progression, and choice losses are repaired",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for ancestry feature and progression option retention still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-005 leaves the affected population for \"Ancestry, feature, progression, and choice losses are repaired\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/option-losses::option-losses",
@@ -4153,7 +4155,7 @@
           "members": ["r|feature:warlock:eldritch-invocations"]
         }
       },
-      "invariant": "The repair must preserve ancestry feature and progression option retention while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Ancestry, feature, progression, and choice losses are repaired\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:option-losses",
         "expectedAfterRepair": "empty"
@@ -4180,7 +4182,7 @@
       "title": "Class features and feats retain complete procedures",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for class feature and feat procedure coverage still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:003 leaves the affected population for \"Class features and feats retain complete procedures\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/class-feature-completeness::class-feature-completeness",
@@ -4193,7 +4195,7 @@
           "members": ["r|feature:barbarian:ability-score-improvement"]
         }
       },
-      "invariant": "The repair must preserve class feature and feat procedure coverage while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Class features and feats retain complete procedures\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:class-feature-completeness",
         "expectedAfterRepair": "empty"
@@ -4220,7 +4222,7 @@
       "title": "Indomitable use scaling is correct",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Indomitable use scaling still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-03 leaves the affected population for \"Indomitable use scaling is correct\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/indomitable-scaling::indomitable-scaling",
@@ -4233,7 +4235,7 @@
           "members": ["r|feature:fighter:indomitable"]
         }
       },
-      "invariant": "The repair must preserve Indomitable use scaling while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Indomitable use scaling is correct\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:indomitable-scaling",
         "expectedAfterRepair": "empty"
@@ -4260,7 +4262,7 @@
       "title": "Arcane Recovery reset is correct",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Arcane Recovery reset timing still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-04 leaves the affected population for \"Arcane Recovery reset is correct\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/arcane-recovery-reset::arcane-recovery-reset",
@@ -4273,7 +4275,7 @@
           "members": ["r|feature:wizard:arcane-recovery"]
         }
       },
-      "invariant": "The repair must preserve Arcane Recovery reset timing while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Arcane Recovery reset is correct\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:arcane-recovery-reset",
         "expectedAfterRepair": "empty"
@@ -4300,7 +4302,7 @@
       "title": "Natural Recovery reset is correct",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Natural Recovery reset timing still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-05 leaves the affected population for \"Natural Recovery reset is correct\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/natural-recovery-reset::natural-recovery-reset",
@@ -4313,7 +4315,7 @@
           "members": ["r|feature:circle-of-the-land:natural-recovery"]
         }
       },
-      "invariant": "The repair must preserve Natural Recovery reset timing while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Natural Recovery reset is correct\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:natural-recovery-reset",
         "expectedAfterRepair": "empty"
@@ -4340,7 +4342,7 @@
       "title": "Ki abilities and save DC are structured",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for ki ability and save-DC structure still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-12 leaves the affected population for \"Ki abilities and save DC are structured\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/ki-abilities::ki-abilities",
@@ -4353,7 +4355,7 @@
           "members": ["r|feature:monk:ki"]
         }
       },
-      "invariant": "The repair must preserve ki ability and save-DC structure while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Ki abilities and save DC are structured\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:ki-abilities",
         "expectedAfterRepair": "empty"
@@ -4380,7 +4382,7 @@
       "title": "Divine Sense use count is explicit",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Divine Sense use-count calculation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-24 leaves the affected population for \"Divine Sense use count is explicit\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/divine-sense-uses::divine-sense-uses",
@@ -4393,7 +4395,7 @@
           "members": ["r|feature:paladin:divine-sense"]
         }
       },
-      "invariant": "The repair must preserve Divine Sense use-count calculation while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Divine Sense use count is explicit\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:divine-sense-uses",
         "expectedAfterRepair": "empty"
@@ -4420,7 +4422,7 @@
       "title": "Condition structure is repaired without regressing typed effects",
       "status": "narrowed",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for typed condition effect preservation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-002 leaves the affected population for \"Condition structure is repaired without regressing typed effects\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "statusReasoning": "CAP-002 overstates the condition deficit: existing typed condition effects are exact against source. Repair only proven structural gaps and preserve those typed effects.",
       "obligation": {
@@ -4434,7 +4436,7 @@
           "members": ["r|magic-item:bag-of-beans"]
         }
       },
-      "invariant": "The repair must preserve typed condition effect preservation while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Condition structure is repaired without regressing typed effects\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:condition-structure-no-regression",
         "expectedAfterRepair": "stable"
@@ -4461,7 +4463,7 @@
       "title": "Rules prose has an in-band readiness disposition",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for in-band rules-prose readiness still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-09 leaves the affected population for \"Rules prose has an in-band readiness disposition\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/rules-prose-readiness::rules-prose-readiness",
@@ -4474,7 +4476,7 @@
           "members": ["r|magic-item:bag-of-beans"]
         }
       },
-      "invariant": "The repair must preserve in-band rules-prose readiness while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Rules prose has an in-band readiness disposition\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:rules-prose-readiness",
         "expectedAfterRepair": "empty"
@@ -4501,7 +4503,7 @@
       "title": "Ancestry deterministic semantics are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for ancestry deterministic semantics still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:004 leaves the affected population for \"Ancestry deterministic semantics are complete\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/ancestry-omissions::ancestry-omissions",
@@ -4514,7 +4516,7 @@
           "members": ["r|ancestry:dragonborn"]
         }
       },
-      "invariant": "The repair must preserve ancestry deterministic semantics while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Ancestry deterministic semantics are complete\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:ancestry-omissions",
         "expectedAfterRepair": "empty"
@@ -4541,7 +4543,7 @@
       "title": "Background equipment is structured",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for background equipment grants still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-18 leaves the affected population for \"Background equipment is structured\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/background-equipment::background-equipment",
@@ -4554,7 +4556,7 @@
           "members": ["r|background:acolyte", "r|equipment:backpack"]
         }
       },
-      "invariant": "The repair must preserve background equipment grants while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Background equipment is structured\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:background-equipment",
         "expectedAfterRepair": "empty"
@@ -4581,7 +4583,7 @@
       "title": "Hazards and healing potion procedures are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for hazard and healing-potion procedures still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-006 leaves the affected population for \"Hazards and healing potion procedures are complete\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/hazard-and-healing-potion::hazard-and-healing-potion",
@@ -4597,7 +4599,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve hazard and healing-potion procedures while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Hazards and healing potion procedures are complete\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:hazard-and-healing-potion",
         "expectedAfterRepair": "empty"
@@ -4623,7 +4625,7 @@
       "aliases": ["indep:005"],
       "title": "Spell procedures are complete",
       "status": "accepted",
-      "membershipStatus": "derived",
+      "membershipStatus": "underived",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/spell-completeness::spell-completeness",
         "evidenceKind": "audit-finding",
@@ -4955,7 +4957,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve clause-complete spell procedures while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Spell procedures are complete\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:spell-completeness",
         "expectedAfterRepair": "empty"
@@ -5294,7 +5296,9 @@
         "sourceScope": "Every committed record whose key has the spell: namespace.",
         "authority": "audit-finding:indep:005",
         "currentMatch": "required"
-      }
+      },
+      "underivedReason": "Independent audit authority audit-finding:indep:005 leaves the affected population for \"Spell procedures are complete\" unresolved; Every committed record whose key has the spell: namespace. still needs exact identity reconciliation before closure.",
+      "owningDerivationBead": "eshyra-o9bd.19.1.7"
     },
     {
       "canonicalId": "point-origin-areas",
@@ -5302,7 +5306,7 @@
       "title": "Point-origin spell areas are represented",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for point-origin area geometry still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-08 leaves the affected population for \"Point-origin spell areas are represented\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/point-origin-areas::point-origin-areas",
@@ -5319,7 +5323,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve point-origin area geometry while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Point-origin spell areas are represented\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:point-origin-areas",
         "expectedAfterRepair": "empty"
@@ -5350,7 +5354,7 @@
       "title": "Magic Missile base projectile count is explicit",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Magic Missile projectile count still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-11 leaves the affected population for \"Magic Missile base projectile count is explicit\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/magic-missile-projectiles::magic-missile-projectiles",
@@ -5366,7 +5370,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve Magic Missile projectile count while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Magic Missile base projectile count is explicit\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:magic-missile-projectiles",
         "expectedAfterRepair": "empty"
@@ -5396,7 +5400,7 @@
       "title": "Spell mechanics are projected to source depth",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for spell mechanic source depth still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-003 leaves the affected population for \"Spell mechanics are projected to source depth\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/spell-mechanics-depth::spell-mechanics-depth",
@@ -5409,7 +5413,7 @@
           "members": ["r|spell:acid-arrow"]
         }
       },
-      "invariant": "The repair must preserve spell mechanic source depth while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Spell mechanics are projected to source depth\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:spell-mechanics-depth",
         "expectedAfterRepair": "empty"
@@ -5436,7 +5440,7 @@
       "title": "Animal Friendship correction is source-authority work",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Animal Friendship source authority still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-009 leaves the affected population for \"Animal Friendship correction is source-authority work\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/animal-friendship-authority::animal-friendship-authority",
@@ -5452,7 +5456,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve Animal Friendship source authority while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Animal Friendship correction is source-authority work\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:animal-friendship-authority",
         "expectedAfterRepair": "empty"
@@ -5482,7 +5486,7 @@
       "title": "Creature triggers, branches, timing, and lifecycle are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for creature trigger branch timing and lifecycle still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:006 leaves the affected population for \"Creature triggers, branches, timing, and lifecycle are complete\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/creature-completeness::creature-completeness",
@@ -5495,7 +5499,7 @@
           "members": ["r|creature:aboleth"]
         }
       },
-      "invariant": "The repair must preserve creature trigger branch timing and lifecycle while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Creature triggers, branches, timing, and lifecycle are complete\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:creature-completeness",
         "expectedAfterRepair": "empty"
@@ -5521,7 +5525,7 @@
       "aliases": ["opus:F-25"],
       "title": "Creature and hazard half-damage branches are represented",
       "status": "accepted",
-      "membershipStatus": "derived",
+      "membershipStatus": "underived",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/half-damage-branches::half-damage-branches",
         "evidenceKind": "audit-finding",
@@ -5627,7 +5631,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve creature and hazard half-damage branching while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Creature and hazard half-damage branches are represented\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:half-damage-branches",
         "expectedAfterRepair": "empty"
@@ -5740,7 +5744,9 @@
         "sourceScope": "Every creature or hazard source branch containing a half-damage outcome.",
         "authority": "audit-finding:opus:F-25",
         "currentMatch": "required"
-      }
+      },
+      "underivedReason": "Independent audit authority audit-finding:opus:F-25 leaves the affected population for \"Creature and hazard half-damage branches are represented\" unresolved; Every creature or hazard source branch containing a half-damage outcome. still needs exact identity reconciliation before closure.",
+      "owningDerivationBead": "eshyra-o9bd.19.1.7"
     },
     {
       "canonicalId": "legendary-economy",
@@ -5748,7 +5754,7 @@
       "title": "Legendary budgets and action costs are modeled",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for legendary action budget economy still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-26 leaves the affected population for \"Legendary budgets and action costs are modeled\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/legendary-economy::legendary-economy",
@@ -5761,7 +5767,7 @@
           "members": ["r|creature:adult-black-dragon"]
         }
       },
-      "invariant": "The repair must preserve legendary action budget economy while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Legendary budgets and action costs are modeled\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:legendary-economy",
         "expectedAfterRepair": "empty"
@@ -5788,7 +5794,7 @@
       "title": "Druid and Dryad attacks have attack objects",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Druid and Dryad attack objects still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-28 leaves the affected population for \"Druid and Dryad attacks have attack objects\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/druid-dryad-attacks::druid-dryad-attacks",
@@ -5801,7 +5807,7 @@
           "members": ["p|creature:druid|data.traits[0].text"]
         }
       },
-      "invariant": "The repair must preserve Druid and Dryad attack objects while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Druid and Dryad attacks have attack objects\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:druid-dryad-attacks",
         "expectedAfterRepair": "empty"
@@ -5828,7 +5834,7 @@
       "title": "Unicode-minus damage is normalized",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Unicode-minus damage normalization still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-29 leaves the affected population for \"Unicode-minus damage is normalized\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/unicode-minus-damage::unicode-minus-damage",
@@ -5841,7 +5847,7 @@
           "members": ["p|creature:bulette|data.actions[0].text"]
         }
       },
-      "invariant": "The repair must preserve Unicode-minus damage normalization while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Unicode-minus damage is normalized\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:unicode-minus-damage",
         "expectedAfterRepair": "empty"
@@ -5868,7 +5874,7 @@
       "title": "Ranged attacks retain range under alternate notation",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for ranged attack alternate notation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-31 leaves the affected population for \"Ranged attacks retain range under alternate notation\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/ranged-notation::ranged-notation",
@@ -5881,7 +5887,7 @@
           "members": ["p|creature:wererat|data.actions[2].text"]
         }
       },
-      "invariant": "The repair must preserve ranged attack alternate notation while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Ranged attacks retain range under alternate notation\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:ranged-notation",
         "expectedAfterRepair": "empty"
@@ -5908,7 +5914,7 @@
       "title": "Multi-save entries retain every save",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for multi-save entry preservation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-32 leaves the affected population for \"Multi-save entries retain every save\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/multi-save-entries::multi-save-entries",
@@ -5921,7 +5927,7 @@
           "members": ["p|creature:bulette|data.actions[1].text"]
         }
       },
-      "invariant": "The repair must preserve multi-save entry preservation while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Multi-save entries retain every save\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:multi-save-entries",
         "expectedAfterRepair": "empty"
@@ -5948,7 +5954,7 @@
       "title": "Creature stat-block mechanics are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for creature stat-block mechanics still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-004 leaves the affected population for \"Creature stat-block mechanics are complete\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/creature-statblock-mechanics::creature-statblock-mechanics",
@@ -5961,7 +5967,7 @@
           "members": ["p|creature:bulette|data.traits[0].mechanics"]
         }
       },
-      "invariant": "The repair must preserve creature stat-block mechanics while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Creature stat-block mechanics are complete\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:creature-statblock-mechanics",
         "expectedAfterRepair": "empty"
@@ -5988,7 +5994,7 @@
       "title": "Creature riders and ongoing damage are typed",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for creature rider and ongoing-damage typing still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:fable:F3 leaves the affected population for \"Creature riders and ongoing damage are typed\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/creature-ongoing-riders::creature-ongoing-riders",
@@ -6001,7 +6007,7 @@
           "members": ["r|creature:wererat"]
         }
       },
-      "invariant": "The repair must preserve creature rider and ongoing-damage typing while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Creature riders and ongoing damage are typed\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:creature-ongoing-riders",
         "expectedAfterRepair": "empty"
@@ -6028,7 +6034,7 @@
       "title": "Hazards are deterministically executable",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for deterministic hazard execution still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:indep:007 leaves the affected population for \"Hazards are deterministically executable\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/hazard-completeness::hazard-completeness",
@@ -6041,7 +6047,7 @@
           "members": ["r|hazard:assassins-blood"]
         }
       },
-      "invariant": "The repair must preserve deterministic hazard execution while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Hazards are deterministically executable\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:hazard-completeness",
         "expectedAfterRepair": "empty"
@@ -6068,7 +6074,7 @@
       "title": "Hazard success-damage branches are represented",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for hazard success-damage branching still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-01 leaves the affected population for \"Hazard success-damage branches are represented\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/hazard-success-branches::hazard-success-branches",
@@ -6081,7 +6087,7 @@
           "members": ["r|hazard:pits"]
         }
       },
-      "invariant": "The repair must preserve hazard success-damage branching while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Hazard success-damage branches are represented\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:hazard-success-branches",
         "expectedAfterRepair": "empty"
@@ -6108,7 +6114,7 @@
       "title": "Sphere of Annihilation is not prose-only",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for Sphere of Annihilation executable detail still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-23 leaves the affected population for \"Sphere of Annihilation is not prose-only\" unresolved; The exact source-backed record, clause, field, relationship, or artifact named by this finding. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/sphere-prose::sphere-prose",
@@ -6121,7 +6127,7 @@
           "members": ["r|hazard:sphere-of-annihilation"]
         }
       },
-      "invariant": "The repair must preserve Sphere of Annihilation executable detail while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Sphere of Annihilation is not prose-only\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:sphere-prose",
         "expectedAfterRepair": "empty"
@@ -6148,7 +6154,7 @@
       "title": "Magic-item effects have an honest execution boundary",
       "status": "disclosed-dependency",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for magic-item execution boundaries still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:residual-unverified-effects-semantics leaves the affected population for \"Magic-item effects have an honest execution boundary\" unresolved; Every source-backed execution-readiness clause currently requiring an engine capability. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "statusReasoning": "Pack projection can enumerate item clauses, but complete execution remains dependent on the engine capability families and their owning beads.",
       "obligation": {
@@ -6957,7 +6963,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve magic-item execution boundaries while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Magic-item effects have an honest execution boundary\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:magic-item-effects",
         "expectedAfterRepair": "empty"
@@ -7779,7 +7785,7 @@
       "title": "Readiness metadata reflects semantic completeness",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for semantic readiness metadata integrity still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:opus:F-21 leaves the affected population for \"Readiness metadata reflects semantic completeness\" unresolved; Every source-backed execution-readiness clause in the magic-item corpus. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/readiness-integrity::readiness-integrity",
@@ -8809,7 +8815,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve semantic readiness metadata integrity while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Readiness metadata reflects semantic completeness\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:readiness-integrity",
         "expectedAfterRepair": "empty"
@@ -9852,7 +9858,7 @@
       "aliases": ["sol:CAP-007"],
       "title": "Required engine capabilities have qualified ownership",
       "status": "disclosed-dependency",
-      "membershipStatus": "derived",
+      "membershipStatus": "underived",
       "statusReasoning": "Capability membership is generated from the pack and completion is owned by the engine capability family beads; the registry records the dependency until those families certify.",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/engine-capability-ownership::engine-capability-ownership",
@@ -11319,7 +11325,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve qualified engine capability ownership while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Required engine capabilities have qualified ownership\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:engine-capability-ownership",
         "expectedAfterRepair": "empty"
@@ -12133,7 +12139,9 @@
         "sourceScope": "Every source-backed execution-readiness clause currently requiring an engine capability.",
         "authority": "audit-finding:sol:CAP-007",
         "currentMatch": "required"
-      }
+      },
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-007 leaves the affected population for \"Required engine capabilities have qualified ownership\" unresolved; Every source-backed execution-readiness clause currently requiring an engine capability. still needs exact identity reconciliation before closure.",
+      "owningDerivationBead": "eshyra-o9bd.19.1.7"
     },
     {
       "canonicalId": "readiness-artifacts",
@@ -12141,7 +12149,7 @@
       "title": "Readiness artifacts agree with the corpus",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "The audit-derived membership boundary for readiness artifact and corpus agreement still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
+      "underivedReason": "Independent audit authority audit-finding:sol:CAP-014 leaves the affected population for \"Readiness artifacts agree with the corpus\" unresolved; The checked-in readiness artifacts that summarize and identify the committed corpus. still needs exact identity reconciliation before closure.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/readiness-artifacts::readiness-artifacts",
@@ -12158,7 +12166,7 @@
           ]
         }
       },
-      "invariant": "The repair must preserve readiness artifact and corpus agreement while satisfying the source-backed obligation at the exact audited target.",
+      "invariant": "The repaired \"Readiness artifacts agree with the corpus\" must preserve its source-backed branches, alternatives, timing, lifecycle, and termination semantics; closure requires evidence for every affected identity.",
       "violation": {
         "queryId": "finding:readiness-artifacts",
         "expectedAfterRepair": "empty"

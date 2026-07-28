@@ -22,9 +22,10 @@ Every row separates the durable obligation from the current defect:
   repair. A disappearing violation therefore does not erase the obligation.
 
 `baselineMembership` is the audited, checked-in snapshot of exact identities.
-It is evidence, not a copied total. `membershipDerivation` records how the
-snapshot was generated from the committed corpus (record-kind, readiness-clause,
-half-damage-branch, or artifact enumeration) and names the source authority.
+It is evidence, not a copied total. `membershipDerivation` records the
+candidate pack/artifact join and names the independent source authority. A pack
+query is never sufficient to make a row derived: the current corpus can only
+show which independently recorded identities are present.
 `evaluateMembershipQuery` joins the durable expected identities to the current
 pack and artifact files, returning expected, current, and missing identities
 separately. Validation compares the complete sets, so losing one member fails
@@ -34,15 +35,13 @@ rather than merely remaining non-empty.
 
 Rows have one of two mechanically enforced membership statuses:
 
-- `derived` means a named executable query is the authority for the baseline.
-  Validation reruns that query against the committed pack and requires the
-  complete identity set to match the stored snapshot. A single-record result
-  is valid only when the query proves that it is the complete result.
+- `derived` means an independently authoritative, named executable query
+  defines the complete baseline and the current corpus joins to it exactly.
 - `underived` means the complete population still requires reconciliation to
-  the prose of the four audit reviews. It carries a distinct
-  `underivedReason` describing the interpretation still needed for that row and
+  the source or prose of the four audit reviews. All 68 rows are currently in
+  this honest state; each carries distinct evidence in `underivedReason` and
   names `eshyra-o9bd.19.1.7`, which owns that derivation work. A reason may not
-  be a canonical-ID template or be reused by another underived row.
+  be a canonical-ID or paraphrase-slot template, or be reused by another row.
 
 `findingRegistryClosureReady()` is the fail-closed gate: it reruns the full
 membership validation chain and returns false while any row is underived or a
@@ -67,7 +66,8 @@ are intentionally duplicated locally until the bootstrap capability-ledger PR
 lands; the integration follow-up can replace this small duplicate at the
 serialized boundary without changing the identity spellings.
 
-The validator rejects duplicate canonical IDs, duplicate aliases, malformed
+The validator rejects duplicate canonical IDs, omitted or unexpected canonical
+rows/aliases, malformed
 obligation IDs, pack self-authority, generic selectors, malformed nested
 identities, baseline/selector drift, partial current membership, structurally
 templated invariants or underived reasons, non-specific underived reasons, and

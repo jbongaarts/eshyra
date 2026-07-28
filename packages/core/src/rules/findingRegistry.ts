@@ -215,6 +215,77 @@ export type MembershipQueryName =
 
 type Obj = Record<string, unknown>;
 
+const CANONICAL_ROW_ROSTER: Readonly<Record<string, readonly string[]>> = {
+  'source-authority-opus-f19': ['opus:F-19'],
+  'source-authority-opus-f20': ['opus:F-20'],
+  'source-authority-sol-cap-008': ['sol:CAP-008'],
+  'source-authority-fable-f1': ['fable:F1'],
+  'source-authority-fable-f5': ['fable:F5'],
+  'source-authority-fable-f7': ['fable:F7'],
+  'language-universe-policy': ['indep:011'],
+  'locator-completeness': ['indep:008'],
+  'ambiguous-coverage': ['indep:009'],
+  'rock-gnome-boundary': ['indep:010', 'sol:CAP-012'],
+  'equipment-report': ['indep:012'],
+  'spellcasting-granularity': ['opus:F-15'],
+  'vehicle-tool-row': ['opus:F-17'],
+  'wererat-crossbow': ['opus:F-30'],
+  'source-provenance-fields': ['sol:CAP-010'],
+  'container-continuation': ['fable:F4'],
+  'advancement-qualifiers': ['opus:F-10'],
+  'proficiency-grants': ['opus:F-13'],
+  'choice-identifiers': ['opus:F-14'],
+  'madness-durations': ['opus:F-16'],
+  'damage-field-shape': ['opus:F-34'],
+  'equipment-taxonomy': ['sol:CAP-013'],
+  'table-empty-cells': ['fable:F6'],
+  'display-name-qualification': ['opus:F-22'],
+  'canonical-discovery': ['sol:CAP-011'],
+  'rule-key-duplication': ['fable:F8'],
+  'audit-readiness-gate': ['indep:001'],
+  'rule-corpus-procedures': ['sol:CAP-001'],
+  'phantom-feature-resources': ['opus:F-06'],
+  'damage-alternatives': ['opus:F-27'],
+  'choice-behavior': ['indep:002'],
+  'pit-variants': ['opus:F-02'],
+  'invocation-effects': ['opus:F-07'],
+  'bulette-alternative': ['opus:F-33'],
+  'targeting-qualifiers': ['opus:F-35'],
+  'option-losses': ['sol:CAP-005'],
+  'class-feature-completeness': ['indep:003'],
+  'indomitable-scaling': ['opus:F-03'],
+  'arcane-recovery-reset': ['opus:F-04'],
+  'natural-recovery-reset': ['opus:F-05'],
+  'ki-abilities': ['opus:F-12'],
+  'divine-sense-uses': ['opus:F-24'],
+  'condition-structure-no-regression': ['sol:CAP-002'],
+  'rules-prose-readiness': ['opus:F-09'],
+  'ancestry-omissions': ['indep:004'],
+  'background-equipment': ['opus:F-18'],
+  'hazard-and-healing-potion': ['sol:CAP-006'],
+  'spell-completeness': ['indep:005'],
+  'point-origin-areas': ['opus:F-08', 'fable:F2'],
+  'magic-missile-projectiles': ['opus:F-11'],
+  'spell-mechanics-depth': ['sol:CAP-003'],
+  'animal-friendship-authority': ['sol:CAP-009'],
+  'creature-completeness': ['indep:006'],
+  'half-damage-branches': ['opus:F-25'],
+  'legendary-economy': ['opus:F-26'],
+  'druid-dryad-attacks': ['opus:F-28'],
+  'unicode-minus-damage': ['opus:F-29'],
+  'ranged-notation': ['opus:F-31'],
+  'multi-save-entries': ['opus:F-32'],
+  'creature-statblock-mechanics': ['sol:CAP-004'],
+  'creature-ongoing-riders': ['fable:F3'],
+  'hazard-completeness': ['indep:007'],
+  'hazard-success-branches': ['opus:F-01'],
+  'sphere-prose': ['opus:F-23'],
+  'magic-item-effects': ['opus:residual-unverified-effects-semantics'],
+  'readiness-integrity': ['opus:F-21'],
+  'engine-capability-ownership': ['sol:CAP-007'],
+  'readiness-artifacts': ['sol:CAP-014'],
+};
+
 const ENGINE_FAMILY_OWNERS: Readonly<Record<EngineCapabilityId, string>> = {
   'engine:F1': 'eshyra-o9bd.19.5.2',
   'engine:F2': 'eshyra-o9bd.19.5.3',
@@ -288,92 +359,291 @@ function engineCapabilityId(engine: string, path: string): EngineCapabilityId {
   return capabilityId as EngineCapabilityId;
 }
 
+const CANONICAL_HOOK_PRIMITIVES = new Map<string, string>([
+  [
+    'engine:F10\0canonical asset creation when retained',
+    'retained-inventory-property-xp-asset-creation',
+  ],
+  [
+    'engine:F10\0currency, property, inventory, and XP ledger outcomes',
+    'canonical-currency-mutation',
+  ],
+  [
+    'engine:F10\0downtime study window',
+    'downtime-study-expense-and-training-ledger',
+  ],
+  [
+    'engine:F1\0condition and eligibility relations',
+    'condition-and-eligibility-relations',
+  ],
+  [
+    'engine:F1\0seeded dice, percentage, table, and pool selection',
+    'seeded-selection-and-roll-replacement',
+  ],
+  [
+    'engine:F1\0shared seeded roll selection and roll replacement',
+    'seeded-selection-and-roll-replacement',
+  ],
+  [
+    'engine:F2\0action-economy activation',
+    'turn-action-and-free-interaction-budget',
+  ],
+  [
+    'engine:F2\0activation action economy',
+    'turn-action-and-free-interaction-budget',
+  ],
+  [
+    'engine:F2\0controlled-entity command action budget',
+    'turn-action-and-free-interaction-budget',
+  ],
+  [
+    'engine:F2\0item activation and action-budget ownership',
+    'reaction-and-item-activation-ownership',
+  ],
+  [
+    'engine:F2\0reaction and action economy',
+    'reaction-and-item-activation-ownership',
+  ],
+  [
+    'engine:F2\0legendary action allowance and option cost',
+    'legendary-action-allowance-and-option-cost',
+  ],
+  ['engine:F3\0concentration lifecycle', 'concentration-owner-and-damage-save'],
+  [
+    'engine:F3\0encounter combatant, persistent actor, and owned-entity lifecycle',
+    'owned-entity-and-repeat-trigger-lifecycle',
+  ],
+  [
+    'engine:F4\0canonical spell execution',
+    'caster-of-record-and-canonical-spell-execution',
+  ],
+  [
+    'engine:F4\0class spell-list eligibility and casting procedure',
+    'caster-of-record-and-canonical-spell-execution',
+  ],
+  [
+    'engine:F4\0class spell-list eligibility and casting/copying procedure',
+    'caster-of-record-and-canonical-spell-execution',
+  ],
+  [
+    'engine:F4\0shared spell-slot, spell-casting, and caster-of-record execution',
+    'spell-slot-gate-and-upcast-transform',
+  ],
+  [
+    'engine:F4\0spell effect application',
+    'caster-of-record-and-canonical-spell-execution',
+  ],
+  [
+    'engine:F4\0spell execution',
+    'caster-of-record-and-canonical-spell-execution',
+  ],
+  [
+    'engine:F4\0spell execution and summoned entity ownership',
+    'caster-of-record-and-canonical-spell-execution',
+  ],
+  [
+    'engine:F4\0stored-spell and item-casting resolution',
+    'caster-of-record-and-canonical-spell-execution',
+  ],
+  [
+    'engine:F4\0wizard spellbook copying procedure',
+    'spellbook-copy-cost-and-asset-ledger',
+  ],
+  [
+    'engine:F5\0attunement, curse, and item-instance state constraints',
+    'attunement-curse-and-identity-constraints',
+  ],
+  [
+    'engine:F5\0complex item state and duration processing',
+    'per-instance-usage-and-charge-spend',
+  ],
+  [
+    'engine:F5\0dawn reset with nonblocking early-reuse risk',
+    'recharge-and-reset-scheduling',
+  ],
+  [
+    'engine:F5\0duration budget and conditional periodic recharge',
+    'recharge-and-reset-scheduling',
+  ],
+  [
+    'engine:F5\0duration-budget accounting',
+    'per-instance-usage-and-charge-spend',
+  ],
+  ['engine:F5\0elapsed-time cooldown reset', 'recharge-and-reset-scheduling'],
+  [
+    'engine:F5\0independent per-bead dawn reset',
+    'recharge-and-reset-scheduling',
+  ],
+  [
+    'engine:F5\0item state transition and duration processing',
+    'per-instance-usage-and-charge-spend',
+  ],
+  [
+    'engine:F5\0item-instance cooldown and owned-entity identity link',
+    'recharge-and-reset-scheduling',
+  ],
+  ['engine:F5\0magic-item-usage-recharge', 'recharge-and-reset-scheduling'],
+  [
+    'engine:F5\0pack-licensed per-instance random initialization and card-pool state',
+    'containment-portal-and-card-pool-instance-state',
+  ],
+  [
+    'engine:F5\0per-instance containment occupancy and portal-state ownership',
+    'containment-portal-and-card-pool-instance-state',
+  ],
+  [
+    'engine:F5\0per-item storage, charge, and reset state',
+    'per-instance-usage-and-charge-spend',
+  ],
+  ['engine:F5\0per-period usage reset', 'recharge-and-reset-scheduling'],
+  [
+    'engine:F6\0character condition, curse, ability, and alignment outcomes',
+    'hp-healing-and-temporary-buffer',
+  ],
+  [
+    'engine:F6\0damage, poisoned condition, and turn lifecycle',
+    'hp-healing-and-temporary-buffer',
+  ],
+  [
+    'engine:F6\0hit points and condition lifecycle',
+    'hp-healing-and-temporary-buffer',
+  ],
+  [
+    'engine:F6\0hit-point and condition mutation',
+    'death-save-dying-and-stable-transitions',
+  ],
+  [
+    'engine:F6\0hit-point loss, healing restriction, and character-condition state',
+    'hp-healing-and-temporary-buffer',
+  ],
+  ['engine:F6\0hit-point restoration', 'hp-healing-and-temporary-buffer'],
+  [
+    'engine:F6\0suffocation and condition lifecycle',
+    'suffocation-and-ongoing-damage-state',
+  ],
+  [
+    'engine:F6\0temporary hit point ownership and duration',
+    'hp-healing-and-temporary-buffer',
+  ],
+  [
+    'engine:F7\0dawn, rest, and timed curse-state transitions',
+    'long-rest-reset-orchestration',
+  ],
+  ['engine:F7\0long-rest reset', 'long-rest-reset-orchestration'],
+  [
+    'engine:F7\0long-rest reset and early-reuse gate',
+    'long-rest-reset-orchestration',
+  ],
+  [
+    'engine:F7\0one-hour declared-draw deadline and reset windows',
+    'planar-return-and-declared-window-clocks',
+  ],
+  [
+    'engine:F7\0suffocation, duration, and planar-return clock processing',
+    'planar-return-and-declared-window-clocks',
+  ],
+  [
+    'engine:F8\0Intelligence (Arcana) check',
+    'derived-attack-ac-and-proficiency-modifiers',
+  ],
+  [
+    'engine:F8\0attack and damage modifier application',
+    'derived-attack-ac-and-proficiency-modifiers',
+  ],
+  [
+    'engine:F8\0derived combat modifier application',
+    'derived-attack-ac-and-proficiency-modifiers',
+  ],
+  [
+    'engine:F8\0roll mode and targeting modifiers',
+    'derived-attack-ac-and-proficiency-modifiers',
+  ],
+  [
+    'engine:F8\0save DC and spell attack resolution',
+    'save-dc-and-spell-attack-modifier-resolution',
+  ],
+  [
+    'engine:F8\0spellcasting ability check',
+    'derived-attack-ac-and-proficiency-modifiers',
+  ],
+  [
+    'engine:F8\0spellcasting-ability and Intelligence (Arcana) checks',
+    'derived-attack-ac-and-proficiency-modifiers',
+  ],
+  [
+    'engine:F9\u000010 + spell-level DC formula',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  [
+    'engine:F9\u000010 + spell-level formula and scroll table resolution',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  [
+    'engine:F9\0area targeting and forced movement',
+    'point-origin-area-geometry-and-targeting',
+  ],
+  [
+    'engine:F9\0checks, saves, damage, movement, and destruction outcomes',
+    'damage-rider-and-half-damage-branch-resolution',
+  ],
+  [
+    'engine:F9\0coverage, time, and volume arithmetic',
+    'capacity-and-variant-arithmetic',
+  ],
+  [
+    'engine:F9\0damage resistance, vulnerability, and rider math',
+    'damage-rider-and-half-damage-branch-resolution',
+  ],
+  [
+    'engine:F9\0damage, range, cover, and forced movement',
+    'damage-rider-and-half-damage-branch-resolution',
+  ],
+  [
+    'engine:F9\0damage, saving throws, and targeting',
+    'damage-rider-and-half-damage-branch-resolution',
+  ],
+  [
+    'engine:F9\0deterministic checks, forced movement, and interaction resolution',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  [
+    'engine:F9\0deterministic roll, save, check, and reflection transform',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  [
+    'engine:F9\0geometry, targeting, movement, and contest resolution',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  [
+    'engine:F9\0saving throw, damage, and attack targeting consequences',
+    'damage-rider-and-half-damage-branch-resolution',
+  ],
+  ['engine:F9\0size-scaled quantity cost', 'capacity-and-variant-arithmetic'],
+  [
+    'engine:F9\0size-scaled quantity cost and area targeting',
+    'point-origin-area-geometry-and-targeting',
+  ],
+  [
+    'engine:F9\0table row resolution by rarity',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  [
+    'engine:F9\0targeting, escape, and movement consequences',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  [
+    'engine:F9\0variant targeting, movement, and capacity arithmetic',
+    'capacity-and-variant-arithmetic',
+  ],
+]);
+
 function primitiveForHook(
   capabilityId: EngineCapabilityId,
   hook: string,
 ): string {
-  const lower = hook.toLowerCase();
-  const canonicalHookPrimitive = new Map<string, string>([
-    [
-      'engine:F3\0active effect duration and termination',
-      'active-effect-duration-and-termination',
-    ],
-    [
-      'engine:F5\0per-item storage, charge, and reset state',
-      'per-instance-usage-and-charge-spend',
-    ],
-    [
-      'engine:F6\0hit-point and condition mutation',
-      'death-save-dying-and-stable-transitions',
-    ],
-    [
-      'engine:F9\0geometry, targeting, movement, and contest resolution',
-      'forced-movement-contest-and-object-interaction',
-    ],
-  ]);
-  const exactPrimitive = canonicalHookPrimitive.get(`${capabilityId}\0${hook}`);
-  if (exactPrimitive !== undefined) return exactPrimitive;
-  const primitive = (() => {
-    switch (capabilityId) {
-      case 'engine:F1':
-        return lower.includes('seeded')
-          ? 'seeded-selection-and-roll-replacement'
-          : 'condition-and-eligibility-relations';
-      case 'engine:F2':
-        return /reaction|item activation/.test(lower)
-          ? 'reaction-and-item-activation-ownership'
-          : 'turn-action-and-free-interaction-budget';
-      case 'engine:F3':
-        return lower.includes('concentration')
-          ? 'concentration-owner-and-damage-save'
-          : 'owned-entity-and-repeat-trigger-lifecycle';
-      case 'engine:F4':
-        if (lower.includes('wizard spellbook'))
-          return 'spellbook-copy-cost-and-asset-ledger';
-        if (lower.includes('slot'))
-          return 'spell-slot-gate-and-upcast-transform';
-        return 'caster-of-record-and-canonical-spell-execution';
-      case 'engine:F5':
-        if (/containment|portal|card-pool/.test(lower))
-          return 'containment-portal-and-card-pool-instance-state';
-        if (/attunement|curse/.test(lower))
-          return 'attunement-curse-and-identity-constraints';
-        if (/reset|recharge|cooldown|dawn|usage/.test(lower))
-          return 'recharge-and-reset-scheduling';
-        return 'per-instance-usage-and-charge-spend';
-      case 'engine:F6':
-        if (lower.includes('suffocation'))
-          return 'suffocation-and-ongoing-damage-state';
-        if (/death|dying|stable/.test(lower))
-          return 'death-save-dying-and-stable-transitions';
-        return 'hp-healing-and-temporary-buffer';
-      case 'engine:F7':
-        if (lower.includes('short-rest')) return 'short-rest-hit-dice-recovery';
-        if (/planar|deadline|declared-draw/.test(lower))
-          return 'planar-return-and-declared-window-clocks';
-        return 'long-rest-reset-orchestration';
-      case 'engine:F8':
-        if (/multi-save|ability-choice/.test(lower))
-          return 'multi-save-and-ability-choice-outcomes';
-        if (/save dc|spell attack/.test(lower))
-          return 'save-dc-and-spell-attack-modifier-resolution';
-        return 'derived-attack-ac-and-proficiency-modifiers';
-      case 'engine:F9':
-        if (/area|geometry/.test(lower))
-          return 'point-origin-area-geometry-and-targeting';
-        if (/damage|rider|resistance|vulnerability/.test(lower))
-          return 'damage-rider-and-half-damage-branch-resolution';
-        if (/capacity|quantity|coverage|volume|variant/.test(lower))
-          return 'capacity-and-variant-arithmetic';
-        return 'forced-movement-contest-and-object-interaction';
-      case 'engine:F10':
-        if (lower.includes('downtime'))
-          return 'downtime-study-expense-and-training-ledger';
-        if (lower.includes('asset'))
-          return 'retained-inventory-property-xp-asset-creation';
-        return 'canonical-currency-mutation';
-    }
-  })();
+  const primitive = CANONICAL_HOOK_PRIMITIVES.get(`${capabilityId}\0${hook}`);
+  if (primitive === undefined)
+    throw new Error(`unknown hook for ${capabilityId}: ${hook}`);
   if (!CANONICAL_PRIMITIVES_BY_ENGINE.get(capabilityId)?.has(primitive)) {
     throw new Error(`no canonical primitive for ${capabilityId}/${hook}`);
   }
@@ -411,6 +681,12 @@ function stringArray(value: unknown, path: string): string[] {
 }
 
 function hasForbiddenTotal(value: unknown, path = 'row'): void {
+  if (Array.isArray(value)) {
+    value.forEach((child, index) => {
+      hasForbiddenTotal(child, `${path}[${index}]`);
+    });
+    return;
+  }
   if (!isObject(value)) return;
   for (const [key, child] of Object.entries(value)) {
     if (/^(?:count|total|totalCount|storedCount|storedTotal)$/i.test(key)) {
@@ -450,7 +726,6 @@ function escapeRegExp(value: string): string {
 function normalizedFindingText(row: FindingRow, value: string): string {
   const rowSpecificTokens = [
     row.canonicalId,
-    row.title,
     row.violation.queryId,
     row.obligation.obligationId,
     row.target.kind,
@@ -476,6 +751,15 @@ function normalizedFindingText(row: FindingRow, value: string): string {
       '<row-specific>',
     );
   }
+  normalized = normalized
+    .replace(
+      /the audit-derived membership boundary for .*? still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence/g,
+      '<membership-boundary-template>',
+    )
+    .replace(
+      /the repair must preserve .*? while satisfying the source-backed obligation at the exact audited target/g,
+      '<invariant-template>',
+    );
   return normalized.replace(/\s+/g, ' ').trim();
 }
 
@@ -750,6 +1034,50 @@ function parseMembers(
       throw new Error(`${path} contains a duplicate identity`);
   }
   return members;
+}
+
+function canonicalRosterBlockers(value: unknown): string[] {
+  if (!isObject(value) || !Array.isArray(value.rows)) return ['registry'];
+  const expected = new Map(Object.entries(CANONICAL_ROW_ROSTER));
+  const seen = new Map<string, number>();
+  const blockers: string[] = [];
+  for (const raw of value.rows) {
+    if (!isObject(raw) || typeof raw.canonicalId !== 'string') {
+      blockers.push('malformed-row');
+      continue;
+    }
+    const canonicalId = raw.canonicalId;
+    const occurrence = (seen.get(canonicalId) ?? 0) + 1;
+    seen.set(canonicalId, occurrence);
+    if (occurrence > 1) blockers.push(`duplicate:${canonicalId}`);
+    const expectedAliases = expected.get(canonicalId);
+    if (expectedAliases === undefined) {
+      blockers.push(`unexpected:${canonicalId}`);
+      continue;
+    }
+    const actualAliases = Array.isArray(raw.aliases)
+      ? raw.aliases.filter(
+          (alias): alias is string => typeof alias === 'string',
+        )
+      : [];
+    if (
+      JSON.stringify([...actualAliases].sort()) !==
+      JSON.stringify([...expectedAliases].sort())
+    ) {
+      blockers.push(`alias-roster:${canonicalId}`);
+    }
+  }
+  for (const canonicalId of expected.keys()) {
+    if (!seen.has(canonicalId)) blockers.push(`missing:${canonicalId}`);
+  }
+  return [...new Set(blockers)];
+}
+
+function assertCanonicalRowRoster(rows: FindingRow[]): void {
+  const blockers = canonicalRosterBlockers({ rows });
+  if (blockers.length > 0) {
+    throw new Error(`canonical row roster mismatch: ${blockers.join(', ')}`);
+  }
 }
 
 function parseRegistry(value: unknown): FindingRegistry {
@@ -1114,6 +1442,7 @@ function parseRegistry(value: unknown): FindingRegistry {
     }
     underivedReasons.set(reason, row.canonicalId);
   }
+  assertCanonicalRowRoster(rows);
   assertNoTemplateCollisions(rows, 'underivedReason');
   assertNoTemplateCollisions(rows, 'invariant');
   return { version: 1, rows };
@@ -1211,7 +1540,7 @@ function recordIdentity(
   return { recordKey: record.key, ...nested };
 }
 
-function capabilityIdentityForHook(
+export function capabilityIdentityForHook(
   engine: string,
   hook: string,
 ): CapabilityIdentity {
@@ -1571,6 +1900,7 @@ export function findingRegistryClosureBlockers(
   registry = loadFindingRegistry(),
   records = getDefaultRecords(),
 ): string[] {
+  const rosterBlockers = canonicalRosterBlockers(registry);
   let parsed: FindingRegistry;
   try {
     parsed = parseRegistry(registry);
@@ -1582,8 +1912,14 @@ export function findingRegistryClosureBlockers(
         ? [row.canonicalId]
         : [],
     );
-    return identities.length > 0 ? [...new Set(identities)] : ['registry'];
+    return [
+      ...new Set([
+        ...rosterBlockers,
+        ...(identities.length > 0 ? identities : ['registry']),
+      ]),
+    ];
   }
+  if (rosterBlockers.length > 0) return rosterBlockers;
   return parsed.rows.flatMap((row) => {
     if (row.membershipStatus === 'underived') return [row.canonicalId];
     try {
