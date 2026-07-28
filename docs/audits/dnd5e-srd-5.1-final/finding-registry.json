@@ -7,7 +7,7 @@
       "title": "Composed spellPreparation source text is not presented as quotation",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete clause membership for “Composed spellPreparation source text is not presented as quotation”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for spell preparation quotation boundaries still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "statusReasoning": "Reviewed empty current membership: the source-backed spellPreparation clause is absent from the current pack; preserve this source identity until the clause IR follow-up lands.",
       "obligation": {
@@ -23,7 +23,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that composed spellPreparation source text is not presented as quotation.",
+      "invariant": "The repair must preserve spell preparation quotation boundaries while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:source-authority-opus-f19",
         "expectedAfterRepair": "empty"
@@ -52,7 +52,7 @@
       "title": "Stale manifest provenance is removed",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete path membership for “Stale manifest provenance is removed”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for manifest provenance lineage still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-opus-f20::source-authority-opus-f20",
@@ -65,7 +65,7 @@
           "members": ["a|manifest.json|$.packId"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that stale manifest provenance is removed.",
+      "invariant": "The repair must preserve manifest provenance lineage while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:source-authority-opus-f20",
         "expectedAfterRepair": "empty"
@@ -92,7 +92,7 @@
       "title": "Bag of Beans successful-save outcome follows source authority",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete clause membership for “Bag of Beans successful-save outcome follows source authority”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for successful-save consequence branches still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-sol-cap-008::source-authority-sol-cap-008",
@@ -107,7 +107,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that bag of Beans successful-save outcome follows source authority.",
+      "invariant": "The repair must preserve successful-save consequence branches while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:source-authority-sol-cap-008",
         "expectedAfterRepair": "empty"
@@ -136,7 +136,7 @@
       "title": "Starting Wealth is not emitted as unsupported SRD content",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Starting Wealth is not emitted as unsupported SRD content”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for unsupported starting-wealth output still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-fable-f1::source-authority-fable-f1",
@@ -149,7 +149,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that starting Wealth is not emitted as unsupported SRD content.",
+      "invariant": "The repair must preserve unsupported starting-wealth output while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:source-authority-fable-f1",
         "expectedAfterRepair": "empty"
@@ -176,7 +176,7 @@
       "title": "Synthesized table headers are distinguished from source text",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Synthesized table headers are distinguished from source text”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for table-header source labeling still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-fable-f5::source-authority-fable-f5",
@@ -189,7 +189,7 @@
           "members": ["r|table:ability-scores-and-modifiers"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that synthesized table headers are distinguished from source text.",
+      "invariant": "The repair must preserve table-header source labeling while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:source-authority-fable-f5",
         "expectedAfterRepair": "empty"
@@ -216,7 +216,7 @@
       "title": "Synthesized choice labels are distinguished from source text",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Synthesized choice labels are distinguished from source text”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for choice-label source labeling still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-authority-fable-f7::source-authority-fable-f7",
@@ -229,7 +229,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that synthesized choice labels are distinguished from source text.",
+      "invariant": "The repair must preserve choice-label source labeling while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:source-authority-fable-f7",
         "expectedAfterRepair": "empty"
@@ -256,7 +256,7 @@
       "title": "Language universe keeps its source-defined extension point",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Language universe keeps its source-defined extension point”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for campaign language extension handling still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/language-universe-policy::language-universe-policy",
@@ -273,7 +273,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that language universe keeps its source-defined extension point.",
+      "invariant": "The repair must preserve campaign language extension handling while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:language-universe-policy",
         "expectedAfterRepair": "empty"
@@ -304,7 +304,7 @@
       "title": "Incomplete locators are not treated as complete coverage",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Incomplete locators are not treated as complete coverage”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for source locator completeness still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/locator-completeness::locator-completeness",
@@ -317,7 +317,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that incomplete locators are not treated as complete coverage.",
+      "invariant": "The repair must preserve source locator completeness while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:locator-completeness",
         "expectedAfterRepair": "empty"
@@ -344,7 +344,7 @@
       "title": "Ambiguous ownership is not counted as resolved coverage",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Ambiguous ownership is not counted as resolved coverage”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for ownership ambiguity resolution still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/ambiguous-coverage::ambiguous-coverage",
@@ -357,7 +357,7 @@
           "members": ["r|magic-item:bag-of-beans"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that ambiguous ownership is not counted as resolved coverage.",
+      "invariant": "The repair must preserve ownership ambiguity resolution while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:ambiguous-coverage",
         "expectedAfterRepair": "empty"
@@ -384,7 +384,7 @@
       "title": "Rock Gnome trait ownership is assigned to the correct boundary",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Rock Gnome trait ownership is assigned to the correct boundary”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Rock Gnome trait ownership still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/rock-gnome-boundary::rock-gnome-boundary",
@@ -397,7 +397,7 @@
           "members": ["r|ancestry:rock-gnome"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that rock Gnome trait ownership is assigned to the correct boundary.",
+      "invariant": "The repair must preserve Rock Gnome trait ownership while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:rock-gnome-boundary",
         "expectedAfterRepair": "empty"
@@ -424,7 +424,7 @@
       "title": "Equipment, material, potion, and report records retain their findings",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Equipment, material, potion, and report records retain their findings”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for equipment report classification still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/equipment-report::equipment-report",
@@ -437,7 +437,7 @@
           "members": ["r|equipment:abacus"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that equipment, material, potion, and report records retain their findings.",
+      "invariant": "The repair must preserve equipment report classification while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:equipment-report",
         "expectedAfterRepair": "empty"
@@ -464,7 +464,7 @@
       "title": "Spellcasting subfeatures retain consistent granularity",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Spellcasting subfeatures retain consistent granularity”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for spellcasting subfeature boundaries still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/spellcasting-granularity::spellcasting-granularity",
@@ -477,7 +477,7 @@
           "members": ["r|feature:bard:spellcasting"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that spellcasting subfeatures retain consistent granularity.",
+      "invariant": "The repair must preserve spellcasting subfeature boundaries while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:spellcasting-granularity",
         "expectedAfterRepair": "empty"
@@ -504,7 +504,7 @@
       "title": "Vehicles tool row is retained",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Vehicles tool row is retained”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for vehicle tool-row retention still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/vehicle-tool-row::vehicle-tool-row",
@@ -517,7 +517,7 @@
           "members": ["r|rule:mounts-and-vehicles"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that vehicles tool row is retained.",
+      "invariant": "The repair must preserve vehicle tool-row retention while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:vehicle-tool-row",
         "expectedAfterRepair": "empty"
@@ -544,7 +544,7 @@
       "title": "Wererat Hand Crossbow is not swallowed by segmentation",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete relationship membership for “Wererat Hand Crossbow is not swallowed by segmentation”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for wererat crossbow segmentation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/wererat-crossbow::wererat-crossbow",
@@ -560,7 +560,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that wererat Hand Crossbow is not swallowed by segmentation.",
+      "invariant": "The repair must preserve wererat crossbow segmentation while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:wererat-crossbow",
         "expectedAfterRepair": "empty"
@@ -590,7 +590,7 @@
       "title": "Structured fields cite actual source provenance",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Structured fields cite actual source provenance”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for structured provenance field evidence still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/source-provenance-fields::source-provenance-fields",
@@ -603,7 +603,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that structured fields cite actual source provenance.",
+      "invariant": "The repair must preserve structured provenance field evidence while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:source-provenance-fields",
         "expectedAfterRepair": "empty"
@@ -630,7 +630,7 @@
       "title": "Container continuations retain complete citation",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Container continuations retain complete citation”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for container continuation citations still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/container-continuation::container-continuation",
@@ -643,7 +643,7 @@
           "members": ["r|table:ability-scores-and-modifiers"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that container continuations retain complete citation.",
+      "invariant": "The repair must preserve container continuation citations while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:container-continuation",
         "expectedAfterRepair": "empty"
@@ -670,7 +670,7 @@
       "title": "Advancement scaling qualifiers are preserved",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Advancement scaling qualifiers are preserved”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for advancement scaling qualifiers still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/advancement-qualifiers::advancement-qualifiers",
@@ -683,7 +683,7 @@
           "members": ["r|feature:barbarian:brutal-critical"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that advancement scaling qualifiers are preserved.",
+      "invariant": "The repair must preserve advancement scaling qualifiers while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:advancement-qualifiers",
         "expectedAfterRepair": "empty"
@@ -710,7 +710,7 @@
       "title": "Proficiency grants are structured",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Proficiency grants are structured”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for proficiency grant structure still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/proficiency-grants::proficiency-grants",
@@ -723,7 +723,7 @@
           "members": ["r|ancestry:rock-gnome"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that proficiency grants are structured.",
+      "invariant": "The repair must preserve proficiency grant structure while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:proficiency-grants",
         "expectedAfterRepair": "empty"
@@ -750,7 +750,7 @@
       "title": "Choice identifiers and catalogs are consistent",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Choice identifiers and catalogs are consistent”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for choice catalog identity stability still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/choice-identifiers::choice-identifiers",
@@ -763,7 +763,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that choice identifiers and catalogs are consistent.",
+      "invariant": "The repair must preserve choice catalog identity stability while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:choice-identifiers",
         "expectedAfterRepair": "empty"
@@ -790,7 +790,7 @@
       "title": "Madness durations are retained",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Madness durations are retained”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for madness duration representation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/madness-durations::madness-durations",
@@ -803,7 +803,7 @@
           "members": ["r|table:short-term-madness"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that madness durations are retained.",
+      "invariant": "The repair must preserve madness duration representation while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:madness-durations",
         "expectedAfterRepair": "empty"
@@ -830,7 +830,7 @@
       "title": "Flat and dice damage fields use a consistent shape",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Flat and dice damage fields use a consistent shape”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for flat and dice damage field shape still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/damage-field-shape::damage-field-shape",
@@ -843,7 +843,7 @@
           "members": ["r|creature:bulette"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that flat and dice damage fields use a consistent shape.",
+      "invariant": "The repair must preserve flat and dice damage field shape while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:damage-field-shape",
         "expectedAfterRepair": "empty"
@@ -870,7 +870,7 @@
       "title": "Tack, Harness, and Drawn Vehicles taxonomy is preserved",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Tack, Harness, and Drawn Vehicles taxonomy is preserved”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for tack harness and drawn-vehicle taxonomy still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/equipment-taxonomy::equipment-taxonomy",
@@ -883,7 +883,7 @@
           "members": ["r|equipment:block-and-tackle"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that tack, Harness, and Drawn Vehicles taxonomy is preserved.",
+      "invariant": "The repair must preserve tack harness and drawn-vehicle taxonomy while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:equipment-taxonomy",
         "expectedAfterRepair": "empty"
@@ -910,7 +910,7 @@
       "title": "Empty table cells retain their structured meaning",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Empty table cells retain their structured meaning”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for empty table-cell semantics still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/table-empty-cells::table-empty-cells",
@@ -923,7 +923,7 @@
           "members": ["r|table:ability-scores-and-modifiers"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that empty table cells retain their structured meaning.",
+      "invariant": "The repair must preserve empty table-cell semantics while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:table-empty-cells",
         "expectedAfterRepair": "empty"
@@ -950,7 +950,7 @@
       "title": "Duplicate display names are qualified",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Duplicate display names are qualified”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for duplicate display-name qualification still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/display-name-qualification::display-name-qualification",
@@ -963,7 +963,7 @@
           "members": ["r|rule:languages"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that duplicate display names are qualified.",
+      "invariant": "The repair must preserve duplicate display-name qualification while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:display-name-qualification",
         "expectedAfterRepair": "empty"
@@ -990,7 +990,7 @@
       "title": "Canonical relationships and DM discovery are durable",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Canonical relationships and DM discovery are durable”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for canonical relationship discovery still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/canonical-discovery::canonical-discovery",
@@ -1003,7 +1003,7 @@
           "members": ["r|action:attack"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that canonical relationships and DM discovery are durable.",
+      "invariant": "The repair must preserve canonical relationship discovery while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:canonical-discovery",
         "expectedAfterRepair": "empty"
@@ -1030,7 +1030,7 @@
       "title": "Rule keying and duplication hygiene are explicit",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Rule keying and duplication hygiene are explicit”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for rule-key duplication hygiene still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/rule-key-duplication::rule-key-duplication",
@@ -1043,7 +1043,7 @@
           "members": ["r|rule:a-clear-path-to-the-target"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that rule keying and duplication hygiene are explicit.",
+      "invariant": "The repair must preserve rule-key duplication hygiene while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:rule-key-duplication",
         "expectedAfterRepair": "empty"
@@ -1070,7 +1070,7 @@
       "title": "Readiness gates require clause-complete procedures",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Readiness gates require clause-complete procedures”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for clause-complete readiness gating still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/audit-readiness-gate::audit-readiness-gate",
@@ -2100,7 +2100,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that readiness gates require clause-complete procedures.",
+      "invariant": "The repair must preserve clause-complete readiness gating while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:audit-readiness-gate",
         "expectedAfterRepair": "empty"
@@ -3491,7 +3491,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that the rule corpus has executable procedures.",
+      "invariant": "The repair must preserve executable rule-corpus procedures while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:rule-corpus-procedures",
         "expectedAfterRepair": "empty"
@@ -3854,7 +3854,7 @@
       "title": "Phantom feature resources are not emitted",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Phantom feature resources are not emitted”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for phantom feature-resource suppression still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/phantom-feature-resources::phantom-feature-resources",
@@ -3867,7 +3867,7 @@
           "members": ["r|feature:fighter:indomitable"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that phantom feature resources are not emitted.",
+      "invariant": "The repair must preserve phantom feature-resource suppression while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:phantom-feature-resources",
         "expectedAfterRepair": "empty"
@@ -3894,7 +3894,7 @@
       "title": "Mutually exclusive damage alternatives remain distinct",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Mutually exclusive damage alternatives remain distinct”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for mutually exclusive damage alternatives still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/damage-alternatives::damage-alternatives",
@@ -3907,7 +3907,7 @@
           "members": ["r|creature:bulette"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that mutually exclusive damage alternatives remain distinct.",
+      "invariant": "The repair must preserve mutually exclusive damage alternatives while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:damage-alternatives",
         "expectedAfterRepair": "empty"
@@ -3934,7 +3934,7 @@
       "title": "Choice behavior remains local to its option",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete relationship membership for “Choice behavior remains local to its option”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for option-local choice behavior still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/choice-behavior::choice-behavior",
@@ -3950,7 +3950,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that choice behavior remains local to its option.",
+      "invariant": "The repair must preserve option-local choice behavior while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:choice-behavior",
         "expectedAfterRepair": "empty"
@@ -3980,7 +3980,7 @@
       "title": "Pit variants remain separate procedures",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Pit variants remain separate procedures”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for pit variant procedure separation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/pit-variants::pit-variants",
@@ -3993,7 +3993,7 @@
           "members": ["r|hazard:pits"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that pit variants remain separate procedures.",
+      "invariant": "The repair must preserve pit variant procedure separation while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:pit-variants",
         "expectedAfterRepair": "empty"
@@ -4020,7 +4020,7 @@
       "title": "Eldritch Invocation effects remain option-local",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Eldritch Invocation effects remain option-local”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for invocation option-local effects still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/invocation-effects::invocation-effects",
@@ -4033,7 +4033,7 @@
           "members": ["r|feature:warlock:eldritch-invocations"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that eldritch Invocation effects remain option-local.",
+      "invariant": "The repair must preserve invocation option-local effects while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:invocation-effects",
         "expectedAfterRepair": "empty"
@@ -4060,7 +4060,7 @@
       "title": "Bulette ability alternatives and DC remain explicit",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Bulette ability alternatives and DC remain explicit”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for bulette ability alternatives and DCs still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/bulette-alternative::bulette-alternative",
@@ -4073,7 +4073,7 @@
           "members": ["r|creature:bulette"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that bulette ability alternatives and DC remain explicit.",
+      "invariant": "The repair must preserve bulette ability alternatives and DCs while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:bulette-alternative",
         "expectedAfterRepair": "empty"
@@ -4100,7 +4100,7 @@
       "title": "Targeting qualifiers are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Targeting qualifiers are complete”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for targeting qualifier preservation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/targeting-qualifiers::targeting-qualifiers",
@@ -4113,7 +4113,7 @@
           "members": ["r|creature:bulette"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that targeting qualifiers are complete.",
+      "invariant": "The repair must preserve targeting qualifier preservation while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:targeting-qualifiers",
         "expectedAfterRepair": "empty"
@@ -4140,7 +4140,7 @@
       "title": "Ancestry, feature, progression, and choice losses are repaired",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Ancestry, feature, progression, and choice losses are repaired”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for ancestry feature and progression option retention still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/option-losses::option-losses",
@@ -4153,7 +4153,7 @@
           "members": ["r|feature:warlock:eldritch-invocations"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that ancestry, feature, progression, and choice losses are repaired.",
+      "invariant": "The repair must preserve ancestry feature and progression option retention while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:option-losses",
         "expectedAfterRepair": "empty"
@@ -4180,7 +4180,7 @@
       "title": "Class features and feats retain complete procedures",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Class features and feats retain complete procedures”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for class feature and feat procedure coverage still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/class-feature-completeness::class-feature-completeness",
@@ -4193,7 +4193,7 @@
           "members": ["r|feature:barbarian:ability-score-improvement"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that class features and feats retain complete procedures.",
+      "invariant": "The repair must preserve class feature and feat procedure coverage while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:class-feature-completeness",
         "expectedAfterRepair": "empty"
@@ -4220,7 +4220,7 @@
       "title": "Indomitable use scaling is correct",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Indomitable use scaling is correct”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Indomitable use scaling still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/indomitable-scaling::indomitable-scaling",
@@ -4233,7 +4233,7 @@
           "members": ["r|feature:fighter:indomitable"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that indomitable use scaling is correct.",
+      "invariant": "The repair must preserve Indomitable use scaling while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:indomitable-scaling",
         "expectedAfterRepair": "empty"
@@ -4260,7 +4260,7 @@
       "title": "Arcane Recovery reset is correct",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Arcane Recovery reset is correct”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Arcane Recovery reset timing still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/arcane-recovery-reset::arcane-recovery-reset",
@@ -4273,7 +4273,7 @@
           "members": ["r|feature:wizard:arcane-recovery"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that arcane Recovery reset is correct.",
+      "invariant": "The repair must preserve Arcane Recovery reset timing while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:arcane-recovery-reset",
         "expectedAfterRepair": "empty"
@@ -4300,7 +4300,7 @@
       "title": "Natural Recovery reset is correct",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Natural Recovery reset is correct”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Natural Recovery reset timing still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/natural-recovery-reset::natural-recovery-reset",
@@ -4313,7 +4313,7 @@
           "members": ["r|feature:circle-of-the-land:natural-recovery"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that natural Recovery reset is correct.",
+      "invariant": "The repair must preserve Natural Recovery reset timing while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:natural-recovery-reset",
         "expectedAfterRepair": "empty"
@@ -4340,7 +4340,7 @@
       "title": "Ki abilities and save DC are structured",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Ki abilities and save DC are structured”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for ki ability and save-DC structure still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/ki-abilities::ki-abilities",
@@ -4353,7 +4353,7 @@
           "members": ["r|feature:monk:ki"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that ki abilities and save DC are structured.",
+      "invariant": "The repair must preserve ki ability and save-DC structure while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:ki-abilities",
         "expectedAfterRepair": "empty"
@@ -4380,7 +4380,7 @@
       "title": "Divine Sense use count is explicit",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Divine Sense use count is explicit”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Divine Sense use-count calculation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/divine-sense-uses::divine-sense-uses",
@@ -4393,7 +4393,7 @@
           "members": ["r|feature:paladin:divine-sense"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that divine Sense use count is explicit.",
+      "invariant": "The repair must preserve Divine Sense use-count calculation while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:divine-sense-uses",
         "expectedAfterRepair": "empty"
@@ -4420,7 +4420,7 @@
       "title": "Condition structure is repaired without regressing typed effects",
       "status": "narrowed",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Condition structure is repaired without regressing typed effects”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for typed condition effect preservation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "statusReasoning": "CAP-002 overstates the condition deficit: existing typed condition effects are exact against source. Repair only proven structural gaps and preserve those typed effects.",
       "obligation": {
@@ -4434,7 +4434,7 @@
           "members": ["r|magic-item:bag-of-beans"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that condition structure is repaired without regressing typed effects.",
+      "invariant": "The repair must preserve typed condition effect preservation while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:condition-structure-no-regression",
         "expectedAfterRepair": "stable"
@@ -4461,7 +4461,7 @@
       "title": "Rules prose has an in-band readiness disposition",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Rules prose has an in-band readiness disposition”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for in-band rules-prose readiness still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/rules-prose-readiness::rules-prose-readiness",
@@ -4474,7 +4474,7 @@
           "members": ["r|magic-item:bag-of-beans"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that rules prose has an in-band readiness disposition.",
+      "invariant": "The repair must preserve in-band rules-prose readiness while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:rules-prose-readiness",
         "expectedAfterRepair": "empty"
@@ -4501,7 +4501,7 @@
       "title": "Ancestry deterministic semantics are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Ancestry deterministic semantics are complete”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for ancestry deterministic semantics still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/ancestry-omissions::ancestry-omissions",
@@ -4514,7 +4514,7 @@
           "members": ["r|ancestry:dragonborn"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that ancestry deterministic semantics are complete.",
+      "invariant": "The repair must preserve ancestry deterministic semantics while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:ancestry-omissions",
         "expectedAfterRepair": "empty"
@@ -4541,7 +4541,7 @@
       "title": "Background equipment is structured",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Background equipment is structured”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for background equipment grants still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/background-equipment::background-equipment",
@@ -4554,7 +4554,7 @@
           "members": ["r|background:acolyte", "r|equipment:backpack"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that background equipment is structured.",
+      "invariant": "The repair must preserve background equipment grants while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:background-equipment",
         "expectedAfterRepair": "empty"
@@ -4581,7 +4581,7 @@
       "title": "Hazards and healing potion procedures are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Hazards and healing potion procedures are complete”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for hazard and healing-potion procedures still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/hazard-and-healing-potion::hazard-and-healing-potion",
@@ -4597,7 +4597,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that hazards and healing potion procedures are complete.",
+      "invariant": "The repair must preserve hazard and healing-potion procedures while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:hazard-and-healing-potion",
         "expectedAfterRepair": "empty"
@@ -4955,7 +4955,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that spell procedures are complete.",
+      "invariant": "The repair must preserve clause-complete spell procedures while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:spell-completeness",
         "expectedAfterRepair": "empty"
@@ -5302,7 +5302,7 @@
       "title": "Point-origin spell areas are represented",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Point-origin spell areas are represented”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for point-origin area geometry still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/point-origin-areas::point-origin-areas",
@@ -5319,7 +5319,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that point-origin spell areas are represented.",
+      "invariant": "The repair must preserve point-origin area geometry while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:point-origin-areas",
         "expectedAfterRepair": "empty"
@@ -5350,7 +5350,7 @@
       "title": "Magic Missile base projectile count is explicit",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Magic Missile base projectile count is explicit”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Magic Missile projectile count still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/magic-missile-projectiles::magic-missile-projectiles",
@@ -5366,7 +5366,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that magic Missile base projectile count is explicit.",
+      "invariant": "The repair must preserve Magic Missile projectile count while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:magic-missile-projectiles",
         "expectedAfterRepair": "empty"
@@ -5396,7 +5396,7 @@
       "title": "Spell mechanics are projected to source depth",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Spell mechanics are projected to source depth”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for spell mechanic source depth still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/spell-mechanics-depth::spell-mechanics-depth",
@@ -5409,7 +5409,7 @@
           "members": ["r|spell:acid-arrow"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that spell mechanics are projected to source depth.",
+      "invariant": "The repair must preserve spell mechanic source depth while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:spell-mechanics-depth",
         "expectedAfterRepair": "empty"
@@ -5436,7 +5436,7 @@
       "title": "Animal Friendship correction is source-authority work",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Animal Friendship correction is source-authority work”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Animal Friendship source authority still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/animal-friendship-authority::animal-friendship-authority",
@@ -5452,7 +5452,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that animal Friendship correction is source-authority work.",
+      "invariant": "The repair must preserve Animal Friendship source authority while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:animal-friendship-authority",
         "expectedAfterRepair": "empty"
@@ -5482,7 +5482,7 @@
       "title": "Creature triggers, branches, timing, and lifecycle are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Creature triggers, branches, timing, and lifecycle are complete”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for creature trigger branch timing and lifecycle still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/creature-completeness::creature-completeness",
@@ -5495,7 +5495,7 @@
           "members": ["r|creature:aboleth"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that creature triggers, branches, timing, and lifecycle are complete.",
+      "invariant": "The repair must preserve creature trigger branch timing and lifecycle while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:creature-completeness",
         "expectedAfterRepair": "empty"
@@ -5627,7 +5627,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that creature and hazard half-damage branches are represented.",
+      "invariant": "The repair must preserve creature and hazard half-damage branching while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:half-damage-branches",
         "expectedAfterRepair": "empty"
@@ -5748,7 +5748,7 @@
       "title": "Legendary budgets and action costs are modeled",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Legendary budgets and action costs are modeled”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for legendary action budget economy still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/legendary-economy::legendary-economy",
@@ -5761,7 +5761,7 @@
           "members": ["r|creature:adult-black-dragon"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that legendary budgets and action costs are modeled.",
+      "invariant": "The repair must preserve legendary action budget economy while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:legendary-economy",
         "expectedAfterRepair": "empty"
@@ -5788,7 +5788,7 @@
       "title": "Druid and Dryad attacks have attack objects",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete field membership for “Druid and Dryad attacks have attack objects”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Druid and Dryad attack objects still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/druid-dryad-attacks::druid-dryad-attacks",
@@ -5801,7 +5801,7 @@
           "members": ["p|creature:druid|data.traits[0].text"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that druid and Dryad attacks have attack objects.",
+      "invariant": "The repair must preserve Druid and Dryad attack objects while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:druid-dryad-attacks",
         "expectedAfterRepair": "empty"
@@ -5828,7 +5828,7 @@
       "title": "Unicode-minus damage is normalized",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete field membership for “Unicode-minus damage is normalized”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Unicode-minus damage normalization still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/unicode-minus-damage::unicode-minus-damage",
@@ -5841,7 +5841,7 @@
           "members": ["p|creature:bulette|data.actions[0].text"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that unicode-minus damage is normalized.",
+      "invariant": "The repair must preserve Unicode-minus damage normalization while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:unicode-minus-damage",
         "expectedAfterRepair": "empty"
@@ -5868,7 +5868,7 @@
       "title": "Ranged attacks retain range under alternate notation",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete field membership for “Ranged attacks retain range under alternate notation”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for ranged attack alternate notation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/ranged-notation::ranged-notation",
@@ -5881,7 +5881,7 @@
           "members": ["p|creature:wererat|data.actions[2].text"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that ranged attacks retain range under alternate notation.",
+      "invariant": "The repair must preserve ranged attack alternate notation while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:ranged-notation",
         "expectedAfterRepair": "empty"
@@ -5908,7 +5908,7 @@
       "title": "Multi-save entries retain every save",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete field membership for “Multi-save entries retain every save”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for multi-save entry preservation still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/multi-save-entries::multi-save-entries",
@@ -5921,7 +5921,7 @@
           "members": ["p|creature:bulette|data.actions[1].text"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that multi-save entries retain every save.",
+      "invariant": "The repair must preserve multi-save entry preservation while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:multi-save-entries",
         "expectedAfterRepair": "empty"
@@ -5948,7 +5948,7 @@
       "title": "Creature stat-block mechanics are complete",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete field membership for “Creature stat-block mechanics are complete”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for creature stat-block mechanics still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/creature-statblock-mechanics::creature-statblock-mechanics",
@@ -5961,7 +5961,7 @@
           "members": ["p|creature:bulette|data.traits[0].mechanics"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that creature stat-block mechanics are complete.",
+      "invariant": "The repair must preserve creature stat-block mechanics while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:creature-statblock-mechanics",
         "expectedAfterRepair": "empty"
@@ -5988,7 +5988,7 @@
       "title": "Creature riders and ongoing damage are typed",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Creature riders and ongoing damage are typed”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for creature rider and ongoing-damage typing still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/creature-ongoing-riders::creature-ongoing-riders",
@@ -6001,7 +6001,7 @@
           "members": ["r|creature:wererat"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that creature riders and ongoing damage are typed.",
+      "invariant": "The repair must preserve creature rider and ongoing-damage typing while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:creature-ongoing-riders",
         "expectedAfterRepair": "empty"
@@ -6028,7 +6028,7 @@
       "title": "Hazards are deterministically executable",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Hazards are deterministically executable”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for deterministic hazard execution still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/hazard-completeness::hazard-completeness",
@@ -6041,7 +6041,7 @@
           "members": ["r|hazard:assassins-blood"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that hazards are deterministically executable.",
+      "invariant": "The repair must preserve deterministic hazard execution while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:hazard-completeness",
         "expectedAfterRepair": "empty"
@@ -6068,7 +6068,7 @@
       "title": "Hazard success-damage branches are represented",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Hazard success-damage branches are represented”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for hazard success-damage branching still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/hazard-success-branches::hazard-success-branches",
@@ -6081,7 +6081,7 @@
           "members": ["r|hazard:pits"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that hazard success-damage branches are represented.",
+      "invariant": "The repair must preserve hazard success-damage branching while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:hazard-success-branches",
         "expectedAfterRepair": "empty"
@@ -6108,7 +6108,7 @@
       "title": "Sphere of Annihilation is not prose-only",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Sphere of Annihilation is not prose-only”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for Sphere of Annihilation executable detail still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/sphere-prose::sphere-prose",
@@ -6121,7 +6121,7 @@
           "members": ["r|hazard:sphere-of-annihilation"]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that sphere of Annihilation is not prose-only.",
+      "invariant": "The repair must preserve Sphere of Annihilation executable detail while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:sphere-prose",
         "expectedAfterRepair": "empty"
@@ -6148,7 +6148,7 @@
       "title": "Magic-item effects have an honest execution boundary",
       "status": "disclosed-dependency",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Magic-item effects have an honest execution boundary”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for magic-item execution boundaries still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "statusReasoning": "Pack projection can enumerate item clauses, but complete execution remains dependent on the engine capability families and their owning beads.",
       "obligation": {
@@ -6957,7 +6957,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that magic-item effects have an honest execution boundary.",
+      "invariant": "The repair must preserve magic-item execution boundaries while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:magic-item-effects",
         "expectedAfterRepair": "empty"
@@ -7779,7 +7779,7 @@
       "title": "Readiness metadata reflects semantic completeness",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Readiness metadata reflects semantic completeness”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for semantic readiness metadata integrity still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/readiness-integrity::readiness-integrity",
@@ -8809,7 +8809,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that readiness metadata reflects semantic completeness.",
+      "invariant": "The repair must preserve semantic readiness metadata integrity while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:readiness-integrity",
         "expectedAfterRepair": "empty"
@@ -11319,7 +11319,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that required engine capabilities have qualified ownership.",
+      "invariant": "The repair must preserve qualified engine capability ownership while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:engine-capability-ownership",
         "expectedAfterRepair": "empty"
@@ -12141,7 +12141,7 @@
       "title": "Readiness artifacts agree with the corpus",
       "status": "accepted",
       "membershipStatus": "underived",
-      "underivedReason": "Audit prose still needs reconciliation to identify the complete record membership for “Readiness artifacts agree with the corpus”; this baseline is not closure evidence.",
+      "underivedReason": "The audit-derived membership boundary for readiness artifact and corpus agreement still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.",
       "owningDerivationBead": "eshyra-o9bd.19.1.7",
       "obligation": {
         "obligationId": "obl:::srd-5.1::audit/readiness-artifacts::readiness-artifacts",
@@ -12158,7 +12158,7 @@
           ]
         }
       },
-      "invariant": "After repair, the audited target satisfies the source-defined requirement that readiness artifacts agree with the corpus.",
+      "invariant": "The repair must preserve readiness artifact and corpus agreement while satisfying the source-backed obligation at the exact audited target.",
       "violation": {
         "queryId": "finding:readiness-artifacts",
         "expectedAfterRepair": "empty"

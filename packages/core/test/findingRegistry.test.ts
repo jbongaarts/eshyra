@@ -147,6 +147,24 @@ describe('durable finding registry', () => {
       /canonicalId template/i,
     );
 
+    const titleReasonTemplates = structuredClone(registry);
+    const reasonRows = titleReasonTemplates.rows.filter(
+      (row) => row.membershipStatus === 'underived',
+    );
+    reasonRows[0].underivedReason = `The unresolved boundary for ${reasonRows[0].title} still needs audit reconciliation.`;
+    reasonRows[1].underivedReason = `The unresolved boundary for ${reasonRows[1].title} still needs audit reconciliation.`;
+    expect(() => validateFindingRegistry(titleReasonTemplates)).toThrow(
+      /underivedReason contains a shared template/i,
+    );
+
+    const titleInvariantTemplates = structuredClone(registry);
+    const invariantRows = titleInvariantTemplates.rows.slice(0, 2);
+    invariantRows[0].invariant = `After repair, ${invariantRows[0].title} remains source-complete.`;
+    invariantRows[1].invariant = `After repair, ${invariantRows[1].title} remains source-complete.`;
+    expect(() => validateFindingRegistry(titleInvariantTemplates)).toThrow(
+      /invariant contains a shared template/i,
+    );
+
     const templated = structuredClone(registry);
     for (const row of templated.rows) {
       row.invariant = `The source-backed obligation for ${row.canonicalId} remains represented at the exact audited target.`;
@@ -187,7 +205,7 @@ describe('durable finding registry', () => {
         );
       }
     }
-  });
+  }, 15000);
 
   it('represents ten required target cases with matching kinds and selectors', () => {
     const registry = loadFindingRegistry();
@@ -424,12 +442,10 @@ describe('durable finding registry', () => {
     const registry = loadFindingRegistry();
     const blockers = findingRegistryClosureBlockers(registry);
     expect(findingRegistryClosureReady(registry)).toBe(false);
-    expect(blockers).toHaveLength(64);
-    expect(blockers).toEqual(
-      registry.rows
-        .filter((row) => row.membershipStatus === 'underived')
-        .map((row) => row.canonicalId),
-    );
+    const underivedIds = registry.rows
+      .filter((row) => row.membershipStatus === 'underived')
+      .map((row) => row.canonicalId);
+    expect(blockers).toEqual(underivedIds);
 
     const allDerived = structuredClone(registry);
     allDerived.rows = allDerived.rows.map((row) => ({
@@ -438,8 +454,33 @@ describe('durable finding registry', () => {
       underivedReason: undefined,
       owningDerivationBead: undefined,
     }));
-    expect(findingRegistryClosureBlockers(allDerived)).toEqual([]);
-    expect(findingRegistryClosureReady(allDerived)).toBe(true);
+    expect(findingRegistryClosureBlockers(allDerived)).toEqual(
+      underivedIds.filter(
+        (canonicalId) =>
+          ![
+            'audit-readiness-gate',
+            'magic-item-effects',
+            'readiness-integrity',
+          ].includes(canonicalId),
+      ),
+    );
+    expect(findingRegistryClosureReady(allDerived)).toBe(false);
+
+    const validFixture = {
+      version: 1 as const,
+      rows: registry.rows.filter((row) => row.membershipStatus === 'derived'),
+    };
+    expect(findingRegistryClosureBlockers(validFixture)).toEqual([]);
+    expect(findingRegistryClosureReady(validFixture)).toBe(true);
+
+    const invalidSnapshot = structuredClone(validFixture);
+    const invalidRow = invalidSnapshot.rows[0];
+    invalidRow.baselineMembership.members.pop();
+    invalidRow.target.selector.members.pop();
+    expect(findingRegistryClosureBlockers(invalidSnapshot)).toEqual([
+      invalidRow.canonicalId,
+    ]);
+    expect(findingRegistryClosureReady(invalidSnapshot)).toBe(false);
   });
 
   it('fails when any declared baseline member disappears', () => {

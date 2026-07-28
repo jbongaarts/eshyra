@@ -44,11 +44,12 @@ Rows have one of two mechanically enforced membership statuses:
   names `eshyra-o9bd.19.1.7`, which owns that derivation work. A reason may not
   be a canonical-ID template or be reused by another underived row.
 
-`findingRegistryClosureReady()` is the fail-closed gate: it returns false
-while any row is underived. `findingRegistryClosureBlockers()` returns the
-offending canonical IDs. The gate becomes true only after every row is
-classified as derived; underived snapshots therefore cannot masquerade as
-closure evidence.
+`findingRegistryClosureReady()` is the fail-closed gate: it reruns the full
+membership validation chain and returns false while any row is underived or a
+derived row fails its executable generator, snapshot, or current-join checks.
+`findingRegistryClosureBlockers()` returns the exact offending canonical IDs.
+The gate becomes true only for a registry whose every row genuinely validates;
+an all-derived status mutation cannot masquerade as closure evidence.
 
 Record identities can include an exact clause ID or data path. Artifact
 identities can include an exact artifact path and JSON path, which allows
@@ -68,8 +69,9 @@ serialized boundary without changing the identity spellings.
 
 The validator rejects duplicate canonical IDs, duplicate aliases, malformed
 obligation IDs, pack self-authority, generic selectors, malformed nested
-identities, baseline/selector drift, partial current membership, templated
-invariants, non-specific underived reasons, and forbidden hand-copied totals.
+identities, baseline/selector drift, partial current membership, structurally
+templated invariants or underived reasons, non-specific underived reasons, and
+forbidden hand-copied totals.
 Empty current violation membership is governed by the typed
 `violation.expectedAfterRepair` contract; there is no free-form
 `zeroMemberPolicy` escape hatch.

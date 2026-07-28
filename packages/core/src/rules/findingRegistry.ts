@@ -441,6 +441,71 @@ function identityKey(identity: MembershipIdentity): string {
   return JSON.stringify(identity);
 }
 
+const TEMPLATE_COLLISION_LIMIT = 1;
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizedFindingText(row: FindingRow, value: string): string {
+  const rowSpecificTokens = [
+    row.canonicalId,
+    row.title,
+    row.violation.queryId,
+    row.obligation.obligationId,
+    row.target.kind,
+    ...row.aliases,
+    ...row.target.selector.members.flatMap((member) =>
+      Object.values(member).flatMap((nested) =>
+        typeof nested === 'string'
+          ? [nested]
+          : isObject(nested)
+            ? Object.values(nested).filter(
+                (child): child is string => typeof child === 'string',
+              )
+            : [],
+      ),
+    ),
+  ]
+    .filter((token) => token.length > 2)
+    .sort((left, right) => right.length - left.length);
+  let normalized = value.toLocaleLowerCase('en-US');
+  for (const token of rowSpecificTokens) {
+    normalized = normalized.replace(
+      new RegExp(escapeRegExp(token.toLocaleLowerCase('en-US')), 'g'),
+      '<row-specific>',
+    );
+  }
+  return normalized.replace(/\s+/g, ' ').trim();
+}
+
+function assertNoTemplateCollisions(
+  rows: FindingRow[],
+  field: 'underivedReason' | 'invariant',
+): void {
+  const collisions = new Map<string, string[]>();
+  for (const row of rows) {
+    if (field === 'underivedReason' && row.membershipStatus !== 'underived')
+      continue;
+    const value = row[field];
+    if (value === undefined) continue;
+    const shape = normalizedFindingText(row, value);
+    const members = collisions.get(shape) ?? [];
+    members.push(row.canonicalId);
+    collisions.set(shape, members);
+  }
+  const repeated = [...collisions.values()].filter(
+    (members) => members.length > TEMPLATE_COLLISION_LIMIT,
+  );
+  if (repeated.length > 0) {
+    throw new Error(
+      `${field} contains a shared template across rows: ${repeated
+        .map((members) => members.join(', '))
+        .join('; ')}`,
+    );
+  }
+}
+
 function parseCapabilityIdentity(
   value: unknown,
   path: string,
@@ -1049,16 +1114,8 @@ function parseRegistry(value: unknown): FindingRegistry {
     }
     underivedReasons.set(reason, row.canonicalId);
   }
-  const invariantShapes = new Set(
-    rows.map((row) =>
-      row.invariant.replaceAll(row.canonicalId, '<canonicalId>'),
-    ),
-  );
-  if (invariantShapes.size !== rows.length) {
-    throw new Error(
-      'invariants must remain defect-specific; a canonicalId template was detected',
-    );
-  }
+  assertNoTemplateCollisions(rows, 'underivedReason');
+  assertNoTemplateCollisions(rows, 'invariant');
   return { version: 1, rows };
 }
 
@@ -1301,12 +1358,18 @@ export function generateMembershipSnapshot(
 function currentIdentity(
   identity: MembershipIdentity,
   records: PackRecord[],
+  recordsByKey = new Map(
+    records.flatMap((record) =>
+      typeof record.key === 'string' ? [[record.key, record] as const] : [],
+    ),
+  ),
 ): MembershipIdentity | undefined {
   if (identity.artifactPath !== undefined)
     return artifactValue(identity) === undefined ? undefined : identity;
-  const record = records.find(
-    (candidate) => candidate.key === identity.recordKey,
-  );
+  const record =
+    identity.recordKey === undefined
+      ? undefined
+      : recordsByKey.get(identity.recordKey);
   if (record === undefined) return undefined;
   if (
     identity.clauseId !== undefined &&
@@ -1348,13 +1411,19 @@ export interface MembershipEvaluation {
 function currentStatus(
   identity: MembershipIdentity,
   records: PackRecord[],
+  recordsByKey = new Map(
+    records.flatMap((record) =>
+      typeof record.key === 'string' ? [[record.key, record] as const] : [],
+    ),
+  ),
 ): string {
   if (identity.artifactPath !== undefined) {
     return artifactValue(identity) === undefined ? 'missing' : 'present';
   }
-  const record = records.find(
-    (candidate) => candidate.key === identity.recordKey,
-  );
+  const record =
+    identity.recordKey === undefined
+      ? undefined
+      : recordsByKey.get(identity.recordKey);
   if (record === undefined) return 'missing';
   if (identity.clauseId !== undefined) {
     const readiness = recordData(record).executionReadiness;
@@ -1387,7 +1456,14 @@ export function evaluateMembershipQuery(
   );
   if (row === undefined) throw new Error(`unknown membership query: ${query}`);
   const expected = row.baselineMembership.members;
-  const joined = expected.map((member) => currentIdentity(member, records));
+  const recordsByKey = new Map(
+    records.flatMap((record) =>
+      typeof record.key === 'string' ? [[record.key, record] as const] : [],
+    ),
+  );
+  const joined = expected.map((member) =>
+    currentIdentity(member, records, recordsByKey),
+  );
   return {
     expected,
     current: joined.filter(
@@ -1396,7 +1472,7 @@ export function evaluateMembershipQuery(
     missing: expected.filter((_, index) => joined[index] === undefined),
     currentStatus: expected.map((identity, index) => ({
       identity: joined[index] ?? identity,
-      status: currentStatus(identity, records),
+      status: currentStatus(identity, records, recordsByKey),
     })),
   };
 }
@@ -1446,18 +1522,84 @@ function sameIdentitySet(
   );
 }
 
+function validateMembershipRow(
+  row: FindingRow,
+  records: PackRecord[],
+  registry: FindingRegistry,
+): void {
+  if (row.membershipStatus === 'derived') {
+    if (
+      !executableMembershipGenerators.has(row.membershipDerivation.generator)
+    ) {
+      throw new Error(
+        `${row.canonicalId} derived membership must use an executable query generator`,
+      );
+    }
+    const generated = generateMembershipSnapshot(row, records);
+    if (!sameIdentitySet(row.baselineMembership.members, generated)) {
+      throw new Error(
+        `${row.canonicalId} derived membership does not match its executable query`,
+      );
+    }
+  }
+  const evaluation = evaluateMembershipQuery(
+    row.violation.queryId,
+    records,
+    registry,
+  );
+  if (
+    row.membershipDerivation.currentMatch === 'required' &&
+    !sameIdentitySet(evaluation.expected, evaluation.current)
+  ) {
+    throw new Error(
+      `${row.canonicalId} lost one or more baseline membership identities`,
+    );
+  }
+  if (
+    evaluation.current.some(
+      (member) =>
+        member.recordKey === undefined && member.artifactPath === undefined,
+    )
+  ) {
+    throw new Error(
+      `${row.canonicalId} returned an identity without a stable locus`,
+    );
+  }
+}
+
 export function findingRegistryClosureBlockers(
   registry = loadFindingRegistry(),
+  records = getDefaultRecords(),
 ): string[] {
-  return registry.rows
-    .filter((row) => row.membershipStatus === 'underived')
-    .map((row) => row.canonicalId);
+  let parsed: FindingRegistry;
+  try {
+    parsed = parseRegistry(registry);
+  } catch {
+    const rows =
+      isObject(registry) && Array.isArray(registry.rows) ? registry.rows : [];
+    const identities = rows.flatMap((row) =>
+      isObject(row) && typeof row.canonicalId === 'string'
+        ? [row.canonicalId]
+        : [],
+    );
+    return identities.length > 0 ? [...new Set(identities)] : ['registry'];
+  }
+  return parsed.rows.flatMap((row) => {
+    if (row.membershipStatus === 'underived') return [row.canonicalId];
+    try {
+      validateMembershipRow(row, records, parsed);
+      return [];
+    } catch {
+      return [row.canonicalId];
+    }
+  });
 }
 
 export function findingRegistryClosureReady(
   registry = loadFindingRegistry(),
+  records = getDefaultRecords(),
 ): boolean {
-  return findingRegistryClosureBlockers(registry).length === 0;
+  return findingRegistryClosureBlockers(registry, records).length === 0;
 }
 
 export function validateFindingRegistry(
@@ -1465,44 +1607,5 @@ export function validateFindingRegistry(
   records = getDefaultRecords(),
 ): void {
   const parsed = parseRegistry(registry);
-  for (const row of parsed.rows) {
-    if (row.membershipStatus === 'derived') {
-      if (
-        !executableMembershipGenerators.has(row.membershipDerivation.generator)
-      ) {
-        throw new Error(
-          `${row.canonicalId} derived membership must use an executable query generator`,
-        );
-      }
-      const generated = generateMembershipSnapshot(row, records);
-      if (!sameIdentitySet(row.baselineMembership.members, generated)) {
-        throw new Error(
-          `${row.canonicalId} derived membership does not match its executable query`,
-        );
-      }
-    }
-    const evaluation = evaluateMembershipQuery(
-      row.violation.queryId,
-      records,
-      parsed,
-    );
-    if (
-      row.membershipDerivation.currentMatch === 'required' &&
-      !sameIdentitySet(evaluation.expected, evaluation.current)
-    ) {
-      throw new Error(
-        `${row.canonicalId} lost one or more baseline membership identities`,
-      );
-    }
-    if (
-      evaluation.current.some(
-        (member) =>
-          member.recordKey === undefined && member.artifactPath === undefined,
-      )
-    ) {
-      throw new Error(
-        `${row.canonicalId} returned an identity without a stable locus`,
-      );
-    }
-  }
+  for (const row of parsed.rows) validateMembershipRow(row, records, parsed);
 }
