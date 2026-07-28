@@ -21,23 +21,7 @@ export {
   FACET_REQUIREMENTS,
   getFacetRequirements,
 } from './contracts.js';
-export type {
-  FamilyApplicability,
-  ObligationClosureEntry,
-  ObligationClosureResult,
-  ObligationMembership,
-  ObligationRegistry,
-  ObligationScope,
-  ObligationScopeInput,
-  UnexpectedObligationClaim,
-} from './obligations.js';
-export {
-  createObligationId,
-  createObligationRegistry,
-  createObligationScope,
-  evaluateObligationClosure,
-  RECORD_FAMILY_APPLICABILITY,
-} from './obligations.js';
+export type { ObligationSource } from './obligations.js';
 export type {
   ActionEconomyCost,
   ActionEconomyKind,

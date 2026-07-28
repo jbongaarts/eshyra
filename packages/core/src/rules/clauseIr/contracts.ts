@@ -1,4 +1,4 @@
-import type { ObligationRegistry } from './obligations.js';
+import type { ObligationSource } from './obligations.js';
 import type {
   BranchName,
   Clause,
@@ -805,14 +805,14 @@ function evidenceKey(evidence: ObligationEvidence): string {
 function evaluateCaptured(
   clause: Clause,
   obligationId: string,
-  registry: ObligationRegistry,
+  source: ObligationSource,
   options: CompletenessEvaluationOptions,
 ): CompletenessReason[] {
   if (clause.readiness.captured.length === 0)
     return [
       { code: 'dimension-not-captured', message: 'captured has no evidence' },
     ];
-  const record = registry.get(obligationId);
+  const record = source.get(obligationId);
   if (record === undefined) return [];
   const captured = new Set(clause.readiness.captured.map(evidenceKey));
   const reasons: CompletenessReason[] = [];
@@ -874,13 +874,14 @@ function validCapability(reference: {
 }
 
 /**
- * Evaluate a clause against immutable registry authority. Semantic
- * completeness is CAPTURED + PROJECTED; supported and discoverable remain
- * independent readiness dimensions.
+ * Evaluate a clause against an independently supplied obligation source.
+ * Semantic completeness is CAPTURED + PROJECTED; supported and discoverable
+ * remain independent readiness dimensions. The source is intentionally an
+ * interface: this evaluator neither constructs nor validates its authority.
  */
 export function evaluateClauseCompleteness(
   clause: Clause,
-  registry: ObligationRegistry,
+  source: ObligationSource,
   options: CompletenessEvaluationOptions = {},
 ): CompletenessResult {
   const reasons: CompletenessReason[] = [...canonicalBaseReasons(clause)];
@@ -904,7 +905,7 @@ export function evaluateClauseCompleteness(
     });
   const obligationId = sourceObligationIds[0];
   const record =
-    obligationId === undefined ? undefined : registry.get(obligationId);
+    obligationId === undefined ? undefined : source.get(obligationId);
   if (obligationId !== undefined && record === undefined)
     reasons.push({
       code: 'unknown-obligation',
@@ -931,9 +932,7 @@ export function evaluateClauseCompleteness(
       }
     }
     if (obligationId !== undefined)
-      reasons.push(
-        ...evaluateCaptured(clause, obligationId, registry, options),
-      );
+      reasons.push(...evaluateCaptured(clause, obligationId, source, options));
   }
   for (const requirement of options.additionalRequirements ?? []) {
     const target = requirement.obligationId ?? obligationId;

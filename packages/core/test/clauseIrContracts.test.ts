@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   BASE_REQUIREMENTS,
   type Clause,
-  createObligationId,
-  createObligationRegistry,
   ENGINE_CAPABILITY_OWNERS,
   evaluateClauseCompleteness,
+  type ObligationSource,
   type SemanticFacet,
   type SourceObligationRecord,
 } from '../src/rules/clauseIr/index.js';
@@ -23,7 +22,7 @@ function record(
   locator = span.locator,
   origin: SourceObligationRecord['origin'] = 'source-extraction',
 ): SourceObligationRecord {
-  const obligationId = createObligationId(span.sourceRef, locator, facet);
+  const obligationId = `obl:::${span.sourceRef}:::${locator}:::${facet}`;
   return {
     obligationId,
     origin,
@@ -52,16 +51,25 @@ function record(
   };
 }
 
-function registry(
+type FixtureObligationSource = ObligationSource & {
+  readonly records: readonly SourceObligationRecord[];
+};
+
+function source(
   facet: SemanticFacet,
   locator = span.locator,
   origin: SourceObligationRecord['origin'] = 'source-extraction',
-) {
-  return createObligationRegistry([record(facet, locator, origin)]);
+): FixtureObligationSource {
+  const records = [record(facet, locator, origin)];
+  return {
+    records,
+    get: (obligationId) =>
+      records.find((record) => record.obligationId === obligationId),
+  };
 }
 
 function makeClause(
-  obligations = registry('save'),
+  obligations = source('save'),
   overrides: Partial<Clause> = {},
 ): Clause {
   const obligation = obligations.records[0];
@@ -162,7 +170,7 @@ function complete(
   facet: SemanticFacet,
   overrides: Partial<Clause> = {},
 ): { clause: Clause; result: ReturnType<typeof evaluateClauseCompleteness> } {
-  const obligations = registry(facet);
+  const obligations = source(facet);
   const clause = makeClause(obligations, overrides);
   return {
     clause,
@@ -172,14 +180,23 @@ function complete(
 
 describe('source-clause canonical contracts', () => {
   it('enforces one obligation per clause while allowing many facets on that obligation', () => {
-    const obligations = createObligationRegistry([
-      { ...record('save'), requiredFacets: ['save', 'duration'] },
-    ]);
-    const clause = makeClause(obligations, {
+    const obligations = source('save');
+    const obligation = obligations.records[0];
+    if (obligation === undefined) throw new Error('fixture obligation missing');
+    const composed = {
+      ...obligation,
+      requiredFacets: ['save', 'duration'] as const,
+    };
+    const composedSource: FixtureObligationSource = {
+      records: [composed],
+      get: (obligationId) =>
+        obligationId === composed.obligationId ? composed : undefined,
+    };
+    const clause = makeClause(composedSource, {
       duration: { amount: '1', unit: 'minute', concentration: false },
     });
     expect(
-      evaluateClauseCompleteness(clause, obligations, resolvers).semantic
+      evaluateClauseCompleteness(clause, composedSource, resolvers).semantic
         .status,
     ).toBe('complete');
     expect(
@@ -191,7 +208,7 @@ describe('source-clause canonical contracts', () => {
             'obl:::srd-5.1:::other:::duration',
           ],
         },
-        obligations,
+        composedSource,
         resolvers,
       ).semantic.reasons,
     ).toEqual(
@@ -478,7 +495,7 @@ describe('source-clause canonical contracts', () => {
   });
 
   it('restricts CAPTURED to source or authoritative evidence', () => {
-    const obligations = registry('save', span.locator, 'audit-finding');
+    const obligations = source('save', span.locator, 'audit-finding');
     const clause = makeClause(obligations, {
       readiness: {
         captured: obligations.records[0].evidence,
