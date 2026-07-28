@@ -100,19 +100,22 @@ export interface KnownMissingSourceClauseEvidence extends ObligationIdentity {
   readonly expected: 'absent-from-pack';
 }
 
-export type ProjectionShape =
-  | 'legendary-action-budget'
-  | 'owned-entity-repeat-lifecycle'
-  | 'spell-slot-upcast-procedure'
-  | 'spellbook-copy-procedure'
-  | 'containment-portal-card-pool'
-  | 'suffocation-ongoing-damage'
-  | 'planar-return-window-clock'
-  | 'multi-save-ability-choice'
-  | 'point-origin-area-geometry'
-  | 'damage-rider-half-damage-branch'
-  | 'downtime-study-training-ledger'
-  | 'retained-asset-creation';
+export const PROJECTION_SHAPES = [
+  'legendary-action-budget',
+  'owned-entity-repeat-lifecycle',
+  'spell-slot-upcast-procedure',
+  'spellbook-copy-procedure',
+  'containment-portal-card-pool',
+  'suffocation-ongoing-damage',
+  'planar-return-window-clock',
+  'multi-save-ability-choice',
+  'point-origin-area-geometry',
+  'damage-rider-half-damage-branch',
+  'downtime-study-training-ledger',
+  'retained-asset-creation',
+] as const;
+
+export type ProjectionShape = (typeof PROJECTION_SHAPES)[number];
 
 export type BootstrapEvidence =
   | ReadinessArtifactEvidence
@@ -1127,7 +1130,7 @@ interface ProjectionNode {
   readonly recordKey: string;
   readonly path: string;
   readonly pathSegments: readonly string[];
-  readonly value: Record<string, unknown>;
+  readonly value: unknown;
   readonly clauseId?: string;
 }
 
@@ -1142,6 +1145,30 @@ interface ProjectionShapeDefinition {
     nodes: readonly ProjectionNode[],
   ) => boolean;
 }
+
+// These are provenance, prose, and evaluator bookkeeping fields. They cannot
+// carry any of the twelve source-negative semantic shapes. Everything else is
+// deliberately left unclassified unless a shape predicate claims it; an
+// unregistered field is therefore evidence-underived rather than silently
+// treated as absent.
+const REGISTERED_IRRELEVANT_PATH_SEGMENTS = new Set([
+  'data',
+  'description',
+  'text',
+  'sourceText',
+  'prompt',
+  'note',
+  'clauseId',
+  'engineHooks',
+  'engine',
+  'hook',
+  'name',
+  'source',
+  'sourceSpan',
+  'locator',
+  'executionReadiness',
+  'clauses',
+]);
 
 function pathSegments(path: string): readonly string[] {
   return path
@@ -1167,22 +1194,29 @@ function pathKey(node: ProjectionNode): string {
   return node.pathSegments[node.pathSegments.length - 1] ?? '';
 }
 
-function hasAnyOwnKey(
-  value: Record<string, unknown>,
-  keys: readonly string[],
-): boolean {
-  return keys.some((key) => Object.hasOwn(value, key));
+function nodeValueObject(
+  node: ProjectionNode,
+): Record<string, unknown> | undefined {
+  return objectRecord(node.value);
 }
 
-function stringField(
-  value: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  return typeof value[key] === 'string' ? value[key] : undefined;
+function nodeField(node: ProjectionNode, key: string): unknown {
+  return nodeValueObject(node)?.[key];
 }
 
-function numericField(value: Record<string, unknown>, key: string): boolean {
-  return typeof value[key] === 'number' && Number.isFinite(value[key]);
+function hasAnyOwnKey(value: unknown, keys: readonly string[]): boolean {
+  const object = objectRecord(value);
+  return object ? keys.some((key) => Object.hasOwn(object, key)) : false;
+}
+
+function stringField(value: unknown, key: string): string | undefined {
+  const object = objectRecord(value);
+  return typeof object?.[key] === 'string' ? object[key] : undefined;
+}
+
+function numericField(value: unknown, key: string): boolean {
+  const object = objectRecord(value);
+  return typeof object?.[key] === 'number' && Number.isFinite(object[key]);
 }
 
 function nodeHasExactPathKey(
@@ -1196,9 +1230,10 @@ function nodeHasBlock(
   node: ProjectionNode,
   blocks: readonly string[],
 ): boolean {
+  const value = nodeValueObject(node);
   return (
     pathKey(node) === 'representation' &&
-    blocks.includes(stringField(node.value, 'block') ?? '')
+    blocks.includes(stringField(value, 'block') ?? '')
   );
 }
 
@@ -1207,7 +1242,7 @@ function nodeHasExactValue(
   key: string,
   values: readonly string[],
 ): boolean {
-  return values.includes(stringField(node.value, key) ?? '');
+  return values.includes(stringField(nodeValueObject(node), key) ?? '');
 }
 
 function projectionShapeDefinition(
@@ -1232,7 +1267,7 @@ function projectionShapeDefinition(
           ]),
         recognized: (node, nodes) =>
           (nodeHasExactPathKey(node, ['legendaryActions']) &&
-            Array.isArray(node.value.entries)) ||
+            Array.isArray(nodeField(node, 'entries'))) ||
           (nodeHasExactPathKey(node, [
             'legendaryBudget',
             'legendaryActionBudget',
@@ -1328,15 +1363,15 @@ function projectionShapeDefinition(
           ]) ||
           nodeHasBlock(node, ['spellbook', 'spellbookCopy']) ||
           (pathKey(node) === 'effects' &&
-            node.value.kind === 'makeAbilityCheck' &&
-            node.value.skill === 'arcana'),
+            nodeField(node, 'kind') === 'makeAbilityCheck' &&
+            nodeField(node, 'skill') === 'arcana'),
         recognized: (node) =>
           nodeHasExactValue(node, 'id', [
             'scroll-copying-procedure',
             'spellbook-copy-procedure',
           ]) ||
-          (node.value.kind === 'makeAbilityCheck' &&
-            node.value.skill === 'arcana'),
+          (nodeField(node, 'kind') === 'makeAbilityCheck' &&
+            nodeField(node, 'skill') === 'arcana'),
       };
     case 'containment-portal-card-pool':
       return {
@@ -1468,10 +1503,10 @@ function projectionShapeDefinition(
             'rider',
           ]) ||
           (nodeHasExactPathKey(node, ['mechanics']) &&
-            Array.isArray(node.value.damage) &&
-            (Array.isArray(node.value.saves) ||
-              Array.isArray(node.value.effects) ||
-              Array.isArray(node.value.conditions))),
+            Array.isArray(nodeField(node, 'damage')) &&
+            (Array.isArray(nodeField(node, 'saves')) ||
+              Array.isArray(nodeField(node, 'effects')) ||
+              Array.isArray(nodeField(node, 'conditions')))),
         recognized: (node) =>
           hasAnyOwnKey(node.value, [
             'halfDamage',
@@ -1480,9 +1515,9 @@ function projectionShapeDefinition(
             'damageRider',
             'rider',
           ]) ||
-          (Array.isArray(node.value.damage) &&
-            (Array.isArray(node.value.saves) ||
-              Array.isArray(node.value.effects))),
+          (Array.isArray(nodeField(node, 'damage')) &&
+            (Array.isArray(nodeField(node, 'saves')) ||
+              Array.isArray(nodeField(node, 'effects')))),
       };
     case 'downtime-study-training-ledger':
       return {
@@ -1543,6 +1578,17 @@ function projectionNodes(
 ): readonly ProjectionNode[] {
   const nodes: ProjectionNode[] = [];
   const visit = (current: unknown, currentPath: string): void => {
+    const currentObject = objectRecord(current);
+    nodes.push({
+      recordKey,
+      path: currentPath,
+      pathSegments: pathSegments(currentPath),
+      value: current,
+      clauseId:
+        typeof currentObject?.clauseId === 'string'
+          ? currentObject.clauseId
+          : undefined,
+    });
     if (Array.isArray(current)) {
       current.forEach((item, index) => {
         visit(item, `${currentPath}[${index}]`);
@@ -1551,26 +1597,19 @@ function projectionNodes(
     }
     const object = objectRecord(current);
     if (!object) return;
-    if (currentPath !== 'data')
-      nodes.push({
-        recordKey,
-        path: currentPath,
-        pathSegments: pathSegments(currentPath),
-        value: object,
-        clauseId:
-          typeof object.clauseId === 'string' ? object.clauseId : undefined,
-      });
     for (const [key, child] of Object.entries(object)) {
-      if (
-        typeof child === 'object' &&
-        child !== null &&
-        !['description', 'text', 'sourceText', 'prompt', 'note'].includes(key)
-      )
-        visit(child, `${currentPath}.${key}`);
+      visit(child, `${currentPath}.${key}`);
     }
   };
   visit(value, path);
   return nodes;
+}
+
+function isRegisteredIrrelevantProjection(node: ProjectionNode): boolean {
+  return (
+    node.path === 'data' ||
+    REGISTERED_IRRELEVANT_PATH_SEGMENTS.has(pathKey(node))
+  );
 }
 
 function projectionShapeSignals(
@@ -1579,11 +1618,10 @@ function projectionShapeSignals(
 ): readonly ProjectionMatch[] {
   const definition = projectionShapeDefinition(shape);
   const applicable = nodes.filter((node) => definition.applicable(node, nodes));
-  if (applicable.length === 0) return [];
   const recognized = applicable.some((node) =>
     definition.recognized(node, nodes),
   );
-  return applicable.map((node) => ({
+  const applicableMatches = applicable.map((node) => ({
     recordKey: node.recordKey,
     clauseId: node.clauseId,
     path: node.path,
@@ -1593,6 +1631,19 @@ function projectionShapeSignals(
         : `unrecognized applicable ${shape} projection`,
     ],
   }));
+  const unclassifiedMatches = nodes
+    .filter(
+      (node) =>
+        !definition.applicable(node, nodes) &&
+        !isRegisteredIrrelevantProjection(node),
+    )
+    .map((node) => ({
+      recordKey: node.recordKey,
+      clauseId: node.clauseId,
+      path: node.path,
+      signals: [`unclassified ${shape} projection`],
+    }));
+  return [...applicableMatches, ...unclassifiedMatches];
 }
 
 function verifyBeadIds(beadIds: readonly string[]): void {
@@ -1701,7 +1752,7 @@ function resolveKnownMissingSourceClause(
     reason:
       projectionMatches.length === 0
         ? undefined
-        : 'an applicable projection shape is present or unrecognized; absence is not provable',
+        : 'an applicable or unclassified structured projection is present; absence is not provable',
   };
 }
 

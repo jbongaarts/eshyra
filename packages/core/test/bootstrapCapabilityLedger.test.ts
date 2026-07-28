@@ -10,6 +10,7 @@ import {
   evaluateRowEvidence,
   loadBootstrapCapabilityLedger,
   NON_PACK_DISCOVERY_PRIMITIVES,
+  PROJECTION_SHAPES,
   resolveEvidence,
   validateBootstrapCapabilityLedger,
 } from '../src/rules/bootstrapCapabilityLedger.js';
@@ -498,14 +499,205 @@ describe('bootstrap capability ledger', () => {
       },
     ]);
     expect(result.status).toBe('evidence-underived');
-    expect(result.projectionMatches).toEqual([
-      expect.objectContaining({
-        path: 'data.downtimeActivity',
-        signals: [
-          'unrecognized applicable downtime-study-training-ledger projection',
-        ],
-      }),
-    ]);
+    expect(result.projectionMatches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: 'data.downtimeActivity',
+          signals: [
+            'unrecognized applicable downtime-study-training-ledger projection',
+          ],
+        }),
+        expect.objectContaining({
+          path: 'data.downtimeActivity.unmodeledField',
+          signals: ['unclassified downtime-study-training-ledger projection'],
+        }),
+      ]),
+    );
+  });
+
+  it('generates classification-complete regression coverage for every projection shape', () => {
+    const ledger = loadBootstrapCapabilityLedger();
+    const fixtureByShape = {
+      'legendary-action-budget': {
+        scalar: 'legendaryBudget',
+        primitiveArray: 'legendaryOptions',
+        split: ['legendaryBudget', 'legendaryOptions'],
+        unregistered: 'alternateLegendaryBudget',
+      },
+      'owned-entity-repeat-lifecycle': {
+        scalar: 'ownedEntity',
+        primitiveArray: 'repeatTriggers',
+        split: ['ownedEntity', 'repeatTriggers'],
+        unregistered: 'ownershipLedger',
+      },
+      'spell-slot-upcast-procedure': {
+        scalar: 'spellSlots',
+        primitiveArray: 'higherLevels',
+        split: ['spellSlots', 'upcast'],
+        unregistered: 'higherSlotScaling',
+      },
+      'spellbook-copy-procedure': {
+        scalar: 'spellbookCopy',
+        primitiveArray: 'copyingProcedure',
+        split: ['spellbookCopy', 'copyingProcedure'],
+        unregistered: 'copyCostLedger',
+      },
+      'containment-portal-card-pool': {
+        scalar: 'containment',
+        primitiveArray: 'remainingCardIds',
+        split: ['containment', 'cardPool'],
+        unregistered: 'licensedCardInstances',
+      },
+      'suffocation-ongoing-damage': {
+        scalar: 'suffocation',
+        primitiveArray: 'oxygen',
+        split: ['suffocation', 'ongoingDamage'],
+        unregistered: 'breathLedger',
+      },
+      'planar-return-window-clock': {
+        scalar: 'deadline',
+        primitiveArray: 'returnWindow',
+        split: ['planarReturn', 'declaredWindow'],
+        unregistered: 'travelWindowLedger',
+      },
+      'multi-save-ability-choice': {
+        scalar: 'saveAbilities',
+        primitiveArray: 'saveAbilities',
+        split: ['multiSave', 'abilityChoice'],
+        unregistered: 'alternateSaveAbilities',
+      },
+      'point-origin-area-geometry': {
+        scalar: 'pointOfOrigin',
+        primitiveArray: 'targeting',
+        split: ['pointOfOrigin', 'areaShape'],
+        unregistered: 'pointOriginRules',
+      },
+      'damage-rider-half-damage-branch': {
+        scalar: 'halfDamage',
+        primitiveArray: 'damageRider',
+        split: ['damageRider', 'halfDamage'],
+        unregistered: 'riderOutcomeLedger',
+      },
+      'downtime-study-training-ledger': {
+        scalar: 'training',
+        primitiveArray: 'study',
+        split: ['training', 'study'],
+        unregistered: 'trainingLedger',
+      },
+      'retained-asset-creation': {
+        scalar: 'retainedAsset',
+        primitiveArray: 'assetCreation',
+        split: ['retainedAsset', 'assetCreation'],
+        unregistered: 'assetProvenanceLedger',
+      },
+    } satisfies Record<
+      (typeof PROJECTION_SHAPES)[number],
+      {
+        scalar: string;
+        primitiveArray: string;
+        split: readonly [string, string];
+        unregistered: string;
+      }
+    >;
+
+    for (const shape of PROJECTION_SHAPES) {
+      const evidence = ledger.rows
+        .flatMap((row) => row.evidence)
+        .find(
+          (item) =>
+            item.kind === 'known-missing-source-clause' &&
+            item.projectionShape === shape,
+        );
+      if (evidence?.kind !== 'known-missing-source-clause')
+        throw new Error(`fixture needs ${shape} source evidence`);
+      const anchor = loadPackRecords().find(
+        (record) =>
+          typeof record === 'object' &&
+          record !== null &&
+          (record as { key?: unknown }).key === evidence.sourceRecordKey,
+      );
+      if (!anchor || typeof anchor !== 'object')
+        throw new Error(`fixture needs ${shape} source anchor`);
+      const anchorRecord = anchor as Record<string, unknown>;
+      const anchorData = (anchorRecord.data ?? {}) as Record<string, unknown>;
+      const fixture = fixtureByShape[shape];
+      const withData = (data: Record<string, unknown>) => ({
+        ...anchorRecord,
+        data: {
+          ...anchorData,
+          ...data,
+          executionReadiness: {
+            clauses: [{ clauseId: `fixture/${shape}`, engineHooks: [] }],
+          },
+        },
+      });
+      const cases = [
+        {
+          label: 'scalar field',
+          records: [withData({ [fixture.scalar]: true })],
+          path: `data.${fixture.scalar}`,
+        },
+        {
+          label: 'primitive array',
+          records: [withData({ [fixture.primitiveArray]: ['alpha', 'beta'] })],
+          path: `data.${fixture.primitiveArray}`,
+        },
+        {
+          label: 'split sibling',
+          records: [
+            withData({
+              [fixture.split[0]]: { points: 3 },
+              [fixture.split[1]]: [{ points: 2 }],
+            }),
+          ],
+          path: `data.${fixture.split[0]}`,
+        },
+        {
+          label: 'cross-record structure',
+          records: [
+            withData({}),
+            {
+              key: `fixture:${shape}:sibling`,
+              source: 'fixture',
+              provenance: { locator: `fixture ${shape}` },
+              data: {
+                [fixture.split[0]]: { points: 3 },
+                [fixture.split[1]]: [{ points: 2 }],
+              },
+            },
+          ],
+          path: `data.${fixture.split[0]}`,
+        },
+        {
+          label: 'schema-valid unregistered key',
+          records: [
+            withData({ [fixture.unregistered]: { semanticValue: true } }),
+          ],
+          path: `data.${fixture.unregistered}`,
+        },
+      ];
+      for (const testCase of cases) {
+        const result = resolveEvidence(evidence, testCase.records);
+        expect(result.status, `${shape} ${testCase.label}`).toBe(
+          'evidence-underived',
+        );
+        expect(
+          result.projectionMatches?.some(
+            (match) => match.path === testCase.path,
+          ),
+          `${shape} ${testCase.label} path`,
+        ).toBe(true);
+        if (testCase.label === 'schema-valid unregistered key')
+          expect(
+            result.projectionMatches?.some(
+              (match) =>
+                match.path === testCase.path &&
+                match.signals.includes(`unclassified ${shape} projection`),
+            ),
+            `${shape} unregistered key classification`,
+          ).toBe(true);
+      }
+    }
   });
 
   it('represents a proposed row without inventing an owner', () => {

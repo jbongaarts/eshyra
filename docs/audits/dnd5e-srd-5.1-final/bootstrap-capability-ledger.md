@@ -39,8 +39,16 @@ closed predicate across every structured projection surface in every pack
 record. Predicates see exact schema/path keys, so sibling fields and
 projections owned by a different record are evaluated together rather than
 being hidden behind the source anchor. A recognized, partial, or
-applicable-but-unrecognized shape returns `evidence-underived`; only a
-complete scan with no applicable structure can prove absence, and underived
+applicable-but-unrecognized shape returns `evidence-underived`. The walker
+emits the root `data` node, scalar nodes, and primitive array-item nodes, so a
+predicate cannot make a listed path disappear merely because its value is not
+an object. Every emitted path is classified for each shape as a match,
+explicitly registered irrelevant metadata/provenance, or unclassified. Only a
+complete scan with no match or unclassified node can prove absence; an
+unregistered schema-valid field is therefore `evidence-underived`, not
+silently irrelevant. The regression matrix is generated from the twelve
+`ProjectionShape` values and covers scalar, primitive-array, split-sibling,
+cross-record, and schema-valid unregistered-key representations. Underived
 results block the exported fail-closed closure predicate. It never searches
 for invented sentinel strings, uses substring aliases, or treats inability to
 recognize a structure as evidence of absence.
