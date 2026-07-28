@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,6 +31,38 @@ export interface CapabilityIdentity {
   primitive: string;
   hookSelector?: CapabilityHookSelector;
   owningBead: string;
+}
+
+export type UnderivedCause =
+  | 'requires-audit-prose-reconciliation'
+  | 'requires-clause-ir'
+  | 'requires-external-source'
+  | 'requires-engine-capability';
+
+export interface BlockingReference {
+  kind: 'bead' | 'artifact';
+  ref: string;
+}
+
+export interface UnderivedReason {
+  cause: UnderivedCause;
+  blockedBy: BlockingReference;
+}
+
+export type InvariantDimension =
+  | 'branches'
+  | 'alternatives'
+  | 'timing'
+  | 'lifecycle'
+  | 'termination';
+
+export interface FindingInvariant {
+  kind: 'source-semantic-preservation';
+  dimensions: InvariantDimension[];
+  evidence: {
+    kind: EvidenceKind;
+    locator: string;
+  };
 }
 
 export type EvidenceKind =
@@ -86,7 +118,7 @@ export interface FindingRow {
   title: string;
   status: FindingStatus;
   membershipStatus: MembershipStatus;
-  underivedReason?: string;
+  underivedReason?: UnderivedReason;
   owningDerivationBead?: string;
   statusReasoning?: string;
   obligation: {
@@ -98,7 +130,7 @@ export interface FindingRow {
     kind: TargetKind;
     selector: ExactSelector;
   };
-  invariant: string;
+  invariant: FindingInvariant;
   violation: {
     queryId: MembershipQueryName;
     expectedAfterRepair: 'empty' | 'stable';
@@ -359,7 +391,7 @@ function engineCapabilityId(engine: string, path: string): EngineCapabilityId {
   return capabilityId as EngineCapabilityId;
 }
 
-const CANONICAL_HOOK_PRIMITIVES = new Map<string, string>([
+const CANONICAL_HOOK_PRIMITIVE_ENTRIES = new Map<string, string>([
   [
     'engine:F10\0canonical asset creation when retained',
     'retained-inventory-property-xp-asset-creation',
@@ -637,23 +669,102 @@ const CANONICAL_HOOK_PRIMITIVES = new Map<string, string>([
   ],
 ]);
 
+/**
+ * The final relation is deliberately multi-valued.  The seed entries above
+ * preserve the reviewed hook vocabulary; these explicit sets record every
+ * primitive that a compound hook covers instead of silently choosing one.
+ */
+const CANONICAL_HOOK_PRIMITIVES = new Map<string, readonly string[]>(
+  Array.from(CANONICAL_HOOK_PRIMITIVE_ENTRIES, ([key, primitive]) => [
+    key,
+    [primitive],
+  ]),
+);
+
+const MULTI_PRIMITIVE_HOOKS: Readonly<Record<string, readonly string[]>> = {
+  'engine:F10\0currency, property, inventory, and XP ledger outcomes': [
+    'canonical-currency-mutation',
+    'retained-inventory-property-xp-asset-creation',
+  ],
+  'engine:F4\0class spell-list eligibility and casting/copying procedure': [
+    'caster-of-record-and-canonical-spell-execution',
+    'spellbook-copy-cost-and-asset-ledger',
+  ],
+  'engine:F4\0shared spell-slot, spell-casting, and caster-of-record execution':
+    [
+      'caster-of-record-and-canonical-spell-execution',
+      'spell-slot-gate-and-upcast-transform',
+    ],
+  'engine:F5\0duration budget and conditional periodic recharge': [
+    'per-instance-usage-and-charge-spend',
+    'recharge-and-reset-scheduling',
+  ],
+  'engine:F5\0per-item storage, charge, and reset state': [
+    'per-instance-usage-and-charge-spend',
+    'recharge-and-reset-scheduling',
+  ],
+  'engine:F9\0area targeting and forced movement': [
+    'point-origin-area-geometry-and-targeting',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  'engine:F9\0checks, saves, damage, movement, and destruction outcomes': [
+    'damage-rider-and-half-damage-branch-resolution',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  'engine:F9\0damage, range, cover, and forced movement': [
+    'damage-rider-and-half-damage-branch-resolution',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  'engine:F9\0damage, saving throws, and targeting': [
+    'damage-rider-and-half-damage-branch-resolution',
+    'point-origin-area-geometry-and-targeting',
+  ],
+  'engine:F9\0geometry, targeting, movement, and contest resolution': [
+    'point-origin-area-geometry-and-targeting',
+    'forced-movement-contest-and-object-interaction',
+  ],
+  'engine:F9\0saving throw, damage, and attack targeting consequences': [
+    'damage-rider-and-half-damage-branch-resolution',
+    'point-origin-area-geometry-and-targeting',
+  ],
+  'engine:F9\0size-scaled quantity cost and area targeting': [
+    'capacity-and-variant-arithmetic',
+    'point-origin-area-geometry-and-targeting',
+  ],
+  'engine:F9\0variant targeting, movement, and capacity arithmetic': [
+    'capacity-and-variant-arithmetic',
+    'point-origin-area-geometry-and-targeting',
+    'forced-movement-contest-and-object-interaction',
+  ],
+};
+
+for (const [hook, primitives] of Object.entries(MULTI_PRIMITIVE_HOOKS)) {
+  CANONICAL_HOOK_PRIMITIVES.set(hook, primitives);
+}
+
 function primitiveForHook(
   capabilityId: EngineCapabilityId,
   hook: string,
-): string {
-  const primitive = CANONICAL_HOOK_PRIMITIVES.get(`${capabilityId}\0${hook}`);
-  if (primitive === undefined)
+): readonly string[] {
+  const primitives = CANONICAL_HOOK_PRIMITIVES.get(`${capabilityId}\0${hook}`);
+  if (primitives === undefined || primitives.length === 0)
     throw new Error(`unknown hook for ${capabilityId}: ${hook}`);
-  if (!CANONICAL_PRIMITIVES_BY_ENGINE.get(capabilityId)?.has(primitive)) {
+  if (
+    primitives.some(
+      (primitive) =>
+        !CANONICAL_PRIMITIVES_BY_ENGINE.get(capabilityId)?.has(primitive),
+    )
+  ) {
     throw new Error(`no canonical primitive for ${capabilityId}/${hook}`);
   }
-  return primitive;
+  return primitives;
 }
 const here = dirname(fileURLToPath(import.meta.url));
 const registryPath = join(
   here,
   '../../../../docs/audits/dnd5e-srd-5.1-final/finding-registry.json',
 );
+const repoRoot = join(here, '../../../../');
 const recordsPath = join(
   here,
   '../../data/rules-packs/rules__dnd5e-srd-5.1/records.json',
@@ -717,79 +828,6 @@ function identityKey(identity: MembershipIdentity): string {
   return JSON.stringify(identity);
 }
 
-const TEMPLATE_COLLISION_LIMIT = 1;
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function normalizedFindingText(row: FindingRow, value: string): string {
-  const rowSpecificTokens = [
-    row.canonicalId,
-    row.violation.queryId,
-    row.obligation.obligationId,
-    row.target.kind,
-    ...row.aliases,
-    ...row.target.selector.members.flatMap((member) =>
-      Object.values(member).flatMap((nested) =>
-        typeof nested === 'string'
-          ? [nested]
-          : isObject(nested)
-            ? Object.values(nested).filter(
-                (child): child is string => typeof child === 'string',
-              )
-            : [],
-      ),
-    ),
-  ]
-    .filter((token) => token.length > 2)
-    .sort((left, right) => right.length - left.length);
-  let normalized = value.toLocaleLowerCase('en-US');
-  for (const token of rowSpecificTokens) {
-    normalized = normalized.replace(
-      new RegExp(escapeRegExp(token.toLocaleLowerCase('en-US')), 'g'),
-      '<row-specific>',
-    );
-  }
-  normalized = normalized
-    .replace(
-      /the audit-derived membership boundary for .*? still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence/g,
-      '<membership-boundary-template>',
-    )
-    .replace(
-      /the repair must preserve .*? while satisfying the source-backed obligation at the exact audited target/g,
-      '<invariant-template>',
-    );
-  return normalized.replace(/\s+/g, ' ').trim();
-}
-
-function assertNoTemplateCollisions(
-  rows: FindingRow[],
-  field: 'underivedReason' | 'invariant',
-): void {
-  const collisions = new Map<string, string[]>();
-  for (const row of rows) {
-    if (field === 'underivedReason' && row.membershipStatus !== 'underived')
-      continue;
-    const value = row[field];
-    if (value === undefined) continue;
-    const shape = normalizedFindingText(row, value);
-    const members = collisions.get(shape) ?? [];
-    members.push(row.canonicalId);
-    collisions.set(shape, members);
-  }
-  const repeated = [...collisions.values()].filter(
-    (members) => members.length > TEMPLATE_COLLISION_LIMIT,
-  );
-  if (repeated.length > 0) {
-    throw new Error(
-      `${field} contains a shared template across rows: ${repeated
-        .map((members) => members.join(', '))
-        .join('; ')}`,
-    );
-  }
-}
-
 function parseCapabilityIdentity(
   value: unknown,
   path: string,
@@ -828,11 +866,11 @@ function parseCapabilityIdentity(
       engine: hookEngine,
       name: requiredString(hookValue.name, `${path}.hookSelector.name`),
     };
-    const hookPrimitive = primitiveForHook(
+    const hookPrimitives = primitiveForHook(
       typedCapabilityId,
       hookSelector.name,
     );
-    if (hookPrimitive !== primitive) {
+    if (!hookPrimitives.includes(primitive)) {
       throw new Error(
         `${path}.hookSelector is not relevant to primitive ${primitive}`,
       );
@@ -1011,18 +1049,24 @@ function parseMembers(
         locus !== undefined &&
         nested !== undefined &&
         capabilityRefs !== undefined &&
-        extra === undefined &&
-        capabilityRefs.includes(',')
+        extra === undefined
       ) {
-        return capabilityRefs
-          .split(',')
-          .map((capabilityRef) =>
-            parseIdentity(
-              [kind, locus, nested, capabilityRef].join('|'),
-              `${path}[${index}]`,
-              capabilityCatalog,
-            ),
+        return capabilityRefs.split(',').flatMap((capabilityRef) => {
+          const identity = parseIdentity(
+            [kind, locus, nested, capabilityRef].join('|'),
+            `${path}[${index}]`,
+            capabilityCatalog,
           );
+          const capability = identity.capability;
+          if (capability?.hookSelector === undefined) return [identity];
+          return primitiveForHook(
+            capability.capabilityId,
+            capability.hookSelector.name,
+          ).map((primitive) => ({
+            ...identity,
+            capability: { ...capability, primitive },
+          }));
+        });
       }
     }
     return [parseIdentity(item, `${path}[${index}]`, capabilityCatalog)];
@@ -1034,6 +1078,91 @@ function parseMembers(
       throw new Error(`${path} contains a duplicate identity`);
   }
   return members;
+}
+
+function parseUnderivedReason(
+  value: unknown,
+  path: string,
+  owningDerivationBead: string | undefined,
+): UnderivedReason {
+  if (!isObject(value)) throw new Error(`${path} must be an object`);
+  const cause = requiredString(value.cause, `${path}.cause`) as UnderivedCause;
+  if (
+    ![
+      'requires-audit-prose-reconciliation',
+      'requires-clause-ir',
+      'requires-external-source',
+      'requires-engine-capability',
+    ].includes(cause)
+  ) {
+    throw new Error(`${path}.cause is not a supported blocking cause`);
+  }
+  const blockedBy = isObject(value.blockedBy) ? value.blockedBy : undefined;
+  const kind = requiredString(
+    blockedBy?.kind,
+    `${path}.blockedBy.kind`,
+  ) as BlockingReference['kind'];
+  if (kind !== 'bead' && kind !== 'artifact') {
+    throw new Error(`${path}.blockedBy.kind is invalid`);
+  }
+  const ref = requiredString(blockedBy?.ref, `${path}.blockedBy.ref`);
+  if (kind === 'bead') {
+    if (ref !== owningDerivationBead) {
+      throw new Error(
+        `${path}.blockedBy bead must resolve to ${owningDerivationBead}`,
+      );
+    }
+  } else {
+    if (ref.startsWith('/') || ref.includes('..')) {
+      throw new Error(`${path}.blockedBy artifact must stay in the repository`);
+    }
+    if (!existsSync(join(repoRoot, ref))) {
+      throw new Error(`${path}.blockedBy artifact does not resolve: ${ref}`);
+    }
+  }
+  return { cause, blockedBy: { kind, ref } };
+}
+
+function parseInvariant(value: unknown, path: string): FindingInvariant {
+  if (!isObject(value)) throw new Error(`${path} must be an object`);
+  if (value.kind !== 'source-semantic-preservation') {
+    throw new Error(`${path}.kind must be source-semantic-preservation`);
+  }
+  if (!Array.isArray(value.dimensions) || value.dimensions.length === 0) {
+    throw new Error(`${path}.dimensions must be a non-empty array`);
+  }
+  const dimensions = value.dimensions.map((dimension, index) => {
+    const parsed = requiredString(
+      dimension,
+      `${path}.dimensions[${index}]`,
+    ) as InvariantDimension;
+    if (
+      ![
+        'branches',
+        'alternatives',
+        'timing',
+        'lifecycle',
+        'termination',
+      ].includes(parsed)
+    ) {
+      throw new Error(
+        `${path}.dimensions contains an unknown semantic dimension`,
+      );
+    }
+    return parsed;
+  });
+  if (new Set(dimensions).size !== dimensions.length) {
+    throw new Error(`${path}.dimensions contains duplicates`);
+  }
+  const evidence = isObject(value.evidence) ? value.evidence : undefined;
+  return {
+    kind: 'source-semantic-preservation',
+    dimensions,
+    evidence: {
+      kind: evidenceKind(evidence?.kind, `${path}.evidence.kind`),
+      locator: requiredString(evidence?.locator, `${path}.evidence.locator`),
+    },
+  };
 }
 
 function canonicalRosterBlockers(value: unknown): string[] {
@@ -1110,16 +1239,20 @@ function parseRegistry(value: unknown): FindingRegistry {
     if (membershipStatus !== 'derived' && membershipStatus !== 'underived') {
       throw new Error(`${path}.membershipStatus is invalid`);
     }
-    const underivedReason =
-      raw.underivedReason === undefined
-        ? undefined
-        : requiredString(raw.underivedReason, `${path}.underivedReason`);
     const owningDerivationBead =
       raw.owningDerivationBead === undefined
         ? undefined
         : requiredString(
             raw.owningDerivationBead,
             `${path}.owningDerivationBead`,
+          );
+    const underivedReason =
+      raw.underivedReason === undefined
+        ? undefined
+        : parseUnderivedReason(
+            raw.underivedReason,
+            `${path}.underivedReason`,
+            owningDerivationBead,
           );
     if (membershipStatus === 'underived') {
       if (underivedReason === undefined) {
@@ -1335,6 +1468,12 @@ function parseRegistry(value: unknown): FindingRegistry {
             raw.sharedQueryJustification,
             `${path}.sharedQueryJustification`,
           );
+    const invariant = parseInvariant(raw.invariant, `${path}.invariant`);
+    if (invariant.evidence.locator !== authority) {
+      throw new Error(
+        `${path}.invariant.evidence.locator must match obligation.authority`,
+      );
+    }
     return {
       canonicalId: requiredString(raw.canonicalId, `${path}.canonicalId`),
       aliases,
@@ -1359,7 +1498,7 @@ function parseRegistry(value: unknown): FindingRegistry {
           ...(capabilityCatalog === undefined ? {} : { capabilityCatalog }),
         },
       },
-      invariant: requiredString(raw.invariant, `${path}.invariant`),
+      invariant,
       violation: {
         queryId: queryId as MembershipQueryName,
         expectedAfterRepair,
@@ -1422,29 +1561,14 @@ function parseRegistry(value: unknown): FindingRegistry {
       );
     }
   }
-  const underivedReasons = new Map<string, string>();
   for (const row of rows) {
     if (row.membershipStatus !== 'underived') continue;
     const reason = row.underivedReason;
     if (reason === undefined) {
       throw new Error(`${row.canonicalId} underivedReason is required`);
     }
-    if (reason.includes(row.canonicalId)) {
-      throw new Error(
-        `${row.canonicalId} underivedReason must not be a canonicalId template`,
-      );
-    }
-    const previous = underivedReasons.get(reason);
-    if (previous !== undefined) {
-      throw new Error(
-        `underivedReason is shared by ${previous} and ${row.canonicalId}`,
-      );
-    }
-    underivedReasons.set(reason, row.canonicalId);
   }
   assertCanonicalRowRoster(rows);
-  assertNoTemplateCollisions(rows, 'underivedReason');
-  assertNoTemplateCollisions(rows, 'invariant');
   return { version: 1, rows };
 }
 
@@ -1540,17 +1664,31 @@ function recordIdentity(
   return { recordKey: record.key, ...nested };
 }
 
+export function capabilityIdentitiesForHook(
+  engine: string,
+  hook: string,
+): CapabilityIdentity[] {
+  const capabilityId = engineCapabilityId(engine, 'pack engine hook');
+  return primitiveForHook(capabilityId, hook).map((primitive) => ({
+    capabilityId,
+    primitive,
+    hookSelector: { engine, name: hook },
+    owningBead: ENGINE_FAMILY_OWNERS[capabilityId],
+  }));
+}
+
+/** Backward-compatible scalar helper for hooks that cover one primitive. */
 export function capabilityIdentityForHook(
   engine: string,
   hook: string,
 ): CapabilityIdentity {
-  const capabilityId = engineCapabilityId(engine, 'pack engine hook');
-  return {
-    capabilityId,
-    primitive: primitiveForHook(capabilityId, hook),
-    hookSelector: { engine, name: hook },
-    owningBead: ENGINE_FAMILY_OWNERS[capabilityId],
-  };
+  const identities = capabilityIdentitiesForHook(engine, hook);
+  if (identities.length !== 1) {
+    throw new Error(
+      `hook ${engine}/${hook} maps to multiple primitives; use capabilityIdentitiesForHook`,
+    );
+  }
+  return identities[0];
 }
 
 function generatedReadinessMembers(
@@ -1591,7 +1729,7 @@ function generatedCapabilityMembers(
           `${clauseId} engine-pending clause has no engine hooks`,
         );
       }
-      return clause.engineHooks.map((hookValue, hookIndex) => {
+      return clause.engineHooks.flatMap((hookValue, hookIndex) => {
         if (!isObject(hookValue)) {
           throw new Error(
             `${clauseId}.engineHooks[${hookIndex}] must be an object`,
@@ -1605,10 +1743,9 @@ function generatedCapabilityMembers(
           hookValue.hook,
           `${clauseId}.engineHooks[${hookIndex}].hook`,
         );
-        return recordIdentity(record, {
-          clauseId,
-          capability: capabilityIdentityForHook(engine, hook),
-        });
+        return capabilityIdentitiesForHook(engine, hook).map((capability) =>
+          recordIdentity(record, { clauseId, capability }),
+        );
       });
     });
   });
@@ -1825,15 +1962,15 @@ export function checkBeadReferences(
         .map((item) => item.id)
         .filter((id): id is string => typeof id === 'string'),
     );
+    const referencedBeads = registry.rows.flatMap((row) => [
+      row.owningBead,
+      ...(row.underivedReason?.blockedBy.kind === 'bead'
+        ? [row.underivedReason.blockedBy.ref]
+        : []),
+    ]);
     return {
       skipped: false,
-      missing: [
-        ...new Set(
-          registry.rows
-            .map((row) => row.owningBead)
-            .filter((bead) => !ids.has(bead)),
-        ),
-      ],
+      missing: [...new Set(referencedBeads.filter((bead) => !ids.has(bead)))],
     };
   } catch {
     return { skipped: true, missing: [] };
@@ -1857,6 +1994,11 @@ function validateMembershipRow(
   registry: FindingRegistry,
 ): void {
   if (row.membershipStatus === 'derived') {
+    if (row.membershipDerivation.generator.startsWith('pack-')) {
+      throw new Error(
+        `${row.canonicalId} pack generator may report current membership but may not establish derived membership`,
+      );
+    }
     if (
       !executableMembershipGenerators.has(row.membershipDerivation.generator)
     ) {

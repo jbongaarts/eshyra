@@ -15,8 +15,10 @@ Every row separates the durable obligation from the current defect:
 - `target` says exactly what the obligation is about. Its selector is a finite
   set of structured identities, never a substring, regular expression, prefix,
   or thematic record-kind search.
-- `invariant` states the requirement positively and survives a successful
-  repair.
+- `invariant` is a typed semantic-preservation contract: it names the
+  dimensions (branches, alternatives, timing, lifecycle, and termination) to
+  preserve and links them to the row's audit authority. It survives a
+  successful repair without relying on generated prose.
 - `violation` names the generated query for the current defect and records
   whether that defect is expected to become `empty` or remain `stable` after
   repair. A disappearing violation therefore does not erase the obligation.
@@ -39,9 +41,11 @@ Rows have one of two mechanically enforced membership statuses:
   defines the complete baseline and the current corpus joins to it exactly.
 - `underived` means the complete population still requires reconciliation to
   the source or prose of the four audit reviews. All 68 rows are currently in
-  this honest state; each carries distinct evidence in `underivedReason` and
-  names `eshyra-o9bd.19.1.7`, which owns that derivation work. A reason may not
-  be a canonical-ID or paraphrase-slot template, or be reused by another row.
+  this honest state; each carries a structured `underivedReason` with a closed
+  blocking cause and a resolvable `blockedBy` bead or artifact reference, and
+  names `eshyra-o9bd.19.1.7`, which owns that derivation work. There is no prose
+  normalizer or sentence blacklist: structured values either resolve or they
+  do not.
 
 `findingRegistryClosureReady()` is the fail-closed gate: it reruns the full
 membership validation chain and returns false while any row is underived or a
@@ -58,20 +62,21 @@ observable.
 Capability memberships add the bootstrap ledger's qualified identity fields to
 the exact record/clause locus: `capabilityId` (`engine:F1` through `engine:F10`),
 the canonical primitive, an exact `hookSelector` when the pack supplies one, and
-the owning family epic. A clause with multiple engine hooks produces one
-qualified membership per hook, preserving every family relationship. Ownership
-is checked against the ten historical family-epic bead IDs; it is not inferred
-from an ID prefix. The capability identity types and canonical primitive roster
-are intentionally duplicated locally until the bootstrap capability-ledger PR
-lands; the integration follow-up can replace this small duplicate at the
-serialized boundary without changing the identity spellings.
+the owning family epic. The committed hook relation is multi-valued: a compound
+hook emits one qualified membership for every applicable primitive, preserving
+cross-primitive siblings rather than selecting a representative. Unknown,
+near-match, and indeterminate hooks fail closed. Ownership is checked against
+the ten historical family-epic bead IDs; it is not inferred from an ID prefix.
+The capability identity types and canonical primitive roster are intentionally
+duplicated locally until the bootstrap capability-ledger PR lands; the
+integration follow-up can replace this small duplicate at the serialized
+boundary without changing the identity spellings.
 
 The validator rejects duplicate canonical IDs, omitted or unexpected canonical
 rows/aliases, malformed
 obligation IDs, pack self-authority, generic selectors, malformed nested
-identities, baseline/selector drift, partial current membership, structurally
-templated invariants or underived reasons, non-specific underived reasons, and
-forbidden hand-copied totals.
+identities, baseline/selector drift, invalid structured invariants or
+underived reasons, unresolved blockers, and forbidden hand-copied totals.
 Empty current violation membership is governed by the typed
 `violation.expectedAfterRepair` contract; there is no free-form
 `zeroMemberPolicy` escape hatch.

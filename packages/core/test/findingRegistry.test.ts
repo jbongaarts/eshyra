@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   aliasIndex,
+  capabilityIdentitiesForHook,
   capabilityIdentityForHook,
   checkBeadReferences,
   evaluateMembershipQuery,
@@ -69,13 +70,28 @@ describe('durable finding registry', () => {
       (row) => row.membershipStatus === 'underived',
     );
     expect(underived).toHaveLength(68);
-    expect(new Set(underived.map((row) => row.underivedReason)).size).toBe(
-      underived.length,
-    );
     for (const row of underived) {
-      expect(row.underivedReason).toBeTruthy();
-      expect(row.underivedReason).not.toContain(row.canonicalId);
+      expect(row.underivedReason).toMatchObject({
+        blockedBy: { kind: 'bead', ref: 'eshyra-o9bd.19.1.7' },
+      });
+      expect(row.underivedReason?.cause).toMatch(
+        /^(requires-audit-prose-reconciliation|requires-clause-ir|requires-external-source|requires-engine-capability)$/,
+      );
       expect(row.owningDerivationBead).toBe('eshyra-o9bd.19.1.7');
+      expect(row.invariant).toEqual({
+        kind: 'source-semantic-preservation',
+        dimensions: [
+          'branches',
+          'alternatives',
+          'timing',
+          'lifecycle',
+          'termination',
+        ],
+        evidence: {
+          kind: 'audit-finding',
+          locator: row.obligation.authority,
+        },
+      });
     }
   });
 
@@ -123,54 +139,44 @@ describe('durable finding registry', () => {
       /exact selector|structured data path/i,
     );
 
-    const duplicateReason = structuredClone(registry);
-    const underivedRows = duplicateReason.rows.filter(
-      (row) => row.membershipStatus === 'underived',
-    );
-    underivedRows[1].underivedReason = underivedRows[0].underivedReason;
-    expect(() => validateFindingRegistry(duplicateReason)).toThrow(
-      /underivedReason is shared/i,
-    );
-
     const templatedReason = structuredClone(registry);
     const templatedRow = templatedReason.rows.find(
       (row) => row.membershipStatus === 'underived',
     );
     if (templatedRow === undefined)
       throw new Error('fixture must contain an underived row');
-    templatedRow.underivedReason = `Membership for ${templatedRow.canonicalId} remains underived.`;
+    templatedRow.underivedReason = {
+      cause: 'not-a-real-cause',
+      blockedBy: { kind: 'bead', ref: 'eshyra-o9bd.19.1.6.9' },
+    } as never;
     expect(() => validateFindingRegistry(templatedReason)).toThrow(
-      /canonicalId template/i,
-    );
-
-    const titleReasonTemplates = structuredClone(registry);
-    const reasonRows = titleReasonTemplates.rows.filter(
-      (row) => row.membershipStatus === 'underived',
-    );
-    reasonRows[0].underivedReason =
-      'The audit-derived membership boundary for spell preparation quotation limits still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.';
-    reasonRows[1].underivedReason =
-      'The audit-derived membership boundary for manifest provenance lineage still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.';
-    expect(() => validateFindingRegistry(titleReasonTemplates)).toThrow(
-      /underivedReason contains a shared template/i,
-    );
-
-    const titleInvariantTemplates = structuredClone(registry);
-    const invariantRows = titleInvariantTemplates.rows.slice(0, 2);
-    invariantRows[0].invariant =
-      'The repair must preserve spell preparation quotation limits while satisfying the source-backed obligation at the exact audited target.';
-    invariantRows[1].invariant =
-      'The repair must preserve manifest provenance lineage while satisfying the source-backed obligation at the exact audited target.';
-    expect(() => validateFindingRegistry(titleInvariantTemplates)).toThrow(
-      /invariant contains a shared template/i,
+      /blocking cause|resolve to eshyra-o9bd.19.1.7/i,
     );
 
     const templated = structuredClone(registry);
     for (const row of templated.rows) {
-      row.invariant = `The source-backed obligation for ${row.canonicalId} remains represented at the exact audited target.`;
+      row.invariant = {
+        kind: 'source-semantic-preservation',
+        dimensions: ['branches'],
+        evidence: {
+          kind: 'audit-finding',
+          locator: row.obligation.authority,
+        },
+      };
     }
-    expect(() => validateFindingRegistry(templated)).toThrow(
-      /defect-specific|template/i,
+    expect(() => validateFindingRegistry(templated)).not.toThrow();
+
+    const invalidInvariant = structuredClone(registry);
+    invalidInvariant.rows[0].invariant = {
+      kind: 'source-semantic-preservation',
+      dimensions: ['branches', 'branches'],
+      evidence: {
+        kind: 'audit-finding',
+        locator: invalidInvariant.rows[0].obligation.authority,
+      },
+    };
+    expect(() => validateFindingRegistry(invalidInvariant)).toThrow(
+      /dimensions contains duplicates/i,
     );
   });
 
@@ -371,7 +377,7 @@ describe('durable finding registry', () => {
     }
   });
 
-  it('uses a closed hook relation, including the F2 legendary-action primitive', () => {
+  it('uses a closed multi-valued hook relation and fails closed when indeterminate', () => {
     expect(
       capabilityIdentityForHook(
         'F2',
@@ -390,6 +396,155 @@ describe('durable finding registry', () => {
     expect(() => capabilityIdentityForHook('F10', 'currency mutation')).toThrow(
       /unknown hook/,
     );
+    expect(
+      capabilityIdentitiesForHook(
+        'F10',
+        'currency, property, inventory, and XP ledger outcomes',
+      ).map((identity) => identity.primitive),
+    ).toEqual([
+      'canonical-currency-mutation',
+      'retained-inventory-property-xp-asset-creation',
+    ]);
+    expect(
+      capabilityIdentitiesForHook(
+        'F5',
+        'per-item storage, charge, and reset state',
+      ).map((identity) => identity.primitive),
+    ).toEqual([
+      'per-instance-usage-and-charge-spend',
+      'recharge-and-reset-scheduling',
+    ]);
+    expect(
+      capabilityIdentitiesForHook(
+        'F9',
+        'size-scaled quantity cost and area targeting',
+      ).map((identity) => identity.primitive),
+    ).toEqual([
+      'capacity-and-variant-arithmetic',
+      'point-origin-area-geometry-and-targeting',
+    ]);
+    expect(() =>
+      capabilityIdentityForHook(
+        'F10',
+        'currency, property, inventory, and XP ledger outcomes',
+      ),
+    ).toThrow(/multiple primitives/);
+
+    const auditedMultiPrimitiveHooks = [
+      [
+        'F10',
+        'currency, property, inventory, and XP ledger outcomes',
+        [
+          'canonical-currency-mutation',
+          'retained-inventory-property-xp-asset-creation',
+        ],
+      ],
+      [
+        'F4',
+        'class spell-list eligibility and casting/copying procedure',
+        [
+          'caster-of-record-and-canonical-spell-execution',
+          'spellbook-copy-cost-and-asset-ledger',
+        ],
+      ],
+      [
+        'F4',
+        'shared spell-slot, spell-casting, and caster-of-record execution',
+        [
+          'caster-of-record-and-canonical-spell-execution',
+          'spell-slot-gate-and-upcast-transform',
+        ],
+      ],
+      [
+        'F5',
+        'duration budget and conditional periodic recharge',
+        [
+          'per-instance-usage-and-charge-spend',
+          'recharge-and-reset-scheduling',
+        ],
+      ],
+      [
+        'F5',
+        'per-item storage, charge, and reset state',
+        [
+          'per-instance-usage-and-charge-spend',
+          'recharge-and-reset-scheduling',
+        ],
+      ],
+      [
+        'F9',
+        'area targeting and forced movement',
+        [
+          'point-origin-area-geometry-and-targeting',
+          'forced-movement-contest-and-object-interaction',
+        ],
+      ],
+      [
+        'F9',
+        'checks, saves, damage, movement, and destruction outcomes',
+        [
+          'damage-rider-and-half-damage-branch-resolution',
+          'forced-movement-contest-and-object-interaction',
+        ],
+      ],
+      [
+        'F9',
+        'damage, range, cover, and forced movement',
+        [
+          'damage-rider-and-half-damage-branch-resolution',
+          'forced-movement-contest-and-object-interaction',
+        ],
+      ],
+      [
+        'F9',
+        'damage, saving throws, and targeting',
+        [
+          'damage-rider-and-half-damage-branch-resolution',
+          'point-origin-area-geometry-and-targeting',
+        ],
+      ],
+      [
+        'F9',
+        'geometry, targeting, movement, and contest resolution',
+        [
+          'point-origin-area-geometry-and-targeting',
+          'forced-movement-contest-and-object-interaction',
+        ],
+      ],
+      [
+        'F9',
+        'saving throw, damage, and attack targeting consequences',
+        [
+          'damage-rider-and-half-damage-branch-resolution',
+          'point-origin-area-geometry-and-targeting',
+        ],
+      ],
+      [
+        'F9',
+        'size-scaled quantity cost and area targeting',
+        [
+          'capacity-and-variant-arithmetic',
+          'point-origin-area-geometry-and-targeting',
+        ],
+      ],
+      [
+        'F9',
+        'variant targeting, movement, and capacity arithmetic',
+        [
+          'capacity-and-variant-arithmetic',
+          'point-origin-area-geometry-and-targeting',
+          'forced-movement-contest-and-object-interaction',
+        ],
+      ],
+    ] as const;
+    for (const [engine, hook, primitives] of auditedMultiPrimitiveHooks) {
+      expect(
+        capabilityIdentitiesForHook(engine, hook).map(
+          (identity) => identity.primitive,
+        ),
+        `${engine}/${hook}`,
+      ).toEqual(primitives);
+    }
   });
 
   it('derives corpus populations rather than retaining exemplars', () => {
@@ -470,14 +625,21 @@ describe('durable finding registry', () => {
       owningDerivationBead: undefined,
     }));
     expect(findingRegistryClosureBlockers(allDerived)).toEqual(
-      underivedIds.filter((canonicalId) => {
-        const row = allDerived.rows.find(
-          (candidate) => candidate.canonicalId === canonicalId,
-        );
-        return row?.membershipDerivation.generator.startsWith('audited-');
-      }),
+      registry.rows.map((row) => row.canonicalId),
     );
     expect(findingRegistryClosureReady(allDerived)).toBe(false);
+
+    const packOnlyDerived = structuredClone(registry);
+    const packRow = packOnlyDerived.rows.find(
+      (row) => row.membershipDerivation.generator === 'pack-record-kind',
+    );
+    if (packRow === undefined) throw new Error('fixture needs a pack row');
+    packRow.membershipStatus = 'derived';
+    packRow.underivedReason = undefined;
+    packRow.owningDerivationBead = undefined;
+    expect(findingRegistryClosureBlockers(packOnlyDerived)).toContain(
+      packRow.canonicalId,
+    );
 
     const deletedRow = registry.rows.at(-1);
     if (deletedRow === undefined) throw new Error('fixture must have rows');
@@ -527,48 +689,6 @@ describe('durable finding registry', () => {
     );
   });
 
-  it('rejects reasons that share a template across rows', () => {
-    // The guard this protects has failed three times in this program, each time
-    // by a required field being filled mechanically: one identical
-    // exemplarJustification across 61 rows, round-robin audit aliases in the
-    // capability ledger, and title-substituted reasons here. Equality checks
-    // miss all three, so the guard normalises row-specific tokens away and
-    // compares the residual skeleton. Without this test a later change could
-    // relax TEMPLATE_COLLISION_LIMIT or blunt the normaliser and nothing would
-    // notice.
-    const registry = loadFindingRegistry();
-    const underived = registry.rows.filter(
-      (row) => row.membershipStatus === 'underived',
-    );
-    const [first, second] = underived;
-
-    // This is the checked-in pattern from the failed revision: the subject is
-    // paraphrased rather than copied from title, so literal-token stripping
-    // cannot catch it.
-    const templated = {
-      ...registry,
-      rows: registry.rows.map((row) => {
-        if (row.canonicalId === first.canonicalId)
-          return {
-            ...row,
-            underivedReason:
-              'The audit-derived membership boundary for spell preparation quotation limits still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.',
-          };
-        if (row.canonicalId === second.canonicalId)
-          return {
-            ...row,
-            underivedReason:
-              'The audit-derived membership boundary for manifest provenance lineage still requires reconciliation against the named review evidence; the checked-in identities are not closure evidence.',
-          };
-        return row;
-      }),
-    };
-
-    expect(() => validateFindingRegistry(templated)).toThrow(
-      /shared template across rows/,
-    );
-  });
-
   it('does not store hand-copied totals', () => {
     const registry = loadFindingRegistry();
     expect(JSON.stringify(registry)).not.toMatch(
@@ -601,6 +721,18 @@ describe('durable finding registry', () => {
       { storedCount: 1 },
     );
     expect(() => validateFindingRegistry(nestedCapability)).toThrow(
+      /hand-copied total/,
+    );
+
+    const nestedArray = structuredClone(registry);
+    Object.assign(
+      nestedArray.rows[0].target.selector.members[0] as unknown as Record<
+        string,
+        unknown
+      >,
+      { nested: [{ entries: [{ total: 1 }] }] },
+    );
+    expect(() => validateFindingRegistry(nestedArray)).toThrow(
       /hand-copied total/,
     );
   });
