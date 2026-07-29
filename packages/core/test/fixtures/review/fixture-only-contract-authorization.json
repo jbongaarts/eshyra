@@ -1,0 +1,21 @@
+{
+  "checkpointKind": "contract-authorization",
+  "fixtureOnly": true,
+  "protocolId": "eshyra-review-v2",
+  "protocolHash": "fixture-only-protocol-hash",
+  "profileId": "rules-clause-complete-v1",
+  "profileHash": "fixture-only-profile-hash",
+  "policyHash": "fixture-only-policy-hash",
+  "effectiveProfile": "rules-clause-complete",
+  "contractHash": "fixture-only-contract-hash",
+  "reviewedScope": "full-contract",
+  "scopeNotes": "fixture-only: covers the whole fixture contract",
+  "publicationHeadSha": "fixture-only-head-sha",
+  "reviewerRole": "fixture-only-reviewer",
+  "result": "approved",
+  "implementationPermission": "granted",
+  "openFindings": 0,
+  "newDefectClasses": 0,
+  "materialContractChange": false,
+  "freshContractReviewRequired": false
+}

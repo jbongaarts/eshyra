@@ -205,6 +205,36 @@ Always pass non-interactive flags so aliased confirmation prompts can't hang
 the agent: `cp -f`, `mv -f`, `rm -f` / `rm -rf`, `apt-get -y`, and
 `ssh`/`scp -o BatchMode=yes`.
 
+## Review Protocol
+
+<!-- BEGIN REVIEW PROTOCOL POINTER -->
+Every change is reviewed under one lifecycle whose evidence bar is set by a
+*review profile* (`standard` < `semantic-system` < `rules-clause-complete`).
+Most work is `standard`; this is not a rules-pack standard applied to
+everything.
+
+```bash
+npm run review:preflight -- --bead <bead-id> [--pr <number>]
+```
+
+Run it before starting and before asking for review. Then:
+
+- read **only** the profile document it reports as effective, plus
+  `docs/review/eshyra-development-and-review-protocol.md` if something is
+  ambiguous;
+- treat the **bead's `## REVIEW CONTRACT` as normative** — PR bodies, templates,
+  and bead notes are explanatory only;
+- when it reports authorization as required, obtain it **before** substantive
+  implementation;
+- re-run it after any material change, and publish an implementation handoff
+  before review readiness;
+- stop immediately and permanently on `DESIGN_INVALIDATED`.
+
+Passing tests, PR prose, a symbol or hook existing, a bead existing, a
+readiness string, or a record existing are never stronger evidence than they
+literally are.
+<!-- END REVIEW PROTOCOL POINTER -->
+
 ## Git & PR Workflow
 
 Work reaches `main` by pull request only — never by a direct push to `main`.

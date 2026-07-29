@@ -1,0 +1,97 @@
+# Review governance gate (protocol `eshyra-review-v2`).
+#
+# Enforces the lifecycle documented in
+# docs/review/eshyra-development-and-review-protocol.md:
+#
+#   1. determine the effective review profile from changed paths + declared
+#      change characteristics;
+#   2. validate the published review contract;
+#   3. validate handoff and checkpoint state;
+#   4. enforce profile-specific requirements (authorization before substantive
+#      implementation for semantic-system and rules-clause-complete);
+#   5. reject design-invalidated PRs, permanently.
+#
+# PERMISSION MODEL — why this is a `pull_request` job and not
+# `pull_request_target`:
+#
+#   The gate is READ-ONLY. It reads the checkout and the PR's comments and
+#   writes nothing. `pull_request` runs fork code with a read-only token scoped
+#   to that PR and no access to repository secrets, so untrusted code never
+#   executes with a privileged token. `pull_request_target` would run the base
+#   branch's workflow with a writable token while checking out untrusted code —
+#   exactly the combination this job must avoid. Publishing handoffs,
+#   checkpoints, and invalidations is done deliberately by a human or an agent
+#   from a trusted context, never by this workflow.
+#
+# The Beads database is NOT read here: it lives in Dolt behind
+# `refs/dolt/data` and is not available to a runner. The handoff comment
+# republishes the normalized contract structure alongside its digest, so this
+# job re-derives the digest and re-runs every structural rule. Proving that the
+# published contract still matches the bead is `npm run review:preflight`'s job,
+# run locally where `bd` exists.
+
+name: Review governance
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+
+# Least privilege: read the code, read the PR conversation, write nothing.
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: review-governance-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review-gate:
+    name: Review contract, authorization, and checkpoint state
+    runs-on: ubuntu-latest
+    env:
+      npm_config_build_from_source: "false"
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The gate compares the base branch against the head to decide
+          # whether the protocol document already exists on the base, which is
+          # one of the three bootstrap-exception conditions.
+          fetch-depth: 0
+
+      - name: Set up Node 24 LTS
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Draft PRs are in-progress work. They must satisfy contract validity and
+      # (where the profile requires it) contract authorization, but they are not
+      # asked for an implementation-review checkpoint — requiring one on every
+      # push would make approval meaningless.
+      - name: Determine gate stage
+        id: stage
+        run: |
+          if [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+            echo "stage=implementation" >> "$GITHUB_OUTPUT"
+          else
+            echo "stage=merge-readiness" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Evaluate review gate
+        run: |
+          npm run review:ci -- \
+            --pr "${{ github.event.pull_request.number }}" \
+            --stage "${{ steps.stage.outputs.stage }}"
+
+      - name: Review gate detail (JSON)
+        if: always()
+        run: |
+          npm run review:ci -- \
+            --pr "${{ github.event.pull_request.number }}" \
+            --stage "${{ steps.stage.outputs.stage }}" \
+            --json || true

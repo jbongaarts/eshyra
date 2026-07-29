@@ -1,0 +1,158 @@
+{
+  "policyId": "eshyra-minimum-profile-policy",
+  "policyVersion": "v1",
+  "protocol": "eshyra-review-v2",
+  "defaultProfile": "standard",
+  "pathRules": [
+    {
+      "id": "rules-source-importers",
+      "profile": "rules-clause-complete",
+      "reason": "Source-rule importers and the rules-pack compiler.",
+      "patterns": [
+        "packages/core/scripts/importers/**",
+        "packages/core/test/importers/**"
+      ]
+    },
+    {
+      "id": "generated-rules-packs",
+      "profile": "rules-clause-complete",
+      "reason": "Generated rules-pack records and manifests.",
+      "patterns": ["packages/core/data/rules-packs/**"]
+    },
+    {
+      "id": "rules-schemas-and-clauses",
+      "profile": "rules-clause-complete",
+      "reason": "Rules schemas, clause representations, and pack loading.",
+      "patterns": ["packages/core/src/rules/**"]
+    },
+    {
+      "id": "rules-audit-and-census",
+      "profile": "rules-clause-complete",
+      "reason": "Source census, source coverage, audit and finding membership, and readiness classification for deterministic rules.",
+      "patterns": [
+        "packages/core/scripts/rules-pack-audit/**",
+        "packages/core/scripts/deep-audit-dnd5e-srd/**",
+        "packages/core/scripts/verify-dnd5e-srd-pack/**",
+        "packages/core/scripts/verify-dnd5e-srd-freeze/**",
+        "packages/core/scripts/create-dnd5e-srd-audit-bundle/**",
+        "packages/core/scripts/generate-creature-name-baseline/**",
+        "docs/audits/**"
+      ]
+    },
+    {
+      "id": "pack-driven-mechanic-resolution",
+      "profile": "rules-clause-complete",
+      "reason": "Deterministic engine consumers of generated rule semantics and pack-driven character or mechanic resolution.",
+      "patterns": [
+        "packages/core/src/character/srd*.ts",
+        "packages/core/src/character/rulesPackResolver.ts",
+        "packages/core/src/orchestrator/calc.ts",
+        "packages/core/src/orchestrator/resolution.ts",
+        "packages/core/src/orchestrator/spellUpcast.ts"
+      ]
+    },
+    {
+      "id": "persisted-campaign-state",
+      "profile": "semantic-system",
+      "reason": "Persisted campaign state, live-state schema, migrations, and replay/rollback checkpoints.",
+      "patterns": [
+        "packages/core/src/persistence/**",
+        "packages/core/src/state/**",
+        "packages/core/data/migrations/**",
+        "packages/core/data/schema.snapshot.sql"
+      ]
+    },
+    {
+      "id": "orchestrator-and-provider-protocols",
+      "profile": "semantic-system",
+      "reason": "Orchestrator and provider-neutral tool protocols and model adapters.",
+      "patterns": [
+        "packages/core/src/orchestrator/**",
+        "packages/core/src/model/**"
+      ]
+    },
+    {
+      "id": "adventure-module-schemas",
+      "profile": "semantic-system",
+      "reason": "Adventure-module schemas and progress state.",
+      "patterns": [
+        "packages/core/src/adventure/**",
+        "packages/core/data/adventure-modules/**"
+      ]
+    },
+    {
+      "id": "public-domain-interfaces",
+      "profile": "semantic-system",
+      "reason": "Public domain interfaces and identity/version models for campaigns, characters, memory, sessions, and world state.",
+      "patterns": [
+        "packages/core/src/index.ts",
+        "packages/core/src/internal.ts",
+        "packages/core/src/validation.ts",
+        "packages/core/src/campaign/**",
+        "packages/core/src/character/**",
+        "packages/core/src/memory/**",
+        "packages/core/src/session/**",
+        "packages/core/src/world/**"
+      ]
+    },
+    {
+      "id": "review-governance-system",
+      "profile": "semantic-system",
+      "reason": "Evidence and review-governance system: the review protocol, its policy, its tooling, and its CI gate.",
+      "patterns": [
+        "docs/review/**",
+        "packages/core/scripts/review/**",
+        "packages/core/test/review/**",
+        "packages/core/test/fixtures/review/**",
+        ".github/workflows/review-governance.yml"
+      ]
+    }
+  ],
+  "characteristicRules": [
+    {
+      "characteristic": "public-schema-or-protocol-change",
+      "profile": "semantic-system",
+      "reason": "A public schema or protocol change binds producers and consumers that cannot be revised together."
+    },
+    {
+      "characteristic": "persisted-state-change",
+      "profile": "semantic-system",
+      "reason": "Persisted state outlives the code that wrote it."
+    },
+    {
+      "characteristic": "migration-required",
+      "profile": "semantic-system",
+      "reason": "A migration must be correct forward and recoverable backward."
+    },
+    {
+      "characteristic": "replay-or-rollback-change",
+      "profile": "semantic-system",
+      "reason": "Replay and rollback are trust boundaries over historical state."
+    },
+    {
+      "characteristic": "authorization-or-evidence-boundary-change",
+      "profile": "semantic-system",
+      "reason": "Authorization and evidence boundaries decide what later work is permitted to claim."
+    },
+    {
+      "characteristic": "generated-data-producer-change",
+      "profile": "rules-clause-complete",
+      "reason": "A producer of generated data determines the content every downstream consumer trusts."
+    },
+    {
+      "characteristic": "source-backed-rule-behavior",
+      "profile": "rules-clause-complete",
+      "reason": "Behavior asserted to follow from a rules source needs an independently established source obligation."
+    },
+    {
+      "characteristic": "deterministic-engine-capability",
+      "profile": "rules-clause-complete",
+      "reason": "A deterministic engine capability claim needs a proven capability boundary, not symbol or hook presence."
+    },
+    {
+      "characteristic": "pack-driven-runtime-semantics",
+      "profile": "rules-clause-complete",
+      "reason": "Runtime semantics driven by generated pack records need provider-neutral reference execution against real records."
+    }
+  ]
+}
