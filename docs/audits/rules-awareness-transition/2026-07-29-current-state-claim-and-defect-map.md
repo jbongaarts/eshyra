@@ -79,12 +79,16 @@ holding them apart is what this map is for.
    capability inventory.** `data.executionReadiness` exists on 240 records,
    all `magic-item` (13% of the corpus, one kind). Spells, creatures, hazards,
    features, rules, and equipment have no equivalent. **[VERIFIED]**
-10. **The typed spell/creature/hazard mechanics projections have no runtime
-    consumer.** No production code reads `mechanics.saves`, `mechanics.damage`,
-    or `mechanics.area`. **[VERIFIED]** Their defects are therefore
-    **discovery and adjudication-support** defects — a truncated typed
-    projection sits beside faithful prose in what `lookup_rules` hands the DM —
-    not deterministic-execution defects. **[INFERRED]**
+10. **The typed spell/creature/hazard mechanics projections have no
+    field-specific reader in production code** — nothing reads
+    `mechanics.saves`, `mechanics.damage`, or `mechanics.area` — **but they do
+    reach the DM**, because `lookup_rules` returns the whole matched record
+    unchanged. **[VERIFIED]** Their defects are therefore **discovery and
+    adjudication-support** defects — a truncated typed projection sits beside
+    faithful prose in what `lookup_rules` hands the DM — not
+    deterministic-execution defects. **[INFERRED]** §4.12 defines the two
+    senses of "consumer" this document uses; they are not interchangeable, and
+    "no reader" never means "unreachable" for pack-record content.
 11. **Discovery, as ADR 0020 §5 describes it, does not exist.**
     `contextAssembler.ts` injects no rules material; `lookup_rules` requires an
     exact `kind` plus an exact name or ref; the turn auditor is a model-based
@@ -212,9 +216,21 @@ strength.
   `DND5E_SRD_PACK_ID` comparison at line 412 — **no pack material enters the
   per-turn context**.
 - `RulesAmbiguity` (3 records: `spell:create-undead`, `magic-item:cube-of-force`,
-  `spell:find-familiar`) is validated at pack load
-  (`rulesAmbiguities.ts`, `validate.ts:276`) and surfaced in the readiness
-  report — but has **no runtime consumer**. It never reaches the DM.
+  `spell:find-familiar`) lives at `record.data.mechanics.ambiguities` and is
+  validated at pack load (`optRulesAmbiguities` in `rulesAmbiguities.ts:75`,
+  reached from `kindSchemas.ts:945` and `magicItemMechanics.ts:2274`; pack-level
+  identity/provenance checks at `validate.ts:276`). **It does reach the DM**:
+  `lookupRulesTool` returns `record: result.record` unchanged
+  (`toolLookupRules.ts:169-170`), so the ambiguity object is in the tool result
+  whenever the model looks up one of those three records. **[VERIFIED]**
+  The narrower verified defect is that **reaching the DM is entirely
+  conditional on the model independently choosing the exact containing
+  record**: no field-specific reader consumes `data.mechanics.ambiguities`,
+  nothing surfaces an ambiguity when the governing situation arises, and there
+  is no campaign-ruling store, resolver, or ruling-to-capability path — the
+  runtime disposition on every entry is `{ status: 'engine-pending', owner:
+  'campaign-ruling' }` with `canonicalResolution: null`
+  (`types.ts:97-108`), and the owning beads `eshyra-jhpt.6`/`.7` are OPEN.
   **[VERIFIED]**
 
 **Interpretation / adjudication.**
@@ -642,10 +658,27 @@ self-certification, and what breaks if it were removed today.
 | Migration runner | `persistence/migrationRunner.ts` | pack-dir resolution only |
 | Adventure modules | `adventure/listModules.ts` | mirrors pack-dir resolution |
 
-**Not read by any production code: `mechanics.saves`, `mechanics.damage`,
-`mechanics.area`, `mechanics.conditions`, `mechanics.scaling` (outside the
-spell-upcast `effects` path), and `data.mechanics.ambiguities`.** **[VERIFIED
-by grep across `packages/core/src` and `packages/cli/src` excluding tests.]**
+**Two senses of "consumer" must be kept apart, and the rest of this document
+uses them precisely.**
+
+1. **Field-specific readers** — production code that reads a named field and
+   computes from it. **No production code reads `mechanics.saves`,
+   `mechanics.damage`, `mechanics.area`, `mechanics.conditions`,
+   `mechanics.scaling` (outside the spell-upcast `effects` path), or
+   `data.mechanics.ambiguities`.** **[VERIFIED by grep across
+   `packages/core/src` and `packages/cli/src` excluding tests.]**
+2. **The generic whole-record consumer** — `lookupRulesTool` returns
+   `record: result.record` **unchanged** (`toolLookupRules.ts:169-170`). Every
+   field of a matched record, including all of the above, therefore reaches the
+   DM model's context whenever the model looks that record up. **[VERIFIED]**
+
+A field with no reader in sense 1 is **not** unreachable. It is *executed by
+nothing* and *read by the DM on request*. Where §4 rows say "No runtime
+consumer" of the **audit registries** (`GAMEPLAY_READINESS_DISPOSITIONS`,
+`RULE_DISPOSITIONS`, `ENGINE_PROCEDURE_COVERAGE`, the three `srd*Audit`
+modules, the ADR 0019 inventory), that statement is unconditional in **both**
+senses — those artifacts are code and documentation, not pack records, so no
+lookup can return them. **[VERIFIED]**
 
 **[INFERRED]** The corpus of typed spell/creature/hazard mechanics is, today,
 material the DM model reads through `lookup_rules` — i.e. **discovery and
@@ -716,7 +749,18 @@ Dimension abbreviations: **SF** source fidelity · **DI** discovery ·
 **AD** adjudication support · **DC** deterministic capability ·
 **SI** state integrity.
 
-### 6.1 Verified-live defects (re-derived in this session)
+### 6.1 Verified defects (re-derived in this session)
+
+**Three classes, kept distinct.** Every entry names its violated invariant; an
+entry without one belongs in §7A, not here.
+
+| Class | Entries | Meaning |
+|---|---|---|
+| **Live, with current instances** | D-1, D-2, D-3, D-4, D-6, D-7, D-8 | A named invariant is violated **and** the violating records/rows/pointers exist today and are enumerated. |
+| **Live claim, no instance required** | D-5 | A gating claim that is still recorded and still blocking is unobtainable in principle. The defect is the surviving claim, not any record. |
+| **Structurally present, no triggering instance** | D-9 | The defective predicate exists in code and would read a non-recognised input as satisfied; nothing currently triggers it. ADR 0020 §3 makes this a defect regardless ("Any gate, report, or predicate that reads an unbound or unrecognized item as satisfied is a defect, not a green"). |
+
+Design properties that violate no invariant are **not** listed here — see §7A.
 
 ---
 
@@ -920,26 +964,45 @@ Dimension abbreviations: **SF** source fidelity · **DI** discovery ·
 
 ---
 
-**D-5 — `RulesRecord.data` is `unknown`; kind validators accept unregistered fields**
+**D-5 — The still-recorded zero-engine-pending re-freeze bar infers completeness
+from an open schema**
 
-- **Original finding:** recorded in ADR 0020 Context and in
-  `eshyra-o9bd.19.7` question 10 as the reason PR #477's absence proof failed.
-- **Violated invariant:** none — this is a *design property*, and the finding is
-  that it makes a class of claim unprovable.
-- **Authoritative evidence:** `packages/core/src/rules/types.ts:135` —
-  `readonly data: unknown`. Empirically: injecting
+- **Original finding:** the 2026-07-25 program decision recorded in
+  `eshyra-olc5` notes and `eshyra-o9bd.19`; `eshyra-o9bd.19.7` question 10 as
+  the reason PR #477's absence proof failed; ADR 0020 Alternatives §1.
+- **Violated invariant:** ADR 0020 §3 — "Absence of a capability binding is a
+  statement about Eshyra, not about the rules … 'Unbound', 'unclassified', and
+  'not recognized' are not safety properties." The still-recorded bar
+  ("**AT RE-FREEZE THERE MUST BE ZERO ENGINE-PENDING DETERMINISTIC CLAUSES**",
+  `eshyra-olc5` notes, verbatim and unamended) requires a global negative — that
+  no unimplemented mechanics remain in a record — which it can only obtain by
+  reading non-recognition as completeness. ADR 0020 "Prior assumptions" item 4
+  states it "rests on a global negative claim the corpus cannot support and
+  must be reassessed."
+- **The defect is the surviving claim, not the schema.** `RulesRecord.data:
+  unknown` and permissive extension fields are **architectural properties**, not
+  defects; they are recorded as such in §7A. What is defective is that a live
+  gating bar — the one blocking `eshyra-o9bd.14` and `eshyra-2zyy` — still
+  depends on a closure those properties make unobtainable.
+- **Authoritative evidence:** the bar is still recorded verbatim in
+  `eshyra-olc5`'s notes (points 5–6 of the nine-point GREEN definition encode
+  the global reference-engine claim). The enabling properties:
+  `packages/core/src/rules/types.ts:135` — `readonly data: unknown`; injecting
   `data.totallyMadeUpField = { nonsense: true }` into `spell:fireball` and
   calling `validateRulesPack` → **accepted**. **[VERIFIED]**
-- **Dimensions:** **SF**, **DC**, **AD**.
-- **Concerns:** an obsolete global claim. ADR 0020 Alternatives §1 records this
-  as the decisive reason global deterministic closure was withdrawn.
+- **Affected membership:** the `eshyra-olc5` GREEN definition; the re-freeze
+  bar in `eshyra-o9bd.19`; and transitively `eshyra-o9bd.14` and `eshyra-2zyy`,
+  which are blocked on it (see D-6 and §9 questions 1–2).
+- **Dimensions:** **DC** (primary), **SF**, **AD**.
+- **Concerns:** an obsolete global claim that is still operative as a gate.
 - **Current owner:** `eshyra-o9bd.19.1.14` (F1) and `eshyra-olc5.3`/`.4`
   ("Certify clause-complete absence for bootstrap source-negative blockers") —
   OPEN.
 - **Unresolved decision:** **[QUESTION]** The handoff's only sound position was
   "unclassified structured material must remain UNDERIVED, never absent." Is
   `underived` a status the pack should carry in-band, or a property of an
-  external registry? Not decided here.
+  external registry? And what replaces the withdrawn bar (§9 question 1)? Not
+  decided here.
 
 ---
 
@@ -970,6 +1033,12 @@ Dimension abbreviations: **SF** source fidelity · **DI** discovery ·
 
 - **Original finding:** repair-plan item 8 ("Make audit findings durable
   project data"); bead `eshyra-o9bd.19.1.6`.
+- **Violated invariant:** ADR 0020 §7 — "Findings from the SRD audits remain
+  open obligations until each receives an **explicit disposition**." An
+  explicit disposition per finding is unsatisfiable while the repository cannot
+  enumerate the findings. Also `eshyra-o9bd.19`'s own second acceptance
+  requirement ("every numbered finding … maps to at least one bead with
+  regression evidence").
 - **Authoritative evidence:** the finding-to-bead coverage matrix — 12
   `indep:*`, 24 `opus:F-*`, 11 amended `opus:F-*`, 14 `sol:CAP-*`, 8 `fable:F*`
   (≈69 findings) plus the engine-gap tables — exists in
@@ -997,6 +1066,11 @@ Dimension abbreviations: **SF** source fidelity · **DI** discovery ·
 - **Original finding:** ADR 0019 §"Current repository inventory" states five
   explicit residual `unsupported` families and asserts "No new bead is created:
   these owners already exist."
+- **Violated invariant:** ADR 0019's own `unsupported` contract — "Source is
+  retained, **the owner/reason is named**, and readiness must not claim
+  deterministic support" — plus the accompanying assertion that the owners
+  exist. The retention and the no-false-readiness halves hold; the named-owner
+  half does not.
 - **Authoritative evidence:** all five owners are **CLOSED** —
   `eshyra-o9bd.18.7.9.15` (savingThrows/skills/senses),
   `eshyra-o9bd.18.7.6` (`equipment.data.properties[]`),
@@ -1021,6 +1095,13 @@ Dimension abbreviations: **SF** source fidelity · **DI** discovery ·
 ---
 
 **D-9 — Latent fail-opens (no current instance, structurally present)**
+
+- **Violated invariant:** ADR 0020 §3 — "Any gate, report, or predicate that
+  reads an unbound or unrecognized item as satisfied is a defect, not a green."
+  The invariant is about the **predicate**, so it is violated by the code as
+  written, independently of whether an input currently reaches it. That is why
+  these are defects rather than §7A constraints, and why "0 current instances"
+  is recorded per row rather than used to dismiss them.
 
 | # | Location | Fail-open | Current instances |
 |---|---|---|---|
@@ -1105,6 +1186,30 @@ pushed, not to be pushed or built on.
 
 ## 7. Negative-claim and fail-open risks
 
+### 7A. Architectural constraints — properties, not defects
+
+These are deliberate design properties. They are **not** defects and are not
+counted among §6.1's nine. They are recorded here because they are what makes
+certain global negative claims unobtainable, and any claim that infers
+completeness from them *is* a defect (D-5).
+
+| Constraint | Evidence | What it makes unprovable |
+|---|---|---|
+| `RulesRecord.data` is typed `unknown` | `packages/core/src/rules/types.ts:135` **[VERIFIED]** | Any enumeration over "all mechanical fields of a record" |
+| Kind validators do not reject unregistered `data` fields | injecting `data.totallyMadeUpField` into `spell:fireball` → `validateRulesPack` **accepts** **[VERIFIED]** | "This record contains no unimplemented mechanics" — there is no closed schema to enumerate against |
+| Key closure over `mechanics` exists for **`magic-item` only** | Injecting `data.mechanics.madeUpKey` into `magic-item:adamantine-armor` → **rejected** (`records[796].data.mechanics has unsupported key "madeUpKey"`, `magicItemMechanics.ts:468`). The same injection into `spell:fireball` and `creature:goblin` → **accepted**. **[VERIFIED]** | An absence claim over `data.mechanics` for any kind other than `magic-item` |
+| `requireOnlyKeys` (`kindSchemas.ts:923`) closes ~20 **nested sub-objects** (`roll`, `check`, `form`, `statistics`, …), not the `mechanics` object above them | Injecting `data.mechanics.saves[0].madeUpKey` into `spell:fireball` → **accepted** **[VERIFIED]** | Any claim that spell/creature mechanics are a closed schema at any level |
+
+**[INFERRED]** The last two rows matter for scoping a future absence claim.
+Real key closure exists in exactly one place — `magic-item.data.mechanics` —
+which is also the one kind that carries `executionReadiness` and the one that
+feeds the live runtime capability gate (§4.7–4.8). That is not a coincidence
+worth generalising from: it is the only corner of the corpus where a
+schema-closure argument is currently available at all, and it does not extend
+to `data` even there (`data.madeUpKey` on the same record is **accepted**).
+
+### 7B. Negative claims currently in force
+
 ADR 0020 §3 forbids reading "unbound", "unclassified", or "not recognized" as
 satisfied. Ranked by how load-bearing the negative claim is.
 
@@ -1112,10 +1217,10 @@ satisfied. Ranked by how load-bearing the negative claim is.
 |---|---|---|---|---|
 | 1 | "Every not-yet-modeled record has a reviewed disposition" | `assertGameplayReadinessDispositions` | the bucket predicates being exhaustive | **Broken today**: 197 records match no bucket (D-3). |
 | 2 | "Every readiness gap has a live owner" | `finding.bead`, `designOwner`, `externalClauses.bead` | a bead-shaped string | **Broken today**: every pointer names a closed bead (D-2). |
-| 3 | "No record contains unimplemented mechanics" | withdrawn by ADR 0020; still implied by the `eshyra-olc5` nine-point GREEN and the "zero engine-pending at re-freeze" bar | `data: unknown` with no closed schema | Unprovable (D-5). The beads still record it. |
+| 3 | "No record contains unimplemented mechanics" | withdrawn by ADR 0020; **still recorded verbatim** in the `eshyra-olc5` nine-point GREEN and the "zero engine-pending at re-freeze" bar | reading non-recognition as completeness over an open schema (§7A) | **Live and unamended** (D-5). It blocks `eshyra-o9bd.14` and `eshyra-2zyy`. |
 | 4 | "The frozen artifact has not drifted" | freeze manifest | a hash check that is red and a CI job that was deleted | **Non-operative** (D-6). |
 | 5 | "Every record's content is source-backed" | ADR 0007 §1, `assertProvenanceMatchesPackSource` | `sourceRef` identity equality only | **Broken today** (D-1); no output→source gate exists. |
-| 6 | "The corpus contains no unrecognized structured fields" | never claimed in code; assumed by absence-style reasoning | kind validators | Validators accept unregistered fields (D-5, **[VERIFIED empirically]**). |
+| 6 | "The corpus contains no unrecognized structured fields" | never claimed in code; assumed by absence-style reasoning | kind validators | Not available: validators accept unregistered `data` fields for every kind, and unregistered `mechanics` keys for every kind except `magic-item` (§7A, **[VERIFIED empirically]**). This is a constraint, not a defect; the defect is any gate that assumes otherwise. |
 | 7 | "`mechanicalProse: 0` means no residual mechanical prose" | readiness report | an entry having *any* `mechanics` object | Misleading: the dragon breath clause (D-4) is inside a `mechanics` object and is wrong. |
 | 8 | "Class census stability implies classification stability" | `EXPECTED_*_CENSUS` | counts | Count-pinned (D-9c). |
 | 9 | "The engine capability picture is `engine:F1`–`F10`" | `eshyra-olc5` decomposition | pack `executionReadiness` | Scoped to 240 magic-item records only (§4.8). Not a corpus claim. |
@@ -1236,10 +1341,19 @@ here.**
    generated evidence about 240 magic items and the input to the one live
    runtime gate — and `eshyra-olc5` decomposes ten epics from it as if it were
    a corpus inventory.
-10. **How do the three `RulesAmbiguity` records reach the DM?** They are
-    validated, reported, and owned (`eshyra-jhpt.6`/`.7`) but have no runtime
-    consumer. ADR 0020 §5 item 5 names "known ambiguity" as context-packet
-    content.
+10. **How should known ambiguity be *surfaced automatically*, and what is the
+    campaign-ruling lifecycle?** The three `RulesAmbiguity` records already
+    reach the DM when the model looks up the containing record (§3.1), so the
+    open question is not reachability. It is: what makes an ambiguity surface
+    when the governing situation arises rather than when the model happens to
+    look up that record; and what carries a ruling forward once made — every
+    entry is `{ status: 'engine-pending', owner: 'campaign-ruling' }` with
+    `canonicalResolution: null`, and no store, resolver, or
+    ruling-to-capability path exists. ADR 0020 §5 item 5 names both "known
+    ambiguity" and "applicable campaign rulings" as context-packet content, and
+    its Open Questions ask how these should be "retrieved and scoped
+    (extending, or distinguished from, `RulesAmbiguity` and ADR 0014 overlay
+    canon)". Owners `eshyra-jhpt.6`/`.7` are OPEN.
 11. **Does ADR 0019's one-disposition-per-candidate rule change?** ADR 0020
     requires the follow-up review and forbids generalizing it to clause,
     procedure, or capability level. The `properties[]` / `weaponProperties[]`
@@ -1303,11 +1417,13 @@ here.**
 - A verified statement of which deterministic capabilities and state-kernel
   invariants exist independently of any global pack claim, and therefore
   survive the withdrawal untouched (§5).
-- A preserved defect corpus: nine re-derived live defects with reproducible
-  evidence (§6.1), the carried-forward finding list (§6.2), and a bead-status
-  ledger showing which ownership pointers are dead (§6.4).
-- Ten ranked negative-claim risks (§7) and a producer–consumer dependency map
-  (§8).
+- A preserved defect corpus: **nine** re-derived defects with reproducible
+  evidence (§6.1) — seven with current instances, one live-but-instance-free
+  claim (D-5), one structurally-present predicate class (D-9) — plus the
+  carried-forward finding list (§6.2) and a bead-status ledger showing which
+  ownership pointers are dead (§6.4).
+- Architectural constraints held **separately** from defects (§7A), ten ranked
+  negative-claim risks (§7B), and a producer–consumer dependency map (§8).
 - Twelve decisions, framed as questions (§9).
 
 **What the transition design must not read into this map.**
