@@ -96,7 +96,7 @@ the generated pack and the
 `packages/core/data/adventure-modules/eshyra_hollow-beneath-emberfall/adventure-module.json`
 module.
 
-### 1.5 Owning bead, and why no other bead was created
+### 1.5 Owning bead, and the exact bead account for this work
 
 `eshyra-o9bd.19.1.14` (Foundation 1) was inspected first, as required. It is
 IN_PROGRESS and its scope is the **pre-ADR-0020 obligation-discharge proof** —
@@ -105,10 +105,34 @@ by exact projected atoms, on five real procedures. It is a source-fidelity and
 capability-evidence foundation, not a discovery design, and its own explicit
 non-goals forbid it absorbing corpus-wide work. It therefore does **not** cover
 this task. `eshyra-ar72` and `eshyra-jued` are CLOSED and scoped to their
-respective maps. No open bead named the integrated transition design, so exactly
-one owning bead was created — `eshyra-o9bd.19.8`, a sibling of the two map
-beads under `eshyra-o9bd.19`. No other bead was created by this work; §14
-recommends successor beads without creating them. **[VERIFIED]**
+respective maps. No open bead named the integrated transition design, so one
+owning bead was created — `eshyra-o9bd.19.8`, a sibling of the two map beads
+under `eshyra-o9bd.19`.
+
+**Five beads were created by this work, and no others.** **[VERIFIED]**
+
+| Bead | Role |
+|---|---|
+| `eshyra-o9bd.19.8` | owns this design document |
+| `eshyra-l3e5` | B1 — `lookup_rules` rejects the addressable `stat-block` kind (§9.1) |
+| `eshyra-seoh` | B2 — normal CLI play never passes the adventure-module resolver (§9.2) |
+| `eshyra-6vpw` | B3 — deterministic pack consumers use a base-only campaign lookup with a silent bundled-D&D fallback (§9.3) |
+| `eshyra-uiax` | B5 — magic-item readiness silently skips a clause with an unrecognized scope kind (§9.5) |
+
+The four defect beads are **verified, reproducible defects with no prior
+owner**, filed so that each blocker in §9 has a live owner and a required next
+state, as the standing constraint on findings requires. B4 (Starting Wealth)
+needed no new bead: `eshyra-o9bd.19.2.1` already owns it and has already
+recorded the decision (§5.10).
+
+**No speculative successor bead was created.** The §14 work items that would
+need a new owner — W7 (fixture corpus), W8 (offline harness), W9 (shadow
+integration), W10 (packet intervention), W11 (`jhpt` interface consumption),
+W13 (capability-contract normalization), W15 (held-out/live evaluation), and
+the proposed disposition child inside W14 — are recommendations contingent on
+review of this design, and are deliberately left unfiled. W12 and the remainder
+of W14 rest on **existing** beads (`eshyra-jhpt.1`–`.9`; `eshyra-o9bd.14` and
+`eshyra-2zyy`). No existing bead was closed, retired, or reclassified.
 
 ### 1.6 Process note
 
@@ -289,7 +313,7 @@ column is the prohibition that keeps the boundary from eroding.
 | Concern | Owner (bead / code) | May not |
 |---|---|---|
 | **Source fidelity** | rules-pack compiler; `eshyra-o9bd.19.2.*` (source authority, locators, taxonomy), `eshyra-o9bd.19.1.14` (obligation identity and discharge) | be satisfied by a discovery improvement; a faithful passage is a precondition for discovery, not an output of it |
-| **Discovery** | this transition program under `eshyra-o9bd.19` (§14 W5–W7); pack-side discoverability under `eshyra-o9bd.19.2.4` | own campaign rules, own capability contracts, or assert clause completeness |
+| **Discovery** | this transition program under `eshyra-o9bd.19` (§14 W7 diagnostic fixture corpus, W8 offline stage harness, W9 shadow trace integration, W10 context-packet intervention, W15 held-out/live evaluation); pack-side discoverability under `eshyra-o9bd.19.2.4` | own campaign rules, own capability contracts, or assert clause completeness |
 | **Interpretation / adjudication** | primary DM model (ADR 0020 §2); auditor policy under the existing auditor owner | be replaced by deterministic classification; be inferred from packet contents ("present" ≠ "used") |
 | **Deterministic execution** | `eshyra-olc5` (engine families) and the specific capability modules; `itemExecutionReadiness.ts` is the first real contract | be claimed for an operation that has not been positively selected; be inferred from typed-field presence |
 | **State integrity** | existing state kernel (ADR 0012/0014/0015/0018): `mutateStateBatch`, migrations, checkpoints, `characterBuild.ts` | be weakened by any transition work; ADR 0020 leaves all of it intact |
@@ -343,9 +367,11 @@ strengthen what exists rather than replace it.
 **Required next state:** each module's header must state, in-band, that a green
 result is scoped to its enumerated categories and is **not** evidence of global
 source, discovery, adjudication, or capability completeness. No scope widening
-is authorized by this document. Owner: the transition program (§14 W10),
-coordinated with `eshyra-o9bd.19.1.15` so the guards and the finding registry do
-not restate each other.
+is authorized by this document. Owner: **§14 W14 — artifact dispositions and
+re-freeze policy** (proposed disposition child under `eshyra-o9bd.19`),
+coordinated with **§14 W6 — durable finding registry**
+(`eshyra-o9bd.19.1.15`) so the guards and the finding registry do not restate
+each other.
 
 ### 5.2 `GAMEPLAY_READINESS_DISPOSITIONS` — **narrow to a non-exhaustive historical and diagnostic-signal report**
 
@@ -379,7 +405,9 @@ scope gap rather than an implied green; (c) `hasMechanicsProjection`'s
 empty-object acceptance is corrected or replaced by
 `hasSubstantiveMechanicsProjection` (`cli.ts:920`); (d) each `finding` pointer
 becomes a durable finding-registry reference rather than a bead-shaped string,
-sequenced **after** `eshyra-o9bd.19.1.15`. Owner: §14 W10, dependent on W3.
+sequenced **after** `eshyra-o9bd.19.1.15`. Owner: **§14 W14 — artifact
+dispositions and re-freeze policy**, dependent on **§14 W6 — durable finding
+registry** (`eshyra-o9bd.19.1.15`).
 
 ### 5.3 `RULE_DISPOSITIONS` — **retain as an exact classification of `rule:*` records, and only that**
 
@@ -397,7 +425,8 @@ ownership models are rejected outright.
 
 **Required next state:** an in-band scope statement plus replacement of the
 count-pinned `EXPECTED_SEMANTIC_CENSUS` (`:2935`) with identity-pinned
-assertions, so that an equal-size reclassification cannot pass. Owner: §14 W10.
+assertions, so that an equal-size reclassification cannot pass. Owner:
+**§14 W14 — artifact dispositions and re-freeze policy**.
 
 ### 5.4 `ENGINE_PROCEDURE_COVERAGE` — **split three conflated responsibilities**
 
@@ -445,8 +474,10 @@ deferred. The pointer is stale; the disposition is not. **[MAP: ar72 §4.3]**
 **Closed-bead pointers may not remain the only durable identity for an
 unresolved obligation.** Every `designOwner` and `externalClauses.bead`
 currently names a closed bead **[MAP: ar72 §6.1 D-2]**. After the split, each
-unresolved row must carry a durable finding-registry identity (W3), with the
-bead pointer retained as history. Owner: §14 W10, dependent on W3.
+unresolved row must carry a durable finding-registry identity from **§14 W6 —
+durable finding registry** (`eshyra-o9bd.19.1.15`), with the bead pointer
+retained as history. Owner: **§14 W14 — artifact dispositions and re-freeze
+policy**, dependent on W6.
 
 ### 5.5 `itemExecutionReadiness` and `engine:F1`–`engine:F10` — **retain the contract; correct the fail-open; narrow the families**
 
@@ -483,7 +514,9 @@ engine inventory. No other record kind carries `executionReadiness`.
 must be **reassessed against that bounded scope**, not deleted: the underlying
 magic-item obligations remain real, and 221 of 240 items carry at least one
 engine-pending or design-blocked clause **[MAP: ar72 §4.8]**. Owner:
-`eshyra-olc5` (§14 W10), with the taxonomy-collision warning in
+`eshyra-olc5`, under **§14 W14 — artifact dispositions and re-freeze policy**
+for the narrowing itself and **§14 W13 — capability-contract normalization**
+for the contract shape, with the taxonomy-collision warning in
 `eshyra-o9bd.19.5` preserved: the CLOSED epic `eshyra-2n1t`'s F1–F10 and the
 `fable:F1..F8` findings are unrelated namespaces.
 
@@ -565,8 +598,8 @@ closure claim:**
 4. **Truthful scope for every audit and readiness artifact** — every artifact in
    §5.1–§5.6 states its scope in-band and claims nothing outside it.
 5. **Durable disposition of known findings** — every finding in the registry
-   (W3) carries an explicit disposition under ADR 0020 §7, including retirements
-   that name their replacing responsibility.
+   (**§14 W6**, `eshyra-o9bd.19.1.15`) carries an explicit disposition under
+   ADR 0020 §7, including retirements that name their replacing responsibility.
 6. **Correctness of positively selected capabilities** — each capability in
    force declares operation, inputs, exclusions, revision/identity, and residual
    interpretation, and each fails closed on unrecognized input.
@@ -581,8 +614,8 @@ closure claim:**
 **Explicitly not required:** global deterministic closure; universal discovery
 completeness; zero engine-pending clauses; a corpus-wide negative claim of any
 kind. Owner: `eshyra-o9bd.14` and `eshyra-2zyy`, with the amendment to
-`eshyra-olc5`'s nine-point GREEN definition recorded under `eshyra-olc5`
-(§14 W10).
+`eshyra-olc5`'s nine-point GREEN definition recorded under `eshyra-olc5` —
+all three under **§14 W14 — artifact dispositions and re-freeze policy**.
 
 ### 5.10 Starting Wealth — **remove from SRD authority**
 
@@ -873,9 +906,11 @@ responsibilities elsewhere. None creates a bead in this PR.
   evidence, in the accepted-turn trace, of which active rules and rulings were
   supplied for the turn and under which identities — so §13 M5 can be measured
   without a discovery-owned store.
-- **A4 — dependency wiring.** The discovery packet-integration work (§14 W8)
-  **depends on** `eshyra-jhpt.3` (and, for the ruling path, `.6`). It must not
-  proceed by building a substitute.
+- **A4 — dependency wiring.** The discovery campaign-rule integration work
+  (**§14 W11 — `eshyra-jhpt` campaign-rule integration**, consumed by
+  **§14 W10 — context-packet intervention**) **depends on** `eshyra-jhpt.3`
+  (and, for the ruling path, `.6`). It must not proceed by building a
+  substitute.
 
 ### 8.4 Prohibitions
 
@@ -920,8 +955,9 @@ refs to `creature` **or** `stat-block`. **[VERIFIED]** `jued` reproduced the
 `invalid_args` error through a real registry invocation.
 **Required next state:** `stat-block` is accepted, with a test that invokes the
 registry (not the tool body) for a `stat-block` ref and a test that pins the
-enum against `RulesRecordKind`. **Owner:** proposed under `eshyra-o9bd.19.2.4`
-(discoverability) — see §14 W1.
+enum against `RulesRecordKind`. **Owner:** `eshyra-l3e5`, filed by this work
+(**§14 W1 — `stat-block` lookup repair**); coordinate with
+`eshyra-o9bd.19.2.4` (discoverability).
 
 ### 9.2 B2 — normal CLI play never passes the adventure-module resolver
 
@@ -934,8 +970,8 @@ exists (`packages/cli/src/adventures.ts:56` `makeModuleResolver`, wired at `:101
 consumer is the read-only `adventures show` path. **[VERIFIED]**
 **Required next state:** normal CLI play supplies the resolver; a test exercises
 the real `runTurn` handoff (existing CLI tests use a fake `runTurn` and
-therefore cannot see this). **Owner:** proposed as a CLI/runtime repair —
-§14 W2.
+therefore cannot see this). **Owner:** `eshyra-seoh`, filed by this work
+(**§14 W2 — CLI adventure-resolver repair**).
 
 ### 9.3 B3 — deterministic pack consumers do not use the strict campaign stack
 
@@ -949,15 +985,16 @@ Live legacy callers: `actionEconomy.ts:297,374,445`,
 `usageCounters.ts:785`. **[VERIFIED]**
 **Required next state:** deterministic consumers resolve through the same exact
 stack as strict lookup, with no silent bundled-D&D fallback; regression evidence
-is probe P11's synthetic add-on stack (§10.11). **Owner:** proposed runtime
-repair — §14 W3.
+is probe P11's synthetic add-on stack (§10.11). **Owner:** `eshyra-6vpw`,
+filed by this work (**§14 W3 — strict campaign-stack repair**).
 
 ### 9.4 B4 — Starting Wealth source invention
 
 See §5.10. **Required next state:** the record is removed from SRD authority and
 the dependent character-creation path is reconciled in the same change, per the
 decision already recorded in `eshyra-o9bd.19.2.1`; probe P12 becomes a
-permanent regression guard. **Owner:** `eshyra-o9bd.19.2.1` (existing).
+permanent regression guard. **Owner:** `eshyra-o9bd.19.2.1` (existing;
+**§14 W4 — source-authority repair**).
 
 ### 9.5 B5 — magic-item readiness unrecognized-scope fail-open
 
@@ -966,8 +1003,9 @@ scope whose `kind` is neither `'parent'` nor a matching `'variant'`, and
 `:76-77` skips such a clause entirely, so it cannot block. **[VERIFIED]**
 **Required next state:** an unrecognized scope kind fails closed, with a test
 that feeds a malformed scope and asserts the throw. Until then the contract
-cannot serve as pilot evidence for probe P8. **Owner:** proposed under
-`eshyra-olc5` — §14 W4.
+cannot serve as pilot evidence for probe P8. **Owner:** `eshyra-uiax`, filed
+by this work (**§14 W5 — item-readiness fail-open repair**); coordinate with
+`eshyra-olc5`.
 
 ### 9.6 Sequencing statements
 
@@ -1310,8 +1348,8 @@ at any of those without re-running the query and restating the evidence.
 ## 11. Fixture contract
 
 **[DESIGN]** Each diagnostic fixture declares thirteen fields. No fixture data
-is created in this PR; this is the contract the authoring work (§14 W5) must
-satisfy.
+is created in this PR; this is the contract the authoring work
+(**§14 W7 — diagnostic fixture corpus**) must satisfy.
 
 | # | Field | Content |
 |---|---|---|
@@ -1514,10 +1552,11 @@ no candidates, no routes, and no losses has not passed — it has failed to run
 ## 14. Implementation decomposition
 
 **[DESIGN]** Recommended successor breakdown. Owning beads are named where they
-exist. Four beads were created by this work — the four verified runtime and
-capability defects that had **no** owner (they are reproducible defects, not
-speculative future work); every remaining item names a proposed owner without
-creating one.
+exist. Four of the five beads created by this work appear in this table — the
+four verified runtime and capability defects that had **no** owner (§1.5; they
+are reproducible defects, not speculative future work). The fifth,
+`eshyra-o9bd.19.8`, owns this design and is not a work item. Every remaining
+row names a **proposed** owner without creating one.
 
 | # | Work item | Owning bead | Depends on | Changes architecture? | Parallel-safe? | Required permanent evidence |
 |---|---|---|---|---|---|---|
@@ -1665,11 +1704,12 @@ was selected by executing `assertMagicItemOperationReady` over every
 `itemState.ts:1888-1911` constructs — six (record, operation) pairs pass, and
 the selected one is recorded with its exact evidence in §10.8.
 
-Beads created by this work: `eshyra-o9bd.19.8` (this design) and four
-verified-defect beads with no prior owner — `eshyra-l3e5` (B1), `eshyra-seoh`
-(B2), `eshyra-6vpw` (B3), `eshyra-uiax` (B5). B4 already had an owner
-(`eshyra-o9bd.19.2.1`). No other bead was created, and no existing bead was
-closed, retired, or reclassified by this document.
+Beads created by this work — the same five accounted for in §1.5:
+`eshyra-o9bd.19.8` (this design) and four verified-defect beads with no prior
+owner, `eshyra-l3e5` (B1), `eshyra-seoh` (B2), `eshyra-6vpw` (B3), and
+`eshyra-uiax` (B5). B4 already had an owner (`eshyra-o9bd.19.2.1`). No other
+bead was created, and no existing bead was closed, retired, or reclassified by
+this document.
 
 ---
 
