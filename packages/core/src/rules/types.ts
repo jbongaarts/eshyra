@@ -2,23 +2,23 @@ import type { PackLicense, PackLicenseClass } from '../world/types.js';
 
 export type RulesPackRole = 'base' | 'addon';
 
-export type RulesRecordKind =
-  | 'ability'
-  | 'action'
-  | 'ancestry'
-  | 'background'
-  | 'class'
-  | 'condition'
-  | 'creature'
-  | 'equipment'
-  | 'feat'
+export const RULES_RECORD_KINDS = [
+  'ability',
+  'action',
+  'ancestry',
+  'background',
+  'class',
+  'condition',
+  'creature',
+  'equipment',
+  'feat',
   // `feature` is class/subclass-granted (Action Surge, Rage, ...), distinct
   // from the player-selected `feat`. See ADR 0009.
-  | 'feature'
-  | 'hazard'
-  | 'magic-item'
-  | 'rule'
-  | 'spell'
+  'feature',
+  'hazard',
+  'magic-item',
+  'rule',
+  'spell',
   // `stat-block` is an abbreviated, canonical combat stat block defined INLINE
   // under another entry (e.g. Avatar of Death inside the Deck of Many Things
   // magic item, Giant Fly inside the Figurine of Wondrous Power). It is its own
@@ -27,12 +27,15 @@ export type RulesRecordKind =
   // creature: derived/textual hit points and an optional challenge rating. Full
   // creatures stay on the strict `creature` kind; containers point at a
   // stat-block via `magic-item` `data.statBlockRefs`. See eshyra-4a7.4.
-  | 'stat-block'
+  'stat-block',
   // `subclass` (Champion, Life domain, School of Evocation, ...) is its own
   // addressable kind; it links to its parent base `class` via
   // `data.parentClass`. See ADR 0009.
-  | 'subclass'
-  | 'table';
+  'subclass',
+  'table',
+] as const;
+
+export type RulesRecordKind = (typeof RULES_RECORD_KINDS)[number];
 
 export type RulesPackLicense = PackLicense;
 export type RulesPackLicenseClass = PackLicenseClass;

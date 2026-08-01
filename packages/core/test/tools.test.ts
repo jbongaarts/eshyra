@@ -16,6 +16,7 @@ import {
   openDatabase,
   openScene,
   parseDice,
+  RULES_RECORD_KINDS,
   recordSceneSummary,
   rollDice,
   startSession,
@@ -441,6 +442,25 @@ describe('lookup_rules tool', () => {
     }
   });
 
+  it.each(['stat-block:avatar-of-death', 'stat-block:giant-fly'])(
+    'resolves campaign stat-block ref %s through the registry',
+    (ref) => {
+      const result = createDefaultToolRegistry().invoke(
+        'lookup_rules',
+        { kind: 'stat-block', ref },
+        ctx(),
+      );
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const data = result.data as {
+          record: { key: string; kind: string };
+        };
+        expect(data.record.key).toBe(ref);
+        expect(data.record.kind).toBe('stat-block');
+      }
+    },
+  );
+
   it('returns not_found for an unknown name', () => {
     const result = createDefaultToolRegistry().invoke(
       'lookup_rules',
@@ -657,11 +677,11 @@ describe('lookup_rules tool', () => {
     }
   });
 
-  it('advertises magic-item as a lookup kind', () => {
+  it('advertises every RulesRecordKind as a lookup kind', () => {
     const def = createDefaultToolRegistry()
       .definitions()
       .find((d) => d.name === 'lookup_rules') as ModelToolDefinition;
-    expect(def.inputSchema.properties.kind?.enum).toContain('magic-item');
+    expect(def.inputSchema.properties.kind?.enum).toEqual(RULES_RECORD_KINDS);
   });
 
   it('fails clearly when the binding names the retired placeholder pack id (ADR 0013)', () => {

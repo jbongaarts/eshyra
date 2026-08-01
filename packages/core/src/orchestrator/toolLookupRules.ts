@@ -13,7 +13,7 @@ import { buildRulesRecordCard } from '../rules/recordCard.js';
 import type { ResolvedRulesStack } from '../rules/stack.js';
 import { resolveRulesStack } from '../rules/stack.js';
 import type { RulesPack, RulesRecordKind } from '../rules/types.js';
-import { RulesPackError } from '../rules/types.js';
+import { RULES_RECORD_KINDS, RulesPackError } from '../rules/types.js';
 import {
   CampaignRulesBindingResolutionError,
   resolveStrictCampaignRulesStack,
@@ -73,24 +73,7 @@ export const lookupRulesTool: Tool = {
     properties: {
       kind: {
         type: 'string',
-        enum: [
-          'ability',
-          'action',
-          'ancestry',
-          'background',
-          'class',
-          'condition',
-          'creature',
-          'equipment',
-          'feat',
-          'feature',
-          'hazard',
-          'magic-item',
-          'rule',
-          'spell',
-          'subclass',
-          'table',
-        ],
+        enum: RULES_RECORD_KINDS,
         description: 'The kind of rules record to look up.',
       },
       name: {
