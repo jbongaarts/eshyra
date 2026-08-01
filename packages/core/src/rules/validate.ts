@@ -8,33 +8,12 @@ import type {
   RulesPackRole,
   RulesPackSource,
   RulesRecord,
-  RulesRecordKind,
 } from './types.js';
-import { RulesPackError } from './types.js';
+import { RULES_RECORD_KINDS, RulesPackError } from './types.js';
 
 type Obj = Record<string, unknown>;
 
 const RULES_PACK_ROLES: readonly RulesPackRole[] = ['base', 'addon'];
-const RULES_RECORD_KINDS: readonly RulesRecordKind[] = [
-  'ability',
-  'action',
-  'ancestry',
-  'background',
-  'class',
-  'condition',
-  'creature',
-  'equipment',
-  'feat',
-  'feature',
-  'hazard',
-  'magic-item',
-  'rule',
-  'spell',
-  'stat-block',
-  'subclass',
-  'table',
-];
-
 function obj(value: unknown, path: string): Obj {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new RulesPackError(`${path} must be an object`);
