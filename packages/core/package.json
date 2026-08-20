@@ -46,7 +46,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
     "@types/pdfkit": "^0.17.6",
-    "pdfjs-dist": "^5.7.284",
+    "pdfjs-dist": "^6.2.108",
     "pdfkit": "^0.19.1",
     "tsx": "^4.23.11"
   }
