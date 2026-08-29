@@ -52,6 +52,7 @@ import {
   type ResolvedClassData,
   type ResolvedLanguageGrant,
   type RulesPackCharacterResolver,
+  STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './rulesPackResolver.js';
 import type { StartingWealthResult } from './srdStartingWealth.js';
 import { validateStartingWealthResult } from './srdStartingWealth.js';
@@ -311,6 +312,12 @@ function validateFinalStartingAcquisition(
       };
     }
     return { ok: true, value: { mode, walletGp } };
+  }
+  // Fail on the truthful reason before asking for evidence: with no table in
+  // the active stack there is no roll the draft could have made, and reporting
+  // a missing roll would misdescribe why the mode is refused.
+  if (!resolver.startingWealthAvailable()) {
+    return { ok: false, error: STARTING_WEALTH_UNAVAILABLE_MESSAGE };
   }
   if (result === undefined) {
     return { ok: false, error: 'starting-wealth mode requires one roll' };

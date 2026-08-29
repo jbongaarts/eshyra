@@ -288,7 +288,7 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // 104 -> 108 (eshyra-4a7.10.5): the four Appendix PH-B deity tables
   // (Celtic/Greek/Egyptian/Norse Deities), reconstructed by parseDeityTables
   // from the page-interleaved column blocks.
-  table: 109,
+  table: 108,
 };
 
 /**
@@ -900,8 +900,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'table',
     field: 'legend',
-    missingCount: 108,
-    totalInKind: 109,
+    missingCount: 107,
+    totalInKind: 108,
   },
   // Semantic table projections. The first slice (eshyra-o9bd.7) projected the
   // feature-owned Destroy Undead / Beast Shapes tables and the Races Draconic
@@ -912,8 +912,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'table',
     field: 'projection',
-    missingCount: 87,
-    totalInKind: 109,
+    missingCount: 86,
+    totalInKind: 108,
   },
 ];
 
@@ -1200,6 +1200,51 @@ function numericConservationFindings(
 
 describe('D&D 5e SRD 5.1 committed pack', () => {
   const pack = loadRulesPackFromDirectory(PACK_DIR);
+
+  /**
+   * ADR 0020 probe P12 (eshyra-o9bd.19.2.1.1). Deliberately NARROW: it asserts
+   * the absence of ONE record and ONE claim, not a corpus-wide negative about
+   * compiler-authored content. The transition design's section 5.9 truthfulness
+   * bar explicitly does not require such a global negative, and the corpus
+   * cannot support one.
+   *
+   * Background: `table:starting-wealth-by-class` was produced from a hard-coded
+   * literal in the importer, yet shipped with source "SRD 5.1 p. 38", a
+   * provenance locator of "p. 38", and the pack's CC-BY-4.0 SRD attribution
+   * block. The string "Starting Wealth" does not occur anywhere in the
+   * extracted 403-page SRD 5.1 text; p. 38 is Ranger (Hunter) subclass
+   * features. This guard exists so that record and that claim cannot silently
+   * return.
+   */
+  describe('probe P12 — no SRD authority for starting wealth', () => {
+    it('emits no starting-wealth table record', () => {
+      expect(
+        pack.records.find(
+          (record) => record.key === 'table:starting-wealth-by-class',
+        ),
+      ).toBeUndefined();
+    });
+
+    it('carries no record claiming SRD provenance for starting wealth', () => {
+      const claimants = pack.records.filter((record) => {
+        const haystack = [
+          record.key,
+          record.name,
+          record.source,
+          record.provenance.sourceRef,
+          record.provenance.locator ?? '',
+          JSON.stringify(record.data),
+        ]
+          .join('\n')
+          .toLowerCase();
+        return (
+          haystack.includes('starting wealth') ||
+          haystack.includes('starting-wealth')
+        );
+      });
+      expect(claimants.map((record) => record.key)).toEqual([]);
+    });
+  });
 
   describe('magic-item numeric conservation gate', () => {
     it('conserves description dice/DCs and mechanics dice/DCs in both directions', () => {
@@ -4800,7 +4845,6 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:staff-of-the-magi',
         'table:standard-exchange-rates',
         'table:standard-languages',
-        'table:starting-wealth-by-class',
         'table:tan-bag-of-tricks',
         'table:teleport-familiarity',
         'table:temperature',
@@ -4831,7 +4875,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
 
     it('contains exactly the reviewed table name set', () => {
       expect(tables.map((record) => record.name).sort()).toEqual(
-        [...EXPECTED_SRD_5_1_TABLE_NAMES, 'Starting Wealth by Class'].sort(),
+        [...EXPECTED_SRD_5_1_TABLE_NAMES].sort(),
       );
       expect(new Set(EXPECTED_SRD_5_1_TABLE_NAMES).size).toBe(
         EXPECTED_SRD_5_1_TABLE_NAMES.length,

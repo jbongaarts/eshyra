@@ -370,6 +370,7 @@ export type {
 export {
   createRulesPackCharacterResolver,
   getBundledDnd5eCharacterResolver,
+  STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './character/rulesPackResolver.js';
 export type {
   DerivedModifierContribution,
@@ -443,6 +444,7 @@ export {
 export {
   resolveStartingWealth,
   rollStartingWealth,
+  StartingWealthUnavailableError,
   validateStartingWealthResult,
 } from './character/srdStartingWealth.js';
 // Opt-in session debug logging (eshyra-iu18): structural model-call diagnostics

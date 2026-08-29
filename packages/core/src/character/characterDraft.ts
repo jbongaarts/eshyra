@@ -66,6 +66,7 @@ import {
   type ResolvedBackgroundData,
   type ResolvedClassData,
   type RulesPackCharacterResolver,
+  STARTING_WEALTH_UNAVAILABLE_MESSAGE,
 } from './rulesPackResolver.js';
 import { SRD_5_1_SKILLS } from './srdCreationChoices.js';
 import {
@@ -584,7 +585,15 @@ export function createCharacterCreationEngine(
   ): void {
     const mode = selections.startingEquipmentMode ?? 'packages';
     if (mode === 'starting-wealth') {
-      if (selections.startingWealth === undefined) {
+      // No table in the active stack means the mode itself is unavailable, so
+      // report that rather than a missing or inconsistent roll.
+      if (!resolver.startingWealthAvailable()) {
+        diagnostics.push({
+          field: 'startingEquipmentMode',
+          severity: 'error',
+          message: STARTING_WEALTH_UNAVAILABLE_MESSAGE,
+        });
+      } else if (selections.startingWealth === undefined) {
         diagnostics.push({
           field: 'startingWealth',
           severity: 'error',
