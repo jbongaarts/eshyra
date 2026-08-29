@@ -732,15 +732,23 @@ class Wizard {
 
   private async chooseStartingEquipmentMode(): Promise<Nav> {
     const current = this.draft.selections.startingEquipmentMode ?? 'packages';
+    // Starting wealth exists only where a pack supplies the table; the bundled
+    // SRD 5.1 pack does not. Offering it there would advertise a mode that
+    // cannot be completed.
+    const wealthAvailable = this.deps.resolver.startingWealthAvailable();
     this.write(
-      `Starting acquisition: ${current}. Enter to keep, 1/packages, or 2/wealth:`,
+      wealthAvailable
+        ? `Starting acquisition: ${current}. Enter to keep, 1/packages, or 2/wealth:`
+        : `Starting acquisition: ${current}. Enter to keep, or 1/packages (no active rules pack provides a starting-wealth table):`,
     );
     const answer = await this.deps.io.prompt('Acquisition> ');
     if (answer === undefined) return 'eof';
     const command = parseCommand(answer);
     if (command.name === '?' || command.name === 'help') {
       this.write(
-        'Choose packages or wealth; commands: review, save, back, quit.',
+        wealthAvailable
+          ? 'Choose packages or wealth; commands: review, save, back, quit.'
+          : 'Choose packages; commands: review, save, back, quit.',
       );
       return 'stay';
     }
@@ -766,7 +774,17 @@ class Wizard {
           ? 'starting-wealth'
           : undefined;
     if (mode === undefined) {
-      this.write('Invalid acquisition. Choose 1/packages or 2/wealth.');
+      this.write(
+        wealthAvailable
+          ? 'Invalid acquisition. Choose 1/packages or 2/wealth.'
+          : 'Invalid acquisition. Choose 1/packages.',
+      );
+      return 'stay';
+    }
+    if (mode === 'starting-wealth' && !wealthAvailable) {
+      this.write(
+        'Starting wealth is unavailable: no active rules pack provides a starting-wealth table.',
+      );
       return 'stay';
     }
     this.draft = this.deps.engine.setStartingEquipmentMode(this.draft, mode);

@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type CharacterCreationEngine,
   type CharacterDraft,
+  createCharacterCreationEngine,
   createSeededRng,
   finalizeCharacterDraft,
   getDnd5eCharacterCreationEngine,
   rollAbilityScoreSet,
   rollStartingWealth,
+  STARTING_WEALTH_UNAVAILABLE_MESSAGE,
   UnsupportedCharacterBuildError,
 } from '../src/internal.js';
+import { getSyntheticStartingWealthResolver } from './support/startingWealthSupplement.js';
 
 /**
  * finalizeCharacterDraft (eshyra-b69j.14) gates on completeness and folds the
@@ -20,13 +24,18 @@ const engine = getDnd5eCharacterCreationEngine();
 const META = { createdAt: '2026-06-26T00:00:00.000Z', source: 'test' } as const;
 
 /** A fully-complete Fighter + Human draft (every required choice made). */
-function completeDraft(): CharacterDraft {
-  let draft = engine.createDraft({ id: 'hero', mode: 'concept-first' });
-  draft = engine.setIdentity(draft, { name: 'Grok', concept: 'stoic guard' });
-  draft = engine.setClass(draft, 'Fighter');
-  draft = engine.setAncestry(draft, 'Human');
-  draft = engine.setAbilityScoreMethod(draft, 'point_buy');
-  draft = engine.setAbilityScores(draft, {
+function completeDraft(
+  withEngine: CharacterCreationEngine = engine,
+): CharacterDraft {
+  let draft = withEngine.createDraft({ id: 'hero', mode: 'concept-first' });
+  draft = withEngine.setIdentity(draft, {
+    name: 'Grok',
+    concept: 'stoic guard',
+  });
+  draft = withEngine.setClass(draft, 'Fighter');
+  draft = withEngine.setAncestry(draft, 'Human');
+  draft = withEngine.setAbilityScoreMethod(draft, 'point_buy');
+  draft = withEngine.setAbilityScores(draft, {
     strength: 15,
     dexterity: 14,
     constitution: 13,
@@ -36,13 +45,21 @@ function completeDraft(): CharacterDraft {
   });
   // Satisfy every mechanical choice (skills, four equipment groups, Human
   // language) by taking each choice's first valid option(s).
-  for (const entry of engine.mechanicalChoices(draft)) {
+  for (const entry of withEngine.mechanicalChoices(draft)) {
     const need = entry.choice.choose ?? 0;
     const picks = (entry.choice.from ?? []).slice(0, need);
-    draft = engine.setChoice(draft, entry.choice.id, picks);
+    draft = withEngine.setChoice(draft, entry.choice.id, picks);
   }
   return draft;
 }
+
+/**
+ * Starting wealth is unavailable under the bundled SRD pack (ADR 0020 B4,
+ * eshyra-o9bd.19.2.1.1), so the working-path coverage below runs against a
+ * synthetic supplement with invented values.
+ */
+const supplementResolver = getSyntheticStartingWealthResolver();
+const supplementEngine = createCharacterCreationEngine(supplementResolver);
 
 describe('finalizeCharacterDraft', () => {
   it('finalizes a source-bounded custom background with durable identity and choices', () => {
@@ -259,19 +276,64 @@ describe('finalizeCharacterDraft', () => {
     expect(c.languages.length).toBe(2);
   });
 
-  it('finalizes starting wealth without package equipment or currency', () => {
+  it('rejects starting-wealth mode under SRD-only with the truthful reason', () => {
+    // Regression evidence (b): the bundled SRD pack provides no starting-wealth
+    // table, so the mode must be refused BECAUSE it is unavailable — not
+    // because a roll is missing, which would misdescribe why it failed.
     let draft = completeDraft();
     draft = engine.setStartingEquipmentMode(draft, 'starting-wealth');
-    draft = engine.setStartingWealth(
-      draft,
-      rollStartingWealth('class:fighter', createSeededRng(7)),
-    );
     const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(JSON.stringify(result)).toContain(
+        STARTING_WEALTH_UNAVAILABLE_MESSAGE,
+      );
+    }
+  });
+
+  it('still finalizes SRD-only package equipment and background currency', () => {
+    // Regression evidence (c), the positive control: removing the unsupported
+    // table must not disturb the genuinely-SRD packages path.
+    let draft = completeDraft();
+    draft = engine.setBackground(draft, 'background:acolyte');
+    for (const entry of engine.mechanicalChoices(draft)) {
+      if (entry.satisfied) continue;
+      draft = engine.setChoice(
+        draft,
+        entry.choice.id,
+        (entry.choice.from ?? []).slice(0, entry.choice.choose ?? 0),
+      );
+    }
+    const result = finalizeCharacterDraft(draft, META);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.character.startingEquipmentMode).toBe('packages');
+      expect(result.character.equipment.length).toBeGreaterThan(0);
+      expect(result.character.wallet?.gp).toBeGreaterThan(0);
+    }
+  });
+
+  it('finalizes starting wealth from a supplement without package equipment', () => {
+    // Regression evidence (d): the mechanism was disabled by data, not deleted.
+    let draft = completeDraft(supplementEngine);
+    draft = supplementEngine.setStartingEquipmentMode(draft, 'starting-wealth');
+    const roll = rollStartingWealth(
+      'class:fighter',
+      createSeededRng(7),
+      supplementResolver,
+    );
+    draft = supplementEngine.setStartingWealth(draft, roll);
+    const result = finalizeCharacterDraft(
+      draft,
+      META,
+      supplementResolver,
+      supplementEngine,
+    );
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.character.startingEquipmentMode).toBe('starting-wealth');
       expect(result.character.equipment).toEqual([]);
-      expect(result.character.wallet?.gp).toBe(120);
+      expect(result.character.wallet?.gp).toBe(roll.totalGp);
     }
   });
 
@@ -311,13 +373,19 @@ describe('finalizeCharacterDraft', () => {
   });
 
   it('returns normal failures for malformed persisted wealth evidence', () => {
-    let valid = engine.setStartingEquipmentMode(
-      completeDraft(),
+    // Runs against the supplement: under SRD-only the mode is unavailable, so
+    // the draft would be refused before evidence shape is ever inspected.
+    let valid = supplementEngine.setStartingEquipmentMode(
+      completeDraft(supplementEngine),
       'starting-wealth',
     );
-    valid = engine.setStartingWealth(
+    valid = supplementEngine.setStartingWealth(
       valid,
-      rollStartingWealth('class:fighter', createSeededRng(7)),
+      rollStartingWealth(
+        'class:fighter',
+        createSeededRng(7),
+        supplementResolver,
+      ),
     );
 
     const corruptedDrafts = [
@@ -345,8 +413,22 @@ describe('finalizeCharacterDraft', () => {
     ] as unknown as CharacterDraft[];
 
     for (const draft of corruptedDrafts) {
-      expect(() => finalizeCharacterDraft(draft, META)).not.toThrow();
-      expect(finalizeCharacterDraft(draft, META).ok).toBe(false);
+      expect(() =>
+        finalizeCharacterDraft(
+          draft,
+          META,
+          supplementResolver,
+          supplementEngine,
+        ),
+      ).not.toThrow();
+      expect(
+        finalizeCharacterDraft(
+          draft,
+          META,
+          supplementResolver,
+          supplementEngine,
+        ).ok,
+      ).toBe(false);
     }
   });
 
