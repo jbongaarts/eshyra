@@ -4,6 +4,7 @@ import type { FindingRegistry } from '../src/internal.js';
 import {
   aliasIndex,
   CANONICAL_FINDING_IDS,
+  CANONICAL_ROW_ROSTER,
   FINDING_ALIASES,
   findingByAlias,
   findingByCanonicalId,
@@ -25,6 +26,10 @@ describe('finding registry', () => {
     expect(FINDING_ALIASES).toHaveLength(70);
     expect(new Set(real.rows.flatMap((row) => row.aliases)).size).toBe(70);
     expect(CANONICAL_FINDING_IDS).toHaveLength(68);
+    expect(Object.keys(CANONICAL_ROW_ROSTER)).toHaveLength(68);
+    expect(Object.values(CANONICAL_ROW_ROSTER).flat()).toHaveLength(70);
+    for (const row of real.rows)
+      expect(row.aliases).toEqual(CANONICAL_ROW_ROSTER[row.canonicalId]);
   });
 
   it('resolves every alias exactly once and round-trips lookups', () => {
@@ -98,6 +103,32 @@ describe('finding registry', () => {
     version.version = 1 as 2;
     expect(() => validateFindingRegistry(version)).toThrow(
       /version must be exactly 2/,
+    );
+  });
+
+  it('rejects aliases traded between canonical rows even with provenance traded', () => {
+    const swapped = fixture();
+    const auditGate = swapped.rows.find(
+      (row) => row.canonicalId === 'audit-readiness-gate',
+    );
+    const corpusProcedures = swapped.rows.find(
+      (row) => row.canonicalId === 'rule-corpus-procedures',
+    );
+    if (!auditGate || !corpusProcedures)
+      throw new Error('fixture rows missing');
+    [auditGate.aliases, corpusProcedures.aliases] = [
+      corpusProcedures.aliases,
+      auditGate.aliases,
+    ];
+    [
+      auditGate.provenance.auditFinding,
+      corpusProcedures.provenance.auditFinding,
+    ] = [
+      corpusProcedures.provenance.auditFinding,
+      auditGate.provenance.auditFinding,
+    ];
+    expect(() => validateFindingRegistry(swapped)).toThrow(
+      /audit-readiness-gate|rule-corpus-procedures/,
     );
   });
 

@@ -913,6 +913,7 @@ export type {
 export {
   aliasIndex,
   CANONICAL_FINDING_IDS,
+  CANONICAL_ROW_ROSTER,
   FINDING_ALIASES,
   findingByAlias,
   findingByCanonicalId,
