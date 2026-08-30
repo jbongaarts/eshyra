@@ -1,0 +1,833 @@
+{
+  "version": 2,
+  "explicitNonClaims": [
+    "This registry does not claim executable exact membership for any finding.",
+    "This registry does not claim a derived or complete population for any finding.",
+    "This registry does not certify zero-repeat or no-recurrence.",
+    "This registry does not provide a closure-readiness predicate or closure evidence.",
+    "This registry does not make a capability-evidence claim.",
+    "This registry does not assert that the current rules pack does or does not violate any row."
+  ],
+  "rows": [
+    {
+      "canonicalId": "source-authority-opus-f19",
+      "aliases": ["opus:F-19"],
+      "invariant": "Composed spellPreparation source text is not presented as quotation",
+      "status": "accepted",
+      "statusReasoning": "Reviewed empty current membership: the source-backed spellPreparation clause is absent from the current pack; preserve this source identity until the clause IR follow-up lands.",
+      "provenance": {
+        "auditFinding": "opus:F-19",
+        "evidenceBasis": "known-missing-source-clause"
+      },
+      "scopeKind": "clause",
+      "owningBead": "eshyra-o9bd.19.2.1"
+    },
+    {
+      "canonicalId": "source-authority-opus-f20",
+      "aliases": ["opus:F-20"],
+      "invariant": "Stale manifest provenance is removed",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-20",
+        "evidenceBasis": "authoritative-input"
+      },
+      "scopeKind": "path",
+      "owningBead": "eshyra-o9bd.19.2.1"
+    },
+    {
+      "canonicalId": "source-authority-sol-cap-008",
+      "aliases": ["sol:CAP-008"],
+      "invariant": "Bag of Beans successful-save outcome follows source authority",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-008",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "clause",
+      "owningBead": "eshyra-o9bd.19.2.1"
+    },
+    {
+      "canonicalId": "source-authority-fable-f1",
+      "aliases": ["fable:F1"],
+      "invariant": "Starting Wealth is not emitted as unsupported SRD content",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "fable:F1",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.1"
+    },
+    {
+      "canonicalId": "source-authority-fable-f5",
+      "aliases": ["fable:F5"],
+      "invariant": "Synthesized table headers are distinguished from source text",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "fable:F5",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.1"
+    },
+    {
+      "canonicalId": "source-authority-fable-f7",
+      "aliases": ["fable:F7"],
+      "invariant": "Synthesized choice labels are distinguished from source text",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "fable:F7",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.1"
+    },
+    {
+      "canonicalId": "language-universe-policy",
+      "aliases": ["indep:011"],
+      "invariant": "Language universe keeps its source-defined extension point",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:011",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.1"
+    },
+    {
+      "canonicalId": "locator-completeness",
+      "aliases": ["indep:008"],
+      "invariant": "Incomplete locators are not treated as complete coverage",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:008",
+        "evidenceBasis": "source-span"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.2"
+    },
+    {
+      "canonicalId": "ambiguous-coverage",
+      "aliases": ["indep:009"],
+      "invariant": "Ambiguous ownership is not counted as resolved coverage",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:009",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.2"
+    },
+    {
+      "canonicalId": "rock-gnome-boundary",
+      "aliases": ["indep:010", "sol:CAP-012"],
+      "invariant": "Rock Gnome trait ownership is assigned to the correct boundary",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:010",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.2"
+    },
+    {
+      "canonicalId": "equipment-report",
+      "aliases": ["indep:012"],
+      "invariant": "Equipment, material, potion, and report records retain their findings",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:012",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.2"
+    },
+    {
+      "canonicalId": "spellcasting-granularity",
+      "aliases": ["opus:F-15"],
+      "invariant": "Spellcasting subfeatures retain consistent granularity",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-15",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.2"
+    },
+    {
+      "canonicalId": "vehicle-tool-row",
+      "aliases": ["opus:F-17"],
+      "invariant": "Vehicles tool row is retained",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-17",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.2"
+    },
+    {
+      "canonicalId": "wererat-crossbow",
+      "aliases": ["opus:F-30"],
+      "invariant": "Wererat Hand Crossbow is not swallowed by segmentation",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-30",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "relationship",
+      "owningBead": "eshyra-o9bd.19.2.2"
+    },
+    {
+      "canonicalId": "source-provenance-fields",
+      "aliases": ["sol:CAP-010"],
+      "invariant": "Structured fields cite actual source provenance",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-010",
+        "evidenceBasis": "source-span"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.2"
+    },
+    {
+      "canonicalId": "container-continuation",
+      "aliases": ["fable:F4"],
+      "invariant": "Container continuations retain complete citation",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "fable:F4",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.2"
+    },
+    {
+      "canonicalId": "advancement-qualifiers",
+      "aliases": ["opus:F-10"],
+      "invariant": "Advancement scaling qualifiers are preserved",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-10",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.3"
+    },
+    {
+      "canonicalId": "proficiency-grants",
+      "aliases": ["opus:F-13"],
+      "invariant": "Proficiency grants are structured",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-13",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.3"
+    },
+    {
+      "canonicalId": "choice-identifiers",
+      "aliases": ["opus:F-14"],
+      "invariant": "Choice identifiers and catalogs are consistent",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-14",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.3"
+    },
+    {
+      "canonicalId": "madness-durations",
+      "aliases": ["opus:F-16"],
+      "invariant": "Madness durations are retained",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-16",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.3"
+    },
+    {
+      "canonicalId": "damage-field-shape",
+      "aliases": ["opus:F-34"],
+      "invariant": "Flat and dice damage fields use a consistent shape",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-34",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.3"
+    },
+    {
+      "canonicalId": "equipment-taxonomy",
+      "aliases": ["sol:CAP-013"],
+      "invariant": "Tack, Harness, and Drawn Vehicles taxonomy is preserved",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-013",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.3"
+    },
+    {
+      "canonicalId": "table-empty-cells",
+      "aliases": ["fable:F6"],
+      "invariant": "Empty table cells retain their structured meaning",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "fable:F6",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.3"
+    },
+    {
+      "canonicalId": "display-name-qualification",
+      "aliases": ["opus:F-22"],
+      "invariant": "Duplicate display names are qualified",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-22",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.4"
+    },
+    {
+      "canonicalId": "canonical-discovery",
+      "aliases": ["sol:CAP-011"],
+      "invariant": "Canonical relationships and DM discovery are durable",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-011",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.4"
+    },
+    {
+      "canonicalId": "rule-key-duplication",
+      "aliases": ["fable:F8"],
+      "invariant": "Rule keying and duplication hygiene are explicit",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "fable:F8",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.4"
+    },
+    {
+      "canonicalId": "audit-readiness-gate",
+      "aliases": ["indep:001"],
+      "invariant": "Readiness gates require clause-complete procedures",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:001",
+        "evidenceBasis": "code"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.1.5"
+    },
+    {
+      "canonicalId": "rule-corpus-procedures",
+      "aliases": ["sol:CAP-001"],
+      "invariant": "The rule corpus has executable procedures",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-001",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.4"
+    },
+    {
+      "canonicalId": "phantom-feature-resources",
+      "aliases": ["opus:F-06"],
+      "invariant": "Phantom feature resources are not emitted",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-06",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.2"
+    },
+    {
+      "canonicalId": "damage-alternatives",
+      "aliases": ["opus:F-27"],
+      "invariant": "Mutually exclusive damage alternatives remain distinct",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-27",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.1"
+    },
+    {
+      "canonicalId": "choice-behavior",
+      "aliases": ["indep:002"],
+      "invariant": "Choice behavior remains local to its option",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:002",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "relationship",
+      "owningBead": "eshyra-o9bd.19.3.1"
+    },
+    {
+      "canonicalId": "pit-variants",
+      "aliases": ["opus:F-02"],
+      "invariant": "Pit variants remain separate procedures",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-02",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.1"
+    },
+    {
+      "canonicalId": "invocation-effects",
+      "aliases": ["opus:F-07"],
+      "invariant": "Eldritch Invocation effects remain option-local",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-07",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.1"
+    },
+    {
+      "canonicalId": "bulette-alternative",
+      "aliases": ["opus:F-33"],
+      "invariant": "Bulette ability alternatives and DC remain explicit",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-33",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.1"
+    },
+    {
+      "canonicalId": "targeting-qualifiers",
+      "aliases": ["opus:F-35"],
+      "invariant": "Targeting qualifiers are complete",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-35",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.1"
+    },
+    {
+      "canonicalId": "option-losses",
+      "aliases": ["sol:CAP-005"],
+      "invariant": "Ancestry, feature, progression, and choice losses are repaired",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-005",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.1"
+    },
+    {
+      "canonicalId": "class-feature-completeness",
+      "aliases": ["indep:003"],
+      "invariant": "Class features and feats retain complete procedures",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:003",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.2"
+    },
+    {
+      "canonicalId": "indomitable-scaling",
+      "aliases": ["opus:F-03"],
+      "invariant": "Indomitable use scaling is correct",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-03",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.2"
+    },
+    {
+      "canonicalId": "arcane-recovery-reset",
+      "aliases": ["opus:F-04"],
+      "invariant": "Arcane Recovery reset is correct",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-04",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.2"
+    },
+    {
+      "canonicalId": "natural-recovery-reset",
+      "aliases": ["opus:F-05"],
+      "invariant": "Natural Recovery reset is correct",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-05",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.2"
+    },
+    {
+      "canonicalId": "ki-abilities",
+      "aliases": ["opus:F-12"],
+      "invariant": "Ki abilities and save DC are structured",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-12",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.2"
+    },
+    {
+      "canonicalId": "divine-sense-uses",
+      "aliases": ["opus:F-24"],
+      "invariant": "Divine Sense use count is explicit",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-24",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.2"
+    },
+    {
+      "canonicalId": "condition-structure-no-regression",
+      "aliases": ["sol:CAP-002"],
+      "invariant": "Condition structure is repaired without regressing typed effects",
+      "status": "narrowed",
+      "statusReasoning": "CAP-002 overstates the condition deficit: existing typed condition effects are exact against source. Repair only proven structural gaps and preserve those typed effects.",
+      "provenance": {
+        "auditFinding": "sol:CAP-002",
+        "evidenceBasis": "bead"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.4"
+    },
+    {
+      "canonicalId": "rules-prose-readiness",
+      "aliases": ["opus:F-09"],
+      "invariant": "Rules prose has an in-band readiness disposition",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-09",
+        "evidenceBasis": "code"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.4"
+    },
+    {
+      "canonicalId": "ancestry-omissions",
+      "aliases": ["indep:004"],
+      "invariant": "Ancestry deterministic semantics are complete",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:004",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.3"
+    },
+    {
+      "canonicalId": "background-equipment",
+      "aliases": ["opus:F-18"],
+      "invariant": "Background equipment is structured",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-18",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.3.3"
+    },
+    {
+      "canonicalId": "hazard-and-healing-potion",
+      "aliases": ["sol:CAP-006"],
+      "invariant": "Hazards and healing potion procedures are complete",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-006",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.4"
+    },
+    {
+      "canonicalId": "spell-completeness",
+      "aliases": ["indep:005"],
+      "invariant": "Spell procedures are complete",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:005",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.1"
+    },
+    {
+      "canonicalId": "point-origin-areas",
+      "aliases": ["opus:F-08", "fable:F2"],
+      "invariant": "Point-origin spell areas are represented",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-08",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.1"
+    },
+    {
+      "canonicalId": "magic-missile-projectiles",
+      "aliases": ["opus:F-11"],
+      "invariant": "Magic Missile base projectile count is explicit",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-11",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.1"
+    },
+    {
+      "canonicalId": "spell-mechanics-depth",
+      "aliases": ["sol:CAP-003"],
+      "invariant": "Spell mechanics are projected to source depth",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-003",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.1"
+    },
+    {
+      "canonicalId": "animal-friendship-authority",
+      "aliases": ["sol:CAP-009"],
+      "invariant": "Animal Friendship correction is source-authority work",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-009",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.2.1"
+    },
+    {
+      "canonicalId": "creature-completeness",
+      "aliases": ["indep:006"],
+      "invariant": "Creature triggers, branches, timing, and lifecycle are complete",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:006",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.3"
+    },
+    {
+      "canonicalId": "half-damage-branches",
+      "aliases": ["opus:F-25"],
+      "invariant": "Creature and hazard half-damage branches are represented",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-25",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "relationship",
+      "owningBead": "eshyra-o9bd.19.4.3"
+    },
+    {
+      "canonicalId": "legendary-economy",
+      "aliases": ["opus:F-26"],
+      "invariant": "Legendary budgets and action costs are modeled",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-26",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.3"
+    },
+    {
+      "canonicalId": "druid-dryad-attacks",
+      "aliases": ["opus:F-28"],
+      "invariant": "Druid and Dryad attacks have attack objects",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-28",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "field",
+      "owningBead": "eshyra-o9bd.19.4.2"
+    },
+    {
+      "canonicalId": "unicode-minus-damage",
+      "aliases": ["opus:F-29"],
+      "invariant": "Unicode-minus damage is normalized",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-29",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "field",
+      "owningBead": "eshyra-o9bd.19.4.2"
+    },
+    {
+      "canonicalId": "ranged-notation",
+      "aliases": ["opus:F-31"],
+      "invariant": "Ranged attacks retain range under alternate notation",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-31",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "field",
+      "owningBead": "eshyra-o9bd.19.4.2"
+    },
+    {
+      "canonicalId": "multi-save-entries",
+      "aliases": ["opus:F-32"],
+      "invariant": "Multi-save entries retain every save",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-32",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "field",
+      "owningBead": "eshyra-o9bd.19.4.3"
+    },
+    {
+      "canonicalId": "creature-statblock-mechanics",
+      "aliases": ["sol:CAP-004"],
+      "invariant": "Creature stat-block mechanics are complete",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-004",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "field",
+      "owningBead": "eshyra-o9bd.19.4.2"
+    },
+    {
+      "canonicalId": "creature-ongoing-riders",
+      "aliases": ["fable:F3"],
+      "invariant": "Creature riders and ongoing damage are typed",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "fable:F3",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.3"
+    },
+    {
+      "canonicalId": "hazard-completeness",
+      "aliases": ["indep:007"],
+      "invariant": "Hazards are deterministically executable",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "indep:007",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.4"
+    },
+    {
+      "canonicalId": "hazard-success-branches",
+      "aliases": ["opus:F-01"],
+      "invariant": "Hazard success-damage branches are represented",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-01",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.4"
+    },
+    {
+      "canonicalId": "sphere-prose",
+      "aliases": ["opus:F-23"],
+      "invariant": "Sphere of Annihilation is not prose-only",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-23",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.4"
+    },
+    {
+      "canonicalId": "magic-item-effects",
+      "aliases": ["opus:residual-unverified-effects-semantics"],
+      "invariant": "Magic-item effects have an honest execution boundary",
+      "status": "disclosed-dependency",
+      "statusReasoning": "Pack projection can enumerate item clauses, but complete execution remains dependent on the engine capability families and their owning beads.",
+      "provenance": {
+        "auditFinding": "opus:residual-unverified-effects-semantics",
+        "evidenceBasis": "audit-finding"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.4.5"
+    },
+    {
+      "canonicalId": "readiness-integrity",
+      "aliases": ["opus:F-21"],
+      "invariant": "Readiness metadata reflects semantic completeness",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "opus:F-21",
+        "evidenceBasis": "code"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.1.5"
+    },
+    {
+      "canonicalId": "engine-capability-ownership",
+      "aliases": ["sol:CAP-007"],
+      "invariant": "Required engine capabilities have qualified ownership",
+      "status": "disclosed-dependency",
+      "statusReasoning": "Capability membership is generated from the pack and completion is owned by the engine capability family beads; the registry records the dependency until those families certify.",
+      "provenance": {
+        "auditFinding": "sol:CAP-007",
+        "evidenceBasis": "code"
+      },
+      "scopeKind": "capability",
+      "owningBead": "eshyra-o9bd.19.5"
+    },
+    {
+      "canonicalId": "readiness-artifacts",
+      "aliases": ["sol:CAP-014"],
+      "invariant": "Readiness artifacts agree with the corpus",
+      "status": "accepted",
+      "provenance": {
+        "auditFinding": "sol:CAP-014",
+        "evidenceBasis": "code"
+      },
+      "scopeKind": "record",
+      "owningBead": "eshyra-o9bd.19.1.5"
+    }
+  ]
+}
