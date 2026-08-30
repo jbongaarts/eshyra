@@ -31,6 +31,7 @@ import {
   type RunTurnResult,
   readCampaignRulesBinding,
   registerNewCharacter,
+  runTurn,
   startSession,
 } from '@eshyra/core';
 import {
@@ -46,6 +47,7 @@ import {
   listAdventureRuns,
   listBundledAdventureModules,
   listClosedArcSummaries,
+  listCombatants,
   mutateState,
   openScene,
   recordTurnTrace,
@@ -1474,6 +1476,59 @@ describe('runPlay', () => {
     expect(out).toContain('Choose an adventure to begin this campaign:');
     expect(out).not.toContain('Beginning adventure:');
     expect(listAdventureRuns(db, { campaignId: campaignId(db) })).toEqual([]);
+    dispose();
+  });
+
+  it('passes the selected adventure module to the real turn orchestrator (eshyra-seoh)', async () => {
+    const { db, dispose } = makeDb();
+    const { io } = scriptedIO([
+      '/defer',
+      '1',
+      'look toward the watchtower',
+      '/quit',
+    ]);
+    let turnContext = '';
+    let turnModelCalls = 0;
+    const model: ModelClient = {
+      complete: async (input) => {
+        if (input.system?.includes('extract structured world facts')) {
+          return { text: ROUTED_FAKE_BIBLE_JSON };
+        }
+        turnContext = input.messages[0]?.content ?? '';
+        if (turnModelCalls++ === 0) {
+          return {
+            text: [
+              '```tool_call',
+              '{"tool":"start_encounter","args":{"encounterId":"enc-mouth-ambush"}}',
+              '```',
+            ].join('\n'),
+          };
+        }
+        return { text: 'The watchtower mouth looms ahead.' };
+      },
+    };
+    const modulesById = new Map(
+      HOLLOW_MODULES.map(({ module }) => [module.id, module]),
+    );
+
+    await runPlay(
+      {
+        ...baseDeps(
+          db,
+          io,
+          runTurn,
+          () => undefined,
+          () => HOLLOW_MODULES,
+        ),
+        model,
+        resolveAdventureModule: (moduleId) => modulesById.get(moduleId),
+      },
+      { dbPath: 'demo.db' },
+    );
+
+    expect(turnContext).toContain('## Adventure Module (DM-only)');
+    expect(turnContext).toContain('The Hollow Beneath Emberfall');
+    expect(listCombatants(db, campaignId(db))).toHaveLength(2);
     dispose();
   });
 

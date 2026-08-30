@@ -98,6 +98,9 @@ export async function turnLoop(
         db,
         model: deps.model,
         registry: deps.registry,
+        ...(deps.resolveAdventureModule
+          ? { resolveAdventureModule: deps.resolveAdventureModule }
+          : {}),
         ...(deps.auditor ? { auditor: deps.auditor } : {}),
         ...(deps.debug ? { debug: deps.debug } : {}),
         ...(deps.diagnostics ? { diagnostics: deps.diagnostics } : {}),

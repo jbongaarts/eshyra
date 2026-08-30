@@ -349,6 +349,12 @@ function buildPlayDeps(
     runTurn,
     pack: EMBERFALL_HOLLOW,
     listAdventureModules: () => availableAdventureModules(dataRoot),
+    // Keep turn-time resolution aligned with the selector: a user-installed
+    // module overrides a bundled module with the same id.
+    resolveAdventureModule: (moduleId: string) =>
+      availableAdventureModules(dataRoot).find(
+        ({ module }) => module.id === moduleId,
+      )?.module,
     characterDraftStore: createFileCharacterDraftStore(
       characterDraftsDir(dataRoot),
     ),
