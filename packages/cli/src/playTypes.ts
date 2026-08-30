@@ -1,4 +1,5 @@
 import type {
+  AdventureModule,
   CharacterChronicleStore,
   CharacterCreationEngine,
   CharacterRegistryStore,
@@ -67,6 +68,12 @@ export interface PlayDeps {
    * exercisable in tests without a live model — defaults to the core `runTurn`.
    */
   runTurn: (deps: RunTurnDeps, input: RunTurnInput) => Promise<RunTurnResult>;
+  /**
+   * Resolves a campaign-bound adventure module for turn-time DM context and
+   * authored encounter lookup. The CLI wires this from its bundled/installed
+   * module inventory; omitted in loop-only tests and campaigns without modules.
+   */
+  resolveAdventureModule?: (moduleId: string) => AdventureModule | undefined;
   /** Module template forked into a brand-new campaign. */
   pack: ModulePack;
   /**
