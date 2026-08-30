@@ -1,8 +1,14 @@
 import {
   type CharacterDraft,
+  createCharacterCreationEngine,
+  createRulesPackCharacterResolver,
   createSeededRng,
   getBundledDnd5eCharacterResolver,
-  getDnd5eCharacterCreationEngine,
+  getBundledDnd5eSrdPack,
+  type RulesPack,
+  type RulesPackCharacterResolver,
+  type RulesPackLicense,
+  resolveRulesStack,
 } from '@eshyra/core/internal';
 import { describe, expect, it } from 'vitest';
 import type { CharacterDraftStore } from '../src/characterDraftStore.js';
@@ -41,7 +47,15 @@ function memoryStore(): CharacterDraftStore & {
   };
 }
 
-function deps(answers: ReadonlyArray<string>): {
+function deps(
+  answers: ReadonlyArray<string>,
+  /**
+   * Override the rules stack. Defaults to the bundled SRD pack, which provides
+   * no starting-wealth table (ADR 0020 B4, eshyra-o9bd.19.2.1.1); the
+   * starting-wealth cases pass a synthetic supplement instead.
+   */
+  resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
+): {
   deps: CharacterWizardDeps;
   lines: string[];
   store: ReturnType<typeof memoryStore>;
@@ -53,12 +67,94 @@ function deps(answers: ReadonlyArray<string>): {
     store,
     deps: {
       io,
-      engine: getDnd5eCharacterCreationEngine(),
-      resolver: getBundledDnd5eCharacterResolver(),
+      engine: createCharacterCreationEngine(resolver),
+      resolver,
       store,
       rng: createSeededRng(42),
     },
   };
+}
+
+/**
+ * A synthetic add-on supplying a starting-wealth table.
+ *
+ * The bundled SRD 5.1 pack provides none — SRD 5.1 has no starting-wealth text,
+ * so the table the importer used to emit was compiler-authored content wearing
+ * an SRD source line (ADR 0020 blocker B4, eshyra-o9bd.19.2.1.1). Every value
+ * below is invented and deliberately unlike the PHB table; it exists only to
+ * prove the wizard's wealth path still works where a licensed pack supplies it.
+ *
+ * Defined here rather than imported: `packages/core/test/support` is not part
+ * of core's published surface and the CLI package cannot reach into it.
+ */
+const SYNTHETIC_LICENSE: RulesPackLicense = {
+  licenseClass: 'open',
+  licenseName: 'Synthetic test license',
+  attributionText: 'Test-only invented data. Not derived from any source.',
+  requiresAttribution: false,
+  commercialUseAllowed: true,
+  hostedUseAllowed: true,
+  redistributionAllowed: true,
+  publicSharingAllowed: true,
+  derivativeAllowed: true,
+  containsUserSuppliedText: false,
+  containsTrademarkedSettingMaterial: false,
+  sourceMaterialDescription: 'Invented test values; no external rules text.',
+  provenancePolicy:
+    'Every record names the synthetic fixture that authored it.',
+  outputRestrictions: 'Test fixture; not for redistribution as game content.',
+};
+
+const STARTING_WEALTH_SUPPLEMENT: RulesPack = {
+  meta: {
+    packId: 'rules:test-starting-wealth-supplement',
+    title: 'Synthetic starting-wealth supplement',
+    description:
+      'Test-only add-on supplying an invented starting-wealth table.',
+    role: 'addon',
+    systemId: 'dnd5e-srd',
+    version: '1.0.0',
+    order: 1,
+    compatibleBaseSystems: [{ systemId: 'dnd5e-srd', versions: ['5.1'] }],
+    license: SYNTHETIC_LICENSE,
+    source: {
+      sourceTitle: 'Synthetic test supplement',
+      sourceVersion: '1.0.0',
+      sourceIdentity: 'synthetic:starting-wealth-supplement',
+      recordProvenancePolicy:
+        'Every record names the synthetic fixture that authored it.',
+    },
+  },
+  records: [
+    {
+      systemId: 'dnd5e-srd',
+      kind: 'table',
+      key: 'table:starting-wealth-by-class',
+      name: 'Starting Wealth by Class',
+      data: {
+        columns: ['Class', 'Starting Wealth'],
+        rows: [
+          ['Fighter', '2d2 \u00d7 3 gp'],
+          ['Wizard', '2d2 \u00d7 3 gp'],
+        ],
+      },
+      source: 'Synthetic test supplement',
+      license: SYNTHETIC_LICENSE,
+      provenance: {
+        sourceRef: 'synthetic:starting-wealth-supplement',
+        note: 'Invented test values; not extracted from any published source.',
+      },
+    },
+  ],
+};
+
+function supplementedResolver(): RulesPackCharacterResolver {
+  return createRulesPackCharacterResolver(
+    resolveRulesStack({
+      base: getBundledDnd5eSrdPack(),
+      addons: [STARTING_WEALTH_SUPPLEMENT],
+    }),
+  );
 }
 
 const text = (lines: readonly string[]): string => lines.join('\n');
@@ -127,30 +223,68 @@ describe('character wizard — concept-first happy path', () => {
   });
 });
 
+const SCORE_ANSWERS = [
+  'str 15',
+  'dex 14',
+  'con 13',
+  'int 12',
+  'wis 10',
+  'cha 8',
+  'done',
+];
+
 describe('character wizard — starting acquisition mode', () => {
-  it('reaches starting wealth, rolls once, and skips only equipment choices', async () => {
+  it('does not offer wealth when no active pack provides the table', async () => {
+    // Bundled SRD stack: the mode must not be advertised, and asking for it
+    // anyway must report the truthful reason instead of setting an unusable
+    // mode (ADR 0020 B4, eshyra-o9bd.19.2.1.1).
     const { deps: d, lines } = deps([
       'Mira',
       'Fighter',
       'Human',
       '',
       'point_buy',
-      'str 15',
-      'dex 14',
-      'con 13',
-      'int 12',
-      'wis 10',
-      'cha 8',
-      'done',
+      ...SCORE_ANSWERS,
       '2',
-      'Athletics',
-      'Perception',
-      'Dwarvish',
-      '',
-      '',
-      '',
-      '',
+      'quit',
+      'n',
     ]);
+    const result = await runCharacterWizard(d, {
+      mode: 'concept-first',
+      draftId: 'wealth-unavailable',
+    });
+    const output = text(lines);
+    expect(output).toContain(
+      'no active rules pack provides a starting-wealth table',
+    );
+    expect(output).not.toContain('2/wealth');
+    expect(result.draft.selections.startingEquipmentMode).not.toBe(
+      'starting-wealth',
+    );
+  });
+
+  it('reaches starting wealth, rolls once, and skips only equipment choices', async () => {
+    // Supplement-backed: proves the wizard path was disabled by data, not
+    // deleted. Values come from the synthetic pack, never the PHB table.
+    const { deps: d, lines } = deps(
+      [
+        'Mira',
+        'Fighter',
+        'Human',
+        '',
+        'point_buy',
+        ...SCORE_ANSWERS,
+        '2',
+        'Athletics',
+        'Perception',
+        'Dwarvish',
+        '',
+        '',
+        '',
+        '',
+      ],
+      supplementedResolver(),
+    );
     const result = await runCharacterWizard(d, {
       mode: 'concept-first',
       draftId: 'wealth',
@@ -159,11 +293,11 @@ describe('character wizard — starting acquisition mode', () => {
     expect(result.draft.selections.startingEquipmentMode).toBe(
       'starting-wealth',
     );
-    expect(result.draft.selections.startingWealth?.roll.rolls).toHaveLength(5);
+    expect(result.draft.selections.startingWealth?.roll.rolls).toHaveLength(2);
     expect(
       result.draft.selections.choices?.['class.equipment.0'],
     ).toBeUndefined();
-    expect(text(lines)).toContain('Starting wealth: 5d4');
+    expect(text(lines)).toContain('Starting wealth: 2d2');
     expect(text(lines)).toContain('Acquisition: starting-wealth');
   });
 });

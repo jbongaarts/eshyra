@@ -123,29 +123,6 @@ export const SRD_5_1_LICENSE: RulesPackLicense = {
     'Preserve the SRD 5.1 attribution text on redistributed records and derivatives.',
 };
 
-/** Source-backed p. 38 Starting Wealth by Class table. */
-export function startingWealthTable(): TableExtraction {
-  return {
-    name: 'Starting Wealth by Class',
-    columns: ['Class', 'Starting Wealth'],
-    rows: [
-      ['Barbarian', '2d4 × 10 gp'],
-      ['Bard', '5d4 × 10 gp'],
-      ['Cleric', '5d4 × 10 gp'],
-      ['Druid', '2d4 × 10 gp'],
-      ['Fighter', '5d4 × 10 gp'],
-      ['Monk', '5d4 gp'],
-      ['Paladin', '5d4 × 10 gp'],
-      ['Ranger', '5d4 × 10 gp'],
-      ['Rogue', '4d4 × 10 gp'],
-      ['Sorcerer', '3d4 × 10 gp'],
-      ['Warlock', '4d4 × 10 gp'],
-      ['Wizard', '4d4 × 10 gp'],
-    ],
-    sourcePage: 38,
-  };
-}
-
 function buildSource(sourceHash: string): RulesPackSource {
   return {
     sourceTitle: SOURCE_TITLE,
@@ -163,11 +140,11 @@ function buildMeta(
 ): RulesPackMeta {
   // The description is intentionally explicit about which kinds the current
   // importer covers; this prevents callers from assuming a half-built pack is
-  // reference-complete. See ADR 0005 and the loreweaver-0m9.5 issue.
+  // reference-complete. See ADR 0005 and the eshyra-0m9.5 issue.
   return {
     packId: PACK_ID,
     title: 'D&D 5e SRD 5.1',
-    description: `D&D 5th Edition System Reference Document 5.1, extracted by the deterministic importer at packages/core/scripts/importers/dnd5e-srd-5.1. Included record kinds: ${includedKinds.join(', ')}. Other SRD record kinds are tracked under loreweaver-0m9.5 child issues and are not included until their parsers ship.`,
+    description: `D&D 5th Edition System Reference Document 5.1, extracted by the deterministic importer at packages/core/scripts/importers/dnd5e-srd-5.1. Included record kinds: ${includedKinds.join(', ')}. Other SRD record kinds are tracked under eshyra-0m9.5 child issues and are not included until their parsers ship.`,
     role: 'base',
     systemId: SYSTEM_ID,
     version: SOURCE_VERSION,
@@ -1623,10 +1600,13 @@ export function buildPack(input: BuildPackInput): RulesPack {
   const ruleRecords = enrichSkillsRule(
     ruleExtractionsToRecords(input.rules ?? []),
   );
-  const sourceTables =
-    input.classes?.length === 12
-      ? [...(input.tables ?? []), startingWealthTable()]
-      : (input.tables ?? []);
+  // Every emitted table comes from the extractor. The compiler must not author
+  // table content here: an emitter-authored row set still inherits this pack's
+  // SRD source line and CC-BY-4.0 attribution block, which would claim SRD
+  // authority for text that is not in SRD 5.1. That is exactly how the
+  // "Starting Wealth by Class" table entered the pack (ADR 0020 blocker B4,
+  // eshyra-o9bd.19.2.1.1) — SRD 5.1 has no starting-wealth text anywhere.
+  const sourceTables = input.tables ?? [];
   const tableRecords = tableExtractionsToRecords(sourceTables);
   const spellRecords = linkSpellEmbeddedTables({
     spellRecords: baseSpellRecords,

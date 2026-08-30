@@ -9,7 +9,10 @@ import type {
   ResolvedStartingWealth,
   RulesPackCharacterResolver,
 } from './rulesPackResolver.js';
-import { getBundledDnd5eCharacterResolver } from './rulesPackResolver.js';
+import {
+  getBundledDnd5eCharacterResolver,
+  STARTING_WEALTH_UNAVAILABLE_MESSAGE,
+} from './rulesPackResolver.js';
 
 export type { ResolvedStartingWealth };
 
@@ -21,12 +24,33 @@ export interface StartingWealthResult {
   readonly totalGp: number;
 }
 
+/**
+ * Thrown when the active rules stack provides no starting-wealth table at all,
+ * as opposed to providing one that is present but malformed. Callers that must
+ * distinguish "this campaign has no starting-wealth rules" from "the pack is
+ * broken" branch on this type rather than on message text.
+ *
+ * The bundled SRD 5.1 pack provides no such table — see
+ * {@link STARTING_WEALTH_UNAVAILABLE_MESSAGE}.
+ */
+export class StartingWealthUnavailableError extends Error {
+  constructor(message: string = STARTING_WEALTH_UNAVAILABLE_MESSAGE) {
+    super(message);
+    this.name = 'StartingWealthUnavailableError';
+  }
+}
+
 export function resolveStartingWealth(
   classKey: string,
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
 ): ResolvedStartingWealth {
   const result = resolver.resolveStartingWealth(classKey);
-  if (!result.ok) throw new Error(result.message);
+  if (!result.ok) {
+    if (!resolver.startingWealthAvailable()) {
+      throw new StartingWealthUnavailableError(result.message);
+    }
+    throw new Error(result.message);
+  }
   return result.record;
 }
 

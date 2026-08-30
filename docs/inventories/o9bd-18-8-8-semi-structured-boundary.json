@@ -6,7 +6,7 @@
     "packages/core/src/rules/pathfinder2eRemaster.ts"
   ],
   "recordCounts": {
-    "dnd5eSrd": 1813,
+    "dnd5eSrd": 1812,
     "pathfinderFixture": 7
   },
   "rowCount": 1793,
@@ -34771,7 +34771,7 @@
         "Bond",
         "Flaw"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -35490,7 +35490,7 @@
         "−4",
         "4–5"
       ],
-      "population": 1216,
+      "population": 1204,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -35514,7 +35514,7 @@
         "table:acolyte-ideals",
         "table:acolyte-personality-traits"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.key is required by the baseline record validator",
       "deterministicConsumers": "rules-stack `byKey` index and `lookupRulesRecord({ ref })`",
@@ -35534,7 +35534,7 @@
       "representativeValues": [
         "table"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.kind is checked against the closed RulesRecordKind union/validator",
       "deterministicConsumers": "RulesRecordKind discriminator and kind-specific schema dispatch",
@@ -35554,7 +35554,7 @@
       "representativeValues": [
         "This work includes material taken from the System Reference Document 5.1 (\"SRD 5.1\") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode."
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -35574,7 +35574,7 @@
       "representativeValues": [
         "open"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -35594,7 +35594,7 @@
       "representativeValues": [
         "Creative Commons Attribution 4.0 International"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -35614,7 +35614,7 @@
       "representativeValues": [
         "Preserve the SRD 5.1 attribution text on redistributed records and derivatives."
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -35634,7 +35634,7 @@
       "representativeValues": [
         "Every record names the SRD page it was extracted from."
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -35654,7 +35654,7 @@
       "representativeValues": [
         "System Reference Document 5.1 at https://dnd.wizards.com/resources/systems-reference-document"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -35678,7 +35678,7 @@
         "Acolyte Ideals",
         "Acolyte Personality Traits"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.name is required by the baseline record validator",
       "deterministicConsumers": "rules-stack `byName` index using `normalizeRulesRecordName`; display identity",
@@ -35702,7 +35702,7 @@
         "p. 208",
         "p. 209"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -35722,7 +35722,7 @@
       "representativeValues": [
         "https://dnd.wizards.com/resources/systems-reference-document"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RecordProvenance.sourceRef must match meta.source.sourceUrl or meta.source.sourceIdentity",
       "deterministicConsumers": "validateRulesPack `assertProvenanceMatchesPackSource` cross-field invariant",
@@ -35746,7 +35746,7 @@
         "SRD 5.1 p. 208",
         "SRD 5.1 p. 209"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -35766,7 +35766,7 @@
       "representativeValues": [
         "dnd5e-srd"
       ],
-      "population": 109,
+      "population": 108,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.systemId is required by the baseline pack model",
       "deterministicConsumers": "rules-stack system binding and `resolveRulesStack` compatibility",

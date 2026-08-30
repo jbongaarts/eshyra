@@ -1,7 +1,7 @@
 {
   "packId": "rules:dnd5e-srd-5.1",
   "title": "D&D 5e SRD 5.1",
-  "description": "D&D 5th Edition System Reference Document 5.1, extracted by the deterministic importer at packages/core/scripts/importers/dnd5e-srd-5.1. Included record kinds: action, ancestry, background, class, condition, creature, equipment, feat, feature, hazard, magic-item, rule, spell, stat-block, subclass, table. Other SRD record kinds are tracked under loreweaver-0m9.5 child issues and are not included until their parsers ship.",
+  "description": "D&D 5th Edition System Reference Document 5.1, extracted by the deterministic importer at packages/core/scripts/importers/dnd5e-srd-5.1. Included record kinds: action, ancestry, background, class, condition, creature, equipment, feat, feature, hazard, magic-item, rule, spell, stat-block, subclass, table. Other SRD record kinds are tracked under eshyra-0m9.5 child issues and are not included until their parsers ship.",
   "role": "base",
   "systemId": "dnd5e-srd",
   "version": "5.1",

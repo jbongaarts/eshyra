@@ -338,6 +338,14 @@ export interface RulesPackCharacterResolver {
     classKey: string,
   ): CharacterResolution<ResolvedStartingWealth>;
   /**
+   * Whether any pack in the active stack provides a starting-wealth table.
+   * Callers gate the starting-wealth acquisition path on this rather than
+   * string-matching a failed {@link resolveStartingWealth} message. The
+   * bundled SRD 5.1 pack provides none — see
+   * {@link STARTING_WEALTH_UNAVAILABLE_MESSAGE}.
+   */
+  startingWealthAvailable(): boolean;
+  /**
    * Every well-formed `class` record in the stack, in canonical-key order.
    * Drives ability-score-driven class recommendations (eshyra-b69j.7), which
    * need to score the whole class list rather than resolve a single name.
@@ -375,6 +383,7 @@ export function createRulesPackCharacterResolver(
     resolveBackground: (nameOrRef) => resolveBackground(stack, nameOrRef),
     resolveFeat: (nameOrRef) => resolveFeat(stack, nameOrRef),
     resolveStartingWealth: (classKey) => resolveStartingWealth(stack, classKey),
+    startingWealthAvailable: () => startingWealthAvailable(stack),
     listClasses: () => listClasses(stack),
     listAncestries: () =>
       listByKind(stack, 'ancestry', (key) => resolveAncestry(stack, key)),
@@ -1280,13 +1289,48 @@ function parseBackgroundEquipmentGrants(
   return grants.length > 0 ? grants : undefined;
 }
 
+/**
+ * Message returned when no pack in the active stack provides a starting-wealth
+ * table.
+ *
+ * The bundled SRD 5.1 pack deliberately provides none. SRD 5.1 contains no
+ * starting-wealth text at all — the table the importer used to emit was
+ * compiler-authored PHB content wearing an SRD source line and the CC-BY-4.0
+ * SRD attribution block (ADR 0020 blocker B4, eshyra-o9bd.19.2.1.1). Starting
+ * wealth is available only from a separately identified, appropriately
+ * licensed supplement pack.
+ *
+ * Absence is reported as `not_found`, never `malformed`: `malformed` asserts a
+ * record is present but broken, which would be an actively false claim about a
+ * record that is intentionally absent.
+ */
+export const STARTING_WEALTH_UNAVAILABLE_MESSAGE =
+  'no active rules pack provides a starting-wealth table';
+
+function startingWealthUnavailable<T>(): CharacterResolution<T> {
+  return {
+    ok: false,
+    code: 'not_found',
+    message: STARTING_WEALTH_UNAVAILABLE_MESSAGE,
+  };
+}
+
+function startingWealthAvailable(stack: ResolvedRulesStack): boolean {
+  return lookup(stack, 'table', 'table:starting-wealth-by-class').ok;
+}
+
 function resolveStartingWealth(
   stack: ResolvedRulesStack,
   classKey: string,
 ): CharacterResolution<ResolvedStartingWealth> {
   const table = lookup(stack, 'table', 'table:starting-wealth-by-class');
-  if (!table.ok || !isRecord(table.record.data)) {
-    return malformed('table', 'table:starting-wealth-by-class');
+  if (!table.ok) {
+    return table.code === 'not_found'
+      ? startingWealthUnavailable()
+      : lookupError(table);
+  }
+  if (!isRecord(table.record.data)) {
+    return malformed('table', table.record.key);
   }
   const columns = table.record.data.columns;
   const rows = table.record.data.rows;
