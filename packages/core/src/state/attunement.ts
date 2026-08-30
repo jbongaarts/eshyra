@@ -535,7 +535,12 @@ export function attuneItem(db: Db, input: AttuneItemInput): AttuneItemResult {
         );
       }
     } else {
-      record = lookupCampaignRecord(txnDb, 'magic-item', candidateRef);
+      record = lookupCampaignRecord(
+        txnDb,
+        'magic-item',
+        candidateRef,
+        input.resolveRulesPack,
+      );
     }
     if (item.pack_ref !== null && record === undefined) {
       throw new AttunementError(

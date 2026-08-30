@@ -63,7 +63,10 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
-import { lookupCampaignRecord } from './campaignRecordLookup.js';
+import {
+  type CampaignRulesPackResolver,
+  lookupCampaignRecord,
+} from './campaignRecordLookup.js';
 import type { LifeState } from './hpLifecycle.js';
 import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 
@@ -114,6 +117,7 @@ export interface UsageMutationContext {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 /** Economy declaration for abilities/items the pack does not structure:
@@ -739,6 +743,7 @@ function resolveCounterTarget(
     itemId?: string;
     declared?: DeclaredUsageEconomy;
   },
+  resolver?: CampaignRulesPackResolver,
 ): CounterTarget {
   if (input.itemId !== undefined) {
     const { owner, itemName } = resolveItemCounter(db, resolved, input.itemId);
@@ -782,7 +787,7 @@ function resolveCounterTarget(
     const record =
       resolved.rulesRef === undefined
         ? undefined
-        : lookupCampaignRecord(db, 'creature', resolved.rulesRef);
+        : lookupCampaignRecord(db, 'creature', resolved.rulesRef, resolver);
     if (record === undefined) {
       throw new UsageCounterError(
         `${resolved.ownerLabel}'s rules record '${resolved.rulesRef ?? '(none)'}' does not resolve in the campaign rules stack, so no usage economy can be derived (failing closed rather than inventing one)`,
@@ -911,11 +916,17 @@ export function spendUsage(db: Db, input: SpendUsageInput): SpendUsageResult {
   }
   return withTransaction(db, (txnDb) => {
     const resolved = resolveOwner(txnDb, input.campaignId, input.owner);
-    const target = resolveCounterTarget(txnDb, input.campaignId, resolved, {
-      ...(input.ability === undefined ? {} : { ability: input.ability }),
-      ...(input.itemId === undefined ? {} : { itemId: input.itemId }),
-      ...(input.declared === undefined ? {} : { declared: input.declared }),
-    });
+    const target = resolveCounterTarget(
+      txnDb,
+      input.campaignId,
+      resolved,
+      {
+        ...(input.ability === undefined ? {} : { ability: input.ability }),
+        ...(input.itemId === undefined ? {} : { itemId: input.itemId }),
+        ...(input.declared === undefined ? {} : { declared: input.declared }),
+      },
+      input.resolveRulesPack,
+    );
     if (target.create !== undefined) {
       insertCounter(
         txnDb,

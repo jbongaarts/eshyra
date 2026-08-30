@@ -86,13 +86,9 @@ export function lookupCampaignRecord(
   db: Db,
   kind: RulesRecordKind,
   ref: string,
+  resolver?: CampaignRulesPackResolver,
 ): RulesRecord | undefined {
-  const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
-  const base =
-    [getBundledDnd5eSrdPack(), PATHFINDER2E_REMASTER_RULES_PACK].find(
-      (candidate) => candidate.meta.packId === binding.base.packId,
-    ) ?? getBundledDnd5eSrdPack();
-  const stack = resolveRulesStack({ base });
+  const stack = resolveStrictCampaignRulesStack(db, resolver);
   const result = ref.includes(':')
     ? lookupRulesRecord(stack, { kind, ref })
     : lookupRulesRecord(stack, { kind, name: ref });

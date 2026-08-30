@@ -154,6 +154,7 @@ export const spendUsageTool: Tool = {
           ...(typeof a.itemId === 'string' ? { itemId: a.itemId } : {}),
           ...(typeof a.uses === 'number' ? { uses: a.uses } : {}),
           ...(declared === undefined ? {} : { declared }),
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

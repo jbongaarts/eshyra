@@ -66,7 +66,10 @@ import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
 import type { TurnBoundaryEffectSummary } from './activeEffects.js';
 import { settleEffectsAtTurnBoundary } from './activeEffects.js';
-import { lookupCampaignRecord } from './campaignRecordLookup.js';
+import {
+  type CampaignRulesPackResolver,
+  lookupCampaignRecord,
+} from './campaignRecordLookup.js';
 import {
   getActiveCombatInstance,
   listCombatantsForInstance,
@@ -140,6 +143,7 @@ export interface TurnMutationContext {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 export interface BeginTurnInput extends TurnMutationContext {
@@ -293,8 +297,12 @@ interface ResolvedSpell {
   readonly actionCantrip: boolean;
 }
 
-function resolveSpell(db: Db, spellRef: string): ResolvedSpell {
-  const record = lookupCampaignRecord(db, 'spell', spellRef);
+function resolveSpell(
+  db: Db,
+  spellRef: string,
+  resolver?: CampaignRulesPackResolver,
+): ResolvedSpell {
+  const record = lookupCampaignRecord(db, 'spell', spellRef, resolver);
   const data = record?.data;
   if (typeof data !== 'object' || data === null) {
     throw new ActionEconomyError(
@@ -367,11 +375,12 @@ function collectExtraReactionEffects(
 function reactionProfileFor(
   db: Db,
   rulesRef: string | undefined,
+  resolver?: CampaignRulesPackResolver,
 ): ReactionProfile {
   if (rulesRef === undefined) {
     return DEFAULT_REACTION_PROFILE;
   }
-  const record = lookupCampaignRecord(db, 'creature', rulesRef);
+  const record = lookupCampaignRecord(db, 'creature', rulesRef, resolver);
   if (record === undefined) {
     return DEFAULT_REACTION_PROFILE;
   }
@@ -438,11 +447,12 @@ function normalizeLegendaryName(name: string): string {
 function legendaryProfileFor(
   db: Db,
   rulesRef: string | undefined,
+  resolver?: CampaignRulesPackResolver,
 ): LegendaryProfile {
   if (rulesRef === undefined) {
     return NO_LEGENDARY_PROFILE;
   }
-  const record = lookupCampaignRecord(db, 'creature', rulesRef);
+  const record = lookupCampaignRecord(db, 'creature', rulesRef, resolver);
   const data = record?.data;
   if (typeof data !== 'object' || data === null) {
     return NO_LEGENDARY_PROFILE;
@@ -796,8 +806,8 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       input.campaignId,
       instance.combatInstanceId,
       participant,
-      reactionProfileFor(txnDb, rulesRef),
-      legendaryProfileFor(txnDb, rulesRef),
+      reactionProfileFor(txnDb, rulesRef, input.resolveRulesPack),
+      legendaryProfileFor(txnDb, rulesRef, input.resolveRulesPack),
       input,
     );
     txnDb
@@ -972,7 +982,7 @@ export function spendTurnResource(
     const spell =
       input.spellRef === undefined
         ? undefined
-        : resolveSpell(txnDb, input.spellRef);
+        : resolveSpell(txnDb, input.spellRef, input.resolveRulesPack);
     const turn = readInstanceTurnFields(
       txnDb,
       input.campaignId,
@@ -997,8 +1007,12 @@ export function spendTurnResource(
       );
     }
 
-    const profile = reactionProfileFor(txnDb, rulesRef);
-    const legendaryProfile = legendaryProfileFor(txnDb, rulesRef);
+    const profile = reactionProfileFor(txnDb, rulesRef, input.resolveRulesPack);
+    const legendaryProfile = legendaryProfileFor(
+      txnDb,
+      rulesRef,
+      input.resolveRulesPack,
+    );
     ensureBudgetRow(
       txnDb,
       input.campaignId,
