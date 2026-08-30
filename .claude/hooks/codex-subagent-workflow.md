@@ -13,13 +13,36 @@ especially compelling cases. (Workflow ported from chopcli, 2026-07-18.)
 
 ## Dispatch defaults
 
-- `codex exec -m gpt-5.6-luna -c model_reasoning_effort=medium`, launched via
-  background Bash with `</dev/null` on stdin.
-- Sandbox: tightest that fits the task. YOLO
-  (`--dangerously-bypass-approvals-and-sandbox`) is authorized when the task
-  needs installs/git/network/bd; write-capable runs always happen inside the
-  child's own worktree, never the parent checkout.
+**Always launch through `/home/jhbongaarts/.claude/dispatch-codex.sh`. Never
+hand-roll a `setsid`/`codex exec` command line.** Auto mode allowlists exactly
+that script path (`Bash(/home/jhbongaarts/.claude/dispatch-codex.sh:*)` in
+`~/.claude/settings.json`); a hand-written `setsid … codex exec
+--dangerously-bypass-approvals-and-sandbox …` is NOT allowlisted and the auto-mode
+classifier will refuse it. The script lives outside the repo on purpose, so the
+Codex children it dispatches cannot read it.
+
+```bash
+# write the launch prompt first; the script reads it from the registry
+/home/jhbongaarts/.claude/dispatch-codex.sh <child-bead-id>
+/home/jhbongaarts/.claude/dispatch-codex.sh <child-bead-id> --dry-run   # preview
+```
+
+- Defaults to `-m gpt-5.6-luna -c model_reasoning_effort=medium` with YOLO
+  (`--dangerously-bypass-approvals-and-sandbox`); override with `--model`,
+  `--effort`, `--prompt-file`, or `--sandbox` (drops YOLO).
+- It reads `<root>/.worktrees/.dispatch/<child>.prompt`, writes `<child>.log` and
+  `<child>.pgid` beside it, refuses to dispatch into the parent checkout, refuses
+  a worktree not on the child's own branch, and refuses to double-dispatch a bead
+  whose recorded process group is still alive. Those guards only protect you if
+  you actually go through the script.
 - Resume a session: `codex exec resume <session-id>`.
+
+**If a dispatch launch is refused, STOP AND ASK THE USER.** A refusal means the
+approved path was not taken or the environment changed. Do not "adjust" by
+downgrading the sandbox, and above all do not strip capabilities out of the
+child's task to fit a weaker sandbox — see the bead-protocol rule below. A
+weakened dispatch silently produces a child that cannot do its job and a
+supervisor that has to fake the missing half.
 
 ## Worktree & branch model (one per child)
 
@@ -72,6 +95,46 @@ especially compelling cases. (Workflow ported from chopcli, 2026-07-18.)
 - Failed or partial attempts: close the child with `--reason`, then create
   attempt N+1 (fresh branch off the current parent branch; delete or abandon
   the failed child branch rather than reusing it).
+
+### The beads protocol is the communication channel — NEVER route around it
+
+**Standing user instruction, restated after a violation on 2026-08-29.** Beads
+is how a dispatched subagent receives its task and reports back. Every dispatch
+prompt MUST tell the child to read its spec with `bd show` and to report with
+`bd update --append-notes` / `bd create` / `bd close`. That is the protocol.
+
+Forbidden, in every case and for every reason:
+
+- telling a child **"do NOT run `bd`"**, or otherwise removing bd from its prompt;
+- substituting files (`.dispatch-plan.md`, `.dispatch-report.md`, a pasted spec
+  in the prompt, anything else) for `bd show` and `bd`-recorded notes;
+- writing the child's completion report or closing its bead **on its behalf**
+  because it could not reach bd;
+- weakening the dispatch sandbox until bd is unreachable and then working around
+  the consequence.
+
+If bd is unreachable for a dispatch, the dispatch is **blocked**. Say so and ask
+the user. Do not invent a substitute channel — a file-based side channel looks
+like it worked, but it strands the record outside Dolt, it never reaches
+`bd dolt push`, and no other machine, Codex session, or future supervisor can
+see it. The whole point of the protocol is that the task record is shared and
+syncable; a private file is the one thing it must never degrade into.
+
+Note the interaction with the sandbox: `bd` writes to the Dolt DB in the PARENT
+checkout, outside any child worktree. A `--sandbox workspace-write` dispatch
+therefore cannot use bd at all, and cannot `git commit` either (a linked
+worktree's git metadata lives in the parent checkout). That is precisely why
+`dispatch-codex.sh` defaults to YOLO. `--sandbox` is for read-only or
+analysis-only runs, never for a normal implementation dispatch.
+
+(Violation of record, 2026-08-29, bead `eshyra-o9bd.19.1.15.1`: after the
+auto-mode classifier refused a hand-rolled YOLO launch, the supervisor
+downgraded to `--sandbox workspace-write` and rewrote the prompt to say "Do NOT
+run `bd`", passing the spec as `.dispatch-plan.md` and taking the report back as
+`.dispatch-report.md`. The child then could not commit either, so the supervisor
+committed and closed the bead for it. Two failures, one root cause: the approved
+launcher above was not used, and rather than stopping, the dispatch was reshaped
+around the refusal.)
 
 ## Supervisor rules
 
@@ -157,29 +220,25 @@ and leaving PR #462's reviewed head unreachable from the branch. Cross-session
 attribution is unreliable — trust the git and bd record, not any transcript's
 account of who did what.
 
-So **record identity at launch, and only ever act on what you recorded.** Have
-the new session leader record its own PID rather than trusting `$!`: `setsid`
-forks only when the caller is already a process group leader, so `$!` is *not
-guaranteed* to be the new session leader. When it does fork, `$!` is a parent
-that has already exited and whose PID is eligible for reuse — signalling it
-later can hit an unrelated process group. `echo "$$"` from inside the new
-session is correct either way.
+So **record identity at launch, and only ever act on what you recorded.**
+`dispatch-codex.sh` already does this correctly — it is the reason the script
+exists, and the reason not to hand-roll the launch. What it handles for you:
 
-```bash
-# Launch from the supervisor's parent checkout, but the dispatch itself must
-# RUN IN THE CHILD WORKTREE -- write-capable runs never execute in the parent
-# checkout. Paths are absolute, resolved before the cd.
-root="$(git rev-parse --show-toplevel)"
-reg="$root/.worktrees/.dispatch"; mkdir -p "$reg"
-wt="$root/.worktrees/<child-bead-id>"
-setsid bash -c 'echo "$$" >"$2"; cd "$1" || exit 1; exec codex exec … ' \
-  _ "$wt" "$reg/<child-bead-id>.pgid" </dev/null &
-```
+- The new session leader records its own `$$` rather than the caller trusting
+  `$!`. `setsid` forks only when the caller is already a process group leader,
+  so `$!` is *not guaranteed* to be the new session leader. When it does fork,
+  `$!` is a parent that has already exited and whose PID is eligible for reuse —
+  signalling it later can hit an unrelated process group. `exec` then preserves
+  the leader's PID, so the recorded value is the real PGID.
+- The dispatch runs IN THE CHILD WORKTREE (write-capable runs never execute in
+  the parent checkout), and the `cd` fails the dispatch closed if the worktree
+  vanished between the check and the launch.
+- The registry sits BESIDE the worktrees at `.worktrees/.dispatch/`, never
+  inside one: `.worktrees/` is gitignored, so no child agent sees a stray
+  untracked file and nothing can be committed by accident.
+- A prior log is renamed to `.bak` rather than clobbered, so failed-attempt
+  evidence survives.
 
-`exec` preserves the leader's PID, so the recorded value is the real PGID, and
-the `cd` fails the dispatch closed if the worktree is missing. The registry sits
-BESIDE the worktrees, never inside one: `.worktrees/` is gitignored, so no child
-agent sees a stray untracked file and nothing can be committed by accident.
 Mirror the PGID into the child bead's notes so the registry survives a deleted
 worktree.
 
