@@ -52,150 +52,82 @@ export interface FindingRegistry {
   rows: FindingRow[];
 }
 
-export const CANONICAL_FINDING_IDS = [
-  'source-authority-opus-f19',
-  'source-authority-opus-f20',
-  'source-authority-sol-cap-008',
-  'source-authority-fable-f1',
-  'source-authority-fable-f5',
-  'source-authority-fable-f7',
-  'language-universe-policy',
-  'locator-completeness',
-  'ambiguous-coverage',
-  'rock-gnome-boundary',
-  'equipment-report',
-  'spellcasting-granularity',
-  'vehicle-tool-row',
-  'wererat-crossbow',
-  'source-provenance-fields',
-  'container-continuation',
-  'advancement-qualifiers',
-  'proficiency-grants',
-  'choice-identifiers',
-  'madness-durations',
-  'damage-field-shape',
-  'equipment-taxonomy',
-  'table-empty-cells',
-  'display-name-qualification',
-  'canonical-discovery',
-  'rule-key-duplication',
-  'audit-readiness-gate',
-  'rule-corpus-procedures',
-  'phantom-feature-resources',
-  'damage-alternatives',
-  'choice-behavior',
-  'pit-variants',
-  'invocation-effects',
-  'bulette-alternative',
-  'targeting-qualifiers',
-  'option-losses',
-  'class-feature-completeness',
-  'indomitable-scaling',
-  'arcane-recovery-reset',
-  'natural-recovery-reset',
-  'ki-abilities',
-  'divine-sense-uses',
-  'condition-structure-no-regression',
-  'rules-prose-readiness',
-  'ancestry-omissions',
-  'background-equipment',
-  'hazard-and-healing-potion',
-  'spell-completeness',
-  'point-origin-areas',
-  'magic-missile-projectiles',
-  'spell-mechanics-depth',
-  'animal-friendship-authority',
-  'creature-completeness',
-  'half-damage-branches',
-  'legendary-economy',
-  'druid-dryad-attacks',
-  'unicode-minus-damage',
-  'ranged-notation',
-  'multi-save-entries',
-  'creature-statblock-mechanics',
-  'creature-ongoing-riders',
-  'hazard-completeness',
-  'hazard-success-branches',
-  'sphere-prose',
-  'magic-item-effects',
-  'readiness-integrity',
-  'engine-capability-ownership',
-  'readiness-artifacts',
-] as const;
+export const CANONICAL_ROW_ROSTER: Readonly<Record<string, readonly string[]>> =
+  {
+    'source-authority-opus-f19': ['opus:F-19'],
+    'source-authority-opus-f20': ['opus:F-20'],
+    'source-authority-sol-cap-008': ['sol:CAP-008'],
+    'source-authority-fable-f1': ['fable:F1'],
+    'source-authority-fable-f5': ['fable:F5'],
+    'source-authority-fable-f7': ['fable:F7'],
+    'language-universe-policy': ['indep:011'],
+    'locator-completeness': ['indep:008'],
+    'ambiguous-coverage': ['indep:009'],
+    'rock-gnome-boundary': ['indep:010', 'sol:CAP-012'],
+    'equipment-report': ['indep:012'],
+    'spellcasting-granularity': ['opus:F-15'],
+    'vehicle-tool-row': ['opus:F-17'],
+    'wererat-crossbow': ['opus:F-30'],
+    'source-provenance-fields': ['sol:CAP-010'],
+    'container-continuation': ['fable:F4'],
+    'advancement-qualifiers': ['opus:F-10'],
+    'proficiency-grants': ['opus:F-13'],
+    'choice-identifiers': ['opus:F-14'],
+    'madness-durations': ['opus:F-16'],
+    'damage-field-shape': ['opus:F-34'],
+    'equipment-taxonomy': ['sol:CAP-013'],
+    'table-empty-cells': ['fable:F6'],
+    'display-name-qualification': ['opus:F-22'],
+    'canonical-discovery': ['sol:CAP-011'],
+    'rule-key-duplication': ['fable:F8'],
+    'audit-readiness-gate': ['indep:001'],
+    'rule-corpus-procedures': ['sol:CAP-001'],
+    'phantom-feature-resources': ['opus:F-06'],
+    'damage-alternatives': ['opus:F-27'],
+    'choice-behavior': ['indep:002'],
+    'pit-variants': ['opus:F-02'],
+    'invocation-effects': ['opus:F-07'],
+    'bulette-alternative': ['opus:F-33'],
+    'targeting-qualifiers': ['opus:F-35'],
+    'option-losses': ['sol:CAP-005'],
+    'class-feature-completeness': ['indep:003'],
+    'indomitable-scaling': ['opus:F-03'],
+    'arcane-recovery-reset': ['opus:F-04'],
+    'natural-recovery-reset': ['opus:F-05'],
+    'ki-abilities': ['opus:F-12'],
+    'divine-sense-uses': ['opus:F-24'],
+    'condition-structure-no-regression': ['sol:CAP-002'],
+    'rules-prose-readiness': ['opus:F-09'],
+    'ancestry-omissions': ['indep:004'],
+    'background-equipment': ['opus:F-18'],
+    'hazard-and-healing-potion': ['sol:CAP-006'],
+    'spell-completeness': ['indep:005'],
+    'point-origin-areas': ['opus:F-08', 'fable:F2'],
+    'magic-missile-projectiles': ['opus:F-11'],
+    'spell-mechanics-depth': ['sol:CAP-003'],
+    'animal-friendship-authority': ['sol:CAP-009'],
+    'creature-completeness': ['indep:006'],
+    'half-damage-branches': ['opus:F-25'],
+    'legendary-economy': ['opus:F-26'],
+    'druid-dryad-attacks': ['opus:F-28'],
+    'unicode-minus-damage': ['opus:F-29'],
+    'ranged-notation': ['opus:F-31'],
+    'multi-save-entries': ['opus:F-32'],
+    'creature-statblock-mechanics': ['sol:CAP-004'],
+    'creature-ongoing-riders': ['fable:F3'],
+    'hazard-completeness': ['indep:007'],
+    'hazard-success-branches': ['opus:F-01'],
+    'sphere-prose': ['opus:F-23'],
+    'magic-item-effects': ['opus:residual-unverified-effects-semantics'],
+    'readiness-integrity': ['opus:F-21'],
+    'engine-capability-ownership': ['sol:CAP-007'],
+    'readiness-artifacts': ['sol:CAP-014'],
+  };
 
-export const FINDING_ALIASES = [
-  'fable:F1',
-  'fable:F2',
-  'fable:F3',
-  'fable:F4',
-  'fable:F5',
-  'fable:F6',
-  'fable:F7',
-  'fable:F8',
-  'indep:001',
-  'indep:002',
-  'indep:003',
-  'indep:004',
-  'indep:005',
-  'indep:006',
-  'indep:007',
-  'indep:008',
-  'indep:009',
-  'indep:010',
-  'indep:011',
-  'indep:012',
-  'opus:F-01',
-  'opus:F-02',
-  'opus:F-03',
-  'opus:F-04',
-  'opus:F-05',
-  'opus:F-06',
-  'opus:F-07',
-  'opus:F-08',
-  'opus:F-09',
-  'opus:F-10',
-  'opus:F-11',
-  'opus:F-12',
-  'opus:F-13',
-  'opus:F-14',
-  'opus:F-15',
-  'opus:F-16',
-  'opus:F-17',
-  'opus:F-18',
-  'opus:F-19',
-  'opus:F-20',
-  'opus:F-21',
-  'opus:F-22',
-  'opus:F-23',
-  'opus:F-24',
-  'opus:F-25',
-  'opus:F-26',
-  'opus:F-27',
-  'opus:F-28',
-  'opus:F-29',
-  'opus:F-30',
-  'opus:F-31',
-  'opus:F-32',
-  'opus:F-33',
-  'opus:F-34',
-  'opus:F-35',
-  'opus:residual-unverified-effects-semantics',
-  'sol:CAP-001',
-  'sol:CAP-002',
-  'sol:CAP-003',
-  'sol:CAP-004',
-  'sol:CAP-005',
-  'sol:CAP-006',
-  'sol:CAP-007',
-  'sol:CAP-008',
-  'sol:CAP-009',
-  'sol:CAP-010',
-  'sol:CAP-011',
-  'sol:CAP-012',
-  'sol:CAP-013',
-  'sol:CAP-014',
-] as const;
-
+export const CANONICAL_FINDING_IDS = Object.keys(CANONICAL_ROW_ROSTER);
+export const FINDING_ALIASES = Object.values(CANONICAL_ROW_ROSTER)
+  .flat()
+  .sort();
 const ROW_KEYS = new Set([
   'canonicalId',
   'aliases',
@@ -285,6 +217,50 @@ function exactSet(
     throw new Error(
       `${label} set mismatch; missing: ${missing.join(', ') || 'none'}; unexpected: ${unexpected.join(', ') || 'none'}`,
     );
+  }
+}
+
+function canonicalRosterBlockers(value: unknown): string[] {
+  if (!isRecord(value) || !Array.isArray(value.rows)) return ['registry'];
+  const expected = new Map(Object.entries(CANONICAL_ROW_ROSTER));
+  const seen = new Map<string, number>();
+  const blockers: string[] = [];
+  for (const raw of value.rows) {
+    if (!isRecord(raw) || typeof raw.canonicalId !== 'string') {
+      blockers.push('malformed-row');
+      continue;
+    }
+    const canonicalId = raw.canonicalId;
+    const occurrence = (seen.get(canonicalId) ?? 0) + 1;
+    seen.set(canonicalId, occurrence);
+    if (occurrence > 1) blockers.push(`duplicate:${canonicalId}`);
+    const expectedAliases = expected.get(canonicalId);
+    if (expectedAliases === undefined) {
+      blockers.push(`unexpected:${canonicalId}`);
+      continue;
+    }
+    const actualAliases = Array.isArray(raw.aliases)
+      ? raw.aliases.filter(
+          (alias): alias is string => typeof alias === 'string',
+        )
+      : [];
+    if (
+      JSON.stringify([...actualAliases].sort()) !==
+      JSON.stringify([...expectedAliases].sort())
+    ) {
+      blockers.push(`alias-roster:${canonicalId}`);
+    }
+  }
+  for (const canonicalId of expected.keys()) {
+    if (!seen.has(canonicalId)) blockers.push(`missing:${canonicalId}`);
+  }
+  return [...new Set(blockers)];
+}
+
+function assertCanonicalRowRoster(rows: FindingRow[]): void {
+  const blockers = canonicalRosterBlockers({ rows });
+  if (blockers.length > 0) {
+    throw new Error(`canonicalId set mismatch; ${blockers.join(', ')}`);
   }
 }
 
@@ -407,6 +383,7 @@ export function validateFindingRegistry(value: unknown): FindingRegistry {
       owningBead: rawRow.owningBead,
     });
   }
+  assertCanonicalRowRoster(rows);
   exactSet(canonicalIds, CANONICAL_SET, 'canonicalId');
   exactSet(aliases, ALIAS_SET, 'alias');
   return {
