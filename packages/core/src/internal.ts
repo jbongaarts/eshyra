@@ -903,6 +903,24 @@ export {
   isFeatureChoiceCategory,
 } from './rules/featureChoices.js';
 export type {
+  EvidenceBasis,
+  FindingProvenance,
+  FindingRegistry,
+  FindingRow,
+  FindingScopeKind,
+  FindingStatus,
+} from './rules/findingRegistry.js';
+export {
+  aliasIndex,
+  CANONICAL_FINDING_IDS,
+  CANONICAL_ROW_ROSTER,
+  FINDING_ALIASES,
+  findingByAlias,
+  findingByCanonicalId,
+  loadFindingRegistry,
+  validateFindingRegistry,
+} from './rules/findingRegistry.js';
+export type {
   InlineFeatureOption,
   InlineFeatureOptionIndex,
 } from './rules/inlineFeatureOptions.js';
