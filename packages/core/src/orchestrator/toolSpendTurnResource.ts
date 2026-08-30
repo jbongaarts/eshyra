@@ -129,6 +129,7 @@ export const spendTurnResourceTool: Tool = {
           ...(typeof a.legendaryActionName === 'string'
             ? { legendaryActionName: a.legendaryActionName }
             : {}),
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

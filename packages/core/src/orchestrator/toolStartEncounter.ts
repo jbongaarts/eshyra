@@ -200,6 +200,7 @@ export const startEncounterTool: Tool = {
             : {}),
           ...(actors === undefined ? {} : { actors }),
           resolveAdventureModule: ctx.resolveAdventureModule,
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

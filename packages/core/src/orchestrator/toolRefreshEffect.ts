@@ -53,6 +53,7 @@ export const refreshEffectTool: Tool = {
           effectId: a.effectId,
           ...(duration === undefined ? {} : { duration }),
           ...(typeof a.note === 'string' ? { note: a.note } : {}),
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,
