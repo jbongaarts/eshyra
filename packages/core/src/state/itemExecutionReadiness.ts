@@ -22,11 +22,13 @@ function inSelectedScope(
 ): boolean {
   const value = object(scope);
   if (value?.kind === 'parent') return true;
-  if (value?.kind !== 'variant' || typeof value.variantKey !== 'string')
-    return false;
-  return (
-    variantId !== undefined &&
-    canonicalMagicItemVariantId(value.variantKey) === variantId
+  if (value?.kind === 'variant' && typeof value.variantKey === 'string')
+    return (
+      variantId !== undefined &&
+      canonicalMagicItemVariantId(value.variantKey) === variantId
+    );
+  throw new ItemExecutionReadinessError(
+    'execution-readiness clause has an unrecognized scope',
   );
 }
 
