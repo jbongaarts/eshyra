@@ -17,7 +17,10 @@ import {
   withTransaction,
   writeItemState,
 } from '../src/internal.js';
-import { assertMagicItemOperationReady } from '../src/state/itemExecutionReadiness.js';
+import {
+  assertMagicItemOperationReady,
+  ItemExecutionReadinessError,
+} from '../src/state/itemExecutionReadiness.js';
 import { freshDbWithSession } from './support/db.js';
 
 const MUTATION = {
@@ -2227,6 +2230,94 @@ describe('magic-item live instance state', () => {
     ).toThrow(/not safely executable.*F9:apply blast damage/);
     expect(readItemState(db, granted.id)).toBeUndefined();
     db.close();
+  });
+
+  it('fails closed when an execution-readiness clause has an unrecognized scope', () => {
+    const record = item('unrecognized-readiness-scope', {
+      operations: [{ id: 'invoke' }],
+    });
+    const data = record.data as Record<string, unknown>;
+    const readiness = data.executionReadiness as Record<string, unknown>;
+    const clauses = readiness.clauses as Record<string, unknown>[];
+    const malformed: RulesRecord = {
+      ...record,
+      data: {
+        ...data,
+        executionReadiness: {
+          ...readiness,
+          clauses: [
+            ...clauses,
+            {
+              clauseId: 'test/malformed-scope',
+              scope: { kind: 'unknown' },
+              tag: 'M1',
+              readiness: 'green',
+              representation: { block: 'operations', operationId: 'invoke' },
+            },
+          ],
+        },
+      },
+    };
+
+    expect(() =>
+      assertMagicItemOperationReady(malformed, undefined, {
+        operationId: 'invoke',
+        economyIds: new Set(),
+        operationEffectIds: new Set(),
+        effectIds: new Set(),
+        usesStateMachine: false,
+        usesSpellStore: false,
+      }),
+    ).toThrow(ItemExecutionReadinessError);
+  });
+
+  it('continues to select only matching parent and variant readiness clauses', () => {
+    const record = item('scoped-readiness', {
+      operations: [{ id: 'invoke' }],
+    });
+    const data = record.data as Record<string, unknown>;
+    const readiness = data.executionReadiness as Record<string, unknown>;
+    const clauses = readiness.clauses as Record<string, unknown>[];
+    const scoped: RulesRecord = {
+      ...record,
+      data: {
+        ...data,
+        executionReadiness: {
+          ...readiness,
+          clauses: [
+            ...clauses,
+            {
+              clauseId: 'test/variant-pending',
+              scope: { kind: 'variant', variantKey: 'agility' },
+              tag: 'M1',
+              readiness: 'engine-pending',
+              representation: { block: 'operations', operationId: 'invoke' },
+              engineHooks: [{ engine: 'F9', hook: 'variant invoke' }],
+              missingHooks: [{ engine: 'F9', hook: 'variant invoke' }],
+              missingEngines: ['F9'],
+            },
+          ],
+        },
+      },
+    };
+    const input = {
+      operationId: 'invoke',
+      economyIds: new Set<string>(),
+      operationEffectIds: new Set<string>(),
+      effectIds: new Set<string>(),
+      usesStateMachine: false,
+      usesSpellStore: false,
+    };
+
+    expect(() =>
+      assertMagicItemOperationReady(scoped, undefined, input),
+    ).not.toThrow();
+    expect(() =>
+      assertMagicItemOperationReady(scoped, 'other', input),
+    ).not.toThrow();
+    expect(() =>
+      assertMagicItemOperationReady(scoped, 'agility', input),
+    ).toThrow(/variant invoke/);
   });
 
   it('exposes pack identity, instance id, and validated state in turn context', () => {
