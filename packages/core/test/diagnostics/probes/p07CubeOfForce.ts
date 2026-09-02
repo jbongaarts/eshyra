@@ -112,19 +112,9 @@ export const P07_CUBE_OF_FORCE: DiagnosticFixture = {
           },
         ],
       },
-      expectedCampaignRuleOrRulingState: {
-        kind: 'campaign-rule-cases',
-        cases: [
-          {
-            caseId: 'without-active-ruling',
-            statement:
-              'No active ruling is present; the packet states unresolved and owner campaign-ruling beside the ambiguity.',
-            ruleKind: 'ruling',
-            scope: `${itemKey} / ${ambiguityId}`,
-            provenance: 'No campaign ruling supplied.',
-          },
-        ],
-      },
+      expectedCampaignRuleOrRulingState: none(
+        'No active ruling is expected; the unresolved ambiguity and its campaign-ruling owner are represented by expectedAmbiguityState and campaignRuleState.',
+      ),
       expectedCapabilityStatus,
       expectedDeterministicStateEffect: none(
         'No item operation executes while readiness is blocked.',
