@@ -37,10 +37,14 @@ export const P05_INCAPACITATION_CONCENTRATION: DiagnosticFixture = {
       statement:
         'The concentration prose retains the incapacitation break clause.',
     },
+  ],
+  evidenceNotes: [
     {
-      targetRef: 'rule:concentration',
+      kind: 'packet-semantic',
       statement:
         'There is no typed edge from condition:incapacitated to rule:concentration; reaching the rule requires a cue route, not a traversal.',
+      assertionId: 'concentration-reached-by-cue-not-edge',
+      why: 'The claim is about which route class reached the record.',
     },
   ],
   requiredRelationshipExpansion: [

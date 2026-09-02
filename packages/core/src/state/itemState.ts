@@ -36,6 +36,7 @@ import {
 import {
   assertMagicItemOperationReady,
   ItemExecutionReadinessError,
+  type ItemOperationReadinessInput,
 } from './itemExecutionReadiness.js';
 import {
   ItemRandomInitializationError,
@@ -567,6 +568,94 @@ function mechanicsFor(record: RulesRecord, variantId?: string): Obj {
       throw new ItemStateError(error.message);
     throw error;
   }
+}
+
+/**
+ * Derive the exact readiness inputs used by item execution. This is kept pure
+ * so offline discovery can perform the same bounded preflight without
+ * opening a transaction or duplicating the operation/state-machine rules.
+ */
+export function deriveItemOperationReadinessInput(
+  record: RulesRecord,
+  variantId: string | undefined,
+  operationId: string,
+): ItemOperationReadinessInput {
+  const mechanics = mechanicsFor(record, variantId);
+  const refs = validateRecordReferences(mechanics, record.key);
+  let operation = refs.operations.find(
+    (candidate) => candidate.id === operationId,
+  );
+  if (
+    operation === undefined &&
+    (operationId === 'activate' || operationId === 'deactivate')
+  ) {
+    const machine =
+      mechanics.stateMachine === undefined
+        ? undefined
+        : obj(mechanics.stateMachine, `${record.key}.mechanics.stateMachine`);
+    if (
+      Array.isArray(machine?.transitions) &&
+      machine.transitions.some(
+        (raw) =>
+          obj(raw, `${record.key}.mechanics.stateMachine.transitions[]`).via ===
+          operationId,
+      )
+    )
+      operation = { id: operationId };
+  }
+  if (operation === undefined)
+    throw new ItemStateError(
+      `${record.key} declares no operation '${operationId}'`,
+    );
+  const operationEffectIds = Array.isArray(operation.effects)
+    ? (operation.effects as string[])
+    : [];
+  const machineForReadiness =
+    mechanics.stateMachine === undefined
+      ? undefined
+      : obj(mechanics.stateMachine, `${record.key}.mechanics.stateMachine`);
+  const operationTransitions = Array.isArray(machineForReadiness?.transitions)
+    ? machineForReadiness.transitions
+        .map((raw, index) =>
+          obj(
+            raw,
+            `${record.key}.mechanics.stateMachine.transitions[${index}]`,
+          ),
+        )
+        .filter(({ via }) => via === operationId)
+    : [];
+  const possibleTransitionEffectIds = operationTransitions.flatMap(
+    (transition) =>
+      Array.isArray(transition.effects) ? (transition.effects as string[]) : [],
+  );
+  const spellStore =
+    mechanics.spellStore === undefined
+      ? undefined
+      : obj(mechanics.spellStore, `${record.key}.mechanics.spellStore`);
+  const spellStoreContracts = Array.isArray(spellStore?.contracts)
+    ? spellStore.contracts
+    : [];
+  return {
+    operationId,
+    economyIds: new Set(
+      (Array.isArray(operation.cost) ? operation.cost : []).map((raw) =>
+        String(obj(raw, 'operation cost').economy),
+      ),
+    ),
+    operationEffectIds: new Set(operationEffectIds),
+    effectIds: new Set([...operationEffectIds, ...possibleTransitionEffectIds]),
+    usesStateMachine: operationTransitions.length > 0,
+    usesSpellStore: spellStoreContracts.some((raw, index) => {
+      const contract = obj(
+        raw,
+        `${record.key}.mechanics.spellStore.contracts[${index}]`,
+      );
+      return (
+        Array.isArray(contract.operationIds) &&
+        contract.operationIds.includes(operationId)
+      );
+    }),
+  };
 }
 
 function licensesStoredSpells(mechanics: Obj): boolean {
@@ -1831,6 +1920,18 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
         );
     }
     const mechanics = mechanicsFor(hit.record, variantId);
+    const readinessInput = deriveItemOperationReadinessInput(
+      hit.record,
+      variantId,
+      input.operationId,
+    );
+    try {
+      assertMagicItemOperationReady(hit.record, variantId, readinessInput);
+    } catch (error) {
+      if (error instanceof ItemExecutionReadinessError)
+        throw new ItemStateError(error.message);
+      throw error;
+    }
     const refs = validateRecordReferences(mechanics, packRef);
     let operation = refs.operations.find(
       (candidate) => candidate.id === input.operationId,
@@ -1857,63 +1958,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       throw new ItemStateError(
         `${packRef} declares no operation '${input.operationId}'`,
       );
-    const operationEffectIds = Array.isArray(operation.effects)
-      ? (operation.effects as string[])
-      : [];
-    const machineForReadiness =
-      mechanics.stateMachine === undefined
-        ? undefined
-        : obj(mechanics.stateMachine, `${packRef}.mechanics.stateMachine`);
-    const operationTransitions = Array.isArray(machineForReadiness?.transitions)
-      ? machineForReadiness.transitions
-          .map((raw, index) =>
-            obj(raw, `${packRef}.mechanics.stateMachine.transitions[${index}]`),
-          )
-          .filter(({ via }) => via === input.operationId)
-      : [];
-    const possibleTransitionEffectIds = operationTransitions.flatMap(
-      (transition) =>
-        Array.isArray(transition.effects)
-          ? (transition.effects as string[])
-          : [],
-    );
-    const spellStore =
-      mechanics.spellStore === undefined
-        ? undefined
-        : obj(mechanics.spellStore, `${packRef}.mechanics.spellStore`);
-    const spellStoreContracts = Array.isArray(spellStore?.contracts)
-      ? spellStore.contracts
-      : [];
-    try {
-      assertMagicItemOperationReady(hit.record, variantId, {
-        operationId: input.operationId,
-        economyIds: new Set(
-          (Array.isArray(operation.cost) ? operation.cost : []).map((raw) =>
-            String(obj(raw, 'operation cost').economy),
-          ),
-        ),
-        operationEffectIds: new Set(operationEffectIds),
-        effectIds: new Set([
-          ...operationEffectIds,
-          ...possibleTransitionEffectIds,
-        ]),
-        usesStateMachine: operationTransitions.length > 0,
-        usesSpellStore: spellStoreContracts.some((raw, index) => {
-          const contract = obj(
-            raw,
-            `${packRef}.mechanics.spellStore.contracts[${index}]`,
-          );
-          return (
-            Array.isArray(contract.operationIds) &&
-            contract.operationIds.includes(input.operationId)
-          );
-        }),
-      });
-    } catch (error) {
-      if (error instanceof ItemExecutionReadinessError)
-        throw new ItemStateError(error.message);
-      throw error;
-    }
+    const operationEffectIds = [...readinessInput.operationEffectIds];
     const resolveTable = (ref: string): RulesRecord | undefined => {
       const result = lookupRulesRecord(hit.stack, { kind: 'table', ref });
       return result.ok ? result.record : undefined;

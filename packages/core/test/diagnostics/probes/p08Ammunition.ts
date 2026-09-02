@@ -67,15 +67,20 @@ export const P08_AMMUNITION: DiagnosticFixture = {
       },
       statement: 'The generated readiness identity is retained.',
     },
+  ],
+  evidenceNotes: [
     {
-      targetRef: itemKey,
+      kind: 'packet-semantic',
       statement:
         'The sibling C2 effects clause is engine-pending on F8 derived combat modifier application; the +1/+2/+3 attack and damage bonus is not executed.',
+      assertionId: 'ammunition-c2-engine-pending-disclosed',
+      why: 'The claim is that the unexecuted sibling clause is disclosed.',
     },
     {
-      targetRef: itemKey,
+      kind: 'non-claim',
       statement:
         'The four other green operations that declare no cost and no effects are absence-of-blocker observations, not positive capability evidence; candle-of-invocation can be green while declaring an F5 hook.',
+      why: 'Explicitly disclaims that green-with-no-cost operations are capability evidence.',
     },
   ],
   requiredRelationshipExpansion: none(

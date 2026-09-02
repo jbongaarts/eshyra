@@ -470,6 +470,50 @@ export {
   sanitizePromptSectionName,
   splitPromptSections,
 } from './debug/sessionDebug.js';
+export type { CandidateAccounting } from './discovery/accounting.js';
+export { accountCandidates } from './discovery/accounting.js';
+export {
+  joinCampaignRules,
+  NULL_CAMPAIGN_RULE_SEAM,
+} from './discovery/campaignRuleSeam.js';
+export { resolveDiscoveryCandidates } from './discovery/candidates.js';
+export { deduplicateCandidates } from './discovery/dedup.js';
+export { expandTypedRelationships } from './discovery/expansion.js';
+export { runDiscoveryStages } from './discovery/harness.js';
+export type {
+  DiscoveryMeasurementInput,
+  DiscoveryMeasurements,
+  RequiredPacketFact,
+} from './discovery/measurements.js';
+export { measureDiscovery } from './discovery/measurements.js';
+export { buildContextPacket } from './discovery/packet.js';
+export { DEFAULT_BUDGET, retainCandidates } from './discovery/retention.js';
+export { extractDiscoverySignals } from './discovery/signals.js';
+// Offline discovery pilot (experiment-only; intentionally absent from the
+// stable root export and not imported by runtime modules).
+export type {
+  CampaignRuleProjection,
+  CampaignRuleReadSeam,
+  CampaignRulingProjection,
+  CandidateBand,
+  ContextPacket,
+  DiscoveryCandidate,
+  DiscoveryRoute,
+  DiscoveryRunInput,
+  DiscoveryScenario,
+  DiscoverySignal,
+  DiscoverySignalKind,
+  DiscoveryTrace,
+  InjectedSignal,
+  OfflineCapabilityDeclaration,
+  PacketCandidate,
+  ProjectionLimitNote,
+  RetentionBudget,
+  RouteClass,
+  StageLoss,
+  StageTrace,
+  TypedTraversal,
+} from './discovery/types.js';
 export * from './index.js';
 export type {
   CampaignArcRecord,
@@ -1358,6 +1402,11 @@ export type {
   ItemAdoptionReviewKind,
 } from './state/itemAdoptionReview.js';
 export { requiredItemAdoptionResolutionAction } from './state/itemAdoptionReview.js';
+export type { ItemOperationReadinessInput } from './state/itemExecutionReadiness.js';
+export {
+  ItemExecutionReadinessError,
+  MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
+} from './state/itemExecutionReadiness.js';
 export type {
   ItemClockEventResolution,
   ItemResetEvidence,
@@ -1377,6 +1426,7 @@ export type {
 } from './state/itemState.js';
 export {
   createInitialItemState,
+  deriveItemOperationReadinessInput,
   ItemStateAmbiguityError,
   ItemStateError,
   isStatefulMagicItem,

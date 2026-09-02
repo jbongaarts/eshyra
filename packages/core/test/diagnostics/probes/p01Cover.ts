@@ -41,9 +41,14 @@ export const P01_COVER: DiagnosticFixture = {
       statement:
         'The packet retains the AC and Dexterity-save consequence as prose; no deterministic degree-of-cover selection is inferred.',
     },
+  ],
+  evidenceNotes: [
     {
+      kind: 'packet-semantic',
       statement:
         'The player input intentionally contains no occurrence of the word cover; the cue is geometry plus combat context.',
+      assertionId: 'cover-reached-without-its-name',
+      why: 'The claim is that a cue, not a name mention, proposed the record.',
     },
   ],
   requiredRelationshipExpansion: none(

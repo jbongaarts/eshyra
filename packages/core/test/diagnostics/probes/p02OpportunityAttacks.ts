@@ -42,6 +42,7 @@ export const P02_OPPORTUNITY_ATTACKS: DiagnosticFixture = {
       statement: 'The involuntary-movement exception is retained.',
     },
   ],
+  evidenceNotes: [],
   requiredRelationshipExpansion: none(
     'The text-only opportunity-attack record has no typed relationship expansion.',
   ),

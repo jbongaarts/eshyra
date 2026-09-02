@@ -33,28 +33,45 @@ export const P11_ADDON_OVERRIDE: DiagnosticFixture = {
   mustIncludeTargets: [rulesTarget(itemKey, 'p. 237')],
   mayIncludeTargets: [],
   mustNotIncludeTargets: [],
-  requiredRetainedFacts: [
+  requiredRetainedFacts: none(
+    'Every requirement for this probe is an evidence note rather than a packet-retention fact.',
+  ),
+  evidenceNotes: [
     {
-      targetRef: itemKey,
+      kind: 'substrate-fact',
       statement:
         'The synthetic add-on overrides the base record with an explicit override declaration; resolveRulesStack preserves the full overrideChain.',
+      assertionId: 'override-chain-preserved',
+      why: 'A checkable claim about the resolved stack entry.',
     },
     {
-      targetRef: itemKey,
+      kind: 'substrate-fact',
       statement:
         'Strict discovery and deterministic execution must agree on the same active record, system dnd5e-srd, version 5.1, and full override chain.',
+      assertionId: 'strict-stack-identity-agrees',
+      why: 'A checkable claim about the resolved stack identity.',
     },
     {
+      kind: 'historical-annotation',
       statement:
         'Historical, pre-B3 divergence: lookup_rules used resolveStrictCampaignRulesStack while lookupCampaignRecord resolved base-only by packId and campaignBasePack in encounterCombatants.ts repeated the pattern, either one able to fall back to bundled D&D. That is the regression evidence that B3 was real; it is not a current claim about main.',
+      why: 'Records the pre-B3 divergence explicitly as history, not current state.',
     },
     {
+      kind: 'external-guard',
       statement:
         'Current verified state after B3 (PR #508, eshyra-6vpw): lookupCampaignRecord resolves through resolveStrictCampaignRulesStack and takes a resolver argument, campaignBasePack is gone from encounterCombatants.ts, and creature projection goes through lookupCampaignRecord. Strict discovery and deterministic execution therefore resolve the same active record, system, version, and override chain, with no silent bundled-D&D fallback.',
+      guardPath: 'packages/core/test/campaignRulesStackParity.test.ts',
+      guardSymbol: 'resolveStrictCampaignRulesStack',
+      why: 'The deterministic half of the parity claim is proven by that test.',
     },
     {
+      kind: 'external-guard',
       statement:
         'The deterministic half of this parity is already covered by packages/core/test/campaignRulesStackParity.test.ts, which landed with B3 and exercises the exact ordered add-on chain plus fail-closed behavior on unavailable or mismatched pack identities. This fixture states the discovery-side expectation and references that test rather than duplicating it.',
+      guardPath: 'packages/core/test/campaignRulesStackParity.test.ts',
+      guardSymbol: 'campaign rules stack parity',
+      why: 'The fixture names that test as the owning guard rather than duplicating it.',
     },
   ],
   requiredRelationshipExpansion: none(

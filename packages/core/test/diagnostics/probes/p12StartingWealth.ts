@@ -25,26 +25,43 @@ export const P12_STARTING_WEALTH: DiagnosticFixture = {
         'The B4 repair removed the false SRD-authority record; discovery must not surface it.',
     },
   ],
-  requiredRetainedFacts: [
+  requiredRetainedFacts: none(
+    'Every requirement for this probe is an evidence note rather than a packet-retention fact.',
+  ),
+  evidenceNotes: [
     {
-      targetRef: 'class:fighter',
+      kind: 'external-guard',
       statement:
         'The reconciled character-creation path reports STARTING_WEALTH_UNAVAILABLE_MESSAGE with code not_found when no active pack provides the table, never malformed.',
+      guardPath: 'packages/core/src/character/srdStartingWealth.ts',
+      guardSymbol: 'STARTING_WEALTH_UNAVAILABLE_MESSAGE',
+      why: 'The character-creation reporting path is owned outside discovery.',
     },
     {
+      kind: 'historical-annotation',
       statement:
         'Historical false-authority evidence only: source "SRD 5.1 p. 38" and provenance locator "p. 38" were attached to the removed compiler-authored record; this is not a current pack assertion and must never be treated as SRD authority.',
+      why: 'Historical false-authority evidence about a removed record.',
     },
     {
+      kind: 'historical-annotation',
       statement: `Historical false-authority evidence only, asserted as prose and deliberately NOT bound to the live pack: the removed compiler-authored record carried the pack's SRD attribution block (${historicalAttribution}). That block is the pack's own legitimate CC-BY-4.0 license text and is still present in pack meta for the genuine SRD material; its presence there is evidence about the pack license, never about the removed record. Binding this fact to pack meta would assert live SRD authority under a historical label, which is the exact laundering this probe forbids.`,
+      why: 'Historical false-authority evidence, deliberately not bound to the live pack.',
     },
     {
+      kind: 'external-guard',
       statement:
         'The licensed supplement re-enable path is packages/core/test/support/startingWealthSupplement.ts; the standing guard is packages/core/test/srdGeneratedPack.test.ts and is referenced rather than duplicated here.',
+      guardPath: 'packages/core/test/srdGeneratedPack.test.ts',
+      guardSymbol: 'table:starting-wealth-by-class',
+      why: 'The fixture names that test as the standing absence guard.',
     },
     {
+      kind: 'packet-semantic',
       statement:
         'Discovery success must never launder known false provenance through the DM context packet.',
+      assertionId: 'no-false-provenance-laundered',
+      why: 'The claim is that the removed record never reaches the packet.',
     },
   ],
   requiredRelationshipExpansion: none(

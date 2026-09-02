@@ -70,15 +70,20 @@ export const P07_CUBE_OF_FORCE: DiagnosticFixture = {
       statement:
         'The face-1 to face-1 transition carries the source ambiguity.',
     },
+  ],
+  evidenceNotes: [
     {
-      targetRef: itemKey,
+      kind: 'packet-semantic',
       statement:
         'Every press-face operation clause is engine-pending; assertMagicItemOperationReady runs before matchStateTransition, so use_item is blocked by readiness first.',
+      assertionId: 'cube-blocked-by-readiness',
+      why: 'The packet-visible claim is the blocked preflight; the runtime call ordering inside useItem is guarded by the item-state tests.',
     },
     {
-      targetRef: itemKey,
+      kind: 'non-claim',
       statement:
         'The fixture defines no ruling persistence model, schema, store, resolver, or lifecycle.',
+      why: 'Explicitly disclaims a ruling persistence model; asserts no output.',
     },
   ],
   requiredRelationshipExpansion: none(
