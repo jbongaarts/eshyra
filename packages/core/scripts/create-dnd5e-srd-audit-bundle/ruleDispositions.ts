@@ -2713,6 +2713,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       {
         clause: 'per-item spell-data completeness',
         bead: 'eshyra-o9bd.18.7.7',
+        findingId: 'magic-item-effects',
       },
     ],
   },
@@ -3352,6 +3353,7 @@ export interface RuleDispositionReport {
       readonly key: string;
       readonly clause: string;
       readonly bead: string;
+      readonly findingId: string;
     }[];
   };
   /** Context that must be retrievable when a procedure is model-adjudicated. */
@@ -3408,7 +3410,12 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
   const partial: { key: string; missing: string }[] = [];
   const unimplemented: { key: string; missing: string }[] = [];
   const designBlocked: { key: string; designOwner: string }[] = [];
-  const externalClauses: { key: string; clause: string; bead: string }[] = [];
+  const externalClauses: {
+    key: string;
+    clause: string;
+    bead: string;
+    findingId: string;
+  }[] = [];
   const adjudicationContextInventory: {
     key: string;
     contextRequirement: string;
@@ -3463,7 +3470,7 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
       });
     }
     for (const { clause, bead, findingId } of coverage.externalClauses ?? []) {
-      externalClauses.push({ key, clause, bead });
+      externalClauses.push({ key, clause, bead, findingId: findingId ?? '' });
       unresolvedWork.push({
         key,
         kind: 'external-clause',

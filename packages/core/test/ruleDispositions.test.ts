@@ -187,6 +187,14 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       key: 'rule:spells',
       clause: 'per-item spell-data completeness',
       bead: 'eshyra-o9bd.18.7.7',
+      findingId: 'magic-item-effects',
+    });
+    expect(report.unresolvedWork).toContainEqual({
+      key: 'rule:spells',
+      kind: 'external-clause',
+      detail: 'per-item spell-data completeness',
+      findingId: 'magic-item-effects',
+      historicalBead: 'eshyra-o9bd.18.7.7',
     });
     expect(report.unresolvedWork).toContainEqual(
       expect.objectContaining({
@@ -204,6 +212,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       key: 'rule:telepathy',
       clause: 'per-creature payload contracts (18.7.9 C3 slice)',
       bead: 'eshyra-o9bd.18.7.9',
+      findingId: 'rule-corpus-procedures',
     });
     expect(
       ENGINE_PROCEDURE_COVERAGE['rule:multiattack']?.externalClauses,
@@ -214,6 +223,29 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
         (row) => row.key === 'rule:armor-guidance',
       ),
     ).toHaveLength(1);
+  });
+
+  it('hands W13 raw multi-owner concentration evidence, not pseudo-capability semantics', () => {
+    const handoff =
+      buildRuleDispositionReport().deterministicCapabilityHandoff.find(
+        (row) => row.ruleKey === 'rule:concentration',
+      );
+
+    expect(handoff).toEqual({
+      ruleKey: 'rule:concentration',
+      runtimeOwner: [
+        'packages/core/src/state/activeEffects.ts',
+        'packages/core/src/state/hpLifecycle.ts',
+        'packages/core/src/orchestrator/toolResolveConcentration.ts',
+        'packages/core/src/orchestrator/toolStartEffect.ts',
+        'packages/core/src/orchestrator/toolEndEffect.ts',
+      ],
+      evidence: ['packages/core/test/activeEffects.test.ts'],
+      primitives: [],
+    });
+    expect(handoff).not.toHaveProperty('operation');
+    expect(handoff).not.toHaveProperty('revision');
+    expect(handoff).not.toHaveProperty('residualInterpretation');
   });
 
   it('registers every literally-named supporting tool in primitives, e.g. consumables/remove_item', () => {
