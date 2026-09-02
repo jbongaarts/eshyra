@@ -69,6 +69,10 @@ import {
 } from './campaignRecordLookup.js';
 import type { LifeState } from './hpLifecycle.js';
 import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
+import {
+  replaceParentheticals,
+  stripTrailingParenthetical,
+} from './parentheticalNames.js';
 
 /** Who a counter row belongs to: an acting entity, or — for charge
  *  economies — the item itself, so charge state follows the item across
@@ -255,8 +259,7 @@ function rowToCounter(row: CounterRow, ownerLabel: string): UsageCounter {
 /** Normalize an ability/spell name for matching: parentheticals like
  *  "(Recharge 5–6)" or "(3/Day)" are display metadata, not identity. */
 function normalizeAbilityName(name: string): string {
-  return name
-    .replace(/\([^)]*\)/g, ' ')
+  return replaceParentheticals(name, ' ')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
@@ -350,7 +353,7 @@ function economyFromEntryMechanics(
     return {
       kind: 'economy',
       counterKey: slug,
-      displayName: `${entryName.replace(/\s*\([^)]*\)\s*$/, '')} (${usage.perDay}/Day)`,
+      displayName: `${stripTrailingParenthetical(entryName)} (${usage.perDay}/Day)`,
       usesMax: usage.perDay,
       resetKind: 'dawn',
     };

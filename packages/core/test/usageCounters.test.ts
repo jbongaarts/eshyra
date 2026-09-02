@@ -97,6 +97,21 @@ const combatant = (ref: string) => ({ kind: 'combatant' as const, ref });
 const PC = { kind: 'character' as const };
 
 describe('spendUsage — record-derived combatant economies', () => {
+  it('fails closed promptly for an adversarial unclosed ability name', () => {
+    const { db } = setup();
+    const ability = '('.repeat(200_000);
+    const started = Date.now();
+    expect(() =>
+      spendUsage(db, {
+        campaignId: CAMPAIGN,
+        owner: combatant(DRAGON),
+        ability,
+        ...CTX,
+      }),
+    ).toThrow(UsageCounterError);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
   it('derives an X/Day trait economy and refuses the overspend with a dawn hint', () => {
     const { db } = setup();
 
