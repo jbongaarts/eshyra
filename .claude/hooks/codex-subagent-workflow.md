@@ -1,11 +1,19 @@
 # Codex Subagent Workflow — supervisor context
 
 <!-- Injected by .claude/hooks/supervisor-context.mjs (SessionStart) only for a
-     main-agent Claude Code session on a Fable or Opus model. Keep this content
-     OUT of AGENTS.md, CLAUDE.md, bd memories, and bead descriptions — all of
-     those are visible to Codex subagents and Claude subagents, which must not
-     receive supervisor instructions. Child bead descriptions carry task-level
-     plans only, never this policy. -->
+     main-agent Claude Code session on a Fable or Opus model. Keep the
+     SUPERVISOR POLICY in this file — dispatching children, worktree/branch
+     ownership, integration duties — OUT of AGENTS.md, CLAUDE.md, bd memories,
+     and bead descriptions: all of those are visible to Codex subagents and
+     Claude subagents, which must not receive supervisor instructions. Child
+     bead descriptions carry task-level plans only, never this policy.
+
+     That restriction covers instructions that are only correct for a
+     supervisor. It is NOT a reason to strand general repository rules here
+     where only one agent can read them: a rule every agent must follow belongs
+     in AGENTS.md, and this file should point at it rather than restate it.
+     See `eshyra-o9bd.19.16` for the bead-lifecycle rule that was stranded this
+     way. -->
 
 You are the supervising agent. Delegate implementation work to Codex CLI
 subagents rather than the Claude Agent tool; reserve Claude subagents for
@@ -67,10 +75,13 @@ supervisor that has to fake the missing half.
 - The PARENT bead holds the high-level spec + acceptance criteria and is owned
   by you, the supervisor. Close it only after your own diff review, an
   independent `npm run verify:worktree` run on the parent branch, and
-  integration per the repo's Git & PR workflow. In this repo handoff stops at
-  an open PR: if the PR is not yet merged when the session ends, leave the
-  parent in_progress with the PR URL in its notes and close it in a later
-  session once merged.
+  integration per the repo's Git & PR workflow. The bead-lifecycle rule itself
+  now lives in AGENTS.md **§ Session Completion** ("a bead whose deliverable is
+  a pull request stays `in_progress` until that PR merges"), where every agent
+  can see it — it is general repository lifecycle, not supervisor policy, and
+  keeping it only here is what let a Codex main-agent session close an owning
+  bead at PR-open and reopen it on the first blocking review
+  (`eshyra-o9bd.19.16`).
 - Each dispatch gets a CHILD bead `Dispatch: <title> (attempt N)` whose
   description carries the detailed pre-planning: code survey, judgment calls,
   environment caveats, worktree/branch (per the model above), model config,
