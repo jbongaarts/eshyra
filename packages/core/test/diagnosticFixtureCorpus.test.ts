@@ -558,6 +558,29 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
     missingSelectionRuling.cases[0].selectedInterpretationId = undefined;
     expectInvalid(resolvedWithoutSelection);
 
+    // A resolution has to come from a ruling. Requiring explicit-none field 12
+    // for an inactive execution would otherwise skip the resolved/ruling
+    // agreement check entirely -- it only runs over campaign-rule cases -- so
+    // an inactive execution could claim a resolved ambiguity with a selected
+    // interpretation and nothing anywhere to justify it. This mutation is that
+    // exact shape: it satisfies every other rule.
+    const resolvedWithoutAnyRuling = fixture();
+    const orphanResolution = resolvedWithoutAnyRuling[6]?.executions[1];
+    if (orphanResolution === undefined)
+      throw new Error('P7 active ruling execution missing');
+    orphanResolution.campaignRuleState = {
+      kind: 'none',
+      statement: 'Mutated to have no active ruling.',
+    };
+    orphanResolution.expectedCampaignRuleOrRulingState = {
+      kind: 'none',
+      statement: 'Mutated to expect no ruling case.',
+    };
+    const orphanRoutes = orphanResolution.expectedRouteClasses[0]?.routes;
+    if (orphanRoutes === undefined) throw new Error('P7 routes missing');
+    orphanRoutes.splice(orphanRoutes.indexOf('campaign-ruling'), 1);
+    expectInvalid(resolvedWithoutAnyRuling);
+
     const undeclaredSelection = fixture();
     const undeclaredExpectation =
       undeclaredSelection[6]?.executions[1]?.expectedAmbiguityState;

@@ -687,11 +687,6 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
   const noActiveCampaignRule =
     isRecord(value.campaignRuleState) &&
     value.campaignRuleState.kind === 'none';
-  const expectedCampaignRuleCases =
-    isRecord(value.expectedCampaignRuleOrRulingState) &&
-    value.expectedCampaignRuleOrRulingState.kind === 'campaign-rule-cases'
-      ? value.expectedCampaignRuleOrRulingState
-      : undefined;
   if (noActiveCampaignRule) {
     if (
       !isRecord(value.expectedCampaignRuleOrRulingState) ||
@@ -707,6 +702,20 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
         throw new Error(
           `fixture ${index}.expectedRouteClasses cannot include ${routeClass} without an active ${ruleKind}`,
         );
+    // A resolution comes from a ruling. Requiring explicit-none field 12 above
+    // would otherwise SKIP the resolved-ambiguity/ruling-selection agreement
+    // check, which only runs over campaign-rule cases -- so an inactive
+    // execution could claim a resolved ambiguity with a selected
+    // interpretation and no ruling anywhere to justify it.
+    if (
+      isRecord(value.expectedAmbiguityState) &&
+      value.expectedAmbiguityState.kind === 'ambiguities'
+    )
+      for (const expectation of value.expectedAmbiguityState.expectations)
+        if (expectation.expectedResolution !== 'unresolved')
+          throw new Error(
+            `fixture ${index}.expectedAmbiguityState cannot resolve ${expectation.ambiguityId} without an active campaign ruling`,
+          );
   } else {
     if (
       !isRecord(value.expectedCampaignRuleOrRulingState) ||
@@ -715,33 +724,30 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
       throw new Error(
         `fixture ${index}.expectedCampaignRuleOrRulingState must contain campaign-rule cases with an active campaign rule`,
       );
-    if (expectedCampaignRuleCases !== undefined) {
-      for (const item of expectedCampaignRuleCases.cases) {
-        if (item.ruleKind === undefined)
-          throw new Error(
-            `fixture ${index}.expectedCampaignRuleOrRulingState cases must declare ruleKind`,
-          );
-        if (item.ruleKind !== undefined) {
-          const routeClass = CAMPAIGN_RULE_ROUTE_BY_KIND[item.ruleKind];
-          if (!routeClasses.has(routeClass))
-            throw new Error(
-              `fixture ${index}.expectedRouteClasses must include ${routeClass} for an active ${item.ruleKind}`,
-            );
-          if (item.ruleKind !== 'ruling') continue;
-          nonEmptyString(
-            item.ruleIdentity,
-            `fixture ${index}.expectedCampaignRuleOrRulingState ruling identity`,
-          );
-          nonEmptyString(
-            item.ambiguityId,
-            `fixture ${index}.expectedCampaignRuleOrRulingState ruling ambiguity id`,
-          );
-          nonEmptyString(
-            item.selectedInterpretationId,
-            `fixture ${index}.expectedCampaignRuleOrRulingState ruling selected interpretation id`,
-          );
-        }
-      }
+    // The throw above guarantees field 12 is campaign-rule-cases here.
+    for (const item of value.expectedCampaignRuleOrRulingState.cases) {
+      if (item.ruleKind === undefined)
+        throw new Error(
+          `fixture ${index}.expectedCampaignRuleOrRulingState cases must declare ruleKind`,
+        );
+      const routeClass = CAMPAIGN_RULE_ROUTE_BY_KIND[item.ruleKind];
+      if (!routeClasses.has(routeClass))
+        throw new Error(
+          `fixture ${index}.expectedRouteClasses must include ${routeClass} for an active ${item.ruleKind}`,
+        );
+      if (item.ruleKind !== 'ruling') continue;
+      nonEmptyString(
+        item.ruleIdentity,
+        `fixture ${index}.expectedCampaignRuleOrRulingState ruling identity`,
+      );
+      nonEmptyString(
+        item.ambiguityId,
+        `fixture ${index}.expectedCampaignRuleOrRulingState ruling ambiguity id`,
+      );
+      nonEmptyString(
+        item.selectedInterpretationId,
+        `fixture ${index}.expectedCampaignRuleOrRulingState ruling selected interpretation id`,
+      );
     }
   }
   if (
