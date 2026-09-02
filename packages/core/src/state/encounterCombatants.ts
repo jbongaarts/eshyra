@@ -1,15 +1,7 @@
 import type { AdventureModule } from '../adventure/types.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
-import {
-  DEFAULT_DND5E_SRD_BINDING,
-  readCampaignRulesBinding,
-} from '../rules/binding.js';
-import { getBundledDnd5eSrdPack } from '../rules/bundledSrdPack.js';
-import { lookupRulesRecord } from '../rules/lookup.js';
-import { PATHFINDER2E_REMASTER_RULES_PACK } from '../rules/pathfinder2eRemaster.js';
-import { resolveRulesStack } from '../rules/stack.js';
-import type { RulesPack, RulesRecord } from '../rules/types.js';
+import type { RulesRecord } from '../rules/types.js';
 // Function-level circular dependency with activeEffects.ts (which mutates
 // combatants through updateCombatant during effect cleanup): safe because
 // both sides only reference each other inside function bodies, never during
@@ -20,6 +12,10 @@ import {
   applyCombatClosureToEffects,
   breakCombatantConcentration,
 } from './activeEffects.js';
+import {
+  type CampaignRulesPackResolver,
+  lookupCampaignRecord,
+} from './campaignRecordLookup.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
 import { closeOpenShortRestRecoveryWindows } from './rest.js';
 
@@ -151,6 +147,7 @@ export interface StartEncounterInput {
   readonly resolveAdventureModule?: (
     moduleId: string,
   ) => AdventureModule | undefined;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -520,28 +517,12 @@ function displayNameFromRulesRef(rulesRef: string): string {
     .join(' ');
 }
 
-function bundledRulesPacks(): readonly RulesPack[] {
-  return [getBundledDnd5eSrdPack(), PATHFINDER2E_REMASTER_RULES_PACK];
-}
-
-function campaignBasePack(db: Db): RulesPack {
-  const binding = readCampaignRulesBinding(db) ?? DEFAULT_DND5E_SRD_BINDING;
-  const pack = bundledRulesPacks().find(
-    (candidate) => candidate.meta.packId === binding.base.packId,
-  );
-  return pack ?? getBundledDnd5eSrdPack();
-}
-
 function lookupCreatureRecord(
   db: Db,
   rulesRef: string,
+  resolver?: CampaignRulesPackResolver,
 ): RulesRecord | undefined {
-  const pack = campaignBasePack(db);
-  const result = lookupRulesRecord(resolveRulesStack({ base: pack }), {
-    kind: 'creature',
-    ref: rulesRef,
-  });
-  return result.ok ? result.record : undefined;
+  return lookupCampaignRecord(db, 'creature', rulesRef, resolver);
 }
 
 /**
@@ -872,7 +853,11 @@ function startEncounterInTxn(
 
   let ordinal = 1;
   for (const creature of source?.encounter.creatures ?? []) {
-    const record = lookupCreatureRecord(db, creature.rulesRef);
+    const record = lookupCreatureRecord(
+      db,
+      creature.rulesRef,
+      input.resolveRulesPack,
+    );
     const hpMax = readCreatureHp(record);
     const ac = readCreatureAc(record);
     const baseId = slug(creature.rulesRef);
@@ -911,7 +896,7 @@ function startEncounterInTxn(
         `actor '${actorInput.actorId}' needs rulesRef for combat projection`,
       );
     }
-    const record = lookupCreatureRecord(db, rulesRef);
+    const record = lookupCreatureRecord(db, rulesRef, input.resolveRulesPack);
     const baselineHp = readCreatureHp(record);
     const hpMax = actorInput.hpMax ?? existing?.hpMax ?? baselineHp;
     const hpCurrent = actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax;

@@ -303,6 +303,7 @@ export const startEffectTool: Tool = {
           ...(targets.length === 0 ? {} : { targets }),
           ...(conditions.length === 0 ? {} : { conditions }),
           ...(actors.length === 0 ? {} : { actors }),
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

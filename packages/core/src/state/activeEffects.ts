@@ -35,7 +35,10 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
-import { lookupCampaignRecord } from './campaignRecordLookup.js';
+import {
+  type CampaignRulesPackResolver,
+  lookupCampaignRecord,
+} from './campaignRecordLookup.js';
 import { addCondition, removeCondition } from './domainMutations.js';
 import {
   EncounterCombatantError,
@@ -166,6 +169,7 @@ export interface EffectMutationContext {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 export interface EffectTargetInput {
@@ -2557,7 +2561,12 @@ export function createActiveEffect(
         input.source.ref,
         "a spell-sourced effect's source.ref",
       );
-      const record = lookupCampaignRecord(txnDb, 'spell', ref);
+      const record = lookupCampaignRecord(
+        txnDb,
+        'spell',
+        ref,
+        input.resolveRulesPack,
+      );
       if (record === undefined) {
         throw new ActiveEffectError(
           `source.ref '${ref}' does not resolve to a spell record in the campaign rules stack; ` +
@@ -2584,6 +2593,7 @@ export function createActiveEffect(
         txnDb,
         'magic-item',
         input.source.ref,
+        input.resolveRulesPack,
       );
       if (record === undefined) {
         throw new ActiveEffectError(
@@ -4028,7 +4038,12 @@ export function refreshEffect(
       row.source_kind === 'spell' &&
       row.source_ref !== null
     ) {
-      const record = lookupCampaignRecord(txnDb, 'spell', row.source_ref);
+      const record = lookupCampaignRecord(
+        txnDb,
+        'spell',
+        row.source_ref,
+        input.resolveRulesPack,
+      );
       const durationText = (record?.data as Record<string, unknown> | undefined)
         ?.duration;
       if (typeof durationText === 'string') {

@@ -54,6 +54,7 @@ export const beginTurnTool: Tool = {
           campaignId: ctx.campaignId,
           participant,
           ...(typeof a.round === 'number' ? { round: a.round } : {}),
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,
