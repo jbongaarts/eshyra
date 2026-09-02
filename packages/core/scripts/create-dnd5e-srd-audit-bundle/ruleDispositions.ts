@@ -2,11 +2,11 @@
  * Rule-record disposition & engine-procedure coverage layer
  * (eshyra-o9bd.18.7.8.1).
  *
- * Mirrors the enforcement style of `GAMEPLAY_READINESS_DISPOSITIONS` in
- * `cli.ts`: a fail-closed, exact-membership registry over every `rule:*`
- * pack record. Kept in a sibling module (not inline in cli.ts) purely for
- * file-size reasons — it is wired into the same audit-bundle build path via
- * `assertRuleDispositions`.
+ * Exact classification of `rule:*` records only. It is not a corpus-wide
+ * semantic ownership, discovery-completeness, capability-completeness, or
+ * exclusive-clause-ownership artifact (ADR 0020 §5.3). Kept in a sibling
+ * module (not inline in cli.ts) purely for file-size reasons — it is wired
+ * into the same audit-bundle build path via `assertRuleDispositions`.
  *
  * Two independent registries, deliberately not nested (design doc §2,
  * docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-1-rule-disposition-layer-design.md):
@@ -28,6 +28,7 @@
  * hand-edit around a stale key set.
  */
 
+import { createHash } from 'node:crypto';
 import { DEFAULT_TOOLS } from '../../src/orchestrator/tools.js';
 import type { RulesPack } from '../../src/rules/types.js';
 
@@ -1660,10 +1661,16 @@ export interface RuleProcedureCoverage {
   readonly missing?: string;
   /** Bead owning the design decision; required for 'design-blocked'. */
   readonly designOwner?: string;
+  /** Durable Foundation-2 finding-registry identity; bead IDs are history. */
+  readonly findingId?: string;
   /** Clause-level external ownership: the row's primary status stands and
    *  bead closure alone never auto-upgrades it — closing requires new
    *  runtime/pack evidence in a reviewed diff. */
-  readonly externalClauses?: readonly { clause: string; bead: string }[];
+  readonly externalClauses?: readonly {
+    readonly clause: string;
+    readonly bead: string;
+    readonly findingId?: string;
+  }[];
 }
 
 export const ENGINE_PROCEDURE_COVERAGE: Readonly<
@@ -2931,15 +2938,37 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
 });
 
-/** Pinned semantic census (2026-07-06 rule-classification artifact, §2). */
-const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
-  Object.freeze({
-    'engine-procedure': 175,
-    'reference-prose': 96,
-    definition: 33,
-    'table-backed': 19,
-    duplicate: 12,
-  });
+/**
+ * Identity-pinned classification of the reviewed `rule:*` corpus. This hash
+ * covers every sorted `key:class` pair, so an equal-size reclassification is
+ * still drift. It intentionally makes no claim beyond `rule:*` records.
+ */
+const EXPECTED_RULE_DISPOSITION_IDENTITY_FINGERPRINT =
+  'ce931fcf6307c8ff6de62a446b6436ab70f7bdc74701e7311f6b1ff61dd53e58';
+
+function ruleDispositionIdentityFingerprint(
+  dispositions: Readonly<Record<string, RuleDisposition>>,
+): string {
+  return createHash('sha256')
+    .update(
+      Object.entries(dispositions)
+        .map(([key, disposition]) => `${key}:${disposition.class}`)
+        .sort()
+        .join('\n'),
+    )
+    .digest('hex');
+}
+
+export function validateRuleDispositionIdentity(
+  dispositions: Readonly<Record<string, RuleDisposition>>,
+): readonly string[] {
+  const actual = ruleDispositionIdentityFingerprint(dispositions);
+  return actual === EXPECTED_RULE_DISPOSITION_IDENTITY_FINGERPRINT
+    ? []
+    : [
+        `rule disposition identity drift: expected ${EXPECTED_RULE_DISPOSITION_IDENTITY_FINGERPRINT}, got ${actual} — review every rule:* key/class identity in a deliberate diff`,
+      ];
+}
 
 /**
  * Pinned execution-boundary coverage census. Seeded from the 2026-07-06
@@ -2999,10 +3028,9 @@ const BEAD_ID_PATTERN = /^eshyra-[a-z0-9]+(\.[0-9]+)*$/;
 /**
  * Registry-integrity check (design §3) over an arbitrary
  * (dispositions, coverage) pair: class invariants, coverage completeness,
- * status invariants, and census. Pack-independent and pure, so tests can
- * exercise each failure mode against small fixtures without the pinned
- * 335/175 census getting in the way (pass matching `expectedSemanticCensus`/
- * `expectedCoverageCensus` overrides). `assertRuleDispositions` is the
+ * status invariants, and optional fixture census. Pack-independent and pure,
+ * so tests can exercise each failure mode against small fixtures without the
+ * production identity pin getting in the way. `assertRuleDispositions` is the
  * production entry point, applied to the real registries plus the
  * pack-key-diff check. Does NOT check runtimeOwner/evidence path existence
  * — that runs in tests (design §6) to keep the bundle build hermetic.
@@ -3010,9 +3038,7 @@ const BEAD_ID_PATTERN = /^eshyra-[a-z0-9]+(\.[0-9]+)*$/;
 export function validateRuleRegistries(
   dispositions: Readonly<Record<string, RuleDisposition>>,
   coverage: Readonly<Record<string, RuleProcedureCoverage>>,
-  expectedSemanticCensus: Readonly<
-    Record<RuleDispositionClass, number>
-  > = EXPECTED_SEMANTIC_CENSUS,
+  expectedSemanticCensus?: Readonly<Record<RuleDispositionClass, number>>,
   expectedCoverageCensus: Readonly<
     Record<RuleCoverageStatus, number>
   > = EXPECTED_COVERAGE_CENSUS,
@@ -3062,14 +3088,16 @@ export function validateRuleRegistries(
       }
     }
   }
-  for (const [dispositionClass, expected] of Object.entries(
-    expectedSemanticCensus,
-  )) {
-    const actual = censusByClass[dispositionClass] ?? 0;
-    if (actual !== expected) {
-      errors.push(
-        `semantic census drift: ${dispositionClass} is ${actual}, expected ${expected} — update EXPECTED_SEMANTIC_CENSUS in a reviewed diff`,
-      );
+  if (expectedSemanticCensus !== undefined) {
+    for (const [dispositionClass, expected] of Object.entries(
+      expectedSemanticCensus,
+    )) {
+      const actual = censusByClass[dispositionClass] ?? 0;
+      if (actual !== expected) {
+        errors.push(
+          `semantic fixture census drift: ${dispositionClass} is ${actual}, expected ${expected}`,
+        );
+      }
     }
   }
 
@@ -3211,12 +3239,15 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
 
   errors.push(
     ...validateRuleRegistries(RULE_DISPOSITIONS, ENGINE_PROCEDURE_COVERAGE),
+    ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
   );
 
   return errors;
 }
 
 export interface RuleDispositionReport {
+  /** Exact `rule:*` classification only; never corpus-wide ownership. */
+  readonly scope: 'rule-record-classification-only';
   readonly referencesProse: number;
   readonly definitions: number;
   readonly tableBacked: number;
@@ -3248,6 +3279,36 @@ export interface RuleDispositionReport {
       readonly bead: string;
     }[];
   };
+  /** Context that must be retrievable when a procedure is model-adjudicated. */
+  readonly adjudicationContextInventory: readonly {
+    readonly key: string;
+    readonly contextRequirement: string;
+  }[];
+  /**
+   * Positive implemented-row handoff for W13. These are inventory rows, not a
+   * normalized capability contract or a claim about unlisted capabilities.
+   */
+  readonly deterministicCapabilityHandoff: readonly {
+    readonly operation: string;
+    readonly inputs: readonly string[];
+    readonly exclusions: string;
+    readonly revision: 'pre-w13-coverage-registry';
+    readonly residualInterpretation: string;
+    readonly runtimeOwner: readonly string[];
+    readonly evidence: readonly string[];
+  }[];
+  /** Deferred, partial, unimplemented, design-blocked, and external work. */
+  readonly unresolvedWork: readonly {
+    readonly key: string;
+    readonly kind:
+      | 'partial'
+      | 'unimplemented'
+      | 'design-blocked'
+      | 'external-clause';
+    readonly detail: string;
+    readonly findingId: string;
+    readonly historicalBead?: string;
+  }[];
 }
 
 /**
@@ -3275,27 +3336,79 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
   const unimplemented: { key: string; missing: string }[] = [];
   const designBlocked: { key: string; designOwner: string }[] = [];
   const externalClauses: { key: string; clause: string; bead: string }[] = [];
+  const adjudicationContextInventory: {
+    key: string;
+    contextRequirement: string;
+  }[] = [];
+  const deterministicCapabilityHandoff: RuleDispositionReport['deterministicCapabilityHandoff'][number][] =
+    [];
+  const unresolvedWork: RuleDispositionReport['unresolvedWork'][number][] = [];
   for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
     if (coverage.status === 'implemented') implemented += 1;
     if (coverage.status === 'model-adjudicated-supported') {
       modelAdjudicatedSupported += 1;
+      adjudicationContextInventory.push({
+        key,
+        contextRequirement: coverage.contextRequirement ?? '',
+      });
+    }
+    if (coverage.status === 'implemented') {
+      deterministicCapabilityHandoff.push({
+        operation: key,
+        inputs: ['runtime inputs are defined by the listed owner'],
+        exclusions:
+          'No behavior outside this implemented rule row is asserted.',
+        revision: 'pre-w13-coverage-registry',
+        residualInterpretation:
+          'W13 must normalize residual semantics before treating this inventory as a capability contract.',
+        runtimeOwner: coverage.runtimeOwner ?? [],
+        evidence: coverage.evidence ?? [],
+      });
     }
     if (coverage.status === 'partial') {
       partial.push({ key, missing: coverage.missing ?? '' });
+      unresolvedWork.push({
+        key,
+        kind: 'partial',
+        detail: coverage.missing ?? '',
+        findingId: 'readiness-integrity',
+      });
     }
     if (coverage.status === 'unimplemented') {
       unimplemented.push({ key, missing: coverage.missing ?? '' });
+      unresolvedWork.push({
+        key,
+        kind: 'unimplemented',
+        detail: coverage.missing ?? '',
+        findingId: 'readiness-integrity',
+      });
     }
     if (coverage.status === 'design-blocked') {
       designBlocked.push({ key, designOwner: coverage.designOwner ?? '' });
+      unresolvedWork.push({
+        key,
+        kind: 'design-blocked',
+        detail:
+          'Deliberately deferred design work; ADR 0018 §6 reporting remains required for multiclass procedures.',
+        findingId: coverage.findingId ?? 'engine-capability-ownership',
+        historicalBead: coverage.designOwner,
+      });
     }
     for (const { clause, bead } of coverage.externalClauses ?? []) {
       externalClauses.push({ key, clause, bead });
+      unresolvedWork.push({
+        key,
+        kind: 'external-clause',
+        detail: clause,
+        findingId: 'rule-corpus-procedures',
+        historicalBead: bead,
+      });
     }
   }
   const byKey = <T extends { key: string }>(a: T, b: T) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
   return {
+    scope: 'rule-record-classification-only',
     referencesProse,
     definitions,
     tableBacked,
@@ -3310,5 +3423,10 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
         (a, b) => byKey(a, b) || (a.clause < b.clause ? -1 : 1),
       ),
     },
+    adjudicationContextInventory: adjudicationContextInventory.sort(byKey),
+    deterministicCapabilityHandoff: deterministicCapabilityHandoff.sort(
+      (a, b) => a.operation.localeCompare(b.operation),
+    ),
+    unresolvedWork: unresolvedWork.sort(byKey),
   };
 }

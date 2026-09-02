@@ -696,7 +696,9 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
           name: 'Modeled',
           data: {
             description: 'Prose plus a mechanics projection.',
-            mechanics: { effects: [] },
+            mechanics: {
+              effects: [{ kind: 'condition', condition: 'blinded' }],
+            },
           },
         }),
       ]),
@@ -707,6 +709,22 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
       error.startsWith('deity#'),
     );
     expect(deityErrors).toEqual([]);
+  });
+
+  it('does not treat an empty mechanics object as a projection', () => {
+    const report = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'deity',
+          key: 'deity:empty-mechanics',
+          name: 'Empty mechanics',
+          data: { description: 'Prose only.', mechanics: {} },
+        }),
+      ]),
+      [],
+    );
+
+    expect(report.byKind.deity?.recordsWithMechanicsProjections).toBe(0);
   });
 
   it('categorizes every committed-pack bucket via the reviewed policy and passes fail-closed', () => {

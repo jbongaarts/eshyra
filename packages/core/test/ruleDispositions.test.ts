@@ -548,7 +548,9 @@ describe('validateRuleRegistries (eshyra-o9bd.18.7.8.1 §6 failure modes)', () =
     );
     expect(
       semanticErrors.some((e) =>
-        e.includes('semantic census drift: reference-prose is 1, expected 2'),
+        e.includes(
+          'semantic fixture census drift: reference-prose is 1, expected 2',
+        ),
       ),
     ).toBe(true);
 

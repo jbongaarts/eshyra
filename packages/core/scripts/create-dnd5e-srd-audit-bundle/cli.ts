@@ -942,39 +942,41 @@ function hasNestedCreatureMechanicsProjection(
   data: Record<string, unknown>,
 ): boolean {
   if (
-    arrayValue(data.actions).some(
-      (action) => objectValue(objectValue(action)?.mechanics) !== null,
+    arrayValue(data.actions).some((action) =>
+      hasSubstantiveMechanicsProjection(objectValue(action)?.mechanics),
     )
   ) {
     return true;
   }
   if (
-    arrayValue(data.reactions).some(
-      (reaction) => objectValue(objectValue(reaction)?.mechanics) !== null,
+    arrayValue(data.reactions).some((reaction) =>
+      hasSubstantiveMechanicsProjection(objectValue(reaction)?.mechanics),
     )
   ) {
     return true;
   }
   const legendaryActions = objectValue(data.legendaryActions);
-  return arrayValue(legendaryActions?.entries).some(
-    (entry) => objectValue(objectValue(entry)?.mechanics) !== null,
+  return arrayValue(legendaryActions?.entries).some((entry) =>
+    hasSubstantiveMechanicsProjection(objectValue(entry)?.mechanics),
   );
 }
 
 function hasMechanicsProjection(record: RulesRecord): boolean {
   const data = dataObject(record);
   if (data === null) return false;
-  if (objectValue(data.mechanics) !== null) return true;
-  if (objectValue(data.projection) !== null) return true;
-  if (objectValue(data.useProfile) !== null) return true;
+  if (hasSubstantiveMechanicsProjection(data.mechanics)) return true;
+  if (hasSubstantiveMechanicsProjection(data.projection)) return true;
+  if (hasSubstantiveMechanicsProjection(data.useProfile)) return true;
   if (
-    arrayValue(data.traits).some(
-      (trait) => objectValue(objectValue(trait)?.mechanics) !== null,
+    arrayValue(data.traits).some((trait) =>
+      hasSubstantiveMechanicsProjection(objectValue(trait)?.mechanics),
     )
   ) {
     return true;
   }
-  if (objectValue(objectValue(data.feature)?.mechanics) !== null) return true;
+  if (hasSubstantiveMechanicsProjection(objectValue(data.feature)?.mechanics)) {
+    return true;
+  }
   return hasNestedCreatureMechanicsProjection(data);
 }
 
@@ -1023,9 +1025,9 @@ function firstKeys(
 // ---------------------------------------------------------------------------
 
 /**
- * The readiness buckets that require an explicit reviewed disposition when
- * they contain records that are not already modeled (no structured choices,
- * deterministic grants, or mechanics projection).
+ * Historical diagnostic buckets that require an explicit reviewed disposition
+ * when they contain records that are not already modeled. They deliberately do
+ * not partition the corpus; records outside them are reported as scope gaps.
  */
 export type GameplayReadinessBucket =
   | 'unresolved-choice-prose'
@@ -1056,12 +1058,11 @@ export type GameplayReadinessBucket =
  *     `CREATURE_ENTRY_REVIEWED_DISPOSITIONS`) — it must never itself be read
  *     as blanket acceptance.
  *
- * Records that are already modeled never need an entry. The policy is
- * fail-closed both ways (`assertGameplayReadinessDispositions`): a non-empty
- * bucket without an entry fails the bundle build, and a stale entry naming a
- * now-empty bucket also fails, so closing a bucket requires an explicit
- * policy update — a future audit can never silently rediscover (or silently
- * lose) a broad readiness bucket (eshyra-o9bd.18.9.6).
+ * This is a non-exhaustive historical and diagnostic-signal report (ADR 0020
+ * §5.2), not a pack-readiness partition. A missing bucket is a stated scope
+ * gap, not satisfaction; a closed bead is history, not closure evidence; and
+ * zero findings never proves pack readiness. Within its enumerated buckets,
+ * the policy remains fail-closed both ways.
  */
 export interface GameplayReadinessDispositionPolicyEntry {
   readonly status:
@@ -1072,6 +1073,8 @@ export interface GameplayReadinessDispositionPolicyEntry {
   readonly reason: string;
   /** Required when `status` is `finding`. */
   readonly bead?: string;
+  /** Required when `status` is `finding`; stable Foundation-2 identity. */
+  readonly findingId?: string;
 }
 
 /**
@@ -1133,7 +1136,8 @@ function formatMagicItemExecutionReadinessReport(
   report: MagicItemExecutionReadinessReport,
 ): string {
   return [
-    'Magic-item execution readiness',
+    'Magic-item execution readiness (generated magic-item capability backlog only)',
+    'Scope: engine:F1–engine:F10 describe 240 magic-item records, their execution-readiness clauses, and declared hooks; this is not a corpus-wide engine inventory or capability-completeness claim.',
     `Items: ${report.itemCount}`,
     `Clauses: ${report.clauseCount}`,
     ...Object.entries(report.counts).map(
@@ -1277,18 +1281,21 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   'hazard#prose-only': {
     status: 'finding',
     bead: 'eshyra-o9bd.18.7.7',
+    findingId: 'magic-item-effects',
     reason:
       "Sphere of Annihilation's contact/destruction mechanics are prose-only pending the magic-item deterministic-effect epic.",
   },
   'equipment#partial-structure': {
     status: 'finding',
     bead: 'eshyra-o9bd.18.7.6',
+    findingId: 'equipment-report',
     reason:
       'Equipment records with variants/contents structure but no deterministic use mechanics (adventuring gear and consumables).',
   },
   'equipment#prose-only': {
     status: 'finding',
     bead: 'eshyra-o9bd.18.7.6',
+    findingId: 'equipment-report',
     reason:
       'Adventuring gear and consumables whose usable effects (acid, healing potion, caltrops, …) are described in prose only.',
   },
@@ -1313,12 +1320,14 @@ export const GAMEPLAY_READINESS_DISPOSITIONS: Readonly<
   'rule#partial-structure': {
     status: 'finding',
     bead: 'eshyra-o9bd.18.7.8',
+    findingId: 'rule-corpus-procedures',
     reason:
       'Rule records with table structure but no classified deterministic mechanics.',
   },
   'rule#prose-only': {
     status: 'finding',
     bead: 'eshyra-o9bd.18.7.8',
+    findingId: 'rule-corpus-procedures',
     reason:
       'Rule records pending the classify-and-model pass that decides deterministic vs narrative-only rules.',
   },
@@ -1332,9 +1341,12 @@ export interface GameplayReadinessDisposition {
   readonly status: GameplayReadinessDispositionPolicyEntry['status'];
   readonly reason: string;
   readonly bead?: string;
+  readonly findingId?: string;
 }
 
 export type GameplayReadinessReport = {
+  /** Bounded report scope; never a corpus-wide readiness or completeness claim. */
+  readonly scope: 'non-exhaustive-historical-diagnostic-signal-report';
   readonly packId: string;
   readonly byKind: Record<
     string,
@@ -1428,6 +1440,23 @@ export type GameplayReadinessReport = {
    * policy entry.
    */
   readonly dispositions: readonly GameplayReadinessDisposition[];
+  /** Not-yet-modeled records outside this report's historical buckets. */
+  readonly scopeGaps: readonly {
+    readonly kind: string;
+    readonly count: number;
+    readonly examples: readonly string[];
+  }[];
+  /**
+   * Baseline documented by the ADR 0020 reassessment: 197 records matched no
+   * historical bucket (109 equipment, 87 table, 1 stat-block). The live list
+   * above may differ as the pack changes; neither count is an implied green.
+   */
+  readonly historicalScopeGapBaseline: {
+    readonly recordCount: 197;
+    readonly byKind: Readonly<
+      Record<'equipment' | 'table' | 'stat-block', number>
+    >;
+  };
   /**
    * Rule-record disposition & engine-procedure coverage counts
    * (eshyra-o9bd.18.7.8.1): what every `rule:*` record IS (reference-prose /
@@ -1590,14 +1619,19 @@ export function buildGameplayReadinessReport(
       findingsBySlice: Object.freeze(findingsBySlice),
     },
   };
-  // Resolve dispositions (eshyra-o9bd.18.9.6): every non-empty bucket of
-  // not-yet-modeled records must map to a reviewed policy entry, and every
-  // policy entry must still name a non-empty bucket.
+  // Resolve only the historical diagnostic buckets. This intentionally does
+  // not partition unmodeled records; records outside the buckets are emitted
+  // below as a scope gap (ADR 0020 §5.2).
   const isModeled = (record: RulesRecord): boolean =>
     hasStructuredChoices(record) ||
     hasDeterministicGrants(record) ||
     hasMechanicsProjection(record);
   const dispositions: GameplayReadinessDisposition[] = [];
+  const scopeGaps: {
+    kind: string;
+    count: number;
+    examples: readonly string[];
+  }[] = [];
   const dispositionErrors: string[] = [];
   const seenPolicyKeys = new Set<string>();
   for (const kind of kinds) {
@@ -1621,6 +1655,23 @@ export function buildGameplayReadinessReport(
         ),
       ],
     ];
+    const bucketedKeys = new Set(
+      buckets.flatMap(([, bucketRecords]) =>
+        bucketRecords.map((record) => record.key),
+      ),
+    );
+    const outsideHistoricalBuckets = unmodeled.filter(
+      (record) => !bucketedKeys.has(record.key),
+    );
+    if (outsideHistoricalBuckets.length > 0) {
+      scopeGaps.push({
+        kind,
+        count: outsideHistoricalBuckets.length,
+        examples: outsideHistoricalBuckets
+          .slice(0, 5)
+          .map((record) => record.key),
+      });
+    }
     for (const [bucket, bucketRecords] of buckets) {
       if (bucketRecords.length === 0) continue;
       const policyKey = `${kind}#${bucket}`;
@@ -1635,9 +1686,12 @@ export function buildGameplayReadinessReport(
         );
         continue;
       }
-      if (policy.status === 'finding' && policy.bead === undefined) {
+      if (
+        policy.status === 'finding' &&
+        (policy.bead === undefined || policy.findingId === undefined)
+      ) {
         dispositionErrors.push(
-          `${policyKey}: disposition is a finding but names no bead`,
+          `${policyKey}: disposition is a finding but lacks bead history or durable findingId`,
         );
       }
       // Accepted record buckets fail closed by MEMBERSHIP
@@ -1683,6 +1737,9 @@ export function buildGameplayReadinessReport(
         status: policy.status,
         reason: policy.reason,
         ...(policy.bead === undefined ? {} : { bead: policy.bead }),
+        ...(policy.findingId === undefined
+          ? {}
+          : { findingId: policy.findingId }),
       });
     }
   }
@@ -1906,6 +1963,7 @@ export function buildGameplayReadinessReport(
   };
 
   return {
+    scope: 'non-exhaustive-historical-diagnostic-signal-report',
     packId: pack.meta.packId,
     byKind,
     creatureEntries,
@@ -1921,6 +1979,11 @@ export function buildGameplayReadinessReport(
       signal: finding.matchedPhrases.join(', '),
     })),
     dispositions,
+    scopeGaps,
+    historicalScopeGapBaseline: {
+      recordCount: 197,
+      byKind: { equipment: 109, table: 87, 'stat-block': 1 },
+    },
     rules,
     dispositionErrors,
   };
@@ -1928,8 +1991,9 @@ export function buildGameplayReadinessReport(
 
 /**
  * Fail-closed gate for audit/freeze work (eshyra-o9bd.18.9.6): the bundle
- * build fails when any readiness bucket lacks a reviewed disposition, a
- * finding lacks a bead, or the policy carries a stale entry.
+ * build fails when an enumerated readiness bucket lacks a reviewed
+ * disposition, a finding lacks durable identity plus bead history, or the
+ * policy carries a stale entry. It deliberately does not fail for scope gaps.
  */
 export function assertGameplayReadinessDispositions(
   report: GameplayReadinessReport,
@@ -1946,8 +2010,9 @@ export function formatGameplayReadinessReport(
   report: ReturnType<typeof buildGameplayReadinessReport>,
 ): string {
   const lines = [
-    'Gameplay readiness',
+    'Gameplay readiness (non-exhaustive historical and diagnostic-signal report)',
     `Pack: ${report.packId}`,
+    'Scope: this report does not partition the corpus; it does not establish source, discovery, adjudication, capability, or pack-readiness completeness.',
     '',
     '| kind | total | structured choices | unresolved choice prose | deterministic grants | mechanics projections | partial structure | prose-only |',
     '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
@@ -2015,13 +2080,24 @@ export function formatGameplayReadinessReport(
       lines.push(
         `- ${disposition.kind}#${disposition.bucket} (${disposition.count}): ${disposition.status}${
           disposition.bead === undefined ? '' : ` → ${disposition.bead}`
-        } — ${disposition.reason}`,
+        }${disposition.findingId === undefined ? '' : ` [finding: ${disposition.findingId}]`} — ${disposition.reason}`,
       );
     }
   }
   lines.push(
     '',
+    'Scope gaps (unmodeled records outside the historical buckets; not implied green)',
+    `- documented ADR 0020 baseline: ${report.historicalScopeGapBaseline.recordCount} bucket-less records (equipment ${report.historicalScopeGapBaseline.byKind.equipment}; table ${report.historicalScopeGapBaseline.byKind.table}; stat-block ${report.historicalScopeGapBaseline.byKind['stat-block']})`,
+    ...(report.scopeGaps.length === 0
+      ? ['(none)']
+      : report.scopeGaps.map(
+          (gap) => `- ${gap.kind}: ${gap.count} [${gap.examples.join(', ')}]`,
+        )),
+  );
+  lines.push(
+    '',
     'Rule-record disposition & engine-procedure coverage (eshyra-o9bd.18.7.8.1)',
+    '- Scope: exact rule:* classification only; not corpus-wide semantic, discovery, capability, or exclusive-clause ownership.',
     `- reference-prose: ${report.rules.referencesProse}; definition: ${report.rules.definitions}; table-backed: ${report.rules.tableBacked}; duplicate: ${report.rules.duplicates}`,
     `- engine-procedure: implemented ${report.rules.engineProcedure.implemented}; model-adjudicated-supported ${report.rules.engineProcedure.modelAdjudicatedSupported}; partial ${report.rules.engineProcedure.partial.length}; unimplemented ${report.rules.engineProcedure.unimplemented.length}; design-blocked ${report.rules.engineProcedure.designBlocked.length}`,
     'Partial (actionable gaps: key — missing)',
@@ -2048,6 +2124,21 @@ export function formatGameplayReadinessReport(
       : report.rules.engineProcedure.externalClauses.map(
           (row) => `- ${row.key}: ${row.clause} → ${row.bead}`,
         )),
+    '',
+    `Adjudication-context inventory: ${report.rules.adjudicationContextInventory.length} model-adjudicated procedures with retrievable context requirements`,
+    ...report.rules.adjudicationContextInventory.map(
+      (row) => `- ${row.key}: ${row.contextRequirement}`,
+    ),
+    `Positive deterministic-capability handoff to W13 (five-field pre-normalization inventory): ${report.rules.deterministicCapabilityHandoff.length}`,
+    ...report.rules.deterministicCapabilityHandoff.map(
+      (row) =>
+        `- ${row.operation} [${row.revision}]: ${row.residualInterpretation}`,
+    ),
+    `Unresolved/deferred/design-blocked work: ${report.rules.unresolvedWork.length} (durable finding identity; bead is historical context)`,
+    ...report.rules.unresolvedWork.map(
+      (row) =>
+        `- ${row.key} (${row.kind}) [finding: ${row.findingId}]${row.historicalBead === undefined ? '' : ` [history: ${row.historicalBead}]`} — ${row.detail}`,
+    ),
   );
   if (report.dispositionErrors.length > 0) {
     lines.push('', 'DISPOSITION ERRORS (fail-closed)');
