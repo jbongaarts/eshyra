@@ -15,7 +15,6 @@ export const P09_ADVENTURE_ENCOUNTER: DiagnosticFixture = {
     encounterId: 'enc-mouth-ambush',
     locationId: 'loc-watchtower-mouth',
   },
-  campaignRuleState: none('No active campaign rule or ruling.'),
   mustIncludeTargets: [
     {
       targetKind: 'adventure-entity',
@@ -36,23 +35,6 @@ export const P09_ADVENTURE_ENCOUNTER: DiagnosticFixture = {
     rulesTarget('stat-block:giant-fly', 'p. 222'),
   ],
   mustNotIncludeTargets: [],
-  expectedRouteClasses: [
-    {
-      targetRef: `${moduleId}#encounter:enc-mouth-ambush`,
-      routes: ['direct-adventure-ref'],
-      why: 'The selected authored encounter is named by the active adventure run.',
-    },
-    {
-      targetRef: `${moduleId}#location:loc-watchtower-mouth`,
-      routes: ['direct-adventure-ref'],
-      why: 'The selected authored location supplies the encounter context.',
-    },
-    {
-      targetRef: 'creature:goblin',
-      routes: ['direct-adventure-ref'],
-      why: 'The encounter creature entry carries the canonical rulesRef creature:goblin.',
-    },
-  ],
   requiredRetainedFacts: [
     {
       targetRef: 'creature:goblin',
@@ -92,26 +74,50 @@ export const P09_ADVENTURE_ENCOUNTER: DiagnosticFixture = {
   requiredRelationshipExpansion: none(
     'The encounter-to-creature containment is an authored module reference, not a typed mechanics relationship in the rules pack; no pack relationship traversal is invented.',
   ),
-  expectedAmbiguityState: none(
-    'No source ambiguity is declared for the authored encounter.',
-  ),
-  expectedCampaignRuleOrRulingState: none(
-    'No campaign rule or ruling is active.',
-  ),
-  expectedCapabilityStatus: {
-    status: 'none-selected',
-    statement:
-      'No deterministic capability is positively selected by this discovery fixture; encounter creation remains a separate runtime operation.',
-    inputs: ['module encounter reference', 'creature:goblin statline'],
-    exclusions: [
-      'The fixture does not claim to execute combat or stat-block expansion.',
-    ],
-    residualInterpretation:
-      'The runtime encounter owner seeds the authored combatants from the discovered statline.',
-  },
-  expectedDeterministicStateEffect: none(
-    'The fixture does not start the encounter or mutate combat state.',
-  ),
+  executions: [
+    {
+      executionId: 'default',
+      campaignRuleState: none('No active campaign rule or ruling.'),
+      expectedRouteClasses: [
+        {
+          targetRef: `${moduleId}#encounter:enc-mouth-ambush`,
+          routes: ['direct-adventure-ref'],
+          why: 'The selected authored encounter is named by the active adventure run.',
+        },
+        {
+          targetRef: `${moduleId}#location:loc-watchtower-mouth`,
+          routes: ['direct-adventure-ref'],
+          why: 'The selected authored location supplies the encounter context.',
+        },
+        {
+          targetRef: 'creature:goblin',
+          routes: ['direct-adventure-ref'],
+          why: 'The encounter creature entry carries the canonical rulesRef creature:goblin.',
+        },
+      ],
+      expectedAmbiguityState: none(
+        'No source ambiguity is declared for the authored encounter.',
+      ),
+      expectedCampaignRuleOrRulingState: none(
+        'No campaign rule or ruling is active.',
+      ),
+      expectedCapabilityStatus: {
+        status: 'none-selected',
+        statement:
+          'No deterministic capability is positively selected by this discovery fixture; encounter creation remains a separate runtime operation.',
+        inputs: ['module encounter reference', 'creature:goblin statline'],
+        exclusions: [
+          'The fixture does not claim to execute combat or stat-block expansion.',
+        ],
+        residualInterpretation:
+          'The runtime encounter owner seeds the authored combatants from the discovered statline.',
+      },
+      expectedDeterministicStateEffect: none(
+        'The fixture does not start the encounter or mutate combat state.',
+      ),
+      oracleSignals: [],
+    },
+  ],
   probeId: 'P9',
   title: 'Authored adventure encounter',
   verifiedAtCommit: VERIFIED_AT_COMMIT,
@@ -123,5 +129,4 @@ export const P09_ADVENTURE_ENCOUNTER: DiagnosticFixture = {
   },
   boundedEvidenceStatement:
     'This fixture is bounded evidence for one authored adventure encounter and direct module-reference discovery; it is not a completeness unit, not a partition of the corpus, and supplies no coverage, readiness, or completeness figure.',
-  oracleSignals: [],
 };

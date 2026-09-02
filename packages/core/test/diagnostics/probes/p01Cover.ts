@@ -23,17 +23,9 @@ export const P01_COVER: DiagnosticFixture = {
   adventureState: none(
     'No adventure module state is required for this geometry probe.',
   ),
-  campaignRuleState: none('No active campaign rule or ruling.'),
   mustIncludeTargets: [rulesTarget('rule:cover', 'p. 96')],
   mayIncludeTargets: [],
   mustNotIncludeTargets: [],
-  expectedRouteClasses: [
-    {
-      targetRef: 'rule:cover',
-      routes: ['situation-cue'],
-      why: 'The low-wall geometry and combat context propose the rule without a rule-name mention.',
-    },
-  ],
   requiredRetainedFacts: [
     {
       targetRef: 'rule:cover',
@@ -57,25 +49,43 @@ export const P01_COVER: DiagnosticFixture = {
   requiredRelationshipExpansion: none(
     'rule:cover carries only data.text and has no typed relationship expansion.',
   ),
-  expectedAmbiguityState: none(
-    'No source ambiguity is declared for this probe.',
-  ),
-  expectedCampaignRuleOrRulingState: none(
-    'No campaign rule or ruling is active.',
-  ),
-  expectedCapabilityStatus: {
-    status: 'none-selected',
-    statement:
-      'No capability is positively selected. Degree-of-cover selection remains model adjudication; any +2/+5 AC and Dexterity-save modifier rides declared modifiers on resolve_check.',
-    inputs: ['geometry and combat context', 'resolve_check declared modifiers'],
-    exclusions: [
-      'No deterministic capability applies a cover bonus or selects a cover degree.',
-    ],
-    residualInterpretation: 'The DM decides applicability and degree of cover.',
-  },
-  expectedDeterministicStateEffect: none(
-    'Discovery supplies context only; it does not apply a cover bonus or mutate state.',
-  ),
+  executions: [
+    {
+      executionId: 'default',
+      campaignRuleState: none('No active campaign rule or ruling.'),
+      expectedRouteClasses: [
+        {
+          targetRef: 'rule:cover',
+          routes: ['situation-cue'],
+          why: 'The low-wall geometry and combat context propose the rule without a rule-name mention.',
+        },
+      ],
+      expectedAmbiguityState: none(
+        'No source ambiguity is declared for this probe.',
+      ),
+      expectedCampaignRuleOrRulingState: none(
+        'No campaign rule or ruling is active.',
+      ),
+      expectedCapabilityStatus: {
+        status: 'none-selected',
+        statement:
+          'No capability is positively selected. Degree-of-cover selection remains model adjudication; any +2/+5 AC and Dexterity-save modifier rides declared modifiers on resolve_check.',
+        inputs: [
+          'geometry and combat context',
+          'resolve_check declared modifiers',
+        ],
+        exclusions: [
+          'No deterministic capability applies a cover bonus or selects a cover degree.',
+        ],
+        residualInterpretation:
+          'The DM decides applicability and degree of cover.',
+      },
+      expectedDeterministicStateEffect: none(
+        'Discovery supplies context only; it does not apply a cover bonus or mutate state.',
+      ),
+      oracleSignals: [],
+    },
+  ],
   probeId: 'P1',
   title: 'Implicit cover from geometry',
   verifiedAtCommit: VERIFIED_AT_COMMIT,
@@ -85,7 +95,6 @@ export const P01_COVER: DiagnosticFixture = {
     gates: 'No blocker gates this fixture identity.',
   },
   boundedEvidenceStatement: bounded,
-  oracleSignals: [],
 };
 
 export { SRD_SOURCE_REF };

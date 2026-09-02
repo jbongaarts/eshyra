@@ -13,7 +13,6 @@ export const P08_AMMUNITION: DiagnosticFixture = {
   adventureState: none(
     'No authored adventure state is needed for this capability preflight probe.',
   ),
-  campaignRuleState: none('No active campaign rule or ruling.'),
   mustIncludeTargets: [
     rulesTarget(itemKey, 'p. 207', {
       kind: 'stable-id',
@@ -33,13 +32,6 @@ export const P08_AMMUNITION: DiagnosticFixture = {
   ],
   mayIncludeTargets: [],
   mustNotIncludeTargets: [],
-  expectedRouteClasses: [
-    {
-      targetRef: itemKey,
-      routes: ['direct-state-ref', 'capability-preflight'],
-      why: 'The inventory item reference directly identifies the record and readiness preflight selects the positively owned use clause.',
-    },
-  ],
   requiredRetainedFacts: [
     {
       targetRef: itemKey,
@@ -89,42 +81,56 @@ export const P08_AMMUNITION: DiagnosticFixture = {
   requiredRelationshipExpansion: none(
     'The ammunition capability is selected from the item record; no typed relationship expansion is required.',
   ),
-  expectedAmbiguityState: none(
-    'No source ambiguity is declared for this ammunition operation.',
-  ),
-  expectedCampaignRuleOrRulingState: none(
-    'No campaign rule or ruling is active.',
-  ),
-  expectedCapabilityStatus: {
-    status: 'available',
-    capabilityId: 'magic-item-single-use-spend',
-    revision: 'derived-magic-item-clauses-v1',
-    statement:
-      'The generated query selected hit-target because its parent C1 use economy is green and positively owned with no engine hooks.',
-    inputs: [
-      'use_item { instanceId, operationId: hit-target, character? }',
-      'cost economy use amount 1',
-    ],
-    exclusions: [
-      'C2 attack and damage modifiers are not executed.',
-      'The free-text rarity does not determine which bonus applies.',
-      'Green operations with no cost/effects are not positive capability evidence.',
-    ],
-    residualInterpretation:
-      'The DM interprets any attack result and bonus choice; F8 remains outside this capability.',
-    evidence: [
-      'packages/core/src/state/itemState.ts:1888-1911',
-      'packages/core/src/state/itemState.ts:1710',
-      'packages/core/src/state/itemState.ts:2127',
-    ],
-  },
-  expectedDeterministicStateEffect: {
-    kind: 'effect',
-    statement:
-      'A stateless single-use spend consumes one unit, splits the consumed unit out of the stack, and creates nonmagical inventory.',
-    evidence:
-      'splitNonmagicalSingleUseInventory preserves the physical row while nulling the magic binding for the transformed unit.',
-  },
+  executions: [
+    {
+      executionId: 'default',
+      campaignRuleState: none('No active campaign rule or ruling.'),
+      expectedRouteClasses: [
+        {
+          targetRef: itemKey,
+          routes: ['direct-state-ref', 'capability-preflight'],
+          why: 'The inventory item reference directly identifies the record and readiness preflight selects the positively owned use clause.',
+        },
+      ],
+      expectedAmbiguityState: none(
+        'No source ambiguity is declared for this ammunition operation.',
+      ),
+      expectedCampaignRuleOrRulingState: none(
+        'No campaign rule or ruling is active.',
+      ),
+      expectedCapabilityStatus: {
+        status: 'available',
+        capabilityId: 'magic-item-single-use-spend',
+        revision: 'derived-magic-item-clauses-v1',
+        statement:
+          'The generated query selected hit-target because its parent C1 use economy is green and positively owned with no engine hooks.',
+        inputs: [
+          'use_item { instanceId, operationId: hit-target, character? }',
+          'cost economy use amount 1',
+        ],
+        exclusions: [
+          'C2 attack and damage modifiers are not executed.',
+          'The free-text rarity does not determine which bonus applies.',
+          'Green operations with no cost/effects are not positive capability evidence.',
+        ],
+        residualInterpretation:
+          'The DM interprets any attack result and bonus choice; F8 remains outside this capability.',
+        evidence: [
+          'packages/core/src/state/itemState.ts:1888-1911',
+          'packages/core/src/state/itemState.ts:1710',
+          'packages/core/src/state/itemState.ts:2127',
+        ],
+      },
+      expectedDeterministicStateEffect: {
+        kind: 'effect',
+        statement:
+          'A stateless single-use spend consumes one unit, splits the consumed unit out of the stack, and creates nonmagical inventory.',
+        evidence:
+          'splitNonmagicalSingleUseInventory preserves the physical row while nulling the magic binding for the transformed unit.',
+      },
+      oracleSignals: [],
+    },
+  ],
   probeId: 'P8',
   title: 'Positive magic-ammunition capability',
   verifiedAtCommit: VERIFIED_AT_COMMIT,
@@ -136,5 +142,4 @@ export const P08_AMMUNITION: DiagnosticFixture = {
   },
   boundedEvidenceStatement:
     'This fixture is bounded evidence for the selected ammunition operation and its partial capability; it is not a completeness unit, not a partition of the corpus, and supplies no coverage, readiness, or completeness figure.',
-  oracleSignals: [],
 };
