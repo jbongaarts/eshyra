@@ -1,4 +1,5 @@
 import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
+import { candidateBand } from './bands.js';
 import { joinCampaignRules } from './campaignRuleSeam.js';
 import { resolveDiscoveryCandidates } from './candidates.js';
 import { deduplicateCandidates } from './dedup.js';
@@ -30,7 +31,32 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
       stack,
     },
   );
-  const dedup = deduplicateCandidates(ruleJoin.outputsProduced);
+  // Design amendment 12.1.1: the join is the only stage that can change a
+  // candidate's band, so expansion repeats exactly once more, seeded only by
+  // the candidates it promoted to must-consider. Without this, a governing
+  // record reached only by `campaign-rule` could never receive the one-hop
+  // Related neighbourhood section 6.3 grants must-consider material.
+  const bandBeforeJoin = new Map(
+    expansion.outputsProduced.map((candidate) => [
+      candidate.candidateKey,
+      candidateBand(candidate),
+    ]),
+  );
+  const promoted = new Set(
+    ruleJoin.outputsProduced
+      .filter(
+        (candidate) =>
+          candidateBand(candidate) === 'must-consider' &&
+          bandBeforeJoin.get(candidate.candidateKey) !== 'must-consider',
+      )
+      .map((candidate) => candidate.candidateKey),
+  );
+  const ruleExpansion = expandTypedRelationships(
+    ruleJoin.outputsProduced,
+    stack,
+    { seedKeys: promoted },
+  );
+  const dedup = deduplicateCandidates(ruleExpansion.outputsProduced);
   const retention = retainCandidates(dedup.outputsProduced, input.budget);
   // A must-consider overflow must be REPORTED, not thrown (design section 6.3):
   // the overflow record naming every dropped candidate and its routes is the
@@ -46,6 +72,7 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
     candidates,
     expansion,
     ruleJoin,
+    ruleExpansion,
     dedup,
     retention,
     packet,
@@ -54,6 +81,7 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
       'candidates',
       'expansion',
       'rule-join',
+      'campaign-rule-expansion',
       'dedup',
       'retention',
       'packet',

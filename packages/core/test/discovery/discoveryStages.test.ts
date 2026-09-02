@@ -636,4 +636,92 @@ describe('offline discovery stage boundaries', () => {
       db.close();
     }
   });
+  it('expands the neighbourhood of a record the campaign rule alone made must-consider', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          // Nothing here names or references the governed record.
+          playerInput: 'the party proceeds',
+          stateFields: { campaignPosition: 'turn-1', actor: 'pc-1' },
+        },
+        campaignRuleSeam: {
+          activeRulesAtPosition: () => [
+            {
+              ruleIdentity: 'house-rule-incapacitation',
+              ruleKind: 'house-rule',
+              status: 'active',
+              origin: 'player',
+              provenance: 'campaign history',
+              effectivePosition: 'turn-1',
+              supersededBy: null,
+              scope: 'incapacitation',
+              governingRecordKeys: ['condition:incapacitated'],
+            },
+          ],
+          activeRulingsForAmbiguities: () => [],
+        },
+      });
+      const keys = new Set(
+        trace.packet.packet.candidates.map((item) => item.identity.key),
+      );
+      const governed = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'condition:incapacitated',
+      );
+
+      // Must-consider through campaign-rule alone.
+      expect(governed?.routes.map((route) => route.routeClass)).toContain(
+        'campaign-rule',
+      );
+      expect(trace.ruleJoin.surfacedCandidateKeys).toEqual([
+        'condition:incapacitated',
+      ]);
+
+      // Design amendment 12.1.1: it receives the one-hop Related neighbourhood
+      // that section 6.3 grants must-consider material. Before the second
+      // pass, expansion had already finished and this was unreachable.
+      expect(keys).toContain('action:dodge');
+      expect(trace.ruleExpansion.traversals).toContainEqual({
+        sourceRecordKey: 'action:dodge',
+        linkField: 'data.mechanics.conditions',
+        relation: 'exclusion',
+        targetRecordKey: 'condition:incapacitated',
+      });
+
+      // One hop only. feature:barbarian:danger-sense is a hop-1 neighbour and
+      // carries `data.source: class:barbarian`; a cascading second pass would
+      // pull the class in.
+      expect(keys).toContain('feature:barbarian:danger-sense');
+      expect(keys).not.toContain('class:barbarian');
+      for (const traversal of trace.ruleExpansion.traversals)
+        expect(
+          traversal.sourceRecordKey === 'condition:incapacitated' ||
+            traversal.targetRecordKey === 'condition:incapacitated',
+          `${traversal.sourceRecordKey} -> ${traversal.targetRecordKey} is not one hop from the promoted record`,
+        ).toBe(true);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('runs the second expansion pass only for candidates the join promoted', () => {
+    const db = freshDbWithSession();
+    try {
+      // No campaign rule at all: nothing is promoted, so the second pass has
+      // no seeds and adds no traversals, while the first pass still worked.
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'nothing',
+          stateFields: { first: 'condition:incapacitated' },
+        },
+      });
+      expect(trace.expansion.traversals.length).toBeGreaterThan(0);
+      expect(trace.ruleExpansion.traversals).toEqual([]);
+      expect(trace.ruleJoin.surfacedCandidateKeys).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
 });

@@ -7,7 +7,13 @@ import type {
 import { DIAGNOSTIC_FIXTURES } from '../diagnostics/index.js';
 import { freshDbWithSession } from '../support/db.js';
 import {
+  ASSERTIONS,
+  assertGuardExists,
+  FACT_EVIDENCE,
+} from './support/factEvidence.js';
+import {
   declaredBindingLabels,
+  installScenarioBinding,
   moduleForFixture,
   oracleCampaignRuleSeam,
   scenarioForFixture,
@@ -60,6 +66,7 @@ const STAGES = [
   'candidates',
   'expansion',
   'rule-join',
+  'campaign-rule-expansion',
   'dedup',
   'retention',
   'packet',
@@ -72,13 +79,12 @@ describe('offline discovery diagnostic probes', () => {
       it(`${label} runs end to end with M1-M9 per stage`, () => {
         const db = freshDbWithSession();
         try {
+          const moduleJson = moduleForFixture(fixture);
+          const rulesPackResolver = installScenarioBinding(fixture, db);
           const trace = runDiscoveryStages({
             db,
-            scenario: scenarioForFixture(
-              fixture,
-              execution,
-              moduleForFixture(fixture),
-            ),
+            rulesPackResolver,
+            scenario: scenarioForFixture(fixture, execution, moduleJson),
             campaignRuleSeam: oracleCampaignRuleSeam(fixture, execution),
           });
           expect(trace.stageOrder).toEqual([...STAGES]);
@@ -93,9 +99,17 @@ describe('offline discovery diagnostic probes', () => {
             mustIncludeTargetRefs: mustRefs,
             mustNotIncludeTargetRefs:
               fixture.mustNotIncludeTargets.map(targetRef),
-            requiredFacts: Array.isArray(fixture.requiredRetainedFacts)
+            // Each statement-only requirement carries its declared evidence
+            // surface. One without an entry lands in m9.indeterminate and
+            // fails the probe, so a field-9 requirement can never go unproven
+            // while M9 reads green.
+            requiredFacts: (Array.isArray(fixture.requiredRetainedFacts)
               ? fixture.requiredRetainedFacts
-              : [],
+              : []
+            ).map((fact, index) => ({
+              ...fact,
+              classification: FACT_EVIDENCE[`${fixture.probeId}[${index}]`],
+            })),
             // Without this the declared traversals are measured against an
             // empty list and M4 silently reports nothing for every probe.
             requiredRelationshipExpansion: declaredTraversals.map(
@@ -172,12 +186,36 @@ describe('offline discovery diagnostic probes', () => {
           expect(measurements.m8.unattributedPresent).toEqual([]);
           expect(measurements.m9.missing).toEqual([]);
 
-          // Statement-only facts cannot be matched against packet content, so
-          // they are reported rather than counted as satisfied. The design's
-          // named packet requirements are asserted below as typed expectations
-          // instead, which is what makes those probes real evidence.
-          for (const fact of measurements.m9.proseOnlyNotCheckable)
-            expect(fact.exactSubstring ?? fact.typedPath).toBeUndefined();
+          // Every statement-only requirement is classified, and every
+          // classification that names an assertion actually runs it.
+          expect(
+            measurements.m9.indeterminate.map((fact) => fact.statement),
+            `${label} has field-9 requirements with no declared evidence surface`,
+          ).toEqual([]);
+          for (const entry of measurements.m9.classified) {
+            assertGuardExists(entry.classification);
+            const { kind, assertionId } = entry.classification;
+            if (kind === 'packet-semantic' || kind === 'substrate-fact') {
+              expect(
+                assertionId,
+                `${label} ${kind} requirement names no assertion`,
+              ).toBeDefined();
+              const assertion = ASSERTIONS[assertionId as string];
+              expect(
+                assertion,
+                `${label} names missing assertion ${assertionId}`,
+              ).toBeDefined();
+              assertion({
+                trace,
+                candidate: (key) =>
+                  trace.packet.packet.candidates.find(
+                    (item) => item.identity.key === key,
+                  ),
+                playerInput: fixture.playerInput,
+                moduleJson: moduleJson as Record<string, unknown> | undefined,
+              });
+            }
+          }
           for (const required of REQUIRED_PROJECTION_LIMITS[fixture.probeId] ??
             []) {
             const candidate = trace.packet.packet.candidates.find(

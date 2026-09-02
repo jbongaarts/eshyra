@@ -1,5 +1,7 @@
 import type {
   AdventureModule,
+  CampaignRulesPackResolver,
+  Db,
   DiscoveryRunInput,
   DiscoveryScenario,
 } from '../../../src/internal.js';
@@ -8,6 +10,7 @@ import type {
   DiagnosticFixture,
   FixtureExecution,
 } from '../../diagnostics/fixtureContract.js';
+import { installCursedAttunementAddon } from '../../support/cursedAttunementAddon.js';
 import { oracleCampaignRuleSeam } from './oracleCampaignRules.js';
 
 function isNone(value: unknown): boolean {
@@ -63,6 +66,24 @@ const DECLARED_OFFLINE_CAPABILITIES: Readonly<
     },
   ],
 };
+
+/**
+ * Per-probe campaign-database setup, returning the pack resolver the run must
+ * use.
+ *
+ * P11 declares a base-plus-add-on `campaignRulesBinding` in its campaign
+ * state, but a scenario alone cannot install it: the binding lives in the
+ * database that `resolveStrictCampaignRulesStack` reads. Without this the
+ * probe resolved against the base pack and its override chain was empty, so
+ * the add-on override probe was not overriding anything.
+ */
+export function installScenarioBinding(
+  fixture: DiagnosticFixture,
+  db: Db,
+): CampaignRulesPackResolver | undefined {
+  if (fixture.probeId !== 'P11') return undefined;
+  return installCursedAttunementAddon(db, '2026-09-02T00:00:00.000Z');
+}
 
 export function scenarioForFixture(
   fixture: DiagnosticFixture,

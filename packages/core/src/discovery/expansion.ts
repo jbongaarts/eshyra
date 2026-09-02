@@ -142,9 +142,18 @@ function newRecordCandidate(
   );
 }
 
+/**
+ * One-hop typed expansion from must-consider material.
+ *
+ * `seedKeys` restricts which candidates act as expansion origins. The second
+ * pass authorized by design amendment 12.1.1 uses it to expand only the
+ * candidates the campaign-rule join promoted to must-consider, so the
+ * repetition stays one hop and cannot cascade.
+ */
 export function expandTypedRelationships(
   candidates: readonly DiscoveryCandidate[],
   stack: Stack,
+  options: { readonly seedKeys?: ReadonlySet<string> } = {},
 ): ExpansionTrace {
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
@@ -164,14 +173,19 @@ export function expandTypedRelationships(
   // Related band, changing retention pressure and bypassing the boundary the
   // design draws. Skipped seeds are recorded, never silently ignored.
   const originals = [...candidates];
+  const seeded = (candidate: DiscoveryCandidate) =>
+    options.seedKeys === undefined ||
+    options.seedKeys.has(candidate.candidateKey);
   const expandable = originals.filter(
     (candidate) =>
       candidate.entry !== undefined &&
-      candidateBand(candidate) === 'must-consider',
+      candidateBand(candidate) === 'must-consider' &&
+      seeded(candidate),
   );
   for (const candidate of originals)
     if (
       candidate.entry !== undefined &&
+      seeded(candidate) &&
       candidateBand(candidate) !== 'must-consider'
     )
       losses.push({

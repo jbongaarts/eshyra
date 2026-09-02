@@ -1,10 +1,43 @@
 import type { DiscoveryTrace, TypedTraversal } from './types.js';
 
+/**
+ * How a fixture field-9 requirement is proven.
+ *
+ * A requirement carrying `exactSubstring` or `typedPath` is a source-fact
+ * check M9 measures directly. Everything else states a requirement about
+ * something other than a retained source string, and must name the evidence
+ * surface that actually proves it. An unclassified statement-only requirement
+ * makes M9 INDETERMINATE — it never silently disappears from `missing`, which
+ * is how a declared requirement could previously stay unproven while M9 read
+ * green.
+ */
+export type FactEvidenceKind =
+  /** A claim about packet content, proven by a typed packet assertion. */
+  | 'packet-semantic'
+  /** A claim about the loaded pack or module, proven against that substrate. */
+  | 'substrate-fact'
+  /** Proven by a named test or module elsewhere in the tree. */
+  | 'external-guard'
+  /** A statement about superseded state, making no claim on current output. */
+  | 'historical-annotation'
+  /** An explicit disclaimer; it asserts that something is NOT claimed. */
+  | 'non-claim';
+
+export interface FactClassification {
+  readonly kind: FactEvidenceKind;
+  /** Required for packet-semantic and substrate-fact: the assertion proving it. */
+  readonly assertionId?: string;
+  /** Repo-relative path of the guard, required for external-guard. */
+  readonly guardPath?: string;
+  readonly why: string;
+}
+
 export interface RequiredPacketFact {
   readonly targetRef?: string;
   readonly exactSubstring?: string;
   readonly typedPath?: string;
   readonly expectedValue?: unknown;
+  readonly classification?: FactClassification;
 }
 export interface DiscoveryMeasurementInput {
   readonly mustIncludeTargetRefs?: readonly string[];
@@ -88,7 +121,14 @@ export interface DiscoveryMeasurements {
   };
   readonly m9: {
     readonly missing: readonly RequiredPacketFact[];
-    readonly proseOnlyNotCheckable: readonly RequiredPacketFact[];
+    /** Statement-only requirements with a declared evidence surface. */
+    readonly classified: readonly {
+      readonly fact: RequiredPacketFact;
+      readonly classification: FactClassification;
+    }[];
+    /** Statement-only requirements with NO declared evidence surface. Any
+     * entry here makes M9 indeterminate for the probe and must fail it. */
+    readonly indeterminate: readonly RequiredPacketFact[];
   };
   readonly perStage: Readonly<
     Record<
@@ -166,6 +206,7 @@ export function measureDiscovery(
     ['candidates', trace.candidates],
     ['expansion', trace.expansion],
     ['rule-join', trace.ruleJoin],
+    ['campaign-rule-expansion', trace.ruleExpansion],
     ['dedup', trace.dedup],
     ['retention', trace.retention],
     ['packet', trace.packet],
@@ -192,6 +233,7 @@ export function measureDiscovery(
     trace.candidates,
     trace.expansion,
     trace.ruleJoin,
+    trace.ruleExpansion,
     trace.dedup,
     trace.retention,
   ])
@@ -229,9 +271,10 @@ export function measureDiscovery(
     };
   }
   const m4 = (input.requiredRelationshipExpansion ?? []).map((traversal) => {
-    const fired = trace.expansion.traversals.some((item) =>
-      equal(item, traversal),
-    );
+    const fired = [
+      ...trace.expansion.traversals,
+      ...trace.ruleExpansion.traversals,
+    ].some((item) => equal(item, traversal));
     const retained = trace.packet.packet.candidates.some((candidate) =>
       candidate.traversals.some((item) => equal(item, traversal)),
     );
@@ -245,10 +288,15 @@ export function measureDiscovery(
     };
   });
   const missing: RequiredPacketFact[] = [];
-  const proseOnlyNotCheckable: RequiredPacketFact[] = [];
+  const classified: {
+    fact: RequiredPacketFact;
+    classification: FactClassification;
+  }[] = [];
+  const indeterminate: RequiredPacketFact[] = [];
   for (const fact of input.requiredFacts ?? []) {
     if (fact.exactSubstring === undefined && fact.typedPath === undefined) {
-      proseOnlyNotCheckable.push(fact);
+      if (fact.classification === undefined) indeterminate.push(fact);
+      else classified.push({ fact, classification: fact.classification });
       continue;
     }
     const candidate =
@@ -321,7 +369,7 @@ export function measureDiscovery(
       })),
     },
     m8: { forbiddenPresent, unattributedPresent },
-    m9: { missing, proseOnlyNotCheckable },
+    m9: { missing, classified, indeterminate },
     perStage: Object.fromEntries(
       stages.map(([name, stage]) => [
         name,

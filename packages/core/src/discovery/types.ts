@@ -303,6 +303,9 @@ export interface DiscoveryTrace {
   readonly candidates: CandidateTrace;
   readonly expansion: ExpansionTrace;
   readonly ruleJoin: RuleJoinTrace;
+  /** The second, bounded expansion pass (design amendment 12.1.1), seeded only
+   * by candidates the rule join promoted to must-consider. */
+  readonly ruleExpansion: ExpansionTrace;
   readonly dedup: DedupTrace;
   readonly retention: RetentionTrace;
   readonly packet: PacketTrace;

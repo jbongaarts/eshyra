@@ -1431,6 +1431,54 @@ signals → candidates → typed expansion → campaign-rule/ruling join
 end-to-end through the harness; every stage boundary emits its own evidence;
 each measurement in §13 is computable per probe per stage.
 
+#### 12.1.1 Amendment A — expansion repeats after campaign-rule promotion
+
+- **Date:** 2026-09-02. **Owning bead:** `eshyra-o9bd.19.10` (W8).
+- **Status:** amends the stage list above. Everything else in §12.1 stands.
+
+**The inconsistency.** The linear stage list places typed expansion *before*
+the campaign-rule/ruling join. That order is only coherent while
+`campaign-rule` is an annotation applied to material some other route already
+found. It is **not** coherent with the rest of this design:
+
+- §6.2 lists `campaign-rule` as a route class — a reason a candidate is
+  **proposed**, not merely decorated;
+- §6.3 places applicable active campaign rules in the **must-consider** band;
+- §6.3 defines Related as one-hop explicitly typed relationships **from
+  must-consider material**.
+
+Taken together, a governing record that becomes must-consider *only* through
+`campaign-rule` is entitled to the same one-hop Related neighbourhood as a
+record reached by any other must-consider route. Under the literal stage
+order it can never receive one, because the only expansion pass has already
+run. The defect is latent in the original design and surfaces the moment
+`campaign-rule` is implemented as a real producing route.
+
+**The resolution.** Typed expansion is a **bounded repetition**, not a new
+kind of processing. After the campaign-rule/ruling join, expansion runs a
+second and final time, seeded **only** by candidates whose band changed to
+must-consider at the join — those newly surfaced by a rule and those an
+existing route set did not already make must-consider. The stage list becomes:
+
+```text
+signals → candidates → typed expansion → campaign-rule/ruling join
+        → campaign-rule expansion → dedup with preserved reasons
+        → priority and retention → context packet
+```
+
+**What this does not change.** Expansion remains **one hop**: the second pass
+does not expand candidates the first pass produced, and neither pass expands
+its own output. Exploratory-only seeds still do not expand, in either pass.
+The repetition is bounded at exactly two passes because the join is the only
+stage that can promote a band, and the join runs once. No third pass is
+authorized, and expansion is not a fixpoint over arbitrary promotion.
+
+**Why not simply reorder.** Moving the join before expansion would make the
+`campaign-rule` route unable to see the ambiguities that expansion surfaces
+on newly reached records, inverting §8.2 R2 (rulings are requested for
+*discovered* ambiguity ids). The join must stay downstream of the first
+expansion; the second pass is what reconciles the two requirements.
+
 ### 12.2 Phase 2 — runtime shadow mode
 
 **Do:** run discovery **after `assembleContext` and before
