@@ -26,7 +26,10 @@ bd show <issue-id>
 bd update <issue-id> --claim
 bd update <issue-id> --status done
 
-# Sync with Dolt remote
+# Sync Beads with the Dolt remote and refresh the readable projection
+npm run beads:sync
+
+# Underlying authoritative Dolt push (normally performed by beads:sync)
 bd dolt push
 ```
 
