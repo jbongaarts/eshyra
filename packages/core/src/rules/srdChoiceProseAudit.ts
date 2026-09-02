@@ -36,6 +36,10 @@
  * existing green assertion.
  *
  * Everything is pure and deterministic; findings are sorted for diffable output.
+ *
+ * Scope boundary (ADR 0020 §5.1): a green result covers only the choice-prose
+ * signals and five scanned kinds enumerated here. It is not evidence of global
+ * source, discovery, adjudication, or capability completeness.
  */
 
 import type { RulesPack, RulesRecord } from './types.js';

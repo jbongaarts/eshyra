@@ -95,6 +95,15 @@ population, current kind-schema validation, consumers, audit/readiness
 assumptions, disposition, owner, and future-work status. It reads pack data and
 writes only the two documentation artifacts.
 
+The one-disposition-per-candidate convention is field-level bookkeeping, not
+exclusive clause, procedure, discovery, or capability ownership. A record may
+have both a typed projection and an untyped residual for the same concept (for
+example, `equipment:battleaxe` retains a source `data.properties` value beside
+its typed `weaponProperties[]`). Discovery may use the census only for
+exploratory candidate generation and projection-limit disclosure; it must not
+use it as an ownership claim. ADR-level follow-up review remains this ADR's
+own successor.
+
 The 2026-07-14 baseline contains 1,813 D&D records across 16 active kinds and
 7 Pathfinder records, yielding 1,196 grouped string paths after metadata is
 included. The generated disposition census is the authority; the current

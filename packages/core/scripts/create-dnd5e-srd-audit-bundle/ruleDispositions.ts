@@ -2,11 +2,11 @@
  * Rule-record disposition & engine-procedure coverage layer
  * (eshyra-o9bd.18.7.8.1).
  *
- * Mirrors the enforcement style of `GAMEPLAY_READINESS_DISPOSITIONS` in
- * `cli.ts`: a fail-closed, exact-membership registry over every `rule:*`
- * pack record. Kept in a sibling module (not inline in cli.ts) purely for
- * file-size reasons — it is wired into the same audit-bundle build path via
- * `assertRuleDispositions`.
+ * Exact classification of `rule:*` records only. It is not a corpus-wide
+ * semantic ownership, discovery-completeness, capability-completeness, or
+ * exclusive-clause-ownership artifact (ADR 0020 §5.3). Kept in a sibling
+ * module (not inline in cli.ts) purely for file-size reasons — it is wired
+ * into the same audit-bundle build path via `assertRuleDispositions`.
  *
  * Two independent registries, deliberately not nested (design doc §2,
  * docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-1-rule-disposition-layer-design.md):
@@ -28,7 +28,9 @@
  * hand-edit around a stale key set.
  */
 
+import { createHash } from 'node:crypto';
 import { DEFAULT_TOOLS } from '../../src/orchestrator/tools.js';
+import { findingByCanonicalId } from '../../src/rules/findingRegistry.js';
 import type { RulesPack } from '../../src/rules/types.js';
 
 export type RuleDispositionClass =
@@ -1660,13 +1662,19 @@ export interface RuleProcedureCoverage {
   readonly missing?: string;
   /** Bead owning the design decision; required for 'design-blocked'. */
   readonly designOwner?: string;
+  /** Durable Foundation-2 finding-registry identity; bead IDs are history. */
+  readonly findingId?: string;
   /** Clause-level external ownership: the row's primary status stands and
    *  bead closure alone never auto-upgrades it — closing requires new
    *  runtime/pack evidence in a reviewed diff. */
-  readonly externalClauses?: readonly { clause: string; bead: string }[];
+  readonly externalClauses?: readonly {
+    readonly clause: string;
+    readonly bead: string;
+    readonly findingId?: string;
+  }[];
 }
 
-export const ENGINE_PROCEDURE_COVERAGE: Readonly<
+const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
   Record<string, RuleProcedureCoverage>
 > = Object.freeze({
   'rule:a-clear-path-to-the-target': {
@@ -2931,15 +2939,93 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
 });
 
-/** Pinned semantic census (2026-07-06 rule-classification artifact, §2). */
-const EXPECTED_SEMANTIC_CENSUS: Readonly<Record<RuleDispositionClass, number>> =
-  Object.freeze({
-    'engine-procedure': 175,
-    'reference-prose': 96,
-    definition: 33,
-    'table-backed': 19,
-    duplicate: 12,
-  });
+/**
+ * Attach the reviewed Foundation-2 identity to unresolved rows as the registry
+ * is materialized. The historical bead remains alongside it; it is never used
+ * as a resolution signal. These broad, existing audit identities preserve the
+ * prior mappings without inventing new finding dispositions.
+ */
+export function materializeEngineProcedureCoverage(
+  unboundCoverage: Readonly<Record<string, RuleProcedureCoverage>>,
+): Readonly<Record<string, RuleProcedureCoverage>> {
+  return Object.freeze(
+    Object.fromEntries(
+      Object.entries(unboundCoverage).map(([key, coverage]) => {
+        const unresolvedFindingId =
+          coverage.status === 'design-blocked'
+            ? 'engine-capability-ownership'
+            : coverage.status === 'partial' ||
+                coverage.status === 'unimplemented'
+              ? 'readiness-integrity'
+              : undefined;
+        const findingId =
+          unresolvedFindingId === undefined
+            ? coverage.findingId
+            : requireFindingReference(unresolvedFindingId, key);
+        const externalClauses = coverage.externalClauses?.map((clause) => ({
+          ...clause,
+          findingId: requireFindingReference(
+            clause.findingId ?? 'rule-corpus-procedures',
+            `${key}:${clause.clause}`,
+          ),
+        }));
+        return [
+          key,
+          {
+            ...coverage,
+            ...(findingId === undefined ? {} : { findingId }),
+            ...(externalClauses === undefined ? {} : { externalClauses }),
+          },
+        ] as const;
+      }),
+    ),
+  );
+}
+
+export const ENGINE_PROCEDURE_COVERAGE = materializeEngineProcedureCoverage(
+  UNBOUND_ENGINE_PROCEDURE_COVERAGE,
+);
+
+function requireFindingReference(id: string, context: string): string {
+  if (findingByCanonicalId(id) === undefined) {
+    throw new Error(
+      `${context}: unknown canonical finding ID ${JSON.stringify(id)}`,
+    );
+  }
+  return id;
+}
+
+/**
+ * Identity-pinned classification of the reviewed `rule:*` corpus. This hash
+ * covers every sorted `key:class` pair, so an equal-size reclassification is
+ * still drift. It intentionally makes no claim beyond `rule:*` records.
+ */
+const EXPECTED_RULE_DISPOSITION_IDENTITY_FINGERPRINT =
+  'ce931fcf6307c8ff6de62a446b6436ab70f7bdc74701e7311f6b1ff61dd53e58';
+
+function ruleDispositionIdentityFingerprint(
+  dispositions: Readonly<Record<string, RuleDisposition>>,
+): string {
+  return createHash('sha256')
+    .update(
+      Object.entries(dispositions)
+        .map(([key, disposition]) => `${key}:${disposition.class}`)
+        .sort()
+        .join('\n'),
+    )
+    .digest('hex');
+}
+
+export function validateRuleDispositionIdentity(
+  dispositions: Readonly<Record<string, RuleDisposition>>,
+): readonly string[] {
+  const actual = ruleDispositionIdentityFingerprint(dispositions);
+  return actual === EXPECTED_RULE_DISPOSITION_IDENTITY_FINGERPRINT
+    ? []
+    : [
+        `rule disposition identity drift: expected ${EXPECTED_RULE_DISPOSITION_IDENTITY_FINGERPRINT}, got ${actual} — review every rule:* key/class identity in a deliberate diff`,
+      ];
+}
 
 /**
  * Pinned execution-boundary coverage census. Seeded from the 2026-07-06
@@ -2999,10 +3085,9 @@ const BEAD_ID_PATTERN = /^eshyra-[a-z0-9]+(\.[0-9]+)*$/;
 /**
  * Registry-integrity check (design §3) over an arbitrary
  * (dispositions, coverage) pair: class invariants, coverage completeness,
- * status invariants, and census. Pack-independent and pure, so tests can
- * exercise each failure mode against small fixtures without the pinned
- * 335/175 census getting in the way (pass matching `expectedSemanticCensus`/
- * `expectedCoverageCensus` overrides). `assertRuleDispositions` is the
+ * status invariants, and optional fixture census. Pack-independent and pure,
+ * so tests can exercise each failure mode against small fixtures without the
+ * production identity pin getting in the way. `assertRuleDispositions` is the
  * production entry point, applied to the real registries plus the
  * pack-key-diff check. Does NOT check runtimeOwner/evidence path existence
  * — that runs in tests (design §6) to keep the bundle build hermetic.
@@ -3010,9 +3095,7 @@ const BEAD_ID_PATTERN = /^eshyra-[a-z0-9]+(\.[0-9]+)*$/;
 export function validateRuleRegistries(
   dispositions: Readonly<Record<string, RuleDisposition>>,
   coverage: Readonly<Record<string, RuleProcedureCoverage>>,
-  expectedSemanticCensus: Readonly<
-    Record<RuleDispositionClass, number>
-  > = EXPECTED_SEMANTIC_CENSUS,
+  expectedSemanticCensus?: Readonly<Record<RuleDispositionClass, number>>,
   expectedCoverageCensus: Readonly<
     Record<RuleCoverageStatus, number>
   > = EXPECTED_COVERAGE_CENSUS,
@@ -3062,14 +3145,16 @@ export function validateRuleRegistries(
       }
     }
   }
-  for (const [dispositionClass, expected] of Object.entries(
-    expectedSemanticCensus,
-  )) {
-    const actual = censusByClass[dispositionClass] ?? 0;
-    if (actual !== expected) {
-      errors.push(
-        `semantic census drift: ${dispositionClass} is ${actual}, expected ${expected} — update EXPECTED_SEMANTIC_CENSUS in a reviewed diff`,
-      );
+  if (expectedSemanticCensus !== undefined) {
+    for (const [dispositionClass, expected] of Object.entries(
+      expectedSemanticCensus,
+    )) {
+      const actual = censusByClass[dispositionClass] ?? 0;
+      if (actual !== expected) {
+        errors.push(
+          `semantic fixture census drift: ${dispositionClass} is ${actual}, expected ${expected}`,
+        );
+      }
     }
   }
 
@@ -3128,6 +3213,21 @@ export function validateRuleRegistries(
     if (coverageRow.status === 'partial' && !coverageRow.missing) {
       errors.push(`${key}: partial row is missing 'missing'`);
     }
+    if (
+      (coverageRow.status === 'partial' ||
+        coverageRow.status === 'unimplemented' ||
+        coverageRow.status === 'design-blocked') &&
+      coverageRow.findingId === undefined
+    ) {
+      errors.push(`${key}: unresolved row is missing durable findingId`);
+    } else if (
+      coverageRow.findingId !== undefined &&
+      findingByCanonicalId(coverageRow.findingId) === undefined
+    ) {
+      errors.push(
+        `${key}: unknown canonical finding ID ${JSON.stringify(coverageRow.findingId)}`,
+      );
+    }
     if (coverageRow.status === 'design-blocked') {
       if (!coverageRow.designOwner) {
         errors.push(`${key}: design-blocked row is missing designOwner`);
@@ -3140,13 +3240,23 @@ export function validateRuleRegistries(
     // Clause-level external ownership (design §5 item 3): each clause must
     // name a real bead and a non-empty description — never a placeholder —
     // so a malformed cross-bead pointer can't silently pass review.
-    for (const { clause, bead } of coverageRow.externalClauses ?? []) {
+    for (const { clause, bead, findingId } of coverageRow.externalClauses ??
+      []) {
       if (!clause) {
         errors.push(`${key}: externalClauses entry is missing 'clause'`);
       }
       if (!BEAD_ID_PATTERN.test(bead)) {
         errors.push(
           `${key}: externalClauses bead '${bead}' is not a real bead-id shape`,
+        );
+      }
+      if (findingId === undefined) {
+        errors.push(
+          `${key}: externalClauses entry is missing durable findingId`,
+        );
+      } else if (findingByCanonicalId(findingId) === undefined) {
+        errors.push(
+          `${key}: externalClauses findingId ${JSON.stringify(findingId)} is not a canonical finding ID`,
         );
       }
     }
@@ -3211,12 +3321,15 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
 
   errors.push(
     ...validateRuleRegistries(RULE_DISPOSITIONS, ENGINE_PROCEDURE_COVERAGE),
+    ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
   );
 
   return errors;
 }
 
 export interface RuleDispositionReport {
+  /** Exact `rule:*` classification only; never corpus-wide ownership. */
+  readonly scope: 'rule-record-classification-only';
   readonly referencesProse: number;
   readonly definitions: number;
   readonly tableBacked: number;
@@ -3246,8 +3359,37 @@ export interface RuleDispositionReport {
       readonly key: string;
       readonly clause: string;
       readonly bead: string;
+      readonly findingId: string;
     }[];
   };
+  /** Context that must be retrievable when a procedure is model-adjudicated. */
+  readonly adjudicationContextInventory: readonly {
+    readonly key: string;
+    readonly contextRequirement: string;
+  }[];
+  /**
+   * Raw implemented-row evidence for W13. This is intentionally not a
+   * capability contract: operation, inputs, exclusions, revision, and
+   * residual semantics are underived until W13 binds them to real operations.
+   */
+  readonly deterministicCapabilityHandoff: readonly {
+    readonly ruleKey: string;
+    readonly runtimeOwner: readonly string[];
+    readonly evidence: readonly string[];
+    readonly primitives: readonly string[];
+  }[];
+  /** Deferred, partial, unimplemented, design-blocked, and external work. */
+  readonly unresolvedWork: readonly {
+    readonly key: string;
+    readonly kind:
+      | 'partial'
+      | 'unimplemented'
+      | 'design-blocked'
+      | 'external-clause';
+    readonly detail: string;
+    readonly findingId: string;
+    readonly historicalBead?: string;
+  }[];
 }
 
 /**
@@ -3258,7 +3400,11 @@ export interface RuleDispositionReport {
  * arrays (not just counts) so a reviewer can see exactly which keys and
  * clauses are outstanding without re-deriving them from the registry.
  */
-export function buildRuleDispositionReport(): RuleDispositionReport {
+export function buildRuleDispositionReport(
+  coverageRegistry: Readonly<
+    Record<string, RuleProcedureCoverage>
+  > = ENGINE_PROCEDURE_COVERAGE,
+): RuleDispositionReport {
   let referencesProse = 0;
   let definitions = 0;
   let tableBacked = 0;
@@ -3274,28 +3420,80 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
   const partial: { key: string; missing: string }[] = [];
   const unimplemented: { key: string; missing: string }[] = [];
   const designBlocked: { key: string; designOwner: string }[] = [];
-  const externalClauses: { key: string; clause: string; bead: string }[] = [];
-  for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
+  const externalClauses: {
+    key: string;
+    clause: string;
+    bead: string;
+    findingId: string;
+  }[] = [];
+  const adjudicationContextInventory: {
+    key: string;
+    contextRequirement: string;
+  }[] = [];
+  const deterministicCapabilityHandoff: RuleDispositionReport['deterministicCapabilityHandoff'][number][] =
+    [];
+  const unresolvedWork: RuleDispositionReport['unresolvedWork'][number][] = [];
+  for (const [key, coverage] of Object.entries(coverageRegistry)) {
     if (coverage.status === 'implemented') implemented += 1;
     if (coverage.status === 'model-adjudicated-supported') {
       modelAdjudicatedSupported += 1;
+      adjudicationContextInventory.push({
+        key,
+        contextRequirement: coverage.contextRequirement ?? '',
+      });
+    }
+    if (coverage.status === 'implemented') {
+      deterministicCapabilityHandoff.push({
+        ruleKey: key,
+        runtimeOwner: coverage.runtimeOwner ?? [],
+        evidence: coverage.evidence ?? [],
+        primitives: coverage.primitives ?? [],
+      });
     }
     if (coverage.status === 'partial') {
       partial.push({ key, missing: coverage.missing ?? '' });
+      unresolvedWork.push({
+        key,
+        kind: 'partial',
+        detail: coverage.missing ?? '',
+        findingId: coverage.findingId ?? '',
+      });
     }
     if (coverage.status === 'unimplemented') {
       unimplemented.push({ key, missing: coverage.missing ?? '' });
+      unresolvedWork.push({
+        key,
+        kind: 'unimplemented',
+        detail: coverage.missing ?? '',
+        findingId: coverage.findingId ?? '',
+      });
     }
     if (coverage.status === 'design-blocked') {
       designBlocked.push({ key, designOwner: coverage.designOwner ?? '' });
+      unresolvedWork.push({
+        key,
+        kind: 'design-blocked',
+        detail:
+          'Deliberately deferred design work; ADR 0018 §6 reporting remains required for multiclass procedures.',
+        findingId: coverage.findingId ?? '',
+        historicalBead: coverage.designOwner,
+      });
     }
-    for (const { clause, bead } of coverage.externalClauses ?? []) {
-      externalClauses.push({ key, clause, bead });
+    for (const { clause, bead, findingId } of coverage.externalClauses ?? []) {
+      externalClauses.push({ key, clause, bead, findingId: findingId ?? '' });
+      unresolvedWork.push({
+        key,
+        kind: 'external-clause',
+        detail: clause,
+        findingId: findingId ?? '',
+        historicalBead: bead,
+      });
     }
   }
   const byKey = <T extends { key: string }>(a: T, b: T) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
   return {
+    scope: 'rule-record-classification-only',
     referencesProse,
     definitions,
     tableBacked,
@@ -3310,5 +3508,10 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
         (a, b) => byKey(a, b) || (a.clause < b.clause ? -1 : 1),
       ),
     },
+    adjudicationContextInventory: adjudicationContextInventory.sort(byKey),
+    deterministicCapabilityHandoff: deterministicCapabilityHandoff.sort(
+      (a, b) => a.ruleKey.localeCompare(b.ruleKey),
+    ),
+    unresolvedWork: unresolvedWork.sort(byKey),
   };
 }
