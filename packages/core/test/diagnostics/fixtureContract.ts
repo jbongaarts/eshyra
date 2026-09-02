@@ -106,6 +106,7 @@ export interface AmbiguityExpectation {
   readonly ambiguityId: string;
   readonly expectedResolution: 'resolved' | 'unresolved';
   readonly interpretationIds: readonly string[];
+  readonly selectedInterpretationId?: string;
   readonly statement: string;
 }
 
@@ -119,6 +120,8 @@ export interface CampaignRuleCase {
   readonly statement: string;
   readonly ruleIdentity?: string;
   readonly ruleKind?: 'house-rule' | 'ruling';
+  readonly ambiguityId?: string;
+  readonly selectedInterpretationId?: string;
   readonly scope?: string;
   readonly provenance?: string;
 }
@@ -263,6 +266,10 @@ const SELECTOR_KEYS = {
   'json-pointer': new Set(['kind', 'pointer']),
   'source-text-predicate': new Set(['kind', 'description', 'exactSubstring']),
   'stable-id': new Set(['kind', 'idKind', 'id']),
+} as const;
+const CAMPAIGN_RULE_ROUTE_BY_KIND = {
+  'house-rule': 'campaign-rule',
+  ruling: 'campaign-ruling',
 } as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -436,9 +443,30 @@ function checkCampaignRuleCases(value: unknown, label: string): void {
   for (const [index, item] of value.cases.entries()) {
     if (!isRecord(item))
       throw new Error(`${label}.cases[${index}] must be an object`);
+    checkKeysAndRequired(
+      item,
+      new Set([
+        'caseId',
+        'statement',
+        'ruleIdentity',
+        'ruleKind',
+        'ambiguityId',
+        'selectedInterpretationId',
+        'scope',
+        'provenance',
+      ]),
+      new Set(['caseId', 'statement']),
+      `${label}.cases[${index}]`,
+    );
     nonEmptyString(item.caseId, `${label}.cases[${index}].caseId`);
     nonEmptyString(item.statement, `${label}.cases[${index}].statement`);
-    for (const key of ['ruleIdentity', 'scope', 'provenance'])
+    for (const key of [
+      'ruleIdentity',
+      'ambiguityId',
+      'selectedInterpretationId',
+      'scope',
+      'provenance',
+    ])
       if (item[key] !== undefined)
         nonEmptyString(item[key], `${label}.cases[${index}].${key}`);
     if (
@@ -447,6 +475,13 @@ function checkCampaignRuleCases(value: unknown, label: string): void {
       item.ruleKind !== 'ruling'
     )
       throw new Error(`${label}.cases[${index}].ruleKind is invalid`);
+    if (
+      item.selectedInterpretationId !== undefined &&
+      item.ambiguityId === undefined
+    )
+      throw new Error(
+        `${label}.cases[${index}].selectedInterpretationId requires ambiguityId`,
+      );
   }
 }
 
@@ -532,28 +567,6 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
     throw new Error(
       `fixture ${index}.expectedRouteClasses is missing must-include target coverage: ${missingRouteTargets.join(', ')}`,
     );
-  const routeClasses = new Set(
-    value.expectedRouteClasses.flatMap((route) => route.routes),
-  );
-  const noActiveRuling =
-    isRecord(value.campaignRuleState) &&
-    value.campaignRuleState.kind === 'none';
-  if (noActiveRuling && routeClasses.has('campaign-ruling'))
-    throw new Error(
-      `fixture ${index}.expectedRouteClasses cannot include campaign-ruling without an active ruling`,
-    );
-  if (
-    !noActiveRuling &&
-    isRecord(value.expectedCampaignRuleOrRulingState) &&
-    value.expectedCampaignRuleOrRulingState.kind === 'campaign-rule-cases' &&
-    value.expectedCampaignRuleOrRulingState.cases.some(
-      (item) => item.ruleKind === 'ruling',
-    ) &&
-    !routeClasses.has('campaign-ruling')
-  )
-    throw new Error(
-      `fixture ${index}.expectedRouteClasses must include campaign-ruling for an active ruling`,
-    );
   checkFacts(
     value.requiredRetainedFacts,
     `fixture ${index}.requiredRetainedFacts`,
@@ -638,6 +651,20 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
         throw new Error(
           `fixture ${index}.expectedAmbiguityState has no interpretations`,
         );
+      if (item.expectedResolution === 'resolved') {
+        nonEmptyString(
+          item.selectedInterpretationId,
+          `fixture ${index}.expectedAmbiguityState.expectations[${ambiguityIndex}].selectedInterpretationId`,
+        );
+        if (!item.interpretationIds.includes(item.selectedInterpretationId))
+          throw new Error(
+            `fixture ${index}.expectedAmbiguityState selection is not one of its declared interpretations`,
+          );
+      } else if (item.selectedInterpretationId !== undefined) {
+        throw new Error(
+          `fixture ${index}.expectedAmbiguityState unresolved expectation cannot select an interpretation`,
+        );
+      }
       item.interpretationIds.forEach((id, idIndex) => {
         nonEmptyString(
           id,
@@ -654,6 +681,58 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
     value.expectedCampaignRuleOrRulingState,
     `fixture ${index}.expectedCampaignRuleOrRulingState`,
   );
+  const routeClasses = new Set(
+    value.expectedRouteClasses.flatMap((route) => route.routes),
+  );
+  const noActiveCampaignRule =
+    isRecord(value.campaignRuleState) &&
+    value.campaignRuleState.kind === 'none';
+  if (noActiveCampaignRule) {
+    for (const [ruleKind, routeClass] of Object.entries(
+      CAMPAIGN_RULE_ROUTE_BY_KIND,
+    ))
+      if (routeClasses.has(routeClass))
+        throw new Error(
+          `fixture ${index}.expectedRouteClasses cannot include ${routeClass} without an active ${ruleKind}`,
+        );
+  } else if (
+    isRecord(value.expectedCampaignRuleOrRulingState) &&
+    value.expectedCampaignRuleOrRulingState.kind === 'campaign-rule-cases'
+  ) {
+    for (const item of value.expectedCampaignRuleOrRulingState.cases) {
+      if (item.ruleKind === undefined) continue;
+      const routeClass = CAMPAIGN_RULE_ROUTE_BY_KIND[item.ruleKind];
+      if (!routeClasses.has(routeClass))
+        throw new Error(
+          `fixture ${index}.expectedRouteClasses must include ${routeClass} for an active ${item.ruleKind}`,
+        );
+    }
+  }
+  if (
+    isRecord(value.expectedAmbiguityState) &&
+    value.expectedAmbiguityState.kind === 'ambiguities' &&
+    isRecord(value.expectedCampaignRuleOrRulingState) &&
+    value.expectedCampaignRuleOrRulingState.kind === 'campaign-rule-cases'
+  ) {
+    for (const expectation of value.expectedAmbiguityState.expectations) {
+      if (expectation.expectedResolution !== 'resolved') continue;
+      const ruling = value.expectedCampaignRuleOrRulingState.cases.find(
+        (item) =>
+          item.ruleKind === 'ruling' &&
+          item.ambiguityId === expectation.ambiguityId,
+      );
+      if (ruling === undefined)
+        throw new Error(
+          `fixture ${index} resolved ambiguity ${expectation.ambiguityId} must have a ruling case with explicit route evidence`,
+        );
+      if (
+        ruling.selectedInterpretationId !== expectation.selectedInterpretationId
+      )
+        throw new Error(
+          `fixture ${index} ruling selection disagrees with ambiguity ${expectation.ambiguityId}`,
+        );
+    }
+  }
   if (!isRecord(value.expectedCapabilityStatus))
     throw new Error(
       `fixture ${index}.expectedCapabilityStatus must be an object`,
