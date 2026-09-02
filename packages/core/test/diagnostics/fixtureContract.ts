@@ -182,7 +182,9 @@ export interface DiagnosticFixture {
   readonly verifiedAtCommit: string;
   readonly gatingBlocker: GatingBlocker;
   readonly boundedEvidenceStatement: string;
-  readonly oracleSignals: readonly OracleSignal[];
+  // Oracle signals belong to FixtureExecution, not here: a supplied answer is
+  // consumed by one execution, and labelling it at scenario level would attach
+  // it to executions that never used it. `FIXTURE_KEYS` rejects it here.
 }
 
 export interface GatingBlocker {
