@@ -13,6 +13,13 @@ import {
   runDiscoveryStages,
 } from '../../src/internal.js';
 import { freshDbWithSession } from '../support/db.js';
+import {
+  installVariantReadinessAddon,
+  PENDING_VARIANT_ID,
+  READY_VARIANT_ID,
+  VARIANT_READINESS_ITEM_KEY,
+  VARIANT_READINESS_OPERATION,
+} from './support/variantReadinessAddon.js';
 
 describe('offline discovery stage boundaries', () => {
   const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
@@ -217,7 +224,7 @@ describe('offline discovery stage boundaries', () => {
     }
   });
 
-  it('records a packet byte-budget overrun without discarding the trace', () => {
+  it('makes a byte budget fail mandatory retention with candidate-level evidence', () => {
     const db = freshDbWithSession();
     try {
       const trace = runDiscoveryStages({
@@ -228,13 +235,77 @@ describe('offline discovery stage boundaries', () => {
         },
         budget: { maxPacketBytes: 1 },
       });
+      // The byte budget is a real retention budget, not a diagnostic flag: a
+      // must-consider candidate it cannot hold is an overflow under design
+      // section 6.3, and the record names the candidate and its routes.
       expect(trace.packet.byteBudgetExceeded).toBe(true);
+      expect(trace.packet.byteOverflow).toHaveLength(1);
+      expect(trace.packet.byteOverflow[0].candidateKey).toBe(
+        'creature:adult-black-dragon',
+      );
+      expect(trace.packet.byteOverflow[0].band).toBe('must-consider');
+      expect(trace.packet.byteOverflow[0].routes.length).toBeGreaterThan(0);
+      expect(trace.packet.byteOverflow[0].reason).toContain('byte budget');
+
+      const measurements = measureDiscovery(trace, {
+        mustIncludeTargetRefs: ['creature:adult-black-dragon'],
+      });
+      expect(measurements.m6.overflowed).toBe(true);
+      expect(measurements.m6.allMustConsiderRetained).toBe(false);
+      expect(measurements.m6.overflow[0].candidateKey).toBe(
+        'creature:adult-black-dragon',
+      );
+      // M7 sees the byte-driven drop with its reason, and M2 blames the packet.
+      expect(measurements.m7.drops.map((drop) => drop.candidateKey)).toContain(
+        'creature:adult-black-dragon',
+      );
+      expect(measurements.m2['creature:adult-black-dragon']).toBe('packet');
+    } finally {
+      db.close();
+    }
+  });
+
+  it('drops only related and exploratory candidates when the budget still fits the mandatory set', () => {
+    const db = freshDbWithSession();
+    try {
+      const full = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'nothing',
+          stateFields: { first: 'condition:incapacitated' },
+        },
+      });
+      const mustConsiderBytes = full.packet.packet.candidates
+        .filter(
+          (candidate) => candidate.identity.key === 'condition:incapacitated',
+        )
+        .reduce(
+          (total, candidate) =>
+            total + Buffer.byteLength(JSON.stringify(candidate), 'utf8'),
+          2,
+        );
+      const trimmed = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'nothing',
+          stateFields: { first: 'condition:incapacitated' },
+        },
+        budget: { maxPacketBytes: mustConsiderBytes },
+      });
+      // The mandatory candidate survives; related expansion is what gives way,
+      // and every drop carries a reason (M7).
+      expect(trimmed.packet.byteOverflow).toEqual([]);
       expect(
-        trace.packet.losses.some(
-          (loss) => loss.reason === 'packet-byte-budget-exceeded',
-        ),
-      ).toBe(true);
-      expect(trace.packet.packet.candidates.length).toBeGreaterThan(0);
+        trimmed.packet.packet.candidates.map((item) => item.identity.key),
+      ).toContain('condition:incapacitated');
+      expect(trimmed.packet.dropped.length).toBeGreaterThan(0);
+      for (const drop of trimmed.packet.dropped)
+        expect(drop.reason.length).toBeGreaterThan(0);
+      expect(
+        measureDiscovery(trimmed, {
+          mustIncludeTargetRefs: ['condition:incapacitated'],
+        }).m6.overflowed,
+      ).toBe(false);
     } finally {
       db.close();
     }
@@ -324,6 +395,243 @@ describe('offline discovery stage boundaries', () => {
       expect(candidate?.ambiguities.map((item) => item.id)).toContain(
         'ambiguity:cube-of-force-same-face-duration-reset',
       );
+    } finally {
+      db.close();
+    }
+  });
+  it('preflights only the candidate the capability route selected', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'nothing',
+          stateFields: {
+            itemRecord: 'magic-item:ammunition-1-2-or-3',
+            operationId: 'hit-target',
+            // An unrelated magic item merely present in context. A
+            // scenario-global operationId fallback would preflight this too
+            // and report a capability for an item nothing selected.
+            alsoCarried: 'magic-item:cube-of-force',
+          },
+        },
+      });
+      const selected = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'magic-item:ammunition-1-2-or-3',
+      );
+      const unrelated = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'magic-item:cube-of-force',
+      );
+      expect(selected?.capability?.status).toBe('available');
+      expect(unrelated).toBeDefined();
+      expect(unrelated?.capability).toBeUndefined();
+    } finally {
+      db.close();
+    }
+  });
+
+  it('reports the readiness capability itself, not an execution capability', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'nothing',
+          stateFields: {
+            itemRecord: 'magic-item:ammunition-1-2-or-3',
+            operationId: 'hit-target',
+          },
+        },
+      });
+      const candidate = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'magic-item:ammunition-1-2-or-3',
+      );
+      // A green readiness preflight establishes the readiness capability and
+      // nothing more. Relabelling it as a single-use SPEND would assert an
+      // execution commitment no contract backs and no code here performs.
+      expect(candidate?.capability?.capabilityId).toBe(
+        MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.operationId,
+      );
+      expect(candidate?.capability?.capabilityId).not.toBe(
+        'magic-item-single-use-spend',
+      );
+    } finally {
+      db.close();
+    }
+  });
+
+  it('gates the preflight on the selected variant', () => {
+    const db = freshDbWithSession();
+    try {
+      const resolver = installVariantReadinessAddon(
+        db,
+        '2026-09-01T00:00:00.000Z',
+      );
+      const run = (variantId: string) =>
+        runDiscoveryStages({
+          db,
+          rulesPackResolver: resolver,
+          scenario: {
+            playerInput: 'nothing',
+            stateFields: {
+              itemRecord: VARIANT_READINESS_ITEM_KEY,
+              operationId: VARIANT_READINESS_OPERATION,
+              variantId,
+            },
+          },
+        }).packet.packet.candidates.find(
+          (item) => item.identity.key === VARIANT_READINESS_ITEM_KEY,
+        )?.capability;
+
+      // Same record, same operation, different variant. Passing
+      // variantId = undefined (as an earlier revision hardcoded) cannot tell
+      // these apart and would report one answer for both.
+      const ready = run(READY_VARIANT_ID);
+      const pending = run(PENDING_VARIANT_ID);
+      expect(ready?.variantId).toBe(READY_VARIANT_ID);
+      expect(pending?.variantId).toBe(PENDING_VARIANT_ID);
+      expect(ready?.status).toBe('available');
+      expect(pending?.status).toBe('blocked');
+    } finally {
+      db.close();
+    }
+  });
+
+  it('lets an active campaign rule surface governing material by itself', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          // Nothing here mentions or references the governed record.
+          playerInput: 'we continue the negotiation',
+          stateFields: { campaignPosition: 'turn-12', actor: 'pc-1' },
+        },
+        campaignRuleSeam: {
+          activeRulesAtPosition: () => [
+            {
+              ruleIdentity: 'house-rule-components',
+              ruleKind: 'house-rule',
+              status: 'active',
+              origin: 'player',
+              provenance: 'campaign history',
+              effectivePosition: 'turn-12',
+              supersededBy: null,
+              scope: 'material components',
+              governingRecordKeys: ['spell:fireball'],
+            },
+          ],
+          activeRulingsForAmbiguities: () => [],
+        },
+      });
+      // campaign-rule is a discovery ROUTE: the governing record enters as a
+      // must-consider candidate even though no other route reached it.
+      expect(trace.ruleJoin.surfacedCandidateKeys).toEqual(['spell:fireball']);
+      const candidate = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'spell:fireball',
+      );
+      expect(candidate).toBeDefined();
+      expect(candidate?.routes.map((route) => route.routeClass)).toEqual([
+        'campaign-rule',
+      ]);
+      expect(candidate?.campaignRules[0].ruleIdentity).toBe(
+        'house-rule-components',
+      );
+      const measurements = measureDiscovery(trace, {
+        mustIncludeTargetRefs: ['spell:fireball'],
+      });
+      expect(measurements.m1['spell:fireball']).toBe(true);
+      expect(measurements.m5.returned).toEqual(['house-rule-components']);
+      expect(measurements.m5.matched).toEqual(['house-rule-components']);
+      expect(measurements.m5.unplaced).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('records an unplaceable rule and leaves its ambiguity unresolved', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'nothing',
+          stateFields: { itemRecord: 'magic-item:cube-of-force' },
+        },
+        campaignRuleSeam: {
+          activeRulesAtPosition: () => [],
+          activeRulingsForAmbiguities: () => [
+            {
+              ruleIdentity: 'ruling-nowhere',
+              ruleKind: 'ruling',
+              status: 'active',
+              origin: 'dm',
+              provenance: 'campaign history',
+              effectivePosition: 'turn-1',
+              supersededBy: null,
+              scope: 'ambiguity:cube-of-force-same-face-duration-reset',
+              governingRecordKeys: ['rules-record:does-not-exist'],
+              ambiguityId: 'ambiguity:cube-of-force-same-face-duration-reset',
+              selectedInterpretationId: 'same-face-resets',
+            },
+          ],
+        },
+      });
+      const measurements = measureDiscovery(trace);
+      expect(measurements.m5.returned).toEqual(['ruling-nowhere']);
+      expect(measurements.m5.unplaced).toEqual(['ruling-nowhere']);
+      // An unplaced ruling never reached the packet, so it cannot be reported
+      // as resolving the ambiguity: the uncertainty is preserved (8.2 R7).
+      expect(measurements.m5.unresolvedAmbiguityIds).toContain(
+        'ambiguity:cube-of-force-same-face-duration-reset',
+      );
+      expect(
+        trace.ruleJoin.losses.some((loss) => loss.reason === 'unplaced-rule'),
+      ).toBe(true);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('expands typed links from a must-consider seed but not an exploratory one', () => {
+    const seed = (routeClass: 'direct-state-ref' | 'situation-cue') => ({
+      candidateKey: 'condition:incapacitated',
+      targetKind: 'rules-record' as const,
+      entry: stack.recordsByKey.get('condition:incapacitated'),
+      routes: [{ routeClass, trigger: 'seed', evidence: {}, signalId: 'seed' }],
+      traversals: [],
+      campaignRules: [],
+      campaignRulings: [],
+    });
+    const dodgeReached = (candidates: readonly DiscoveryCandidate[]) =>
+      expandTypedRelationships(candidates, stack).outputsProduced.some(
+        (item) => item.candidateKey === 'action:dodge',
+      );
+
+    // Identical typed link, two different origin bands.
+    expect(dodgeReached([seed('direct-state-ref')])).toBe(true);
+    expect(dodgeReached([seed('situation-cue')])).toBe(false);
+
+    const skipped = expandTypedRelationships([seed('situation-cue')], stack);
+    expect(skipped.losses.map((loss) => loss.reason)).toContain(
+      'expansion-origin-not-must-consider',
+    );
+  });
+
+  it('recognizes areas in linear time on adversarial prose', () => {
+    const db = freshDbWithSession();
+    try {
+      // A long digit run that never reaches "-foot" is the shape CodeQL
+      // flagged as polynomial. The bounded recognizer must return promptly.
+      const started = Date.now();
+      runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: `${'9'.repeat(60_000)} feet of nothing`,
+          stateFields: { first: 'rule:cover' },
+        },
+      });
+      expect(Date.now() - started).toBeLessThan(5_000);
     } finally {
       db.close();
     }

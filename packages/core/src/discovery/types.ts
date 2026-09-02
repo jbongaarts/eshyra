@@ -178,6 +178,13 @@ export const NULL_CAMPAIGN_RULE_SEAM: CampaignRuleReadSeam = {
 export interface RuleJoinTrace extends StageTrace<DiscoveryCandidate> {
   readonly requestedRuleRecordKeys: readonly string[];
   readonly requestedAmbiguityIds: readonly string[];
+  /** Every identity the seam returned, whether or not it could be placed. */
+  readonly returnedRuleIdentities: readonly string[];
+  readonly placedRuleIdentities: readonly string[];
+  /** Returned but with no governing key resolvable in the active stack. */
+  readonly unplacedRuleIdentities: readonly string[];
+  /** Governing material this stage introduced that no earlier route reached. */
+  readonly surfacedCandidateKeys: readonly string[];
   readonly placedRules: readonly {
     readonly ruleIdentity: string;
     readonly governingRecordKey: string;
@@ -227,6 +234,9 @@ export interface CapabilityPreflight {
   readonly exclusions?: readonly string[];
   readonly residualInterpretation?: string;
   readonly operationId?: string;
+  /** The variant the preflight route selected, threaded through to the real
+   * readiness derivation exactly as `useItem` does. */
+  readonly variantId?: string;
   readonly readinessInput?: ItemOperationReadinessInput;
   readonly blockingClauseIds?: readonly string[];
   readonly message?: string;
@@ -272,6 +282,10 @@ export interface PacketTrace extends StageTrace<PacketCandidate> {
   readonly packet: ContextPacket;
   /** Recorded rather than thrown, so the trace survives a budget overrun. */
   readonly byteBudgetExceeded: boolean;
+  /** Must-consider candidates the byte budget could not hold. Non-empty is an
+   * overflow under design section 6.3 and fails the probe, exactly as a
+   * candidate-count overflow does. */
+  readonly byteOverflow: readonly RetentionOverflow[];
   readonly dropped: readonly RetentionTrace['dropped'][number][];
 }
 

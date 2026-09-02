@@ -20,6 +20,41 @@ function targetRef(target: DiagnosticTarget): string {
     : target.recordKey;
 }
 
+/**
+ * Packet semantics the accepted design requires by name, expressed as typed
+ * expectations because they are NOT machine-checkable as `requiredRetainedFacts`
+ * prose. Design section 7.2 names both worked examples: the Acid Breath
+ * projection omits the success branch and the area, and Fireball has no typed
+ * area despite its prose. Asserting only that `m9.missing` is empty let those
+ * requirements pass while the packet never disclosed them.
+ */
+const REQUIRED_PROJECTION_LIMITS: Readonly<
+  Record<
+    string,
+    readonly { candidateKey: string; kind: string; evidencePath?: string }[]
+  >
+> = {
+  P3: [
+    {
+      candidateKey: 'creature:adult-black-dragon',
+      kind: 'success-branch',
+      evidencePath: '/data/actions/5/mechanics/saves',
+    },
+    { candidateKey: 'creature:adult-black-dragon', kind: 'area' },
+  ],
+  P4: [{ candidateKey: 'spell:fireball', kind: 'area' }],
+};
+
+/** Authored-module authority metadata that must survive into the packet. */
+const REQUIRED_ADVENTURE_PROVENANCE: Readonly<
+  Record<string, { sourceRef: string; licenseClass: string }>
+> = {
+  P9: {
+    sourceRef: 'first-party:hollow-beneath-emberfall',
+    licenseClass: 'original',
+  },
+};
+
 const STAGES = [
   'signals',
   'candidates',
@@ -136,6 +171,47 @@ describe('offline discovery diagnostic probes', () => {
           expect(measurements.m8.forbiddenPresent).toEqual([]);
           expect(measurements.m8.unattributedPresent).toEqual([]);
           expect(measurements.m9.missing).toEqual([]);
+
+          // Statement-only facts cannot be matched against packet content, so
+          // they are reported rather than counted as satisfied. The design's
+          // named packet requirements are asserted below as typed expectations
+          // instead, which is what makes those probes real evidence.
+          for (const fact of measurements.m9.proseOnlyNotCheckable)
+            expect(fact.exactSubstring ?? fact.typedPath).toBeUndefined();
+          for (const required of REQUIRED_PROJECTION_LIMITS[fixture.probeId] ??
+            []) {
+            const candidate = trace.packet.packet.candidates.find(
+              (item) => item.identity.key === required.candidateKey,
+            );
+            const note = candidate?.projectionLimits.find(
+              (item) =>
+                item.kind === required.kind &&
+                (required.evidencePath === undefined ||
+                  item.evidence.path === required.evidencePath),
+            );
+            expect(
+              note,
+              `${label} packet omits the required ${required.kind} disclosure for ${required.candidateKey}`,
+            ).toBeDefined();
+            if (required.evidencePath !== undefined)
+              expect(note?.evidence.path).toBe(required.evidencePath);
+            expect(note?.preservedProse.length ?? 0).toBeGreaterThan(0);
+          }
+
+          const provenance = REQUIRED_ADVENTURE_PROVENANCE[fixture.probeId];
+          if (provenance !== undefined) {
+            const authored = trace.packet.packet.candidates.filter(
+              (item) => item.identity.kind === 'adventure-entity',
+            );
+            expect(authored.length).toBeGreaterThan(0);
+            for (const item of authored) {
+              expect(item.provenance.sourceRef).toBe(provenance.sourceRef);
+              expect(
+                (item.provenance.license as { licenseClass?: string } | null)
+                  ?.licenseClass,
+              ).toBe(provenance.licenseClass);
+            }
+          }
 
           // Expected route classes are a lower bound; extras are legitimate
           // discovery and stay visible in the trace.

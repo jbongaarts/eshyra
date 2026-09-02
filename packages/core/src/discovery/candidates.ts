@@ -24,6 +24,16 @@ function emptyCandidate(
   };
 }
 
+/**
+ * An authored module entity plus the module's own authority metadata.
+ *
+ * `AdventureModule` carries real `provenance` and `license` (Hollow Beneath
+ * Emberfall declares `first-party:hollow-beneath-emberfall` and an original
+ * CC-BY-4.0 licence). Returning the bare entity discarded both, and the packet
+ * then hardcoded `sourceRef: 'adventure-module'` with a null licence — losing
+ * known authority metadata for material the packet presents as authoritative.
+ * Source fidelity does not depend on the material being a rules record.
+ */
 function adventureEntity(
   signal: DiscoverySignal,
   scenario: DiscoveryScenario,
@@ -34,15 +44,23 @@ function adventureEntity(
   if (evidence.moduleId !== adventure.moduleId) return undefined;
   const kind = evidence.entityKind;
   const id = evidence.entityId;
-  if (kind === 'location')
-    return adventure.module.locations.find((item) => item.id === id) as
-      | Record<string, unknown>
-      | undefined;
-  if (kind === 'encounter')
-    return adventure.module.encounters.find((item) => item.id === id) as
-      | Record<string, unknown>
-      | undefined;
-  return undefined;
+  const entity =
+    kind === 'location'
+      ? adventure.module.locations.find((item) => item.id === id)
+      : kind === 'encounter'
+        ? adventure.module.encounters.find((item) => item.id === id)
+        : undefined;
+  if (entity === undefined) return undefined;
+  return {
+    entity: entity as unknown as Record<string, unknown>,
+    moduleId: adventure.module.id,
+    entityKind: kind,
+    provenance: adventure.module.provenance as unknown as Record<
+      string,
+      unknown
+    >,
+    license: adventure.module.license as unknown as Record<string, unknown>,
+  };
 }
 
 export function resolveDiscoveryCandidates(

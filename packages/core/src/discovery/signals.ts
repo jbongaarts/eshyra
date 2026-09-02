@@ -228,18 +228,30 @@ export function extractDiscoverySignals(
       consumed.add(leaf.path);
     }
     if (leaf.path.endsWith('/operationId') && typeof leaf.value === 'string') {
+      const boundInstance = scenario.itemInstances?.find((item) =>
+        Object.values(scenario.stateFields).includes(item.instanceId),
+      );
       const itemRecord =
         typeof scenario.stateFields.itemRecord === 'string'
           ? scenario.stateFields.itemRecord
-          : scenario.itemInstances?.find((item) =>
-              Object.values(scenario.stateFields).includes(item.instanceId),
-            )?.recordKey;
+          : boundInstance?.recordKey;
+      // The variant travels with the operation so the preflight derives and
+      // gates on the same variant identity `useItem` supplies at runtime.
+      const variantId =
+        typeof scenario.stateFields.variantId === 'string'
+          ? scenario.stateFields.variantId
+          : boundInstance?.variantId;
       if (typeof itemRecord === 'string' && KEY_RE.test(itemRecord)) {
         signals.push(
           signal(
             'capability-preflight',
             itemRecord,
-            { path: leaf.path, operationId: leaf.value, itemRecord },
+            {
+              path: leaf.path,
+              operationId: leaf.value,
+              itemRecord,
+              ...(variantId === undefined ? {} : { variantId }),
+            },
             index++,
             leaf.value,
           ),

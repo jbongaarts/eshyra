@@ -38,9 +38,19 @@ export interface DiscoveryMeasurements {
     readonly traversal: TypedTraversal;
     readonly result: 'fired' | 'not-fired' | 'fired-and-dropped';
   }[];
+  /**
+   * M5's definition is which rules/rulings were REQUESTED from jhpt, which
+   * MATCHED, and which were PLACED beside their governing material. Reporting
+   * only the placed pairs hid a returned rule that no candidate could receive.
+   */
   readonly m5: {
     readonly requestedRuleRecordKeys: readonly string[];
     readonly requestedAmbiguityIds: readonly string[];
+    readonly returned: readonly string[];
+    readonly matched: readonly string[];
+    readonly unplaced: readonly string[];
+    readonly surfacedCandidateKeys: readonly string[];
+    readonly unresolvedAmbiguityIds: readonly string[];
     readonly placed: readonly {
       readonly ruleIdentity: string;
       readonly governingRecordKey: string;
@@ -49,6 +59,12 @@ export interface DiscoveryMeasurements {
   readonly m6: {
     readonly allMustConsiderRetained: boolean;
     readonly overflowed: boolean;
+    /** Every must-consider candidate a budget could not hold, with its routes. */
+    readonly overflow: readonly {
+      readonly candidateKey: string;
+      readonly routes: readonly { readonly routeClass: string }[];
+      readonly reason: string;
+    }[];
   };
   readonly m7: {
     readonly packetBytes: number;
@@ -258,11 +274,15 @@ export function measureDiscovery(
   const forbiddenPresent = (input.mustNotIncludeTargetRefs ?? []).filter(
     (key) => keys.has(key),
   );
+  // Every candidate must carry real attribution, adventure entities included.
+  // Exempting the kind meant P9 stayed green while the module's actual
+  // provenance and licence were being discarded.
   const unattributedPresent = trace.packet.packet.candidates
     .filter(
       (candidate) =>
-        candidate.identity.kind !== 'adventure-entity' &&
-        (candidate.provenance.sourceRef ?? '').trim().length === 0,
+        (candidate.provenance.sourceRef ?? '').trim().length === 0 ||
+        candidate.provenance.license === null ||
+        candidate.provenance.license === undefined,
     )
     .map((candidate) => candidate.identity.key);
   return {
@@ -273,11 +293,24 @@ export function measureDiscovery(
     m5: {
       requestedRuleRecordKeys: trace.ruleJoin.requestedRuleRecordKeys,
       requestedAmbiguityIds: trace.ruleJoin.requestedAmbiguityIds,
+      returned: trace.ruleJoin.returnedRuleIdentities,
+      matched: trace.ruleJoin.placedRuleIdentities,
+      unplaced: trace.ruleJoin.unplacedRuleIdentities,
+      surfacedCandidateKeys: trace.ruleJoin.surfacedCandidateKeys,
+      unresolvedAmbiguityIds: trace.ruleJoin.unresolvedAmbiguities
+        .map((item) => item.id)
+        .filter((id): id is string => typeof id === 'string'),
       placed: trace.ruleJoin.placedRules,
     },
+    // Both budgets feed one mandatory-retention measurement: a must-consider
+    // candidate lost to the byte budget is as much an overflow as one lost to
+    // the candidate count.
     m6: {
-      allMustConsiderRetained: !trace.retention.overflowed,
-      overflowed: trace.retention.overflowed,
+      allMustConsiderRetained:
+        !trace.retention.overflowed && trace.packet.byteOverflow.length === 0,
+      overflowed:
+        trace.retention.overflowed || trace.packet.byteOverflow.length > 0,
+      overflow: [...trace.retention.overflow, ...trace.packet.byteOverflow],
     },
     m7: {
       packetBytes: trace.packet.packet.bytes,

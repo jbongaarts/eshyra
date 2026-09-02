@@ -1,5 +1,5 @@
+import { candidateBand as band } from './bands.js';
 import type {
-  CandidateBand,
   DiscoveryCandidate,
   RetainedCandidate,
   RetentionBudget,
@@ -10,27 +10,6 @@ const DEFAULT_BUDGET: RetentionBudget = {
   maxCandidates: 100,
   maxPacketBytes: 512_000,
 };
-
-function band(candidate: DiscoveryCandidate): CandidateBand {
-  if (
-    candidate.routes.some((route) =>
-      [
-        'direct-state-ref',
-        'direct-adventure-ref',
-        'explicit-name-or-alias',
-        'campaign-rule',
-        'campaign-ruling',
-        'capability-preflight',
-      ].includes(route.routeClass),
-    )
-  )
-    return 'must-consider';
-  if (
-    candidate.routes.some((route) => route.routeClass === 'typed-relationship')
-  )
-    return 'related';
-  return 'exploratory';
-}
 
 function rank(a: RetainedCandidate, b: RetainedCandidate): number {
   return (

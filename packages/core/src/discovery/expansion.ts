@@ -1,6 +1,7 @@
 import { CONDITION_RELATION_VALUES } from '../rules/conditionRelations.js';
 import { normalizeRulesRecordName } from '../rules/stack.js';
 import type { RulesRecordKind } from '../rules/types.js';
+import { candidateBand } from './bands.js';
 import type {
   DiscoveryCandidate,
   DiscoveryRoute,
@@ -157,9 +158,32 @@ export function expandTypedRelationships(
       reverse.set(traversal.targetRecordKey, inbound);
     }
   }
+  // Design section 6.3 defines Related as one-hop typed relationships FROM
+  // must-consider material. Expanding from an exploratory-only seed (a bare
+  // situation cue, say) would promote its whole typed neighbourhood into the
+  // Related band, changing retention pressure and bypassing the boundary the
+  // design draws. Skipped seeds are recorded, never silently ignored.
   const originals = [...candidates];
+  const expandable = originals.filter(
+    (candidate) =>
+      candidate.entry !== undefined &&
+      candidateBand(candidate) === 'must-consider',
+  );
+  for (const candidate of originals)
+    if (
+      candidate.entry !== undefined &&
+      candidateBand(candidate) !== 'must-consider'
+    )
+      losses.push({
+        reason: 'expansion-origin-not-must-consider',
+        detail: {
+          candidateKey: candidate.candidateKey,
+          band: candidateBand(candidate),
+          routes: candidate.routes.map((route) => route.routeClass),
+        },
+      });
   const traversals: TypedTraversal[] = [];
-  for (const candidate of originals) {
+  for (const candidate of expandable) {
     if (candidate.entry === undefined) continue;
     const outgoing = directLinks(candidate.entry, stack);
     const incoming = reverse.get(candidate.candidateKey) ?? [];
@@ -202,7 +226,7 @@ export function expandTypedRelationships(
   }
   return {
     stage: 'expansion',
-    inputsConsumed: originals.map((candidate) => ({
+    inputsConsumed: expandable.map((candidate) => ({
       candidateKey: candidate.candidateKey,
     })),
     outputsProduced: [...result.values()],

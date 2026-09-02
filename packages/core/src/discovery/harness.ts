@@ -21,10 +21,14 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
   const ruleJoin = joinCampaignRules(
     expansion.outputsProduced,
     input.campaignRuleSeam,
-    input.campaignPosition ??
-      (typeof input.scenario.stateFields.campaignPosition === 'string'
-        ? input.scenario.stateFields.campaignPosition
-        : undefined),
+    {
+      campaignPosition:
+        input.campaignPosition ??
+        (typeof input.scenario.stateFields.campaignPosition === 'string'
+          ? input.scenario.stateFields.campaignPosition
+          : undefined),
+      stack,
+    },
   );
   const dedup = deduplicateCandidates(ruleJoin.outputsProduced);
   const retention = retainCandidates(dedup.outputsProduced, input.budget);
@@ -34,9 +38,8 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
   // runner fails the probe on `m6.overflowed`.
   const packet = buildContextPacket(
     retention,
-    input.scenario.stateFields,
+    input.scenario.declaredCapabilities ?? [],
     input.budget?.maxPacketBytes,
-    input.scenario.declaredCapabilities,
   );
   return {
     signals,
