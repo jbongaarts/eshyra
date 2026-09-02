@@ -335,7 +335,9 @@ export function extractDiscoverySignals(
       .map((leaf) => ({ path: leaf.path })),
     outputsProduced: allSignals,
     losses: [],
-    carriedForward: 0,
+    produced: allSignals.map((signal) => signal.signalId),
+    modified: [],
+    carriedForward: [],
     outcome: allSignals.length === 0 ? 'failed-to-run' : 'ran',
     failedToRun: allSignals.length === 0,
     unconsumedStateFields: leaves

@@ -61,7 +61,11 @@ export function deduplicateCandidates(
     })),
     outputsProduced: [...merged.values()],
     losses,
-    carriedForward: 0,
+    // Dedup owns every key it emits: it is the merge point, so nothing here
+    // is untouched pass-through.
+    produced: [],
+    modified: [...merged.keys()],
+    carriedForward: [],
     outcome: merged.size === 0 && losses.length === 0 ? 'failed-to-run' : 'ran',
     failedToRun: merged.size === 0 && losses.length === 0,
     routeCountBeforeDedup: before,

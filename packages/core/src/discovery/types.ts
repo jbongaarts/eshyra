@@ -92,7 +92,7 @@ export interface StageLoss {
 }
 
 /**
- * How a stage reports itself (design amendment 12.1.2).
+ * How a stage reports itself (design section 12.1, stage accounting).
  *
  * `ran` — it did work: produced candidates, traversals, placements or losses.
  * `skipped` — it is a CONDITIONAL stage with nothing applicable to do. This is
@@ -106,11 +106,17 @@ export type StageOutcome = 'ran' | 'skipped' | 'failed-to-run';
 export interface StageTrace<T> {
   readonly stage: string;
   readonly inputsConsumed: readonly Record<string, unknown>[];
-  /** Everything the stage emits downstream, including pass-through. */
+  /** Everything the stage emits downstream, including pass-through. Read
+   * `produced`/`modified`/`carriedForward` for what the stage actually did;
+   * this array's length is not a measure of work. */
   readonly outputsProduced: readonly T[];
-  /** Candidates forwarded untouched. Counting these as produced is what let a
-   * zero-seed second pass manufacture a green signal. */
-  readonly carriedForward: number;
+  /** Candidate keys this stage created. */
+  readonly produced: readonly string[];
+  /** Existing candidate keys this stage changed — new routes, traversals,
+   * rules or rulings. A modified candidate is never pass-through. */
+  readonly modified: readonly string[];
+  /** Candidate keys forwarded untouched. */
+  readonly carriedForward: readonly string[];
   readonly losses: readonly StageLoss[];
   readonly outcome: StageOutcome;
   /** Retained for readability; true only when outcome is 'failed-to-run'. */
@@ -322,13 +328,13 @@ export interface DiscoveryTrace {
   readonly candidates: CandidateTrace;
   readonly expansion: ExpansionTrace;
   readonly ruleJoin: RuleJoinTrace;
-  /** The second, bounded expansion pass (design amendment 12.1.1), seeded only
+  /** The second, bounded expansion pass (design section 12.1), seeded only
    * by candidates the rule join promoted to must-consider. */
   readonly ruleExpansion: ExpansionTrace;
   /** The final seam query, for material the first join never saw. */
   readonly lateRuleJoin: RuleJoinTrace;
   /** Records the late join promoted that expansion no longer reaches. The
-   * bound is declared in design amendment 12.1.2 and reported, not hidden. */
+   * bound is declared in design section 12.1 and reported, not hidden. */
   readonly unexpandedPromotions: readonly string[];
   readonly dedup: DedupTrace;
   readonly retention: RetentionTrace;

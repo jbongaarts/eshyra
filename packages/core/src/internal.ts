@@ -470,6 +470,8 @@ export {
   sanitizePromptSectionName,
   splitPromptSections,
 } from './debug/sessionDebug.js';
+export type { CandidateAccounting } from './discovery/accounting.js';
+export { accountCandidates } from './discovery/accounting.js';
 export {
   joinCampaignRules,
   NULL_CAMPAIGN_RULE_SEAM,

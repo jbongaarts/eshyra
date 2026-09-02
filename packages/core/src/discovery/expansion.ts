@@ -1,6 +1,7 @@
 import { CONDITION_RELATION_VALUES } from '../rules/conditionRelations.js';
 import { normalizeRulesRecordName } from '../rules/stack.js';
 import type { RulesRecordKind } from '../rules/types.js';
+import { accountCandidates } from './accounting.js';
 import { candidateBand } from './bands.js';
 import type {
   DiscoveryCandidate,
@@ -146,7 +147,7 @@ function newRecordCandidate(
  * One-hop typed expansion from must-consider material.
  *
  * `seedKeys` restricts which candidates act as expansion origins. The second
- * pass authorized by design amendment 12.1.1 uses it to expand only the
+ * pass authorized by design section 12.1 uses it to expand only the
  * candidates the campaign-rule join promoted to must-consider, so the
  * repetition stays one hop and cannot cascade.
  */
@@ -242,17 +243,11 @@ export function expandTypedRelationships(
       );
     }
   }
-  const produced = [...result.values()].filter(
-    (candidate) =>
-      !candidates.some(
-        (original) =>
-          original.candidateKey === candidate.candidateKey &&
-          original.routes.length === candidate.routes.length,
-      ),
-  ).length;
-  // A zero-seed conditional pass forwards its input untouched. Counting that
-  // pass-through as work is exactly the green signal section 13.3 forbids, so
-  // the outcome is `skipped` and the carried-forward count is separate.
+  const outputs = [...result.values()];
+  const accounting = accountCandidates(candidates, outputs);
+  // A conditional stage is `skipped` only when it had nothing applicable to
+  // do. Anything it actually performed makes it `ran`, and pass-through is
+  // never counted as work.
   const didWork =
     expandable.length > 0 || traversals.length > 0 || losses.length > 0;
   return {
@@ -260,7 +255,9 @@ export function expandTypedRelationships(
     inputsConsumed: expandable.map((candidate) => ({
       candidateKey: candidate.candidateKey,
     })),
-    carriedForward: result.size - produced,
+    produced: accounting.produced,
+    modified: accounting.modified,
+    carriedForward: accounting.carriedForward,
     outcome: didWork
       ? 'ran'
       : options.conditional === true

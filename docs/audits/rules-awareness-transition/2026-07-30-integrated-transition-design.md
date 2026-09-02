@@ -1442,14 +1442,87 @@ authoring, and offline-harness design may all proceed during Phase 0.
 
 ### 12.1 Phase 1 — offline stage harness
 
-**Build** an **experiment-only** harness that can execute and inspect the stage
-pipeline:
+**Consolidated 2026-09-02** by `eshyra-o9bd.19.10` (W8). This section is the
+single normative Phase-1 contract. It absorbs what were amendments 12.1.1 and
+12.1.2 — the second expansion pass, the late ruling join, the bounded
+residual, and conditional-stage semantics — into the pipeline itself rather
+than layering exceptions around superseded text. §11.1 (field 9 and field 14)
+remains a separate amendment because it narrows the **W7 fixture contract**,
+not this section. Nothing here is new relative to those amendments; the
+changes are consolidation and the removal of two statements the amendments
+falsified.
+
+**Build** an **experiment-only** harness that can execute and inspect the
+stage pipeline:
 
 ```text
 signals → candidates → typed expansion → campaign-rule/ruling join
+        → campaign-rule expansion → late ruling join
         → dedup with preserved reasons → priority and retention
         → context packet
 ```
+
+**Why nine stages and not seven.** The original seven-stage list is coherent
+only while `campaign-rule` is an annotation applied to material some other
+route already found. It is not coherent with §6.2, which lists `campaign-rule`
+as a route that **proposes** candidates, or with §6.3, which makes an
+applicable active rule must-consider and defines Related as one hop **from
+must-consider material**. Once the route is real:
+
+- a record made must-consider only by a campaign rule is entitled to the same
+  one-hop neighbourhood as any other must-consider record, so **expansion
+  repeats once** after the join, seeded only by candidates the join promoted;
+- that second pass can reach records carrying a `RulesAmbiguity` the first
+  join never saw, and §8.2 R2 requires a ruling query for every **discovered**
+  ambiguity id, so a **late ruling join** follows it.
+
+**The join boundary, and why the late stage queries rulings only.**
+`eshyra-jhpt.3` requires the active-at-position query to return **all and only**
+the rules active at the current campaign position, and W11 requires discovery
+to consume that query rather than define active-rule resolution itself. Active
+campaign rules are therefore retrieved **exactly once**, in the
+campaign-rule/ruling join, from the complete position query. The late stage
+queries **rulings only**, for ambiguity ids discovered after that point.
+Re-running the active-rule query against a later candidate set would either
+duplicate rules a contract-faithful `jhpt` already returned, or make
+active-rule applicability depend on discovery progress — a change to
+`jhpt`-owned semantics that this design does not make and W8 may not make
+unilaterally.
+
+**Closure.** The late ruling join **may not introduce new candidates**: a
+ruling attaches to candidates that already exist, and one whose governing
+material is absent is recorded as unplaced and leaves its ambiguity
+unresolved (§8.2 R7). This is what makes the pipeline closed — no record, and
+therefore no ambiguity, can appear after the final ruling query. **Every
+ambiguity in the finished packet was offered to the seam**, and that is a
+checkable property rather than an assumption.
+
+**The bounded residual.** A ruling placed by the late join can promote its
+record to must-consider, and §6.3 would entitle that record to a one-hop
+neighbourhood. **The pilot does not expand again.** Expansion is bounded at
+two passes; a third would reopen the same question a fourth time, and an
+unbounded fixpoint is not a Phase-1 commitment. The truncation is instead
+**named and measured**: every record promoted by the late join without
+receiving expansion is recorded in the trace, reported per probe, and is
+bounded evidence about the pilot rather than a claim about the rules (§6.4).
+A probe whose residual set is non-empty has not failed; it has disclosed a
+known limit.
+
+**Stage accounting.** Each stage trace states, by candidate key and not by
+count, which candidates it **produced**, which existing candidates it
+**modified**, and which it **carried forward** untouched. Each stage reports
+exactly one outcome:
+
+| outcome | meaning |
+|---|---|
+| `ran` | it performed its work — including a seam query that executed and returned nothing, which is itself evidence under §8.2 R7 |
+| `skipped` | a **conditional** stage had nothing applicable to do: no seeds to expand, or no new ambiguity ids to ask about |
+| `failed-to-run` | it recorded nothing and is not a conditional skip |
+
+Only `campaign-rule expansion` and `late ruling join` are conditional and may
+report `skipped`. `skipped` is a truthful third state; it is **not** a pass,
+and it may never be manufactured by forwarding upstream output as though this
+stage produced it.
 
 **Requirements:**
 
@@ -1467,104 +1540,9 @@ signals → candidates → typed expansion → campaign-rule/ruling join
   handed it the answer is reported as such.
 
 **Exit criteria:** every probe in §10 that does not require runtime state runs
-end-to-end through the harness; every stage boundary emits its own evidence;
-each measurement in §13 is computable per probe per stage.
-
-#### 12.1.1 Amendment A — expansion repeats after campaign-rule promotion
-
-- **Date:** 2026-09-02. **Owning bead:** `eshyra-o9bd.19.10` (W8).
-- **Status:** amends the stage list above. Everything else in §12.1 stands.
-
-**The inconsistency.** The linear stage list places typed expansion *before*
-the campaign-rule/ruling join. That order is only coherent while
-`campaign-rule` is an annotation applied to material some other route already
-found. It is **not** coherent with the rest of this design:
-
-- §6.2 lists `campaign-rule` as a route class — a reason a candidate is
-  **proposed**, not merely decorated;
-- §6.3 places applicable active campaign rules in the **must-consider** band;
-- §6.3 defines Related as one-hop explicitly typed relationships **from
-  must-consider material**.
-
-Taken together, a governing record that becomes must-consider *only* through
-`campaign-rule` is entitled to the same one-hop Related neighbourhood as a
-record reached by any other must-consider route. Under the literal stage
-order it can never receive one, because the only expansion pass has already
-run. The defect is latent in the original design and surfaces the moment
-`campaign-rule` is implemented as a real producing route.
-
-**The resolution.** Typed expansion is a **bounded repetition**, not a new
-kind of processing. After the campaign-rule/ruling join, expansion runs a
-second and final time, seeded **only** by candidates whose band changed to
-must-consider at the join — those newly surfaced by a rule and those an
-existing route set did not already make must-consider. The stage list becomes:
-
-```text
-signals → candidates → typed expansion → campaign-rule/ruling join
-        → campaign-rule expansion → dedup with preserved reasons
-        → priority and retention → context packet
-```
-
-**What this does not change.** Expansion remains **one hop**: the second pass
-does not expand candidates the first pass produced, and neither pass expands
-its own output. Exploratory-only seeds still do not expand, in either pass.
-The repetition is bounded at exactly two passes because the join is the only
-stage that can promote a band, and the join runs once. No third pass is
-authorized, and expansion is not a fixpoint over arbitrary promotion.
-
-**Why not simply reorder.** Moving the join before expansion would make the
-`campaign-rule` route unable to see the ambiguities that expansion surfaces
-on newly reached records, inverting §8.2 R2 (rulings are requested for
-*discovered* ambiguity ids). The join must stay downstream of the first
-expansion; the second pass is what reconciles the two requirements.
-
-#### 12.1.2 Amendment B — late rule join, the bounded residual, and conditional stages
-
-- **Date:** 2026-09-02. **Owning bead:** `eshyra-o9bd.19.10` (W8).
-- **Status:** extends Amendment A. Amendment A's two-pass expansion bound
-  stands; this states what happens at that bound and how a conditional stage
-  reports itself.
-
-**The gap Amendment A left.** A ruled the join must follow the first
-expansion so it can see ambiguities discovered there. The identical argument
-applies to the *second* expansion: a record reached only by
-`campaign-rule expansion` may carry a `RulesAmbiguity`, and under §8.2 R2 a
-ruling must be requested for every **discovered** ambiguity id. With a single
-join, such an ambiguity reaches the packet having never been offered to
-`jhpt`, which is the silent-uncertainty failure §8.2 R7 exists to prevent.
-
-**The resolution — a second, final join.** After `campaign-rule expansion`,
-the seam is queried once more, for **newly appeared candidate keys and newly
-discovered ambiguity ids only**. Rules and rulings it returns are placed
-exactly as in the first join. The stage list becomes:
-
-```text
-signals → candidates → typed expansion → campaign-rule/ruling join
-        → campaign-rule expansion → late rule join
-        → dedup with preserved reasons → priority and retention
-        → context packet
-```
-
-**The residual, stated rather than hidden.** A rule or ruling placed by the
-late join can promote its record to must-consider, and §6.3 would entitle
-that record to a one-hop Related neighbourhood. **The pilot does not expand
-again.** Expansion remains bounded at two passes; a third pass would reopen
-the same question a fourth time, and an unbounded fixpoint is not a Phase-1
-commitment. Instead the truncation is **named and measured**: every record
-promoted by the late join without receiving expansion is recorded in the
-trace as an unexpanded promotion, reported per probe, and is bounded evidence
-about the pilot rather than a claim about the rules (§6.4). A probe in which
-that set is non-empty has not failed; it has disclosed a known limit.
-
-**Conditional stages.** `campaign-rule expansion` and `late rule join` run
-only when the preceding stage produced work for them — promoted candidates,
-or new keys and ambiguity ids. A stage with nothing to do is **skipped**, and
-that is a distinct, truthful outcome. It is **not** a pass, and it must never
-be manufactured by forwarding upstream output as if this stage had produced
-it: §13.3 forbids exactly that. Each stage trace therefore reports one of
-`ran`, `skipped`, or `failed-to-run`, and only a stage declared conditional
-here may report `skipped`. Candidates a stage carries through untouched are
-counted separately from candidates it produced.
+end-to-end through the harness; every stage boundary emits its own evidence
+under the stage-accounting contract above; each measurement in §13 is
+computable per probe per stage.
 
 ### 12.2 Phase 2 — runtime shadow mode
 
@@ -1681,6 +1659,15 @@ membership. M11 and explicit citations are correlates, not proof (§12.3).
 no candidates, no routes, and no losses has not passed — it has failed to run
 (the "recognizing nothing looks green" idiom that ADR 0020 §3 forbids and that
 `eshyra-o9bd.19.7` names as recurring idiom 1).
+
+**The one exception, and it is not a pass.** §12.1 declares two stages
+conditional: `campaign-rule expansion` and `late ruling join` do not apply when
+the preceding stage promoted nothing or discovered no new ambiguity id. Such a
+stage reports `skipped`, which is distinct from both `ran` and
+`failed-to-run`, and it must still report zero produced candidates. A stage
+that executed — including a seam query that returned nothing — reports `ran`,
+never `skipped`. No other stage may report `skipped`, and `skipped` may never
+be produced by forwarding upstream output.
 
 ---
 

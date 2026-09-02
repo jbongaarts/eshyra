@@ -63,7 +63,7 @@ const STAGES = [
   'expansion',
   'rule-join',
   'campaign-rule-expansion',
-  'late-rule-join',
+  'late-ruling-join',
   'dedup',
   'retention',
   'packet',
@@ -116,11 +116,11 @@ describe('offline discovery diagnostic probes', () => {
           // A stage that produced nothing and recorded no loss did not pass;
           // it failed to run (design section 13.3). A conditional stage with
           // nothing applicable reports `skipped`, which is truthful and is not
-          // a pass — and only the two stages amendment 12.1.2 declares
+          // a pass — and only the two stages design section 12.1 declares
           // conditional may report it.
           const CONDITIONAL = new Set([
             'campaign-rule-expansion',
-            'late-rule-join',
+            'late-ruling-join',
           ]);
           for (const stage of STAGES) {
             const outcome = measurements.perStage[stage].outcome;
@@ -133,11 +133,15 @@ describe('offline discovery diagnostic probes', () => {
                 CONDITIONAL.has(stage),
                 `${label} stage ${stage} is not conditional and may not be skipped`,
               ).toBe(true);
-            // A skipped stage must not claim to have produced anything.
-            if (outcome === 'skipped')
-              expect(measurements.perStage[stage].carriedForward).toBe(
-                measurements.perStage[stage].produced,
+            // A skipped stage produced and modified nothing; everything it
+            // emitted was carried through.
+            if (outcome === 'skipped') {
+              expect(measurements.perStage[stage].produced).toEqual([]);
+              expect(measurements.perStage[stage].modified).toEqual([]);
+              expect(measurements.perStage[stage].carriedForward.length).toBe(
+                measurements.perStage[stage].emitted,
               );
+            }
           }
 
           // M1: every must-include target reached the packet. M2: nothing is
@@ -200,7 +204,7 @@ describe('offline discovery diagnostic probes', () => {
               ).toBe(expectation.expectedResolution === 'unresolved');
             }
 
-          // The bounded residual amendment 12.1.2 declares must be reported,
+          // The bounded residual design section 12.1 declares must be reported,
           // not merely tolerated: anything the late join promoted without a
           // further expansion is named and is a retained candidate.
           for (const key of measurements.m5.unexpandedPromotions)
@@ -208,6 +212,14 @@ describe('offline discovery diagnostic probes', () => {
               trace.packet.packet.candidates.map((item) => item.identity.key),
               `${label} names an unexpanded promotion that is not in the packet`,
             ).toContain(key);
+
+          // Closure: every ambiguity that reached the packet was offered to
+          // the seam. The late stage cannot introduce candidates, so nothing
+          // carrying an ambiguity can appear after the final ruling query.
+          expect(
+            measurements.m5.unqueriedAmbiguityIds,
+            `${label} has packet ambiguities never offered to the seam`,
+          ).toEqual([]);
 
           // M6 / M7: no must-consider overflow, and every drop carries a
           // reason. Reported as counts and reasons, never as a rate.

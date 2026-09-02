@@ -54,7 +54,9 @@ export function retainCandidates(
     })),
     outputsProduced: selected,
     losses: dropped.map((item) => ({ reason: item.reason, detail: item })),
-    carriedForward: 0,
+    produced: [],
+    modified: selected.map((candidate) => candidate.candidateKey),
+    carriedForward: [],
     outcome:
       selected.length === 0 && dropped.length === 0 ? 'failed-to-run' : 'ran',
     failedToRun: selected.length === 0 && dropped.length === 0,

@@ -382,7 +382,9 @@ export function buildContextPacket(
       reason: item.reason,
       detail: item as unknown as Record<string, unknown>,
     })),
-    carriedForward: 0,
+    produced: kept.map((candidate) => candidate.identity.key),
+    modified: [],
+    carriedForward: [],
     outcome:
       kept.length === 0 && dropped.length === 0 ? 'failed-to-run' : 'ran',
     failedToRun: kept.length === 0 && dropped.length === 0,

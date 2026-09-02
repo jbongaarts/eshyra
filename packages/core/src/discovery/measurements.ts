@@ -58,8 +58,12 @@ export interface DiscoveryMeasurements {
     readonly matched: readonly string[];
     readonly unplaced: readonly string[];
     readonly surfacedCandidateKeys: readonly string[];
-    /** Bounded residual declared by design amendment 12.1.2. */
+    /** Bounded residual declared by design section 12.1. */
     readonly unexpandedPromotions: readonly string[];
+    /** Ambiguities in the finished packet that were never offered to the
+     * seam. Design section 12.1 makes the pipeline closed, so this is
+     * checkable and must be empty. */
+    readonly unqueriedAmbiguityIds: readonly string[];
     readonly unresolvedAmbiguityIds: readonly string[];
     readonly placed: readonly {
       readonly ruleIdentity: string;
@@ -105,8 +109,10 @@ export interface DiscoveryMeasurements {
     Record<
       string,
       {
-        readonly produced: number;
-        readonly carriedForward: number;
+        readonly produced: readonly string[];
+        readonly modified: readonly string[];
+        readonly carriedForward: readonly string[];
+        readonly emitted: number;
         readonly losses: number;
         readonly outcome: string;
         readonly failedToRun: boolean;
@@ -180,7 +186,7 @@ export function measureDiscovery(
     ['expansion', trace.expansion],
     ['rule-join', trace.ruleJoin],
     ['campaign-rule-expansion', trace.ruleExpansion],
-    ['late-rule-join', trace.lateRuleJoin],
+    ['late-ruling-join', trace.lateRuleJoin],
     ['dedup', trace.dedup],
     ['retention', trace.retention],
     ['packet', trace.packet],
@@ -335,6 +341,21 @@ export function measureDiscovery(
         ...trace.lateRuleJoin.surfacedCandidateKeys,
       ],
       unexpandedPromotions: trace.unexpandedPromotions,
+      unqueriedAmbiguityIds: (() => {
+        const offered = new Set([
+          ...trace.ruleJoin.requestedAmbiguityIds,
+          ...trace.lateRuleJoin.requestedAmbiguityIds,
+        ]);
+        return [
+          ...new Set(
+            trace.packet.packet.candidates
+              .flatMap((candidate) => candidate.ambiguities)
+              .map((ambiguity) => ambiguity.id)
+              .filter((id): id is string => typeof id === 'string')
+              .filter((id) => !offered.has(id)),
+          ),
+        ];
+      })(),
       unresolvedAmbiguityIds: trace.lateRuleJoin.unresolvedAmbiguities
         .map((item) => item.id)
         .filter((id): id is string => typeof id === 'string'),
@@ -367,8 +388,12 @@ export function measureDiscovery(
       stages.map(([name, stage]) => [
         name,
         {
-          produced: stage.outputsProduced.length,
+          produced: stage.produced,
+          modified: stage.modified,
           carriedForward: stage.carriedForward,
+          // What the stage emitted downstream, pass-through included. Named
+          // `emitted` because it is not a measure of work.
+          emitted: stage.outputsProduced.length,
           losses: stage.losses.length,
           outcome: stage.outcome,
           failedToRun: stage.failedToRun,

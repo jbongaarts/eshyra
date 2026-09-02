@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DiscoveryCandidate } from '../../src/internal.js';
 import {
+  accountCandidates,
   deduplicateCandidates,
   expandTypedRelationships,
   getBundledDnd5eSrdPack,
@@ -684,7 +685,7 @@ describe('offline discovery stage boundaries', () => {
         'condition:incapacitated',
       ]);
 
-      // Design amendment 12.1.1: it receives the one-hop Related neighbourhood
+      // Design section 12.1: it receives the one-hop Related neighbourhood
       // that section 6.3 grants must-consider material. Before the second
       // pass, expansion had already finished and this was unreachable.
       expect(keys).toContain('action:dodge');
@@ -751,8 +752,10 @@ describe('offline discovery stage boundaries', () => {
       expect(stage.traversals).toEqual([]);
       expect(stage.losses).toEqual([]);
       // Everything it emitted was carried through, not produced.
-      expect(stage.carriedForward).toBe(stage.outputsProduced.length);
-      expect(trace.lateRuleJoin.stage).toBe('late-rule-join');
+      expect(stage.produced).toEqual([]);
+      expect(stage.modified).toEqual([]);
+      expect(stage.carriedForward.length).toBe(stage.outputsProduced.length);
+      expect(trace.lateRuleJoin.stage).toBe('late-ruling-join');
       expect(trace.lateRuleJoin.outcome).toBe('skipped');
 
       // The first expansion, by contrast, genuinely ran.
@@ -856,7 +859,7 @@ describe('offline discovery stage boundaries', () => {
         'campaign-ruling',
       );
 
-      // The bounded residual amendment 12.1.2 declares: the late ruling made
+      // The bounded residual design section 12.1 declares: the late ruling made
       // this record must-consider, expansion is bounded at two passes, and the
       // truncation is named rather than hidden.
       expect(trace.unexpandedPromotions).toContain(LATE_AMBIGUITY_TARGET_KEY);
@@ -866,5 +869,198 @@ describe('offline discovery stage boundaries', () => {
     } finally {
       db.close();
     }
+  });
+  it('retrieves active rules once from a contract-faithful position query', () => {
+    const db = freshDbWithSession();
+    try {
+      // eshyra-jhpt.3 requires the active-at-position query to return ALL and
+      // ONLY the rules active at the position, independent of which candidates
+      // discovery happens to have found. This seam behaves that way.
+      const calls: string[][] = [];
+      const rule = {
+        ruleIdentity: 'house-rule-components',
+        ruleKind: 'house-rule' as const,
+        status: 'active',
+        origin: 'player',
+        provenance: 'campaign history',
+        effectivePosition: 'turn-12',
+        supersededBy: null,
+        scope: 'material components',
+        governingRecordKeys: ['spell:fireball'],
+      };
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'I cast fireball',
+          stateFields: { campaignPosition: 'turn-12' },
+        },
+        campaignRuleSeam: {
+          activeRulesAtPosition: ({ candidateRecordKeys }) => {
+            calls.push([...candidateRecordKeys]);
+            return [rule];
+          },
+          activeRulingsForAmbiguities: () => [],
+        },
+      });
+
+      // Queried exactly once. A second position query would either duplicate
+      // what a faithful jhpt already returned, or make applicability depend on
+      // discovery progress -- jhpt-owned semantics W8 may not change.
+      expect(calls).toHaveLength(1);
+
+      const fireball = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'spell:fireball',
+      );
+      expect(fireball?.campaignRules).toHaveLength(1);
+      expect(
+        fireball?.routes.filter(
+          (route) => route.routeClass === 'campaign-rule',
+        ),
+      ).toHaveLength(1);
+
+      const measurements = measureDiscovery(trace);
+      expect(measurements.m5.returned).toEqual(['house-rule-components']);
+      expect(measurements.m5.matched).toEqual(['house-rule-components']);
+      expect(measurements.m5.placed).toEqual([
+        {
+          ruleIdentity: 'house-rule-components',
+          governingRecordKey: 'spell:fireball',
+        },
+      ]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('reports a ruling query that returned nothing as ran, not skipped', () => {
+    const db = freshDbWithSession();
+    try {
+      const resolver = installLateAmbiguityAddon(
+        db,
+        '2026-09-02T00:00:00.000Z',
+      );
+      const trace = runDiscoveryStages({
+        db,
+        rulesPackResolver: resolver,
+        scenario: {
+          playerInput: 'the party proceeds',
+          stateFields: { campaignPosition: 'turn-3' },
+        },
+        campaignRuleSeam: {
+          activeRulesAtPosition: () => [
+            {
+              ruleIdentity: 'house-rule-late-root',
+              ruleKind: 'house-rule',
+              status: 'active',
+              origin: 'player',
+              provenance: 'campaign history',
+              effectivePosition: 'turn-3',
+              supersededBy: null,
+              scope: 'late ambiguity root',
+              governingRecordKeys: [LATE_AMBIGUITY_ROOT_KEY],
+            },
+          ],
+          // The query executes and legitimately finds no ruling.
+          activeRulingsForAmbiguities: () => [],
+        },
+      });
+      // Absence is itself evidence under section 8.2 R7, so a query that ran
+      // and returned nothing is `ran`. Calling it `skipped` would report that
+      // the seam was never consulted.
+      expect(trace.lateRuleJoin.requestedAmbiguityIds).toContain(
+        LATE_AMBIGUITY_ID,
+      );
+      expect(trace.lateRuleJoin.outcome).toBe('ran');
+      expect(trace.lateRuleJoin.returnedRuleIdentities).toEqual([]);
+      expect(measureDiscovery(trace).m5.unresolvedAmbiguityIds).toContain(
+        LATE_AMBIGUITY_ID,
+      );
+    } finally {
+      db.close();
+    }
+  });
+
+  it('counts a candidate that received a campaign rule as modified, not carried forward', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'I cast fireball',
+          stateFields: { campaignPosition: 'turn-12' },
+        },
+        campaignRuleSeam: {
+          activeRulesAtPosition: () => [
+            {
+              ruleIdentity: 'house-rule-components',
+              ruleKind: 'house-rule',
+              status: 'active',
+              origin: 'player',
+              provenance: 'campaign history',
+              effectivePosition: 'turn-12',
+              supersededBy: null,
+              scope: 'material components',
+              governingRecordKeys: ['spell:fireball'],
+            },
+          ],
+          activeRulingsForAmbiguities: () => [],
+        },
+      });
+      // Fireball already existed by exact name; the join changed it.
+      expect(trace.ruleJoin.modified).toContain('spell:fireball');
+      expect(trace.ruleJoin.carriedForward).not.toContain('spell:fireball');
+      expect(trace.ruleJoin.produced).not.toContain('spell:fireball');
+    } finally {
+      db.close();
+    }
+  });
+
+  it('recognizes a mutation that adds traversal evidence without adding a route', () => {
+    // The precise case: route identity is unchanged, only traversal evidence
+    // grows. A count-based comparison reports this as untouched pass-through.
+    const route = {
+      routeClass: 'typed-relationship' as const,
+      trigger: 'data.mechanics.conditions:exclusion',
+      evidence: {},
+      signalId: 'seed',
+    };
+    const before: DiscoveryCandidate = {
+      candidateKey: 'condition:incapacitated',
+      targetKind: 'rules-record',
+      entry: stack.recordsByKey.get('condition:incapacitated'),
+      routes: [route],
+      traversals: [],
+      campaignRules: [],
+      campaignRulings: [],
+    };
+    const after: DiscoveryCandidate = {
+      ...before,
+      routes: [route],
+      traversals: [
+        {
+          sourceRecordKey: 'action:dodge',
+          linkField: 'data.mechanics.conditions',
+          relation: 'exclusion',
+          targetRecordKey: 'condition:incapacitated',
+        },
+      ],
+    };
+
+    const accounting = accountCandidates([before], [after]);
+    expect(accounting.modified).toEqual(['condition:incapacitated']);
+    expect(accounting.carriedForward).toEqual([]);
+    expect(accounting.produced).toEqual([]);
+
+    // A genuinely untouched candidate is still carried forward.
+    expect(accountCandidates([before], [before]).carriedForward).toEqual([
+      'condition:incapacitated',
+    ]);
+    expect(accountCandidates([before], [before]).modified).toEqual([]);
+
+    // The contract lives in this helper, and both expansion and the rule join
+    // report membership through it, so proving it here proves it for both.
+    // It cannot be isolated end to end: a candidate carrying only a
+    // typed-relationship route is `related`, so expansion correctly declines
+    // to use it as a seed and nothing mutates it at all.
   });
 });

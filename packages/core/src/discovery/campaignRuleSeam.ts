@@ -1,3 +1,4 @@
+import { accountCandidates } from './accounting.js';
 import type {
   CampaignRuleProjection,
   CampaignRuleReadSeam,
@@ -87,10 +88,22 @@ export function joinCampaignRules(
     };
     readonly stageName?: string;
     readonly conditional?: boolean;
-    /** Restrict the query to material the previous join has not already seen
-     * (design amendment 12.1.2: the late join asks only about new keys and
-     * newly discovered ambiguity ids). */
-    readonly onlyCandidateKeys?: ReadonlySet<string>;
+    /**
+     * Rulings only, for ambiguity ids discovered after the first join.
+     *
+     * `eshyra-jhpt.3` requires the active-at-position query to return all and
+     * only the rules active at the current position, and W11 requires
+     * discovery to consume that query rather than redefine it. Active rules
+     * are therefore retrieved exactly once. Re-querying them against a later
+     * candidate set would either duplicate what a contract-faithful jhpt
+     * already returned, or make active-rule applicability depend on discovery
+     * progress -- a change to jhpt-owned semantics W8 may not make.
+     *
+     * A late-stage ruling also may not introduce a new candidate: that is
+     * what closes the pipeline, since nothing can then appear carrying an
+     * ambiguity after the final ruling query.
+     */
+    readonly rulingsOnly?: boolean;
     readonly seenAmbiguityIds?: ReadonlySet<string>;
     /** Ambiguities an earlier join already resolved. Without these the late
      * join reports them unresolved, because its own `resolved` set contains
@@ -98,11 +111,7 @@ export function joinCampaignRules(
     readonly resolvedAmbiguityIds?: ReadonlySet<string>;
   } = {},
 ): RuleJoinTrace {
-  const allKeys = candidates.map((candidate) => candidate.candidateKey);
-  const keys =
-    options.onlyCandidateKeys === undefined
-      ? allKeys
-      : allKeys.filter((key) => options.onlyCandidateKeys?.has(key));
+  const keys = candidates.map((candidate) => candidate.candidateKey);
   const rawAmbiguities = ambiguities(candidates);
   const ambiguityIds = [
     ...new Set(
@@ -116,14 +125,22 @@ export function joinCampaignRules(
   // query the seam: R1 is about active rules applicable to the situation, not
   // about whether discovery already found candidates, so a rule can surface
   // governing material even when nothing else did.
+  // A rulings-only stage has work exactly when there is a newly discovered
+  // ambiguity id to ask about; the candidate set is irrelevant to it because
+  // active rules were already retrieved once, in full, by the first join.
   const asked =
-    options.conditional !== true || keys.length > 0 || ambiguityIds.length > 0;
-  const rules = asked
-    ? seam.activeRulesAtPosition({
-        campaignPosition: options.campaignPosition,
-        candidateRecordKeys: keys,
-      })
-    : [];
+    options.rulingsOnly === true
+      ? ambiguityIds.length > 0
+      : options.conditional !== true ||
+        keys.length > 0 ||
+        ambiguityIds.length > 0;
+  const rules =
+    asked && options.rulingsOnly !== true
+      ? seam.activeRulesAtPosition({
+          campaignPosition: options.campaignPosition,
+          candidateRecordKeys: keys,
+        })
+      : [];
   const rulings = asked ? seam.activeRulingsForAmbiguities(ambiguityIds) : [];
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
@@ -143,8 +160,12 @@ export function joinCampaignRules(
         continue;
       }
       // The jhpt route surfaces governing material the rest of discovery did
-      // not reach. Only a key the active stack can resolve may enter.
-      const entry = options.stack?.recordsByKey.get(key);
+      // not reach. Only a key the active stack can resolve may enter, and the
+      // late stage may not surface at all (design section 12.1, Closure).
+      const entry =
+        options.rulingsOnly === true
+          ? undefined
+          : options.stack?.recordsByKey.get(key);
       if (entry === undefined) continue;
       result.set(key, {
         candidateKey: key,
@@ -195,20 +216,23 @@ export function joinCampaignRules(
     .map(
       (item) => item as unknown as import('../rules/types.js').RulesAmbiguity,
     );
-  const didWork =
-    asked &&
-    (placedRules.length > 0 || losses.length > 0 || returned.length > 0);
+  const outputs = [...result.values()];
+  const accounting = accountCandidates(candidates, outputs);
+  // A query that executed and returned nothing still RAN: under section 8.2 R7
+  // that absence is itself evidence. Only a stage with nothing to ask about
+  // is skipped.
+  const didWork = asked;
   return {
     stage: options.stageName ?? 'rule-join',
-    carriedForward: result.size - surfaced.length,
+    produced: accounting.produced,
+    modified: accounting.modified,
+    carriedForward: accounting.carriedForward,
     outcome: didWork
       ? 'ran'
       : options.conditional === true
         ? 'skipped'
-        : asked
-          ? 'ran'
-          : 'failed-to-run',
-    failedToRun: !didWork && !asked && options.conditional !== true,
+        : 'failed-to-run',
+    failedToRun: !didWork && options.conditional !== true,
     inputsConsumed: [{ candidateRecordKeys: keys, ambiguityIds }],
     outputsProduced: [...result.values()],
     losses,

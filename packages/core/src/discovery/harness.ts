@@ -31,7 +31,7 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
       stack,
     },
   );
-  // Design amendment 12.1.1: the join is the only stage that can change a
+  // Design section 12.1: the join is the only stage that can change a
   // candidate's band, so expansion repeats exactly once more, seeded only by
   // the candidates it promoted to must-consider. Without this, a governing
   // record reached only by `campaign-rule` could never receive the one-hop
@@ -60,20 +60,12 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
       conditional: true,
     },
   );
-  // Design amendment 12.1.2: the second expansion can reach records carrying
+  // Design section 12.1: the second expansion can reach records carrying
   // ambiguities that the first join never saw, so the seam is queried once
   // more for the newly appeared keys and newly discovered ambiguity ids.
   // Without this a discovered ambiguity could reach the packet having never
   // been offered to jhpt, which is the silent-uncertainty failure 8.2 R7
   // exists to prevent.
-  const knownKeys = new Set(
-    ruleJoin.outputsProduced.map((candidate) => candidate.candidateKey),
-  );
-  const newKeys = new Set(
-    ruleExpansion.outputsProduced
-      .map((candidate) => candidate.candidateKey)
-      .filter((key) => !knownKeys.has(key)),
-  );
   const bandBeforeLateJoin = new Map(
     ruleExpansion.outputsProduced.map((candidate) => [
       candidate.candidateKey,
@@ -84,20 +76,18 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
     ruleExpansion.outputsProduced,
     input.campaignRuleSeam,
     {
-      campaignPosition:
-        input.campaignPosition ??
-        (typeof input.scenario.stateFields.campaignPosition === 'string'
-          ? input.scenario.stateFields.campaignPosition
-          : undefined),
       stack,
-      stageName: 'late-rule-join',
+      stageName: 'late-ruling-join',
       conditional: true,
-      onlyCandidateKeys: newKeys,
+      // Rulings only. Active rules came once from the complete
+      // active-at-position query in the first join; see design section 12.1,
+      // "the join boundary".
+      rulingsOnly: true,
       seenAmbiguityIds: new Set(ruleJoin.requestedAmbiguityIds),
       resolvedAmbiguityIds: new Set(ruleJoin.resolvedAmbiguityIds),
     },
   );
-  // The residual the amendment names rather than hides: a record the late join
+  // The residual design section 12.1 names rather than hides: a record the late join
   // promoted to must-consider is entitled to a Related neighbourhood under
   // section 6.3, but expansion is bounded at two passes. Those records are
   // recorded, reported per probe, and are bounded evidence about the pilot.
@@ -136,7 +126,7 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
       'expansion',
       'rule-join',
       'campaign-rule-expansion',
-      'late-rule-join',
+      'late-ruling-join',
       'dedup',
       'retention',
       'packet',

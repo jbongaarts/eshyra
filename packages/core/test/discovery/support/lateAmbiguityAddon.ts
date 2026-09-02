@@ -17,7 +17,7 @@ import {
  * record — verified by scanning every typed link field against the three
  * records that declare `mechanics.ambiguities` — so the corpus cannot exercise
  * an ambiguity first discovered during the second expansion pass. This add-on
- * supplies that case, as design amendment 12.1.2's evidence requires and as
+ * supplies that case, as design section 12.1's evidence requires and as
  * the review permits. It asserts nothing about the real SRD corpus, and the
  * ambiguity it reaches is the genuine Cube of Force one.
  */
