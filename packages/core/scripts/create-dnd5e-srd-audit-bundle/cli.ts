@@ -2155,10 +2155,10 @@ export function formatGameplayReadinessReport(
     ...report.rules.adjudicationContextInventory.map(
       (row) => `- ${row.key}: ${row.contextRequirement}`,
     ),
-    `Raw implemented-row evidence handed to W13 (not a capability contract): ${report.rules.deterministicCapabilityHandoff.length}`,
-    ...report.rules.deterministicCapabilityHandoff.map(
+    `Positive bounded deterministic capabilities (ADR 0020 §3; not a corpus-wide inventory): ${report.rules.deterministicCapabilities.length}`,
+    ...report.rules.deterministicCapabilities.map(
       (row) =>
-        `- ${row.ruleKey}: owners [${row.runtimeOwner.join(', ')}]; evidence [${row.evidence.join(', ')}]`,
+        `- ${row.ruleKey} [${row.revision}]: ${row.operation}; inputs [${row.requiredInputs.join(' | ')}]; exclusions [${row.exclusions.join(' | ')}]; DM [${row.residualDmInterpretation.join(' | ')}]; owners [${row.runtimeOwner.join(', ')}]; evidence [${row.evidence.join(', ')}]`,
     ),
     `Unresolved/deferred/design-blocked work: ${report.rules.unresolvedWork.length} (durable finding identity; bead is historical context)`,
     ...report.rules.unresolvedWork.map(

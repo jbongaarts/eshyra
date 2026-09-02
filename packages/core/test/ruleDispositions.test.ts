@@ -6,9 +6,12 @@ import {
   buildRuleDispositionReport,
   ENGINE_PROCEDURE_COVERAGE,
   materializeEngineProcedureCoverage,
+  RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
   RULE_DISPOSITIONS,
   type RuleDisposition,
   type RuleProcedureCoverage,
+  requireRuleDeterministicCapabilityContract,
+  validateRuleDeterministicCapabilityContracts,
   validateRuleDispositionIdentity,
   validateRuleRegistries,
 } from '../scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.js';
@@ -253,27 +256,52 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     });
   });
 
-  it('hands W13 raw multi-owner concentration evidence, not pseudo-capability semantics', () => {
-    const handoff =
-      buildRuleDispositionReport().deterministicCapabilityHandoff.find(
+  it('declares W13 concentration as a positive bounded capability contract', () => {
+    const contract =
+      buildRuleDispositionReport().deterministicCapabilities.find(
         (row) => row.ruleKey === 'rule:concentration',
       );
 
-    expect(handoff).toEqual({
+    expect(contract).toMatchObject({
       ruleKey: 'rule:concentration',
-      runtimeOwner: [
+      revision: 'rule-procedure:concentration-v1',
+      runtimeOwner: expect.arrayContaining([
         'packages/core/src/state/activeEffects.ts',
-        'packages/core/src/state/hpLifecycle.ts',
-        'packages/core/src/orchestrator/toolResolveConcentration.ts',
-        'packages/core/src/orchestrator/toolStartEffect.ts',
-        'packages/core/src/orchestrator/toolEndEffect.ts',
-      ],
+      ]),
       evidence: ['packages/core/test/activeEffects.test.ts'],
-      primitives: [],
     });
-    expect(handoff).not.toHaveProperty('operation');
-    expect(handoff).not.toHaveProperty('revision');
-    expect(handoff).not.toHaveProperty('residualInterpretation');
+    expect(contract?.operation).toContain('rule:concentration');
+    expect(contract?.requiredInputs).not.toHaveLength(0);
+    expect(contract?.exclusions).not.toHaveLength(0);
+    expect(contract?.residualDmInterpretation).not.toHaveLength(0);
+  });
+
+  it('fails closed when an unrecognized rule has no positive capability binding', () => {
+    expect(() =>
+      requireRuleDeterministicCapabilityContract('rule:not-recognized'),
+    ).toThrow(/no deterministic capability has been positively selected/);
+  });
+
+  it('rejects missing or non-implemented deterministic capability contracts', () => {
+    expect(
+      validateRuleDeterministicCapabilityContracts(
+        { 'rule:x': { status: 'implemented' } },
+        {},
+      ),
+    ).toContain('rule:x: implemented row has no positive capability contract');
+    expect(
+      validateRuleDeterministicCapabilityContracts(
+        {},
+        {
+          'rule:x': {
+            ...RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['rule:concentration'],
+            ruleKey: 'rule:x',
+          },
+        },
+      ),
+    ).toContain(
+      'rule:x: capability contract is not backed by an implemented row',
+    );
   });
 
   it('registers every literally-named supporting tool in primitives, e.g. consumables/remove_item', () => {

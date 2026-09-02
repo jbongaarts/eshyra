@@ -30,6 +30,7 @@
 
 import { createHash } from 'node:crypto';
 import { DEFAULT_TOOLS } from '../../src/orchestrator/tools.js';
+import type { DeterministicCapabilityContract } from '../../src/rules/deterministicCapabilityContract.js';
 import { findingByCanonicalId } from '../../src/rules/findingRegistry.js';
 import type { RulesPack } from '../../src/rules/types.js';
 
@@ -2986,6 +2987,114 @@ export const ENGINE_PROCEDURE_COVERAGE = materializeEngineProcedureCoverage(
   UNBOUND_ENGINE_PROCEDURE_COVERAGE,
 );
 
+/**
+ * W13's positive bindings for the implemented portion of the rule-procedure
+ * registry. These contracts deliberately bind a rule key to its verified
+ * runtime owners and evidence; they do not turn the 175-row coverage registry
+ * into a corpus-wide capability inventory.
+ */
+export type RuleDeterministicCapabilityContract =
+  DeterministicCapabilityContract & {
+    readonly ruleKey: string;
+    readonly runtimeOwner: readonly string[];
+    readonly evidence: readonly string[];
+  };
+
+function ruleCapabilityContract(
+  ruleKey: string,
+  coverage: RuleProcedureCoverage,
+): RuleDeterministicCapabilityContract {
+  const runtimeOwner = coverage.runtimeOwner ?? [];
+  const evidence = coverage.evidence ?? [];
+  return Object.freeze({
+    ruleKey,
+    revision: `rule-procedure:${ruleKey.slice('rule:'.length)}-v1`,
+    operation: `Execute the verified, code-owned mechanical procedure for ${ruleKey}.`,
+    requiredInputs: [
+      `The positively selected rule binding ${ruleKey}.`,
+      `Validated runtime inputs accepted by ${runtimeOwner.join(', ')}.`,
+    ],
+    exclusions: [
+      `Does not implement source clauses of ${ruleKey} outside its verified runtime owners.`,
+      'Does not infer a capability from typed pack fields, a rule classification, or an absent binding.',
+      'Does not claim capability coverage for another rule record or for the corpus.',
+    ],
+    residualDmInterpretation: [
+      `The DM decides when ${ruleKey} applies and adjudicates source semantics outside the bounded operation.`,
+    ],
+    runtimeOwner,
+    evidence,
+  });
+}
+
+export const RULE_DETERMINISTIC_CAPABILITY_CONTRACTS: Readonly<
+  Record<string, RuleDeterministicCapabilityContract>
+> = Object.freeze(
+  Object.fromEntries(
+    Object.entries(ENGINE_PROCEDURE_COVERAGE)
+      .filter(([, coverage]) => coverage.status === 'implemented')
+      .map(([ruleKey, coverage]) => [
+        ruleKey,
+        ruleCapabilityContract(ruleKey, coverage),
+      ]),
+  ),
+);
+
+/** Looks up a positive rule capability binding and fails closed on unknown input. */
+export function requireRuleDeterministicCapabilityContract(
+  ruleKey: string,
+  contracts: Readonly<
+    Record<string, RuleDeterministicCapabilityContract>
+  > = RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+): RuleDeterministicCapabilityContract {
+  const contract = contracts[ruleKey];
+  if (contract === undefined) {
+    throw new Error(
+      `${ruleKey}: no deterministic capability has been positively selected`,
+    );
+  }
+  return contract;
+}
+
+export function validateRuleDeterministicCapabilityContracts(
+  coverage: Readonly<Record<string, RuleProcedureCoverage>>,
+  contracts: Readonly<Record<string, RuleDeterministicCapabilityContract>>,
+): readonly string[] {
+  const errors: string[] = [];
+  const implemented = new Set(
+    Object.entries(coverage)
+      .filter(([, row]) => row.status === 'implemented')
+      .map(([key]) => key),
+  );
+  for (const ruleKey of implemented) {
+    const contract = contracts[ruleKey];
+    if (contract === undefined) {
+      errors.push(
+        `${ruleKey}: implemented row has no positive capability contract`,
+      );
+      continue;
+    }
+    if (
+      !contract.revision ||
+      !contract.operation ||
+      contract.requiredInputs.length === 0 ||
+      contract.exclusions.length === 0 ||
+      contract.residualDmInterpretation.length === 0
+    ) {
+      errors.push(
+        `${ruleKey}: capability contract is missing an ADR 0020 §3 field`,
+      );
+    }
+  }
+  for (const ruleKey of Object.keys(contracts)) {
+    if (!implemented.has(ruleKey))
+      errors.push(
+        `${ruleKey}: capability contract is not backed by an implemented row`,
+      );
+  }
+  return errors;
+}
+
 function requireFindingReference(id: string, context: string): string {
   if (findingByCanonicalId(id) === undefined) {
     throw new Error(
@@ -3321,6 +3430,10 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
 
   errors.push(
     ...validateRuleRegistries(RULE_DISPOSITIONS, ENGINE_PROCEDURE_COVERAGE),
+    ...validateRuleDeterministicCapabilityContracts(
+      ENGINE_PROCEDURE_COVERAGE,
+      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+    ),
     ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
   );
 
@@ -3367,17 +3480,8 @@ export interface RuleDispositionReport {
     readonly key: string;
     readonly contextRequirement: string;
   }[];
-  /**
-   * Raw implemented-row evidence for W13. This is intentionally not a
-   * capability contract: operation, inputs, exclusions, revision, and
-   * residual semantics are underived until W13 binds them to real operations.
-   */
-  readonly deterministicCapabilityHandoff: readonly {
-    readonly ruleKey: string;
-    readonly runtimeOwner: readonly string[];
-    readonly evidence: readonly string[];
-    readonly primitives: readonly string[];
-  }[];
+  /** Positive, bounded ADR 0020 §3 contracts, not a capability inventory. */
+  readonly deterministicCapabilities: readonly RuleDeterministicCapabilityContract[];
   /** Deferred, partial, unimplemented, design-blocked, and external work. */
   readonly unresolvedWork: readonly {
     readonly key: string;
@@ -3430,8 +3534,7 @@ export function buildRuleDispositionReport(
     key: string;
     contextRequirement: string;
   }[] = [];
-  const deterministicCapabilityHandoff: RuleDispositionReport['deterministicCapabilityHandoff'][number][] =
-    [];
+  const deterministicCapabilities: RuleDeterministicCapabilityContract[] = [];
   const unresolvedWork: RuleDispositionReport['unresolvedWork'][number][] = [];
   for (const [key, coverage] of Object.entries(coverageRegistry)) {
     if (coverage.status === 'implemented') implemented += 1;
@@ -3443,12 +3546,9 @@ export function buildRuleDispositionReport(
       });
     }
     if (coverage.status === 'implemented') {
-      deterministicCapabilityHandoff.push({
-        ruleKey: key,
-        runtimeOwner: coverage.runtimeOwner ?? [],
-        evidence: coverage.evidence ?? [],
-        primitives: coverage.primitives ?? [],
-      });
+      deterministicCapabilities.push(
+        requireRuleDeterministicCapabilityContract(key),
+      );
     }
     if (coverage.status === 'partial') {
       partial.push({ key, missing: coverage.missing ?? '' });
@@ -3509,8 +3609,8 @@ export function buildRuleDispositionReport(
       ),
     },
     adjudicationContextInventory: adjudicationContextInventory.sort(byKey),
-    deterministicCapabilityHandoff: deterministicCapabilityHandoff.sort(
-      (a, b) => a.ruleKey.localeCompare(b.ruleKey),
+    deterministicCapabilities: deterministicCapabilities.sort((a, b) =>
+      a.ruleKey.localeCompare(b.ruleKey),
     ),
     unresolvedWork: unresolvedWork.sort(byKey),
   };
