@@ -382,6 +382,9 @@ export function buildContextPacket(
       reason: item.reason,
       detail: item as unknown as Record<string, unknown>,
     })),
+    carriedForward: 0,
+    outcome:
+      kept.length === 0 && dropped.length === 0 ? 'failed-to-run' : 'ran',
     failedToRun: kept.length === 0 && dropped.length === 0,
     packet,
     byteBudgetExceeded: byteOverflow.length > 0 || byteDropped.length > 0,

@@ -48,27 +48,40 @@ export const P09_ADVENTURE_ENCOUNTER: DiagnosticFixture = {
       expectedValue: 7,
       statement: 'Encounter seeding reads the goblin hit-points value 7.',
     },
+  ],
+  evidenceNotes: [
     {
-      targetRef: `${moduleId}#encounter:enc-mouth-ambush`,
+      kind: 'packet-semantic',
       statement:
         'The module encounter is Ambush at the Mouth at loc-watchtower-mouth with two creature:goblin sentries.',
+      assertionId: 'encounter-identity-retained',
+      why: 'The claim is about authored encounter content reaching the packet.',
     },
     {
-      targetRef: `${moduleId}#location:loc-watchtower-mouth`,
+      kind: 'substrate-fact',
       statement:
         'The module contains the authored watchtower-mouth location and no stat-block rulesRef.',
+      assertionId: 'module-location-and-no-stat-block-ref',
+      why: 'A checkable claim about the loaded module, not about the packet.',
     },
     {
+      kind: 'substrate-fact',
       statement:
         'The module’s only rulesRef values are creature:goblin and magic-item:potion-of-healing; it does not itself exercise stat-block addressability.',
+      assertionId: 'module-rules-refs-are-exactly-two',
+      why: 'A checkable claim about the loaded module, not about the packet.',
     },
     {
+      kind: 'historical-annotation',
       statement:
         'Correction to stale design state: B1 eshyra-l3e5 is discharged. The discharging evidence is that stat-block is a member of RULES_RECORD_KINDS (packages/core/src/rules/types.ts) and toolLookupRules.ts supplies that same constant as the lookup_rules kind enum, so the tool no longer rejects the kind. Record presence alone would not establish this; stat-block:avatar-of-death (p. 218) and stat-block:giant-fly (p. 222) are separately verified present in this pack, which is what gives the direct probe a resolvable target.',
+      why: 'Records that blocker B1 is discharged; corrects stale design state.',
     },
     {
+      kind: 'historical-annotation',
       statement:
         'B2 eshyra-seoh is closed, and the authored resolver path is available; the fixture records that the former normal-CLI resolver gap is discharged rather than asserting the old failure.',
+      why: 'Records that blocker B2 is closed; corrects stale design state.',
     },
   ],
   requiredRelationshipExpansion: none(

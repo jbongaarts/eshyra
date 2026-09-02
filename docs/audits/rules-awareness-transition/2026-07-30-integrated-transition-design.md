@@ -1381,6 +1381,45 @@ is created in this PR; this is the contract the authoring work
   not corpus-completeness declarations**, and no report generated from them may
   aggregate them into one.
 
+### 11.1 Amendment C — field 9 holds only packet-retention facts
+
+- **Date:** 2026-09-02. **Owning bead:** `eshyra-o9bd.19.10` (W8), amending the
+  W7 fixture contract (`eshyra-o9bd.19.9`).
+- **Status:** narrows field 9 and adds one field. The other thirteen stand.
+
+**The defect.** Field 9 is defined above as *exact prose substrings, typed
+values, or selectors that must survive into the packet*, and §13 defines M9 as
+those facts absent from the packet. The authored corpus also placed material
+of four other kinds in field 9: statements about superseded state, explicit
+disclaimers, claims about the loaded pack or module, and pointers to guards
+elsewhere in the tree. None of those is a fact that can survive into a packet,
+so none can be measured by M9. Classifying them inside the measurement does
+not fix this — it redefines M9 by implementation, which no amendment
+authorized.
+
+**Field 9 is narrowed.** Every field-9 entry must carry an `exactSubstring` or
+a `typedPath`, and every field-9 entry contributes directly to M9. The fixture
+contract enforces this: a statement-only entry in field 9 is now a contract
+violation, not a classification problem. M9 carries no classification logic.
+
+**Field 14 — `evidenceNotes`.** Material that is genuinely part of a fixture's
+record but is not a packet-retention fact moves here, each entry declaring the
+evidence surface that actually proves it:
+
+| kind | proven by |
+|---|---|
+| `packet-semantic` | a named assertion against packet structure the probe runs |
+| `substrate-fact` | a named assertion against the loaded pack or module |
+| `external-guard` | a named file **and symbol** elsewhere in the tree |
+| `historical-annotation` | states superseded state; asserts nothing about current output |
+| `non-claim` | an explicit disclaimer of something not claimed |
+
+`packet-semantic` and `substrate-fact` notes must name an assertion that
+actually executes; `external-guard` notes must name both a path and a symbol
+within it, so a guard cannot be satisfied by a file merely existing. This
+field is fixture metadata and evidence routing. **It is not an input to M1–M9**
+and may never be aggregated into a coverage or completeness figure.
+
 ---
 
 ## 12. Experiment phases
@@ -1478,6 +1517,54 @@ authorized, and expansion is not a fixpoint over arbitrary promotion.
 on newly reached records, inverting §8.2 R2 (rulings are requested for
 *discovered* ambiguity ids). The join must stay downstream of the first
 expansion; the second pass is what reconciles the two requirements.
+
+#### 12.1.2 Amendment B — late rule join, the bounded residual, and conditional stages
+
+- **Date:** 2026-09-02. **Owning bead:** `eshyra-o9bd.19.10` (W8).
+- **Status:** extends Amendment A. Amendment A's two-pass expansion bound
+  stands; this states what happens at that bound and how a conditional stage
+  reports itself.
+
+**The gap Amendment A left.** A ruled the join must follow the first
+expansion so it can see ambiguities discovered there. The identical argument
+applies to the *second* expansion: a record reached only by
+`campaign-rule expansion` may carry a `RulesAmbiguity`, and under §8.2 R2 a
+ruling must be requested for every **discovered** ambiguity id. With a single
+join, such an ambiguity reaches the packet having never been offered to
+`jhpt`, which is the silent-uncertainty failure §8.2 R7 exists to prevent.
+
+**The resolution — a second, final join.** After `campaign-rule expansion`,
+the seam is queried once more, for **newly appeared candidate keys and newly
+discovered ambiguity ids only**. Rules and rulings it returns are placed
+exactly as in the first join. The stage list becomes:
+
+```text
+signals → candidates → typed expansion → campaign-rule/ruling join
+        → campaign-rule expansion → late rule join
+        → dedup with preserved reasons → priority and retention
+        → context packet
+```
+
+**The residual, stated rather than hidden.** A rule or ruling placed by the
+late join can promote its record to must-consider, and §6.3 would entitle
+that record to a one-hop Related neighbourhood. **The pilot does not expand
+again.** Expansion remains bounded at two passes; a third pass would reopen
+the same question a fourth time, and an unbounded fixpoint is not a Phase-1
+commitment. Instead the truncation is **named and measured**: every record
+promoted by the late join without receiving expansion is recorded in the
+trace as an unexpanded promotion, reported per probe, and is bounded evidence
+about the pilot rather than a claim about the rules (§6.4). A probe in which
+that set is non-empty has not failed; it has disclosed a known limit.
+
+**Conditional stages.** `campaign-rule expansion` and `late rule join` run
+only when the preceding stage produced work for them — promoted candidates,
+or new keys and ambiguity ids. A stage with nothing to do is **skipped**, and
+that is a distinct, truthful outcome. It is **not** a pass, and it must never
+be manufactured by forwarding upstream output as if this stage had produced
+it: §13.3 forbids exactly that. Each stage trace therefore reports one of
+`ran`, `skipped`, or `failed-to-run`, and only a stage declared conditional
+here may report `skipped`. Candidates a stage carries through untouched are
+counted separately from candidates it produced.
 
 ### 12.2 Phase 2 — runtime shadow mode
 

@@ -85,18 +85,46 @@ export function joinCampaignRules(
         NonNullable<DiscoveryCandidate['entry']>
       >;
     };
+    readonly stageName?: string;
+    readonly conditional?: boolean;
+    /** Restrict the query to material the previous join has not already seen
+     * (design amendment 12.1.2: the late join asks only about new keys and
+     * newly discovered ambiguity ids). */
+    readonly onlyCandidateKeys?: ReadonlySet<string>;
+    readonly seenAmbiguityIds?: ReadonlySet<string>;
+    /** Ambiguities an earlier join already resolved. Without these the late
+     * join reports them unresolved, because its own `resolved` set contains
+     * only the rulings IT placed. */
+    readonly resolvedAmbiguityIds?: ReadonlySet<string>;
   } = {},
 ): RuleJoinTrace {
-  const keys = candidates.map((candidate) => candidate.candidateKey);
+  const allKeys = candidates.map((candidate) => candidate.candidateKey);
+  const keys =
+    options.onlyCandidateKeys === undefined
+      ? allKeys
+      : allKeys.filter((key) => options.onlyCandidateKeys?.has(key));
   const rawAmbiguities = ambiguities(candidates);
-  const ambiguityIds = rawAmbiguities
-    .filter((item) => typeof item.id === 'string')
-    .map((item) => item.id as string);
-  const rules = seam.activeRulesAtPosition({
-    campaignPosition: options.campaignPosition,
-    candidateRecordKeys: keys,
-  });
-  const rulings = seam.activeRulingsForAmbiguities(ambiguityIds);
+  const ambiguityIds = [
+    ...new Set(
+      rawAmbiguities
+        .filter((item) => typeof item.id === 'string')
+        .map((item) => item.id as string)
+        .filter((id) => options.seenAmbiguityIds?.has(id) !== true),
+    ),
+  ];
+  // Only a CONDITIONAL join may decline to ask. The first join must always
+  // query the seam: R1 is about active rules applicable to the situation, not
+  // about whether discovery already found candidates, so a rule can surface
+  // governing material even when nothing else did.
+  const asked =
+    options.conditional !== true || keys.length > 0 || ambiguityIds.length > 0;
+  const rules = asked
+    ? seam.activeRulesAtPosition({
+        campaignPosition: options.campaignPosition,
+        candidateRecordKeys: keys,
+      })
+    : [];
+  const rulings = asked ? seam.activeRulingsForAmbiguities(ambiguityIds) : [];
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
   );
@@ -156,22 +184,34 @@ export function joinCampaignRules(
   // Only a ruling that was actually placed resolves its ambiguity. Treating
   // every returned ruling as resolving would report a resolution the packet
   // never carried.
-  const resolved = new Set(
-    rulings
+  const resolved = new Set([
+    ...(options.resolvedAmbiguityIds ?? []),
+    ...rulings
       .filter((ruling) => placedIdentities.has(ruling.ruleIdentity))
       .map((ruling) => ruling.ambiguityId),
-  );
+  ]);
   const unresolvedAmbiguities = rawAmbiguities
     .filter((item) => typeof item.id === 'string' && !resolved.has(item.id))
     .map(
       (item) => item as unknown as import('../rules/types.js').RulesAmbiguity,
     );
+  const didWork =
+    asked &&
+    (placedRules.length > 0 || losses.length > 0 || returned.length > 0);
   return {
-    stage: 'rule-join',
+    stage: options.stageName ?? 'rule-join',
+    carriedForward: result.size - surfaced.length,
+    outcome: didWork
+      ? 'ran'
+      : options.conditional === true
+        ? 'skipped'
+        : asked
+          ? 'ran'
+          : 'failed-to-run',
+    failedToRun: !didWork && !asked && options.conditional !== true,
     inputsConsumed: [{ candidateRecordKeys: keys, ambiguityIds }],
     outputsProduced: [...result.values()],
     losses,
-    failedToRun: result.size === 0 && losses.length === 0,
     requestedRuleRecordKeys: keys,
     requestedAmbiguityIds: ambiguityIds,
     returnedRuleIdentities: returned,
@@ -179,6 +219,7 @@ export function joinCampaignRules(
     unplacedRuleIdentities: unplaced,
     surfacedCandidateKeys: surfaced,
     placedRules,
+    resolvedAmbiguityIds: [...resolved],
     unresolvedAmbiguities,
   };
 }

@@ -153,7 +153,11 @@ function newRecordCandidate(
 export function expandTypedRelationships(
   candidates: readonly DiscoveryCandidate[],
   stack: Stack,
-  options: { readonly seedKeys?: ReadonlySet<string> } = {},
+  options: {
+    readonly seedKeys?: ReadonlySet<string>;
+    readonly stageName?: string;
+    readonly conditional?: boolean;
+  } = {},
 ): ExpansionTrace {
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
@@ -238,14 +242,33 @@ export function expandTypedRelationships(
       );
     }
   }
+  const produced = [...result.values()].filter(
+    (candidate) =>
+      !candidates.some(
+        (original) =>
+          original.candidateKey === candidate.candidateKey &&
+          original.routes.length === candidate.routes.length,
+      ),
+  ).length;
+  // A zero-seed conditional pass forwards its input untouched. Counting that
+  // pass-through as work is exactly the green signal section 13.3 forbids, so
+  // the outcome is `skipped` and the carried-forward count is separate.
+  const didWork =
+    expandable.length > 0 || traversals.length > 0 || losses.length > 0;
   return {
-    stage: 'expansion',
+    stage: options.stageName ?? 'expansion',
     inputsConsumed: expandable.map((candidate) => ({
       candidateKey: candidate.candidateKey,
     })),
+    carriedForward: result.size - produced,
+    outcome: didWork
+      ? 'ran'
+      : options.conditional === true
+        ? 'skipped'
+        : 'failed-to-run',
+    failedToRun: !didWork && options.conditional !== true,
     outputsProduced: [...result.values()],
     losses,
-    failedToRun: result.size === 0 && losses.length === 0,
     traversals,
   };
 }

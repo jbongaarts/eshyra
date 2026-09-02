@@ -38,9 +38,14 @@ export const P03_ADULT_BLACK_DRAGON: DiagnosticFixture = {
       statement:
         'The typed damage projection is retained beside, not instead of, the source branch.',
     },
+  ],
+  evidenceNotes: [
     {
+      kind: 'packet-semantic',
       statement:
         'The typed projection has no damageOnSuccess field and no success branch; 12d8 must not be presented as unconditional damage.',
+      assertionId: 'dragon-success-branch-disclosed',
+      why: 'The claim is that the packet must not present 12d8 as unconditional.',
     },
   ],
   requiredRelationshipExpansion: none(

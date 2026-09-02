@@ -1,155 +1,19 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect } from 'vitest';
-import type {
-  DiscoveryTrace,
-  FactClassification,
-  PacketCandidate,
-} from '../../../src/internal.js';
+import type { DiscoveryTrace, PacketCandidate } from '../../../src/internal.js';
+import type { EvidenceNote } from '../../diagnostics/index.js';
 
 /**
- * Evidence surface for every statement-only fixture field-9 requirement.
+ * Assertions the fixtures' `evidenceNotes` (field 14) name.
  *
- * M9 measures requirements carrying `exactSubstring` or `typedPath` directly.
- * A statement-only requirement states something about the packet, the loaded
- * substrate, superseded state, or an explicit non-claim; none of those is a
- * retained source string, so none is measurable as one. Previously they were
- * swept into a `proseOnlyNotCheckable` bucket that nothing asserted, which let
- * a declared requirement stay completely unproven while M9 reported green.
- *
- * Every entry below is keyed `P<probe>[<index>]` against
- * `DiagnosticFixture.requiredRetainedFacts`. A statement-only fact with no
- * entry makes M9 indeterminate and fails its probe, so this table cannot
- * silently fall behind the corpus. `packet-semantic` and `substrate-fact`
- * entries must name an assertion in ASSERTIONS below, and that assertion runs
- * for real during the probe.
+ * Design amendment 11.1 moved non-retention material out of field 9, so M9 is
+ * now exactly the packet-retention facts and carries no classification logic.
+ * What remains here are the assertions a `packet-semantic` or `substrate-fact`
+ * note names; the probe runner executes them, so a note cannot be satisfied by
+ * being labelled. `external-guard` notes name a path AND a symbol, and both
+ * are checked — a guard proven only by a file existing proves nothing.
  */
-export const FACT_EVIDENCE: Readonly<Record<string, FactClassification>> = {
-  'P1[2]': {
-    kind: 'packet-semantic',
-    assertionId: 'cover-reached-without-its-name',
-    why: 'The claim is that the cue, not a name mention, proposed the record.',
-  },
-  'P3[3]': {
-    kind: 'packet-semantic',
-    assertionId: 'dragon-success-branch-disclosed',
-    why: 'The claim is that the packet must not present 12d8 as unconditional.',
-  },
-  'P4[6]': {
-    kind: 'packet-semantic',
-    assertionId: 'fireball-area-disclosed',
-    why: 'The claim is that the packet discloses the absent typed area.',
-  },
-  'P5[3]': {
-    kind: 'packet-semantic',
-    assertionId: 'concentration-reached-by-cue-not-edge',
-    why: 'The claim is about which route class reached the record.',
-  },
-  'P6[4]': {
-    kind: 'historical-annotation',
-    why: 'Records that an earlier framing named a key the pack does not use.',
-  },
-  'P7[3]': {
-    kind: 'packet-semantic',
-    assertionId: 'cube-blocked-by-readiness',
-    guardPath: 'packages/core/test/itemState.test.ts',
-    why: 'The packet-visible claim is the blocked preflight; the runtime call ordering inside useItem is guarded by the item-state tests.',
-  },
-  'P7[4]': {
-    kind: 'non-claim',
-    why: 'Explicitly disclaims a ruling persistence model; asserts no output.',
-  },
-  'P8[4]': {
-    kind: 'packet-semantic',
-    assertionId: 'ammunition-c2-engine-pending-disclosed',
-    why: 'The claim is that the unexecuted sibling clause is disclosed.',
-  },
-  'P8[5]': {
-    kind: 'non-claim',
-    why: 'Explicitly disclaims that green-with-no-cost operations are capability evidence.',
-  },
-  'P9[2]': {
-    kind: 'packet-semantic',
-    assertionId: 'encounter-identity-retained',
-    why: 'The claim is about the authored encounter content reaching the packet.',
-  },
-  'P9[3]': {
-    kind: 'substrate-fact',
-    assertionId: 'module-location-and-no-stat-block-ref',
-    why: 'A checkable claim about the loaded module, not about the packet.',
-  },
-  'P9[4]': {
-    kind: 'substrate-fact',
-    assertionId: 'module-rules-refs-are-exactly-two',
-    why: 'A checkable claim about the loaded module, not about the packet.',
-  },
-  'P9[5]': {
-    kind: 'historical-annotation',
-    why: 'Records that blocker B1 is discharged; corrects stale design state.',
-  },
-  'P9[6]': {
-    kind: 'historical-annotation',
-    why: 'Records that blocker B2 is closed; corrects stale design state.',
-  },
-  'P10[2]': {
-    kind: 'packet-semantic',
-    assertionId: 'house-rule-governs-beside-source',
-    why: 'The load-bearing precedence requirement: the rule governs beside, and does not replace or hide, the SRD source.',
-  },
-  'P10[3]': {
-    kind: 'packet-semantic',
-    assertionId: 'house-rule-is-not-an-ambiguity-choice',
-    why: 'The claim distinguishes a house rule from an ambiguity ruling.',
-  },
-  'P11[0]': {
-    kind: 'substrate-fact',
-    assertionId: 'override-chain-preserved',
-    why: 'A checkable claim about the resolved stack entry.',
-  },
-  'P11[1]': {
-    kind: 'substrate-fact',
-    assertionId: 'strict-stack-identity-agrees',
-    why: 'A checkable claim about the resolved stack identity.',
-  },
-  'P11[2]': {
-    kind: 'historical-annotation',
-    why: 'Records the pre-B3 divergence explicitly as history, not current state.',
-  },
-  'P11[3]': {
-    kind: 'external-guard',
-    guardPath: 'packages/core/test/campaignRulesStackParity.test.ts',
-    why: 'The deterministic half of the parity claim is proven by that test.',
-  },
-  'P11[4]': {
-    kind: 'external-guard',
-    guardPath: 'packages/core/test/campaignRulesStackParity.test.ts',
-    why: 'The fixture names that test as the owning guard rather than duplicating it.',
-  },
-  'P12[0]': {
-    kind: 'external-guard',
-    guardPath: 'packages/core/src/character/srdStartingWealth.ts',
-    why: 'The character-creation reporting path is owned outside discovery.',
-  },
-  'P12[1]': {
-    kind: 'historical-annotation',
-    why: 'Historical false-authority evidence about a removed record.',
-  },
-  'P12[2]': {
-    kind: 'historical-annotation',
-    why: 'Historical false-authority evidence, deliberately not bound to the live pack.',
-  },
-  'P12[3]': {
-    kind: 'external-guard',
-    guardPath: 'packages/core/test/srdGeneratedPack.test.ts',
-    why: 'The fixture names that test as the standing absence guard.',
-  },
-  'P12[4]': {
-    kind: 'packet-semantic',
-    assertionId: 'no-false-provenance-laundered',
-    why: 'The claim is that the removed record never reaches the packet.',
-  },
-};
-
 export interface AssertionContext {
   readonly trace: DiscoveryTrace;
   readonly candidate: (key: string) => PacketCandidate | undefined;
@@ -307,10 +171,28 @@ export const ASSERTIONS: Readonly<
   },
 };
 
-export function assertGuardExists(classification: FactClassification): void {
-  if (classification.guardPath === undefined) return;
+export function assertEvidenceNote(
+  note: EvidenceNote,
+  context: AssertionContext,
+): void {
+  if (note.kind === 'packet-semantic' || note.kind === 'substrate-fact') {
+    const assertion = ASSERTIONS[note.assertionId as string];
+    expect(
+      assertion,
+      `evidence note names missing assertion ${note.assertionId}`,
+    ).toBeDefined();
+    assertion(context);
+    return;
+  }
+  if (note.kind !== 'external-guard') return;
+  const path = join(process.cwd(), note.guardPath as string);
+  expect(existsSync(path), `named guard ${note.guardPath} does not exist`).toBe(
+    true,
+  );
+  // The symbol is what ties the guard to the claim; existence alone would let
+  // any file stand in for any requirement.
   expect(
-    existsSync(join(process.cwd(), classification.guardPath)),
-    `named guard ${classification.guardPath} does not exist`,
+    readFileSync(path, 'utf8').includes(note.guardSymbol as string),
+    `guard ${note.guardPath} does not contain ${note.guardSymbol}`,
   ).toBe(true);
 }

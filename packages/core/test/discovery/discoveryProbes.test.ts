@@ -6,11 +6,7 @@ import type {
 } from '../diagnostics/index.js';
 import { DIAGNOSTIC_FIXTURES } from '../diagnostics/index.js';
 import { freshDbWithSession } from '../support/db.js';
-import {
-  ASSERTIONS,
-  assertGuardExists,
-  FACT_EVIDENCE,
-} from './support/factEvidence.js';
+import { assertEvidenceNote } from './support/factEvidence.js';
 import {
   declaredBindingLabels,
   installScenarioBinding,
@@ -67,6 +63,7 @@ const STAGES = [
   'expansion',
   'rule-join',
   'campaign-rule-expansion',
+  'late-rule-join',
   'dedup',
   'retention',
   'packet',
@@ -99,17 +96,11 @@ describe('offline discovery diagnostic probes', () => {
             mustIncludeTargetRefs: mustRefs,
             mustNotIncludeTargetRefs:
               fixture.mustNotIncludeTargets.map(targetRef),
-            // Each statement-only requirement carries its declared evidence
-            // surface. One without an entry lands in m9.indeterminate and
-            // fails the probe, so a field-9 requirement can never go unproven
-            // while M9 reads green.
-            requiredFacts: (Array.isArray(fixture.requiredRetainedFacts)
+            // Field 9 is now packet-retention facts only (design amendment
+            // 11.1), so every entry contributes directly to M9.
+            requiredFacts: Array.isArray(fixture.requiredRetainedFacts)
               ? fixture.requiredRetainedFacts
-              : []
-            ).map((fact, index) => ({
-              ...fact,
-              classification: FACT_EVIDENCE[`${fixture.probeId}[${index}]`],
-            })),
+              : [],
             // Without this the declared traversals are measured against an
             // empty list and M4 silently reports nothing for every probe.
             requiredRelationshipExpansion: declaredTraversals.map(
@@ -123,12 +114,31 @@ describe('offline discovery diagnostic probes', () => {
           });
 
           // A stage that produced nothing and recorded no loss did not pass;
-          // it failed to run (design section 13.3).
-          for (const stage of STAGES)
+          // it failed to run (design section 13.3). A conditional stage with
+          // nothing applicable reports `skipped`, which is truthful and is not
+          // a pass — and only the two stages amendment 12.1.2 declares
+          // conditional may report it.
+          const CONDITIONAL = new Set([
+            'campaign-rule-expansion',
+            'late-rule-join',
+          ]);
+          for (const stage of STAGES) {
+            const outcome = measurements.perStage[stage].outcome;
             expect(
-              measurements.perStage[stage].failedToRun,
+              outcome,
               `${label} stage ${stage} recorded no output and no loss`,
-            ).toBe(false);
+            ).not.toBe('failed-to-run');
+            if (outcome === 'skipped')
+              expect(
+                CONDITIONAL.has(stage),
+                `${label} stage ${stage} is not conditional and may not be skipped`,
+              ).toBe(true);
+            // A skipped stage must not claim to have produced anything.
+            if (outcome === 'skipped')
+              expect(measurements.perStage[stage].carriedForward).toBe(
+                measurements.perStage[stage].produced,
+              );
+          }
 
           // M1: every must-include target reached the packet. M2: nothing is
           // reported lost when M1 passed.
@@ -172,6 +182,33 @@ describe('offline discovery diagnostic probes', () => {
             ),
           ).toEqual([]);
 
+          // Field 11 must agree with the trace. An ambiguity the fixture
+          // declares resolved must not be reported unresolved, and vice
+          // versa. This ties the declared ambiguity state to the seam result
+          // across BOTH joins -- an ambiguity resolved by the first join was
+          // being reported unresolved by the second, with nothing to catch it.
+          const ambiguityState = execution.expectedAmbiguityState;
+          if ('expectations' in ambiguityState)
+            for (const expectation of ambiguityState.expectations) {
+              const unresolved =
+                measurements.m5.unresolvedAmbiguityIds.includes(
+                  expectation.ambiguityId,
+                );
+              expect(
+                unresolved,
+                `${label} ${expectation.ambiguityId} expected ${expectation.expectedResolution}`,
+              ).toBe(expectation.expectedResolution === 'unresolved');
+            }
+
+          // The bounded residual amendment 12.1.2 declares must be reported,
+          // not merely tolerated: anything the late join promoted without a
+          // further expansion is named and is a retained candidate.
+          for (const key of measurements.m5.unexpandedPromotions)
+            expect(
+              trace.packet.packet.candidates.map((item) => item.identity.key),
+              `${label} names an unexpanded promotion that is not in the packet`,
+            ).toContain(key);
+
           // M6 / M7: no must-consider overflow, and every drop carries a
           // reason. Reported as counts and reasons, never as a rate.
           expect(measurements.m6.overflowed).toBe(false);
@@ -186,36 +223,27 @@ describe('offline discovery diagnostic probes', () => {
           expect(measurements.m8.unattributedPresent).toEqual([]);
           expect(measurements.m9.missing).toEqual([]);
 
-          // Every statement-only requirement is classified, and every
-          // classification that names an assertion actually runs it.
-          expect(
-            measurements.m9.indeterminate.map((fact) => fact.statement),
-            `${label} has field-9 requirements with no declared evidence surface`,
-          ).toEqual([]);
-          for (const entry of measurements.m9.classified) {
-            assertGuardExists(entry.classification);
-            const { kind, assertionId } = entry.classification;
-            if (kind === 'packet-semantic' || kind === 'substrate-fact') {
-              expect(
-                assertionId,
-                `${label} ${kind} requirement names no assertion`,
-              ).toBeDefined();
-              const assertion = ASSERTIONS[assertionId as string];
-              expect(
-                assertion,
-                `${label} names missing assertion ${assertionId}`,
-              ).toBeDefined();
-              assertion({
-                trace,
-                candidate: (key) =>
-                  trace.packet.packet.candidates.find(
-                    (item) => item.identity.key === key,
-                  ),
-                playerInput: fixture.playerInput,
-                moduleJson: moduleJson as Record<string, unknown> | undefined,
-              });
-            }
-          }
+          // M9 measures exactly the field-9 facts, and the fixture contract
+          // guarantees each is a packet-retention fact.
+          expect(measurements.m9.measured).toBe(
+            Array.isArray(fixture.requiredRetainedFacts)
+              ? fixture.requiredRetainedFacts.length
+              : 0,
+          );
+          // Field-14 notes are proven on their own surface: named assertions
+          // run for real, and named guards must contain their symbol.
+          const assertionContext = {
+            trace,
+            candidate: (key: string) =>
+              trace.packet.packet.candidates.find(
+                (item) => item.identity.key === key,
+              ),
+            playerInput: fixture.playerInput,
+            moduleJson: moduleJson as Record<string, unknown> | undefined,
+          };
+          for (const note of fixture.evidenceNotes)
+            assertEvidenceNote(note, assertionContext);
+
           for (const required of REQUIRED_PROJECTION_LIMITS[fixture.probeId] ??
             []) {
             const candidate = trace.packet.packet.candidates.find(

@@ -61,6 +61,8 @@ export function deduplicateCandidates(
     })),
     outputsProduced: [...merged.values()],
     losses,
+    carriedForward: 0,
+    outcome: merged.size === 0 && losses.length === 0 ? 'failed-to-run' : 'ran',
     failedToRun: merged.size === 0 && losses.length === 0,
     routeCountBeforeDedup: before,
     routeCountAfterDedup: after,

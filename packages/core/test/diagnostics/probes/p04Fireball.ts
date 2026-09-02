@@ -56,10 +56,14 @@ export const P04_FIREBALL: DiagnosticFixture = {
       typedPath: '/data/upcast',
       statement: 'The compiler-emitted higher-slot clause is retained.',
     },
+  ],
+  evidenceNotes: [
     {
-      targetRef: 'spell:fireball',
+      kind: 'packet-semantic',
       statement:
         'The typed projection has no mechanics.area; area geometry and target selection remain outside the upcast capability.',
+      assertionId: 'fireball-area-disclosed',
+      why: 'The claim is that the packet discloses the absent typed area.',
     },
   ],
   requiredRelationshipExpansion: none(

@@ -39,9 +39,13 @@ export const P06_ACTION_SURGE: DiagnosticFixture = {
         'Starting at 17th level, you can use it twice before a rest, but only once on the same turn.',
       statement: 'The prose-only 17th-level usage limit is retained.',
     },
+  ],
+  evidenceNotes: [
     {
+      kind: 'historical-annotation',
       statement:
         'Correction: the framing named feature:action-surge, but the verified canonical pack key is feature:fighter:action-surge.',
+      why: 'Records that an earlier framing named a key the pack does not use.',
     },
   ],
   requiredRelationshipExpansion: none(

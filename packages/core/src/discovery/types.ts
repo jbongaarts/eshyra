@@ -91,11 +91,29 @@ export interface StageLoss {
   readonly detail: Record<string, unknown>;
 }
 
+/**
+ * How a stage reports itself (design amendment 12.1.2).
+ *
+ * `ran` — it did work: produced candidates, traversals, placements or losses.
+ * `skipped` — it is a CONDITIONAL stage with nothing applicable to do. This is
+ *   a truthful third state, not a pass, and only a stage the amendment
+ *   declares conditional may report it.
+ * `failed-to-run` — it recorded nothing and is not a conditional skip. Section
+ *   13.3 forbids treating this as success.
+ */
+export type StageOutcome = 'ran' | 'skipped' | 'failed-to-run';
+
 export interface StageTrace<T> {
   readonly stage: string;
   readonly inputsConsumed: readonly Record<string, unknown>[];
+  /** Everything the stage emits downstream, including pass-through. */
   readonly outputsProduced: readonly T[];
+  /** Candidates forwarded untouched. Counting these as produced is what let a
+   * zero-seed second pass manufacture a green signal. */
+  readonly carriedForward: number;
   readonly losses: readonly StageLoss[];
+  readonly outcome: StageOutcome;
+  /** Retained for readability; true only when outcome is 'failed-to-run'. */
   readonly failedToRun: boolean;
 }
 
@@ -189,6 +207,7 @@ export interface RuleJoinTrace extends StageTrace<DiscoveryCandidate> {
     readonly ruleIdentity: string;
     readonly governingRecordKey: string;
   }[];
+  readonly resolvedAmbiguityIds: readonly string[];
   readonly unresolvedAmbiguities: readonly RulesAmbiguity[];
 }
 
@@ -306,6 +325,11 @@ export interface DiscoveryTrace {
   /** The second, bounded expansion pass (design amendment 12.1.1), seeded only
    * by candidates the rule join promoted to must-consider. */
   readonly ruleExpansion: ExpansionTrace;
+  /** The final seam query, for material the first join never saw. */
+  readonly lateRuleJoin: RuleJoinTrace;
+  /** Records the late join promoted that expansion no longer reaches. The
+   * bound is declared in design amendment 12.1.2 and reported, not hidden. */
+  readonly unexpandedPromotions: readonly string[];
   readonly dedup: DedupTrace;
   readonly retention: RetentionTrace;
   readonly packet: PacketTrace;

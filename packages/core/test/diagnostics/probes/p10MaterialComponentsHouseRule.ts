@@ -29,14 +29,21 @@ export const P10_MATERIAL_COMPONENTS_HOUSE_RULE: DiagnosticFixture = {
       statement:
         'The source material overridden by the house rule remains attributed and visible.',
     },
+  ],
+  evidenceNotes: [
     {
-      targetRef: 'spell:fireball',
+      kind: 'packet-semantic',
       statement:
         'Precedence is presented: the active campaign rule governs this campaign position, but does not replace or hide the SRD source.',
+      assertionId: 'house-rule-governs-beside-source',
+      why: 'The load-bearing precedence requirement: the rule governs beside, and does not replace or hide, the SRD source.',
     },
     {
+      kind: 'packet-semantic',
       statement:
         'This is a house-rule case, not an ambiguity choice and not ordinary contextual adjudication about cover, visibility, or terrain.',
+      assertionId: 'house-rule-is-not-an-ambiguity-choice',
+      why: 'The claim distinguishes a house rule from an ambiguity ruling.',
     },
   ],
   requiredRelationshipExpansion: none(

@@ -80,12 +80,42 @@ export interface ExplicitNone {
   readonly statement: string;
 }
 
+/**
+ * Field 9 — a fact that must survive into the context packet.
+ *
+ * Design amendment 11.1 narrows this to packet-retention facts only: every
+ * entry carries an `exactSubstring` or a `typedPath`, and every entry
+ * contributes directly to M9. Material that cannot survive into a packet —
+ * superseded state, disclaimers, claims about the loaded substrate, pointers
+ * to guards elsewhere — belongs in `evidenceNotes` (field 14). Allowing it
+ * here made M9 unmeasurable for those entries.
+ */
 export interface RetainedFact {
   readonly statement: string;
   readonly targetRef?: string;
   readonly exactSubstring?: string;
   readonly typedPath?: string;
   readonly expectedValue?: unknown;
+}
+
+/** Field 14 — fixture material that is not a packet-retention fact. */
+export type EvidenceNoteKind =
+  | 'packet-semantic'
+  | 'substrate-fact'
+  | 'external-guard'
+  | 'historical-annotation'
+  | 'non-claim';
+
+export interface EvidenceNote {
+  readonly kind: EvidenceNoteKind;
+  readonly statement: string;
+  readonly why: string;
+  /** Required for packet-semantic and substrate-fact. */
+  readonly assertionId?: string;
+  /** Required for external-guard, together with guardSymbol. */
+  readonly guardPath?: string;
+  /** A symbol that must appear in guardPath, so existence alone cannot pass. */
+  readonly guardSymbol?: string;
 }
 
 export interface TypedRelationshipExpectation {
@@ -175,6 +205,7 @@ export interface DiagnosticFixture {
   readonly mayIncludeTargets: readonly DiagnosticTarget[];
   readonly mustNotIncludeTargets: readonly DiagnosticTarget[];
   readonly requiredRetainedFacts: ExplicitNone | readonly RetainedFact[];
+  readonly evidenceNotes: readonly EvidenceNote[];
   readonly requiredRelationshipExpansion:
     | ExplicitNone
     | readonly TypedRelationshipExpectation[];
@@ -219,6 +250,7 @@ const FIXTURE_KEYS = new Set([
   'mayIncludeTargets',
   'mustNotIncludeTargets',
   'requiredRetainedFacts',
+  'evidenceNotes',
   'requiredRelationshipExpansion',
   'executions',
   'probeId',
@@ -238,6 +270,7 @@ const EXECUTION_KEYS = new Set([
   'mustNotIncludeTargets',
   'expectedRouteClasses',
   'requiredRetainedFacts',
+  'evidenceNotes',
   'requiredRelationshipExpansion',
   'expectedAmbiguityState',
   'expectedCampaignRuleOrRulingState',
@@ -405,6 +438,13 @@ function checkFacts(value: unknown, label: string): void {
     if (!isRecord(fact))
       throw new Error(`${label}[${index}] must be an object`);
     nonEmptyString(fact.statement, `${label}[${index}].statement`);
+    // Design amendment 11.1: field 9 holds packet-retention facts only. A
+    // statement-only entry cannot survive into a packet and therefore cannot
+    // be measured by M9; it belongs in evidenceNotes.
+    if (fact.exactSubstring === undefined && fact.typedPath === undefined)
+      throw new Error(
+        `${label}[${index}] must declare exactSubstring or typedPath; non-retention material belongs in evidenceNotes`,
+      );
     if (fact.targetRef !== undefined)
       nonEmptyString(fact.targetRef, `${label}[${index}].targetRef`);
     if (fact.exactSubstring !== undefined) {
@@ -412,16 +452,64 @@ function checkFacts(value: unknown, label: string): void {
       // An unanchored substring expectation would fall back to searching pack
       // metadata, which silently turns a claim about one record into a claim
       // about the pack's own license text. Historical or narrative evidence
-      // belongs in `statement` as prose, unbound to the live pack.
+      // belongs in `evidenceNotes` as prose, unbound to the live pack.
       if (fact.targetRef === undefined)
         throw new Error(
-          `${label}[${index}].exactSubstring requires targetRef; unanchored substrings must stay prose in statement`,
+          `${label}[${index}].exactSubstring requires targetRef; unanchored substrings belong in evidenceNotes`,
         );
     }
     if (fact.typedPath !== undefined) {
       nonEmptyString(fact.typedPath, `${label}[${index}].typedPath`);
       if (!fact.typedPath.startsWith('/'))
         throw new Error(`${label}[${index}].typedPath must be a JSON pointer`);
+      if (fact.targetRef === undefined)
+        throw new Error(`${label}[${index}].typedPath requires targetRef`);
+    }
+  }
+}
+
+const EVIDENCE_NOTE_KINDS = new Set<EvidenceNoteKind>([
+  'packet-semantic',
+  'substrate-fact',
+  'external-guard',
+  'historical-annotation',
+  'non-claim',
+]);
+
+function checkEvidenceNotes(value: unknown, label: string): void {
+  if (!Array.isArray(value)) throw new Error(`${label} must be an array`);
+  for (const [index, raw] of value.entries()) {
+    if (!isRecord(raw)) throw new Error(`${label}[${index}] must be an object`);
+    checkKeysAndRequired(
+      raw,
+      new Set([
+        'kind',
+        'statement',
+        'why',
+        'assertionId',
+        'guardPath',
+        'guardSymbol',
+      ]),
+      new Set(['kind', 'statement', 'why']),
+      `${label}[${index}]`,
+    );
+    if (
+      typeof raw.kind !== 'string' ||
+      !EVIDENCE_NOTE_KINDS.has(raw.kind as EvidenceNoteKind)
+    )
+      throw new Error(`${label}[${index}].kind is invalid`);
+    nonEmptyString(raw.statement, `${label}[${index}].statement`);
+    nonEmptyString(raw.why, `${label}[${index}].why`);
+    if (raw.kind === 'packet-semantic' || raw.kind === 'substrate-fact')
+      nonEmptyString(raw.assertionId, `${label}[${index}].assertionId`);
+    else if (raw.assertionId !== undefined)
+      throw new Error(
+        `${label}[${index}].assertionId is only meaningful for packet-semantic or substrate-fact`,
+      );
+    if (raw.kind === 'external-guard') {
+      nonEmptyString(raw.guardPath, `${label}[${index}].guardPath`);
+      // A guard proven only by a path existing proves nothing about the claim.
+      nonEmptyString(raw.guardSymbol, `${label}[${index}].guardSymbol`);
     }
   }
 }
@@ -571,6 +659,7 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
     value.requiredRetainedFacts,
     `fixture ${index}.requiredRetainedFacts`,
   );
+  checkEvidenceNotes(value.evidenceNotes, `fixture ${index}.evidenceNotes`);
   if (
     isRecord(value.requiredRelationshipExpansion) &&
     value.requiredRelationshipExpansion.kind === 'none'

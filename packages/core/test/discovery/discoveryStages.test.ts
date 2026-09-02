@@ -14,6 +14,12 @@ import {
 } from '../../src/internal.js';
 import { freshDbWithSession } from '../support/db.js';
 import {
+  installLateAmbiguityAddon,
+  LATE_AMBIGUITY_ID,
+  LATE_AMBIGUITY_ROOT_KEY,
+  LATE_AMBIGUITY_TARGET_KEY,
+} from './support/lateAmbiguityAddon.js';
+import {
   installVariantReadinessAddon,
   PENDING_VARIANT_ID,
   READY_VARIANT_ID,
@@ -720,6 +726,143 @@ describe('offline discovery stage boundaries', () => {
       expect(trace.expansion.traversals.length).toBeGreaterThan(0);
       expect(trace.ruleExpansion.traversals).toEqual([]);
       expect(trace.ruleJoin.surfacedCandidateKeys).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+  it('reports a zero-seed conditional pass as skipped, not as work it did not do', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'nothing',
+          stateFields: { first: 'condition:incapacitated' },
+        },
+      });
+      const stage = trace.ruleExpansion;
+      // The complete trace shape for a zero-seed run. Forwarding upstream
+      // candidates as `outputsProduced` while reporting failedToRun === false
+      // is precisely the green signal section 13.3 forbids.
+      expect(stage.stage).toBe('campaign-rule-expansion');
+      expect(stage.outcome).toBe('skipped');
+      expect(stage.failedToRun).toBe(false);
+      expect(stage.inputsConsumed).toEqual([]);
+      expect(stage.traversals).toEqual([]);
+      expect(stage.losses).toEqual([]);
+      // Everything it emitted was carried through, not produced.
+      expect(stage.carriedForward).toBe(stage.outputsProduced.length);
+      expect(trace.lateRuleJoin.stage).toBe('late-rule-join');
+      expect(trace.lateRuleJoin.outcome).toBe('skipped');
+
+      // The first expansion, by contrast, genuinely ran.
+      expect(trace.expansion.stage).toBe('expansion');
+      expect(trace.expansion.outcome).toBe('ran');
+      expect(trace.expansion.traversals.length).toBeGreaterThan(0);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('requests a ruling for an ambiguity discovered only in the second expansion pass', () => {
+    const db = freshDbWithSession();
+    try {
+      const resolver = installLateAmbiguityAddon(
+        db,
+        '2026-09-02T00:00:00.000Z',
+      );
+      const requested: string[][] = [];
+      const trace = runDiscoveryStages({
+        db,
+        rulesPackResolver: resolver,
+        scenario: {
+          playerInput: 'the party proceeds',
+          stateFields: { campaignPosition: 'turn-3', actor: 'pc-1' },
+        },
+        campaignRuleSeam: {
+          activeRulesAtPosition: ({ candidateRecordKeys }) =>
+            candidateRecordKeys.includes(LATE_AMBIGUITY_ROOT_KEY) ||
+            candidateRecordKeys.length === 0
+              ? [
+                  {
+                    ruleIdentity: 'house-rule-late-root',
+                    ruleKind: 'house-rule',
+                    status: 'active',
+                    origin: 'player',
+                    provenance: 'campaign history',
+                    effectivePosition: 'turn-3',
+                    supersededBy: null,
+                    scope: 'late ambiguity root',
+                    governingRecordKeys: [LATE_AMBIGUITY_ROOT_KEY],
+                  },
+                ]
+              : [],
+          activeRulingsForAmbiguities: (ids) => {
+            requested.push([...ids]);
+            return ids.includes(LATE_AMBIGUITY_ID)
+              ? [
+                  {
+                    ruleIdentity: 'ruling-late-cube',
+                    ruleKind: 'ruling',
+                    status: 'active',
+                    origin: 'dm',
+                    provenance: 'campaign history',
+                    effectivePosition: 'turn-3',
+                    supersededBy: null,
+                    scope: LATE_AMBIGUITY_ID,
+                    governingRecordKeys: [LATE_AMBIGUITY_TARGET_KEY],
+                    ambiguityId: LATE_AMBIGUITY_ID,
+                    selectedInterpretationId: 'same-face-resets',
+                  },
+                ]
+              : [];
+          },
+        },
+      });
+
+      // The root is must-consider through the campaign rule alone, and the
+      // second pass follows its typed edge to the ambiguity-carrying record.
+      expect(trace.ruleJoin.surfacedCandidateKeys).toEqual([
+        LATE_AMBIGUITY_ROOT_KEY,
+      ]);
+      expect(trace.ruleExpansion.outcome).toBe('ran');
+      expect(trace.ruleExpansion.traversals).toContainEqual({
+        sourceRecordKey: LATE_AMBIGUITY_ROOT_KEY,
+        linkField: 'data.source',
+        relation: 'data.source',
+        targetRecordKey: LATE_AMBIGUITY_TARGET_KEY,
+      });
+
+      // The first join never saw that ambiguity; the late join requests it.
+      expect(trace.ruleJoin.requestedAmbiguityIds).not.toContain(
+        LATE_AMBIGUITY_ID,
+      );
+      expect(trace.lateRuleJoin.outcome).toBe('ran');
+      expect(trace.lateRuleJoin.requestedAmbiguityIds).toContain(
+        LATE_AMBIGUITY_ID,
+      );
+      expect(requested.at(-1)).toContain(LATE_AMBIGUITY_ID);
+
+      // The ruling is placed beside its governing record, so the ambiguity
+      // does not reach the packet as silently unresolved.
+      expect(trace.lateRuleJoin.placedRuleIdentities).toContain(
+        'ruling-late-cube',
+      );
+      const cube = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === LATE_AMBIGUITY_TARGET_KEY,
+      );
+      expect(cube?.campaignRulings[0].ambiguityId).toBe(LATE_AMBIGUITY_ID);
+      expect(cube?.routes.map((route) => route.routeClass)).toContain(
+        'campaign-ruling',
+      );
+
+      // The bounded residual amendment 12.1.2 declares: the late ruling made
+      // this record must-consider, expansion is bounded at two passes, and the
+      // truncation is named rather than hidden.
+      expect(trace.unexpandedPromotions).toContain(LATE_AMBIGUITY_TARGET_KEY);
+      expect(measureDiscovery(trace).m5.unexpandedPromotions).toContain(
+        LATE_AMBIGUITY_TARGET_KEY,
+      );
     } finally {
       db.close();
     }

@@ -6,6 +6,8 @@ export type {
   DiagnosticFixture,
   DiagnosticSelector,
   DiagnosticTarget,
+  EvidenceNote,
+  EvidenceNoteKind,
   ExplicitNone,
   FixtureExecution,
   GatingBlocker,

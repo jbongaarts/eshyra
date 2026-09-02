@@ -116,6 +116,9 @@ export function resolveDiscoveryCandidates(
     })),
     outputsProduced: [...candidates.values()],
     losses,
+    carriedForward: 0,
+    outcome:
+      candidates.size === 0 && losses.length === 0 ? 'failed-to-run' : 'ran',
     failedToRun: candidates.size === 0 && losses.length === 0,
     unresolvedTargets,
   };

@@ -1,43 +1,18 @@
 import type { DiscoveryTrace, TypedTraversal } from './types.js';
 
 /**
- * How a fixture field-9 requirement is proven.
- *
- * A requirement carrying `exactSubstring` or `typedPath` is a source-fact
- * check M9 measures directly. Everything else states a requirement about
- * something other than a retained source string, and must name the evidence
- * surface that actually proves it. An unclassified statement-only requirement
- * makes M9 INDETERMINATE — it never silently disappears from `missing`, which
- * is how a declared requirement could previously stay unproven while M9 read
- * green.
+ * A field-9 packet-retention fact. Design amendment 11.1 narrows field 9 to
+ * exactly this: every entry carries an `exactSubstring` or a `typedPath` and
+ * contributes directly to M9. Material that cannot survive into a packet is
+ * fixture `evidenceNotes` (field 14) and is not an M9 input, so M9 carries no
+ * classification logic — a classification registry inside the measurement
+ * would redefine M9 by implementation.
  */
-export type FactEvidenceKind =
-  /** A claim about packet content, proven by a typed packet assertion. */
-  | 'packet-semantic'
-  /** A claim about the loaded pack or module, proven against that substrate. */
-  | 'substrate-fact'
-  /** Proven by a named test or module elsewhere in the tree. */
-  | 'external-guard'
-  /** A statement about superseded state, making no claim on current output. */
-  | 'historical-annotation'
-  /** An explicit disclaimer; it asserts that something is NOT claimed. */
-  | 'non-claim';
-
-export interface FactClassification {
-  readonly kind: FactEvidenceKind;
-  /** Required for packet-semantic and substrate-fact: the assertion proving it. */
-  readonly assertionId?: string;
-  /** Repo-relative path of the guard, required for external-guard. */
-  readonly guardPath?: string;
-  readonly why: string;
-}
-
 export interface RequiredPacketFact {
   readonly targetRef?: string;
   readonly exactSubstring?: string;
   readonly typedPath?: string;
   readonly expectedValue?: unknown;
-  readonly classification?: FactClassification;
 }
 export interface DiscoveryMeasurementInput {
   readonly mustIncludeTargetRefs?: readonly string[];
@@ -83,6 +58,8 @@ export interface DiscoveryMeasurements {
     readonly matched: readonly string[];
     readonly unplaced: readonly string[];
     readonly surfacedCandidateKeys: readonly string[];
+    /** Bounded residual declared by design amendment 12.1.2. */
+    readonly unexpandedPromotions: readonly string[];
     readonly unresolvedAmbiguityIds: readonly string[];
     readonly placed: readonly {
       readonly ruleIdentity: string;
@@ -121,21 +98,17 @@ export interface DiscoveryMeasurements {
   };
   readonly m9: {
     readonly missing: readonly RequiredPacketFact[];
-    /** Statement-only requirements with a declared evidence surface. */
-    readonly classified: readonly {
-      readonly fact: RequiredPacketFact;
-      readonly classification: FactClassification;
-    }[];
-    /** Statement-only requirements with NO declared evidence surface. Any
-     * entry here makes M9 indeterminate for the probe and must fail it. */
-    readonly indeterminate: readonly RequiredPacketFact[];
+    /** Every field-9 fact measured, so an empty corpus cannot read as green. */
+    readonly measured: number;
   };
   readonly perStage: Readonly<
     Record<
       string,
       {
         readonly produced: number;
+        readonly carriedForward: number;
         readonly losses: number;
+        readonly outcome: string;
         readonly failedToRun: boolean;
       }
     >
@@ -207,6 +180,7 @@ export function measureDiscovery(
     ['expansion', trace.expansion],
     ['rule-join', trace.ruleJoin],
     ['campaign-rule-expansion', trace.ruleExpansion],
+    ['late-rule-join', trace.lateRuleJoin],
     ['dedup', trace.dedup],
     ['retention', trace.retention],
     ['packet', trace.packet],
@@ -234,6 +208,7 @@ export function measureDiscovery(
     trace.expansion,
     trace.ruleJoin,
     trace.ruleExpansion,
+    trace.lateRuleJoin,
     trace.dedup,
     trace.retention,
   ])
@@ -288,17 +263,13 @@ export function measureDiscovery(
     };
   });
   const missing: RequiredPacketFact[] = [];
-  const classified: {
-    fact: RequiredPacketFact;
-    classification: FactClassification;
-  }[] = [];
-  const indeterminate: RequiredPacketFact[] = [];
+  let measured = 0;
   for (const fact of input.requiredFacts ?? []) {
-    if (fact.exactSubstring === undefined && fact.typedPath === undefined) {
-      if (fact.classification === undefined) indeterminate.push(fact);
-      else classified.push({ fact, classification: fact.classification });
-      continue;
-    }
+    if (fact.exactSubstring === undefined && fact.typedPath === undefined)
+      throw new Error(
+        'a field-9 fact must declare exactSubstring or typedPath; non-retention material belongs in fixture evidenceNotes (design amendment 11.1)',
+      );
+    measured += 1;
     const candidate =
       fact.targetRef === undefined
         ? undefined
@@ -339,16 +310,38 @@ export function measureDiscovery(
     m3,
     m4,
     m5: {
-      requestedRuleRecordKeys: trace.ruleJoin.requestedRuleRecordKeys,
-      requestedAmbiguityIds: trace.ruleJoin.requestedAmbiguityIds,
-      returned: trace.ruleJoin.returnedRuleIdentities,
-      matched: trace.ruleJoin.placedRuleIdentities,
-      unplaced: trace.ruleJoin.unplacedRuleIdentities,
-      surfacedCandidateKeys: trace.ruleJoin.surfacedCandidateKeys,
-      unresolvedAmbiguityIds: trace.ruleJoin.unresolvedAmbiguities
+      requestedRuleRecordKeys: [
+        ...trace.ruleJoin.requestedRuleRecordKeys,
+        ...trace.lateRuleJoin.requestedRuleRecordKeys,
+      ],
+      requestedAmbiguityIds: [
+        ...trace.ruleJoin.requestedAmbiguityIds,
+        ...trace.lateRuleJoin.requestedAmbiguityIds,
+      ],
+      returned: [
+        ...trace.ruleJoin.returnedRuleIdentities,
+        ...trace.lateRuleJoin.returnedRuleIdentities,
+      ],
+      matched: [
+        ...trace.ruleJoin.placedRuleIdentities,
+        ...trace.lateRuleJoin.placedRuleIdentities,
+      ],
+      unplaced: [
+        ...trace.ruleJoin.unplacedRuleIdentities,
+        ...trace.lateRuleJoin.unplacedRuleIdentities,
+      ],
+      surfacedCandidateKeys: [
+        ...trace.ruleJoin.surfacedCandidateKeys,
+        ...trace.lateRuleJoin.surfacedCandidateKeys,
+      ],
+      unexpandedPromotions: trace.unexpandedPromotions,
+      unresolvedAmbiguityIds: trace.lateRuleJoin.unresolvedAmbiguities
         .map((item) => item.id)
         .filter((id): id is string => typeof id === 'string'),
-      placed: trace.ruleJoin.placedRules,
+      placed: [
+        ...trace.ruleJoin.placedRules,
+        ...trace.lateRuleJoin.placedRules,
+      ],
     },
     // Both budgets feed one mandatory-retention measurement: a must-consider
     // candidate lost to the byte budget is as much an overflow as one lost to
@@ -369,13 +362,15 @@ export function measureDiscovery(
       })),
     },
     m8: { forbiddenPresent, unattributedPresent },
-    m9: { missing, classified, indeterminate },
+    m9: { missing, measured },
     perStage: Object.fromEntries(
       stages.map(([name, stage]) => [
         name,
         {
           produced: stage.outputsProduced.length,
+          carriedForward: stage.carriedForward,
           losses: stage.losses.length,
+          outcome: stage.outcome,
           failedToRun: stage.failedToRun,
         },
       ]),
