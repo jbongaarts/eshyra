@@ -114,14 +114,11 @@ function assertFact(
   pack: ReturnType<typeof loadRulesPackFromDirectory>,
   adventure: ReturnType<typeof loadAdventureModuleFromDir>,
 ): void {
-  if (fact.targetRef === undefined) {
-    if (fact.exactSubstring !== undefined)
-      expect(
-        stringsIn(pack.meta).some((text) => text.includes(fact.exactSubstring)),
-        fact.statement,
-      ).toBe(true);
-    return;
-  }
+  // A fact with no targetRef is prose-only evidence. The contract rejects an
+  // unanchored `exactSubstring`, so there is deliberately nothing to bind here:
+  // matching such a substring against pack metadata would assert live pack
+  // authority for a statement that claims to be historical.
+  if (fact.targetRef === undefined) return;
   const record = pack.records.find(
     (candidate) => candidate.key === fact.targetRef,
   );

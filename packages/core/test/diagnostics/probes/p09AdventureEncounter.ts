@@ -82,7 +82,7 @@ export const P09_ADVENTURE_ENCOUNTER: DiagnosticFixture = {
     },
     {
       statement:
-        'Correction to stale design state: stat-block:avatar-of-death and stat-block:giant-fly are present at p. 218 and p. 222 in this verified pack, so the direct stat-block lookup now succeeds; B1 eshyra-l3e5 is discharged here.',
+        'Correction to stale design state: B1 eshyra-l3e5 is discharged. The discharging evidence is that stat-block is a member of RULES_RECORD_KINDS (packages/core/src/rules/types.ts) and toolLookupRules.ts supplies that same constant as the lookup_rules kind enum, so the tool no longer rejects the kind. Record presence alone would not establish this; stat-block:avatar-of-death (p. 218) and stat-block:giant-fly (p. 222) are separately verified present in this pack, which is what gives the direct probe a resolvable target.',
     },
     {
       statement:

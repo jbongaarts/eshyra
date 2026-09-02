@@ -46,8 +46,7 @@ export const P12_STARTING_WEALTH: DiagnosticFixture = {
         'Historical false-authority evidence only: source "SRD 5.1 p. 38" and provenance locator "p. 38" were attached to the removed compiler-authored record; this is not a current pack assertion and must never be treated as SRD authority.',
     },
     {
-      statement: 'Historical false-authority attribution block:',
-      exactSubstring: historicalAttribution,
+      statement: `Historical false-authority evidence only, asserted as prose and deliberately NOT bound to the live pack: the removed compiler-authored record carried the pack's SRD attribution block (${historicalAttribution}). That block is the pack's own legitimate CC-BY-4.0 license text and is still present in pack meta for the genuine SRD material; its presence there is evidence about the pack license, never about the removed record. Binding this fact to pack meta would assert live SRD authority under a historical label, which is the exact laundering this probe forbids.`,
     },
     {
       statement:

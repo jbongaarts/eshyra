@@ -365,8 +365,17 @@ function checkFacts(value: unknown, label: string): void {
     nonEmptyString(fact.statement, `${label}[${index}].statement`);
     if (fact.targetRef !== undefined)
       nonEmptyString(fact.targetRef, `${label}[${index}].targetRef`);
-    if (fact.exactSubstring !== undefined)
+    if (fact.exactSubstring !== undefined) {
       nonEmptyString(fact.exactSubstring, `${label}[${index}].exactSubstring`);
+      // An unanchored substring expectation would fall back to searching pack
+      // metadata, which silently turns a claim about one record into a claim
+      // about the pack's own license text. Historical or narrative evidence
+      // belongs in `statement` as prose, unbound to the live pack.
+      if (fact.targetRef === undefined)
+        throw new Error(
+          `${label}[${index}].exactSubstring requires targetRef; unanchored substrings must stay prose in statement`,
+        );
+    }
     if (fact.typedPath !== undefined) {
       nonEmptyString(fact.typedPath, `${label}[${index}].typedPath`);
       if (!fact.typedPath.startsWith('/'))
