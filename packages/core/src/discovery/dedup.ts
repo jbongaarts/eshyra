@@ -1,3 +1,4 @@
+import { accountCandidates } from './accounting.js';
 import type { DedupTrace, DiscoveryCandidate } from './types.js';
 
 function routeKey(route: DiscoveryCandidate['routes'][number]): string {
@@ -61,11 +62,13 @@ export function deduplicateCandidates(
     })),
     outputsProduced: [...merged.values()],
     losses,
-    // Dedup owns every key it emits: it is the merge point, so nothing here
-    // is untouched pass-through.
-    produced: [],
-    modified: [...merged.keys()],
-    carriedForward: [],
+    // Membership comes from the shared accounting contract, not from the
+    // stage's position in the pipeline. Earlier stages already merge by key,
+    // so a unique candidate arrives here and is emitted unchanged: that is
+    // untouched pass-through, and calling it modified reported work the stage
+    // did not do. A genuine same-key merge does change the candidate and is
+    // correctly modified.
+    ...accountCandidates(candidates, [...merged.values()]),
     outcome: merged.size === 0 && losses.length === 0 ? 'failed-to-run' : 'ran',
     failedToRun: merged.size === 0 && losses.length === 0,
     routeCountBeforeDedup: before,

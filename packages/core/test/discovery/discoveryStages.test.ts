@@ -1063,4 +1063,157 @@ describe('offline discovery stage boundaries', () => {
     // typed-relationship route is `related`, so expansion correctly declines
     // to use it as a seed and nothing mutates it at all.
   });
+  it('reports only the rule and ruling queries that actually executed', () => {
+    const db = freshDbWithSession();
+    try {
+      const resolver = installLateAmbiguityAddon(
+        db,
+        '2026-09-02T00:00:00.000Z',
+      );
+      let ruleCalls = 0;
+      const trace = runDiscoveryStages({
+        db,
+        rulesPackResolver: resolver,
+        scenario: {
+          playerInput: 'the party proceeds',
+          stateFields: { campaignPosition: 'turn-3' },
+        },
+        campaignRuleSeam: {
+          activeRulesAtPosition: () => {
+            ruleCalls += 1;
+            return [
+              {
+                ruleIdentity: 'house-rule-late-root',
+                ruleKind: 'house-rule',
+                status: 'active',
+                origin: 'player',
+                provenance: 'campaign history',
+                effectivePosition: 'turn-3',
+                supersededBy: null,
+                scope: 'late ambiguity root',
+                governingRecordKeys: [LATE_AMBIGUITY_ROOT_KEY],
+              },
+            ];
+          },
+          activeRulingsForAmbiguities: (ids) =>
+            ids.includes(LATE_AMBIGUITY_ID)
+              ? [
+                  {
+                    ruleIdentity: 'ruling-late-cube',
+                    ruleKind: 'ruling',
+                    status: 'active',
+                    origin: 'dm',
+                    provenance: 'campaign history',
+                    effectivePosition: 'turn-3',
+                    supersededBy: null,
+                    scope: LATE_AMBIGUITY_ID,
+                    governingRecordKeys: [LATE_AMBIGUITY_TARGET_KEY],
+                    ambiguityId: LATE_AMBIGUITY_ID,
+                    selectedInterpretationId: 'same-face-resets',
+                  },
+                ]
+              : [],
+        },
+      });
+
+      // One active-rule query, made by the first join. The late stage is
+      // rulings-only, so it must claim no rule-record requests at all --
+      // reporting them would describe a second position query that the jhpt
+      // boundary forbids and that never happened.
+      expect(ruleCalls).toBe(1);
+      expect(trace.ruleJoin.ruleQueryExecuted).toBe(true);
+      expect(trace.lateRuleJoin.ruleQueryExecuted).toBe(false);
+      expect(trace.lateRuleJoin.requestedRuleRecordKeys).toEqual([]);
+
+      // The late ruling query did execute, and its ambiguity request is real.
+      expect(trace.lateRuleJoin.rulingQueryExecuted).toBe(true);
+      expect(trace.lateRuleJoin.requestedAmbiguityIds).toContain(
+        LATE_AMBIGUITY_ID,
+      );
+
+      const measurements = measureDiscovery(trace);
+      // M5's rule-request evidence derives only from the first call...
+      expect(measurements.m5.ruleQueryCount).toBe(1);
+      expect(measurements.m5.requestedRuleRecordKeys).toEqual(
+        trace.ruleJoin.requestedRuleRecordKeys,
+      );
+      // ...while its ambiguity-request evidence includes the late call.
+      expect(measurements.m5.requestedAmbiguityIds).toContain(
+        LATE_AMBIGUITY_ID,
+      );
+    } finally {
+      db.close();
+    }
+  });
+
+  it('carries a unique candidate through dedup instead of calling it modified', () => {
+    const only: DiscoveryCandidate = {
+      candidateKey: 'rule:cover',
+      targetKind: 'rules-record',
+      entry: stack.recordsByKey.get('rule:cover'),
+      routes: [
+        {
+          routeClass: 'situation-cue',
+          trigger: 'geometry',
+          evidence: {},
+          signalId: 'a',
+        },
+      ],
+      traversals: [],
+      campaignRules: [],
+      campaignRulings: [],
+    };
+    const trace = deduplicateCandidates([only]);
+
+    // Nothing merged, so nothing changed.
+    expect(trace.carriedForward).toEqual(['rule:cover']);
+    expect(trace.modified).toEqual([]);
+    expect(trace.produced).toEqual([]);
+    // Route preservation is checked independently of the classification.
+    expect(trace.routeCountBeforeDedup['rule:cover']).toBe(1);
+    expect(trace.routeCountAfterDedup['rule:cover']).toBe(1);
+  });
+
+  it('marks a genuine same-key merge as modified', () => {
+    const base: DiscoveryCandidate = {
+      candidateKey: 'rule:cover',
+      targetKind: 'rules-record',
+      entry: stack.recordsByKey.get('rule:cover'),
+      routes: [],
+      traversals: [],
+      campaignRules: [],
+      campaignRulings: [],
+    };
+    const trace = deduplicateCandidates([
+      {
+        ...base,
+        routes: [
+          {
+            routeClass: 'situation-cue',
+            trigger: 'geometry',
+            evidence: {},
+            signalId: 'a',
+          },
+        ],
+      },
+      {
+        ...base,
+        routes: [
+          {
+            routeClass: 'explicit-name-or-alias',
+            trigger: 'cover',
+            evidence: {},
+            signalId: 'b',
+          },
+        ],
+      },
+    ]);
+
+    expect(trace.modified).toEqual(['rule:cover']);
+    expect(trace.carriedForward).toEqual([]);
+    // Both distinct routes survive the merge, checked independently.
+    expect(trace.outputsProduced[0].routes).toHaveLength(2);
+    expect(trace.routeCountBeforeDedup['rule:cover']).toBe(2);
+    expect(trace.routeCountAfterDedup['rule:cover']).toBe(2);
+  });
 });

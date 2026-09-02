@@ -200,8 +200,14 @@ export const NULL_CAMPAIGN_RULE_SEAM: CampaignRuleReadSeam = {
 };
 
 export interface RuleJoinTrace extends StageTrace<DiscoveryCandidate> {
+  /** Keys passed to the active-rule query, empty unless it executed. */
   readonly requestedRuleRecordKeys: readonly string[];
+  /** Ids passed to the ruling query, empty unless it executed. */
   readonly requestedAmbiguityIds: readonly string[];
+  /** Whether each seam query actually ran. A position query over an empty
+   * candidate set still ran, so counts cannot witness this. */
+  readonly ruleQueryExecuted: boolean;
+  readonly rulingQueryExecuted: boolean;
   /** Every identity the seam returned, whether or not it could be placed. */
   readonly returnedRuleIdentities: readonly string[];
   readonly placedRuleIdentities: readonly string[];

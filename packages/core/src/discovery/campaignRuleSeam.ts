@@ -134,14 +134,34 @@ export function joinCampaignRules(
       : options.conditional !== true ||
         keys.length > 0 ||
         ambiguityIds.length > 0;
-  const rules =
-    asked && options.rulingsOnly !== true
-      ? seam.activeRulesAtPosition({
-          campaignPosition: options.campaignPosition,
-          candidateRecordKeys: keys,
-        })
-      : [];
-  const rulings = asked ? seam.activeRulingsForAmbiguities(ambiguityIds) : [];
+  // Request evidence is derived from the calls that ACTUALLY executed, never
+  // from what this stage could have asked. A rulings-only stage does not call
+  // the active-rule query, so it must not report requested rule-record keys:
+  // that would claim a second position query the jhpt boundary forbids and
+  // this stage never made.
+  // Request evidence is derived from the calls that ACTUALLY executed, never
+  // from what this stage could have asked. A rulings-only stage does not call
+  // the active-rule query, so it must not report requested rule-record keys:
+  // that would claim a second position query the jhpt boundary forbids and
+  // this stage never made. Execution is tracked separately from the arguments
+  // because a position query over an empty candidate set still ran.
+  const ruleQueryExecuted = asked && options.rulingsOnly !== true;
+  const rulingQueryExecuted = asked;
+  const requestedRuleRecordKeys: readonly string[] = ruleQueryExecuted
+    ? keys
+    : [];
+  const requestedAmbiguityIds: readonly string[] = rulingQueryExecuted
+    ? ambiguityIds
+    : [];
+  const rules = ruleQueryExecuted
+    ? seam.activeRulesAtPosition({
+        campaignPosition: options.campaignPosition,
+        candidateRecordKeys: keys,
+      })
+    : [];
+  const rulings = rulingQueryExecuted
+    ? seam.activeRulingsForAmbiguities(ambiguityIds)
+    : [];
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
   );
@@ -233,11 +253,20 @@ export function joinCampaignRules(
         ? 'skipped'
         : 'failed-to-run',
     failedToRun: !didWork && options.conditional !== true,
-    inputsConsumed: [{ candidateRecordKeys: keys, ambiguityIds }],
+    inputsConsumed: [
+      {
+        ruleQueryExecuted,
+        requestedRuleRecordKeys,
+        rulingQueryExecuted,
+        requestedAmbiguityIds,
+      },
+    ],
     outputsProduced: [...result.values()],
     losses,
-    requestedRuleRecordKeys: keys,
-    requestedAmbiguityIds: ambiguityIds,
+    requestedRuleRecordKeys,
+    requestedAmbiguityIds,
+    ruleQueryExecuted,
+    rulingQueryExecuted,
     returnedRuleIdentities: returned,
     placedRuleIdentities: [...placedIdentities],
     unplacedRuleIdentities: unplaced,

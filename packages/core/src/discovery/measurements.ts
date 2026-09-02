@@ -54,6 +54,9 @@ export interface DiscoveryMeasurements {
   readonly m5: {
     readonly requestedRuleRecordKeys: readonly string[];
     readonly requestedAmbiguityIds: readonly string[];
+    /** How many times each seam query actually executed. */
+    readonly ruleQueryCount: number;
+    readonly rulingQueryCount: number;
     readonly returned: readonly string[];
     readonly matched: readonly string[];
     readonly unplaced: readonly string[];
@@ -324,6 +327,12 @@ export function measureDiscovery(
         ...trace.ruleJoin.requestedAmbiguityIds,
         ...trace.lateRuleJoin.requestedAmbiguityIds,
       ],
+      ruleQueryCount:
+        (trace.ruleJoin.ruleQueryExecuted ? 1 : 0) +
+        (trace.lateRuleJoin.ruleQueryExecuted ? 1 : 0),
+      rulingQueryCount:
+        (trace.ruleJoin.rulingQueryExecuted ? 1 : 0) +
+        (trace.lateRuleJoin.rulingQueryExecuted ? 1 : 0),
       returned: [
         ...trace.ruleJoin.returnedRuleIdentities,
         ...trace.lateRuleJoin.returnedRuleIdentities,
