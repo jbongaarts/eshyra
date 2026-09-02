@@ -1,3 +1,4 @@
+import type { DeterministicCapabilityContract } from '../rules/deterministicCapabilityContract.js';
 import { canonicalMagicItemVariantId } from '../rules/magicItemVariants.js';
 import type { RulesRecord } from '../rules/types.js';
 
@@ -47,6 +48,36 @@ export interface ItemOperationReadinessInput {
   readonly usesStateMachine: boolean;
   readonly usesSpellStore: boolean;
 }
+
+/**
+ * Positive capability contract for the magic-item mutation preflight.
+ *
+ * This declares only whether a particular, already-selected operation has a
+ * trusted readiness binding. It does not execute item semantics or decide
+ * whether an item operation is applicable; those remain with the item engine
+ * and the DM respectively. Unknown readiness shapes fail closed below.
+ */
+export const MAGIC_ITEM_OPERATION_READINESS_CAPABILITY: DeterministicCapabilityContract =
+  Object.freeze({
+    revision: 'derived-magic-item-clauses-v1',
+    operationId: 'assertMagicItemOperationReady',
+    operation:
+      'Preflight a selected magic-item operation before live state mutation.',
+    requiredInputs: [
+      'A magic-item RulesRecord carrying the trusted derived execution-readiness contract.',
+      'The selected parent or canonical variant identity.',
+      'A validated operation id and its bound economies, effects, state-machine, and spell-store inputs.',
+    ],
+    exclusions: [
+      'Does not execute the item operation or supply missing item semantics.',
+      'Does not claim that every clause of the item record is implemented.',
+      'Does not infer a capability from typed mechanics fields or an absent readiness binding.',
+    ],
+    residualDmInterpretation: [
+      'Whether the player may attempt the operation and how source prose applies remain DM rulings.',
+      'Any item semantics outside the positively bound operation remain with the DM or another explicit capability.',
+    ],
+  });
 
 /**
  * Enforces the compiler's executable-ownership boundary before live state is

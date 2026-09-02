@@ -6,9 +6,15 @@ import {
   buildRuleDispositionReport,
   ENGINE_PROCEDURE_COVERAGE,
   materializeEngineProcedureCoverage,
+  RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
+  RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+  RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
   RULE_DISPOSITIONS,
   type RuleDisposition,
   type RuleProcedureCoverage,
+  requireRuleDeterministicCapabilityContract,
+  validateRuleDeterministicCapabilityContracts,
+  validateRuleDeterministicCapabilityInput,
   validateRuleDispositionIdentity,
   validateRuleRegistries,
 } from '../scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.js';
@@ -253,27 +259,142 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     });
   });
 
-  it('hands W13 raw multi-owner concentration evidence, not pseudo-capability semantics', () => {
-    const handoff =
-      buildRuleDispositionReport().deterministicCapabilityHandoff.find(
-        (row) => row.ruleKey === 'rule:concentration',
+  it('declares W13 concentration as a positive bounded provider-neutral capability', () => {
+    const contract =
+      buildRuleDispositionReport().deterministicCapabilities.find(
+        (row) => row.operationId === 'resolve_concentration',
       );
 
-    expect(handoff).toEqual({
-      ruleKey: 'rule:concentration',
+    expect(contract).toMatchObject({
+      revision: 'resolve-concentration-v1',
       runtimeOwner: [
         'packages/core/src/state/activeEffects.ts',
-        'packages/core/src/state/hpLifecycle.ts',
         'packages/core/src/orchestrator/toolResolveConcentration.ts',
-        'packages/core/src/orchestrator/toolStartEffect.ts',
-        'packages/core/src/orchestrator/toolEndEffect.ts',
       ],
-      evidence: ['packages/core/test/activeEffects.test.ts'],
-      primitives: [],
+      evidence: [
+        'packages/core/test/activeEffects.test.ts',
+        'packages/core/test/tools.test.ts',
+      ],
     });
-    expect(handoff).not.toHaveProperty('operation');
-    expect(handoff).not.toHaveProperty('revision');
-    expect(handoff).not.toHaveProperty('residualInterpretation');
+    expect(contract?.operation).toContain('concentration');
+    expect(contract?.requiredInputs).not.toHaveLength(0);
+    expect(contract?.exclusions).not.toHaveLength(0);
+    expect(contract?.residualDmInterpretation).not.toHaveLength(0);
+  });
+
+  it('uses one actual operation for several rule bindings and fails closed on invalid input', () => {
+    expect(
+      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v1'],
+    ).toMatchObject({
+      operationId: 'resolve_check',
+    });
+    expect(
+      RULE_DETERMINISTIC_CAPABILITY_BINDINGS.filter(
+        ({ capability }) => capability === 'resolve-check-v1',
+      ).map(({ ruleKey }) => ruleKey),
+    ).toEqual([
+      'rule:ability-checks',
+      'rule:advantage-and-disadvantage',
+      'rule:attack-rolls',
+      'rule:modifiers-to-the-roll',
+      'rule:proficiency-bonus',
+      'rule:saving-throws',
+    ]);
+    expect(() =>
+      requireRuleDeterministicCapabilityContract('not-recognized-v1'),
+    ).toThrow(/no deterministic capability has been positively selected/);
+    expect(
+      validateRuleDeterministicCapabilityInput('resolve-check-v1', {
+        kind: 'initiative',
+        reason: 'invalid kind',
+        extra: true,
+      }),
+    ).toBeDefined();
+    expect(
+      validateRuleDeterministicCapabilityInput('resolve-spell-upcast-v1', {
+        spellRef: 'spell:fireball',
+        slotLevel: 3,
+        extra: true,
+      }),
+    ).toBeDefined();
+    expect(
+      validateRuleDeterministicCapabilityInput('resolve-concentration-v1', {
+        owner: 'pc-1',
+        damage: 4,
+        extra: true,
+      }),
+    ).toBeDefined();
+  });
+
+  it('accounts for every implemented row with a binding or explicit disposition', () => {
+    const report = buildRuleDispositionReport();
+    const implementedKeys = Object.entries(ENGINE_PROCEDURE_COVERAGE)
+      .filter(([, coverage]) => coverage.status === 'implemented')
+      .map(([ruleKey]) => ruleKey)
+      .sort();
+    expect(report.deterministicCapabilitySourceOutcomes).toHaveLength(39);
+    expect(
+      report.deterministicCapabilitySourceOutcomes
+        .map(({ ruleKey }) => ruleKey)
+        .sort(),
+    ).toEqual(implementedKeys);
+    expect(
+      RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS['rule:spell-slots'],
+    ).toMatchObject({
+      outcome: 'not-positively-selected',
+      nextState: expect.stringContaining('validated operation'),
+    });
+    expect(
+      report.deterministicCapabilitySourceOutcomes.find(
+        ({ ruleKey }) => ruleKey === 'rule:casting-a-spell-at-a-higher-level',
+      ),
+    ).toMatchObject({
+      outcome: 'bound',
+      capabilities: ['resolve-spell-upcast-v1'],
+    });
+    expect(
+      validateRuleDeterministicCapabilityContracts(
+        { 'rule:x': { status: 'implemented' } },
+        {},
+        [],
+        {},
+      ),
+    ).toContain(
+      'rule:x: implemented row has no W13 capability binding or disposition',
+    );
+  });
+
+  it('rejects capability operation and required-input contract drift', () => {
+    expect(
+      validateRuleDeterministicCapabilityContracts(
+        {},
+        {
+          'rule:x': {
+            ...RULE_DETERMINISTIC_CAPABILITY_CONTRACTS[
+              'resolve-concentration-v1'
+            ],
+            operationId: 'not-registered',
+          },
+        },
+        [],
+        {},
+      ),
+    ).toContain('rule:x: capability operation is not a registered tool');
+    expect(
+      validateRuleDeterministicCapabilityContracts(
+        {},
+        {
+          'resolve-check-v1': {
+            ...RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v1'],
+            requiredInputs: ['kind'],
+          },
+        },
+        [],
+        {},
+      ),
+    ).toContain(
+      "resolve-check-v1: required schema input 'reason' is missing from the contract",
+    );
   });
 
   it('registers every literally-named supporting tool in primitives, e.g. consumables/remove_item', () => {
