@@ -16,17 +16,9 @@ export const P02_OPPORTUNITY_ATTACKS: DiagnosticFixture = {
   adventureState: none(
     'No authored adventure state is needed for movement timing.',
   ),
-  campaignRuleState: none('No active campaign rule or ruling.'),
   mustIncludeTargets: [rulesTarget('rule:opportunity-attacks', 'p. 95')],
   mayIncludeTargets: [],
   mustNotIncludeTargets: [],
-  expectedRouteClasses: [
-    {
-      targetRef: 'rule:opportunity-attacks',
-      routes: ['situation-cue'],
-      why: 'Movement intent and reach propose the trigger without an explicit rule-name mention.',
-    },
-  ],
   requiredRetainedFacts: [
     {
       targetRef: 'rule:opportunity-attacks',
@@ -53,30 +45,44 @@ export const P02_OPPORTUNITY_ATTACKS: DiagnosticFixture = {
   requiredRelationshipExpansion: none(
     'The text-only opportunity-attack record has no typed relationship expansion.',
   ),
-  expectedAmbiguityState: none(
-    'No source ambiguity is declared for this trigger.',
-  ),
-  expectedCampaignRuleOrRulingState: none(
-    'No campaign rule or ruling is active.',
-  ),
-  expectedCapabilityStatus: {
-    status: 'none-selected',
-    statement:
-      'The trigger and exclusions remain model-adjudicated; reaction spending is code-owned by the F2 turn budget.',
-    inputs: [
-      'movement intent',
-      'reach and visibility',
-      'reaction availability',
-    ],
-    exclusions: [
-      'No capability decides whether the movement satisfies the trigger or an exception.',
-    ],
-    residualInterpretation:
-      'The DM rules on the trigger and exceptions; a state tool spends the reaction if authorized.',
-  },
-  expectedDeterministicStateEffect: none(
-    'This fixture does not spend a reaction or mutate combat state.',
-  ),
+  executions: [
+    {
+      executionId: 'default',
+      campaignRuleState: none('No active campaign rule or ruling.'),
+      expectedRouteClasses: [
+        {
+          targetRef: 'rule:opportunity-attacks',
+          routes: ['situation-cue'],
+          why: 'Movement intent and reach propose the trigger without an explicit rule-name mention.',
+        },
+      ],
+      expectedAmbiguityState: none(
+        'No source ambiguity is declared for this trigger.',
+      ),
+      expectedCampaignRuleOrRulingState: none(
+        'No campaign rule or ruling is active.',
+      ),
+      expectedCapabilityStatus: {
+        status: 'none-selected',
+        statement:
+          'The trigger and exclusions remain model-adjudicated; reaction spending is code-owned by the F2 turn budget.',
+        inputs: [
+          'movement intent',
+          'reach and visibility',
+          'reaction availability',
+        ],
+        exclusions: [
+          'No capability decides whether the movement satisfies the trigger or an exception.',
+        ],
+        residualInterpretation:
+          'The DM rules on the trigger and exceptions; a state tool spends the reaction if authorized.',
+      },
+      expectedDeterministicStateEffect: none(
+        'This fixture does not spend a reaction or mutate combat state.',
+      ),
+      oracleSignals: [],
+    },
+  ],
   probeId: 'P2',
   title: 'Opportunity attack trigger and exceptions',
   verifiedAtCommit: VERIFIED_AT_COMMIT,
@@ -87,5 +93,4 @@ export const P02_OPPORTUNITY_ATTACKS: DiagnosticFixture = {
   },
   boundedEvidenceStatement:
     'This fixture is bounded evidence for movement-trigger retrieval; it is not a completeness unit, not a partition of the corpus, and supplies no coverage, readiness, or completeness figure.',
-  oracleSignals: [],
 };

@@ -6,11 +6,17 @@ import {
 } from '../src/internal.js';
 import {
   DIAGNOSTIC_FIXTURES,
+  type DiagnosticFixture,
   type DiagnosticSelector,
   type DiagnosticTarget,
   type RetainedFact,
   validateDiagnosticCorpus,
 } from './diagnostics/index.js';
+import {
+  CURSED_ATTUNEMENT_ADDON_PACK_ID,
+  CURSED_ATTUNEMENT_ADDON_VERSION,
+  CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF,
+} from './support/cursedAttunementAddon.js';
 
 const PACK_DIR = join(
   process.cwd(),
@@ -39,14 +45,55 @@ function stringsIn(value: unknown): readonly string[] {
   return Object.values(value).flatMap(stringsIn);
 }
 
-function findById(value: unknown, id: string): boolean {
-  if (Array.isArray(value)) return value.some((item) => findById(item, id));
+function recordData(record: { data: unknown }): Record<string, unknown> {
+  return record.data as Record<string, unknown>;
+}
+
+function recordsWithId(value: unknown, key: string, id: string): boolean {
+  if (!Array.isArray(value)) return false;
+  return value.some(
+    (item) =>
+      typeof item === 'object' &&
+      item !== null &&
+      (item as Record<string, unknown>)[key] === id,
+  );
+}
+
+function hasKeyValue(value: unknown, key: string, expected: string): boolean {
+  if (Array.isArray(value))
+    return value.some((item) => hasKeyValue(item, key, expected));
   if (typeof value !== 'object' || value === null) return false;
   return Object.entries(value).some(
-    ([key, child]) =>
-      ((key === 'id' || key === 'clauseId' || key === 'via') && child === id) ||
-      findById(child, id),
+    ([childKey, child]) =>
+      (childKey === key && child === expected) ||
+      hasKeyValue(child, key, expected),
   );
+}
+
+function hasAmbiguity(record: { data: unknown }, id: string): boolean {
+  const data = recordData(record);
+  const mechanics = data.mechanics as Record<string, unknown> | undefined;
+  return recordsWithId(mechanics?.ambiguities, 'id', id);
+}
+
+function hasStableId(
+  record: { data: unknown },
+  idKind: 'operation' | 'clause',
+  id: string,
+): boolean {
+  const data = recordData(record);
+  const mechanics = data.mechanics as Record<string, unknown> | undefined;
+  if (idKind === 'operation')
+    return (
+      recordsWithId(mechanics?.operations, 'id', id) ||
+      recordsWithId(
+        (mechanics?.stateMachine as Record<string, unknown> | undefined)
+          ?.transitions,
+        'via',
+        id,
+      )
+    );
+  return hasKeyValue(data, 'clauseId', id);
 }
 
 function recordForTarget(
@@ -81,12 +128,12 @@ function assertSelector(
     ).toBe(true);
   } else if (selector.kind === 'ambiguity-id') {
     expect(
-      findById(record.data, selector.id),
+      hasAmbiguity(record, selector.id),
       `${record.key} ${selector.id}`,
     ).toBe(true);
   } else {
     expect(
-      findById(record.data, selector.id),
+      hasStableId(record, selector.idKind, selector.id),
       `${record.key} ${selector.id}`,
     ).toBe(true);
   }
@@ -212,7 +259,188 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
           expect(relationFound, relation.statement).toBe(true);
         }
       }
+      for (const execution of fixture.executions) {
+        const ambiguityState = execution.expectedAmbiguityState;
+        if (ambiguityState.kind !== 'ambiguities') continue;
+        for (const expectation of ambiguityState.expectations) {
+          const record = pack.records.find(
+            (candidate) =>
+              candidate.key ===
+              fixture.mustIncludeTargets.find(
+                (target) =>
+                  target.targetKind === 'rules-record' &&
+                  hasAmbiguity(candidate, expectation.ambiguityId),
+              )?.recordKey,
+          );
+          expect(record, expectation.statement).toBeDefined();
+          const ambiguities = (
+            recordData(record as { data: unknown }).mechanics as Record<
+              string,
+              unknown
+            >
+          ).ambiguities as readonly Record<string, unknown>[];
+          const ambiguity = ambiguities.find(
+            (candidate) => candidate.id === expectation.ambiguityId,
+          );
+          expect(ambiguity, expectation.statement).toBeDefined();
+          const interpretations = ambiguity?.interpretations;
+          for (const interpretationId of expectation.interpretationIds)
+            expect(
+              recordsWithId(interpretations, 'id', interpretationId),
+              `${fixture.probeId} ${expectation.ambiguityId} ${interpretationId}`,
+            ).toBe(true);
+          if (
+            execution.campaignRuleState.kind === 'none' &&
+            expectation.expectedResolution === 'unresolved'
+          )
+            expect(ambiguity?.canonicalResolution).toBeNull();
+        }
+      }
     }
+  });
+
+  it('keeps P7 executions independently falsifiable and capability-blocked', () => {
+    const p7 = DIAGNOSTIC_FIXTURES.find((fixture) => fixture.probeId === 'P7');
+    expect(p7).toBeDefined();
+    const executions = p7?.executions ?? [];
+    const withoutRuling = executions.find(
+      (execution) => execution.executionId === 'without-active-ruling',
+    );
+    const withRuling = executions.find(
+      (execution) => execution.executionId === 'with-active-ruling',
+    );
+    expect(withoutRuling?.campaignRuleState.kind).toBe('none');
+    expect(
+      withoutRuling?.expectedRouteClasses.some((route) =>
+        route.routes.includes('campaign-ruling'),
+      ),
+    ).toBe(false);
+    expect(withoutRuling?.expectedAmbiguityState).toMatchObject({
+      kind: 'ambiguities',
+      expectations: [{ expectedResolution: 'unresolved' }],
+    });
+    expect(withRuling?.campaignRuleState).toMatchObject({
+      source: 'eshyra-jhpt',
+      scope: 'ambiguity:cube-of-force-same-face-duration-reset',
+    });
+    expect(
+      withRuling?.expectedRouteClasses.some((route) =>
+        route.routes.includes('campaign-ruling'),
+      ),
+    ).toBe(true);
+    expect(withRuling?.expectedCampaignRuleOrRulingState).toMatchObject({
+      cases: [
+        {
+          ruleIdentity: 'supplied by eshyra-jhpt at runtime',
+          provenance: 'eshyra-jhpt campaign-rule read interface',
+        },
+      ],
+    });
+    expect(withRuling?.oracleSignals).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: 'jhpt-active-ruling' }),
+      ]),
+    );
+    expect(
+      executions.every(
+        (execution) => execution.expectedCapabilityStatus.status === 'blocked',
+      ),
+    ).toBe(true);
+  });
+
+  it('binds P11 synthetic identity declarations to its producer fixture', () => {
+    const p11 = DIAGNOSTIC_FIXTURES.find(
+      (fixture) => fixture.probeId === 'P11',
+    );
+    expect(p11?.campaignState).toMatchObject({
+      selectedRecord: CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF,
+      campaignRulesBinding: {
+        addons: [
+          {
+            packId: CURSED_ATTUNEMENT_ADDON_PACK_ID,
+            version: CURSED_ATTUNEMENT_ADDON_VERSION,
+          },
+        ],
+      },
+    });
+  });
+
+  it('rejects adversarial mutations of the diagnostic contract and identity gate', () => {
+    const fixture = (): DiagnosticFixture[] =>
+      JSON.parse(JSON.stringify(DIAGNOSTIC_FIXTURES)) as DiagnosticFixture[];
+    const expectInvalid = (mutated: DiagnosticFixture[]) =>
+      expect(() => validateDiagnosticCorpus(mutated)).toThrow();
+    const expectIdentityInvalid = (mutated: DiagnosticFixture[]) => {
+      validateDiagnosticCorpus(mutated);
+      const target = mutated[2]?.mustIncludeTargets[0];
+      if (
+        target?.targetKind !== 'rules-record' ||
+        target.selector === undefined
+      )
+        throw new Error('P3 selector fixture missing');
+      expect(() => assertPackTarget(target, pack)).toThrow();
+    };
+
+    const wrongSelectorKind = fixture();
+    const wrongTarget = wrongSelectorKind[2]?.mustIncludeTargets[0];
+    if (
+      wrongTarget?.targetKind !== 'rules-record' ||
+      wrongTarget.selector?.kind !== 'json-pointer'
+    )
+      throw new Error('P3 selector fixture missing');
+    wrongTarget.selector = {
+      kind: 'stable-id',
+      idKind: 'clause',
+      id: '/data/actions/5',
+    };
+    expectIdentityInvalid(wrongSelectorKind);
+
+    const staleIdentity = fixture();
+    const staleTarget = staleIdentity[2]?.mustIncludeTargets[0];
+    if (
+      staleTarget?.targetKind !== 'rules-record' ||
+      staleTarget.selector?.kind !== 'json-pointer'
+    )
+      throw new Error('P3 selector fixture missing');
+    staleTarget.selector = {
+      kind: 'json-pointer',
+      pointer: '/data/actions/999',
+    };
+    expectIdentityInvalid(staleIdentity);
+
+    const missingRoute = fixture();
+    missingRoute[4]?.executions[0]?.expectedRouteClasses.splice(0, 1);
+    expectInvalid(missingRoute);
+    const missingProbe = fixture();
+    missingProbe.pop();
+    expectInvalid(missingProbe);
+    const duplicateProbe = fixture();
+    if (duplicateProbe[1] !== undefined) duplicateProbe[1].probeId = 'P1';
+    expectInvalid(duplicateProbe);
+    const duplicateExecution = fixture();
+    if (duplicateExecution[6] !== undefined)
+      duplicateExecution[6].executions[1].executionId = 'without-active-ruling';
+    expectInvalid(duplicateExecution);
+    const unanchoredSubstring = fixture();
+    const fact = unanchoredSubstring[0]?.requiredRetainedFacts;
+    if (!Array.isArray(fact)) throw new Error('P1 facts missing');
+    fact[0].targetRef = undefined;
+    expectInvalid(unanchoredSubstring);
+    const unknownRoute = fixture();
+    const route = unknownRoute[0]?.executions[0]?.expectedRouteClasses[0];
+    if (route === undefined) throw new Error('P1 route missing');
+    route.routes = ['unknown-route'] as never;
+    expectInvalid(unknownRoute);
+    const unlabelledOracle = fixture();
+    const signal = unlabelledOracle[6]?.executions[1]?.oracleSignals[0];
+    if (signal === undefined) throw new Error('P7 oracle signal missing');
+    signal.label = '';
+    expectInvalid(unlabelledOracle);
+    const noRulingRoute = fixture();
+    const noRuling = noRulingRoute[6]?.executions[0];
+    if (noRuling === undefined) throw new Error('P7 execution missing');
+    noRuling.expectedRouteClasses[0]?.routes.push('campaign-ruling');
+    expectInvalid(noRulingRoute);
   });
 
   it('asserts the narrow P12 absence without pinning record counts or aggregating corpus figures', () => {

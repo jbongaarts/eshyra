@@ -13,7 +13,6 @@ export const P04_FIREBALL: DiagnosticFixture = {
   adventureState: none(
     'No authored adventure state is needed for explicit spell discovery.',
   ),
-  campaignRuleState: none('No active campaign rule or ruling.'),
   mustIncludeTargets: [
     rulesTarget('spell:fireball', 'p. 144', {
       kind: 'stable-id',
@@ -23,13 +22,6 @@ export const P04_FIREBALL: DiagnosticFixture = {
   ],
   mayIncludeTargets: [],
   mustNotIncludeTargets: [],
-  expectedRouteClasses: [
-    {
-      targetRef: 'spell:fireball',
-      routes: ['explicit-name-or-alias'],
-      why: 'The player explicitly names the spell, selecting its canonical record.',
-    },
-  ],
   requiredRetainedFacts: [
     {
       targetRef: 'spell:fireball',
@@ -73,35 +65,51 @@ export const P04_FIREBALL: DiagnosticFixture = {
   requiredRelationshipExpansion: none(
     'Explicit spell discovery requires no typed relationship expansion.',
   ),
-  expectedAmbiguityState: none('No source ambiguity is declared for Fireball.'),
-  expectedCampaignRuleOrRulingState: none(
-    'No campaign rule or ruling is active.',
-  ),
-  expectedCapabilityStatus: {
-    status: 'implemented',
-    capabilityId: 'spell-upcast',
-    revision: 'fireball:higher-slot',
-    statement:
-      'The bounded upcast capability is positively selected for slot spending and damage scaling.',
-    inputs: [
-      'spell:fireball',
-      'selected spell-slot level',
-      'fireball:higher-slot',
-    ],
-    exclusions: [
-      'packages/core/src/orchestrator/spellUpcast.ts and toolSpendSpellSlot.ts do not own area geometry or target selection.',
-      'No typed mechanics.area is present.',
-    ],
-    residualInterpretation:
-      'The DM adjudicates the area, targets, and successful-save application around the deterministic upcast arithmetic.',
-    evidence: [
-      'packages/core/src/orchestrator/spellUpcast.ts',
-      'packages/core/src/orchestrator/toolSpendSpellSlot.ts',
-    ],
-  },
-  expectedDeterministicStateEffect: none(
-    'This fixture does not spend a spell slot or apply Fireball damage.',
-  ),
+  executions: [
+    {
+      executionId: 'default',
+      campaignRuleState: none('No active campaign rule or ruling.'),
+      expectedRouteClasses: [
+        {
+          targetRef: 'spell:fireball',
+          routes: ['explicit-name-or-alias'],
+          why: 'The player explicitly names the spell, selecting its canonical record.',
+        },
+      ],
+      expectedAmbiguityState: none(
+        'No source ambiguity is declared for Fireball.',
+      ),
+      expectedCampaignRuleOrRulingState: none(
+        'No campaign rule or ruling is active.',
+      ),
+      expectedCapabilityStatus: {
+        status: 'implemented',
+        capabilityId: 'spell-upcast',
+        revision: 'fireball:higher-slot',
+        statement:
+          'The bounded upcast capability is positively selected for slot spending and damage scaling.',
+        inputs: [
+          'spell:fireball',
+          'selected spell-slot level',
+          'fireball:higher-slot',
+        ],
+        exclusions: [
+          'packages/core/src/orchestrator/spellUpcast.ts and toolSpendSpellSlot.ts do not own area geometry or target selection.',
+          'No typed mechanics.area is present.',
+        ],
+        residualInterpretation:
+          'The DM adjudicates the area, targets, and successful-save application around the deterministic upcast arithmetic.',
+        evidence: [
+          'packages/core/src/orchestrator/spellUpcast.ts',
+          'packages/core/src/orchestrator/toolSpendSpellSlot.ts',
+        ],
+      },
+      expectedDeterministicStateEffect: none(
+        'This fixture does not spend a spell slot or apply Fireball damage.',
+      ),
+      oracleSignals: [],
+    },
+  ],
   probeId: 'P4',
   title: 'Fireball area, save, damage, and upcast',
   verifiedAtCommit: VERIFIED_AT_COMMIT,
@@ -112,5 +120,4 @@ export const P04_FIREBALL: DiagnosticFixture = {
   },
   boundedEvidenceStatement:
     'This fixture is bounded evidence for explicit Fireball discovery and its partial upcast capability; it is not a completeness unit, not a partition of the corpus, and supplies no coverage, readiness, or completeness figure.',
-  oracleSignals: [],
 };

@@ -15,9 +15,6 @@ export const P12_STARTING_WEALTH: DiagnosticFixture = {
   adventureState: none(
     'No authored adventure state is relevant to character creation.',
   ),
-  campaignRuleState: none(
-    'No active campaign rule or ruling supplies starting wealth.',
-  ),
   mustIncludeTargets: [rulesTarget('class:fighter', 'p. 24')],
   mayIncludeTargets: [],
   mustNotIncludeTargets: [
@@ -26,13 +23,6 @@ export const P12_STARTING_WEALTH: DiagnosticFixture = {
       recordKey: 'table:starting-wealth-by-class',
       reason:
         'The B4 repair removed the false SRD-authority record; discovery must not surface it.',
-    },
-  ],
-  expectedRouteClasses: [
-    {
-      targetRef: 'class:fighter',
-      routes: ['direct-state-ref'],
-      why: 'Character creation directly identifies the selected fighter class while checking for starting-wealth support.',
     },
   ],
   requiredRetainedFacts: [
@@ -60,26 +50,42 @@ export const P12_STARTING_WEALTH: DiagnosticFixture = {
   requiredRelationshipExpansion: none(
     'Starting-wealth absence and licensed-supplement selection require no typed relationship expansion.',
   ),
-  expectedAmbiguityState: none(
-    'No source ambiguity is declared for starting wealth.',
-  ),
-  expectedCampaignRuleOrRulingState: none(
-    'No campaign rule or ruling is active.',
-  ),
-  expectedCapabilityStatus: {
-    status: 'none-selected',
-    statement:
-      'No starting-wealth capability is positively selected from the absent SRD target; a separately identified licensed supplement may re-enable the path.',
-    inputs: ['class:fighter', 'active rules stack'],
-    exclusions: [
-      'Absence is not malformed, and no source authority is inferred from a removed record or its historical attribution block.',
-    ],
-    residualInterpretation:
-      'Character creation reports availability or not_found from the active stack.',
-  },
-  expectedDeterministicStateEffect: none(
-    'The fixture does not create a character or roll starting wealth.',
-  ),
+  executions: [
+    {
+      executionId: 'default',
+      campaignRuleState: none(
+        'No active campaign rule or ruling supplies starting wealth.',
+      ),
+      expectedRouteClasses: [
+        {
+          targetRef: 'class:fighter',
+          routes: ['direct-state-ref'],
+          why: 'Character creation directly identifies the selected fighter class while checking for starting-wealth support.',
+        },
+      ],
+      expectedAmbiguityState: none(
+        'No source ambiguity is declared for starting wealth.',
+      ),
+      expectedCampaignRuleOrRulingState: none(
+        'No campaign rule or ruling is active.',
+      ),
+      expectedCapabilityStatus: {
+        status: 'none-selected',
+        statement:
+          'No starting-wealth capability is positively selected from the absent SRD target; a separately identified licensed supplement may re-enable the path.',
+        inputs: ['class:fighter', 'active rules stack'],
+        exclusions: [
+          'Absence is not malformed, and no source authority is inferred from a removed record or its historical attribution block.',
+        ],
+        residualInterpretation:
+          'Character creation reports availability or not_found from the active stack.',
+      },
+      expectedDeterministicStateEffect: none(
+        'The fixture does not create a character or roll starting wealth.',
+      ),
+      oracleSignals: [],
+    },
+  ],
   probeId: 'P12',
   title: 'False SRD authority for starting wealth',
   verifiedAtCommit: VERIFIED_AT_COMMIT,
@@ -91,5 +97,4 @@ export const P12_STARTING_WEALTH: DiagnosticFixture = {
   },
   boundedEvidenceStatement:
     'This fixture is bounded evidence for the absence of one known false-authority target and the reconciled character-creation path; it is not a completeness unit, not a partition of the corpus, and supplies no coverage, readiness, or completeness figure.',
-  oracleSignals: [],
 };

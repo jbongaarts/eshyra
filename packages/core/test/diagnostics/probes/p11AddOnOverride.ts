@@ -1,7 +1,12 @@
+import {
+  CURSED_ATTUNEMENT_ADDON_PACK_ID,
+  CURSED_ATTUNEMENT_ADDON_VERSION,
+  CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF,
+} from '../../support/cursedAttunementAddon.js';
 import type { DiagnosticFixture } from '../fixtureContract.js';
 import { none, rulesTarget, VERIFIED_AT_COMMIT } from '../fixtureContract.js';
 
-const itemKey = 'magic-item:ring-of-protection';
+const itemKey = CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF;
 
 export const P11_ADDON_OVERRIDE: DiagnosticFixture = {
   playerInput: 'Use the campaign version of the Ring of Protection.',
@@ -15,8 +20,8 @@ export const P11_ADDON_OVERRIDE: DiagnosticFixture = {
       addons: [
         {
           systemId: 'dnd5e-srd',
-          packId: 'rules:test-cursed-attunement-addon',
-          version: '1.0.0',
+          packId: CURSED_ATTUNEMENT_ADDON_PACK_ID,
+          version: CURSED_ATTUNEMENT_ADDON_VERSION,
         },
       ],
     },
@@ -25,19 +30,9 @@ export const P11_ADDON_OVERRIDE: DiagnosticFixture = {
   adventureState: none(
     'No authored adventure state is needed for stack-integrity evidence.',
   ),
-  campaignRuleState: none(
-    'No jhpt campaign rule or ruling is active; the add-on is a rules-pack stack input, not campaign prose.',
-  ),
   mustIncludeTargets: [rulesTarget(itemKey, 'p. 237')],
   mayIncludeTargets: [],
   mustNotIncludeTargets: [],
-  expectedRouteClasses: [
-    {
-      targetRef: itemKey,
-      routes: ['direct-state-ref'],
-      why: 'The selected item reference reaches the active record in the campaign stack.',
-    },
-  ],
   requiredRetainedFacts: [
     {
       targetRef: itemKey,
@@ -65,29 +60,45 @@ export const P11_ADDON_OVERRIDE: DiagnosticFixture = {
   requiredRelationshipExpansion: none(
     'Stack override resolution is not a typed mechanics relationship traversal.',
   ),
-  expectedAmbiguityState: none(
-    'No source ambiguity is declared for the synthetic override stack.',
-  ),
-  expectedCampaignRuleOrRulingState: none(
-    'No campaign rule or ruling is active.',
-  ),
-  expectedCapabilityStatus: {
-    status: 'none-selected',
-    statement:
-      'No deterministic item capability is selected; this probe checks identity parity between discovery and execution resolution.',
-    inputs: [
-      'exact campaign binding',
-      'base and synthetic add-on pack identities',
-    ],
-    exclusions: [
-      'The fixture does not define a new pack schema, resolver, persistence model, or capability.',
-    ],
-    residualInterpretation:
-      'The runtime consumers own the mechanics after they receive the same active record.',
-  },
-  expectedDeterministicStateEffect: none(
-    'The fixture does not attune, use, or mutate the overridden item.',
-  ),
+  executions: [
+    {
+      executionId: 'default',
+      campaignRuleState: none(
+        'No jhpt campaign rule or ruling is active; the add-on is a rules-pack stack input, not campaign prose.',
+      ),
+      expectedRouteClasses: [
+        {
+          targetRef: itemKey,
+          routes: ['direct-state-ref'],
+          why: 'The selected item reference reaches the active record in the campaign stack.',
+        },
+      ],
+      expectedAmbiguityState: none(
+        'No source ambiguity is declared for the synthetic override stack.',
+      ),
+      expectedCampaignRuleOrRulingState: none(
+        'No campaign rule or ruling is active.',
+      ),
+      expectedCapabilityStatus: {
+        status: 'none-selected',
+        statement:
+          'No deterministic item capability is selected; this probe checks identity parity between discovery and execution resolution.',
+        inputs: [
+          'exact campaign binding',
+          'base and synthetic add-on pack identities',
+        ],
+        exclusions: [
+          'The fixture does not define a new pack schema, resolver, persistence model, or capability.',
+        ],
+        residualInterpretation:
+          'The runtime consumers own the mechanics after they receive the same active record.',
+      },
+      expectedDeterministicStateEffect: none(
+        'The fixture does not attune, use, or mutate the overridden item.',
+      ),
+      oracleSignals: [],
+    },
+  ],
   probeId: 'P11',
   title: 'Synthetic add-on override stack',
   verifiedAtCommit: VERIFIED_AT_COMMIT,
@@ -99,5 +110,4 @@ export const P11_ADDON_OVERRIDE: DiagnosticFixture = {
   },
   boundedEvidenceStatement:
     'This fixture is bounded evidence for one synthetic base-plus-add-on override stack; it is not a completeness unit, not a partition of the corpus, and supplies no coverage, readiness, or completeness figure.',
-  oracleSignals: [],
 };

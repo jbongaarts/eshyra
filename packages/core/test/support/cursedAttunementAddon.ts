@@ -8,7 +8,11 @@ import {
   writeCampaignRulesBinding,
 } from '../../src/internal.js';
 
-const OVERRIDDEN_ITEM_REF = 'magic-item:ring-of-protection';
+export const CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF =
+  'magic-item:ring-of-protection';
+export const CURSED_ATTUNEMENT_ADDON_PACK_ID =
+  'rules:test-cursed-attunement-addon';
+export const CURSED_ATTUNEMENT_ADDON_VERSION = '1.0.0';
 
 /** Install an effective-stack override that adds a curse to an uncursed item. */
 export function installCursedAttunementAddon(
@@ -17,10 +21,12 @@ export function installCursedAttunementAddon(
 ): CampaignRulesPackResolver {
   const base = getBundledDnd5eSrdPack();
   const baseRecord = base.records.find(
-    (record) => record.key === OVERRIDDEN_ITEM_REF,
+    (record) => record.key === CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF,
   );
   if (baseRecord === undefined) {
-    throw new Error(`missing fixture record '${OVERRIDDEN_ITEM_REF}'`);
+    throw new Error(
+      `missing fixture record '${CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF}'`,
+    );
   }
   const override = structuredClone(baseRecord);
   const data = override.data as Record<string, unknown>;
@@ -39,16 +45,18 @@ export function installCursedAttunementAddon(
       note: 'test-only add-on curse',
     },
   };
-  override.overrides = [`${base.meta.packId}/${OVERRIDDEN_ITEM_REF}`];
+  override.overrides = [
+    `${base.meta.packId}/${CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF}`,
+  ];
 
   const addon: RulesPack = {
     meta: {
       ...base.meta,
-      packId: 'rules:test-cursed-attunement-addon',
+      packId: CURSED_ATTUNEMENT_ADDON_PACK_ID,
       title: 'Test cursed attunement add-on',
       description: 'Overrides an uncursed base item with a curse contract.',
       role: 'addon',
-      version: '1.0.0',
+      version: CURSED_ATTUNEMENT_ADDON_VERSION,
       order: 1,
       compatibleBaseSystems: [
         { systemId: base.meta.systemId, versions: [base.meta.version] },

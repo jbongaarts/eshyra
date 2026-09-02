@@ -7,6 +7,7 @@ export type {
   DiagnosticSelector,
   DiagnosticTarget,
   ExplicitNone,
+  FixtureExecution,
   GatingBlocker,
   OracleSignal,
   RetainedFact,

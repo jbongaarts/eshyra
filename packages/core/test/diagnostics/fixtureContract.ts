@@ -146,35 +146,45 @@ export interface DeterministicStateEffect {
 }
 
 /**
- * The fourteen ordered scenario fields are the thirteen section-11 fields
- * plus the deterministic state-effect field required by the W7 plan.
+ * The scenario carries the shared section-11 context. Execution-specific
+ * adjudication and outcome expectations live in `executions`, so a consumer
+ * can enumerate independently falsifiable executions without probe-specific
+ * knowledge.
  */
-export interface DiagnosticFixture {
-  readonly playerInput: string;
-  readonly campaignState: Record<string, unknown>;
-  readonly adventureState: ExplicitNone | Record<string, unknown>;
+export interface FixtureExecution {
+  readonly executionId: string;
   readonly campaignRuleState: ExplicitNone | Record<string, unknown>;
-  readonly mustIncludeTargets: readonly DiagnosticTarget[];
-  readonly mayIncludeTargets: readonly DiagnosticTarget[];
-  readonly mustNotIncludeTargets: readonly DiagnosticTarget[];
   readonly expectedRouteClasses: readonly RouteExpectation[];
-  readonly requiredRetainedFacts: ExplicitNone | readonly RetainedFact[];
-  readonly requiredRelationshipExpansion:
-    | ExplicitNone
-    | readonly TypedRelationshipExpectation[];
   readonly expectedAmbiguityState: ExplicitNone | AmbiguityState;
   readonly expectedCampaignRuleOrRulingState: ExplicitNone | CampaignRuleCases;
   readonly expectedCapabilityStatus: CapabilityExpectation;
   readonly expectedDeterministicStateEffect:
     | ExplicitNone
     | DeterministicStateEffect;
+  readonly oracleSignals: readonly OracleSignal[];
+}
+
+export interface DiagnosticFixture {
+  readonly playerInput: string;
+  readonly campaignState: Record<string, unknown>;
+  readonly adventureState: ExplicitNone | Record<string, unknown>;
+  readonly mustIncludeTargets: readonly DiagnosticTarget[];
+  readonly mayIncludeTargets: readonly DiagnosticTarget[];
+  readonly mustNotIncludeTargets: readonly DiagnosticTarget[];
+  readonly requiredRetainedFacts: ExplicitNone | readonly RetainedFact[];
+  readonly requiredRelationshipExpansion:
+    | ExplicitNone
+    | readonly TypedRelationshipExpectation[];
+  readonly executions: readonly FixtureExecution[];
 
   readonly probeId: `P${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12}`;
   readonly title: string;
   readonly verifiedAtCommit: string;
   readonly gatingBlocker: GatingBlocker;
   readonly boundedEvidenceStatement: string;
-  readonly oracleSignals: readonly OracleSignal[];
+  // Oracle signals belong to FixtureExecution, not here: a supplied answer is
+  // consumed by one execution, and labelling it at scenario level would attach
+  // it to executions that never used it. `FIXTURE_KEYS` rejects it here.
 }
 
 export interface GatingBlocker {
@@ -202,6 +212,23 @@ const FIXTURE_KEYS = new Set([
   'playerInput',
   'campaignState',
   'adventureState',
+  'mustIncludeTargets',
+  'mayIncludeTargets',
+  'mustNotIncludeTargets',
+  'requiredRetainedFacts',
+  'requiredRelationshipExpansion',
+  'executions',
+  'probeId',
+  'title',
+  'verifiedAtCommit',
+  'gatingBlocker',
+  'boundedEvidenceStatement',
+]);
+const EXECUTION_KEYS = new Set([
+  'executionId',
+  'playerInput',
+  'campaignState',
+  'adventureState',
   'campaignRuleState',
   'mustIncludeTargets',
   'mayIncludeTargets',
@@ -213,12 +240,12 @@ const FIXTURE_KEYS = new Set([
   'expectedCampaignRuleOrRulingState',
   'expectedCapabilityStatus',
   'expectedDeterministicStateEffect',
+  'oracleSignals',
   'probeId',
   'title',
   'verifiedAtCommit',
   'gatingBlocker',
   'boundedEvidenceStatement',
-  'oracleSignals',
 ]);
 const ROUTE_CLASSES = new Set<RouteClass>([
   'direct-state-ref',
@@ -423,9 +450,8 @@ function checkCampaignRuleCases(value: unknown, label: string): void {
   }
 }
 
-function checkFixture(value: unknown, index: number): DiagnosticFixture {
-  if (!isRecord(value)) throw new Error(`fixture ${index} must be an object`);
-  checkExactKeys(value, FIXTURE_KEYS, `fixture ${index}`);
+function checkExecution(value: Record<string, unknown>, index: number): void {
+  checkExactKeys(value, EXECUTION_KEYS, `fixture ${index} execution`);
   nonEmptyString(value.playerInput, `fixture ${index}.playerInput`);
   if (
     !isRecord(value.campaignState) ||
@@ -466,6 +492,7 @@ function checkFixture(value: unknown, index: number): DiagnosticFixture {
       `fixture ${index}.expectedRouteClasses must be a non-empty array`,
     );
   const targetRefs = new Set(value.mustIncludeTargets.map(targetReference));
+  const coveredTargetRefs = new Set<string>();
   for (const [routeIndex, route] of value.expectedRouteClasses.entries()) {
     if (!isRecord(route))
       throw new Error(
@@ -479,6 +506,7 @@ function checkFixture(value: unknown, index: number): DiagnosticFixture {
       throw new Error(
         `fixture ${index}.expectedRouteClasses[${routeIndex}] names a non-must-include target`,
       );
+    coveredTargetRefs.add(route.targetRef);
     if (!Array.isArray(route.routes) || route.routes.length === 0)
       throw new Error(
         `fixture ${index}.expectedRouteClasses[${routeIndex}].routes must not be empty`,
@@ -497,6 +525,35 @@ function checkFixture(value: unknown, index: number): DiagnosticFixture {
       `fixture ${index}.expectedRouteClasses[${routeIndex}].why`,
     );
   }
+  const missingRouteTargets = [...targetRefs].filter(
+    (targetRef) => !coveredTargetRefs.has(targetRef),
+  );
+  if (missingRouteTargets.length > 0)
+    throw new Error(
+      `fixture ${index}.expectedRouteClasses is missing must-include target coverage: ${missingRouteTargets.join(', ')}`,
+    );
+  const routeClasses = new Set(
+    value.expectedRouteClasses.flatMap((route) => route.routes),
+  );
+  const noActiveRuling =
+    isRecord(value.campaignRuleState) &&
+    value.campaignRuleState.kind === 'none';
+  if (noActiveRuling && routeClasses.has('campaign-ruling'))
+    throw new Error(
+      `fixture ${index}.expectedRouteClasses cannot include campaign-ruling without an active ruling`,
+    );
+  if (
+    !noActiveRuling &&
+    isRecord(value.expectedCampaignRuleOrRulingState) &&
+    value.expectedCampaignRuleOrRulingState.kind === 'campaign-rule-cases' &&
+    value.expectedCampaignRuleOrRulingState.cases.some(
+      (item) => item.ruleKind === 'ruling',
+    ) &&
+    !routeClasses.has('campaign-ruling')
+  )
+    throw new Error(
+      `fixture ${index}.expectedRouteClasses must include campaign-ruling for an active ruling`,
+    );
   checkFacts(
     value.requiredRetainedFacts,
     `fixture ${index}.requiredRetainedFacts`,
@@ -719,6 +776,55 @@ function checkFixture(value: unknown, index: number): DiagnosticFixture {
     nonEmptyString(
       signal.why,
       `fixture ${index}.oracleSignals[${signalIndex}].why`,
+    );
+  }
+}
+
+function checkFixture(value: unknown, index: number): DiagnosticFixture {
+  if (!isRecord(value)) throw new Error(`fixture ${index} must be an object`);
+  checkExactKeys(value, FIXTURE_KEYS, `fixture ${index}`);
+  if (!Array.isArray(value.executions) || value.executions.length === 0)
+    throw new Error(`fixture ${index}.executions must be a non-empty array`);
+  const executionIds = new Set<string>();
+  const { executions, ...scenario } = value;
+  for (const [executionIndex, execution] of executions.entries()) {
+    if (!isRecord(execution))
+      throw new Error(
+        `fixture ${index}.executions[${executionIndex}] must be an object`,
+      );
+    checkExactKeys(
+      execution,
+      new Set([
+        'executionId',
+        'campaignRuleState',
+        'expectedRouteClasses',
+        'expectedAmbiguityState',
+        'expectedCampaignRuleOrRulingState',
+        'expectedCapabilityStatus',
+        'expectedDeterministicStateEffect',
+        'oracleSignals',
+      ]),
+      `fixture ${index}.executions[${executionIndex}]`,
+    );
+    nonEmptyString(
+      execution.executionId,
+      `fixture ${index}.executions[${executionIndex}].executionId`,
+    );
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(execution.executionId))
+      throw new Error(
+        `fixture ${index}.executions[${executionIndex}].executionId must be kebab-case`,
+      );
+    if (executionIds.has(execution.executionId))
+      throw new Error(
+        `duplicate execution id ${execution.executionId} in fixture ${index}`,
+      );
+    executionIds.add(execution.executionId);
+    checkExecution(
+      {
+        ...scenario,
+        ...execution,
+      },
+      index,
     );
   }
   return value as unknown as DiagnosticFixture;
