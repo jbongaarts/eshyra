@@ -687,7 +687,19 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
   const noActiveCampaignRule =
     isRecord(value.campaignRuleState) &&
     value.campaignRuleState.kind === 'none';
+  const expectedCampaignRuleCases =
+    isRecord(value.expectedCampaignRuleOrRulingState) &&
+    value.expectedCampaignRuleOrRulingState.kind === 'campaign-rule-cases'
+      ? value.expectedCampaignRuleOrRulingState
+      : undefined;
   if (noActiveCampaignRule) {
+    if (
+      !isRecord(value.expectedCampaignRuleOrRulingState) ||
+      value.expectedCampaignRuleOrRulingState.kind !== 'none'
+    )
+      throw new Error(
+        `fixture ${index}.expectedCampaignRuleOrRulingState must be explicit none without an active campaign rule`,
+      );
     for (const [ruleKind, routeClass] of Object.entries(
       CAMPAIGN_RULE_ROUTE_BY_KIND,
     ))
@@ -695,17 +707,41 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
         throw new Error(
           `fixture ${index}.expectedRouteClasses cannot include ${routeClass} without an active ${ruleKind}`,
         );
-  } else if (
-    isRecord(value.expectedCampaignRuleOrRulingState) &&
-    value.expectedCampaignRuleOrRulingState.kind === 'campaign-rule-cases'
-  ) {
-    for (const item of value.expectedCampaignRuleOrRulingState.cases) {
-      if (item.ruleKind === undefined) continue;
-      const routeClass = CAMPAIGN_RULE_ROUTE_BY_KIND[item.ruleKind];
-      if (!routeClasses.has(routeClass))
-        throw new Error(
-          `fixture ${index}.expectedRouteClasses must include ${routeClass} for an active ${item.ruleKind}`,
-        );
+  } else {
+    if (
+      !isRecord(value.expectedCampaignRuleOrRulingState) ||
+      value.expectedCampaignRuleOrRulingState.kind !== 'campaign-rule-cases'
+    )
+      throw new Error(
+        `fixture ${index}.expectedCampaignRuleOrRulingState must contain campaign-rule cases with an active campaign rule`,
+      );
+    if (expectedCampaignRuleCases !== undefined) {
+      for (const item of expectedCampaignRuleCases.cases) {
+        if (item.ruleKind === undefined)
+          throw new Error(
+            `fixture ${index}.expectedCampaignRuleOrRulingState cases must declare ruleKind`,
+          );
+        if (item.ruleKind !== undefined) {
+          const routeClass = CAMPAIGN_RULE_ROUTE_BY_KIND[item.ruleKind];
+          if (!routeClasses.has(routeClass))
+            throw new Error(
+              `fixture ${index}.expectedRouteClasses must include ${routeClass} for an active ${item.ruleKind}`,
+            );
+          if (item.ruleKind !== 'ruling') continue;
+          nonEmptyString(
+            item.ruleIdentity,
+            `fixture ${index}.expectedCampaignRuleOrRulingState ruling identity`,
+          );
+          nonEmptyString(
+            item.ambiguityId,
+            `fixture ${index}.expectedCampaignRuleOrRulingState ruling ambiguity id`,
+          );
+          nonEmptyString(
+            item.selectedInterpretationId,
+            `fixture ${index}.expectedCampaignRuleOrRulingState ruling selected interpretation id`,
+          );
+        }
+      }
     }
   }
   if (

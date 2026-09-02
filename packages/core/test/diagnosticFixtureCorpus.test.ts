@@ -328,6 +328,9 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
       kind: 'ambiguities',
       expectations: [{ expectedResolution: 'unresolved' }],
     });
+    expect(withoutRuling?.expectedCampaignRuleOrRulingState).toMatchObject({
+      kind: 'none',
+    });
     expect(withRuling?.campaignRuleState).toMatchObject({
       source: 'eshyra-jhpt',
       scope: 'ambiguity:cube-of-force-same-face-duration-reset',
@@ -453,6 +456,93 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
     if (noRuling === undefined) throw new Error('P7 execution missing');
     noRuling.expectedRouteClasses[0]?.routes.push('campaign-ruling');
     expectInvalid(noRulingRoute);
+
+    const noRulingCase = fixture();
+    const noRulingCases = noRulingCase[6]?.executions[0];
+    if (noRulingCases === undefined) throw new Error('P7 execution missing');
+    noRulingCases.expectedCampaignRuleOrRulingState = {
+      kind: 'campaign-rule-cases',
+      cases: [
+        {
+          caseId: 'mutated-ruling',
+          statement: 'Mutated no-ruling execution.',
+        },
+      ],
+    };
+    expectInvalid(noRulingCase);
+
+    const activeRulingWithNone = fixture();
+    const activeRuling = activeRulingWithNone[6]?.executions[1];
+    if (activeRuling === undefined) throw new Error('P7 execution missing');
+    activeRuling.expectedCampaignRuleOrRulingState = {
+      kind: 'none',
+      statement: 'Mutated active ruling execution.',
+    };
+    expectInvalid(activeRulingWithNone);
+
+    const activeHouseRuleWithNone = fixture();
+    const activeHouseRule = activeHouseRuleWithNone[9]?.executions[0];
+    if (activeHouseRule === undefined) throw new Error('P10 execution missing');
+    activeHouseRule.expectedCampaignRuleOrRulingState = {
+      kind: 'none',
+      statement: 'Mutated active house-rule execution.',
+    };
+    expectInvalid(activeHouseRuleWithNone);
+
+    const missingRuleKind = fixture();
+    const ruleKindCase =
+      missingRuleKind[9]?.executions[0]?.expectedCampaignRuleOrRulingState;
+    if (ruleKindCase?.kind !== 'campaign-rule-cases')
+      throw new Error('P10 campaign-rule case missing');
+    ruleKindCase.cases[0].ruleKind = undefined;
+    expectInvalid(missingRuleKind);
+
+    const missingRulingIdentity = fixture();
+    const rulingIdentityCase =
+      missingRulingIdentity[6]?.executions[1]
+        ?.expectedCampaignRuleOrRulingState;
+    if (rulingIdentityCase?.kind !== 'campaign-rule-cases')
+      throw new Error('P7 ruling case missing');
+    rulingIdentityCase.cases[0].ruleIdentity = undefined;
+    expectInvalid(missingRulingIdentity);
+
+    const missingRulingAmbiguity = fixture();
+    // Keep the ambiguity expectation out of the resolved/ruling agreement
+    // check so this mutation isolates the ruling evidence field guard.
+    const missingRulingAmbiguityExpectation =
+      missingRulingAmbiguity[6]?.executions[1];
+    if (missingRulingAmbiguityExpectation === undefined)
+      throw new Error('P7 execution missing');
+    missingRulingAmbiguityExpectation.expectedAmbiguityState = {
+      kind: 'none',
+      statement: 'Mutated active ruling ambiguity expectation.',
+    };
+    const rulingAmbiguityCase =
+      missingRulingAmbiguity[6]?.executions[1]
+        ?.expectedCampaignRuleOrRulingState;
+    if (rulingAmbiguityCase?.kind !== 'campaign-rule-cases')
+      throw new Error('P7 ruling case missing');
+    rulingAmbiguityCase.cases[0].ambiguityId = undefined;
+    expectInvalid(missingRulingAmbiguity);
+
+    const missingRulingSelection = fixture();
+    // Keep the ambiguity expectation out of the resolved/ruling agreement
+    // check so this mutation isolates the ruling evidence field guard.
+    const missingRulingSelectionExpectation =
+      missingRulingSelection[6]?.executions[1];
+    if (missingRulingSelectionExpectation === undefined)
+      throw new Error('P7 execution missing');
+    missingRulingSelectionExpectation.expectedAmbiguityState = {
+      kind: 'none',
+      statement: 'Mutated active ruling ambiguity expectation.',
+    };
+    const rulingSelectionCase =
+      missingRulingSelection[6]?.executions[1]
+        ?.expectedCampaignRuleOrRulingState;
+    if (rulingSelectionCase?.kind !== 'campaign-rule-cases')
+      throw new Error('P7 ruling case missing');
+    rulingSelectionCase.cases[0].selectedInterpretationId = undefined;
+    expectInvalid(missingRulingSelection);
 
     const resolvedWithoutSelection = fixture();
     const resolvedExpectation =
