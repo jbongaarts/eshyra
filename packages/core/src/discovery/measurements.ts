@@ -15,7 +15,25 @@ export interface DiscoveryMeasurementInput {
 export interface DiscoveryMeasurements {
   readonly m1: Readonly<Record<string, boolean>>;
   readonly m2: Readonly<Record<string, string | null>>;
-  readonly m3: Readonly<Record<string, { before: number; after: number }>>;
+  /**
+   * Route preservation, measured across every candidate-bearing stage rather
+   * than from the dedup stage alone. Candidates, expansion, and the rule join
+   * each merge into a map keyed by candidate key, so the dedup stage's own
+   * before/after counts are equal by construction and would report route
+   * preservation that was never tested. `producedAcrossStages` is the union of
+   * every route ever attached to the key at any stage.
+   */
+  readonly m3: Readonly<
+    Record<
+      string,
+      {
+        producedAcrossStages: number;
+        inPacket: number;
+        lost: readonly string[];
+        droppedBeforePacket: boolean;
+      }
+    >
+  >;
   readonly m4: readonly {
     readonly traversal: TypedTraversal;
     readonly result: 'fired' | 'not-fired' | 'fired-and-dropped';
@@ -40,9 +58,17 @@ export interface DiscoveryMeasurements {
       readonly reason: string;
     }[];
   };
+  /**
+   * The substantive false-authority check for this pilot is
+   * `forbiddenPresent`: P12 declares the removed
+   * `table:starting-wealth-by-class` record as a must-not-include target, and
+   * its appearance in a packet is the laundering the probe exists to catch.
+   * `unattributedPresent` is the standing structural check — a rules-record
+   * candidate that reached the packet carrying no source attribution.
+   */
   readonly m8: {
     readonly forbiddenPresent: readonly string[];
-    readonly knownFalseProvenancePresent: readonly string[];
+    readonly unattributedPresent: readonly string[];
   };
   readonly m9: {
     readonly missing: readonly RequiredPacketFact[];
@@ -61,6 +87,39 @@ export interface DiscoveryMeasurements {
 }
 function equal(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+/**
+ * Stage outputs carry a target identity under three different shapes: signals
+ * name it in `proposes`, candidate-bearing stages in `candidateKey`, and the
+ * packet in `identity.key`. Missing the packet shape would report every
+ * retained target as lost at the packet boundary.
+ */
+function holdsTarget(item: unknown, key: string): boolean {
+  if (typeof item !== 'object' || item === null) return false;
+  const value = item as Record<string, unknown>;
+  if (value.candidateKey === key || value.proposes === key) return true;
+  const identity = value.identity;
+  return (
+    typeof identity === 'object' &&
+    identity !== null &&
+    (identity as Record<string, unknown>).key === key
+  );
+}
+function routeIdentity(route: {
+  routeClass: string;
+  trigger: string;
+  signalId: string;
+}): string {
+  return JSON.stringify([route.routeClass, route.trigger, route.signalId]);
+}
+/** Every string reachable in a value, so a substring check runs against real
+ * prose instead of a JSON encoding whose escapes break the match. */
+function proseStrings(value: unknown): readonly string[] {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(proseStrings);
+  if (typeof value === 'object' && value !== null)
+    return Object.values(value).flatMap(proseStrings);
+  return [];
 }
 function valueAt(root: unknown, pointer: string): unknown {
   return pointer.startsWith('/')
@@ -101,24 +160,58 @@ export function measureDiscovery(
       m2[key] = null;
       continue;
     }
-    const found = stages.findIndex(([, stage]) =>
-      stage.outputsProduced.some((item) =>
-        'candidateKey' in item
-          ? item.candidateKey === key
-          : 'proposes' in item && item.proposes === key,
-      ),
-    );
-    m2[key] = found < 0 ? 'packet' : stages[found][0];
+    // The losing stage is the one AFTER the last stage that still held the
+    // target, not the first stage that produced it. Reporting the first
+    // producer would blame `signals` for every downstream drop.
+    let lastHeld = -1;
+    stages.forEach(([, stage], index) => {
+      if (stage.outputsProduced.some((item) => holdsTarget(item, key)))
+        lastHeld = index;
+    });
+    m2[key] =
+      lastHeld < 0 ? 'signals' : (stages[lastHeld + 1]?.[0] ?? 'packet');
   }
-  const m3: Record<string, { before: number; after: number }> = {};
-  for (const key of new Set([
-    ...Object.keys(trace.dedup.routeCountBeforeDedup),
-    ...Object.keys(trace.dedup.routeCountAfterDedup),
-  ]))
+  const producedRoutes = new Map<string, Set<string>>();
+  for (const stage of [
+    trace.candidates,
+    trace.expansion,
+    trace.ruleJoin,
+    trace.dedup,
+    trace.retention,
+  ])
+    for (const candidate of stage.outputsProduced) {
+      const seen =
+        producedRoutes.get(candidate.candidateKey) ?? new Set<string>();
+      for (const route of candidate.routes) seen.add(routeIdentity(route));
+      producedRoutes.set(candidate.candidateKey, seen);
+    }
+  const packetRoutes = new Map<string, Set<string>>(
+    trace.packet.packet.candidates.map((candidate) => [
+      candidate.identity.key,
+      new Set(candidate.routes.map(routeIdentity)),
+    ]),
+  );
+  const m3: Record<
+    string,
+    {
+      producedAcrossStages: number;
+      inPacket: number;
+      lost: readonly string[];
+      droppedBeforePacket: boolean;
+    }
+  > = {};
+  for (const [key, produced] of producedRoutes) {
+    const retained = packetRoutes.get(key);
     m3[key] = {
-      before: trace.dedup.routeCountBeforeDedup[key] ?? 0,
-      after: trace.dedup.routeCountAfterDedup[key] ?? 0,
+      producedAcrossStages: produced.size,
+      inPacket: retained?.size ?? 0,
+      lost:
+        retained === undefined
+          ? []
+          : [...produced].filter((route) => !retained.has(route)),
+      droppedBeforePacket: retained === undefined,
     };
+  }
   const m4 = (input.requiredRelationshipExpansion ?? []).map((traversal) => {
     const fired = trace.expansion.traversals.some((item) =>
       equal(item, traversal),
@@ -157,16 +250,20 @@ export function measureDiscovery(
                 valueAt(candidate?.sourceProse, fact.typedPath),
                 fact.expectedValue,
               ))
-        : (JSON.stringify(candidate?.sourceProse) ?? '').includes(
-            fact.exactSubstring,
+        : proseStrings(candidate?.sourceProse).some((text) =>
+            text.includes(fact.exactSubstring as string),
           );
     if (!present) missing.push(fact);
   }
   const forbiddenPresent = (input.mustNotIncludeTargetRefs ?? []).filter(
     (key) => keys.has(key),
   );
-  const knownFalseProvenancePresent = trace.packet.packet.candidates
-    .filter((candidate) => candidate.provenance.sourceRef === 'known-false')
+  const unattributedPresent = trace.packet.packet.candidates
+    .filter(
+      (candidate) =>
+        candidate.identity.kind !== 'adventure-entity' &&
+        (candidate.provenance.sourceRef ?? '').trim().length === 0,
+    )
     .map((candidate) => candidate.identity.key);
   return {
     m1,
@@ -190,7 +287,7 @@ export function measureDiscovery(
         reason: item.reason,
       })),
     },
-    m8: { forbiddenPresent, knownFalseProvenancePresent },
+    m8: { forbiddenPresent, unattributedPresent },
     m9: { missing, proseOnlyNotCheckable },
     perStage: Object.fromEntries(
       stages.map(([name, stage]) => [

@@ -28,10 +28,10 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
   );
   const dedup = deduplicateCandidates(ruleJoin.outputsProduced);
   const retention = retainCandidates(dedup.outputsProduced, input.budget);
-  if (retention.overflowed)
-    throw new Error(
-      `must-consider candidate overflow: ${retention.overflow.map((item) => item.candidateKey).join(', ')}`,
-    );
+  // A must-consider overflow must be REPORTED, not thrown (design section 6.3):
+  // the overflow record naming every dropped candidate and its routes is the
+  // evidence, and throwing would destroy the trace that carries it. The probe
+  // runner fails the probe on `m6.overflowed`.
   const packet = buildContextPacket(
     retention,
     input.scenario.stateFields,

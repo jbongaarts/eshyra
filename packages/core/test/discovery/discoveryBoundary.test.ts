@@ -1,7 +1,23 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import type { RouteClass as HarnessRouteClass } from '../../src/internal.js';
+import type { RouteClass as FixtureRouteClass } from '../diagnostics/index.js';
+
+/**
+ * The harness declares its own `RouteClass` because `src/` cannot import the
+ * test-local fixture contract. This assertion fails typecheck if the two
+ * vocabularies ever diverge, so the nine ADR 0020 section 6.2 labels stay one
+ * set rather than two that drift apart silently.
+ */
+type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+const ROUTE_VOCABULARIES_AGREE: Exact<HarnessRouteClass, FixtureRouteClass> =
+  true;
 
 describe('offline discovery boundary', () => {
+  it('shares one route vocabulary with the fixture contract', () => {
+    expect(ROUTE_VOCABULARIES_AGREE).toBe(true);
+  });
+
   it('is not imported by runtime modules and is not in the stable root export', () => {
     const roots = [
       'packages/core/src/orchestrator',

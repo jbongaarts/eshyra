@@ -79,6 +79,16 @@ function projectionLimits(
     });
   return notes;
 }
+function singleUseEconomy(
+  record: { data: unknown },
+  input: { economyIds: ReadonlySet<string> },
+): boolean {
+  const economies = object(object(object(record.data)?.mechanics)?.economies);
+  if (economies === undefined) return false;
+  return [...input.economyIds].some(
+    (id) => object(economies[id])?.kind === 'single-use',
+  );
+}
 function capability(
   candidate: DiscoveryCandidate,
   state: Readonly<Record<string, unknown>>,
@@ -124,10 +134,12 @@ function capability(
     );
     return {
       status: 'available',
-      capabilityId:
-        candidate.entry.record.key === 'magic-item:ammunition-1-2-or-3'
-          ? 'magic-item-single-use-spend'
-          : 'magic-item-operation-readiness',
+      // Derived from the record's own bound economy, never from a literal
+      // record key: keying capability identity off one probe's record would
+      // tune the harness to the fixture it is supposed to be evidence for.
+      capabilityId: singleUseEconomy(candidate.entry.record, readinessInput)
+        ? 'magic-item-single-use-spend'
+        : 'magic-item-operation-readiness',
       revision: 'derived-magic-item-clauses-v1',
       operationId,
       readinessInput,
@@ -223,20 +235,33 @@ export function buildContextPacket(
     ),
     modelUsageClaim: null,
   };
-  if (packet.bytes > maxPacketBytes)
-    throw new Error(`context packet exceeds byte budget: ${packet.bytes}`);
+  // Exceeding the byte budget is recorded, never thrown: throwing would
+  // destroy the trace that is the sole evidence surface, and a byte overflow
+  // that silently vanished would be indistinguishable from a packet that fit.
+  const byteBudgetExceeded = packet.bytes > maxPacketBytes;
   return {
     stage: 'packet',
     inputsConsumed: retained.outputsProduced.map((candidate) => ({
       candidateKey: candidate.candidateKey,
     })),
     outputsProduced: packetCandidates,
-    losses: retained.dropped.map((item) => ({
-      reason: item.reason,
-      detail: item,
-    })),
+    losses: [
+      ...retained.dropped.map((item) => ({
+        reason: item.reason,
+        detail: item as unknown as Record<string, unknown>,
+      })),
+      ...(byteBudgetExceeded
+        ? [
+            {
+              reason: 'packet-byte-budget-exceeded',
+              detail: { bytes: packet.bytes, maxPacketBytes },
+            },
+          ]
+        : []),
+    ],
     failedToRun: packetCandidates.length === 0 && retained.dropped.length === 0,
     packet,
+    byteBudgetExceeded,
     dropped: retained.dropped,
   };
 }

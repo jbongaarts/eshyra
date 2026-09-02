@@ -1,4 +1,5 @@
 import { CONDITION_RELATION_VALUES } from '../rules/conditionRelations.js';
+import { normalizeRulesRecordName } from '../rules/stack.js';
 import type { RulesRecordKind } from '../rules/types.js';
 import type {
   DiscoveryCandidate,
@@ -67,7 +68,11 @@ function directLinks(entry: Entry, stack: Stack): TypedTraversal[] {
       )
         continue;
       const index = stack.recordsByKind.get('condition')?.byName;
-      const matches = index?.get(condition.condition.toLowerCase()) ?? [];
+      // The byName index is keyed by normalizeName, which does more than
+      // lowercase (apostrophes, trailing parentheticals). toLowerCase would
+      // silently miss any condition whose name needs real normalization.
+      const matches =
+        index?.get(normalizeRulesRecordName(condition.condition)) ?? [];
       for (const target of matches)
         links.push({
           sourceRecordKey: entry.record.key,

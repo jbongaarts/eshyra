@@ -270,6 +270,8 @@ export interface ContextPacket {
 
 export interface PacketTrace extends StageTrace<PacketCandidate> {
   readonly packet: ContextPacket;
+  /** Recorded rather than thrown, so the trace survives a budget overrun. */
+  readonly byteBudgetExceeded: boolean;
   readonly dropped: readonly RetentionTrace['dropped'][number][];
 }
 
