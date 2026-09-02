@@ -2,6 +2,7 @@ import type { RulesAmbiguity } from '../rules/types.js';
 import {
   assertMagicItemOperationReady,
   ItemExecutionReadinessError,
+  MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
 } from '../state/itemExecutionReadiness.js';
 import { deriveItemOperationReadinessInput } from '../state/itemState.js';
 import type {
@@ -140,33 +141,42 @@ function capability(
       capabilityId: singleUseEconomy(candidate.entry.record, readinessInput)
         ? 'magic-item-single-use-spend'
         : 'magic-item-operation-readiness',
-      revision: 'derived-magic-item-clauses-v1',
+      revision: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.revision,
       operationId,
       readinessInput,
-      inputs: ['item record', 'operation id', 'bound operation mechanics'],
-      exclusions: [
-        'This preflight does not prove complete item semantics or execute state mutations.',
-      ],
+      // Design section 7.1 sources the packet's capability inputs,
+      // exclusions, revision, and residual interpretation from the capability
+      // contract itself. W13 (eshyra-olc5.6, PR #517) made that contract real,
+      // so the packet quotes it rather than restating it in prose that would
+      // drift away from the contract it claims to describe.
+      inputs: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.requiredInputs,
+      exclusions: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.exclusions,
       residualInterpretation:
-        'The DM and state owner retain interpretation outside the bounded readiness contract.',
+        MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.residualDmInterpretation.join(
+          ' ',
+        ),
     };
   } catch (error) {
     if (!(error instanceof ItemExecutionReadinessError)) throw error;
     return {
       status: 'blocked',
       capabilityId: 'magic-item-operation-readiness',
-      revision: 'derived-magic-item-clauses-v1',
+      revision: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.revision,
       operationId,
       blockingClauseIds: [
         ...error.message.matchAll(/([\w:-]+\/c\d+(?:-[\w-]+)?)/gu),
       ].map((match) => match[1]),
       message: error.message,
-      inputs: ['item record', 'operation id', 'bound operation mechanics'],
+      inputs: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.requiredInputs,
       exclusions: [
         'A blocked readiness contract cannot be treated as an executable capability.',
+        ...MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.exclusions,
       ],
       residualInterpretation:
-        'An engine owner must resolve the named readiness clauses.',
+        'An engine owner must resolve the named readiness clauses. ' +
+        MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.residualDmInterpretation.join(
+          ' ',
+        ),
     };
   }
 }

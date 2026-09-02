@@ -5,6 +5,7 @@ import {
   expandTypedRelationships,
   getBundledDnd5eSrdPack,
   joinCampaignRules,
+  MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
   measureDiscovery,
   resolveDiscoveryCandidates,
   resolveRulesStack,
@@ -263,6 +264,66 @@ describe('offline discovery stage boundaries', () => {
         ],
       });
       expect(measurements.m9.missing).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+  it('quotes the W13 capability contract instead of restating it', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'nothing',
+          stateFields: {
+            itemRecord: 'magic-item:ammunition-1-2-or-3',
+            operationId: 'hit-target',
+          },
+        },
+      });
+      const candidate = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'magic-item:ammunition-1-2-or-3',
+      );
+      expect(candidate?.capability?.status).toBe('available');
+      // Sourced from the contract W13 landed, so the packet cannot drift away
+      // from the capability it claims to describe (design section 7.1).
+      expect(candidate?.capability?.revision).toBe(
+        MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.revision,
+      );
+      expect(candidate?.capability?.inputs).toEqual(
+        MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.requiredInputs,
+      );
+      expect(candidate?.capability?.exclusions).toEqual(
+        MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.exclusions,
+      );
+    } finally {
+      db.close();
+    }
+  });
+
+  it('reports a blocked preflight for an engine-pending operation', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: 'nothing',
+          stateFields: {
+            itemRecord: 'magic-item:cube-of-force',
+            operationId: 'press-face-1',
+          },
+        },
+      });
+      const candidate = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'magic-item:cube-of-force',
+      );
+      // P7's premise: a jhpt ruling never makes an engine-pending readiness
+      // clause green, and readiness runs ahead of the ambiguity in use_item.
+      expect(candidate?.capability?.status).toBe('blocked');
+      expect(candidate?.capability?.message?.length ?? 0).toBeGreaterThan(0);
+      expect(candidate?.ambiguities.map((item) => item.id)).toContain(
+        'ambiguity:cube-of-force-same-face-duration-reset',
+      );
     } finally {
       db.close();
     }

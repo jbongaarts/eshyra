@@ -1401,7 +1401,10 @@ export type {
 } from './state/itemAdoptionReview.js';
 export { requiredItemAdoptionResolutionAction } from './state/itemAdoptionReview.js';
 export type { ItemOperationReadinessInput } from './state/itemExecutionReadiness.js';
-export { ItemExecutionReadinessError } from './state/itemExecutionReadiness.js';
+export {
+  ItemExecutionReadinessError,
+  MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
+} from './state/itemExecutionReadiness.js';
 export type {
   ItemClockEventResolution,
   ItemResetEvidence,
