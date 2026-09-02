@@ -364,6 +364,84 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     );
   });
 
+  it('identity-pins the complete reviewed W13 source outcome membership', () => {
+    const expected = {
+      bindings: [
+        'rule:ability-checks->resolve-check-v1',
+        'rule:advantage-and-disadvantage->resolve-check-v1',
+        'rule:attack-rolls->resolve-check-v1',
+        'rule:casting-a-spell-at-a-higher-level->resolve-spell-upcast-v1',
+        'rule:concentration->resolve-concentration-v1',
+        'rule:modifiers-to-the-roll->resolve-check-v1',
+        'rule:proficiency-bonus->resolve-check-v1',
+        'rule:saving-throws->resolve-check-v1',
+      ],
+      dispositions: [
+        'rule:abilities',
+        'rule:ability-scores-and-modifiers',
+        'rule:attunement',
+        'rule:backgrounds-equipment',
+        'rule:backgrounds-proficiencies',
+        'rule:beyond-1st-level',
+        'rule:bonus-action',
+        'rule:bonus-actions',
+        'rule:constitution-hit-points',
+        'rule:contests',
+        'rule:critical-hits',
+        'rule:damage-resistance-and-vulnerability',
+        'rule:damage-rolls',
+        'rule:death-saving-throws',
+        'rule:falling-unconscious',
+        'rule:gaining-inspiration',
+        'rule:grapple-rules-for-monsters',
+        'rule:group-checks',
+        'rule:healing',
+        'rule:instant-death',
+        'rule:legendary-actions',
+        'rule:limited-usage',
+        'rule:other-activity-on-your-turn',
+        'rule:passive-checks',
+        'rule:reactions',
+        'rule:spell-slots',
+        'rule:stabilizing-a-creature',
+        'rule:surprise',
+        'rule:temporary-hit-points',
+        'rule:using-inspiration',
+        'rule:your-turn',
+      ],
+    };
+    const actual = {
+      bindings: RULE_DETERMINISTIC_CAPABILITY_BINDINGS.map(
+        ({ ruleKey, capability }) => `${ruleKey}->${capability}`,
+      ).sort(),
+      dispositions: Object.keys(
+        RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
+      ).sort(),
+    };
+
+    expect(actual).toEqual(expected);
+
+    const equalSizeSwap = {
+      bindings: actual.bindings
+        .map((binding) =>
+          binding === 'rule:concentration->resolve-concentration-v1'
+            ? 'rule:abilities->resolve-concentration-v1'
+            : binding,
+        )
+        .sort(),
+      dispositions: actual.dispositions
+        .map((ruleKey) =>
+          ruleKey === 'rule:abilities' ? 'rule:concentration' : ruleKey,
+        )
+        .sort(),
+    };
+    expect(equalSizeSwap.bindings).toHaveLength(expected.bindings.length);
+    expect(equalSizeSwap.dispositions).toHaveLength(
+      expected.dispositions.length,
+    );
+    expect(equalSizeSwap).not.toEqual(expected);
+  });
+
   it('rejects capability operation and required-input contract drift', () => {
     expect(
       validateRuleDeterministicCapabilityContracts(
