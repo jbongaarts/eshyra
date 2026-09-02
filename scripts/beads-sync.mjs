@@ -310,16 +310,16 @@ export async function publishProjection({
       beadsVersion,
       rawExport: raw,
     });
-    const afterExport = await resolveDolt();
-    if (afterExport !== doltSha)
-      throw new Error(
-        `Canonical ${DOLT_REF} changed during export (${doltSha} -> ${afterExport})`,
-      );
     const snapshot = await build({
       files: projection.files,
       repoDir,
       generatedAtUtc: projection.metadata.generatedAtUtc,
     });
+    const beforePublishDoltSha = await resolveDolt();
+    if (beforePublishDoltSha !== doltSha)
+      throw new Error(
+        `Canonical ${DOLT_REF} changed during snapshot generation (${doltSha} -> ${beforePublishDoltSha})`,
+      );
     if (!dryRun) {
       await run(
         'git',

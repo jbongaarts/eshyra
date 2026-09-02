@@ -216,8 +216,39 @@ describe('Beads readable projection', () => {
         build: async () => ({ commit: 'candidate-sha' }),
         repoDir: '.',
       }),
-    ).rejects.toThrow(/changed during export/);
+    ).rejects.toThrow(/changed during snapshot generation/);
     expect(racedCalls.some((call) => call[1] === 'push')).toBe(false);
+
+    let buildFinished = false;
+    const buildRaceCalls: string[][] = [];
+    const buildRaceRun = async (command: string, args: string[]) => {
+      buildRaceCalls.push([command, ...args]);
+      if (command === 'git' && args[0] === 'ls-remote')
+        return {
+          stdout: `${args.at(-1) === DOLT_REF ? (buildFinished ? 'changed' : 'same') : 'candidate-sha'}\t${args.at(-1)}\n`,
+        };
+      if (command === 'bd' && args[0] === 'export')
+        await (await import('node:fs/promises')).writeFile(
+          args[args.indexOf('-o') + 1],
+          `${JSON.stringify(record('eshyra-a1'))}\n`,
+        );
+      if (command === 'git' && args[0] === 'config')
+        return { stdout: 'repo\n' };
+      if (command === 'bd' && args[0] === '--version')
+        return { stdout: 'bd 1\n' };
+      return { stdout: '' };
+    };
+    await expect(
+      publishProjection({
+        run: buildRaceRun,
+        build: async () => {
+          buildFinished = true;
+          return { commit: 'candidate-sha' };
+        },
+        repoDir: '.',
+      }),
+    ).rejects.toThrow(/changed during snapshot generation/);
+    expect(buildRaceCalls.some((call) => call[1] === 'push')).toBe(false);
 
     const failedRun = async (command: string, args: string[]) => {
       if (command === 'bd' && args[0] === 'dolt')
