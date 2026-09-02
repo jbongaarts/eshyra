@@ -500,12 +500,34 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
     staleRuling.cases[0].selectedInterpretationId =
       'stale-published-interpretation';
     validateDiagnosticCorpus(staleSelection);
+    // This proves the COMPOSED chain: the validator requires the selection to
+    // be one of the declared interpretations, and every declared interpretation
+    // must resolve in the pack. It does not isolate the selection check, because
+    // the stale id had to be declared to survive validation, and the
+    // interpretationIds loop rejects it first.
     expect(() =>
       assertPackAmbiguityExpectation(
         staleSelection[6] as DiagnosticFixture,
         staleExpectation.expectations[0],
         pack,
       ),
+    ).toThrow();
+
+    // Isolate the selection guard itself. A fixture in this shape could never
+    // reach the pack check (the validator rejects a selection outside
+    // interpretationIds first), so the assertion is unit-tested directly. Kept
+    // as defense in depth: it is what still fails if that membership rule is
+    // ever relaxed.
+    const p7Fixture = DIAGNOSTIC_FIXTURES[6];
+    if (p7Fixture === undefined) throw new Error('P7 fixture missing');
+    const packValidExpectation = p7Fixture.executions[1]
+      ?.expectedAmbiguityState as { expectations: AmbiguityExpectation[] };
+    const isolated: AmbiguityExpectation = {
+      ...packValidExpectation.expectations[0],
+      selectedInterpretationId: 'absent-from-the-pack',
+    };
+    expect(() =>
+      assertPackAmbiguityExpectation(p7Fixture, isolated, pack),
     ).toThrow();
 
     const disagreeingRuling = fixture();
