@@ -246,6 +246,20 @@ An open, unmerged PR is a complete handoff. Before ending a session:
 - Clear stashes and prune stale remote branches.
 - Hand off: PR URL, bead IDs, and context for the next session.
 
+**A bead whose deliverable is a pull request stays `in_progress` until that PR
+merges.** An open PR is a complete *handoff*, not a completed bead: leave the
+PR URL in the bead's notes and close it in a later session once merged. This
+narrows the generated `bd close` session-close checklist that `bd prime`
+injects — per the precedence rule at the top of this file, this file wins over
+a generated block, and the checklist is silent on the difference between "the
+work is finished" and "the bead may close."
+
+Judge by **deliverable**, not by agent role. A bead whose deliverable is a
+commit handed back to an integrating agent — the dispatched-child case in
+**Git & PR Workflow** above, which never opens a PR — is finished when that
+commit lands on its branch, and the child closes its own bead as instructed.
+The rule above applies to whoever owns the PR.
+
 ### PR Merge Policy
 
 Default merge method is a **merge commit**, not squash. Eshyra's history is
