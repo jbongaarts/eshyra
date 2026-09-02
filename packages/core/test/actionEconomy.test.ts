@@ -1472,6 +1472,21 @@ describe('legendary actions (F5, eshyra-2n1t.7)', () => {
     );
   });
 
+  it('fails closed promptly for an adversarial unclosed option name', () => {
+    const { db } = setupDragonCombat();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(GOBLIN),
+      ...CTX,
+    });
+    const legendaryActionName = '('.repeat(200_000);
+    const started = Date.now();
+    expect(() => spendLegendary(db, legendaryActionName)).toThrow(
+      /not a legendary option/,
+    );
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
   it('rejects legendary spends by creatures without legendary actions', () => {
     const { db } = setupDragonCombat();
     beginTurn(db, {
