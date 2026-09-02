@@ -6,12 +6,14 @@ import {
   buildRuleDispositionReport,
   ENGINE_PROCEDURE_COVERAGE,
   materializeEngineProcedureCoverage,
+  RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
   RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
   RULE_DISPOSITIONS,
   type RuleDisposition,
   type RuleProcedureCoverage,
   requireRuleDeterministicCapabilityContract,
   validateRuleDeterministicCapabilityContracts,
+  validateRuleDeterministicCapabilityInput,
   validateRuleDispositionIdentity,
   validateRuleRegistries,
 } from '../scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.js';
@@ -256,30 +258,64 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     });
   });
 
-  it('declares W13 concentration as a positive bounded capability contract', () => {
+  it('declares W13 concentration as a positive bounded provider-neutral capability', () => {
     const contract =
       buildRuleDispositionReport().deterministicCapabilities.find(
-        (row) => row.ruleKey === 'rule:concentration',
+        (row) => row.operationId === 'resolve_concentration',
       );
 
     expect(contract).toMatchObject({
-      ruleKey: 'rule:concentration',
-      revision: 'rule-procedure:concentration-v1',
+      revision: 'resolve-concentration-v1',
       runtimeOwner: expect.arrayContaining([
         'packages/core/src/state/activeEffects.ts',
       ]),
       evidence: ['packages/core/test/activeEffects.test.ts'],
     });
-    expect(contract?.operation).toContain('rule:concentration');
+    expect(contract?.operation).toContain('concentration');
     expect(contract?.requiredInputs).not.toHaveLength(0);
     expect(contract?.exclusions).not.toHaveLength(0);
     expect(contract?.residualDmInterpretation).not.toHaveLength(0);
   });
 
-  it('fails closed when an unrecognized rule has no positive capability binding', () => {
+  it('uses one actual operation for several rule bindings and fails closed on invalid input', () => {
+    expect(
+      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v1'],
+    ).toMatchObject({
+      operationId: 'resolve_check',
+    });
+    expect(
+      RULE_DETERMINISTIC_CAPABILITY_BINDINGS.filter(
+        ({ capability }) => capability === 'resolve-check-v1',
+      ).map(({ ruleKey }) => ruleKey),
+    ).toEqual([
+      'rule:ability-checks',
+      'rule:attack-rolls',
+      'rule:saving-throws',
+    ]);
     expect(() =>
-      requireRuleDeterministicCapabilityContract('rule:not-recognized'),
+      requireRuleDeterministicCapabilityContract('not-recognized-v1'),
     ).toThrow(/no deterministic capability has been positively selected/);
+    expect(
+      validateRuleDeterministicCapabilityInput('resolve-check-v1', {
+        kind: 'initiative',
+        reason: 'invalid kind',
+        extra: true,
+      }),
+    ).toBeDefined();
+    expect(
+      validateRuleDeterministicCapabilityInput('resolve-spell-upcast-v1', {
+        spellRef: 'spell:fireball',
+        slotLevel: 3,
+        extra: true,
+      }),
+    ).toBeDefined();
+    expect(
+      validateRuleDeterministicCapabilityInput('resolve-concentration-v1', {
+        owner: 'pc-1',
+        damage: 4,
+        extra: true,
+      }),
+    ).toBeDefined();
   });
 
   it('rejects missing or non-implemented deterministic capability contracts', () => {
@@ -287,21 +323,23 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       validateRuleDeterministicCapabilityContracts(
         { 'rule:x': { status: 'implemented' } },
         {},
+        [],
       ),
-    ).toContain('rule:x: implemented row has no positive capability contract');
+    ).toEqual([]);
     expect(
       validateRuleDeterministicCapabilityContracts(
         {},
         {
           'rule:x': {
-            ...RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['rule:concentration'],
-            ruleKey: 'rule:x',
+            ...RULE_DETERMINISTIC_CAPABILITY_CONTRACTS[
+              'resolve-concentration-v1'
+            ],
+            operationId: 'not-registered',
           },
         },
+        [],
       ),
-    ).toContain(
-      'rule:x: capability contract is not backed by an implemented row',
-    );
+    ).toContain('rule:x: capability operation is not a registered tool');
   });
 
   it('registers every literally-named supporting tool in primitives, e.g. consumables/remove_item', () => {

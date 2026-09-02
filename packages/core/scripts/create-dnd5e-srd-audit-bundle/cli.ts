@@ -2158,7 +2158,7 @@ export function formatGameplayReadinessReport(
     `Positive bounded deterministic capabilities (ADR 0020 §3; not a corpus-wide inventory): ${report.rules.deterministicCapabilities.length}`,
     ...report.rules.deterministicCapabilities.map(
       (row) =>
-        `- ${row.ruleKey} [${row.revision}]: ${row.operation}; inputs [${row.requiredInputs.join(' | ')}]; exclusions [${row.exclusions.join(' | ')}]; DM [${row.residualDmInterpretation.join(' | ')}]; owners [${row.runtimeOwner.join(', ')}]; evidence [${row.evidence.join(', ')}]`,
+        `- ${row.operationId} [${row.revision}]: ${row.operation}; inputs [${row.requiredInputs.join(' | ')}]; exclusions [${row.exclusions.join(' | ')}]; DM [${row.residualDmInterpretation.join(' | ')}]; owners [${row.runtimeOwner.join(', ')}]; evidence [${row.evidence.join(', ')}]`,
     ),
     `Unresolved/deferred/design-blocked work: ${report.rules.unresolvedWork.length} (durable finding identity; bead is historical context)`,
     ...report.rules.unresolvedWork.map(

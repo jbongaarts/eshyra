@@ -60,6 +60,7 @@ export interface ItemOperationReadinessInput {
 export const MAGIC_ITEM_OPERATION_READINESS_CAPABILITY: DeterministicCapabilityContract =
   Object.freeze({
     revision: 'derived-magic-item-clauses-v1',
+    operationId: 'assertMagicItemOperationReady',
     operation:
       'Preflight a selected magic-item operation before live state mutation.',
     requiredInputs: [

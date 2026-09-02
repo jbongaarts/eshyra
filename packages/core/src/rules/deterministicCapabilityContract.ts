@@ -8,6 +8,8 @@
 export interface DeterministicCapabilityContract {
   /** Stable capability identity, including its revision. */
   readonly revision: string;
+  /** Provider-neutral operation or explicit callable entry point. */
+  readonly operationId: string;
   /** The narrow, deterministic operation Eshyra performs. */
   readonly operation: string;
   /** Inputs that must be recognized and validated before it runs. */
