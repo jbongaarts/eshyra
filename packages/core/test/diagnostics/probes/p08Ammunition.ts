@@ -129,10 +129,10 @@ export const P08_AMMUNITION: DiagnosticFixture = {
   title: 'Positive magic-ammunition capability',
   verifiedAtCommit: VERIFIED_AT_COMMIT,
   gatingBlocker: {
-    id: 'B5',
+    id: 'none',
     owningBead: 'eshyra-uiax',
     gates:
-      'Until the unrecognized-scope fail-open is corrected, passing the readiness contract cannot be trusted as capability evidence.',
+      'B5 is discharged: the repair merged to main as PR #514 (dd96529). inSelectedScope in itemExecutionReadiness.ts now throws ItemExecutionReadinessError on an unrecognized scope instead of returning false, so a clause can no longer be skipped silently and passing the readiness contract is trustworthy capability evidence.',
   },
   boundedEvidenceStatement:
     'This fixture is bounded evidence for the selected ammunition operation and its partial capability; it is not a completeness unit, not a partition of the corpus, and supplies no coverage, readiness, or completeness figure.',

@@ -47,6 +47,17 @@ import { P10_MATERIAL_COMPONENTS_HOUSE_RULE } from './probes/p10MaterialComponen
 import { P11_ADDON_OVERRIDE } from './probes/p11AddOnOverride.js';
 import { P12_STARTING_WEALTH } from './probes/p12StartingWealth.js';
 
+/**
+ * Every fixture's `gatingBlocker` is `none` at {@link VERIFIED_AT_COMMIT}: all
+ * five ADR 0020 section 9 pre-experiment blockers are discharged on main —
+ * B1 `eshyra-l3e5`, B2 `eshyra-seoh` (PR #506), B3 `eshyra-6vpw` (PR #508),
+ * B4 `eshyra-o9bd.19.2.1.1`, B5 `eshyra-uiax` (PR #514).
+ *
+ * This is a statement about those five named blockers and nothing else. It is
+ * not a readiness figure, and it does not claim the probes are valid in any
+ * respect beyond the specific defects those blockers named. Per-probe evidence
+ * limits stay in each fixture's own fields.
+ */
 export const DIAGNOSTIC_FIXTURES: readonly DiagnosticFixture[] = [
   P01_COVER,
   P02_OPPORTUNITY_ATTACKS,

@@ -51,11 +51,15 @@ export const P11_ADDON_OVERRIDE: DiagnosticFixture = {
     },
     {
       statement:
-        'Before B3, lookup_rules used resolveStrictCampaignRulesStack while lookupCampaignRecord and campaignBasePack resolved base-only and could fall back to bundled D&D; the after half is gated on eshyra-6vpw-deterministic-pack-stack landing, even though bead eshyra-6vpw is marked closed.',
+        'Historical, pre-B3 divergence: lookup_rules used resolveStrictCampaignRulesStack while lookupCampaignRecord resolved base-only by packId and campaignBasePack in encounterCombatants.ts repeated the pattern, either one able to fall back to bundled D&D. That is the regression evidence that B3 was real; it is not a current claim about main.',
     },
     {
       statement:
-        'The after state must not silently fall back to bundled D&D when the selected add-on stack is unavailable.',
+        'Current verified state after B3 (PR #508, eshyra-6vpw): lookupCampaignRecord resolves through resolveStrictCampaignRulesStack and takes a resolver argument, campaignBasePack is gone from encounterCombatants.ts, and creature projection goes through lookupCampaignRecord. Strict discovery and deterministic execution therefore resolve the same active record, system, version, and override chain, with no silent bundled-D&D fallback.',
+    },
+    {
+      statement:
+        'The deterministic half of this parity is already covered by packages/core/test/campaignRulesStackParity.test.ts, which landed with B3 and exercises the exact ordered add-on chain plus fail-closed behavior on unavailable or mismatched pack identities. This fixture states the discovery-side expectation and references that test rather than duplicating it.',
     },
   ],
   requiredRelationshipExpansion: none(
@@ -88,10 +92,10 @@ export const P11_ADDON_OVERRIDE: DiagnosticFixture = {
   title: 'Synthetic add-on override stack',
   verifiedAtCommit: VERIFIED_AT_COMMIT,
   gatingBlocker: {
-    id: 'B3',
+    id: 'none',
     owningBead: 'eshyra-6vpw',
     gates:
-      'The before divergence is regression evidence; the strict after-parity half waits for the repair branch eshyra-6vpw-deterministic-pack-stack to land.',
+      'B3 is discharged: the repair merged to main as PR #508 (32f8600). Both halves of this probe are now valid against main, so no blocker gates its evidence.',
   },
   boundedEvidenceStatement:
     'This fixture is bounded evidence for one synthetic base-plus-add-on override stack; it is not a completeness unit, not a partition of the corpus, and supplies no coverage, readiness, or completeness figure.',

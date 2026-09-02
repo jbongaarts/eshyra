@@ -6,7 +6,15 @@
  * membership scheme.
  */
 
-export const VERIFIED_AT_COMMIT = '22c1a04bfe2a3c6c68675e3e31879bfbfd17fc98';
+/**
+ * The commit every fixture's declared identities were verified against.
+ *
+ * Re-verified at `dd96529` after B3 (PR #508) and B5 (PR #514) landed. Neither
+ * merge touched `packages/core/data`, so every record, selector, and module
+ * identity carried over unchanged; what changed is that P8's and P11's gating
+ * blockers are now discharged.
+ */
+export const VERIFIED_AT_COMMIT = 'dd9652904e2fda281a8317d29f43d4bca46df6f5';
 export const SRD_SOURCE_REF =
   'https://dnd.wizards.com/resources/systems-reference-document';
 
