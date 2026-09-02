@@ -3,6 +3,7 @@ import { none, rulesTarget, VERIFIED_AT_COMMIT } from '../fixtureContract.js';
 
 const ambiguityId = 'ambiguity:cube-of-force-same-face-duration-reset';
 const itemKey = 'magic-item:cube-of-force';
+const selectedInterpretationId = 'same-face-resets';
 
 const expectedCapabilityStatus = {
   status: 'blocked' as const,
@@ -136,6 +137,7 @@ export const P07_CUBE_OF_FORCE: DiagnosticFixture = {
         source: 'eshyra-jhpt',
         ruling: 'active ruling supplied by eshyra-jhpt',
         scope: ambiguityId,
+        selectedInterpretationId,
       },
       expectedRouteClasses: [
         {
@@ -158,8 +160,9 @@ export const P07_CUBE_OF_FORCE: DiagnosticFixture = {
               'same-face-resets',
               'different-face-only-resets',
             ],
+            selectedInterpretationId,
             statement:
-              'The supplied jhpt ruling resolves the ambiguity while retaining both published interpretation identities beside it.',
+              'The supplied jhpt ruling selects same-face-resets for the already-active face while retaining both published interpretation identities beside it; this selection is oracle-supplied, not the pack canonical resolution.',
           },
         ],
       },
@@ -172,6 +175,8 @@ export const P07_CUBE_OF_FORCE: DiagnosticFixture = {
               'An active ruling supplied by eshyra-jhpt appears beside the ambiguity with its identity, scope, and provenance; the exact durable identity is owned by jhpt and is not invented here.',
             ruleIdentity: 'supplied by eshyra-jhpt at runtime',
             ruleKind: 'ruling',
+            ambiguityId,
+            selectedInterpretationId,
             scope: ambiguityId,
             provenance: 'eshyra-jhpt campaign-rule read interface',
           },
@@ -185,7 +190,7 @@ export const P07_CUBE_OF_FORCE: DiagnosticFixture = {
         {
           label: 'jhpt-active-ruling',
           supplies:
-            'The active ruling identity, scope, provenance, and resolution for the resolved-ruling execution.',
+            'The active ruling identity, scope, provenance, and selected interpretation same-face-resets for the resolved-ruling execution.',
           why: 'The campaign-rule domain and durable identity belong to eshyra-jhpt; a fixture-supplied ruling cannot be mistaken for end-to-end discovery.',
         },
       ],

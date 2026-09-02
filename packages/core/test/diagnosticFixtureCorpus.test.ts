@@ -5,6 +5,7 @@ import {
   loadRulesPackFromDirectory,
 } from '../src/internal.js';
 import {
+  type AmbiguityExpectation,
   DIAGNOSTIC_FIXTURES,
   type DiagnosticFixture,
   type DiagnosticSelector,
@@ -156,6 +157,45 @@ function assertPackTarget(
     assertSelector(target.selector, record);
 }
 
+function assertPackAmbiguityExpectation(
+  fixture: DiagnosticFixture,
+  expectation: AmbiguityExpectation,
+  pack: ReturnType<typeof loadRulesPackFromDirectory>,
+): void {
+  const record = pack.records.find(
+    (candidate) =>
+      fixture.mustIncludeTargets.some(
+        (target) =>
+          target.targetKind === 'rules-record' &&
+          target.recordKey === candidate.key,
+      ) && hasAmbiguity(candidate, expectation.ambiguityId),
+  );
+  expect(record, expectation.statement).toBeDefined();
+  const ambiguities = (
+    recordData(record as { data: unknown }).mechanics as Record<string, unknown>
+  ).ambiguities as readonly Record<string, unknown>[];
+  const ambiguity = ambiguities.find(
+    (candidate) => candidate.id === expectation.ambiguityId,
+  );
+  expect(ambiguity, expectation.statement).toBeDefined();
+  const interpretations = ambiguity?.interpretations;
+  for (const interpretationId of expectation.interpretationIds)
+    expect(
+      recordsWithId(interpretations, 'id', interpretationId),
+      `${fixture.probeId} ${expectation.ambiguityId} ${interpretationId}`,
+    ).toBe(true);
+  expect(ambiguity?.canonicalResolution).toBeNull();
+  if (expectation.selectedInterpretationId !== undefined)
+    expect(
+      recordsWithId(
+        interpretations,
+        'id',
+        expectation.selectedInterpretationId,
+      ),
+      `${fixture.probeId} ${expectation.ambiguityId} selected interpretation`,
+    ).toBe(true);
+}
+
 function assertFact(
   fact: RetainedFact,
   pack: ReturnType<typeof loadRulesPackFromDirectory>,
@@ -262,39 +302,8 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
       for (const execution of fixture.executions) {
         const ambiguityState = execution.expectedAmbiguityState;
         if (ambiguityState.kind !== 'ambiguities') continue;
-        for (const expectation of ambiguityState.expectations) {
-          const record = pack.records.find(
-            (candidate) =>
-              candidate.key ===
-              fixture.mustIncludeTargets.find(
-                (target) =>
-                  target.targetKind === 'rules-record' &&
-                  hasAmbiguity(candidate, expectation.ambiguityId),
-              )?.recordKey,
-          );
-          expect(record, expectation.statement).toBeDefined();
-          const ambiguities = (
-            recordData(record as { data: unknown }).mechanics as Record<
-              string,
-              unknown
-            >
-          ).ambiguities as readonly Record<string, unknown>[];
-          const ambiguity = ambiguities.find(
-            (candidate) => candidate.id === expectation.ambiguityId,
-          );
-          expect(ambiguity, expectation.statement).toBeDefined();
-          const interpretations = ambiguity?.interpretations;
-          for (const interpretationId of expectation.interpretationIds)
-            expect(
-              recordsWithId(interpretations, 'id', interpretationId),
-              `${fixture.probeId} ${expectation.ambiguityId} ${interpretationId}`,
-            ).toBe(true);
-          if (
-            execution.campaignRuleState.kind === 'none' &&
-            expectation.expectedResolution === 'unresolved'
-          )
-            expect(ambiguity?.canonicalResolution).toBeNull();
-        }
+        for (const expectation of ambiguityState.expectations)
+          assertPackAmbiguityExpectation(fixture, expectation, pack);
       }
     }
   });
@@ -322,6 +331,7 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
     expect(withRuling?.campaignRuleState).toMatchObject({
       source: 'eshyra-jhpt',
       scope: 'ambiguity:cube-of-force-same-face-duration-reset',
+      selectedInterpretationId: 'same-face-resets',
     });
     expect(
       withRuling?.expectedRouteClasses.some((route) =>
@@ -333,6 +343,8 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
         {
           ruleIdentity: 'supplied by eshyra-jhpt at runtime',
           provenance: 'eshyra-jhpt campaign-rule read interface',
+          ambiguityId: 'ambiguity:cube-of-force-same-face-duration-reset',
+          selectedInterpretationId: 'same-face-resets',
         },
       ],
     });
@@ -441,6 +453,105 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
     if (noRuling === undefined) throw new Error('P7 execution missing');
     noRuling.expectedRouteClasses[0]?.routes.push('campaign-ruling');
     expectInvalid(noRulingRoute);
+
+    const resolvedWithoutSelection = fixture();
+    const resolvedExpectation =
+      resolvedWithoutSelection[6]?.executions[1]?.expectedAmbiguityState;
+    if (resolvedExpectation?.kind !== 'ambiguities')
+      throw new Error('P7 resolved ambiguity expectation missing');
+    resolvedExpectation.expectations[0].selectedInterpretationId = undefined;
+    const missingSelectionRuling =
+      resolvedWithoutSelection[6]?.executions[1]
+        ?.expectedCampaignRuleOrRulingState;
+    if (missingSelectionRuling?.kind !== 'campaign-rule-cases')
+      throw new Error('P7 ruling case missing');
+    missingSelectionRuling.cases[0].selectedInterpretationId = undefined;
+    expectInvalid(resolvedWithoutSelection);
+
+    const undeclaredSelection = fixture();
+    const undeclaredExpectation =
+      undeclaredSelection[6]?.executions[1]?.expectedAmbiguityState;
+    if (undeclaredExpectation?.kind !== 'ambiguities')
+      throw new Error('P7 resolved ambiguity expectation missing');
+    undeclaredExpectation.expectations[0].selectedInterpretationId =
+      'not-declared';
+    const undeclaredRuling =
+      undeclaredSelection[6]?.executions[1]?.expectedCampaignRuleOrRulingState;
+    if (undeclaredRuling?.kind !== 'campaign-rule-cases')
+      throw new Error('P7 ruling case missing');
+    undeclaredRuling.cases[0].selectedInterpretationId = 'not-declared';
+    expectInvalid(undeclaredSelection);
+
+    const staleSelection = fixture();
+    const staleExpectation =
+      staleSelection[6]?.executions[1]?.expectedAmbiguityState;
+    if (staleExpectation?.kind !== 'ambiguities')
+      throw new Error('P7 resolved ambiguity expectation missing');
+    staleExpectation.expectations[0].interpretationIds = [
+      ...staleExpectation.expectations[0].interpretationIds,
+      'stale-published-interpretation',
+    ];
+    staleExpectation.expectations[0].selectedInterpretationId =
+      'stale-published-interpretation';
+    const staleRuling =
+      staleSelection[6]?.executions[1]?.expectedCampaignRuleOrRulingState;
+    if (staleRuling?.kind !== 'campaign-rule-cases')
+      throw new Error('P7 ruling case missing');
+    staleRuling.cases[0].selectedInterpretationId =
+      'stale-published-interpretation';
+    validateDiagnosticCorpus(staleSelection);
+    expect(() =>
+      assertPackAmbiguityExpectation(
+        staleSelection[6] as DiagnosticFixture,
+        staleExpectation.expectations[0],
+        pack,
+      ),
+    ).toThrow();
+
+    const disagreeingRuling = fixture();
+    const rulingCase =
+      disagreeingRuling[6]?.executions[1]?.expectedCampaignRuleOrRulingState;
+    if (rulingCase?.kind !== 'campaign-rule-cases')
+      throw new Error('P7 ruling case missing');
+    rulingCase.cases[0].selectedInterpretationId = 'different-face-only-resets';
+    expectInvalid(disagreeingRuling);
+
+    const unresolvedSelection = fixture();
+    const unresolvedExpectation =
+      unresolvedSelection[6]?.executions[0]?.expectedAmbiguityState;
+    if (unresolvedExpectation?.kind !== 'ambiguities')
+      throw new Error('P7 unresolved ambiguity expectation missing');
+    unresolvedExpectation.expectations[0].selectedInterpretationId =
+      'same-face-resets';
+    expectInvalid(unresolvedSelection);
+
+    const activeRulingWithoutRoute = fixture();
+    const activeRulingRoutes =
+      activeRulingWithoutRoute[6]?.executions[1]?.expectedRouteClasses[0]
+        ?.routes;
+    if (activeRulingRoutes === undefined)
+      throw new Error('P7 active ruling route missing');
+    activeRulingRoutes.splice(activeRulingRoutes.indexOf('campaign-ruling'), 1);
+    expectInvalid(activeRulingWithoutRoute);
+
+    const inactiveHouseRuleWithRoute = fixture();
+    const houseRuleExecution = inactiveHouseRuleWithRoute[9]?.executions[0];
+    if (houseRuleExecution === undefined)
+      throw new Error('P10 execution missing');
+    houseRuleExecution.campaignRuleState = {
+      kind: 'none',
+      statement: 'Mutated to have no active house rule.',
+    };
+    expectInvalid(inactiveHouseRuleWithRoute);
+
+    const activeHouseRuleWithoutRoute = fixture();
+    const houseRuleRoute =
+      activeHouseRuleWithoutRoute[9]?.executions[0]?.expectedRouteClasses[0]
+        ?.routes;
+    if (houseRuleRoute === undefined)
+      throw new Error('P10 campaign-rule route missing');
+    houseRuleRoute.splice(houseRuleRoute.indexOf('campaign-rule'), 1);
+    expectInvalid(activeHouseRuleWithoutRoute);
   });
 
   it('asserts the narrow P12 absence without pinning record counts or aggregating corpus figures', () => {
