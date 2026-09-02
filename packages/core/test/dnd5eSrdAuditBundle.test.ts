@@ -5,8 +5,10 @@ import {
   buildGameplayReadinessReport,
   buildOverlayParityReport,
   CREATURE_ENTRY_REVIEWED_DISPOSITIONS,
+  validateGameplayReadinessFindingReference,
 } from '../scripts/create-dnd5e-srd-audit-bundle/cli.js';
 import {
+  findingByCanonicalId,
   getBundledDnd5eSrdPack,
   type RulesPack,
   type RulesPackLicense,
@@ -58,6 +60,24 @@ function pack(records: readonly RulesRecord[]): RulesPack {
 }
 
 describe('D&D SRD audit bundle gameplay-readiness report', () => {
+  it('rejects an unknown gameplay-readiness finding identity', () => {
+    expect(() =>
+      validateGameplayReadinessFindingReference('typo-or-invented-id'),
+    ).toThrow(/unknown canonical finding ID/);
+  });
+
+  it('emits only finding IDs that resolve through the real registry', () => {
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    for (const disposition of report.dispositions) {
+      if (disposition.findingId !== undefined) {
+        expect(findingByCanonicalId(disposition.findingId)).toBeDefined();
+      }
+    }
+    for (const unresolved of report.rules.unresolvedWork) {
+      expect(findingByCanonicalId(unresolved.findingId)).toBeDefined();
+    }
+  });
+
   it('reports the exact equipment mechanics census', () => {
     const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
     expect(report.equipment).toEqual({
@@ -696,7 +716,9 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
           name: 'Modeled',
           data: {
             description: 'Prose plus a mechanics projection.',
-            mechanics: { effects: [] },
+            mechanics: {
+              effects: [{ kind: 'condition', condition: 'blinded' }],
+            },
           },
         }),
       ]),
@@ -707,6 +729,22 @@ describe('gameplay-readiness dispositions (eshyra-o9bd.18.9.6)', () => {
       error.startsWith('deity#'),
     );
     expect(deityErrors).toEqual([]);
+  });
+
+  it('does not treat an empty mechanics object as a projection', () => {
+    const report = buildGameplayReadinessReport(
+      pack([
+        record({
+          kind: 'deity',
+          key: 'deity:empty-mechanics',
+          name: 'Empty mechanics',
+          data: { description: 'Prose only.', mechanics: {} },
+        }),
+      ]),
+      [],
+    );
+
+    expect(report.byKind.deity?.recordsWithMechanicsProjections).toBe(0);
   });
 
   it('categorizes every committed-pack bucket via the reviewed policy and passes fail-closed', () => {

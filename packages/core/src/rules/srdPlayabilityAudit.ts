@@ -39,6 +39,10 @@
  *   - feature/table de-flatten + tableRefs completeness → eshyra-o9bd.8
  *
  * Everything is pure and deterministic; findings are sorted for diffable output.
+ *
+ * Scope boundary (ADR 0020 §5.1): a green result covers only the seven
+ * enumerated historical defect categories above. It is not evidence of global
+ * source, discovery, adjudication, or capability completeness.
  */
 
 import { buildInlineFeatureOptionIndex } from './inlineFeatureOptions.js';

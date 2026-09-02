@@ -5,9 +5,11 @@ import {
   assertRuleDispositions,
   buildRuleDispositionReport,
   ENGINE_PROCEDURE_COVERAGE,
+  materializeEngineProcedureCoverage,
   RULE_DISPOSITIONS,
   type RuleDisposition,
   type RuleProcedureCoverage,
+  validateRuleDispositionIdentity,
   validateRuleRegistries,
 } from '../scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.js';
 import {
@@ -75,6 +77,27 @@ function pack(records: readonly RulesRecord[]): RulesPack {
 }
 
 describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
+  it('rejects an equal-size rule-class reclassification by identity', () => {
+    const changed = {
+      ...RULE_DISPOSITIONS,
+      'rule:a-legendary-creatures-lair': {
+        ...RULE_DISPOSITIONS['rule:a-legendary-creatures-lair'],
+        class: 'definition' as const,
+      },
+      'rule:wisdom': {
+        ...RULE_DISPOSITIONS['rule:wisdom'],
+        class: 'reference-prose' as const,
+      },
+    };
+
+    expect(Object.keys(changed)).toHaveLength(
+      Object.keys(RULE_DISPOSITIONS).length,
+    );
+    expect(validateRuleDispositionIdentity(changed)).toContainEqual(
+      expect.stringContaining('rule disposition identity drift'),
+    );
+  });
+
   it('closes every F10-owned coverage row against registered primitives', () => {
     const rows = [
       'rule:coinage',
@@ -165,7 +188,16 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       key: 'rule:spells',
       clause: 'per-item spell-data completeness',
       bead: 'eshyra-o9bd.18.7.7',
+      findingId: 'rule-corpus-procedures',
     });
+    expect(report.unresolvedWork).toContainEqual(
+      expect.objectContaining({
+        key: 'rule:special-weapons',
+        kind: 'external-clause',
+        findingId: 'rule-corpus-procedures',
+        historicalBead: 'eshyra-o9bd.18.7.8.3',
+      }),
+    );
     // telepathy's per-creature payload contracts are the still-pending
     // C3 slice tracked in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — unlike
     // multiattack's "(18.7.9)" mention, which credits already-typed
@@ -174,6 +206,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       key: 'rule:telepathy',
       clause: 'per-creature payload contracts (18.7.9 C3 slice)',
       bead: 'eshyra-o9bd.18.7.9',
+      findingId: 'rule-corpus-procedures',
     });
     expect(
       ENGINE_PROCEDURE_COVERAGE['rule:multiattack']?.externalClauses,
@@ -184,6 +217,63 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
         (row) => row.key === 'rule:armor-guidance',
       ),
     ).toHaveLength(1);
+  });
+
+  it('preserves an explicit non-default external finding ID through materialization and reporting', () => {
+    const coverage = materializeEngineProcedureCoverage({
+      'rule:fixture': {
+        status: 'model-adjudicated-supported',
+        primitives: ['lookup_rules'],
+        contextRequirement: 'fixture context',
+        externalClauses: [
+          {
+            clause: 'fixture external clause',
+            bead: 'eshyra-o9bd.18.7.7',
+            findingId: 'magic-item-effects',
+          },
+        ],
+      },
+    });
+    const report = buildRuleDispositionReport(coverage);
+
+    expect(report.engineProcedure.externalClauses).toEqual([
+      {
+        key: 'rule:fixture',
+        clause: 'fixture external clause',
+        bead: 'eshyra-o9bd.18.7.7',
+        findingId: 'magic-item-effects',
+      },
+    ]);
+    expect(report.unresolvedWork).toContainEqual({
+      key: 'rule:fixture',
+      kind: 'external-clause',
+      detail: 'fixture external clause',
+      findingId: 'magic-item-effects',
+      historicalBead: 'eshyra-o9bd.18.7.7',
+    });
+  });
+
+  it('hands W13 raw multi-owner concentration evidence, not pseudo-capability semantics', () => {
+    const handoff =
+      buildRuleDispositionReport().deterministicCapabilityHandoff.find(
+        (row) => row.ruleKey === 'rule:concentration',
+      );
+
+    expect(handoff).toEqual({
+      ruleKey: 'rule:concentration',
+      runtimeOwner: [
+        'packages/core/src/state/activeEffects.ts',
+        'packages/core/src/state/hpLifecycle.ts',
+        'packages/core/src/orchestrator/toolResolveConcentration.ts',
+        'packages/core/src/orchestrator/toolStartEffect.ts',
+        'packages/core/src/orchestrator/toolEndEffect.ts',
+      ],
+      evidence: ['packages/core/test/activeEffects.test.ts'],
+      primitives: [],
+    });
+    expect(handoff).not.toHaveProperty('operation');
+    expect(handoff).not.toHaveProperty('revision');
+    expect(handoff).not.toHaveProperty('residualInterpretation');
   });
 
   it('registers every literally-named supporting tool in primitives, e.g. consumables/remove_item', () => {
@@ -548,7 +638,9 @@ describe('validateRuleRegistries (eshyra-o9bd.18.7.8.1 §6 failure modes)', () =
     );
     expect(
       semanticErrors.some((e) =>
-        e.includes('semantic census drift: reference-prose is 1, expected 2'),
+        e.includes(
+          'semantic fixture census drift: reference-prose is 1, expected 2',
+        ),
       ),
     ).toBe(true);
 

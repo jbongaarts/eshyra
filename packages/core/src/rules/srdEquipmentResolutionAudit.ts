@@ -25,6 +25,11 @@
  *     be reviewed and added here.
  *
  * Pure and deterministic; results are sorted for diffable reports.
+ *
+ * Scope boundary (ADR 0020 §5.1): a green result covers only emitted
+ * starting-equipment filters and the reviewed class-proficiency phrase table.
+ * It is not evidence of global source, discovery, adjudication, or capability
+ * completeness.
  */
 
 import type { RulesPack, RulesRecord } from './types.js';

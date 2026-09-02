@@ -861,6 +861,8 @@ export function renderInventoryMarkdown(artifact: InventoryArtifact): string {
       .map(([key, value]) => `\`${key}\` ${value}`)
       .join(', ')}.`,
     '',
+    'Scope boundary (ADR 0020 §5.6): one disposition per candidate is field-level bookkeeping only. It is not exclusive clause, procedure, discovery, or capability ownership. A record can hold a typed projection and an untyped residual for the same concept; discovery may use this census for exploratory candidates and projection-limit disclosure, never as an ownership claim.',
+    '',
     'The generated JSON is the machine-readable inventory. This table keeps the same evidence compact enough for review.',
     '',
     '| System | Kinds | Field path | Population | Representative values | Class | Disposition | Consumer / schema | Retained prose | Owner / future |',
