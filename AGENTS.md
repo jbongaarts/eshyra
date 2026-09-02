@@ -239,8 +239,9 @@ An open, unmerged PR is a complete handoff. Before ending a session:
 
 - File beads issues for anything left undone.
 - Run the quality gates for what changed, from the worktree that holds it.
-- Close finished beads and update in-progress ones, then **`bd dolt push`** —
-  bead state syncs separately from git and is otherwise stranded locally.
+- Close finished beads and update in-progress ones, then **`npm run beads:sync`**.
+  This performs the authoritative `bd dolt push` and refreshes the disposable,
+  readable projection at `refs/beads/state`; Beads/Dolt remains canonical.
 - Commit and push the feature branch; confirm with `git status`. Open the PR
   when the work is ready for review.
 - Clear stashes and prune stale remote branches.
@@ -358,15 +359,16 @@ bd ready                 # find unblocked work
 bd show <id>             # issue detail
 bd update <id> --claim   # claim work
 bd close <id>            # complete work
-bd dolt push             # REQUIRED after any bead change
+npm run beads:sync         # REQUIRED after any bead change: Dolt push + projection
 ```
 
 - Issues live in a local Dolt DB; sync uses `refs/dolt/data` on the git remote;
   `.beads/issues.jsonl` is a passive export. Nothing leaves this machine without
-  `bd dolt push`. Details and anti-patterns:
+  `npm run beads:sync`. Details and anti-patterns:
   [SYNC_CONCEPTS](https://github.com/gastownhall/beads/blob/main/docs/SYNC_CONCEPTS.md).
 - Use `bd remember` for durable project knowledge — anything another machine,
-  account, or Codex session would need. Only bd memories sync (`bd dolt push`)
+  account, or Codex session would need. Only bd memories sync through the
+  authoritative Dolt database (normally via `npm run beads:sync`)
   and reach other agents via `bd prime`. The ban on markdown memory files
   targets in-repo TODO/memory documents; an agent harness's own private store
   is exempt for harness-local preferences, but repo knowledge must never live
