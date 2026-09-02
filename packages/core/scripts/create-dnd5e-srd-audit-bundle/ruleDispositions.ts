@@ -2713,7 +2713,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       {
         clause: 'per-item spell-data completeness',
         bead: 'eshyra-o9bd.18.7.7',
-        findingId: 'magic-item-effects',
       },
     ],
   },
@@ -2946,38 +2945,45 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
  * as a resolution signal. These broad, existing audit identities preserve the
  * prior mappings without inventing new finding dispositions.
  */
-export const ENGINE_PROCEDURE_COVERAGE: Readonly<
-  Record<string, RuleProcedureCoverage>
-> = Object.freeze(
-  Object.fromEntries(
-    Object.entries(UNBOUND_ENGINE_PROCEDURE_COVERAGE).map(([key, coverage]) => {
-      const unresolvedFindingId =
-        coverage.status === 'design-blocked'
-          ? 'engine-capability-ownership'
-          : coverage.status === 'partial' || coverage.status === 'unimplemented'
-            ? 'readiness-integrity'
-            : undefined;
-      const findingId =
-        unresolvedFindingId === undefined
-          ? coverage.findingId
-          : requireFindingReference(unresolvedFindingId, key);
-      const externalClauses = coverage.externalClauses?.map((clause) => ({
-        ...clause,
-        findingId: requireFindingReference(
-          clause.findingId ?? 'rule-corpus-procedures',
-          `${key}:${clause.clause}`,
-        ),
-      }));
-      return [
-        key,
-        {
-          ...coverage,
-          ...(findingId === undefined ? {} : { findingId }),
-          ...(externalClauses === undefined ? {} : { externalClauses }),
-        },
-      ] as const;
-    }),
-  ),
+export function materializeEngineProcedureCoverage(
+  unboundCoverage: Readonly<Record<string, RuleProcedureCoverage>>,
+): Readonly<Record<string, RuleProcedureCoverage>> {
+  return Object.freeze(
+    Object.fromEntries(
+      Object.entries(unboundCoverage).map(([key, coverage]) => {
+        const unresolvedFindingId =
+          coverage.status === 'design-blocked'
+            ? 'engine-capability-ownership'
+            : coverage.status === 'partial' ||
+                coverage.status === 'unimplemented'
+              ? 'readiness-integrity'
+              : undefined;
+        const findingId =
+          unresolvedFindingId === undefined
+            ? coverage.findingId
+            : requireFindingReference(unresolvedFindingId, key);
+        const externalClauses = coverage.externalClauses?.map((clause) => ({
+          ...clause,
+          findingId: requireFindingReference(
+            clause.findingId ?? 'rule-corpus-procedures',
+            `${key}:${clause.clause}`,
+          ),
+        }));
+        return [
+          key,
+          {
+            ...coverage,
+            ...(findingId === undefined ? {} : { findingId }),
+            ...(externalClauses === undefined ? {} : { externalClauses }),
+          },
+        ] as const;
+      }),
+    ),
+  );
+}
+
+export const ENGINE_PROCEDURE_COVERAGE = materializeEngineProcedureCoverage(
+  UNBOUND_ENGINE_PROCEDURE_COVERAGE,
 );
 
 function requireFindingReference(id: string, context: string): string {
@@ -3394,7 +3400,11 @@ export interface RuleDispositionReport {
  * arrays (not just counts) so a reviewer can see exactly which keys and
  * clauses are outstanding without re-deriving them from the registry.
  */
-export function buildRuleDispositionReport(): RuleDispositionReport {
+export function buildRuleDispositionReport(
+  coverageRegistry: Readonly<
+    Record<string, RuleProcedureCoverage>
+  > = ENGINE_PROCEDURE_COVERAGE,
+): RuleDispositionReport {
   let referencesProse = 0;
   let definitions = 0;
   let tableBacked = 0;
@@ -3423,7 +3433,7 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
   const deterministicCapabilityHandoff: RuleDispositionReport['deterministicCapabilityHandoff'][number][] =
     [];
   const unresolvedWork: RuleDispositionReport['unresolvedWork'][number][] = [];
-  for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
+  for (const [key, coverage] of Object.entries(coverageRegistry)) {
     if (coverage.status === 'implemented') implemented += 1;
     if (coverage.status === 'model-adjudicated-supported') {
       modelAdjudicatedSupported += 1;

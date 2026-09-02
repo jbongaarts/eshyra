@@ -5,6 +5,7 @@ import {
   assertRuleDispositions,
   buildRuleDispositionReport,
   ENGINE_PROCEDURE_COVERAGE,
+  materializeEngineProcedureCoverage,
   RULE_DISPOSITIONS,
   type RuleDisposition,
   type RuleProcedureCoverage,
@@ -187,14 +188,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       key: 'rule:spells',
       clause: 'per-item spell-data completeness',
       bead: 'eshyra-o9bd.18.7.7',
-      findingId: 'magic-item-effects',
-    });
-    expect(report.unresolvedWork).toContainEqual({
-      key: 'rule:spells',
-      kind: 'external-clause',
-      detail: 'per-item spell-data completeness',
-      findingId: 'magic-item-effects',
-      historicalBead: 'eshyra-o9bd.18.7.7',
+      findingId: 'rule-corpus-procedures',
     });
     expect(report.unresolvedWork).toContainEqual(
       expect.objectContaining({
@@ -223,6 +217,40 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
         (row) => row.key === 'rule:armor-guidance',
       ),
     ).toHaveLength(1);
+  });
+
+  it('preserves an explicit non-default external finding ID through materialization and reporting', () => {
+    const coverage = materializeEngineProcedureCoverage({
+      'rule:fixture': {
+        status: 'model-adjudicated-supported',
+        primitives: ['lookup_rules'],
+        contextRequirement: 'fixture context',
+        externalClauses: [
+          {
+            clause: 'fixture external clause',
+            bead: 'eshyra-o9bd.18.7.7',
+            findingId: 'magic-item-effects',
+          },
+        ],
+      },
+    });
+    const report = buildRuleDispositionReport(coverage);
+
+    expect(report.engineProcedure.externalClauses).toEqual([
+      {
+        key: 'rule:fixture',
+        clause: 'fixture external clause',
+        bead: 'eshyra-o9bd.18.7.7',
+        findingId: 'magic-item-effects',
+      },
+    ]);
+    expect(report.unresolvedWork).toContainEqual({
+      key: 'rule:fixture',
+      kind: 'external-clause',
+      detail: 'fixture external clause',
+      findingId: 'magic-item-effects',
+      historicalBead: 'eshyra-o9bd.18.7.7',
+    });
   });
 
   it('hands W13 raw multi-owner concentration evidence, not pseudo-capability semantics', () => {
