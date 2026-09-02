@@ -20,6 +20,7 @@ import {
 import {
   assertMagicItemOperationReady,
   ItemExecutionReadinessError,
+  MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
 } from '../src/state/itemExecutionReadiness.js';
 import { freshDbWithSession } from './support/db.js';
 
@@ -125,6 +126,21 @@ function useInput(
 }
 
 describe('magic-item live instance state', () => {
+  it('declares the bounded magic-item readiness capability in ADR 0020 shape', () => {
+    expect(MAGIC_ITEM_OPERATION_READINESS_CAPABILITY).toMatchObject({
+      revision: 'derived-magic-item-clauses-v1',
+    });
+    expect(
+      MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.requiredInputs,
+    ).not.toHaveLength(0);
+    expect(
+      MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.exclusions,
+    ).not.toHaveLength(0);
+    expect(
+      MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.residualDmInterpretation,
+    ).not.toHaveLength(0);
+  });
+
   it('initializes and plays Flame Tongue toggle state', () => {
     const db = freshDbWithSession();
     const flameTongue = item('flame-tongue-test', {
