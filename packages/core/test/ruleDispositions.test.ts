@@ -8,6 +8,7 @@ import {
   RULE_DISPOSITIONS,
   type RuleDisposition,
   type RuleProcedureCoverage,
+  validateRuleDispositionIdentity,
   validateRuleRegistries,
 } from '../scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.js';
 import {
@@ -75,6 +76,27 @@ function pack(records: readonly RulesRecord[]): RulesPack {
 }
 
 describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
+  it('rejects an equal-size rule-class reclassification by identity', () => {
+    const changed = {
+      ...RULE_DISPOSITIONS,
+      'rule:a-legendary-creatures-lair': {
+        ...RULE_DISPOSITIONS['rule:a-legendary-creatures-lair'],
+        class: 'definition' as const,
+      },
+      'rule:wisdom': {
+        ...RULE_DISPOSITIONS['rule:wisdom'],
+        class: 'reference-prose' as const,
+      },
+    };
+
+    expect(Object.keys(changed)).toHaveLength(
+      Object.keys(RULE_DISPOSITIONS).length,
+    );
+    expect(validateRuleDispositionIdentity(changed)).toContainEqual(
+      expect.stringContaining('rule disposition identity drift'),
+    );
+  });
+
   it('closes every F10-owned coverage row against registered primitives', () => {
     const rows = [
       'rule:coinage',
@@ -166,6 +188,14 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       clause: 'per-item spell-data completeness',
       bead: 'eshyra-o9bd.18.7.7',
     });
+    expect(report.unresolvedWork).toContainEqual(
+      expect.objectContaining({
+        key: 'rule:special-weapons',
+        kind: 'external-clause',
+        findingId: 'rule-corpus-procedures',
+        historicalBead: 'eshyra-o9bd.18.7.8.3',
+      }),
+    );
     // telepathy's per-creature payload contracts are the still-pending
     // C3 slice tracked in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — unlike
     // multiattack's "(18.7.9)" mention, which credits already-typed

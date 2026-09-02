@@ -30,6 +30,7 @@
 
 import { createHash } from 'node:crypto';
 import { DEFAULT_TOOLS } from '../../src/orchestrator/tools.js';
+import { findingByCanonicalId } from '../../src/rules/findingRegistry.js';
 import type { RulesPack } from '../../src/rules/types.js';
 
 export type RuleDispositionClass =
@@ -1673,7 +1674,7 @@ export interface RuleProcedureCoverage {
   }[];
 }
 
-export const ENGINE_PROCEDURE_COVERAGE: Readonly<
+const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
   Record<string, RuleProcedureCoverage>
 > = Object.freeze({
   'rule:a-clear-path-to-the-target': {
@@ -2939,6 +2940,55 @@ export const ENGINE_PROCEDURE_COVERAGE: Readonly<
 });
 
 /**
+ * Attach the reviewed Foundation-2 identity to unresolved rows as the registry
+ * is materialized. The historical bead remains alongside it; it is never used
+ * as a resolution signal. These broad, existing audit identities preserve the
+ * prior mappings without inventing new finding dispositions.
+ */
+export const ENGINE_PROCEDURE_COVERAGE: Readonly<
+  Record<string, RuleProcedureCoverage>
+> = Object.freeze(
+  Object.fromEntries(
+    Object.entries(UNBOUND_ENGINE_PROCEDURE_COVERAGE).map(([key, coverage]) => {
+      const unresolvedFindingId =
+        coverage.status === 'design-blocked'
+          ? 'engine-capability-ownership'
+          : coverage.status === 'partial' || coverage.status === 'unimplemented'
+            ? 'readiness-integrity'
+            : undefined;
+      const findingId =
+        unresolvedFindingId === undefined
+          ? coverage.findingId
+          : requireFindingReference(unresolvedFindingId, key);
+      const externalClauses = coverage.externalClauses?.map((clause) => ({
+        ...clause,
+        findingId: requireFindingReference(
+          clause.findingId ?? 'rule-corpus-procedures',
+          `${key}:${clause.clause}`,
+        ),
+      }));
+      return [
+        key,
+        {
+          ...coverage,
+          ...(findingId === undefined ? {} : { findingId }),
+          ...(externalClauses === undefined ? {} : { externalClauses }),
+        },
+      ] as const;
+    }),
+  ),
+);
+
+function requireFindingReference(id: string, context: string): string {
+  if (findingByCanonicalId(id) === undefined) {
+    throw new Error(
+      `${context}: unknown canonical finding ID ${JSON.stringify(id)}`,
+    );
+  }
+  return id;
+}
+
+/**
  * Identity-pinned classification of the reviewed `rule:*` corpus. This hash
  * covers every sorted `key:class` pair, so an equal-size reclassification is
  * still drift. It intentionally makes no claim beyond `rule:*` records.
@@ -3156,6 +3206,21 @@ export function validateRuleRegistries(
     if (coverageRow.status === 'partial' && !coverageRow.missing) {
       errors.push(`${key}: partial row is missing 'missing'`);
     }
+    if (
+      (coverageRow.status === 'partial' ||
+        coverageRow.status === 'unimplemented' ||
+        coverageRow.status === 'design-blocked') &&
+      coverageRow.findingId === undefined
+    ) {
+      errors.push(`${key}: unresolved row is missing durable findingId`);
+    } else if (
+      coverageRow.findingId !== undefined &&
+      findingByCanonicalId(coverageRow.findingId) === undefined
+    ) {
+      errors.push(
+        `${key}: unknown canonical finding ID ${JSON.stringify(coverageRow.findingId)}`,
+      );
+    }
     if (coverageRow.status === 'design-blocked') {
       if (!coverageRow.designOwner) {
         errors.push(`${key}: design-blocked row is missing designOwner`);
@@ -3168,13 +3233,23 @@ export function validateRuleRegistries(
     // Clause-level external ownership (design §5 item 3): each clause must
     // name a real bead and a non-empty description — never a placeholder —
     // so a malformed cross-bead pointer can't silently pass review.
-    for (const { clause, bead } of coverageRow.externalClauses ?? []) {
+    for (const { clause, bead, findingId } of coverageRow.externalClauses ??
+      []) {
       if (!clause) {
         errors.push(`${key}: externalClauses entry is missing 'clause'`);
       }
       if (!BEAD_ID_PATTERN.test(bead)) {
         errors.push(
           `${key}: externalClauses bead '${bead}' is not a real bead-id shape`,
+        );
+      }
+      if (findingId === undefined) {
+        errors.push(
+          `${key}: externalClauses entry is missing durable findingId`,
+        );
+      } else if (findingByCanonicalId(findingId) === undefined) {
+        errors.push(
+          `${key}: externalClauses findingId ${JSON.stringify(findingId)} is not a canonical finding ID`,
         );
       }
     }
@@ -3285,17 +3360,15 @@ export interface RuleDispositionReport {
     readonly contextRequirement: string;
   }[];
   /**
-   * Positive implemented-row handoff for W13. These are inventory rows, not a
-   * normalized capability contract or a claim about unlisted capabilities.
+   * Raw implemented-row evidence for W13. This is intentionally not a
+   * capability contract: operation, inputs, exclusions, revision, and
+   * residual semantics are underived until W13 binds them to real operations.
    */
   readonly deterministicCapabilityHandoff: readonly {
-    readonly operation: string;
-    readonly inputs: readonly string[];
-    readonly exclusions: string;
-    readonly revision: 'pre-w13-coverage-registry';
-    readonly residualInterpretation: string;
+    readonly ruleKey: string;
     readonly runtimeOwner: readonly string[];
     readonly evidence: readonly string[];
+    readonly primitives: readonly string[];
   }[];
   /** Deferred, partial, unimplemented, design-blocked, and external work. */
   readonly unresolvedWork: readonly {
@@ -3354,15 +3427,10 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
     }
     if (coverage.status === 'implemented') {
       deterministicCapabilityHandoff.push({
-        operation: key,
-        inputs: ['runtime inputs are defined by the listed owner'],
-        exclusions:
-          'No behavior outside this implemented rule row is asserted.',
-        revision: 'pre-w13-coverage-registry',
-        residualInterpretation:
-          'W13 must normalize residual semantics before treating this inventory as a capability contract.',
+        ruleKey: key,
         runtimeOwner: coverage.runtimeOwner ?? [],
         evidence: coverage.evidence ?? [],
+        primitives: coverage.primitives ?? [],
       });
     }
     if (coverage.status === 'partial') {
@@ -3371,7 +3439,7 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
         key,
         kind: 'partial',
         detail: coverage.missing ?? '',
-        findingId: 'readiness-integrity',
+        findingId: coverage.findingId ?? '',
       });
     }
     if (coverage.status === 'unimplemented') {
@@ -3380,7 +3448,7 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
         key,
         kind: 'unimplemented',
         detail: coverage.missing ?? '',
-        findingId: 'readiness-integrity',
+        findingId: coverage.findingId ?? '',
       });
     }
     if (coverage.status === 'design-blocked') {
@@ -3390,17 +3458,17 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
         kind: 'design-blocked',
         detail:
           'Deliberately deferred design work; ADR 0018 §6 reporting remains required for multiclass procedures.',
-        findingId: coverage.findingId ?? 'engine-capability-ownership',
+        findingId: coverage.findingId ?? '',
         historicalBead: coverage.designOwner,
       });
     }
-    for (const { clause, bead } of coverage.externalClauses ?? []) {
+    for (const { clause, bead, findingId } of coverage.externalClauses ?? []) {
       externalClauses.push({ key, clause, bead });
       unresolvedWork.push({
         key,
         kind: 'external-clause',
         detail: clause,
-        findingId: 'rule-corpus-procedures',
+        findingId: findingId ?? '',
         historicalBead: bead,
       });
     }
@@ -3425,7 +3493,7 @@ export function buildRuleDispositionReport(): RuleDispositionReport {
     },
     adjudicationContextInventory: adjudicationContextInventory.sort(byKey),
     deterministicCapabilityHandoff: deterministicCapabilityHandoff.sort(
-      (a, b) => a.operation.localeCompare(b.operation),
+      (a, b) => a.ruleKey.localeCompare(b.ruleKey),
     ),
     unresolvedWork: unresolvedWork.sort(byKey),
   };

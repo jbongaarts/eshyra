@@ -48,6 +48,7 @@ import {
   auditSrdPlayability,
   countSrdPlayabilityByCategory,
   type EquipmentResolutionResult,
+  findingByCanonicalId,
   formatAuditReport,
   formatSrdAuditReport,
   formatSrdChoiceProseReport,
@@ -1077,6 +1078,18 @@ export interface GameplayReadinessDispositionPolicyEntry {
   readonly findingId?: string;
 }
 
+/** Resolve a W14 finding pointer against Foundation 2's validated registry. */
+export function validateGameplayReadinessFindingReference(
+  findingId: string,
+): string {
+  if (findingByCanonicalId(findingId) === undefined) {
+    throw new Error(
+      `unknown canonical finding ID ${JSON.stringify(findingId)} in gameplay-readiness disposition`,
+    );
+  }
+  return findingId;
+}
+
 /**
  * Mechanical vocabulary in an unmodeled creature entry (eshyra-o9bd.18.7.3):
  * anything matching this is reported as `mechanical-prose` rather than
@@ -1694,6 +1707,15 @@ export function buildGameplayReadinessReport(
           `${policyKey}: disposition is a finding but lacks bead history or durable findingId`,
         );
       }
+      if (policy.status === 'finding' && policy.findingId !== undefined) {
+        try {
+          validateGameplayReadinessFindingReference(policy.findingId);
+        } catch (error) {
+          dispositionErrors.push(
+            `${policyKey}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }
       // Accepted record buckets fail closed by MEMBERSHIP
       // (eshyra-o9bd.18.7.5 review): the acceptance covers exactly the
       // reviewed keys, so a modeling regression surfaces as an unreviewed
@@ -1739,7 +1761,11 @@ export function buildGameplayReadinessReport(
         ...(policy.bead === undefined ? {} : { bead: policy.bead }),
         ...(policy.findingId === undefined
           ? {}
-          : { findingId: policy.findingId }),
+          : {
+              findingId: validateGameplayReadinessFindingReference(
+                policy.findingId,
+              ),
+            }),
       });
     }
   }
@@ -2129,10 +2155,10 @@ export function formatGameplayReadinessReport(
     ...report.rules.adjudicationContextInventory.map(
       (row) => `- ${row.key}: ${row.contextRequirement}`,
     ),
-    `Positive deterministic-capability handoff to W13 (five-field pre-normalization inventory): ${report.rules.deterministicCapabilityHandoff.length}`,
+    `Raw implemented-row evidence handed to W13 (not a capability contract): ${report.rules.deterministicCapabilityHandoff.length}`,
     ...report.rules.deterministicCapabilityHandoff.map(
       (row) =>
-        `- ${row.operation} [${row.revision}]: ${row.residualInterpretation}`,
+        `- ${row.ruleKey}: owners [${row.runtimeOwner.join(', ')}]; evidence [${row.evidence.join(', ')}]`,
     ),
     `Unresolved/deferred/design-blocked work: ${report.rules.unresolvedWork.length} (durable finding identity; bead is historical context)`,
     ...report.rules.unresolvedWork.map(

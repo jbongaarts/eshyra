@@ -5,8 +5,10 @@ import {
   buildGameplayReadinessReport,
   buildOverlayParityReport,
   CREATURE_ENTRY_REVIEWED_DISPOSITIONS,
+  validateGameplayReadinessFindingReference,
 } from '../scripts/create-dnd5e-srd-audit-bundle/cli.js';
 import {
+  findingByCanonicalId,
   getBundledDnd5eSrdPack,
   type RulesPack,
   type RulesPackLicense,
@@ -58,6 +60,24 @@ function pack(records: readonly RulesRecord[]): RulesPack {
 }
 
 describe('D&D SRD audit bundle gameplay-readiness report', () => {
+  it('rejects an unknown gameplay-readiness finding identity', () => {
+    expect(() =>
+      validateGameplayReadinessFindingReference('typo-or-invented-id'),
+    ).toThrow(/unknown canonical finding ID/);
+  });
+
+  it('emits only finding IDs that resolve through the real registry', () => {
+    const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
+    for (const disposition of report.dispositions) {
+      if (disposition.findingId !== undefined) {
+        expect(findingByCanonicalId(disposition.findingId)).toBeDefined();
+      }
+    }
+    for (const unresolved of report.rules.unresolvedWork) {
+      expect(findingByCanonicalId(unresolved.findingId)).toBeDefined();
+    }
+  });
+
   it('reports the exact equipment mechanics census', () => {
     const report = buildGameplayReadinessReport(getBundledDnd5eSrdPack(), []);
     expect(report.equipment).toEqual({
