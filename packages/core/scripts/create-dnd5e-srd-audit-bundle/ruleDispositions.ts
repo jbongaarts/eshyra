@@ -3043,12 +3043,12 @@ export const RULE_DETERMINISTIC_CAPABILITY_CONTRACTS: Readonly<
     ],
     runtimeOwner: [
       'packages/core/src/state/activeEffects.ts',
-      'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolResolveConcentration.ts',
-      'packages/core/src/orchestrator/toolStartEffect.ts',
-      'packages/core/src/orchestrator/toolEndEffect.ts',
     ],
-    evidence: ['packages/core/test/activeEffects.test.ts'],
+    evidence: [
+      'packages/core/test/activeEffects.test.ts',
+      'packages/core/test/tools.test.ts',
+    ],
   },
   'resolve-spell-upcast-v1': {
     revision: 'resolve-spell-upcast-v1',
@@ -3072,7 +3072,13 @@ export const RULE_DETERMINISTIC_CAPABILITY_CONTRACTS: Readonly<
 /** Source-rule evidence may bind to a capability many-to-many. */
 export const RULE_DETERMINISTIC_CAPABILITY_BINDINGS = Object.freeze([
   { ruleKey: 'rule:ability-checks', capability: 'resolve-check-v1' },
+  {
+    ruleKey: 'rule:advantage-and-disadvantage',
+    capability: 'resolve-check-v1',
+  },
   { ruleKey: 'rule:attack-rolls', capability: 'resolve-check-v1' },
+  { ruleKey: 'rule:modifiers-to-the-roll', capability: 'resolve-check-v1' },
+  { ruleKey: 'rule:proficiency-bonus', capability: 'resolve-check-v1' },
   { ruleKey: 'rule:saving-throws', capability: 'resolve-check-v1' },
   { ruleKey: 'rule:concentration', capability: 'resolve-concentration-v1' },
   {
@@ -3080,6 +3086,73 @@ export const RULE_DETERMINISTIC_CAPABILITY_BINDINGS = Object.freeze([
     capability: 'resolve-spell-upcast-v1',
   },
 ] as const);
+
+export interface RuleDeterministicCapabilityDisposition {
+  readonly ruleKey: string;
+  readonly outcome: 'not-positively-selected';
+  readonly reason: string;
+  readonly replacingResponsibility: string;
+  readonly nextState: string;
+}
+
+const IMPLEMENTED_ROWS_WITHOUT_SELECTED_CAPABILITY = [
+  'rule:abilities',
+  'rule:ability-scores-and-modifiers',
+  'rule:attunement',
+  'rule:backgrounds-equipment',
+  'rule:backgrounds-proficiencies',
+  'rule:beyond-1st-level',
+  'rule:bonus-action',
+  'rule:bonus-actions',
+  'rule:constitution-hit-points',
+  'rule:contests',
+  'rule:critical-hits',
+  'rule:damage-resistance-and-vulnerability',
+  'rule:damage-rolls',
+  'rule:death-saving-throws',
+  'rule:falling-unconscious',
+  'rule:gaining-inspiration',
+  'rule:grapple-rules-for-monsters',
+  'rule:group-checks',
+  'rule:healing',
+  'rule:instant-death',
+  'rule:legendary-actions',
+  'rule:limited-usage',
+  'rule:other-activity-on-your-turn',
+  'rule:passive-checks',
+  'rule:reactions',
+  'rule:spell-slots',
+  'rule:stabilizing-a-creature',
+  'rule:surprise',
+  'rule:temporary-hit-points',
+  'rule:using-inspiration',
+  'rule:your-turn',
+] as const;
+
+/**
+ * Explicit W13 outcomes for historical implemented rows that are not a
+ * positively selected capability. The implementation evidence remains real,
+ * but it is broader than a reviewed provider-neutral operation contract.
+ */
+export const RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS: Readonly<
+  Record<string, RuleDeterministicCapabilityDisposition>
+> = Object.freeze(
+  Object.fromEntries(
+    IMPLEMENTED_ROWS_WITHOUT_SELECTED_CAPABILITY.map((ruleKey) => [
+      ruleKey,
+      Object.freeze({
+        ruleKey,
+        outcome: 'not-positively-selected' as const,
+        reason:
+          'The historical implemented row records code and test evidence, but does not by itself identify one reviewed provider-neutral operation boundary.',
+        replacingResponsibility:
+          'ENGINE_PROCEDURE_COVERAGE retains the implementation evidence without advertising deterministic capability availability.',
+        nextState:
+          'Define and review a real validated operation or bounded composite before capability presentation; absence makes no claim about the rule semantics.',
+      }),
+    ]),
+  ),
+);
 
 /** Looks up a positive rule capability binding and fails closed on unknown input. */
 export function requireRuleDeterministicCapabilityContract(
@@ -3104,6 +3177,9 @@ export function validateRuleDeterministicCapabilityContracts(
     readonly ruleKey: string;
     readonly capability: string;
   }[] = RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
+  dispositions: Readonly<
+    Record<string, RuleDeterministicCapabilityDisposition>
+  > = RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
 ): readonly string[] {
   const errors: string[] = [];
   const implemented = new Set(
@@ -3132,14 +3208,23 @@ export function validateRuleDeterministicCapabilityContracts(
       );
     }
     if (tool !== undefined) {
+      const declaredInputs = new Set(contract.requiredInputs);
+      const schemaInputs = new Set(tool.inputSchema.required ?? []);
       for (const input of contract.requiredInputs) {
-        if (!tool.inputSchema.required?.includes(input))
+        if (!schemaInputs.has(input))
           errors.push(
             `${capability}: '${input}' is not required by ${tool.name}`,
           );
       }
+      for (const input of schemaInputs) {
+        if (!declaredInputs.has(input))
+          errors.push(
+            `${capability}: required schema input '${input}' is missing from the contract`,
+          );
+      }
     }
   }
+  const boundRules = new Set(bindings.map(({ ruleKey }) => ruleKey));
   for (const binding of bindings) {
     if (!implemented.has(binding.ruleKey))
       errors.push(
@@ -3148,6 +3233,29 @@ export function validateRuleDeterministicCapabilityContracts(
     if (contracts[binding.capability] === undefined)
       errors.push(
         `${binding.ruleKey}: binds unknown capability ${binding.capability}`,
+      );
+  }
+  for (const [ruleKey, disposition] of Object.entries(dispositions)) {
+    if (!implemented.has(ruleKey))
+      errors.push(
+        `${ruleKey}: capability disposition is not backed by an implemented row`,
+      );
+    if (boundRules.has(ruleKey))
+      errors.push(
+        `${ruleKey}: has both a capability binding and a disposition`,
+      );
+    if (
+      disposition.ruleKey !== ruleKey ||
+      !disposition.reason ||
+      !disposition.replacingResponsibility ||
+      !disposition.nextState
+    )
+      errors.push(`${ruleKey}: capability disposition is incomplete`);
+  }
+  for (const ruleKey of implemented) {
+    if (!boundRules.has(ruleKey) && dispositions[ruleKey] === undefined)
+      errors.push(
+        `${ruleKey}: implemented row has no W13 capability binding or disposition`,
       );
   }
   return errors;
@@ -3553,6 +3661,20 @@ export interface RuleDispositionReport {
   }[];
   /** Positive, bounded ADR 0020 §3 contracts, not a capability inventory. */
   readonly deterministicCapabilities: readonly RuleDeterministicCapabilityContract[];
+  /** Identity-complete W13 outcome for each historical implemented row. */
+  readonly deterministicCapabilitySourceOutcomes: readonly (
+    | {
+        readonly ruleKey: string;
+        readonly outcome: 'bound';
+        readonly capabilities: readonly string[];
+        readonly coverageRuntimeOwner: readonly string[];
+        readonly coverageEvidence: readonly string[];
+      }
+    | (RuleDeterministicCapabilityDisposition & {
+        readonly coverageRuntimeOwner: readonly string[];
+        readonly coverageEvidence: readonly string[];
+      })
+  )[];
   /** Deferred, partial, unimplemented, design-blocked, and external work. */
   readonly unresolvedWork: readonly {
     readonly key: string;
@@ -3657,6 +3779,31 @@ export function buildRuleDispositionReport(
   }
   const byKey = <T extends { key: string }>(a: T, b: T) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
+  const deterministicCapabilitySourceOutcomes: RuleDispositionReport['deterministicCapabilitySourceOutcomes'][number][] =
+    [];
+  for (const [ruleKey, coverage] of Object.entries(coverageRegistry)) {
+    if (coverage.status !== 'implemented') continue;
+    const capabilities = RULE_DETERMINISTIC_CAPABILITY_BINDINGS.filter(
+      (binding) => binding.ruleKey === ruleKey,
+    ).map(({ capability }) => capability);
+    if (capabilities.length > 0) {
+      deterministicCapabilitySourceOutcomes.push({
+        ruleKey,
+        outcome: 'bound',
+        capabilities,
+        coverageRuntimeOwner: coverage.runtimeOwner ?? [],
+        coverageEvidence: coverage.evidence ?? [],
+      });
+      continue;
+    }
+    const disposition = RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS[ruleKey];
+    if (disposition !== undefined)
+      deterministicCapabilitySourceOutcomes.push({
+        ...disposition,
+        coverageRuntimeOwner: coverage.runtimeOwner ?? [],
+        coverageEvidence: coverage.evidence ?? [],
+      });
+  }
   return {
     scope: 'rule-record-classification-only',
     referencesProse,
@@ -3677,6 +3824,10 @@ export function buildRuleDispositionReport(
     deterministicCapabilities: Object.values(
       RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
     ).sort((a, b) => a.revision.localeCompare(b.revision)),
+    deterministicCapabilitySourceOutcomes:
+      deterministicCapabilitySourceOutcomes.sort((a, b) =>
+        a.ruleKey.localeCompare(b.ruleKey),
+      ),
     unresolvedWork: unresolvedWork.sort(byKey),
   };
 }

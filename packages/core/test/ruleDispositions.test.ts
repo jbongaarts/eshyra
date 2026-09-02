@@ -8,6 +8,7 @@ import {
   materializeEngineProcedureCoverage,
   RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
   RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+  RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
   RULE_DISPOSITIONS,
   type RuleDisposition,
   type RuleProcedureCoverage,
@@ -266,10 +267,14 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
 
     expect(contract).toMatchObject({
       revision: 'resolve-concentration-v1',
-      runtimeOwner: expect.arrayContaining([
+      runtimeOwner: [
         'packages/core/src/state/activeEffects.ts',
-      ]),
-      evidence: ['packages/core/test/activeEffects.test.ts'],
+        'packages/core/src/orchestrator/toolResolveConcentration.ts',
+      ],
+      evidence: [
+        'packages/core/test/activeEffects.test.ts',
+        'packages/core/test/tools.test.ts',
+      ],
     });
     expect(contract?.operation).toContain('concentration');
     expect(contract?.requiredInputs).not.toHaveLength(0);
@@ -289,7 +294,10 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       ).map(({ ruleKey }) => ruleKey),
     ).toEqual([
       'rule:ability-checks',
+      'rule:advantage-and-disadvantage',
       'rule:attack-rolls',
+      'rule:modifiers-to-the-roll',
+      'rule:proficiency-bonus',
       'rule:saving-throws',
     ]);
     expect(() =>
@@ -318,14 +326,45 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     ).toBeDefined();
   });
 
-  it('rejects missing or non-implemented deterministic capability contracts', () => {
+  it('accounts for every implemented row with a binding or explicit disposition', () => {
+    const report = buildRuleDispositionReport();
+    const implementedKeys = Object.entries(ENGINE_PROCEDURE_COVERAGE)
+      .filter(([, coverage]) => coverage.status === 'implemented')
+      .map(([ruleKey]) => ruleKey)
+      .sort();
+    expect(report.deterministicCapabilitySourceOutcomes).toHaveLength(39);
+    expect(
+      report.deterministicCapabilitySourceOutcomes
+        .map(({ ruleKey }) => ruleKey)
+        .sort(),
+    ).toEqual(implementedKeys);
+    expect(
+      RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS['rule:spell-slots'],
+    ).toMatchObject({
+      outcome: 'not-positively-selected',
+      nextState: expect.stringContaining('validated operation'),
+    });
+    expect(
+      report.deterministicCapabilitySourceOutcomes.find(
+        ({ ruleKey }) => ruleKey === 'rule:casting-a-spell-at-a-higher-level',
+      ),
+    ).toMatchObject({
+      outcome: 'bound',
+      capabilities: ['resolve-spell-upcast-v1'],
+    });
     expect(
       validateRuleDeterministicCapabilityContracts(
         { 'rule:x': { status: 'implemented' } },
         {},
         [],
+        {},
       ),
-    ).toEqual([]);
+    ).toContain(
+      'rule:x: implemented row has no W13 capability binding or disposition',
+    );
+  });
+
+  it('rejects capability operation and required-input contract drift', () => {
     expect(
       validateRuleDeterministicCapabilityContracts(
         {},
@@ -338,8 +377,24 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
           },
         },
         [],
+        {},
       ),
     ).toContain('rule:x: capability operation is not a registered tool');
+    expect(
+      validateRuleDeterministicCapabilityContracts(
+        {},
+        {
+          'resolve-check-v1': {
+            ...RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['resolve-check-v1'],
+            requiredInputs: ['kind'],
+          },
+        },
+        [],
+        {},
+      ),
+    ).toContain(
+      "resolve-check-v1: required schema input 'reason' is missing from the contract",
+    );
   });
 
   it('registers every literally-named supporting tool in primitives, e.g. consumables/remove_item', () => {
