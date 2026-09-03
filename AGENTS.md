@@ -140,6 +140,9 @@ from that worktree root. `verify:worktree` resolves the active git root, runs
 `npm run format` (`biome check --write .`) for safe fixes and import
 organization, then runs the repo checks and tests. (The npm scripts wrap
 `scripts/agent-preflight-main.mjs` and `scripts/verify-current-worktree.mjs`.)
+Each linked worktree must have its own dependencies installed with `npm ci`
+before verification; the verification script rejects `@eshyra/core` or
+`@eshyra/cli` resolutions that point outside the active worktree.
 
 **`verify:worktree` mutates the tree** — the formatter writes fixes — so it must
 run *before* you commit, never after. Verification may be run earlier when a

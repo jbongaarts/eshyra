@@ -1,7 +1,18 @@
-import { readFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { buildVerificationEnvironment } from '../../../scripts/verification-environment.mjs';
+import {
+  verifyWorkspaceResolution,
+  // @ts-expect-error - .mjs tooling script without type declarations
+} from '../../../scripts/verify-workspace-resolution.mjs';
 
 interface PackageJson {
   engines?: { node?: string };
@@ -48,6 +59,59 @@ function expectDependabotMajorIgnore(dependabot: string, dependency: string) {
 }
 
 describe('Node runtime policy', () => {
+  const temporaryRoots: string[] = [];
+
+  afterEach(() => {
+    for (const root of temporaryRoots.splice(0)) {
+      rmSync(root, { force: true, recursive: true });
+    }
+  });
+
+  function createWorkspaceFixture(targetRoot: string, linkRoot: string) {
+    mkdirSync(join(targetRoot, 'packages', 'core'), { recursive: true });
+    mkdirSync(join(targetRoot, 'packages', 'cli'), { recursive: true });
+    mkdirSync(join(linkRoot, 'node_modules', '@eshyra'), { recursive: true });
+    for (const workspace of ['core', 'cli']) {
+      const link = join(linkRoot, 'node_modules', '@eshyra', workspace);
+      const target = join(targetRoot, 'packages', workspace);
+      symlinkSync(
+        target,
+        link,
+        process.platform === 'win32' ? 'junction' : 'dir',
+      );
+    }
+  }
+
+  it('accepts workspace links that resolve inside the active worktree', () => {
+    const root = mkdtempSync(join(tmpdir(), 'eshyra-worktree-'));
+    temporaryRoots.push(root);
+
+    createWorkspaceFixture(root, root);
+
+    expect(() => verifyWorkspaceResolution(root)).not.toThrow();
+  });
+
+  it('rejects workspace links that resolve outside the active worktree', () => {
+    const root = mkdtempSync(join(tmpdir(), 'eshyra-worktree-'));
+    const externalRoot = mkdtempSync(join(tmpdir(), 'eshyra-parent-'));
+    temporaryRoots.push(root, externalRoot);
+
+    createWorkspaceFixture(externalRoot, root);
+
+    expect(() => verifyWorkspaceResolution(root)).toThrow(
+      /resolves outside the active worktree/,
+    );
+  });
+
+  it('rejects a worktree without installed workspace links', () => {
+    const root = mkdtempSync(join(tmpdir(), 'eshyra-worktree-'));
+    temporaryRoots.push(root);
+
+    expect(() => verifyWorkspaceResolution(root)).toThrow(
+      /Run "npm ci" from this worktree before verification/,
+    );
+  });
+
   it('supports Node 24 with a matching native SQLite dependency line', () => {
     const root = readPackageJson('package.json');
     const core = readPackageJson('packages/core/package.json');
@@ -258,6 +322,12 @@ describe('Node runtime policy', () => {
     expect(verify).toContain("process.argv.includes('--sandbox')");
     expect(verify).toContain(
       'buildVerificationEnvironment(process.env, sandboxMode)',
+    );
+    expect(verify).toContain('verifyWorkspaceResolution(repoRoot)');
+    const resolution = readText('scripts/verify-workspace-resolution.mjs');
+    expect(resolution).toContain('realpathSync(packagePath)');
+    expect(resolution).toContain(
+      'Run "npm ci" from this worktree before verification.',
     );
     const verificationEnvironment = readText(
       'scripts/verification-environment.mjs',
