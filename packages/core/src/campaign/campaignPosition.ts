@@ -58,3 +58,26 @@ export function getCurrentCampaignPosition(
         ordinal: row.ordinal,
       };
 }
+
+/** Read the persisted chronology anchor for one campaign ordinal. */
+export function getCampaignPositionAtOrdinal(
+  db: Db,
+  campaignId: string,
+  ordinal: number,
+): CampaignPosition | undefined {
+  const row = db
+    .prepare(
+      `SELECT session_id, turn_id, ordinal FROM campaign_turn_position
+       WHERE campaign_id = ? AND ordinal = ?`,
+    )
+    .get(campaignId, ordinal) as
+    | { session_id: string; turn_id: string; ordinal: number }
+    | undefined;
+  return row === undefined
+    ? undefined
+    : {
+        sessionId: row.session_id,
+        turnId: row.turn_id,
+        ordinal: row.ordinal,
+      };
+}

@@ -21,6 +21,8 @@ export interface CampaignAmbiguityContext {
 export interface CampaignRulesContext {
   readonly position: string;
   readonly rules: readonly CampaignRuleProjection[];
+  /** Active rulings whose ambiguity is absent from the bound pack. */
+  readonly unboundRulings: readonly CampaignRulingProjection[];
   readonly ambiguities: readonly CampaignAmbiguityContext[];
 }
 
@@ -61,10 +63,16 @@ export function assembleCampaignRulesContext(
   stack: ResolvedRulesStack,
 ): CampaignRulesContext {
   const ambiguities = ambiguitiesFromStack(stack);
+  const ambiguityIds = new Set(ambiguities.map((item) => item.id));
+  const activeRules = listActiveCampaignRulesAtPosition(
+    db,
+    campaignId,
+    position,
+  );
   const rulings = listActiveRulingsForAmbiguitiesAtPosition(
     db,
     campaignId,
-    ambiguities.map((item) => item.id),
+    [...ambiguityIds],
     position,
   );
   const rulingByAmbiguity = new Map<string, CampaignRulingProjection>();
@@ -77,9 +85,26 @@ export function assembleCampaignRulesContext(
   }
   return {
     position,
-    rules: listActiveCampaignRulesAtPosition(db, campaignId, position)
+    rules: activeRules
       .filter((rule) => rule.provenance.kind !== 'ambiguity')
       .map(projectCampaignRule),
+    unboundRulings: activeRules
+      .filter(
+        (
+          rule,
+        ): rule is typeof rule & {
+          provenance: Extract<typeof rule.provenance, { kind: 'ambiguity' }>;
+        } =>
+          rule.provenance.kind === 'ambiguity' &&
+          !ambiguityIds.has(rule.provenance.ambiguityId),
+      )
+      .map((rule) => projectCampaignRule(rule))
+      .filter(
+        (rule): rule is CampaignRulingProjection =>
+          rule.ruleKind === 'ruling' &&
+          'selectedInterpretationId' in rule &&
+          typeof rule.selectedInterpretationId === 'string',
+      ),
     ambiguities: ambiguities.map((ambiguity) => ({
       ambiguity,
       ruling: rulingByAmbiguity.get(ambiguity.id),

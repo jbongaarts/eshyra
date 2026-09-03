@@ -13,9 +13,9 @@ import { requireNonEmpty } from '../validation.js';
  * not persist it), while the session and turn anchors make the value useful
  * in diagnostics and replay. The ordinal is authoritative for chronology;
  * session and turn IDs are diagnostic anchors and deterministic tie-breakers.
- * The ordinal leads so byte order over canonical positions equals chronological
- * order, keeping downstream SQL ordering and range predicates correct without
- * parsing.
+ * The ordinal leads so canonical positions remain compact and stable; consumers
+ * that need to compare equal-ordinal rule anchors use the decoded position
+ * comparator.
  */
 
 export class CampaignRuleError extends Error {
@@ -307,9 +307,10 @@ export function compareCampaignPositions(
   a: CampaignPosition | string,
   b: CampaignPosition | string,
 ): number {
-  // Canonical persisted positions put the unique campaign ordinal first, so
-  // this decoded comparator agrees with SQL BINARY ordering of those values.
-  // Equal ordinals cannot be persisted for one campaign.
+  // The ordinal is the primary chronology key. Session and turn anchors are
+  // decoded before comparing so equal-ordinal rows (which can exist in the
+  // rule table even though turn positions themselves are unique) use the same
+  // ordering as every other in-memory consumer.
   const left = typeof a === 'string' ? parseCampaignPosition(a) : a;
   const right = typeof b === 'string' ? parseCampaignPosition(b) : b;
   return (

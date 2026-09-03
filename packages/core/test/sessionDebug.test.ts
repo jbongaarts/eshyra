@@ -30,6 +30,9 @@ describe('sanitizePromptSectionName', () => {
       '## Game State',
       '## Player Input',
       '## Available Tools',
+      '## Character Chronicle',
+      '## Adventure Module (DM-only)',
+      '## Campaign Rules',
     ]) {
       expect(sanitizePromptSectionName(label)).toBe(label);
     }

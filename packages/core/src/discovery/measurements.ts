@@ -54,6 +54,7 @@ export interface DiscoveryMeasurements {
   readonly m5: {
     readonly requestedRuleRecordKeys: readonly string[];
     readonly requestedAmbiguityIds: readonly string[];
+    readonly allActiveRulingsRequested: boolean;
     /** How many times each seam query actually executed. */
     readonly ruleQueryCount: number;
     readonly rulingQueryCount: number;
@@ -327,6 +328,9 @@ export function measureDiscovery(
         ...trace.ruleJoin.requestedAmbiguityIds,
         ...trace.lateRuleJoin.requestedAmbiguityIds,
       ],
+      allActiveRulingsRequested:
+        trace.ruleJoin.rulingQueryScope === 'all-active' ||
+        trace.lateRuleJoin.rulingQueryScope === 'all-active',
       ruleQueryCount:
         (trace.ruleJoin.ruleQueryExecuted ? 1 : 0) +
         (trace.lateRuleJoin.ruleQueryExecuted ? 1 : 0),
@@ -351,6 +355,12 @@ export function measureDiscovery(
       ],
       unexpandedPromotions: trace.unexpandedPromotions,
       unqueriedAmbiguityIds: (() => {
+        if (
+          trace.ruleJoin.rulingQueryScope === 'all-active' ||
+          trace.lateRuleJoin.rulingQueryScope === 'all-active'
+        ) {
+          return [];
+        }
         const offered = new Set([
           ...trace.ruleJoin.requestedAmbiguityIds,
           ...trace.lateRuleJoin.requestedAmbiguityIds,

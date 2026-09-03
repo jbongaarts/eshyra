@@ -1025,11 +1025,16 @@ export function renderContextMessage(ctx: AssembledContext): string {
 
   if (
     ctx.campaignRules.rules.length > 0 ||
+    ctx.campaignRules.unboundRulings.length > 0 ||
     ctx.campaignRules.ambiguities.length > 0
   ) {
     const rules = ctx.campaignRules.rules.map(
       (rule) =>
         `- [${rule.ruleKind}] ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): ${rule.prose ?? ''}`,
+    );
+    const unboundRulings = ctx.campaignRules.unboundRulings.map(
+      (ruling) =>
+        `- [ruling] ${ruling.ruleIdentity} (${ruling.provenance}; ambiguity absent from current pack; effective ${ruling.effectivePosition}; records: ${ruling.governingRecordKeys.join(', ') || '(none)'}): ${ruling.prose ?? ''}`,
     );
     const ambiguityLines = ctx.campaignRules.ambiguities.flatMap(
       ({ ambiguity, ruling }) => [
@@ -1043,7 +1048,7 @@ export function renderContextMessage(ctx: AssembledContext): string {
       ],
     );
     sections.push(
-      `## Campaign Rules\n${[...rules, ...ambiguityLines].join('\n')}`,
+      `## Campaign Rules\n${[...rules, ...unboundRulings, ...ambiguityLines].join('\n')}`,
     );
   }
 

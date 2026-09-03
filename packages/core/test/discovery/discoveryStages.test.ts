@@ -1124,6 +1124,8 @@ describe('offline discovery stage boundaries', () => {
       expect(trace.ruleJoin.ruleQueryExecuted).toBe(true);
       expect(trace.lateRuleJoin.ruleQueryExecuted).toBe(false);
       expect(trace.lateRuleJoin.requestedRuleRecordKeys).toEqual([]);
+      expect(trace.ruleJoin.rulingQueryScope).toBe('all-active');
+      expect(trace.lateRuleJoin.rulingQueryScope).toBe('requested-ambiguities');
 
       // The late ruling query did execute, and its ambiguity request is real.
       expect(trace.lateRuleJoin.rulingQueryExecuted).toBe(true);
@@ -1134,6 +1136,7 @@ describe('offline discovery stage boundaries', () => {
       const measurements = measureDiscovery(trace);
       // M5's rule-request evidence derives only from the first call...
       expect(measurements.m5.ruleQueryCount).toBe(1);
+      expect(measurements.m5.allActiveRulingsRequested).toBe(true);
       expect(measurements.m5.requestedRuleRecordKeys).toEqual(
         trace.ruleJoin.requestedRuleRecordKeys,
       );

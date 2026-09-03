@@ -71,6 +71,9 @@ const KNOWN_PROMPT_SECTION_LABELS: ReadonlySet<string> = new Set([
   '## Game State',
   '## Current Scene',
   '## Player Input',
+  '## Character Chronicle',
+  '## Adventure Module (DM-only)',
+  '## Campaign Rules',
 ]);
 
 /**
