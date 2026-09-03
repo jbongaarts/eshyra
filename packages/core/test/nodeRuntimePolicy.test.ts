@@ -259,6 +259,11 @@ describe('Node runtime policy', () => {
     expect(verify).toContain(
       'buildVerificationEnvironment(process.env, sandboxMode)',
     );
+    expect(verify).toContain('verifyWorkspaceResolution(repoRoot)');
+    expect(verify).toContain('realpathSync(packagePath)');
+    expect(verify).toContain(
+      'Run "npm ci" from this worktree before verification.',
+    );
     const verificationEnvironment = readText(
       'scripts/verification-environment.mjs',
     );
