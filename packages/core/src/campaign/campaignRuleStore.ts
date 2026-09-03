@@ -149,6 +149,44 @@ function writeRule(
       'a revoked campaign rule requires revokedPosition',
     );
   }
+  if (
+    rule.status === 'revoked' &&
+    compareCampaignPositions(
+      options.revokedPosition as CampaignPosition,
+      rule.effectivePosition,
+    ) < 0
+  ) {
+    throw new CampaignRuleError(
+      `campaign rule '${rule.ruleIdentity}' cannot be revoked before its effective position`,
+    );
+  }
+  if (rule.status === 'superseded') {
+    if (rule.supersededBy === null) {
+      throw new CampaignRuleError(
+        `superseded campaign rule '${rule.ruleIdentity}' requires a successor`,
+      );
+    }
+    const successor = getCampaignRule(db, {
+      campaignId: rule.campaignId,
+      ruleIdentity: rule.supersededBy,
+    });
+    if (successor === undefined) {
+      throw new CampaignRuleError(
+        `supersededBy ${rule.supersededBy} does not exist in campaign '${rule.campaignId}'`,
+      );
+    }
+    if (
+      compareCampaignPositions(
+        successor.effectivePosition,
+        rule.effectivePosition,
+      ) < 0
+    ) {
+      throw new CampaignRuleError(
+        `successor '${successor.ruleIdentity}' cannot take effect before '${rule.ruleIdentity}'`,
+      );
+    }
+    validateCampaignRules([rule, successor], options.validation);
+  }
   const p = rule.provenance;
   db.prepare(`INSERT INTO campaign_rule (
     campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
@@ -265,6 +303,13 @@ export function supersedeCampaignRule(
     throw new CampaignRuleError(
       `campaign rule '${input.ruleIdentity}' does not exist in campaign '${input.campaignId}'`,
     );
+  if (prior.status !== 'active') {
+    throw new CampaignRuleError(
+      prior.status === 'superseded'
+        ? `campaign rule '${input.ruleIdentity}' is already superseded`
+        : `campaign rule '${input.ruleIdentity}' is revoked`,
+    );
+  }
   if (input.successor.ruleIdentity === input.ruleIdentity)
     throw new CampaignRuleError('a rule cannot supersede itself');
   if (
@@ -285,6 +330,7 @@ export function supersedeCampaignRule(
     throw new CampaignRuleError(
       `campaign rule '${input.successor.ruleIdentity}' already exists`,
     );
+  validateCampaignRule(prior, input.validation);
   validateCampaignRules(
     [
       {
