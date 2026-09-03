@@ -1,15 +1,20 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type {
   AbilityScoreName,
+  CampaignPosition,
+  CampaignRule,
   CharacterSheet,
   Db,
   FinalizedAbilityScore,
 } from '../src/internal.js';
 import {
   appendSceneLog,
+  assembleCampaignRulesContext,
   assembleContext,
   closeOpenArcAndOpenNext,
   closeScene,
+  createCampaignRule,
   createCharacterChronicleStore,
   createDefaultToolRegistry,
   createSeededRng,
@@ -17,6 +22,7 @@ import {
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
   ensureCharacterRegistrySchema,
+  formatCampaignPosition,
   memoryDrilldown,
   mutateState,
   openArcIfMissing,
@@ -24,10 +30,13 @@ import {
   openScene,
   recordSceneSummary,
   renderContextMessage,
+  revokeCampaignRule,
   rollupSessionRecap,
   stampSessionWithOpenArc,
   startAdventureRun,
+  supersedeCampaignRule,
 } from '../src/internal.js';
+import { resolveStrictCampaignRulesStack } from '../src/state/campaignRecordLookup.js';
 import {
   NEARBY_INVENTORY_MAX_BYTES,
   utf8ByteLength,
@@ -45,6 +54,34 @@ const ABILITIES: AbilityScoreName[] = [
   'wisdom',
   'charisma',
 ];
+
+const campaignPosition = (ordinal: number): CampaignPosition => ({
+  sessionId: `session-${ordinal}`,
+  turnId: `turn-${ordinal}`,
+  ordinal,
+});
+
+function campaignRule(
+  identity: string,
+  ordinal: number,
+  overrides: Partial<CampaignRule> = {},
+): CampaignRule {
+  return {
+    ruleIdentity: identity,
+    campaignId: CAMPAIGN,
+    ruleKind: 'house-rule',
+    status: 'active',
+    origin: 'player-approved',
+    provenance: { kind: 'house-rule', rationale: 'test' },
+    effectivePosition: campaignPosition(ordinal),
+    temporalMode: { mode: 'prospective' },
+    supersededBy: null,
+    scope: 'test',
+    governingRecordKeys: ['record:test'],
+    prose: `Prose for ${identity}`,
+    ...overrides,
+  };
+}
 
 function logTurn(
   db: Db,
@@ -107,6 +144,147 @@ function testSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
 }
 
 describe('Context Assembler', () => {
+  it('projects position-active rules, source associations, and immutable ambiguities', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const packPath = new URL(
+      '../data/rules-packs/rules__dnd5e-srd-5.1/records.json',
+      import.meta.url,
+    );
+    const packBefore = readFileSync(packPath);
+    createCampaignRule(db, campaignRule('future-rule', 4));
+    createCampaignRule(db, campaignRule('ordered-z', 1));
+    createCampaignRule(db, campaignRule('ordered-a', 1));
+    const oldRule = campaignRule('superseded-rule', 1);
+    createCampaignRule(db, oldRule);
+    supersedeCampaignRule(db, {
+      campaignId: CAMPAIGN,
+      ruleIdentity: oldRule.ruleIdentity,
+      successor: campaignRule('successor-rule', 3),
+    });
+    const revokedRule = campaignRule('revoked-rule', 1);
+    createCampaignRule(db, revokedRule);
+    revokeCampaignRule(db, {
+      campaignId: CAMPAIGN,
+      ruleIdentity: revokedRule.ruleIdentity,
+      revokedPosition: campaignPosition(3),
+    });
+
+    const atOne = assembleCampaignRulesContext(
+      db,
+      CAMPAIGN,
+      formatCampaignPosition(campaignPosition(1)),
+      resolveStrictCampaignRulesStack(db),
+    );
+    expect(atOne.rules.map((rule) => rule.ruleIdentity)).toEqual([
+      'ordered-a',
+      'ordered-z',
+      'revoked-rule',
+      'superseded-rule',
+    ]);
+    expect(
+      atOne.rules.find((rule) => rule.ruleIdentity === 'superseded-rule'),
+    ).toMatchObject({
+      governingRecordKeys: ['record:test'],
+    });
+    expect(
+      atOne.rules.some((rule) => rule.ruleIdentity === 'future-rule'),
+    ).toBe(false);
+    expect(atOne.ambiguities.map(({ ambiguity }) => ambiguity.id)).toEqual([
+      'ambiguity:create-undead-ghast-wight-composition',
+      'ambiguity:cube-of-force-same-face-duration-reset',
+      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+    ]);
+    for (const { ambiguity, ruling } of atOne.ambiguities) {
+      expect(ambiguity.question).toEqual(expect.any(String));
+      expect(ambiguity.interpretations.length).toBeGreaterThan(0);
+      expect(ruling).toBeUndefined();
+    }
+
+    const later = assembleCampaignRulesContext(
+      db,
+      CAMPAIGN,
+      formatCampaignPosition(campaignPosition(4)),
+      resolveStrictCampaignRulesStack(db),
+    );
+    expect(later.rules.map((rule) => rule.ruleIdentity)).toContain(
+      'successor-rule',
+    );
+    expect(later.rules.map((rule) => rule.ruleIdentity)).toContain(
+      'future-rule',
+    );
+    expect(later.rules.map((rule) => rule.ruleIdentity)).not.toContain(
+      'superseded-rule',
+    );
+    expect(later.rules.map((rule) => rule.ruleIdentity)).not.toContain(
+      'revoked-rule',
+    );
+
+    const familiar = later.ambiguities.find(({ ambiguity }) =>
+      ambiguity.id.includes('find-familiar'),
+    );
+    if (familiar === undefined) throw new Error('missing familiar ambiguity');
+    const interpretation = familiar.ambiguity.interpretations[0];
+    if (interpretation === undefined) throw new Error('missing interpretation');
+    const ruling = campaignRule('familiar-ruling', 3, {
+      ruleKind: 'ruling',
+      provenance: {
+        kind: 'ambiguity',
+        ambiguityId: familiar.ambiguity.id,
+        selectedInterpretationId: interpretation.id,
+      },
+      governingRecordKeys: ['spell:find-familiar'],
+    });
+    createCampaignRule(db, ruling, {
+      validation: { ambiguity: familiar.ambiguity },
+    });
+    const resolved = assembleCampaignRulesContext(
+      db,
+      CAMPAIGN,
+      formatCampaignPosition(campaignPosition(4)),
+      resolveStrictCampaignRulesStack(db),
+    );
+    const resolvedFamiliar = resolved.ambiguities.find(
+      ({ ambiguity }) => ambiguity.id === familiar.ambiguity.id,
+    );
+    expect(resolvedFamiliar?.ruling).toMatchObject({
+      ambiguityId: familiar.ambiguity.id,
+      selectedInterpretationId: interpretation.id,
+      governingRecordKeys: ['spell:find-familiar'],
+    });
+    expect(resolvedFamiliar?.ambiguity.question).toBe(
+      familiar.ambiguity.question,
+    );
+
+    const unresolvedMessage = renderContextMessage(
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: formatCampaignPosition(campaignPosition(1)),
+        sessionId: SESSION,
+        playerInput: 'continue',
+      }),
+    );
+    expect(unresolvedMessage).toContain(
+      'UNRESOLVED: do not assert a canonical answer or silently choose an interpretation.',
+    );
+    const resolvedMessage = renderContextMessage(
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: formatCampaignPosition(campaignPosition(4)),
+        sessionId: SESSION,
+        playerInput: 'continue',
+      }),
+    );
+    expect(resolvedMessage).toContain(
+      `Active ruling familiar-ruling (${interpretation.id})`,
+    );
+    expect(resolvedMessage).toContain(interpretation.summary);
+    const packAfter = readFileSync(packPath);
+    expect(packBefore).toEqual(packAfter);
+    db.close();
+  }, 120000);
+
   it('renders the acting character wallet, including legacy zero balances', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     const store = createSqliteCharacterSheetStore(db);
@@ -117,6 +295,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'How much money do I have?',
     });
@@ -128,6 +307,7 @@ describe('Context Assembler', () => {
     const legacy = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'How much money do I have?',
     });
@@ -140,6 +320,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'How much money do I have?',
     });
@@ -159,6 +340,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'What do I carry?',
     });
@@ -174,6 +356,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'What equipment do I have?',
     });
@@ -215,6 +398,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'I ask about the missing caravan.',
     });
@@ -272,6 +456,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'What should I expect if I investigate?',
     });
@@ -328,6 +513,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'Remind me what Sela said.',
     });
@@ -353,6 +539,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'continue',
       sceneTranscriptLimit: 4,
@@ -437,6 +624,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'continue',
     });
@@ -560,6 +748,7 @@ describe('Context Assembler', () => {
     const context = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'I pick up the ring.',
     });
@@ -655,6 +844,7 @@ describe('Context Assembler', () => {
     const context = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'look around',
     });
@@ -723,6 +913,7 @@ describe('Context Assembler', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
+        campaignPosition: 'test-position',
         sessionId: SESSION,
         playerInput: 'look around',
       }).state.nearbyInventory,
@@ -750,6 +941,7 @@ describe('Context Assembler', () => {
     const context = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'look around',
     });
@@ -796,6 +988,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'continue',
     });
@@ -874,6 +1067,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'continue',
       characterChronicle: chronicle,
@@ -935,6 +1129,7 @@ describe('Context Assembler', () => {
     const defaultCtx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'continue',
       characterChronicle: chronicle,
@@ -942,6 +1137,7 @@ describe('Context Assembler', () => {
     const explicitCtx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'continue',
       characterChronicle: chronicle,
@@ -995,6 +1191,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'continue',
     });
@@ -1018,6 +1215,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: 'session-7',
       playerInput: 'continue',
     });
@@ -1089,6 +1287,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: 's5',
       playerInput: 'continue',
     });
@@ -1120,6 +1319,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'continue',
       recentSessionLimit: 1,
@@ -1135,6 +1335,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'hello',
     });
@@ -1169,6 +1370,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'I order food.',
     });
@@ -1193,6 +1395,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'look around',
     });
@@ -1227,6 +1430,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'search the cellar',
       resolveAdventureModule: (id) => (id === module.id ? module : undefined),
@@ -1259,6 +1463,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
+      campaignPosition: 'test-position',
       sessionId: SESSION,
       playerInput: 'look around',
       resolveAdventureModule: () => undefined,

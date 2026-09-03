@@ -121,6 +121,7 @@ describe('acting-character attribution', () => {
     const assembled = assembleContext({
       db,
       campaignId: 'campaign-1',
+      campaignPosition: 'test-position',
       sessionId: 'session-1',
       playerInput: 'look around',
       actingCharacterId: 'pc-2',

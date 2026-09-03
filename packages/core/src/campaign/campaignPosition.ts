@@ -1,6 +1,6 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
-import type { CampaignPosition } from './campaignRules.js';
+import { type CampaignPosition, CampaignRuleError } from './campaignRules.js';
 
 /** Resolve the durable chronology anchor for a turn, assigning it once. */
 export function resolveCampaignPosition(
@@ -28,7 +28,7 @@ export function resolveCampaignPosition(
       | { session_id: string; turn_id: string; ordinal: number }
       | undefined;
     if (row === undefined)
-      throw new Error('campaign turn position was not persisted');
+      throw new CampaignRuleError('campaign turn position was not persisted');
     return {
       sessionId: row.session_id,
       turnId: row.turn_id,

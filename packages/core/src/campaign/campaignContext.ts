@@ -43,7 +43,9 @@ function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
       }
     }
   }
-  return [...found.values()].sort((a, b) => a.id.localeCompare(b.id));
+  return [...found.values()].sort((a, b) =>
+    a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+  );
 }
 
 /** Shared DM/auditor projection of campaign prose and immutable ambiguity metadata. */

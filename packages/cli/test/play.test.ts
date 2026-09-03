@@ -388,6 +388,7 @@ describe('runPlay', () => {
     const ctx = assembleContext({
       db,
       campaignId: cid,
+      campaignPosition: 'test-position',
       sessionId: 'next-session',
       playerInput: 'I think back to last time…',
     });
@@ -1293,6 +1294,7 @@ describe('runPlay', () => {
     const ctx3 = assembleContext({
       db,
       campaignId: cid,
+      campaignPosition: 'test-position',
       sessionId: sid6,
       playerInput: 'what happened before?',
       recentSessionLimit: 3,
@@ -1305,6 +1307,7 @@ describe('runPlay', () => {
     const ctx5 = assembleContext({
       db,
       campaignId: cid,
+      campaignPosition: 'test-position',
       sessionId: sid6,
       playerInput: 'what happened before?',
       recentSessionLimit: 5,

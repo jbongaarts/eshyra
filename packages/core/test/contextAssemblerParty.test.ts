@@ -42,6 +42,7 @@ function assemble(db: Db) {
   return assembleContext({
     db,
     campaignId: CAMPAIGN,
+    campaignPosition: 'test-position',
     sessionId: SESSION,
     playerInput: 'continue',
   });
@@ -104,6 +105,7 @@ describe('context assembler party support', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
+        campaignPosition: 'test-position',
         sessionId: SESSION,
         playerInput: 'continue',
         actingCharacterId: 'pc-2',
@@ -133,6 +135,7 @@ describe('context assembler stale/invalid active character', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
+        campaignPosition: 'test-position',
         sessionId: SESSION,
         playerInput: 'continue',
         actingCharacterId: 'pc-missing',
@@ -152,6 +155,7 @@ describe('context assembler stale/invalid active character', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
+        campaignPosition: 'test-position',
         sessionId: SESSION,
         playerInput: 'continue',
         actingCharacterId: 'comp-1',

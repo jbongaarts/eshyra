@@ -256,6 +256,7 @@ describe('encounter combatants', () => {
     const assembled = assembleContext({
       db,
       campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      campaignPosition: 'test-position',
       sessionId: sessionB,
       playerInput: 'I resume the fight.',
       resolveAdventureModule: (moduleId) =>
@@ -485,6 +486,7 @@ describe('encounter combatants', () => {
     const assembled = assembleContext({
       db,
       campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      campaignPosition: 'test-position',
       sessionId: DEFAULT_TEST_SESSION_ID,
       playerInput: 'I face Grik again.',
       resolveAdventureModule: (moduleId) =>

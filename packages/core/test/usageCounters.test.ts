@@ -895,6 +895,7 @@ describe('context snapshot', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
+        campaignPosition: 'test-position',
         sessionId: DEFAULT_TEST_SESSION_ID,
         playerInput: 'What now?',
       }),

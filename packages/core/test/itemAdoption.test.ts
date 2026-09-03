@@ -1094,6 +1094,7 @@ describe('legacy magic-item adoption', () => {
       assembleContext({
         db: s.db,
         campaignId: 'campaign-1',
+        campaignPosition: 'test-position',
         sessionId: 'session-1',
         playerInput: 'Inspect the quarantined item.',
       }),
@@ -1469,6 +1470,7 @@ describe('legacy magic-item adoption', () => {
         assembleContext({
           db: s.db,
           campaignId: 'campaign-1',
+          campaignPosition: 'test-position',
           sessionId: 'session-1',
           playerInput: 'Inspect the legacy item.',
         }),

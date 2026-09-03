@@ -164,7 +164,7 @@ export interface ContextAssemblyInput {
    */
   characterChronicle?: CharacterChronicleStore;
   /** Durable position assigned by the turn coordinator. */
-  campaignPosition?: string;
+  campaignPosition: string;
   /** Resolves non-bundled packs in the campaign binding. */
   resolveRulesPack?: import('../state/campaignRecordLookup.js').CampaignRulesPackResolver;
 }
@@ -600,15 +600,12 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     state.clock.currentLocationId,
     input.resolveAdventureModule,
   );
-  const campaignRules =
-    input.campaignPosition === undefined
-      ? { position: '', rules: [], ambiguities: [] }
-      : assembleCampaignRulesContext(
-          input.db,
-          input.campaignId,
-          input.campaignPosition,
-          resolveStrictCampaignRulesStack(input.db, input.resolveRulesPack),
-        );
+  const campaignRules = assembleCampaignRulesContext(
+    input.db,
+    input.campaignId,
+    input.campaignPosition,
+    resolveStrictCampaignRulesStack(input.db, input.resolveRulesPack),
+  );
   const characterChronicle = assembleCharacterChronicle(
     input.db,
     state.character.id,

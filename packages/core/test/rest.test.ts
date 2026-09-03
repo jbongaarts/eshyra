@@ -505,6 +505,7 @@ describe('F7 rest qualification boundary', () => {
         assembleContext({
           db,
           campaignId: CTX.campaignId,
+          campaignPosition: 'test-position',
           sessionId: CTX.sessionId,
           playerInput: '',
           actingCharacterId: 'pc-1',
