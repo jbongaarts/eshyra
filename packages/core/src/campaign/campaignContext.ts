@@ -30,6 +30,9 @@ export interface CampaignRulesContext {
   readonly ambiguities: readonly CampaignAmbiguityContext[];
 }
 
+/** Pack-authoring defects are recoverable on the per-turn context path. */
+export class CampaignRulesPackAuthoringError extends CampaignRuleError {}
+
 function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
   const found = new Map<
     string,
@@ -56,7 +59,7 @@ function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
       const ambiguity = value as RulesAmbiguity;
       const previous = found.get(ambiguity.id);
       if (previous !== undefined)
-        throw new CampaignRuleError(
+        throw new CampaignRulesPackAuthoringError(
           `ambiguity '${ambiguity.id}' is declared by records '${previous.recordKey}' and '${entry.record.key}'`,
         );
       found.set(ambiguity.id, { ambiguity, recordKey: entry.record.key });

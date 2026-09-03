@@ -975,6 +975,46 @@ describe('offline discovery stage boundaries', () => {
       expect(measureDiscovery(trace).m5.unresolvedAmbiguityIds).toContain(
         LATE_AMBIGUITY_ID,
       );
+
+      const firstCandidate = trace.packet.packet.candidates[0];
+      if (firstCandidate === undefined)
+        throw new Error('missing packet candidate');
+      const unofferedAmbiguity = {
+        id: 'ambiguity:not-offered',
+        question: 'Synthetic ambiguity omitted from seam calls',
+        source: [{ locator: 'test', clauseId: 'not-offered' }],
+        affects: [firstCandidate.identity.key],
+        interpretations: [{ id: 'test', summary: 'Synthetic interpretation' }],
+        canonicalResolution: null,
+        runtimeDisposition: {
+          status: 'engine-pending',
+          owner: 'campaign-ruling',
+        },
+      } as const;
+      const packetWithUnqueriedAmbiguity = {
+        ...trace,
+        packet: {
+          ...trace.packet,
+          packet: {
+            ...trace.packet.packet,
+            candidates: trace.packet.packet.candidates.map(
+              (candidate, index) =>
+                index === 0
+                  ? {
+                      ...candidate,
+                      ambiguities: [
+                        ...candidate.ambiguities,
+                        unofferedAmbiguity,
+                      ],
+                    }
+                  : candidate,
+            ),
+          },
+        },
+      };
+      expect(
+        measureDiscovery(packetWithUnqueriedAmbiguity).m5.unqueriedAmbiguityIds,
+      ).toEqual(['ambiguity:not-offered']);
     } finally {
       db.close();
     }

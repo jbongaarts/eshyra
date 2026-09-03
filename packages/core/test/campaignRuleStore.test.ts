@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { CampaignPosition, CampaignRule } from '../src/internal.js';
 import {
   assembleCampaignRulesContext,
@@ -191,7 +191,7 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
-  it('round trips lossless rule fields and orders by canonical position', () => {
+  it('round trips rule fields and orders future positions canonically', () => {
     const db = bareDb();
     createCampaignRule(db, rule('later', 10));
     createCampaignRule(db, rule('earlier', 2));
@@ -200,7 +200,15 @@ describe('campaign rule persistence', () => {
     ).toEqual(['earlier', 'later']);
     expect(
       getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'earlier' }),
-    ).toEqual(rule('earlier', 2));
+    ).toEqual(
+      rule('earlier', 2, 'house-rule', {
+        effectivePosition: {
+          ...p(2),
+          sessionId: '__future__',
+          turnId: '__future__',
+        },
+      }),
+    );
     expect(formatCampaignPosition(p(2))).toMatch(/^cp1~000000000002~/);
     db.close();
   });
@@ -400,6 +408,103 @@ describe('campaign rule persistence', () => {
         formatCampaignPosition(p(999)),
       ).map((r) => r.ruleIdentity),
     ).toEqual(['now', 'future']);
+    db.close();
+  });
+
+  it('canonicalizes future anchors and permits deterministic revocation at the real turn', () => {
+    const db = bareDb();
+    const first = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 'session-1',
+      turnId: 'turn-1',
+    });
+    const futureWithLateAnchor = {
+      ...p(2),
+      sessionId: 'zzz',
+      turnId: 'zzz',
+    };
+    const futureWithEarlyAnchor = {
+      ...p(2),
+      sessionId: 'aaa',
+      turnId: 'aaa',
+    };
+    createCampaignRule(
+      db,
+      rule('late-anchor', 2, 'house-rule', {
+        effectivePosition: futureWithLateAnchor,
+      }),
+      withCurrent({}, first),
+    );
+    createCampaignRule(
+      db,
+      rule('early-anchor', 2, 'house-rule', {
+        effectivePosition: futureWithEarlyAnchor,
+      }),
+      withCurrent({}, first),
+    );
+
+    const realSecond = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 'session-2',
+      turnId: 'turn-2',
+    });
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(realSecond),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['early-anchor', 'late-anchor']);
+
+    expect(() =>
+      revokeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'late-anchor',
+        revokedPosition: realSecond,
+        currentPosition: realSecond,
+      }),
+    ).not.toThrow();
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(realSecond),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['early-anchor']);
+    db.close();
+  });
+
+  it('resolves superseded successors from the fetched active-row set', () => {
+    const db = bareDb();
+    const current = p(0);
+    createCampaignRule(db, rule('prior', 1), withCurrent({}, current));
+    const first = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 'session-1',
+      turnId: 'turn-1',
+    });
+    supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'prior',
+      successor: rule('successor', 1, 'house-rule', {
+        effectivePosition: first,
+      }),
+      currentPosition: first,
+    });
+
+    const pointQueries: string[] = [];
+    const originalPrepare = db.prepare.bind(db);
+    const prepareSpy = vi.spyOn(db, 'prepare').mockImplementation(((
+      sql: string,
+    ) => {
+      if (sql.includes('WHERE campaign_id = ? AND rule_identity = ?'))
+        pointQueries.push(sql);
+      return originalPrepare(sql);
+    }) as typeof db.prepare);
+
+    listActiveCampaignRulesAtPosition(db, 'c1', formatCampaignPosition(first));
+    expect(pointQueries).toEqual([]);
+    prepareSpy.mockRestore();
     db.close();
   });
 
@@ -1043,14 +1148,14 @@ describe('campaign rule persistence', () => {
         'c1',
         formatCampaignPosition(bang),
       ).map((item) => item.ruleIdentity),
-    ).toEqual(['space', 'bang']);
+    ).toEqual(['bang', 'space']);
     expect(
       listActiveCampaignRulesAtPosition(
         db,
         'c1',
         formatCampaignPosition(space),
       ).map((item) => item.ruleIdentity),
-    ).toEqual(['space']);
+    ).toEqual(['bang', 'space']);
     db.close();
   });
 

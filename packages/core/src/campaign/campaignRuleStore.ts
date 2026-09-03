@@ -15,6 +15,7 @@ import type {
 import {
   CampaignRuleError,
   compareCampaignPositions,
+  FUTURE_CAMPAIGN_POSITION_ANCHOR,
   formatCampaignPosition,
   orderCampaignRules,
   parseCampaignPosition,
@@ -227,69 +228,97 @@ const SELECT = `SELECT campaign_id, rule_identity, rule_kind, status, origin,
   superseded_by, revoked_position, scope, governing_record_keys_json, prose,
   provenance, session_id, updated_at FROM campaign_rule`;
 
+function canonicalizeFutureEffectivePosition(
+  db: Db,
+  rule: CampaignRule,
+  currentPosition: CampaignPosition,
+): CampaignRule {
+  const persistedCurrent = getCurrentCampaignPosition(db, rule.campaignId);
+  const currentOrdinal = persistedCurrent?.ordinal ?? currentPosition.ordinal;
+  if (
+    rule.temporalMode.mode === 'prospective' &&
+    rule.effectivePosition.ordinal > currentOrdinal
+  ) {
+    return {
+      ...rule,
+      effectivePosition: {
+        ...rule.effectivePosition,
+        sessionId: FUTURE_CAMPAIGN_POSITION_ANCHOR,
+        turnId: FUTURE_CAMPAIGN_POSITION_ANCHOR,
+      },
+    };
+  }
+  return rule;
+}
+
 function writeRule(
   db: Db,
   rule: CampaignRule,
   options: CreateCampaignRuleOptions,
-): void {
-  validateCampaignRule(rule, options.validation, options.currentPosition);
-  if (rule.status !== 'active') {
+): CampaignRule {
+  const storedRule = canonicalizeFutureEffectivePosition(
+    db,
+    rule,
+    options.currentPosition,
+  );
+  validateCampaignRule(storedRule, options.validation, options.currentPosition);
+  if (storedRule.status !== 'active') {
     throw new CampaignRuleError(
-      `live campaign rule creation requires active status; use the lifecycle mutation for '${rule.ruleIdentity}'`,
+      `live campaign rule creation requires active status; use the lifecycle mutation for '${storedRule.ruleIdentity}'`,
     );
   }
   if (
     getCampaignRule(db, {
-      campaignId: rule.campaignId,
-      ruleIdentity: rule.ruleIdentity,
+      campaignId: storedRule.campaignId,
+      ruleIdentity: storedRule.ruleIdentity,
     }) !== undefined
   ) {
     throw new CampaignRuleError(
-      `campaign rule '${rule.ruleIdentity}' already exists`,
+      `campaign rule '${storedRule.ruleIdentity}' already exists`,
     );
   }
-  if (rule.temporalMode.mode === 'disputed-turn') {
+  if (storedRule.temporalMode.mode === 'disputed-turn') {
     assertPersistedPosition(
       db,
-      rule.campaignId,
-      rule.temporalMode.disputedPosition,
+      storedRule.campaignId,
+      storedRule.temporalMode.disputedPosition,
       'temporalMode.disputedPosition',
     );
   }
   assertPersistedPositionAtOrBeforeCurrent(
     db,
-    rule.campaignId,
-    rule.effectivePosition,
+    storedRule.campaignId,
+    storedRule.effectivePosition,
     'effectivePosition',
   );
-  assertNoOverlappingAmbiguityRuling(db, rule, undefined);
-  const p = rule.provenance;
+  assertNoOverlappingAmbiguityRuling(db, storedRule, undefined);
+  const p = storedRule.provenance;
   db.prepare(`INSERT INTO campaign_rule (
     campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
     ambiguity_id, selected_interpretation_id, question_id, rationale,
     effective_position, temporal_mode, disputed_position, superseded_by,
     revoked_position, scope, governing_record_keys_json, prose, provenance,
     session_id, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
-    rule.campaignId,
-    rule.ruleIdentity,
-    rule.ruleKind,
-    rule.status,
-    rule.origin,
+    storedRule.campaignId,
+    storedRule.ruleIdentity,
+    storedRule.ruleKind,
+    storedRule.status,
+    storedRule.origin,
     p.kind,
     p.kind === 'ambiguity' ? p.ambiguityId : null,
     p.kind === 'ambiguity' ? p.selectedInterpretationId : null,
     p.kind === 'recurring-question' ? p.questionId : null,
     p.kind === 'house-rule' ? (p.rationale ?? null) : null,
-    formatCampaignPosition(rule.effectivePosition),
-    rule.temporalMode.mode,
-    rule.temporalMode.mode === 'disputed-turn'
-      ? formatCampaignPosition(rule.temporalMode.disputedPosition)
+    formatCampaignPosition(storedRule.effectivePosition),
+    storedRule.temporalMode.mode,
+    storedRule.temporalMode.mode === 'disputed-turn'
+      ? formatCampaignPosition(storedRule.temporalMode.disputedPosition)
       : null,
-    rule.supersededBy,
+    storedRule.supersededBy,
     null,
-    rule.scope,
-    keysColumn.encode(rule.governingRecordKeys),
-    rule.prose,
+    storedRule.scope,
+    keysColumn.encode(storedRule.governingRecordKeys),
+    storedRule.prose,
     p.kind === 'ambiguity'
       ? `ambiguity:${p.ambiguityId}#${p.selectedInterpretationId}`
       : p.kind === 'recurring-question'
@@ -298,6 +327,7 @@ function writeRule(
     options.sessionId ?? 'campaign-rule',
     options.updatedAt ?? new Date().toISOString(),
   );
+  return storedRule;
 }
 
 export function createCampaignRule(
@@ -562,7 +592,11 @@ function activeRows(
   const rows = db
     .prepare(`${SELECT} WHERE campaign_id = ?`)
     .all(campaignId) as RuleRow[];
+  const rowsByIdentity = new Map(rows.map((row) => [row.rule_identity, row]));
   const rules = rows.map(rowToRule);
+  const rulesByIdentity = new Map(
+    rules.map((rule) => [rule.ruleIdentity, rule]),
+  );
   return [
     ...orderCampaignRules(
       rules
@@ -573,9 +607,7 @@ function activeRows(
         )
         .filter((rule) => {
           if (rule.status === 'revoked') {
-            const row = rows.find(
-              (candidate) => candidate.rule_identity === rule.ruleIdentity,
-            );
+            const row = rowsByIdentity.get(rule.ruleIdentity);
             return (
               row?.revoked_position !== null &&
               row?.revoked_position !== undefined &&
@@ -586,15 +618,10 @@ function activeRows(
             );
           }
           if (rule.status !== 'superseded') return true;
-          const row = rows.find(
-            (candidate) => candidate.rule_identity === rule.ruleIdentity,
-          );
+          const row = rowsByIdentity.get(rule.ruleIdentity);
           if (row?.superseded_by === null || row?.superseded_by === undefined)
             return false;
-          const successor = getCampaignRule(db, {
-            campaignId: rule.campaignId,
-            ruleIdentity: row.superseded_by,
-          });
+          const successor = rulesByIdentity.get(row.superseded_by);
           return (
             successor !== undefined &&
             compareCampaignPositions(

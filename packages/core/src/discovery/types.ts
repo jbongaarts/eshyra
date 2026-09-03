@@ -190,6 +190,8 @@ export interface RuleJoinTrace extends StageTrace<DiscoveryCandidate> {
   readonly rulingQueryExecuted: boolean;
   /** Every identity the seam returned, whether or not it could be placed. */
   readonly returnedRuleIdentities: readonly string[];
+  /** Ambiguity ids carried by rulings the seam actually returned. */
+  readonly returnedAmbiguityIds: readonly string[];
   readonly placedRuleIdentities: readonly string[];
   /** Returned but with no governing key resolvable in the active stack. */
   readonly unplacedRuleIdentities: readonly string[];

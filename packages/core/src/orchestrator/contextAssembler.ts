@@ -3,6 +3,7 @@ import { listAdventureRuns } from '../campaign/adventureRun.js';
 import {
   assembleCampaignRulesContext,
   type CampaignRulesContext,
+  CampaignRulesPackAuthoringError,
 } from '../campaign/campaignContext.js';
 import type {
   CharacterChronicleRecord,
@@ -612,7 +613,11 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
       resolveStrictCampaignRulesStack(input.db, input.resolveRulesPack),
     );
   } catch (error) {
-    if (!(error instanceof CampaignRulesBindingResolutionError)) throw error;
+    if (
+      !(error instanceof CampaignRulesBindingResolutionError) &&
+      !(error instanceof CampaignRulesPackAuthoringError)
+    )
+      throw error;
     campaignRules = assembleCampaignRulesContext(
       input.db,
       input.campaignId,
