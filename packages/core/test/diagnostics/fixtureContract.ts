@@ -833,15 +833,15 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
           `fixture ${index}.expectedRouteClasses must include ${routeClass} for an active ${item.ruleKind}`,
         );
       if (item.ruleKind !== 'ruling') continue;
+      nonEmptyString(
+        item.ruleIdentity,
+        `fixture ${index}.expectedCampaignRuleOrRulingState ruling identity`,
+      );
       if (
         item.ambiguityId === undefined &&
         item.selectedInterpretationId === undefined
       )
         continue;
-      nonEmptyString(
-        item.ruleIdentity,
-        `fixture ${index}.expectedCampaignRuleOrRulingState ruling identity`,
-      );
       nonEmptyString(
         item.ambiguityId,
         `fixture ${index}.expectedCampaignRuleOrRulingState ruling ambiguity id`,

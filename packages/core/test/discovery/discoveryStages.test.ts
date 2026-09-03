@@ -1137,6 +1137,7 @@ describe('offline discovery stage boundaries', () => {
       // M5's rule-request evidence derives only from the first call...
       expect(measurements.m5.ruleQueryCount).toBe(1);
       expect(measurements.m5.allActiveRulingsRequested).toBe(true);
+      expect(measurements.m5.ambiguityCoverage).toBe('all-active');
       expect(measurements.m5.requestedRuleRecordKeys).toEqual(
         trace.ruleJoin.requestedRuleRecordKeys,
       );

@@ -43,7 +43,10 @@ import {
   type AttunementEntry,
   listAttunements,
 } from '../state/attunement.js';
-import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
+import {
+  CampaignRulesBindingResolutionError,
+  resolveStrictCampaignRulesStack,
+} from '../state/campaignRecordLookup.js';
 import {
   type CampaignActor,
   type EncounterCombatant,
@@ -600,12 +603,24 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     state.clock.currentLocationId,
     input.resolveAdventureModule,
   );
-  const campaignRules = assembleCampaignRulesContext(
-    input.db,
-    input.campaignId,
-    input.campaignPosition,
-    resolveStrictCampaignRulesStack(input.db, input.resolveRulesPack),
-  );
+  let campaignRules: CampaignRulesContext;
+  try {
+    campaignRules = assembleCampaignRulesContext(
+      input.db,
+      input.campaignId,
+      input.campaignPosition,
+      resolveStrictCampaignRulesStack(input.db, input.resolveRulesPack),
+    );
+  } catch (error) {
+    if (!(error instanceof CampaignRulesBindingResolutionError)) throw error;
+    campaignRules = assembleCampaignRulesContext(
+      input.db,
+      input.campaignId,
+      input.campaignPosition,
+      undefined,
+      error.message,
+    );
+  }
   const characterChronicle = assembleCharacterChronicle(
     input.db,
     state.character.id,
@@ -1024,10 +1039,17 @@ export function renderContextMessage(ctx: AssembledContext): string {
   }
 
   if (
+    ctx.campaignRules.ambiguitySourceUnavailable !== undefined ||
     ctx.campaignRules.rules.length > 0 ||
     ctx.campaignRules.unboundRulings.length > 0 ||
     ctx.campaignRules.ambiguities.length > 0
   ) {
+    const unavailable =
+      ctx.campaignRules.ambiguitySourceUnavailable === undefined
+        ? []
+        : [
+            `- AMBIGUITY SOURCE UNAVAILABLE: ${ctx.campaignRules.ambiguitySourceUnavailable}; immutable ambiguity metadata is omitted until the bound pack is available`,
+          ];
     const rules = ctx.campaignRules.rules.map(
       (rule) =>
         `- [${rule.ruleKind}] ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): ${rule.prose ?? ''}`,
@@ -1037,18 +1059,20 @@ export function renderContextMessage(ctx: AssembledContext): string {
         `- [ruling] ${ruling.ruleIdentity} (${ruling.provenance}; ambiguity absent from current pack; effective ${ruling.effectivePosition}; records: ${ruling.governingRecordKeys.join(', ') || '(none)'}): ${ruling.prose ?? ''}`,
     );
     const ambiguityLines = ctx.campaignRules.ambiguities.flatMap(
-      ({ ambiguity, ruling }) => [
+      ({ ambiguity, ruling, conflictingRulings }) => [
         `- ${ambiguity.id}: ${ambiguity.question}`,
         ...ambiguity.interpretations.map(
           (item) => `  - ${item.id}: ${item.summary}`,
         ),
-        ruling === undefined
-          ? '  UNRESOLVED: do not assert a canonical answer or silently choose an interpretation.'
-          : `  Active ruling ${ruling.ruleIdentity} (${ruling.selectedInterpretationId}): ${ruling.prose ?? ''}`,
+        conflictingRulings.length > 1
+          ? `  CONFLICT: active rulings ${conflictingRulings.map((item) => item.ruleIdentity).join(', ')} contradict one another; none is authoritative.`
+          : ruling === undefined
+            ? '  UNRESOLVED: do not assert a canonical answer or silently choose an interpretation.'
+            : `  Active ruling ${ruling.ruleIdentity} (${ruling.selectedInterpretationId}): ${ruling.prose ?? ''}`,
       ],
     );
     sections.push(
-      `## Campaign Rules\n${[...rules, ...unboundRulings, ...ambiguityLines].join('\n')}`,
+      `## Campaign Rules\n${[...unavailable, ...rules, ...unboundRulings, ...ambiguityLines].join('\n')}`,
     );
   }
 

@@ -256,6 +256,12 @@ function writeRule(
       'temporalMode.disputedPosition',
     );
   }
+  assertPersistedPositionAtOrBeforeCurrent(
+    db,
+    rule.campaignId,
+    rule.effectivePosition,
+    'effectivePosition',
+  );
   assertNoOverlappingAmbiguityRuling(db, rule, undefined);
   const p = rule.provenance;
   db.prepare(`INSERT INTO campaign_rule (
@@ -353,6 +359,22 @@ function assertPersistedPosition(
   }
 }
 
+/**
+ * Future prospective rules may use an ordinal whose turn has not been
+ * persisted yet. At or before the current turn, every anchor must be the
+ * canonical chronology row rather than a caller-fabricated tie-breaker.
+ */
+function assertPersistedPositionAtOrBeforeCurrent(
+  db: Db,
+  campaignId: string,
+  candidate: CampaignPosition,
+  field: string,
+): void {
+  const current = getCurrentCampaignPosition(db, campaignId);
+  if (current !== undefined && candidate.ordinal <= current.ordinal)
+    assertPersistedPosition(db, campaignId, candidate, field);
+}
+
 export function getCampaignRule(
   db: Db,
   key: CampaignRuleKey,
@@ -402,6 +424,13 @@ export function revokeCampaignRule(
     throw new CampaignRuleError(
       `campaign rule '${input.ruleIdentity}' cannot be revoked before its effective position`,
     );
+  formatCampaignPosition(input.revokedPosition);
+  assertPersistedPosition(
+    db,
+    input.campaignId,
+    input.revokedPosition,
+    'revokedPosition',
+  );
   if (
     compareCampaignPositions(input.revokedPosition, input.currentPosition) < 0
   )
@@ -467,6 +496,12 @@ export function supersedeCampaignRule(
     throw new CampaignRuleError(
       `successor '${input.successor.ruleIdentity}' cannot take effect before the current position`,
     );
+  assertPersistedPositionAtOrBeforeCurrent(
+    db,
+    input.campaignId,
+    input.successor.effectivePosition,
+    'successor.effectivePosition',
+  );
   if (
     getCampaignRule(db, {
       campaignId: input.campaignId,

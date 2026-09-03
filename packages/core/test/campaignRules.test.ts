@@ -3,7 +3,6 @@ import type { RulesAmbiguity } from '../src/internal.js';
 import {
   type CampaignPosition,
   type CampaignRule,
-  CampaignRuleError,
   compareCampaignPositions,
   formatCampaignPosition,
   orderCampaignRules,
@@ -62,7 +61,9 @@ describe('campaign rule domain', () => {
     expect(value).toBe('cp1~000000000012~session-1~turn-1');
     expect(parseCampaignPosition(value)).toEqual(position(12));
     expect(compareCampaignPositions(position(1), position(2))).toBeLessThan(0);
-    expect(() => parseCampaignPosition('turn-12')).toThrow(CampaignRuleError);
+    expect(() => parseCampaignPosition('turn-12')).toThrow(
+      'invalid campaign position',
+    );
   });
 
   it('orders chronology by ordinal across sessions and turns', () => {
@@ -250,7 +251,25 @@ describe('campaign rule domain', () => {
         rule({ temporalMode: { mode: 'historical' } as never }),
         { ambiguity },
       ),
-    ).toThrow();
+    ).toThrow(/reading 'ordinal'/);
+  });
+
+  it('allows an immediately preceding disputed turn across a session boundary', () => {
+    const previous = position(7, 'turn-7', 'session-1');
+    const current = position(8, 'turn-8', 'session-2');
+    expect(() =>
+      validateCampaignRule(
+        rule({
+          effectivePosition: previous,
+          temporalMode: {
+            mode: 'disputed-turn',
+            disputedPosition: previous,
+          },
+        }),
+        { ambiguity },
+        current,
+      ),
+    ).not.toThrow();
   });
 
   it('keeps SQL and decoded position ordering aligned for encoded anchors', () => {

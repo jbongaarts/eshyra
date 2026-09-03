@@ -55,6 +55,8 @@ export interface DiscoveryMeasurements {
     readonly requestedRuleRecordKeys: readonly string[];
     readonly requestedAmbiguityIds: readonly string[];
     readonly allActiveRulingsRequested: boolean;
+    /** The scope that makes the ambiguity-coverage measurement meaningful. */
+    readonly ambiguityCoverage: 'all-active' | 'requested-ambiguities';
     /** How many times each seam query actually executed. */
     readonly ruleQueryCount: number;
     readonly rulingQueryCount: number;
@@ -331,6 +333,11 @@ export function measureDiscovery(
       allActiveRulingsRequested:
         trace.ruleJoin.rulingQueryScope === 'all-active' ||
         trace.lateRuleJoin.rulingQueryScope === 'all-active',
+      ambiguityCoverage:
+        trace.ruleJoin.rulingQueryScope === 'all-active' ||
+        trace.lateRuleJoin.rulingQueryScope === 'all-active'
+          ? 'all-active'
+          : 'requested-ambiguities',
       ruleQueryCount:
         (trace.ruleJoin.ruleQueryExecuted ? 1 : 0) +
         (trace.lateRuleJoin.ruleQueryExecuted ? 1 : 0),

@@ -121,10 +121,20 @@ describe('checkpoint serialization', () => {
       status: 'active',
       effectivePosition: pos(2),
     });
+    let revocationPosition: CampaignPosition | undefined;
+    for (let ordinal = 1; ordinal <= 4; ordinal += 1)
+      revocationPosition = resolveCampaignPosition(db, {
+        campaignId: 'c1',
+        sessionId: 's1',
+        turnId: `t${ordinal}`,
+      });
+    if (revocationPosition === undefined)
+      throw new Error('missing revocation position');
     revokeCampaignRule(db, {
       campaignId: 'c1',
       ruleIdentity: 'revoked',
-      revokedPosition: pos(4),
+      revokedPosition: revocationPosition,
+      currentPosition: revocationPosition,
     });
     for (let ordinal = 1; ordinal <= 5; ordinal += 1) {
       resolveCampaignPosition(db, {
@@ -289,10 +299,20 @@ describe.skipIf(!doltOk)('CheckpointStore.restoreToNewWorkingCopy', () => {
         status: 'active',
         effectivePosition: pos(2),
       });
+      let revocationPosition: CampaignPosition | undefined;
+      for (let ordinal = 1; ordinal <= 4; ordinal += 1)
+        revocationPosition = resolveCampaignPosition(db, {
+          campaignId: 'c1',
+          sessionId: 's1',
+          turnId: `t${ordinal}`,
+        });
+      if (revocationPosition === undefined)
+        throw new Error('missing revocation position');
       revokeCampaignRule(db, {
         campaignId: 'c1',
         ruleIdentity: 'revoked',
-        revokedPosition: pos(4),
+        revokedPosition: revocationPosition,
+        currentPosition: revocationPosition,
       });
       const before = canonicalize(serializeCampaign(db));
       db.close();

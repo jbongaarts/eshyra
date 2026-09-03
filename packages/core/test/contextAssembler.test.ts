@@ -32,9 +32,11 @@ import {
   supersedeCampaignRule as persistSupersedeCampaignRule,
   recordSceneSummary,
   renderContextMessage,
+  resolveCampaignPosition,
   rollupSessionRecap,
   stampSessionWithOpenArc,
   startAdventureRun,
+  writeCampaignRulesBinding,
 } from '../src/internal.js';
 import { resolveStrictCampaignRulesStack } from '../src/state/campaignRecordLookup.js';
 import {
@@ -185,6 +187,41 @@ function testSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
 }
 
 describe('Context Assembler', () => {
+  it('keeps a turn playable when the bound ambiguity source is unavailable', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const position = formatCampaignPosition(campaignPosition(1));
+    createCampaignRule(db, campaignRule('still-playable', 1));
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: DND5E_SRD_SYSTEM_ID,
+        packId: 'rules:missing-pack',
+        version: '1.0',
+      },
+      addons: [],
+      resolvedAt: '2026-05-20T09:00:00.000Z',
+    });
+
+    const context = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      campaignPosition: position,
+      sessionId: SESSION,
+      playerInput: 'continue',
+    });
+
+    expect(context.campaignRules.rules).toEqual([
+      expect.objectContaining({ ruleIdentity: 'still-playable' }),
+    ]);
+    expect(context.campaignRules.ambiguities).toEqual([]);
+    expect(context.campaignRules.ambiguitySourceUnavailable).toContain(
+      "campaign rules pack 'dnd5e-srd' / 'rules:missing-pack' @ '1.0' is unavailable",
+    );
+    expect(renderContextMessage(context)).toContain(
+      'AMBIGUITY SOURCE UNAVAILABLE',
+    );
+    db.close();
+  });
+
   it('projects position-active rules, source associations, and immutable ambiguities', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     const packPath = new URL(
@@ -204,10 +241,20 @@ describe('Context Assembler', () => {
     });
     const revokedRule = campaignRule('revoked-rule', 1);
     createCampaignRule(db, revokedRule);
+    let revocationPosition: CampaignPosition | undefined;
+    for (let ordinal = 1; ordinal <= 3; ordinal += 1)
+      revocationPosition = resolveCampaignPosition(db, {
+        campaignId: CAMPAIGN,
+        sessionId: SESSION,
+        turnId: `turn-${ordinal}`,
+      });
+    if (revocationPosition === undefined)
+      throw new Error('missing revocation position');
     revokeCampaignRule(db, {
       campaignId: CAMPAIGN,
       ruleIdentity: revokedRule.ruleIdentity,
-      revokedPosition: campaignPosition(3),
+      revokedPosition: revocationPosition,
+      currentPosition: revocationPosition,
     });
 
     const atOne = assembleCampaignRulesContext(
@@ -274,9 +321,11 @@ describe('Context Assembler', () => {
         selectedInterpretationId: interpretation.id,
       },
       governingRecordKeys: ['spell:find-familiar'],
+      effectivePosition: revocationPosition,
     });
     createCampaignRule(db, ruling, {
       validation: { ambiguity: familiar.ambiguity },
+      currentPosition: revocationPosition,
     });
     const resolved = assembleCampaignRulesContext(
       db,
@@ -402,6 +451,47 @@ describe('Context Assembler', () => {
         malformedStack,
       ),
     ).toThrow(/feature:malformed-ambiguity/);
+    db.close();
+  });
+
+  it('rejects duplicate ambiguity ids from different resolved records', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const stack = resolveStrictCampaignRulesStack(db);
+    const source = [...stack.recordsByKey.values()].find((entry) => {
+      const data = entry.record.data;
+      if (typeof data !== 'object' || data === null || Array.isArray(data))
+        return false;
+      const mechanics = (data as { mechanics?: unknown }).mechanics;
+      return (
+        typeof mechanics === 'object' &&
+        mechanics !== null &&
+        !Array.isArray(mechanics) &&
+        Array.isArray((mechanics as { ambiguities?: unknown }).ambiguities)
+      );
+    });
+    if (source === undefined) throw new Error('missing ambiguity source');
+    const duplicateData = source.record.data;
+    const recordsByKey = new Map(
+      [...stack.recordsByKey].filter(([key]) => key !== source.record.key),
+    );
+    for (const key of ['collision:one', 'collision:two'])
+      recordsByKey.set(key, {
+        ...source,
+        record: { ...source.record, key, data: duplicateData },
+      });
+    expect(() =>
+      assembleCampaignRulesContext(
+        db,
+        CAMPAIGN,
+        formatCampaignPosition(campaignPosition(1)),
+        {
+          ...stack,
+          recordsByKey,
+        },
+      ),
+    ).toThrow(
+      /ambiguity '.*' is declared by records 'collision:one' and 'collision:two'/,
+    );
     db.close();
   });
 

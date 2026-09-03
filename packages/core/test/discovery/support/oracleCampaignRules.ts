@@ -69,7 +69,9 @@ export function oracleCampaignRuleSeam(
     }));
   return {
     activeRulesAtPosition: () => projections,
-    activeRulingsForAmbiguities: (ids) =>
-      rulings.filter((item) => ids.includes(item.ambiguityId)),
+    activeRulingsForAmbiguities: (ids, options) =>
+      options?.includeAllActive === true
+        ? rulings
+        : rulings.filter((item) => ids.includes(item.ambiguityId)),
   };
 }
