@@ -78,6 +78,12 @@ export {
   recordAdventureRunProgress,
   startAdventureRun,
 } from './campaign/adventureRun.js';
+export {
+  assembleCampaignRulesContext,
+  type CampaignAmbiguityContext,
+  type CampaignRulesContext,
+} from './campaign/campaignContext.js';
+export { resolveCampaignPosition } from './campaign/campaignPosition.js';
 export type {
   CampaignRuleKey,
   CreateCampaignRuleOptions,

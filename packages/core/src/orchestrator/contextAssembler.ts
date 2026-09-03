@@ -1,5 +1,9 @@
 import type { AdventureModule } from '../adventure/types.js';
 import { listAdventureRuns } from '../campaign/adventureRun.js';
+import {
+  assembleCampaignRulesContext,
+  type CampaignRulesContext,
+} from '../campaign/campaignContext.js';
 import type {
   CharacterChronicleRecord,
   CharacterChronicleStore,
@@ -39,6 +43,7 @@ import {
   type AttunementEntry,
   listAttunements,
 } from '../state/attunement.js';
+import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
 import {
   type CampaignActor,
   type EncounterCombatant,
@@ -158,6 +163,10 @@ export interface ContextAssemblyInput {
    * from campaign canon.
    */
   characterChronicle?: CharacterChronicleStore;
+  /** Durable position assigned by the turn coordinator. */
+  campaignPosition?: string;
+  /** Resolves non-bundled packs in the campaign binding. */
+  resolveRulesPack?: import('../state/campaignRecordLookup.js').CampaignRulesPackResolver;
 }
 
 export interface CharacterSnapshot {
@@ -275,6 +284,7 @@ export interface AssembledContext {
    * runs' modules resolved.
    */
   adventures: AdventureContextSlice[];
+  campaignRules: CampaignRulesContext;
   playerInput: string;
 }
 
@@ -590,6 +600,15 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     state.clock.currentLocationId,
     input.resolveAdventureModule,
   );
+  const campaignRules =
+    input.campaignPosition === undefined
+      ? { position: '', rules: [], ambiguities: [] }
+      : assembleCampaignRulesContext(
+          input.db,
+          input.campaignId,
+          input.campaignPosition,
+          resolveStrictCampaignRulesStack(input.db, input.resolveRulesPack),
+        );
   const characterChronicle = assembleCharacterChronicle(
     input.db,
     state.character.id,
@@ -619,6 +638,7 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     recentSceneEvidence,
     characterChronicle,
     adventures,
+    campaignRules,
     playerInput: input.playerInput,
   };
 }
@@ -1003,6 +1023,30 @@ export function renderContextMessage(ctx: AssembledContext): string {
     const body = ctx.adventures.map(renderAdventureContextSlice).join('\n\n');
     sections.push(
       `## Adventure Module (DM-only)\nGuidance from the active authored scenario; campaign truth above overrides it where they conflict. Do not narrate DM-only details verbatim.\n\n${body}`,
+    );
+  }
+
+  if (
+    ctx.campaignRules.rules.length > 0 ||
+    ctx.campaignRules.ambiguities.length > 0
+  ) {
+    const rules = ctx.campaignRules.rules.map(
+      (rule) =>
+        `- [${rule.ruleKind}] ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): ${rule.prose ?? ''}`,
+    );
+    const ambiguityLines = ctx.campaignRules.ambiguities.flatMap(
+      ({ ambiguity, ruling }) => [
+        `- ${ambiguity.id}: ${ambiguity.question}`,
+        ...ambiguity.interpretations.map(
+          (item) => `  - ${item.id}: ${item.summary}`,
+        ),
+        ruling === undefined
+          ? '  UNRESOLVED: do not assert a canonical answer or silently choose an interpretation.'
+          : `  Active ruling ${ruling.ruleIdentity} (${ruling.selectedInterpretationId}): ${ruling.prose ?? ''}`,
+      ],
+    );
+    sections.push(
+      `## Campaign Rules\n${[...rules, ...ambiguityLines].join('\n')}`,
     );
   }
 

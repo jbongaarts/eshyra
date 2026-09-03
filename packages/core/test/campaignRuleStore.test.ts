@@ -9,6 +9,7 @@ import {
   listActiveCampaignRulesAtPosition,
   listActiveRulingsForAmbiguitiesAtPosition,
   listCampaignRules,
+  resolveCampaignPosition,
   revokeCampaignRule,
   supersedeCampaignRule,
 } from '../src/internal.js';
@@ -66,6 +67,34 @@ function ambiguityRuling(identity: string, ordinal: number): CampaignRule {
 }
 
 describe('campaign rule persistence', () => {
+  it('assigns stable campaign-wide positions across sessions and replay', () => {
+    const db = bareDb();
+    const first = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 's1',
+      turnId: 'turn-a',
+    });
+    const replay = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 's1',
+      turnId: 'turn-a',
+    });
+    const next = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 's1',
+      turnId: 'turn-b',
+    });
+    const nextSession = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 's2',
+      turnId: 'turn-c',
+    });
+    expect(replay).toEqual(first);
+    expect(next.ordinal).toBe(first.ordinal + 1);
+    expect(nextSession.ordinal).toBe(next.ordinal + 1);
+    db.close();
+  });
+
   it('round trips lossless rule fields and orders by canonical position', () => {
     const db = bareDb();
     createCampaignRule(db, rule('later', 10));
