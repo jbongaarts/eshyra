@@ -258,4 +258,99 @@ describe('campaign rule persistence', () => {
     ).toThrow(CampaignRuleError);
     db.close();
   });
+
+  it('rejects re-superseding and preserves the original supersession chain', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('old', 1));
+    supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'old',
+      successor: rule('first', 5),
+    });
+    expect(() =>
+      supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'old',
+        successor: rule('second', 9),
+      }),
+    ).toThrow(CampaignRuleError);
+    expect(
+      getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'old' }),
+    ).toMatchObject({ status: 'superseded', supersededBy: 'first' });
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(p(7)),
+      ).map((r) => r.ruleIdentity),
+    ).toEqual(['first']);
+    db.close();
+  });
+
+  it('rejects superseding a revoked rule without changing its revocation', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('revoked', 1));
+    revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'revoked',
+      revokedPosition: p(4),
+    });
+    expect(() =>
+      supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'revoked',
+        successor: rule('successor', 5),
+      }),
+    ).toThrow(CampaignRuleError);
+    expect(
+      getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'revoked' }),
+    ).toMatchObject({ status: 'revoked' });
+    expect(
+      db
+        .prepare(
+          'SELECT revoked_position FROM campaign_rule WHERE rule_identity=?',
+        )
+        .get('revoked'),
+    ).toMatchObject({ revoked_position: formatCampaignPosition(p(4)) });
+    db.close();
+  });
+
+  it('rejects direct creation of a revoked rule before its effective position', () => {
+    const db = bareDb();
+    expect(() =>
+      createCampaignRule(
+        db,
+        { ...rule('bad-revoked', 10), status: 'revoked' },
+        { revokedPosition: p(2) },
+      ),
+    ).toThrow(CampaignRuleError);
+    db.close();
+  });
+
+  it('rejects dangling direct supersession and permits valid historical rows', () => {
+    const db = bareDb();
+    expect(() =>
+      createCampaignRule(db, {
+        ...rule('bad-superseded', 10),
+        status: 'superseded',
+        supersededBy: 'does-not-exist',
+      }),
+    ).toThrow(CampaignRuleError);
+    createCampaignRule(db, rule('successor', 12));
+    expect(
+      createCampaignRule(
+        db,
+        { ...rule('historical-revoked', 10), status: 'revoked' },
+        { revokedPosition: p(11) },
+      ).status,
+    ).toBe('revoked');
+    expect(
+      createCampaignRule(db, {
+        ...rule('historical-superseded', 10),
+        status: 'superseded',
+        supersededBy: 'successor',
+      }),
+    ).toMatchObject({ status: 'superseded', supersededBy: 'successor' });
+    db.close();
+  });
 });
