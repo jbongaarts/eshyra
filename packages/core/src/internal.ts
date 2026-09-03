@@ -79,6 +79,21 @@ export {
   startAdventureRun,
 } from './campaign/adventureRun.js';
 export type {
+  CampaignRuleKey,
+  CreateCampaignRuleOptions,
+  RevokeCampaignRuleInput,
+  SupersedeCampaignRuleInput,
+} from './campaign/campaignRuleStore.js';
+export {
+  createCampaignRule,
+  createCampaignRuleReadSeam,
+  getCampaignRule,
+  listActiveCampaignRulesAtPosition,
+  listCampaignRules,
+  revokeCampaignRule,
+  supersedeCampaignRule,
+} from './campaign/campaignRuleStore.js';
+export type {
   CampaignPosition,
   CampaignPrecedence,
   CampaignRule,
