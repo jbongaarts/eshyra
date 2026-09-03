@@ -35,3 +35,16 @@ export function stripTrailingParenthetical(text: string): string {
   if (text.slice(open + 1, end - 1).includes(')')) return text;
   return text.slice(0, open).trimEnd();
 }
+
+/**
+ * Trim leading and trailing runs of `ch` without the polynomial backtracking
+ * reported by CodeQL's js/polynomial-redos rule. Exactly equivalent to
+ * `text.replace(/^<ch>+|<ch>+$/g, '')` for a single non-special character.
+ */
+export function trimEdgeChar(text: string, ch: string): string {
+  let start = 0;
+  let end = text.length;
+  while (start < end && text[start] === ch) start += 1;
+  while (end > start && text[end - 1] === ch) end -= 1;
+  return text.slice(start, end);
+}

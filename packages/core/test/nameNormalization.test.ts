@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   replaceParentheticals,
   stripTrailingParenthetical,
+  trimEdgeChar,
 } from '../src/internal.js';
 
 const fixtures = [
@@ -41,6 +42,29 @@ describe('parenthetical name scans', () => {
     const input = `${' '.repeat(200_000)}(x`;
     const started = Date.now();
     expect(stripTrailingParenthetical(input)).toBe(input);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  it('trimEdgeChar preserves the original regex behavior', () => {
+    const edgeFixtures = [
+      '',
+      '-',
+      '--',
+      '-a-',
+      '---abc---',
+      'a-b',
+      'abc',
+      '-'.repeat(9),
+    ];
+    for (const input of edgeFixtures) {
+      expect(trimEdgeChar(input, '-')).toBe(input.replace(/^-+|-+$/g, ''));
+    }
+  });
+
+  it('trimEdgeChar handles a long edge run linearly', () => {
+    const input = '-'.repeat(200_000);
+    const started = Date.now();
+    expect(trimEdgeChar(input, '-')).toBe('');
     expect(Date.now() - started).toBeLessThan(1_000);
   });
 });
