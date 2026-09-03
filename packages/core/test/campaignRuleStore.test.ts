@@ -552,6 +552,58 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
+  it('revokes campaign rules inside the same transaction as its guards', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('transactional-revocation', 1), {
+      currentPosition: p(0),
+    });
+    const current = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 's1',
+      turnId: 'turn-1',
+    });
+    const originalTransaction = db.transaction.bind(db);
+    const transactionSpy = vi
+      .spyOn(db, 'transaction')
+      .mockImplementation(originalTransaction);
+
+    revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'transactional-revocation',
+      revokedPosition: current,
+      currentPosition: current,
+    });
+
+    expect(transactionSpy).toHaveBeenCalled();
+    transactionSpy.mockRestore();
+    db.close();
+  });
+
+  it('scans active campaign rows once when assembling both context lists', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('single-active-row-scan', 1));
+    const originalPrepare = db.prepare.bind(db);
+    const prepareSpy = vi
+      .spyOn(db, 'prepare')
+      .mockImplementation(originalPrepare);
+
+    assembleCampaignRulesContext(
+      db,
+      'c1',
+      formatCampaignPosition(p(1)),
+      undefined,
+    );
+
+    const activeRowQueries = prepareSpy.mock.calls.filter(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.startsWith('SELECT campaign_id, rule_identity, rule_kind'),
+    );
+    expect(activeRowQueries).toHaveLength(1);
+    prepareSpy.mockRestore();
+    db.close();
+  });
+
   it('rejects malformed positions before querying active rules', () => {
     const db = bareDb();
     expect(() =>
@@ -1201,6 +1253,74 @@ describe('campaign rule persistence', () => {
     });
     db.close();
   });
+
+  it.each([
+    {
+      label: 'a house rule',
+      successor: () => rule('house-successor', 1),
+      validation: undefined,
+    },
+    {
+      label: 'a ruling for a different ambiguity',
+      successor: () => ({
+        ...ambiguityRuling('different-ruling', 1),
+        provenance: {
+          kind: 'ambiguity' as const,
+          ambiguityId: 'amb-2',
+          selectedInterpretationId: 'int-2',
+        },
+      }),
+      validation: {
+        ambiguity: {
+          ...ambiguity,
+          id: 'amb-2',
+          interpretations: [
+            { id: 'int-2', summary: 'The second interpretation' },
+          ],
+        },
+      },
+    },
+    {
+      label: 'a ruling for the same ambiguity',
+      successor: () => ambiguityRuling('same-ruling', 1),
+      validation: { ambiguity },
+    },
+  ])(
+    'supersedes an ambiguity ruling with $label',
+    ({ successor, validation }) => {
+      const db = bareDb();
+      const prior = ambiguityRuling('prior-ambiguity-ruling', 1);
+      createCampaignRule(db, prior, {
+        currentPosition: p(0),
+        validation: { ambiguity },
+      });
+
+      const replaced = supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: prior.ruleIdentity,
+        successor: successor(),
+        currentPosition: p(0),
+        validation,
+      });
+
+      expect(replaced).toEqual(
+        getCampaignRule(db, {
+          campaignId: 'c1',
+          ruleIdentity: replaced.ruleIdentity,
+        }),
+      );
+      expect(
+        getCampaignRule(db, {
+          campaignId: 'c1',
+          ruleIdentity: prior.ruleIdentity,
+        }),
+      ).toMatchObject({
+        status: 'superseded',
+        supersededBy: replaced.ruleIdentity,
+      });
+      db.close();
+    },
+  );
 
   it('supersedes a ruling at the immediately preceding disputed turn', () => {
     const db = bareDb();

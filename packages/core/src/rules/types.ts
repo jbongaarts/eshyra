@@ -172,6 +172,14 @@ export class RulesPackError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'RulesPackError';
+  }
+}
+
+/** A resolved pack's content cannot be interpreted for model-facing context. */
+export class RulesPackContentError extends RulesPackError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RulesPackContentError';
     markRulesPackContentError(this);
   }
 }

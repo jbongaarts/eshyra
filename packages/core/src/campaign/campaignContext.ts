@@ -6,10 +6,7 @@ import {
   markRulesPackContentError,
   type RulesAmbiguity,
 } from '../rules/types.js';
-import {
-  listActiveCampaignRulesAtPosition,
-  listActiveRulingsForAmbiguitiesAtPosition,
-} from './campaignRuleStore.js';
+import { listActiveCampaignRulesAtPosition } from './campaignRuleStore.js';
 import {
   CampaignRuleError,
   type CampaignRuleProjection,
@@ -45,50 +42,49 @@ export class CampaignRulesPackAuthoringError extends CampaignRuleError {
 }
 
 function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
-  try {
-    const found = new Map<
-      string,
-      { ambiguity: RulesAmbiguity; recordKey: string }
-    >();
-    for (const entry of stack.recordsByKey.values()) {
-      const data = entry.record.data;
-      if (typeof data !== 'object' || data === null || Array.isArray(data))
-        continue;
-      const mechanics = (data as { mechanics?: unknown }).mechanics;
-      if (
-        typeof mechanics !== 'object' ||
-        mechanics === null ||
-        Array.isArray(mechanics)
-      )
-        continue;
-      const ambiguityIds = optRulesAmbiguities(
+  const found = new Map<
+    string,
+    { ambiguity: RulesAmbiguity; recordKey: string }
+  >();
+  for (const entry of stack.recordsByKey.values()) {
+    const data = entry.record.data;
+    if (typeof data !== 'object' || data === null || Array.isArray(data))
+      continue;
+    const mechanics = (data as { mechanics?: unknown }).mechanics;
+    if (
+      typeof mechanics !== 'object' ||
+      mechanics === null ||
+      Array.isArray(mechanics)
+    )
+      continue;
+    let ambiguityIds: ReadonlySet<string>;
+    try {
+      ambiguityIds = optRulesAmbiguities(
         mechanics as Record<string, unknown>,
         `${entry.record.key}.data.mechanics`,
       );
-      const values = (mechanics as { ambiguities?: unknown }).ambiguities;
-      if (!Array.isArray(values) || ambiguityIds.size === 0) continue;
-      for (const value of values) {
-        const ambiguity = value as RulesAmbiguity;
-        const previous = found.get(ambiguity.id);
-        if (previous !== undefined)
-          throw new CampaignRulesPackAuthoringError(
-            `ambiguity '${ambiguity.id}' is declared by records '${previous.recordKey}' and '${entry.record.key}'`,
-          );
-        found.set(ambiguity.id, { ambiguity, recordKey: entry.record.key });
-      }
+    } catch (error) {
+      // Only the ambiguity interpreter is allowed to reclassify an otherwise
+      // unmarked parser failure as recoverable pack content.
+      if (isRulesPackContentError(error)) throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      throw new CampaignRulesPackAuthoringError(message);
     }
-    return [...found.values()]
-      .map(({ ambiguity }) => ambiguity)
-      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  } catch (error) {
-    // This boundary is deliberately around pack-content interpretation, not
-    // database projection. Any future parser/curator error thrown here is
-    // converted into the marked recoverable class; unrelated failures retain
-    // their original behavior outside this boundary.
-    if (isRulesPackContentError(error)) throw error;
-    const message = error instanceof Error ? error.message : String(error);
-    throw new CampaignRulesPackAuthoringError(message);
+    const values = (mechanics as { ambiguities?: unknown }).ambiguities;
+    if (!Array.isArray(values) || ambiguityIds.size === 0) continue;
+    for (const value of values) {
+      const ambiguity = value as RulesAmbiguity;
+      const previous = found.get(ambiguity.id);
+      if (previous !== undefined)
+        throw new CampaignRulesPackAuthoringError(
+          `ambiguity '${ambiguity.id}' is declared by records '${previous.recordKey}' and '${entry.record.key}'`,
+        );
+      found.set(ambiguity.id, { ambiguity, recordKey: entry.record.key });
+    }
   }
+  return [...found.values()]
+    .map(({ ambiguity }) => ambiguity)
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 /** Shared DM/auditor projection of campaign prose and immutable ambiguity metadata. */
@@ -106,12 +102,25 @@ export function assembleCampaignRulesContext(
     campaignId,
     position,
   );
-  const rulings = listActiveRulingsForAmbiguitiesAtPosition(
-    db,
-    campaignId,
-    [...ambiguityIds],
-    position,
-  );
+  const rulings = activeRules
+    .filter(
+      (
+        rule,
+      ): rule is typeof rule & {
+        ruleKind: 'ruling';
+        provenance: Extract<typeof rule.provenance, { kind: 'ambiguity' }>;
+      } => rule.ruleKind === 'ruling' && rule.provenance.kind === 'ambiguity',
+    )
+    .filter((rule) => ambiguityIds.has(rule.provenance.ambiguityId))
+    .map((rule) => {
+      const projection = projectCampaignRule(rule);
+      return {
+        ...projection,
+        ruleKind: 'ruling' as const,
+        ambiguityId: rule.provenance.ambiguityId,
+        selectedInterpretationId: rule.provenance.selectedInterpretationId,
+      };
+    });
   const rulingsByAmbiguity = new Map<string, CampaignRulingProjection[]>();
   for (const ruling of rulings) {
     const existing = rulingsByAmbiguity.get(ruling.ambiguityId) ?? [];

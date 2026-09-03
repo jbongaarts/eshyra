@@ -7,6 +7,7 @@ import type {
   CharacterSheet,
   Db,
   FinalizedAbilityScore,
+  ResolvedRulesStack,
   RulesPack,
 } from '../src/internal.js';
 import {
@@ -189,9 +190,8 @@ function testSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
 }
 
 describe('Context Assembler', () => {
-  it('keeps a turn playable when the bound ambiguity source is unavailable', () => {
+  it('fails clearly when the bound rules pack is unavailable', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
-    const position = formatCampaignPosition(campaignPosition(1));
     createCampaignRule(db, campaignRule('still-playable', 1));
     writeCampaignRulesBinding(db, {
       base: {
@@ -203,24 +203,6 @@ describe('Context Assembler', () => {
       resolvedAt: '2026-05-20T09:00:00.000Z',
     });
 
-    const context = assembleContext({
-      db,
-      campaignId: CAMPAIGN,
-      campaignPosition: position,
-      sessionId: SESSION,
-      playerInput: 'continue',
-    });
-
-    expect(context.campaignRules.rules).toEqual([
-      expect.objectContaining({ ruleIdentity: 'still-playable' }),
-    ]);
-    expect(context.campaignRules.ambiguities).toEqual([]);
-    expect(context.campaignRules.ambiguitySourceUnavailable).toContain(
-      "campaign rules pack 'dnd5e-srd' / 'rules:missing-pack' @ '1.0' is unavailable",
-    );
-    expect(renderContextMessage(context)).toContain(
-      'AMBIGUITY SOURCE UNAVAILABLE',
-    );
     expect(() =>
       assembleContext({
         db,
@@ -228,11 +210,11 @@ describe('Context Assembler', () => {
         campaignPosition: formatCampaignPosition(campaignPosition(1)),
         sessionId: SESSION,
         playerInput: 'continue',
-        resolveRulesPack: () => {
-          throw new Error('resolver transport failed');
-        },
+        resolveRulesPack: () => undefined,
       }),
-    ).toThrow('resolver transport failed');
+    ).toThrow(
+      "campaign rules pack 'dnd5e-srd' / 'rules:missing-pack' @ '1.0' is unavailable",
+    );
     db.close();
   });
 
@@ -649,6 +631,33 @@ describe('Context Assembler', () => {
     ).toThrow(
       /ambiguity '.*' is declared by records 'collision:one' and 'collision:two'/,
     );
+    db.close();
+  });
+
+  it('propagates failures from the surrounding stack iteration unchanged', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const stack = resolveStrictCampaignRulesStack(db);
+    const brokenStack = {
+      ...stack,
+      recordsByKey: {
+        values: () => {
+          throw new TypeError('records iteration failed');
+        },
+      },
+    } as unknown as ResolvedRulesStack;
+
+    try {
+      assembleCampaignRulesContext(
+        db,
+        CAMPAIGN,
+        formatCampaignPosition(campaignPosition(1)),
+        brokenStack,
+      );
+      throw new Error('expected stack iteration to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(TypeError);
+      expect(error).toHaveProperty('message', 'records iteration failed');
+    }
     db.close();
   });
 

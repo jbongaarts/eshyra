@@ -1,4 +1,7 @@
-import { type RulesAmbiguity, RulesPackError } from './types.js';
+import {
+  type RulesAmbiguity,
+  RulesPackContentError as RulesPackError,
+} from './types.js';
 
 export type { RulesAmbiguity };
 
