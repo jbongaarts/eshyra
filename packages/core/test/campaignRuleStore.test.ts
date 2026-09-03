@@ -118,22 +118,10 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
-  it('uses the latest recorded position when no cutoff is supplied', () => {
+  it('requires a position and excludes future-effective rules', () => {
     const db = bareDb();
     createCampaignRule(db, rule('now', 1));
     createCampaignRule(db, rule('future', 999));
-    expect(
-      listActiveCampaignRulesAtPosition(db, 'c1').map((r) => r.ruleIdentity),
-    ).toEqual(['now', 'future']);
-    expect(
-      listActiveCampaignRulesAtPosition(db, 'c1').map((r) => r.ruleIdentity),
-    ).toEqual(
-      listActiveCampaignRulesAtPosition(
-        db,
-        'c1',
-        formatCampaignPosition(p(999)),
-      ).map((r) => r.ruleIdentity),
-    );
     expect(
       listActiveCampaignRulesAtPosition(
         db,
@@ -141,6 +129,13 @@ describe('campaign rule persistence', () => {
         formatCampaignPosition(p(1)),
       ).map((r) => r.ruleIdentity),
     ).toEqual(['now']);
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(p(999)),
+      ).map((r) => r.ruleIdentity),
+    ).toEqual(['now', 'future']);
     db.close();
   });
 

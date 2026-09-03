@@ -1,4 +1,3 @@
-import type { CampaignRuleReadSeam } from '../discovery/types.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
@@ -6,6 +5,7 @@ import type {
   CampaignPosition,
   CampaignRule,
   CampaignRuleProvenance,
+  CampaignRuleReadSeam,
   CampaignRulingProjection,
 } from './campaignRules.js';
 import {
@@ -320,20 +320,10 @@ export function supersedeCampaignRule(
 function activeRows(
   db: Db,
   campaignId: string,
-  cutoff?: string,
+  cutoff: string,
 ): CampaignRule[] {
-  const resolvedCutoff =
-    cutoff ??
-    (
-      db
-        .prepare(
-          'SELECT MAX(effective_position) AS latest FROM campaign_rule WHERE campaign_id = ?',
-        )
-        .get(campaignId) as { latest: string | null }
-    ).latest ??
-    'cp1~000000000000~campaign-rule~latest';
   const predicate = `effective_position <= ? AND (revoked_position IS NULL OR revoked_position > ?) AND (status != 'superseded' OR EXISTS (SELECT 1 FROM campaign_rule successor WHERE successor.campaign_id=campaign_rule.campaign_id AND successor.rule_identity=campaign_rule.superseded_by AND successor.effective_position > ?))`;
-  const args = [campaignId, resolvedCutoff, resolvedCutoff, resolvedCutoff];
+  const args = [campaignId, cutoff, cutoff, cutoff];
   const rows = db
     .prepare(
       // Canonical campaign positions are self-sorting; SQL can order them directly.
@@ -346,7 +336,7 @@ function activeRows(
 export function listActiveCampaignRulesAtPosition(
   db: Db,
   campaignId: string,
-  campaignPosition?: string,
+  campaignPosition: string,
 ): CampaignRule[] {
   return activeRows(db, campaignId, campaignPosition);
 }
@@ -355,7 +345,7 @@ export function listActiveRulingsForAmbiguitiesAtPosition(
   db: Db,
   campaignId: string,
   ambiguityIds: readonly string[],
-  campaignPosition?: string,
+  campaignPosition: string,
 ): CampaignRulingProjection[] {
   return activeRows(db, campaignId, campaignPosition)
     .filter(isAmbiguityRuling)
@@ -372,15 +362,13 @@ export function listActiveRulingsForAmbiguitiesAtPosition(
 }
 
 /**
- * The discovery seam is position-blind for rulings by contract. Callers that
- * need replay accuracy bind the requested campaign position here; otherwise
- * queries use the latest recorded rule position and still apply temporal
- * filtering.
+ * The discovery seam binds a required campaign position so every query is
+ * replay-accurate.
  */
 export function createCampaignRuleReadSeam(
   db: Db,
   campaignId: string,
-  campaignPosition?: string,
+  campaignPosition: string,
 ): CampaignRuleReadSeam {
   return {
     activeRulesAtPosition: (query: RuleSeamQuery) =>

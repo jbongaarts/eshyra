@@ -102,6 +102,7 @@ export type {
   CampaignRuleOrigin,
   CampaignRuleProjection,
   CampaignRuleProvenance,
+  CampaignRuleReadSeam,
   CampaignRuleStatus,
   CampaignRuleValidationOptions,
   CampaignRulingProjection,
@@ -532,7 +533,6 @@ export { extractDiscoverySignals } from './discovery/signals.js';
 // Offline discovery pilot (experiment-only; intentionally absent from the
 // stable root export and not imported by runtime modules).
 export type {
-  CampaignRuleReadSeam,
   CandidateBand,
   ContextPacket,
   DiscoveryCandidate,

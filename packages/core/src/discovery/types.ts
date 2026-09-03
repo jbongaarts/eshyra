@@ -1,6 +1,7 @@
 import type { AdventureModule } from '../adventure/types.js';
 import type {
   CampaignRuleProjection,
+  CampaignRuleReadSeam,
   CampaignRulingProjection,
 } from '../campaign/campaignRules.js';
 import type { Db } from '../persistence/db.js';
@@ -13,6 +14,7 @@ import type { ItemOperationReadinessInput } from '../state/itemExecutionReadines
 
 export type {
   CampaignRuleProjection,
+  CampaignRuleReadSeam,
   CampaignRulingProjection,
 } from '../campaign/campaignRules.js';
 
@@ -172,20 +174,7 @@ export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
   readonly traversals: readonly TypedTraversal[];
 }
 
-export interface CampaignRuleReadSeam {
-  activeRulesAtPosition(query: {
-    readonly campaignPosition?: string;
-    readonly candidateRecordKeys: readonly string[];
-  }): readonly CampaignRuleProjection[];
-  activeRulingsForAmbiguities(
-    ambiguityIds: readonly string[],
-  ): readonly CampaignRulingProjection[];
-}
-
-export const NULL_CAMPAIGN_RULE_SEAM: CampaignRuleReadSeam = {
-  activeRulesAtPosition: () => [],
-  activeRulingsForAmbiguities: () => [],
-};
+export { NULL_CAMPAIGN_RULE_SEAM } from '../campaign/campaignRules.js';
 
 export interface RuleJoinTrace extends StageTrace<DiscoveryCandidate> {
   /** Keys passed to the active-rule query, empty unless it executed. */

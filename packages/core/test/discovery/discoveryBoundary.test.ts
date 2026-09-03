@@ -36,10 +36,7 @@ describe('offline discovery boundary', () => {
         readFileSync(file, 'utf8')
           .split('\n')
           .filter(
-            (line) =>
-              !line.trimStart().startsWith('import type') &&
-              line.includes('discovery') &&
-              line.includes('from '),
+            (line) => line.includes('discovery') && line.includes('from '),
           ),
       ),
     ).toEqual([]);
