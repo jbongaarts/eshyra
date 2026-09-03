@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { resolveCampaignPosition } from '../campaign/campaignPosition.js';
+import { formatCampaignPosition } from '../campaign/campaignRules.js';
 import type { CharacterChronicleStore } from '../character/characterChronicle.js';
 import type {
   CandidateDisposition,
@@ -546,6 +548,11 @@ export async function runTurn(
   const rejectedAttemptToolNames = new Set<string>();
   let toolsRerunDuringRetry: readonly string[] = [];
 
+  const campaignPosition = resolveCampaignPosition(db, {
+    campaignId: input.campaignId,
+    sessionId: input.sessionId,
+    turnId: input.turnId,
+  });
   db.exec(`SAVEPOINT ${TURN_SAVEPOINT}`);
   try {
     // Resolve and validate the acting PC before any context assembly, tool
@@ -567,6 +574,8 @@ export async function runTurn(
       actingCharacterId,
       resolveAdventureModule: deps.resolveAdventureModule,
       characterChronicle: deps.characterChronicle,
+      campaignPosition: formatCampaignPosition(campaignPosition),
+      resolveRulesPack: deps.resolveRulesPack,
     });
 
     phase = 'model_loop';

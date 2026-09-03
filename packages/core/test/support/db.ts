@@ -1,10 +1,15 @@
 import type { Db } from '../../src/index.js';
 import { initSchema, openDatabase, startSession } from '../../src/index.js';
-import { mutateState } from '../../src/internal.js';
+import { formatCampaignPosition, mutateState } from '../../src/internal.js';
 
 export const DEFAULT_TEST_CAMPAIGN_ID = 'campaign-1';
 export const DEFAULT_TEST_SESSION_ID = 'session-1';
 export const DEFAULT_TEST_SESSION_STARTED_AT = '2026-05-20T09:00:00.000Z';
+export const DEFAULT_TEST_CAMPAIGN_POSITION = formatCampaignPosition({
+  sessionId: 'test-session',
+  turnId: 'test-turn',
+  ordinal: 1,
+});
 
 /**
  * Default valid ability scores used to satisfy the live-state shape validator

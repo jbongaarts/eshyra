@@ -11,6 +11,7 @@ import {
   setActiveCharacterId,
   startSession,
 } from '../src/internal.js';
+import { DEFAULT_TEST_CAMPAIGN_POSITION } from './support/db.js';
 
 const registry = createDefaultToolRegistry();
 
@@ -121,6 +122,7 @@ describe('acting-character attribution', () => {
     const assembled = assembleContext({
       db,
       campaignId: 'campaign-1',
+      campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
       sessionId: 'session-1',
       playerInput: 'look around',
       actingCharacterId: 'pc-2',

@@ -300,6 +300,15 @@ CREATE TABLE campaign_session (
   PRIMARY KEY (campaign_id, session_id)
 );
 
+CREATE TABLE campaign_turn_position (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  turn_id TEXT NOT NULL,
+  ordinal INTEGER NOT NULL CHECK (ordinal > 0),
+  PRIMARY KEY (campaign_id, session_id, turn_id),
+  UNIQUE (campaign_id, ordinal)
+);
+
 CREATE TABLE character (
   id TEXT PRIMARY KEY,
   name TEXT,
@@ -881,6 +890,9 @@ CREATE INDEX campaign_rule_status_position
 CREATE UNIQUE INDEX campaign_session_one_open
   ON campaign_session(campaign_id)
   WHERE status = 'open';
+
+CREATE INDEX campaign_turn_position_ordinal
+  ON campaign_turn_position(campaign_id, ordinal);
 
 CREATE INDEX character_spell_slot_character
   ON character_spell_slot(character_id, pool_kind, spell_level);
