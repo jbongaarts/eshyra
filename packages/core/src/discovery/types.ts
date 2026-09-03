@@ -1,4 +1,8 @@
 import type { AdventureModule } from '../adventure/types.js';
+import type {
+  CampaignRuleProjection,
+  CampaignRulingProjection,
+} from '../campaign/campaignRules.js';
 import type { Db } from '../persistence/db.js';
 import type {
   ResolvedRulesStack,
@@ -6,6 +10,11 @@ import type {
 } from '../rules/stack.js';
 import type { RulesAmbiguity } from '../rules/types.js';
 import type { ItemOperationReadinessInput } from '../state/itemExecutionReadiness.js';
+
+export type {
+  CampaignRuleProjection,
+  CampaignRulingProjection,
+} from '../campaign/campaignRules.js';
 
 export type RouteClass =
   | 'direct-state-ref'
@@ -161,27 +170,6 @@ export interface TypedTraversal {
 
 export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
   readonly traversals: readonly TypedTraversal[];
-}
-
-export interface CampaignRuleProjection {
-  readonly ruleIdentity: string;
-  readonly ruleKind: 'house-rule' | 'ruling';
-  readonly status: string;
-  readonly origin: string;
-  readonly provenance: string;
-  readonly effectivePosition: string;
-  readonly supersededBy: string | null;
-  readonly scope: string;
-  readonly governingRecordKeys: readonly string[];
-  readonly ambiguityId?: string;
-  readonly oracleSupplied?: boolean;
-  readonly prose?: string;
-}
-
-export interface CampaignRulingProjection extends CampaignRuleProjection {
-  readonly ruleKind: 'ruling';
-  readonly ambiguityId: string;
-  readonly selectedInterpretationId: string;
 }
 
 export interface CampaignRuleReadSeam {
