@@ -11,8 +11,8 @@ import { requireNonEmpty } from '../validation.js';
  * Positions are `cp1~<encoded session>~<encoded turn>~<12-digit ordinal>`.
  * The ordinal is assigned by the campaign history writer (this module does
  * not persist it), while the session and turn anchors make the value useful
- * in diagnostics and replay. Lexical comparison of canonical positions is a
- * total order.
+ * in diagnostics and replay. The ordinal is authoritative for chronology;
+ * session and turn IDs are diagnostic anchors and deterministic tie-breakers.
  */
 
 export class CampaignRuleError extends Error {
@@ -283,9 +283,15 @@ export function compareCampaignPositions(
 ): number {
   const left = typeof a === 'string' ? parseCampaignPosition(a) : a;
   const right = typeof b === 'string' ? parseCampaignPosition(b) : b;
-  return formatCampaignPosition(left).localeCompare(
-    formatCampaignPosition(right),
+  return (
+    left.ordinal - right.ordinal ||
+    compareCodePoints(left.sessionId, right.sessionId) ||
+    compareCodePoints(left.turnId, right.turnId)
   );
+}
+
+function compareCodePoints(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 export type CampaignPrecedence =
@@ -316,7 +322,7 @@ export function orderCampaignRules(
     return (
       position ||
       precedenceOf(a) - precedenceOf(b) ||
-      a.ruleIdentity.localeCompare(b.ruleIdentity)
+      compareCodePoints(a.ruleIdentity, b.ruleIdentity)
     );
   });
 }
@@ -346,18 +352,12 @@ export function projectCampaignRule(
     ...(rule.origin === 'oracle-supplied' ? { oracleSupplied: true } : {}),
     prose: rule.prose,
   };
-  return rule.ruleKind === 'ruling' && rule.provenance.kind !== 'house-rule'
+  return rule.ruleKind === 'ruling' && rule.provenance.kind === 'ambiguity'
     ? {
         ...base,
         ruleKind: 'ruling',
-        ambiguityId:
-          rule.provenance.kind === 'ambiguity'
-            ? rule.provenance.ambiguityId
-            : `question:${rule.provenance.questionId}`,
-        selectedInterpretationId:
-          rule.provenance.kind === 'ambiguity'
-            ? rule.provenance.selectedInterpretationId
-            : rule.provenance.questionId,
+        ambiguityId: rule.provenance.ambiguityId,
+        selectedInterpretationId: rule.provenance.selectedInterpretationId,
       }
     : base;
 }

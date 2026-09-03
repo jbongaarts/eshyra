@@ -14,8 +14,12 @@ import {
   validateCampaignRules,
 } from '../src/internal.js';
 
-const position = (ordinal: number, turnId = 'turn-1'): CampaignPosition => ({
-  sessionId: 'session-1',
+const position = (
+  ordinal: number,
+  turnId = 'turn-1',
+  sessionId = 'session-1',
+): CampaignPosition => ({
+  sessionId,
   turnId,
   ordinal,
 });
@@ -61,6 +65,44 @@ describe('campaign rule domain', () => {
     expect(() => parseCampaignPosition('turn-12')).toThrow(CampaignRuleError);
   });
 
+  it('orders chronology by ordinal across sessions and turns', () => {
+    const early = position(5, 't1', 's2');
+    const late = position(6, 't1', 's10');
+    expect(compareCampaignPositions(early, late)).toBeLessThan(0);
+    expect(compareCampaignPositions(late, early)).toBeGreaterThan(0);
+    expect(
+      compareCampaignPositions(
+        position(5, 'turn-2', 'session-1'),
+        position(5, 'turn-10', 'session-1'),
+      ),
+    ).toBeGreaterThan(0);
+
+    const shuffled = [
+      position(12, 'turn-2', 'S!'),
+      position(2, 'turn-1', 's10'),
+      position(11, 'turn-1', 's2'),
+      position(7, 'Turn-1', 'S!'),
+    ];
+    expect(shuffled.sort(compareCampaignPositions)).toEqual([
+      position(2, 'turn-1', 's10'),
+      position(7, 'Turn-1', 'S!'),
+      position(11, 'turn-1', 's2'),
+      position(12, 'turn-2', 'S!'),
+    ]);
+    expect(
+      compareCampaignPositions(
+        position(1, 'turn', 'S1'),
+        position(1, 'turn', 's1'),
+      ),
+    ).toBeLessThan(0);
+    expect(
+      compareCampaignPositions(
+        position(1, 'turn', 'a'),
+        position(1, 'turn', 'B'),
+      ),
+    ).toBeGreaterThan(0);
+  });
+
   it('distinguishes rulings from house rules and derives seam projections', () => {
     const ruling = rule();
     const projection = projectCampaignRule(ruling);
@@ -77,6 +119,20 @@ describe('campaign rule domain', () => {
     expect(projectCampaignRule(houseRule)).toMatchObject({
       ruleKind: 'house-rule',
       provenance: 'house-rule',
+    });
+    const recurring = rule({
+      ruleIdentity: 'recurring',
+      provenance: { kind: 'recurring-question', questionId: 'question-1' },
+    });
+    expect(projectCampaignRule(recurring)).toEqual(
+      expect.not.objectContaining({
+        ambiguityId: expect.anything(),
+        selectedInterpretationId: expect.anything(),
+      }),
+    );
+    expect(projectCampaignRule(recurring)).toMatchObject({
+      ruleKind: 'ruling',
+      provenance: 'question:question-1',
     });
     expect(() =>
       validateCampaignRule(
