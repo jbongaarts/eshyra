@@ -342,8 +342,7 @@ export function createCampaignRule(
   }
   return withTransaction(db, (txn) => {
     assertCurrentPosition(txn, rule.campaignId, options.currentPosition);
-    writeRule(txn, rule, options);
-    return rule;
+    return writeRule(txn, rule, options);
   });
 }
 
@@ -445,11 +444,18 @@ export function revokeCampaignRule(
     throw new CampaignRuleError(
       `campaign rule '${input.ruleIdentity}' is not active`,
     );
+  // A future rule may be explicitly cancelled at the current persisted
+  // position. Other pre-effective revocation positions remain invalid.
+  const canCancelBeforeEffective =
+    existing.effectivePosition.ordinal > input.currentPosition.ordinal &&
+    compareCampaignPositions(input.revokedPosition, input.currentPosition) ===
+      0;
   if (
     compareCampaignPositions(
       input.revokedPosition,
       existing.effectivePosition,
-    ) < 0
+    ) < 0 &&
+    !canCancelBeforeEffective
   )
     throw new CampaignRuleError(
       `campaign rule '${input.ruleIdentity}' cannot be revoked before its effective position`,
@@ -505,11 +511,16 @@ export function supersedeCampaignRule(
         : `campaign rule '${input.ruleIdentity}' is revoked`,
     );
   }
-  if (input.successor.ruleIdentity === input.ruleIdentity)
+  const successor = canonicalizeFutureEffectivePosition(
+    db,
+    input.successor,
+    input.currentPosition,
+  );
+  if (successor.ruleIdentity === input.ruleIdentity)
     throw new CampaignRuleError('a rule cannot supersede itself');
   if (
     compareCampaignPositions(
-      input.successor.effectivePosition,
+      successor.effectivePosition,
       prior.effectivePosition,
     ) < 0
   )
@@ -518,10 +529,10 @@ export function supersedeCampaignRule(
     );
   if (
     compareCampaignPositions(
-      input.successor.effectivePosition,
+      successor.effectivePosition,
       input.currentPosition,
     ) < 0 &&
-    input.successor.temporalMode.mode === 'prospective'
+    successor.temporalMode.mode === 'prospective'
   )
     throw new CampaignRuleError(
       `successor '${input.successor.ruleIdentity}' cannot take effect before the current position`,
@@ -529,32 +540,28 @@ export function supersedeCampaignRule(
   assertPersistedPositionAtOrBeforeCurrent(
     db,
     input.campaignId,
-    input.successor.effectivePosition,
+    successor.effectivePosition,
     'successor.effectivePosition',
   );
   if (
     getCampaignRule(db, {
       campaignId: input.campaignId,
-      ruleIdentity: input.successor.ruleIdentity,
+      ruleIdentity: successor.ruleIdentity,
     }) !== undefined
   )
     throw new CampaignRuleError(
-      `campaign rule '${input.successor.ruleIdentity}' already exists`,
+      `campaign rule '${successor.ruleIdentity}' already exists`,
     );
   validateCampaignRule(prior, input.validation);
-  validateCampaignRule(
-    input.successor,
-    input.validation,
-    input.currentPosition,
-  );
+  validateCampaignRule(successor, input.validation, input.currentPosition);
   validateCampaignRules(
     [
       {
         ...prior,
         status: 'superseded',
-        supersededBy: input.successor.ruleIdentity,
+        supersededBy: successor.ruleIdentity,
       },
-      input.successor,
+      successor,
     ],
     input.validation,
   );
@@ -570,13 +577,13 @@ export function supersedeCampaignRule(
         input.campaignId,
         input.ruleIdentity,
       );
-    writeRule(txn, input.successor, {
+    const storedSuccessor = writeRule(txn, successor, {
       currentPosition: input.currentPosition,
       sessionId: input.sessionId,
       updatedAt: input.updatedAt,
       validation: input.validation,
     });
-    return input.successor;
+    return storedSuccessor;
   });
 }
 

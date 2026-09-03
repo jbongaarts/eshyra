@@ -221,6 +221,18 @@ describe('Context Assembler', () => {
     expect(renderContextMessage(context)).toContain(
       'AMBIGUITY SOURCE UNAVAILABLE',
     );
+    expect(() =>
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: formatCampaignPosition(campaignPosition(1)),
+        sessionId: SESSION,
+        playerInput: 'continue',
+        resolveRulesPack: () => {
+          throw new Error('resolver transport failed');
+        },
+      }),
+    ).toThrow('resolver transport failed');
     db.close();
   });
 
@@ -298,6 +310,72 @@ describe('Context Assembler', () => {
     const rendered = renderContextMessage(context);
     expect(rendered).toContain('collision:one');
     expect(rendered).toContain('collision:two');
+    db.close();
+  });
+
+  it('degrades malformed pack ambiguity content into visible per-turn context', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const original = getBundledDnd5eSrdPack();
+    const addon: RulesPack = {
+      ...original,
+      meta: {
+        ...original.meta,
+        packId: 'rules:test-malformed-ambiguity',
+        role: 'addon',
+        order: 1,
+        compatibleBaseSystems: [
+          {
+            systemId: original.meta.systemId,
+            versions: [original.meta.version],
+          },
+        ],
+      },
+      records: [
+        {
+          ...original.records[0],
+          key: 'feature:malformed-ambiguity',
+          data: {
+            mechanics: {
+              ambiguities: [{ id: 'ambiguity:Foo_Bar' }],
+            },
+          },
+        },
+      ],
+    };
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: original.meta.systemId,
+        packId: original.meta.packId,
+        version: original.meta.version,
+      },
+      addons: [
+        {
+          systemId: addon.meta.systemId,
+          packId: addon.meta.packId,
+          version: addon.meta.version,
+        },
+      ],
+      resolvedAt: '2026-05-20T09:00:00.000Z',
+    });
+    const context = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
+      sessionId: SESSION,
+      playerInput: 'continue',
+      resolveRulesPack: (ref) =>
+        ref.packId === original.meta.packId
+          ? original
+          : ref.packId === addon.meta.packId
+            ? addon
+            : undefined,
+    });
+    expect(context.campaignRules.ambiguitySourceUnavailable).toContain(
+      'feature:malformed-ambiguity.data.mechanics.ambiguities[0].id must be a stable ambiguity:<kebab-case> ID',
+    );
+    expect(renderContextMessage(context)).toContain(
+      'AMBIGUITY SOURCE UNAVAILABLE',
+    );
     db.close();
   });
 

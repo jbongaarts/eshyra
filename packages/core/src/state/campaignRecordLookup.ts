@@ -13,6 +13,7 @@ import type {
   RulesRecord,
   RulesRecordKind,
 } from '../rules/types.js';
+import { markRulesPackContentError } from '../rules/types.js';
 
 export type CampaignRulesPackResolver = (binding: {
   readonly systemId: string;
@@ -24,6 +25,7 @@ export class CampaignRulesBindingResolutionError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'CampaignRulesBindingResolutionError';
+    markRulesPackContentError(this);
   }
 }
 

@@ -213,6 +213,50 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
+  it('returns the canonical rule representation that it persisted', () => {
+    const db = bareDb();
+    const ordinary = createCampaignRule(db, rule('ordinary', 0));
+    expect(ordinary).toEqual(
+      getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'ordinary' }),
+    );
+
+    const future = createCampaignRule(db, rule('future-returned', 9));
+    expect(future).toEqual(
+      getCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'future-returned',
+      }),
+    );
+    expect(future.effectivePosition).toEqual({
+      ...p(9),
+      sessionId: '__future__',
+      turnId: '__future__',
+    });
+    db.close();
+  });
+
+  it('returns the canonical successor representation that it persisted', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('prior-returned', 0));
+    const successor = supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'prior-returned',
+      successor: rule('future-successor-returned', 9),
+    });
+    expect(successor).toEqual(
+      getCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'future-successor-returned',
+      }),
+    );
+    expect(successor.effectivePosition).toEqual({
+      ...p(9),
+      sessionId: '__future__',
+      turnId: '__future__',
+    });
+    db.close();
+  });
+
   it('rejects stale current-position authority and preserves history', () => {
     const db = bareDb();
     const first = resolveCampaignPosition(db, {
@@ -671,6 +715,95 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
+  it('cancels a future rule at the current position before it takes effect', () => {
+    const db = bareDb();
+    const current = persistPositions(db, 2, 'future-cancel');
+    createCampaignRule(db, rule('future-to-cancel', 9), {
+      currentPosition: current,
+    });
+
+    const revoked = revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'future-to-cancel',
+      revokedPosition: current,
+      currentPosition: current,
+    });
+    expect(revoked).toMatchObject({ status: 'revoked' });
+    for (const ordinal of [2, 9, 10]) {
+      expect(
+        listActiveCampaignRulesAtPosition(
+          db,
+          'c1',
+          formatCampaignPosition(p(ordinal)),
+        ).map((item) => item.ruleIdentity),
+      ).not.toContain('future-to-cancel');
+    }
+    db.close();
+  });
+
+  it('rejects empty governing keys and places restored duplicate keys idempotently', () => {
+    const db = bareDb();
+    expect(() =>
+      createCampaignRule(
+        db,
+        rule('empty-governing-keys', 0, 'house-rule', {
+          governingRecordKeys: [],
+        }),
+      ),
+    ).toThrow('governingRecordKeys must contain at least one record key');
+    expect(() =>
+      createCampaignRule(
+        db,
+        rule('blank-governing-key', 0, 'house-rule', {
+          governingRecordKeys: [''],
+        }),
+      ),
+    ).toThrow('governingRecordKeys[0] must be a non-empty string');
+    expect(() =>
+      createCampaignRule(
+        db,
+        rule('duplicate-governing-keys', 0, 'house-rule', {
+          governingRecordKeys: ['spell:fireball', 'spell:fireball'],
+        }),
+      ),
+    ).toThrow("governingRecordKeys contains duplicate key 'spell:fireball'");
+
+    createCampaignRule(
+      db,
+      rule('legacy-duplicate-governing-keys', 1, 'house-rule', {
+        governingRecordKeys: ['spell:fireball'],
+      }),
+    );
+    db.prepare(
+      'UPDATE campaign_rule SET governing_record_keys_json = ? WHERE rule_identity = ?',
+    ).run(
+      JSON.stringify(['spell:fireball', 'spell:fireball']),
+      'legacy-duplicate-governing-keys',
+    );
+    const position = formatCampaignPosition(p(1));
+    const trace = joinCampaignRules(
+      [],
+      createCampaignRuleReadSeam(db, 'c1', position),
+      {
+        campaignPosition: position,
+        stack: resolveStrictCampaignRulesStack(db),
+      },
+    );
+    const fireball = trace.outputsProduced.find(
+      (candidate) => candidate.candidateKey === 'spell:fireball',
+    );
+    expect(fireball?.campaignRules.map((item) => item.ruleIdentity)).toEqual([
+      'legacy-duplicate-governing-keys',
+    ]);
+    expect(
+      trace.placedRules.filter(
+        ({ ruleIdentity }) =>
+          ruleIdentity === 'legacy-duplicate-governing-keys',
+      ),
+    ).toHaveLength(1);
+    db.close();
+  });
+
   it('keeps historical ambiguity-ruling supersession intervals disjoint', () => {
     const db = bareDb();
     createCampaignRule(db, ambiguityRuling('old-ruling', 1), {
@@ -861,6 +994,74 @@ describe('campaign rule persistence', () => {
       }),
     ).toContain(
       'CONFLICT: active rulings raw-ruling-one, raw-ruling-two contradict one another; none is authoritative.',
+    );
+    db.close();
+  });
+
+  it('accounts for restored house rules with ambiguity provenance', () => {
+    const db = bareDb();
+    const campaignPosition = formatCampaignPosition(p(1));
+    db.prepare(`
+      INSERT INTO campaign_rule (
+        campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
+        ambiguity_id, selected_interpretation_id, question_id, rationale,
+        effective_position, temporal_mode, disputed_position, superseded_by,
+        revoked_position, scope, governing_record_keys_json, prose, provenance,
+        session_id, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `).run(
+      'c1',
+      'restored-invalid-provenance',
+      'house-rule',
+      'active',
+      'player-approved',
+      'ambiguity',
+      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+      'presence-required',
+      null,
+      null,
+      campaignPosition,
+      'prospective',
+      null,
+      null,
+      null,
+      'test',
+      JSON.stringify(['spell:find-familiar']),
+      'Restored invalid rule',
+      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp#presence-required',
+      'test',
+      '2026-09-03T00:00:00.000Z',
+    );
+
+    const context = assembleCampaignRulesContext(
+      db,
+      'c1',
+      campaignPosition,
+      resolveStrictCampaignRulesStack(db),
+    );
+    expect(context.unrepresentableRules).toEqual([
+      expect.objectContaining({ ruleIdentity: 'restored-invalid-provenance' }),
+    ]);
+    expect(context.rules).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ruleIdentity: 'restored-invalid-provenance',
+        }),
+      ]),
+    );
+    expect(
+      renderContextMessage({
+        ...assembleContext({
+          db,
+          campaignId: 'c1',
+          campaignPosition,
+          sessionId: 'session-1',
+          playerInput: 'continue',
+        }),
+        campaignRules: context,
+      }),
+    ).toContain(
+      'UNREPRESENTABLE ACTIVE CAMPAIGN RULE restored-invalid-provenance',
     );
     db.close();
   });
