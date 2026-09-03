@@ -207,6 +207,19 @@ export function validateCampaignRule(
   );
   checkPosition(rule.effectivePosition, 'effectivePosition');
   checkTemporalMode(rule.temporalMode, rule.effectivePosition, currentPosition);
+  if (
+    !Array.isArray(rule.governingRecordKeys) ||
+    rule.governingRecordKeys.length === 0
+  )
+    fail('governingRecordKeys must contain at least one record key');
+  const governingRecordKeys = new Set<string>();
+  rule.governingRecordKeys.forEach((key, index) => {
+    if (typeof key !== 'string' || key.length === 0)
+      fail(`governingRecordKeys[${index}] must be a non-empty string`);
+    if (governingRecordKeys.has(key))
+      fail(`governingRecordKeys contains duplicate key '${key}'`);
+    governingRecordKeys.add(key);
+  });
   if (rule.status === 'superseded' && rule.supersededBy === null) {
     fail('superseded rule must name supersededBy');
   }

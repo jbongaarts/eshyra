@@ -22,6 +22,7 @@ function isAmbiguityRuling(
 function withRule(
   candidate: DiscoveryCandidate,
   projection: CampaignRuleProjection,
+  governingRecordKey: string,
 ): DiscoveryCandidate {
   const ambiguityRuling = isAmbiguityRuling(projection);
   const route = {
@@ -32,6 +33,12 @@ function withRule(
     evidence: projection as unknown as Record<string, unknown>,
     signalId: `campaign-rule:${projection.ruleIdentity}`,
   };
+  const alreadyPlaced = (items: readonly CampaignRuleProjection[]) =>
+    items.some(
+      (item) =>
+        item.ruleIdentity === projection.ruleIdentity &&
+        item.governingRecordKeys.includes(governingRecordKey),
+    );
   return {
     ...candidate,
     routes: candidate.routes.some((item) => item.trigger === route.trigger)
@@ -39,9 +46,13 @@ function withRule(
       : [...candidate.routes, route],
     campaignRules: ambiguityRuling
       ? candidate.campaignRules
-      : [...candidate.campaignRules, projection],
+      : alreadyPlaced(candidate.campaignRules)
+        ? candidate.campaignRules
+        : [...candidate.campaignRules, projection],
     campaignRulings: ambiguityRuling
-      ? [...candidate.campaignRulings, projection]
+      ? alreadyPlaced(candidate.campaignRulings)
+        ? candidate.campaignRulings
+        : [...candidate.campaignRulings, projection]
       : candidate.campaignRulings,
   };
 }
@@ -240,14 +251,21 @@ export function joinCampaignRules(
     }
     placedIdentities.add(projection.ruleIdentity);
     for (const key of governed) {
-      result.set(
-        key,
-        withRule(result.get(key) as DiscoveryCandidate, projection),
+      const candidate = result.get(key) as DiscoveryCandidate;
+      const placements = isAmbiguityRuling(projection)
+        ? candidate.campaignRulings
+        : candidate.campaignRules;
+      const alreadyPlaced = placements.some(
+        (item) =>
+          item.ruleIdentity === projection.ruleIdentity &&
+          item.governingRecordKeys.includes(key),
       );
-      placedRules.push({
-        ruleIdentity: projection.ruleIdentity,
-        governingRecordKey: key,
-      });
+      result.set(key, withRule(candidate, projection, key));
+      if (!alreadyPlaced)
+        placedRules.push({
+          ruleIdentity: projection.ruleIdentity,
+          governingRecordKey: key,
+        });
     }
   }
   // Only a ruling that was actually placed resolves its ambiguity. Treating

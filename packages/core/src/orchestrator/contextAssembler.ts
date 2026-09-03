@@ -3,7 +3,6 @@ import { listAdventureRuns } from '../campaign/adventureRun.js';
 import {
   assembleCampaignRulesContext,
   type CampaignRulesContext,
-  CampaignRulesPackAuthoringError,
 } from '../campaign/campaignContext.js';
 import type {
   CharacterChronicleRecord,
@@ -25,6 +24,7 @@ import {
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
 } from '../rules/bundledSrdPack.js';
+import { isRulesPackContentError } from '../rules/types.js';
 import {
   type CombatTurnState,
   formatTurnBudget,
@@ -44,10 +44,7 @@ import {
   type AttunementEntry,
   listAttunements,
 } from '../state/attunement.js';
-import {
-  CampaignRulesBindingResolutionError,
-  resolveStrictCampaignRulesStack,
-} from '../state/campaignRecordLookup.js';
+import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
 import {
   type CampaignActor,
   type EncounterCombatant,
@@ -613,11 +610,7 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
       resolveStrictCampaignRulesStack(input.db, input.resolveRulesPack),
     );
   } catch (error) {
-    if (
-      !(error instanceof CampaignRulesBindingResolutionError) &&
-      !(error instanceof CampaignRulesPackAuthoringError)
-    )
-      throw error;
+    if (!isRulesPackContentError(error)) throw error;
     campaignRules = assembleCampaignRulesContext(
       input.db,
       input.campaignId,
@@ -1047,6 +1040,7 @@ export function renderContextMessage(ctx: AssembledContext): string {
     ctx.campaignRules.ambiguitySourceUnavailable !== undefined ||
     ctx.campaignRules.rules.length > 0 ||
     ctx.campaignRules.unboundRulings.length > 0 ||
+    ctx.campaignRules.unrepresentableRules.length > 0 ||
     ctx.campaignRules.ambiguities.length > 0
   ) {
     const unavailable =
@@ -1063,6 +1057,10 @@ export function renderContextMessage(ctx: AssembledContext): string {
       (ruling) =>
         `- [ruling] ${ruling.ruleIdentity} (${ruling.provenance}; ambiguity absent from current pack; effective ${ruling.effectivePosition}; records: ${ruling.governingRecordKeys.join(', ') || '(none)'}): ${ruling.prose ?? ''}`,
     );
+    const unrepresentableRules = ctx.campaignRules.unrepresentableRules.map(
+      (rule) =>
+        `- UNREPRESENTABLE ACTIVE CAMPAIGN RULE ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): preserved restored content requires repair before it can be interpreted`,
+    );
     const ambiguityLines = ctx.campaignRules.ambiguities.flatMap(
       ({ ambiguity, ruling, conflictingRulings }) => [
         `- ${ambiguity.id}: ${ambiguity.question}`,
@@ -1077,7 +1075,7 @@ export function renderContextMessage(ctx: AssembledContext): string {
       ],
     );
     sections.push(
-      `## Campaign Rules\n${[...unavailable, ...rules, ...unboundRulings, ...ambiguityLines].join('\n')}`,
+      `## Campaign Rules\n${[...unavailable, ...rules, ...unboundRulings, ...unrepresentableRules, ...ambiguityLines].join('\n')}`,
     );
   }
 
