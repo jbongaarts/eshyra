@@ -181,6 +181,9 @@ export function joinCampaignRules(
         includeAllActive: options.rulingsOnly !== true,
       })
     : [];
+  const returnedAmbiguityIds = [
+    ...new Set(rulings.map((ruling) => ruling.ambiguityId)),
+  ];
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
   );
@@ -295,6 +298,7 @@ export function joinCampaignRules(
     ruleQueryExecuted,
     rulingQueryExecuted,
     returnedRuleIdentities: returned,
+    returnedAmbiguityIds,
     placedRuleIdentities: [...placedIdentities],
     unplacedRuleIdentities: unplaced,
     surfacedCandidateKeys: surfaced,

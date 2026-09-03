@@ -25,6 +25,9 @@ export class CampaignRuleError extends Error {
   }
 }
 
+/** Reserved ordering anchor for a prospective rule whose turn is not stored. */
+export const FUTURE_CAMPAIGN_POSITION_ANCHOR = '__future__';
+
 export interface CampaignPosition {
   readonly sessionId: string;
   readonly turnId: string;
@@ -312,8 +315,17 @@ export function compareCampaignPositions(
   // ordering as every other in-memory consumer.
   const left = typeof a === 'string' ? parseCampaignPosition(a) : a;
   const right = typeof b === 'string' ? parseCampaignPosition(b) : b;
+  const leftIsFutureAnchor =
+    left.sessionId === FUTURE_CAMPAIGN_POSITION_ANCHOR &&
+    left.turnId === FUTURE_CAMPAIGN_POSITION_ANCHOR;
+  const rightIsFutureAnchor =
+    right.sessionId === FUTURE_CAMPAIGN_POSITION_ANCHOR &&
+    right.turnId === FUTURE_CAMPAIGN_POSITION_ANCHOR;
+  const ordinal = left.ordinal - right.ordinal;
+  if (ordinal !== 0) return ordinal;
+  if (leftIsFutureAnchor !== rightIsFutureAnchor)
+    return leftIsFutureAnchor ? -1 : 1;
   return (
-    left.ordinal - right.ordinal ||
     compareCodePoints(left.sessionId, right.sessionId) ||
     compareCodePoints(left.turnId, right.turnId)
   );

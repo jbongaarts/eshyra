@@ -362,15 +362,15 @@ export function measureDiscovery(
       ],
       unexpandedPromotions: trace.unexpandedPromotions,
       unqueriedAmbiguityIds: (() => {
-        if (
-          trace.ruleJoin.rulingQueryScope === 'all-active' ||
-          trace.lateRuleJoin.rulingQueryScope === 'all-active'
-        ) {
-          return [];
-        }
+        // The all-active scope is only an argument to the seam. Closure is
+        // measured from the actual query evidence: ids offered as arguments
+        // plus ambiguity ids present in rulings the seam returned. This keeps
+        // a scope flag from turning the assertion into an unconditional pass.
         const offered = new Set([
           ...trace.ruleJoin.requestedAmbiguityIds,
           ...trace.lateRuleJoin.requestedAmbiguityIds,
+          ...trace.ruleJoin.returnedAmbiguityIds,
+          ...trace.lateRuleJoin.returnedAmbiguityIds,
         ]);
         return [
           ...new Set(

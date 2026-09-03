@@ -7,6 +7,7 @@ import type {
   CharacterSheet,
   Db,
   FinalizedAbilityScore,
+  RulesPack,
 } from '../src/internal.js';
 import {
   appendSceneLog,
@@ -22,6 +23,7 @@ import {
   DND5E_SRD_SYSTEM_ID,
   ensureCharacterRegistrySchema,
   formatCampaignPosition,
+  getBundledDnd5eSrdPack,
   memoryDrilldown,
   mutateState,
   openArcIfMissing,
@@ -219,6 +221,83 @@ describe('Context Assembler', () => {
     expect(renderContextMessage(context)).toContain(
       'AMBIGUITY SOURCE UNAVAILABLE',
     );
+    db.close();
+  });
+
+  it('degrades a duplicate pack ambiguity into visible per-turn context', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const original = getBundledDnd5eSrdPack();
+    const source = original.records.find((record) => {
+      const data = record.data;
+      if (typeof data !== 'object' || data === null || Array.isArray(data))
+        return false;
+      const mechanics = (data as { mechanics?: unknown }).mechanics;
+      return (
+        typeof mechanics === 'object' &&
+        mechanics !== null &&
+        !Array.isArray(mechanics) &&
+        Array.isArray((mechanics as { ambiguities?: unknown }).ambiguities)
+      );
+    });
+    if (source === undefined) throw new Error('missing ambiguity source');
+    const base: RulesPack = {
+      ...original,
+      meta: { ...original.meta, packId: 'rules:test-collision-base' },
+      records: original.records.filter((record) => record.key !== source.key),
+    };
+    const addon: RulesPack = {
+      ...original,
+      meta: {
+        ...original.meta,
+        packId: 'rules:test-collision-addon',
+        role: 'addon',
+        order: 1,
+        compatibleBaseSystems: [
+          {
+            systemId: original.meta.systemId,
+            versions: [original.meta.version],
+          },
+        ],
+      },
+      records: [
+        { ...source, key: 'collision:one' },
+        { ...source, key: 'collision:two' },
+      ],
+    };
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: base.meta.systemId,
+        packId: base.meta.packId,
+        version: base.meta.version,
+      },
+      addons: [
+        {
+          systemId: addon.meta.systemId,
+          packId: addon.meta.packId,
+          version: addon.meta.version,
+        },
+      ],
+      resolvedAt: '2026-05-20T09:00:00.000Z',
+    });
+    const context = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
+      sessionId: SESSION,
+      playerInput: 'continue',
+      resolveRulesPack: (ref) =>
+        ref.packId === base.meta.packId
+          ? base
+          : ref.packId === addon.meta.packId
+            ? addon
+            : undefined,
+    });
+    expect(context.campaignRules.ambiguitySourceUnavailable).toContain(
+      "records 'collision:one' and 'collision:two'",
+    );
+    const rendered = renderContextMessage(context);
+    expect(rendered).toContain('collision:one');
+    expect(rendered).toContain('collision:two');
     db.close();
   });
 
