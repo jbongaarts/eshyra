@@ -179,8 +179,11 @@ export { NULL_CAMPAIGN_RULE_SEAM } from '../campaign/campaignRules.js';
 export interface RuleJoinTrace extends StageTrace<DiscoveryCandidate> {
   /** Keys passed to the active-rule query, empty unless it executed. */
   readonly requestedRuleRecordKeys: readonly string[];
-  /** Ids passed to the ruling query, empty unless it executed. */
+  /** Ids passed to the ruling query, empty unless it executed. When the scope
+   * is `all-active`, these are context ids and do not limit the result. */
   readonly requestedAmbiguityIds: readonly string[];
+  /** Whether the ruling query asked for the complete active ruling set. */
+  readonly rulingQueryScope: 'none' | 'requested-ambiguities' | 'all-active';
   /** Whether each seam query actually ran. A position query over an empty
    * candidate set still ran, so counts cannot witness this. */
   readonly ruleQueryExecuted: boolean;

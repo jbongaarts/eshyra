@@ -272,6 +272,20 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
+  it('reports duplicate ambiguity identity before checking overlap', () => {
+    const db = bareDb();
+    const first = ambiguityRuling('duplicate-ruling', 1);
+    createCampaignRule(db, first, {
+      validation: { ambiguity },
+    });
+    expect(() =>
+      createCampaignRule(db, first, {
+        validation: { ambiguity },
+      }),
+    ).toThrow("campaign rule 'duplicate-ruling' already exists");
+    db.close();
+  });
+
   it('applies supersession and revocation prospectively', () => {
     const db = bareDb();
     createCampaignRule(db, rule('old', 1), withCurrent({}, p(0)));
@@ -804,6 +818,160 @@ describe('campaign rule persistence', () => {
         )
         .get('revoked'),
     ).toMatchObject({ revoked_position: formatCampaignPosition(p(4)) });
+    db.close();
+  });
+
+  it('supersedes a ruling at the immediately preceding disputed turn', () => {
+    const db = bareDb();
+    const previous = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 's1',
+      turnId: 'turn-1',
+    });
+    const prior = ambiguityRuling('prior-ruling', 1);
+    createCampaignRule(
+      db,
+      { ...prior, effectivePosition: previous },
+      {
+        validation: { ambiguity },
+        currentPosition: previous,
+      },
+    );
+    const current = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 's1',
+      turnId: 'turn-2',
+    });
+    const successor = ambiguityRuling('corrected-ruling', 1);
+    supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: prior.ruleIdentity,
+      successor: {
+        ...successor,
+        effectivePosition: previous,
+        temporalMode: {
+          mode: 'disputed-turn',
+          disputedPosition: previous,
+        },
+      },
+      currentPosition: current,
+      validation: { ambiguity },
+    });
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(previous),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['corrected-ruling']);
+
+    const third = rule('third-rule', 1);
+    createCampaignRule(
+      db,
+      {
+        ...third,
+        effectivePosition: previous,
+        temporalMode: {
+          mode: 'disputed-turn',
+          disputedPosition: previous,
+        },
+      },
+      {
+        currentPosition: current,
+      },
+    );
+    const older = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 's1',
+      turnId: 'turn-3',
+    });
+    expect(() =>
+      supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: third.ruleIdentity,
+        successor: {
+          ...rule('too-old-correction', 1),
+          effectivePosition: previous,
+          temporalMode: {
+            mode: 'disputed-turn',
+            disputedPosition: previous,
+          },
+        },
+        currentPosition: older,
+      }),
+    ).toThrow(CampaignRuleError);
+    db.close();
+  });
+
+  it('rejects a disputed anchor that disagrees with persisted chronology', () => {
+    const db = bareDb();
+    const previous = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 'aaa-turn',
+      turnId: 'turn-1',
+    });
+    const current = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 'zzz-turn',
+      turnId: 'turn-2',
+    });
+    expect(() =>
+      createCampaignRule(
+        db,
+        {
+          ...ambiguityRuling('fabricated-anchor', previous.ordinal),
+          effectivePosition: {
+            ...previous,
+            turnId: current.turnId,
+          },
+          temporalMode: {
+            mode: 'disputed-turn',
+            disputedPosition: {
+              ...previous,
+              turnId: current.turnId,
+            },
+          },
+        },
+        { currentPosition: current, validation: { ambiguity } },
+      ),
+    ).toThrow(CampaignRuleError);
+    db.close();
+  });
+
+  it('uses decoded position ordering for equal-ordinal active queries', () => {
+    const db = bareDb();
+    const space = {
+      sessionId: 'a b',
+      turnId: 'turn-space',
+      ordinal: 4,
+    };
+    const bang = {
+      sessionId: 'a!b',
+      turnId: 'turn-bang',
+      ordinal: 4,
+    };
+    createCampaignRule(db, {
+      ...rule('space', 4),
+      effectivePosition: space,
+    });
+    createCampaignRule(db, {
+      ...rule('bang', 4),
+      effectivePosition: bang,
+    });
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(bang),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['space', 'bang']);
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(space),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['space']);
     db.close();
   });
 

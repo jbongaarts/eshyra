@@ -326,6 +326,43 @@ describe('Context Assembler', () => {
         .filter((line) => line.includes('familiar-ruling')),
     ).toHaveLength(1);
     expect(resolvedMessage).toContain(interpretation.summary);
+    const fullStack = resolveStrictCampaignRulesStack(db);
+    const reboundStack = {
+      ...fullStack,
+      recordsByKey: new Map(
+        [...fullStack.recordsByKey].filter(
+          ([key]) => key !== 'spell:find-familiar',
+        ),
+      ),
+    };
+    const rebound = assembleCampaignRulesContext(
+      db,
+      CAMPAIGN,
+      formatCampaignPosition(campaignPosition(4)),
+      reboundStack,
+    );
+    expect(
+      rebound.ambiguities.map(({ ambiguity }) => ambiguity.id),
+    ).not.toContain(familiar.ambiguity.id);
+    expect(rebound.unboundRulings).toEqual([
+      expect.objectContaining({
+        ruleIdentity: 'familiar-ruling',
+        ambiguityId: familiar.ambiguity.id,
+        selectedInterpretationId: interpretation.id,
+      }),
+    ]);
+    expect(
+      renderContextMessage({
+        ...assembleContext({
+          db,
+          campaignId: CAMPAIGN,
+          campaignPosition: formatCampaignPosition(campaignPosition(4)),
+          sessionId: SESSION,
+          playerInput: 'continue',
+        }),
+        campaignRules: rebound,
+      }),
+    ).toContain('ambiguity absent from current pack');
     const packAfter = readFileSync(packPath);
     expect(packBefore).toEqual(packAfter);
     db.close();

@@ -1,7 +1,10 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
-import { getCurrentCampaignPosition } from './campaignPosition.js';
+import {
+  getCampaignPositionAtOrdinal,
+  getCurrentCampaignPosition,
+} from './campaignPosition.js';
 import type {
   CampaignPosition,
   CampaignRule,
@@ -235,7 +238,6 @@ function writeRule(
       `live campaign rule creation requires active status; use the lifecycle mutation for '${rule.ruleIdentity}'`,
     );
   }
-  assertNoOverlappingAmbiguityRuling(db, rule, undefined);
   if (
     getCampaignRule(db, {
       campaignId: rule.campaignId,
@@ -246,6 +248,15 @@ function writeRule(
       `campaign rule '${rule.ruleIdentity}' already exists`,
     );
   }
+  if (rule.temporalMode.mode === 'disputed-turn') {
+    assertPersistedPosition(
+      db,
+      rule.campaignId,
+      rule.temporalMode.disputedPosition,
+      'temporalMode.disputedPosition',
+    );
+  }
+  assertNoOverlappingAmbiguityRuling(db, rule, undefined);
   const p = rule.provenance;
   db.prepare(`INSERT INTO campaign_rule (
     campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
@@ -317,6 +328,27 @@ function assertCurrentPosition(
   if (compareCampaignPositions(currentPosition, persisted) !== 0) {
     throw new CampaignRuleError(
       'currentPosition does not match the persisted current campaign position',
+    );
+  }
+}
+
+function assertPersistedPosition(
+  db: Db,
+  campaignId: string,
+  candidate: CampaignPosition,
+  field: string,
+): void {
+  const persisted = getCampaignPositionAtOrdinal(
+    db,
+    campaignId,
+    candidate.ordinal,
+  );
+  if (
+    persisted === undefined ||
+    compareCampaignPositions(candidate, persisted) !== 0
+  ) {
+    throw new CampaignRuleError(
+      `${field} does not match the persisted campaign turn position`,
     );
   }
 }
@@ -429,7 +461,8 @@ export function supersedeCampaignRule(
     compareCampaignPositions(
       input.successor.effectivePosition,
       input.currentPosition,
-    ) < 0
+    ) < 0 &&
+    input.successor.temporalMode.mode === 'prospective'
   )
     throw new CampaignRuleError(
       `successor '${input.successor.ruleIdentity}' cannot take effect before the current position`,
@@ -487,17 +520,56 @@ function activeRows(
   campaignId: string,
   cutoff: string,
 ): CampaignRule[] {
-  // SQL compares canonical position strings as BINARY; formatCampaignPosition
-  // puts the unique campaign ordinal first, matching decoded comparisons.
-  const predicate = `effective_position <= ? AND (revoked_position IS NULL OR revoked_position > ?) AND (status != 'superseded' OR EXISTS (SELECT 1 FROM campaign_rule successor WHERE successor.campaign_id=campaign_rule.campaign_id AND successor.rule_identity=campaign_rule.superseded_by AND successor.effective_position > ?))`;
-  const args = [campaignId, cutoff, cutoff, cutoff];
+  // Do all position predicates through the decoded comparator. Equal-ordinal
+  // campaign_rule rows are valid even though campaign_turn_position ordinals
+  // are unique, so SQL BINARY comparison of encoded anchors is insufficient.
+  const cutoffPosition = position(cutoff);
   const rows = db
-    .prepare(
-      // Canonical campaign positions are self-sorting; SQL can order them directly.
-      `${SELECT} WHERE campaign_id = ? AND ${predicate} ORDER BY effective_position, CASE rule_kind WHEN 'ruling' THEN 0 ELSE 1 END, rule_identity`,
-    )
-    .all(...args) as RuleRow[];
-  return rows.map(rowToRule);
+    .prepare(`${SELECT} WHERE campaign_id = ?`)
+    .all(campaignId) as RuleRow[];
+  const rules = rows.map(rowToRule);
+  return [
+    ...orderCampaignRules(
+      rules
+        .filter(
+          (rule) =>
+            compareCampaignPositions(rule.effectivePosition, cutoffPosition) <=
+            0,
+        )
+        .filter((rule) => {
+          if (rule.status === 'revoked') {
+            const row = rows.find(
+              (candidate) => candidate.rule_identity === rule.ruleIdentity,
+            );
+            return (
+              row?.revoked_position !== null &&
+              row?.revoked_position !== undefined &&
+              compareCampaignPositions(
+                position(row.revoked_position),
+                cutoffPosition,
+              ) > 0
+            );
+          }
+          if (rule.status !== 'superseded') return true;
+          const row = rows.find(
+            (candidate) => candidate.rule_identity === rule.ruleIdentity,
+          );
+          if (row?.superseded_by === null || row?.superseded_by === undefined)
+            return false;
+          const successor = getCampaignRule(db, {
+            campaignId: rule.campaignId,
+            ruleIdentity: row.superseded_by,
+          });
+          return (
+            successor !== undefined &&
+            compareCampaignPositions(
+              successor.effectivePosition,
+              cutoffPosition,
+            ) > 0
+          );
+        }),
+    ),
+  ];
 }
 
 export function listActiveCampaignRulesAtPosition(

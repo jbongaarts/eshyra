@@ -164,6 +164,12 @@ export function joinCampaignRules(
   const requestedAmbiguityIds: readonly string[] = rulingQueryExecuted
     ? ambiguityIds
     : [];
+  const rulingQueryScope: RuleJoinTrace['rulingQueryScope'] =
+    !rulingQueryExecuted
+      ? 'none'
+      : options.rulingsOnly === true
+        ? 'requested-ambiguities'
+        : 'all-active';
   const rules = ruleQueryExecuted
     ? seam.activeRulesAtPosition({
         campaignPosition: options.campaignPosition,
@@ -278,12 +284,14 @@ export function joinCampaignRules(
         requestedRuleRecordKeys,
         rulingQueryExecuted,
         requestedAmbiguityIds,
+        rulingQueryScope,
       },
     ],
     outputsProduced: [...result.values()],
     losses,
     requestedRuleRecordKeys,
     requestedAmbiguityIds,
+    rulingQueryScope,
     ruleQueryExecuted,
     rulingQueryExecuted,
     returnedRuleIdentities: returned,
