@@ -59,7 +59,7 @@ const rule = (overrides: Partial<CampaignRule> = {}): CampaignRule => ({
 describe('campaign rule domain', () => {
   it('formats, parses, and totally orders anchored positions', () => {
     const value = formatCampaignPosition(position(12));
-    expect(value).toBe('cp1~session-1~turn-1~000000000012');
+    expect(value).toBe('cp1~000000000012~session-1~turn-1');
     expect(parseCampaignPosition(value)).toEqual(position(12));
     expect(compareCampaignPositions(position(1), position(2))).toBeLessThan(0);
     expect(() => parseCampaignPosition('turn-12')).toThrow(CampaignRuleError);
@@ -101,6 +101,24 @@ describe('campaign rule domain', () => {
         position(1, 'turn', 'B'),
       ),
     ).toBeGreaterThan(0);
+  });
+
+  it('makes canonical position strings self-sort chronologically', () => {
+    const positions = [
+      position(5, 't1', 's2'),
+      position(6, 't1', 's10'),
+      position(7, 't1', 's3'),
+    ];
+    const canonical = positions.map(formatCampaignPosition);
+    const cutoff = canonical[1];
+
+    expect([...canonical].sort()).toEqual(canonical);
+    expect(canonical.filter((value) => value <= cutoff)).toEqual(
+      canonical.slice(0, 2),
+    );
+    expect(
+      positions.filter((value) => value.ordinal <= positions[1].ordinal),
+    ).toEqual(positions.slice(0, 2));
   });
 
   it('distinguishes rulings from house rules and derives seam projections', () => {

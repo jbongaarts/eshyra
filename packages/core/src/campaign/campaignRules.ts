@@ -8,11 +8,14 @@ import { requireNonEmpty } from '../validation.js';
  * timing, identity, and lifecycle. It does not compile prose into mechanics,
  * infer house rules from conflicts, or persist fictional one-off judgments.
  *
- * Positions are `cp1~<encoded session>~<encoded turn>~<12-digit ordinal>`.
+ * Positions are `cp1~<12-digit ordinal>~<encoded session>~<encoded turn>`.
  * The ordinal is assigned by the campaign history writer (this module does
  * not persist it), while the session and turn anchors make the value useful
  * in diagnostics and replay. The ordinal is authoritative for chronology;
  * session and turn IDs are diagnostic anchors and deterministic tie-breakers.
+ * The ordinal leads so byte order over canonical positions equals chronological
+ * order, keeping downstream SQL ordering and range predicates correct without
+ * parsing.
  */
 
 export class CampaignRuleError extends Error {
@@ -250,7 +253,7 @@ export function validateCampaignRules(
 
 export function formatCampaignPosition(position: CampaignPosition): string {
   checkPosition(position, 'position');
-  return `cp1~${encodeURIComponent(position.sessionId)}~${encodeURIComponent(position.turnId)}~${String(position.ordinal).padStart(12, '0')}`;
+  return `cp1~${String(position.ordinal).padStart(12, '0')}~${encodeURIComponent(position.sessionId)}~${encodeURIComponent(position.turnId)}`;
 }
 
 export function parseCampaignPosition(value: string): CampaignPosition {
@@ -258,19 +261,19 @@ export function parseCampaignPosition(value: string): CampaignPosition {
   if (
     parts.length !== 4 ||
     parts[0] !== 'cp1' ||
-    !/^\d{12}$/.test(parts[3] ?? '')
+    !/^\d{12}$/.test(parts[1] ?? '')
   ) {
     fail(`invalid campaign position ${JSON.stringify(value)}`);
   }
   let sessionId: string;
   let turnId: string;
   try {
-    sessionId = decodeURIComponent(parts[1] as string);
-    turnId = decodeURIComponent(parts[2] as string);
+    sessionId = decodeURIComponent(parts[2] as string);
+    turnId = decodeURIComponent(parts[3] as string);
   } catch {
     fail(`invalid campaign position ${JSON.stringify(value)}`);
   }
-  const position = { sessionId, turnId, ordinal: Number(parts[3]) };
+  const position = { sessionId, turnId, ordinal: Number(parts[1]) };
   checkPosition(position, 'position');
   if (formatCampaignPosition(position) !== value)
     fail('campaign position is not canonical');
