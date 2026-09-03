@@ -17,6 +17,17 @@ const fixtures = [
   '  (trailing)   ',
   'nested (a (b) c)',
   '(a)(b)',
+  '(()',
+  'name ((x)',
+  'a ((b)',
+  'x (( )',
+  '  ((a)  ',
+  '()',
+  '(',
+  '))',
+  '(()) ',
+  '((',
+  'a)(b)',
 ];
 
 describe('parenthetical name scans', () => {

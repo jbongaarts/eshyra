@@ -25,14 +25,15 @@ export function replaceParentheticals(
  * Strip a trailing parenthetical without the polynomial backtracking reported
  * by CodeQL's js/polynomial-redos rule. This is exactly equivalent to
  * `text.replace(/\s*\([^)]*\)\s*$/, '')`; trimEnd uses the same whitespace set
- * as the regex's `\s*`, and the span must contain no closing parenthesis.
+ * as the regex's `\s*`. When the text ends in `)`, the opening parenthesis is
+ * the leftmost `(` after the last interior `)`.
  */
 export function stripTrailingParenthetical(text: string): string {
   const end = text.trimEnd().length;
   if (end === 0 || text[end - 1] !== ')') return text;
-  const open = text.lastIndexOf('(', end - 1);
-  if (open === -1) return text;
-  if (text.slice(open + 1, end - 1).includes(')')) return text;
+  const lastClose = end >= 2 ? text.lastIndexOf(')', end - 2) : -1;
+  const open = text.indexOf('(', lastClose + 1);
+  if (open === -1 || open >= end - 1) return text;
   return text.slice(0, open).trimEnd();
 }
 
