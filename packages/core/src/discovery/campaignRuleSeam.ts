@@ -8,15 +8,26 @@ import type {
 } from './types.js';
 import { NULL_CAMPAIGN_RULE_SEAM } from './types.js';
 
+function isAmbiguityRuling(
+  projection: CampaignRuleProjection,
+): projection is CampaignRulingProjection {
+  return (
+    projection.ruleKind === 'ruling' &&
+    projection.ambiguityId !== undefined &&
+    'selectedInterpretationId' in projection &&
+    typeof projection.selectedInterpretationId === 'string'
+  );
+}
+
 function withRule(
   candidate: DiscoveryCandidate,
   projection: CampaignRuleProjection,
 ): DiscoveryCandidate {
+  const ambiguityRuling = isAmbiguityRuling(projection);
   const route = {
-    routeClass:
-      projection.ruleKind === 'ruling'
-        ? ('campaign-ruling' as const)
-        : ('campaign-rule' as const),
+    routeClass: ambiguityRuling
+      ? ('campaign-ruling' as const)
+      : ('campaign-rule' as const),
     trigger: projection.ruleIdentity,
     evidence: projection as unknown as Record<string, unknown>,
     signalId: `campaign-rule:${projection.ruleIdentity}`,
@@ -26,14 +37,12 @@ function withRule(
     routes: candidate.routes.some((item) => item.trigger === route.trigger)
       ? candidate.routes
       : [...candidate.routes, route],
-    campaignRules:
-      projection.ruleKind === 'ruling'
-        ? candidate.campaignRules
-        : [...candidate.campaignRules, projection],
-    campaignRulings:
-      projection.ruleKind === 'ruling'
-        ? [...candidate.campaignRulings, projection as CampaignRulingProjection]
-        : candidate.campaignRulings,
+    campaignRules: ambiguityRuling
+      ? candidate.campaignRules
+      : [...candidate.campaignRules, projection],
+    campaignRulings: ambiguityRuling
+      ? [...candidate.campaignRulings, projection]
+      : candidate.campaignRulings,
   };
 }
 

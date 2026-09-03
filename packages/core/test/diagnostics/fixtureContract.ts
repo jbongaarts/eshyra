@@ -305,6 +305,14 @@ const CAMPAIGN_RULE_ROUTE_BY_KIND = {
   ruling: 'campaign-ruling',
 } as const;
 
+function campaignRuleRoute(
+  item: CampaignRuleCase,
+): (typeof CAMPAIGN_RULE_ROUTE_BY_KIND)[keyof typeof CAMPAIGN_RULE_ROUTE_BY_KIND] {
+  return item.ruleKind === 'ruling' && item.ambiguityId !== undefined
+    ? 'campaign-ruling'
+    : 'campaign-rule';
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -819,12 +827,17 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
         throw new Error(
           `fixture ${index}.expectedCampaignRuleOrRulingState cases must declare ruleKind`,
         );
-      const routeClass = CAMPAIGN_RULE_ROUTE_BY_KIND[item.ruleKind];
+      const routeClass = campaignRuleRoute(item);
       if (!routeClasses.has(routeClass))
         throw new Error(
           `fixture ${index}.expectedRouteClasses must include ${routeClass} for an active ${item.ruleKind}`,
         );
       if (item.ruleKind !== 'ruling') continue;
+      if (
+        item.ambiguityId === undefined &&
+        item.selectedInterpretationId === undefined
+      )
+        continue;
       nonEmptyString(
         item.ruleIdentity,
         `fixture ${index}.expectedCampaignRuleOrRulingState ruling identity`,

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { CampaignPosition, CampaignRule } from '../src/internal.js';
 import {
+  assembleCampaignRulesContext,
   CampaignRuleError,
   createCampaignRule,
   createCampaignRuleReadSeam,
   formatCampaignPosition,
   getCampaignRule,
+  joinCampaignRules,
   listActiveCampaignRulesAtPosition,
   listActiveRulingsForAmbiguitiesAtPosition,
   listCampaignRules,
@@ -13,6 +15,7 @@ import {
   revokeCampaignRule,
   supersedeCampaignRule,
 } from '../src/internal.js';
+import { resolveStrictCampaignRulesStack } from '../src/state/campaignRecordLookup.js';
 import { bareDb } from './support/db.js';
 
 const p = (ordinal: number): CampaignPosition => ({
@@ -187,9 +190,10 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
-  it('provides the shared seam contract: house rules only, all candidates, ambiguity rulings separately', () => {
+  it('provides the shared seam contract: non-ambiguity rules and ambiguity rulings separately', () => {
     const db = bareDb();
     createCampaignRule(db, rule('house', 1));
+    createCampaignRule(db, rule('recurring', 1, 'ruling'));
     createCampaignRule(db, ambiguityRuling('ruling', 1), {
       validation: { ambiguity },
     });
@@ -205,7 +209,7 @@ describe('campaign rule persistence', () => {
           candidateRecordKeys: [],
         })
         .map((r) => r.ruleIdentity),
-    ).toEqual(['house']);
+    ).toEqual(['recurring', 'house']);
     expect(
       seam.activeRulingsForAmbiguities(['amb-1']).map((r) => r.ruleIdentity),
     ).toEqual(['ruling']);
@@ -226,6 +230,188 @@ describe('campaign rule persistence', () => {
         })
         .map((r) => r.ruleIdentity),
     ).not.toContain('ruling');
+    db.close();
+  });
+
+  it('rejects a seam position override that differs from its bound position', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('house-early', 1));
+    createCampaignRule(db, rule('house-late', 10));
+    const seam = createCampaignRuleReadSeam(
+      db,
+      'c1',
+      formatCampaignPosition(p(10)),
+    );
+
+    expect(
+      seam
+        .activeRulesAtPosition({ candidateRecordKeys: [] })
+        .map((item) => item.ruleIdentity),
+    ).toEqual(['house-early', 'house-late']);
+    expect(() =>
+      seam.activeRulesAtPosition({
+        campaignPosition: formatCampaignPosition(p(5)),
+        candidateRecordKeys: [],
+      }),
+    ).toThrow(CampaignRuleError);
+    db.close();
+  });
+
+  it('carries a recurring-question ruling through the DB seam and discovery join', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('recurring', 1, 'ruling'));
+    const seam = createCampaignRuleReadSeam(
+      db,
+      'c1',
+      formatCampaignPosition(p(2)),
+    );
+    const projection = seam.activeRulesAtPosition({
+      candidateRecordKeys: ['record:one'],
+    })[0];
+    expect(projection).toMatchObject({
+      ruleIdentity: 'recurring',
+      ruleKind: 'ruling',
+      provenance: 'question:q1',
+      governingRecordKeys: ['record:one'],
+    });
+    expect(projection).not.toHaveProperty('ambiguityId');
+    expect(projection).not.toHaveProperty('selectedInterpretationId');
+
+    const trace = joinCampaignRules(
+      [
+        {
+          candidateKey: 'record:one',
+          targetKind: 'rules-record',
+          routes: [],
+          traversals: [],
+          campaignRules: [],
+          campaignRulings: [],
+        },
+      ],
+      seam,
+      { campaignPosition: formatCampaignPosition(p(2)) },
+    );
+    const candidate = trace.outputsProduced[0];
+    expect(candidate?.campaignRules).toEqual([
+      expect.objectContaining({
+        ruleIdentity: 'recurring',
+        ruleKind: 'ruling',
+        provenance: 'question:q1',
+      }),
+    ]);
+    expect(candidate?.campaignRules[0]).not.toHaveProperty('ambiguityId');
+    expect(candidate?.campaignRulings).toEqual([]);
+    expect(candidate?.routes[0]?.routeClass).toBe('campaign-rule');
+    db.close();
+  });
+
+  it('rejects overlapping active ambiguity rulings', () => {
+    const db = bareDb();
+    createCampaignRule(db, ambiguityRuling('ruling-one', 1), {
+      validation: { ambiguity },
+    });
+    const secondAmbiguity = {
+      ...ambiguity,
+      interpretations: [
+        ...ambiguity.interpretations,
+        { id: 'int-2', summary: 'The second interpretation' },
+      ],
+    };
+    expect(() =>
+      createCampaignRule(
+        db,
+        {
+          ...ambiguityRuling('ruling-two', 2),
+          provenance: {
+            kind: 'ambiguity',
+            ambiguityId: ambiguity.id,
+            selectedInterpretationId: 'int-2',
+          },
+        },
+        { validation: { ambiguity: secondAmbiguity } },
+      ),
+    ).toThrow(CampaignRuleError);
+    db.close();
+  });
+
+  it('keeps historical ambiguity-ruling supersession intervals disjoint', () => {
+    const db = bareDb();
+    createCampaignRule(db, ambiguityRuling('old-ruling', 1), {
+      validation: { ambiguity },
+    });
+    supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'old-ruling',
+      successor: ambiguityRuling('new-ruling', 5),
+      validation: { ambiguity },
+    });
+    expect(
+      listActiveRulingsForAmbiguitiesAtPosition(
+        db,
+        'c1',
+        [ambiguity.id],
+        formatCampaignPosition(p(4)),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['old-ruling']);
+    expect(
+      listActiveRulingsForAmbiguitiesAtPosition(
+        db,
+        'c1',
+        [ambiguity.id],
+        formatCampaignPosition(p(5)),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['new-ruling']);
+    db.close();
+  });
+
+  it('fails closed when persisted ambiguity projections are contradictory', () => {
+    const db = bareDb();
+    const campaignPosition = formatCampaignPosition(p(1));
+    const insert = db.prepare(`
+      INSERT INTO campaign_rule (
+        campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
+        ambiguity_id, selected_interpretation_id, question_id, rationale,
+        effective_position, temporal_mode, disputed_position, superseded_by,
+        revoked_position, scope, governing_record_keys_json, prose, provenance,
+        session_id, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `);
+    for (const [identity, selected] of [
+      ['raw-ruling-one', 'presence-required'],
+      ['raw-ruling-two', 'active-link-sufficient'],
+    ]) {
+      insert.run(
+        'c1',
+        identity,
+        'ruling',
+        'active',
+        'player-approved',
+        'ambiguity',
+        'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+        selected,
+        null,
+        null,
+        campaignPosition,
+        'prospective',
+        null,
+        null,
+        null,
+        'test',
+        '[]',
+        identity,
+        `ambiguity:find-familiar-permanent-dismissal-after-zero-hp#${selected}`,
+        'test',
+        '2026-09-03T00:00:00.000Z',
+      );
+    }
+    expect(() =>
+      assembleCampaignRulesContext(
+        db,
+        'c1',
+        campaignPosition,
+        resolveStrictCampaignRulesStack(db),
+      ),
+    ).toThrow(CampaignRuleError);
     db.close();
   });
 
