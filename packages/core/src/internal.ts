@@ -79,6 +79,22 @@ export {
   startAdventureRun,
 } from './campaign/adventureRun.js';
 export type {
+  CampaignRuleKey,
+  CreateCampaignRuleOptions,
+  RevokeCampaignRuleInput,
+  SupersedeCampaignRuleInput,
+} from './campaign/campaignRuleStore.js';
+export {
+  createCampaignRule,
+  createCampaignRuleReadSeam,
+  getCampaignRule,
+  listActiveCampaignRulesAtPosition,
+  listActiveRulingsForAmbiguitiesAtPosition,
+  listCampaignRules,
+  revokeCampaignRule,
+  supersedeCampaignRule,
+} from './campaign/campaignRuleStore.js';
+export type {
   CampaignPosition,
   CampaignPrecedence,
   CampaignRule,
@@ -86,6 +102,7 @@ export type {
   CampaignRuleOrigin,
   CampaignRuleProjection,
   CampaignRuleProvenance,
+  CampaignRuleReadSeam,
   CampaignRuleStatus,
   CampaignRuleValidationOptions,
   CampaignRulingProjection,
@@ -516,7 +533,6 @@ export { extractDiscoverySignals } from './discovery/signals.js';
 // Offline discovery pilot (experiment-only; intentionally absent from the
 // stable root export and not imported by runtime modules).
 export type {
-  CampaignRuleReadSeam,
   CandidateBand,
   ContextPacket,
   DiscoveryCandidate,

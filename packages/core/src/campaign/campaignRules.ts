@@ -91,6 +91,21 @@ export interface CampaignRulingProjection extends CampaignRuleProjection {
   readonly selectedInterpretationId: string;
 }
 
+export interface CampaignRuleReadSeam {
+  activeRulesAtPosition(query: {
+    readonly campaignPosition?: string;
+    readonly candidateRecordKeys: readonly string[];
+  }): readonly CampaignRuleProjection[];
+  activeRulingsForAmbiguities(
+    ambiguityIds: readonly string[],
+  ): readonly CampaignRulingProjection[];
+}
+
+export const NULL_CAMPAIGN_RULE_SEAM: CampaignRuleReadSeam = {
+  activeRulesAtPosition: () => [],
+  activeRulingsForAmbiguities: () => [],
+};
+
 export interface CampaignRuleValidationOptions {
   readonly ambiguity?: RulesAmbiguity;
   readonly ambiguityLookup?: (
