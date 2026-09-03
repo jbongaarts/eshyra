@@ -41,6 +41,7 @@ import {
   DEFAULT_MEMORY_CONFIG,
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
+  formatCampaignPosition,
   getClosedSessionsInOpenArc,
   getOpenArc,
   getOpenScene,
@@ -64,6 +65,11 @@ import {
 } from '../src/play.js';
 
 const FAKE_ARC_SUMMARY = 'FAKE_ARC_SUMMARY';
+const TEST_CAMPAIGN_POSITION = formatCampaignPosition({
+  sessionId: 'test-session',
+  turnId: 'test-turn',
+  ordinal: 1,
+});
 // Real Dolt subprocesses can exceed Vitest's 5s default under full-suite load.
 const DOLT_TEST_TIMEOUT_MS = 30_000;
 
@@ -388,7 +394,7 @@ describe('runPlay', () => {
     const ctx = assembleContext({
       db,
       campaignId: cid,
-      campaignPosition: 'test-position',
+      campaignPosition: TEST_CAMPAIGN_POSITION,
       sessionId: 'next-session',
       playerInput: 'I think back to last time…',
     });
@@ -1294,7 +1300,7 @@ describe('runPlay', () => {
     const ctx3 = assembleContext({
       db,
       campaignId: cid,
-      campaignPosition: 'test-position',
+      campaignPosition: TEST_CAMPAIGN_POSITION,
       sessionId: sid6,
       playerInput: 'what happened before?',
       recentSessionLimit: 3,
@@ -1307,7 +1313,7 @@ describe('runPlay', () => {
     const ctx5 = assembleContext({
       db,
       campaignId: cid,
-      campaignPosition: 'test-position',
+      campaignPosition: TEST_CAMPAIGN_POSITION,
       sessionId: sid6,
       playerInput: 'what happened before?',
       recentSessionLimit: 5,
