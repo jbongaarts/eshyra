@@ -12,6 +12,7 @@ import {
 import {
   DEFAULT_TEST_CAMPAIGN_ID as CAMPAIGN,
   DEFAULT_TEST_ABILITY_SCORES,
+  DEFAULT_TEST_CAMPAIGN_POSITION,
   freshDbWithSession,
   DEFAULT_TEST_SESSION_ID as SESSION,
 } from './support/db.js';
@@ -42,7 +43,7 @@ function assemble(db: Db) {
   return assembleContext({
     db,
     campaignId: CAMPAIGN,
-    campaignPosition: 'test-position',
+    campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
     sessionId: SESSION,
     playerInput: 'continue',
   });
@@ -105,7 +106,7 @@ describe('context assembler party support', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
-        campaignPosition: 'test-position',
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
         sessionId: SESSION,
         playerInput: 'continue',
         actingCharacterId: 'pc-2',
@@ -135,7 +136,7 @@ describe('context assembler stale/invalid active character', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
-        campaignPosition: 'test-position',
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
         sessionId: SESSION,
         playerInput: 'continue',
         actingCharacterId: 'pc-missing',
@@ -155,7 +156,7 @@ describe('context assembler stale/invalid active character', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
-        campaignPosition: 'test-position',
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
         sessionId: SESSION,
         playerInput: 'continue',
         actingCharacterId: 'comp-1',

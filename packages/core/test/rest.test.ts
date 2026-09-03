@@ -42,6 +42,7 @@ import { playerVisibleRollEntries } from '../src/orchestrator/playerVisibleRollL
 import type { ExecutedToolCall } from '../src/orchestrator/turnLoop.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
+  DEFAULT_TEST_CAMPAIGN_POSITION,
   DEFAULT_TEST_SESSION_ID,
   freshDbWithSession,
 } from './support/db.js';
@@ -505,7 +506,7 @@ describe('F7 rest qualification boundary', () => {
         assembleContext({
           db,
           campaignId: CTX.campaignId,
-          campaignPosition: 'test-position',
+          campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
           sessionId: CTX.sessionId,
           playerInput: '',
           actingCharacterId: 'pc-1',

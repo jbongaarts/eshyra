@@ -29,6 +29,7 @@ import {
 import { installCursedAttunementAddon } from './support/cursedAttunementAddon.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
+  DEFAULT_TEST_CAMPAIGN_POSITION,
   DEFAULT_TEST_SESSION_ID,
   freshDbWithSession,
 } from './support/db.js';
@@ -712,7 +713,7 @@ describe('context snapshot', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
-        campaignPosition: 'test-position',
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
         sessionId: DEFAULT_TEST_SESSION_ID,
         playerInput: 'What am I wearing?',
       }),

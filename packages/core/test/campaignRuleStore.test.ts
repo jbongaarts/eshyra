@@ -168,6 +168,25 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
+  it('rejects malformed positions before querying active rules', () => {
+    const db = bareDb();
+    expect(() =>
+      listActiveCampaignRulesAtPosition(db, 'c1', 'test-position'),
+    ).toThrow(CampaignRuleError);
+    expect(() =>
+      listActiveRulingsForAmbiguitiesAtPosition(
+        db,
+        'c1',
+        ['amb-1'],
+        'test-position',
+      ),
+    ).toThrow(CampaignRuleError);
+    expect(() => createCampaignRuleReadSeam(db, 'c1', 'test-position')).toThrow(
+      CampaignRuleError,
+    );
+    db.close();
+  });
+
   it('provides the shared seam contract: house rules only, all candidates, ambiguity rulings separately', () => {
     const db = bareDb();
     createCampaignRule(db, rule('house', 1));

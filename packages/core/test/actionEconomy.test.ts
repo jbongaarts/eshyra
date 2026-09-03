@@ -34,6 +34,7 @@ import {
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
+  DEFAULT_TEST_CAMPAIGN_POSITION,
   DEFAULT_TEST_SESSION_ID,
   freshDbWithSession,
 } from './support/db.js';
@@ -708,7 +709,7 @@ describe('context snapshot and rendering', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
-        campaignPosition: 'test-position',
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
         sessionId: DEFAULT_TEST_SESSION_ID,
         playerInput: 'I attack the goblin.',
       }),
@@ -728,7 +729,7 @@ describe('context snapshot and rendering', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
-        campaignPosition: 'test-position',
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
         sessionId: DEFAULT_TEST_SESSION_ID,
         playerInput: 'What now?',
       }),
@@ -1560,7 +1561,7 @@ describe('legendary actions (F5, eshyra-2n1t.7)', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
-        campaignPosition: 'test-position',
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
         sessionId: DEFAULT_TEST_SESSION_ID,
         playerInput: 'I brace myself.',
       }),

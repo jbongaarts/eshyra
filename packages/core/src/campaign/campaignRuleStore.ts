@@ -338,7 +338,10 @@ export function listActiveCampaignRulesAtPosition(
   campaignId: string,
   campaignPosition: string,
 ): CampaignRule[] {
-  return activeRows(db, campaignId, campaignPosition);
+  const canonicalPosition = formatCampaignPosition(
+    parseCampaignPosition(campaignPosition),
+  );
+  return activeRows(db, campaignId, canonicalPosition);
 }
 
 export function listActiveRulingsForAmbiguitiesAtPosition(
@@ -347,7 +350,10 @@ export function listActiveRulingsForAmbiguitiesAtPosition(
   ambiguityIds: readonly string[],
   campaignPosition: string,
 ): CampaignRulingProjection[] {
-  return activeRows(db, campaignId, campaignPosition)
+  const canonicalPosition = formatCampaignPosition(
+    parseCampaignPosition(campaignPosition),
+  );
+  return activeRows(db, campaignId, canonicalPosition)
     .filter(isAmbiguityRuling)
     .filter((r) => ambiguityIds.includes(r.provenance.ambiguityId))
     .map((r) => {
@@ -370,17 +376,24 @@ export function createCampaignRuleReadSeam(
   campaignId: string,
   campaignPosition: string,
 ): CampaignRuleReadSeam {
+  const canonicalPosition = formatCampaignPosition(
+    parseCampaignPosition(campaignPosition),
+  );
   return {
-    activeRulesAtPosition: (query: RuleSeamQuery) =>
-      activeRows(db, campaignId, query.campaignPosition ?? campaignPosition)
+    activeRulesAtPosition: (query: RuleSeamQuery) => {
+      const queryPosition = formatCampaignPosition(
+        parseCampaignPosition(query.campaignPosition ?? canonicalPosition),
+      );
+      return activeRows(db, campaignId, queryPosition)
         .filter((r) => r.ruleKind === 'house-rule')
-        .map(projectCampaignRule),
+        .map(projectCampaignRule);
+    },
     activeRulingsForAmbiguities: (ambiguityIds: readonly string[]) =>
       listActiveRulingsForAmbiguitiesAtPosition(
         db,
         campaignId,
         ambiguityIds,
-        campaignPosition,
+        canonicalPosition,
       ),
   };
 }

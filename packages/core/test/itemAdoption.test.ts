@@ -10,7 +10,10 @@ import {
   renderContextMessage,
   resolveCharacterId,
 } from '../src/internal.js';
-import { freshDbWithSession } from './support/db.js';
+import {
+  DEFAULT_TEST_CAMPAIGN_POSITION,
+  freshDbWithSession,
+} from './support/db.js';
 
 const AT = '2026-07-18T20:00:00.000Z';
 
@@ -1094,7 +1097,7 @@ describe('legacy magic-item adoption', () => {
       assembleContext({
         db: s.db,
         campaignId: 'campaign-1',
-        campaignPosition: 'test-position',
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
         sessionId: 'session-1',
         playerInput: 'Inspect the quarantined item.',
       }),
@@ -1470,7 +1473,7 @@ describe('legacy magic-item adoption', () => {
         assembleContext({
           db: s.db,
           campaignId: 'campaign-1',
-          campaignPosition: 'test-position',
+          campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
           sessionId: 'session-1',
           playerInput: 'Inspect the legacy item.',
         }),

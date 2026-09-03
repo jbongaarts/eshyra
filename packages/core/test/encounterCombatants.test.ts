@@ -19,6 +19,7 @@ import { deriveTraceFields } from '../src/orchestrator/turnTraceProjection.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
+  DEFAULT_TEST_CAMPAIGN_POSITION,
   DEFAULT_TEST_SESSION_ID,
   freshDbWithSession,
 } from './support/db.js';
@@ -256,7 +257,7 @@ describe('encounter combatants', () => {
     const assembled = assembleContext({
       db,
       campaignId: DEFAULT_TEST_CAMPAIGN_ID,
-      campaignPosition: 'test-position',
+      campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
       sessionId: sessionB,
       playerInput: 'I resume the fight.',
       resolveAdventureModule: (moduleId) =>
@@ -486,7 +487,7 @@ describe('encounter combatants', () => {
     const assembled = assembleContext({
       db,
       campaignId: DEFAULT_TEST_CAMPAIGN_ID,
-      campaignPosition: 'test-position',
+      campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
       sessionId: DEFAULT_TEST_SESSION_ID,
       playerInput: 'I face Grik again.',
       resolveAdventureModule: (moduleId) =>

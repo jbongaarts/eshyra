@@ -295,7 +295,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'How much money do I have?',
     });
@@ -307,7 +307,7 @@ describe('Context Assembler', () => {
     const legacy = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'How much money do I have?',
     });
@@ -320,7 +320,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'How much money do I have?',
     });
@@ -340,7 +340,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'What do I carry?',
     });
@@ -356,7 +356,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'What equipment do I have?',
     });
@@ -398,7 +398,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'I ask about the missing caravan.',
     });
@@ -456,7 +456,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'What should I expect if I investigate?',
     });
@@ -513,7 +513,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'Remind me what Sela said.',
     });
@@ -539,7 +539,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'continue',
       sceneTranscriptLimit: 4,
@@ -624,7 +624,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'continue',
     });
@@ -748,7 +748,7 @@ describe('Context Assembler', () => {
     const context = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'I pick up the ring.',
     });
@@ -844,7 +844,7 @@ describe('Context Assembler', () => {
     const context = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'look around',
     });
@@ -913,7 +913,7 @@ describe('Context Assembler', () => {
       assembleContext({
         db,
         campaignId: CAMPAIGN,
-        campaignPosition: 'test-position',
+        campaignPosition: formatCampaignPosition(campaignPosition(1)),
         sessionId: SESSION,
         playerInput: 'look around',
       }).state.nearbyInventory,
@@ -941,7 +941,7 @@ describe('Context Assembler', () => {
     const context = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'look around',
     });
@@ -988,7 +988,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'continue',
     });
@@ -1067,7 +1067,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'continue',
       characterChronicle: chronicle,
@@ -1129,7 +1129,7 @@ describe('Context Assembler', () => {
     const defaultCtx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'continue',
       characterChronicle: chronicle,
@@ -1137,7 +1137,7 @@ describe('Context Assembler', () => {
     const explicitCtx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'continue',
       characterChronicle: chronicle,
@@ -1191,7 +1191,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'continue',
     });
@@ -1215,7 +1215,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: 'session-7',
       playerInput: 'continue',
     });
@@ -1287,7 +1287,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: 's5',
       playerInput: 'continue',
     });
@@ -1319,7 +1319,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'continue',
       recentSessionLimit: 1,
@@ -1335,7 +1335,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'hello',
     });
@@ -1370,7 +1370,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'I order food.',
     });
@@ -1395,7 +1395,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'look around',
     });
@@ -1430,7 +1430,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'search the cellar',
       resolveAdventureModule: (id) => (id === module.id ? module : undefined),
@@ -1463,7 +1463,7 @@ describe('Context Assembler', () => {
     const ctx = assembleContext({
       db,
       campaignId: CAMPAIGN,
-      campaignPosition: 'test-position',
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
       sessionId: SESSION,
       playerInput: 'look around',
       resolveAdventureModule: () => undefined,
