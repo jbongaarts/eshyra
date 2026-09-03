@@ -2,6 +2,12 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  createCampaignRule,
+  formatCampaignPosition,
+  revokeCampaignRule,
+  supersedeCampaignRule,
+} from '../src/internal.js';
 import { DoltRepo } from '../src/persistence/checkpoint/doltRepo.js';
 import {
   canonicalize,
@@ -12,12 +18,85 @@ import {
   CheckpointStore,
 } from '../src/persistence/checkpoint/store.js';
 import { openDatabase } from '../src/persistence/db.js';
+import { initSchema } from '../src/persistence/schema.js';
 
 const doltOk = DoltRepo.available();
 // Real Dolt subprocesses can exceed Vitest's 5s default under full-suite load.
 const DOLT_TEST_TIMEOUT_MS = 30_000;
 
 describe.skipIf(!doltOk)('CheckpointStore.restoreToNewWorkingCopy', () => {
+  it(
+    'round trips campaign-rule identities, ordering, provenance, statuses, and positions',
+    () => {
+      const root = mkdtempSync(join(tmpdir(), 'lw-rules-rs-'));
+      const src = join(root, 'live.db');
+      const db = openDatabase(src);
+      initSchema(db);
+      const pos = (ordinal: number) => ({
+        sessionId: 's1',
+        turnId: `t${ordinal}`,
+        ordinal,
+      });
+      const base = {
+        campaignId: 'c1',
+        ruleKind: 'house-rule' as const,
+        origin: 'player-approved' as const,
+        provenance: { kind: 'house-rule' as const, rationale: 'table' },
+        temporalMode: { mode: 'prospective' as const },
+        supersededBy: null,
+        scope: 'combat',
+        governingRecordKeys: ['record:one'],
+        prose: 'Use the table ruling.',
+      };
+      createCampaignRule(db, {
+        ...base,
+        ruleIdentity: 'old',
+        status: 'active',
+        effectivePosition: pos(1),
+      });
+      supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'old',
+        successor: {
+          ...base,
+          ruleIdentity: 'new',
+          status: 'active',
+          effectivePosition: pos(3),
+        },
+      });
+      createCampaignRule(db, {
+        ...base,
+        ruleIdentity: 'revoked',
+        status: 'active',
+        effectivePosition: pos(2),
+      });
+      revokeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'revoked',
+        revokedPosition: pos(4),
+      });
+      const before = canonicalize(serializeCampaign(db));
+      db.close();
+      const store = new CheckpointStore(
+        join(root, 'dolt'),
+        join(root, '.beads'),
+      );
+      const id = store.checkpoint(src, 'campaign rules');
+      const dest = join(root, 'restored.db');
+      store.restoreToNewWorkingCopy(id, dest);
+      const restored = openDatabase(dest);
+      expect(canonicalize(serializeCampaign(restored))).toBe(before);
+      expect(
+        restored.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
+      ).toEqual({
+        count: 3,
+      });
+      expect(formatCampaignPosition(pos(3))).toMatch(/^cp1~/);
+      restored.close();
+    },
+    DOLT_TEST_TIMEOUT_MS,
+  );
+
   it(
     'restores a checkpoint into a new db identical to the source',
     () => {

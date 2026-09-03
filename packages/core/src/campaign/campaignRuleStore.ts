@@ -1,13 +1,16 @@
+import type { CampaignRuleReadSeam } from '../discovery/types.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
 import type {
   CampaignPosition,
   CampaignRule,
-  CampaignRuleProjection,
+  CampaignRuleProvenance,
   CampaignRulingProjection,
 } from './campaignRules.js';
 import {
+  CampaignRuleError,
+  compareCampaignPositions,
   formatCampaignPosition,
   orderCampaignRules,
   parseCampaignPosition,
@@ -77,6 +80,15 @@ interface RuleSeamQuery {
   readonly candidateRecordKeys: readonly string[];
 }
 
+type AmbiguityRuling = CampaignRule & {
+  readonly ruleKind: 'ruling';
+  readonly provenance: Extract<CampaignRuleProvenance, { kind: 'ambiguity' }>;
+};
+
+function isAmbiguityRuling(rule: CampaignRule): rule is AmbiguityRuling {
+  return rule.ruleKind === 'ruling' && rule.provenance.kind === 'ambiguity';
+}
+
 function position(value: string): CampaignPosition {
   return parseCampaignPosition(value);
 }
@@ -133,7 +145,9 @@ function writeRule(
 ): void {
   validateCampaignRule(rule, options.validation);
   if (rule.status === 'revoked' && options.revokedPosition === undefined) {
-    throw new Error('a revoked campaign rule requires revokedPosition');
+    throw new CampaignRuleError(
+      'a revoked campaign rule requires revokedPosition',
+    );
   }
   const p = rule.provenance;
   db.prepare(`INSERT INTO campaign_rule (
@@ -211,11 +225,22 @@ export function revokeCampaignRule(
 ): CampaignRule {
   const existing = getCampaignRule(db, input);
   if (existing === undefined)
-    throw new Error(
+    throw new CampaignRuleError(
       `campaign rule '${input.ruleIdentity}' does not exist in campaign '${input.campaignId}'`,
     );
   if (existing.status !== 'active')
-    throw new Error(`campaign rule '${input.ruleIdentity}' is not active`);
+    throw new CampaignRuleError(
+      `campaign rule '${input.ruleIdentity}' is not active`,
+    );
+  if (
+    compareCampaignPositions(
+      input.revokedPosition,
+      existing.effectivePosition,
+    ) < 0
+  )
+    throw new CampaignRuleError(
+      `campaign rule '${input.ruleIdentity}' cannot be revoked before its effective position`,
+    );
   const revokedPosition = formatCampaignPosition(input.revokedPosition);
   db.prepare(
     `UPDATE campaign_rule SET status='revoked', revoked_position=?, session_id=?, updated_at=? WHERE campaign_id=? AND rule_identity=?`,
@@ -234,21 +259,30 @@ export function supersedeCampaignRule(
   input: SupersedeCampaignRuleInput,
 ): CampaignRule {
   if (input.successor.campaignId !== input.campaignId)
-    throw new Error('supersession cannot cross campaigns');
+    throw new CampaignRuleError('supersession cannot cross campaigns');
   const prior = getCampaignRule(db, input);
   if (prior === undefined)
-    throw new Error(
+    throw new CampaignRuleError(
       `campaign rule '${input.ruleIdentity}' does not exist in campaign '${input.campaignId}'`,
     );
   if (input.successor.ruleIdentity === input.ruleIdentity)
-    throw new Error('a rule cannot supersede itself');
+    throw new CampaignRuleError('a rule cannot supersede itself');
+  if (
+    compareCampaignPositions(
+      input.successor.effectivePosition,
+      prior.effectivePosition,
+    ) < 0
+  )
+    throw new CampaignRuleError(
+      `successor '${input.successor.ruleIdentity}' cannot take effect before '${input.ruleIdentity}'`,
+    );
   if (
     getCampaignRule(db, {
       campaignId: input.campaignId,
       ruleIdentity: input.successor.ruleIdentity,
     }) !== undefined
   )
-    throw new Error(
+    throw new CampaignRuleError(
       `campaign rule '${input.successor.ruleIdentity}' already exists`,
     );
   validateCampaignRules(
@@ -288,13 +322,21 @@ function activeRows(
   campaignId: string,
   cutoff?: string,
 ): CampaignRule[] {
-  const historical = cutoff !== undefined;
-  const predicate = historical
-    ? `effective_position <= ? AND (revoked_position IS NULL OR revoked_position > ?) AND (status != 'superseded' OR EXISTS (SELECT 1 FROM campaign_rule successor WHERE successor.campaign_id=campaign_rule.campaign_id AND successor.rule_identity=campaign_rule.superseded_by AND successor.effective_position > ?))`
-    : `status = 'active'`;
-  const args = historical ? [campaignId, cutoff, cutoff, cutoff] : [campaignId];
+  const resolvedCutoff =
+    cutoff ??
+    (
+      db
+        .prepare(
+          'SELECT MAX(effective_position) AS latest FROM campaign_rule WHERE campaign_id = ?',
+        )
+        .get(campaignId) as { latest: string | null }
+    ).latest ??
+    'cp1~000000000000~campaign-rule~latest';
+  const predicate = `effective_position <= ? AND (revoked_position IS NULL OR revoked_position > ?) AND (status != 'superseded' OR EXISTS (SELECT 1 FROM campaign_rule successor WHERE successor.campaign_id=campaign_rule.campaign_id AND successor.rule_identity=campaign_rule.superseded_by AND successor.effective_position > ?))`;
+  const args = [campaignId, resolvedCutoff, resolvedCutoff, resolvedCutoff];
   const rows = db
     .prepare(
+      // Canonical campaign positions are self-sorting; SQL can order them directly.
       `${SELECT} WHERE campaign_id = ? AND ${predicate} ORDER BY effective_position, CASE rule_kind WHEN 'ruling' THEN 0 ELSE 1 END, rule_identity`,
     )
     .all(...args) as RuleRow[];
@@ -309,21 +351,48 @@ export function listActiveCampaignRulesAtPosition(
   return activeRows(db, campaignId, campaignPosition);
 }
 
-export function createCampaignRuleReadSeam(db: Db, campaignId: string) {
+export function listActiveRulingsForAmbiguitiesAtPosition(
+  db: Db,
+  campaignId: string,
+  ambiguityIds: readonly string[],
+  campaignPosition?: string,
+): CampaignRulingProjection[] {
+  return activeRows(db, campaignId, campaignPosition)
+    .filter(isAmbiguityRuling)
+    .filter((r) => ambiguityIds.includes(r.provenance.ambiguityId))
+    .map((r) => {
+      const projection = projectCampaignRule(r);
+      return {
+        ...projection,
+        ruleKind: 'ruling' as const,
+        ambiguityId: r.provenance.ambiguityId,
+        selectedInterpretationId: r.provenance.selectedInterpretationId,
+      };
+    });
+}
+
+/**
+ * The discovery seam is position-blind for rulings by contract. Callers that
+ * need replay accuracy bind the requested campaign position here; otherwise
+ * queries use the latest recorded rule position and still apply temporal
+ * filtering.
+ */
+export function createCampaignRuleReadSeam(
+  db: Db,
+  campaignId: string,
+  campaignPosition?: string,
+): CampaignRuleReadSeam {
   return {
-    activeRulesAtPosition: ({ campaignPosition }: RuleSeamQuery) =>
-      activeRows(db, campaignId, campaignPosition)
+    activeRulesAtPosition: (query: RuleSeamQuery) =>
+      activeRows(db, campaignId, query.campaignPosition ?? campaignPosition)
         .filter((r) => r.ruleKind === 'house-rule')
-        .map(projectCampaignRule) as CampaignRuleProjection[],
+        .map(projectCampaignRule),
     activeRulingsForAmbiguities: (ambiguityIds: readonly string[]) =>
-      activeRows(db, campaignId)
-        .filter(
-          (r) =>
-            r.ruleKind === 'ruling' &&
-            r.provenance.kind === 'ambiguity' &&
-            ambiguityIds.includes(r.provenance.ambiguityId),
-        )
-        .map(projectCampaignRule)
-        .filter((r): r is CampaignRulingProjection => r.ruleKind === 'ruling'),
+      listActiveRulingsForAmbiguitiesAtPosition(
+        db,
+        campaignId,
+        ambiguityIds,
+        campaignPosition,
+      ),
   };
 }

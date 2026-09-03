@@ -89,6 +89,7 @@ export {
   createCampaignRuleReadSeam,
   getCampaignRule,
   listActiveCampaignRulesAtPosition,
+  listActiveRulingsForAmbiguitiesAtPosition,
   listCampaignRules,
   revokeCampaignRule,
   supersedeCampaignRule,
