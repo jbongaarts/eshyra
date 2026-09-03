@@ -1,6 +1,7 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
+import { getCurrentCampaignPosition } from './campaignPosition.js';
 import type {
   CampaignPosition,
   CampaignRule,
@@ -228,16 +229,23 @@ function writeRule(
   rule: CampaignRule,
   options: CreateCampaignRuleOptions,
 ): void {
-  validateCampaignRule(rule, {
-    ...options.validation,
-    currentPosition: options.currentPosition,
-  });
+  validateCampaignRule(rule, options.validation, options.currentPosition);
   if (rule.status !== 'active') {
     throw new CampaignRuleError(
       `live campaign rule creation requires active status; use the lifecycle mutation for '${rule.ruleIdentity}'`,
     );
   }
   assertNoOverlappingAmbiguityRuling(db, rule, undefined);
+  if (
+    getCampaignRule(db, {
+      campaignId: rule.campaignId,
+      ruleIdentity: rule.ruleIdentity,
+    }) !== undefined
+  ) {
+    throw new CampaignRuleError(
+      `campaign rule '${rule.ruleIdentity}' already exists`,
+    );
+  }
   const p = rule.provenance;
   db.prepare(`INSERT INTO campaign_rule (
     campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
@@ -286,9 +294,31 @@ export function createCampaignRule(
     );
   }
   return withTransaction(db, (txn) => {
+    assertCurrentPosition(txn, rule.campaignId, options.currentPosition);
     writeRule(txn, rule, options);
     return rule;
   });
+}
+
+function assertCurrentPosition(
+  db: Db,
+  campaignId: string,
+  currentPosition: CampaignPosition,
+): void {
+  const persisted = getCurrentCampaignPosition(db, campaignId);
+  if (persisted === undefined) {
+    if (currentPosition.ordinal !== 0) {
+      throw new CampaignRuleError(
+        `campaign '${campaignId}' has no persisted turn position; currentPosition must use ordinal 0`,
+      );
+    }
+    return;
+  }
+  if (compareCampaignPositions(currentPosition, persisted) !== 0) {
+    throw new CampaignRuleError(
+      'currentPosition does not match the persisted current campaign position',
+    );
+  }
 }
 
 export function getCampaignRule(
@@ -321,6 +351,7 @@ export function revokeCampaignRule(
     );
   }
   formatCampaignPosition(input.currentPosition);
+  assertCurrentPosition(db, input.campaignId, input.currentPosition);
   const existing = getCampaignRule(db, input);
   if (existing === undefined)
     throw new CampaignRuleError(
@@ -368,6 +399,7 @@ export function supersedeCampaignRule(
     );
   }
   formatCampaignPosition(input.currentPosition);
+  assertCurrentPosition(db, input.campaignId, input.currentPosition);
   if (input.successor.campaignId !== input.campaignId)
     throw new CampaignRuleError('supersession cannot cross campaigns');
   const prior = getCampaignRule(db, input);
@@ -412,10 +444,11 @@ export function supersedeCampaignRule(
       `campaign rule '${input.successor.ruleIdentity}' already exists`,
     );
   validateCampaignRule(prior, input.validation);
-  validateCampaignRule(input.successor, {
-    ...input.validation,
-    currentPosition: input.currentPosition,
-  });
+  validateCampaignRule(
+    input.successor,
+    input.validation,
+    input.currentPosition,
+  );
   validateCampaignRules(
     [
       {
@@ -454,6 +487,8 @@ function activeRows(
   campaignId: string,
   cutoff: string,
 ): CampaignRule[] {
+  // SQL compares canonical position strings as BINARY; formatCampaignPosition
+  // puts the unique campaign ordinal first, matching decoded comparisons.
   const predicate = `effective_position <= ? AND (revoked_position IS NULL OR revoked_position > ?) AND (status != 'superseded' OR EXISTS (SELECT 1 FROM campaign_rule successor WHERE successor.campaign_id=campaign_rule.campaign_id AND successor.rule_identity=campaign_rule.superseded_by AND successor.effective_position > ?))`;
   const args = [campaignId, cutoff, cutoff, cutoff];
   const rows = db
@@ -481,13 +516,18 @@ export function listActiveRulingsForAmbiguitiesAtPosition(
   campaignId: string,
   ambiguityIds: readonly string[],
   campaignPosition: string,
+  options: { readonly includeAllActive?: boolean } = {},
 ): CampaignRulingProjection[] {
   const canonicalPosition = formatCampaignPosition(
     parseCampaignPosition(campaignPosition),
   );
   return activeRows(db, campaignId, canonicalPosition)
     .filter(isAmbiguityRuling)
-    .filter((r) => ambiguityIds.includes(r.provenance.ambiguityId))
+    .filter(
+      (r) =>
+        options.includeAllActive === true ||
+        ambiguityIds.includes(r.provenance.ambiguityId),
+    )
     .map((r) => {
       const projection = projectCampaignRule(r);
       return {
@@ -527,12 +567,16 @@ export function createCampaignRuleReadSeam(
         .filter((r) => !isAmbiguityRuling(r))
         .map(projectCampaignRule);
     },
-    activeRulingsForAmbiguities: (ambiguityIds: readonly string[]) =>
+    activeRulingsForAmbiguities: (
+      ambiguityIds: readonly string[],
+      options?: { readonly includeAllActive?: boolean },
+    ) =>
       listActiveRulingsForAmbiguitiesAtPosition(
         db,
         campaignId,
         ambiguityIds,
         canonicalPosition,
+        options,
       ),
   };
 }

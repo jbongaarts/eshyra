@@ -98,6 +98,7 @@ export interface CampaignRuleReadSeam {
   }): readonly CampaignRuleProjection[];
   activeRulingsForAmbiguities(
     ambiguityIds: readonly string[],
+    options?: { readonly includeAllActive?: boolean },
   ): readonly CampaignRulingProjection[];
 }
 
@@ -111,7 +112,6 @@ export interface CampaignRuleValidationOptions {
   readonly ambiguityLookup?: (
     ambiguityId: string,
   ) => RulesAmbiguity | undefined;
-  readonly currentPosition?: CampaignPosition;
 }
 
 function fail(message: string): never {
@@ -167,7 +167,8 @@ function checkTemporalMode(
   if (currentPosition === undefined) return;
   const sameTurn =
     mode.disputedPosition.sessionId === currentPosition.sessionId &&
-    mode.disputedPosition.turnId === currentPosition.turnId;
+    mode.disputedPosition.turnId === currentPosition.turnId &&
+    mode.disputedPosition.ordinal === currentPosition.ordinal;
   const immediatelyBefore =
     mode.disputedPosition.sessionId === currentPosition.sessionId &&
     mode.disputedPosition.ordinal + 1 === currentPosition.ordinal;
@@ -190,6 +191,7 @@ function ambiguityFor(
 export function validateCampaignRule(
   rule: CampaignRule,
   options: CampaignRuleValidationOptions = {},
+  currentPosition?: CampaignPosition,
 ): void {
   requireNonEmpty(
     CampaignRuleError,
@@ -202,11 +204,7 @@ export function validateCampaignRule(
     (field) => `${field} is required`,
   );
   checkPosition(rule.effectivePosition, 'effectivePosition');
-  checkTemporalMode(
-    rule.temporalMode,
-    rule.effectivePosition,
-    options.currentPosition,
-  );
+  checkTemporalMode(rule.temporalMode, rule.effectivePosition, currentPosition);
   if (rule.status === 'superseded' && rule.supersededBy === null) {
     fail('superseded rule must name supersededBy');
   }
@@ -309,6 +307,9 @@ export function compareCampaignPositions(
   a: CampaignPosition | string,
   b: CampaignPosition | string,
 ): number {
+  // Canonical persisted positions put the unique campaign ordinal first, so
+  // this decoded comparator agrees with SQL BINARY ordering of those values.
+  // Equal ordinals cannot be persisted for one campaign.
   const left = typeof a === 'string' ? parseCampaignPosition(a) : a;
   const right = typeof b === 'string' ? parseCampaignPosition(b) : b;
   return (

@@ -36,3 +36,25 @@ export function resolveCampaignPosition(
     };
   });
 }
+
+/** Read the latest persisted chronology anchor without allocating a turn. */
+export function getCurrentCampaignPosition(
+  db: Db,
+  campaignId: string,
+): CampaignPosition | undefined {
+  const row = db
+    .prepare(
+      `SELECT session_id, turn_id, ordinal FROM campaign_turn_position
+       WHERE campaign_id = ? ORDER BY ordinal DESC LIMIT 1`,
+    )
+    .get(campaignId) as
+    | { session_id: string; turn_id: string; ordinal: number }
+    | undefined;
+  return row === undefined
+    ? undefined
+    : {
+        sessionId: row.session_id,
+        turnId: row.turn_id,
+        ordinal: row.ordinal,
+      };
+}

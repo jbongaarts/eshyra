@@ -1,4 +1,5 @@
 import type { Db } from '../persistence/db.js';
+import { optRulesAmbiguities } from '../rules/rulesAmbiguities.js';
 import type { ResolvedRulesStack } from '../rules/stack.js';
 import type { RulesAmbiguity } from '../rules/types.js';
 import {
@@ -29,19 +30,22 @@ function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
     const data = entry.record.data;
     if (typeof data !== 'object' || data === null || Array.isArray(data))
       continue;
-    const values = (data as { mechanics?: { ambiguities?: unknown } }).mechanics
-      ?.ambiguities;
-    if (!Array.isArray(values)) continue;
+    const mechanics = (data as { mechanics?: unknown }).mechanics;
+    if (
+      typeof mechanics !== 'object' ||
+      mechanics === null ||
+      Array.isArray(mechanics)
+    )
+      continue;
+    const ambiguityIds = optRulesAmbiguities(
+      mechanics as Record<string, unknown>,
+      `${entry.record.key}.data.mechanics`,
+    );
+    const values = (mechanics as { ambiguities?: unknown }).ambiguities;
+    if (!Array.isArray(values) || ambiguityIds.size === 0) continue;
     for (const value of values) {
-      if (
-        typeof value === 'object' &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
-        const ambiguity = value as RulesAmbiguity;
-        if (typeof ambiguity.id === 'string')
-          found.set(ambiguity.id, ambiguity);
-      }
+      const ambiguity = value as RulesAmbiguity;
+      found.set(ambiguity.id, ambiguity);
     }
   }
   return [...found.values()].sort((a, b) =>
@@ -73,9 +77,9 @@ export function assembleCampaignRulesContext(
   }
   return {
     position,
-    rules: listActiveCampaignRulesAtPosition(db, campaignId, position).map(
-      projectCampaignRule,
-    ),
+    rules: listActiveCampaignRulesAtPosition(db, campaignId, position)
+      .filter((rule) => rule.provenance.kind !== 'ambiguity')
+      .map(projectCampaignRule),
     ambiguities: ambiguities.map((ambiguity) => ({
       ambiguity,
       ruling: rulingByAmbiguity.get(ambiguity.id),

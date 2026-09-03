@@ -118,6 +118,8 @@ export function joinCampaignRules(
      * join reports them unresolved, because its own `resolved` set contains
      * only the rulings IT placed. */
     readonly resolvedAmbiguityIds?: ReadonlySet<string>;
+    /** Rule identities already processed by an earlier bounded join pass. */
+    readonly seenRuleIdentities?: ReadonlySet<string>;
   } = {},
 ): RuleJoinTrace {
   const keys = candidates.map((candidate) => candidate.candidateKey);
@@ -169,7 +171,9 @@ export function joinCampaignRules(
       })
     : [];
   const rulings = rulingQueryExecuted
-    ? seam.activeRulingsForAmbiguities(ambiguityIds)
+    ? seam.activeRulingsForAmbiguities(ambiguityIds, {
+        includeAllActive: options.rulingsOnly !== true,
+      })
     : [];
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
@@ -180,7 +184,13 @@ export function joinCampaignRules(
   const placedIdentities = new Set<string>();
   const unplaced: string[] = [];
   const surfaced: string[] = [];
-  for (const projection of [...rules, ...rulings]) {
+  const projections = [...rules, ...rulings].filter(
+    (projection, index, all) =>
+      options.seenRuleIdentities?.has(projection.ruleIdentity) !== true &&
+      all.findIndex((item) => item.ruleIdentity === projection.ruleIdentity) ===
+        index,
+  );
+  for (const projection of projections) {
     returned.push(projection.ruleIdentity);
     const governed: string[] = [];
     for (const key of projection.governingRecordKeys) {

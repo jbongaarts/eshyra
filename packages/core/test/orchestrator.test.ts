@@ -179,12 +179,11 @@ describe('orchestrator turn loop', () => {
         governingRecordKeys: [],
         prose: 'The replay uses this ruling.',
       },
+      {},
       {
-        currentPosition: {
-          sessionId: SESSION,
-          turnId: 'turn-c',
-          ordinal: 2,
-        },
+        sessionId: SESSION,
+        turnId: 'turn-c',
+        ordinal: 2,
       },
     );
     db.close();
