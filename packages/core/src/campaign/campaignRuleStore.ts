@@ -89,6 +89,87 @@ function isAmbiguityRuling(rule: CampaignRule): rule is AmbiguityRuling {
   return rule.ruleKind === 'ruling' && rule.provenance.kind === 'ambiguity';
 }
 
+function intervalsOverlap(
+  leftStart: CampaignPosition,
+  leftEnd: CampaignPosition | undefined,
+  rightStart: CampaignPosition,
+  rightEnd: CampaignPosition | undefined,
+): boolean {
+  return (
+    (leftEnd === undefined ||
+      compareCampaignPositions(leftStart, leftEnd) < 0) &&
+    (rightEnd === undefined ||
+      compareCampaignPositions(rightStart, rightEnd) < 0) &&
+    (leftEnd === undefined ||
+      compareCampaignPositions(rightStart, leftEnd) < 0) &&
+    (rightEnd === undefined ||
+      compareCampaignPositions(leftStart, rightEnd) < 0)
+  );
+}
+
+function existingIntervalEnd(
+  db: Db,
+  row: RuleRow,
+  pendingRule: CampaignRule,
+): CampaignPosition | undefined {
+  if (row.status === 'revoked') {
+    if (row.revoked_position === null)
+      throw new CampaignRuleError(
+        `revoked campaign rule '${row.rule_identity}' is missing revoked_position`,
+      );
+    return position(row.revoked_position);
+  }
+  if (row.status === 'superseded') {
+    if (row.superseded_by === null)
+      throw new CampaignRuleError(
+        `superseded campaign rule '${row.rule_identity}' is missing superseded_by`,
+      );
+    if (
+      row.campaign_id === pendingRule.campaignId &&
+      row.superseded_by === pendingRule.ruleIdentity
+    )
+      return pendingRule.effectivePosition;
+    const successor = getCampaignRule(db, {
+      campaignId: row.campaign_id,
+      ruleIdentity: row.superseded_by,
+    });
+    if (successor === undefined)
+      throw new CampaignRuleError(
+        `supersededBy ${row.superseded_by} does not exist in campaign '${row.campaign_id}'`,
+      );
+    return successor.effectivePosition;
+  }
+  return undefined;
+}
+
+function assertNoOverlappingAmbiguityRuling(
+  db: Db,
+  rule: CampaignRule,
+  intervalEnd: CampaignPosition | undefined,
+): void {
+  if (!isAmbiguityRuling(rule)) return;
+  const rows = db
+    .prepare(
+      `${SELECT} WHERE campaign_id = ? AND provenance_kind = 'ambiguity' AND ambiguity_id = ?`,
+    )
+    .all(rule.campaignId, rule.provenance.ambiguityId) as RuleRow[];
+  for (const row of rows) {
+    const existing = rowToRule(row);
+    if (
+      intervalsOverlap(
+        rule.effectivePosition,
+        intervalEnd,
+        existing.effectivePosition,
+        existingIntervalEnd(db, row, rule),
+      )
+    ) {
+      throw new CampaignRuleError(
+        `active ambiguity ruling '${rule.ruleIdentity}' overlaps '${existing.ruleIdentity}' for ambiguity '${rule.provenance.ambiguityId}'`,
+      );
+    }
+  }
+}
+
 function position(value: string): CampaignPosition {
   return parseCampaignPosition(value);
 }
@@ -144,6 +225,7 @@ function writeRule(
   options: CreateCampaignRuleOptions,
 ): void {
   validateCampaignRule(rule, options.validation);
+  let intervalEnd: CampaignPosition | undefined;
   if (rule.status === 'revoked' && options.revokedPosition === undefined) {
     throw new CampaignRuleError(
       'a revoked campaign rule requires revokedPosition',
@@ -186,7 +268,10 @@ function writeRule(
       );
     }
     validateCampaignRules([rule, successor], options.validation);
+    intervalEnd = successor.effectivePosition;
   }
+  if (rule.status === 'revoked') intervalEnd = options.revokedPosition;
+  assertNoOverlappingAmbiguityRuling(db, rule, intervalEnd);
   const p = rule.provenance;
   db.prepare(`INSERT INTO campaign_rule (
     campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
@@ -427,11 +512,18 @@ export function createCampaignRuleReadSeam(
   );
   return {
     activeRulesAtPosition: (query: RuleSeamQuery) => {
-      const queryPosition = formatCampaignPosition(
-        parseCampaignPosition(query.campaignPosition ?? canonicalPosition),
-      );
+      const queryPosition =
+        query.campaignPosition === undefined
+          ? canonicalPosition
+          : formatCampaignPosition(
+              parseCampaignPosition(query.campaignPosition),
+            );
+      if (queryPosition !== canonicalPosition)
+        throw new CampaignRuleError(
+          `campaign rule seam is bound to ${canonicalPosition}, not ${queryPosition}`,
+        );
       return activeRows(db, campaignId, queryPosition)
-        .filter((r) => r.ruleKind === 'house-rule')
+        .filter((r) => !isAmbiguityRuling(r))
         .map(projectCampaignRule);
     },
     activeRulingsForAmbiguities: (ambiguityIds: readonly string[]) =>

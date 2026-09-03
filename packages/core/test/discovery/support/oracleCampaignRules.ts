@@ -21,10 +21,16 @@ export function oracleCampaignRuleSeam(
       activeRulingsForAmbiguities: () => [],
     };
   const projections: CampaignRuleProjection[] = cases.cases
-    .filter((item) => item.ruleKind === 'house-rule')
+    .filter(
+      (item) =>
+        item.ruleKind === 'house-rule' ||
+        (item.ruleKind === 'ruling' &&
+          item.ambiguityId === undefined &&
+          item.selectedInterpretationId === undefined),
+    )
     .map((item) => ({
       ruleIdentity: item.ruleIdentity ?? item.caseId,
-      ruleKind: 'house-rule',
+      ruleKind: item.ruleKind === 'ruling' ? 'ruling' : 'house-rule',
       status: 'active',
       origin: 'oracle-supplied',
       provenance: item.provenance ?? 'oracle-supplied',

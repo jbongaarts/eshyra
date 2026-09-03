@@ -6,6 +6,7 @@ import {
   listActiveRulingsForAmbiguitiesAtPosition,
 } from './campaignRuleStore.js';
 import {
+  CampaignRuleError,
   type CampaignRuleProjection,
   type CampaignRulingProjection,
   projectCampaignRule,
@@ -63,8 +64,13 @@ export function assembleCampaignRulesContext(
     position,
   );
   const rulingByAmbiguity = new Map<string, CampaignRulingProjection>();
-  for (const ruling of rulings)
+  for (const ruling of rulings) {
+    if (rulingByAmbiguity.has(ruling.ambiguityId))
+      throw new CampaignRuleError(
+        `multiple active campaign rulings for ambiguity '${ruling.ambiguityId}'`,
+      );
     rulingByAmbiguity.set(ruling.ambiguityId, ruling);
+  }
   return {
     position,
     rules: listActiveCampaignRulesAtPosition(db, campaignId, position).map(

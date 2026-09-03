@@ -29,6 +29,7 @@ import {
   openScene,
   queryCampaignOverlayLore,
   runTurn,
+  validateCampaignRule,
 } from '../src/internal.js';
 import { runModelLoop } from '../src/orchestrator/turnLoop.js';
 import { freshDbWithSession } from './support/db.js';
@@ -99,6 +100,96 @@ function baseInput(overrides: Record<string, unknown> = {}) {
 }
 
 describe('orchestrator turn loop', () => {
+  it('does not consume chronology for a failed turn and reuses replay positions', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+
+    const first = await runTurn(
+      {
+        db,
+        model: new ScriptedModel(['The first turn succeeds.']),
+        registry: createDefaultToolRegistry(),
+      },
+      baseInput({ turnId: 'turn-a' }),
+    );
+    expect(first.ok).toBe(true);
+
+    const replay = await runTurn(
+      {
+        db,
+        model: new ScriptedModel(['The replay succeeds.']),
+        registry: createDefaultToolRegistry(),
+      },
+      baseInput({ turnId: 'turn-a', playerInput: 'Replay the first turn.' }),
+    );
+    expect(replay.ok).toBe(true);
+
+    const failed = await runTurn(
+      {
+        db,
+        model: new FailingModel(),
+        registry: createDefaultToolRegistry(),
+      },
+      baseInput({ turnId: 'turn-b', playerInput: 'This turn fails.' }),
+    );
+    expect(failed.ok).toBe(false);
+
+    const next = await runTurn(
+      {
+        db,
+        model: new ScriptedModel(['The next canonical turn succeeds.']),
+        registry: createDefaultToolRegistry(),
+      },
+      baseInput({ turnId: 'turn-c', playerInput: 'Continue after failure.' }),
+    );
+    expect(next.ok).toBe(true);
+
+    const positions = db
+      .prepare(
+        'SELECT session_id, turn_id, ordinal FROM campaign_turn_position ORDER BY ordinal',
+      )
+      .all();
+    expect(positions).toEqual([
+      { session_id: SESSION, turn_id: 'turn-a', ordinal: 1 },
+      { session_id: SESSION, turn_id: 'turn-c', ordinal: 2 },
+    ]);
+    validateCampaignRule(
+      {
+        ruleIdentity: 'replay-ruling',
+        campaignId: CAMPAIGN,
+        ruleKind: 'house-rule',
+        status: 'active',
+        origin: 'player-approved',
+        provenance: { kind: 'house-rule' },
+        effectivePosition: {
+          sessionId: SESSION,
+          turnId: 'turn-a',
+          ordinal: 1,
+        },
+        temporalMode: {
+          mode: 'disputed-turn',
+          disputedPosition: {
+            sessionId: SESSION,
+            turnId: 'turn-a',
+            ordinal: 1,
+          },
+        },
+        supersededBy: null,
+        scope: 'replay',
+        governingRecordKeys: [],
+        prose: 'The replay uses this ruling.',
+      },
+      {
+        currentPosition: {
+          sessionId: SESSION,
+          turnId: 'turn-c',
+          ordinal: 2,
+        },
+      },
+    );
+    db.close();
+  });
+
   it('runs a full turn: model called, tool executed, narration + scene_log', async () => {
     const db = freshDbWithSession();
     withOpenScene(db);
