@@ -85,6 +85,7 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
       rulingsOnly: true,
       seenAmbiguityIds: new Set(ruleJoin.requestedAmbiguityIds),
       resolvedAmbiguityIds: new Set(ruleJoin.resolvedAmbiguityIds),
+      seenRuleIdentities: new Set(ruleJoin.returnedRuleIdentities),
     },
   );
   // The residual design section 12.1 names rather than hides: a record the late join

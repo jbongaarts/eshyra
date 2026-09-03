@@ -8,6 +8,7 @@ import {
   createCampaignRule as persistCampaignRule,
   revokeCampaignRule as persistRevokeCampaignRule,
   supersedeCampaignRule as persistSupersedeCampaignRule,
+  resolveCampaignPosition,
 } from '../src/internal.js';
 import { DoltRepo } from '../src/persistence/checkpoint/doltRepo.js';
 import {
@@ -38,7 +39,11 @@ function createCampaignRule(
 ): CampaignRule {
   return persistCampaignRule(db, value, {
     ...options,
-    currentPosition: options.currentPosition ?? value.effectivePosition,
+    currentPosition: options.currentPosition ?? {
+      sessionId: 'initial',
+      turnId: 'initial',
+      ordinal: 0,
+    },
   });
 }
 
@@ -50,7 +55,11 @@ function revokeCampaignRule(
 ): CampaignRule {
   return persistRevokeCampaignRule(db, {
     ...input,
-    currentPosition: input.currentPosition ?? input.revokedPosition,
+    currentPosition: input.currentPosition ?? {
+      sessionId: 'initial',
+      turnId: 'initial',
+      ordinal: 0,
+    },
   });
 }
 
@@ -62,7 +71,11 @@ function supersedeCampaignRule(
 ): CampaignRule {
   return persistSupersedeCampaignRule(db, {
     ...input,
-    currentPosition: input.currentPosition ?? input.successor.effectivePosition,
+    currentPosition: input.currentPosition ?? {
+      sessionId: 'initial',
+      turnId: 'initial',
+      ordinal: 0,
+    },
   });
 }
 
@@ -113,6 +126,13 @@ describe('checkpoint serialization', () => {
       ruleIdentity: 'revoked',
       revokedPosition: pos(4),
     });
+    for (let ordinal = 1; ordinal <= 5; ordinal += 1) {
+      resolveCampaignPosition(db, {
+        campaignId: 'c1',
+        sessionId: 's1',
+        turnId: `t${ordinal}`,
+      });
+    }
     createCampaignRule(
       db,
       {
@@ -132,6 +152,7 @@ describe('checkpoint serialization', () => {
         effectivePosition: pos(5),
       },
       {
+        currentPosition: pos(5),
         validation: {
           ambiguity: {
             id: 'amb-1',

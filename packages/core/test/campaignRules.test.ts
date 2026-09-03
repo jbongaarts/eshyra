@@ -207,15 +207,30 @@ describe('campaign rule domain', () => {
         effectivePosition: current,
         temporalMode: { mode: 'disputed-turn', disputedPosition: current },
       }),
-      { ambiguity, currentPosition: current },
+      { ambiguity },
+      current,
     );
+    expect(() =>
+      validateCampaignRule(
+        rule({
+          effectivePosition: position(3, 't-current', 's-current'),
+          temporalMode: {
+            mode: 'disputed-turn',
+            disputedPosition: position(3, 't-current', 's-current'),
+          },
+        }),
+        { ambiguity },
+        position(100, 't-current', 's-current'),
+      ),
+    ).toThrow('only the current or immediately preceding');
     const prior = position(9, 'turn-9');
     validateCampaignRule(
       rule({
         effectivePosition: prior,
         temporalMode: { mode: 'disputed-turn', disputedPosition: prior },
       }),
-      { ambiguity, currentPosition: position(10, 'turn-10') },
+      { ambiguity },
+      position(10, 'turn-10'),
     );
     expect(() =>
       validateCampaignRule(
@@ -226,7 +241,8 @@ describe('campaign rule domain', () => {
             disputedPosition: position(1),
           },
         }),
-        { ambiguity, currentPosition: position(10, 'turn-10') },
+        { ambiguity },
+        position(10, 'turn-10'),
       ),
     ).toThrow('only the current or immediately preceding');
     expect(() =>
@@ -235,6 +251,18 @@ describe('campaign rule domain', () => {
         { ambiguity },
       ),
     ).toThrow();
+  });
+
+  it('keeps SQL and decoded position ordering aligned for encoded anchors', () => {
+    const positions = [position(5, 'turn', 'a b'), position(6, 'turn', 'a!c')];
+    const encoded = positions.map(formatCampaignPosition);
+    expect([...encoded].sort()).toEqual(encoded);
+    expect(
+      positions
+        .slice()
+        .sort(compareCampaignPositions)
+        .map(formatCampaignPosition),
+    ).toEqual(encoded);
   });
 
   it('rejects invalid supersession graphs and lifecycle contradictions', () => {

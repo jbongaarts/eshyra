@@ -83,7 +83,10 @@ export {
   type CampaignAmbiguityContext,
   type CampaignRulesContext,
 } from './campaign/campaignContext.js';
-export { resolveCampaignPosition } from './campaign/campaignPosition.js';
+export {
+  getCurrentCampaignPosition,
+  resolveCampaignPosition,
+} from './campaign/campaignPosition.js';
 export type {
   CampaignRuleKey,
   CreateCampaignRuleOptions,

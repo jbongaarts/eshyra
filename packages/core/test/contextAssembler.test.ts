@@ -96,7 +96,7 @@ function createCampaignRule(
 ): CampaignRule {
   return persistCampaignRule(db, value, {
     ...options,
-    currentPosition: options.currentPosition ?? value.effectivePosition,
+    currentPosition: options.currentPosition ?? campaignPosition(0),
   });
 }
 
@@ -108,7 +108,7 @@ function revokeCampaignRule(
 ): CampaignRule {
   return persistRevokeCampaignRule(db, {
     ...input,
-    currentPosition: input.currentPosition ?? input.revokedPosition,
+    currentPosition: input.currentPosition ?? campaignPosition(0),
   });
 }
 
@@ -120,7 +120,7 @@ function supersedeCampaignRule(
 ): CampaignRule {
   return persistSupersedeCampaignRule(db, {
     ...input,
-    currentPosition: input.currentPosition ?? input.successor.effectivePosition,
+    currentPosition: input.currentPosition ?? campaignPosition(0),
   });
 }
 
@@ -320,11 +320,53 @@ describe('Context Assembler', () => {
     expect(resolvedMessage).toContain(
       `Active ruling familiar-ruling (${interpretation.id})`,
     );
+    expect(
+      resolvedMessage
+        .split('\n')
+        .filter((line) => line.includes('familiar-ruling')),
+    ).toHaveLength(1);
     expect(resolvedMessage).toContain(interpretation.summary);
     const packAfter = readFileSync(packPath);
     expect(packBefore).toEqual(packAfter);
     db.close();
   }, 120000);
+
+  it('rejects malformed ambiguity data before prompt rendering', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const stack = resolveStrictCampaignRulesStack(db);
+    const source = stack.recordsByKey.values().next().value;
+    if (source === undefined) throw new Error('missing stack record');
+    const malformedStack = {
+      ...stack,
+      recordsByKey: new Map([
+        ...stack.recordsByKey,
+        [
+          'feature:malformed-ambiguity',
+          {
+            ...source,
+            record: {
+              ...source.record,
+              key: 'feature:malformed-ambiguity',
+              data: {
+                mechanics: {
+                  ambiguities: [{ id: 'ambiguity:malformed' }],
+                },
+              },
+            },
+          },
+        ],
+      ]),
+    };
+    expect(() =>
+      assembleCampaignRulesContext(
+        db,
+        CAMPAIGN,
+        formatCampaignPosition(campaignPosition(1)),
+        malformedStack,
+      ),
+    ).toThrow(/feature:malformed-ambiguity/);
+    db.close();
+  });
 
   it('renders the acting character wallet, including legacy zero balances', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
