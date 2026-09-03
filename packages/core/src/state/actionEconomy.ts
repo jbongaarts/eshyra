@@ -75,7 +75,7 @@ import {
   listCombatantsForInstance,
 } from './encounterCombatants.js';
 import type { LifeState } from './hpLifecycle.js';
-import { replaceParentheticals } from './parentheticalNames.js';
+import { replaceParentheticals } from './nameNormalization.js';
 import { readCompletedTurns } from './turnClock.js';
 
 export type TurnParticipantKind = 'character' | 'combatant';

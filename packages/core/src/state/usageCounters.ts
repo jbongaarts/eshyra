@@ -72,7 +72,8 @@ import { itemAdoptionReviewBlockMessage } from './itemAdoptionReview.js';
 import {
   replaceParentheticals,
   stripTrailingParenthetical,
-} from './parentheticalNames.js';
+  trimEdgeChar,
+} from './nameNormalization.js';
 
 /** Who a counter row belongs to: an acting entity, or — for charge
  *  economies — the item itself, so charge state follows the item across
@@ -259,10 +260,10 @@ function rowToCounter(row: CounterRow, ownerLabel: string): UsageCounter {
 /** Normalize an ability/spell name for matching: parentheticals like
  *  "(Recharge 5–6)" or "(3/Day)" are display metadata, not identity. */
 function normalizeAbilityName(name: string): string {
-  return replaceParentheticals(name, ' ')
+  const normalized = replaceParentheticals(name, ' ')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/[^a-z0-9]+/g, '-');
+  return trimEdgeChar(normalized, '-');
 }
 
 function spellRefSlug(ref: string): string {
