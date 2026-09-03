@@ -75,6 +75,7 @@ import {
   listCombatantsForInstance,
 } from './encounterCombatants.js';
 import type { LifeState } from './hpLifecycle.js';
+import { replaceParentheticals } from './nameNormalization.js';
 import { readCompletedTurns } from './turnClock.js';
 
 export type TurnParticipantKind = 'character' | 'combatant';
@@ -437,8 +438,7 @@ const COUNT_WORDS: Readonly<Record<string, number>> = {
 /** Normalize a legendary option name for matching: the "(Costs 2 Actions)"
  *  suffix is cost metadata, not identity. */
 function normalizeLegendaryName(name: string): string {
-  return name
-    .replace(/\([^)]*\)/g, ' ')
+  return replaceParentheticals(name, ' ')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();

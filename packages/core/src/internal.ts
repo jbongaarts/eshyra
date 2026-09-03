@@ -1481,6 +1481,11 @@ export {
   mutateState,
   mutateStateBatch,
 } from './state/mutateState.js';
+export {
+  replaceParentheticals,
+  stripTrailingParenthetical,
+  trimEdgeChar,
+} from './state/nameNormalization.js';
 export type { PartyMember } from './state/party.js';
 // Party roster reads.
 export { listParty } from './state/party.js';
