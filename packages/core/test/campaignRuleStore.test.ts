@@ -3,7 +3,6 @@ import type { CampaignPosition, CampaignRule } from '../src/internal.js';
 import {
   assembleCampaignRulesContext,
   CampaignRuleError,
-  createCampaignRule,
   createCampaignRuleReadSeam,
   formatCampaignPosition,
   getCampaignRule,
@@ -11,9 +10,10 @@ import {
   listActiveCampaignRulesAtPosition,
   listActiveRulingsForAmbiguitiesAtPosition,
   listCampaignRules,
+  createCampaignRule as persistCampaignRule,
+  revokeCampaignRule as persistRevokeCampaignRule,
+  supersedeCampaignRule as persistSupersedeCampaignRule,
   resolveCampaignPosition,
-  revokeCampaignRule,
-  supersedeCampaignRule,
 } from '../src/internal.js';
 import { resolveStrictCampaignRulesStack } from '../src/state/campaignRecordLookup.js';
 import { bareDb } from './support/db.js';
@@ -28,6 +28,7 @@ function rule(
   identity: string,
   ordinal: number,
   kind: CampaignRule['ruleKind'] = 'house-rule',
+  overrides: Partial<CampaignRule> = {},
 ): CampaignRule {
   return {
     ruleIdentity: identity,
@@ -45,6 +46,7 @@ function rule(
     scope: 'combat',
     governingRecordKeys: ['record:one'],
     prose: `Rule ${identity}`,
+    ...overrides,
   };
 }
 
@@ -67,6 +69,59 @@ function ambiguityRuling(identity: string, ordinal: number): CampaignRule {
       selectedInterpretationId: 'int-1',
     },
   };
+}
+
+function withCurrent<T>(
+  value: T,
+  currentPosition: CampaignPosition,
+): T & {
+  currentPosition: CampaignPosition;
+} {
+  return { ...value, currentPosition };
+}
+
+type CreateOptions = Parameters<typeof persistCampaignRule>[2];
+type TestCreateOptions = Omit<CreateOptions, 'currentPosition'> & {
+  currentPosition?: CampaignPosition;
+};
+type RevokeInput = Parameters<typeof persistRevokeCampaignRule>[1];
+type TestRevokeInput = Omit<RevokeInput, 'currentPosition'> & {
+  currentPosition?: CampaignPosition;
+};
+type SupersedeInput = Parameters<typeof persistSupersedeCampaignRule>[1];
+type TestSupersedeInput = Omit<SupersedeInput, 'currentPosition'> & {
+  currentPosition?: CampaignPosition;
+};
+
+function createCampaignRule(
+  db: Parameters<typeof persistCampaignRule>[0],
+  value: CampaignRule,
+  options: TestCreateOptions = {},
+): CampaignRule {
+  return persistCampaignRule(db, value, {
+    ...options,
+    currentPosition: options.currentPosition ?? p(0),
+  });
+}
+
+function revokeCampaignRule(
+  db: Parameters<typeof persistRevokeCampaignRule>[0],
+  input: TestRevokeInput,
+): CampaignRule {
+  return persistRevokeCampaignRule(db, {
+    ...input,
+    currentPosition: input.currentPosition ?? p(0),
+  });
+}
+
+function supersedeCampaignRule(
+  db: Parameters<typeof persistSupersedeCampaignRule>[0],
+  input: TestSupersedeInput,
+): CampaignRule {
+  return persistSupersedeCampaignRule(db, {
+    ...input,
+    currentPosition: input.currentPosition ?? p(0),
+  });
 }
 
 describe('campaign rule persistence', () => {
@@ -114,18 +169,30 @@ describe('campaign rule persistence', () => {
 
   it('applies supersession and revocation prospectively', () => {
     const db = bareDb();
-    createCampaignRule(db, rule('old', 1));
-    supersedeCampaignRule(db, {
-      campaignId: 'c1',
-      ruleIdentity: 'old',
-      successor: rule('new', 5),
-    });
-    createCampaignRule(db, rule('revocable', 2));
-    revokeCampaignRule(db, {
-      campaignId: 'c1',
-      ruleIdentity: 'revocable',
-      revokedPosition: p(7),
-    });
+    createCampaignRule(db, rule('old', 1), withCurrent({}, p(0)));
+    supersedeCampaignRule(
+      db,
+      withCurrent(
+        {
+          campaignId: 'c1',
+          ruleIdentity: 'old',
+          successor: rule('new', 5),
+        },
+        p(1),
+      ),
+    );
+    createCampaignRule(db, rule('revocable', 2), withCurrent({}, p(1)));
+    revokeCampaignRule(
+      db,
+      withCurrent(
+        {
+          campaignId: 'c1',
+          ruleIdentity: 'revocable',
+          revokedPosition: p(7),
+        },
+        p(5),
+      ),
+    );
     expect(
       listActiveCampaignRulesAtPosition(
         db,
@@ -417,48 +484,78 @@ describe('campaign rule persistence', () => {
 
   it('isolates campaigns and rejects non-prospective lifecycle changes', () => {
     const db = bareDb();
-    createCampaignRule(db, rule('same', 5));
+    createCampaignRule(db, rule('same', 1), withCurrent({}, p(0)));
     expect(
       getCampaignRule(db, { campaignId: 'c2', ruleIdentity: 'same' }),
     ).toBeUndefined();
     expect(() =>
-      revokeCampaignRule(db, {
-        campaignId: 'c1',
-        ruleIdentity: 'same',
-        revokedPosition: p(4),
-      }),
+      revokeCampaignRule(
+        db,
+        withCurrent(
+          {
+            campaignId: 'c1',
+            ruleIdentity: 'same',
+            revokedPosition: p(4),
+          },
+          p(5),
+        ),
+      ),
     ).toThrow(CampaignRuleError);
     expect(() =>
-      supersedeCampaignRule(db, {
-        campaignId: 'c1',
-        ruleIdentity: 'same',
-        successor: rule('earlier-successor', 4),
-      }),
+      supersedeCampaignRule(
+        db,
+        withCurrent(
+          {
+            campaignId: 'c1',
+            ruleIdentity: 'same',
+            successor: rule('earlier-successor', 4),
+          },
+          p(5),
+        ),
+      ),
     ).toThrow(CampaignRuleError);
     expect(() =>
-      supersedeCampaignRule(db, {
-        campaignId: 'c1',
-        ruleIdentity: 'same',
-        successor: { ...rule('other-campaign', 5), campaignId: 'c2' },
-      }),
+      supersedeCampaignRule(
+        db,
+        withCurrent(
+          {
+            campaignId: 'c1',
+            ruleIdentity: 'same',
+            successor: { ...rule('other-campaign', 5), campaignId: 'c2' },
+          },
+          p(5),
+        ),
+      ),
     ).toThrow(CampaignRuleError);
     db.close();
   });
 
   it('rejects re-superseding and preserves the original supersession chain', () => {
     const db = bareDb();
-    createCampaignRule(db, rule('old', 1));
-    supersedeCampaignRule(db, {
-      campaignId: 'c1',
-      ruleIdentity: 'old',
-      successor: rule('first', 5),
-    });
+    createCampaignRule(db, rule('old', 1), withCurrent({}, p(0)));
+    supersedeCampaignRule(
+      db,
+      withCurrent(
+        {
+          campaignId: 'c1',
+          ruleIdentity: 'old',
+          successor: rule('first', 5),
+        },
+        p(1),
+      ),
+    );
     expect(() =>
-      supersedeCampaignRule(db, {
-        campaignId: 'c1',
-        ruleIdentity: 'old',
-        successor: rule('second', 9),
-      }),
+      supersedeCampaignRule(
+        db,
+        withCurrent(
+          {
+            campaignId: 'c1',
+            ruleIdentity: 'old',
+            successor: rule('second', 9),
+          },
+          p(5),
+        ),
+      ),
     ).toThrow(CampaignRuleError);
     expect(
       getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'old' }),
@@ -475,18 +572,30 @@ describe('campaign rule persistence', () => {
 
   it('rejects superseding a revoked rule without changing its revocation', () => {
     const db = bareDb();
-    createCampaignRule(db, rule('revoked', 1));
-    revokeCampaignRule(db, {
-      campaignId: 'c1',
-      ruleIdentity: 'revoked',
-      revokedPosition: p(4),
-    });
+    createCampaignRule(db, rule('revoked', 1), withCurrent({}, p(0)));
+    revokeCampaignRule(
+      db,
+      withCurrent(
+        {
+          campaignId: 'c1',
+          ruleIdentity: 'revoked',
+          revokedPosition: p(4),
+        },
+        p(4),
+      ),
+    );
     expect(() =>
-      supersedeCampaignRule(db, {
-        campaignId: 'c1',
-        ruleIdentity: 'revoked',
-        successor: rule('successor', 5),
-      }),
+      supersedeCampaignRule(
+        db,
+        withCurrent(
+          {
+            campaignId: 'c1',
+            ruleIdentity: 'revoked',
+            successor: rule('successor', 5),
+          },
+          p(4),
+        ),
+      ),
     ).toThrow(CampaignRuleError);
     expect(
       getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'revoked' }),
@@ -513,30 +622,220 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
-  it('rejects dangling direct supersession and permits valid historical rows', () => {
+  it('rejects dangling supersession and direct creation of historical rows', () => {
     const db = bareDb();
     expect(() =>
-      createCampaignRule(db, {
-        ...rule('bad-superseded', 10),
-        status: 'superseded',
-        supersededBy: 'does-not-exist',
-      }),
-    ).toThrow(CampaignRuleError);
-    createCampaignRule(db, rule('successor', 12));
-    expect(
       createCampaignRule(
         db,
-        { ...rule('historical-revoked', 10), status: 'revoked' },
-        { revokedPosition: p(11) },
-      ).status,
-    ).toBe('revoked');
+        withCurrent(
+          {
+            ...rule('bad-superseded', 10),
+            status: 'superseded',
+            supersededBy: 'does-not-exist',
+          },
+          p(0),
+        ),
+      ),
+    ).toThrow(CampaignRuleError);
+    createCampaignRule(db, rule('successor', 12), withCurrent({}, p(0)));
+    expect(() =>
+      createCampaignRule(
+        db,
+        withCurrent(
+          {
+            ...rule('historical-revoked', 10),
+            status: 'revoked',
+          },
+          p(0),
+        ),
+      ),
+    ).toThrow(CampaignRuleError);
+    expect(() =>
+      createCampaignRule(
+        db,
+        withCurrent(
+          {
+            ...rule('historical-superseded', 10),
+            status: 'superseded',
+            supersededBy: 'successor',
+          },
+          p(0),
+        ),
+      ),
+    ).toThrow(CampaignRuleError);
+    db.close();
+  });
+
+  it('rejects prospective creation before current position while preserving bounded disputed turns', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('existing', 5), withCurrent({}, p(0)));
+    const before = listCampaignRules(db, { campaignId: 'c1' });
+    expect(() =>
+      createCampaignRule(db, rule('backdated', 9), withCurrent({}, p(10))),
+    ).toThrow(CampaignRuleError);
+    expect(listCampaignRules(db, { campaignId: 'c1' })).toEqual(before);
     expect(
-      createCampaignRule(db, {
-        ...rule('historical-superseded', 10),
-        status: 'superseded',
-        supersededBy: 'successor',
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(p(9)),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['existing']);
+
+    createCampaignRule(db, rule('at-current', 10), withCurrent({}, p(10)));
+    createCampaignRule(db, rule('future', 11), withCurrent({}, p(10)));
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(p(10)),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['existing', 'at-current']);
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(p(11)),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['existing', 'at-current', 'future']);
+
+    const currentTurn = {
+      sessionId: 'session',
+      turnId: 'turn-10',
+      ordinal: 10,
+    };
+    const previousTurn = { sessionId: 'session', turnId: 'turn-9', ordinal: 9 };
+    const olderTurn = { sessionId: 'session', turnId: 'turn-8', ordinal: 8 };
+    createCampaignRule(
+      db,
+      rule('disputed-current', 10, 'ruling', {
+        effectivePosition: currentTurn,
+        temporalMode: { mode: 'disputed-turn', disputedPosition: currentTurn },
       }),
-    ).toMatchObject({ status: 'superseded', supersededBy: 'successor' });
+      withCurrent(
+        { validation: { currentPosition: currentTurn } },
+        currentTurn,
+      ),
+    );
+    createCampaignRule(
+      db,
+      rule('disputed-previous', 9, 'ruling', {
+        effectivePosition: previousTurn,
+        temporalMode: { mode: 'disputed-turn', disputedPosition: previousTurn },
+      }),
+      withCurrent(
+        { validation: { currentPosition: currentTurn } },
+        currentTurn,
+      ),
+    );
+    expect(() =>
+      createCampaignRule(
+        db,
+        rule('disputed-too-old', 8, 'ruling', {
+          effectivePosition: olderTurn,
+          temporalMode: { mode: 'disputed-turn', disputedPosition: olderTurn },
+        }),
+        withCurrent(
+          { validation: { currentPosition: currentTurn } },
+          currentTurn,
+        ),
+      ),
+    ).toThrow(CampaignRuleError);
+    db.close();
+  });
+
+  it('rejects revocation before current position without rewriting historical active sets', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('live', 5), withCurrent({}, p(0)));
+    expect(() =>
+      revokeCampaignRule(
+        db,
+        withCurrent(
+          { campaignId: 'c1', ruleIdentity: 'live', revokedPosition: p(9) },
+          p(10),
+        ),
+      ),
+    ).toThrow(CampaignRuleError);
+    for (const ordinal of [7, 9, 10]) {
+      expect(
+        listActiveCampaignRulesAtPosition(
+          db,
+          'c1',
+          formatCampaignPosition(p(ordinal)),
+        ).map((item) => item.ruleIdentity),
+      ).toEqual(['live']);
+    }
+    db.close();
+  });
+
+  it('rejects supersession before current position without rewriting the prior chain', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('old', 5), withCurrent({}, p(0)));
+    expect(() =>
+      supersedeCampaignRule(
+        db,
+        withCurrent(
+          { campaignId: 'c1', ruleIdentity: 'old', successor: rule('new', 9) },
+          p(10),
+        ),
+      ),
+    ).toThrow(CampaignRuleError);
+    expect(
+      getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'new' }),
+    ).toBeUndefined();
+    expect(
+      getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'old' }),
+    ).toMatchObject({ status: 'active', supersededBy: null });
+    for (const ordinal of [7, 9, 10]) {
+      expect(
+        listActiveCampaignRulesAtPosition(
+          db,
+          'c1',
+          formatCampaignPosition(p(ordinal)),
+        ).map((item) => item.ruleIdentity),
+      ).toEqual(['old']);
+    }
+    db.close();
+  });
+
+  it('fails closed when current-position authority is omitted from every mutation API', () => {
+    const db = bareDb();
+    expect(() =>
+      Reflect.apply(persistCampaignRule, null, [
+        db,
+        rule('create-without-current', 1),
+      ]),
+    ).toThrow(CampaignRuleError);
+    createCampaignRule(
+      db,
+      rule('revoke-without-current', 1),
+      withCurrent({}, p(0)),
+    );
+    expect(() =>
+      Reflect.apply(persistRevokeCampaignRule, null, [
+        db,
+        {
+          campaignId: 'c1',
+          ruleIdentity: 'revoke-without-current',
+          revokedPosition: p(2),
+        },
+      ]),
+    ).toThrow(CampaignRuleError);
+    createCampaignRule(
+      db,
+      rule('supersede-without-current', 1),
+      withCurrent({}, p(0)),
+    );
+    expect(() =>
+      Reflect.apply(persistSupersedeCampaignRule, null, [
+        db,
+        {
+          campaignId: 'c1',
+          ruleIdentity: 'supersede-without-current',
+          successor: rule('successor-without-current', 2),
+        },
+      ]),
+    ).toThrow(CampaignRuleError);
     db.close();
   });
 });

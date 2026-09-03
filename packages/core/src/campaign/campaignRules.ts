@@ -148,13 +148,23 @@ function checkTemporalMode(
   effectivePosition: CampaignPosition,
   currentPosition?: CampaignPosition,
 ): void {
+  if (currentPosition !== undefined) {
+    checkPosition(currentPosition, 'currentPosition');
+    if (
+      mode.mode === 'prospective' &&
+      compareCampaignPositions(effectivePosition, currentPosition) < 0
+    ) {
+      fail(
+        'prospective campaign rule cannot take effect before the current position',
+      );
+    }
+  }
   if (mode.mode === 'prospective') return;
   checkPosition(mode.disputedPosition, 'temporalMode.disputedPosition');
   if (!samePosition(mode.disputedPosition, effectivePosition)) {
     fail('disputed-turn effective position must equal disputedPosition');
   }
   if (currentPosition === undefined) return;
-  checkPosition(currentPosition, 'currentPosition');
   const sameTurn =
     mode.disputedPosition.sessionId === currentPosition.sessionId &&
     mode.disputedPosition.turnId === currentPosition.turnId;

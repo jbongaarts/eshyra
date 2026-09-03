@@ -2,11 +2,12 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { CampaignPosition, CampaignRule } from '../src/internal.js';
 import {
-  createCampaignRule,
   formatCampaignPosition,
-  revokeCampaignRule,
-  supersedeCampaignRule,
+  createCampaignRule as persistCampaignRule,
+  revokeCampaignRule as persistRevokeCampaignRule,
+  supersedeCampaignRule as persistSupersedeCampaignRule,
 } from '../src/internal.js';
 import { DoltRepo } from '../src/persistence/checkpoint/doltRepo.js';
 import {
@@ -23,6 +24,47 @@ import { initSchema } from '../src/persistence/schema.js';
 const doltOk = DoltRepo.available();
 // Real Dolt subprocesses can exceed Vitest's 5s default under full-suite load.
 const DOLT_TEST_TIMEOUT_MS = 30_000;
+
+type CreateOptions = Parameters<typeof persistCampaignRule>[2];
+type RevokeInput = Parameters<typeof persistRevokeCampaignRule>[1];
+type SupersedeInput = Parameters<typeof persistSupersedeCampaignRule>[1];
+
+function createCampaignRule(
+  db: Parameters<typeof persistCampaignRule>[0],
+  value: CampaignRule,
+  options: Omit<CreateOptions, 'currentPosition'> & {
+    currentPosition?: CampaignPosition;
+  } = {},
+): CampaignRule {
+  return persistCampaignRule(db, value, {
+    ...options,
+    currentPosition: options.currentPosition ?? value.effectivePosition,
+  });
+}
+
+function revokeCampaignRule(
+  db: Parameters<typeof persistRevokeCampaignRule>[0],
+  input: Omit<RevokeInput, 'currentPosition'> & {
+    currentPosition?: CampaignPosition;
+  },
+): CampaignRule {
+  return persistRevokeCampaignRule(db, {
+    ...input,
+    currentPosition: input.currentPosition ?? input.revokedPosition,
+  });
+}
+
+function supersedeCampaignRule(
+  db: Parameters<typeof persistSupersedeCampaignRule>[0],
+  input: Omit<SupersedeInput, 'currentPosition'> & {
+    currentPosition?: CampaignPosition;
+  },
+): CampaignRule {
+  return persistSupersedeCampaignRule(db, {
+    ...input,
+    currentPosition: input.currentPosition ?? input.successor.effectivePosition,
+  });
+}
 
 describe('checkpoint serialization', () => {
   it('captures campaign-rule identities, ordering, provenance, statuses, and positions', () => {

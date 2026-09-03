@@ -14,7 +14,6 @@ import {
   assembleContext,
   closeOpenArcAndOpenNext,
   closeScene,
-  createCampaignRule,
   createCharacterChronicleStore,
   createDefaultToolRegistry,
   createSeededRng,
@@ -28,13 +27,14 @@ import {
   openArcIfMissing,
   openDatabase,
   openScene,
+  createCampaignRule as persistCampaignRule,
+  revokeCampaignRule as persistRevokeCampaignRule,
+  supersedeCampaignRule as persistSupersedeCampaignRule,
   recordSceneSummary,
   renderContextMessage,
-  revokeCampaignRule,
   rollupSessionRecap,
   stampSessionWithOpenArc,
   startAdventureRun,
-  supersedeCampaignRule,
 } from '../src/internal.js';
 import { resolveStrictCampaignRulesStack } from '../src/state/campaignRecordLookup.js';
 import {
@@ -81,6 +81,47 @@ function campaignRule(
     prose: `Prose for ${identity}`,
     ...overrides,
   };
+}
+
+type CreateOptions = Parameters<typeof persistCampaignRule>[2];
+type RevokeInput = Parameters<typeof persistRevokeCampaignRule>[1];
+type SupersedeInput = Parameters<typeof persistSupersedeCampaignRule>[1];
+
+function createCampaignRule(
+  db: Parameters<typeof persistCampaignRule>[0],
+  value: CampaignRule,
+  options: Omit<CreateOptions, 'currentPosition'> & {
+    currentPosition?: CampaignPosition;
+  } = {},
+): CampaignRule {
+  return persistCampaignRule(db, value, {
+    ...options,
+    currentPosition: options.currentPosition ?? value.effectivePosition,
+  });
+}
+
+function revokeCampaignRule(
+  db: Parameters<typeof persistRevokeCampaignRule>[0],
+  input: Omit<RevokeInput, 'currentPosition'> & {
+    currentPosition?: CampaignPosition;
+  },
+): CampaignRule {
+  return persistRevokeCampaignRule(db, {
+    ...input,
+    currentPosition: input.currentPosition ?? input.revokedPosition,
+  });
+}
+
+function supersedeCampaignRule(
+  db: Parameters<typeof persistSupersedeCampaignRule>[0],
+  input: Omit<SupersedeInput, 'currentPosition'> & {
+    currentPosition?: CampaignPosition;
+  },
+): CampaignRule {
+  return persistSupersedeCampaignRule(db, {
+    ...input,
+    currentPosition: input.currentPosition ?? input.successor.effectivePosition,
+  });
 }
 
 function logTurn(
