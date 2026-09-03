@@ -78,6 +78,30 @@ export {
   recordAdventureRunProgress,
   startAdventureRun,
 } from './campaign/adventureRun.js';
+export type {
+  CampaignPosition,
+  CampaignPrecedence,
+  CampaignRule,
+  CampaignRuleKind,
+  CampaignRuleOrigin,
+  CampaignRuleProjection,
+  CampaignRuleProvenance,
+  CampaignRuleStatus,
+  CampaignRuleValidationOptions,
+  CampaignRulingProjection,
+  CampaignTemporalMode,
+} from './campaign/campaignRules.js';
+export {
+  CampaignRuleError,
+  compareCampaignPositions,
+  formatCampaignPosition,
+  orderCampaignRules,
+  parseCampaignPosition,
+  precedenceOf,
+  projectCampaignRule,
+  validateCampaignRule,
+  validateCampaignRules,
+} from './campaign/campaignRules.js';
 // Demo-mode policy + budget helpers (the high-level entrypoints are stable).
 export {
   assertDemoContentAllowed,
@@ -492,9 +516,7 @@ export { extractDiscoverySignals } from './discovery/signals.js';
 // Offline discovery pilot (experiment-only; intentionally absent from the
 // stable root export and not imported by runtime modules).
 export type {
-  CampaignRuleProjection,
   CampaignRuleReadSeam,
-  CampaignRulingProjection,
   CandidateBand,
   ContextPacket,
   DiscoveryCandidate,
