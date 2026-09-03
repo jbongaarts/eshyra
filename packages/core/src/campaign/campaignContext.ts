@@ -16,10 +16,14 @@ import {
 export interface CampaignAmbiguityContext {
   readonly ambiguity: RulesAmbiguity;
   readonly ruling: CampaignRulingProjection | undefined;
+  /** Present when restored history contains contradictory active rulings. */
+  readonly conflictingRulings: readonly CampaignRulingProjection[];
 }
 
 export interface CampaignRulesContext {
   readonly position: string;
+  /** Error detail when the bound immutable ambiguity source was unavailable. */
+  readonly ambiguitySourceUnavailable?: string;
   readonly rules: readonly CampaignRuleProjection[];
   /** Active rulings whose ambiguity is absent from the bound pack. */
   readonly unboundRulings: readonly CampaignRulingProjection[];
@@ -27,7 +31,10 @@ export interface CampaignRulesContext {
 }
 
 function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
-  const found = new Map<string, RulesAmbiguity>();
+  const found = new Map<
+    string,
+    { ambiguity: RulesAmbiguity; recordKey: string }
+  >();
   for (const entry of stack.recordsByKey.values()) {
     const data = entry.record.data;
     if (typeof data !== 'object' || data === null || Array.isArray(data))
@@ -47,12 +54,17 @@ function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
     if (!Array.isArray(values) || ambiguityIds.size === 0) continue;
     for (const value of values) {
       const ambiguity = value as RulesAmbiguity;
-      found.set(ambiguity.id, ambiguity);
+      const previous = found.get(ambiguity.id);
+      if (previous !== undefined)
+        throw new CampaignRuleError(
+          `ambiguity '${ambiguity.id}' is declared by records '${previous.recordKey}' and '${entry.record.key}'`,
+        );
+      found.set(ambiguity.id, { ambiguity, recordKey: entry.record.key });
     }
   }
-  return [...found.values()].sort((a, b) =>
-    a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
-  );
+  return [...found.values()]
+    .map(({ ambiguity }) => ambiguity)
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 /** Shared DM/auditor projection of campaign prose and immutable ambiguity metadata. */
@@ -60,9 +72,10 @@ export function assembleCampaignRulesContext(
   db: Db,
   campaignId: string,
   position: string,
-  stack: ResolvedRulesStack,
+  stack: ResolvedRulesStack | undefined,
+  ambiguitySourceUnavailable?: string,
 ): CampaignRulesContext {
-  const ambiguities = ambiguitiesFromStack(stack);
+  const ambiguities = stack === undefined ? [] : ambiguitiesFromStack(stack);
   const ambiguityIds = new Set(ambiguities.map((item) => item.id));
   const activeRules = listActiveCampaignRulesAtPosition(
     db,
@@ -75,18 +88,21 @@ export function assembleCampaignRulesContext(
     [...ambiguityIds],
     position,
   );
-  const rulingByAmbiguity = new Map<string, CampaignRulingProjection>();
+  const rulingsByAmbiguity = new Map<string, CampaignRulingProjection[]>();
   for (const ruling of rulings) {
-    if (rulingByAmbiguity.has(ruling.ambiguityId))
-      throw new CampaignRuleError(
-        `multiple active campaign rulings for ambiguity '${ruling.ambiguityId}'`,
-      );
-    rulingByAmbiguity.set(ruling.ambiguityId, ruling);
+    const existing = rulingsByAmbiguity.get(ruling.ambiguityId) ?? [];
+    existing.push(ruling);
+    rulingsByAmbiguity.set(ruling.ambiguityId, existing);
   }
   return {
     position,
+    ...(ambiguitySourceUnavailable === undefined
+      ? {}
+      : { ambiguitySourceUnavailable }),
     rules: activeRules
-      .filter((rule) => rule.provenance.kind !== 'ambiguity')
+      .filter(
+        (rule) => stack === undefined || rule.provenance.kind !== 'ambiguity',
+      )
       .map(projectCampaignRule),
     unboundRulings: activeRules
       .filter(
@@ -95,6 +111,7 @@ export function assembleCampaignRulesContext(
         ): rule is typeof rule & {
           provenance: Extract<typeof rule.provenance, { kind: 'ambiguity' }>;
         } =>
+          stack !== undefined &&
           rule.provenance.kind === 'ambiguity' &&
           !ambiguityIds.has(rule.provenance.ambiguityId),
       )
@@ -107,7 +124,14 @@ export function assembleCampaignRulesContext(
       ),
     ambiguities: ambiguities.map((ambiguity) => ({
       ambiguity,
-      ruling: rulingByAmbiguity.get(ambiguity.id),
+      ruling:
+        (rulingsByAmbiguity.get(ambiguity.id)?.length ?? 0) === 1
+          ? rulingsByAmbiguity.get(ambiguity.id)?.[0]
+          : undefined,
+      conflictingRulings:
+        (rulingsByAmbiguity.get(ambiguity.id)?.length ?? 0) > 1
+          ? (rulingsByAmbiguity.get(ambiguity.id) as CampaignRulingProjection[])
+          : [],
     })),
   };
 }

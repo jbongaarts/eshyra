@@ -216,6 +216,7 @@ describe('offline discovery diagnostic probes', () => {
           // Closure: every ambiguity that reached the packet was offered to
           // the seam. The late stage cannot introduce candidates, so nothing
           // carrying an ambiguity can appear after the final ruling query.
+          expect(measurements.m5.ambiguityCoverage).toBe('all-active');
           expect(
             measurements.m5.unqueriedAmbiguityIds,
             `${label} has packet ambiguities never offered to the seam`,

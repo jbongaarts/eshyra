@@ -170,7 +170,6 @@ function checkTemporalMode(
     mode.disputedPosition.turnId === currentPosition.turnId &&
     mode.disputedPosition.ordinal === currentPosition.ordinal;
   const immediatelyBefore =
-    mode.disputedPosition.sessionId === currentPosition.sessionId &&
     mode.disputedPosition.ordinal + 1 === currentPosition.ordinal;
   if (!sameTurn && !immediatelyBefore) {
     fail(
