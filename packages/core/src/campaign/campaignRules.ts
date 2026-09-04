@@ -155,10 +155,10 @@ function checkTemporalMode(
     checkPosition(currentPosition, 'currentPosition');
     if (
       mode.mode === 'prospective' &&
-      compareCampaignPositions(effectivePosition, currentPosition) < 0
+      effectivePosition.ordinal <= currentPosition.ordinal
     ) {
       fail(
-        'prospective campaign rule cannot take effect before the current position',
+        'prospective campaign rule cannot take effect at or before the current position',
       );
     }
   }

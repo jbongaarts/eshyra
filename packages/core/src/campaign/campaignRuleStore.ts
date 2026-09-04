@@ -251,27 +251,39 @@ const SELECT = `SELECT campaign_id, rule_identity, rule_kind, status, origin,
   superseded_by, revoked_position, scope, governing_record_keys_json, prose,
   provenance, session_id, updated_at FROM campaign_rule`;
 
+function canonicalizeFuturePosition(
+  db: Db,
+  campaignId: string,
+  candidate: CampaignPosition,
+  currentPosition: CampaignPosition,
+): CampaignPosition {
+  const persistedCurrent = getCurrentCampaignPosition(db, campaignId);
+  const currentOrdinal = persistedCurrent?.ordinal ?? currentPosition.ordinal;
+  if (candidate.ordinal > currentOrdinal) {
+    return {
+      ...candidate,
+      sessionId: FUTURE_CAMPAIGN_POSITION_ANCHOR,
+      turnId: FUTURE_CAMPAIGN_POSITION_ANCHOR,
+    };
+  }
+  return candidate;
+}
+
 function canonicalizeFutureEffectivePosition(
   db: Db,
   rule: CampaignRule,
   currentPosition: CampaignPosition,
 ): CampaignRule {
-  const persistedCurrent = getCurrentCampaignPosition(db, rule.campaignId);
-  const currentOrdinal = persistedCurrent?.ordinal ?? currentPosition.ordinal;
-  if (
-    rule.temporalMode.mode === 'prospective' &&
-    rule.effectivePosition.ordinal > currentOrdinal
-  ) {
-    return {
-      ...rule,
-      effectivePosition: {
-        ...rule.effectivePosition,
-        sessionId: FUTURE_CAMPAIGN_POSITION_ANCHOR,
-        turnId: FUTURE_CAMPAIGN_POSITION_ANCHOR,
-      },
-    };
-  }
-  return rule;
+  if (rule.temporalMode.mode !== 'prospective') return rule;
+  return {
+    ...rule,
+    effectivePosition: canonicalizeFuturePosition(
+      db,
+      rule.campaignId,
+      rule.effectivePosition,
+      currentPosition,
+    ),
+  };
 }
 
 function writeRule(
@@ -468,36 +480,22 @@ export function revokeCampaignRule(
       throw new CampaignRuleError(
         `campaign rule '${input.ruleIdentity}' is not active`,
       );
-    // A future rule may be explicitly cancelled at the current persisted
-    // position. Other pre-effective revocation positions remain invalid.
-    const canCancelBeforeEffective =
-      existing.effectivePosition.ordinal > input.currentPosition.ordinal &&
-      compareCampaignPositions(input.revokedPosition, input.currentPosition) ===
-        0;
-    if (
-      compareCampaignPositions(
-        input.revokedPosition,
-        existing.effectivePosition,
-      ) < 0 &&
-      !canCancelBeforeEffective
-    )
-      throw new CampaignRuleError(
-        `campaign rule '${input.ruleIdentity}' cannot be revoked before its effective position`,
-      );
     formatCampaignPosition(input.revokedPosition);
-    assertPersistedPosition(
-      txn,
-      input.campaignId,
-      input.revokedPosition,
-      'revokedPosition',
-    );
-    if (
-      compareCampaignPositions(input.revokedPosition, input.currentPosition) < 0
-    )
+    if (input.revokedPosition.ordinal <= input.currentPosition.ordinal)
       throw new CampaignRuleError(
-        `campaign rule '${input.ruleIdentity}' cannot be revoked before the current position`,
+        `campaign rule '${input.ruleIdentity}' cannot be revoked at or before the current position`,
       );
-    const revokedPosition = formatCampaignPosition(input.revokedPosition);
+    // A future cancellation stores the supplied ordinal at the canonical
+    // __future__ anchor. This makes a rule scheduled later never active while
+    // keeping the current active set unchanged.
+    const revokedPosition = formatCampaignPosition(
+      canonicalizeFuturePosition(
+        txn,
+        input.campaignId,
+        input.revokedPosition,
+        input.currentPosition,
+      ),
+    );
     txn
       .prepare(
         `UPDATE campaign_rule SET status='revoked', revoked_position=?, session_id=?, updated_at=? WHERE campaign_id=? AND rule_identity=?`,
@@ -560,14 +558,11 @@ export function supersedeCampaignRule(
         `successor '${input.successor.ruleIdentity}' cannot take effect before '${input.ruleIdentity}'`,
       );
     if (
-      compareCampaignPositions(
-        successor.effectivePosition,
-        input.currentPosition,
-      ) < 0 &&
-      successor.temporalMode.mode === 'prospective'
+      successor.temporalMode.mode === 'prospective' &&
+      successor.effectivePosition.ordinal <= input.currentPosition.ordinal
     )
       throw new CampaignRuleError(
-        `successor '${input.successor.ruleIdentity}' cannot take effect before the current position`,
+        `successor '${input.successor.ruleIdentity}' cannot take effect at or before the current position`,
       );
     assertPersistedPositionAtOrBeforeCurrent(
       txn,

@@ -380,20 +380,20 @@ describe('Context Assembler', () => {
     });
     const revokedRule = campaignRule('revoked-rule', 1);
     createCampaignRule(db, revokedRule);
-    let revocationPosition: CampaignPosition | undefined;
+    let currentPosition: CampaignPosition | undefined;
     for (let ordinal = 1; ordinal <= 3; ordinal += 1)
-      revocationPosition = resolveCampaignPosition(db, {
+      currentPosition = resolveCampaignPosition(db, {
         campaignId: CAMPAIGN,
         sessionId: SESSION,
         turnId: `turn-${ordinal}`,
       });
-    if (revocationPosition === undefined)
+    if (currentPosition === undefined)
       throw new Error('missing revocation position');
     revokeCampaignRule(db, {
       campaignId: CAMPAIGN,
       ruleIdentity: revokedRule.ruleIdentity,
-      revokedPosition: revocationPosition,
-      currentPosition: revocationPosition,
+      revokedPosition: campaignPosition(4),
+      currentPosition,
     });
 
     const atOne = assembleCampaignRulesContext(
@@ -460,11 +460,11 @@ describe('Context Assembler', () => {
         selectedInterpretationId: interpretation.id,
       },
       governingRecordKeys: ['spell:find-familiar'],
-      effectivePosition: revocationPosition,
+      effectivePosition: campaignPosition(4),
     });
     createCampaignRule(db, ruling, {
       validation: { ambiguity: familiar.ambiguity },
-      currentPosition: revocationPosition,
+      currentPosition,
     });
     const resolved = assembleCampaignRulesContext(
       db,
