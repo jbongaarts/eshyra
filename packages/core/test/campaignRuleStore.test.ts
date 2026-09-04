@@ -215,7 +215,7 @@ describe('campaign rule persistence', () => {
 
   it('returns the canonical rule representation that it persisted', () => {
     const db = bareDb();
-    const ordinary = createCampaignRule(db, rule('ordinary', 0));
+    const ordinary = createCampaignRule(db, rule('ordinary', 1));
     expect(ordinary).toEqual(
       getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'ordinary' }),
     );
@@ -237,7 +237,7 @@ describe('campaign rule persistence', () => {
 
   it('returns the canonical successor representation that it persisted', () => {
     const db = bareDb();
-    createCampaignRule(db, rule('prior-returned', 0));
+    createCampaignRule(db, rule('prior-returned', 1));
     const successor = supersedeCampaignRule(db, {
       campaignId: 'c1',
       ruleIdentity: 'prior-returned',
@@ -267,21 +267,21 @@ describe('campaign rule persistence', () => {
     expect(getCurrentCampaignPosition(db, 'c1')).toEqual(first);
     createCampaignRule(
       db,
-      rule('live', 1, 'house-rule', { effectivePosition: first }),
+      rule('live', 2, 'house-rule', { effectivePosition: p(2) }),
       {
         currentPosition: first,
       },
     );
     createCampaignRule(
       db,
-      rule('revocable', 1, 'house-rule', { effectivePosition: first }),
+      rule('revocable', 2, 'house-rule', { effectivePosition: p(2) }),
       {
         currentPosition: first,
       },
     );
     createCampaignRule(
       db,
-      rule('supersedable', 1, 'house-rule', { effectivePosition: first }),
+      rule('supersedable', 2, 'house-rule', { effectivePosition: p(2) }),
       {
         currentPosition: first,
       },
@@ -398,16 +398,16 @@ describe('campaign rule persistence', () => {
       ),
     );
     createCampaignRule(db, rule('revocable', 2), withCurrent({}, p(0)));
-    const revocationPosition = persistPositions(db, 7);
+    const currentPosition = persistPositions(db, 7);
     revokeCampaignRule(
       db,
       withCurrent(
         {
           campaignId: 'c1',
           ruleIdentity: 'revocable',
-          revokedPosition: revocationPosition,
+          revokedPosition: p(8),
         },
-        revocationPosition,
+        currentPosition,
       ),
     );
     expect(
@@ -492,6 +492,12 @@ describe('campaign rule persistence', () => {
       sessionId: 'session-2',
       turnId: 'turn-2',
     });
+    const realThird = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 'session-3',
+      turnId: 'turn-3',
+    });
+    const realFourth = p(4);
     expect(
       listActiveCampaignRulesAtPosition(
         db,
@@ -504,15 +510,15 @@ describe('campaign rule persistence', () => {
       revokeCampaignRule(db, {
         campaignId: 'c1',
         ruleIdentity: 'late-anchor',
-        revokedPosition: realSecond,
-        currentPosition: realSecond,
+        revokedPosition: realFourth,
+        currentPosition: realThird,
       }),
     ).not.toThrow();
     expect(
       listActiveCampaignRulesAtPosition(
         db,
         'c1',
-        formatCampaignPosition(realSecond),
+        formatCampaignPosition(realFourth),
       ).map((item) => item.ruleIdentity),
     ).toEqual(['early-anchor']);
     db.close();
@@ -530,8 +536,8 @@ describe('campaign rule persistence', () => {
     supersedeCampaignRule(db, {
       campaignId: 'c1',
       ruleIdentity: 'prior',
-      successor: rule('successor', 1, 'house-rule', {
-        effectivePosition: first,
+      successor: rule('successor', 2, 'house-rule', {
+        effectivePosition: p(2),
       }),
       currentPosition: first,
     });
@@ -570,7 +576,7 @@ describe('campaign rule persistence', () => {
     revokeCampaignRule(db, {
       campaignId: 'c1',
       ruleIdentity: 'transactional-revocation',
-      revokedPosition: current,
+      revokedPosition: p(2),
       currentPosition: current,
     });
 
@@ -767,7 +773,7 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
-  it('cancels a future rule at the current position before it takes effect', () => {
+  it('cancels a future rule at the next position before it takes effect', () => {
     const db = bareDb();
     const current = persistPositions(db, 2, 'future-cancel');
     createCampaignRule(db, rule('future-to-cancel', 9), {
@@ -777,7 +783,7 @@ describe('campaign rule persistence', () => {
     const revoked = revokeCampaignRule(db, {
       campaignId: 'c1',
       ruleIdentity: 'future-to-cancel',
-      revokedPosition: current,
+      revokedPosition: p(3),
       currentPosition: current,
     });
     expect(revoked).toMatchObject({ status: 'revoked' });
@@ -798,7 +804,7 @@ describe('campaign rule persistence', () => {
     expect(() =>
       createCampaignRule(
         db,
-        rule('empty-governing-keys', 0, 'house-rule', {
+        rule('empty-governing-keys', 1, 'house-rule', {
           governingRecordKeys: [],
         }),
       ),
@@ -806,7 +812,7 @@ describe('campaign rule persistence', () => {
     expect(() =>
       createCampaignRule(
         db,
-        rule('blank-governing-key', 0, 'house-rule', {
+        rule('blank-governing-key', 1, 'house-rule', {
           governingRecordKeys: [''],
         }),
       ),
@@ -814,7 +820,7 @@ describe('campaign rule persistence', () => {
     expect(() =>
       createCampaignRule(
         db,
-        rule('duplicate-governing-keys', 0, 'house-rule', {
+        rule('duplicate-governing-keys', 1, 'house-rule', {
           governingRecordKeys: ['spell:fireball', 'spell:fireball'],
         }),
       ),
@@ -888,22 +894,22 @@ describe('campaign rule persistence', () => {
 
   it('uses one current-position authority when superseding a historical rule', () => {
     const db = bareDb();
+    createCampaignRule(
+      db,
+      {
+        ...ambiguityRuling('historical', 1),
+        effectivePosition: p(1),
+      },
+      {
+        currentPosition: p(0),
+        validation: { ambiguity },
+      },
+    );
     const current = resolveCampaignPosition(db, {
       campaignId: 'c1',
       sessionId: 'session',
       turnId: 'turn-1',
     });
-    createCampaignRule(
-      db,
-      {
-        ...ambiguityRuling('historical', 1),
-        effectivePosition: current,
-      },
-      {
-        currentPosition: current,
-        validation: { ambiguity },
-      },
-    );
     const positions = [current];
     for (let ordinal = 2; ordinal <= 10; ordinal += 1) {
       positions.push(
@@ -922,7 +928,7 @@ describe('campaign rule persistence', () => {
         ruleIdentity: 'historical',
         successor: {
           ...ambiguityRuling('replacement', 10),
-          effectivePosition: now,
+          effectivePosition: p(11),
         },
         currentPosition: now,
         validation: {
@@ -939,11 +945,7 @@ describe('campaign rule persistence', () => {
 
   it('surfaces an ambiguity ruling even when no ambiguity candidate was discovered', () => {
     const db = bareDb();
-    const campaignPosition = resolveCampaignPosition(db, {
-      campaignId: 'c1',
-      sessionId: 'session',
-      turnId: 'turn-1',
-    });
+    const campaignPosition = p(1);
     createCampaignRule(
       db,
       {
@@ -951,11 +953,13 @@ describe('campaign rule persistence', () => {
         effectivePosition: campaignPosition,
         governingRecordKeys: ['spell:find-familiar'],
       },
-      {
-        currentPosition: campaignPosition,
-        validation: { ambiguity },
-      },
+      { currentPosition: p(0), validation: { ambiguity } },
     );
+    resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 'session',
+      turnId: 'turn-1',
+    });
     const seam = createCampaignRuleReadSeam(
       db,
       'c1',
@@ -1138,7 +1142,7 @@ describe('campaign rule persistence', () => {
         ),
       ),
     ).toThrow(
-      "campaign rule 'same' cannot be revoked before the current position",
+      "campaign rule 'same' cannot be revoked at or before the current position",
     );
     expect(() =>
       supersedeCampaignRule(
@@ -1153,7 +1157,7 @@ describe('campaign rule persistence', () => {
         ),
       ),
     ).toThrow(
-      "successor 'earlier-successor' cannot take effect before the current position",
+      "successor 'earlier-successor' cannot take effect at or before the current position",
     );
     expect(() =>
       supersedeCampaignRule(
@@ -1214,16 +1218,16 @@ describe('campaign rule persistence', () => {
   it('rejects superseding a revoked rule without changing its revocation', () => {
     const db = bareDb();
     createCampaignRule(db, rule('revoked', 1), withCurrent({}, p(0)));
-    const revocationPosition = persistPositions(db, 4);
+    const revocationCurrent = persistPositions(db, 4);
     revokeCampaignRule(
       db,
       withCurrent(
         {
           campaignId: 'c1',
           ruleIdentity: 'revoked',
-          revokedPosition: revocationPosition,
+          revokedPosition: p(5),
         },
-        revocationPosition,
+        revocationCurrent,
       ),
     );
     expect(() =>
@@ -1235,7 +1239,7 @@ describe('campaign rule persistence', () => {
             ruleIdentity: 'revoked',
             successor: rule('successor', 5),
           },
-          revocationPosition,
+          revocationCurrent,
         ),
       ),
     ).toThrow("campaign rule 'revoked' is revoked");
@@ -1249,7 +1253,11 @@ describe('campaign rule persistence', () => {
         )
         .get('revoked'),
     ).toMatchObject({
-      revoked_position: formatCampaignPosition(revocationPosition),
+      revoked_position: formatCampaignPosition({
+        ...p(5),
+        sessionId: '__future__',
+        turnId: '__future__',
+      }),
     });
     db.close();
   });
@@ -1329,15 +1337,18 @@ describe('campaign rule persistence', () => {
       sessionId: 's1',
       turnId: 'turn-1',
     });
-    const prior = ambiguityRuling('prior-ruling', 1);
-    createCampaignRule(
-      db,
-      { ...prior, effectivePosition: previous },
-      {
-        validation: { ambiguity },
-        currentPosition: previous,
+    const prior = {
+      ...ambiguityRuling('prior-ruling', 1),
+      effectivePosition: previous,
+      temporalMode: {
+        mode: 'disputed-turn' as const,
+        disputedPosition: previous,
       },
-    );
+    };
+    createCampaignRule(db, prior, {
+      validation: { ambiguity },
+      currentPosition: previous,
+    });
     const current = resolveCampaignPosition(db, {
       campaignId: 'c1',
       sessionId: 's1',
@@ -1480,89 +1491,88 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
-  it('rejects revocation before a rule effective position', () => {
-    const db = bareDb();
-    createCampaignRule(db, rule('bad-revoked', 10), withCurrent({}, p(0)));
-    expect(() =>
-      revokeCampaignRule(
-        db,
-        withCurrent(
-          {
-            campaignId: 'c1',
-            ruleIdentity: 'bad-revoked',
-            revokedPosition: p(2),
-          },
-          p(0),
-        ),
-      ),
-    ).toThrow(
-      "campaign rule 'bad-revoked' cannot be revoked before its effective position",
-    );
-    db.close();
-  });
-
-  it('rejects a fabricated effective-position chronology anchor', () => {
+  it('canonicalizes a fabricated future effective-position chronology anchor', () => {
     const db = bareDb();
     const current = persistPositions(db, 2, 'canonical');
-    const fabricatedCurrent = { ...current, turnId: 'turn-z' };
-    expect(() =>
-      createCampaignRule(
-        db,
-        rule('fabricated-effective', current.ordinal, 'house-rule', {
-          effectivePosition: fabricatedCurrent,
-        }),
-        withCurrent({}, current),
-      ),
-    ).toThrow(
-      'effectivePosition does not match the persisted campaign turn position',
+    createCampaignRule(
+      db,
+      rule('fabricated-effective', 3, 'house-rule', {
+        effectivePosition: { ...p(3), turnId: 'turn-z' },
+      }),
+      withCurrent({}, current),
     );
+    expect(
+      getCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'fabricated-effective',
+      })?.effectivePosition,
+    ).toEqual({
+      ...p(3),
+      sessionId: '__future__',
+      turnId: '__future__',
+    });
 
     db.close();
   });
 
-  it('rejects a fabricated revocation-position chronology anchor', () => {
+  it('canonicalizes a fabricated future revocation-position chronology anchor', () => {
     const db = bareDb();
     createCampaignRule(db, rule('fabricated-revocation', 1), {
       currentPosition: p(0),
     });
     const current = persistPositions(db, 2, 'canonical');
-    expect(() =>
-      revokeCampaignRule(db, {
+    revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'fabricated-revocation',
+      revokedPosition: {
+        sessionId: 'invented-session',
+        turnId: 'invented-turn',
+        ordinal: 999999,
+      },
+      currentPosition: current,
+    });
+    expect(
+      getCampaignRule(db, {
         campaignId: 'c1',
         ruleIdentity: 'fabricated-revocation',
-        revokedPosition: {
-          sessionId: 'invented-session',
-          turnId: 'invented-turn',
-          ordinal: 999999,
-        },
-        currentPosition: current,
       }),
-    ).toThrow(
-      'revokedPosition does not match the persisted campaign turn position',
-    );
+    ).toMatchObject({ status: 'revoked' });
+    expect(
+      db
+        .prepare(
+          'SELECT revoked_position FROM campaign_rule WHERE rule_identity=?',
+        )
+        .get('fabricated-revocation'),
+    ).toMatchObject({
+      revoked_position: formatCampaignPosition({
+        sessionId: '__future__',
+        turnId: '__future__',
+        ordinal: 999999,
+      }),
+    });
 
     db.close();
   });
 
-  it('rejects a fabricated supersession effective-position chronology anchor', () => {
+  it('canonicalizes a fabricated future supersession effective-position anchor', () => {
     const db = bareDb();
     createCampaignRule(db, rule('superseded-prior', 1), {
       currentPosition: p(0),
     });
     const current = persistPositions(db, 2, 'canonical');
-    const fabricatedCurrent = { ...current, turnId: 'turn-z' };
-    expect(() =>
-      supersedeCampaignRule(db, {
-        campaignId: 'c1',
-        ruleIdentity: 'superseded-prior',
-        successor: rule('fabricated-successor', current.ordinal, 'house-rule', {
-          effectivePosition: fabricatedCurrent,
-        }),
-        currentPosition: current,
+    const successor = supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'superseded-prior',
+      successor: rule('fabricated-successor', 3, 'house-rule', {
+        effectivePosition: { ...p(3), turnId: 'turn-z' },
       }),
-    ).toThrow(
-      'successor.effectivePosition does not match the persisted campaign turn position',
-    );
+      currentPosition: current,
+    });
+    expect(successor.effectivePosition).toEqual({
+      ...p(3),
+      sessionId: '__future__',
+      turnId: '__future__',
+    });
     db.close();
   });
 
@@ -1631,7 +1641,7 @@ describe('campaign rule persistence', () => {
         withCurrent({}, currentPosition),
       ),
     ).toThrow(
-      'prospective campaign rule cannot take effect before the current position',
+      'prospective campaign rule cannot take effect at or before the current position',
     );
     expect(listCampaignRules(db, { campaignId: 'c1' })).toEqual(before);
     expect(
@@ -1642,10 +1652,14 @@ describe('campaign rule persistence', () => {
       ).map((item) => item.ruleIdentity),
     ).toEqual(['existing']);
 
-    createCampaignRule(
-      db,
-      rule('at-current', 10),
-      withCurrent({}, currentPosition),
+    expect(() =>
+      createCampaignRule(
+        db,
+        { ...rule('at-current', 10), effectivePosition: currentPosition },
+        withCurrent({}, currentPosition),
+      ),
+    ).toThrow(
+      'prospective campaign rule cannot take effect at or before the current position',
     );
     createCampaignRule(
       db,
@@ -1658,14 +1672,14 @@ describe('campaign rule persistence', () => {
         'c1',
         formatCampaignPosition(p(10)),
       ).map((item) => item.ruleIdentity),
-    ).toEqual(['existing', 'at-current']);
+    ).toEqual(['existing']);
     expect(
       listActiveCampaignRulesAtPosition(
         db,
         'c1',
         formatCampaignPosition(p(11)),
       ).map((item) => item.ruleIdentity),
-    ).toEqual(['existing', 'at-current', 'future']);
+    ).toEqual(['existing', 'future']);
 
     const currentTurn = currentPosition;
     const previousTurn = positions[8];
@@ -1703,6 +1717,375 @@ describe('campaign rule persistence', () => {
     db.close();
   });
 
+  it('E1 rejects ordinary creation at committed P10 and activates P11 rules prospectively', () => {
+    const db = bareDb();
+    const current = persistPositions(db, 10, 'e1');
+    const before = listActiveCampaignRulesAtPosition(
+      db,
+      'c1',
+      formatCampaignPosition(current),
+    );
+    expect(() =>
+      createCampaignRule(
+        db,
+        { ...rule('at-committed-current', 10), effectivePosition: current },
+        {
+          currentPosition: current,
+        },
+      ),
+    ).toThrow(
+      'prospective campaign rule cannot take effect at or before the current position',
+    );
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(current),
+      ),
+    ).toEqual(before);
+
+    createCampaignRule(db, rule('at-next-turn', 11), {
+      currentPosition: current,
+    });
+    expect(
+      getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'at-next-turn' })
+        ?.effectivePosition,
+    ).toEqual({
+      ...p(11),
+      sessionId: '__future__',
+      turnId: '__future__',
+    });
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(current),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual([]);
+    const next = persistPositions(db, 11, 'e1');
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(next),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['at-next-turn']);
+    db.close();
+  });
+
+  it('E2 rejects revocation at committed P10 and canonicalizes a P11 revocation', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('active-at-ten', 1));
+    const current = persistPositions(db, 10, 'e2');
+    const before = listActiveCampaignRulesAtPosition(
+      db,
+      'c1',
+      formatCampaignPosition(current),
+    );
+    expect(() =>
+      revokeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'active-at-ten',
+        revokedPosition: current,
+        currentPosition: current,
+      }),
+    ).toThrow(
+      "campaign rule 'active-at-ten' cannot be revoked at or before the current position",
+    );
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(current),
+      ),
+    ).toEqual(before);
+
+    revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'active-at-ten',
+      revokedPosition: p(11),
+      currentPosition: current,
+    });
+    expect(
+      db
+        .prepare(
+          'SELECT revoked_position FROM campaign_rule WHERE rule_identity=?',
+        )
+        .get('active-at-ten'),
+    ).toMatchObject({
+      revoked_position: formatCampaignPosition({
+        ...p(11),
+        sessionId: '__future__',
+        turnId: '__future__',
+      }),
+    });
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(current),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['active-at-ten']);
+    const next = persistPositions(db, 11, 'e2');
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(next),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual([]);
+    db.close();
+  });
+
+  it('E3 rejects supersession at committed P10 and starts the successor at P11', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('prior-at-ten', 1));
+    const current = persistPositions(db, 10, 'e3');
+    const before = listActiveCampaignRulesAtPosition(
+      db,
+      'c1',
+      formatCampaignPosition(current),
+    );
+    expect(() =>
+      supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'prior-at-ten',
+        successor: {
+          ...rule('successor-at-ten', 10),
+          effectivePosition: current,
+        },
+        currentPosition: current,
+      }),
+    ).toThrow(
+      "successor 'successor-at-ten' cannot take effect at or before the current position",
+    );
+    expect(listCampaignRules(db, { campaignId: 'c1' })).toHaveLength(1);
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(current),
+      ),
+    ).toEqual(before);
+
+    supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'prior-at-ten',
+      successor: rule('successor-at-eleven', 11),
+      currentPosition: current,
+    });
+    expect(
+      getCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'successor-at-eleven',
+      })?.effectivePosition,
+    ).toEqual({
+      ...p(11),
+      sessionId: '__future__',
+      turnId: '__future__',
+    });
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(current),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['prior-at-ten']);
+    const next = persistPositions(db, 11, 'e3');
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(next),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['successor-at-eleven']);
+    db.close();
+  });
+
+  it('E4 preserves disputed-turn creation and supersession at current and previous cross-session turns', () => {
+    const db = bareDb();
+    const previous = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 'e4-session-one',
+      turnId: 'turn-one',
+    });
+    const current = resolveCampaignPosition(db, {
+      campaignId: 'c1',
+      sessionId: 'e4-session-two',
+      turnId: 'turn-two',
+    });
+    expect(() =>
+      createCampaignRule(
+        db,
+        {
+          ...rule('ordinary-at-current', current.ordinal),
+          effectivePosition: current,
+        },
+        { currentPosition: current },
+      ),
+    ).toThrow(
+      'prospective campaign rule cannot take effect at or before the current position',
+    );
+
+    const disputedCurrent = {
+      ...rule('disputed-current', current.ordinal),
+      effectivePosition: current,
+      temporalMode: {
+        mode: 'disputed-turn' as const,
+        disputedPosition: current,
+      },
+    };
+    const disputedPrevious = {
+      ...rule('disputed-previous', previous.ordinal),
+      effectivePosition: previous,
+      temporalMode: {
+        mode: 'disputed-turn' as const,
+        disputedPosition: previous,
+      },
+    };
+    createCampaignRule(db, disputedCurrent, { currentPosition: current });
+    createCampaignRule(db, disputedPrevious, { currentPosition: current });
+    supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'disputed-current',
+      successor: {
+        ...rule('corrected-current', current.ordinal),
+        effectivePosition: current,
+        temporalMode: {
+          mode: 'disputed-turn',
+          disputedPosition: current,
+        },
+      },
+      currentPosition: current,
+    });
+    supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'disputed-previous',
+      successor: {
+        ...rule('corrected-previous', previous.ordinal),
+        effectivePosition: previous,
+        temporalMode: {
+          mode: 'disputed-turn',
+          disputedPosition: previous,
+        },
+      },
+      currentPosition: current,
+    });
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(previous),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['corrected-previous']);
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(current),
+      ).map((item) => item.ruleIdentity),
+    ).toEqual(['corrected-previous', 'corrected-current']);
+    db.close();
+  });
+
+  it('E5 cancels a future rule at current+1 without changing the current active set', () => {
+    const db = bareDb();
+    const current = persistPositions(db, 2, 'e5');
+    createCampaignRule(db, rule('future-cancelled', 9), {
+      currentPosition: current,
+    });
+    const before = listActiveCampaignRulesAtPosition(
+      db,
+      'c1',
+      formatCampaignPosition(current),
+    );
+    revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'future-cancelled',
+      revokedPosition: p(3),
+      currentPosition: current,
+    });
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(current),
+      ),
+    ).toEqual(before);
+    const atEffective = persistPositions(db, 9, 'e5');
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(atEffective),
+      ).map((item) => item.ruleIdentity),
+    ).not.toContain('future-cancelled');
+    const afterEffective = persistPositions(db, 10, 'e5');
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(afterEffective),
+      ).map((item) => item.ruleIdentity),
+    ).not.toContain('future-cancelled');
+    db.close();
+  });
+
+  it('E6 rejected ordinary mutations preserve rows, chains, and active-at-position results', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('existing-rule', 1));
+    createCampaignRule(db, rule('revocation-target', 1));
+    createCampaignRule(db, rule('supersession-target', 1));
+    const current = persistPositions(db, 10, 'e6');
+    const beforeRules = listCampaignRules(db, { campaignId: 'c1' });
+    const beforeActive = listActiveCampaignRulesAtPosition(
+      db,
+      'c1',
+      formatCampaignPosition(current),
+    );
+    expect(() =>
+      createCampaignRule(
+        db,
+        { ...rule('rejected-create', 10), effectivePosition: current },
+        { currentPosition: current },
+      ),
+    ).toThrow(
+      'prospective campaign rule cannot take effect at or before the current position',
+    );
+    expect(() =>
+      revokeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'revocation-target',
+        revokedPosition: current,
+        currentPosition: current,
+      }),
+    ).toThrow(
+      "campaign rule 'revocation-target' cannot be revoked at or before the current position",
+    );
+    expect(() =>
+      supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'supersession-target',
+        successor: {
+          ...rule('rejected-successor', 10),
+          effectivePosition: current,
+        },
+        currentPosition: current,
+      }),
+    ).toThrow(
+      "successor 'rejected-successor' cannot take effect at or before the current position",
+    );
+    expect(listCampaignRules(db, { campaignId: 'c1' })).toEqual(beforeRules);
+    expect(
+      listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(current),
+      ),
+    ).toEqual(beforeActive);
+    db.close();
+  });
+
   it('rejects revocation before current position without rewriting historical active sets', () => {
     const db = bareDb();
     createCampaignRule(db, rule('live', 5), withCurrent({}, p(0)));
@@ -1720,7 +2103,7 @@ describe('campaign rule persistence', () => {
         ),
       ),
     ).toThrow(
-      "campaign rule 'live' cannot be revoked before the current position",
+      "campaign rule 'live' cannot be revoked at or before the current position",
     );
     for (const ordinal of [7, 9, 10]) {
       expect(
@@ -1746,7 +2129,9 @@ describe('campaign rule persistence', () => {
           current,
         ),
       ),
-    ).toThrow("successor 'new' cannot take effect before the current position");
+    ).toThrow(
+      "successor 'new' cannot take effect at or before the current position",
+    );
     expect(
       getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'new' }),
     ).toBeUndefined();

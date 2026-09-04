@@ -133,7 +133,7 @@ describe('checkpoint serialization', () => {
     revokeCampaignRule(db, {
       campaignId: 'c1',
       ruleIdentity: 'revoked',
-      revokedPosition: revocationPosition,
+      revokedPosition: pos(5),
       currentPosition: revocationPosition,
     });
     for (let ordinal = 1; ordinal <= 5; ordinal += 1) {
@@ -311,7 +311,7 @@ describe.skipIf(!doltOk)('CheckpointStore.restoreToNewWorkingCopy', () => {
       revokeCampaignRule(db, {
         campaignId: 'c1',
         ruleIdentity: 'revoked',
-        revokedPosition: revocationPosition,
+        revokedPosition: pos(5),
         currentPosition: revocationPosition,
       });
       const before = canonicalize(serializeCampaign(db));
