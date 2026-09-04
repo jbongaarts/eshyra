@@ -1164,7 +1164,13 @@ export type {
   RulesRecord,
   RulesRecordKind,
 } from './rules/types.js';
-export { RULES_RECORD_KINDS } from './rules/types.js';
+export {
+  isRulesPackContentError,
+  markRulesPackContentError,
+  RULES_RECORD_KINDS,
+  RulesPackContentError,
+  RulesPackError,
+} from './rules/types.js';
 // Rules engine internals (pack validation, license policy, stack resolution,
 // record lookup, record-shape types).
 export { validateRulesPack } from './rules/validate.js';

@@ -98,6 +98,29 @@ function isAmbiguityRuling(rule: CampaignRule): rule is AmbiguityRuling {
   return rule.ruleKind === 'ruling' && rule.provenance.kind === 'ambiguity';
 }
 
+/** Validate only the persisted prior row's lifecycle transition. */
+function validatePriorForSupersession(
+  prior: CampaignRule,
+  campaignId: string,
+  ruleIdentity: string,
+  successorIdentity: string,
+): void {
+  if (prior.ruleIdentity !== ruleIdentity)
+    throw new CampaignRuleError('supersession prior identity does not match');
+  if (prior.campaignId !== campaignId)
+    throw new CampaignRuleError('supersession prior campaign does not match');
+  if (prior.status !== 'active')
+    throw new CampaignRuleError('supersession prior must be active');
+  if (prior.supersededBy !== null)
+    throw new CampaignRuleError(
+      `active campaign rule '${prior.ruleIdentity}' cannot name supersededBy`,
+    );
+  if (successorIdentity.length === 0)
+    throw new CampaignRuleError('supersession successor identity is required');
+  if (successorIdentity === prior.ruleIdentity)
+    throw new CampaignRuleError('a rule cannot supersede itself');
+}
+
 function intervalsOverlap(
   leftStart: CampaignPosition,
   leftEnd: CampaignPosition | undefined,
@@ -433,57 +456,61 @@ export function revokeCampaignRule(
       'currentPosition is required for live campaign rule revocation',
     );
   }
-  formatCampaignPosition(input.currentPosition);
-  assertCurrentPosition(db, input.campaignId, input.currentPosition);
-  const existing = getCampaignRule(db, input);
-  if (existing === undefined)
-    throw new CampaignRuleError(
-      `campaign rule '${input.ruleIdentity}' does not exist in campaign '${input.campaignId}'`,
-    );
-  if (existing.status !== 'active')
-    throw new CampaignRuleError(
-      `campaign rule '${input.ruleIdentity}' is not active`,
-    );
-  // A future rule may be explicitly cancelled at the current persisted
-  // position. Other pre-effective revocation positions remain invalid.
-  const canCancelBeforeEffective =
-    existing.effectivePosition.ordinal > input.currentPosition.ordinal &&
-    compareCampaignPositions(input.revokedPosition, input.currentPosition) ===
-      0;
-  if (
-    compareCampaignPositions(
+  return withTransaction(db, (txn) => {
+    formatCampaignPosition(input.currentPosition);
+    assertCurrentPosition(txn, input.campaignId, input.currentPosition);
+    const existing = getCampaignRule(txn, input);
+    if (existing === undefined)
+      throw new CampaignRuleError(
+        `campaign rule '${input.ruleIdentity}' does not exist in campaign '${input.campaignId}'`,
+      );
+    if (existing.status !== 'active')
+      throw new CampaignRuleError(
+        `campaign rule '${input.ruleIdentity}' is not active`,
+      );
+    // A future rule may be explicitly cancelled at the current persisted
+    // position. Other pre-effective revocation positions remain invalid.
+    const canCancelBeforeEffective =
+      existing.effectivePosition.ordinal > input.currentPosition.ordinal &&
+      compareCampaignPositions(input.revokedPosition, input.currentPosition) ===
+        0;
+    if (
+      compareCampaignPositions(
+        input.revokedPosition,
+        existing.effectivePosition,
+      ) < 0 &&
+      !canCancelBeforeEffective
+    )
+      throw new CampaignRuleError(
+        `campaign rule '${input.ruleIdentity}' cannot be revoked before its effective position`,
+      );
+    formatCampaignPosition(input.revokedPosition);
+    assertPersistedPosition(
+      txn,
+      input.campaignId,
       input.revokedPosition,
-      existing.effectivePosition,
-    ) < 0 &&
-    !canCancelBeforeEffective
-  )
-    throw new CampaignRuleError(
-      `campaign rule '${input.ruleIdentity}' cannot be revoked before its effective position`,
+      'revokedPosition',
     );
-  formatCampaignPosition(input.revokedPosition);
-  assertPersistedPosition(
-    db,
-    input.campaignId,
-    input.revokedPosition,
-    'revokedPosition',
-  );
-  if (
-    compareCampaignPositions(input.revokedPosition, input.currentPosition) < 0
-  )
-    throw new CampaignRuleError(
-      `campaign rule '${input.ruleIdentity}' cannot be revoked before the current position`,
-    );
-  const revokedPosition = formatCampaignPosition(input.revokedPosition);
-  db.prepare(
-    `UPDATE campaign_rule SET status='revoked', revoked_position=?, session_id=?, updated_at=? WHERE campaign_id=? AND rule_identity=?`,
-  ).run(
-    revokedPosition,
-    input.sessionId ?? 'campaign-rule',
-    input.updatedAt ?? new Date().toISOString(),
-    input.campaignId,
-    input.ruleIdentity,
-  );
-  return getCampaignRule(db, input) as CampaignRule;
+    if (
+      compareCampaignPositions(input.revokedPosition, input.currentPosition) < 0
+    )
+      throw new CampaignRuleError(
+        `campaign rule '${input.ruleIdentity}' cannot be revoked before the current position`,
+      );
+    const revokedPosition = formatCampaignPosition(input.revokedPosition);
+    txn
+      .prepare(
+        `UPDATE campaign_rule SET status='revoked', revoked_position=?, session_id=?, updated_at=? WHERE campaign_id=? AND rule_identity=?`,
+      )
+      .run(
+        revokedPosition,
+        input.sessionId ?? 'campaign-rule',
+        input.updatedAt ?? new Date().toISOString(),
+        input.campaignId,
+        input.ruleIdentity,
+      );
+    return getCampaignRule(txn, input) as CampaignRule;
+  });
 }
 
 export function supersedeCampaignRule(
@@ -495,77 +522,70 @@ export function supersedeCampaignRule(
       'currentPosition is required for live campaign rule supersession',
     );
   }
-  formatCampaignPosition(input.currentPosition);
-  assertCurrentPosition(db, input.campaignId, input.currentPosition);
-  if (input.successor.campaignId !== input.campaignId)
-    throw new CampaignRuleError('supersession cannot cross campaigns');
-  const prior = getCampaignRule(db, input);
-  if (prior === undefined)
-    throw new CampaignRuleError(
-      `campaign rule '${input.ruleIdentity}' does not exist in campaign '${input.campaignId}'`,
-    );
-  if (prior.status !== 'active') {
-    throw new CampaignRuleError(
-      prior.status === 'superseded'
-        ? `campaign rule '${input.ruleIdentity}' is already superseded`
-        : `campaign rule '${input.ruleIdentity}' is revoked`,
-    );
-  }
-  const successor = canonicalizeFutureEffectivePosition(
-    db,
-    input.successor,
-    input.currentPosition,
-  );
-  if (successor.ruleIdentity === input.ruleIdentity)
-    throw new CampaignRuleError('a rule cannot supersede itself');
-  if (
-    compareCampaignPositions(
-      successor.effectivePosition,
-      prior.effectivePosition,
-    ) < 0
-  )
-    throw new CampaignRuleError(
-      `successor '${input.successor.ruleIdentity}' cannot take effect before '${input.ruleIdentity}'`,
-    );
-  if (
-    compareCampaignPositions(
-      successor.effectivePosition,
-      input.currentPosition,
-    ) < 0 &&
-    successor.temporalMode.mode === 'prospective'
-  )
-    throw new CampaignRuleError(
-      `successor '${input.successor.ruleIdentity}' cannot take effect before the current position`,
-    );
-  assertPersistedPositionAtOrBeforeCurrent(
-    db,
-    input.campaignId,
-    successor.effectivePosition,
-    'successor.effectivePosition',
-  );
-  if (
-    getCampaignRule(db, {
-      campaignId: input.campaignId,
-      ruleIdentity: successor.ruleIdentity,
-    }) !== undefined
-  )
-    throw new CampaignRuleError(
-      `campaign rule '${successor.ruleIdentity}' already exists`,
-    );
-  validateCampaignRule(prior, input.validation);
-  validateCampaignRule(successor, input.validation, input.currentPosition);
-  validateCampaignRules(
-    [
-      {
-        ...prior,
-        status: 'superseded',
-        supersededBy: successor.ruleIdentity,
-      },
-      successor,
-    ],
-    input.validation,
-  );
   return withTransaction(db, (txn) => {
+    formatCampaignPosition(input.currentPosition);
+    assertCurrentPosition(txn, input.campaignId, input.currentPosition);
+    if (input.successor.campaignId !== input.campaignId)
+      throw new CampaignRuleError('supersession cannot cross campaigns');
+    const prior = getCampaignRule(txn, input);
+    if (prior === undefined)
+      throw new CampaignRuleError(
+        `campaign rule '${input.ruleIdentity}' does not exist in campaign '${input.campaignId}'`,
+      );
+    if (prior.status !== 'active') {
+      throw new CampaignRuleError(
+        prior.status === 'superseded'
+          ? `campaign rule '${input.ruleIdentity}' is already superseded`
+          : `campaign rule '${input.ruleIdentity}' is revoked`,
+      );
+    }
+    const successor = canonicalizeFutureEffectivePosition(
+      txn,
+      input.successor,
+      input.currentPosition,
+    );
+    validatePriorForSupersession(
+      prior,
+      input.campaignId,
+      input.ruleIdentity,
+      successor.ruleIdentity,
+    );
+    if (
+      compareCampaignPositions(
+        successor.effectivePosition,
+        prior.effectivePosition,
+      ) < 0
+    )
+      throw new CampaignRuleError(
+        `successor '${input.successor.ruleIdentity}' cannot take effect before '${input.ruleIdentity}'`,
+      );
+    if (
+      compareCampaignPositions(
+        successor.effectivePosition,
+        input.currentPosition,
+      ) < 0 &&
+      successor.temporalMode.mode === 'prospective'
+    )
+      throw new CampaignRuleError(
+        `successor '${input.successor.ruleIdentity}' cannot take effect before the current position`,
+      );
+    assertPersistedPositionAtOrBeforeCurrent(
+      txn,
+      input.campaignId,
+      successor.effectivePosition,
+      'successor.effectivePosition',
+    );
+    if (
+      getCampaignRule(txn, {
+        campaignId: input.campaignId,
+        ruleIdentity: successor.ruleIdentity,
+      }) !== undefined
+    )
+      throw new CampaignRuleError(
+        `campaign rule '${successor.ruleIdentity}' already exists`,
+      );
+    validateCampaignRule(successor, input.validation, input.currentPosition);
+    validateCampaignRules([successor], input.validation);
     txn
       .prepare(
         `UPDATE campaign_rule SET status='superseded', superseded_by=?, session_id=?, updated_at=? WHERE campaign_id=? AND rule_identity=?`,
