@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type {
   AuditVerdict,
+  CampaignRule,
   Db,
   ModelClient,
   ModelCompleteInput,
   ModelCompleteResult,
   ProviderExecutedToolCall,
+  RulesPack,
   SessionDebugSink,
   ToolUsageRecord,
   TurnAuditDebugEvent,
@@ -18,9 +20,11 @@ import type {
 } from '../src/internal.js';
 import {
   appendSceneLog,
+  createCampaignRule,
   createDefaultToolRegistry,
   createSeededRng,
   ensureCharacterRow,
+  getBundledDnd5eSrdPack,
   getTurnFailureDiagnostic,
   getTurnTrace,
   listSceneLog,
@@ -28,8 +32,10 @@ import {
   mutateState,
   openScene,
   queryCampaignOverlayLore,
+  renderCampaignRulesSection,
   runTurn,
   validateCampaignRule,
+  writeCampaignRulesBinding,
 } from '../src/internal.js';
 import { runModelLoop } from '../src/orchestrator/turnLoop.js';
 import { freshDbWithSession } from './support/db.js';
@@ -1149,6 +1155,81 @@ function collectingAuditSink(): SessionDebugSink & {
 }
 
 describe('orchestrator mechanics-audit gate (eshyra-oobh)', () => {
+  it('passes the DM campaign-rule context unchanged to the auditor and trace', async () => {
+    const db = freshDbWithSession();
+    withOpenScene(db);
+    const effectivePosition = {
+      sessionId: SESSION,
+      turnId: 'turn-1',
+      ordinal: 1,
+    };
+    const rule: CampaignRule = {
+      ruleIdentity: 'rule:auditor-parity',
+      campaignId: CAMPAIGN,
+      ruleKind: 'house-rule',
+      status: 'active',
+      origin: 'player-approved',
+      provenance: { kind: 'house-rule', rationale: 'table agreement' },
+      effectivePosition,
+      temporalMode: { mode: 'prospective' },
+      supersededBy: null,
+      revokedPosition: null,
+      scope: 'all checks',
+      governingRecordKeys: ['record:test'],
+      prose: 'Resolve tied checks in the player character’s favor.',
+    };
+    createCampaignRule(db, rule, {
+      currentPosition: {
+        sessionId: SESSION,
+        turnId: 'before-play',
+        ordinal: 0,
+      },
+    });
+    const auditor = new ScriptedAuditor([accept]);
+
+    const result = await runTurn(
+      {
+        db,
+        model: new ScriptedModel(['The agreed tie rule applies.']),
+        registry: createDefaultToolRegistry(),
+        auditor,
+      },
+      baseInput(),
+    );
+
+    expect(result.ok).toBe(true);
+    const campaignRules = auditor.seen[0].campaignRules;
+    if (campaignRules === undefined)
+      throw new Error('auditor did not receive campaign rules');
+    const shared = renderCampaignRulesSection(campaignRules);
+    if (shared === undefined)
+      throw new Error('campaign rules were not rendered');
+    const trace = getTurnTrace(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      turnId: 'turn-1',
+    });
+    const traceContext = trace?.retrievedContext[0];
+    if (typeof traceContext !== 'string')
+      throw new Error('trace did not retain the rendered DM context');
+    expect(
+      traceContext.match(/## Campaign Rules\n[\s\S]*?(?=\n\n## |$)/)?.[0],
+    ).toBe(shared);
+    expect(trace?.campaignRulesEvidence).toMatchObject({
+      position: campaignRules?.position,
+      rules: [
+        {
+          ruleIdentity: 'rule:auditor-parity',
+          ruleKind: 'house-rule',
+          provenance: 'house-rule',
+          effectivePosition: campaignRules?.rules[0]?.effectivePosition,
+          governingRecordKeys: ['record:test'],
+        },
+      ],
+    });
+    db.close();
+  });
+
   it('accepts a candidate whose mechanical claim is backed by an executed tool', async () => {
     const db = freshDbWithSession();
     withOpenScene(db);
@@ -1191,16 +1272,50 @@ describe('orchestrator mechanics-audit gate (eshyra-oobh)', () => {
   it('accepts a purely narrative response with no mechanical claim', async () => {
     const db = freshDbWithSession();
     withOpenScene(db);
+    const bundled = getBundledDnd5eSrdPack();
+    const emptyPack: RulesPack = {
+      ...bundled,
+      meta: { ...bundled.meta, packId: 'rules:empty-a3-test' },
+      records: [],
+    };
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: emptyPack.meta.systemId,
+        packId: emptyPack.meta.packId,
+        version: emptyPack.meta.version,
+      },
+      addons: [],
+      resolvedAt: '2026-05-20T09:00:00.000Z',
+    });
     const model = new ScriptedModel(['The tavern is warm and loud.']);
     const auditor = new ScriptedAuditor([accept]);
 
     const result = await runTurn(
-      { db, model, registry: createDefaultToolRegistry(), auditor },
+      {
+        db,
+        model,
+        registry: createDefaultToolRegistry(),
+        auditor,
+        resolveRulesPack: () => emptyPack,
+      },
       baseInput(),
     );
 
     expect(result.ok).toBe(true);
     expect(auditor.seen).toHaveLength(1);
+    expect(auditor.seen[0].campaignRules).toBeDefined();
+    const trace = getTurnTrace(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      turnId: 'turn-1',
+    });
+    expect(trace?.campaignRulesEvidence).toEqual({
+      position: expect.any(String),
+      rules: [],
+      rulings: [],
+      unresolvedAmbiguityIds: [],
+      conflictingAmbiguityIds: [],
+    });
     db.close();
   });
 

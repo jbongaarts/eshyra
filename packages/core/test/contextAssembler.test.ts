@@ -34,6 +34,7 @@ import {
   revokeCampaignRule as persistRevokeCampaignRule,
   supersedeCampaignRule as persistSupersedeCampaignRule,
   recordSceneSummary,
+  renderCampaignRulesSection,
   renderContextMessage,
   resolveCampaignPosition,
   rollupSessionRecap,
@@ -41,6 +42,7 @@ import {
   startAdventureRun,
   writeCampaignRulesBinding,
 } from '../src/internal.js';
+import { buildAuditUserMessage } from '../src/orchestrator/turnAuditor.js';
 import { resolveStrictCampaignRulesStack } from '../src/state/campaignRecordLookup.js';
 import {
   NEARBY_INVENTORY_MAX_BYTES,
@@ -130,6 +132,10 @@ function supersedeCampaignRule(
   });
 }
 
+function campaignRulesSectionOf(message: string): string | undefined {
+  return message.match(/## Campaign Rules\n[\s\S]*?(?=\n\n## |$)/)?.[0];
+}
+
 function logTurn(
   db: Db,
   sceneId: string,
@@ -191,6 +197,18 @@ function testSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
 }
 
 describe('Context Assembler', () => {
+  it('omits an empty campaign-rules section', () => {
+    expect(
+      renderCampaignRulesSection({
+        position: formatCampaignPosition(campaignPosition(1)),
+        rules: [],
+        unboundRulings: [],
+        unrepresentableRules: [],
+        ambiguities: [],
+      }),
+    ).toBeUndefined();
+  });
+
   it('fails clearly when the bound rules pack is unavailable', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     createCampaignRule(db, campaignRule('still-playable', 1));
@@ -552,6 +570,82 @@ describe('Context Assembler', () => {
         campaignRules: rebound,
       }),
     ).toContain('ambiguity absent from current pack');
+
+    createCampaignRule(db, campaignRule('scheduled-rule', 6), {
+      currentPosition,
+    });
+    const disputedPosition = resolveCampaignPosition(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      turnId: 'turn-2',
+    });
+    createCampaignRule(
+      db,
+      campaignRule('disputed-turn-rule', 2, {
+        effectivePosition: disputedPosition,
+        temporalMode: { mode: 'disputed-turn', disputedPosition },
+      }),
+      { currentPosition },
+    );
+
+    const parityContexts = [
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: formatCampaignPosition(campaignPosition(1)),
+        sessionId: SESSION,
+        playerInput: 'before supersession',
+      }),
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: formatCampaignPosition(campaignPosition(4)),
+        sessionId: SESSION,
+        playerInput: 'after revocation',
+      }),
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: formatCampaignPosition(disputedPosition),
+        sessionId: SESSION,
+        playerInput: 'replay disputed turn',
+      }),
+    ];
+    for (const assembled of parityContexts) {
+      const shared = renderCampaignRulesSection(assembled.campaignRules);
+      const auditor = buildAuditUserMessage({
+        playerInput: assembled.playerInput,
+        candidateResponse: 'candidate',
+        providedToolNames: [],
+        executedToolCalls: [],
+        campaignRules: assembled.campaignRules,
+      });
+      expect(campaignRulesSectionOf(renderContextMessage(assembled))).toBe(
+        shared,
+      );
+      expect(campaignRulesSectionOf(auditor)).toBe(shared);
+    }
+    expect(
+      parityContexts[0].campaignRules.rules.map((rule) => rule.ruleIdentity),
+    ).toEqual(['ordered-a', 'ordered-z', 'revoked-rule', 'superseded-rule']);
+    const afterRevocationIds = parityContexts[1].campaignRules.rules.map(
+      (rule) => rule.ruleIdentity,
+    );
+    for (const absent of [
+      'revoked-rule',
+      'scheduled-rule',
+      'superseded-rule',
+    ]) {
+      expect(afterRevocationIds).not.toContain(absent);
+    }
+    expect(
+      parityContexts[1].campaignRules.ambiguities.find(
+        ({ ambiguity }) => ambiguity.id === familiar.ambiguity.id,
+      )?.ruling?.ruleIdentity,
+    ).toBe('familiar-ruling');
+    expect(
+      parityContexts[2].campaignRules.rules.map((rule) => rule.ruleIdentity),
+    ).toContain('disputed-turn-rule');
     const packAfter = readFileSync(packPath);
     expect(packBefore).toEqual(packAfter);
     db.close();
