@@ -119,6 +119,29 @@ export interface CampaignRuleValidationOptions {
   ) => RulesAmbiguity | undefined;
 }
 
+/**
+ * Return whether two campaign-rule intervals overlap under half-open
+ * interval semantics: [effectivePosition, end). An undefined end is open,
+ * and an interval whose end is at or before its start is empty.
+ */
+export function campaignRuleIntervalsOverlap(
+  leftStart: CampaignPosition,
+  leftEnd: CampaignPosition | undefined,
+  rightStart: CampaignPosition,
+  rightEnd: CampaignPosition | undefined,
+): boolean {
+  return (
+    (leftEnd === undefined ||
+      compareCampaignPositions(leftStart, leftEnd) < 0) &&
+    (rightEnd === undefined ||
+      compareCampaignPositions(rightStart, rightEnd) < 0) &&
+    (leftEnd === undefined ||
+      compareCampaignPositions(rightStart, leftEnd) < 0) &&
+    (rightEnd === undefined ||
+      compareCampaignPositions(leftStart, rightEnd) < 0)
+  );
+}
+
 function fail(message: string): never {
   throw new CampaignRuleError(message);
 }
@@ -285,6 +308,90 @@ export function validateCampaignRules(
       fail(`supersededBy ${rule.supersededBy} does not exist`);
     if (successor.campaignId !== rule.campaignId)
       fail('supersession cannot cross campaigns');
+  }
+  const successorOwners = new Map<string, string>();
+  for (const rule of rules) {
+    if (rule.supersededBy === null) continue;
+    const previousOwner = successorOwners.get(rule.supersededBy);
+    if (previousOwner !== undefined)
+      fail(
+        `campaign rule '${rule.supersededBy}' is named as successor by more than one rule`,
+      );
+    successorOwners.set(rule.supersededBy, rule.ruleIdentity);
+    const successor = byId.get(rule.supersededBy);
+    if (successor === undefined) continue;
+    if (
+      compareCampaignPositions(
+        successor.effectivePosition,
+        rule.effectivePosition,
+      ) < 0
+    ) {
+      fail(
+        `successor '${successor.ruleIdentity}' cannot take effect before '${rule.ruleIdentity}'`,
+      );
+    }
+    if (
+      successor.revokedPosition !== null &&
+      compareCampaignPositions(
+        successor.revokedPosition,
+        successor.effectivePosition,
+      ) <= 0
+    ) {
+      fail(
+        `successor '${successor.ruleIdentity}' of '${rule.ruleIdentity}' was revoked before taking effect`,
+      );
+    }
+  }
+  const ambiguityRulings = rules.filter(
+    (
+      rule,
+    ): rule is CampaignRule & {
+      readonly ruleKind: 'ruling';
+      readonly provenance: Extract<
+        CampaignRuleProvenance,
+        { kind: 'ambiguity' }
+      >;
+    } => rule.ruleKind === 'ruling' && rule.provenance.kind === 'ambiguity',
+  );
+  for (let i = 0; i < ambiguityRulings.length; i += 1) {
+    const left = ambiguityRulings[i];
+    if (left === undefined) continue;
+    const leftSuccessor =
+      left.supersededBy === null ? undefined : byId.get(left.supersededBy);
+    const leftEnd =
+      left.status === 'revoked'
+        ? (left.revokedPosition ?? undefined)
+        : left.status === 'superseded'
+          ? leftSuccessor?.effectivePosition
+          : undefined;
+    for (let j = i + 1; j < ambiguityRulings.length; j += 1) {
+      const right = ambiguityRulings[j];
+      if (
+        right === undefined ||
+        right.provenance.ambiguityId !== left.provenance.ambiguityId
+      )
+        continue;
+      const rightSuccessor =
+        right.supersededBy === null ? undefined : byId.get(right.supersededBy);
+      const rightEnd =
+        right.status === 'revoked'
+          ? (right.revokedPosition ?? undefined)
+          : right.status === 'superseded'
+            ? rightSuccessor?.effectivePosition
+            : undefined;
+      if (
+        campaignRuleIntervalsOverlap(
+          left.effectivePosition,
+          leftEnd,
+          right.effectivePosition,
+          rightEnd,
+        )
+      ) {
+        fail(
+          `active ambiguity ruling '${right.ruleIdentity}' overlaps '${left.ruleIdentity}' for ambiguity '${left.provenance.ambiguityId}'`,
+        );
+      }
+    }
   }
   for (const rule of rules) {
     const seen = new Set<string>();

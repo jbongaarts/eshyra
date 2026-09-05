@@ -14,6 +14,7 @@ import type {
 } from './campaignRules.js';
 import {
   CampaignRuleError,
+  campaignRuleIntervalsOverlap,
   compareCampaignPositions,
   FUTURE_CAMPAIGN_POSITION_ANCHOR,
   formatCampaignPosition,
@@ -127,16 +128,7 @@ function intervalsOverlap(
   rightStart: CampaignPosition,
   rightEnd: CampaignPosition | undefined,
 ): boolean {
-  return (
-    (leftEnd === undefined ||
-      compareCampaignPositions(leftStart, leftEnd) < 0) &&
-    (rightEnd === undefined ||
-      compareCampaignPositions(rightStart, rightEnd) < 0) &&
-    (leftEnd === undefined ||
-      compareCampaignPositions(rightStart, leftEnd) < 0) &&
-    (rightEnd === undefined ||
-      compareCampaignPositions(leftStart, rightEnd) < 0)
-  );
+  return campaignRuleIntervalsOverlap(leftStart, leftEnd, rightStart, rightEnd);
 }
 
 function existingIntervalEnd(
@@ -152,22 +144,23 @@ function existingIntervalEnd(
     return existingRule.revokedPosition;
   }
   if (existingRule.status === 'superseded') {
-    if (existingRule.supersededBy === null)
+    const successorIdentity = existingRule.supersededBy;
+    if (successorIdentity === null)
       throw new CampaignRuleError(
         `superseded campaign rule '${existingRule.ruleIdentity}' is missing superseded_by`,
       );
     if (
       existingRule.campaignId === pendingRule.campaignId &&
-      existingRule.supersededBy === pendingRule.ruleIdentity
+      successorIdentity === pendingRule.ruleIdentity
     )
       return pendingRule.effectivePosition;
     const successor = getCampaignRule(db, {
       campaignId: existingRule.campaignId,
-      ruleIdentity: existingRule.supersededBy,
+      ruleIdentity: successorIdentity,
     });
     if (successor === undefined)
       throw new CampaignRuleError(
-        `supersededBy ${existingRule.supersededBy} does not exist in campaign '${existingRule.campaignId}'`,
+        `supersededBy ${successorIdentity} does not exist in campaign '${existingRule.campaignId}'`,
       );
     return successor.effectivePosition;
   }
@@ -218,6 +211,15 @@ function rowToRule(row: RuleRow): CampaignRule {
     throw new CampaignRuleError(
       `only a revoked rule may carry revokedPosition (campaign rule '${row.rule_identity}')`,
     );
+  const supersededBy = row.superseded_by;
+  if (status === 'superseded' && supersededBy === null)
+    throw new CampaignRuleError(
+      `superseded campaign rule '${row.rule_identity}' is missing superseded_by`,
+    );
+  if (status !== 'superseded' && supersededBy !== null)
+    throw new CampaignRuleError(
+      `only a superseded rule may name supersededBy (campaign rule '${row.rule_identity}')`,
+    );
   const provenance =
     row.provenance_kind === 'ambiguity'
       ? {
@@ -249,7 +251,7 @@ function rowToRule(row: RuleRow): CampaignRule {
             mode: 'disputed-turn',
             disputedPosition: position(row.disputed_position as string),
           },
-    supersededBy: row.superseded_by,
+    supersededBy,
     revokedPosition,
     scope: row.scope,
     governingRecordKeys: keysColumn.decode(row.governing_record_keys_json),
@@ -473,6 +475,12 @@ export function listCampaignRules(
   return [...orderCampaignRules(rows.map(rowToRule))];
 }
 
+/**
+ * Revocation of a scheduled replacement is intentionally rejected before the
+ * replacement takes effect. To cancel it while preserving continuity, callers
+ * supersede the scheduled successor with a new rule (typically a copy of the
+ * prior rule's prose) effective at the same position as the scheduled rule.
+ */
 export function revokeCampaignRule(
   db: Db,
   input: RevokeCampaignRuleInput,
@@ -493,6 +501,23 @@ export function revokeCampaignRule(
     if (existing.status !== 'active')
       throw new CampaignRuleError(
         `campaign rule '${input.ruleIdentity}' is not active`,
+      );
+    const prior = txn
+      .prepare(
+        'SELECT rule_identity FROM campaign_rule WHERE campaign_id = ? AND superseded_by = ? LIMIT 1',
+      )
+      .get(input.campaignId, existing.ruleIdentity) as
+      | { rule_identity: string }
+      | undefined;
+    if (
+      prior !== undefined &&
+      compareCampaignPositions(
+        input.revokedPosition,
+        existing.effectivePosition,
+      ) <= 0
+    )
+      throw new CampaignRuleError(
+        `campaign rule '${existing.ruleIdentity}' supersedes '${prior.rule_identity}' and cannot be revoked before it takes effect; supersede it instead`,
       );
     formatCampaignPosition(input.revokedPosition);
     if (input.revokedPosition.ordinal <= input.currentPosition.ordinal)

@@ -119,6 +119,7 @@ export type {
 } from './campaign/campaignRules.js';
 export {
   CampaignRuleError,
+  campaignRuleIntervalsOverlap,
   compareCampaignPositions,
   formatCampaignPosition,
   orderCampaignRules,
