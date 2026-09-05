@@ -915,6 +915,7 @@ export {
   canonicalize,
   serializeCampaign,
 } from './persistence/checkpoint/serialize.js';
+export { materializeSnapshot } from './persistence/checkpoint/store.js';
 // Database internals.
 export type { Db } from './persistence/db.js';
 export { withTransaction } from './persistence/db.js';
