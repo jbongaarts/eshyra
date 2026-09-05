@@ -49,6 +49,7 @@ const rule = (overrides: Partial<CampaignRule> = {}): CampaignRule => ({
   effectivePosition: position(1),
   temporalMode: { mode: 'prospective' },
   supersededBy: null,
+  revokedPosition: null,
   scope: 'spell:find-familiar',
   governingRecordKeys: ['spell:find-familiar'],
   prose: 'The familiar is dismissed.',
@@ -129,6 +130,7 @@ describe('campaign rule domain', () => {
       ruleKind: 'ruling',
       ambiguityId: ambiguity.id,
       selectedInterpretationId: 'interpretation:dismiss',
+      revokedPosition: null,
     });
     const houseRule = rule({
       ruleIdentity: 'rule-2',
@@ -138,6 +140,7 @@ describe('campaign rule domain', () => {
     expect(projectCampaignRule(houseRule)).toMatchObject({
       ruleKind: 'house-rule',
       provenance: 'house-rule',
+      revokedPosition: null,
     });
     const recurring = rule({
       ruleIdentity: 'recurring',

@@ -36,6 +36,7 @@ export function oracleCampaignRuleSeam(
       provenance: item.provenance ?? 'oracle-supplied',
       effectivePosition: item.scope ?? 'current',
       supersededBy: null,
+      revokedPosition: null,
       scope: item.scope ?? 'current',
       governingRecordKeys: fixture.mustIncludeTargets
         .filter((target) => target.targetKind === 'rules-record')
@@ -58,6 +59,7 @@ export function oracleCampaignRuleSeam(
       provenance: item.provenance ?? 'oracle-supplied',
       effectivePosition: item.scope ?? 'current',
       supersededBy: null,
+      revokedPosition: null,
       scope: item.scope ?? 'current',
       governingRecordKeys: fixture.mustIncludeTargets
         .filter((target) => target.targetKind === 'rules-record')

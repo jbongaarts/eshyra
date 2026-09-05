@@ -141,33 +141,33 @@ function intervalsOverlap(
 
 function existingIntervalEnd(
   db: Db,
-  row: RuleRow,
+  existingRule: CampaignRule,
   pendingRule: CampaignRule,
 ): CampaignPosition | undefined {
-  if (row.status === 'revoked') {
-    if (row.revoked_position === null)
+  if (existingRule.status === 'revoked') {
+    if (existingRule.revokedPosition === null)
       throw new CampaignRuleError(
-        `revoked campaign rule '${row.rule_identity}' is missing revoked_position`,
+        `revoked campaign rule '${existingRule.ruleIdentity}' is missing revoked_position`,
       );
-    return position(row.revoked_position);
+    return existingRule.revokedPosition;
   }
-  if (row.status === 'superseded') {
-    if (row.superseded_by === null)
+  if (existingRule.status === 'superseded') {
+    if (existingRule.supersededBy === null)
       throw new CampaignRuleError(
-        `superseded campaign rule '${row.rule_identity}' is missing superseded_by`,
+        `superseded campaign rule '${existingRule.ruleIdentity}' is missing superseded_by`,
       );
     if (
-      row.campaign_id === pendingRule.campaignId &&
-      row.superseded_by === pendingRule.ruleIdentity
+      existingRule.campaignId === pendingRule.campaignId &&
+      existingRule.supersededBy === pendingRule.ruleIdentity
     )
       return pendingRule.effectivePosition;
     const successor = getCampaignRule(db, {
-      campaignId: row.campaign_id,
-      ruleIdentity: row.superseded_by,
+      campaignId: existingRule.campaignId,
+      ruleIdentity: existingRule.supersededBy,
     });
     if (successor === undefined)
       throw new CampaignRuleError(
-        `supersededBy ${row.superseded_by} does not exist in campaign '${row.campaign_id}'`,
+        `supersededBy ${existingRule.supersededBy} does not exist in campaign '${existingRule.campaignId}'`,
       );
     return successor.effectivePosition;
   }
@@ -192,7 +192,7 @@ function assertNoOverlappingAmbiguityRuling(
         rule.effectivePosition,
         intervalEnd,
         existing.effectivePosition,
-        existingIntervalEnd(db, row, rule),
+        existingIntervalEnd(db, existing, rule),
       )
     ) {
       throw new CampaignRuleError(
@@ -207,6 +207,17 @@ function position(value: string): CampaignPosition {
 }
 
 function rowToRule(row: RuleRow): CampaignRule {
+  const status = row.status as CampaignRule['status'];
+  const revokedPosition =
+    row.revoked_position === null ? null : position(row.revoked_position);
+  if (status === 'revoked' && revokedPosition === null)
+    throw new CampaignRuleError(
+      `revoked campaign rule '${row.rule_identity}' is missing revoked_position`,
+    );
+  if (status !== 'revoked' && revokedPosition !== null)
+    throw new CampaignRuleError(
+      `only a revoked rule may carry revokedPosition (campaign rule '${row.rule_identity}')`,
+    );
   const provenance =
     row.provenance_kind === 'ambiguity'
       ? {
@@ -227,7 +238,7 @@ function rowToRule(row: RuleRow): CampaignRule {
     ruleIdentity: row.rule_identity,
     campaignId: row.campaign_id,
     ruleKind: row.rule_kind as CampaignRule['ruleKind'],
-    status: row.status as CampaignRule['status'],
+    status,
     origin: row.origin as CampaignRule['origin'],
     provenance,
     effectivePosition: position(row.effective_position),
@@ -239,6 +250,7 @@ function rowToRule(row: RuleRow): CampaignRule {
             disputedPosition: position(row.disputed_position as string),
           },
     supersededBy: row.superseded_by,
+    revokedPosition,
     scope: row.scope,
     governingRecordKeys: keysColumn.decode(row.governing_record_keys_json),
     prose: row.prose,
@@ -350,7 +362,9 @@ function writeRule(
       ? formatCampaignPosition(storedRule.temporalMode.disputedPosition)
       : null,
     storedRule.supersededBy,
-    null,
+    storedRule.revokedPosition === null
+      ? null
+      : formatCampaignPosition(storedRule.revokedPosition),
     storedRule.scope,
     keysColumn.encode(storedRule.governingRecordKeys),
     storedRule.prose,
@@ -614,7 +628,6 @@ function activeRows(
   const rows = db
     .prepare(`${SELECT} WHERE campaign_id = ?`)
     .all(campaignId) as RuleRow[];
-  const rowsByIdentity = new Map(rows.map((row) => [row.rule_identity, row]));
   const rules = rows.map(rowToRule);
   const rulesByIdentity = new Map(
     rules.map((rule) => [rule.ruleIdentity, rule]),
@@ -629,21 +642,14 @@ function activeRows(
         )
         .filter((rule) => {
           if (rule.status === 'revoked') {
-            const row = rowsByIdentity.get(rule.ruleIdentity);
             return (
-              row?.revoked_position !== null &&
-              row?.revoked_position !== undefined &&
-              compareCampaignPositions(
-                position(row.revoked_position),
-                cutoffPosition,
-              ) > 0
+              rule.revokedPosition !== null &&
+              compareCampaignPositions(rule.revokedPosition, cutoffPosition) > 0
             );
           }
           if (rule.status !== 'superseded') return true;
-          const row = rowsByIdentity.get(rule.ruleIdentity);
-          if (row?.superseded_by === null || row?.superseded_by === undefined)
-            return false;
-          const successor = rulesByIdentity.get(row.superseded_by);
+          if (rule.supersededBy === null) return false;
+          const successor = rulesByIdentity.get(rule.supersededBy);
           return (
             successor !== undefined &&
             compareCampaignPositions(

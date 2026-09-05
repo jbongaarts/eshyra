@@ -81,6 +81,7 @@ function campaignRule(
     effectivePosition: campaignPosition(ordinal),
     temporalMode: { mode: 'prospective' },
     supersededBy: null,
+    revokedPosition: null,
     scope: 'test',
     governingRecordKeys: ['record:test'],
     prose: `Prose for ${identity}`,

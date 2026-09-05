@@ -175,6 +175,7 @@ describe('orchestrator turn loop', () => {
           },
         },
         supersededBy: null,
+        revokedPosition: null,
         scope: 'replay',
         governingRecordKeys: ['record:replay'],
         prose: 'The replay uses this ruling.',

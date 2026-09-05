@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 import type { CampaignPosition, CampaignRule } from '../src/internal.js';
 import {
   formatCampaignPosition,
+  getCampaignRule,
+  listCampaignRules,
   createCampaignRule as persistCampaignRule,
   revokeCampaignRule as persistRevokeCampaignRule,
   supersedeCampaignRule as persistSupersedeCampaignRule,
@@ -95,6 +97,7 @@ describe('checkpoint serialization', () => {
       provenance: { kind: 'house-rule' as const, rationale: 'table' },
       temporalMode: { mode: 'prospective' as const },
       supersededBy: null,
+      revokedPosition: null,
       scope: 'combat',
       governingRecordKeys: ['record:one'],
       prose: 'Use the table ruling.',
@@ -273,6 +276,7 @@ describe.skipIf(!doltOk)('CheckpointStore.restoreToNewWorkingCopy', () => {
         provenance: { kind: 'house-rule' as const, rationale: 'table' },
         temporalMode: { mode: 'prospective' as const },
         supersededBy: null,
+        revokedPosition: null,
         scope: 'combat',
         governingRecordKeys: ['record:one'],
         prose: 'Use the table ruling.',
@@ -329,6 +333,28 @@ describe.skipIf(!doltOk)('CheckpointStore.restoreToNewWorkingCopy', () => {
         restored.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
       ).toEqual({
         count: 3,
+      });
+      const expectedRevokedPosition = {
+        sessionId: '__future__',
+        turnId: '__future__',
+        ordinal: 5,
+      };
+      expect(
+        getCampaignRule(restored, {
+          campaignId: 'c1',
+          ruleIdentity: 'revoked',
+        }),
+      ).toMatchObject({
+        status: 'revoked',
+        revokedPosition: expectedRevokedPosition,
+      });
+      expect(
+        listCampaignRules(restored, { campaignId: 'c1' }).find(
+          ({ ruleIdentity }) => ruleIdentity === 'revoked',
+        ),
+      ).toMatchObject({
+        status: 'revoked',
+        revokedPosition: expectedRevokedPosition,
       });
       expect(formatCampaignPosition(pos(3))).toMatch(/^cp1~/);
       restored.close();

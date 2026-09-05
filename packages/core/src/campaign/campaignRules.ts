@@ -67,6 +67,7 @@ export interface CampaignRule {
   readonly effectivePosition: CampaignPosition;
   readonly temporalMode: CampaignTemporalMode;
   readonly supersededBy: string | null;
+  readonly revokedPosition: CampaignPosition | null;
   readonly scope: string;
   readonly governingRecordKeys: readonly string[];
   readonly prose: string;
@@ -81,6 +82,7 @@ export interface CampaignRuleProjection {
   readonly provenance: string;
   readonly effectivePosition: string;
   readonly supersededBy: string | null;
+  readonly revokedPosition: string | null;
   readonly scope: string;
   readonly governingRecordKeys: readonly string[];
   readonly ambiguityId?: string;
@@ -226,6 +228,14 @@ export function validateCampaignRule(
   if (rule.status !== 'superseded' && rule.supersededBy !== null) {
     fail('only a superseded rule may name supersededBy');
   }
+  if (rule.status === 'revoked' && rule.revokedPosition === null) {
+    fail('revoked rule must carry revokedPosition');
+  }
+  if (rule.status !== 'revoked' && rule.revokedPosition !== null) {
+    fail('only a revoked rule may carry revokedPosition');
+  }
+  if (rule.revokedPosition !== null)
+    checkPosition(rule.revokedPosition, 'revokedPosition');
   if (rule.supersededBy === rule.ruleIdentity)
     fail('a rule cannot supersede itself');
   if (rule.ruleKind === 'ruling') {
@@ -398,6 +408,10 @@ export function projectCampaignRule(
     provenance,
     effectivePosition: formatCampaignPosition(rule.effectivePosition),
     supersededBy: rule.supersededBy,
+    revokedPosition:
+      rule.revokedPosition === null
+        ? null
+        : formatCampaignPosition(rule.revokedPosition),
     scope: rule.scope,
     governingRecordKeys: rule.governingRecordKeys,
     ...(rule.provenance.kind === 'ambiguity'
