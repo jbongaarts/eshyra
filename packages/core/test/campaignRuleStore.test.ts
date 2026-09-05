@@ -17,6 +17,7 @@ import {
   renderContextMessage,
   resolveCampaignPosition,
   validateCampaignRule,
+  validateCampaignRules,
 } from '../src/internal.js';
 import { resolveStrictCampaignRulesStack } from '../src/state/campaignRecordLookup.js';
 import { bareDb } from './support/db.js';
@@ -468,6 +469,9 @@ describe('campaign rule persistence', () => {
       turnId: '__future__',
       ordinal: 3,
     });
+    expect(() =>
+      validateCampaignRules(listCampaignRules(db, { campaignId: 'c1' })),
+    ).not.toThrow();
     db.close();
   });
 

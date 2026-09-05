@@ -285,8 +285,6 @@ export function validateCampaignRules(
       fail(`supersededBy ${rule.supersededBy} does not exist`);
     if (successor.campaignId !== rule.campaignId)
       fail('supersession cannot cross campaigns');
-    if (successor.status === 'revoked')
-      fail('a revoked rule cannot supersede another rule');
   }
   for (const rule of rules) {
     const seen = new Set<string>();
