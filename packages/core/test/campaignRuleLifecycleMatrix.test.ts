@@ -444,6 +444,28 @@ describe('campaign rule lifecycle matrix', () => {
     expect(() =>
       revoke(
         db,
+        {
+          campaignId: 'c1',
+          ruleIdentity: 'B',
+          revokedPosition: {
+            sessionId: 'fabricated-session',
+            turnId: 'fabricated-turn',
+            ordinal: 9,
+          },
+        },
+        current,
+      ),
+    ).toThrow(
+      "campaign rule 'B' supersedes 'A' and cannot be revoked before it takes effect; supersede it instead",
+    );
+    expect(listCampaignRules(db, { campaignId: 'c1' })).toEqual(beforeRules);
+    expect([activeIds(db, p(2)), activeIds(db, p(9))]).toEqual(beforeActive);
+    expect(() =>
+      validateCampaignRules(listCampaignRules(db, { campaignId: 'c1' })),
+    ).not.toThrow();
+    expect(() =>
+      revoke(
+        db,
         { campaignId: 'c1', ruleIdentity: 'B', revokedPosition: p(3) },
         current,
       ),
@@ -458,6 +480,33 @@ describe('campaign rule lifecycle matrix', () => {
         rule('B', 9, { status: 'revoked', revokedPosition: p(3) }),
       ]),
     ).toThrow("successor 'B' of 'A' was revoked before taking effect");
+
+    const positiveDb = bareDb();
+    create(positiveDb, rule('A', 1));
+    const positiveCurrent = persistThrough(positiveDb, 2);
+    supersede(
+      positiveDb,
+      { campaignId: 'c1', ruleIdentity: 'A', successor: rule('B', 9) },
+      positiveCurrent,
+    );
+    const revoked = revoke(
+      positiveDb,
+      { campaignId: 'c1', ruleIdentity: 'B', revokedPosition: p(10) },
+      positiveCurrent,
+    );
+    expect(revoked.revokedPosition).toEqual({
+      sessionId: '__future__',
+      turnId: '__future__',
+      ordinal: 10,
+    });
+    expect(activeIds(positiveDb, p(9))).toEqual(['B']);
+    expect(activeIds(positiveDb, p(10))).toEqual([]);
+    expect(() =>
+      validateCampaignRules(
+        listCampaignRules(positiveDb, { campaignId: 'c1' }),
+      ),
+    ).not.toThrow();
+    positiveDb.close();
     db.close();
   });
 
