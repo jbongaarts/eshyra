@@ -502,6 +502,13 @@ export function revokeCampaignRule(
       throw new CampaignRuleError(
         `campaign rule '${input.ruleIdentity}' is not active`,
       );
+    formatCampaignPosition(input.revokedPosition);
+    const revokedPosition = canonicalizeFuturePosition(
+      txn,
+      input.campaignId,
+      input.revokedPosition,
+      input.currentPosition,
+    );
     const prior = txn
       .prepare(
         'SELECT rule_identity FROM campaign_rule WHERE campaign_id = ? AND superseded_by = ? LIMIT 1',
@@ -511,36 +518,25 @@ export function revokeCampaignRule(
       | undefined;
     if (
       prior !== undefined &&
-      compareCampaignPositions(
-        input.revokedPosition,
-        existing.effectivePosition,
-      ) <= 0
+      compareCampaignPositions(revokedPosition, existing.effectivePosition) <= 0
     )
       throw new CampaignRuleError(
         `campaign rule '${existing.ruleIdentity}' supersedes '${prior.rule_identity}' and cannot be revoked before it takes effect; supersede it instead`,
       );
-    formatCampaignPosition(input.revokedPosition);
-    if (input.revokedPosition.ordinal <= input.currentPosition.ordinal)
+    if (revokedPosition.ordinal <= input.currentPosition.ordinal)
       throw new CampaignRuleError(
         `campaign rule '${input.ruleIdentity}' cannot be revoked at or before the current position`,
       );
     // A future cancellation stores the supplied ordinal at the canonical
     // __future__ anchor. This makes a rule scheduled later never active while
     // keeping the current active set unchanged.
-    const revokedPosition = formatCampaignPosition(
-      canonicalizeFuturePosition(
-        txn,
-        input.campaignId,
-        input.revokedPosition,
-        input.currentPosition,
-      ),
-    );
+    const formattedRevokedPosition = formatCampaignPosition(revokedPosition);
     txn
       .prepare(
         `UPDATE campaign_rule SET status='revoked', revoked_position=?, session_id=?, updated_at=? WHERE campaign_id=? AND rule_identity=?`,
       )
       .run(
-        revokedPosition,
+        formattedRevokedPosition,
         input.sessionId ?? 'campaign-rule',
         input.updatedAt ?? new Date().toISOString(),
         input.campaignId,
