@@ -49,6 +49,7 @@ import { ToolRegistry } from './toolRegistry.js';
 import { removeConditionTool } from './toolRemoveCondition.js';
 import { removeEffectTargetTool } from './toolRemoveEffectTarget.js';
 import { removeItemTool } from './toolRemoveItem.js';
+import { requestAmbiguityRulingTool } from './toolRequestAmbiguityRuling.js';
 import { resetUsageTool } from './toolResetUsage.js';
 import { resolveCheckTool } from './toolResolveCheck.js';
 import { resolveConcentrationTool } from './toolResolveConcentration.js';
@@ -93,6 +94,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   calcTool,
   markSceneTool,
   lookupRulesTool,
+  requestAmbiguityRulingTool,
   startEncounterTool,
   updateCombatantTool,
   closeCombatInstanceTool,

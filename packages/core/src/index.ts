@@ -46,6 +46,10 @@ export {
   listAdventureRuns,
   startAdventureRun,
 } from './campaign/adventureRun.js';
+export {
+  lookupCampaignAmbiguity,
+  recordAmbiguityRuling,
+} from './campaign/ambiguityResolution.js';
 export type { CampaignInfo, CreateCampaignInput } from './campaign/campaign.js';
 // Campaign lifecycle.
 export {

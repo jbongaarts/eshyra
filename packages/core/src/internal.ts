@@ -79,6 +79,10 @@ export {
   startAdventureRun,
 } from './campaign/adventureRun.js';
 export {
+  lookupCampaignAmbiguity,
+  recordAmbiguityRuling,
+} from './campaign/ambiguityResolution.js';
+export {
   assembleCampaignRulesContext,
   type CampaignAmbiguityContext,
   type CampaignRulesContext,

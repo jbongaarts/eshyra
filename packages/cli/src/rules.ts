@@ -22,8 +22,10 @@ import {
   getCurrentCampaignPosition,
   listActiveCampaignRulesAtPosition,
   listCampaignRules,
+  lookupCampaignAmbiguity,
   openDatabase,
   parseCampaignPosition,
+  recordAmbiguityRuling,
   resolveStrictCampaignRulesStack,
   revokeCampaignRule,
   supersedeCampaignRule,
@@ -56,7 +58,7 @@ interface ParsedArgs {
 }
 
 const USAGE =
-  'usage: eshyra rules <list|show|history|add|supersede|revoke> [flags] [campaign-id]';
+  'usage: eshyra rules <list|show|history|add|supersede|revoke|ambiguities|resolve> [flags] [campaign-id]';
 
 function parseArgs(
   args: readonly string[],
@@ -391,6 +393,87 @@ function listCommand(args: readonly string[], deps: RulesDeps): number {
   }
 }
 
+function ambiguitiesCommand(args: readonly string[], deps: RulesDeps): number {
+  try {
+    const parsed = parseArgs(args, []);
+    const [campaignId, ...extra] = parsed.positional;
+    if (extra.length > 0) throw new CampaignRuleError(USAGE);
+    const result = withCampaign(deps, campaignId, (db, id, current) => {
+      const context = assembleCampaignRulesContext(
+        db,
+        id,
+        formatCampaignPosition(current),
+        resolveStrictCampaignRulesStack(db),
+      );
+      for (const item of context.ambiguities) {
+        const resolution = lookupCampaignAmbiguity(db, {
+          campaignId: id,
+          ambiguityId: item.ambiguity.id,
+          position: current,
+        });
+        const status =
+          resolution.status === 'resolved'
+            ? `resolved:${resolution.ruling?.selectedInterpretationId ?? '(unknown)'}`
+            : resolution.status;
+        deps.log(
+          `${item.ambiguity.id}  status: ${status}  interpretations: ${item.ambiguity.interpretations.map(({ id: interpretationId }) => interpretationId).join(', ')}`,
+        );
+      }
+    });
+    return result ? 0 : 1;
+  } catch (error) {
+    deps.log(errorMessage(error));
+    return 1;
+  }
+}
+
+function resolveCommand(args: readonly string[], deps: RulesDeps): number {
+  try {
+    const parsed = parseArgs(args, ['interpretation', 'prose', 'effective']);
+    const [ambiguityId, campaignId, ...extra] = parsed.positional;
+    if (ambiguityId === undefined || extra.length > 0)
+      throw new CampaignRuleError(USAGE);
+    const result = withCampaign(deps, campaignId, (db, id, current) => {
+      const interpretationId = requiredFlag(parsed, 'interpretation');
+      const effective = flag(parsed, 'effective');
+      let effectiveOrdinal: number | undefined;
+      if (effective !== undefined) {
+        if (!/^\d+$/.test(effective))
+          throw new CampaignRuleError(
+            '--effective must be a non-negative ordinal',
+          );
+        effectiveOrdinal = Number(effective);
+        if (!Number.isSafeInteger(effectiveOrdinal))
+          throw new CampaignRuleError(
+            `invalid campaign position ordinal ${effective}`,
+          );
+      }
+      const prose = flag(parsed, 'prose');
+      const recorded = recordAmbiguityRuling(db, {
+        campaignId: id,
+        ambiguityId,
+        interpretationId,
+        ...(prose === undefined ? {} : { prose }),
+        currentPosition: current,
+        ...(effectiveOrdinal === undefined ? {} : { effectiveOrdinal }),
+      });
+      if (!recorded.created) {
+        deps.log(
+          `already resolved by '${recorded.rule.ruleIdentity}' (takes effect from turn ${recorded.rule.effectivePosition.ordinal}).`,
+        );
+        return;
+      }
+      deps.log(
+        `Added ${recorded.rule.ruleKind} '${recorded.rule.ruleIdentity}' (status: ${recorded.rule.status}, effective ordinal ${recorded.rule.effectivePosition.ordinal}, provenance: ${provenanceLabel(recorded.rule.provenance)}); takes effect from turn ${recorded.rule.effectivePosition.ordinal}.`,
+      );
+    });
+    return result ? 0 : 1;
+  } catch (error) {
+    deps.log(errorMessage(error));
+    return 1;
+  }
+}
+
 function showCommand(
   args: readonly string[],
   deps: RulesDeps,
@@ -681,6 +764,10 @@ export function runRulesCommand(args: string[], deps: RulesDeps): number {
       return supersedeCommand(rest, deps);
     case 'revoke':
       return revokeCommand(rest, deps);
+    case 'ambiguities':
+      return ambiguitiesCommand(rest, deps);
+    case 'resolve':
+      return resolveCommand(rest, deps);
     default:
       deps.log(USAGE);
       return 1;
