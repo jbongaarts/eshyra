@@ -1,4 +1,9 @@
-import type { TraceJsonValue } from '../memory/turnTrace.js';
+import type { CampaignRulesContext } from '../campaign/campaignContext.js';
+import type { CampaignRulingProjection } from '../campaign/campaignRules.js';
+import type {
+  CampaignRulesEvidence,
+  TraceJsonValue,
+} from '../memory/turnTrace.js';
 import { isMarkSceneToolData } from './tools.js';
 import type { ExecutedToolCall } from './turnLoop.js';
 
@@ -10,6 +15,7 @@ import type { ExecutedToolCall } from './turnLoop.js';
  * - `rejectedCandidates` — mutations / tool calls the model proposed that a
  *   tool refused (invalid args, unknown tool, malformed tool call).
  * - `rulesResolution` — deterministic-layer outcomes (dice, SRD lookups).
+ * - `campaignRulesEvidence` — A3 identities supplied to both models.
  * - `memoryUpdates` — scene summaries the turn rolled up.
  * - `qualityFlags` — signals worth surfacing for later review.
  *
@@ -22,10 +28,54 @@ import type { ExecutedToolCall } from './turnLoop.js';
 
 export interface DerivedTraceFields {
   rulesResolution: TraceJsonValue;
+  campaignRulesEvidence: CampaignRulesEvidence | undefined;
   acceptedStateDelta: TraceJsonValue[];
   rejectedCandidates: TraceJsonValue[];
   memoryUpdates: TraceJsonValue[];
   qualityFlags: string[];
+}
+
+/** Project the exact assembled campaign-rule context into durable A3 evidence. */
+export function campaignRulesEvidenceFrom(
+  ctx: CampaignRulesContext,
+): CampaignRulesEvidence {
+  const rulings = new Map<string, CampaignRulingProjection>();
+  for (const ruling of ctx.unboundRulings)
+    rulings.set(ruling.ruleIdentity, ruling);
+  for (const { ruling, conflictingRulings } of ctx.ambiguities) {
+    if (ruling !== undefined) rulings.set(ruling.ruleIdentity, ruling);
+    for (const conflicting of conflictingRulings)
+      rulings.set(conflicting.ruleIdentity, conflicting);
+  }
+  return {
+    position: ctx.position,
+    rules: [...ctx.rules, ...ctx.unrepresentableRules].map((rule) => ({
+      ruleIdentity: rule.ruleIdentity,
+      ruleKind: rule.ruleKind,
+      status: rule.status,
+      provenance: rule.provenance,
+      effectivePosition: rule.effectivePosition,
+      governingRecordKeys: [...rule.governingRecordKeys],
+    })),
+    rulings: [...rulings.values()].map((ruling) => ({
+      ruleIdentity: ruling.ruleIdentity,
+      ambiguityId: ruling.ambiguityId,
+      selectedInterpretationId: ruling.selectedInterpretationId,
+      effectivePosition: ruling.effectivePosition,
+    })),
+    unresolvedAmbiguityIds: ctx.ambiguities
+      .filter(
+        ({ ruling, conflictingRulings }) =>
+          ruling === undefined && conflictingRulings.length <= 1,
+      )
+      .map(({ ambiguity }) => ambiguity.id),
+    conflictingAmbiguityIds: ctx.ambiguities
+      .filter(({ conflictingRulings }) => conflictingRulings.length > 1)
+      .map(({ ambiguity }) => ambiguity.id),
+    ...(ctx.ambiguitySourceUnavailable === undefined
+      ? {}
+      : { ambiguitySourceUnavailable: ctx.ambiguitySourceUnavailable }),
+  };
 }
 
 function closedSceneIdOf(call: ExecutedToolCall): string | undefined {
@@ -55,6 +105,7 @@ export function extractClosedSceneIds(
 export function deriveTraceFields(
   toolCalls: readonly ExecutedToolCall[],
   summarizedSceneIds: readonly string[],
+  campaignRules?: CampaignRulesContext,
 ): DerivedTraceFields {
   const argsOf = (call: ExecutedToolCall): TraceJsonValue =>
     (call.args ?? null) as TraceJsonValue;
@@ -103,6 +154,10 @@ export function deriveTraceFields(
   }
 
   return {
+    campaignRulesEvidence:
+      campaignRules === undefined
+        ? undefined
+        : campaignRulesEvidenceFrom(campaignRules),
     rulesResolution: {
       rolls: okData('roll'),
       // F1/F9 deterministic resolutions (eshyra-2n1t.3 / eshyra-2n1t.11):

@@ -244,6 +244,14 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
     expect(prompt).toContain('separate unlinked `spend_currency`');
   });
 
+  it('binds auditor rulings to campaign rule identities without granting writes', () => {
+    const prompt = buildAuditSystemPrompt();
+    expect(prompt).toContain('binding on both the DM and');
+    expect(prompt).toContain('canonical pack semantics plus these');
+    expect(prompt).toContain('cite its ruleIdentity in the reason');
+    expect(prompt).toContain('Never propose creating or modifying');
+  });
+
   it('user message lists the explicit-action-only tools for the turn', () => {
     const message = buildAuditUserMessage({
       playerInput: 'What am I equipped with?',
@@ -263,8 +271,53 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
       candidateResponse: 'You rolled an 11.',
       providedToolNames: ['roll'],
       executedToolCalls: [],
+      campaignRules: {
+        position: 'cp1~000000000001~session-1~turn-1',
+        rules: [],
+        unboundRulings: [],
+        unrepresentableRules: [],
+        ambiguities: [],
+      },
     });
     expect(message).toContain('## Explicit-Action-Only Tools\n(none)');
+    expect(message).toContain('## Campaign Rules\n(none)');
+  });
+
+  it('places campaign rules before player input', () => {
+    const message = buildAuditUserMessage({
+      playerInput: 'I test the table ruling.',
+      candidateResponse: 'The table ruling applies.',
+      providedToolNames: [],
+      executedToolCalls: [],
+      campaignRules: {
+        position: 'cp1~000000000001~session-1~turn-1',
+        rules: [
+          {
+            ruleIdentity: 'rule:table-test',
+            ruleKind: 'house-rule',
+            status: 'active',
+            origin: 'player-approved',
+            provenance: 'house-rule',
+            effectivePosition: 'cp1~000000000001~session-1~turn-1',
+            supersededBy: null,
+            revokedPosition: null,
+            scope: 'tests',
+            governingRecordKeys: ['record:test'],
+            prose: 'Use the table test rule.',
+          },
+        ],
+        unboundRulings: [],
+        unrepresentableRules: [],
+        ambiguities: [],
+      },
+    });
+
+    expect(message).toContain(
+      '## Campaign Rules\n- [house-rule] rule:table-test',
+    );
+    expect(message.indexOf('## Campaign Rules')).toBeLessThan(
+      message.indexOf('## Player Input'),
+    );
   });
 });
 

@@ -176,3 +176,56 @@ export function assembleCampaignRulesContext(
     })),
   };
 }
+
+/** Render the campaign-rule prompt section shared by the DM and auditor. */
+export function renderCampaignRulesSection(
+  ctx: CampaignRulesContext,
+): string | undefined {
+  if (
+    ctx.ambiguitySourceUnavailable === undefined &&
+    ctx.rules.length === 0 &&
+    ctx.unboundRulings.length === 0 &&
+    ctx.unrepresentableRules.length === 0 &&
+    ctx.ambiguities.length === 0
+  ) {
+    return undefined;
+  }
+  const unavailable =
+    ctx.ambiguitySourceUnavailable === undefined
+      ? []
+      : [
+          `- AMBIGUITY SOURCE UNAVAILABLE: ${ctx.ambiguitySourceUnavailable}; immutable ambiguity metadata is omitted until the bound pack is available`,
+        ];
+  const rules = ctx.rules.map(
+    (rule) =>
+      `- [${rule.ruleKind}] ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): ${rule.prose ?? ''}`,
+  );
+  const unboundRulings = ctx.unboundRulings.map(
+    (ruling) =>
+      `- [ruling] ${ruling.ruleIdentity} (${ruling.provenance}; ambiguity absent from current pack; effective ${ruling.effectivePosition}; records: ${ruling.governingRecordKeys.join(', ') || '(none)'}): ${ruling.prose ?? ''}`,
+  );
+  const unrepresentableRules = ctx.unrepresentableRules.map(
+    (rule) =>
+      `- UNREPRESENTABLE ACTIVE CAMPAIGN RULE ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): preserved restored content requires repair before it can be interpreted`,
+  );
+  const ambiguityLines = ctx.ambiguities.flatMap(
+    ({ ambiguity, ruling, conflictingRulings }) => [
+      `- ${ambiguity.id}: ${ambiguity.question}`,
+      ...ambiguity.interpretations.map(
+        (item) => `  - ${item.id}: ${item.summary}`,
+      ),
+      conflictingRulings.length > 1
+        ? `  CONFLICT: active rulings ${conflictingRulings.map((item) => item.ruleIdentity).join(', ')} contradict one another; none is authoritative.`
+        : ruling === undefined
+          ? '  UNRESOLVED: do not assert a canonical answer or silently choose an interpretation.'
+          : `  Active ruling ${ruling.ruleIdentity} (${ruling.selectedInterpretationId}): ${ruling.prose ?? ''}`,
+    ],
+  );
+  return `## Campaign Rules\n${[
+    ...unavailable,
+    ...rules,
+    ...unboundRulings,
+    ...unrepresentableRules,
+    ...ambiguityLines,
+  ].join('\n')}`;
+}

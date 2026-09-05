@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { CampaignRulesContext } from '../src/campaign/campaignContext.js';
 import type { ExecutedToolCall } from '../src/orchestrator/turnLoop.js';
-import { deriveTraceFields } from '../src/orchestrator/turnTraceProjection.js';
+import {
+  campaignRulesEvidenceFrom,
+  deriveTraceFields,
+} from '../src/orchestrator/turnTraceProjection.js';
 
 function call(
   tool: string,
@@ -14,6 +18,113 @@ function call(
     source: 'native',
   };
 }
+
+const campaignRulesContext: CampaignRulesContext = {
+  position: 'cp1~000000000004~session-1~turn-4',
+  ambiguitySourceUnavailable: 'optional add-on unavailable',
+  rules: [
+    {
+      ruleIdentity: 'rule:house',
+      ruleKind: 'house-rule',
+      status: 'active',
+      origin: 'player-approved',
+      provenance: 'house-rule',
+      effectivePosition: 'cp1~000000000001~session-1~turn-1',
+      supersededBy: null,
+      revokedPosition: null,
+      scope: 'tests',
+      governingRecordKeys: ['record:house'],
+      prose: 'House rule prose.',
+    },
+  ],
+  unboundRulings: [],
+  unrepresentableRules: [],
+  ambiguities: [
+    {
+      ambiguity: {
+        id: 'ambiguity:resolved-test',
+        question: 'Which test interpretation applies?',
+        source: [{ locator: 'test', clauseId: 'clause:test' }],
+        affects: ['record:ruling'],
+        interpretations: [
+          { id: 'interpretation:selected', summary: 'Selected test reading.' },
+        ],
+        canonicalResolution: null,
+        runtimeDisposition: {
+          status: 'engine-pending',
+          owner: 'campaign-ruling',
+        },
+      },
+      ruling: {
+        ruleIdentity: 'rule:ruling',
+        ruleKind: 'ruling',
+        status: 'active',
+        origin: 'player-approved',
+        provenance: 'ambiguity:ambiguity:resolved-test#interpretation:selected',
+        effectivePosition: 'cp1~000000000002~session-1~turn-2',
+        supersededBy: null,
+        revokedPosition: null,
+        scope: 'tests',
+        governingRecordKeys: ['record:ruling'],
+        ambiguityId: 'ambiguity:resolved-test',
+        selectedInterpretationId: 'interpretation:selected',
+        prose: 'Selected ruling prose.',
+      },
+      conflictingRulings: [],
+    },
+    {
+      ambiguity: {
+        id: 'ambiguity:unresolved-test',
+        question: 'What remains unresolved?',
+        source: [{ locator: 'test', clauseId: 'clause:unresolved' }],
+        affects: ['record:unresolved'],
+        interpretations: [
+          { id: 'interpretation:open', summary: 'An open reading.' },
+        ],
+        canonicalResolution: null,
+        runtimeDisposition: {
+          status: 'model-adjudication',
+          owner: 'primary-dm',
+        },
+      },
+      ruling: undefined,
+      conflictingRulings: [],
+    },
+  ],
+};
+
+describe('campaign rules trace projection (ADR 0020 A3)', () => {
+  it('projects supplied rules, rulings, ambiguity state, and source availability', () => {
+    const evidence = campaignRulesEvidenceFrom(campaignRulesContext);
+    expect(evidence).toEqual({
+      position: campaignRulesContext.position,
+      rules: [
+        {
+          ruleIdentity: 'rule:house',
+          ruleKind: 'house-rule',
+          status: 'active',
+          provenance: 'house-rule',
+          effectivePosition: 'cp1~000000000001~session-1~turn-1',
+          governingRecordKeys: ['record:house'],
+        },
+      ],
+      rulings: [
+        {
+          ruleIdentity: 'rule:ruling',
+          ambiguityId: 'ambiguity:resolved-test',
+          selectedInterpretationId: 'interpretation:selected',
+          effectivePosition: 'cp1~000000000002~session-1~turn-2',
+        },
+      ],
+      unresolvedAmbiguityIds: ['ambiguity:unresolved-test'],
+      conflictingAmbiguityIds: [],
+      ambiguitySourceUnavailable: 'optional add-on unavailable',
+    });
+    expect(
+      deriveTraceFields([], [], campaignRulesContext).campaignRulesEvidence,
+    ).toEqual(evidence);
+  });
+});
 
 describe('currency trace projection', () => {
   it('projects successful currency mutations and rejected calls', () => {

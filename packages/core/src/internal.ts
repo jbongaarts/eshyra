@@ -82,6 +82,7 @@ export {
   assembleCampaignRulesContext,
   type CampaignAmbiguityContext,
   type CampaignRulesContext,
+  renderCampaignRulesSection,
 } from './campaign/campaignContext.js';
 export {
   getCurrentCampaignPosition,
@@ -620,6 +621,9 @@ export {
   TurnFailureDiagnosticError,
 } from './memory/turnFailureDiagnostic.js';
 export type {
+  CampaignRulesEvidence,
+  CampaignRulesEvidenceRule,
+  CampaignRulesEvidenceRuling,
   TraceJsonValue,
   TurnTraceConsentScope,
   TurnTraceKey,
@@ -880,6 +884,11 @@ export { normalizeNativeToolCalls } from './orchestrator/toolRequest.js';
 export type { MarkSceneToolData } from './orchestrator/tools.js';
 // Tool-data helpers (the registry itself is stable; these are internals).
 export { isMarkSceneToolData } from './orchestrator/tools.js';
+export {
+  campaignRulesEvidenceFrom,
+  deriveTraceFields,
+  extractClosedSceneIds,
+} from './orchestrator/turnTraceProjection.js';
 export type { ResolveDoltOptions } from './persistence/checkpoint/doltBinary.js';
 export {
   managedDoltDir,
