@@ -1,4 +1,9 @@
 import type { AdventureModule } from '../adventure/types.js';
+import type {
+  CampaignRuleProjection,
+  CampaignRuleReadSeam,
+  CampaignRulingProjection,
+} from '../campaign/campaignRules.js';
 import type { Db } from '../persistence/db.js';
 import type {
   ResolvedRulesStack,
@@ -6,6 +11,12 @@ import type {
 } from '../rules/stack.js';
 import type { RulesAmbiguity } from '../rules/types.js';
 import type { ItemOperationReadinessInput } from '../state/itemExecutionReadiness.js';
+
+export type {
+  CampaignRuleProjection,
+  CampaignRuleReadSeam,
+  CampaignRulingProjection,
+} from '../campaign/campaignRules.js';
 
 export type RouteClass =
   | 'direct-state-ref'
@@ -163,53 +174,24 @@ export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
   readonly traversals: readonly TypedTraversal[];
 }
 
-export interface CampaignRuleProjection {
-  readonly ruleIdentity: string;
-  readonly ruleKind: 'house-rule' | 'ruling';
-  readonly status: string;
-  readonly origin: string;
-  readonly provenance: string;
-  readonly effectivePosition: string;
-  readonly supersededBy: string | null;
-  readonly scope: string;
-  readonly governingRecordKeys: readonly string[];
-  readonly ambiguityId?: string;
-  readonly oracleSupplied?: boolean;
-  readonly prose?: string;
-}
-
-export interface CampaignRulingProjection extends CampaignRuleProjection {
-  readonly ruleKind: 'ruling';
-  readonly ambiguityId: string;
-  readonly selectedInterpretationId: string;
-}
-
-export interface CampaignRuleReadSeam {
-  activeRulesAtPosition(query: {
-    readonly campaignPosition?: string;
-    readonly candidateRecordKeys: readonly string[];
-  }): readonly CampaignRuleProjection[];
-  activeRulingsForAmbiguities(
-    ambiguityIds: readonly string[],
-  ): readonly CampaignRulingProjection[];
-}
-
-export const NULL_CAMPAIGN_RULE_SEAM: CampaignRuleReadSeam = {
-  activeRulesAtPosition: () => [],
-  activeRulingsForAmbiguities: () => [],
-};
+export { NULL_CAMPAIGN_RULE_SEAM } from '../campaign/campaignRules.js';
 
 export interface RuleJoinTrace extends StageTrace<DiscoveryCandidate> {
   /** Keys passed to the active-rule query, empty unless it executed. */
   readonly requestedRuleRecordKeys: readonly string[];
-  /** Ids passed to the ruling query, empty unless it executed. */
+  /** Ids passed to the ruling query, empty unless it executed. When the scope
+   * is `all-active`, these are context ids and do not limit the result. */
   readonly requestedAmbiguityIds: readonly string[];
+  /** Whether the ruling query asked for the complete active ruling set. */
+  readonly rulingQueryScope: 'none' | 'requested-ambiguities' | 'all-active';
   /** Whether each seam query actually ran. A position query over an empty
    * candidate set still ran, so counts cannot witness this. */
   readonly ruleQueryExecuted: boolean;
   readonly rulingQueryExecuted: boolean;
   /** Every identity the seam returned, whether or not it could be placed. */
   readonly returnedRuleIdentities: readonly string[];
+  /** Ambiguity ids carried by rulings the seam actually returned. */
+  readonly returnedAmbiguityIds: readonly string[];
   readonly placedRuleIdentities: readonly string[];
   /** Returned but with no governing key resolvable in the active stack. */
   readonly unplacedRuleIdentities: readonly string[];

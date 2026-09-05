@@ -1,5 +1,9 @@
 import type { AdventureModule } from '../adventure/types.js';
 import { listAdventureRuns } from '../campaign/adventureRun.js';
+import {
+  assembleCampaignRulesContext,
+  type CampaignRulesContext,
+} from '../campaign/campaignContext.js';
 import type {
   CharacterChronicleRecord,
   CharacterChronicleStore,
@@ -20,6 +24,7 @@ import {
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
 } from '../rules/bundledSrdPack.js';
+import { isRulesPackContentError } from '../rules/types.js';
 import {
   type CombatTurnState,
   formatTurnBudget,
@@ -39,6 +44,7 @@ import {
   type AttunementEntry,
   listAttunements,
 } from '../state/attunement.js';
+import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
 import {
   type CampaignActor,
   type EncounterCombatant,
@@ -158,6 +164,10 @@ export interface ContextAssemblyInput {
    * from campaign canon.
    */
   characterChronicle?: CharacterChronicleStore;
+  /** Durable position assigned by the turn coordinator. */
+  campaignPosition: string;
+  /** Resolves non-bundled packs in the campaign binding. */
+  resolveRulesPack?: import('../state/campaignRecordLookup.js').CampaignRulesPackResolver;
 }
 
 export interface CharacterSnapshot {
@@ -275,6 +285,7 @@ export interface AssembledContext {
    * runs' modules resolved.
    */
   adventures: AdventureContextSlice[];
+  campaignRules: CampaignRulesContext;
   playerInput: string;
 }
 
@@ -590,6 +601,24 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     state.clock.currentLocationId,
     input.resolveAdventureModule,
   );
+  let campaignRules: CampaignRulesContext;
+  try {
+    campaignRules = assembleCampaignRulesContext(
+      input.db,
+      input.campaignId,
+      input.campaignPosition,
+      resolveStrictCampaignRulesStack(input.db, input.resolveRulesPack),
+    );
+  } catch (error) {
+    if (!isRulesPackContentError(error)) throw error;
+    campaignRules = assembleCampaignRulesContext(
+      input.db,
+      input.campaignId,
+      input.campaignPosition,
+      undefined,
+      error.message,
+    );
+  }
   const characterChronicle = assembleCharacterChronicle(
     input.db,
     state.character.id,
@@ -619,6 +648,7 @@ export function assembleContext(input: ContextAssemblyInput): AssembledContext {
     recentSceneEvidence,
     characterChronicle,
     adventures,
+    campaignRules,
     playerInput: input.playerInput,
   };
 }
@@ -1003,6 +1033,49 @@ export function renderContextMessage(ctx: AssembledContext): string {
     const body = ctx.adventures.map(renderAdventureContextSlice).join('\n\n');
     sections.push(
       `## Adventure Module (DM-only)\nGuidance from the active authored scenario; campaign truth above overrides it where they conflict. Do not narrate DM-only details verbatim.\n\n${body}`,
+    );
+  }
+
+  if (
+    ctx.campaignRules.ambiguitySourceUnavailable !== undefined ||
+    ctx.campaignRules.rules.length > 0 ||
+    ctx.campaignRules.unboundRulings.length > 0 ||
+    ctx.campaignRules.unrepresentableRules.length > 0 ||
+    ctx.campaignRules.ambiguities.length > 0
+  ) {
+    const unavailable =
+      ctx.campaignRules.ambiguitySourceUnavailable === undefined
+        ? []
+        : [
+            `- AMBIGUITY SOURCE UNAVAILABLE: ${ctx.campaignRules.ambiguitySourceUnavailable}; immutable ambiguity metadata is omitted until the bound pack is available`,
+          ];
+    const rules = ctx.campaignRules.rules.map(
+      (rule) =>
+        `- [${rule.ruleKind}] ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): ${rule.prose ?? ''}`,
+    );
+    const unboundRulings = ctx.campaignRules.unboundRulings.map(
+      (ruling) =>
+        `- [ruling] ${ruling.ruleIdentity} (${ruling.provenance}; ambiguity absent from current pack; effective ${ruling.effectivePosition}; records: ${ruling.governingRecordKeys.join(', ') || '(none)'}): ${ruling.prose ?? ''}`,
+    );
+    const unrepresentableRules = ctx.campaignRules.unrepresentableRules.map(
+      (rule) =>
+        `- UNREPRESENTABLE ACTIVE CAMPAIGN RULE ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): preserved restored content requires repair before it can be interpreted`,
+    );
+    const ambiguityLines = ctx.campaignRules.ambiguities.flatMap(
+      ({ ambiguity, ruling, conflictingRulings }) => [
+        `- ${ambiguity.id}: ${ambiguity.question}`,
+        ...ambiguity.interpretations.map(
+          (item) => `  - ${item.id}: ${item.summary}`,
+        ),
+        conflictingRulings.length > 1
+          ? `  CONFLICT: active rulings ${conflictingRulings.map((item) => item.ruleIdentity).join(', ')} contradict one another; none is authoritative.`
+          : ruling === undefined
+            ? '  UNRESOLVED: do not assert a canonical answer or silently choose an interpretation.'
+            : `  Active ruling ${ruling.ruleIdentity} (${ruling.selectedInterpretationId}): ${ruling.prose ?? ''}`,
+      ],
+    );
+    sections.push(
+      `## Campaign Rules\n${[...unavailable, ...rules, ...unboundRulings, ...unrepresentableRules, ...ambiguityLines].join('\n')}`,
     );
   }
 

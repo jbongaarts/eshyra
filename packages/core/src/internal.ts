@@ -78,6 +78,57 @@ export {
   recordAdventureRunProgress,
   startAdventureRun,
 } from './campaign/adventureRun.js';
+export {
+  assembleCampaignRulesContext,
+  type CampaignAmbiguityContext,
+  type CampaignRulesContext,
+} from './campaign/campaignContext.js';
+export {
+  getCurrentCampaignPosition,
+  resolveCampaignPosition,
+} from './campaign/campaignPosition.js';
+export type {
+  CampaignRuleKey,
+  CreateCampaignRuleOptions,
+  RevokeCampaignRuleInput,
+  SupersedeCampaignRuleInput,
+} from './campaign/campaignRuleStore.js';
+export {
+  createCampaignRule,
+  createCampaignRuleReadSeam,
+  getCampaignRule,
+  listActiveCampaignRulesAtPosition,
+  listActiveRulingsForAmbiguitiesAtPosition,
+  listCampaignRules,
+  revokeCampaignRule,
+  supersedeCampaignRule,
+} from './campaign/campaignRuleStore.js';
+export type {
+  CampaignPosition,
+  CampaignPrecedence,
+  CampaignRule,
+  CampaignRuleKind,
+  CampaignRuleOrigin,
+  CampaignRuleProjection,
+  CampaignRuleProvenance,
+  CampaignRuleReadSeam,
+  CampaignRuleStatus,
+  CampaignRuleValidationOptions,
+  CampaignRulingProjection,
+  CampaignTemporalMode,
+} from './campaign/campaignRules.js';
+export {
+  CampaignRuleError,
+  campaignRuleIntervalsOverlap,
+  compareCampaignPositions,
+  formatCampaignPosition,
+  orderCampaignRules,
+  parseCampaignPosition,
+  precedenceOf,
+  projectCampaignRule,
+  validateCampaignRule,
+  validateCampaignRules,
+} from './campaign/campaignRules.js';
 // Demo-mode policy + budget helpers (the high-level entrypoints are stable).
 export {
   assertDemoContentAllowed,
@@ -492,9 +543,6 @@ export { extractDiscoverySignals } from './discovery/signals.js';
 // Offline discovery pilot (experiment-only; intentionally absent from the
 // stable root export and not imported by runtime modules).
 export type {
-  CampaignRuleProjection,
-  CampaignRuleReadSeam,
-  CampaignRulingProjection,
   CandidateBand,
   ContextPacket,
   DiscoveryCandidate,
@@ -868,6 +916,7 @@ export {
   canonicalize,
   serializeCampaign,
 } from './persistence/checkpoint/serialize.js';
+export { materializeSnapshot } from './persistence/checkpoint/store.js';
 // Database internals.
 export type { Db } from './persistence/db.js';
 export { withTransaction } from './persistence/db.js';
@@ -1117,7 +1166,13 @@ export type {
   RulesRecord,
   RulesRecordKind,
 } from './rules/types.js';
-export { RULES_RECORD_KINDS } from './rules/types.js';
+export {
+  isRulesPackContentError,
+  markRulesPackContentError,
+  RULES_RECORD_KINDS,
+  RulesPackContentError,
+  RulesPackError,
+} from './rules/types.js';
 // Rules engine internals (pack validation, license policy, stack resolution,
 // record lookup, record-shape types).
 export { validateRulesPack } from './rules/validate.js';

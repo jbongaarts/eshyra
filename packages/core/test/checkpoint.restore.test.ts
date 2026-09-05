@@ -1,7 +1,25 @@
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { CampaignPosition, CampaignRule } from '../src/internal.js';
+import {
+  formatCampaignPosition,
+  getCampaignRule,
+  listActiveCampaignRulesAtPosition,
+  listCampaignRules,
+  materializeSnapshot,
+  createCampaignRule as persistCampaignRule,
+  revokeCampaignRule as persistRevokeCampaignRule,
+  supersedeCampaignRule as persistSupersedeCampaignRule,
+  resolveCampaignPosition,
+} from '../src/internal.js';
 import { DoltRepo } from '../src/persistence/checkpoint/doltRepo.js';
 import {
   canonicalize,
@@ -12,12 +30,526 @@ import {
   CheckpointStore,
 } from '../src/persistence/checkpoint/store.js';
 import { openDatabase } from '../src/persistence/db.js';
+import { initSchema } from '../src/persistence/schema.js';
 
 const doltOk = DoltRepo.available();
 // Real Dolt subprocesses can exceed Vitest's 5s default under full-suite load.
 const DOLT_TEST_TIMEOUT_MS = 30_000;
 
+type CreateOptions = Parameters<typeof persistCampaignRule>[2];
+type RevokeInput = Parameters<typeof persistRevokeCampaignRule>[1];
+type SupersedeInput = Parameters<typeof persistSupersedeCampaignRule>[1];
+
+function createCampaignRule(
+  db: Parameters<typeof persistCampaignRule>[0],
+  value: CampaignRule,
+  options: Omit<CreateOptions, 'currentPosition'> & {
+    currentPosition?: CampaignPosition;
+  } = {},
+): CampaignRule {
+  return persistCampaignRule(db, value, {
+    ...options,
+    currentPosition: options.currentPosition ?? {
+      sessionId: 'initial',
+      turnId: 'initial',
+      ordinal: 0,
+    },
+  });
+}
+
+function revokeCampaignRule(
+  db: Parameters<typeof persistRevokeCampaignRule>[0],
+  input: Omit<RevokeInput, 'currentPosition'> & {
+    currentPosition?: CampaignPosition;
+  },
+): CampaignRule {
+  return persistRevokeCampaignRule(db, {
+    ...input,
+    currentPosition: input.currentPosition ?? {
+      sessionId: 'initial',
+      turnId: 'initial',
+      ordinal: 0,
+    },
+  });
+}
+
+function supersedeCampaignRule(
+  db: Parameters<typeof persistSupersedeCampaignRule>[0],
+  input: Omit<SupersedeInput, 'currentPosition'> & {
+    currentPosition?: CampaignPosition;
+  },
+): CampaignRule {
+  return persistSupersedeCampaignRule(db, {
+    ...input,
+    currentPosition: input.currentPosition ?? {
+      sessionId: 'initial',
+      turnId: 'initial',
+      ordinal: 0,
+    },
+  });
+}
+
+describe('checkpoint serialization', () => {
+  it('materializes campaign-rule reads without Dolt', () => {
+    const root = mkdtempSync(join(tmpdir(), 'lw-rules-rs-'));
+    const dest = join(root, 'restored.db');
+    const db = openDatabase(':memory:');
+    initSchema(db);
+    const pos = (ordinal: number) => ({
+      sessionId: 's1',
+      turnId: `t${ordinal}`,
+      ordinal,
+    });
+    const base = {
+      campaignId: 'c1',
+      ruleKind: 'house-rule' as const,
+      origin: 'player-approved' as const,
+      provenance: { kind: 'house-rule' as const, rationale: 'table' },
+      temporalMode: { mode: 'prospective' as const },
+      supersededBy: null,
+      revokedPosition: null,
+      scope: 'combat',
+      governingRecordKeys: ['record:one'],
+      prose: 'Use the table ruling.',
+    };
+
+    try {
+      createCampaignRule(db, {
+        ...base,
+        ruleIdentity: 'old',
+        status: 'active',
+        effectivePosition: pos(1),
+      });
+      supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'old',
+        successor: {
+          ...base,
+          ruleIdentity: 'new',
+          status: 'active',
+          effectivePosition: pos(3),
+        },
+      });
+      createCampaignRule(db, {
+        ...base,
+        ruleIdentity: 'revoked',
+        status: 'active',
+        effectivePosition: pos(2),
+      });
+      let revocationPosition: CampaignPosition | undefined;
+      for (let ordinal = 1; ordinal <= 4; ordinal += 1)
+        revocationPosition = resolveCampaignPosition(db, {
+          campaignId: 'c1',
+          sessionId: 's1',
+          turnId: `t${ordinal}`,
+        });
+      if (revocationPosition === undefined)
+        throw new Error('missing revocation position');
+      revokeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'revoked',
+        revokedPosition: pos(5),
+        currentPosition: revocationPosition,
+      });
+
+      const beforeRules = listCampaignRules(db, { campaignId: 'c1' });
+      const beforeReads = new Map(
+        beforeRules.map((rule) => [
+          rule.ruleIdentity,
+          getCampaignRule(db, {
+            campaignId: 'c1',
+            ruleIdentity: rule.ruleIdentity,
+          }),
+        ]),
+      );
+      const beforeActive = listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(pos(4)),
+      );
+      const afterActive = listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(pos(5)),
+      );
+
+      materializeSnapshot(serializeCampaign(db), dest);
+      const restored = openDatabase(dest);
+      try {
+        const expectedRevokedPosition = {
+          sessionId: '__future__',
+          turnId: '__future__',
+          ordinal: 5,
+        };
+        expect(listCampaignRules(restored, { campaignId: 'c1' })).toEqual(
+          beforeRules,
+        );
+        for (const [ruleIdentity, before] of beforeReads) {
+          expect(
+            getCampaignRule(restored, { campaignId: 'c1', ruleIdentity }),
+          ).toEqual(before);
+        }
+        expect(
+          getCampaignRule(restored, {
+            campaignId: 'c1',
+            ruleIdentity: 'revoked',
+          }),
+        ).toMatchObject({
+          status: 'revoked',
+          revokedPosition: expectedRevokedPosition,
+        });
+        expect(
+          getCampaignRule(restored, {
+            campaignId: 'c1',
+            ruleIdentity: 'old',
+          }),
+        ).toMatchObject({
+          status: 'superseded',
+          supersededBy: 'new',
+          revokedPosition: null,
+        });
+        expect(
+          getCampaignRule(restored, {
+            campaignId: 'c1',
+            ruleIdentity: 'new',
+          }),
+        ).toMatchObject({ status: 'active', revokedPosition: null });
+        const restoredRules = listCampaignRules(restored, {
+          campaignId: 'c1',
+        });
+        expect(
+          restoredRules.find(({ ruleIdentity }) => ruleIdentity === 'revoked'),
+        ).toMatchObject({
+          status: 'revoked',
+          revokedPosition: expectedRevokedPosition,
+        });
+        expect(
+          restoredRules.find(({ ruleIdentity }) => ruleIdentity === 'old'),
+        ).toMatchObject({
+          status: 'superseded',
+          supersededBy: 'new',
+          revokedPosition: null,
+        });
+        expect(
+          restoredRules.find(({ ruleIdentity }) => ruleIdentity === 'new'),
+        ).toMatchObject({ status: 'active', revokedPosition: null });
+        expect(
+          listActiveCampaignRulesAtPosition(
+            restored,
+            'c1',
+            formatCampaignPosition(pos(4)),
+          ),
+        ).toEqual(beforeActive);
+        expect(
+          listActiveCampaignRulesAtPosition(
+            restored,
+            'c1',
+            formatCampaignPosition(pos(4)),
+          ).map(({ ruleIdentity }) => ruleIdentity),
+        ).toEqual(['revoked', 'new']);
+        expect(
+          listActiveCampaignRulesAtPosition(
+            restored,
+            'c1',
+            formatCampaignPosition(pos(5)),
+          ),
+        ).toEqual(afterActive);
+        expect(
+          listActiveCampaignRulesAtPosition(
+            restored,
+            'c1',
+            formatCampaignPosition(pos(5)),
+          ).map(({ ruleIdentity }) => ruleIdentity),
+        ).toEqual(['new']);
+      } finally {
+        restored.close();
+      }
+    } finally {
+      db.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('captures campaign-rule identities, ordering, provenance, statuses, and positions', () => {
+    const db = openDatabase(':memory:');
+    initSchema(db);
+    const pos = (ordinal: number) => ({
+      sessionId: 's1',
+      turnId: `t${ordinal}`,
+      ordinal,
+    });
+    const base = {
+      campaignId: 'c1',
+      ruleKind: 'house-rule' as const,
+      origin: 'player-approved' as const,
+      provenance: { kind: 'house-rule' as const, rationale: 'table' },
+      temporalMode: { mode: 'prospective' as const },
+      supersededBy: null,
+      revokedPosition: null,
+      scope: 'combat',
+      governingRecordKeys: ['record:one'],
+      prose: 'Use the table ruling.',
+    };
+    createCampaignRule(db, {
+      ...base,
+      ruleIdentity: 'old',
+      status: 'active',
+      effectivePosition: pos(1),
+    });
+    supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'old',
+      successor: {
+        ...base,
+        ruleIdentity: 'new',
+        status: 'active',
+        effectivePosition: pos(3),
+      },
+    });
+    createCampaignRule(db, {
+      ...base,
+      ruleIdentity: 'revoked',
+      status: 'active',
+      effectivePosition: pos(2),
+    });
+    let revocationPosition: CampaignPosition | undefined;
+    for (let ordinal = 1; ordinal <= 4; ordinal += 1)
+      revocationPosition = resolveCampaignPosition(db, {
+        campaignId: 'c1',
+        sessionId: 's1',
+        turnId: `t${ordinal}`,
+      });
+    if (revocationPosition === undefined)
+      throw new Error('missing revocation position');
+    revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'revoked',
+      revokedPosition: pos(5),
+      currentPosition: revocationPosition,
+    });
+    for (let ordinal = 1; ordinal <= 5; ordinal += 1) {
+      resolveCampaignPosition(db, {
+        campaignId: 'c1',
+        sessionId: 's1',
+        turnId: `t${ordinal}`,
+      });
+    }
+    createCampaignRule(
+      db,
+      {
+        ...base,
+        ruleIdentity: 'ruling',
+        status: 'active',
+        ruleKind: 'ruling',
+        provenance: {
+          kind: 'ambiguity',
+          ambiguityId: 'amb-1',
+          selectedInterpretationId: 'int-1',
+        },
+        temporalMode: {
+          mode: 'disputed-turn' as const,
+          disputedPosition: pos(5),
+        },
+        effectivePosition: pos(5),
+      },
+      {
+        currentPosition: pos(5),
+        validation: {
+          ambiguity: {
+            id: 'amb-1',
+            question: 'Which interpretation applies?',
+            source: [{ locator: 'p.1', clauseId: 'clause-1' }],
+            affects: ['record:one'],
+            interpretations: [
+              { id: 'int-1', summary: 'The first interpretation' },
+            ],
+            canonicalResolution: null,
+            runtimeDisposition: {
+              status: 'engine-pending',
+              owner: 'campaign-ruling',
+            },
+          },
+        },
+      },
+    );
+
+    const first = serializeCampaign(db);
+    const second = serializeCampaign(db);
+    expect(canonicalize(first)).toBe(canonicalize(second));
+    const rows = first
+      .filter(
+        (record) => record.table === 'campaign_rule' && record.kind === 'row',
+      )
+      .map((record) => JSON.parse(record.payload) as Record<string, unknown>);
+    expect(rows.map((row) => row.rule_identity)).toEqual([
+      'ruling',
+      'old',
+      'revoked',
+      'new',
+    ]);
+    expect(
+      rows.map((row) => [
+        row.rule_identity,
+        row.status,
+        row.effective_position,
+        row.provenance_kind,
+        row.superseded_by,
+        row.revoked_position,
+        row.temporal_mode,
+        row.disputed_position,
+      ]),
+    ).toEqual([
+      [
+        'ruling',
+        'active',
+        expect.any(String),
+        'ambiguity',
+        null,
+        null,
+        'disputed-turn',
+        expect.any(String),
+      ],
+      [
+        'old',
+        'superseded',
+        expect.any(String),
+        'house-rule',
+        'new',
+        null,
+        'prospective',
+        null,
+      ],
+      [
+        'revoked',
+        'revoked',
+        expect.any(String),
+        'house-rule',
+        null,
+        expect.any(String),
+        'prospective',
+        null,
+      ],
+      [
+        'new',
+        'active',
+        expect.any(String),
+        'house-rule',
+        null,
+        null,
+        'prospective',
+        null,
+      ],
+    ]);
+    db.close();
+  });
+});
+
 describe.skipIf(!doltOk)('CheckpointStore.restoreToNewWorkingCopy', () => {
+  it(
+    'round trips campaign-rule identities, ordering, provenance, statuses, and positions',
+    () => {
+      const root = mkdtempSync(join(tmpdir(), 'lw-rules-rs-'));
+      const src = join(root, 'live.db');
+      const db = openDatabase(src);
+      initSchema(db);
+      const pos = (ordinal: number) => ({
+        sessionId: 's1',
+        turnId: `t${ordinal}`,
+        ordinal,
+      });
+      const base = {
+        campaignId: 'c1',
+        ruleKind: 'house-rule' as const,
+        origin: 'player-approved' as const,
+        provenance: { kind: 'house-rule' as const, rationale: 'table' },
+        temporalMode: { mode: 'prospective' as const },
+        supersededBy: null,
+        revokedPosition: null,
+        scope: 'combat',
+        governingRecordKeys: ['record:one'],
+        prose: 'Use the table ruling.',
+      };
+      createCampaignRule(db, {
+        ...base,
+        ruleIdentity: 'old',
+        status: 'active',
+        effectivePosition: pos(1),
+      });
+      supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'old',
+        successor: {
+          ...base,
+          ruleIdentity: 'new',
+          status: 'active',
+          effectivePosition: pos(3),
+        },
+      });
+      createCampaignRule(db, {
+        ...base,
+        ruleIdentity: 'revoked',
+        status: 'active',
+        effectivePosition: pos(2),
+      });
+      let revocationPosition: CampaignPosition | undefined;
+      for (let ordinal = 1; ordinal <= 4; ordinal += 1)
+        revocationPosition = resolveCampaignPosition(db, {
+          campaignId: 'c1',
+          sessionId: 's1',
+          turnId: `t${ordinal}`,
+        });
+      if (revocationPosition === undefined)
+        throw new Error('missing revocation position');
+      revokeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'revoked',
+        revokedPosition: pos(5),
+        currentPosition: revocationPosition,
+      });
+      const before = canonicalize(serializeCampaign(db));
+      db.close();
+      const store = new CheckpointStore(
+        join(root, 'dolt'),
+        join(root, '.beads'),
+      );
+      const id = store.checkpoint(src, 'campaign rules');
+      const dest = join(root, 'restored.db');
+      store.restoreToNewWorkingCopy(id, dest);
+      const restored = openDatabase(dest);
+      expect(canonicalize(serializeCampaign(restored))).toBe(before);
+      expect(
+        restored.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
+      ).toEqual({
+        count: 3,
+      });
+      const expectedRevokedPosition = {
+        sessionId: '__future__',
+        turnId: '__future__',
+        ordinal: 5,
+      };
+      expect(
+        getCampaignRule(restored, {
+          campaignId: 'c1',
+          ruleIdentity: 'revoked',
+        }),
+      ).toMatchObject({
+        status: 'revoked',
+        revokedPosition: expectedRevokedPosition,
+      });
+      expect(
+        listCampaignRules(restored, { campaignId: 'c1' }).find(
+          ({ ruleIdentity }) => ruleIdentity === 'revoked',
+        ),
+      ).toMatchObject({
+        status: 'revoked',
+        revokedPosition: expectedRevokedPosition,
+      });
+      expect(formatCampaignPosition(pos(3))).toMatch(/^cp1~/);
+      restored.close();
+    },
+    DOLT_TEST_TIMEOUT_MS,
+  );
+
   it(
     'restores a checkpoint into a new db identical to the source',
     () => {

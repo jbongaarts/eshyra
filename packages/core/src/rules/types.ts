@@ -148,9 +148,38 @@ export interface RulesPack {
   readonly records: readonly RulesRecord[];
 }
 
+const RULES_PACK_CONTENT_ERROR = Symbol('rules-pack-content-error');
+
+export function markRulesPackContentError(error: Error): void {
+  Object.defineProperty(error, RULES_PACK_CONTENT_ERROR, {
+    configurable: false,
+    enumerable: false,
+    value: true,
+    writable: false,
+  });
+}
+
+export function isRulesPackContentError(error: unknown): error is Error {
+  return (
+    error instanceof Error &&
+    (error as Error & { readonly [RULES_PACK_CONTENT_ERROR]?: unknown })[
+      RULES_PACK_CONTENT_ERROR
+    ] === true
+  );
+}
+
 export class RulesPackError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'RulesPackError';
+  }
+}
+
+/** A resolved pack's content cannot be interpreted for model-facing context. */
+export class RulesPackContentError extends RulesPackError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RulesPackContentError';
+    markRulesPackContentError(this);
   }
 }

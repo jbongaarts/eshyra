@@ -8,32 +8,52 @@ import type {
 } from './types.js';
 import { NULL_CAMPAIGN_RULE_SEAM } from './types.js';
 
+function isAmbiguityRuling(
+  projection: CampaignRuleProjection,
+): projection is CampaignRulingProjection {
+  return (
+    projection.ruleKind === 'ruling' &&
+    projection.ambiguityId !== undefined &&
+    'selectedInterpretationId' in projection &&
+    typeof projection.selectedInterpretationId === 'string'
+  );
+}
+
 function withRule(
   candidate: DiscoveryCandidate,
   projection: CampaignRuleProjection,
+  governingRecordKey: string,
 ): DiscoveryCandidate {
+  const ambiguityRuling = isAmbiguityRuling(projection);
   const route = {
-    routeClass:
-      projection.ruleKind === 'ruling'
-        ? ('campaign-ruling' as const)
-        : ('campaign-rule' as const),
+    routeClass: ambiguityRuling
+      ? ('campaign-ruling' as const)
+      : ('campaign-rule' as const),
     trigger: projection.ruleIdentity,
     evidence: projection as unknown as Record<string, unknown>,
     signalId: `campaign-rule:${projection.ruleIdentity}`,
   };
+  const alreadyPlaced = (items: readonly CampaignRuleProjection[]) =>
+    items.some(
+      (item) =>
+        item.ruleIdentity === projection.ruleIdentity &&
+        item.governingRecordKeys.includes(governingRecordKey),
+    );
   return {
     ...candidate,
     routes: candidate.routes.some((item) => item.trigger === route.trigger)
       ? candidate.routes
       : [...candidate.routes, route],
-    campaignRules:
-      projection.ruleKind === 'ruling'
+    campaignRules: ambiguityRuling
+      ? candidate.campaignRules
+      : alreadyPlaced(candidate.campaignRules)
         ? candidate.campaignRules
         : [...candidate.campaignRules, projection],
-    campaignRulings:
-      projection.ruleKind === 'ruling'
-        ? [...candidate.campaignRulings, projection as CampaignRulingProjection]
-        : candidate.campaignRulings,
+    campaignRulings: ambiguityRuling
+      ? alreadyPlaced(candidate.campaignRulings)
+        ? candidate.campaignRulings
+        : [...candidate.campaignRulings, projection]
+      : candidate.campaignRulings,
   };
 }
 
@@ -109,6 +129,8 @@ export function joinCampaignRules(
      * join reports them unresolved, because its own `resolved` set contains
      * only the rulings IT placed. */
     readonly resolvedAmbiguityIds?: ReadonlySet<string>;
+    /** Rule identities already processed by an earlier bounded join pass. */
+    readonly seenRuleIdentities?: ReadonlySet<string>;
   } = {},
 ): RuleJoinTrace {
   const keys = candidates.map((candidate) => candidate.candidateKey);
@@ -153,6 +175,12 @@ export function joinCampaignRules(
   const requestedAmbiguityIds: readonly string[] = rulingQueryExecuted
     ? ambiguityIds
     : [];
+  const rulingQueryScope: RuleJoinTrace['rulingQueryScope'] =
+    !rulingQueryExecuted
+      ? 'none'
+      : options.rulingsOnly === true
+        ? 'requested-ambiguities'
+        : 'all-active';
   const rules = ruleQueryExecuted
     ? seam.activeRulesAtPosition({
         campaignPosition: options.campaignPosition,
@@ -160,8 +188,13 @@ export function joinCampaignRules(
       })
     : [];
   const rulings = rulingQueryExecuted
-    ? seam.activeRulingsForAmbiguities(ambiguityIds)
+    ? seam.activeRulingsForAmbiguities(ambiguityIds, {
+        includeAllActive: options.rulingsOnly !== true,
+      })
     : [];
+  const returnedAmbiguityIds = [
+    ...new Set(rulings.map((ruling) => ruling.ambiguityId)),
+  ];
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
   );
@@ -171,7 +204,13 @@ export function joinCampaignRules(
   const placedIdentities = new Set<string>();
   const unplaced: string[] = [];
   const surfaced: string[] = [];
-  for (const projection of [...rules, ...rulings]) {
+  const projections = [...rules, ...rulings].filter(
+    (projection, index, all) =>
+      options.seenRuleIdentities?.has(projection.ruleIdentity) !== true &&
+      all.findIndex((item) => item.ruleIdentity === projection.ruleIdentity) ===
+        index,
+  );
+  for (const projection of projections) {
     returned.push(projection.ruleIdentity);
     const governed: string[] = [];
     for (const key of projection.governingRecordKeys) {
@@ -212,14 +251,21 @@ export function joinCampaignRules(
     }
     placedIdentities.add(projection.ruleIdentity);
     for (const key of governed) {
-      result.set(
-        key,
-        withRule(result.get(key) as DiscoveryCandidate, projection),
+      const candidate = result.get(key) as DiscoveryCandidate;
+      const placements = isAmbiguityRuling(projection)
+        ? candidate.campaignRulings
+        : candidate.campaignRules;
+      const alreadyPlaced = placements.some(
+        (item) =>
+          item.ruleIdentity === projection.ruleIdentity &&
+          item.governingRecordKeys.includes(key),
       );
-      placedRules.push({
-        ruleIdentity: projection.ruleIdentity,
-        governingRecordKey: key,
-      });
+      result.set(key, withRule(candidate, projection, key));
+      if (!alreadyPlaced)
+        placedRules.push({
+          ruleIdentity: projection.ruleIdentity,
+          governingRecordKey: key,
+        });
     }
   }
   // Only a ruling that was actually placed resolves its ambiguity. Treating
@@ -259,15 +305,18 @@ export function joinCampaignRules(
         requestedRuleRecordKeys,
         rulingQueryExecuted,
         requestedAmbiguityIds,
+        rulingQueryScope,
       },
     ],
     outputsProduced: [...result.values()],
     losses,
     requestedRuleRecordKeys,
     requestedAmbiguityIds,
+    rulingQueryScope,
     ruleQueryExecuted,
     rulingQueryExecuted,
     returnedRuleIdentities: returned,
+    returnedAmbiguityIds,
     placedRuleIdentities: [...placedIdentities],
     unplacedRuleIdentities: unplaced,
     surfacedCandidateKeys: surfaced,

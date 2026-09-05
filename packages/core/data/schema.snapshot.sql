@@ -248,6 +248,39 @@ CREATE TABLE campaign_progression_policy (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE campaign_rule (
+  campaign_id TEXT NOT NULL,
+  rule_identity TEXT NOT NULL,
+  rule_kind TEXT NOT NULL CHECK (rule_kind IN ('ruling','house-rule')),
+  status TEXT NOT NULL CHECK (status IN ('active','revoked','superseded')),
+  origin TEXT NOT NULL CHECK (origin IN ('player-authored','player-approved','oracle-supplied')),
+  provenance_kind TEXT NOT NULL CHECK (provenance_kind IN ('ambiguity','recurring-question','house-rule')),
+  ambiguity_id TEXT,
+  selected_interpretation_id TEXT,
+  question_id TEXT,
+  rationale TEXT,
+  effective_position TEXT NOT NULL,
+  temporal_mode TEXT NOT NULL CHECK (temporal_mode IN ('prospective','disputed-turn')),
+  disputed_position TEXT,
+  superseded_by TEXT,
+  revoked_position TEXT,
+  scope TEXT NOT NULL,
+  governing_record_keys_json TEXT NOT NULL,
+  prose TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, rule_identity),
+  CHECK ((provenance_kind = 'ambiguity' AND ambiguity_id IS NOT NULL AND selected_interpretation_id IS NOT NULL AND question_id IS NULL AND rationale IS NULL)
+      OR (provenance_kind = 'recurring-question' AND question_id IS NOT NULL AND ambiguity_id IS NULL AND selected_interpretation_id IS NULL AND rationale IS NULL)
+      OR (provenance_kind = 'house-rule' AND ambiguity_id IS NULL AND selected_interpretation_id IS NULL AND question_id IS NULL)),
+  CHECK ((temporal_mode = 'prospective' AND disputed_position IS NULL)
+      OR (temporal_mode = 'disputed-turn' AND disputed_position IS NOT NULL)),
+  CHECK ((status = 'superseded' AND superseded_by IS NOT NULL)
+      OR (status != 'superseded' AND superseded_by IS NULL)),
+  CHECK (status != 'revoked' OR revoked_position IS NOT NULL)
+);
+
 CREATE TABLE campaign_rules_binding (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   base_system_id TEXT NOT NULL,
@@ -265,6 +298,15 @@ CREATE TABLE campaign_session (
   closed_at TEXT,
   arc_id TEXT,
   PRIMARY KEY (campaign_id, session_id)
+);
+
+CREATE TABLE campaign_turn_position (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  turn_id TEXT NOT NULL,
+  ordinal INTEGER NOT NULL CHECK (ordinal > 0),
+  PRIMARY KEY (campaign_id, session_id, turn_id),
+  UNIQUE (campaign_id, ordinal)
 );
 
 CREATE TABLE character (
@@ -836,9 +878,21 @@ CREATE INDEX campaign_overlay_lore_location
 CREATE INDEX campaign_overlay_lore_npc
   ON campaign_overlay_lore(npc_id);
 
+CREATE INDEX campaign_rule_ambiguity
+  ON campaign_rule(campaign_id, provenance_kind, ambiguity_id, effective_position, rule_identity);
+
+CREATE INDEX campaign_rule_effective_position
+  ON campaign_rule(campaign_id, effective_position, rule_identity);
+
+CREATE INDEX campaign_rule_status_position
+  ON campaign_rule(campaign_id, status, effective_position, rule_identity);
+
 CREATE UNIQUE INDEX campaign_session_one_open
   ON campaign_session(campaign_id)
   WHERE status = 'open';
+
+CREATE INDEX campaign_turn_position_ordinal
+  ON campaign_turn_position(campaign_id, ordinal);
 
 CREATE INDEX character_spell_slot_character
   ON character_spell_slot(character_id, pool_kind, spell_level);

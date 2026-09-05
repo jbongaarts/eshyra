@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { resolveCampaignPosition } from '../campaign/campaignPosition.js';
+import { formatCampaignPosition } from '../campaign/campaignRules.js';
 import type { CharacterChronicleStore } from '../character/characterChronicle.js';
 import type {
   CandidateDisposition,
@@ -548,6 +550,14 @@ export async function runTurn(
 
   db.exec(`SAVEPOINT ${TURN_SAVEPOINT}`);
   try {
+    // Resolve inside the turn savepoint. A new failed attempt must not leave a
+    // chronology hole behind, while INSERT OR IGNORE still preserves the
+    // durable position of an intentional replay.
+    const campaignPosition = resolveCampaignPosition(db, {
+      campaignId: input.campaignId,
+      sessionId: input.sessionId,
+      turnId: input.turnId,
+    });
     // Resolve and validate the acting PC before any context assembly, tool
     // execution, or trace write. A non-PC or missing actingCharacterId throws
     // here, so the turn rolls back as ok:false with nothing persisted.
@@ -567,6 +577,8 @@ export async function runTurn(
       actingCharacterId,
       resolveAdventureModule: deps.resolveAdventureModule,
       characterChronicle: deps.characterChronicle,
+      campaignPosition: formatCampaignPosition(campaignPosition),
+      resolveRulesPack: deps.resolveRulesPack,
     });
 
     phase = 'model_loop';

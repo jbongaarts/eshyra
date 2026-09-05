@@ -54,6 +54,9 @@ export interface DiscoveryMeasurements {
   readonly m5: {
     readonly requestedRuleRecordKeys: readonly string[];
     readonly requestedAmbiguityIds: readonly string[];
+    readonly allActiveRulingsRequested: boolean;
+    /** The scope that makes the ambiguity-coverage measurement meaningful. */
+    readonly ambiguityCoverage: 'all-active' | 'requested-ambiguities';
     /** How many times each seam query actually executed. */
     readonly ruleQueryCount: number;
     readonly rulingQueryCount: number;
@@ -327,6 +330,14 @@ export function measureDiscovery(
         ...trace.ruleJoin.requestedAmbiguityIds,
         ...trace.lateRuleJoin.requestedAmbiguityIds,
       ],
+      allActiveRulingsRequested:
+        trace.ruleJoin.rulingQueryScope === 'all-active' ||
+        trace.lateRuleJoin.rulingQueryScope === 'all-active',
+      ambiguityCoverage:
+        trace.ruleJoin.rulingQueryScope === 'all-active' ||
+        trace.lateRuleJoin.rulingQueryScope === 'all-active'
+          ? 'all-active'
+          : 'requested-ambiguities',
       ruleQueryCount:
         (trace.ruleJoin.ruleQueryExecuted ? 1 : 0) +
         (trace.lateRuleJoin.ruleQueryExecuted ? 1 : 0),
@@ -351,9 +362,15 @@ export function measureDiscovery(
       ],
       unexpandedPromotions: trace.unexpandedPromotions,
       unqueriedAmbiguityIds: (() => {
+        // The all-active scope is only an argument to the seam. Closure is
+        // measured from the actual query evidence: ids offered as arguments
+        // plus ambiguity ids present in rulings the seam returned. This keeps
+        // a scope flag from turning the assertion into an unconditional pass.
         const offered = new Set([
           ...trace.ruleJoin.requestedAmbiguityIds,
           ...trace.lateRuleJoin.requestedAmbiguityIds,
+          ...trace.ruleJoin.returnedAmbiguityIds,
+          ...trace.lateRuleJoin.returnedAmbiguityIds,
         ]);
         return [
           ...new Set(

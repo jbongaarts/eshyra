@@ -173,6 +173,7 @@ describe('offline discovery stage boundaries', () => {
           provenance: 'campaign',
           effectivePosition: 'turn-1',
           supersededBy: null,
+          revokedPosition: null,
           scope: 'spell components',
           governingRecordKeys: ['spell:fireball'],
         },
@@ -524,6 +525,7 @@ describe('offline discovery stage boundaries', () => {
               provenance: 'campaign history',
               effectivePosition: 'turn-12',
               supersededBy: null,
+              revokedPosition: null,
               scope: 'material components',
               governingRecordKeys: ['spell:fireball'],
             },
@@ -576,6 +578,7 @@ describe('offline discovery stage boundaries', () => {
               provenance: 'campaign history',
               effectivePosition: 'turn-1',
               supersededBy: null,
+              revokedPosition: null,
               scope: 'ambiguity:cube-of-force-same-face-duration-reset',
               governingRecordKeys: ['rules-record:does-not-exist'],
               ambiguityId: 'ambiguity:cube-of-force-same-face-duration-reset',
@@ -663,6 +666,7 @@ describe('offline discovery stage boundaries', () => {
               provenance: 'campaign history',
               effectivePosition: 'turn-1',
               supersededBy: null,
+              revokedPosition: null,
               scope: 'incapacitation',
               governingRecordKeys: ['condition:incapacitated'],
             },
@@ -795,6 +799,7 @@ describe('offline discovery stage boundaries', () => {
                     provenance: 'campaign history',
                     effectivePosition: 'turn-3',
                     supersededBy: null,
+                    revokedPosition: null,
                     scope: 'late ambiguity root',
                     governingRecordKeys: [LATE_AMBIGUITY_ROOT_KEY],
                   },
@@ -812,6 +817,7 @@ describe('offline discovery stage boundaries', () => {
                     provenance: 'campaign history',
                     effectivePosition: 'turn-3',
                     supersededBy: null,
+                    revokedPosition: null,
                     scope: LATE_AMBIGUITY_ID,
                     governingRecordKeys: [LATE_AMBIGUITY_TARGET_KEY],
                     ambiguityId: LATE_AMBIGUITY_ID,
@@ -885,6 +891,7 @@ describe('offline discovery stage boundaries', () => {
         provenance: 'campaign history',
         effectivePosition: 'turn-12',
         supersededBy: null,
+        revokedPosition: null,
         scope: 'material components',
         governingRecordKeys: ['spell:fireball'],
       };
@@ -956,6 +963,7 @@ describe('offline discovery stage boundaries', () => {
               provenance: 'campaign history',
               effectivePosition: 'turn-3',
               supersededBy: null,
+              revokedPosition: null,
               scope: 'late ambiguity root',
               governingRecordKeys: [LATE_AMBIGUITY_ROOT_KEY],
             },
@@ -975,6 +983,46 @@ describe('offline discovery stage boundaries', () => {
       expect(measureDiscovery(trace).m5.unresolvedAmbiguityIds).toContain(
         LATE_AMBIGUITY_ID,
       );
+
+      const firstCandidate = trace.packet.packet.candidates[0];
+      if (firstCandidate === undefined)
+        throw new Error('missing packet candidate');
+      const unofferedAmbiguity = {
+        id: 'ambiguity:not-offered',
+        question: 'Synthetic ambiguity omitted from seam calls',
+        source: [{ locator: 'test', clauseId: 'not-offered' }],
+        affects: [firstCandidate.identity.key],
+        interpretations: [{ id: 'test', summary: 'Synthetic interpretation' }],
+        canonicalResolution: null,
+        runtimeDisposition: {
+          status: 'engine-pending',
+          owner: 'campaign-ruling',
+        },
+      } as const;
+      const packetWithUnqueriedAmbiguity = {
+        ...trace,
+        packet: {
+          ...trace.packet,
+          packet: {
+            ...trace.packet.packet,
+            candidates: trace.packet.packet.candidates.map(
+              (candidate, index) =>
+                index === 0
+                  ? {
+                      ...candidate,
+                      ambiguities: [
+                        ...candidate.ambiguities,
+                        unofferedAmbiguity,
+                      ],
+                    }
+                  : candidate,
+            ),
+          },
+        },
+      };
+      expect(
+        measureDiscovery(packetWithUnqueriedAmbiguity).m5.unqueriedAmbiguityIds,
+      ).toEqual(['ambiguity:not-offered']);
     } finally {
       db.close();
     }
@@ -999,6 +1047,7 @@ describe('offline discovery stage boundaries', () => {
               provenance: 'campaign history',
               effectivePosition: 'turn-12',
               supersededBy: null,
+              revokedPosition: null,
               scope: 'material components',
               governingRecordKeys: ['spell:fireball'],
             },
@@ -1090,6 +1139,7 @@ describe('offline discovery stage boundaries', () => {
                 provenance: 'campaign history',
                 effectivePosition: 'turn-3',
                 supersededBy: null,
+                revokedPosition: null,
                 scope: 'late ambiguity root',
                 governingRecordKeys: [LATE_AMBIGUITY_ROOT_KEY],
               },
@@ -1106,6 +1156,7 @@ describe('offline discovery stage boundaries', () => {
                     provenance: 'campaign history',
                     effectivePosition: 'turn-3',
                     supersededBy: null,
+                    revokedPosition: null,
                     scope: LATE_AMBIGUITY_ID,
                     governingRecordKeys: [LATE_AMBIGUITY_TARGET_KEY],
                     ambiguityId: LATE_AMBIGUITY_ID,
@@ -1124,6 +1175,8 @@ describe('offline discovery stage boundaries', () => {
       expect(trace.ruleJoin.ruleQueryExecuted).toBe(true);
       expect(trace.lateRuleJoin.ruleQueryExecuted).toBe(false);
       expect(trace.lateRuleJoin.requestedRuleRecordKeys).toEqual([]);
+      expect(trace.ruleJoin.rulingQueryScope).toBe('all-active');
+      expect(trace.lateRuleJoin.rulingQueryScope).toBe('requested-ambiguities');
 
       // The late ruling query did execute, and its ambiguity request is real.
       expect(trace.lateRuleJoin.rulingQueryExecuted).toBe(true);
@@ -1134,6 +1187,8 @@ describe('offline discovery stage boundaries', () => {
       const measurements = measureDiscovery(trace);
       // M5's rule-request evidence derives only from the first call...
       expect(measurements.m5.ruleQueryCount).toBe(1);
+      expect(measurements.m5.allActiveRulingsRequested).toBe(true);
+      expect(measurements.m5.ambiguityCoverage).toBe('all-active');
       expect(measurements.m5.requestedRuleRecordKeys).toEqual(
         trace.ruleJoin.requestedRuleRecordKeys,
       );
