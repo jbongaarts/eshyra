@@ -287,7 +287,45 @@ describe('campaign rule domain', () => {
     ).toEqual(encoded);
   });
 
-  it('rejects invalid supersession graphs and lifecycle contradictions', () => {
+  it('accepts coherent supersession history ending in a revoked successor', () => {
+    expect(() =>
+      validateCampaignRules(
+        [
+          rule({ ruleIdentity: 'a', status: 'superseded', supersededBy: 'b' }),
+          rule({
+            ruleIdentity: 'b',
+            effectivePosition: position(2),
+            status: 'revoked',
+            revokedPosition: position(3),
+          }),
+        ],
+        { ambiguity },
+      ),
+    ).not.toThrow();
+
+    expect(() =>
+      validateCampaignRules(
+        [
+          rule({ ruleIdentity: 'a', status: 'superseded', supersededBy: 'b' }),
+          rule({
+            ruleIdentity: 'b',
+            effectivePosition: position(2),
+            status: 'superseded',
+            supersededBy: 'c',
+          }),
+          rule({
+            ruleIdentity: 'c',
+            effectivePosition: position(3),
+            status: 'revoked',
+            revokedPosition: position(4),
+          }),
+        ],
+        { ambiguity },
+      ),
+    ).not.toThrow();
+  });
+
+  it('rejects an incoherent revoked rule without a revocation position', () => {
     expect(() =>
       validateCampaignRules(
         [
@@ -296,7 +334,10 @@ describe('campaign rule domain', () => {
         ],
         { ambiguity },
       ),
-    ).toThrow('revoked');
+    ).toThrow('revoked rule must carry revokedPosition');
+  });
+
+  it('rejects invalid supersession graphs', () => {
     expect(() =>
       validateCampaignRules(
         [
