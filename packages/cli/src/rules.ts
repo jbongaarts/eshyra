@@ -13,6 +13,7 @@ import {
   type CampaignPosition,
   type CampaignRule,
   CampaignRuleError,
+  type CampaignRuleKind,
   type CampaignRuleProvenance,
   createCampaignRule,
   formatCampaignPosition,
@@ -192,14 +193,19 @@ function recordsFromFlag(value: string): string[] {
   return records;
 }
 
-function slugIdentity(prose: string): string {
+/** Deterministic default identity: `<kind>:<slug of first 5 prose words>:<effective ordinal>`. */
+function slugIdentity(
+  kind: CampaignRuleKind,
+  prose: string,
+  effective: CampaignPosition,
+): string {
   const words = prose.trim().split(/\s+/).slice(0, 5);
   const slug = words
     .map((word) => word.toLowerCase().replace(/[^a-z0-9]+/g, '-'))
     .map((word) => word.replace(/^-+|-+$/g, ''))
     .filter((word) => word.length > 0)
     .join('-');
-  return `:${slug || 'campaign-rule'}:`;
+  return `${kind}:${slug || 'campaign-rule'}:${effective.ordinal}`;
 }
 
 function provenanceLabel(provenance: CampaignRuleProvenance): string {
@@ -374,7 +380,7 @@ function listCommand(args: readonly string[], deps: RulesDeps): number {
       );
       for (const rule of rules) {
         deps.log(
-          `  [${rule.ruleIdentity}/${rule.status}] ${formatCampaignPosition(rule.effectivePosition)} — ${rule.prose.slice(0, 80)}`,
+          `  ${rule.ruleIdentity}  [${rule.ruleKind}/${rule.status}]  effective ${rule.effectivePosition.ordinal}  ${provenanceLabel(rule.provenance)}  — ${rule.prose.slice(0, 80)}`,
         );
       }
     });
@@ -492,14 +498,16 @@ function addCommand(args: readonly string[], deps: RulesDeps): number {
       const prose = requiredFlag(parsed, 'prose');
       const scope = requiredFlag(parsed, 'scope');
       const records = recordsFromFlag(requiredFlag(parsed, 'records'));
+      const effective = effectivePosition(parsed, current);
       const rule: CampaignRule = {
-        ruleIdentity: flag(parsed, 'identity') ?? slugIdentity(prose),
+        ruleIdentity:
+          flag(parsed, 'identity') ?? slugIdentity(kind, prose, effective),
         campaignId: id,
         ruleKind: kind,
         status: 'active',
         origin,
         provenance: provenanceForAdd(parsed, db, id, current, kind),
-        effectivePosition: effectivePosition(parsed, current),
+        effectivePosition: effective,
         temporalMode: { mode: 'prospective' },
         supersededBy: null,
         revokedPosition: null,
@@ -579,14 +587,17 @@ function supersedeCommand(args: readonly string[], deps: RulesDeps): number {
         );
       }
       const prose = requiredFlag(parsed, 'prose');
+      const successorEffective = effectivePosition(parsed, current);
       const successor: CampaignRule = {
-        ruleIdentity: flag(parsed, 'identity') ?? slugIdentity(prose),
+        ruleIdentity:
+          flag(parsed, 'identity') ??
+          slugIdentity(prior.ruleKind, prose, successorEffective),
         campaignId: id,
         ruleKind: prior.ruleKind,
         status: 'active',
         origin: prior.origin,
         provenance: provenanceForSuccessor(parsed, db, id, current, prior),
-        effectivePosition: effectivePosition(parsed, current),
+        effectivePosition: successorEffective,
         temporalMode: { mode: 'prospective' },
         supersededBy: null,
         revokedPosition: null,

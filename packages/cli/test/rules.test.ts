@@ -137,7 +137,7 @@ describe('runRulesCommand', () => {
       'table agreement',
     ]);
     expect(result.code).toBe(0);
-    expect(result.output).toContain(':shields-grant-a-small-bonus:');
+    expect(result.output).toContain('house-rule:shields-grant-a-small-bonus:1');
     expect(result.output).toContain('effective ordinal 1');
     expect(result.output).toContain('provenance: house-rule (table agreement)');
     expect(result.output).toContain('takes effect from turn 1');
@@ -235,7 +235,9 @@ describe('runRulesCommand', () => {
     );
     const all = invoke(dbPath, ['list', '--all']);
     expect(all.code).toBe(0);
-    expect(all.output).toContain('[future-rule/active]');
+    expect(all.output).toContain(
+      'future-rule  [house-rule/active]  effective 1  house-rule',
+    );
     expect(all.output).toContain('This rule is active from the next turn.');
   });
 
@@ -331,7 +333,7 @@ describe('runRulesCommand', () => {
     advance(dbPath, 2);
     expect(invoke(dbPath, ['list']).output).not.toContain('revocable');
     const all = invoke(dbPath, ['list', '--all']);
-    expect(all.output).toContain('[revocable/revoked]');
+    expect(all.output).toContain('revocable  [house-rule/revoked]');
     expect(invoke(dbPath, ['show', 'revocable']).output).toContain(
       'revoked position: cp1~000000000002~__future__~__future__',
     );
@@ -399,7 +401,7 @@ describe('runRulesCommand', () => {
     const duplicate = invoke(dbPath, args);
     expect(duplicate.code).toBe(1);
     expect(duplicate.output).toBe(
-      "campaign rule ':a-deterministic-duplicate-rule:' already exists",
+      "campaign rule 'house-rule:a-deterministic-duplicate-rule:1' already exists",
     );
     const db = openDatabase(dbPath);
     try {
