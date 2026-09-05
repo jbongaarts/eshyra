@@ -41,7 +41,7 @@ export class CheckpointStore {
 
   restoreToNewWorkingCopy(checkpointId: string, destDbPath: string): string {
     const records = this.repo.readSnapshotAt(checkpointId);
-    materialize(records, destDbPath);
+    materializeSnapshot(records, destDbPath);
     return destDbPath;
   }
 
@@ -67,7 +67,10 @@ export class CheckpointStore {
  * emits them — without a dependency-ordered topological sort. Foreign-key
  * enforcement is checked once at commit, when every table and row is present.
  */
-function materialize(records: SnapshotRecord[], destDbPath: string): void {
+export function materializeSnapshot(
+  records: SnapshotRecord[],
+  destDbPath: string,
+): void {
   if (existsSync(destDbPath)) {
     throw new CheckpointError(
       `restore destination already exists: ${destDbPath}`,

@@ -1,4 +1,10 @@
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -6,7 +12,9 @@ import type { CampaignPosition, CampaignRule } from '../src/internal.js';
 import {
   formatCampaignPosition,
   getCampaignRule,
+  listActiveCampaignRulesAtPosition,
   listCampaignRules,
+  materializeSnapshot,
   createCampaignRule as persistCampaignRule,
   revokeCampaignRule as persistRevokeCampaignRule,
   supersedeCampaignRule as persistSupersedeCampaignRule,
@@ -82,6 +90,123 @@ function supersedeCampaignRule(
 }
 
 describe('checkpoint serialization', () => {
+  it('materializes campaign-rule reads without Dolt', () => {
+    const root = mkdtempSync(join(tmpdir(), 'lw-rules-rs-'));
+    const dest = join(root, 'restored.db');
+    const db = openDatabase(':memory:');
+    initSchema(db);
+    const pos = (ordinal: number) => ({
+      sessionId: 's1',
+      turnId: `t${ordinal}`,
+      ordinal,
+    });
+    const base = {
+      campaignId: 'c1',
+      ruleKind: 'house-rule' as const,
+      origin: 'player-approved' as const,
+      provenance: { kind: 'house-rule' as const, rationale: 'table' },
+      temporalMode: { mode: 'prospective' as const },
+      supersededBy: null,
+      revokedPosition: null,
+      scope: 'combat',
+      governingRecordKeys: ['record:one'],
+      prose: 'Use the table ruling.',
+    };
+
+    try {
+      createCampaignRule(db, {
+        ...base,
+        ruleIdentity: 'old',
+        status: 'active',
+        effectivePosition: pos(1),
+      });
+      supersedeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'old',
+        successor: {
+          ...base,
+          ruleIdentity: 'new',
+          status: 'active',
+          effectivePosition: pos(3),
+        },
+      });
+      createCampaignRule(db, {
+        ...base,
+        ruleIdentity: 'revoked',
+        status: 'active',
+        effectivePosition: pos(2),
+      });
+      let revocationPosition: CampaignPosition | undefined;
+      for (let ordinal = 1; ordinal <= 4; ordinal += 1)
+        revocationPosition = resolveCampaignPosition(db, {
+          campaignId: 'c1',
+          sessionId: 's1',
+          turnId: `t${ordinal}`,
+        });
+      if (revocationPosition === undefined)
+        throw new Error('missing revocation position');
+      revokeCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'revoked',
+        revokedPosition: pos(5),
+        currentPosition: revocationPosition,
+      });
+
+      const beforeRules = listCampaignRules(db, { campaignId: 'c1' });
+      const beforeReads = new Map(
+        beforeRules.map((rule) => [
+          rule.ruleIdentity,
+          getCampaignRule(db, {
+            campaignId: 'c1',
+            ruleIdentity: rule.ruleIdentity,
+          }),
+        ]),
+      );
+      const beforeActive = listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(pos(4)),
+      );
+      const afterActive = listActiveCampaignRulesAtPosition(
+        db,
+        'c1',
+        formatCampaignPosition(pos(5)),
+      );
+
+      materializeSnapshot(serializeCampaign(db), dest);
+      const restored = openDatabase(dest);
+      try {
+        expect(listCampaignRules(restored, { campaignId: 'c1' })).toEqual(
+          beforeRules,
+        );
+        for (const [ruleIdentity, before] of beforeReads) {
+          expect(
+            getCampaignRule(restored, { campaignId: 'c1', ruleIdentity }),
+          ).toEqual(before);
+        }
+        expect(
+          listActiveCampaignRulesAtPosition(
+            restored,
+            'c1',
+            formatCampaignPosition(pos(4)),
+          ),
+        ).toEqual(beforeActive);
+        expect(
+          listActiveCampaignRulesAtPosition(
+            restored,
+            'c1',
+            formatCampaignPosition(pos(5)),
+          ),
+        ).toEqual(afterActive);
+      } finally {
+        restored.close();
+      }
+    } finally {
+      db.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('captures campaign-rule identities, ordering, provenance, statuses, and positions', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
