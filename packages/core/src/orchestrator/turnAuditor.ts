@@ -1,3 +1,7 @@
+import {
+  type CampaignRulesContext,
+  renderCampaignRulesSection,
+} from '../campaign/campaignContext.js';
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type { ModelClient, ModelTraceMetadata } from '../model/client.js';
 import type { RecentSceneEvidence, StateSnapshot } from './contextAssembler.js';
@@ -102,6 +106,8 @@ export interface TurnAuditInput {
    * all count as executed evidence.
    */
   readonly executedToolCalls: readonly ExecutedToolCall[];
+  /** Exact campaign-rule context rendered for the primary DM this turn. */
+  readonly campaignRules?: CampaignRulesContext;
   /**
    * Structured current state already present in the DM's bounded context. This
    * is evidence for read-only claims and avoids requiring memory drilldown for
@@ -291,6 +297,15 @@ export function buildAuditSystemPrompt(): string {
     '',
     AUDIT_POLICY,
     '',
+    'Active campaign rulings and house rules are binding on both the DM and',
+    'auditor. Judge the candidate against canonical pack semantics plus these',
+    'campaign rules. When relying on one, cite its ruleIdentity in the reason.',
+    'Never propose creating or modifying a campaign rule.',
+    'A candidate that asserts a definite outcome for an ambiguity listed as',
+    'UNRESOLVED without an active ruling must be rejected, with a reason citing',
+    'the ambiguity id; a candidate that surfaces the uncertainty and defers to',
+    'the player is acceptable.',
+    '',
     'Respond with ONLY a single JSON object, no prose and no code fences, of the',
     'exact shape:',
     '{"verdict":"accept"|"reject","missingRequiredCalls":[{"tool":"<tool>","target":"<record/intent>"}],"disallowedToolCalls":["<tool>"],"reason":"<short>","repairInstruction":"<short>","presentationOnlyRepair":null|{"kind":"roll_ledger"}}',
@@ -454,6 +469,10 @@ export function buildAuditUserMessage(input: TurnAuditInput): string {
     .map(summarizeCanonTierEvidence)
     .filter((entry): entry is Record<string, unknown> => entry !== undefined);
   const explicitActionTools = input.requiresExplicitActionTools ?? [];
+  const campaignRules =
+    input.campaignRules === undefined
+      ? undefined
+      : renderCampaignRulesSection(input.campaignRules);
   return [
     '## Provided Tools',
     input.providedToolNames.length > 0
@@ -486,6 +505,8 @@ export function buildAuditUserMessage(input: TurnAuditInput): string {
     input.currentStateSnapshot === undefined
       ? '(not supplied)'
       : boundedAuditJson(input.currentStateSnapshot),
+    '',
+    campaignRules ?? '## Campaign Rules\n(none)',
     '',
     '## Player Input',
     input.playerInput,

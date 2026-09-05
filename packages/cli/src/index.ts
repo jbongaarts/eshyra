@@ -73,6 +73,7 @@ import {
   runPlay,
 } from './play.js';
 import { runForkCharacterSubcommand } from './playFork.js';
+import { runRulesCommand } from './rules.js';
 import { resolveSessionDebug } from './sessionDebug.js';
 import { runUsageCommand } from './usage.js';
 
@@ -582,6 +583,19 @@ export function runCheckpointSubcommand(argv: string[]): number {
   });
 }
 
+/** `eshyra rules <list|show|history|add|supersede|revoke|ambiguities|resolve>` — campaign rules. */
+export function runRulesSubcommand(argv: string[]): number {
+  const cli = resolveCliEnv();
+  if (cli === undefined) {
+    return 1;
+  }
+  return runRulesCommand(argv.slice(3), {
+    root: cli.dataRoot,
+    env: process.env,
+    log: (message: string) => console.log(message),
+  });
+}
+
 /** `eshyra adventures [campaign-id]` — inspect adventure module state. */
 export function runAdventuresSubcommand(argv: string[]): number {
   const cli = resolveCliEnv();
@@ -665,6 +679,11 @@ export function main(argv: string[] = process.argv): void {
 
   if (argv[2] === 'checkpoint') {
     process.exitCode = runCheckpointSubcommand(argv);
+    return;
+  }
+
+  if (argv[2] === 'rules') {
+    process.exitCode = runRulesSubcommand(argv);
     return;
   }
 
