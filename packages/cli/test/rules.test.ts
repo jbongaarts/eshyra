@@ -452,4 +452,55 @@ describe('runRulesCommand', () => {
       db.close();
     }
   });
+
+  it('lists every bundled ambiguity with its status and interpretations', () => {
+    const result = invoke(campaignDb(), ['ambiguities']);
+    expect(result.code).toBe(0);
+    for (const id of [
+      'ambiguity:create-undead-ghast-wight-composition',
+      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+      'ambiguity:cube-of-force-same-face-duration-reset',
+    ]) {
+      expect(result.output).toContain(id);
+      expect(result.output).toContain('status: unresolved');
+      expect(result.output).toContain('interpretations:');
+    }
+  });
+
+  it('resolves an ambiguity and reports idempotent repeats', () => {
+    const dbPath = campaignDb();
+    const args = [
+      'resolve',
+      'ambiguity:create-undead-ghast-wight-composition',
+      '--interpretation',
+      'homogeneous-alternative',
+    ];
+    const first = invoke(dbPath, args);
+    expect(first.code).toBe(0);
+    expect(first.output).toContain(
+      'ruling:create-undead-ghast-wight-composition:',
+    );
+    expect(first.output).toContain('takes effect from turn 1');
+    const second = invoke(dbPath, [
+      'resolve',
+      'ambiguity:create-undead-ghast-wight-composition',
+      '--interpretation',
+      'mixed-within-total',
+    ]);
+    expect(second.code).toBe(0);
+    expect(second.output).toContain('already resolved by');
+  });
+
+  it('lists known interpretations for an unknown resolve choice', () => {
+    const result = invoke(campaignDb(), [
+      'resolve',
+      'ambiguity:create-undead-ghast-wight-composition',
+      '--interpretation',
+      'not-enumerated',
+    ]);
+    expect(result.code).toBe(1);
+    expect(result.output).toContain('known interpretation ids:');
+    expect(result.output).toContain('homogeneous-alternative');
+    expect(result.output).toContain('mixed-within-total');
+  });
 });

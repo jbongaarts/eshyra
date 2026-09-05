@@ -583,7 +583,7 @@ export function runCheckpointSubcommand(argv: string[]): number {
   });
 }
 
-/** `eshyra rules <list|show|history|add|supersede|revoke>` — campaign rules. */
+/** `eshyra rules <list|show|history|add|supersede|revoke|ambiguities|resolve>` — campaign rules. */
 export function runRulesSubcommand(argv: string[]): number {
   const cli = resolveCliEnv();
   if (cli === undefined) {

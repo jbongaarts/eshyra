@@ -5,6 +5,7 @@ import { gracefulClose } from './playClose.js';
 import { runMoneyCommand, showWallet } from './playCurrency.js';
 import { showParty, switchActiveCharacter } from './playParty.js';
 import { runLevelUpCommand, showProgression } from './playProgression.js';
+import { offerAmbiguityRulings } from './playRulings.js';
 import type { PlayDeps } from './playTypes.js';
 
 /** Inputs that end the turn loop and trigger a graceful close. */
@@ -123,6 +124,7 @@ export async function turnLoop(
       // and `runTurn` resolves once the turn is finished, so narration is
       // written in one shot rather than streamed token-by-token (see ADR 0002).
       deps.io.write(result.narration);
+      await offerAmbiguityRulings(deps, db, campaignId, result.toolCalls);
     } else if (result.isRateLimit) {
       const retryHint =
         result.retryAfterSeconds !== undefined
