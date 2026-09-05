@@ -73,7 +73,7 @@ describe('play ambiguity rulings', () => {
     expect(
       getCampaignRule(db, {
         campaignId: 'campaign-1',
-        ruleIdentity: `ruling:${AMBIGUITY_ID.slice('ambiguity:'.length)}:`,
+        ruleIdentity: `ruling:${AMBIGUITY_ID.slice('ambiguity:'.length)}:2`,
       }),
     ).toMatchObject({
       origin: 'player-approved',

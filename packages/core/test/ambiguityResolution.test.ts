@@ -71,7 +71,7 @@ describe('campaign ambiguity resolution', () => {
 
       expect(recorded.created).toBe(true);
       expect(recorded.rule).toMatchObject({
-        ruleIdentity: `ruling:${ambiguityId.slice('ambiguity:'.length)}:`,
+        ruleIdentity: `ruling:${ambiguityId.slice('ambiguity:'.length)}:${CURRENT.ordinal + 1}`,
         ruleKind: 'ruling',
         status: 'active',
         origin: 'player-approved',

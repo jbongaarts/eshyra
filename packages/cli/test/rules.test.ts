@@ -478,7 +478,7 @@ describe('runRulesCommand', () => {
     const first = invoke(dbPath, args);
     expect(first.code).toBe(0);
     expect(first.output).toContain(
-      'ruling:create-undead-ghast-wight-composition:',
+      'ruling:create-undead-ghast-wight-composition:1',
     );
     expect(first.output).toContain('takes effect from turn 1');
     const second = invoke(dbPath, [

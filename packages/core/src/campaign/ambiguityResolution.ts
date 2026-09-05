@@ -177,7 +177,7 @@ export function recordAmbiguityRuling(
     ordinal: input.effectiveOrdinal ?? input.currentPosition.ordinal + 1,
   };
   const rule: CampaignRule = {
-    ruleIdentity: `ruling:${input.ambiguityId.replace(/^ambiguity:/, '')}:`,
+    ruleIdentity: `ruling:${input.ambiguityId.replace(/^ambiguity:/, '')}:${effectivePosition.ordinal}`,
     campaignId: input.campaignId,
     ruleKind: 'ruling',
     status: 'active',
@@ -195,7 +195,7 @@ export function recordAmbiguityRuling(
     governingRecordKeys:
       found.ambiguity.affects.length > 0
         ? found.ambiguity.affects
-        : ['ambiguity:'],
+        : [`ambiguity:${input.ambiguityId}`],
     prose:
       input.prose ??
       `${found.ambiguity.question} Ruling: ${interpretation.summary}`,
