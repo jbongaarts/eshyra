@@ -176,6 +176,11 @@ describe('checkpoint serialization', () => {
       materializeSnapshot(serializeCampaign(db), dest);
       const restored = openDatabase(dest);
       try {
+        const expectedRevokedPosition = {
+          sessionId: '__future__',
+          turnId: '__future__',
+          ordinal: 5,
+        };
         expect(listCampaignRules(restored, { campaignId: 'c1' })).toEqual(
           beforeRules,
         );
@@ -184,6 +189,50 @@ describe('checkpoint serialization', () => {
             getCampaignRule(restored, { campaignId: 'c1', ruleIdentity }),
           ).toEqual(before);
         }
+        expect(
+          getCampaignRule(restored, {
+            campaignId: 'c1',
+            ruleIdentity: 'revoked',
+          }),
+        ).toMatchObject({
+          status: 'revoked',
+          revokedPosition: expectedRevokedPosition,
+        });
+        expect(
+          getCampaignRule(restored, {
+            campaignId: 'c1',
+            ruleIdentity: 'old',
+          }),
+        ).toMatchObject({
+          status: 'superseded',
+          supersededBy: 'new',
+          revokedPosition: null,
+        });
+        expect(
+          getCampaignRule(restored, {
+            campaignId: 'c1',
+            ruleIdentity: 'new',
+          }),
+        ).toMatchObject({ status: 'active', revokedPosition: null });
+        const restoredRules = listCampaignRules(restored, {
+          campaignId: 'c1',
+        });
+        expect(
+          restoredRules.find(({ ruleIdentity }) => ruleIdentity === 'revoked'),
+        ).toMatchObject({
+          status: 'revoked',
+          revokedPosition: expectedRevokedPosition,
+        });
+        expect(
+          restoredRules.find(({ ruleIdentity }) => ruleIdentity === 'old'),
+        ).toMatchObject({
+          status: 'superseded',
+          supersededBy: 'new',
+          revokedPosition: null,
+        });
+        expect(
+          restoredRules.find(({ ruleIdentity }) => ruleIdentity === 'new'),
+        ).toMatchObject({ status: 'active', revokedPosition: null });
         expect(
           listActiveCampaignRulesAtPosition(
             restored,
@@ -195,9 +244,23 @@ describe('checkpoint serialization', () => {
           listActiveCampaignRulesAtPosition(
             restored,
             'c1',
+            formatCampaignPosition(pos(4)),
+          ).map(({ ruleIdentity }) => ruleIdentity),
+        ).toEqual(['revoked', 'new']);
+        expect(
+          listActiveCampaignRulesAtPosition(
+            restored,
+            'c1',
             formatCampaignPosition(pos(5)),
           ),
         ).toEqual(afterActive);
+        expect(
+          listActiveCampaignRulesAtPosition(
+            restored,
+            'c1',
+            formatCampaignPosition(pos(5)),
+          ).map(({ ruleIdentity }) => ruleIdentity),
+        ).toEqual(['new']);
       } finally {
         restored.close();
       }
