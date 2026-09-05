@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-on6",
+  "title": "Prefix smoke test",
+  "description": "Temporary smoke test for Eshyra issue prefix migration.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T16:53:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:46Z",
+  "closed_at": "2026-06-07T16:55:28Z",
+  "close_reason": "Prefix smoke test failed: issue-prefix was not set and bd create still generated loreweaver-*.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

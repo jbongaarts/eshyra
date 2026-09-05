@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14.4.3",
+  "title": "Add continuity bridge narration prompt",
+  "description": "Separate from custody mechanics: touches DM UX/model prompting. After a catch-up-to-head, offer a short in-fiction explanation for the character's changed state. Parent: eshyra-lupf.14.4; depends on eshyra-lupf.14.4.2.",
+  "acceptance_criteria": "- After catch-up-to-head, generate or request a short continuity explanation.\n- Support at least: player-provided explanation; DM-generated explanation.\n- Include enough context for the model: prior local revision, new revision summary if available, current scene/session state.\n- For mid-scene/combat, show an explicit warning before proceeding.\n- Do NOT require this for the core catch-up mechanics to work.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T18:05:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-27T18:51:10Z",
+  "started_at": "2026-06-27T18:51:03Z",
+  "closed_at": "2026-06-27T18:51:10Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14.4.3",
+      "depends_on_id": "eshyra-lupf.14.4",
+      "type": "parent-child",
+      "created_at": "2026-06-27T13:05:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.14.4.3",
+      "depends_on_id": "eshyra-lupf.14.4.2",
+      "type": "blocks",
+      "created_at": "2026-06-27T13:06:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

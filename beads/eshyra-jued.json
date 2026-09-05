@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jued",
+  "title": "Map existing rules-awareness discovery substrate",
+  "description": "Produce the independently verified code-archaeology report requested for the ADR 0020 transition. Trace player input and campaign state through context, provider-neutral/model-specific seams, lookup_rules and pack loading, capability/tool use, auditing, persistence, and deterministic state mutation. Document current discovery paths, substrate fields, loss/evidence/failure behavior, bypasses, and narrow future instrumentation seams without implementing production code or selecting a final design.",
+  "acceptance_criteria": "Create docs/audits/rules-awareness-transition/2026-07-29-existing-discovery-substrate-map.md with the twelve required sections, a concise flow diagram, producer-consumer tables, verified file/symbol citations, relevant real-path test/probe evidence, explicit gaps and uncertainties, and no generated-pack or production-code changes; verify, commit, push, and open a PR.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-30T04:07:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-30T04:28:05Z",
+  "started_at": "2026-07-30T04:08:08Z",
+  "closed_at": "2026-07-30T04:28:05Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

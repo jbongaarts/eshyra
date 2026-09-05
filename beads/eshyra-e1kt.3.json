@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-e1kt.3",
+  "title": "Dispatch: fix leftmost-open-paren semantics in stripTrailingParenthetical (attempt 3)",
+  "description": "Dispatch bead for `eshyra-e1kt` (read that bead for the spec). Attempt 3 —\nblocking review finding on PR #523 at head b0ff8ddf. Attempts 1 and 2 stay\nmerged; this repairs one defect in `stripTrailingParenthetical`.\n\nBranch/worktree: `eshyra-e1kt.3`, cut from branch `eshyra-e1kt` (head b0ff8dd).\nModel config: gpt-5.6-luna, reasoning effort medium.\n\n## The defect\n\n`stripTrailingParenthetical` in\n`packages/core/src/state/nameNormalization.ts` claims exact equivalence to\n`text.replace(/\\s*\\([^)]*\\)\\s*$/, '')`. It is not equivalent. It selects the\nopening parenthesis with `text.lastIndexOf('(', end - 1)` — the LATEST `(` —\nbut the regex is leftmost-match and `[^)]*` admits `(`, so the regex can start\nat an EARLIER `(`.\n\nConfirmed counterexamples (regex result vs current helper):\n\n| input | `/\\s*\\([^)]*\\)\\s*$/` | current helper |\n| --- | --- | --- |\n| `\"(()\"` | `\"\"` | `\"(\"` |\n| `\"name ((x)\"` | `\"name\"` | `\"name (\"` |\n| `\"a ((b)\"` | `\"a\"` | `\"a (\"` |\n| `\"x (( )\"` | `\"x\"` | `\"x (\"` |\n| `\"  ((a)  \"` | `\"\"` | `\"  (\"` |\n\nThe attempt-1 spec asserted a false lemma — \"leftmost-match forces the `(` to\nbe the last `(` in the string\" — and the helper's doc comment and the PR body\nboth repeat it. The existing `'nested (a (b) c)'` fixture does not catch this\nbecause that input has an interior `)` that makes BOTH candidate opens fail, so\nthe two implementations agree by accident.\n\n## Correct semantics\n\nThe closing paren is pinned: `text[end-1]` must be `)` where\n`end = text.trimEnd().length`, because `\\s*$` cannot span a non-whitespace\ncharacter. So the match is `[q, end)` for an opening paren at `q` where\n`text[q] === '('` and `(q, end-1)` contains no `)`.\n\nLet `lastClose` be the index of the last `)` strictly before `end-1`. Then\n`q` is viable exactly when `q > lastClose`: any `q < lastClose` puts that `)`\ninside the span. The regex takes the leftmost viable `q` — and since a smaller\n`q` also yields a smaller match start once the leading `\\s*` run is absorbed,\nleftmost `q` is leftmost match.\n\nSo the selection is `indexOf('(', lastClose + 1)`, NOT `lastIndexOf`:\n\n```ts\nexport function stripTrailingParenthetical(text: string): string {\n  const end = text.trimEnd().length;\n  if (end === 0 || text[end - 1] !== ')') return text;\n  const lastClose = end >= 2 ? text.lastIndexOf(')', end - 2) : -1;\n  const open = text.indexOf('(', lastClose + 1);\n  if (open === -1 || open >= end - 1) return text;\n  return text.slice(0, open).trimEnd();\n}\n```\n\nThis is still linear: two bounded scans plus a slice, no backtracking. Verified\nequivalent to the regex across all 22 inputs in the table below.\n\nRewrite the doc comment so it states the ACTUAL rule — leftmost `(` after the\nlast interior `)` — and drop the false \"last `(` in the string\" claim.\n\n## Tests\n\nIn `packages/core/test/nameNormalization.test.ts`, extend the shared `fixtures`\nlist used by the differential test (the one asserting against the inline\noriginal regexes as oracle) with at least:\n\n`'(()'`, `'name ((x)'`, `'a ((b)'`, `'x (( )'`, `'  ((a)  '`, `'()'`, `'('`,\n`'))'`, `'(()) '`, `'(('`, `'a)(b)'`\n\nKeep every existing fixture. The differential assertion is the regression —\nit must fail against the current implementation and pass against the fix.\nConfirm that by running the new tests against the OLD helper once before\napplying the fix, and record in your completion notes that you saw them fail.\n\nDo not weaken or delete any existing assertion, and do not touch\n`replaceParentheticals` or `trimEdgeChar` — both were checked against this\ndefect class and are equivalent for their inputs.\n\n## Scope\n\nNothing else. No semantics change to usage counters or action economy: for\nevery real SRD/pack ability name — no unmatched interior `(` — the old and new\nhelpers already agree, so counter keys and display names are unaffected. This\nrepairs the equivalence claim the bead requires, not observed behavior.\n\n## Verification\n\nFrom the worktree root: `npm run verify:worktree` BEFORE committing (it\nrewrites files). All non-skipped tests must pass; documented skips are the\nlive-API integration tests and the Dolt-gated checkpoint tests.\n",
+  "notes": "Dispatched 2026-09-02: pgid 544068, worktree .worktrees/eshyra-e1kt.3, branch eshyra-e1kt.3 (cut from eshyra-e1kt @ b0ff8dd), model gpt-5.6-luna effort medium, log .worktrees/.dispatch/eshyra-e1kt.3.log\nCompleted on branch eshyra-e1kt.3 in commit ae98e4e. Repaired stripTrailingParenthetical to choose indexOf('(', lastClose + 1), matching the leftmost viable opening parenthesis after the last interior ')'; updated the doc comment to state the actual rule. Added all requested differential fixtures while preserving existing assertions. Confirmed the new differential test failed against the old helper ('(()' expected '' but returned '('), then passed after the fix. Verification: npm run verify:worktree passed (273 test files passed, 4 skipped; 4827 tests passed, 19 skipped). No discovered follow-ups.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-03T00:39:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-03T00:41:17Z",
+  "started_at": "2026-09-03T00:39:47Z",
+  "closed_at": "2026-09-03T00:41:17Z",
+  "close_reason": "Closed",
+  "labels": [
+    "architecture"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-e1kt.3",
+      "depends_on_id": "eshyra-e1kt",
+      "type": "parent-child",
+      "created_at": "2026-09-02T19:39:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

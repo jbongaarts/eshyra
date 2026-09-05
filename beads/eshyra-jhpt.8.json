@@ -1,0 +1,92 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.8",
+  "title": "Replay an immediately disputed turn under a new campaign rule",
+  "description": "Objective\nHandle a player objection to the current/immediately preceding adjudication by establishing an approved ruling or house rule effective from the start of that disputed turn, restoring pre-turn state, and replaying once under the new rule.\n\nRequired behavior\nRecognize an explicit objection to the immediate adjudication, obtain player-approved prose/kind, persist canonical rule identity with effective position at disputed-turn start, restore the checkpoint/state immediately before that turn, replay the same player turn with the rule active in both DM and auditor contexts, and commit the accepted replay as campaign canon. Required canonical-conflict scenario: after a material-component rejection, \"we don't use spell components\" creates a house rule, rolls back the disputed turn, replays under it, and commits the replay. Abandoned adjudication may remain diagnostic/provenance history but not continuing campaign canon.\n\nArchitecture and references\nUse eshyra-jhpt.1-.4 for domain/storage/context parity, audited-turn staging eshyra-67qo, turn rollback proof eshyra-c07.8, and checkpoint restore foundation eshyra-7wc.5. Preserve canonical campaign history and auditor evidence across the replay boundary.\n\nNon-goals\nNo arbitrary historical retroactivity or replay of older turns; no automatic objection inference; no rule without player approval; no prose-to-mechanics compiler; no automatic house rule from an unaccepted canonical violation; no changes to immutable pack semantics.",
+  "acceptance_criteria": "An immediate material-components objection creates approved house-rule prose effective at disputed-turn start, restores exact pre-turn state, replays once with identical DM/auditor active rules, and makes accepted replay canonical; ordinary new rules remain prospective; failed replay preserves a recoverable canonical pre-turn state; older-turn retroactivity is rejected; diagnostic history distinguishes abandoned and canonical attempts.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T21:25:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:52Z",
+  "labels": [
+    "audit",
+    "campaign-runtime",
+    "checkpoint",
+    "model-context",
+    "replay",
+    "rollback",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-c07.8",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt",
+      "type": "parent-child",
+      "created_at": "2026-07-10T16:25:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt.4",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-67qo",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt.3",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-7wc.5",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt.1",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt.2",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 7,
+  "dependent_count": 1,
+  "comment_count": 0
+}

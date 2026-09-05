@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.15",
+  "title": "Retire or convert character-creation overlays to oracle tests",
+  "description": "Thaw scope #9. Once the importer emits ASIs, languages, spellcasting ability/prep, and starting equipment (.5) and the pack is regenerated/re-frozen (.14), remove the overlays' RUNTIME usage so no deterministic character-creation fact is sourced from outside the generated pack.\n\nPREFERRED end state is CONVERSION, not blind deletion: the source-cited constants in packages/core/src/character/srd{AncestryAbilityScoreIncreases,ClassSpellcasting,ClassStartingEquipment,Languages}.ts are valuable as REGRESSION ORACLES. Convert them into tests that assert generated pack data matches those expected source-derived values, then delete the runtime code paths that consumed them. Only fully delete a file when its constants add no oracle value beyond what a pack-vs-source test already covers. Net result: zero runtime overlay dependence, oracle coverage preserved.",
+  "notes": "Dependency on eshyra-o9bd.14 removed 2026-07-25. This bead is CLOSED and its own\nclose reason records that the edge was already stale (\"Forced because\neshyra-o9bd.14 remains open in Beads although this requested slice is complete\").\nThe edge also blocked the corrected closure chain, where re-freeze (.14) now runs\nLAST, after independent re-audit (.16) and certification (eshyra-o9bd.19.6.4).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:54:34Z",
+  "started_at": "2026-06-29T19:35:25Z",
+  "closed_at": "2026-06-29T19:47:39Z",
+  "close_reason": "Runtime character creation and level-up now source ASIs, languages, spellcasting metadata, and starting equipment from generated pack fields; source constants retained as oracle tests. Forced because eshyra-o9bd.14 remains open in Beads although this requested slice is complete.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.15",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.15",
+      "depends_on_id": "eshyra-o9bd.5",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

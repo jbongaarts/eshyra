@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.3.1",
+  "title": "Tag SRD weapons with simple/martial and melee/ranged groups",
+  "description": "Child of the equipment grouping audit epic.\n\nThe SRD weapons table encodes four important groups via table headers:\n- Simple Melee Weapons\n- Simple Ranged Weapons\n- Martial Melee Weapons\n- Martial Ranged Weapons\n\nGenerated weapon records currently preserve cost, damage, properties, and weight, but do not preserve simple/martial or melee/ranged grouping. This makes class weapon proficiencies and starting-equipment filters impossible to resolve deterministically.\n\nAcceptance criteria:\n- Each generated weapon record has structured grouping metadata equivalent to:\n  - weaponCategory: simple | martial\n  - weaponRange: melee | ranged\n- The metadata is derived deterministically from the SRD table grouping, not manually patched in the generated pack.\n- Starting-equipment filters for martial melee weapons and similar weapon choices can enumerate concrete candidates.\n- Class proficiencies for Simple weapons and martial weapons can resolve to concrete weapon records.\n- Add regression tests for representative simple melee, simple ranged, martial melee, and martial ranged weapons.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T05:58:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-01T06:46:58Z",
+  "closed_at": "2026-07-01T12:45:45Z",
+  "close_reason": "Tagged all 37 weapons with weaponCategory/weaponRange derived from the Weapons table sub-headers",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.3.1",
+      "depends_on_id": "eshyra-erf5.3",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

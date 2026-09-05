@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.1",
+  "title": "Compile every spell into a clause-complete procedure",
+  "description": "Compile all 319 spells into clause-complete procedures.\n\nRoot cause: spell projection captures headers and a small mechanics summary, so\narea geometry, projectile counts, ordered allocation, staged effects, and\ntermination remain prose.\n\nRequired membership — all of:\n- all point-origin and target-origin area geometry (main @4384f25: only 16 spells\n  carry mechanics.area; 68 more describe areas in prose only, including fireball\n  and cloudkill);\n- Magic Missile projectile count, targeting, automatic hit, and simultaneity;\n- pools and ordered allocation such as Sleep and Color Spray;\n- multi-stage spells, repeat saves/checks, secondary checks, tables, counters,\n  entity lifecycle, movement, termination, and upcast bases;\n- all exact spell examples and candidate memberships from the four reviews;\n- the 9 spells whose prose states a half-damage success branch with no typed\n  success field (shared predicate with A2), e.g. spell:blade-barrier,\n  spell:control-water, spell:earthquake;\n- honest handling of the Animal Friendship source corruption (with B1).\n\nCloses findings: SOL-005, F-08, F-11, CAP-003, CAP-009, Fable F2.",
+  "acceptance_criteria": "- Every printed deterministic spell hook is either represented and engine-mapped, or explicitly non-engine with a clause-level rationale.\n- No generic metadata (concentration flag, save ability, duration) can make an incomplete spell appear complete.\n- Area geometry is typed for every spell that prints one, with its origin kind.\n- Upcast bases are typed and derivable, not prose-only.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F4, F7, F8, F9.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:39:40Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.1",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.1",
+      "depends_on_id": "eshyra-o9bd.19.4",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.1",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.1",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 2,
+  "comment_count": 0
+}

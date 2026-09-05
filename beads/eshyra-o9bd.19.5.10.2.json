@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.10.2",
+  "title": "Certify Engine F9 reference implementation against the clause-capability ledger",
+  "description": "Family-level certification gate for engine:F9 (Geometry, targeting, damage, movement, contests, and object interaction). Feeds the overall\nreference-engine certification under eshyra-olc5, which gates the SRD re-freeze.\n\nCertify that:\n\n  * Every authoritative-ledger member for engine:F9 is implemented, OR explicitly\n    excluded under one of the four approved non-deterministic categories\n    (campaign-ruling ambiguity, intentional model adjudication, external non-SRD\n    content, explicitly deferred non-deterministic house rules).\n  * Pack clauses and engine consumers use the SAME contract — the engine reads\n    the committed pack representation, not a test fixture shaped to suit it.\n  * Executable, source-backed conformance tests exercise the pack representation\n    for each primitive in this family.\n  * ZERO remaining pending capability references for this family in the\n    authoritative ledger (eshyra-o9bd.19.5.12).\n  * Finding-registry (eshyra-o9bd.19.1.6) evidence is attached for every finding\n    this family closes, with the registry status recorded.\n  * Replay / deterministic-equivalence tests and failure-boundary tests pass\n    where applicable.\n  * Unsupported input fails CLOSED — no silent degradation, no partial\n    execution presented as complete.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "acceptance_criteria": "\n• Zero pending capability references for engine:F9 in the authoritative ledger.\n• Every member implemented or explicitly excluded under a named approved category.\n• Pack-driven (not fixture-driven) conformance tests pass for every primitive.\n• Finding-registry evidence attached for each finding closed by this family.\n• Fail-closed and replay/equivalence behavior demonstrated.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T17:36:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:36:41Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.10.2",
+      "depends_on_id": "eshyra-o9bd.19.5.10.1",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:36:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.10.2",
+      "depends_on_id": "eshyra-o9bd.19.5.10",
+      "type": "parent-child",
+      "created_at": "2026-07-25T12:36:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.10.2",
+      "depends_on_id": "eshyra-o9bd.19.5.12",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:41:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

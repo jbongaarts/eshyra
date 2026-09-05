@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5ze.5",
+  "title": "06b-B T5: CLI tests for bible-retry and atomic-skip paths",
+  "description": "Objective:\nAdd three CLI integration tests in packages/cli/test/play.test.ts that exercise the new failure modes introduced in T4:\n  (a) bible call fails once then succeeds (retry-success): both bible and summary land.\n  (b) bible call fails twice (double-failure): warning + atomic skip, no arc_summary row.\n  (c) bible succeeds, summary fails: warning + atomic skip, no arc_summary row.\n\nFiles:\n- Modify: packages/cli/test/play.test.ts\n\nSteps:\n1. Add the three new tests (Design field) inside the existing describe('runPlay') block, alongside the existing 'rolls the campaign arc up' and 'skips arc rollup and warns when the model errors during close' tests.\n2. The retry-success test will need a stateful bible route that throws on first call and returns valid JSON on second call. Build this with a small closure (see Design).\n3. Run: npx vitest run packages/cli/test/play.test.ts --reporter=verbose\n   Expected: all tests in this file pass, including the three new ones.\n4. Run the full suite: npx vitest run. Expected: all pass.\n5. Run: npm run typecheck. Expected: success.\n6. Commit:\n     git add packages/cli/test/play.test.ts\n     git commit -m \"Cover bible-extraction retry and atomic-skip paths in CLI tests (loreweaver-5ze)\"",
+  "design": "New tests (place after the existing failure-mode test 'skips arc rollup and warns when the model errors during close'):\n\n  it('retries the bible call once and recovers when the second attempt succeeds', async () => {\n    const { db, dispose } = makeDb();\n    const { io, lines } = scriptedIO(['/defer', 'look around', '/quit']);\n    let bibleCallCount = 0;\n    const deps: PlayDeps = {\n      ...baseDeps(db, io),\n      model: routedFakeModel({\n        bible: () => {\n          bibleCallCount++;\n          if (bibleCallCount === 1) {\n            throw new ModelClientError('first attempt fails');\n          }\n          return ROUTED_FAKE_BIBLE_JSON;\n        },\n        summary: () => FAKE_ARC_SUMMARY,\n      }),\n    };\n\n    const code = await runPlay(deps, { dbPath: 'demo.db' });\n\n    expect(code).toBe(0);\n    expect(bibleCallCount).toBe(2);\n    const out = lines.join('\\n');\n    expect(out).toContain('closed and recapped');\n    // Retry succeeded silently: no skip warning written.\n    expect(out).not.toContain('Arc rollup skipped');\n\n    const cid = campaignId(db);\n    const arc = getArcSummary(db, { campaignId: cid, arcId: 'arc-1' });\n    expect(arc?.summary).toBe(FAKE_ARC_SUMMARY);\n    const bible = getCampaignBible(db, { campaignId: cid });\n    expect(bible?.worldFacts.map((e) => e.text)).toContain(\n      'Emberfall sits on a fault line',\n    );\n    dispose();\n  });\n\n  it('skips the rollup and warns when bible extraction fails twice', async () => {\n    const { db, dispose } = makeDb();\n    const { io, lines } = scriptedIO(['/defer', 'look around', '/quit']);\n    const deps: PlayDeps = {\n      ...baseDeps(db, io),\n      model: routedFakeModel({\n        bible: () => {\n          throw new ModelClientError('bible provider down');\n        },\n        summary: () => FAKE_ARC_SUMMARY,\n      }),\n    };\n\n    const code = await runPlay(deps, { dbPath: 'demo.db' });\n\n    expect(code).toBe(0);\n    const out = lines.join('\\n');\n    expect(out).toContain('closed and recapped');\n    expect(out).toContain(\n      'Arc rollup skipped (bible extraction failed): bible provider down.',\n    );\n\n    const cid = campaignId(db);\n    // Session closed and recap written despite the bible failure.\n    expect(getOpenSession(db, { campaignId: cid })).toBeUndefined();\n    const session = listSessions(db, { campaignId: cid })[0];\n    expect(getSessionRecap(db, { campaignId: cid, sessionId: session.sessionId })).toBeDefined();\n    // No arc_summary row was written because the bible call failed both attempts.\n    expect(getArcSummary(db, { campaignId: cid, arcId: 'arc-1' })).toBeUndefined();\n    dispose();\n  });\n\n  it('skips the rollup and warns when arc summary fails after bible succeeded', async () => {\n    const { db, dispose } = makeDb();\n    const { io, lines } = scriptedIO(['/defer', 'look around', '/quit']);\n    const deps: PlayDeps = {\n      ...baseDeps(db, io),\n      model: routedFakeModel({\n        bible: () => ROUTED_FAKE_BIBLE_JSON,\n        summary: () => {\n          throw new ModelClientError('summary provider down');\n        },\n      }),\n    };\n\n    const code = await runPlay(deps, { dbPath: 'demo.db' });\n\n    expect(code).toBe(0);\n    const out = lines.join('\\n');\n    expect(out).toContain('closed and recapped');\n    expect(out).toContain(\n      'Arc rollup skipped (arc summary failed): summary provider down.',\n    );\n\n    const cid = campaignId(db);\n    // No arc_summary row was written despite the bible succeeding — the\n    // contract is atomic: both must succeed or neither writes.\n    expect(getArcSummary(db, { campaignId: cid, arcId: 'arc-1' })).toBeUndefined();\n    // Also no campaign_bible row, since rollupArcSummary is what writes it.\n    expect(getCampaignBible(db, { campaignId: cid })).toBeUndefined();\n    dispose();\n  });\n\nNOTE TO IMPLEMENTER:\n- The 'skips arc rollup and warns when the model errors during close' test from 4ua used a single-call throwing model. With T4's routed-fake-model migration, that earlier test should already be passing because its model throws on every call — the bible call (first) will throw twice (retry), then the rollup is atomic-skipped. If that 4ua test starts to fail, update it to use routedFakeModel with bible: () => { throw ... } and summary unused; the assertion 'Arc rollup skipped (model error)' will need to become 'Arc rollup skipped (bible extraction failed): provider down.' since the new error message differentiates by failure stage. Check the diff carefully.",
+  "acceptance_criteria": "1. The three new tests exist in packages/cli/test/play.test.ts and all pass.\n2. The retry-success test verifies bibleCallCount === 2 (one fail + one retry) and no skip warning is written.\n3. The bible-double-failure test verifies the 'Arc rollup skipped (bible extraction failed): bible provider down.' warning lands and no arc_summary row exists.\n4. The summary-fail test verifies the 'Arc rollup skipped (arc summary failed): summary provider down.' warning lands and no arc_summary OR campaign_bible row exists (atomic skip).\n5. If the existing 4ua failure-mode test ('skips arc rollup and warns when the model errors during close') needs to be updated because of message-format changes from T4, the update is included.\n6. The full npx vitest run suite passes.\n7. npm run typecheck succeeds.\n8. The commit message references loreweaver-5ze.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T16:13:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:18Z",
+  "started_at": "2026-05-23T22:16:04Z",
+  "closed_at": "2026-05-23T22:24:05Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-5ze.5",
+      "depends_on_id": "eshyra-5ze.4",
+      "type": "blocks",
+      "created_at": "2026-05-23T11:13:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-5ze.5",
+      "depends_on_id": "eshyra-5ze",
+      "type": "parent-child",
+      "created_at": "2026-05-23T11:13:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "19a028ef-dc6f-5226-87a3-3694ecde504e",
+      "issue_id": "eshyra-5ze.5",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `0513a7b..1914e1d`:\n\nAssessment: Ready to merge\n\nCritical: none\nImportant: none\nMinor: none\nFollow-up: none",
+      "created_at": "2026-05-23T22:23:39Z"
+    },
+    {
+      "id": "5c38d2b2-c5fe-53c0-82fb-36848eb372d9",
+      "issue_id": "eshyra-5ze.5",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 0513a7b..1914e1d: Ready to merge. Critical: none. Important: none. Minor: bible-double-failure test could also assert getCampaignBible is undefined (parallel with summary-fail test) — vacuously true, but documents atomicity symmetrically.",
+      "created_at": "2026-05-23T22:24:04Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 2
+}

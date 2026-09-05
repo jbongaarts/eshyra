@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.11.1",
+  "title": "Dispatch: readiness dimension assignment and capability ownership (attempt 1)",
+  "description": "Bounded mechanical defects decomposed out of PR #475 (eshyra-o9bd.19.1.1) when\nthe churn stop rule triggered at 8c027f1. These are deliberately NARROW. If a\nfix here starts to require exact source VALUES, stop — that belongs to\neshyra-o9bd.19.1.10, not here. Say so in your notes rather than widening scope.\n\nWork on the PR #475 branch content: this worktree is cut from\neshyra-o9bd.19.1.1 at 8c027f1.\n\n=== FILES YOU OWN ===\n  docs/adr/0020-source-clause-semantic-ir-and-completeness-contracts.md\n  packages/core/src/rules/clauseIr/types.ts\n  packages/core/src/rules/clauseIr/contracts.ts\n  packages/core/src/rules/clauseIr/obligations.ts\n  packages/core/src/rules/clauseIr/index.ts\n  packages/core/test/clauseIrContracts.test.ts\n  packages/core/test/clauseIrObligations.test.ts\n\n=== D1: CAPABILITY FAILURES ARE ASSIGNED TO THE WRONG DIMENSION ===\nA clause whose engine capability cannot be resolved is currently reported as a\nPROJECTED failure. That is exactly the dimension conflation ADR 0020 exists to\nprevent: the projection may be perfectly complete while the ENGINE support is\nabsent. Capability resolution failures belong to SUPPORTED, always.\nFIX: route every capability-resolution failure to SUPPORTED. Add a test per\ndimension proving a failure in one dimension never reports as another —\nincluding the case where a clause is fully captured and projected but its\ncapability is unresolved, which must read complete-but-unsupported.\n\n=== D2: CAPABILITY OWNERSHIP USES AN INCORRECT BEAD-ID PREFIX ===\nThe ownership check uses the wrong bead-ID form, so wrong-owner references pass.\nOwning beads for engine capabilities are the family epics under eshyra-olc5 —\nnote that they retain historical eshyra-o9bd.19.5.* IDs, so a naive\n'starts with eshyra-olc5' test is exactly the bug. Judge ownership by the actual\nbead identity, not by ID prefix.\nFIX: correct the check and test unqualified, wrong-owner, stale and\nnonexistent references.\n\n=== D3: EVIDENCE AND PROVENANCE CONSISTENCY ARE UNDER-VALIDATED ===\nFIX: validate that an obligation's evidence is internally consistent and\nconsistent with its provenance — evidence kinds appropriate to the declared\norigin, locators agreeing with the identity, no stale or dangling references.\nAdd negative tests for each inconsistency class.\n\n=== D4: BRANCH AND ALTERNATIVE BINDINGS CANNOT TARGET SCALAR MECHANICS ===\nBindings can name shells but cannot target several valid scalar mechanics, so a\nbranch or alternative whose outcome is a scalar cannot be bound at all.\nFIX: allow bindings to target scalar mechanics as well as shells, without\nweakening the exclusion-graph validation already in place. Add coverage for\nscalar-outcome branches and scalar alternatives.\n\n=== D5: ADR 0020 CONTRADICTS THE BEAD CONTRACT ===\nThe ADR and the owning bead's REVIEW CONTRACT disagree about the #475/#477\nintegration boundary. The bead contract is authoritative. The ACTUAL position:\nobligationId is obl:::<sourceRef>:::<locator>:::<facet>; PR #477 emits and\nvalidates the same shape, so #475 and #477 are mechanically joinable; PR #476\ndoes NOT participate — it uses MembershipIdentity{recordKey, clauseId?, path?,\nsourceSpan?} with no obligationId, and bridging it belongs to\neshyra-o9bd.19.1.7.\nFIX: make ADR 0020 state exactly that. Do not overclaim alignment.\n\n=== DO NOT TOUCH ===\nThe clause/obligation boundary that survived review: one-obligation-per-clause,\ncanonical base requirements, facet implication closure, identity bound to\nevidence, opaque validated scopes, CAPTURED restricted to source evidence, the\nclosed EngineCapability union, deep-frozen artifacts. Keep every test.\n\n=== ENVIRONMENT / CONSTRAINTS ===\nnpm ci first; npm run verify:worktree BEFORE committing — it rewrites files. If\nrulesPackAuditCli or dolt-gated suites time out under load, rerun that file in\nisolation before concluding a regression.\nEdit ONLY the files under FILES YOU OWN. A sibling dispatch runs in parallel on\na disjoint set. Do not touch package.json, packages/core/package.json,\npackages/core/src/internal.ts, AGENTS.md, CLAUDE.md, .github/, or any\nscript/protocol/CI file — review infrastructure is OUT OF SCOPE this session.\nDo not regenerate the rules pack or run the SRD importer.\nDo not modify any bead but your own. No bd dolt push. No push, PR comment, or\nmerge. Never delete a test to make a finding disappear; if a committed test\nencodes the defect, change it deliberately and say why in your notes.",
+  "acceptance_criteria": "\n• Capability resolution failures report against SUPPORTED, never PROJECTED, with a per-dimension test including complete-but-unsupported.\n• Capability ownership is judged by actual bead identity rather than ID prefix; unqualified, wrong-owner, stale and nonexistent references fail.\n• Evidence/provenance consistency is validated with negative tests per inconsistency class.\n• Branch and alternative bindings can target scalar mechanics without weakening exclusion-graph validation.\n• ADR 0020 states the real cross-PR position and no longer contradicts the bead contract.\n• No exact-source-value work is absorbed; anything requiring it is reported, not implemented.\n• npm run verify:worktree passes.",
+  "notes": "Completion report: corrected the clause IR evaluator and obligation registry. Capability identity/ownership now uses the closed engine:F1..F10 roster mapped to the actual historical family-epic bead IDs, every capability mismatch/invalid/duplicate/unresolved failure is reported only in SUPPORTED, and semantic CAPTURED/PROJECTED status remains independent. Evidence validation now rejects incompatible origin kinds and divergent authoritative locators; canonical provenance extraction/source-span consistency and semantic-owner kind/prefix are executable. Branch and alternative binding validation excludes shell IDs and admits stable scalar mechanic IDs. ADR 0020 now states the actual #475/#477 obligationId parity boundary and explicitly excludes #476. Added regression coverage for D1-D4 and evidence/provenance consistency. Verification: npm run verify:worktree passed (264 files passed, 4 skipped; 4743 tests passed, 19 skipped). Follow-up filed as eshyra-687l for exact source semantic value bindings, which I deliberately did not implement because the child contract assigns that work to the sibling source-value bead. No decision disagreement; the exact-owner closed roster is the binding architecture decision used here. No obligation remains unsatisfied within this bead's owned scope.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T00:06:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:16:49Z",
+  "started_at": "2026-07-28T00:08:44Z",
+  "closed_at": "2026-07-28T00:16:49Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.11.1",
+      "depends_on_id": "eshyra-o9bd.19.1.11",
+      "type": "parent-child",
+      "created_at": "2026-07-27T19:06:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,53 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ws9.1",
+  "title": "Build model evaluation harness and cost-quality metrics",
+  "description": "Create an evaluation harness for model/profile quality gates. It should test long-campaign continuity, canon preservation, NPC consistency, rules adjudication, structured output reliability, memory update quality, tool-use reliability, cost per turn/session, and latency.",
+  "acceptance_criteria": "Harness can run scripted scenarios against a ModelClient/profile; records continuity/canon/NPC/rules/structured-output/memory/tool-use scores plus cost and latency metrics; premium_dm pass/fail threshold is explicit and documented.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-18T03:00:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-20T23:43:35Z",
+  "close_reason": "Added model evaluation harness with scripted ModelClient/profile runs, seven quality dimension scores, cost/latency reporting, and premium_dm threshold pass/fail; verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ws9.1",
+      "depends_on_id": "eshyra-cck.8",
+      "type": "blocks",
+      "created_at": "2026-05-17T22:00:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ws9.1",
+      "depends_on_id": "eshyra-ws9",
+      "type": "parent-child",
+      "created_at": "2026-05-17T22:00:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "9ee6ac0d-d685-57bb-860f-dd0675e809ac",
+      "issue_id": "eshyra-ws9.1",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded; npm run typecheck passed; initial npm run test failed before build because @loreweaver/core dist entry was absent; npm run build passed; npm run test passed after build with 157 passed / 1 skipped.",
+      "created_at": "2026-05-20T23:39:07Z"
+    },
+    {
+      "id": "51e4b5f8-45e5-5cf5-bb40-2805ab719872",
+      "issue_id": "eshyra-ws9.1",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> passed; npm run build -> passed; npm run test -> 158 passed / 1 skipped. Acceptance check: scripted scenarios run against ModelClient/profile; report records all seven quality dimensions plus cost and latency; premium_dm threshold is exported as PREMIUM_DM_EVALUATION_THRESHOLD and drives pass/fail.",
+      "created_at": "2026-05-20T23:43:29Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 2
+}

@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.1.6",
+  "title": "Dispatch: fail-closed obligation resolution and complete alternative partitions (attempt 6)",
+  "description": "Fresh full review of PR #475 at 68e5253: two P1 and two P2. THE DECOMPOSITION WAS\nACCEPTED — registry/authority findings went to eshyra-o9bd.19.1.12 and\nscope/closure findings to .13, and were not counted against this PR. These\nfindings are inside the reduced per-clause boundary.\n\nThe contract has been REWRITTEN by the supervisor for the reduced scope (that\nwas finding 4, a supervisor error). Read `bd show eshyra-o9bd.19.1.1` — the\nauthority and closure requirements are gone, not annotated.\n\nBecause these are new findings inside the reduced boundary, the next review is a\nFRESH FULL review.\n\n=== FILES YOU OWN ===\n  docs/adr/0020-source-clause-semantic-ir-and-completeness-contracts.md\n  packages/core/src/rules/clauseIr/types.ts\n  packages/core/src/rules/clauseIr/contracts.ts\n  packages/core/src/rules/clauseIr/obligations.ts\n  packages/core/src/rules/clauseIr/index.ts\n  packages/core/test/clauseIrContracts.test.ts\n  packages/core/test/clauseIrObligations.test.ts\n\n=== F1 (P1): CAPTURED SATISFIES ON A MISSING OR UNKNOWN OBLIGATION ===\nSupervisor-confirmed. contracts.ts ~line 815:\n    const record = source.get(obligationId);\n    if (record === undefined) return [];\nAn unresolvable obligation yields an EMPTY failure list, and line ~1024 computes\n    captured: dimension(capturedFailures.length === 0, ...)\nso zero failures reads as SATISFIED. A clause citing a nonexistent obligation is\ntherefore reported CAPTURED.\n\n*** THIS IS THE FIFTH FAIL-OPEN IN THIS PROGRAM. *** The others: two finding-\nregistry closure predicates, the bootstrap ledger closure, and the prose\nanti-template guard. The recurring idiom is exactly this — returning an empty\nfailure list when a lookup does not resolve, so \"no failures\" is\nindistinguishable from \"all checks passed\".\n\nFIX: an unresolvable obligation reference must FAIL CLOSED on EVERY dimension it\nfeeds, with a named reason distinguishing 'obligation not found' from 'obligation\nsatisfied'. Then AUDIT EVERY OTHER early return in this module for the same\nshape — do not fix only the reported line. Add a test per dimension proving an\nunknown obligation ID cannot yield a satisfied dimension.\n\n=== F2 (P1): choice AND variant ALTERNATIVES NEED A COMPLETE PARTITION ===\nSupervisor-confirmed. contracts.ts:231-232:\n    choice:  requirements('choice',  count('choice','alternatives',1)),\n    variant: requirements('variant', count('variant','alternatives',1)),\nOnly \"at least one alternative\" is required, so a DISCONNECTED exclusion graph\npasses. Mutual exclusion across a set is a partition property; one member proves\nnothing about it.\nFIX: require the exclusion graph to be symmetric and fully connected across the\nalternative set for choice and variant. Add tests for a disconnected graph, an\nasymmetric pair, and a valid complete partition.\n\n=== F3 (P2): EVIDENCE EQUALITY DEPENDS ON PROPERTY ORDER ===\ncontracts.ts:802 — `return JSON.stringify(evidence);` — so two evidence values\nthat differ only by property insertion order compare unequal.\nFIX: structural comparison, order-independent. Add a test with the same evidence\nbuilt in two key orders.\n\n=== PRESERVE ===\nOne obligation per clause; canonical base requirements; facet implication\nclosure; the complete timing facet vocabulary; independent readiness dimensions\nwith capability failures on SUPPORTED; CAPTURED restricted to source evidence;\nthe closed engine:F1..F10 identity with ownership by bead identity; the 13-line\nnon-authoritative ObligationSource interface — do NOT reintroduce a validating\nregistry, scope, or closure surface, and do not absorb work owned by\neshyra-o9bd.19.1.12 or .13.\n\n=== ENVIRONMENT / CONSTRAINTS ===\nnpm ci first; npm run verify:worktree BEFORE committing. Edit only the files\nabove. Do not touch package.json, internal.ts, AGENTS.md, CLAUDE.md, .github/,\nor any script/CI file. Do not regenerate the pack or run the importer. Do not\nmodify any bead but your own; no bd dolt push; no push, PR comment, or merge.\nThe PR body and bead contract are the supervisor's to maintain.",
+  "acceptance_criteria": "\n• An unresolvable obligation reference fails closed on every dimension, with a reason distinguishing not-found from satisfied; a test per dimension proves it.\n• Every other early return in the module is audited for the same fail-open shape, not just the reported line.\n• choice and variant require a symmetric, fully connected exclusion graph; disconnected and asymmetric cases fail, with tests.\n• Evidence equality is structural and order-independent, with a two-key-order test.\n• No validating registry, scope, or closure surface is reintroduced; no .12 or .13 work is absorbed.\n• npm run verify:worktree passes.",
+  "notes": "Completion report (2026-07-28): Changed ADR 0020 and the clause completeness evaluator/tests. Unresolved or missing obligation references now fail closed for CAPTURED and PROJECTED with a named source-obligation-not-found/missing reason; alternative-bearing facets, including choice and variant, require symmetric fully connected exclusion partitions; capturable evidence comparison is discriminated structural comparison independent of property insertion order. Added readiness-dimension, disconnected/asymmetric/valid partition, and reordered source-span/authoritative-input regressions. Decision disagreement: none; the supervisor’s reduced boundary and independent readiness dimensions were followed. Could not satisfy: generated cross-family regression coverage was not added in this correction; follow-up eshyra-tba9 records it. Production census and real resolver work remain approved residuals owned elsewhere and were not attempted. Verification passed: npm ci; npm run verify:worktree; 264 test files, 4741 passed, 19 skipped. Commit: 7f38879.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T02:43:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T02:54:09Z",
+  "closed_at": "2026-07-28T02:54:09Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.1.6",
+      "depends_on_id": "eshyra-o9bd.19.1.1",
+      "type": "parent-child",
+      "created_at": "2026-07-27T21:43:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

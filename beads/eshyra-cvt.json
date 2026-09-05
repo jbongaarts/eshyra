@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cvt",
+  "title": "Brainstorm: model-extracted campaign bible (06b-B)",
+  "description": "Explore design for loreweaver-5ze. Decide: combine bible extraction with the arc-summary model call or run as two separate calls; JSON parsing/validation strategy; error-handling interaction with the arc rollup. Reuses 4ua plumbing pattern.",
+  "notes": "Decision (Q1): Pipeline — extract bible first, then pass bible into the arc-summary prompt so the summary can reference named NPCs/factions canonically. Implication: composeArcSummary signature grows to accept a CampaignBible input; CLI rollupCampaignArc orchestrates two sequential model calls.\nDecision (Q2): Bible failure path = retry once, then atomic-skip (skip both bible and arc summary; prior arc_summary stays). Arc-summary call retains 4ua's single-attempt contract. Combined contract: bible-extract call -> on error, retry once -> on second error, log warning + return early. If bible succeeds and arc-summary subsequently fails, atomic-skip (log warning + return early before rollupArcSummary write).\n\nDecision (Q3 — JSON parsing): follow orchestrator's fenced-block pattern. Dedicated fence tag (e.g. 'bible_json'); parse with a small regex + JSON.parse + shape check (object with worldFacts/majorNpcs/factions/openThreads each string[]); throw typed MemorySummaryError on parse/shape failure.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T15:48:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:59Z",
+  "started_at": "2026-05-23T15:48:30Z",
+  "closed_at": "2026-05-23T16:13:34Z",
+  "close_reason": "Design approved; epic populated on loreweaver-5ze; 5 child tasks filed under loreweaver-5ze.1-5.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

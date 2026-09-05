@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.13",
+  "title": "Prove scope membership and unify aggregate closure with per-clause evaluation",
+  "description": "Decomposed out of eshyra-o9bd.19.1.1 (PR #475) 2026-07-27, user-approved, under the churn stop rule.\n\nTWO DEFECTS, one cause: aggregate closure and per-clause evaluation are two evaluation paths that do not share a contract, and the scope they run over cannot prove what it claims.\n\nSCOPE:\n  * a branded scope must PROVE authoritative membership and record ownership, not merely carry a brand. An applicable scope with empty or selectively omitted membership must not return a false-green empty closure, and a clause from another record must not satisfy this scope.\n  * aggregate closure must evaluate THE SAME CONTRACT as individual clauses — today it drops resolver context and additive requirements, so a clause can pass closure under weaker rules than it would face individually.\n\nDEPENDENCY: needs the registry authority bead, since a scope cannot prove membership against an authority that cannot itself be proven.\n\nPR #475 retains per-clause evaluation; this bead owns the aggregate path.",
+  "acceptance_criteria": "\n• A scope proves authoritative membership and exact family+record ownership; omitted membership and foreign-record clauses are rejected with tests.\n• Aggregate closure evaluates the same contract as per-clause evaluation, including resolver context and additive requirements.\n• A clause cannot pass closure under weaker rules than individual evaluation applies.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T01:41:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T01:41:38Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.13",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.13",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-27T20:41:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.13",
+      "depends_on_id": "eshyra-o9bd.19.1.12",
+      "type": "blocks",
+      "created_at": "2026-07-27T20:41:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

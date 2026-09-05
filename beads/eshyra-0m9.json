@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9",
+  "title": "Build deterministic rules-pack ingestion pipeline",
+  "description": "Create the infrastructure and work plan needed to replace minimal placeholder D&D SRD and Pathfinder rules fixtures with complete, licensed, deterministic rules-pack data.\r\n\r\nThe core policy is: licensed source -> deterministic extraction -> schema validation -> coverage tests -> audit. Do not use an LLM as the source of truth for rules data. Models may assist parser development and audits, but generated pack contents must be reproducible from approved source material.",
+  "design": "This epic is about deterministic rules-pack population, not rules-engine automation completeness. Full reference coverage comes first. Mechanical automation can remain partial and layered on afterward.",
+  "acceptance_criteria": "- Rules-pack ingestion approach is documented.\r\n- Source/license/provenance metadata exists.\r\n- Kind-specific rules record schemas are defined.\r\n- Generated-data layout and pack loader are established.\r\n- D&D SRD importer work is tracked.\r\n- Pathfinder source-policy and importer work is tracked.\r\n- Coverage/audit tooling work is tracked.\r\n- The plan explicitly forbids model-generated authoritative rules content.",
+  "notes": "Deferred 2026-06-16. Epic blocked on Pathfinder children (0m9.8, 0m9.9) which are deferred pending campaign validation. D&D SRD work (all other children) is complete.",
+  "status": "deferred",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:01:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:52Z",
+  "defer_until": "2026-12-01T00:00:00Z",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9",
+      "depends_on_id": "eshyra-ss08.9",
+      "type": "relates-to",
+      "created_at": "2026-07-09T23:28:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

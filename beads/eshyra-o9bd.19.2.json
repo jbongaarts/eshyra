@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2",
+  "title": "Restore source authority, provenance, taxonomy, and discovery",
+  "description": "Repair the concrete source-authority, segmentation, taxonomy, and\ndiscoverability defects, and make each class mechanically impossible to recur.\n\nTwo distinct source-authority failure modes were found and must not be conflated:\n(1) unsupported non-SRD content emitted with false SRD provenance\n(table:starting-wealth-by-class); (2) an editorial repair presented as if it were\nsupported by the rendered PDF (the Animal Friendship upcast correction).",
+  "acceptance_criteria": "- No output carries SRD provenance or CC attribution for unsupported content.\n- Record boundaries follow source headings; no feature is merged into or swallowed by a sibling.\n- Structured labels authored by the compiler are distinguishable from source quotation everywhere.\n- The DM and deterministic tools can find canonical records without knowing the exact kind and normalized title.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:21:33Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

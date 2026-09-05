@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.12",
+  "title": "Transition W10: context-packet intervention through the provider-neutral adapter seam (Phase 3)",
+  "description": "Workstream W10 of the integrated ADR 0020 transition design, Phase 3 (section\n12.3), with the packet contract in section 7:\ndocs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md.\nThat design is the accepted deliverable of eshyra-o9bd.19.8 (PR #485, reviewed\nhead afd113c7090378c3a9f4122f246a6c32602a5164, merge commit\n042ce119aa699f04f60a1885d471335f07745282). ADR 0020 controls.\n\nOWNER\nThis bead is the single owner of context-packet intervention: the first change to\nwhat the DM actually receives. No other bead owns it.\n\nSCOPE\nInject the discovery context packet in scripted, provider-neutral tests and\ncompare against the recorded shadow baseline. Provider-neutral means through the\nexisting adapter seam (ADR 0010), not through one provider's agent loop.\n\nThe packet carries, per retained candidate (design section 7.1): canonical record\nidentity; source provenance and licence identity; the exact source prose the\nfixture requires; every retrieval reason; traversed relationships; known source\nambiguity with its interpretations; the applicable campaign rule or ruling from\neshyra-jhpt with identity, scope, provenance, and supersession status;\ndeterministic capability availability with inputs, exclusions, revision, and\nresidual DM interpretation; and explicit projection-limit notes.\n\nObserve: whether must-include material reaches the DM; whether routes survive\ndedup; whether mandatory candidates survive budgets; whether source prose stays\nintact; whether partial-projection limits are explicit; whether campaign rules\nand rulings carry correct scope and provenance; whether capability limits are\nshown correctly; auditor retries; explicit citations or tool calls; accepted\ndeterministic state effects. Report M1-M12 against the recorded baseline.\n\nPROHIBITIONS (design sections 7.2, 7.3, 13.2)\n- A typed projection is never presented as complete merely because it exists,\n  and never converts into deterministic readiness. Source prose stays verbatim\n  and authoritative; the projection's omissions are disclosed in band beside it\n  (the verified worked cases are creature:adult-black-dragon /data/actions/5 and\n  spell:fireball's missing typed area).\n- A must-consider candidate never disappears silently. Overflow is explicit,\n  names every dropped candidate and its routes, and fails the probe.\n- A record whose provenance is known false is never laundered into the packet as\n  authority (probe P12).\n- \"No capability bound\" is never presented as \"no mechanics\", \"irrelevant\", or\n  \"safe to ignore\"; capability availability is a positive bounded contract with\n  declared exclusions, joined at packet-build time, never inferred from typed\n  fields.\n- Packet presence is never reported as proof the model used the material. No\n  trustworthy used-versus-ignored signal exists; citations and tool-call\n  correlation are suggestive, never proof.\n- No campaign-rule or ruling schema, store, resolver, supersession lifecycle, or\n  house-rule subsystem is defined here; those stay with eshyra-jhpt. Campaign\n  material reaches the packet only through W11.\n- No universal discovery-completeness claim, no corpus-wide capability\n  inventory, and no aggregate readiness or coverage score.\n\nDEPENDENCIES\nW9 (shadow evidence and the recorded baseline) and W11 (the jhpt rule/ruling\nfields). Not parallel-safe with either.\n\nPERMANENT EVIDENCE\nScripted provider-neutral intervention tests through the ADR 0010 adapter seam,\nreporting M1-M12 against the recorded baseline, including every must-consider\noverflow occurrence and the probe it failed.\n\nREQUIRED NEXT STATE\nScripted provider-neutral intervention runs produce M1-M12 against a recorded\nbaseline; no must-consider overflow occurred, or every occurrence failed its\nprobe as designed.\n\nMATERIAL CHANGE: yes. This changes what the DM receives.\n",
+  "acceptance_criteria": "Packet intervention is exercised by scripted, provider-neutral tests through the\nexisting ADR 0010 adapter seam, never through one provider's agent loop. Source\nprose reaches the DM verbatim and remains the authoritative content; a typed\nprojection never replaces, suppresses, or overwrites it. Every partial\nprojection discloses its limits in band beside the projection, with the verified\ncreature:adult-black-dragon success-branch omission and the spell:fireball\nmissing typed area proven as cases; projection presence never converts into\ndeterministic readiness. Must-consider candidates never disappear silently:\nevery budget-driven drop emits an explicit overflow record naming the candidate\nand its routes and fails the probe, and related/exploratory drops each record a\nreason. Campaign rules and rulings appear with identity, kind, campaign scope,\nprovenance, effective position, and supersession status, obtained through W11\nfrom the eshyra-jhpt runtime, and the governing source material remains present\nand attributed beside them. Capability availability is a positive bounded\ncontract stating operation, required inputs, exclusions, revision/identity, and\nresidual DM interpretation, joined at packet-build time and never inferred from\ntyped-field presence; absence of a binding is presented as \"no capability\npositively selected\", never as \"no mechanics\" or \"safe to ignore\". A record with\nknown-false provenance is never surfaced as authority. M1-M12 are reported per\nprobe against the recorded shadow baseline, kept independent, and never\ncollapsed into a coverage, readiness, or completeness score. No report claims\nthat the model used the packet's material because it was present.",
+  "notes": "WORKSTREAM-TO-BEAD MAP (integrated transition design section 14, materialized\n2026-07-31). Workstream numbers in these descriptions resolve as follows; judge\nownership by this map and by the dependency tree, never by bead-ID prefix.\n\n  W1  stat-block lookup repair (B1)             eshyra-l3e5\n  W2  CLI adventure-resolver repair (B2)        eshyra-seoh\n  W3  strict campaign-stack repair (B3)         eshyra-6vpw\n  W4  source-authority repair (B4)              eshyra-o9bd.19.2.1\n  W5  item-readiness fail-open repair (B5)      eshyra-uiax\n  W6  durable finding registry                  eshyra-o9bd.19.1.15\n  W7  diagnostic fixture corpus                 eshyra-o9bd.19.9\n  W8  offline discovery stage harness           eshyra-o9bd.19.10\n  W9  runtime shadow trace integration          eshyra-o9bd.19.11\n  W10 context-packet intervention               eshyra-o9bd.19.12\n  W11 jhpt read-interface consumption           eshyra-o9bd.19.13\n  W12 campaign rules and ruling implementation  eshyra-jhpt.1-.9 (+ A1-A4)\n  W13 capability-contract normalization         eshyra-olc5.6\n  W14 artifact dispositions (sections 5.1-5.6)  eshyra-o9bd.19.14\n      re-freeze bar (section 5.9)               eshyra-o9bd.14, eshyra-2zyy\n  W15 held-out and live-play evaluation         eshyra-o9bd.19.15\n\nTRACEABILITY: every bead in the W7-W15 set was created 2026-07-31 to execute the\ndesign accepted as the deliverable of eshyra-o9bd.19.8 (PR #485, reviewed head\nafd113c7090378c3a9f4122f246a6c32602a5164, merge commit\n042ce119aa699f04f60a1885d471335f07745282). They are parented to the ACTIVE\ntransition epic (eshyra-o9bd.19, or eshyra-olc5 for W13) rather than to the\nclosed design bead, so lifecycle semantics stay honest; eshyra-o9bd.19.8 remains\nthe design authority and is referenced from each description.\n\nBOUNDARY THAT MUST NOT ERODE (design sections 8.4 and 14.3): campaign-rule\npersistence and ruling lifecycle do not move out of eshyra-jhpt under any of\nthese items. W11 consumes; it does not own. If the jhpt interface proves\ninsufficient, the correct response is an amendment or a child under eshyra-jhpt,\nnever a discovery-local store.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-31T23:40:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-31T23:48:42Z",
+  "labels": [
+    "architecture",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.12",
+      "depends_on_id": "eshyra-o9bd.19.11",
+      "type": "blocks",
+      "created_at": "2026-07-31T18:43:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.12",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-31T18:40:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.12",
+      "depends_on_id": "eshyra-o9bd.19.13",
+      "type": "blocks",
+      "created_at": "2026-07-31T18:44:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

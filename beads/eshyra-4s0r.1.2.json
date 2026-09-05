@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.1.2",
+  "title": "Record migration-first SQLite schema policy",
+  "description": "Write the design note or ADR for Eshyra's migration-first SQLite schema policy before implementation.\n\nThe decision should settle:\n- SQL migration files are the canonical executable schema source.\n- Whether schema.snapshot.sql exists and whether it is generated-only.\n- How schema_migrations records version, name, checksum, and applied_at.\n- Transaction policy for migrations.\n- How bootstrap/default rows are handled without becoming hidden schema repair.\n- How old meta.schema_version databases are adopted or rejected.\n- What developers must do when changing schema after this lands.\n\nAcceptance criteria:\n- A committed design note or ADR describes the migration-first policy.\n- The note explicitly rejects hand-maintained latest-schema DDL as executable authority.\n- The note describes the chosen legacy DB behavior.\n- The note includes enough workflow detail for future agent/coding sessions to add migrations correctly.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T03:05:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T03:18:53Z",
+  "started_at": "2026-06-26T03:12:35Z",
+  "closed_at": "2026-06-26T03:18:53Z",
+  "close_reason": "ADR 0015 (migration-first SQLite schema policy) written and delivered in PR #315. Settles all decision points: SQL files as sole schema authority, schema_migrations ledger, SHA-256 checksum drift policy, per-migration transactions, seed-as-migration, legacy adoption-at-15-vs-reset, generated-only snapshot, and the future-migration authoring workflow. Implementation is .1.3-.1.7.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.1.2",
+      "depends_on_id": "eshyra-4s0r.1",
+      "type": "parent-child",
+      "created_at": "2026-06-25T22:05:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

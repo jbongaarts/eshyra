@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9wi",
+  "title": "Share a required-field validation helper",
+  "description": "Tech-debt review finding. requireFields and empty-string validators are copy-pasted across scene.ts, session.ts, summary.ts, turnTrace.ts and mutateState.ts, each throwing its own error class. Extract a shared requireNonEmpty helper that takes the error class. Parent context: loreweaver-d4r.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:25:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:19Z",
+  "started_at": "2026-05-22T22:48:40Z",
+  "closed_at": "2026-05-22T22:52:44Z",
+  "close_reason": "Added shared requireNonEmpty helper and replaced duplicated required-field checks across session, scene, memory summary, turn trace, and mutate_state while preserving error classes/messages. Verification: focused Vitest passed (56 tests), core tsc build passed; npm run typecheck remains blocked by unrelated CLI TS errors recorded in comments. PR: https://github.com/jbongaarts/loreweaver/pull/46",
+  "comments": [
+    {
+      "id": "10ec6dc8-787b-525f-80fc-4af344faa12d",
+      "issue_id": "eshyra-9wi",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/validation.test.ts -> failed as expected because ../src/validation.js does not exist yet for shared requireNonEmpty helper.",
+      "created_at": "2026-05-22T22:49:43Z"
+    },
+    {
+      "id": "683b7d19-95d1-5a46-bb52-d04ceeee27a4",
+      "issue_id": "eshyra-9wi",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN/REFACTOR: npx vitest run packages/core/test/validation.test.ts packages/core/test/scene.test.ts packages/core/test/session.test.ts packages/core/test/memorySummary.test.ts packages/core/test/memoryTrace.test.ts packages/core/test/gameState.test.ts packages/core/test/tools.test.ts -> passed (56 tests). npx tsc --build packages/core/tsconfig.json --force -> passed. Duplicate validation-pattern rg returned no matches.",
+      "created_at": "2026-05-22T22:51:34Z"
+    },
+    {
+      "id": "ca5b51a6-f473-5c78-8b2f-9fa27ff7dffc",
+      "issue_id": "eshyra-9wi",
+      "author": "Joseph Bongaarts",
+      "text": "Verification caveat: npm run typecheck -> failed on unrelated packages/cli/src/index.ts:131 TS2554/TS2339. Focused verification and core build passed.",
+      "created_at": "2026-05-22T22:52:00Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 3
+}

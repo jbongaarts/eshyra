@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.9",
+  "title": "Surface required level-up choices and explicitly block unsupported ones",
+  "description": "Mirror requiredChoices.ts for leveling: surface the choices a level-up requires (ASI vs feat, subclass selection, spells learned/known/prepared, expertise) as explicit required-choice descriptors, reusing the existing 'choices keyed by generated descriptors' pattern from character creation. Crucially, level-up must FAIL CLOSED: where a granted level requires a choice the engine cannot yet apply deterministically — notably new cantrips/spells/slots/preparation — block it with an explicit reason rather than inferring or silently skipping it. Note the creation-time seam deliberately does NOT do this (the draft engine's mechanical-choice gate covers only skills/tools/equipment/languages, and the wizard treats empty spell input as finalizable); do not copy that lenient behavior into leveling.",
+  "acceptance_criteria": "Required level-up choices are enumerated from pack data; supported choices are applied deterministically; unsupported choices are blocked with a clear, explicit reason; tests cover a class that needs a subclass and one that needs a spell choice.",
+  "notes": "Groundwork landed in .8 (PR #340): detectLevelUpRequiredChoices(sheet) + LevelUpRequiredChoicesError in character/levelUpEngine.ts already detect & fail-closed-block subclass/ASI/fighting-style/expertise/class-feature/spell-learning levels (conservative denylist by feature-ref suffix + spell-capacity deltas). .9 replaces that denylist with structured required-choice descriptors (mirror requiredChoices.ts) + accepted choice inputs so these levels can actually complete; applyLevelUp should consume the resolved choices instead of unconditionally throwing.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:21:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T01:54:46Z",
+  "closed_at": "2026-06-28T02:00:12Z",
+  "close_reason": "Implemented structured level-up choice descriptors, deterministic subclass selection, and explicit unsupported blockers for spell/other choices.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.9",
+      "depends_on_id": "eshyra-lupf.8",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.9",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:21:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.9",
+      "depends_on_id": "eshyra-lupf.3",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

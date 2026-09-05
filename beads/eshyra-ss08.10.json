@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ss08.10",
+  "title": "Polish rules-pack story with final author edit",
+  "description": "Follow-up editorial refinement for the existing /rules-pack/ article originally implemented under eshyra-5f2w. The article is already good enough to ship and remain public long-term. This is optional P3 refinement, not a correctness blocker.\n\nThis task is deliberately split between agent work and human authorship. The agent may make only the narrow factual and wording corrections below, then must pause before creating a PR and explicitly ask Joseph to perform his own hand-edit pass on the article. The PR must not be created until Joseph confirms that his edits are complete. The intent is not to have an agent simulate Joseph's voice. The article has already had substantial model-assisted drafting and editing, and Joseph must perform the final personalization pass himself.\n\nRequired agent edits:\n1. Replace the overstatement approximately phrased as \"The pack never needed more data.\" Preserve the distinction that adding unstructured content was insufficient, richer semantic representation was necessary, and the deeper issue was semantic structure and execution ownership. Use wording such as \"The problem was not simply that the pack needed more data.\" or \"More data was not the answer by itself.\" Choose what fits the surrounding prose.\n2. Replace the imprecise statement approximately phrased as \"None of that survives as English.\" The source information does exist in prose and can be understood by a person or model. Clarify that the semantics are not deterministically enforceable while represented only as prose, using wording such as \"None of that is machine-enforceable while it exists only as English prose.\"\n3. Restore personal ownership of the importance judgment, preferring \"The second example is subtler, and I think more important.\"\n4. Rewrite the line that reads like an editing instruction, approximately \"One distinction here is easy to misread, so state it flatly.\" Use natural prose such as \"One distinction here is easy to misread, so it is worth stating flatly.\"\n5. Rewrite the awkward \"guessed at into\" construction while preserving fail-closed semantics. A suitable shape is: \"Prose that falls outside the reviewed shape contributes no semantics at all. The grammar fails closed rather than inventing something plausible.\"\n6. Remove the minimizing \"only\" from the playtest conclusion. Preserve the boundary that the compiler owns immutable pack semantics, live state remains separate, engine execution remains separate, and playtesting changed the project's understanding of how much semantic information the pack needed to provide. Prefer wording such as: \"What playtesting changed was our understanding of how much the pack itself had to say for those other layers to function.\"\n\nRequired human hand-edit checkpoint:\n1. The implementation agent creates a branch or worktree for the task and applies only the six narrow corrections.\n2. Run enough local verification to ensure the article still builds.\n3. Commit the agent-authored mechanical/editorial corrections if that makes the handoff cleaner.\n4. Stop before creating a PR.\n5. Tell Joseph the exact worktree path, the file to edit (site/src/rules-pack.html.tmpl), and a useful local preview or build command.\n6. Explicitly ask Joseph to edit the article directly and tell the agent when his personal prose pass is complete.\n7. Wait for Joseph's confirmation.\n8. After confirmation, inspect the diff, preserve Joseph's prose choices, and do not normalize his voice toward generic model prose. Make only obvious typo, HTML, or factual corrections if needed, preferably flagging substantive concerns instead of silently rewriting them.\n9. Commit Joseph's hand-edit changes separately from the agent edits where practical. Do not add an AI co-author trailer to a commit whose substantive prose changes were written by Joseph.\n10. Run full required verification, then create the PR only after the human checkpoint is complete.\n\nVoice guidance:\nPreserve Joseph's established authorial traits: analytical and curious; concrete examples before abstraction where useful; audience-calibrated jargon; dry humor that arises naturally; visible uncertainty where real; willingness to show how the conclusion was reached; and parenthetical precision where useful.\nUse we for shared work, discovery, accomplishment, and credit. Use I for personal judgment, doubt, criticism, uncertainty, mistakes, and negative responsibility. Reflect praise and absorb blame.\nNo em dashes and no literal em dash characters or &mdash;. Do not introduce repetitive \"not X, but Y\" constructions, artificial three-part cadence, excessive rhetorical questions, slogan-like conclusions, generic polished transitions, or paragraphs that over-explain examples. The goal is genuine authorship, not model imitation.\n\nTooltip verification:\nThe article contains a tooltip-style author aside that previously had clipping problems. During final verification check normal desktop width and narrow/mobile width. Confirm the entire tooltip remains readable, clips on neither side, creates no horizontal scrolling, reveals on keyboard focus, and retains accessible wiring. Make a CSS change only if a real presentation problem remains.\n\nAcceptance criteria:\n- All six identified wording issues are corrected.\n- No substantive architecture claim is changed.\n- Joseph is explicitly invited to perform the final hand-edit pass before PR creation.\n- No PR is created until Joseph confirms his hand edits are complete.\n- Joseph's resulting prose edits are preserved rather than rewritten by the agent.\n- The final article contains no em dashes.\n- Tooltip behavior is verified at desktop and narrow widths.\n- The site builds successfully.\n- No unsubstituted placeholders remain.\n- Homepage, article, and download links still work.\n- ZIP and checksum generation still work.\n- Repository-required checks pass.\n- No generated rules-pack records change.\n- No freeze manifests or audit artifacts change.\n- The final PR description distinguishes the narrow agent corrections from Joseph's hand-edit pass.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T04:54:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "labels": [
+    "docs",
+    "site",
+    "srd",
+    "storytelling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ss08.10",
+      "depends_on_id": "eshyra-5f2w",
+      "type": "relates-to",
+      "created_at": "2026-07-09T23:54:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ss08.10",
+      "depends_on_id": "eshyra-ss08",
+      "type": "parent-child",
+      "created_at": "2026-07-09T23:54:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

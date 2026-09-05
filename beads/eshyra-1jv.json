@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1jv",
+  "title": "CLI: feed priorBible + closedArcSummaries into arc-rollup bible extraction (06b.1-B)",
+  "description": "Wire `rollupCampaignArcIfReady` in `packages/cli/src/play.ts` to populate the new optional inputs added in 06b.1-A.\n\nParent: loreweaver-06b.1. Depends on 06b.1-A (the new input fields must exist).\n\nScope:\n- Before calling `extractBibleWithRetry`, read the existing campaign bible via `getCampaignBible(db, { campaignId })` and project it into a `CampaignBibleInput` (just the `.text` of each entry per list — `CampaignBibleRecord` uses rich `CampaignBibleEntry` objects, `extractCampaignBible` accepts the plain string-array shape).\n- Read closed-arc summaries via `listClosedArcSummaries(db, { campaignId })` (already exists in core; verify it is reachable from CLI — if not currently re-exported, add the export rather than reaching into `/internal` from production code).\n- Pass both into `extractBibleWithRetry`; widen its parameter type from `{ campaignId; recaps }` to include the new optional fields.\n- Skip empty inputs (don't pass an empty-entry `priorBible` — the extractor should still elide the section when nothing is known yet).\n- Add a deterministic test in `packages/cli/test/play.test.ts` that seeds a campaign with a prior bible row + a closed arc summary, triggers the arc-rollover threshold, and asserts that the fake model captured a `messages[0].content` containing both the `## previously known bible` block and the `## closed arc summaries` block.",
+  "design": "- Place the lookups inside `rollupCampaignArcIfReady` just after the recap fetch, before the bible call. Both lookups are cheap reads against the live SQLite DB; no need for caching.\n- Project `CampaignBibleRecord` -> `CampaignBibleInput` with a small inline helper or a `.map(e => e.text)` per list.\n- Widen `extractBibleWithRetry` to forward all of `ExtractCampaignBibleInput` so future fields don't require touching this shim again.",
+  "acceptance_criteria": "- Arc rollup in the CLI passes the prior bible (when non-empty) and closed arc summaries (when any closed arcs exist) into `extractCampaignBible`.\n- The first-ever arc rollup (no prior bible, no closed arcs) is byte-identical to today's behavior.\n- New CLI test verifies the wiring with a fake model + seeded DB rows.\n- `npm run typecheck` and `npm run test` pass.",
+  "notes": "PR #64 opened against main. Adds 1 new test (recording fake model that captures bible-call inputs across 2*N rollovers). Full suite: 457 passed, 2 skipped, 0 failed. Awaiting review.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T04:39:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:16Z",
+  "started_at": "2026-05-25T04:59:58Z",
+  "closed_at": "2026-05-25T05:14:10Z",
+  "close_reason": "Merged via PR #64 and PR #65",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-1jv",
+      "depends_on_id": "eshyra-5l8",
+      "type": "blocks",
+      "created_at": "2026-05-24T23:40:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

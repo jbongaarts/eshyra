@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jk4d",
+  "title": "Audit bundle overlay parity flags prepared-caster formula supersets as mismatches",
+  "description": "The generated D&D SRD audit bundle reports overlay-vs-pack parity mismatches for class:cleric, class:druid, class:paladin, and class:wizard data.spellPreparation. The actual pack data includes source-backed preparationFormula fields, while the parity report's expected overlay projection drops preparationFormula before comparing. This makes a successful migration to richer generated-pack facts appear as four mismatches in metadata.json and reports/overlay-vs-pack-parity.*. Update the audit-bundle parity projection or comparison so these source-backed formula supersets are treated as expected, and add/adjust coverage so future bundles report zero mismatches when generated pack facts intentionally extend the legacy overlay shape.",
+  "acceptance_criteria": "Fresh npm run audit-bundle:dnd5e-srd reports overlayVsPackParity.mismatchedFacts as 0 for the current prepared-caster spellPreparation facts, without removing the preparationFormula fields from class records.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T22:03:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T23:25:03Z",
+  "started_at": "2026-06-30T23:19:05Z",
+  "closed_at": "2026-06-30T23:25:03Z",
+  "close_reason": "Fixed spellPreparationFromOverlay to include preparationFormula; audit-bundle now reports 0 overlay mismatches",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jk4d",
+      "depends_on_id": "eshyra-ajpc",
+      "type": "parent-child",
+      "created_at": "2026-06-30T18:06:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

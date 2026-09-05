@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.2",
+  "title": "Complete class feature, feat, resource, and progression procedures",
+  "description": "Complete the deterministic procedures for class features and feats, and correct\nresource, reset, and progression modelling.\n\nRoot cause: resets are bound to keyword presence rather than to the governing\nclause, use-count and die/feature scaling are dropped from typed progression, and\nresources are emitted from mechanics-atom presence rather than from a source\nclause that establishes them.\n\nRequired membership — all of:\n- Wild Shape, Bardic Inspiration, Song of Rest, Ki and its three abilities,\n  Second Wind, Rage-related procedures, Lay on Hands, Deflect Missiles, Divine\n  Sense, Indomitable, Arcane Recovery, Natural Recovery, Circle Spells, Primeval\n  Awareness, and every feature surfaced by the four reviews;\n- remove phantom resources;\n- bind reset to the governing clause rather than to keyword presence\n  (Arcane Recovery and Natural Recovery reset wrongly today);\n- preserve use-count and die/feature scaling in typed progression\n  (Indomitable use scaling is wrong; Divine Sense use count is missing);\n- complete Grappler's pin action and lifecycle;\n- type fixed proficiency targets.\n\nCloses findings: SOL-003, F-03, F-04, F-05, F-06, F-07, F-10, F-12, F-15, F-24,\nCAP-002, CAP-005.",
+  "acceptance_criteria": "- Every deterministic feature/feat clause is option-local, level-aware, executable, and linked to required engine capability IDs.\n- Reset semantics derive from the governing source clause; a keyword match alone cannot produce a reset.\n- No phantom resource survives a corpus-wide predicate.\n- Use counts and scaling dice are typed per level, not described in prose.\n- Ki save DC and the three Ki abilities are typed, not swallowed by feature prose.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F1, F2, F5, F8, F10.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:39:31Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.2",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.2",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.2",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.2",
+      "depends_on_id": "eshyra-o9bd.19.3",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 2,
+  "comment_count": 0
+}

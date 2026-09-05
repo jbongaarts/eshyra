@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1a4",
+  "title": "Extract persistence codecs for JSON-backed tables",
+  "description": "Review finding from loreweaver-den. JSON parsing/stringifying and row-to-domain mapping are hand-rolled across memory, context assembly, and world query modules, increasing schema-change risk. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Shared codecs or row mappers reduce duplicated JSON parse/stringify logic; malformed JSON failures are typed or consistently handled; existing persistence and world tests still pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:45:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:03Z",
+  "started_at": "2026-05-22T02:24:50Z",
+  "closed_at": "2026-05-22T02:55:14Z",
+  "close_reason": "Completed in PRs #28 + #29 (merged) — jsonColumn codec adopted across all JSON-backed live-DB table columns",
+  "comments": [
+    {
+      "id": "594ec944-c890-5ed2-8086-df44ed85e6ee",
+      "issue_id": "eshyra-1a4",
+      "author": "Joseph Bongaarts",
+      "text": "Progress (PR for work/loreweaver-1a4): established persistence/jsonColumn.ts (typed jsonColumn<T> encode/decode codec) and migrated memory/turnTrace.ts off its ad-hoc stringifyTraceJson/parseTraceJson helpers. Remaining adoption for full close: memory/summary.ts (scene/session/arc summaries + campaign bible), world/forkCampaign.ts, persistence/checkpoint, and folding state/mutateState.ts serializeJsonValue into the shared codec. Issue stays open until those are migrated.",
+      "created_at": "2026-05-22T02:30:58Z"
+    },
+    {
+      "id": "16358810-082f-506c-bcb0-97b13d0bb4d5",
+      "issue_id": "eshyra-1a4",
+      "author": "Joseph Bongaarts",
+      "text": "Progress (2nd PR, work/loreweaver-1a4): migrated memory/summary.ts (18 sites -> 9 per-column jsonColumn codecs). The memory subsystem (turn_trace + scene/session/arc summaries + campaign_bible) is now fully on the codec. Still remaining: module_*.data_json (forkCampaign write / worldQuery read), mutate_state value+JSON columns (serializeJsonValue uses MutateStateError), checkpoint snapshot serializer (blob-aware). Those need per-site decisions.",
+      "created_at": "2026-05-22T02:44:13Z"
+    },
+    {
+      "id": "b847f40a-8493-57a8-84d6-ba76114fd195",
+      "issue_id": "eshyra-1a4",
+      "author": "Joseph Bongaarts",
+      "text": "Completed on work/loreweaver-1a4 (PR #29): jsonColumn codec now adopted across every JSON-backed live-DB table column - turn_trace (PR #28), the four memory-summary tables, module_*, overlay_facts, plot_flags, character, inventory. mutateState keeps its MutateStateError contract by wrapping the codec. Checkpoint snapshot serializer deliberately excluded (blob-aware canonical Dolt snapshot, not a table-column codec). Issue closes when PR #29 merges.",
+      "created_at": "2026-05-22T02:52:49Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 3
+}

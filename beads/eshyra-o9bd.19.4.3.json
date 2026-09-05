@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.3",
+  "title": "Complete creature saves, outcomes, lifecycle, variants, and legendary economy",
+  "description": "Complete the save, outcome, lifecycle, variant, and legendary-economy semantics\nfor all 317 creatures.\n\nRequired membership — all of:\n- every creature half-damage-on-success omission (plan states 79; a coarse\n  whole-record scan of main @4384f25 gives 77 — the exact membership MUST be\n  re-derived by the committed A2 clause predicate, not copied);\n- multiple saves per entry, and save-ability alternatives (only the first save is\n  typed today);\n- trigger, duration, repeat, immunity, recovery, escape, secondary damage/check,\n  and termination semantics;\n- legendary-action budget and per-option costs;\n- Frightful Presence, breath geometry, transformations, summoning, diseases,\n  wounds, maximum-stat changes, and variant families;\n- Avatar of Death and the inline stat-block gaps;\n- conditional and rider damage typing — 14 of 771 creature damage clauses carry\n  untyped riders (sneak attack extra dice, elk and hobgoblin riders, infernal\n  wound, vampire sunlight 20 radiant) despite the readiness report claiming\n  \"mechanical prose: 0\";\n- exhaustive clause reconciliation beyond the earlier sampled surfaces.\n\nCloses findings: F-25, F-26, F-32, F-33, SOL-006, CAP-004, Fable F3, and the\nOpus residual \"unverified effects semantics\".",
+  "acceptance_criteria": "- Zero creature clauses print a success branch without typing it, proven by the shared A2 predicate.\n- Multi-save entries type every save, and ability alternatives are represented as alternatives (e.g. Bulette).\n- Legendary action budgets and per-option costs are typed and executable.\n- Rider and ongoing damage are typed; the readiness report can no longer claim \"mechanical prose: 0\" while untyped riders exist.\n- Every creature clause is reconciled, not sampled — the coverage-depth matrix records creature as semantically reviewed.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F2, F6, F8, F9.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:39:47Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.3",
+      "depends_on_id": "eshyra-o9bd.19.4",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.3",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.3",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

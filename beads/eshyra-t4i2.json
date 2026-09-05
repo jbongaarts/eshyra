@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-t4i2",
+  "title": "Installer: fail-closed checksums, release gating, functional smoke (eshyra-4kdt follow-up)",
+  "description": "Make installer checksum verification fail closed when checksum data is present (POSIX + PowerShell); gate tag release publication on validate-installer-scripts; add functional POSIX installer smoke against locally built release assets; add regression checks for checksum failure cases.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-17T22:51:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-17T23:02:40Z",
+  "started_at": "2026-06-17T22:51:37Z",
+  "closed_at": "2026-06-17T23:02:40Z",
+  "close_reason": "Implemented fail-closed checksums (sh+ps1), gated release job on validate-installer-scripts+installer-smoke, added functional POSIX smoke + regression tests, fixed symlinked-launcher bug. All gates pass: check, test (1838 pass), release:build/validate/checksums, smoke.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

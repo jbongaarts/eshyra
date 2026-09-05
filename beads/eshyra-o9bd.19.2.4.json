@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.4",
+  "title": "Add canonical relationships, aliases, topic indexes, and non-exact lookup",
+  "description": "Make the corpus discoverable by the primary DM and by deterministic tools without\nrequiring exact kind + normalized title.\n\nRoot cause: lookup is exact-key based, duplicate display names are unqualified,\nand options have no globally resolvable identity, so a tool that knows the\nconcept but not the key cannot find the canonical rule.\n\nRequired membership — all of:\n- qualified names for duplicate feature names;\n- canonical owner links for duplicate rule concepts;\n- an option index, or globally resolvable option identities;\n- aliases, tags, topics, family/group indexes, and relationship-aware lookup;\n- discoverability for concepts whose source title differs from common query\n  language.\n\nCloses findings: F-14, F-22, CAP-011, Fable F8, and the discoverable dimension of\nSOL-001.",
+  "acceptance_criteria": "- The primary DM and deterministic tools can find canonical records without knowing the exact kind and normalized title.\n- Every duplicate display name resolves to a qualified, unambiguous identity.\n- Every option (fighting style, invocation, metamagic, pact boon, Hunter option, variant) has a globally resolvable identifier usable as a lookup key.\n- Relationship-aware lookup returns the canonical owner for duplicated rule concepts.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:21:48Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.1.4",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

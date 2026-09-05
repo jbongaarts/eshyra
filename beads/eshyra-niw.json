@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-niw",
+  "title": "Review MVP code for correctness risks",
+  "description": "Run a focused correctness review across core and CLI. Prioritize persistence invariants, transaction boundaries, session close/resume behavior, checkpoint failure modes, model/tool orchestration, config validation, and tests that could allow state corruption or player-visible regressions. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Findings are recorded with file/line references; confirmed bugs are filed as separate beads with repro notes and severity; if no correctness bugs are found, the review bead records scope reviewed, commands run, and residual risks.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:11:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:45Z",
+  "started_at": "2026-05-21T04:37:09Z",
+  "closed_at": "2026-05-21T04:47:04Z",
+  "close_reason": "Correctness review completed by parallel subagent; findings recorded with file references, repro notes, verification evidence, and follow-up beads loreweaver-hu0 loreweaver-fgk loreweaver-c1v loreweaver-67y loreweaver-6cp loreweaver-aq1 loreweaver-kf8.",
+  "comments": [
+    {
+      "id": "5174a70e-6364-5438-97d0-2e26c39c46e4",
+      "issue_id": "eshyra-niw",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for MVP correctness review:\n\nAssessment: Not ready for correctness.\n\nCritical:\n- packages/core/src/state/mutateState.ts:160,169,172,202: raw model-supplied values can corrupt typed canonical state fields; SQLite accepts text in numeric columns.\n- packages/core/src/sessionClose.ts:48,65,84: closeSessionGracefully can write rollups before proving the session exists.\n- packages/core/src/sessionClose.ts:49,55,65,73,84: graceful close is not atomic and can leave session/scene/recap in partial state.\n\nImportant:\n- Checkpoint failure after close is not retryable through the same API.\n- worldQuery overlay prefix LIKE is not escaped for _/% ids.\n- Scene APIs allow scenes/logs for nonexistent or closed sessions.\n- Module pack validation misses several encounter/NPC cross references.\n\nMinor:\n- Checkpoint restore is not transactional/destination-safe.\n\nFollow-up beads created:\n- loreweaver-hu0, loreweaver-fgk, loreweaver-c1v, loreweaver-67y, loreweaver-6cp, loreweaver-aq1, loreweaver-kf8.\n\nScope/verification: reviewer inspected persistence/schema, state mutation, sessions, scenes, orchestrator/tools, context, checkpointing, world validation/query, config, CLI lifecycle, and tests. Reviewer ran targeted repros and npm run test: 35 test files passed, 195 tests passed, 1 skipped. Worktree remained clean.\r",
+      "created_at": "2026-05-21T04:46:24Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

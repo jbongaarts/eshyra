@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6",
+  "title": "Prove closure and re-freeze without repeat findings",
+  "description": "Phase 3. Migrate the full corpus through the clause model, add permanent\nregression evidence for every finding, and pass an independent no-repeat review\nbefore re-freeze.\n\nOnly after this epic closes may eshyra-o9bd.14 (regenerate + re-freeze) and\neshyra-2zyy (restore SRD thaw-note CI gating) proceed.",
+  "acceptance_criteria": "- The full corpus is migrated and reclassified, with exact memberships reconciled rather than sampled.\n- Every finding has a checked-in registry row and a committed regression predicate.\n- Independent max-level reviews report zero repeat findings.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:23:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:23:08Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:23:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

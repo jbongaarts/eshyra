@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-60z",
+  "title": "Vendor SRD 5.1 PDF source artifact and record provenance",
+  "description": "Vendor the approved D&D SRD 5.1 PDF/source artifact so D&D importer coverage and exact-name validation can be derived from a pinned authoritative source rather than hand-curated lists. Record source provenance, license metadata, retrieval details, and checksum information. Keep this bead focused on source artifact policy and deterministic source availability; do not expand parser behavior or implement the exact creature name-set check here.",
+  "acceptance_criteria": "- Approved SRD 5.1 PDF/source artifact is placed under packages/core/sources/dnd5e-srd-5.1/ or the repo's chosen deterministic source-artifact location.\n- Source README/manifest records exact source URL, license, version, retrieval date, and checksum/hash.\n- Importer/source tooling can locate the vendored artifact deterministically.\n- Documentation explains why the PDF is vendored and how it supports coverage/audit validation.\n- No parser behavior is expanded except minimal path/source wiring needed to recognize the vendored artifact.\n- No hand-curated monster list is added.\n- npm run check and relevant tests pass.",
+  "notes": "Review round 1 addressed in commit e34d005 / PR #127: (1) attribution text replaced with verbatim SRD 5.1 PDF preamble quote in manifest.json (attribution.text) and source-dir README; (2) sourceDate corrected from 2023-01-12 to 2023-01-27 (Wizards' CC-BY-4.0 release announcement) with sourceDateNote pinning the field's semantics; (3) packages/core/test/srdSourceArtifact.test.ts added — reads manifest, stats PDF, asserts size + SHA-256 match. Verified failure mode by mutating the pinned hash. License URL upgraded to /legalcode to match preamble. Follow-up bd bnb tracks aligning the pack-level attributionText with the verbatim preamble (separate scope: importer emit change).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-01T04:28:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-01T05:10:19Z",
+  "closed_at": "2026-06-01T05:58:46Z",
+  "close_reason": "PR #127 merged. Vendored SRD 5.1 PDF with SHA-256 pin, source manifest, README, and srdSourceArtifact test. Review fixes (verbatim date, legalcode URL, attribution object) landed in same PR.",
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.7",
+  "title": "Equipment-resolution audit accepts unvalidated named-item candidates",
+  "description": "Found in PR #380 review (eshyra-erf5.3.3's srdEquipmentResolutionAudit.ts).\n\nnamedItemCandidates(key) in packages/core/src/rules/srdEquipmentResolutionAudit.ts\nsimply returns `[key]` without checking that `key` exists in the equipment\ncatalog. PROFICIENCY_PHRASE_RESOLVERS uses this helper for every named\nsingle-item weapon/tool proficiency phrase (hand crossbows, Thieves' tools,\nHerbalism kit, Daggers, etc.). assertEquipmentResolution() only checks\n`candidateKeys.length > 0`, so a typo in one of these hard-coded keys (e.g.\n`equipment:crossbow-hnad` instead of `equipment:crossbow-hand`) would still\npass the audit because it is a non-empty one-element array.\n\nThis weakens eshyra-erf5.3.3's claim: the audit proves broad filters\n(weapon category/range, armor type, equipmentGroup) resolve against actual\nequipment records, but for named single-item phrases it currently proves\nonly that a hard-coded string is non-empty, not that it exists in the\ncatalog.\n\nAcceptance criteria:\n- Either make namedItemCandidates() filter against the actual equipment\n  catalog (only return the key if a record with that key/kind exists), or\n  add a second assertion in assertEquipmentResolution() (or a dedicated\n  check) that every returned candidateKey exists in the equipment catalog.\n- Add a regression test where a named proficiency resolver points at a\n  missing/misspelled equipment key and assert that resolution now fails\n  (currently it would silently pass).\n\nLikely files: packages/core/src/rules/srdEquipmentResolutionAudit.ts,\npackages/core/test/srdEquipmentResolutionAudit.test.ts.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T21:39:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T22:08:11Z",
+  "started_at": "2026-07-01T21:44:15Z",
+  "closed_at": "2026-07-01T22:08:11Z",
+  "close_reason": "namedItemCandidates() now validates keys against the equipment catalog; regression test added for a missing/misspelled named key. PR #381.",
+  "labels": [
+    "audit",
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.7",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T16:39:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

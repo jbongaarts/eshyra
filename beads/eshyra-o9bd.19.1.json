@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1",
+  "title": "Build a clause-complete semantic compiler and truthful readiness gates",
+  "description": "Path A of the plan's Phase 1. Replace atom-presence readiness with a\nsource-clause semantic IR, shared cross-kind mechanic primitives, bidirectional\nprovenance, in-band execution readiness, and audits rebuilt on the clause model.\n\nRoot cause this epic addresses: the pipeline is strongest at extracting records\nand preserving prose, but treats a record containing ANY mechanics atom (a save,\na damage expression, a condition mention, a reset, a table link) as modeled. A\nfeature, spell, creature entry, or hazard therefore appears covered while its\nprocedure is mostly prose.\n\nExecution order within the epic: A1 and A3 may run in parallel once stable clause\nand source identities are agreed; A2 implements against A1; A4 stabilizes with\nE0; A5 lands last.",
+  "acceptance_criteria": "- No record family can report complete from mechanics-atom presence.\n- Captured / projected / engine-supported / discoverable are separately represented in pack data and in reports.\n- Recurring mechanics are parsed once by shared primitives, not re-parsed per record kind.\n- Coverage is proven in both directions (source->output and output->source) at field level.\n- The bundle emits a coverage-depth matrix proving semantic — not sampled — review for every mechanics-bearing family.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:21:16Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

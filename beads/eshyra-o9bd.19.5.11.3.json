@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.11.3",
+  "title": "engine:F10 — Retained asset creation and provenance ledger semantics",
+  "description": "Create and retain canonical inventory, property, XP, and other source-defined\nassets with auditable ownership and provenance.\n\nROOT CAUSE: character progression and inventory structures exist, but there is\nno owner for the full retained-asset creation and provenance contract. The\ncurrent engine:F10 family owns the currency and downtime surface; asset CREATION\nwith retained provenance crosses that boundary. An asset that appears in\ninventory without a recorded origin cannot be audited, replayed, or reconciled\nagainst canon — which is the same class of defect as the pack's fabricated\nstarting-wealth table, expressed at runtime instead of at compile time.\n\nLEDGER ROW: capabilityId engine:F10, primitive\n\"retained-inventory-property-xp-asset-creation\".\nPack membership: records whose data.executionReadiness hooks qualify as\nengine:F10 with retained asset creation, inventory, property, or XP semantics.\nSource omissions are compared separately.\n\nCROSSES: engine:F5 (item-instance state) and engine:F4 (spell-driven asset\ncreation — coordinate with the spellbook-copy primitive under eshyra-o9bd.19.5.5).\nengine:F10 owns it.\n\nREQUIRED INVARIANT: every retained asset records how it came to exist. Creation\nwithout provenance is not permitted, and provenance is auditable after the fact\nrather than reconstructed.\n\nPROVENANCE: this bead exists because the bootstrap capability ledger\n(eshyra-o9bd.19.5.1, PR #477) found this primitive had NO owner in the current\nfamily decomposition. It was recorded there as ownershipStatus=proposed-new-bead;\nthis bead is that proposal made real, and the ledger row now points here.\n\nCROSS-FAMILY PRIMITIVE. The owning family is named in the title, but the\nrequirement crosses family boundaries. Per the authorization criteria on\neshyra-olc5.1, a cross-family primitive is named ONCE and assigned ONE owning\nfamily — do not re-implement it under the families it touches. Coordinate\ninstead.\n\nSEQUENCING: this bead is blocked by its family's decomposition task and must not\nbe started before it. Decomposition does not RE-CREATE this bead; it reconciles\nagainst it, decides whether the primitive splits further, and names the\nconformance scenarios. Duplicating it under a sibling family is the failure mode\nto avoid.\n\nGREEN BAR: the nine-point definition on eshyra-o9bd.19 applies — this primitive\nis not done until a provider-neutral implementation exists, reference-engine\nconformance tests exercise the committed PACK representation (not a fixture),\ntool exposure and state mutation are correct, unsupported input fails CLOSED,\nand replay / deterministic equivalence holds where applicable.\n\nCOUNT HYGIENE: membership comes from the ledger's generated query for this\nprimitive. Never hand-copy a hook count into an acceptance test.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "acceptance_criteria": "\n• Every retained asset — inventory, property, XP, and source-defined assets — records auditable creation provenance.\n• Asset creation without provenance is unreachable, not merely discouraged.\n• Provenance survives save/restore and is correct under replay.\n• Conformance tests drive creation from the committed pack representation.\n• Unsupported input fails CLOSED rather than creating an unprovenanced asset.\n• The engine:F10 ledger membership query returns zero unowned clauses for this primitive.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T00:35:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T00:35:20Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.11.3",
+      "depends_on_id": "eshyra-o9bd.19.5.11",
+      "type": "parent-child",
+      "created_at": "2026-07-25T19:35:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.11.3",
+      "depends_on_id": "eshyra-o9bd.19.5.11.1",
+      "type": "blocks",
+      "created_at": "2026-07-25T19:35:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

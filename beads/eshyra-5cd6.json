@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5cd6",
+  "title": "Reduce GitHub Release CLI artifact size",
+  "description": "The self-contained release artifact (eshyra-0p8u) is ~423 MB unpacked on linux-x64, dominated by the bundled @anthropic-ai Agent SDK (~255 MB, which vendors the Claude Code executable + platform binaries) and the pinned Node runtime (~118 MB). Investigate trimming: prune unused vendored binaries/locales from the Agent SDK bundle, drop dev-ish files from production deps, or compress more aggressively. Must not break the bundled-Node run path or the validation guards. Does not change the artifact format decision (eshyra-upef).",
+  "acceptance_criteria": "A measured size reduction is achieved or a documented rationale explains why the bundle cannot shrink. The artifact still passes scripts/release/validate-release-artifact.mjs on all target platforms. No package private guard is touched and no npm publish metadata is added.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-17T05:01:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-02T01:58:23Z",
+  "started_at": "2026-07-02T01:46:09Z",
+  "closed_at": "2026-07-02T01:58:23Z",
+  "close_reason": "Implemented release artifact pruning and stronger POSIX gzip compression. Local claude/linux-x64 measurement: unpacked 422,093,541 -> 397,120,692 bytes (25.0 MB saved); archive 133,423,934 -> 128,168,728 bytes (5.3 MB, 3.9% saved). Validated with npm run release:validate on rebuilt artifact; repo gates passed: npm run check, npm run typecheck, npm run test.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-5cd6",
+      "depends_on_id": "eshyra-0p8u",
+      "type": "blocks",
+      "created_at": "2026-06-17T00:02:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

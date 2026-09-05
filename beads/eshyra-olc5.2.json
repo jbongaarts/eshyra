@@ -1,0 +1,118 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.2",
+  "title": "Certify the deterministic reference engine for SRD re-freeze",
+  "description": "The gate that permits the SRD pack to be re-frozen. Depends on all ten family\ncertification tasks and on the authoritative capability ledger\n(eshyra-o9bd.19.5.12). Blocks eshyra-o9bd.19.6.1, and therefore the whole\nclosure chain down to eshyra-o9bd.14.\n\nWHY THIS GATES THE FREEZE: where structured pack data is a direct input to\ndeterministic execution, the pack contract and the reference engine are one\nco-designed system. Implementation pressure exposes missing distinctions,\ninvalid abstractions, and fields that look complete but cannot actually drive\nexecution. A pack frozen before its reference implementation would preserve a\nseparation that does not exist in practice. Precedent: the unfinished\nhouse-rules section was previously frozen ahead of its consumer, and that is the\npattern being corrected here.\n\nCertify:\n\n  * Authoritative-ledger count of unowned capabilities: ZERO.\n  * Deterministic engine-pending clauses: ZERO.\n  * Stale or falsely green clauses: ZERO.\n  * Every implemented capability is reached by at least one REAL pack-driven\n    test, not a fixture.\n  * All eshyra-2n1t discrepancies resolved per the four-way classification.\n  * The only remaining non-executable clauses are the four approved categories,\n    each represented in-band with its alternatives / campaign-ruling requirement\n    and failing CLOSED.\n\nSCOPE BOUNDARY: the house-rule and source-ambiguity boundary is different in\nkind and is NOT expected to be executed by the base deterministic engine. It\nmust be explicitly represented and fail closed, not implemented.\n\n*** GREEN DEFINITION REVISED (2026-07-25) — SUPERSEDES the 8-point version ***\nDECISION: where structured pack data is a DIRECT INPUT to deterministic\nexecution, the pack contract and the reference engine are ONE co-designed\nsystem. The pack defines what the engine must execute; the reference engine\nproves the representation is sufficient and unambiguous. Freezing the pack\nfirst would preserve a separation that does not exist in practice.\n\nA deterministic clause that feeds engine execution is GREEN only when all nine\nhold:\n  1. Complete source-clause identification.\n  2. Clause-complete structured representation.\n  3. Complete field provenance.\n  4. Explicit capability requirements.\n  5. A provider-neutral engine implementation exists.\n  6. Reference-engine conformance tests exercise the PACK representation.\n  7. Correct tool exposure and state mutation.\n  8. Fail-closed behavior for unsupported input.\n  9. Successful replay / deterministic equivalence where applicable.\n\nA clause is NOT green merely because the pack appears to contain enough data;\nthe reference implementation must demonstrate that it actually does. A\nrepresentation reference that merely RESOLVES to an existing object is not\ngreen — the Opus amended magic-item pass proved reference integrity but\nexplicitly did NOT prove semantic appropriateness of free-form effects.\n\nAT RE-FREEZE THERE MUST BE ZERO ENGINE-PENDING DETERMINISTIC CLAUSES. The only\npermissible non-green clauses are four approved categories:\n  * genuine source ambiguity routed to campaign rulings;\n  * intentionally model-adjudicated material;\n  * external content unavailable in the SRD;\n  * explicitly deferred non-deterministic house-rule behavior.\nEach must be explicitly represented in-band, carry its alternatives and\ncampaign-ruling requirement, and fail CLOSED.\n\nWHY (audit evidence): the 2026-07-24 findings were structures that looked\nplausible in isolation but failed as executable inputs — alternative damage\nmodes stored as parallel damage, recharge triggers read as reset periods,\npartial saves treated as complete, legendary actions with no budget or cost,\noption mechanics hoisted onto parent features, typed records missing\nbranching/timing/termination. A completed reference implementation forces these\nto surface: a dragon-breath scenario cannot pass without half-damage handling;\na legendary-creature scenario cannot pass without a budget; a versatile attack\ncannot execute without a discriminated alternative.\n\nCONSEQUENCE FOR SEQUENCING: eshyra-olc5 is no longer a downstream project that\nmay stay open after eshyra-o9bd closes. Its reference-implementation\ncertification gates eshyra-o9bd.19.6.1 and therefore the formal re-freeze in\neshyra-o9bd.14.",
+  "acceptance_criteria": "\n• Unowned capabilities in the authoritative ledger: zero.\n• Deterministic engine-pending clauses: zero.\n• Stale or falsely green clauses: zero.\n• Every implemented capability exercised by at least one pack-driven test.\n• eshyra-2n1t discrepancies fully resolved.\n• Remaining non-executable clauses fall only into the four approved categories, in-band and fail-closed.\n• All ten family certification tasks closed.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T17:37:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:37:14Z",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-07-25T12:37:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.6.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.12",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:38:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.2.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.8.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.10.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.9.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.3.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.5.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.7.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.11.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.4.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 11,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-8kt",
+  "title": "E8: opt-in managed dolt provisioner ('loreweaver dolt install') — APPROVAL GATED",
+  "description": "Follow-up to loreweaver-a15 (resolver seam already shipped). Build the opt-in provisioner that auto-installs dolt into the Loreweaver-managed cache dir (managedDoltDir()) so local/power users get zero-touch checkpointing without a manual install.\n\nSCOPE: an explicit user-invoked command (e.g. 'loreweaver dolt install'), NOT an npm postinstall and NOT auto-triggered from any code path. Downloads the PINNED dolt release for the current platform/arch from github.com/dolthub/dolt/releases, verifies a checksum (and signature if dolthub publishes one), unpacks into managedDoltDir(), chmod +x. resolveDoltBinary() already prefers that path, so no other wiring needed.\n\nSECURITY/REVIEW (why this is approval-gated, do NOT implement without sign-off): fetches and makes executable a third-party binary. Requirements: version pin + checksum verification mandatory; HTTPS only; clear provenance shown to the user; offline/air-gap path stays LOREWEAVER_DOLT_BIN; no silent/background download; documented in deploy docs. ADR-0001: hosted web/PWA bakes dolt into the server image and does not use this path.",
+  "design": "Authoritative: dolt has NO checksum sidecar assets => sha256 pinned in source, verified FAIL-CLOSED (sentinel 'UNPINNED' => refuse). Pinned dolt v2.0.3. Assets: dolt-{darwin,linux}-{amd64,arm64}.tar.gz, dolt-windows-amd64.zip.\n\nCore (UI-agnostic): doltProvision.ts. ensureDoltAvailable(opts) decision tree implementing the user's 3 rules: (1) resolveDoltBinary() first — if dolt already present anywhere, return it, NO prompt, NO install; (2) confirm() is REQUIRED and awaited before any download/install; (3) if LOREWEAVER_DOLT_BIN is set but missing, NEVER auto-install — prompt with reason='explicit-path-missing', decline => actionable DoltUnavailableError (fix path / re-run & approve), never silent. Else reason='not-found'. provisionDolt(): pinned URL by platform/arch, https download, sha256 verify (fail-closed), tar -xf extract, place in managedDoltDir, chmod. download/extract injectable for offline tests; real defaults.\n\nCLI: 'loreweaver dolt install' wires a readline Y/n confirm (default NO; non-TTY => NO, never hangs). Already-present => prints path, no prompt.\n\nSecurity: pinned version+sha256, HTTPS, no npm postinstall, no silent/background fetch, explicit user yes per install, air-gap stays LOREWEAVER_DOLT_BIN. Hosted/PWA bakes dolt in image, does not use this path.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T03:12:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:20Z",
+  "started_at": "2026-05-19T03:22:40Z",
+  "closed_at": "2026-05-19T03:28:00Z",
+  "close_reason": "Implemented: ensureDoltAvailable() decision tree (already-present=>no prompt; confirm always awaited pre-install; LOREWEAVER_DOLT_BIN set-but-missing never auto-installs, asks, safe-declines), provisionDolt() pinned dolt v2.0.3 with REAL per-platform sha256 (computed from official assets; no dolt checksum sidecars exist) fail-closed before extract, CLI 'loreweaver dolt install' with default-NO/non-TTY-declines confirm. 14 new tests; full suite 50 passed/5 skipped; typecheck 0. Trust anchor verified (pinned sha256 == real asset sha256). Residual real on-host download+extract execution is gated and folds into loreweaver-d7y.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

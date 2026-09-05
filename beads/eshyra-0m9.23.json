@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.23",
+  "title": "Expand SRD table coverage beyond current imported tables",
+  "description": "Problem\r\nOnly a small number of table records are emitted even though the SRD source contains many mechanically meaningful tables.\r\n\r\nEvidence from the 2026-06-07 audit\r\nThe canonical pack contains only 8 table records, while many source tables remain uncaptured, including but not limited to:\r\n- Character Advancement\r\n- Multiclassing prerequisites/proficiencies\r\n- Languages\r\n- Services and spellcasting services\r\n- Magic item and monster rules tables\r\n- Class/subclass-related tables that should be either structured or explicitly excluded from generic table import\r\n\r\nRequired behavior\r\n- Decide which source tables should become standalone table records versus structured fields inside other records.\r\n- Emit standalone table records for mechanically meaningful tables not otherwise captured.\r\n- Add coverage so new omissions are visible.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "notes": "PR #185 (https://github.com/jbongaarts/eshyra/pull/185) opened, awaiting review. Emitted the 5 Beyond-1st-Level table records (Character Advancement, Multiclassing Prerequisites/Proficiencies, Standard/Exotic Languages); table count 8->13. Remaining source tables (Standard Exchange Rates, Trade Goods, Lifestyle Expenses, Food/Drink/Lodging, Services) registered in SRD_5_1_SOURCE_TABLE_GAPS so the audit reports them as missing-coverage; deferred to eshyra-0m9.19. Do not close until PR merges.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-09T04:14:24Z",
+  "started_at": "2026-06-09T03:47:36Z",
+  "closed_at": "2026-06-09T04:14:24Z",
+  "close_reason": "Imported the 5 Beyond-1st-Level SRD tables (table count 8->13) via PR #185, squash-merged to main. Remaining money/downtime source tables tracked in SRD_5_1_SOURCE_TABLE_GAPS and deferred to eshyra-0m9.19.",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.23",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

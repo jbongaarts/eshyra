@@ -1,0 +1,82 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.13",
+  "title": "SRD 5.1 importer: advanced reference-table extraction",
+  "description": "Follow-up to loreweaver-0m9.5.12. Add stronger PDF table reconstruction for SRD 5.1 tables that resist the simple anchor plus row-regex parser, especially treasure/hoard tables and other wide or nested tables where pdfjs emits columns as interleaved text.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:49:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T21:45:34Z",
+  "closed_at": "2026-05-28T21:57:31Z",
+  "close_reason": "Implemented SRD 5.1 treasure table column-block reconstruction; verification passed; TDD evidence recorded.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.13",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:49:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "e5c679b3-0437-57d4-b400-b5a3157af057",
+      "issue_id": "eshyra-0m9.5.13",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline in .worktrees/loreweaver-0m9-5-13 on branch work/loreweaver-0m9-5-13: npm install succeeded with Node 24 engine warnings; npm run typecheck passed; npm run test passed (750 passed, 3 skipped); npm run check passed.",
+      "created_at": "2026-05-28T21:47:32Z"
+    },
+    {
+      "id": "71664d0c-51f1-5b62-be22-22d923a2f8d0",
+      "issue_id": "eshyra-0m9.5.13",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 79ab3c3e6f32bbdb9c8bab893bc765488ef0f4dc..working-tree: Assessment: Ready to verify. Critical: none. Important: none. Minor: none. Follow-up: existing loreweaver-0m9.6 covers full-PDF coverage/audit tests; no new follow-up needed for this diff.",
+      "created_at": "2026-05-28T21:56:48Z"
+    },
+    {
+      "id": "a1f6556b-ce66-5d7f-83ba-2696fd5f48e4",
+      "issue_id": "eshyra-0m9.5.13",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> passed; npm run test -> passed (67 files passed, 2 skipped; 751 tests passed, 3 skipped); npm run check -> passed. TDD evidence recorded in loreweaver-0m9.5.13.1, loreweaver-0m9.5.13.3, and loreweaver-0m9.5.13.2.",
+      "created_at": "2026-05-28T21:57:30Z"
+    },
+    {
+      "id": "6a15aa37-1488-59fe-b4ec-a3ee61b24eae",
+      "issue_id": "eshyra-0m9.5.13",
+      "author": "Joseph Bongaarts",
+      "text": "Beads preflight: bd preflight printed the default non-applicable Go/Nix checklist for this TypeScript repo; applicable gates already run via npm run typecheck/test/check. bd stale -> no stale issues. bd orphans -> existing parent epic loreweaver-0m9.5. bd list --status=in_progress -> existing parent epic loreweaver-0m9.5 plus unrelated loreweaver-0u2; no branch-specific hygiene blocker.",
+      "created_at": "2026-05-28T21:57:58Z"
+    },
+    {
+      "id": "84082557-a182-5609-8a7b-ec2703b2e36c",
+      "issue_id": "eshyra-0m9.5.13",
+      "author": "Joseph Bongaarts",
+      "text": "PR: https://github.com/jbongaarts/loreweaver/pull/101. Remote checks via gh pr checks 101 --watch -> passing: Analyze (actions), Analyze (javascript-typescript), CodeQL, and build-test.",
+      "created_at": "2026-05-28T22:01:16Z"
+    },
+    {
+      "id": "554c321a-7c0e-5035-a85f-7f916d08cae1",
+      "issue_id": "eshyra-0m9.5.13",
+      "author": "Joseph Bongaarts",
+      "text": "Merged PR #101 at 2026-05-28T22:47:46Z. Merge commit: cc2bf81436c0e3c6ee9eb1307149608f682494d8. Pre-merge status: PR mergeable and checks successful.",
+      "created_at": "2026-05-28T22:49:37Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 6
+}

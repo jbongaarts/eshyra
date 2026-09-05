@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.5",
+  "title": "Foundation 5: rebuild bootstrap capability inventory as a consumer of accepted identities",
+  "description": "Successor to eshyra-o9bd.19.5.1 (PR #477, DESIGN_INVALIDATED). Blocked on\nFoundation 4, and transitively on Foundations 1 and 3.\n\nPREMISE CHANGE (why this exists): PRs #475/#476/#477 reached DESIGN_INVALIDATED\nafter repeatedly producing NEW defect classes following material contract changes\nand fresh full reviews. The shared root cause was not implementation quality: in\nall three, unsettled concepts were GENERALIZED ACROSS THE CORPUS before their\ntrust boundaries had been proven by a small number of concrete\nsource-to-execution examples. Successor work inverts that order.\n\nGOAL: rebuild the bootstrap capability inventory as a CONSUMER of accepted\nobligation, finding, and evidence identities — never as the place those\nidentities are invented. #477 invented its own incompatible obligation identity,\nits own evidence taxonomy, and its own absence proof, none of which survived.\n\nIt MAY remain non-authoritative, but it must be honest, exact enough to guide\ndecomposition, and MECHANICALLY RECONCILABLE with the future authoritative\nledger (eshyra-o9bd.19.5.12).\n\nSALVAGE AS-IS from #477: the corrected historical eshyra-2n1t reconciliation, and\nthe distinction between narrow child completion and overstated umbrella closure —\nthat analysis was accepted by review and is independent of the invalidated\nevidence framework. It should be EXTRACTED so it does not die with the ledger.\nSALVAGE AFTER EXTRACTION: candidate capability primitive names; ownership\ncandidates; the identification of primitives invisible from current pack\nprojection.",
+  "acceptance_criteria": "\n• The inventory consumes obligation, finding and evidence identities defined elsewhere; it invents none.\n• The eshyra-2n1t historical reconciliation is preserved intact and independently reviewable.\n• Non-authoritative status is explicit, and the artifact is mechanically reconcilable with eshyra-o9bd.19.5.12.\n• No resolver claims more than its evidence proves.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T03:08:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T03:08:20Z",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.5",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-07-27T22:08:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.5",
+      "depends_on_id": "eshyra-o9bd.19.1.16",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 0
+}

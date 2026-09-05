@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xxv",
+  "title": "Brainstorm: model-backed arc summary (06b-A)",
+  "description": "Explore design for the first slice of loreweaver-06b: model-authored arc summary that replaces the mechanical join in CLI rollupCampaignArc. Sibling slices (bible extraction, multi-arc boundaries) tracked separately under 06b parent.",
+  "notes": "Project context already gathered: 06b is follow-up to e0a (PR #26) mechanical arc rollup; 32m (PR #47) shipped deterministic composeSessionRecap (NOT model-backed despite 06b description); ModelClient adapter exists at packages/core/src/model/client.ts; deps.model: ModelClient is plumbed in CLI PlayDeps and used by orchestrator (orchestrator.ts:199). Current target: packages/cli/src/play.ts:497-521 rollupCampaignArc joins recaps with ' ' and writes empty bible row.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T03:53:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:01Z",
+  "started_at": "2026-05-23T03:53:20Z",
+  "closed_at": "2026-05-23T04:46:03Z",
+  "close_reason": "Design approved by user; epic populated on loreweaver-4ua. Implementation plan written under that epic.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

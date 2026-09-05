@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.3",
+  "title": "Certify clause-complete absence for bootstrap source-negative blockers",
+  "description": "Resolve the exact source-negative blockers left visible by bootstrap ledger closure predicate evaluateBootstrapLedgerClosure. Scope is the seven rows currently returned as evidence-underived: engine:F2 legendary-action-allowance-and-option-cost; engine:F3 owned-entity-and-repeat-trigger-lifecycle; engine:F5 containment-portal-and-card-pool-instance-state; engine:F7 planar-return-and-declared-window-clocks; engine:F8 multi-save-and-ability-choice-outcomes; engine:F9 damage-rider-and-half-damage-branch-resolution; engine:F10 retained-inventory-property-xp-asset-creation. Use clause-complete source anchors and representation-aware predicates over all applicable structured projection surfaces; closure must remain blocked until each absence is proven or the row is explicitly adjudicated.",
+  "acceptance_criteria": "Each listed row has a source-specific, source-text-backed anchor and a reproducible semantic absence proof, or a documented adjudication; the bootstrap closure predicate reports no evidence-underived blockers for the resolved rows; regression tests assert exact blocker identities throughout.",
+  "notes": "Created as a follow-up from eshyra-o9bd.19.5.1.7. Current implementation deliberately leaves these seven blockers underived and fail-closed; do not tune the ledger to a target count.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T00:38:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:38:05Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.3",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-07-27T19:38:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

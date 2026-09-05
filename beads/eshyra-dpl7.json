@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-dpl7",
+  "title": "Preserve exact source spans for nested finding identities",
+  "description": "Extend rules-pack provenance so membership identities can carry exact source spans instead of only page locators; keep recordKey plus clauseId/path stable.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T01:05:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T01:05:14Z",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

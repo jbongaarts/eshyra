@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.11",
+  "title": "Evolve ModelClient contract beyond flattened prompt text",
+  "description": "The current Agent SDK adapter flattens role messages into one prompt string. Preserve compatibility, but evolve the provider-neutral ModelClient contract so future providers can receive structured messages, tools, response-format hints, profile metadata, and trace metadata.",
+  "acceptance_criteria": "- ModelClient input shape preserves structured system/messages.\r\n- Adapter may still flatten internally if needed.\r\n- Contract has a place for tools/response-format/profile/trace metadata.\r\n- Existing mock/model tests are migrated.\r\n- Orchestrator remains provider-neutral.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-26T05:34:28Z",
+  "closed_at": "2026-05-26T21:53:01Z",
+  "close_reason": "Merged to main (PRs #81, #83)",
+  "labels": [
+    "architecture",
+    "model",
+    "provider-neutral",
+    "refactor",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.11",
+      "depends_on_id": "eshyra-0jq.10",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.11",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

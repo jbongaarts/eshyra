@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.7",
+  "title": "SRD 5.1 importer: rule-text + action + table parsers",
+  "description": "Add parsers for the general-rule-text sections of the SRD 5.1 (kind=rule), the standard action entries (kind=action, e.g. Attack, Dash, Disengage, Dodge, Help, Hide, Ready, Search, Use an Object), and the freestanding reference tables (kind=table, e.g. exhaustion levels, encounter difficulty, treasure tables). The rule kind has a 'text' required field; the table kind has required 'columns' and 'rows'.",
+  "acceptance_criteria": "- rule parser extracts each labeled rule section from the SRD core rules chapters.\n- action parser extracts each named standard action.\n- table parser extracts the freestanding reference tables with column headers and rows.\n- All records satisfy their kindSchemas (rule.text, table.columns/rows).\n- Manifest description includes 'rule, action, table' in Included record kinds.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:07:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:56Z",
+  "closed_at": "2026-05-27T23:19:35Z",
+  "close_reason": "Split into three separate parsers for shippable scope: loreweaver-0m9.5.10 (rule-text), loreweaver-0m9.5.11 (action), loreweaver-0m9.5.12 (reference-table). Each is one session of work; the original bundled all three.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.7",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:07:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

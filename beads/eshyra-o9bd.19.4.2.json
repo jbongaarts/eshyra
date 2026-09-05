@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.2",
+  "title": "Harden creature attack/action parsing and alternate-mode representation",
+  "description": "Harden creature attack and action parsing so no printed attack, damage value, or\nrange is dropped, and alternate modes are represented as alternatives.\n\nRoot cause: brittle regex parsing over stat-block prose. Each of the listed\ndefects is a different failure of the same parser, which is why A2's shared\nnormalization is a prerequisite.\n\nRequired membership — all of:\n- alternate damage modes and swarm thresholds (full-health vs half-health swarm\n  damage);\n- attacks missing because the bonus appears as a parenthetical alternate;\n- Unicode-minus damage silently dropped;\n- the swallowed Wererat Hand Crossbow action (shared with B2);\n- nonstandard and single-value ranges;\n- uniform flat vs dice damage field shapes (shared with B3);\n- target qualifiers currently truncated;\n- full attack inventory and action-boundary regression across all 317 creatures.\n\nCloses findings: F-27, F-28, F-29, F-30, F-31, F-34, F-35, SOL-006, CAP-004,\nFable F3.",
+  "acceptance_criteria": "- Every printed attack in every stat block produces an attack object; the attack inventory is proven complete by a corpus-wide predicate.\n- A Unicode minus, an alternate range notation, or a parenthetical alternate bonus cannot silently drop a value — each has a negative regression test.\n- Mutually exclusive damage modes are represented as alternatives, never as a flat cumulative array.\n- Target qualifiers survive projection in full.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F2, F6, F8, F9.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:39:43Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.2",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.2",
+      "depends_on_id": "eshyra-o9bd.19.4",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.2",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

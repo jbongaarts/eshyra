@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ua0.11",
+  "title": "REFACTOR: session launch resume state",
+  "description": "Clean up launch-state API and keep verification green.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T00:37:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:05Z",
+  "started_at": "2026-05-21T00:39:17Z",
+  "closed_at": "2026-05-21T00:39:58Z",
+  "close_reason": "Session launch resume-state cleanup complete; full typecheck, test, and build passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ua0.11",
+      "depends_on_id": "eshyra-ua0",
+      "type": "parent-child",
+      "created_at": "2026-05-20T19:37:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ua0.11",
+      "depends_on_id": "eshyra-ua0.10",
+      "type": "blocks",
+      "created_at": "2026-05-20T19:37:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "d6c2dd40-e69f-5e61-bae2-101872661176",
+      "issue_id": "eshyra-ua0.11",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npm run typecheck -> exit 0; npm run test -> exit 0 (31 passed, 1 skipped; 167 passed, 1 skipped); npm run build -> exit 0.",
+      "created_at": "2026-05-21T00:39:58Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

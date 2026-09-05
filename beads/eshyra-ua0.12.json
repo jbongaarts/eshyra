@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ua0.12",
+  "title": "Wire thin CLI front-end over E6 session lifecycle core",
+  "description": "Epic ua0 built the E6 session-lifecycle core (startSession/closeSessionGracefully/getSessionLaunchState), demo mode, and ADR 0002, but no child wired a playable thin CLI. The CLI is still only a banner + 'dolt install'. This issue covers the interactive front-end so epic ua0 acceptance #1/#2/#5 can be demonstrated end-to-end.",
+  "design": "Two parts. CORE: new campaign.ts — createCampaign (forkModuleIntoCampaign + record campaign_id in meta) and getCampaign (read back); gives the CLI a SQL-free create-or-select. CLI: new play.ts — CliIO seam (write/prompt) with a node readline impl; runPlay(deps,opts) orchestrates open-or-create campaign, getSessionLaunchState (resume vs close-and-recap prompt), an interactive turn loop delegating each turn to core runTurn, and graceful-exit via closeSessionGracefully. All core fns + IO injected so the loop is testable without a live model. index.ts gains a 'play' subcommand wiring real deps (AgentSdkModelClient, createDefaultToolRegistry, EMBERFALL_HOLLOW). No dice/canon/rules logic in the CLI.",
+  "acceptance_criteria": "CLI can create/fork a campaign from a module template; runs an interactive turn loop (prompt I/O, streaming); graceful-exit auto-runs closeSessionGracefully; relaunch offers Resume vs Close-and-recap via getSessionLaunchState; CLI contains no game-rule logic (delegates entirely to core).",
+  "notes": "TDD: core campaign.ts RED (npx vitest campaign.test.ts: 3 fail, createCampaign/getCampaign/CampaignError missing) -> GREEN (4 pass). CLI play.ts: 5 runPlay tests pass (create+play+graceful-close, EOF quit, resume, close-and-recap, failed-turn-continues). REFACTOR: full npm run typecheck + npm run test (190 passed, 1 skipped) + npm run build all green.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T00:58:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:04Z",
+  "started_at": "2026-05-21T01:05:28Z",
+  "closed_at": "2026-05-21T01:13:46Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ua0.12",
+      "depends_on_id": "eshyra-ua0",
+      "type": "parent-child",
+      "created_at": "2026-05-20T19:58:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

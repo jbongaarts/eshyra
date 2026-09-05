@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5l8",
+  "title": "Bible extractor: priorBible + closedArcSummaries input + no-omit prompt (06b.1-A)",
+  "description": "Update `packages/core/src/memory/campaignBibleExtractor.ts` so that callers can feed the prior bible and closed-arc summaries into the extraction call, and so the system prompt instructs the model not to silently drop entries.\n\nParent: loreweaver-06b.1 (Strengthen campaign bible faithfulness). This is the pure-core change with deterministic tests; CLI wiring (06b.1-B) and the gated live-API faithfulness test (06b.1-C) build on top of it.\n\nScope:\n- Extend `ExtractCampaignBibleInput` with optional `priorBible?: CampaignBibleInput` and `closedArcSummaries?: ArcSummaryRecord[]`.\n- Append two instructions to `BIBLE_EXTRACTOR_SYSTEM_PROMPT`: (1) treat `## previously known bible` entries as canonical unless the recaps explicitly contradict/retire them; (2) only drop an entry if the recaps contradict it or it was an error — going off-screen is not a reason.\n- Render a `## previously known bible` block (with `### worldFacts/majorNpcs/factions/openThreads` subsections) when `priorBible` is provided and non-empty.\n- Render a `## closed arc summaries` block before the recap list when `closedArcSummaries` is provided and non-empty; preserve input order.\n- When both are absent or empty, the rendered user message must be byte-identical to today's recap-only layout (regression-safe for pre-x63 callers).\n- Output schema (`CampaignBibleInput`) and the fenced `bible_json` contract are unchanged.",
+  "design": "- Add two helper renderers — `renderPriorBible` and `renderClosedArcSummaries` — that return either the rendered block or the empty string, so the call site can join with `\\n\\n` and elide absent sections without conditionals leaking into `renderRecaps`.\n- System prompt update is two extra bullet lines appended to the existing array; same join('\\n') idiom.\n- Tests: add cases to `packages/core/test/campaignBibleExtractor.test.ts` — (a) prior bible round-trips into user content, (b) closed arc summaries appear in order, (c) absent fields fall through to the legacy layout (snapshot the captured `messages[0].content` and compare to a literal), (d) system prompt contains the no-omit phrase.",
+  "acceptance_criteria": "- `extractCampaignBible` accepts optional `priorBible` and `closedArcSummaries` without breaking existing callers.\n- System prompt contains the no-omit instruction (assertable via substring match in a test).\n- User content includes the `## previously known bible` block with all four lists when `priorBible` is populated.\n- User content includes a `## closed arc summaries` block in input order when `closedArcSummaries` is populated.\n- When both are absent the user content is identical to today's recap-only output.\n- `npm run typecheck` passes; `npm run test` passes (new deterministic tests included).",
+  "notes": "PR #63 opened against main with 7 new deterministic tests + 6 existing tests all passing. Full suite: 456 passed, 2 skipped (documented gated tests), 0 failed. Awaiting review.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T04:39:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-25T04:40:39Z",
+  "closed_at": "2026-05-25T04:59:51Z",
+  "close_reason": "Merged via PR #63",
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

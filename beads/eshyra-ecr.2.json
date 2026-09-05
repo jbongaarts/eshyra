@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ecr.2",
+  "title": "REFACTOR: Regenerate pack and verify magic items",
+  "description": "Objective: Regenerate the canonical DND5E SRD 5.1 pack, update reviewed baselines/docs, and run required gates. Files: packages/core/data/rules-packs/rules__dnd5e-srd-5.1/{manifest.json,records.json}, packages/core/scripts/importers/dnd5e-srd-5.1/README.md, packages/core/test/srdGeneratedPack.test.ts. Steps: run npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1; update exact magic-item count/name/spot-check baselines; document embedded table policy; run npm run verify:dnd5e-srd-pack, audit, check, typecheck, and npm test; record evidence.",
+  "acceptance_criteria": "verify:dnd5e-srd-pack exits 0; audit reports 0 suspicious records or documented reviewed findings; npm run check, npm run typecheck, and npm test pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-04T05:57:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-04T06:21:02Z",
+  "closed_at": "2026-06-05T02:31:17Z",
+  "close_reason": "Regenerated canonical SRD 5.1 pack with 236 magic-item records, updated reviewed count/name/partial-field baselines and docs, and verified reproducibility/audit/check/typecheck/full tests all pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ecr.2",
+      "depends_on_id": "eshyra-ecr",
+      "type": "parent-child",
+      "created_at": "2026-06-04T00:57:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ecr.2",
+      "depends_on_id": "eshyra-ecr.3",
+      "type": "blocks",
+      "created_at": "2026-06-04T00:58:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "2ac8766e-e6d1-5265-9b87-7b062c598b5e",
+      "issue_id": "eshyra-ecr.2",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run verify:dnd5e-srd-pack -> exit 0, importer counts include 236 magic items, manifest changes 0, records added/removed/changed 0; npm run audit:rules-pack -- packages/core/data/rules-packs/rules__dnd5e-srd-5.1 -> exit 0, total records 1318, magic-item 236, suspicious records 0, 21 reviewed partial fields; npm run check -> exit 0; npm run typecheck -> exit 0; npm test -> exit 0, 88 files passed / 2 skipped, 1151 tests passed / 3 skipped.",
+      "created_at": "2026-06-05T02:31:09Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

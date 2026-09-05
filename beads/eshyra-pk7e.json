@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-pk7e",
+  "title": "Integrate registry identity with clause IR after PR #475",
+  "description": "Replace the intentional local duplication of the obligation identity and EvidenceKind types in findingRegistry.ts with the shared clause-IR types after PR #475 lands. Preserve the serialized obl:::<sourceRef>::<locator>::<facet> identity and all six evidence-kind spellings; add an integration test across the registry and clause IR boundary.",
+  "acceptance_criteria": "Shared types are imported from the landed clause IR without changing serialized registry identity; cross-boundary tests pass.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T02:38:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T02:38:17Z",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

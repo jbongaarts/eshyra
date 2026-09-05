@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-gvzx",
+  "title": "Validate clause identity adapters across PRs 476 and 477",
+  "description": "Follow-up from eshyra-o9bd.19.1.1.4: implement validated adapters or parity tests for the clause obligation identity/evidence boundary across PRs #475, #476, and #477. ADR 0020 records that current implementations do not mechanically share obligationId validation; this is intentionally outside the correction's owned design/type-contract scope.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:55:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T03:55:26Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.18",
+  "title": "Reconsider how Eshyra should reduce review and implementation churn",
+  "description": "Complex Eshyra work has repeatedly reached implementation before important\nreview boundaries were stable.\n\nThis bead owns a fresh diagnosis of that problem and the selection of a\nproportionate approach.\n\nImplementation must not begin until a new design is deliberately selected and\nreviewed.\n",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-29T02:53:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-29T02:53:15Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.18",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-28T21:53:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

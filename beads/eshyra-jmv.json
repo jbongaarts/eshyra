@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jmv",
+  "title": "Define ModelClient.complete error-path semantics (throw vs typed Result)",
+  "description": "cck.5 code review (Important): AgentSdkModelClient.complete returns empty string '' on SDKResultError or a stream with no result message, and the ModelClient contract has no error-path semantics. For E1 Orchestrator / E3 DM loop a silent empty return manifests as blank narration. Decide and implement throw-on-error vs a typed Result return for ModelClient.complete. E0 deliberately defers this; must be resolved before E1 Orchestrator integration.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-18T04:04:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:10Z",
+  "started_at": "2026-05-21T00:17:07Z",
+  "closed_at": "2026-05-21T00:31:07Z",
+  "close_reason": "Implemented in PR #10 (branch work/cck-followups); typecheck clean, 166 tests pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jmv",
+      "depends_on_id": "eshyra-cck.5",
+      "type": "blocks",
+      "created_at": "2026-05-17T23:05:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

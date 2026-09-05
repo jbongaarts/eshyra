@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.10",
+  "title": "Model exact source values and relationships in the obligation authority",
+  "description": "Decomposed out of eshyra-o9bd.19.1.1 (PR #475) 2026-07-26. The churn stop rule\ntriggered at 8c027f1: the previous fresh review produced new invariant classes\nand the next one found further defect classes.\n\nTHE ROOT ISSUE, in the reviewer's words: the independent obligation authority\n\"still describes semantic shapes, not exact source values and relationships.\"\n\nThat is a genuine design boundary, not an implementation gap. The obligation\nregistry can currently say \"this clause requires a save facet and a damage\nfacet\". It cannot say \"DC 15 Dexterity save, half damage on success, 8d6 fire\".\nEvery review round has rediscovered a variant of this: wrong save ability or DC,\nwrong damage amount/type/trigger, wrong target count, wrong duration amount or\nunit, wrong reset timing, wrong transition payload — all pass a shape-only\ncontract whenever the global shape and count match.\n\nWHY IT IS SEPARATE WORK: encoding exact source values requires a source-value\nmodel — typed scalars, units, dice expressions, ability references, relational\nconstraints between atoms — plus the extraction that populates it from the\nsource. That is a different problem from the clause/obligation BOUNDARY, which\nPR #475 has now got largely right, and it is what keeps dragging #475 back into\nanother patch cycle.\n\nSCOPE: design and specify the source-value layer — typed values, units,\nrelationships between atoms, and how an obligation states required exact values\nwith source evidence and drift checks. Caller options may strengthen\ndiagnostics but may never be the sole authority for mechanically relevant source\nsemantics.\n\nPREREQUISITE FOR: any claim that a projected clause is semantically faithful to\nits source, and therefore for the green definition on eshyra-o9bd.19.",
+  "acceptance_criteria": "\n• A source-value model exists covering typed scalars, units, dice expressions, ability references, and inter-atom relationships.\n• An obligation can state required exact values, bound to source evidence, with drift detection.\n• Caller-supplied options cannot be the sole authority for mechanically relevant source semantics.\n• Wrong ability, DC, damage amount/type, target count, duration unit, reset timing, and transition payload are each detectable, with tests.",
+  "notes": "Consolidates eshyra-687l, filed independently by dispatch eshyra-o9bd.19.1.11.1 for the same source-value contract work (save ability/DC, damage amount/type/trigger, target count, duration amount/unit, reset timing, transition payload). That bead is closed as a duplicate; this one is the single owner.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T15:08:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:52:43Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.10",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-26T10:08:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.10",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

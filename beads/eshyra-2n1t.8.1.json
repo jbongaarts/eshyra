@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.8.1",
+  "title": "F6 follow-up: durable stable-recovery deadline (1d4 h -> 1 HP)",
+  "description": "stabilizing-a-creature stays PARTIAL after eshyra-2n1t.8/PR #420: the stable flag, counter reset, and the stable->alive transition are code-owned (state/hpLifecycle.ts), but the SRD's automatic 'regains 1 HP after 1d4 hours if still at 0 HP' recovery has no durable deadline — scheduling is model-prompted and can silently drift across turns/sessions. Need: seeded 1d4 roll recorded at stabilize time plus an owned clock-resolution hook that applies the 1 HP regain through adjustHp. Depends on a deterministic in-game-clock representation (the clock is free text today); coordinate with the F7 rest engine (eshyra-2n1t.9) reset-event vocabulary.",
+  "notes": "Dispatch plan (attempt 1, 2026-07-19, supervisor eshyra-fe3t): Codex gpt-5.6-luna in .worktrees/eshyra-2n1t.8.1 branch eshyra-2n1t.8.1 off eshyra-fe3t. The clock dependency named in the description is now satisfied: clock.elapsed_minutes is a deterministic campaign-clock representation (see state/itemTimers.ts for the anchor/deadline pattern and update_clock resolution flow). Record the seeded 1d4 roll at stabilize time in hpLifecycle state, anchor the deadline in elapsed minutes, and resolve the 1-HP regain through adjustHp when the clock passes the deadline (mirror the item-timer reconcile/resolve boundary); coordinate naming with F5/F7 reset-event vocabulary.\nCompletion report (2026-07-19): Implemented durable SRD stable recovery. Added migration 0019 with seeded 1d4 roll, elapsed-minute anchor/deadline, and fail-closed nullable state validation; stabilization and third death-save success schedule recovery; HP transitions clear stale deadlines; advance_time resolves due recoveries through adjustHp; promoted stabilizing-a-creature audit coverage to implemented with evidence. Added boundary/cancellation tests and updated migration expectations/schema snapshot. Verification: scoped 188 tests passed, npm run build passed, npm run typecheck passed, Biome passed, git diff --check passed. npm run verify:worktree reached check but failed because sandbox spawnSync git returns EPERM; full npm test had 254 passing and sandbox-only child-process/loopback failures. Commit was attempted but blocked: worktree Git metadata index.lock is read-only outside the allowed worktree.\nSupervisor: reviewed (seeded 1d4 recorded at stabilize, deadline anchored in clock elapsed_minutes, resolution through adjustHp on advance_time, fields cleared on any life-state exit; campaign rng threaded from both tools; coverage promotion to implemented carries evidence+primitives). Integrated with eshyra-dunv: migration renumbered 0019->0020, ledger/applied pins updated, schema snapshot regenerated. Full verify:worktree green (4,643 tests). Committed by supervisor (child sandbox blocked git).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T23:50:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-19T07:52:38Z",
+  "closed_at": "2026-07-19T08:07:10Z",
+  "close_reason": "Durable stable-recovery deadline implemented, reviewed, fully verified, merged into eshyra-fe3t",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.8.1",
+      "depends_on_id": "eshyra-2n1t.8",
+      "type": "parent-child",
+      "created_at": "2026-07-10T18:50:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

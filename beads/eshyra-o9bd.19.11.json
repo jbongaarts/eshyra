@@ -1,0 +1,82 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.11",
+  "title": "Transition W9: integrate runtime shadow-mode discovery traces (Phase 2)",
+  "description": "Workstream W9 of the integrated ADR 0020 transition design, Phase 2 (section\n12.2): docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md.\nThat design is the accepted deliverable of eshyra-o9bd.19.8 (PR #485, reviewed\nhead afd113c7090378c3a9f4122f246a6c32602a5164, merge commit\n042ce119aa699f04f60a1885d471335f07745282). ADR 0020 controls.\n\nOWNER\nThis bead is the single owner of runtime shadow-mode observation for discovery.\nNo other bead owns it.\n\nSCOPE\nRun discovery in shadow mode on real turns, after assembleContext and before\nrenderContextMessage (the seam verified at orchestrator.ts:561 and :576), and\nrecord, without altering DM input:\n\n- explicit and derived signals;\n- candidates and every retrieval route;\n- relationship traversals;\n- campaign-rule and ruling matches obtained through the eshyra-jhpt read seam;\n- dedup decisions;\n- priority band and retained candidates;\n- rejected candidates, each with its reason;\n- the proposed context packet;\n- capability preflight results.\n\nShadow evidence attaches to the existing accepted-turn trace authority\n(memory/turnTrace.ts TurnTraceRecord, written at orchestrator.ts:817) or returns\nthrough that existing trace seam.\n\nNON-GOALS AND PROHIBITIONS\n- The DM sees exactly what it sees today. No packet is injected; changing DM\n  input is W10.\n- No competing readiness database, second campaign-rule store, or second finding\n  registry (ADR 0017 section 8; ADR 0020 audit-architecture restraint).\n- No discovery-owned campaign-rule persistence, ruling schema, or lifecycle;\n  those stay with eshyra-jhpt.\n- No claim of universal discovery completeness and no aggregate coverage figure.\n  Measurements stay independent per probe and per stage.\n- Presence of material in a shadow packet is never reported as evidence that the\n  model used it.\n\nBASELINE VALIDITY (design section 9.6)\nShadow evidence gathered before the applicable baseline repairs is diagnostic\nonly and may not be called a baseline. Specifically: no stat-block probe\nevidence before B1 (eshyra-l3e5); no adventure-context evidence (P9) before B2\n(eshyra-seoh); no deterministic-agreement measurement (M11) before B3\n(eshyra-6vpw); no capability-agreement evidence (P8) before B5 (eshyra-uiax);\nand table:starting-wealth-by-class is never treated as SRD authority at any time\n(B4, eshyra-o9bd.19.2.1).\n\nDEPENDENCIES\nW8 accepted (Phase 1 exit criteria met), plus the baseline repairs applicable to\nthe probes being shadowed: eshyra-l3e5 (W1), eshyra-seoh (W2), eshyra-6vpw (W3),\neshyra-uiax (W5). Not parallel-safe with its own prerequisites.\n\nPERMANENT EVIDENCE\nShadow traces for the probe corpus over real turns, attached to the existing\nTurnTraceRecord seam; a test proving DM input is byte-identical with and without\nshadow discovery enabled; M1-M11 derivable from the recorded trace without\nre-running discovery.\n\nREQUIRED NEXT STATE\nShadow traces exist for the probe corpus over real turns; every section-13\nmeasurement through M11 is derivable from the trace; no new durable store was\nintroduced; each trace records which blockers were repaired at capture time so a\npre-repair capture can never be mistaken for a baseline.\n\nMATERIAL CHANGE: yes. It adds a runtime observation point in the turn pipeline,\nwithout changing what the DM receives.\n",
+  "acceptance_criteria": "Discovery runs after assembleContext and before renderContextMessage on real\nturns. DM input is unchanged: a test proves the rendered context message is\nidentical with shadow discovery enabled and disabled. Shadow evidence attaches\nto the existing accepted-turn trace authority (memory/turnTrace.ts\nTurnTraceRecord) or returns through that existing trace seam; no competing\nreadiness store, campaign-rule store, or finding registry is created. Both\nretained and rejected candidates are recorded with every retrieval route and\nevery rejection reason, and dedup preserves all routes. Campaign rules and\nrulings come only from the eshyra-jhpt read seam. Each capture records which\nbaseline repairs were in place, and shadow evidence gathered before the\napplicable repairs is labelled diagnostic-only and is never reported as a valid\nbaseline: no stat-block evidence before eshyra-l3e5, no P9 adventure-context\nevidence before eshyra-seoh, no M11 deterministic-agreement measurement before\neshyra-6vpw, no P8 capability-agreement evidence before eshyra-uiax, and\ntable:starting-wealth-by-class never surfaces as SRD authority. M1-M11 are\nderivable from the trace without re-running discovery, are reported\nindependently per probe, and are never aggregated into a coverage, readiness, or\ncompleteness score. Packet presence is never reported as evidence that the model\nused the material.",
+  "notes": "WORKSTREAM-TO-BEAD MAP (integrated transition design section 14, materialized\n2026-07-31). Workstream numbers in these descriptions resolve as follows; judge\nownership by this map and by the dependency tree, never by bead-ID prefix.\n\n  W1  stat-block lookup repair (B1)             eshyra-l3e5\n  W2  CLI adventure-resolver repair (B2)        eshyra-seoh\n  W3  strict campaign-stack repair (B3)         eshyra-6vpw\n  W4  source-authority repair (B4)              eshyra-o9bd.19.2.1\n  W5  item-readiness fail-open repair (B5)      eshyra-uiax\n  W6  durable finding registry                  eshyra-o9bd.19.1.15\n  W7  diagnostic fixture corpus                 eshyra-o9bd.19.9\n  W8  offline discovery stage harness           eshyra-o9bd.19.10\n  W9  runtime shadow trace integration          eshyra-o9bd.19.11\n  W10 context-packet intervention               eshyra-o9bd.19.12\n  W11 jhpt read-interface consumption           eshyra-o9bd.19.13\n  W12 campaign rules and ruling implementation  eshyra-jhpt.1-.9 (+ A1-A4)\n  W13 capability-contract normalization         eshyra-olc5.6\n  W14 artifact dispositions (sections 5.1-5.6)  eshyra-o9bd.19.14\n      re-freeze bar (section 5.9)               eshyra-o9bd.14, eshyra-2zyy\n  W15 held-out and live-play evaluation         eshyra-o9bd.19.15\n\nTRACEABILITY: every bead in the W7-W15 set was created 2026-07-31 to execute the\ndesign accepted as the deliverable of eshyra-o9bd.19.8 (PR #485, reviewed head\nafd113c7090378c3a9f4122f246a6c32602a5164, merge commit\n042ce119aa699f04f60a1885d471335f07745282). They are parented to the ACTIVE\ntransition epic (eshyra-o9bd.19, or eshyra-olc5 for W13) rather than to the\nclosed design bead, so lifecycle semantics stay honest; eshyra-o9bd.19.8 remains\nthe design authority and is referenced from each description.\n\nBOUNDARY THAT MUST NOT ERODE (design sections 8.4 and 14.3): campaign-rule\npersistence and ruling lifecycle do not move out of eshyra-jhpt under any of\nthese items. W11 consumes; it does not own. If the jhpt interface proves\ninsufficient, the correct response is an amendment or a child under eshyra-jhpt,\nnever a discovery-local store.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-31T23:39:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-31T23:48:30Z",
+  "labels": [
+    "architecture",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.11",
+      "depends_on_id": "eshyra-o9bd.19.13",
+      "type": "blocks",
+      "created_at": "2026-09-02T18:38:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.11",
+      "depends_on_id": "eshyra-l3e5",
+      "type": "blocks",
+      "created_at": "2026-07-31T18:42:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.11",
+      "depends_on_id": "eshyra-6vpw",
+      "type": "blocks",
+      "created_at": "2026-07-31T18:43:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.11",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-31T18:39:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.11",
+      "depends_on_id": "eshyra-uiax",
+      "type": "blocks",
+      "created_at": "2026-07-31T18:43:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.11",
+      "depends_on_id": "eshyra-o9bd.19.10",
+      "type": "blocks",
+      "created_at": "2026-07-31T18:42:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.11",
+      "depends_on_id": "eshyra-seoh",
+      "type": "blocks",
+      "created_at": "2026-07-31T18:43:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 6,
+  "dependent_count": 1,
+  "comment_count": 0
+}

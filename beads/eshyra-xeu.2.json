@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xeu.2",
+  "title": "REFACTOR: Clean up CLI character creation flow",
+  "description": "Tidy the implementation while keeping focused and full verification green.",
+  "notes": "Debug evidence: full npm run test failed only in packages/cli/test/cli.test.ts 'play graceful close on stdin EOF'; subprocess exits nonzero because runPlay now returns 1 when EOF occurs before character creation, matching the new character gate.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T03:32:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:01Z",
+  "started_at": "2026-05-23T03:36:24Z",
+  "closed_at": "2026-05-23T03:39:02Z",
+  "close_reason": "Cleanup complete; focused and full verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-xeu.2",
+      "depends_on_id": "eshyra-xeu.1",
+      "type": "blocks",
+      "created_at": "2026-05-22T22:33:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-xeu.2",
+      "depends_on_id": "eshyra-xeu",
+      "type": "parent-child",
+      "created_at": "2026-05-22T22:32:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "ba88bdad-8232-5534-b03a-a781b4968365",
+      "issue_id": "eshyra-xeu.2",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npm run typecheck -> passed; npx vitest run packages/cli/test/play.test.ts -> passed (15 tests); npx vitest run packages/cli/test/cli.test.ts -> passed (10 passed, 1 skipped); npm run test -> passed (324 passed, 2 skipped across 43 files).",
+      "created_at": "2026-05-23T03:39:02Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5",
+  "title": "Close 2026-06-30 D&D SRD audit findings",
+  "description": "Parent epic for the 2026-06-30 / 2026-07-01 D&D SRD 5.1 audit round.\n\nThis epic groups the Codex GPT-5.5 max-effort findings already filed plus the remaining findings from the Claude Opus 4.8 review and ChatGPT review.\n\nScope:\n- Source-coverage proof gaps: sidebars, continuation-only pages, page inventory, duplicate heading ownership, and source regions that are counted as represented without being present or structurally encoded in the owning record.\n- Multi-page provenance locator completeness for primary DM source discoverability.\n- Missing SRD skill-to-ability mapping from p.78 and the coverage false negative that hid it.\n- Equipment grouping semantics needed by deterministic tools: weapon simple/martial and melee/ranged categories, foci, holy symbols, instruments, tools, and starting-equipment filter resolution.\n- Gameplay-readiness report accuracy for creature mechanics projections.\n- Deterministic modeling improvements for armor AC formulas.\n- Minor modeling cleanup from this audit round, including Enlarge/Reduce weapon-damage delta modeling and Potion of Healing display normalization.\n\nAlready-created Codex beads to include under this epic:\n- eshyra-5c7f: source coverage evidence incomplete for sidebars/unaccounted pages.\n- eshyra-lpk9: multi-page provenance locators incomplete.\n- eshyra-txxa: gameplay-readiness undercounts creature mechanics projections.\n- eshyra-rtgi: armor AC not structured enough for deterministic tools.\n\nDo not hand-edit the generated pack. Fixes belong in the deterministic importer, schema/modeling layer, resolver/audit scripts, and regression tests.",
+  "notes": "2026-07-01: PR #380 merged (merge commit 7579fec6). Reviewer flagged two things:\n1. srdEquipmentResolutionAudit.ts's namedItemCandidates() returns [key] unchecked, so a typo'd named-item equipment key would still pass assertEquipmentResolution (length>0 only). Filed eshyra-erf5.7 to fix + add regression test.\n2. Bookkeeping caution about not closing eshyra-5c7f prematurely -- already correct: 5c7f remains OPEN with deferred acceptance criteria documented and linked to erf5.5.\nEpic stays open pending erf5.5, erf5.6, erf5.7.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T05:58:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-01T06:12:12Z",
+  "closed_at": "2026-07-01T22:08:31Z",
+  "close_reason": "All 11 children complete. Final three follow-ups (erf5.5/.6/.7) plus 5c7f's last criterion land in PR #381 (open for review); earlier children merged via PR #380.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

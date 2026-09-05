@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.8.3",
+  "title": "engine:F7 — Source-defined planar-return and deadline clock procedures",
+  "description": "Persist elapsed-time clocks for planar return, declared draws, timed curses, and\nother source-defined deadlines.\n\nROOT CAUSE: generic elapsed world timers and expiry sweeps exist, but the\nsource-specific procedures do not. A planar-return clock is not a duration on an\neffect: it is a deadline attached to an entity that must fire correctly across\nrest, travel, and session boundaries, and whose expiry has a defined narrative\nand mechanical consequence. The existing engine:F7 family owns generic rest and\ntime orchestration, not this cross-record source-clock contract.\n\nLEDGER ROW: capabilityId engine:F7, primitive\n\"planar-return-and-declared-window-clocks\".\nPack membership: records whose data.executionReadiness hooks qualify as\nengine:F7 with planar-return, declared-window, duration, or deadline semantics,\ncompared against the source clauses named by the audit.\n\nCROSSES: engine:F3 (active-effect and owned-entity lifecycle) and engine:F6\n(curse lifecycle). engine:F7 owns it.\n\nREQUIRED INVARIANT: every source-defined deadline is a first-class persistent\nclock with a defined firing consequence. A clock that silently fails to fire, or\nthat fires without applying its consequence, is the defect. Clocks must survive\nrest, travel, and save/restore.\n\nPROVENANCE: this bead exists because the bootstrap capability ledger\n(eshyra-o9bd.19.5.1, PR #477) found this primitive had NO owner in the current\nfamily decomposition. It was recorded there as ownershipStatus=proposed-new-bead;\nthis bead is that proposal made real, and the ledger row now points here.\n\nCROSS-FAMILY PRIMITIVE. The owning family is named in the title, but the\nrequirement crosses family boundaries. Per the authorization criteria on\neshyra-olc5.1, a cross-family primitive is named ONCE and assigned ONE owning\nfamily — do not re-implement it under the families it touches. Coordinate\ninstead.\n\nSEQUENCING: this bead is blocked by its family's decomposition task and must not\nbe started before it. Decomposition does not RE-CREATE this bead; it reconciles\nagainst it, decides whether the primitive splits further, and names the\nconformance scenarios. Duplicating it under a sibling family is the failure mode\nto avoid.\n\nGREEN BAR: the nine-point definition on eshyra-o9bd.19 applies — this primitive\nis not done until a provider-neutral implementation exists, reference-engine\nconformance tests exercise the committed PACK representation (not a fixture),\ntool exposure and state mutation are correct, unsupported input fails CLOSED,\nand replay / deterministic equivalence holds where applicable.\n\nCOUNT HYGIENE: membership comes from the ledger's generated query for this\nprimitive. Never hand-copy a hook count into an acceptance test.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "acceptance_criteria": "\n• Source-defined deadlines are persistent, first-class clocks, not effect durations.\n• Every clock has a defined firing consequence that is applied atomically on expiry.\n• Clocks survive rest, travel, and save/restore, and are correct under replay.\n• Conformance tests drive the clocks from the committed pack representation.\n• Unsupported or ambiguous deadline semantics fail CLOSED rather than silently not firing.\n• The engine:F7 ledger membership query returns zero unowned clauses for this primitive.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T00:35:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T00:35:03Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.8.3",
+      "depends_on_id": "eshyra-o9bd.19.5.8.1",
+      "type": "blocks",
+      "created_at": "2026-07-25T19:35:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.8.3",
+      "depends_on_id": "eshyra-o9bd.19.5.8",
+      "type": "parent-child",
+      "created_at": "2026-07-25T19:35:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

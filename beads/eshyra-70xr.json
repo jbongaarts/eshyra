@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-70xr",
+  "title": "Creature stat blocks: lair actions, regional effects, variant notes",
+  "description": "Slice of eshyra-4a7.5. Capture the post-stat-block sections legendary creatures print after their main block: Lair Actions, Regional Effects, and variant/'A <creature> in its lair' notes, plus any boxed variant rules. These sit in prose between/after stat blocks (e.g. dragons) rather than inside the keyed body, so they need separate boundary handling from the in-body Actions/Legendary Actions sections (eshyra-4a7.5b). Preserve verbatim in the correct structured section. Regression: a dragon or similar complex creature with legendary/lair/regional content. Follow docs/importer-fix-protocol.md.",
+  "notes": "Implemented + PR open: https://github.com/jbongaarts/eshyra/pull/203 (branch feat/creature-variant-sidebars-70xr). Extracts the 2 SRD Variant: sidebars (Diseased Giant Rats->Giant Rat, Insect Swarms->Swarm of Insects) as creature.variants child data; fixes the variant pollution yevt introduced (Giant Rat dup Bite, Swarm of Ravens 7 spurious actions). Confirmed: SRD 5.1 has no per-creature lair actions/regional effects (only p260 rules); Half-Dragon Template + dragon tables belong to eshyra-4a7.10. Coverage known-gap:eshyra-4a7.5 cleared (childOf 12->14). All gates green; verify exit 0. Close on merge. THIS IS THE LAST 4a7.5 SLICE — merging it lets parent eshyra-4a7.5 close.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-13T15:24:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-13T17:09:34Z",
+  "closed_at": "2026-06-13T17:37:29Z",
+  "close_reason": "Merged in PR #203 (commit f8a0c26). The 2 SRD Variant: sidebars are now creature.variants child data; variant pollution fixed; coverage known-gap:eshyra-4a7.5 cleared.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-70xr",
+      "depends_on_id": "eshyra-yevt",
+      "type": "blocks",
+      "created_at": "2026-06-13T10:25:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

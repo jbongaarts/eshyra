@@ -1,0 +1,85 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.6",
+  "title": "Resolve known rules-pack ambiguities as campaign rulings",
+  "description": "Objective\nImplement pre-adjudication resolution for unresolved RulesAmbiguity metadata when no campaign ruling exists.\n\nRequired behavior\nLook up ambiguity metadata from the active rules stack by stable ID, check campaign storage for an active linked ruling, and when unresolved surface the published uncertainty instead of inventing certainty. Ask the player to choose among known interpretation IDs; persist the player-approved result as prose ruling with ambiguity/interpretation provenance; make it prospectively active and available to both model contexts. Required scenario: \"Can I mix a ghast and a wight?\" surfaces ambiguity:create-undead-ghast-wight-composition and can persist either homogeneous-alternative or mixed-within-total. Also cover ambiguity:find-familiar-permanent-dismissal-after-zero-hp.\n\nArchitecture and references\nConsume PR #419 RulesAmbiguity output from eshyra-o9bd.18.7.9. Store only campaign prose/provenance via eshyra-jhpt.2; never write a winner/default back to the immutable pack. Use shared context from eshyra-jhpt.3-.4.\n\nNon-goals\nNo model-selected canonical winner; no campaign ruling without player approval; no house-rule creation for clear canonical conflicts; no resolution of ordinary contextual judgments; no arbitrary prompt/retrieval optimization.",
+  "acceptance_criteria": "Create Undead explicit question and Find Familiar unresolved question both surface source uncertainty and known interpretations; an approved choice creates one durable prose ruling linked to ambiguity and interpretation IDs; an existing active ruling prevents re-prompting; declined/no choice creates nothing; DM/auditor receive the same resulting prose; pack data remains unchanged.\n\nADR 0020 TRANSITION AMENDMENT A2 (integrated transition design section 8.3, R5;\naccepted as the deliverable of eshyra-o9bd.19.8, PR #485, merge commit\n042ce119aa699f04f60a1885d471335f07745282): define how an active ambiguity ruling\nis made available to bounded deterministic capability preflight where execution\ndepends on it, not only to DM and auditor context. Today no path exists from a\ncampaign ruling to capability code.\n\nThe verified concrete case: magic-item:cube-of-force operation press-face-1 from\nstate face-1 hits transition resetsDuration { kind: 'source-ambiguity',\nambiguityId: 'ambiguity:cube-of-force-same-face-duration-reset' }, and\nstate/itemState.ts matchStateTransition throws ItemStateAmbiguityError carrying\nthe ambiguity and interpretation IDs. A ruling selecting same-face-resets or\ndifferent-face-only-resets is exactly what would unblock it. Verified ordering\nconstraint: assertMagicItemOperationReady runs at itemState.ts:1888, BEFORE the\nfirst matchStateTransition call at :1934, and every press-face-* operation clause\non that record is engine-pending, so readiness throws first and the ambiguity\nerror is currently unreachable through use_item. A2 must therefore be designed\nWITH the eshyra-olc5 readiness owner (see eshyra-olc5.6, transition W13), not\nagainst it: a ruling does not make an engine-pending clause ready, and a\ncapability may never consult a ruling that did not come through this runtime.\n\nThis may be satisfied as an acceptance criterion here or as a new child under\neshyra-jhpt; either way the ownership stays here. The discovery-side consumer\neshyra-o9bd.19.13 (transition W11) depends on this output and may not substitute\na discovery-local ruling store or resolver. Probe P7 of the transition design\nexpects both outcomes: with no active ruling the packet carries the ambiguity,\nboth interpretations, and an explicit unresolved state; with an active ruling the\npacket carries the ruling beside the ambiguity and the capability preflight still\nreports blocked.",
+  "notes": "Delivered on branch eshyra-jhpt; PR opened https://github.com/jbongaarts/eshyra/pull/526 at head eeab5eb (2026-09-05). Stays in_progress until merge.",
+  "status": "in_progress",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T21:24:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-05T07:48:26Z",
+  "started_at": "2026-09-05T07:24:47Z",
+  "labels": [
+    "ambiguity",
+    "audit",
+    "campaign-runtime",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.6",
+      "depends_on_id": "eshyra-jhpt.5",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:24:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.6",
+      "depends_on_id": "eshyra-o9bd.18.7.9",
+      "type": "relates-to",
+      "created_at": "2026-07-10T16:32:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.6",
+      "depends_on_id": "eshyra-jhpt",
+      "type": "parent-child",
+      "created_at": "2026-07-10T16:24:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.6",
+      "depends_on_id": "eshyra-jhpt.3",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:24:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.6",
+      "depends_on_id": "eshyra-jhpt.6.1",
+      "type": "blocks",
+      "created_at": "2026-09-05T02:24:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.6",
+      "depends_on_id": "eshyra-jhpt.4",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:24:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.6",
+      "depends_on_id": "eshyra-jhpt.2",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:24:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 5,
+  "dependent_count": 3,
+  "comment_count": 0
+}

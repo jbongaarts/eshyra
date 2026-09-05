@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14.2",
+  "title": "Core character registry + CLI cutover (ADR 0012 continuity/custody)",
+  "description": "Implements the cross-campaign half of the character-sheet authority model, and records the decision as ADR 0012 IN THIS PR (no separate ADR PR).\n\nADR 0012 (folded in): a character is a cross-campaign continuing entity; campaigns are episodes that take CUSTODY during play. The data-root character registry is the authority BETWEEN campaigns; a campaign's character_sheet row (eshyra-lupf.14.1) is the authoritative playable instance DURING play. Attach/import is copy-with-provenance, NOT a silent clone. Revisions, exit/sync-back, double-attach prevention, and the lore chronicle are deferred. Currency is a known sheet gap (eshyra-lupf.15). Cross-pack still fails closed.\n\nImplementation:\n- Add a core-owned CharacterRegistryStore backed by a data-root SQLite DB (e.g. <dataRoot>/characters.db), keyed by a stable globalCharacterId, persisting the CharacterSheet document with binding columns (schema_version/system/rules_pack_id) + created_at/updated_at. Named distinctly from the per-campaign CharacterSheetStore; may share low-level helpers.\n- One-time importer: migrate legacy <dataRoot>/characters/*.json into the registry.\n- Rewire the CLI: standalone create-character writes the registry; import/attach reads the registry, asserts pack match, copies the sheet into the campaign character_sheet table, projects identity/class/level/hp_max into the live character row (importFinalizedCharacter), and stamps globalCharacterId provenance on the campaign sheet.\n- Remove the deprecated FinalizedCharacter alias; consumers use CharacterSheet.\n- Do NOT build revisions/custody-sync/fork (eshyra-lupf.14.3) or the chronicle (eshyra-lupf.16).",
+  "acceptance_criteria": "- ADR 0012 records the continuity/custody model (registry=between-campaign authority; campaign character_sheet=during-play; attach=copy-with-provenance not clone; revisions/sync + chronicle deferred; currency a known gap; cross-pack fails closed).\n- Core CharacterRegistryStore (data-root SQLite) persists sheets keyed by a stable globalCharacterId and replaces CLI JSON authority.\n- Legacy <root>/characters/*.json are migrated into the registry.\n- CLI create/import are wired to the registry; attach copies the sheet into the campaign character_sheet, projects the live row, and stamps globalCharacterId provenance.\n- FinalizedCharacter alias removed; consumers use CharacterSheet.\n- Pack mismatch fails closed on attach.\n- Tests cover registry round-trip, JSON migration, attach+provenance, and pack-mismatch.",
+  "notes": "PR #328 (https://github.com/jbongaarts/eshyra/pull/328). ADR 0012 + CharacterRegistryStore + attachCharacterSheetToCampaign + CLI cutover + legacy-JSON migration; FinalizedCharacter alias removed. Open for review; close on merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T02:03:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T02:28:33Z",
+  "closed_at": "2026-06-27T05:36:12Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14.2",
+      "depends_on_id": "eshyra-lupf.14",
+      "type": "parent-child",
+      "created_at": "2026-06-26T21:03:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.14.2",
+      "depends_on_id": "eshyra-lupf.14.1",
+      "type": "blocks",
+      "created_at": "2026-06-26T21:03:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

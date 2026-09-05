@@ -1,0 +1,59 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.7",
+  "title": "Persist accepted implicit ambiguity precedents",
+  "description": "Objective\nAllow an accepted player action to establish a durable campaign ruling when it unambiguously selects a known interpretation of explicit rules-pack ambiguity metadata.\n\nRequired behavior\nOnly operate when the pack marks the mechanic ambiguous, no active linked ruling exists, the action clearly selects exactly one known interpretation, and the DM accepts the action. Persist player-approved/accepted-adjudication prose with ambiguity and interpretation provenance, and make the precedent visible in natural language. Required scenario: \"Bob summons a ghast and a wight\" may establish mixed-within-total for ambiguity:create-undead-ghast-wight-composition after acceptance. Couple persistence to audited-turn acceptance so rejected/retried candidates cannot leak a precedent.\n\nArchitecture and references\nBuild on explicit ambiguity resolution eshyra-jhpt.6, audited-turn mutation staging eshyra-67qo, mechanics auditor eshyra-oobh, and shared DM/auditor rule context. The model may interpret whether the action clearly selects an enumerated interpretation; deterministic code validates the ambiguity/interpretation IDs and commits only with accepted turn state.\n\nNon-goals\nDo not infer house rules from actions contrary to clear canonical rules. Do not create rules for ordinary fictional judgments. Do not infer when an action fits multiple/no known interpretations. Do not silently establish a precedent without visible acknowledgement. Do not alter the rules pack.",
+  "acceptance_criteria": "Accepted mixed ghast/wight action establishes one visible durable mixed-within-total ruling; rejected/retried/ambiguous actions establish none; an existing ruling prevents duplicate precedent; canonical-rule violations never infer a house rule; persistence is atomic with audited turn acceptance; DM and auditor receive the new prose on subsequent turns.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T21:24:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:52Z",
+  "labels": [
+    "ambiguity",
+    "audit",
+    "campaign-runtime",
+    "model-context",
+    "precedent",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.7",
+      "depends_on_id": "eshyra-jhpt",
+      "type": "parent-child",
+      "created_at": "2026-07-10T16:24:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.7",
+      "depends_on_id": "eshyra-jhpt.6",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:24:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.7",
+      "depends_on_id": "eshyra-67qo",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:24:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.7",
+      "depends_on_id": "eshyra-oobh",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:24:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

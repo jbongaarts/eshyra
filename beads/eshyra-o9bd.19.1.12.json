@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.12",
+  "title": "Establish obligation registry authority backed by a real source census",
+  "description": "Decomposed out of eshyra-o9bd.19.1.1 (PR #475) 2026-07-27, user-approved, after the churn stop rule triggered a SECOND time at efde702.\n\nROOT ANALYSIS: the registry keeps failing review because it is asked to be AUTHORITATIVE while nothing underwrites its authority. A real source census is deferred (eshyra-s38f, eshyra-o9bd.19.6.1), so every round reviewers correctly find the authority forgeable — mutable contract tables, an evidence taxonomy with no valid home for known-missing clauses, partially captured multi-part evidence, colliding identities. These are symptoms of an authority layer with no source of authority, not independent bugs.\n\nSCOPE — the authority artifacts, to be built against a census that actually exists:\n  * canonical facet requirements and implications immutable after import (deep-copy/deep-freeze or immutable accessors), with mutation-attempt regression tests;\n  * an evidence taxonomy in which known-missing-source-clause evidence can exist in a valid registry — today it cannot, which is a representational contradiction;\n  * multi-part authoritative evidence captured completely, never partially;\n  * identity uniqueness across synthetic scalar IDs and ordinary projected atom IDs, which can currently collide.\n\nSEQUENCING: blocked on the source census. Building this before the census repeats the failure.\n\nPR #475 retains the clause completeness CONTRACT — types, facet vocabulary and implications, canonical base requirements, per-clause evaluation, dimension separation — which has stabilised across rounds and is reviewable on its own.",
+  "acceptance_criteria": "\n• Canonical facet requirements and implications cannot be mutated after import, proven by mutation-attempt tests.\n• known-missing-source-clause evidence is representable in a valid registry.\n• Multi-part authoritative evidence is captured completely or rejected; partial capture is impossible.\n• Synthetic scalar identities cannot collide with projected atom identities.\n• The registry authority is grounded in a real source census rather than caller assertion.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T01:41:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T01:41:31Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.12",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-27T20:41:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.12",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.12",
+      "depends_on_id": "eshyra-s38f",
+      "type": "blocks",
+      "created_at": "2026-07-27T20:41:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

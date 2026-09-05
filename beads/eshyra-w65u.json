@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-w65u",
+  "title": "Reconcile PR review lifecycle authority after the abandoned eshyra-review-v2 design",
+  "description": "AGENTS.md grants agents standing authority to verify, commit, push a feature branch and open a PR, and local agent work uses the owning Bead as the task/specification boundary. But standing reviewer instructions still assume every qualifying PR carries an eshyra-review-v2 '## REVIEW CONTRACT', a contract hash, and an authorization checkpoint. That machinery was proposed in PR #481 (bead eshyra-o9bd.19.1.17) and CLOSED UNMERGED on 2026-07-29; it is not repository authority. PR #504 was rejected in a review session solely for missing those absent artifacts despite having an explicit owning bead and accepted architectural authority. Repository documentation and reviewer expectations must state the same lifecycle.",
+  "design": "Documentation/process only. No product, runtime, or rules-pack behavior changes. Process-change exception applies: the process being replaced is not a prerequisite for replacing it (same pattern as PR #482/ADR 0020, which explicitly noted the eshyra-review-v2 protocol was absent from main and followed the ordinary AGENTS.md workflow).",
+  "acceptance_criteria": "AGENTS.md carries a compact 'PR Review Authority and Lifecycle' section near Git & PR Workflow stating: owning bead does not imply a specially formatted REVIEW CONTRACT; profile selects review depth, not contract/checkpoint ceremony; PR #481 machinery is not active authority; explicit accepted authority may still require additional artifacts; authority-first, exact-head, DESIGN_INVALIDATED-terminal and no-nonblocking-findings rules are retained; a process-transition exception exists. A reviewer-handoff expectations subsection is added. CLAUDE.md stays a thin import. A lightweight policy test pins the essential distinctions. A bd memory records the PR #481 framework as historical/superseded. No review:* commands, review-governance CI, contract hashes, or docs/review/ protocol document are introduced.",
+  "notes": "PR #505 opened (https://github.com/jbongaarts/eshyra/pull/505), head db7a43d. AGENTS.md '### PR Review Authority and Lifecycle' + '#### Handing off a PR for review'; new packages/core/test/reviewLifecyclePolicy.test.ts (10 assertions). bd memory pr481-review-contract-framework-superseded added; no existing memory needed retiring. verify:worktree green (263 files / 4721 tests, documented skips only). bd dep cycles: none. Bead stays in_progress until the PR merges.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-08-30T00:43:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-08-30T00:54:59Z",
+  "started_at": "2026-08-30T00:43:41Z",
+  "closed_at": "2026-08-30T00:54:59Z",
+  "close_reason": "Merged to main via PR #505, merge commit c6cf3a5a0997d2f23c26269ff186deef2e40a3bb (reviewed head db7a43d). AGENTS.md '### PR Review Authority and Lifecycle' + '#### Handing off a PR for review'; packages/core/test/reviewLifecyclePolicy.test.ts pins the distinctions; bd memory pr481-review-contract-framework-superseded records the PR #481 framework as historical.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

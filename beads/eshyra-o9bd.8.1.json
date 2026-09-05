@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.8.1",
+  "title": "Link magic-item-owned tables via tableRefs + add non-spell table-link audit gate",
+  "description": "First eshyra-o9bd.8 slice. Wire data.tableRefs on the ~28 magic-item owners (and the clean rule-owned economy tables: trade-goods, services, lifestyle-expenses, food-drink-and-lodging, ability-scores-and-modifiers) so each owned table is reachable from its owner. Multi-table owners: cube-of-force (2), bag-of-tricks (3 colors). Add a generalized non-spell owner-map table-link audit gate (mirroring checkSpellTableLinks / SRD_5_1_SPELL_TABLE_OWNERS) seeded with these owners enforcing exactly-once linkage to an existing table record.",
+  "design": "Follow docs/importer-fix-protocol.md. Schema already supports magic-item/rule data.tableRefs (kindSchemas optStrArray). Prose is already de-flattened (owners reference 'the following table'); confirm no row duplication. Add per-child thaw note + refresh freeze-manifest hashes. Grow the owner map in sibling beads 8.2/8.3.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T20:41:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-28T20:54:44Z",
+  "started_at": "2026-06-28T20:42:01Z",
+  "closed_at": "2026-06-28T20:54:44Z",
+  "close_reason": "Implemented in PR #358",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.8.1",
+      "depends_on_id": "eshyra-o9bd.8",
+      "type": "parent-child",
+      "created_at": "2026-06-28T15:41:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

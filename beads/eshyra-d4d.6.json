@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4d.6",
+  "title": "Per-PC memory salience",
+  "description": "Preserve individual-PC important facts through summary roll-up. Scene/session/arc summaries are party-level prose with no per-PC tagging, so deaths, level-ups, and signature items can be lost. Tag per-PC salient facts via the existing salient_refs mechanism using character.id (no new tables in v1). Acceptance: scene/session salient refs can carry character ids; per-PC important facts are retrievable; tests. Heavier per-PC memory projection remains deferred.",
+  "notes": "DEFERRED pending decision. A correct implementation must attribute scene state-changes to the causing PC, but character-scoped mutations usually target the acting/active PC implicitly (no explicit character arg), and the reviewed design (docs/multi-pc-design.md) deliberately did NOT persist the acting PC on turn_trace (no schema change) and explicitly defers 'heavier per-PC memory projection' until playtesting shows party-level prose loses individual arcs. summarizeSceneFromLog currently writes salientRefs:[]. Two paths to do this well: (a) add acting_character_id to turn_trace via a v9->v10 migration so scene rollup can attribute deltas deterministically; or (b) wait for playtesting per the design. Recommend (b) unless a concrete need appears.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:54:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:15Z",
+  "started_at": "2026-05-28T18:24:05Z",
+  "closed_at": "2026-05-28T21:37:48Z",
+  "close_reason": "Added turn_trace.acting_character_id (schema v9->v10 migration) + recorded resolved acting PC per turn; summarizeSceneFromLog now derives per-PC salient refs {target:character,id,field} from the scene's traces. 5 new tests (per-PC salience x3, migration v9->v10, trace round-trip). Checkpoint round-trip verified green in isolation (65/65). Committed 6ca4bb8.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4d.6",
+      "depends_on_id": "eshyra-d4d",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:54:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

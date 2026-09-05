@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.6",
+  "title": "Add bundled-tool schema keyword coverage",
+  "description": "Add coverage tests that compare bundled tool schemas against the custom provider-neutral schema validator.\n\nProblem:\nEshyra intentionally uses a conservative JSON-Schema-like subset for tool schemas and custom validation. As bundled tools evolve, schemas may begin using keywords the validator does not enforce or intentionally ignores. That should be visible.\n\nAcceptance criteria:\n- Walk all bundled/default tool input schemas recursively.\n- Collect every schema keyword used, including nested object/array/union schemas.\n- Assert each keyword is either supported by the validator or explicitly allowlisted as provider-only/documentation-only.\n- Add a regression test that fails if a new unsupported keyword appears silently.\n- Keep the allowlist narrow and documented.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T03:06:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T05:25:01Z",
+  "started_at": "2026-06-26T05:19:48Z",
+  "closed_at": "2026-06-26T05:25:01Z",
+  "close_reason": "Added recursive bundled-tool schema keyword coverage, with validated keywords and a narrow documented description allowlist.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.6",
+      "depends_on_id": "eshyra-4s0r",
+      "type": "parent-child",
+      "created_at": "2026-06-25T22:06:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

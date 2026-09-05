@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.3.1",
+  "title": "Decompose Engine F2 from the approved capability ledger",
+  "description": "Turn the approved capability membership for engine:F2 (Activation and action-economy ownership) into a\nconcrete implementation plan. This is real work, not a placeholder: decomposition\nis what converts a hook-family label into implementable units, and doing it from\nthe ledger rather than from hook counts is the whole point.\n\nRequired output:\n\n  * The GENERATED membership query for engine:F2 and its current result. Never a\n    hand-copied count.\n  * Every member clause classified into a REUSABLE IMPLEMENTATION PRIMITIVE.\n    Organize children by primitive and by executable scenario, never by hook\n    count and never one-child-per-clause.\n  * Cross-family primitives named explicitly with their owning family, so the\n    same primitive is not implemented twice under two epics.\n  * The proposed implementation children, each naming (a) its conformance\n    scenario and (b) the pack clauses it must actually execute.\n  * Its PAIRED pack-projection bead(s) under eshyra-o9bd.19.3/.19.4 — projection\n    and reference implementation are co-designed, so each proposed child names\n    its projection counterpart.\n  * Every boundary hint in the parent epic's description confirmed against the\n    ledger rather than assumed. The hints are provisional.\n\nDo NOT create implementation children before this bead closes.\n\nCOUNT HYGIENE: every number here is a SNAPSHOT. The generated ledger/predicate\nis authoritative. No acceptance test may require a hand-copied number (e.g.\n391, 399, 77, 79).\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "acceptance_criteria": "\n• A committed, runnable membership query for engine:F2, with its result recorded as a snapshot only.\n• Every member clause mapped to a named reusable primitive.\n• Proposed children listed with conformance scenario, pack clauses, and paired projection bead.\n• Cross-family primitives resolved to a single owner.\n• Parent-epic boundary hints confirmed or corrected against the ledger.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T17:34:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:34:08Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.3.1",
+      "depends_on_id": "eshyra-olc5.1",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:34:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.3.1",
+      "depends_on_id": "eshyra-o9bd.19.5.3",
+      "type": "parent-child",
+      "created_at": "2026-07-25T12:34:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

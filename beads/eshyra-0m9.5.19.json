@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.19",
+  "title": "SRD 5.1 class primaryAbilities from Multiclassing prerequisites",
+  "description": "The base-class parser (loreweaver-0m9.5.2) emits class records with primaryAbilities: [] because the SRD 5.1 'Class Features' block does not print a per-class primary/key ability line — per ADR 0007 the importer leaves the field empty rather than authoring it from model knowledge.\n\nThe canonical SRD source for per-class key abilities is the 'Multiclassing' section's prerequisites listing (Barbarian — Strength 13, Fighter — Strength 13 or Dexterity 13, Monk — Dexterity 13 and Wisdom 13, ...). This bead: add a deterministic slice + parser for that listing, build a class-name -> abilities map, and have the class emitter populate primaryAbilities from it. Provenance still cites the source page.\n\nThis is a normalization-mapping task (ADR 0007 says a human reviews such mappings). Verify exact section placement/format against the vendored PDF; the Multiclassing section likely falls inside the core-rules slice range (Using Ability Scores .. Spell Lists).",
+  "acceptance_criteria": "- A Multiclassing prerequisites parser yields a class-name -> ability list map from the SRD.\n- Class records' primaryAbilities are populated from that map (Fighter -> [Strength, Dexterity], Wizard -> [Intelligence], etc.).\n- Classes absent from the prerequisites map retain []; no value is authored from model knowledge.\n- Unit tests cover an 'or' class (Fighter), an 'and' class (Monk), and a single-ability class (Wizard).",
+  "notes": "Merged work delivered via PR #124: https://github.com/jbongaarts/loreweaver/pull/124 (earlier close reason mistakenly cited #122, which was never created).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-30T02:39:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:52Z",
+  "started_at": "2026-05-31T17:49:44Z",
+  "closed_at": "2026-05-31T18:21:14Z",
+  "close_reason": "Implemented via parseMulticlassing slice+parser (class->primaryAbilities map from SRD Multiclassing prerequisites); emit merges into class records, best-effort per ADR 0007. PR #122: https://github.com/jbongaarts/loreweaver/pull/122",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.19",
+      "depends_on_id": "eshyra-0m9.5.2",
+      "type": "blocks",
+      "created_at": "2026-05-29T21:39:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.19",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-29T21:39:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

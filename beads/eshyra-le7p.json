@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-le7p",
+  "title": "Revisit ADR 0008 for self-contained release artifact model",
+  "description": "ADR 0008 (Node runtime + native better-sqlite3 support) was written when npm install was the only distribution path, so it never distinguished dev/workspace install policy from release CI native-build policy from end-user artifact install policy. The release model has since moved to self-contained per-platform archives (ADR 0003/eshyra-upef, ADR 0011) that bundle a pinned Node runtime + ABI-matched better-sqlite3 prebuild + the app tree; end users never run npm install or compile anything. Supersede or amend ADR 0008 to encode this three-layer policy split.",
+  "acceptance_criteria": "New/amended ADR documents: (1) released artifacts must never run npm install or native compilation on the end-user machine; (2) an explicit decision on whether release CI may source-compile better-sqlite3 when upstream prebuilds are unavailable or prebuild-install tooling risk becomes unacceptable; (3) a requirement for artifact smoke tests on a clean target environment lacking native build tools, with follow-up bead filed for the concrete CI implementation if not done in this bead; (4) explicit bundling requirement that the Node runtime and native addon match OS/arch/Node ABI; (5) the existing guard that moving Node majors requires an explicit dependency/runtime decision is preserved. AGENTS.md/docs/dependencies.md updated if the split changes any stated policy. eshyra-nkbo (npm deprecation warning bead) closed/annotated referencing the dev/workspace-layer decision.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T01:19:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-01T01:19:41Z",
+  "closed_at": "2026-07-01T03:54:52Z",
+  "close_reason": "Merged as PR #378 (merge commit 4fdad8a). ADR 0016 lands the three-layer native-install model and pre-authorizes source-build-first as a future non-policy implementation choice, keeping the current prebuilt-first default. Net diff docs-only. eshyra-nkbo closed won't-fix; eshyra-w7bp (clean-env smoke) remains open as follow-up.",
+  "comments": [
+    {
+      "id": "9b8f332f-c635-50c4-9859-4beddb933a29",
+      "issue_id": "eshyra-le7p",
+      "author": "Joseph Bongaarts",
+      "text": "PR opened: https://github.com/jbongaarts/eshyra/pull/378",
+      "created_at": "2026-07-01T01:26:25Z"
+    },
+    {
+      "id": "dada53d0-9987-5bdf-bb98-a57bf5c914d5",
+      "issue_id": "eshyra-le7p",
+      "author": "Joseph Bongaarts",
+      "text": "Correction applied per user feedback: the intended decision was to flip dev/workspace AND release-CI layers to source-build-first (not merely accept source-compile as a release-CI fallback). Implemented via a checked-in root .npmrc (build-from-source=true). This required real follow-up fixes beyond docs:\n\n- ci.yml's install-smoke log-scan inverted (now requires source-build evidence, fails on unexpected downloaded prebuild). First attempt used a Windows-incompatible compiler-line pattern; fixed to rely solely on node-gyp's cross-platform \"gyp info ok\" line, verified via real GitHub Actions runs on Linux/macOS/Windows.\n- Removed redundant per-workflow npm_config_build_from_source env vars (ci.yml, release.yml, srd-freeze-guard.yml, srd-importer-reproducibility.yml); build-release-artifact.mjs's --global --prefix install keeps an explicit override since it doesn't inherit repo .npmrc.\n- Discovered and fixed a real release-build regression: compiling better-sqlite3 from source also builds its test_extension helper target + ~18MB of node-gyp intermediates, which tripped validate-release-artifact.mjs's stray-native-binary check. Added pruneNativeBuildByproducts() to build-release-artifact.mjs. Verified via a full GitHub Actions Release run: all 16 edition x platform legs + installer-smoke pass.\n- Added a thaw note for srd-freeze-guard.yml (a frozen exact path) since removing its env block tripped the SRD freeze changed-path check.\n\nAll workflows (CI, Release, SRD frozen artifact guard, SRD importer reproducibility) pass on the final commit c252672. PR #378 updated.",
+      "created_at": "2026-07-01T03:07:47Z"
+    },
+    {
+      "id": "084314f0-e481-57eb-911b-38fb62c5684f",
+      "issue_id": "eshyra-le7p",
+      "author": "Joseph Bongaarts",
+      "text": "Final direction (per review): reverted the source-build-first flip; kept ADR 0016 reframed as permissive rather than mandatory.\n\nRationale: the flip bought resiliency (no hard dependency on prebuild-install's deprecated download path) but did NOT remove the deprecation warning (prebuild-install stays a declared dep of better-sqlite3 either way) and added per-install compile time + a mandatory toolchain everywhere. Not worth forcing now.\n\nADR 0016 now: (a) three-layer model (dev/workspace, release-CI, end-user artifact); (b) ADR 0008's prebuilt-first default stays in force; (c) pre-authorizes opting layers 1-2 into source-build-first later as an implementation choice with NO new policy ADR, recording the four validated conditions (mandatory toolchain; invert ci.yml compile-evidence guard keyed on `gyp info ok`; prune node-gyp byproducts incl test_extension.node from release artifacts; longer builds); (d) layer 3 = hard rule (end-user artifact never compiles). ADR 0008 gets a pointer note; AGENTS.md gets a one-line pointer.\n\nNet PR diff vs main is docs-only. All CI green (build-test + install-smoke Linux/Win/mac, CodeQL). PR #378 updated. eshyra-nkbo stays closed won't-fix; eshyra-w7bp (clean-env smoke) stays open.",
+      "created_at": "2026-07-01T03:50:38Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 3
+}

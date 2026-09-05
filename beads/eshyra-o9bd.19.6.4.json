@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.4",
+  "title": "Accept independent audit results and certify zero-repeat closure",
+  "description": "Terminal gate of eshyra-o9bd.19. Receives the independent max-effort re-audit\nresult from eshyra-o9bd.16 and certifies zero-repeat closure, or refuses.\n\nThis bead exists so the .19 hierarchy stays open THROUGH the independent audit\nrather than closing on its own automated gates, and so eshyra-o9bd.16 is used\nrather than silently superseded by the new program.\n\nCertification requires that independent review reports NO repeat finding. Any NEW\nfinding blocks re-freeze, is added to the finding registry BEFORE any repair\nstarts, and is assigned an owning bead.",
+  "acceptance_criteria": "- The independent re-audit (eshyra-o9bd.16) has completed and its results are recorded here.\n- Independent review reports zero REPEAT findings from the 2026-07-24 corpus.\n- Every new finding, if any, is registered with an owning bead before repair begins, and this bead stays open until they close.\n- Certification is explicit and dated; eshyra-o9bd.14 may not proceed without it.",
+  "notes": "Added on review of the original closure wiring, which let eshyra-o9bd.14,\neshyra-o9bd.16 and eshyra-2zyy all proceed in parallel after 19.6.3 — that\nneither enforced the intended sequence nor used the pre-existing final-audit\nbead.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:51:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:51:49Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.4",
+      "depends_on_id": "eshyra-o9bd.16",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:51:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.4",
+      "depends_on_id": "eshyra-o9bd.19.6",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:51:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.4",
+      "depends_on_id": "eshyra-o9bd.19.1.7",
+      "type": "blocks",
+      "created_at": "2026-07-25T22:30:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.4",
+      "depends_on_id": "eshyra-o9bd.19.1.8",
+      "type": "blocks",
+      "created_at": "2026-07-26T10:08:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

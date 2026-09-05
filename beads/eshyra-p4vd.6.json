@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd.6",
+  "title": "Make queryable world and overlay records discoverable",
+  "description": "Improve discoverability of queryable world/campaign records for the DM.\n\nThe playtest showed that asking the model to query exact records is brittle when it does not know valid IDs. Even with a fresh campaign, overlay lore will make this more important because newly introduced subjects may not have pre-authored module IDs.\n\nThis does not need to become broad semantic search in the first pass, but the DM needs a reliable way to discover relevant records.\n\nAcceptance criteria:\n- Provide a compact index/search path for world_query or a separate world_search-style operation.\n- The DM can discover queryable records by natural-ish subject terms such as:\n  - \"north gate\"\n  - \"Old Renn\"\n  - \"missing cart\"\n  - \"rumors north of Hearthmere\"\n- Search/discovery results include record IDs/types suitable for follow-up world_query calls.\n- Results distinguish module canon from campaign overlay lore.\n- Tests cover lookup/discovery for newly recorded overlay lore.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:23:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:45:03Z",
+  "started_at": "2026-06-24T03:34:28Z",
+  "closed_at": "2026-06-24T03:45:03Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-p4vd.6",
+      "depends_on_id": "eshyra-p4vd",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:23:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3",
+  "title": "Complete character-option and core-rule pack semantics",
+  "description": "Complete the deterministic semantics of choices/variants, class features and\nfeats, ancestry/background/equipment grants, and rule/action/condition\nprocedures.\n\nCross-cutting root cause: mutually exclusive behavior is flattened into\nunconditional arrays or hoisted to a parent record, so a consumer must infer\nwhether sibling values are additive, alternative, conditional, or\nvariant-specific. It must never have to infer that.",
+  "acceptance_criteria": "- Selecting one option grants only that option's complete behavior; sibling alternatives are never interpreted as cumulative.\n- Every deterministic feature/feat/ancestry/background/rule clause is option-local, level-aware, executable, and linked to required engine capabilities.\n- No phantom resource exists — a resource is emitted only when a source clause establishes it.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:21:51Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

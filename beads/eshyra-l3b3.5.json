@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l3b3.5",
+  "title": "Add continuity dressing for stable descriptive details",
+  "description": "Problem\n\nThe p4vd canon hierarchy correctly avoids making every descriptive flourish into consequential canon, but the current \"decorative color stays in prose\" guidance is too blunt.\n\nSome non-consequential details are still important for player experience because they are stable, visible, and memorable. If the DM describes an ornate tapestry in a room, then later describes the same room as having bare walls or different decoration, the player may be pulled out of the fiction or infer false significance from the change.\n\nThis is not a clue/hook problem; it is a continuity problem.\n\nDesign direction\n\nAdd a continuity-dressing tier or equivalent field to campaign overlay lore.\n\nDistinguish:\n- Ephemeral atmosphere: transient sensory/mood details that can be safely forgotten.\n- Continuity dressing: stable physical details attached to a recurring location/NPC/object that should remain consistent.\n- Consequential lore: hooks, clues, NPC knowledge, motives, threats, evidence, consequences, and player-affecting facts.\n\nExamples of continuity dressing:\n- ornate tapestry on the west wall\n- cracked blue-glass windows\n- a statue missing one hand\n- three long banquet tables\n- dry fountain in the square\n- soot-streaked houses around Emberfall Square\n\nExamples of ephemeral atmosphere:\n- smell of cold ash\n- wind moving through the room\n- torchlight flickering\n- dust motes in morning light\n- a villager shifting uneasily\n\nAcceptance criteria\n\n- Update the canon-tier design to include stable continuity dressing or an equivalent kind/significance/weight field.\n- The model can record stable visible details without implying they are clues or plot hooks.\n- world_query(location) returns continuity dressing for revisited locations.\n- Audit treats continuity dressing as support for descriptive consistency, not as proof of plot significance.\n- DM guidance says:\n  - do not record every adjective or transient mood detail\n  - do record stable physical details when forgetting or contradicting them would confuse play\n  - do not imply significance merely because a continuity detail was recorded\n- Add or adapt overlay lore fields to support this distinction, such as:\n  - kind: location_dressing / npc_dressing / object_dressing\n  - or significance/weight: atmosphere / continuity / clue / hook / consequence\n- Regression:\n  1. DM describes an ornate tapestry in a room.\n  2. The detail is recorded as continuity dressing.\n  3. Player leaves and later returns.\n  4. DM recalls the tapestry or at minimum avoids contradicting it.\n  5. The system does not imply the tapestry is a clue unless later promoted separately.\n- Regression:\n  - transient atmosphere such as \"torchlight flickers\" is not automatically persisted.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T23:07:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-25T00:36:12Z",
+  "started_at": "2026-06-25T00:25:24Z",
+  "closed_at": "2026-06-25T00:36:12Z",
+  "close_reason": "Added overlay lore significance for continuity dressing, returned continuity evidence in world queries, updated DM/audit guidance, and covered stable vs transient detail regressions.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-l3b3.5",
+      "depends_on_id": "eshyra-l3b3",
+      "type": "parent-child",
+      "created_at": "2026-06-24T18:07:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

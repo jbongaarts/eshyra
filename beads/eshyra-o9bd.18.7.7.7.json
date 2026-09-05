@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.7",
+  "title": "Model magic item activated forms, devices, zones and apparatus state (M5)",
+  "description": "Implement family M5 from docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md §4: 50 rows (exact membership = §2 rows tagged M5). Sub-shapes: on/off toggles (flame-tongue, sun-blade, invisibility, hoods), animated objects with object stats (dancing-sword, animated-shield, ropes incl. self-repair), vehicles/structures (apparatus-of-the-crab, broom, carpet, folding-boat, instant-fortress), barriers/zones (cube-of-force faces, bead-of-force sphere, eversmoking-bottle growth, auras, insect cloud), restraints with escape state and lockouts (iron-bands, dimensional-shackles, rope-of-entanglement), form machines (rod-of-lordly-might six buttons), orbit state (ioun), progressive unlocks (ring-of-elemental-command), sphere-of-annihilation (flagship: control/contest/movement math). Hardest family; design a shared activation/duration/termination contract first, then per-item state machines. Distinguish pack data from live session state (durable item-state lives with the inventory row properties_json or a dedicated owner - design decision). Recommended agent: Opus 4.8.",
+  "notes": "2026-07-08 ADR 0017 adjustment: For activated forms/devices/zones, design pack-side operation/state-machine contracts and hook requirements first. Mutable per-instance apparatus/form/zone state belongs in live item/encounter state owned by runtime services; generated records carry immutable source-derived semantics only.\nImplemented the source-grounded family projector, strict schema validation, clause registry bindings, generated pack projection, and representative/exhaustive tests. The exact 240-row owner-tag conservation census passes; all magic items now carry reviewed executable mechanics.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-06T23:31:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:25Z",
+  "started_at": "2026-07-18T16:34:33Z",
+  "closed_at": "2026-07-18T20:23:25Z",
+  "close_reason": "Source-faithful executable magic-item family complete; canonical regeneration, conservation gates, deep audit, and full worktree verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.7",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-06T18:31:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

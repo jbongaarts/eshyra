@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xx0",
+  "title": "Synthesize product/model/deployment/licensing decisions into roadmap",
+  "description": "Integrate the current Loreweaver product, deployment, model-provider, billing, licensing, and UX decisions into architecture docs and existing beads epics/issues. Avoid parallel planning structures; create new issues only where no existing epic is a good home.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-18T02:57:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:45Z",
+  "started_at": "2026-05-18T02:57:17Z",
+  "closed_at": "2026-05-18T03:01:48Z",
+  "close_reason": "Strategy synthesized into docs, ADR, parent acceptance criteria, existing epic notes, and scoped child issues.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

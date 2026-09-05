@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.6.6",
+  "title": "Dispatch: split derived vs underived membership and gate closure (attempt 6)",
+  "description": "Supervisor decomposition of PR #476, approved by the user 2026-07-26 after the\nchurn stop rule triggered. This is the SPLIT, not another membership attempt.\nDo NOT try to derive better membership in this round — that work now belongs to\neshyra-o9bd.19.1.7.\n\n=== FILES YOU OWN ===\n  docs/audits/dnd5e-srd-5.1-final/finding-registry.json\n  docs/audits/dnd5e-srd-5.1-final/finding-registry.md\n  packages/core/src/rules/findingRegistry.ts\n  packages/core/test/findingRegistry.test.ts\n\n=== WHY ===\nThe registry holds two different kinds of row and only one belongs here:\n  QUERY-SCOPED  membership is derivable by executing a predicate against the\n                committed pack. Already correct: rule corpus 335, spells 319,\n                engine-pending clauses 794, half-damage 93.\n  PROSE-SCOPED  membership must first be reconciled against the prose of the\n                four 2026-07-24 audit reviews. Two attempts filled these with\n                ONE exemplar plus a boilerplate sentence.\nThe boilerplate is the defect: exemplarJustification is a single identical\nstring across all 61 rows that carry it, asserted even on indep:008 ('23\nincomplete locators'), sol:CAP-003, indep:006, sol:CAP-004, fable:F3, opus:F-15\nand fable:F8. A guard satisfiable by a constant is not a guard.\n\n=== 1. DELETE exemplarJustification ENTIRELY ===\nRemove the field, its validator rule and its test. It was a false guard and\nkeeping it invites the same substitution. Do not replace it with another\nfree-text field.\n\n=== 2. ADD membershipStatus PER ROW ===\n  'derived'   the baseline snapshot was produced by a NAMED EXECUTABLE QUERY\n              that the validator re-runs and matches against the stored\n              identities. If the re-run disagrees with the snapshot, FAIL.\n  'underived' membership still requires reconciling audit prose. The row MUST\n              carry underivedReason (per-row, specific) and\n              owningDerivationBead = 'eshyra-o9bd.19.1.7'.\n\nCLASSIFICATION RULE — mechanical, do not use judgement about finding scope:\na row is 'derived' ONLY IF its baseline is reproducible by re-running its query.\nEvery other row is 'underived', including rows that look plausibly single. If a\nrow's population is genuinely one record, that is fine — it just has to be\nPROVEN by a query that returns exactly that one identity, not asserted.\n\n=== 3. underivedReason MUST NOT BE A CONSTANT ===\nApply the same technique already used successfully for invariants this round:\nadd a validator rule and test rejecting an underivedReason that is derivable\nfrom the canonicalId by template substitution, or that is byte-identical across\ntwo or more rows. Each reason states what interpretation is still needed for\nTHAT finding.\n\n=== 4. UNDERIVED ROWS MUST BLOCK CLOSURE ===\nExport a predicate — e.g. findingRegistryClosureReady() — returning false while\nany row is 'underived', with the offending canonicalIds. Test it both ways:\nfalse with the current data, and true on a fixture where all rows are derived.\nThis is the point of the split: an underived row must FAIL the closure gate at\neshyra-o9bd.19.6.4 rather than pass as an exemplar.\n\n=== 5. DOCUMENT THE SPLIT ===\nIn finding-registry.md, state the two row kinds, the classification rule, the\nclosure predicate, and that eshyra-o9bd.19.1.7 owns derivation. Do not restate\nrow data that could drift.\n\n=== PRESERVE ===\nAll 68 rows and all 70 aliases resolving exactly once; the durable\nobligation/target/invariant vs transient violation split; baseline separate from\ngenerated current membership; the 57 distinct invariants; target.kind=capability\non the engine row; the correct query-derived baselines (335 / 319 / 794 / 93);\nindep:011 accepted; the indep:001 / sol:CAP-001 split; duplicate-canonicalId\nrejection. Keep their tests.\n\n=== ENVIRONMENT / CONSTRAINTS ===\nRun npm ci first; npm run verify:worktree BEFORE committing. Edit only the four\nfiles above. Do not touch package.json, internal.ts, AGENTS.md, CLAUDE.md,\n.github/, or any script/CI file. Do not regenerate the pack or run the importer.\nDo not modify any bead but your own; no bd dolt push; no push, PR comment, or\nmerge. Never delete a test to make a finding disappear.",
+  "acceptance_criteria": "\n• exemplarJustification removed entirely, with its validator rule and test.\n• Every row carries membershipStatus; derived requires a reproducible query re-run matching the stored snapshot, enforced by the validator.\n• Underived rows carry a per-row underivedReason and owningDerivationBead=eshyra-o9bd.19.1.7.\n• A constant or template-derived underivedReason is rejected, proven by test.\n• findingRegistryClosureReady() returns false while any row is underived and names them; tested false on current data and true on an all-derived fixture.\n• finding-registry.md documents the two row kinds, the classification rule and the closure gate.\n• All 68 rows, 70 aliases, the durable model, the correct query-derived baselines and all prior corrections are preserved with their tests.\n• npm run verify:worktree passes.",
+  "notes": "Completion report: Added per-row membershipStatus, marking the four supervisor-approved executable query populations derived and all remaining prose-scoped rows underived; removed exemplarJustification from the JSON, validator, tests, and documentation. Added required distinct underivedReason plus owningDerivationBead validation, executable-query replay/identity-set matching for derived rows, duplicate/template reason rejection, and findingRegistryClosureReady/findingRegistryClosureBlockers with false/true fixture tests. Preserved 68 rows, 70 aliases, durable obligation/target/invariant versus violation model, baseline/current separation, capability target, and existing query-derived populations. Decision disagreement: none; the four-population classification and fail-closed split follow the supervisor bead. Unsatisfied obligation by design: exact prose-scoped membership remains underived and closure is not ready; eshyra-o9bd.19.1.7 owns that derivation. Follow-up filed: eshyra-r8r3 for shared clause-IR type integration after PR #475. Verification: npm ci; npm run verify:worktree passed (4724 passed, 19 skipped). Commit f75acb2.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:30:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T03:42:28Z",
+  "started_at": "2026-07-26T03:32:25Z",
+  "closed_at": "2026-07-26T03:42:28Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.6.6",
+      "depends_on_id": "eshyra-o9bd.19.1.6",
+      "type": "parent-child",
+      "created_at": "2026-07-25T22:30:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

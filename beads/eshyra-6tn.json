@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6tn",
+  "title": "Raise vitest timeout on play graceful-close EOF test",
+  "description": "packages/cli/test/cli.test.ts:208 'play graceful close on stdin EOF' spawns the built CLI via execFileSync and exercises the full graceful close pipeline including a Dolt .checkpoints write. Wall time is 4–7 seconds on healthy CI runners and ~6.3s locally on Windows. The test does not pass an it() timeout, so vitest's 5000ms default times it out on slow runners — observed under PR #57's CI where the same test passed at 4367ms in one job and failed at the 5000ms timeout in another. Root cause: missing explicit timeout. Fix: pass a generous timeout (e.g. 30_000ms, matching the inner execFileSync timeout) to the it() call.",
+  "notes": "PR #58 opened (https://github.com/jbongaarts/loreweaver/pull/58). Added 30_000ms timeout to it() in cli.test.ts:208, matching the inner execFileSync timeout. Targeted run: test now finishes at ~6231ms and passes under the new ceiling; would have aborted at old 5000ms default. Full suite green.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-24T04:00:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:17Z",
+  "started_at": "2026-05-24T04:02:02Z",
+  "closed_at": "2026-05-24T04:05:23Z",
+  "close_reason": "Merged via PR #58 (squash e9b0d48..66fb61e on main). it() now carries a 30_000ms timeout matching the inner execFileSync timeout, so the EOF graceful-close test stops flaking against vitest's 5000ms default on slow CI runners.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

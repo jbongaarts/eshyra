@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-uesn",
+  "title": "Dispatch: atomic clock/stable-recovery + rest evidence (attempt 1)",
+  "description": "Works defect beads eshyra-r2ps AND eshyra-cc3c together (read both first: full analysis with file/line refs). Parent spec: eshyra-geny (acceptance criteria 3 and 4).\n\nBranch/worktree: this bead's id, cut from eshyra-geny.\n\n## Code survey (verified 2026-07-19)\n\n- `packages/core/src/state/rest.ts:159-219` `advanceWorldTime`: clock update, effect expiry, and short-rest-window closure commit inside one `withTransaction`; `resolveStableRecoveries` then runs at line 217 AFTER the transaction returned, against the raw connection.\n- `packages/core/src/state/hpLifecycle.ts:597-626` `resolveStableRecoveries`: maps due rows through `adjustHp(db, 1, ...)`, each opening its own transaction.\n- `packages/core/src/state/rest.ts:588-611` `complete()`: passes its own `txn` to `advanceWorldTime` (so that path nests), then builds `benefits` copying `expiredEffects`, `previousElapsedMinutes`, `elapsedMinutes`, `inGameTime`, `narrativeLabelStale`, `closedRecoveryWindows` from the time result — but omits `stableRecoveries`. `benefits` is both the tool response and persisted `benefits_json` (line 684-688).\n- `withTransaction` (`persistence/db.ts:12`) uses better-sqlite3 `db.transaction`, which nests as savepoints — so moving the recovery calls inside the callback composes correctly.\n- Check all consumers of `advanceWorldTime`'s result (`WorldClock` shape) and of `resolveStableRecoveries` before changing shapes: orchestrator/toolRest.ts, rest.ts, tests, internal.ts exports.\n\n## Required behavior changes\n\n1. eshyra-r2ps: resolve all due stable recoveries INSIDE the same `withTransaction` callback as the clock transition in `advanceWorldTime`, returning them as part of that atomic result (no post-transaction mutation). The `WorldClock` result shape keeps its `stableRecoveries` field.\n2. eshyra-cc3c: add `stableRecoveries: time.stableRecoveries` to the `benefits` object in `complete()` so it reaches both the tool response and persisted `benefits_json`.\n\n## Tests\n\n- Atomicity (rest.test.ts or hpLifecycle.test.ts, follow existing setup helpers): with a due stable recovery arranged, inject a failure during recovery resolution (e.g. corrupt the second due character's row so `adjustHp` throws, or another deterministic injection) and assert the clock's `elapsed_minutes` did NOT advance and no partial recovery persisted.\n- Evidence: a short rest whose window crosses a stable character's recovery deadline → returned benefits contain the recovery (character id, HP transition), and the persisted `rest_event.benefits_json` contains the same; the character wakes at 1 HP.\n\n## Verification\n\n`npm run verify:worktree` from this worktree (run `npm ci` first). Do not weaken existing tests. Commit on this branch only.\n",
+  "notes": "Codex session id: 019f7ce1-0a16-73c3-830f-a88d14cf2472 (attempt 1, gpt-5.6-luna, worktree .worktrees/eshyra-uesn)\nCompletion report (2026-07-20): moved resolveStableRecoveries into the advanceWorldTime withTransaction callback and returned the atomic result; added stableRecoveries to complete() benefits so tool and persisted rest_event evidence include recoveries; added rollback-on-injected-recovery-failure and returned/persisted short-rest evidence tests. Verification: npm ci; focused hpLifecycle/rest tests 58 passed; npm run verify:worktree passed (261 files, 4652 tests passed, 4 files/19 tests skipped). No additional follow-ups discovered.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:14:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-20T00:21:24Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

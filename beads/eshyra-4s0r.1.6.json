@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.1.6",
+  "title": "Remove latest-schema repair DDL from initSchema",
+  "description": "Remove the hand-maintained latest-schema DDL authority from initSchema after migration-first initialization is in place.\n\nProblem:\nThe existing init path can run latest CREATE TABLE IF NOT EXISTS / CREATE INDEX IF NOT EXISTS logic after migration compatibility checks, which can mask incomplete migrations.\n\nAcceptance criteria:\n- initSchema delegates schema mutation to the migration runner.\n- initSchema no longer contains or executes hand-maintained latest-schema CREATE TABLE/CREATE INDEX repair DDL.\n- Safe invariant/bootstrap row insertion remains only where appropriate and is documented.\n- Repeated init is idempotent without relying on broad CREATE TABLE IF NOT EXISTS repair behavior.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T03:05:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T04:32:22Z",
+  "started_at": "2026-06-26T04:08:42Z",
+  "closed_at": "2026-06-26T04:32:22Z",
+  "close_reason": "initSchema delegates to migration runner; latest-schema repair DDL + legacy TS chain removed. Landed in PR #318 (merged).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.1.6",
+      "depends_on_id": "eshyra-4s0r.1",
+      "type": "parent-child",
+      "created_at": "2026-06-25T22:05:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

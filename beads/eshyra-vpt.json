@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vpt",
+  "title": "Consolidate the freshDb test helper",
+  "description": "Tech-debt review finding. freshDb is redefined in nine or more core test files with copy-pasted timestamps. Add packages/core/test/support/db.ts exporting bareDb and freshDbWithSession. Test-only consolidation with no production change. Parent context: loreweaver-d4r.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:25:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:19Z",
+  "started_at": "2026-05-22T22:26:56Z",
+  "closed_at": "2026-05-22T22:30:26Z",
+  "close_reason": "Consolidated repeated core test freshDb helpers into packages/core/test/support/db.ts with bareDb and freshDbWithSession. Verification: npx vitest run packages/core/test passed (35 files, 230 tests; 1 file/1 test skipped); npm run typecheck remains blocked by unrelated CLI TS errors recorded in comments. PR: https://github.com/jbongaarts/loreweaver/pull/44",
+  "comments": [
+    {
+      "id": "8f2bebc7-fee3-586c-899e-ef35395af9da",
+      "issue_id": "eshyra-vpt",
+      "author": "Joseph Bongaarts",
+      "text": "Refactor verification: npx vitest run packages/core/test -> passed (35 files, 230 tests; 1 file/1 test skipped). Consolidated local freshDb/bareDb definitions into packages/core/test/support/db.ts.",
+      "created_at": "2026-05-22T22:29:23Z"
+    },
+    {
+      "id": "aa81765c-04b0-596e-95e7-c98d0ac2be6b",
+      "issue_id": "eshyra-vpt",
+      "author": "Joseph Bongaarts",
+      "text": "Verification caveat: npm run typecheck -> failed on unrelated packages/cli/src/index.ts:131 TS2554/TS2339. Duplicate helper search now finds only packages/core/test/support/db.ts.",
+      "created_at": "2026-05-22T22:29:45Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.10",
+  "title": "Add character creation navigation, review, save, and resume",
+  "description": "Add shared wizard-shell behavior for navigation and draft persistence.\n\nEvery step should support, where applicable:\n- ? for help;\n- list;\n- search <term>;\n- back;\n- review;\n- set <field>;\n- save;\n- quit.\n\nDrafts should be saveable and resumable, likely under .eshyra/drafts/characters/<draft-id>.json or the project-standard local state directory.\n\nAcceptance criteria\n- review shows current draft, completed fields, missing required choices, and derived values available so far.\n- save writes a resumable draft.\n- quit offers to save when unsaved changes exist.\n- resume restores the draft without losing state.\n- back and set <field> allow corrections without restarting.\n- Tests cover save/resume and at least one correction flow.",
+  "notes": "Review fix pushed to PR #303: unnamed-draft id now character-<timestamp>-<random> (crypto entropy) instead of a per-process counter that collided on character-1 across runs and overwrote saved drafts; generated id surfaced for --resume. Regression tests added.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-25T22:26:15Z",
+  "started_at": "2026-06-25T05:02:08Z",
+  "closed_at": "2026-06-25T22:26:15Z",
+  "close_reason": "Merged via PR #303. Wizard shell: shared ?/list/search/back/review/set/save/quit over the pure engine; review renders identity/class/ancestry/bg/scores/HP/spell-DC/spells/errors/missing; drafts persist to <dataRoot>/drafts/characters/<id>.json via injectable atomic store; resume rehydrates, quit offers save, EOF autosaves. Unnamed-draft ids use crypto entropy (no cross-run overwrite) and are surfaced for --resume. Resolver listAncestries/listBackgrounds/listSpells added.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.10",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

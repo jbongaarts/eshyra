@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-bv68",
+  "title": "Follow-up: authoritative obligation registry and evidence contract",
+  "description": "Receiving follow-up for the reduced PR #475 scope; owned by the obligation-authority work corresponding to eshyra-o9bd.19.1.12. Restore regression coverage for source-derived registry construction and validation, canonical obligation identity bound to evidence (including repeated occurrences), known-missing-source-clause supplemental gap evidence, conjunctive versus alternative multi-part evidence, capability/facet authority immutability, and scalar identity namespace reservations. These tests were intentionally removed from packages/core/test/clauseIrObligations.test.ts because PR #475 now consumes ObligationSource without constructing or validating authority.",
+  "acceptance_criteria": "Provide an authoritative source census/registry API; represent and validate known-missing gap evidence without making it capturable; validate all identity/evidence parts and multi-part evidence semantics; deep-freeze or encapsulate authority; restore adversarial regression tests.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T01:48:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T01:48:59Z",
+  "labels": [
+    "authority",
+    "clause-ir",
+    "follow-up"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

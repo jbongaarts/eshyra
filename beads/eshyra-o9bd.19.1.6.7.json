@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.6.7",
+  "title": "Dispatch: fail-closed registry gate and effective anti-template guard (attempt 7)",
+  "description": "The two defects left in PR #476's RETAINED CORE after the churn-stop decomposition.\nThey were recorded on eshyra-o9bd.19.1.6 as must-fix and had no dispatch. Without\nthem the rescope is meaningless: the retained core is the row model plus its\ngate, and the gate currently does not gate.\n\nBranch is cut from eshyra-o9bd.19.1.6 at c73f6bc.\n\n=== FILES YOU OWN ===\n  docs/audits/dnd5e-srd-5.1-final/finding-registry.json\n  docs/audits/dnd5e-srd-5.1-final/finding-registry.md\n  packages/core/src/rules/findingRegistry.ts\n  packages/core/test/findingRegistry.test.ts\n\n=== D1: findingRegistryClosureReady() IS FAIL-OPEN ===\nIt checks only whether rows SAY membershipStatus='derived'. It never applies the\nexecutable-generator and snapshot validations that sit directly below it in the\nsame module. Worse, the suite explicitly constructs an invalid all-derived\nregistry and asserts the gate returns true — the test encodes the defect.\n\nCROSS-ARTIFACT PATTERN, recorded on the parent bead: PR #477's ledger closure\npredicate shipped the SAME fail-open shape, built independently in a different\nround. Assume fail-open is the DEFAULT failure mode of any ready/complete helper\nin this program, and write this one to prove the negative.\n\nFIX:\n * The predicate must apply the full validation chain, not read a status field.\n   A row claiming 'derived' whose query re-run does not reproduce its stored\n   snapshot must BLOCK closure, not pass.\n * Return the EXACT blocker set, not a boolean alone.\n * The regression must assert blocker IDENTITIES, never a count. A count-pinned\n   test passes identically for a different set of the same size, which is how\n   both fail-open predicates in this program survived review.\n * Test both directions: not-ready on the real registry naming its real\n   blockers, ready only on a fixture where every row genuinely validates.\n * The committed test asserting true for an invalid all-derived registry must be\n   changed deliberately; record why in your notes.\n\n=== D2: THE ANTI-TEMPLATE GUARD IS INEFFECTIVE ===\nThe validator rejects only a reason that DUPLICATES another or that CONTAINS the\ncanonicalId. The checked-in reasons evade both by using a title-substitution\ntemplate — same sentence skeleton, row title interpolated — and most invariants\nuse the same pattern.\n\nTHIS IS THE THIRD OCCURRENCE OF ONE FAILURE MODE in this program: a required\nfield filled mechanically to satisfy a validator. First exemplarJustification —\none identical sentence across 61 rows. Then PR #477's audit aliases — indep:001\nto 012 cycled round-robin. Now title-substituted reasons and invariants. A guard\nthat a constant or a template can satisfy is not a guard.\n\nFIX:\n * Detect TEMPLATE STRUCTURE, not just equality: normalise each reason and\n   invariant by removing row-specific tokens (title, canonicalId, aliases,\n   target selector text) and reject when the residual skeletons collide across\n   rows above a small threshold.\n * Apply it to BOTH underivedReason and invariant.\n * Add a test that constructs two rows differing only by interpolated title and\n   asserts rejection.\n * Then FIX THE DATA the new guard catches. Expect a substantial number of rows\n   to need genuinely distinct text. Do not weaken the guard to fit the existing\n   data — that is the failure mode this bead exists to end.\n\n=== DO NOT TOUCH ===\n * capability targets and their qualified engine identities — eshyra-o9bd.19.1.9,\n   just landed in c73f6bc;\n * membership derivation for the 64 prose-scoped rows — eshyra-o9bd.19.1.7;\n * violation predicate executability — eshyra-o9bd.19.1.8.\nIf a fix here appears to need any of those, report it rather than widening\nscope. Scope creep is what triggered the stop rule on this PR.\n\n=== ENVIRONMENT / CONSTRAINTS ===\nnpm ci first; npm run verify:worktree BEFORE committing. A sibling dispatch runs\nin parallel on PR #477's files. Do not touch package.json, internal.ts,\nAGENTS.md, CLAUDE.md, .github/, or any script/CI file. Do not regenerate the pack\nor run the importer. Do not modify any bead but your own; no bd dolt push; no\npush, PR comment, or merge. The PR body is the supervisor's to fix.",
+  "acceptance_criteria": "\n• findingRegistryClosureReady applies the full validation chain; a row claiming derived whose query does not reproduce its snapshot blocks closure.\n• The predicate returns the exact blocker set and the regression asserts blocker identities, never a count.\n• Both directions tested; the committed test asserting true for an invalid all-derived registry is deliberately changed.\n• The anti-template guard detects template structure after normalising row-specific tokens, applied to both underivedReason and invariant.\n• A test constructs two rows differing only by interpolated title and asserts rejection.\n• Data caught by the new guard is rewritten with genuinely distinct text; the guard is not weakened to fit existing data.\n• No capability-target, membership-derivation or violation-predicate work is absorbed.\n• npm run verify:worktree passes.",
+  "notes": "Completion report 2026-07-27:\n- Changed the four owned files only. Added structural normalization/collision detection for underivedReason and invariant fields, rewrote the checked-in row text with distinct source/semantic facets, and kept 68 rows, 70 aliases, 4 derived, and 64 underived.\n- Refactored closure validation into a shared row validator. findingRegistryClosureBlockers now runs parse plus executable generator, snapshot, current-join, and stable-locus checks; findingRegistryClosureReady is fail-closed and accepts records fixtures for regression coverage. Tests assert exact blocker identities for real underived rows, invalid all-derived mutations, a valid derived fixture, and a single missing snapshot member.\n- Updated finding-registry documentation and added explicit title-substitution tests for both fields.\n- Decision disagreement: none; I followed the child and corrected parent architecture, including treating status alone as insufficient for closure.\n- Child obligations: all assigned acceptance criteria satisfied. No in-scope obligation could not be satisfied. Follow-up eshyra-jzdw tracks narrower attribution for schema-invalid parse failures, which is outside this bead.\n- Verification: npm ci; npm run verify:worktree passed (263 files, 4 skipped; 4726 tests passed, 19 skipped).\n- Per dispatch constraints, no PR comment, push, merge, or bd dolt push was performed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T00:38:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:50:45Z",
+  "started_at": "2026-07-28T00:41:30Z",
+  "closed_at": "2026-07-28T00:50:45Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.6.7",
+      "depends_on_id": "eshyra-o9bd.19.1.6",
+      "type": "parent-child",
+      "created_at": "2026-07-27T19:38:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

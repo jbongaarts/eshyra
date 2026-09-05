@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.9.1",
+  "title": "o9bd.9.1 Choice schema + choice-coverage audit gate + unsupportedChoice marker (framework)",
+  "description": "Foundational slice of the choice-modeling sub-epic. Add a structured 'choices' field to feature records (id, category, prompt, choose, from?, level, optional unsupportedChoice named marker), a 'choice-coverage' gate in srdPlayabilityAudit.ts that flags level-1/level-up player choices that are prose-only (feature granted by a class progression row whose description carries build-choice signals but lacks structured choices / an unsupportedChoice marker), and the named-unsupported-marker convention. Include ONE worked modeled example (Fighter Fighting Style) to exercise the green path end-to-end (schema + parser + emit + regen + gate-green for that feature). Gate lands RED as a punch list for the remaining slices. Follow docs/importer-fix-protocol.md. Labels: importer, srd, thaw.",
+  "notes": "Scope landed as PURE FRAMEWORK (no pack regeneration): feature.data.choices[] schema + reusable validator, shared closed category vocabulary (featureChoices.ts), named unsupported-marker convention, and the choice-coverage audit gate. Gate is RED on the committed pack with a 48-finding punch list bucketed per slice: .9.2 subclass(12), .9.3 spell/cantrip(12), .9.4 ASI-vs-feat(12), .9.5 fighting-style/metamagic/invocation/terrain-enemy(7), .9.6 channel-divinity/expertise(5). Subclass coverage is checked structurally per-class (selector prose varies too much); other categories via SRD-phrasing-tuned heuristics; ranger foe-slayer/primeval-awareness false positives excluded. Green path proven via synthetic records in unit tests rather than a real Fighting Style parse, to decouple the framework from the fragile PDF feature parser — real per-type modeling (incl. Fighter Fighting Style) lands in the slices. No importer behavior change; verify:dnd5e-srd-pack byte-stable.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T21:47:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T21:48:09Z",
+  "closed_at": "2026-06-29T03:45:23Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.9.1",
+      "depends_on_id": "eshyra-o9bd.9",
+      "type": "parent-child",
+      "created_at": "2026-06-28T16:47:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 5,
+  "comment_count": 0
+}

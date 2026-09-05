@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.9.1",
+  "title": "Promote Fable independent audit harness checks into durable tooling",
+  "description": "Finding source:\n- Fable built an independent scratch harness rather than reusing repo audit code.\n- Checks included source->pack all-page shingle coverage, pack->source record/field verification, digit-bearing token consistency, and internal consistency for dice averages, attack bonuses/DCs, class progression, equipment rows, armorClass structures, and concentration/ritual flags.\n- Durable copy of the harness code and its output reports is at ~/src/dnd5e-srd-audit-harness-070126/ (lib.py, corpus.py, page_coverage.py, record_check.py, digit_check.py, consistency.py, spell_lists.py, plus page-coverage-report.json, record-check-report.json, digit-check.json, consistency-report.json). The scripts reference the extracted audit bundle at a scratchpad path; point them at an unzipped copy of dnd5e-srd-audit-bundle-070126.zip (BUNDLE constant in lib.py).\n\nAcceptance criteria:\n- Review/adapt Fable's independent harness approach into repo tooling.\n- Add durable equivalents for high-value checks: page shingle coverage, record-field source verification, digit-bearing token verification, and consistency checks.\n- Split into normal CI vs deep pre-freeze audit if runtime is too high.\n- Document how to run the deep audit before future freeze/sign-off.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:28:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-03T15:49:22Z",
+  "started_at": "2026-07-03T03:20:17Z",
+  "closed_at": "2026-07-03T15:49:22Z",
+  "close_reason": "PR #395: Fable harness promoted to durable tooling at packages/core/scripts/deep-audit-dnd5e-srd (npm run audit:dnd5e-srd-deep): bidirectional PDF<->pack 6-gram shingle verification (record-check, digit-check, page-coverage with novel-token fail / reordered review split) + pack-internal consistency (dice means, class progression vs table, creature attack bonus/DC vs text, spell dice/save/attack grounding). No parser code shared with importer. Baseline 0 findings across 1812 records/403 pages. CI split: stays out of per-PR CI (verify:dnd5e-srd-pack + tests remain the CI layer); documented as required freeze evidence in docs/deep-audit-dnd5e-srd.md.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.9.1",
+      "depends_on_id": "eshyra-o9bd.18.9",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:28:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

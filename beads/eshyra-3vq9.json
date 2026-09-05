@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3vq9",
+  "title": "Document self-overwriting dispatch heartbeat in supervisor workflow",
+  "description": "Detached Codex dispatches are invisible to the Claude Code UI because setsid removes them from the harness process tree, so the only liveness signal is whatever the supervisor's own monitor prints. The monitor pane is a FIXED 4-line, non-scrollable, head-truncated view of the task's captured stdout, which makes append-only heartbeats useless: every tick pushes current state further out of view.\n\nDiscovered 2026-07-26 while supervising PRs #475/#476/#477. Two wrong fixes were tried first — lengthening the tick interval, then removing periodic output entirely (which deleted the signal while claiming to improve it). The user identified the correct fix: head-insert or complete overwrite.\n\nOverwrite is achievable: a background task can locate its own captured-output file by printing a unique marker and grepping the tasks directory for it, then truncate-and-rewrite that file each tick. Verified working. The rule is that the process must write nothing further to stdout afterwards, or the harness appends it below the rewritten content.\n\nDocument this in .claude/hooks/codex-subagent-workflow.md so future supervisor sessions do not rediscover it.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:10:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T03:13:31Z",
+  "closed_at": "2026-07-26T03:13:31Z",
+  "close_reason": "PR #478 open: https://github.com/jbongaarts/eshyra/pull/478",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

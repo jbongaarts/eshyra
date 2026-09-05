@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.2.1",
+  "title": "Model Warlock Pact Boons and Eldritch Invocations",
+  "description": "Problem:\nWarlock has two high-impact option families that are currently under-modeled:\n- feature:warlock:pact-boon contains Pact of the Chain, Pact of the Blade, and Pact of the Tome as prose.\n- feature:warlock:eldritch-invocations contains 32 invocation options as prose and one generic choice.\n\nImplement:\n- Emit structured Pact Boon options with stable ids and links from the Pact Boon feature.\n- Emit structured Eldritch Invocation options with stable ids.\n- Capture invocation prerequisites from the SRD where present.\n- Link the Eldritch Invocations feature choice to the invocation option catalog.\n- Preserve each option's SRD prose and source location.\n- Keep option effects prose-backed unless a deterministic effect projection is already obvious and tested.\n\nAcceptance criteria:\n- A deterministic character creation flow can list Pact Boon options.\n- A deterministic character creation flow can list Eldritch Invocations and inspect prerequisites.\n- Selected Pact Boon and selected invocations can be stored by stable id.\n- The choice-bearing prose audit no longer flags these Warlock records.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-29T23:02:05Z",
+  "started_at": "2026-06-29T22:48:15Z",
+  "closed_at": "2026-06-29T23:02:05Z",
+  "close_reason": "Implemented Warlock Pact Boon/Eldritch Invocation option catalogs and contingent spell filters",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.2.1",
+      "depends_on_id": "eshyra-ngcj.2",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

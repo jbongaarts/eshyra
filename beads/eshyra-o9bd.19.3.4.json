@@ -1,0 +1,58 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4",
+  "title": "Complete rule, action, and condition pack procedures",
+  "description": "Model the deterministic rule / action / condition clauses in the pack, and put\ntheir readiness in-band (with A4).\n\nPack evidence on main @4384f25: all 335 rule records carry only\n{text, tableRefs, skillsByAbility} — no mechanics projection, no disposition, no\nreadiness. The rule corpus is prose-only.\n\nRequired membership — all of:\n- rule corpus classification and executable clause data;\n- Search's paired alternatives;\n- Help's first-qualifying-attack cardinality;\n- condition acquisition / effects / recovery / lifecycle where not already typed;\n- exhaustion / rest interaction;\n- action economy and termination semantics.\n\nCloses findings: F-09, F-16, CAP-001, CAP-002, SOL-003 (rule surface).\n\nIMPORTANT — do not over-correct: Sol CAP-002 OVERSTATED the current condition\ndeficit. This bead must independently reconcile all condition clauses and\nPRESERVE already-correct typed effects rather than replacing them\nindiscriminately. The 2026-07-24 independent audit verified conditions as exact\nagainst source.",
+  "design": "Depends on the A4 in-band readiness schema for rules. Reconcile the rule\ndisposition work against the existing 2026-07-06 artifacts before re-deriving:\ndocs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-rule-classification.md and\n2026-07-06-o9bd-18-7-8-1-rule-disposition-layer-design.md. Those artifacts\npredate the closure of eshyra-o9bd.18.7.8 and eshyra-2n1t; their conclusions must\nbe re-verified against the current pack, not assumed.",
+  "acceptance_criteria": "- Every rule record is classified, and deterministic rule clauses carry executable clause data plus in-band readiness.\n- Search and Help carry their printed cardinality and alternative structure.\n- Condition lifecycle (acquisition, effects, recovery, termination) is complete, with existing correct typed effects preserved — verified by a before/after diff that shows no regression in already-typed condition mechanics.\n- Exhaustion/rest interaction is executable.\n- Prose-only classification is an explicit, reviewed disposition, never a default.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: nearly every family — engine:F1 through F10.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:39:37Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.1.4",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.3",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 2,
+  "comment_count": 0
+}

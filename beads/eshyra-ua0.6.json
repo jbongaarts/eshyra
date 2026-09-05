@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ua0.6",
+  "title": "REFACTOR: graceful session close pipeline",
+  "description": "Clean up close pipeline integration while preserving focused and full verification.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T00:31:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:05Z",
+  "started_at": "2026-05-21T00:34:17Z",
+  "closed_at": "2026-05-21T00:35:36Z",
+  "close_reason": "Graceful close pipeline cleanup complete; full typecheck, test, and build passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ua0.6",
+      "depends_on_id": "eshyra-ua0.8",
+      "type": "blocks",
+      "created_at": "2026-05-20T19:31:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ua0.6",
+      "depends_on_id": "eshyra-ua0",
+      "type": "parent-child",
+      "created_at": "2026-05-20T19:31:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "b9470dcd-1d22-57ee-afdc-d2cf9852a6de",
+      "issue_id": "eshyra-ua0.6",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npm run typecheck -> exit 0; npm run test -> exit 0 (30 passed, 1 skipped; 164 passed, 1 skipped); npm run build -> exit 0.",
+      "created_at": "2026-05-21T00:35:36Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

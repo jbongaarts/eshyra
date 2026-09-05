@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4",
+  "title": "Complete spell, creature, hazard, and magic-item projection",
+  "description": "Compile spells, creatures, hazards, and magic items into clause-complete\nprocedures, implemented against the A1 IR and the A2 shared primitives.\n\nCross-cutting root cause: the projectors for these four families were written\nindependently, so each re-parses recurring mechanics and each drops a different\nsubset. The half-damage-on-success omission appearing in all four is the\nsignature of the problem.",
+  "acceptance_criteria": "- Every printed deterministic hook in these families is represented and engine-mapped, or explicitly non-engine with a clause-level rationale.\n- No generic metadata can make an incomplete record appear complete.\n- Exact membership is reconciled by committed predicates, not by the named examples in the reviews.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:22:06Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

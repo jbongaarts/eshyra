@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-uuk.1",
+  "title": "Brainstorm: Objects and Madness SRD import",
+  "description": "Explore existing SRD importer patterns, refine the design for Objects and Madness tables/rules, and capture user-approved acceptance criteria before implementation.",
+  "notes": "Context findings: add fail-closed heading anchors Madness->Objects and Objects->Poisons. Canonical source yields 3 madness tables (10 short-term rows, 10 long-term rows, 12 indefinite rows) and 2 object tables (7 AC rows, 4 HP rows). Madness has clean heading tiers for Going Mad, Madness Effects, and Curing Madness. Objects page 203 is currently row-interleaved because the extractor chooses a 5-item far-right island instead of the supported page gutter; faithful object prose requires a narrow extractor regression fix before parsing. Candidate rule shape: Going Mad, Madness Effects, Curing Madness, and one consolidated Objects rule excluding table rows.\nUser decision: emit all five prose rules: Madness, Going Mad, Madness Effects, Curing Madness, and Objects.\nUser approved the proposed design: two fail-closed slices; extractor outlier repair; five deterministic tables; five focused rule records; exact coverage gates; canonical regeneration and documentation.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T01:57:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:47Z",
+  "started_at": "2026-06-06T01:57:32Z",
+  "closed_at": "2026-06-06T04:32:41Z",
+  "close_reason": "Design approved and persisted on parent feature bead loreweaver-uuk.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-uuk.1",
+      "depends_on_id": "eshyra-uuk",
+      "type": "parent-child",
+      "created_at": "2026-06-05T20:57:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

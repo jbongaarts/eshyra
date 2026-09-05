@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.4",
+  "title": "Brainstorm x3w: Present design",
+  "description": "Present the proposed rules-pack design in sections and obtain user approval before implementation planning.",
+  "notes": "Design section approved: add a rules subsystem; campaign binding has one base pack plus ordered add-ons; resolver validates compatibility/dependencies/explicit overrides; public lookup seam becomes provider-neutral rules records while legacy SRD exports can remain during migration.\nDesign section approved: persist campaign rules binding in campaign SQLite as authoritative state; CLI registry remains pointer metadata. Module packs gain rulesRequirements. createCampaign validates binding, module requirements, required packs, and provider-neutral encounter refs. Existing DBs without binding migrate/default to current D&D SRD base binding.\nDesign section approved: model-facing tool becomes lookup_rules using campaign binding by default; lookup_srd may remain as a compatibility wrapper. Prompt avoids D&D-only wording. Character creation dispatches by rules system, preserving D&D behavior and adding a broad level-1 Pathfinder validator backed by rules records; canonical character remains the shared projection with system-specific details in JSON.\nDesign section approved: rules packs reuse/generalize PackLicense policy; bundled/public rules packs require shippable policy checks; Pathfinder fixture uses ORC-licensed rules content only and avoids reserved/trademark material; campaign DB stores binding only; tests cover validation, load order, lookup routing, binding persistence, module compatibility, D&D compatibility, Pathfinder level-1 character validation, and license rejection.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:36:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T04:53:13Z",
+  "closed_at": "2026-05-23T04:57:34Z",
+  "close_reason": "Presented design sections and received user approval for core model, binding/persistence, lookup/character creation, and licensing/testing.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.4",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:36:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.4",
+      "depends_on_id": "eshyra-x3w.3",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:36:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

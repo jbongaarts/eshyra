@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.16",
+  "title": "Reorganize core source layout around lifecycle domains",
+  "description": "packages/core/src has useful subdirectories but also root-level lifecycle files that are becoming a miscellaneous domain layer.\r\n\r\nGroup campaign, session, character, rules, state, memory, model, and persistence concerns more explicitly once the higher-priority refactors are stable.",
+  "acceptance_criteria": "- campaign lifecycle files are grouped.\r\n- session lifecycle files are grouped.\r\n- character creation/state files are grouped.\r\n- imports/exports are updated.\r\n- Existing tests pass.\r\n- Public API compatibility is preserved or intentionally migrated.",
+  "notes": "PR #171 open (https://github.com/jbongaarts/eshyra/pull/171), branch feat/core-layout-toolrequest-seam-eshyra-0jq16. Two commits: (1) transport-neutral ToolRequest seam in orchestrator (prep for native tool use eshyra-1q5; fenced parser is the only producer today, native-rejection guard reframed as policy gate); (2) grouped campaign/session/character lifecycle files into domain dirs. config.ts/validation.ts intentionally kept at root. Barrels re-export unchanged so CLI/consumers unaffected. typecheck/test(1264 pass)/check/verify:worktree all green. Leave in_progress; close on merge.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:32:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-07T20:31:20Z",
+  "closed_at": "2026-06-07T21:24:46Z",
+  "close_reason": "Merged via PR #171 (squash 30c18e0). Seam-aware core layout reorg: transport-neutral ToolRequest abstraction + campaign/session/character lifecycle grouping.",
+  "labels": [
+    "architecture",
+    "core",
+    "file-layout",
+    "refactor",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.16",
+      "depends_on_id": "eshyra-0jq.2",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.16",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:32:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.16",
+      "depends_on_id": "eshyra-0jq.4",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

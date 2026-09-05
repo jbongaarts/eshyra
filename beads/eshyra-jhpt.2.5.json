@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.2.5",
+  "title": "Audit unused campaign-rule position/status indexes",
+  "description": "Assess migration 0025 indexes campaign_rule_effective_position and campaign_rule_status_position. The current active-rule read paths fetch all rows by campaign_id and evaluate effective/revoked/superseded positions in JavaScript, so these two indexes appear unused. Decide whether to retain, replace, or remove them in a future migration after measuring query plans and any restore/checkpoint implications; do not modify merged migration 0025 in the current fix.",
+  "acceptance_criteria": "Record EXPLAIN/query-plan evidence for current reads and a reviewed decision for both indexes; if removal or replacement is warranted, add a separate forward migration and regression coverage.",
+  "notes": "Discovered during eshyra-jhpt.rev7 round-4 review; intentionally not changed in commit 818517d.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-03T07:43:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-03T07:43:40Z",
+  "labels": [
+    "audit",
+    "campaign-runtime",
+    "checkpoint",
+    "model-context",
+    "performance",
+    "persistence",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.2.5",
+      "depends_on_id": "eshyra-jhpt.rev7",
+      "type": "discovered-from",
+      "created_at": "2026-09-03T02:43:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.2.5",
+      "depends_on_id": "eshyra-jhpt.2",
+      "type": "parent-child",
+      "created_at": "2026-09-03T02:43:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

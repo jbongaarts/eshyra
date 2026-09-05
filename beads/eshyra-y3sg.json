@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-y3sg",
+  "title": "Investigate vector-graphics 'dashes' in SRD class tables",
+  "description": "Follow-up from PR #205 (eshyra-4a7.6) review. A reviewer reported that the SRD 5.1 class progression tables (Bard/Cleric/etc.) are 'visually dashed' in unavailable spell-slot and empty Features cells, and asked the importer to emit '—' there.\n\nByte-level verification of the vendored SRD_CC_v5.1.pdf TEXT layer (raw pdfjs items) found NO dash glyph of any codepoint in those cells: whole-page non-ASCII codepoint census on p11 yields only U+2014 (header decoration), U+2019 (apostrophes), U+2022 (bullets); empty cells produce no pdfjs item at all (rows terminate after the last filled column); and there are no ToUnicode-mapped-to-empty phantom items at the empty-cell x-positions. Decision on PR #205 was to keep '' as the text-faithful representation (genuine '—' cells — Monk L1 Ki/Unarmored Movement, Beast Shapes L8 — are preserved).\n\nOPEN QUESTION (could not verify in the PR session — no PDF renderer available): is the reviewer seeing the table's RULE LINES / cell borders rendered as VECTOR GRAPHICS (path strokes), not text? If so, that explains 'visually dashed' while the text layer is blank, and confirms '' is correct (the marks are decoration, not content).\n\nInvestigate by inspecting the PDF VISUAL/vector layer for the class table pages (e.g. p11 Bard, p15 Cleric): use pdfjs getOperatorList() to detect stroke/path ops at the empty-cell positions, or render the page to an image (pdftoppm / pdftocairo / pdfium) and inspect. Determine whether any visible dash in an empty cell is (a) a vector rule-line/border [expected -> '' stays correct, no importer change], or (b) an actual glyph the text extractor drops [-> real extractor bug, recover the token].\n\nThis does NOT block the eshyra-4a7.6 follow-up PRs; the table-extraction foundation and its '' vs '—' convention are decided and tested.",
+  "acceptance_criteria": "Determined whether the 'visual dashes' in SRD class table empty cells are vector rule-lines (decoration) or dropped text glyphs, with evidence (operator-list dump or rendered page image). If decoration: documented as confirmation that '' is correct and closed. If a dropped glyph: filed/linked the extractor fix and the affected cells.",
+  "notes": "Investigated the vendored packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf with pdfjs getTextContent() and getOperatorList(). Physical p11 (Bard) has 607 showText ops, 720 constructPath ops, 567 clip ops, and ZERO stroke/fill/image/form paint ops. Physical p15 (Cleric) has 561 showText, 688 constructPath, 546 clip, and ZERO path/image/form paint ops. Thus the constructPath rectangles are clipping regions, not visible rule lines or vector dash marks. Exact questioned cells have no text item: Bard L7 Features x134.4..270.48 y349.68; Bard L11 Features x134.4..270.48 y292.8; Bard L1 2nd-level slot x371.28..396.24 y461.04; Cleric L3 Features x134.4..307.44 y414.96; Cleric L1 2nd-level slot x371.28..396.24 y448.56. Control comparison: genuine source dashes are ordinary U+2014 text items with width 8.04, including Beast Shapes p20 x399.60 y449.76 and Monk p26 x233.00/x303.13 y472.08; the Bard header decoration is likewise a text item. Conclusion: in this vendored artifact the unavailable/empty cells are truly blank, not vector decoration and not extractor-dropped glyphs. Existing empty-string reconstruction is source-faithful; no importer/extractor change or follow-up fix is needed.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-13T21:43:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-14T17:50:19Z",
+  "started_at": "2026-06-14T17:48:01Z",
+  "closed_at": "2026-06-14T17:50:19Z",
+  "close_reason": "pdfjs operator-list and coordinate evidence confirms the questioned class-table cells are genuinely blank: no text glyph and no painted vector/image mark. Existing empty-string output is correct.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

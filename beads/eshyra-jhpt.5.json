@@ -1,0 +1,60 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.5",
+  "title": "Add explicit campaign-rule management workflow",
+  "description": "Objective\nProvide explicit player-facing management for campaign rulings and house rules: create, review, list/inspect, edit by supersession, and revoke.\n\nRequired behavior\nRequire player-provided or player-approved prose and an explicit kind. Show status, origin/provenance, effective position, and supersession/revocation history. Editing creates a new durable rule that supersedes the old identity rather than mutating historical semantic content. Ordinary creation applies prospectively unless invoked by the separate immediate-adjudication objection workflow.\n\nArchitecture and references\nUse eshyra-jhpt.1 domain invariants and eshyra-jhpt.2 storage APIs. Preserve canonical history and ADR 0017 pack/campaign separation.\n\nNon-goals\nNo arbitrary history rewrite; no direct editing of immutable rules-pack records; no automatic deterministic mechanic generation; no implicit ambiguity precedent; no DM-only unapproved rule creation; no persistence of ordinary contextual adjudications.",
+  "acceptance_criteria": "Players can create ruling/house-rule prose, review and list active/history views, supersede through a new record, and revoke prospectively; confirmations expose effective timing and provenance; tests cover status transitions, deterministic ordering, invalid edits, cross-campaign isolation, and history preservation.",
+  "notes": "Delivered on branch eshyra-jhpt; PR opened https://github.com/jbongaarts/eshyra/pull/526 at head eeab5eb (2026-09-05). Stays in_progress until merge.",
+  "status": "in_progress",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T21:24:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-05T07:48:24Z",
+  "started_at": "2026-09-05T07:04:06Z",
+  "labels": [
+    "audit",
+    "campaign-runtime",
+    "cli",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.5",
+      "depends_on_id": "eshyra-jhpt.1",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:24:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.5",
+      "depends_on_id": "eshyra-jhpt.5.1",
+      "type": "blocks",
+      "created_at": "2026-09-05T02:04:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.5",
+      "depends_on_id": "eshyra-jhpt",
+      "type": "parent-child",
+      "created_at": "2026-07-10T16:24:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.5",
+      "depends_on_id": "eshyra-jhpt.2",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:24:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 2,
+  "comment_count": 0
+}

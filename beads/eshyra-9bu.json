@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9bu",
+  "title": "parseSubclasses emits duplicate subclass:champion from SRD 5.1 PDF",
+  "description": "With loreweaver-8gp (parseFeatures Destroy Undead + Eldritch Invocations dedup) landing, verify:dnd5e-srd-pack now passes the feature-duplicate check but hits the NEXT pipeline failure:\n\n> importer failed: records has duplicate key: subclass:champion\n\nReproduce: npm run verify:dnd5e-srd-pack on a tree that has loreweaver-8gp merged.\n\nInvestigation pointers:\n- This failure is pre-existing — it was masked by the parseFeatures duplicate firing first.\n- The duplicate is in parseSubclasses, not parseFeatures.\n- Likely cause: the Champion subclass heading appears twice in the real SRD layout — once as the Champion subclass intro within the Fighter chapter, and possibly again somewhere else (e.g. an index-style reference). Or the parser is treating a body-prose mention of \"Champion\" as a fresh subclass heading.\n- See packages/core/scripts/importers/dnd5e-srd-5.1/parseSubclasses.ts and its tests at packages/core/test/importers/dnd5e-srd-5.1/parseSubclasses.test.ts.\n- The fix pattern from loreweaver-8gp (output-level dedup+merge keyed by record key) may apply directly.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-02T22:40:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:50Z",
+  "started_at": "2026-06-02T23:06:44Z",
+  "closed_at": "2026-06-02T23:15:19Z",
+  "close_reason": "Fixed in PR #137: parseSubclasses now disambiguates subclass-name lines by current parent class, rejecting the 'Champion' column-wrap from the Barbarian level-20 'Primal Champion' progression-table row. Real-PDF regression test added. verify:dnd5e-srd-pack no longer fails on subclass:champion duplicate key.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

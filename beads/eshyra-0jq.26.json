@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.26",
+  "title": "Document deferred source-code licensing posture (keep packages private)",
+  "description": "The repository source-code license remains intentionally deferred and there is no business decision yet on distribution or commercialization. Rather than choosing a final license prematurely, document the deferred posture explicitly: keep root/core/cli private and unpublished, mark package license metadata UNLICENSED, and add documentation that separates source-code rights from rules-pack/adventure/content licenses. The final license and publish decision is split out into follow-up decision beads. This work is separate from rules/adventure content-source legality.",
+  "design": "Approach: do NOT choose a final source-code license now. Instead:\n- Keep root/core/cli private (no npm publish).\n- Set package license metadata to UNLICENSED for unpublished packages.\n- Add docs/licensing.md explaining that no source-code license has yet been granted, and explicitly separating source-code rights from rules-pack/adventure/content licenses.\n- Add a release/distribution note: npm publication is deferred pending business/licensing decision.\n- Add a CONTRIBUTING note: external code contributions are not accepted yet unless/until contribution licensing is defined.\nDefer the actual decisions (distribution channel; commercialization model) to follow-up beads.",
+  "acceptance_criteria": "- root/core/cli package.json all remain private (private: true), no npm publish enabled.\n- Package license metadata is set to UNLICENSED for the unpublished packages.\n- docs/licensing.md exists and states that no source-code license has yet been granted, and explicitly separates source-code rights from rules-pack/adventure/content licenses.\n- A release/distribution note documents that npm publication is deferred pending a business/licensing decision.\n- A CONTRIBUTING note documents that external code contributions are not accepted yet unless/until contribution licensing is defined.\n- Two follow-up decision beads exist: (1) distribution channel; (2) commercialization model.\n- Package/format/lint checks pass.",
+  "notes": "Implemented in PR #164 (branch chore/loreweaver-0jq.26-license-posture). Awaiting review/merge; leaving in_progress until merged per repo PR workflow. Follow-ups: loreweaver-bo2 (distribution channel), loreweaver-14h (commercialization model).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T16:59:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-07T03:20:23Z",
+  "closed_at": "2026-06-07T04:17:06Z",
+  "close_reason": "Merged via PR #164 (squash) into main; license posture documented.",
+  "labels": [
+    "architecture",
+    "refactor",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.26",
+      "depends_on_id": "eshyra-0jq.21",
+      "type": "blocks",
+      "created_at": "2026-06-05T11:59:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.26",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-06-05T11:59:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

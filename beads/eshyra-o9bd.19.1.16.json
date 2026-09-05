@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.16",
+  "title": "Foundation 4: define capability evidence categories and their exact claims",
+  "description": "Successor concept work for the evidence half of eshyra-o9bd.19.5.1 (PR #477,\nDESIGN_INVALIDATED). Blocked on Foundations 1 and 3.\n\nPREMISE CHANGE (why this exists): PRs #475/#476/#477 reached DESIGN_INVALIDATED\nafter repeatedly producing NEW defect classes following material contract changes\nand fresh full reviews. The shared root cause was not implementation quality: in\nall three, unsettled concepts were GENERALIZED ACROSS THE CORPUS before their\ntrust boundaries had been proven by a small number of concrete\nsource-to-execution examples. Successor work inverts that order.\n\nGOAL: define evidence categories and, for EACH, state exactly what it proves AND\nwhat it explicitly does NOT prove. #477 failed repeatedly because evidence types\nclaimed more than they established — exported-symbol presence presented as\ncapability evidence, bead existence presented as contract ownership, absence of\nan invented marker presented as semantic absence.\n\nCATEGORIES TO DISTINGUISH AT MINIMUM:\n  source obligation | audit finding | current pack projection | readiness\n  artifact | code symbol presence | code-path reachability | executable\n  provider-neutral capability | pack-driven reference execution | bead ownership\n  | ownership contract verification | known missing projection | positive\n  absence proof.\n\nREQUIRED PRINCIPLE, learned the hard way across five fail-open defects in this\nprogram: an evaluation path that cannot resolve its input must FAIL, never\nreturn an empty failure list. \"No failures found\" must never be representable as\n\"all checks passed\". Positive absence must be POSITIVELY established, never\ninferred from a missing invented marker, and unclassified structured material\nmust remain underived rather than silently satisfying.\n\nSALVAGE from #477 (design input): the evidence-strength vocabulary, and the\nidentification of primitives invisible from current pack projection.\nREPLACE: invented sentinel-absence evidence; exported-symbol existence as\ncapability evidence; bead-existence as exact contract ownership; any resolver\nclaiming more than its evidence proves.",
+  "acceptance_criteria": "\n• Every evidence category states what it proves and what it explicitly does not prove.\n• No category permits presence, ownership or candidacy to stand for semantic implementation.\n• Positive absence is defined as a positive proof obligation, never inference from a missing marker.\n• Unresolvable input fails closed; an empty failure list can never mean satisfied.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T03:08:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T03:08:17Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.16",
+      "depends_on_id": "eshyra-o9bd.19.1.7",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.16",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-27T22:08:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.16",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

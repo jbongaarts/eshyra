@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7kn",
+  "title": "Implement semantic Dolt checkpoint projection (gated on history UX)",
+  "description": "Implement the optional semantic projection layer designed in docs/checkpoint-semantic-projection.md (planned in eshyra-0jq.15). Per-entity, identity-keyed native Dolt proj_* tables committed atomically in the same commit as campaign_snapshot, so dolt diff yields field-level campaign deltas instead of opaque ordinal-keyed JSON churn. campaign_snapshot remains the sole restore/fork authority; the projection is read-only and droppable with zero restore impact.\n\nGATE: Do NOT start steps 3-4 without a concrete near-term history UX requirement (timeline / checkpoint-diff view) as a consuming bead. Until then this stays backlog. Steps 1-2 are inert (extra tables nobody reads) and may be landed early only to de-risk schema tracking.",
+  "design": "Recommended sequencing from the design doc:\n1. Generated projection-schema helper (SQLite->Dolt type map + projected-table allowlist), unit-tested against the live schema. Schema only, no diff UX. Proves the projection tracks schema.ts.\n2. Write proj_character + proj_plot_flags + proj_clock in the checkpoint commit; assert atomicity and the no-secret invariant.\n3. Add remaining live-state tables + thin campaign_bible projection.\n4. Add CheckpointStore.diff -> typed CampaignDiff, driven by an actual history-UX bead. First user-visible change; blocked on that consuming requirement.\n\nSame-repo atomic commit (not a second Dolt repo); projection rebuilt wholesale per checkpoint (no projection-side migration framework). Omit provenance/bookkeeping columns and large opaque trace blobs.",
+  "acceptance_criteria": "- campaign_snapshot remains the sole restore/fork authority; restore path unchanged.\n- proj_* tables and the snapshot land in one atomic Dolt commit.\n- Projection schema is generated from live schema metadata and a test asserts allowlisted tables' columns stay in step with schema.ts.\n- No provider secrets in any proj_* table (assert in tests).\n- Steps 3-4 are not implemented without a linked consuming history-UX bead.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T18:59:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-23T23:21:21Z",
+  "closed_at": "2026-06-23T23:21:21Z",
+  "close_reason": "Deferred by design. Semantic Dolt projection is only justified once a concrete history/timeline/checkpoint-diff UX needs typed campaign diffs. Keeping this as an open implementation bead creates backlog noise and risks prematurely locking a projection shape before there is a consumer. The design remains captured in docs/checkpoint-semantic-projection.md and can be revived by a future history UX bead.",
+  "labels": [
+    "architecture",
+    "checkpoint",
+    "deferred",
+    "dolt",
+    "history",
+    "persistence"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7kn",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-06-07T13:59:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7kn",
+      "depends_on_id": "eshyra-0jq.15",
+      "type": "blocks",
+      "created_at": "2026-06-07T13:59:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

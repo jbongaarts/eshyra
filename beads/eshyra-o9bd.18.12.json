@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.12",
+  "title": "Close PR #455 quarantine and reacquisition lifecycle gaps",
+  "description": "Address the four findings from the external re-review of a218a5f: make Orb ending gates reason-aware for existing bonds and transfer-end; make failed canonical adoption an enforced code-owned quarantine that model-facing writes cannot erase or bypass; quarantine malformed legacy evidence outside validated live projections so subsequent context assembles; and add an authorized identity-preserving sold/lost reacquisition transition without reopening general pickup. Audit the complete inventory/adoption/attunement state machine across every inbound, outbound, recovery, and model-reachability transition.",
+  "notes": "Addressed all four findings from the a218a5f re-review plus migration/model-reachability gaps found during the state-machine audit. Added reason-aware Orb end gates; code-owned adoption quarantine and explicit resolution; raw malformed-evidence isolation with context-safe projections; exact sold/lost reacquisition with co-location and durable evidence; model tool/auditor/protocol wiring; migration/schema coverage; and adversarial cross-seam regressions. Full npm run verify:worktree passed: 260 files passed, 4 skipped; 4633 tests passed, 19 skipped.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T05:19:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T05:43:32Z",
+  "started_at": "2026-07-19T05:19:40Z",
+  "closed_at": "2026-07-19T05:43:32Z",
+  "close_reason": "Closed",
+  "external_ref": "gh-455",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.12",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-19T00:19:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

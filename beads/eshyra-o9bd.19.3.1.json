@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.1",
+  "title": "Model choices, alternatives, variants, and option-local behavior",
+  "description": "Repair every case where selected-option behavior is absent, hoisted to a parent\nrecord, or flattened into an unconditional array.\n\nRoot cause: options and variants have no semantic ownership of their own, so\ntheir effects are attached to the parent feature or emitted as a flat list.\n\nRequired membership — all of:\n- fighting styles, Hunter option sets, Eldritch Invocations, metamagic, pact\n  boons;\n- ASI one-score/two-score allocation and repeated improvements;\n- language choices, including the campaign/GM extension escape hatch;\n- ability alternatives and mutually exclusive damage modes;\n- pit variants and other source-defined variants;\n- stable typed option identifiers and prerequisites.\n\nCloses findings: SOL-002, SOL-011, F-02, F-07, F-14, F-27, F-33, F-35, CAP-005.",
+  "acceptance_criteria": "- Selecting one option grants only that option's complete behavior.\n- Sibling alternatives are never interpreted as cumulative by any consumer.\n- Every option has a stable typed identifier and typed prerequisites (with B4).\n- A flattened unconditional array of mutually exclusive behaviors fails a corpus-wide predicate.\n- The language universe is open: campaign/GM-granted languages are representable rather than falsely closed.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F1, F2, F5, F8, F10.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:39:25Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.1",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.1",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.1",
+      "depends_on_id": "eshyra-o9bd.19.3",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

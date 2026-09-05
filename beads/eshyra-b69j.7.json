@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.7",
+  "title": "Add ability score entry and allocation UX",
+  "description": "Add ability score modeling and CLI interaction for both concept-first and ability-first character creation.\n\nDesign direction\n- Point buy should be the default score method in concept-first mode if point buy is already supported.\n- Ability-first mode should support generating or entering scores before class selection.\n- The draft should record the score source/method instead of treating all scores as equivalent.\n- Point-buy validation must be immediate and actionable.\n\nSupported methods should be modeled even if implementation is staged:\n- point buy;\n- standard array;\n- manual entry;\n- rolled/imported scores.\n\nAcceptance criteria\n- User can edit one score at a time and see remaining point-buy budget.\n- Point-buy scores outside 8-15 before ancestry bonuses are rejected immediately.\n- Non-integer scores produce field-specific errors.\n- Ability-first mode can collect scores before class and later use them for class recommendations.\n- Tests cover point-buy bounds, non-integer input, recomputation of modifiers, and preservation of existing draft state.",
+  "notes": "Implemented in PR #290 (branch eshyra-b69j.7); awaiting review/merge. Adds abilityAllocation.ts (point-buy budget, pool assignment, rolling, recommendations, command parser), manual/rolled AbilityScoreMethod, resolver.listClasses().",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T21:41:55Z",
+  "started_at": "2026-06-24T21:15:50Z",
+  "closed_at": "2026-06-24T21:41:55Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.7",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

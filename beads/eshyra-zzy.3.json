@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-zzy.3",
+  "title": "Task 3: Public exports and SRD attribution surface",
+  "description": "Objective: Make the SRD lookup API available from @loreweaver/core and verify license metadata is returned with lookup results. Files: modify packages/core/src/index.ts; modify packages/core/test/srd.test.ts; optionally modify README.md only if public API documentation is necessary. Steps: 1. Add failing tests importing lookupSrd, SRD_LICENSE, and SRD_CATALOG from ../src/index.js and asserting a successful lookup includes license attribution. Command: npm run test -- packages/core/test/srd.test.ts. Expected RED: exports missing from index.ts or result lacks metadata. 2. Export runtime API and types from packages/core/src/index.ts. 3. Run focused test to GREEN. 4. Run npm run build and npm run test. 5. Commit the task changes.",
+  "design": "Keep index.ts as the only package barrel. Export type-only symbols with export type. Do not expose mutable internals; SRD_CATALOG should be readonly at the type level.",
+  "acceptance_criteria": "Consumers can import the SRD catalog metadata and lookupSrd from @loreweaver/core; build and tests pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T03:02:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T03:21:28Z",
+  "closed_at": "2026-05-19T03:24:12Z",
+  "close_reason": "Exported SRD catalog, license metadata, lookup facade, store helpers, and public types from @loreweaver/core; verification: npm run build passed and npm run test passed with 25 passed / 1 skipped; TDD evidence recorded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-zzy.3",
+      "depends_on_id": "eshyra-zzy.2",
+      "type": "blocks",
+      "created_at": "2026-05-18T22:03:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-zzy.3",
+      "depends_on_id": "eshyra-zzy",
+      "type": "parent-child",
+      "created_at": "2026-05-18T22:02:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "915045a9-ac2d-5116-a50a-a131a5146cb8",
+      "issue_id": "eshyra-zzy.3",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/srd.test.ts -> failed for expected reason: package barrel does not export lookupSrd; test error lookupSrd is not a function.",
+      "created_at": "2026-05-19T03:21:59Z"
+    },
+    {
+      "id": "77a2b1e4-1b3e-558a-954c-4636f7e64254",
+      "issue_id": "eshyra-zzy.3",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npm run test -- packages/core/test/srd.test.ts failed because the package barrel did not export lookupSrd; GREEN focused SRD test passed with 5 tests; verification npm run build passed and npm run test passed with 25 passed / 1 skipped.",
+      "created_at": "2026-05-19T03:22:49Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 2
+}

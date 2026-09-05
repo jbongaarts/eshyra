@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l3b3.3",
+  "title": "Harden audit retry convergence for multi-evidence turns",
+  "description": "Problem\n\nThe retry/repair loop is currently whack-a-mole. A rejected attempt may identify one missing requirement, the retry fixes it, then a second attempt is rejected for a different missing requirement. This produced player-visible hard failures in ordinary dialogue.\n\nObserved pattern:\n- Attempt 1 needs record_world_fact for missing scouts and/or movement near the tower.\n- Attempt 2 records the facts but is rejected for missing world_query of Warden Sela or another module-canon support.\n- Player sees a hard failure even though the repair path is obvious.\n\nGoal\n\nImprove retry convergence for turns that need multiple kinds of support: world_query, record_world_fact, scene-local evidence, and audit-safe wording.\n\nAcceptance criteria\n\n- Retry prompt carries cumulative missing requirements from earlier rejected attempts.\n- The system distinguishes:\n  - missing world_query\n  - missing record_world_fact\n  - rumor used as confirmed fact\n  - failed tool call incorrectly relied upon\n  - unsupported exact detail\n  - wrong tool chosen for a consequential fact\n- If a later retry fixes earlier requirements but exposes a new missing-tool/evidence class, the system can make one additional repair attempt within a bounded limit.\n- Rejected mutating calls remain rolled back; no rejected record_world_fact, set_plot_flag, inventory, clock, HP, or condition changes leak into accepted state.\n- Repair guidance should encourage:\n  - query module canon first when resolving existing NPCs/locations/lore\n  - record consequential new lore before asserting it\n  - use scene-local evidence for immediate continuity where available\n  - avoid unsupported exact numbers unless sourced or recorded\n- Regression covers a turn requiring both:\n  - world_query for Warden Sela\n  - record_world_fact for missing scouts / new consequential report\n- Regression covers a failed first retry followed by a successful second retry without player-visible hard failure.\n- Debug logs show the cumulative repair requirements clearly.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T23:07:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-25T00:21:34Z",
+  "started_at": "2026-06-25T00:17:35Z",
+  "closed_at": "2026-06-25T00:21:34Z",
+  "close_reason": "Added cumulative audit repair requirements and bounded extra repair attempt when a retry exposes a new missing evidence class.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-l3b3.3",
+      "depends_on_id": "eshyra-l3b3",
+      "type": "parent-child",
+      "created_at": "2026-06-24T18:07:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

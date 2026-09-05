@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.1.1",
+  "title": "Task 1: sourceInventory.ts pure inventory builder",
+  "description": "Objective: pure deterministic function building the source-structure inventory from PageText[].\n\nFiles:\n- Create: packages/core/scripts/importers/dnd5e-srd-5.1/sourceInventory.ts\n- Test: packages/core/test/importers/dnd5e-srd-5.1/sourceInventory.test.ts\n\nAPI (in design field of parent eshyra-4a7.1; tier map there too):\nexport interface SourceInventoryItem { page: number; lineIndex: number; text: string; tier: 'chapter'|'section'|'subsection'|'leaf'|'sidebar'; structure: 'heading'|'table-caption'|'stat-block'|'table-shape'; section: string | null }\nexport function buildSourceInventory(pages: readonly PageText[], options?): readonly SourceInventoryItem[]\n\nSteps (TDD, one commit per green):\n1. Fixture PageText[] with lineHeights covering all tiers -> failing test asserting tier classification incl. h=10.0 legal lines EXCLUDED, h=10.8 sidebar INCLUDED. Implement tier bucketing. Commit.\n2. Failing test: two adjacent h=12.0 lines in same column merge to one item ('Figurine of Wondrous' + 'Power'-style wrap). Implement merge. Commit.\n3. Failing test: leaf heading followed by 'Large aberration, lawful evil' line classifies structure='stat-block'; followed by h=8.9 run classifies 'table-caption'. Implement. Commit.\n4. Failing test: maximal h=8.9 run NOT preceded by leaf heading emits structure='table-shape' item attached to nearest preceding heading text. Implement. Commit.\n5. Failing test: items carry containing section name using section anchor positions (reuse sections.ts slicing or pass section ranges in). Implement. Commit.\nCommand per step: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/sourceInventory.test.ts",
+  "acceptance_criteria": "All new unit tests pass; function is pure (same input => same output); no changes to existing files; npx vitest run packages/core/test/importers/dnd5e-srd-5.1 green",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T05:39:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-11T05:42:30Z",
+  "closed_at": "2026-06-11T05:45:37Z",
+  "close_reason": "13 unit tests green; real-PDF validation: 2248 items, all sentinels correctly classified",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.1.1",
+      "depends_on_id": "eshyra-4a7.1",
+      "type": "parent-child",
+      "created_at": "2026-06-11T00:39:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

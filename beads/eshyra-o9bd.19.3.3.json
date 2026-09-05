@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.3",
+  "title": "Complete ancestry, background, and equipment-grant semantics",
+  "description": "Complete deterministic ancestry traits, structured background grants, and\nequipment/material semantics.\n\nRequired membership — all of:\n- Breath Weapon, Lucky, Relentless Endurance, Savage Attacks, Trance, Infernal\n  Legacy, darkvision / sleep immunity, Dwarven Toughness, Tinker, and all\n  remaining ancestry omissions;\n- structured background equipment, including embedded choices and currency;\n- wooden-shield / material constraints;\n- Potion of Healing use (currently prose-only);\n- open language-choice escape hatch (shared with C1);\n- typed weapon, armor, skill, save, and tool proficiency grants.\n\nCloses findings: SOL-004, SOL-010, SOL-011, SOL-012, F-13, F-18, CAP-005,\nCAP-006, CAP-012, CAP-013.",
+  "acceptance_criteria": "- Every ancestry trait with deterministic effect is typed, including its save DC, geometry, recharge, and damage where printed.\n- Background equipment is structured with embedded choices and currency, not prose.\n- Proficiency grants are typed targets drawn from a catalog (with B3), never free text.\n- ancestry:dragonborn Breath Weapon carries its typed success branch (shared membership with A2's half-damage predicate).",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F1, F2, F5, F8, F10.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:39:34Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.3",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.3",
+      "depends_on_id": "eshyra-o9bd.19.3",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.3",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.3",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-s6vo",
+  "title": "Follow-up: integrate registry capability relation with bootstrap ledger",
+  "description": "After the bootstrap capability-ledger work lands, replace the local serialized capability identity and exact hook-to-primitive roster in findingRegistry.ts with the shared ledger relation, or mechanically diff both relations in CI. Preserve engine:F1..engine:F10 identities, the F2 legendary-action primitive, qualified hook selectors, and family ownership. This follow-up is intentionally separate from the current registry correction because the shared ledger is on another PR.",
+  "acceptance_criteria": "The registry and bootstrap ledger share one exact hook-to-primitive relation; unknown, near-match, wrong-family, and wrong-primitive hooks fail closed; all current capability identities remain stable.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T01:39:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T01:39:29Z",
+  "labels": [
+    "follow-up",
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-s6vo",
+      "depends_on_id": "eshyra-o9bd.19.1.6.8",
+      "type": "discovered-from",
+      "created_at": "2026-07-27T20:39:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

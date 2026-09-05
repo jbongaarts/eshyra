@@ -1,0 +1,115 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.23.2",
+  "title": "Task 2: Integrate and regenerate class-callout rules",
+  "description": "Objective:\nIntegrate class-callout extraction into the importer, extend exact rule coverage, regenerate the canonical SRD pack, and prove the five records exist independently while PR #162 boundaries remain intact.\n\nFiles:\n- Modify: `packages/core/scripts/importers/dnd5e-srd-5.1/index.ts`\n- Modify: `packages/core/test/srdGeneratedPack.test.ts`\n- Modify: `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json`\n\nSteps:\n1. Add failing committed-pack assertions before changing importer output. Change `EXPECTED_COUNTS_BY_KIND.rule` from 166 to 171 and add a table of the five expected keys, source locators, and representative body phrases: Wizard p.54 / copying costs 2 hours and 50 gp per spell level; Warlock p.51 / Pact of the Chain; Paladin p.33 / GM discretion for an impenitent paladin; Druid p.21 / sacred plants; Druid p.21 / nature deities. Assert each is `kind=rule`, has string `data.text`, expected provenance locator, and excludes the following class/callout body where applicable. Preserve the existing feature/subclass non-contamination cases.\n2. Run `npx vitest run packages/core/test/srdGeneratedPack.test.ts`. Expected RED: rule count is 166 and the five rule keys are absent.\n3. Import `parseClassCallouts` in `index.ts`. Keep `coreRules`, `spellcastingRules`, and `gamemasteringRules` as a `nonClassRules` array before the Classes slice. After `classPages = sliceSection(...)`, parse `classCalloutRules`, assemble `rules = [...nonClassRules, ...classCalloutRules]`, then call `validateRuleCoverage(rules, input.expectedRuleKeys)`. Do not move the Classes section anchor earlier, because current failure-order tests intentionally slice races/classes after other sections.\n4. Add the five keys to `EXPECTED_SRD_5_1_RULE_KEYS`: `rule:druid-druids-and-the-gods`, `rule:druid-sacred-plants-and-wood`, `rule:paladin-breaking-your-oath`, `rule:warlock-your-pact-boon`, `rule:wizard-your-spellbook`. Update comments to describe 127 core + 34 spellcasting + 5 gamemastering + 5 class callouts.\n5. Run the focused parser and generated-pack tests. Expected state before regeneration: parser tests pass; committed-pack test still fails because records.json has not changed.\n6. Regenerate with `npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1`.\n7. Review the generated diff. Expected: exactly five `kind=rule` records added, no records removed, no existing feature/subclass body changes, and manifest metadata/count changes only where generated output requires them.\n8. Run `npm run audit:rules-pack -- packages/core/data/rules-packs/rules__dnd5e-srd-5.1`. Expected: zero suspicious records.\n9. Run `npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts packages/core/test/srdGeneratedPack.test.ts`. Expected GREEN.\n10. Run `npm run verify:dnd5e-srd-pack`. Expected: zero manifest changes, records added/removed/changed all zero against regenerated committed output.\n11. Run Biome on `index.ts` and `srdGeneratedPack.test.ts`. Expected: no diagnostics.\n12. Commit with `git add packages/core/scripts/importers/dnd5e-srd-5.1/index.ts packages/core/test/srdGeneratedPack.test.ts packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json && git commit -m \"feat(srd): emit class callouts as rules\"`. If manifest.json is byte-unchanged, omit it from `git add`.",
+  "design": "Integration shape:\n\n```ts\nconst nonClassRules = [\n  ...coreRules,\n  ...spellcastingRules,\n  ...gamemasteringRules,\n];\n// Existing table/race work remains here.\nconst classPages = sliceSection(pages, anchors.classes);\nconst classCalloutRules = parseClassCallouts(classPages);\nconst rules = [...nonClassRules, ...classCalloutRules];\nvalidateRuleCoverage(rules, input.expectedRuleKeys);\n```\n\n`ruleExtractionsToRecords` already supplies `kind`, `source`, license, and page provenance, so no emitter or schema change is needed. Exact combined key coverage is the fail-closed guard for both missing boxes and accidental promotion of another h~10.8 artifact. Canonical assertions should use keys and provenance, not array positions.",
+  "acceptance_criteria": "Importer emits the five exact parent-qualified rule keys with SRD page provenance; total rule count is 171; exact coverage includes all five; canonical pack gains only those records and generated metadata; feature/subclass contamination guards still pass; audit, focused tests, and verify:dnd5e-srd-pack pass; commit created.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 45,
+  "created_at": "2026-06-07T00:18:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-07T00:44:58Z",
+  "closed_at": "2026-06-07T05:28:30Z",
+  "close_reason": "Integrated five standalone class-callout rules, regenerated exact canonical output, corrected coverage wording; reviews approved and audit/tests/reproducibility verification passed.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd",
+    "tdd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.23.2",
+      "depends_on_id": "eshyra-0m9.5.23.1",
+      "type": "blocks",
+      "created_at": "2026-06-06T19:18:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.23.2",
+      "depends_on_id": "eshyra-0m9.5.23",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:18:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "2cfe2cc0-d9f5-5b24-8629-1531c01bcb68",
+      "issue_id": "eshyra-0m9.5.23.2",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/srdGeneratedPack.test.ts -> failed as expected with 7 failures: rule count 166 vs 171, total count 1502 vs 1507, and each of the five class-callout rule keys absent. 73 other tests passed, confirming the failure is missing committed output rather than test setup.",
+      "created_at": "2026-06-07T00:47:15Z"
+    },
+    {
+      "id": "07edefe5-5189-5cf1-b697-e3d8b4365fe6",
+      "issue_id": "eshyra-0m9.5.23.2",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED \npx vitest run packages/core/test/srdGeneratedPack.test.ts failed as expected (166 vs 171 rules, 1502 vs 1507 total, five records absent). GREEN \npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts packages/core/test/srdGeneratedPack.test.ts passed 85/85 after integration and regeneration. REFACTOR after Biome formatting: targeted Biome checked 2 files with no diagnostics and focused tests remained 85/85. Artifact checks: structural HEAD comparison shows exactly 5 records added, 0 removed, 0 existing changed; manifest byte-unchanged. \npm run audit:rules-pack -- packages/core/data/rules-packs/rules__dnd5e-srd-5.1 reports 1507 total, 171 rules, 0 suspicious. \npm run verify:dnd5e-srd-pack reports manifest 0, records added/removed/changed 0. Full \npm run verify:worktree passed format, hidden-Unicode/Biome check, typecheck, and tests (1275 passed, 3 skipped; 93 files passed, 2 skipped). Source review correction: the hash-pinned PDF places Sacred Plants and Wood on physical p.22 and Druids and the Gods on p.23; p.21 contains Circle of the Land/Natural Recovery. Canonical assertions use the actual callout-heading pages rather than the bead's p.21 shorthand.",
+      "created_at": "2026-06-07T00:54:51Z"
+    },
+    {
+      "id": "db30410b-2965-5224-a25c-13f28d90a143",
+      "issue_id": "eshyra-0m9.5.23.2",
+      "author": "Joseph Bongaarts",
+      "text": "Corrected verification record: RED command npx vitest run packages/core/test/srdGeneratedPack.test.ts failed for the expected 166-to-171 count and five absent keys. GREEN/REFACTOR focused command passed 85/85. Audit reports 1507 records, 171 rules, 0 suspicious. verify:dnd5e-srd-pack reports manifest changes 0 and records added/removed/changed 0. Full npm run verify:worktree passed with 1275 tests passed and 3 skipped. Structural canonical diff is exactly five added rule records, zero removed, zero existing changed; manifest is byte-unchanged. Vendored PDF correction: Sacred Plants and Wood is on physical p.22 and Druids and the Gods is on p.23; physical p.21 contains Circle of the Land/Natural Recovery. Commit 6ebd06c1d7c102ce2252d22801789c252df83033 is pushed to origin/work/loreweaver-0m9.5.23. Bead intentionally remains open.",
+      "created_at": "2026-06-07T00:56:27Z"
+    },
+    {
+      "id": "fdf87b26-3ca3-5614-93e6-dbcd069e4336",
+      "issue_id": "eshyra-0m9.5.23.2",
+      "author": "Joseph Bongaarts",
+      "text": "Planning correction accepted: the task text listed both Druid callouts as p.21, but the hash-pinned extracted source places Sacred Plants and Wood on PDF p.22 and Druids and the Gods on p.23. Canonical tests correctly assert the actual heading-page provenance. This is a source-fidelity correction, not a scope change.",
+      "created_at": "2026-06-07T05:13:58Z"
+    },
+    {
+      "id": "955e529e-8fe9-5e72-88e6-5745520a037c",
+      "issue_id": "eshyra-0m9.5.23.2",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 60a8f80..6ebd06c: Assessment: Ready to merge. Critical/Important: none. Minor accepted cleanup: combined 171-rule coverage comments/error text still say core-rules, and the Spellbook regression comment incorrectly says its prose is absent from committed records. These should be corrected locally before close; no behavior or generated output changes required.",
+      "created_at": "2026-06-07T05:22:37Z"
+    },
+    {
+      "id": "8b7f702d-83bd-578b-a17b-22c8222d97f5",
+      "issue_id": "eshyra-0m9.5.23.2",
+      "author": "Joseph Bongaarts",
+      "text": "Review cleanup evaluation: accepted. RuleCoverageError, RunImporterInput.expectedRuleKeys, validateRuleCoverage, and its diagnostic still describe a core-rules-only set even though validation now covers core, Spellcasting, gamemastering, and Classes callout slices. The Spellbook test comment also incorrectly says the prose is absent from committed records; it is now retained by rule:wizard-your-spellbook. Wording-only cleanup; no generated pack or Task 3 documentation changes.",
+      "created_at": "2026-06-07T05:23:18Z"
+    },
+    {
+      "id": "f5bd487a-1c1c-50fe-b3b1-ea2a3956267f",
+      "issue_id": "eshyra-0m9.5.23.2",
+      "author": "Joseph Bongaarts",
+      "text": "Review cleanup verification: targeted npx biome check on index.ts and srdGeneratedPack.test.ts passed (2 files, no fixes); focused Vitest passed 85/85 across parseClassCallouts.test.ts and srdGeneratedPack.test.ts; npm run verify:dnd5e-srd-pack passed with manifest changes 0 and records added/removed/changed 0. Self-review: only the requested two wording surfaces changed; combined rule coverage now names all implemented slices, reduced-fixture semantics and parent-qualified-key examples remain accurate, Spellbook retention points to rule:wizard-your-spellbook, and no generated pack or Task 3 docs changed.",
+      "created_at": "2026-06-07T05:24:48Z"
+    },
+    {
+      "id": "0e624757-45cf-5773-9299-8b837e191b10",
+      "issue_id": "eshyra-0m9.5.23.2",
+      "author": "Joseph Bongaarts",
+      "text": "Review cleanup committed and pushed: 8febc54d5149efeedb11aec2e503c4a5c2472a33 (fix(srd): clarify combined rule coverage). Branch work/loreweaver-0m9.5.23 is clean and up to date with origin. Bead remains open as instructed.",
+      "created_at": "2026-06-07T05:25:44Z"
+    },
+    {
+      "id": "d0faa672-e620-5f6e-bca1-6dcf7f794851",
+      "issue_id": "eshyra-0m9.5.23.2",
+      "author": "Joseph Bongaarts",
+      "text": "Final code review summary for 60a8f80..8febc54: Assessment Ready to merge; Critical/Important/Minor none. Fresh close verification: focused parser + generated-pack tests passed 85/85; targeted Biome clean; rules-pack audit reports 1507 records, 171 rules, 0 suspicious; verify:dnd5e-srd-pack reports manifest 0 and records added/removed/changed 0; git diff --check clean; branch clean and pushed at 8febc54.",
+      "created_at": "2026-06-07T05:28:28Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 9
+}

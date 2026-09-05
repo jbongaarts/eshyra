@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.8",
+  "title": "Make finding-registry violation predicates executable defect checks",
+  "description": "Decomposed out of eshyra-o9bd.19.1.6 (PR #476) 2026-07-26 under the churn stop\nrule. Review of f75acb2 found this as a NEW DEFECT CLASS.\n\nDEFECT: the violation queryId merely SELECTS a row, after which every finding\nruns the same baseline-existence join. Wrong field values, missing branches,\nincorrect resets and lifecycle errors are never evaluated, and\n`expectedAfterRepair` is unused entirely. So a \"violation query\" proves only\nthat the row's baseline members still exist — which is not a defect check.\n\nCONSEQUENCE: the registry cannot detect recurrence. A repaired defect that\nregresses in a different form leaves the baseline intact and the query green.\nThat defeats the zero-repeat certification at eshyra-o9bd.19.6.4, which is the\nregistry's whole purpose.\n\nSCOPE: give each finding an executable predicate that evaluates the ACTUAL\ndefect condition against the committed pack — wrong value, missing branch,\nabsent alternative, incorrect reset, broken lifecycle, unsupported provenance —\nand make `expectedAfterRepair` operative: 'empty' rows must go empty when\nrepaired and fail if they do not; 'stable' rows must keep their membership.\n\nNOT IN SCOPE HERE: deriving membership for prose-scoped rows (that is\neshyra-o9bd.19.1.7) and capability target identity (the sibling bead created\nalongside this one).\n\nDEPENDENCY NOTE: clause-level predicates likely need the clause IR from\neshyra-o9bd.19.1.1, which is itself under design reopening. Record any row whose\npredicate cannot be written yet rather than writing a shape-only stand-in.",
+  "acceptance_criteria": "\n• Every finding row carries a predicate that evaluates its actual defect condition, not a baseline-existence join.\n• expectedAfterRepair is operative and tested in both directions.\n• A repaired-then-regressed defect in a different form is detected by its predicate.\n• Rows whose predicate cannot yet be written are explicitly recorded and block closure rather than carrying a shape-only stand-in.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T15:08:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T15:08:35Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1.7",
+      "type": "blocks",
+      "created_at": "2026-07-26T10:09:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-26T10:08:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.7",
+  "title": "Derive exact audited membership for prose-scoped finding-registry rows",
+  "description": "Split out of eshyra-o9bd.19.1.6 (PR #476) on 2026-07-26 after the churn stop rule triggered on two consecutive fresh full reviews.\n\nROOT REASON FOR THE SPLIT: the finding registry contains two different kinds of row and only one of them belongs to registry construction.\n  * QUERY-SCOPED rows: membership is derivable by executing a predicate against the committed pack. These were derived correctly in eshyra-o9bd.19.1.6 — rule corpus 335, spells 319, engine-pending clauses 794, half-damage 93.\n  * PROSE-SCOPED rows: membership must be reconciled against the prose of the four 2026-07-24 audit reviews before any predicate can be written. Two attempts filled these with a single exemplar plus a boilerplate justification sentence, which is a schema-conformant facade and cannot prove non-recurrence.\n\nThis bead owns the second kind. It is corpus analysis, not registry construction.\n\nSCOPE: for every row that eshyra-o9bd.19.1.6 marks membershipStatus='underived', reconcile the finding's true population against /mnt/d/eshyra-2026-07-24-audit-repair-bead-plan.md and the committed pack, then replace the placeholder with an executable query plus a reproducible baseline snapshot of identities, and flip the row to membershipStatus='derived'.\n\nKNOWN EXAMPLES (not the full set — the full set is whatever the registry marks underived):\n  indep:008  '23 incomplete locators'                    currently n=1\n  sol:CAP-003 spell mechanics shallower than source      currently n=1\n  indep:006  creature trigger/branch/timing/lifecycle    currently n=1\n  sol:CAP-004 creature/stat-block mechanics incomplete   currently n=1\n  fable:F3   creature rider/ongoing damage untyped       currently n=1\n  opus:F-15  spellcasting granularity                    currently n=1\n  fable:F8   rule keying/duplication hygiene             currently n=1\n\nLIKELY BLOCKED ON: eshyra-o9bd.19.1.1 (clause IR) for any row whose target is clause-level rather than record-level, because the pack cannot express clause identity until that lands.\n\nGATE: while any row remains underived, the finding registry's closure predicate returns false and eshyra-o9bd.19.6.4 cannot certify zero-repeat closure. That is deliberate — an underived row must block closure rather than pass as an exemplar.\n\nCOUNT HYGIENE: a generated, regenerable snapshot of member identities is required and is NOT a hand-copied count. Transcribing a total (23, 79, 391) into an assertion remains forbidden.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:29:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T03:29:19Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.7",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-25T22:29:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.7",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 4,
+  "comment_count": 0
+}

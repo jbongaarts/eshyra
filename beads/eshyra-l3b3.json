@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l3b3",
+  "title": "Harden play-loop canon, audit, and continuity after p4vd",
+  "description": "Problem\n\nThe first playtest after campaign overlay canon landed shows real p4vd progress: consequential lore can be recorded with record_world_fact, retrieved later through world_query, and exposed to audit with canon-tier and visibility metadata.\n\nHowever, normal play is still too brittle. The DM/audit/tool loop now fails at the integration boundary between module canon, campaign overlay lore, recent scene continuity, and descriptive consistency.\n\nObserved playtest pattern\n\nSession: session-mqskv6co-pdsj5x\nCampaign: The Hollow Beneath Emberfall\nScope note: ignore the character creation section; b69j is still in progress.\n\nKey observations:\n- The system successfully recorded and retrieved the Emberfall incident as overlay lore after retry.\n- Warden Sela / Emberfall module-canon discovery was brittle unless exact IDs were used.\n- The auditor did not consistently treat recent accepted dialogue as scene-local evidence.\n- Retry repair sometimes fixed one missing tool/evidence issue but exposed another, causing player-visible hard failure.\n- The auditor classified set_plot_flag as a disallowed tool in a case where the real problem was insufficient evidence / wrong tool choice.\n- The current canon hierarchy risks dropping stable descriptive details as \"just color\", creating continuity contradictions on later revisits.\n\nGoal\n\nHarden the play loop so Eshyra can combine:\n- module canon\n- campaign overlay lore\n- recent scene facts\n- stable continuity dressing\n- audit evidence\n- repair/retry behavior\n\nwithout hard-failing ordinary follow-up conversation or creating immersion-breaking descriptive contradictions.\n\nNon-goal\n\nDo not address character creation issues here. Those remain under b69j.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T23:07:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-24T23:13:14Z",
+  "closed_at": "2026-06-25T00:43:03Z",
+  "close_reason": "All five hardening tasks landed through PRs #292, #294, #295, #297, and #298.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

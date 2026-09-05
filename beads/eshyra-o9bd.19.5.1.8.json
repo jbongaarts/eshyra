@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.1.8",
+  "title": "Dispatch: pack-wide projection matching and fail-closed shape recognition (attempt 8)",
+  "description": "Fresh full review of PR #477 at 3236982: two P1. NO new defect class — both sit\ninside the existing source-negative semantic-proof invariant — so a\nFIX-VERIFICATION review is permitted next PROVIDED the contract and the\nrepresentation boundary remain unchanged. Therefore: implement the existing\ninvariant correctly and change NEITHER. If you believe the contract must change,\nreport it instead of changing it.\n\nACCEPTED AS FIXED — do not touch: exact four-segment ev::: validation; the\nimproved source-procedure anchors; the exported fail-closed closure assessment;\nexact blocker identity assertions.\n\n=== FILES YOU OWN ===\n  docs/audits/dnd5e-srd-5.1-final/bootstrap-capability-ledger.json\n  docs/audits/dnd5e-srd-5.1-final/bootstrap-capability-ledger.md\n  packages/core/src/rules/bootstrapCapabilityLedger.ts\n  packages/core/test/bootstrapCapabilityLedger.test.ts\n\n=== P1-A: THE RESOLVER SCANS ONE RECORD WHILE REPORTING IT SCANNED THE PACK ===\nSupervisor-confirmed in the code. The loop ending near line 1500 iterates all\nrecords but only accumulates scannedClauses. Projection MATCHING happens solely\nat 'for (const node of projectionNodes(sourceData, 'data'))' — sourceData is the\nSINGLE source-anchor record. Line 1524 then reports\n'scannedRecords: records.length'.\n\nThat metric is worse than the bug: it states the whole pack was examined when\none record was, so the defect is concealed from anyone reading the evidence.\n\nA projection living on a sibling, child, or separately owned record is therefore\ninvisible, producing false 'absent' conclusions. Confirmed false-satisfied:\n  * spell-slot / upcast   — nonempty readiness projection AND a source-negative\n                            obligation in the same row;\n  * spellbook copying     — nonempty readiness projection on one record, source\n                            anchor on rule:wizard-your-spellbook;\n  * downtime              — nonempty readiness projection AND a source-negative\n                            obligation.\nNone appears in the pinned blocker list because the resolver never looks at the\nrecords holding those projections.\nAFFECTED MEMBERSHIP: all 12 known-missing-source-clause rows, not the three.\n\nFIX: match projections across the ENTIRE record set, not the anchor alone.\nReport a metric that describes what was actually examined — if you report\nscannedRecords, it must equal the records genuinely searched for projections.\nRe-derive the blocker set afterwards and let it GROW; do not tune anchors to\nkeep the pinned seven.\n\n=== P1-B: SHAPE RECOGNITION IS HEURISTIC AND FAIL-OPEN ===\nstructuredProjectionTokens tokenizes arbitrary keys and values;\nprojectionShapeSignals then substring-matches hand-written alias lists. Top-level\nobjects are evaluated separately and the object's own PATH KEY is not in its\ntoken set. So a representation split across siblings:\n    data.legendaryBudget  = { points: 3 }\n    data.legendaryOptions = [{ points: 2 }]\ncarries the required allowance and option-cost semantics, yet neither evaluated\nnode contains a 'legendary-action' or 'round-budget' token — and the resolver\ncertifies the obligation ABSENT.\n\nFIX — this is the important one, and it is a fail-closed problem, not a\nbetter-aliases problem:\n * Replace alias substring matching with CLOSED PREDICATES over every ALLOWED\n   SCHEMA AND PATH for each projection shape, including cross-record and\n   split-sibling representations. Include the node's own path key in what the\n   predicate can see.\n * ANY applicable structure the predicates do not recognise must resolve\n   evidence-underived, NEVER 'absent'. Inability to recognise a shape is not\n   evidence of its absence — that equivalence is the entire defect.\n * Add tests for the split-sibling case above, for a cross-record projection,\n   and for an unrecognised-but-applicable structure that must come back\n   underived rather than passing.\n\nEXPECT THE BLOCKER SET TO GROW under both fixes. That is the correct outcome and\nthe closure gate already handles it: a larger honest blocker list is the\nartifact working. Do not adjust anchors, aliases, or the pinned set to restore a\nsmaller number.\n\n=== ENVIRONMENT / CONSTRAINTS ===\nnpm ci first; npm run verify:worktree BEFORE committing. Edit only the four\nfiles above. Do not touch package.json, internal.ts, AGENTS.md, CLAUDE.md,\n.github/, or any script/CI file. Do not regenerate the pack or run the importer.\nDo not modify any bead but your own; no bd dolt push; no push, PR comment, or\nmerge. The PR body is the supervisor's to fix, after the push.",
+  "acceptance_criteria": "\n• Projection matching covers the entire record set; any reported scan metric equals what was actually searched.\n• The three confirmed false-satisfied rows resolve correctly, and all 12 known-missing rows are re-derived.\n• Shape recognition uses closed predicates over allowed schemas and paths, including cross-record and split-sibling representations, with the node path key visible to the predicate.\n• An applicable structure the predicates do not recognise resolves evidence-underived, never absent, with a test.\n• Tests cover the split-sibling legendary case and a cross-record projection.\n• The blocker set is allowed to grow; nothing is tuned to preserve the pinned seven.\n• Contract and representation boundary unchanged, so fix-verification review remains permissible.\n• npm run verify:worktree passes.",
+  "notes": "Completion report: Replaced heuristic substring/token projection matching with closed per-shape predicates over exact schema/path keys, including node path keys, split-sibling structures, and cross-record projections. The source-negative resolver now evaluates every structured data surface in every pack record and reports the records/clauses actually scanned. Recognized, partial, and applicable-but-unrecognized structures remain evidence-underived; the permanent tests now cover the 12-row blocker set, cross-record/split-sibling matching, and fail-closed unknown shapes. Updated the audit documentation to describe the invariant. No decision disagreement: I preserved the supervisor's binding contract and representation boundary. Obligations intentionally not satisfied: closure remains blocked by the honest twelve evidence-underived source-negative rows until clause-complete projection evidence exists; this is the required fail-closed outcome, not a weakened test. The generated ledger JSON/schema did not require content changes. No PR comment, push, or Dolt push was performed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T01:20:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T01:32:20Z",
+  "started_at": "2026-07-28T01:22:30Z",
+  "closed_at": "2026-07-28T01:32:20Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.1.8",
+      "depends_on_id": "eshyra-o9bd.19.5.1",
+      "type": "parent-child",
+      "created_at": "2026-07-27T20:20:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

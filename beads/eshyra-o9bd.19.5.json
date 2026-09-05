@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5",
+  "title": "Inventory engine capability requirements and enforce bead ownership",
+  "description": "Owns the PACK-TO-ENGINE boundary: what capabilities the clause corpus requires,\nwho owns each one, and proof that nothing is invisible. It does NOT implement\nthem — engine implementation lives in the separate top-level epic eshyra-olc5\n(\"Reopen deterministic engine completeness under the clause-capability\ncontract\"), where engine:F1..engine:F10 now hang.\n\nWhy the split: the PACK question is whether the data completely and accurately\nexpresses the rules; the ENGINE question is whether Eshyra can execute what the\npack expresses. Those must interact but must never again collapse into one\nundifferentiated \"modeled\" status. An engine-pending clause is not automatically\na pack defect.\n\nTwo beads, two lifecycle stages:\n  19.5.1  BOOTSTRAP ledger — startable immediately, from artifacts/code/beads/\n          findings/known-missing clauses. Not derivable from the pack alone.\n  19.5.12 AUTHORITATIVE ledger — regenerated from the clause-complete corpus\n          after 19.1.1, 19.1.4 and 19.6.1, then diffed against the bootstrap.\n\n*** TAXONOMY WARNING — READ BEFORE TOUCHING ANY CAPABILITY BEAD ***\n\"F1\"..\"F10\" means three different things in this project:\n (1) engine:F1..F10 — values of data.executionReadiness.clauses[].engineHooks[]\n     .engine in the committed pack. THIS is what the capability beads mean.\n     Verified at 4384f25 (hook references): F1 83, F2 226, F3 31, F4 169,\n     F5 399, F6 46, F7 15, F8 310, F9 236, F10 9.\n (2) eshyra-2n1t's F1-F10 — a CLOSED epic with a DIFFERENT taxonomy: F1\n     dice-grammar, F2 action-economy budget, F3 concentration/active-effects,\n     F4 spell-slot economy, F5 usage/recharge/attunement, F6 death/dying/HP-\n     buffer, F7 rest engine, F8 character-build gap closures, F9 derived-math\n     primitives, F10 currency surface. Only F2/F3/F5/F7 roughly correspond.\n     NEVER assume a same-numbered eshyra-2n1t child covers an engine:F family.\n (3) fable:F1..F8 — Fable 5 audit findings (e.g. fable:F1 = unsupported Starting\n     Wealth table). Unrelated to both; owned by the B/C/D beads.\n\nCANONICAL ALIAS PREFIXES — use these everywhere; never a bare \"F1\" or \"CAP-001\":\n  engine:F1 .. engine:F10     pack executionReadiness engineHooks[].engine families\n  fable:F1 .. fable:F8        Fable 5 audit findings\n  opus:F-01 .. opus:F-35      Opus 5 original + amended audit findings\n  sol:CAP-001 .. sol:CAP-014  GPT-5.6-Sol agent audit findings\n  indep:001 .. indep:012      independent review (formerly \"SOL-001..012\"; renamed\n                              so it stops colliding with the sol: model-name prefix)",
+  "acceptance_criteria": "- Every engine-pending, partial, unimplemented and design-blocked clause maps to a real open bead in eshyra-olc5 or an approved explicit house-rule/design dependency.\n- No engine gap is excused because the pack is data-complete.\n- The three deliberate SRD source ambiguities remain under eshyra-jhpt.6/.7 and are regression-tested as unresolved, never \"fixed\".\n- Every capability requirement is expressed as a generated membership query, not a hand-copied count.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:50:01Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.5",
+  "title": "Engine F4 — Canonical spell execution and caster-of-record semantics",
+  "description": "Implement item and class spell casting, spell-slot and stored-spell behavior, caster ability/DC/attack ownership, class-list eligibility, spellbook copying, and summoned-entity ownership.\n\nSnapshot membership: 169 magic-item hook references at 4384f25, plus rule:wizard-your-spellbook and the spell-execution requirements produced by 19.4.1.\n\nLikely child boundaries (confirm against the ledger before creating any):\n  slot economy vs caster-of-record resolution vs stored-spell/item-casting\n\nID NOTE: this bead keeps its original eshyra-o9bd.19.5.* ID for history, but it\nlives under eshyra-olc5 (engine epic), NOT under the SRD pack epic. Judge its parent by\nthe tree, not by the ID prefix.\n\nPROVIDER-NEUTRAL: this is a general engine capability, not an SRD-specific runtime\nbranch. The dnd5e-srd-5.1 pack is the first consumer that exercises it, not its\ndefinition.\n\nCHILD DECOMPOSITION: do NOT pre-create children. Wait for the bootstrap ledger\n(eshyra-o9bd.19.5.1) to produce exact membership and reveal cohesive\nimplementation boundaries. Organize children by REUSABLE ENGINE PRIMITIVE and\nEXECUTABLE SCENARIO — never by magic-item hook count or by individual record.\n\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).",
+  "acceptance_criteria": "- Every clause in this family's ledger-owned membership executes end to end, or carries an approved explicit house-rule/design dependency.\n- Executable scenario tests exist per capability, driven from pack clause data rather than hand-written fixtures.\n- Unsupported clauses fail CLOSED at runtime rather than silently degrading.\n- The pack's in-band readiness for every member clause flips to green under the shared eight-point green definition (19.1.4).\n- No member clause is closed by asserting the pack is data-complete.\n- Acceptance is evaluated against a generated membership query, never a hand-copied count.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:49:38Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.5",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:49:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

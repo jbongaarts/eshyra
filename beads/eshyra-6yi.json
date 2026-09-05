@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6yi",
+  "title": "Accept CLAUDE_CODE_OAUTH_TOKEN so the CLI can run on a Claude Pro/Max plan",
+  "description": "Follow-up from loreweaver-qyj research (docs/agent-sdk-auth.md). The Claude Agent SDK supports subscription auth via CLAUDE_CODE_OAUTH_TOKEN (from 'claude setup-token'), but Loreweaver's loadConfig hard-requires ANTHROPIC_API_KEY and the CLI injects that key through the AgentSdkModelClient auth seam. Per Claude Code's credential precedence, an injected ANTHROPIC_API_KEY also overrides any subscription token. To support Pro/Max: loadConfig should accept CLAUDE_CODE_OAUTH_TOKEN as an alternative to ANTHROPIC_API_KEY, and buildPlayDeps must inject whichever credential is in use (NOT ANTHROPIC_API_KEY when the OAuth token is selected). The AgentSdkAuthSource seam added in loreweaver-lus already supports arbitrary env injection, so this is a config-layer change only.",
+  "acceptance_criteria": "loadConfig accepts a Pro/Max OAuth token as an alternative to ANTHROPIC_API_KEY; the CLI injects the selected credential through the auth seam without injecting an API key that would shadow the token; docs/README updated; tests cover OAuth-token config resolution.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-22T03:13:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:19Z",
+  "started_at": "2026-05-22T03:24:09Z",
+  "closed_at": "2026-05-22T03:41:11Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

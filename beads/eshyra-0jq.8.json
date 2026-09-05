@@ -1,0 +1,63 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.8",
+  "title": "Refactor character state toward party-oriented model",
+  "description": "The current state model is still effectively single-PC. Even if the first playable alpha is solo-focused, the object model should not make companions, sidekicks, familiars, hirelings, or future multi-PC play harder than necessary.\r\n\r\nCoordinate with the existing multi-player-character epic instead of duplicating it.",
+  "acceptance_criteria": "- Existing multi-PC bead/epic is referenced or updated.\r\n- Data model direction is party-oriented rather than singleton-character-oriented.\r\n- Migration or compatibility plan exists for existing singleton character data.\r\n- Solo play remains supported as a one-member party.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:58Z",
+  "started_at": "2026-05-27T04:08:07Z",
+  "closed_at": "2026-05-27T04:43:30Z",
+  "close_reason": "Merged PR #87: party-oriented character model with ensureCharacterRow + inventory ownership. Verification: all CI checks pass, 582 tests pass, lint clean.",
+  "labels": [
+    "architecture",
+    "character",
+    "domain-model",
+    "party",
+    "refactor",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.8",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.8",
+      "depends_on_id": "eshyra-0jq.7",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "2a051f20-8772-5e2a-bcdd-3d1b500918ae",
+      "issue_id": "eshyra-0jq.8",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0 (tsc --build --force clean). npm run check -> exit 0 (biome ci, 168 files, no fixes). npm run test -> exit 0 (577 passed, 3 skipped, 56 test files). Acceptance criteria: (1) loreweaver-d4d updated with foundation notes. (2) Character table: TEXT PK, role column, no singleton CHECK; inventory: character_id FK; all queries parameterized. (3) v8->v9 migration copies id=1 to 'pc-1', links inventory, sets active_character_id. (4) Solo play = one-member party, all existing tests pass.",
+      "created_at": "2026-05-27T04:27:42Z"
+    },
+    {
+      "id": "3b6b5879-3f32-519c-947d-b7196033f837",
+      "issue_id": "eshyra-0jq.8",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run check -> exit 0 (168 files, no errors); npm run test -> exit 0 (582 passed, 3 skipped); 5 new regression tests added (pc-2 creation + 4 inventory ownership isolation). Pushed as 80ba254 on feat/party-oriented-character-model (PR #87).",
+      "created_at": "2026-05-27T04:40:31Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 2
+}

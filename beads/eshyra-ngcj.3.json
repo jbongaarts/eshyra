@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.3",
+  "title": "Resolve class starting equipment into deterministic item grants",
+  "description": "Problem:\nClass starting equipment is currently much better than raw prose, but many entries are still string-based. Examples:\n- 'a greataxe'\n- 'any martial melee weapon'\n- 'Leather armor, any simple weapon, and two daggers'\n\nThis is not enough for deterministic inventory tools. Character creation needs item refs, quantities, and filters.\n\nImplement:\n- Add a typed representation for starting equipment grants.\n- Convert fixed items to stable equipment refs and quantities.\n- Convert open choices to deterministic filters, for example:\n  - any simple weapon\n  - any martial melee weapon\n  - any martial weapon\n  - a shield\n  - a component pouch or arcane focus\n- Preserve original SRD text alongside typed grants for auditability.\n- Fail or report when a class starting equipment entry cannot be resolved.\n- Cover all classes in the SRD pack.\n\nAcceptance criteria:\n- A deterministic character creation flow can grant class starting equipment without parsing prose.\n- All fixed items resolve to equipment record ids.\n- All equipment choices resolve to typed filters or explicit option sets.\n- Quantities are represented explicitly.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-29T21:29:52Z",
+  "started_at": "2026-06-29T21:11:19Z",
+  "closed_at": "2026-06-29T21:29:52Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.3",
+      "depends_on_id": "eshyra-ngcj",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

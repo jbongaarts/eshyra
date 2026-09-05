@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fe3t",
+  "title": "Close pre-re-freeze 2n1t/o9bd follow-up beads in one PR",
+  "description": "Supervisor parent for phase 2 (after PR #455 merges): drive to completion the follow-up beads created during the eshyra-2n1t and eshyra-o9bd work, at the same adversarial-review quality bar as PR #455, in a single PR off main. In scope: eshyra-2n1t.8.1 (F6 durable stable-recovery deadline), eshyra-dunv (inventory identity byte bounds), eshyra-mq4n (authoritative wear/doff state owner), eshyra-stbg (rules-pack audit CLI test determinism), plus supervisor dispositions for eshyra-2n1t.5.2 Part B (zone/form runtimes still lack owning consumers — document/close decision) and eshyra-vumb (typed qualifier schema review — decision only). Out of scope: the re-freeze beads themselves (eshyra-o9bd.14, eshyra-o9bd.16, eshyra-2zyy). Wave plan: stbg + dunv + 2n1t.8.1 parallel; mq4n after dunv (both touch inventory schema/migrations); reviews repeated until clean; merge PR.",
+  "notes": "All four implementation children merged (stbg, dunv m0019, 2n1t.8.1 m0020, mq4n m0021 after attempt-2 review fixes); dispositions closed (2n1t.5.2 -> lx2j owner bead; vumb deferred-with-decision). PR #457 opened: https://github.com/jbongaarts/eshyra/pull/457. Full verification 4,650 tests green.\nCOMPLETE: PR #457 merged to main as 11cf96b (2026-07-19). All four children merged after supervisor review (mq4n needed attempt 2: fail-open legacy custody gate + wear-row collision crash, both fixed and re-verified). Branches/worktrees cleaned.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T07:48:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T23:32:37Z",
+  "started_at": "2026-07-19T07:51:13Z",
+  "closed_at": "2026-07-19T23:32:37Z",
+  "close_reason": "PR #457 merged to main (11cf96b); all in-scope follow-ups closed; re-freeze beads are now unblocked",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-fe3t",
+      "depends_on_id": "eshyra-dunv",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:51:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-fe3t",
+      "depends_on_id": "eshyra-stbg",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:51:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-fe3t",
+      "depends_on_id": "eshyra-mq4n",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:51:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-fe3t",
+      "depends_on_id": "eshyra-2n1t.8.1",
+      "type": "blocks",
+      "created_at": "2026-07-19T02:51:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,42 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.2",
+  "title": "Implement shared cross-kind mechanic primitives and parser normalization",
+  "description": "Replace duplicated spell / creature / hazard / feature / magic-item parsing of\nrecurring mechanics with shared normalized primitives implemented against the A1\nIR.\n\nRoot cause: separate projectors drift. The half-damage-on-success bug reproduced\nindependently in creatures, hazards, spells, features, and ancestries is direct\nproof — the same printed phrase (\"half as much damage on a successful one\")\nprojects differently depending on which projector saw it.\n\nShared primitives required for at least: attacks and alternate attack modes;\nchecks, contests, and ability alternatives; saves, multiple saves,\nfailure/success outcomes, and repeat saves; damage/healing, riders, recurrence,\npools, reductions, and alternatives; action, bonus action, reaction,\nlegendary-action, and controlled-entity budgets; resources, usage limits,\nrecharge, reset, and scaling; geometry, range, targets, cover, movement, and\nforced movement; conditions, active effects, duration, immunity, termination,\nand concentration; options, variants, prerequisites, selection ownership, and\nconditional grants; entity creation, summoning, transformation, ownership, and\ndestruction; currency, inventory, XP, downtime, and persistent ledgers.\n\nNormalization required BEFORE semantic parsing: Unicode minus / en-dash / hyphen\nvariants, punctuation, range notation, multiplication symbols, parenthetical\nalternatives, and wrapped headings.\n\nCloses findings: F-25, F-27, F-28, F-29, F-31, F-32, F-34, F-01, F-08, SOL-005,\nSOL-006, SOL-007, CAP-003, CAP-004, Fable F2, Fable F3.",
+  "design": "Verified membership evidence for the driving defect (main @4384f25): records whose\nprose mentions half damage but carry no typed success branch —\ncreature 77, hazard 9, spell 9, plus ancestry:dragonborn,\nfeature:hunter:superior-hunters-defense, feature:monk:evasion and 5 more\n(8 \"other\"). Typed success fields that DO exist in the pack today:\ndamageOnSuccess, onSuccessfulSave, successfulSaveDamage, noDamageInsteadOfHalf,\nsuccessReductionDice, onSuccess, onSuccessOrFailure.\n\nNOTE: the plan states \"79 creature + 8 hazard\". A coarse whole-record regex over\nmain gives 77 creature / 9 hazard. The exact membership MUST be re-derived by a\ncommitted clause-level predicate, not copied from the plan or from this note.\nSpell and ancestry/feature members are additional to the plan's stated counts and\nmust not be dropped.",
+  "acceptance_criteria": "- Save branches, attacks, damage, range, geometry, usage, duration, and alternatives share one cross-kind projection path.\n- The same source phrase cannot project differently by record kind without an explicit, reviewed override.\n- Corpus-wide mismatch predicates exist for every recurring mechanical pattern, not per-example assertions.\n- Regression coverage includes every brittle parser shape from Opus F-25 through F-35.\n- Unicode-minus, alternate range notation, and parenthetical alternate bonuses cannot silently drop a value.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nDECOMPOSITION WATCH: this bead spans lexical/Unicode normalization AND nearly\nevery shared mechanical projector. Convert to an epic with separate children\n(normalization layer vs each primitive family) if scoping confirms that breadth.\n\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:52:10Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.2",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.2",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 6,
+  "comment_count": 0
+}

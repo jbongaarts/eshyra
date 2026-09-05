@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.4",
+  "title": "Model hazards, poisons, diseases, and traps as complete stateful procedures",
+  "description": "Model all 25 hazard records as complete stateful procedures.\n\nRequired membership — all of:\n- half-damage success branches (9 hazards on main @4384f25 print one with no\n  typed success field, e.g. hazard:assassins-blood, hazard:collapsing-roof,\n  hazard:fire-breathing-statue; the plan states 8 — re-derive exact membership\n  with the shared A2 predicate);\n- the four separate pit variants, currently collapsed (shared with C1);\n- Sphere of Annihilation, currently prose-only;\n- detection, trigger, disarm, geometry, movement, recurrence, success counters,\n  incubation, progression, cure, immunity, and termination for EVERY hazard;\n- the correct distinction between harvesting prerequisites and target effects.\n\nCloses findings: SOL-007, F-01, F-02, F-23, F-25 (hazard half), CAP-006.",
+  "acceptance_criteria": "- Every hazard is executable as a stateful procedure end to end: detect, trigger, resolve, recur, terminate.\n- The four pit variants are separately addressable with option-local behavior.\n- Zero hazard clauses print a success branch without typing it.\n- Harvesting prerequisites are never conflated with target effects.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F3, F6, F7, F8, F9.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:39:50Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.4",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.4",
+      "depends_on_id": "eshyra-o9bd.19.4",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.4",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

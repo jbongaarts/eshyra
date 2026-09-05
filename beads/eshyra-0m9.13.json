@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.13",
+  "title": "Fix SRD class and subclass feature boundary parsing",
+  "description": "Problem\r\nThe SRD importer still merges adjacent class and subclass features or allows class setup/proficiency prose to bleed into feature records.\r\n\r\nEvidence from the 2026-06-07 audit\r\nAffected examples include:\r\n- feature:bard:spellcasting\r\n- feature:cleric:spellcasting\r\n- feature:druid:druidic\r\n- feature:monk:martial-arts\r\n- feature:paladin:divine-sense\r\n- feature:ranger:favored-enemy\r\n- feature:warlock:otherworldly-patron\r\n- feature:wizard:cantrips\r\n- feature:life-domain:bonus-proficiency\r\n- feature:hunter:multiattack\r\n- feature:circle-of-the-land:natural-recovery\r\n\r\nSpecific failures\r\n- Several feature records include class proficiency blocks such as Weapons, Tools, Saving Throws, and Skills.\r\n- Life Domain Bonus Proficiency swallowed Disciple of Life and Channel Divinity: Preserve Life.\r\n- Hunter Multiattack swallowed Superior Hunter's Defense.\r\n- Circle of the Land Natural Recovery swallowed Circle Spells and table content.\r\n- Circle of the Land appears to be missing later features such as Land's Stride, Nature's Ward, and Nature's Sanctuary.\r\n\r\nRequired behavior\r\n- Each class/subclass feature record should correspond to one source feature heading or intentionally modeled repeated feature.\r\n- Adjacent feature headings must terminate the previous feature body.\r\n- Class setup/proficiency blocks must not be emitted as feature body content.\r\n- Subclass feature extraction must not silently skip later subclass features.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "notes": "PR OPENED: https://github.com/jbongaarts/eshyra/pull/175 (branch fix/srd-feature-boundaries-eshyra-0m9.13). History rewritten to 2 clean logical commits (no WIP/debug scripts): 6a5e6f6 band-aware extraction + 412d665 split swallowed headings. Post-rewrite verification: importer+pack tests 614 pass; verify:dnd5e-srd-pack committed==importer; check exit 0; typecheck exit 0. Follow-up eshyra-tzl (College of Lore/Oath design/Pact Magic+audit) deferred, NOT in this branch. Awaiting review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-08T01:51:54Z",
+  "closed_at": "2026-06-08T06:10:51Z",
+  "close_reason": "Merged in PR #175 (main fb18349). Extractor band-aware layout fix + parser swallowed-heading fix. setup-label bleed 8->0; feature 148->165 (+17 real SRD headings); verify:dnd5e-srd-pack clean. Residual gaps (College of Lore Bonus Proficiencies, Oath Channel Divinity design, Warlock Pact Magic, audit 'Higher' false positive) tracked in eshyra-tzl.",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.13",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

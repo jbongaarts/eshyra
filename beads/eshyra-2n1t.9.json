@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.9",
+  "title": "F7: Rest engine (short/long rest)",
+  "description": "Durable hit-dice pool + spend procedure; long-rest gates (8h, 1/24h, >=1 HP) + restore orchestration calling F4/F5/F6 reset hooks; exhaustion/food-water interaction note. Members: short-rest, long-rest (IMPL). Depends on F4/F5/F6 hooks. Source: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4.",
+  "acceptance_criteria": "ADR 0018 single-class guard runs before Hit Dice/rest derivation; the initial Hit Dice pool may use one die type/count derived from the sole class and must not claim mixed-pool support; short-rest spend and long-rest gates/restoration orchestrate F4/F5/F6 hooks and are durable/tested; multiclass-shaped state fails with MULTICLASS_UNSUPPORTED.",
+  "notes": "D1 resolved by ADR 0018: F7 may model one Hit Die type only after the shared fail-closed boundary validates the sheet.\nF3 (eshyra-2n1t.5) landed the active-effect lifecycle: the F7 long-rest sweep can end/expire durable effects through endActiveEffect (reason 'expired' for elapsed world-time timers) and read typed timers via listActiveEffects — no parallel effect bookkeeping needed. See docs/active-effect-lifecycle.md §8.\nImplemented structured elapsed world clock, durable Hit Dice pools, short/long rest orchestration, one-die recovery, F4/F5/F6 hooks, exhaustion food/drink recovery, F3 world-time expiry, explicit-action tools, migrations, and trace/tool integration. Verification: check/typecheck/full suite passed except documented cold-start rulesPackAuditCli timeout; isolated suite 11/11 passed.\nPR #453 review fixes: shared F3 elapsed deadline derivation for create/refresh, explicit expiry boundary validation, durable active-combat gate, strict canonical qualification normalization, Hit Die visible ledger metadata, lifecycle docs, and focused tests. Full suite under load remains affected by documented 5s CLI cold-start timeouts; focused suites pass.\nFinal review fixes: migration 0013 backfills live world timers at elapsed minute zero; dedicated recovery-aware Hit Die ledger reader; migration, refresh, and focused F7 behavioral coverage. Final verification: npm run check, npm run typecheck, npm test, and npm run verify:worktree all passed (4303 passed, 19 skipped).\nFinal review fixes implemented in 978202e: nested savepoints, strict rest qualification/scoping, active-combat and pack gates, resumable recovery/context, corrected Hit Die ledger, checked elapsed-world timer invariants, truthful expiry results, migration preservation, and focused regressions. Full verification passed: 4305 passed, 19 skipped.\nFollow-up fixes completed in 642c0ac: bounded short-rest recovery windows, combat/time closure, historical ended world timers, validated expiry sweep, durable narrative-label freshness, label-aware rest idempotency, final long-rest Hit Dice evidence, expanded rollback/boundary/ledger/context tests, and schema snapshot update.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:40:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-15T05:51:24Z",
+  "started_at": "2026-07-15T00:57:24Z",
+  "closed_at": "2026-07-15T01:10:37Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.9",
+      "depends_on_id": "eshyra-2n1t.13",
+      "type": "blocks",
+      "created_at": "2026-07-11T15:02:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-2n1t.9",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:40:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

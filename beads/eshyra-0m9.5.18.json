@@ -1,0 +1,65 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.18",
+  "title": "SRD 5.1 importer: class/subclass feature parser",
+  "description": "Per ADR 0009, parse SRD 5.1 class- and subclass-granted features into `feature` records (kind added by loreweaver-0m9.5.15). Mirror the existing parser/emit/index/test structure under packages/core/scripts/importers/dnd5e-srd-5.1/.\n\nEach feature record links to its grantor via data.source (the granting class or subclass record key) and records the level gained. Provenance-tagged per ADR 0007 (extract from vendored PDF, never author from model knowledge). Manifest description must include 'feature' in Included record kinds.\n\nFeatures are granted by base classes (0m9.5.2) and subclasses (0m9.5.17); coordinate source keys with both. Depends on: 0m9.5.15 (feature kind) and 0m9.5.2 (base class records).",
+  "design": "Real importer API (verified): parsers consume readonly PageText[] (Classes-chapter slice from sliceSection(anchors.classes)); return *Extraction[] sorted by name; emit.ts builds RulesRecord via *ExtractionsToRecords + buildPack + BuildPackInput; index.ts runImporter wires slice->parse->buildPack->counts with fail-closed coverage guards. feature kindSchema (validateDnd5eFeature in src/rules/kindSchemas.ts): data.{source:str (grantor record key class:<slug> or subclass:<slug>), level:int>=1, description:str}. Mirror parseClasses.ts (Hit-Dice signature, normalizeLine, fail-closed) and parseSubclasses.ts (KNOWN_SUBCLASSES exact-name anchors). SCOPE NOTE: many class features (e.g. Second Wind, Fighting Style at lvl 1) carry NO in-prose level - level comes from the class level/feature progression TABLE; subclass features (Improved Critical, Channel Divinity) DO carry 'at Nth level' lead-ins. Faithful level assignment for class features needs the progression-table name->level map (table reconstruction is nontrivial; see parseTables.ts limits). Pipeline fixture CLASSES_PAGE has only subclass feature 'Improved Critical' (Champion, lvl 3 via prose lead-in); wiring features into runImporter will change pipeline.test.ts exact counts (currently 32 records) - update counts.features and record/key assertions. Add: FeatureExtraction type (types.ts), parseFeatures.ts, featureExtractionsToRecords+buildPack wiring (emit.ts), ImporterCounts.features + runImporter wiring (index.ts), README Scope-today row, parseFeatures.test.ts + emit.test.ts + pipeline.test.ts updates.",
+  "acceptance_criteria": "- Parser extracts class/subclass features from the SRD and links each to its grantor key + level.\n- Records satisfy the feature kindSchema.\n- Manifest 'Included record kinds' lists 'feature'.\n- Unit tests cover a simple class feature (e.g. Second Wind) and a complex one (e.g. Channel Divinity / Rage progression).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-30T02:25:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-30T15:41:38Z",
+  "closed_at": "2026-05-31T03:11:06Z",
+  "close_reason": "Implemented SRD 5.1 class/subclass feature parser with feature record emission, importer counts, manifest inclusion, docs, and parser/emitter/pipeline tests. Verification: Biome CI on touched files, npm run typecheck, npm run test, and git diff --check passed; TDD evidence recorded in bead comment.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.18",
+      "depends_on_id": "eshyra-0m9.5.15",
+      "type": "blocks",
+      "created_at": "2026-05-29T21:25:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.18",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-29T21:25:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.18",
+      "depends_on_id": "eshyra-0m9.5.2",
+      "type": "blocks",
+      "created_at": "2026-05-29T21:25:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "b109ee39-0e87-562d-856c-0850e94fdc0b",
+      "issue_id": "eshyra-0m9.5.18",
+      "author": "Joseph Bongaarts",
+      "text": "TDD/verification: RED npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseFeatures.test.ts packages/core/test/importers/dnd5e-srd-5.1/emit.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> failed as expected on pipeline record count 32 vs 33 after feature wiring. GREEN focused importer suite -> 73 passed; added Spellcasting regression -> parseFeatures 18 passed. Final verification: npx biome ci --vcs-enabled=false <touched importer files> -> exit 0; npm run typecheck -> exit 0; npm run test -> exit 0 (80 files passed, 2 skipped; 952 tests passed, 3 skipped); git diff --check -> exit 0. Note: npm run format/check over '.' does not process files inside .worktrees because biome.json excludes .worktrees, so Biome was run against explicit touched paths.",
+      "created_at": "2026-05-31T03:10:56Z"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 1
+}

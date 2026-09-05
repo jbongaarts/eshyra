@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-iszg",
+  "title": "Make worktree verification subprocess checks sandbox-compatible",
+  "description": "The required npm run verify:worktree and full suite cannot complete in the managed sandbox because hidden-Unicode and CLI tests use child_process spawnSync, while Codex MCP tests bind loopback; each fails with EPERM even though focused engine tests pass. Review whether CI/agent verification needs an environment-compatible path.",
+  "notes": "Implemented restricted verification mode: npm run verify:worktree:sandbox passes ESHYRA_TEST_SANDBOX=1 to child checks; subprocess/loopback integration tests skip only in that mode. Added policy coverage and AGENTS.md guidance. Full sandbox verification passed (4678 passed, 29 skipped); default targeted capability tests passed 35/35.\nAddressed PR #465 review: narrowed sandbox eligibility to environments where Git/npm orchestration works but known nested Node/npm and loopback operations fail; preserved the qualified alternative in the mandatory pre-push rule; corrected CLI test comments; added policy assertions. Full npm run verify:worktree passed (4688 passed, 19 skipped).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T07:58:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T06:25:52Z",
+  "started_at": "2026-07-21T05:49:49Z",
+  "closed_at": "2026-07-21T06:02:02Z",
+  "close_reason": "Implemented and opened PR #465 with restricted sandbox verification mode.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

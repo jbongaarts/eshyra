@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-dy8",
+  "title": "Update README storage status after ADR 0004 merge",
+  "description": "PR #40 replaced explicit-only LOREWEAVER_DB_PATH storage with the managed data root + registry. The README project-status note still said 'first-release storage remains explicit via LOREWEAVER_DB_PATH', which is now stale.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-22T22:21:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:19Z",
+  "started_at": "2026-05-22T22:22:04Z",
+  "closed_at": "2026-05-22T22:49:40Z",
+  "close_reason": "Merged: v3k+6rm in PR #45, dy8 in PR #42.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

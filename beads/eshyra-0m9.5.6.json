@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.6",
+  "title": "SRD 5.1 importer: races/ancestry parser",
+  "description": "**âš  DESIGN DECISION REQUIRED BEFORE IMPLEMENTATION** â€” see HUMAN flag.\r\n\r\n**Prerequisites (apply to all SRD 5.1 importer child issues):**\r\n- Vendored SRD 5.1 PDF must be in place at `packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf` â€” see that directory's README.md.\r\n- Reference implementation: mirror the structure of `packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts` (parser), `emit.ts` (record builder + manifest description), `index.ts` (pipeline wiring), and the test layout under `packages/core/test/importers/dnd5e-srd-5.1/`.\r\n- Depends on `loreweaver-0m9.5.9` (section detection + orchestrator).\r\n\r\n---\r\n\r\nAdd a parser for SRD 5.1 races (kind=ancestry; SRD 5.1 uses the 'race' term, normalized to the kindSchema's 'ancestry' kind per ADR 0005). Captures ability score increases, age, alignment, size, speed, languages, racial traits, and subraces.\r\n\r\n**Open design question (need decision before agent starts):**\r\n- **Subraces** (Hill Dwarf and Mountain Dwarf as subraces of Dwarf; High Elf, Wood Elf, Dark Elf as subraces of Elf) â€” are these:\r\n  (a) Separate `kind=ancestry` records, each carrying the combined parent+subrace data flattened, with `overrides: ['ancestry:<parent>']`?\r\n  (b) Sub-records embedded in the parent ancestry record's `data.subraces[]`?\r\n  (c) Separate records with parent reference but no override, so both are usable independently?\r\n\r\nUntil this is decided, the issue should not be claimed. Decision can be appended to this description before claim.\r\n\r\n---\r\n\r\n## DECISION (recorded 2026-05-28) — subrace handling RESOLVED\r\n\r\nChosen: **(a-variant) Separate `kind=ancestry` records, flattened.**\r\n\r\n- Parent race and each subrace are **separate `kind=ancestry` records**.\r\n- Each **subrace record is self-contained**: it embeds the parent's shared\r\n  traits (size, speed, base ability score increases, racial traits) flattened\r\n  in, merged with the subrace's own additions, so a name lookup of e.g.\r\n  \"Hill Dwarf\" resolves to a fully usable record without resolving the parent.\r\n- Subrace records carry `data.subraceOf: \"ancestry:<parent-key>\"`; the parent\r\n  record lists `data.subraces: [\"ancestry:<child-key>\", ...]` for discoverability.\r\n- The source term \"race\" is preserved in `data.source: \"race\"` per ADR 0005.\r\n- **Do NOT use the `overrides` field.** Per stack.ts (namesOverride /\r\n  overrideRefMatches), `overrides` is a cross-pack replacement mechanism keyed\r\n  by `packId/key`; a subrace has a distinct key/name from its parent, so an\r\n  override ref is either a dangling no-op or wrongly hides the parent. The\r\n  bead's original option (a) wording (\"overrides: ['ancestry:<parent>']\") is\r\n  therefore rejected; we keep separate-records-flattened WITHOUT overrides.\r\n\r\nRationale: ancestries are consumed by **name lookup**\r\n(`lookupOfKind(stack, 'ancestry', name)`), and coverage tests count records\r\nper kind — flat, independently-resolvable records fit both. Human gate cleared.\r\n",
+  "design": "Subraces: separate kind=ancestry records, flattened/self-contained, data.subraceOf + parent data.subraces[], no overrides field. See description DECISION section.",
+  "acceptance_criteria": "- Subrace-handling decision is recorded in this issue's description before implementation starts.\n- Parser extracts every SRD race (and subrace) as kind=ancestry, following the recorded decision.\n- Records preserve the source 'race' term inside record data while using the canonical 'ancestry' kind per ADR 0005.\n- Manifest description includes 'ancestry' in Included record kinds.\n- Unit tests cover a race with no subraces, a race with subraces, and a subrace record (whichever shape was chosen).",
+  "notes": "Implemented; PR #104 (work/0m9-5-6-ancestry-parser) open against main. Decision: separate flattened ancestry records, no overrides. All gates green (test/typecheck/biome). Awaiting review/merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:07:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:57Z",
+  "started_at": "2026-05-28T23:47:55Z",
+  "closed_at": "2026-05-29T00:14:46Z",
+  "close_reason": "Implemented and merged via PR #104. SRD 5.1 races/ancestry parser: separate flattened ancestry records, no overrides; rebased over the equipment parser (#102) and merged.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.6",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:07:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.6",
+      "depends_on_id": "eshyra-0m9.5.9",
+      "type": "blocks",
+      "created_at": "2026-05-27T18:16:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

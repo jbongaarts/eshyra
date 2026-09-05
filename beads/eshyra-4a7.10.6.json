@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.10.6",
+  "title": "Import Customizing NPCs guidance",
+  "description": "Import Appendix MM-B p395 Customizing NPCs as a bounded guidance record or records, preserving its relationship to the surrounding NPC stat blocks without absorbing adjacent appendix content. Follow docs/importer-fix-protocol.md. If the failure map reveals a new root cause, requires a new parser or extractor strategy, or creates generated churn outside the direct consequences of the current minimal fix, stop and report instead of broadening the implementation.",
+  "acceptance_criteria": "A focused boundary regression test proves the complete Customizing NPCs source is emitted without adjacent-content bleed; stable importer-generated records replace the owned known-gap coverage; regeneration verification and repository quality gates pass with explained generated churn.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-14T05:28:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-14T15:56:21Z",
+  "started_at": "2026-06-14T15:47:56Z",
+  "closed_at": "2026-06-14T15:56:21Z",
+  "close_reason": "Imported Appendix MM-B Customizing NPCs guidance as rule:customizing-npcs, carved before the first NPC stat block with no bleed. PR https://github.com/jbongaarts/eshyra/pull/214",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.10.6",
+      "depends_on_id": "eshyra-4a7.10",
+      "type": "parent-child",
+      "created_at": "2026-06-14T00:28:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,74 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.9.4",
+  "title": "Gate creature statline parentheticals, formulas, XP, and conditionals",
+  "description": "Finding source:\n- Fable found dropped AC parentheticals, HP formulas, CR-0 XP ambiguity, form-specific speeds/AC, and hover semantics.\n- Existing gates were green because the fields were never expected by the model.\n\nAcceptance criteria:\n- Add source-vs-model creature statline gate covering AC source/variants, HP formula, CR/XP, speed variants, and hover.\n- Gate must fail on the exact loss categories Fable quantified: 206 AC parentheticals, 316 HP formulas, CR-0 10 XP cases, lycanthrope form stats, Mage/Druid/Ankheg conditionals.\n\nDependency note:\n- Blocked by the statline modeling beads and the CR-0 XP bead: the gate can only pass once the model carries the data.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:28:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-03T03:20:12Z",
+  "closed_at": "2026-07-03T03:20:12Z",
+  "close_reason": "Covered by PR #394 (eshyra-o9bd.18.6.4): the creature-statline-fidelity srdAudit gate enforces AC parentheticals/conditionals/variants via residue-vs-sourceText matching, HP formula presence + floored-mean math, hover, and form-specific speed variants via exact Speed-line re-render; CR/XP is enforced by the creature-cr-xp gate (18.9.3, printed Challenge line). All quantified loss categories (206 AC parentheticals, 316 HP formulas, CR-0 XP, lycanthrope form stats, Mage/Druid/Ankheg conditionals) now fail closed. The parser additionally fails closed on statline grammar, so an independent coordinate-level oracle adds no marginal coverage; the deep-audit tooling bead (18.9.1) supplies the independent source-side verification.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.9.4",
+      "depends_on_id": "eshyra-o9bd.18.9",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:28:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.18.9.4",
+      "depends_on_id": "eshyra-o9bd.18.6.3",
+      "type": "blocks",
+      "created_at": "2026-07-01T22:28:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.18.9.4",
+      "depends_on_id": "eshyra-o9bd.18.5",
+      "type": "blocks",
+      "created_at": "2026-07-01T22:28:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.18.9.4",
+      "depends_on_id": "eshyra-o9bd.18.6.2",
+      "type": "blocks",
+      "created_at": "2026-07-01T22:28:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.18.9.4",
+      "depends_on_id": "eshyra-o9bd.18.6.1",
+      "type": "blocks",
+      "created_at": "2026-07-01T22:28:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "16743af6-0823-5acd-9fc6-6bcf46cf41e6",
+      "issue_id": "eshyra-o9bd.18.9.4",
+      "author": "Joseph Bongaarts",
+      "text": "PR #394 (eshyra-o9bd.18.6.4) added the creature-statline-fidelity srdAudit gate covering AC parentheticals/conditionals (sourceText residue check), HP formulas (grammar + floored-mean math), hover, and form-specific speeds (exact re-render vs speedSourceText). XP is already gated by creature-cr-xp (18.9.3). This bead's scope appears substantially covered — review whether anything remains (e.g. an independent coordinate-level oracle) or close as done-by-18.6.4.",
+      "created_at": "2026-07-03T03:02:45Z"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 0,
+  "comment_count": 1
+}

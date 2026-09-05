@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23.8",
+  "title": "Attribute SRD invocation option source pages (48-50)",
+  "description": "Split from eshyra-vk23.3 (prerequisite parsing fix). The prerequisite-truncation bug is fixed; this bead covers the remaining source-page attribution.\n\nProblem:\nAll 32 Warlock Eldritch Invocation options in feature:warlock:eldritch-invocations carry source 'SRD 5.1 p. 47' (the feature heading page). The invocation list actually spans SRD pages 48-50 (p.47 holds only the intro paragraph). Evidence from the vendored PDF text:\n- p.48: Agonizing Blast, Armor of Shadows, Ascendant Step, Beast Speech, Beguiling Influence, Bewitching Whispers, Book of Ancient Secrets (start).\n- p.49: Chains of Carceri, Lifedrinker, Master of Myriad Forms, Minions of Chaos, Mire the Mind, Repelling Blast, etc.\n- p.50: Thirsting Blade, Visions of Distant Realms, Voice of the Chain Master, Whispers of the Grave, Witch Sight, etc.\n\nWhy deferred (per docs/importer-fix-protocol.md stop-and-report rule):\nPer-option page attribution needs a NEW extractor strategy, not a localized parser fix. The options are parsed in deriveFeatureChoices.ts from the already-concatenated feature.description string, which carries no page data. The warlock pages are a TWO-COLUMN layout where invocation headings interleave with Pact Boon text; parseFeatures de-interleaves columns to build the description, so recovering a per-heading page number requires threading page-boundary data from extract.ts/parseFeatures through FeatureExtraction into the choice deriver.\n\nScope:\n- Capture the source page for each invocation heading at parse time (column-aware).\n- Thread a heading->page map on FeatureExtraction (or emit per-option source at parse time).\n- Set each option's source to its true SRD page (48, 49, or 50).\n- Regression test: assert representative options resolve to 48/49/50, not all 47.\n\nAcceptance:\n- Invocation option sources reflect SRD pages 48-50, not a single collapsed p.47.\n- verify:dnd5e-srd-pack passes; typecheck/test/check pass.\n\nLikely files: packages/core/scripts/importers/dnd5e-srd-5.1/parseFeatures.ts, extract.ts, types.ts (FeatureExtraction), deriveFeatureChoices.ts, emit.ts.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T03:43:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T05:49:02Z",
+  "started_at": "2026-06-30T05:39:04Z",
+  "closed_at": "2026-06-30T05:49:02Z",
+  "close_reason": "Completed in branch eshyra-vk23-rest: gameplay-readiness partial-structure reporting, clean Biome 2.5.1 check output, and SRD option source-page attribution.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-vk23.8",
+      "depends_on_id": "eshyra-vk23",
+      "type": "parent-child",
+      "created_at": "2026-06-29T22:43:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

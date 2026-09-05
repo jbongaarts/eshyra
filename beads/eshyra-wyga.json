@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wyga",
+  "title": "Migrate biome.json schema pin to the installed Biome (2.5.5 -> 2.5.10)",
+  "description": "`biome.json` line 2 pins `https://biomejs.dev/schemas/2.5.5/schema.json` while\nthe installed `@biomejs/biome` is 2.5.10. Biome emits a `deserialize` INFO\ndiagnostic on every `npm run check` / `format:check` / `lint` run:\n\n    The configuration schema version does not match the CLI version 2.5.10\n      Expected: 2.5.10\n      Found:    2.5.5\n\nInfo-level diagnostics do not fail the build (Biome has no exit-on-info flag),\nso this is invisible to CI, which is exactly the accumulation AGENTS.md's\n\"Formatting & Linting\" section warns about: \"keep `biome.json` migrated to the\ninstalled Biome (`npx biome migrate --write`)\".\n\nPre-existing on `main` as of 6015db0; observed while verifying\neshyra-o9bd.19.1.15 (PR #507) and deliberately left out of that PR to keep it\nscoped to the Foundation 2 registry.\n\nFix: run `npx biome migrate --write` from the repo root, confirm\n`npm run check` reports zero diagnostics (not just zero errors), and commit the\n`biome.json` change on its own branch. Per AGENTS.md's dependency rules, keep\nthis separate from feature work; a semver-major Biome bump is a different\ndecision and is not in scope here.\n",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-08-30T02:19:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-08-30T02:19:30Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

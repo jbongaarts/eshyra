@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.6.2",
+  "title": "Amendment A2: make active ambiguity rulings available to bounded capability preflight (with eshyra-olc5 readiness owner)",
+  "description": "ADR 0020 transition amendment A2 (integrated transition design 8.3 R5), carved out of eshyra-jhpt.6 on 2026-09-05 so the .4/.5/.6 PR could land without it. Define how an ACTIVE ambiguity ruling (campaign_rule with ambiguity provenance, read through the .2 APIs / assembleCampaignRulesContext) is made available to bounded deterministic capability preflight where execution depends on it — the verified case is magic-item:cube-of-force press-face-1 resetsDuration { kind:'source-ambiguity', ambiguityId:'ambiguity:cube-of-force-same-face-duration-reset' } where state/itemState.ts matchStateTransition throws ItemStateAmbiguityError. Constraints from the .6 spec: assertMagicItemOperationReady runs before the first matchStateTransition, so readiness throws first today; A2 must be designed WITH the eshyra-olc5 readiness owner (eshyra-olc5.6, transition W13): a ruling does not make an engine-pending clause ready, and a capability may never consult a ruling that did not come through this runtime. Discovery consumer eshyra-o9bd.19.13 (W11) depends on this output and may not substitute a discovery-local store. Probe P7 expects: no active ruling -> packet carries the ambiguity, both interpretations, explicit unresolved; active ruling -> packet carries the ruling beside the ambiguity and preflight still reports blocked. Ownership stays under eshyra-jhpt.6.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-05T07:25:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-05T07:25:07Z",
+  "labels": [
+    "ambiguity",
+    "audit",
+    "campaign-runtime",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.6.2",
+      "depends_on_id": "eshyra-jhpt.6",
+      "type": "parent-child",
+      "created_at": "2026-09-05T02:25:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

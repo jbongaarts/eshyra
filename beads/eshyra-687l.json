@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-687l",
+  "title": "Follow-up: bind exact source semantic values in obligation authority",
+  "description": "Track the deferred source-value contract work identified during correction of PR #475. Add independently authoritative, source-backed predicates/value bindings for mechanically relevant values such as save ability/DC, damage amount/type/trigger, target count, duration amount/unit, reset timing, and transition payload. This is deliberately outside eshyra-o9bd.19.1.11.1 because it requires exact source values; assign to the sibling source-value bead rather than widening the readiness-dimension correction.",
+  "acceptance_criteria": "Source-derived value bindings are authoritative, validated against evidence, preserved through closure, and covered by cross-kind mutation regressions.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T00:16:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:52:38Z",
+  "closed_at": "2026-07-28T00:52:38Z",
+  "close_reason": "Duplicate of eshyra-o9bd.19.1.10 (Model exact source values and relationships in the obligation authority), which was created by the supervisor decomposition of PR #475 and carries the same scope. Consolidated there to keep closure accounting at eshyra-o9bd.19.6.1 correct.",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-687l",
+      "depends_on_id": "eshyra-o9bd.19.1.11.1",
+      "type": "discovered-from",
+      "created_at": "2026-07-27T19:16:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

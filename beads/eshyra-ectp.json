@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ectp",
+  "title": "Format late provider ConfigError from gameplay client construction",
+  "description": "Problem\nPR #255 added provider/auth selection for claude-sub, codex-sub, anthropic-api, and openai-api. The normal provider-selection path is good, but openai-api can now resolve successfully during config loading and then throw a ConfigError later during gameplay client construction.\n\nCurrent suspected issue\nloadConfig can accept an environment where only OPENAI_API_KEY is present and resolve provider/auth as openai-api.\n\nmakeGameplayClient then throws a ConfigError because the OpenAI native gameplay adapter is intentionally not implemented yet, with a useful message referencing the future follow-up bead eshyra-fxxf.\n\nHowever, runPlaySubcommand and runDemoSubcommand appear to format ConfigError only around config loading. Later ConfigError thrown by buildPlayDeps / makeGameplayClient may bypass the normal formatConfigError path and surface as an unhandled exception or stack trace.\n\nWhy this matters\nA user with only OPENAI_API_KEY set should get a clean actionable CLI error saying openai-api is recognized but not implemented yet. They should not see an unhandled stack trace, and the message should not imply that Eshyra silently fell back to billable API behavior.\n\nRelevant PR\n- PR #255: provider/auth selection for subscription and API providers\n\nLikely files\n- packages/cli/src/play.ts\n- packages/cli/src/demo.ts\n- packages/cli/src/providerClients.ts\n- CLI tests around play/demo config error handling\n\nRequested fix\nEnsure ConfigError thrown after loadConfig, especially from makeGameplayClient(openai-api), is caught and formatted consistently in both:\n- eshyra play\n- eshyra demo\n\nUse the existing formatConfigError path if appropriate, or equivalent output with the same UX standard.\n\nAcceptance criteria\n- With only OPENAI_API_KEY set, `eshyra play` exits 1 without a stack trace.\n- With only OPENAI_API_KEY set, `eshyra demo` exits 1 without a stack trace.\n- The error message includes openai-api.\n- The error message references that OpenAI native gameplay support is not implemented yet and points to eshyra-fxxf if that is the existing intended follow-up.\n- The error message does not imply subscription/provider fallback and does not imply hidden API billing fallback.\n- Existing claude-sub, codex-sub, and anthropic-api selection tests still pass.\n- Add regression tests for the late ConfigError path rather than only testing loadConfig.\n- Run the normal verification command before opening the PR, preferably:\n    npm run verify:worktree",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-20T21:16:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-20T21:23:43Z",
+  "started_at": "2026-06-20T21:19:24Z",
+  "closed_at": "2026-06-20T21:23:43Z",
+  "close_reason": "Caught late ConfigError from play/demo dependency construction and added openai-api regression coverage.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.13",
+  "title": "Enforce fail-closed single-class character boundary",
+  "description": "Implement ADR 0018 shared validation so the current schema and deterministic services reject multiclass-shaped state instead of silently flattening it. Guard character-sheet persistence/import and load/use, creation finalization, progression/level-up, F4 spell slots, and F7 Hit Dice. Expose UnsupportedCharacterBuildError with MULTICLASS_UNSUPPORTED and actionable CLI/model-facing diagnostics. Existing valid schema-v1 single-class sheets remain compatible.",
+  "design": "Follow docs/adr/0018-single-class-engine-boundary.md section 7. Keep the guard system-aware and shared; do not scatter one-off classes-field checks. Known multiclass-shaped extension fields are not ignored. This bead establishes the precondition F4/F7/F8 may rely on; it does not implement multiclassing.",
+  "acceptance_criteria": "A shared validator accepts canonical one-class sheets and rejects multiple-class/per-class-level shapes, mismatched subclasses, invalid levels, and alternate advancement targets; persistence/import, creation finalization, level-up preview/apply, F4 slot operations, and F7 Hit Dice operations invoke it before deriving state; failures use typed code MULTICLASS_UNSUPPORTED and are surfaced without flattening, repair, or model adjudication; representative store/import/creation/progression/slot/Hit-Dice tests prove fail-closed behavior; no schema migration is introduced for valid schema-v1 sheets.",
+  "notes": "Review follow-up: validate advancement transport inputs at guided/preview/apply boundaries and inspect nested draft selections.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T20:02:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-11T20:41:11Z",
+  "closed_at": "2026-07-11T21:10:52Z",
+  "close_reason": "Review follow-up complete: advancement inputs and nested draft selections now fail closed; full verify:worktree passed.",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.13",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-11T15:02:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 3,
+  "comment_count": 0
+}

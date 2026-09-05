@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5f2w",
+  "title": "Add long-form rules-pack compiler story page to eshyra.app",
+  "description": "Add a durable, search-indexable long-form technical article at /rules-pack/ on the eshyra.app static site explaining why the D&D 5e SRD 5.1 rules pack exists, how the historical deterministic importer evolved into a source-grounded rules compiler with an executable-curation stage, the model/engine execution boundary, provenance/reproducibility, the three-layer (pack semantics / live state / engine services) separation, and what the downloadable pack is. Faithful to ADR 0007, ADR 0017, and docs/rules-pack-compiler.md. Extend site/build.mjs to render a second template sharing dynamic pack metadata; link it prominently from the homepage rules-pack section and back to the download. No React/CMS/bundler; preserve terminal aesthetic. Status wording must reflect current thawed-reaudit state (not frozen/final/playable).",
+  "notes": "Implemented on branch eshyra-5f2w-rules-pack-story; PR #418 (https://github.com/jbongaarts/eshyra/pull/418) open against main, awaiting review. Long-form article at /rules-pack/ (site/src/rules-pack.html.tmpl); build.mjs renders both templates via shared renderTemplate; homepage links out+back; styles.css extended for long-form. Status wording reflects thawed-reaudit pack state. Verified: site build (both pages, no leftover placeholders, dynamic 1812/16), npm run check clean, full suite 3650 passed/19 skipped. No generated records changed. Handoff stops at open PR (not merged).\nPR #418 follow-up (commit ec0095d): corrected article status paragraph — removed false 'every protected-path change requires a thaw note' claim; now states hash-manifest verification active but per-change thaw-note gate temporarily suspended (THAW_NOTE_CHECK_ENABLED=false) during eshyra-o9bd re-audit, returns at re-freeze. Also reworded README/build.mjs to 'each registered HTML template' (no auto-discovery). Site-only; no records/freeze-manifests/protected artifacts changed. Rebuilt+verified: both pages, ZIP+.sha256, no placeholders; npm run check clean; 3650 passed/19 skipped. PR body status wording updated to match.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-08T04:25:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-08T04:25:45Z",
+  "closed_at": "2026-07-10T04:54:52Z",
+  "close_reason": "Completed and merged as PR #419; retained as the source bead for the editorial follow-up.",
+  "labels": [
+    "docs",
+    "site",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-5f2w",
+      "depends_on_id": "eshyra-ss08.10",
+      "type": "relates-to",
+      "created_at": "2026-07-09T23:54:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-5f2w",
+      "depends_on_id": "eshyra-ss08",
+      "type": "relates-to",
+      "created_at": "2026-07-09T23:28:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

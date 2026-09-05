@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ay3.2",
+  "title": "REFACTOR: Clean up character creation validation",
+  "description": "Refactor the character-creation validation implementation while keeping focused and project test suites green.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-20T22:45:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:06Z",
+  "started_at": "2026-05-20T22:48:27Z",
+  "closed_at": "2026-05-20T22:49:14Z",
+  "close_reason": "Refactored character creation validation while focused and full verification stayed green.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ay3.2",
+      "depends_on_id": "eshyra-ay3",
+      "type": "parent-child",
+      "created_at": "2026-05-20T17:45:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ay3.2",
+      "depends_on_id": "eshyra-ay3.3",
+      "type": "blocks",
+      "created_at": "2026-05-20T17:45:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "67f36b1c-8f49-5f53-b875-709001989bbb",
+      "issue_id": "eshyra-ay3.2",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: npx vitest run packages/core/test/characterCreation.test.ts passed; npm run typecheck passed; npm run test passed with 21 files passed / 1 skipped (98 passed / 1 skipped).",
+      "created_at": "2026-05-20T22:49:09Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

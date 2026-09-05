@@ -1,0 +1,73 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.2",
+  "title": "Add permanent regression evidence for every audit finding",
+  "description": "Populate the A5 finding registry and commit a test or generated predicate for\nevery row of the plan's §IV coverage matrix.\n\nCoverage matrix to close in full:\n  Sol:      SOL-001 .. SOL-012 (12 findings)\n  Opus 5:   F-01 .. F-24 (24 findings)\n  Opus 5 amended: F-25 .. F-35 plus the residual unverified-effects-semantics\n            finding (12)\n  GPT-5.6-Sol: CAP-001 .. CAP-014 (14 findings)\n  Fable 5:  F1 .. F8 (8 findings — note these collide by name with the pack\n            engine-hook families; the registry must disambiguate with a source\n            prefix, e.g. fable:F1 vs engine:F1)\n\nInclude NEGATIVE tests for unsupported source claims (a compiler-authored value\nmust not be able to acquire SRD provenance; the starting-wealth case is the\ncanonical fixture) and POSITIVE tests for accepted ambiguities and\nadjudicated-by-design clauses (the 3 magic-item adjudicated clauses, the 1\ndesign-blocked artifact-property case, and the 3 explicit SRD source ambiguities\nowned by eshyra-jhpt.6/.7).",
+  "acceptance_criteria": "- Every §IV row has a registry entry with canonical ID, all review aliases, membership query, violated invariant, owning bead, regression predicate, and closure evidence.\n- Every regression is a corpus-wide predicate where the finding describes a class, plus committed representative assertions — never assertions alone.\n- Negative tests prove fabricated/unsupported content cannot pass the provenance gate.\n- Positive tests prove intentional ambiguities and adjudicated clauses are preserved and not \"repaired\".\n- CI fails if a registry row's owning bead does not resolve or is closed while the row is open.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCANONICAL ALIAS PREFIXES — never a bare \"F1\" or \"CAP-001\":\n  engine:F1 .. engine:F10     pack executionReadiness engineHooks[].engine families\n  fable:F1 .. fable:F8        Fable 5 audit findings\n  opus:F-01 .. opus:F-35      Opus 5 original + amended audit findings\n  sol:CAP-001 .. sol:CAP-014  GPT-5.6-Sol agent audit findings\n  indep:001 .. indep:012      independent review (formerly \"SOL-001..012\"; renamed\n                              so it stops colliding with the sol: model-name prefix)\n\nSCOPE: 19.6.2 ADDS CLOSURE EVIDENCE to the registry created by eshyra-o9bd.19.1.6. It does not\ncreate the registry.\n\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:23:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:52:20Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.1.7",
+      "type": "blocks",
+      "created_at": "2026-07-25T22:29:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.1.9",
+      "type": "blocks",
+      "created_at": "2026-07-26T10:08:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.6",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:23:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.6.1",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.1.5",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.1.8",
+      "type": "blocks",
+      "created_at": "2026-07-26T10:08:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 5,
+  "dependent_count": 1,
+  "comment_count": 0
+}

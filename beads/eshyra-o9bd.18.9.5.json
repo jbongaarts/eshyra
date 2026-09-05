@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.9.5",
+  "title": "Gate all nested choice prerequisite refs",
+  "description": "Finding source:\n- Fable found five dangling pact-boon refs under feature:warlock:eldritch-invocations choices[].options[].prerequisites[].ref.\n- Existing ref-integrity gates evidently did not traverse that nested path.\n\nAcceptance criteria:\n- Extend ref traversal to choices[].options[].prerequisites[].ref and all adjacent nested reference-bearing fields.\n- Add regression tests for Eldritch Invocation pact-boon prerequisites.\n- Gate reports full JSON paths and candidate fixes for dangling refs.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:28:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-02T12:47:25Z",
+  "closed_at": "2026-07-02T12:47:25Z",
+  "close_reason": "Satisfied by PR #383 (with eshyra-o9bd.18.4): reference-integrity traverses choices[].options[].prerequisites[] (classRef/featureRef/cantrip ref) with full JSON paths; ownership gate lists offering features on mismatch; regression tests added.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.9.5",
+      "depends_on_id": "eshyra-o9bd.18.9",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:28:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

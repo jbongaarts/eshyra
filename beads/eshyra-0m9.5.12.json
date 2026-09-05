@@ -1,0 +1,63 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.12",
+  "title": "SRD 5.1 importer: reference-table parser",
+  "description": "**Prerequisites (apply to all SRD 5.1 importer child issues):**\n- Vendored SRD 5.1 PDF must be in place at `packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf` — see that directory's README.md.\n- Reference implementation: mirror the structure of `packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts` (parser), `emit.ts` (record builder + manifest description), `index.ts` (pipeline wiring), and the test layout under `packages/core/test/importers/dnd5e-srd-5.1/`.\n- Depends on `loreweaver-0m9.5.9` (section detection + orchestrator).\n\n---\n\nAdd a parser for freestanding reference tables in the SRD 5.1 (kind=table): exhaustion levels (if not already covered by the condition parser), encounter difficulty thresholds, treasure tables, ability-check DC tables, etc. Each table becomes a kind=table record. The `table` kindSchema requires `data.columns: string[]` and `data.rows: unknown[][]`. `key` should be `table:<slug>`.\n\nNote: table extraction from PDFs is genuinely harder than prose extraction — pdfjs reports text items with positions but does not preserve table semantics. The parser will likely need a per-table anchor + heuristic for row reconstruction. Start with the simplest tables (encounter difficulty thresholds, ability-check DCs) and document any tables that resist clean extraction so they can be re-attempted with a smarter extractor in a follow-up.\n\nSplit from the original 0m9.5.7 to keep ticket scope shippable in one session.",
+  "acceptance_criteria": "- Parser extracts at least the simple tables (encounter difficulty, ability-check DCs).\n- Records satisfy dnd5e-srd table kindSchema (data.columns string array; data.rows array of arrays).\n- Manifest description includes 'table' in Included record kinds.\n- Tables that resist extraction are listed in the importer README with the reason and a follow-up beads issue link.\n- Unit tests cover a simple two-column table and a multi-column table.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:19:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T17:39:51Z",
+  "closed_at": "2026-05-28T17:51:54Z",
+  "close_reason": "Implemented SRD 5.1 reference-table parser for Difficulty Classes and XP Thresholds by Character Level; verification passed; TDD evidence recorded.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.12",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:19:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.12",
+      "depends_on_id": "eshyra-0m9.5.9",
+      "type": "blocks",
+      "created_at": "2026-05-27T18:19:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "20aa81e1-b9a8-5f2b-be94-803515e57f41",
+      "issue_id": "eshyra-0m9.5.12",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm run typecheck -> passed; npm run test -> passed (66 files passed, 2 skipped; 739 tests passed, 3 skipped); npm run check -> passed. npm install warned about Node 24 vs required >=22 <23; existing project memory notes local Node 24 setup works.",
+      "created_at": "2026-05-28T17:41:45Z"
+    },
+    {
+      "id": "c5fa2406-8c83-53fa-ad83-2e227cc365fb",
+      "issue_id": "eshyra-0m9.5.12",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run check -> passed; npm run test -> passed (67 files passed, 2 skipped; 746 tests passed, 3 skipped); npm run typecheck -> passed. TDD evidence recorded in loreweaver-0m9.5.12.1, .2, and .3. Acceptance: parser emits Difficulty Classes and XP Thresholds by Character Level as table records; table kindSchema exercised by pack validation; manifest includes table; README lists deferred wide/nested tables with follow-up loreweaver-0m9.5.13.",
+      "created_at": "2026-05-28T17:51:48Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 2
+}

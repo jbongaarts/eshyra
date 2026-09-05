@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j",
+  "title": "Implement rules-pack-backed guided character creation",
+  "description": "Design and implement a guided, rules-pack-backed character creation experience for Eshyra.\n\nGoal\nUsers should be able to create a playable level-1 D&D 5e SRD character from the CLI without editing JSON, knowing internal record IDs, manually deriving HP, losing prior answers during revisions, or relying on the LLM as a rules source of truth.\n\nProduct decisions\n- Use one shared CLI shell with rule-pack-specific character creation recipes.\n- Implement the D&D 5e SRD recipe first.\n- Preserve future compatibility with Pathfinder without designing speculative Pathfinder details now.\n- Support both creation modes:\n  1. Concept-first — I know what I want to play\n  2. Ability-first — let the dice inspire me\n- Runtime generated rules packs are the source of validation truth.\n- Retire the legacy SRD_CATALOG after character creation no longer depends on it.\n\nExisting beads to reconcile/fold in\n- eshyra-4jiu guided session-zero flow\n- eshyra-x50w SRD_CATALOG migration\n\nThe design should be captured in docs/design/character-creation-cli.md and implementation should proceed in slices small enough for coding agents.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:21:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-24T02:29:31Z",
+  "closed_at": "2026-06-26T01:23:43Z",
+  "close_reason": "Completed remaining guided character creation transcript coverage and documented ADR deferral.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

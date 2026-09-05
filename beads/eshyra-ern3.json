@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ern3",
+  "title": "Lazy-load the Claude Agent SDK adapter so api/codex installer editions run",
+  "description": "Gate for ADR 0011 api/codex editions (eshyra-7zhm). The Codex adapter (eshyra-jl8n) already imports its SDK lazily, so @eshyra/core loads without the Codex binary. The Claude adapters do NOT: agentSdkClient.ts and agentSdkMcpClient.ts statically import '@anthropic-ai/claude-agent-sdk' at module scope, and index.ts re-exports them eagerly. So the api and codex editions (which prune the ~223MB Claude binary) build at the correct small size (api=166MB vs 423MB) but CRASH at startup / fail the release validator's no-config execution smoke with ERR_MODULE_NOT_FOUND. Work: (1) make agentSdkClient.ts + agentSdkMcpClient.ts dynamic-import('@anthropic-ai/claude-agent-sdk') inside complete() (mirror codexSdkMcpClient.ts), throwing a clear edition error if absent; (2) move @anthropic-ai/claude-agent-sdk to optionalDependencies in packages/core/package.json; (3) keep the existing vi.mock-based tests green (vi.mock intercepts dynamic import too); (4) re-enable the release validator's no-config execution smoke for ALL editions by removing the editionRunsNoConfigSmoke gate in validate-release-artifact.mjs. Verifies the editions feature end-to-end: every edition both builds lean AND runs.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-20T18:38:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-20T19:27:45Z",
+  "closed_at": "2026-06-20T19:48:18Z",
+  "close_reason": "Merged in PR #254. Claude Agent SDK adapters now import the SDK lazily via agentSdkLoader.ts (types-only at module scope); claude-agent-sdk moved to optionalDependencies; validator's deferral gate removed. Proven: api (166MB) + codex (450MB) editions pass the full no-config execution smoke with the Claude SDK pruned.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ern3",
+      "depends_on_id": "eshyra-jl8n",
+      "type": "blocks",
+      "created_at": "2026-06-20T13:39:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

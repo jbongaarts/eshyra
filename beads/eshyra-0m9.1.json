@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.1",
+  "title": "Define rules-pack source manifest and license metadata",
+  "description": "Define the metadata format used by rules-pack importers to record source title, source version, source URL or local source identity, license name, attribution text, source hash/date, allowed-use flags, and per-record provenance policy.\r\n\r\nThis should support both pack-level and record-level provenance.",
+  "acceptance_criteria": "- Manifest schema exists.\r\n- Manifest supports source/license/provenance fields.\r\n- Manifest supports attribution text.\r\n- Manifest supports allowed-use flags needed by pack policy.\r\n- Tests validate representative manifest examples.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:01:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-25T05:26:12Z",
+  "closed_at": "2026-05-25T05:34:33Z",
+  "close_reason": "RulesPackSource and RecordProvenance shipped; validator + fixtures + tests updated.",
+  "labels": [
+    "ingestion",
+    "licensing",
+    "provenance",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.1",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:01:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 3,
+  "comment_count": 0
+}

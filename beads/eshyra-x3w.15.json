@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.15",
+  "title": "Task 7: Dispatch character creation by rules system and preserve D&D",
+  "description": "Objective:\nIntroduce a system-aware character creation seam while keeping current D&D SRD behavior passing.\n\nFiles:\n- Modify: `packages/core/src/characterCreation.ts` or split into `packages/core/src/characterCreation/*`\n- Modify: `packages/cli/src/play.ts`\n- Modify: `packages/core/src/index.ts`\n- Test: `packages/core/test/characterCreation.test.ts`\n- Test: `packages/cli/test/play.test.ts`\n\nSteps:\n1. Write failing tests that D&D character creation uses the campaign rules binding when no catalog argument is supplied and still accepts the existing legal fighter draft.\n2. Write a failing CLI test that play on a D&D campaign still blocks turns until canonical character creation or `/defer`.\n3. Run `npx vitest run packages/core/test/characterCreation.test.ts packages/cli/test/play.test.ts`; expected: FAIL after test changes until dispatch is implemented.\n4. Define `CharacterCreationRulesContext` or equivalent with resolved binding/stack.\n5. Move existing SRD-specific validation behind a D&D validator function without changing accepted output.\n6. Update `completeCharacterCreation` to resolve the campaign binding from DB when available and dispatch by `base.systemId`.\n7. Update CLI play only as needed to pass the DB-backed context; keep the existing prompts for D&D.\n8. Run focused tests; expected: PASS.\n9. Commit with `git add packages/core/src/characterCreation.ts packages/core/src/index.ts packages/cli/src/play.ts packages/core/test/characterCreation.test.ts packages/cli/test/play.test.ts` and `git commit -m feat-dispatch-character-creation-by-rules-system`.",
+  "design": "Do not redesign the CLI prompts in this task. The goal is a seam: D&D remains behaviorally identical, while the implementation can route to Pathfinder in the next task. Keep `buildCharacterCreationMutations` compatible for tests by either defaulting to D&D or accepting an explicit rules context.\n\nInitial test sketch:\n```ts\ncreateCampaign(db, { campaignId: 'c1', pack: EMBERFALL_HOLLOW });\nconst result = completeCharacterCreation(db, { draft: validDraft(), sessionId: 's1', at: now });\nexpect(result.ok).toBe(true);\n```",
+  "acceptance_criteria": "Existing D&D character creation and CLI play tests pass through the new dispatch seam. No public D&D behavior regresses.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:10:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-23T21:58:19Z",
+  "close_reason": "completeCharacterCreation now reads the campaign rules binding (default D&D SRD when none) and dispatches by base.systemId. D&D path is unchanged — existing SRD validators still drive validateCharacterDraft/buildCharacterCreationMutations behavior. Non-D&D systems (including Pathfinder, until Task 8) return a clear correction result naming the systemId and no canonical character writes occur. Verified: focused characterCreation + play vitest pass (24/24 RED→GREEN), full npm run typecheck and npm run test pass (375 passed, 2 documented skips).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.15",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:10:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.15",
+      "depends_on_id": "eshyra-x3w.12",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.15",
+      "depends_on_id": "eshyra-x3w.10",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3dmq",
+  "title": "verify:worktree can false-green cross-package tests when the worktree has no node_modules",
+  "description": "PROBLEM\nA linked worktree created with `git worktree add` has no node_modules of its own. Node/vitest module resolution then walks UP to the parent checkout's node_modules, whose @eshyra/core and @eshyra/cli symlinks point at the PARENT checkout's packages - i.e. whatever branch the parent is on, normally main. Tests that import a sibling workspace package by name therefore exercise MAIN's build, not the worktree's.\n\nCore tests are unaffected: packages/core/test/* import via relative '../src/...'. The exposure is packages/cli/test/*, which import from '@eshyra/core' and '@eshyra/core/internal'.\n\nOBSERVED 2026-09-02 on eshyra-jhpt.3.3\npackages/cli/test/play.test.ts passed with `campaignPosition: 'test-position'` at three assembleContext call sites, even though eshyra-jhpt.3 had made campaignPosition required and eshyra-jhpt.3.3 had added parseCampaignPosition validation that rejects exactly that value. `npm run verify:worktree` reported a clean 276 files / 4844 tests.\nAfter `npm ci` inside the worktree (which creates node_modules/@eshyra/{core,cli} -> ../../packages/*) and a rebuild, the same file failed 2 tests with `CampaignRuleError: invalid campaign position \"test-position\"`.\n\nWHY IT MATTERS\nverify:worktree is the repository's pre-commit gate and the supervisor's merge gate. A false green here is not a flaky test - it silently validates the wrong code for every cross-package test, and it is invisible because the run is green.\nTypecheck is NOT affected: `tsc --build` compiles from source across the workspace, so CLI/core source incompatibilities are still caught. Only runtime module resolution in vitest is wrong. That is why this can persist while the tree looks healthy.\n\nAGENTS.md already documents `npm ci  # CI or worktree install` under Build & Test, but nothing enforces it and verify:worktree does not check for it, so a dispatched agent that goes straight to `npm run verify:worktree` gets a green run against the wrong code.\n\nSUGGESTED FIX\nHave scripts/verify-current-worktree.mjs fail fast (or install) when the active git root lacks node_modules/@eshyra symlinks resolving INTO that same git root. A cheap assertion is enough: resolve @eshyra/core from the worktree root and confirm the resolved realpath is under the worktree, not under the parent checkout. Consider the same check in the sandbox variant. Also consider stating the requirement in the Agent Worktree Workflow section rather than only under Build & Test.\n\nSCOPE NOTE\nFound while supervising eshyra-jhpt. It is not caused by that epic and affects any multi-package change verified from a worktree.",
+  "notes": "Behavioral regression coverage added in 1b940df; PR #525 updated at https://github.com/jbongaarts/eshyra/pull/525",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-03T02:39:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-03T04:03:31Z",
+  "started_at": "2026-09-03T03:34:49Z",
+  "closed_at": "2026-09-03T04:03:31Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

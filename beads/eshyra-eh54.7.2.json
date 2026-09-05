@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54.7.2",
+  "title": "Author The Hollow Beneath Emberfall starter module fixture",
+  "description": "Author the first-party starter adventure module - The Hollow Beneath Emberfall - as structured immutable module source using the new schema.\n\nThis should create a real fixture/module pack that can be loaded by the module loader and referenced by a campaign-owned adventure run / module binding.\n",
+  "design": "Use the outline bead as source material.\n\nDo not over-polish prose at the expense of structured coverage. The module's main job is to exercise the engine path for authored scenario content. The fixture is immutable authored source; it carries no campaign progress fields.\n\nNaming (ADR 0012): module title is The Hollow Beneath Emberfall; the Emberfall setting stays separate campaign-template content. EMBERFALL_HOLLOW is the legacy conflated sample, not this new fixture.\n",
+  "acceptance_criteria": "- The Hollow Beneath Emberfall starter module is represented in the adventure module schema as immutable authored source.\n- The module includes hooks, locations, scenes, NPCs, objectives, secrets/clues, encounters, treasure/reward, and ending states (as authored definitions, not progress).\n- The module references rules-pack content where appropriate instead of copying mechanical truth.\n- The module validates through the module-pack loader.\n- Tests cover loading the module fixture and resolving its internal references.\n- The module remains separate from the Emberfall campaign-template/setting content.",
+  "notes": "Fixture at packages/core/data/adventure-modules/hollow-beneath-emberfall/adventure-module.json; PR #269 open (https://github.com/jbongaarts/eshyra/pull/269). Awaiting review/merge. Loads via loadAdventureModuleFromDir; refs resolve against constructed stack. eh54.7.3 must reconcile rulesRef resolution against the shipped SRD pack (kind-prefixed keys). Unblocks eshyra-eh54.7.3.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:12:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-21T06:28:05Z",
+  "close_reason": "Merged via PR #269. Starter module fixture at packages/core/data/adventure-modules/eshyra_hollow-beneath-emberfall/; shared adventureModuleDirName helper added. Unblocks eshyra-eh54.7.3.",
+  "labels": [
+    "adventure-module",
+    "campaign-runtime",
+    "domain-model",
+    "ember-hollow",
+    "fixture",
+    "starter-content"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54.7.2",
+      "depends_on_id": "eshyra-eh54.7.1",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:15:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.7.2",
+      "depends_on_id": "eshyra-eh54.3",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:15:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.7.2",
+      "depends_on_id": "eshyra-eh54.7",
+      "type": "parent-child",
+      "created_at": "2026-06-18T01:12:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

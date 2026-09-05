@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.11",
+  "title": "F9: Deterministic resolution & derived-math primitives",
+  "description": "Extend the roll tool with declared modifier lists, vsDc/opposed resolution, post-roll transforms (half/double/min-0), plus a small deterministic calc primitive for non-roll formulas. Reconciles the Hybrid Contract (all dice/math via tools) with a roll surface that today computes only NdM+K. Clause members (largest PARTIAL cluster): ability-checks, attack-rolls, saving-throws, contests, group-checks, passive-checks, hiding, modifiers-to-the-roll, damage-rolls, damage-resistance-and-vulnerability, grapple-rules-for-monsters, lifting-and-carrying, variant-encumbrance, jumping, mounts-and-vehicles, cover, critical-hits, falling, proficiency-bonus, two-weapon-fighting, casting-a-spell-at-a-higher-level, food, speed. Spec note: vs-AC/DC resolution must honor nat-1/20 overrides (rolling-1-or-20). Lands with F1. Source: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4.",
+  "notes": "Landed in PR #430 (branch eshyra-2n1t-f1-f9) on the F1 representation (no reparsing). resolve_check (declared modifiers w/ label+source, proficiency {bonus,multiplier} apply-once w/ floor-half + none-doubled=0, adv/dis cancellation, vs DC/AC incl. nat-1/20 attack-only overrides per the rolling-1-or-20 spec note), resolve_contest (fixed roll order, tie=status quo), resolve_damage (typed packets, engine crit dice-doubling, per-packet min-0, roll-once multi-target, immunity->resistance(floor)->vulnerability after modifiers, duplicate declarations rejected), calc (9 SRD-verified formulas: passive_score, carry_capacity+vehicle pull, encumbrance_thresholds, jump_distance, fall_damage_dice, grapple_escape_dc, days_without_food_limit, forced_march_dc, group_check_outcome). All read-only; ledger renders all entries; turn trace rulesResolution carries checks/contests/damage/calcs for deterministic replay. Coverage: 21 partial rows + adv-dis -> implemented; cover/hiding/two-weapon-fighting -> model-adjudicated-supported; census 36/100/24/5/10. Remaining rollout: eshyra-2n1t.11.1 (upcast scaling, dep F4 eshyra-2n1t.6), eshyra-2n1t.11.2 (Codex dedupe of abilityAllocation 4d6-drop-lowest).\nReview correction (PR #430, commit 15fbb36): (1) damage math moved from per-packet to per-type instance aggregates — packets keep raw signed contributions for audit; never-negative + resistance/vulnerability apply once per type, making packet partitioning mechanically irrelevant (metamorphic tests). (2) D20Resolution now carries kept/dropped + indices through ledger and trace (tied-advantage dice disambiguated). (3) Coverage corrected: falling/food/speed/variant-encumbrance/jumping/lifting-and-carrying are model-adjudicated-supported (calc owns only their arithmetic clause), not implemented; final census 30/106/24/5/10 (supersedes the 36/100/24/5/10 figure in the earlier note).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:41:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-11T20:21:26Z",
+  "closed_at": "2026-07-11T20:50:50Z",
+  "close_reason": "Acceptance criteria satisfied in PR #430; remaining rollout tracked in eshyra-2n1t.11.1 / eshyra-2n1t.11.2",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.11",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:41:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

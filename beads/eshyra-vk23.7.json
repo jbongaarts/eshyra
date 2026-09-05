@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23.7",
+  "title": "Clean SRD audit check and typecheck output",
+  "description": "Clean non-blocking audit command-output diagnostics before future SRD bundles.\n\nProblem:\nThe ngcj bundle passes check/typecheck/test/verify, but captured command output still includes non-blocking diagnostic noise, including a Biome schema-version info diagnostic in npm run check output. This is not a correctness blocker, but it adds review noise and makes future audit bundles harder to scan.\n\nScope:\n- Identify why the Biome schema-version info diagnostic appears.\n- Align the Biome config schema/version with the CLI version used in the repo.\n- Confirm npm run check and npm run typecheck output is clean apart from expected command banners.\n- Do not suppress real diagnostics.\n\nAcceptance criteria:\n- npm run check exits 0 without the Biome schema-version info diagnostic.\n- npm run typecheck exits 0 and remains clean.\n- npm test passes.\n- npm run verify:dnd5e-srd-pack passes.\n- Future audit command-output artifacts are easier to review and do not contain known benign noise.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T03:18:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T05:49:02Z",
+  "started_at": "2026-06-30T05:39:03Z",
+  "closed_at": "2026-06-30T05:49:02Z",
+  "close_reason": "Completed in branch eshyra-vk23-rest: gameplay-readiness partial-structure reporting, clean Biome 2.5.1 check output, and SRD option source-page attribution.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-vk23.7",
+      "depends_on_id": "eshyra-vk23",
+      "type": "parent-child",
+      "created_at": "2026-06-29T22:18:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

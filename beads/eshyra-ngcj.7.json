@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.7",
+  "title": "Normalize trap hazard taxonomy for deterministic filtering",
+  "description": "Problem:\nHazard taxonomy is inconsistent. Poisons and diseases expose category, but traps currently expose trapType only. This makes deterministic filtering and DM model retrieval less uniform.\n\nObserved shape:\n- poisons: category-like information is present.\n- diseases: category-like information is present.\n- traps: trapType is present, but category:'trap' is absent.\n\nImplement:\n- Normalize trap records so they expose a category or equivalent discriminator that identifies them as traps.\n- Preserve trapType for mechanical vs magical trap distinctions.\n- Update schema, importer output, and tests.\n- Confirm hazard count/reporting still matches final pack records.\n\nAcceptance criteria:\n- Traps can be queried by hazard category without special-casing trapType.\n- Existing poison and disease records remain compatible.\n- Tests cover trap filtering.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:42:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T01:13:26Z",
+  "started_at": "2026-06-30T01:01:15Z",
+  "closed_at": "2026-06-30T01:13:26Z",
+  "close_reason": "Completed together in PR: traps now expose category trap with schema/tests/generated pack updates; verifier/importer summaries report final record-kind and hazard-category counts; rogue fixed equipment sourceText normalized; audit bundle emits gameplay-readiness report.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.7",
+      "depends_on_id": "eshyra-ngcj",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

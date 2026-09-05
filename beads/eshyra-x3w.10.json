@@ -1,0 +1,91 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.10",
+  "title": "Task 2: Resolve ordered rules-pack stacks and lookup records",
+  "description": "Objective:\nBuild the deterministic System Stack resolver and provider-neutral lookup API.\n\nFiles:\n- Create: `packages/core/src/rules/stack.ts`\n- Create: `packages/core/src/rules/lookup.ts`\n- Modify: `packages/core/src/index.ts`\n- Test: `packages/core/test/rulesStack.test.ts`\n\nSteps:\n1. Write failing tests for resolving one base pack, ordered add-ons, addon incompatible with base, missing addon dependency, duplicate record key without override, duplicate record key with explicit override, lookup by key, and lookup by exact normalized name within a kind.\n2. Run `npx vitest run packages/core/test/rulesStack.test.ts`; expected: FAIL because stack resolver exports do not exist.\n3. Implement `resolveRulesStack({ base, addons })` returning a resolved stack with ordered packs and merged record index.\n4. Implement `lookupRulesRecord(stack, input)` where input is `{ kind, ref }` or `{ kind, name }`; return record, source pack metadata, license, and override chain on success.\n5. Export resolver and lookup APIs from `packages/core/src/index.ts`.\n6. Run `npx vitest run packages/core/test/rulesStack.test.ts`; expected: PASS.\n7. Commit with `git add packages/core/src/rules packages/core/src/index.ts packages/core/test/rulesStack.test.ts` and `git commit -m feat-rules-stack-lookup`.",
+  "design": "The merged index should be deterministic: base records first, add-ons by explicit order, later records accepted only when their `overrides` metadata names the earlier pack/key. Return a typed error such as `RulesPackError` for invalid stacks. Normalize lookup names the same way SRD lookup does today: trim, collapse whitespace, lower-case en-US.\n\nInitial test sketch:\n```ts\nconst stack = resolveRulesStack({ base: basePack(), addons: [addonPack({ order: 10 })] });\nexpect(lookupRulesRecord(stack, { kind: 'creature', ref: 'creature:goblin' }).ok).toBe(true);\nexpect(() => resolveRulesStack({ base: basePack(), addons: [addonPack({ records: [record('creature:goblin')] })] })).toThrow(RulesPackError);\n```",
+  "acceptance_criteria": "`npx vitest run packages/core/test/rulesStack.test.ts` passes. Stack resolution validates compatibility, dependency order, and explicit overrides. Lookup returns record, source pack, license, and override chain.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:10:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T15:43:04Z",
+  "closed_at": "2026-05-23T16:03:02Z",
+  "close_reason": "Implemented rules stack resolution and lookup; spec and code-quality reviews passed after collision/identity fixes; verification: rulesStack/rulesPack focused tests and forced tsc passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.10",
+      "depends_on_id": "eshyra-x3w.9",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.10",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:10:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "64258c7a-a3a1-56c3-a715-2314a93b66d3",
+      "issue_id": "eshyra-x3w.10",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npx vitest run packages/core/test/rulesStack.test.ts -> failed as expected with resolveRulesStack missing; RED regression -> failed on stale normalized-name lookup after rename override; GREEN npx vitest run packages/core/test/rulesStack.test.ts -> exit 0, 9 tests passed; verification npx tsc --build --force -> exit 0.",
+      "created_at": "2026-05-23T15:49:15Z"
+    },
+    {
+      "id": "bf031229-ab74-51f9-895b-4220aa8f5087",
+      "issue_id": "eshyra-x3w.10",
+      "author": "Joseph Bongaarts",
+      "text": "Spec compliance review for 8764237..4cc5d69: approved. Reviewer verified stack resolution, ordered add-ons, compatibility/dependency validation, explicit override handling, lookup by ref/name, result metadata, exports, and focused tests against the task requirements.",
+      "created_at": "2026-05-23T15:53:03Z"
+    },
+    {
+      "id": "3ca2e2f0-c7a6-515e-a447-85b6cd49cf8a",
+      "issue_id": "eshyra-x3w.10",
+      "author": "Joseph Bongaarts",
+      "text": "Code quality review for 8764237..4cc5d69: Assessment With fixes. Important: same-kind normalized name collisions silently overwrite earlier records; explicit overrides can change record kind for the same key; duplicate pack IDs are accepted and make dependencies/overrides ambiguous. Minor: order/dependsOn added via module augmentation instead of central metadata type. Sending fix worker before closing.",
+      "created_at": "2026-05-23T15:55:17Z"
+    },
+    {
+      "id": "f658c6c9-7f9d-5b00-a694-c10e115dc6c6",
+      "issue_id": "eshyra-x3w.10",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npx vitest run packages/core/test/rulesStack.test.ts -> failed for expected missing validations (3 failing tests: duplicate normalized names, override kind mismatch, duplicate pack id precedence). GREEN npx vitest run packages/core/test/rulesStack.test.ts -> exit 0, 12 passed. Verification: npx vitest run packages/core/test/rulesPack.test.ts -> exit 0, 7 passed; npx tsc --build --force -> exit 0.",
+      "created_at": "2026-05-23T15:57:54Z"
+    },
+    {
+      "id": "d5edc851-549a-5954-bef4-57bf226330ac",
+      "issue_id": "eshyra-x3w.10",
+      "author": "Joseph Bongaarts",
+      "text": "Spec compliance re-review for 8764237..38f3e9d: approved. Reviewer verified original Task 2 requirements plus accepted fixes; focused rulesStack tests passed 12/12.",
+      "created_at": "2026-05-23T16:00:35Z"
+    },
+    {
+      "id": "a3c6596f-d622-520c-8682-64726335b62e",
+      "issue_id": "eshyra-x3w.10",
+      "author": "Joseph Bongaarts",
+      "text": "Code quality re-review for 8764237..38f3e9d: Ready to merge; Critical none, Important none, Minor none. Reviewer verified previous findings fixed: duplicate normalized names rejected, overrides preserve kind/systemId, duplicate pack IDs rejected, and order/dependsOn moved to RulesPackMeta.",
+      "created_at": "2026-05-23T16:02:38Z"
+    },
+    {
+      "id": "3d67aa0f-0f21-5ea8-ae12-a8a40b615436",
+      "issue_id": "eshyra-x3w.10",
+      "author": "Joseph Bongaarts",
+      "text": "Controller verification: npx vitest run packages/core/test/rulesStack.test.ts -> exit 0, 1 file passed, 12 tests passed; npx vitest run packages/core/test/rulesPack.test.ts -> exit 0, 1 file passed, 7 tests passed; npx tsc --build --force -> exit 0.",
+      "created_at": "2026-05-23T16:02:56Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 4,
+  "comment_count": 7
+}

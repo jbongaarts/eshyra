@@ -1,0 +1,68 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.13.4",
+  "title": "Address PR 101 treasure table review feedback",
+  "description": "Fix PR #101 before merge. Accepted review items: wire treasure tables through runImporter with a bounded fail-closed section, add pipeline coverage for emitted treasure table records, add malformed-column-block regression coverage, and remove stale duplicate README/comments.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T22:11:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T22:11:44Z",
+  "closed_at": "2026-05-28T22:38:58Z",
+  "close_reason": "PR #101 review feedback addressed; treasure tables wired through runImporter; malformed-block safety and docs cleanup verified.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.13.4",
+      "depends_on_id": "eshyra-0m9.5.13",
+      "type": "parent-child",
+      "created_at": "2026-05-28T17:11:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "14b0b5fa-efc8-5cac-9362-64de10b0577a",
+      "issue_id": "eshyra-0m9.5.13.4",
+      "author": "Joseph Bongaarts",
+      "text": "Review evaluation: accepted. runImporter currently calls parseTables(coreRulePages), so treasure tables outside the coreRules slice are parser-only. Required fix is to add a bounded fail-closed treasure section, feed it into table parsing, add pipeline assertions, add malformed-column-block regression coverage, and clean stale docs/comments without broadening importer scope beyond treasure tables.",
+      "created_at": "2026-05-28T22:11:50Z"
+    },
+    {
+      "id": "fb090855-c157-5f29-a483-11039a0ffe7a",
+      "issue_id": "eshyra-0m9.5.13.4",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> passed; npm run test -> passed (67 files passed, 2 skipped; 754 tests passed, 3 skipped); npm run check -> passed. TDD evidence recorded in loreweaver-0m9.5.13.4.1, .4.2, and .4.3.",
+      "created_at": "2026-05-28T22:38:58Z"
+    },
+    {
+      "id": "4753a8c5-9c11-59d6-b52a-24697e9ced66",
+      "issue_id": "eshyra-0m9.5.13.4",
+      "author": "Joseph Bongaarts",
+      "text": "Beads preflight after review fix: bd preflight printed default non-applicable Go/Nix checklist; applicable repo gates run via npm run typecheck/test/check. bd stale -> no stale issues. bd orphans -> existing parent epic loreweaver-0m9.5. bd list --status=in_progress -> existing parent epic loreweaver-0m9.5 only; no review-fix hygiene blocker.",
+      "created_at": "2026-05-28T22:39:18Z"
+    },
+    {
+      "id": "36161a35-78e6-5a88-8052-bc47832ea83b",
+      "issue_id": "eshyra-0m9.5.13.4",
+      "author": "Joseph Bongaarts",
+      "text": "PR #101 updated with commit 6278948. Remote checks via gh pr checks 101 --watch -> passing: Analyze (actions), Analyze (javascript-typescript), CodeQL, and build-test.",
+      "created_at": "2026-05-28T22:41:08Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

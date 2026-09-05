@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.12.4",
+  "title": "Structure language grants and choices (ancestry + background)",
+  "description": "Languages are prose-only. Background: background:acolyte data.languages = 'Two of your choice'. Ancestry: languages appear in a trait, e.g. ancestry:elf trait 'Languages' text 'You can speak, read, and write Common and Elvish.' The engine cannot enumerate granted/chosen languages without parsing prose.",
+  "acceptance_criteria": "Add structured language metadata: fixed granted languages plus 'choose N' counts, on ancestry and background schema/importer. Regenerate via importer (docs/importer-fix-protocol.md) with audit coverage. Likely files: importers, kindSchemas.ts validateDnd5eAncestry/validateDnd5eBackground, rulesPackResolver.ts.",
+  "notes": "Review fix pushed + rebased onto main (PR #308 now MERGEABLE). enumerateLevel1RequiredChoices computes combined ancestry+background fixed languages and subtracts that set from every free-choice from pool (was only excluding the same entry's own fixed). Regression test: Half-Elf + Acolyte — both language pools exclude Common+Elvish. verify:worktree green (2556 passed/19 skipped).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T21:51:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T23:25:14Z",
+  "closed_at": "2026-06-25T23:54:24Z",
+  "close_reason": "Merged via PR #308. Source-cited language overlay (srdLanguages.ts) keyed to frozen ancestry/background keys: fixed languages + free-choice counts; SRD_STANDARD_LANGUAGES + chooseableLanguages pool. requiredChoices grants fixed languages silently, surfaces only free picks as structured choose/from, and excludes the COMBINED ancestry+background fixed set from every pool (review fix). Freeze-faithful. Completes 12.1-12.4; unblocks b69j.13.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.12.4",
+      "depends_on_id": "eshyra-b69j.12",
+      "type": "parent-child",
+      "created_at": "2026-06-24T16:51:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.1",
+  "title": "Authorize Engine F1-F10 decomposition from the bootstrap capability ledger",
+  "description": "Single machine-enforced gate between the bootstrap capability ledger and any\nengine decomposition work. bd forbids epic->task dependencies, so eshyra-olc5\nitself cannot depend on eshyra-o9bd.19.5.1; this task carries that dependency on\nthe epic's behalf, and the ten per-family decomposition tasks depend on this one.\nThe Engine F* epics will still appear in bd ready — that is a bd display\nlimitation, not permission to start. All executable work below them is blocked\nhere.\n\nAuthorize decomposition only when ALL of the following hold:\n\n  1. The bootstrap ledger (eshyra-o9bd.19.5.1) exists and is labelled\n     non-authoritative.\n  2. Every capability membership has a GENERATED query, not a hand-copied count.\n  3. The eshyra-2n1t reconciliation is complete: every bead of that closed epic\n     classified as different scope/taxonomy | stale readiness mapping |\n     incomplete integration | premature closure.\n  4. Each capability is classified into reusable implementation primitives, with\n     cross-family primitives named once and assigned an owning family.\n  5. Each Engine F epic has a proposed child decomposition recorded on its\n     decomposition task.\n  6. No implementation child anywhere is derived from copied hook counts alone.\n\nCOUNT HYGIENE: every number here is a SNAPSHOT. The generated ledger/predicate\nis authoritative. No acceptance test may require a hand-copied number (e.g.\n391, 399, 77, 79).\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.",
+  "acceptance_criteria": "\n• All six authorization conditions above are satisfied and evidenced.\n• Every engine:F* family has a generated membership query committed and runnable.\n• The eshyra-2n1t four-way classification artifact is linked and complete.\n• Cross-family primitives are enumerated with a single owning family each.\n• No implementation children exist yet anywhere under eshyra-olc5.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T17:33:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T17:33:34Z",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.1",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-07-25T12:33:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.1",
+      "depends_on_id": "eshyra-olc5.5",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 10,
+  "comment_count": 0
+}

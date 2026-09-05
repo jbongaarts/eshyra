@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.2",
+  "title": "Eliminate production CLI imports from @eshyra/core/internal",
+  "description": "Eliminate production CLI imports from @eshyra/core/internal.\n\nProblem:\nProject guidance says production callers should depend only on @eshyra/core's stable root export, while @eshyra/core/internal is unstable. Production CLI code currently imports from @eshyra/core/internal, which weakens the package boundary and risks making internal APIs de facto public.\n\nAcceptance criteria:\n- Audit production files under packages/cli/src for imports from @eshyra/core/internal.\n- Promote CLI-needed APIs/types to the stable @eshyra/core root export, or create a deliberate supported subpath such as @eshyra/core/cli if that is the chosen design.\n- Keep test/evaluation-only internal imports allowed where appropriate.\n- Add a boundary test or static guard that fails if packages/cli/src/**/*.ts imports @eshyra/core/internal.\n- Do not weaken AGENTS.md or public/internal documentation to make the violation disappear.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T03:05:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T04:44:48Z",
+  "started_at": "2026-06-26T04:34:58Z",
+  "closed_at": "2026-06-26T04:44:48Z",
+  "close_reason": "Promoted CLI-needed APIs to @eshyra/core root export, repointed all 13 production CLI files off /internal, added packages/cli/test/internalBoundary.test.ts static guard. PR #319.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.2",
+      "depends_on_id": "eshyra-4s0r",
+      "type": "parent-child",
+      "created_at": "2026-06-25T22:05:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,29 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c03",
+  "title": "Extract a shared scene-summary rollup helper",
+  "description": "Tech-debt review finding. orchestrator.ts writeSceneSummary and sessionClose.ts ensureSceneSummary independently reimplement the same scene rollup, and only the sessionClose copy has an idempotency guard. Extract one idempotent summarizeSceneFromLog into memory/summary.ts used by both. Parent context: loreweaver-d4r.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:25:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:02Z",
+  "started_at": "2026-05-21T21:30:08Z",
+  "closed_at": "2026-05-21T22:39:01Z",
+  "close_reason": "Fixed in PR #26 (merged)",
+  "comments": [
+    {
+      "id": "b45f5ab7-65fc-5f87-828e-ae77874caa5d",
+      "issue_id": "eshyra-c03",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install + npm run build + npm run test; build clean, 212 passed / 1 skipped. Worktree p2-review-findings covers P2 findings c03, ah7, 5g2, m6f, e0a, iff.",
+      "created_at": "2026-05-21T21:32:06Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

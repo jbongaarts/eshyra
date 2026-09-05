@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-r1ct",
+  "title": "Follow-up: sealed obligation scopes and aggregate closure",
+  "description": "Receiving follow-up for the reduced PR #475 scope; owned by the aggregate scope/closure work corresponding to eshyra-o9bd.19.1.13. Restore regression coverage for source-derived sealed scope membership, exact family and record ownership, not-applicable contradictions, unexpected claims, UNCLAIMED obligations, and closure evaluation using the same per-clause context. These tests were intentionally removed from packages/core/test/clauseIrObligations.test.ts because PR #475 now provides only per-clause completeness and an ObligationSource lookup boundary.",
+  "acceptance_criteria": "Construct an opaque census-derived scope; reject raw/subset/cross-record/not-applicable membership; report unexpected and UNCLAIMED claims; preserve the evaluator context and source-origin parity during aggregate closure; restore adversarial scope/closure regression tests.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T01:49:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T01:49:00Z",
+  "labels": [
+    "clause-ir",
+    "closure",
+    "follow-up"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}
