@@ -16,6 +16,7 @@ import {
   supersedeCampaignRule as persistSupersedeCampaignRule,
   renderContextMessage,
   resolveCampaignPosition,
+  validateCampaignRule,
 } from '../src/internal.js';
 import { resolveStrictCampaignRulesStack } from '../src/state/campaignRecordLookup.js';
 import { bareDb } from './support/db.js';
@@ -45,6 +46,7 @@ function rule(
     effectivePosition: p(ordinal),
     temporalMode: { mode: 'prospective' },
     supersededBy: null,
+    revokedPosition: null,
     scope: 'combat',
     governingRecordKeys: ['record:one'],
     prose: `Rule ${identity}`,
@@ -231,6 +233,240 @@ describe('campaign rule persistence', () => {
       ...p(9),
       sessionId: '__future__',
       turnId: '__future__',
+    });
+    db.close();
+  });
+
+  it('R1 exposes the canonical prospective revoked position through typed reads', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('r1-revocable', 1));
+    const currentPosition = persistPositions(db, 2, 'r1');
+    const revoked = revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'r1-revocable',
+      revokedPosition: p(3),
+      currentPosition,
+    });
+    const canonicalRevokedPosition = {
+      ...p(3),
+      sessionId: '__future__',
+      turnId: '__future__',
+    };
+
+    expect(revoked.revokedPosition).toEqual(canonicalRevokedPosition);
+    expect(
+      getCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'r1-revocable',
+      }),
+    ).toMatchObject({
+      status: 'revoked',
+      revokedPosition: canonicalRevokedPosition,
+    });
+    expect(
+      listCampaignRules(db, { campaignId: 'c1' }).find(
+        ({ ruleIdentity }) => ruleIdentity === 'r1-revocable',
+      ),
+    ).toMatchObject({
+      status: 'revoked',
+      revokedPosition: canonicalRevokedPosition,
+    });
+    db.close();
+  });
+
+  it('R2 exposes canonical future anchors for fabricated revocation positions', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('r2-next', 1));
+    createCampaignRule(db, rule('r2-large', 1));
+    const currentPosition = persistPositions(db, 1, 'r2');
+    const next = revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'r2-next',
+      revokedPosition: {
+        sessionId: 'fabricated-session',
+        turnId: 'fabricated-turn',
+        ordinal: currentPosition.ordinal + 1,
+      },
+      currentPosition,
+    });
+    const large = revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'r2-large',
+      revokedPosition: {
+        sessionId: 'another-fabricated-session',
+        turnId: 'another-fabricated-turn',
+        ordinal: 999999,
+      },
+      currentPosition,
+    });
+
+    expect(next.revokedPosition).toEqual({
+      sessionId: '__future__',
+      turnId: '__future__',
+      ordinal: currentPosition.ordinal + 1,
+    });
+    expect(large.revokedPosition).toEqual({
+      sessionId: '__future__',
+      turnId: '__future__',
+      ordinal: 999999,
+    });
+    expect(
+      listCampaignRules(db, { campaignId: 'c1' })
+        .filter(({ ruleIdentity }) =>
+          ['r2-next', 'r2-large'].includes(ruleIdentity),
+        )
+        .map(({ ruleIdentity, revokedPosition }) => ({
+          ruleIdentity,
+          revokedPosition,
+        })),
+    ).toEqual([
+      {
+        ruleIdentity: 'r2-large',
+        revokedPosition: {
+          sessionId: '__future__',
+          turnId: '__future__',
+          ordinal: 999999,
+        },
+      },
+      {
+        ruleIdentity: 'r2-next',
+        revokedPosition: {
+          sessionId: '__future__',
+          turnId: '__future__',
+          ordinal: currentPosition.ordinal + 1,
+        },
+      },
+    ]);
+    db.close();
+  });
+
+  it('R3 preserves null revocation positions and rejects inconsistent domain and stored rows', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('r3-active', 1));
+    supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'r3-active',
+      successor: rule('r3-successor', 2),
+    });
+    expect(
+      getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'r3-successor' }),
+    ).toMatchObject({ status: 'active', revokedPosition: null });
+    expect(
+      getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'r3-active' }),
+    ).toMatchObject({ status: 'superseded', revokedPosition: null });
+
+    expect(() =>
+      validateCampaignRule(
+        rule('r3-invalid-revoked', 1, 'house-rule', {
+          status: 'revoked',
+        }),
+      ),
+    ).toThrow('revoked rule must carry revokedPosition');
+    expect(() =>
+      validateCampaignRule(
+        rule('r3-invalid-active', 1, 'house-rule', {
+          revokedPosition: p(2),
+        }),
+      ),
+    ).toThrow('only a revoked rule may carry revokedPosition');
+
+    db.pragma('ignore_check_constraints = ON');
+    createCampaignRule(db, rule('r3-missing-persisted-position', 1));
+    db.prepare(
+      "UPDATE campaign_rule SET status = 'revoked' WHERE rule_identity = ?",
+    ).run('r3-missing-persisted-position');
+    expect(() =>
+      getCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'r3-missing-persisted-position',
+      }),
+    ).toThrow(
+      "revoked campaign rule 'r3-missing-persisted-position' is missing revoked_position",
+    );
+
+    createCampaignRule(db, rule('r3-non-revoked-position', 1));
+    db.prepare(
+      'UPDATE campaign_rule SET revoked_position = ? WHERE rule_identity = ?',
+    ).run(formatCampaignPosition(p(2)), 'r3-non-revoked-position');
+    expect(() =>
+      getCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'r3-non-revoked-position',
+      }),
+    ).toThrow(
+      "only a revoked rule may carry revokedPosition (campaign rule 'r3-non-revoked-position')",
+    );
+    db.close();
+  });
+
+  it('R5 exposes the complete management history through typed campaign-rule APIs', () => {
+    const db = bareDb();
+    createCampaignRule(db, rule('r5-original', 1));
+    const successor = supersedeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'r5-original',
+      successor: rule('r5-successor', 2),
+    });
+    const revoked = revokeCampaignRule(db, {
+      campaignId: 'c1',
+      ruleIdentity: 'r5-successor',
+      revokedPosition: p(3),
+      currentPosition: p(0),
+    });
+
+    expect(
+      listCampaignRules(db, { campaignId: 'c1' }).map(
+        ({
+          ruleIdentity,
+          status,
+          effectivePosition,
+          supersededBy,
+          revokedPosition,
+        }) => ({
+          ruleIdentity,
+          status,
+          effectivePosition,
+          supersededBy,
+          revokedPosition,
+        }),
+      ),
+    ).toEqual([
+      {
+        ruleIdentity: 'r5-original',
+        status: 'superseded',
+        effectivePosition: {
+          sessionId: '__future__',
+          turnId: '__future__',
+          ordinal: 1,
+        },
+        supersededBy: 'r5-successor',
+        revokedPosition: null,
+      },
+      {
+        ruleIdentity: 'r5-successor',
+        status: 'revoked',
+        effectivePosition: {
+          sessionId: '__future__',
+          turnId: '__future__',
+          ordinal: 2,
+        },
+        supersededBy: null,
+        revokedPosition: {
+          sessionId: '__future__',
+          turnId: '__future__',
+          ordinal: 3,
+        },
+      },
+    ]);
+    expect(successor.effectivePosition).toEqual({
+      sessionId: '__future__',
+      turnId: '__future__',
+      ordinal: 2,
+    });
+    expect(revoked.revokedPosition).toEqual({
+      sessionId: '__future__',
+      turnId: '__future__',
+      ordinal: 3,
     });
     db.close();
   });
@@ -1245,19 +1481,13 @@ describe('campaign rule persistence', () => {
     ).toThrow("campaign rule 'revoked' is revoked");
     expect(
       getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'revoked' }),
-    ).toMatchObject({ status: 'revoked' });
-    expect(
-      db
-        .prepare(
-          'SELECT revoked_position FROM campaign_rule WHERE rule_identity=?',
-        )
-        .get('revoked'),
     ).toMatchObject({
-      revoked_position: formatCampaignPosition({
+      status: 'revoked',
+      revokedPosition: {
         ...p(5),
         sessionId: '__future__',
         turnId: '__future__',
-      }),
+      },
     });
     db.close();
   });
@@ -1536,19 +1766,13 @@ describe('campaign rule persistence', () => {
         campaignId: 'c1',
         ruleIdentity: 'fabricated-revocation',
       }),
-    ).toMatchObject({ status: 'revoked' });
-    expect(
-      db
-        .prepare(
-          'SELECT revoked_position FROM campaign_rule WHERE rule_identity=?',
-        )
-        .get('fabricated-revocation'),
     ).toMatchObject({
-      revoked_position: formatCampaignPosition({
+      status: 'revoked',
+      revokedPosition: {
         sessionId: '__future__',
         turnId: '__future__',
         ordinal: 999999,
-      }),
+      },
     });
 
     db.close();
@@ -1599,6 +1823,7 @@ describe('campaign rule persistence', () => {
           {
             ...rule('historical-revoked', 10),
             status: 'revoked',
+            revokedPosition: p(11),
           },
           p(0),
         ),
@@ -1807,17 +2032,16 @@ describe('campaign rule persistence', () => {
       currentPosition: current,
     });
     expect(
-      db
-        .prepare(
-          'SELECT revoked_position FROM campaign_rule WHERE rule_identity=?',
-        )
-        .get('active-at-ten'),
+      getCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: 'active-at-ten',
+      }),
     ).toMatchObject({
-      revoked_position: formatCampaignPosition({
+      revokedPosition: {
         ...p(11),
         sessionId: '__future__',
         turnId: '__future__',
-      }),
+      },
     });
     expect(
       listActiveCampaignRulesAtPosition(
