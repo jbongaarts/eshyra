@@ -11,6 +11,7 @@ import {
   CampaignRuleError,
   type CampaignRuleProjection,
   type CampaignRulingProjection,
+  hasValidCampaignRuleProvenancePairing,
   projectCampaignRule,
 } from './campaignRules.js';
 
@@ -41,7 +42,12 @@ export interface CampaignRulesContext {
   readonly unboundRulings: readonly CampaignRulingProjection[];
   /** Contradictory active rulings whose ambiguity could not be bound. */
   readonly unboundConflicts: readonly CampaignUnboundConflict[];
-  /** Active restored rows that cannot be represented by a valid context branch. */
+  /**
+   * Active restored rows whose kind/provenance pairing the domain rejects, so
+   * no valid context branch can carry them. Classified from the row alone,
+   * independent of whether the rules-pack ambiguity source is available; they
+   * are preserved for accounting and A3 evidence but bind nobody.
+   */
   readonly unrepresentableRules: readonly CampaignRuleProjection[];
   readonly ambiguities: readonly CampaignAmbiguityContext[];
 }
@@ -110,11 +116,17 @@ export function assembleCampaignRulesContext(
 ): CampaignRulesContext {
   const ambiguities = stack === undefined ? [] : ambiguitiesFromStack(stack);
   const ambiguityIds = new Set(ambiguities.map((item) => item.id));
-  const activeRules = listActiveCampaignRulesAtPosition(
+  const activeRows = listActiveCampaignRulesAtPosition(
     db,
     campaignId,
     position,
   );
+  // Rows the domain would reject on write are fail-closed before any branch
+  // below can give them semantics; this does not depend on `stack`.
+  const unrepresentableRules = activeRows
+    .filter((rule) => !hasValidCampaignRuleProvenancePairing(rule))
+    .map(projectCampaignRule);
+  const activeRules = activeRows.filter(hasValidCampaignRuleProvenancePairing);
   const allRulings = activeRules
     .filter(
       (
@@ -179,14 +191,7 @@ export function assembleCampaignRulesContext(
               !unboundConflictIdentities.has(ruling.ruleIdentity),
           ),
     unboundConflicts,
-    unrepresentableRules: activeRules
-      .filter(
-        (rule) =>
-          stack !== undefined &&
-          rule.provenance.kind === 'ambiguity' &&
-          rule.ruleKind !== 'ruling',
-      )
-      .map(projectCampaignRule),
+    unrepresentableRules,
     ambiguities: ambiguities.map((ambiguity) => ({
       ambiguity,
       ruling:

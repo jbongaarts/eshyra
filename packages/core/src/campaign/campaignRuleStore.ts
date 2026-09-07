@@ -18,6 +18,7 @@ import {
   compareCampaignPositions,
   FUTURE_CAMPAIGN_POSITION_ANCHOR,
   formatCampaignPosition,
+  hasValidCampaignRuleProvenancePairing,
   orderCampaignRules,
   parseCampaignPosition,
   projectCampaignRule,
@@ -746,8 +747,14 @@ export function createCampaignRuleReadSeam(
         throw new CampaignRuleError(
           `campaign rule seam is bound to ${canonicalPosition}, not ${queryPosition}`,
         );
+      // Rows whose kind/provenance pairing the domain rejects are kept out of
+      // discovery placement too: they are UNREPRESENTABLE in the shared
+      // context and must not acquire governing semantics anywhere.
       return activeRows(db, campaignId, queryPosition)
-        .filter((r) => !isAmbiguityRuling(r))
+        .filter(
+          (r) =>
+            !isAmbiguityRuling(r) && hasValidCampaignRuleProvenancePairing(r),
+        )
         .map(projectCampaignRule);
     },
     activeRulingsForAmbiguities: (

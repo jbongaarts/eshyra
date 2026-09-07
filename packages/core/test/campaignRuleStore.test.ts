@@ -8,6 +8,7 @@ import {
   formatCampaignPosition,
   getCampaignRule,
   getCurrentCampaignPosition,
+  hasValidCampaignRuleProvenancePairing,
   joinCampaignRules,
   listActiveCampaignRulesAtPosition,
   listActiveRulingsForAmbiguitiesAtPosition,
@@ -1489,6 +1490,230 @@ describe('campaign rule persistence', () => {
     );
     db.close();
   });
+
+  const INVALID_PAIRINGS = [
+    {
+      ruleKind: 'house-rule',
+      provenanceKind: 'ambiguity',
+      error: 'house-rule must use house-rule provenance',
+    },
+    {
+      ruleKind: 'house-rule',
+      provenanceKind: 'recurring-question',
+      error: 'house-rule must use house-rule provenance',
+    },
+    {
+      ruleKind: 'ruling',
+      provenanceKind: 'house-rule',
+      error: 'ruling cannot use house-rule provenance',
+    },
+  ] as const;
+  const ASSEMBLY_MODES = [
+    { mode: 'resolved stack', unavailable: undefined },
+    {
+      mode: 'ambiguity source unavailable',
+      unavailable: 'ambiguity source failed for the bound pack',
+    },
+  ] as const;
+
+  function insertRestoredRow(
+    db: ReturnType<typeof bareDb>,
+    input: {
+      readonly identity: string;
+      readonly ruleKind: 'house-rule' | 'ruling';
+      readonly provenanceKind:
+        | 'ambiguity'
+        | 'recurring-question'
+        | 'house-rule';
+      readonly position: string;
+    },
+  ): void {
+    const ambiguityId =
+      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp';
+    const provenance =
+      input.provenanceKind === 'ambiguity'
+        ? `${ambiguityId}#presence-required`
+        : input.provenanceKind === 'recurring-question'
+          ? 'question:restored-question'
+          : 'house-rule';
+    db.prepare(`
+      INSERT INTO campaign_rule (
+        campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
+        ambiguity_id, selected_interpretation_id, question_id, rationale,
+        effective_position, temporal_mode, disputed_position, superseded_by,
+        revoked_position, scope, governing_record_keys_json, prose, provenance,
+        session_id, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `).run(
+      'c1',
+      input.identity,
+      input.ruleKind,
+      'active',
+      'player-approved',
+      input.provenanceKind,
+      input.provenanceKind === 'ambiguity' ? ambiguityId : null,
+      input.provenanceKind === 'ambiguity' ? 'presence-required' : null,
+      input.provenanceKind === 'recurring-question'
+        ? 'restored-question'
+        : null,
+      input.provenanceKind === 'house-rule' ? 'restored rationale' : null,
+      input.position,
+      'prospective',
+      null,
+      null,
+      null,
+      'test',
+      JSON.stringify(['spell:find-familiar']),
+      `Restored ${input.ruleKind} with ${input.provenanceKind} provenance`,
+      provenance,
+      'test',
+      '2026-09-03T00:00:00.000Z',
+    );
+  }
+
+  it('agrees with the domain validator on every kind/provenance pairing (eshyra-jhpt.4)', () => {
+    const provenances = {
+      ambiguity: {
+        kind: 'ambiguity',
+        ambiguityId: ambiguity.id,
+        selectedInterpretationId: 'int-1',
+      },
+      'recurring-question': {
+        kind: 'recurring-question',
+        questionId: 'q-1',
+      },
+      'house-rule': { kind: 'house-rule', rationale: 'matrix' },
+    } as const;
+    for (const ruleKind of ['house-rule', 'ruling'] as const) {
+      for (const provenanceKind of [
+        'ambiguity',
+        'recurring-question',
+        'house-rule',
+      ] as const) {
+        const candidate: CampaignRule = {
+          ...rule('pairing', 1),
+          ruleKind,
+          provenance: provenances[provenanceKind],
+        };
+        const validatorAccepts = (() => {
+          try {
+            validateCampaignRule(candidate, { ambiguity });
+            return true;
+          } catch {
+            return false;
+          }
+        })();
+        expect({
+          ruleKind,
+          provenanceKind,
+          predicate: hasValidCampaignRuleProvenancePairing(candidate),
+        }).toEqual({ ruleKind, provenanceKind, predicate: validatorAccepts });
+      }
+    }
+  });
+
+  it.each(
+    INVALID_PAIRINGS.flatMap((pairing) =>
+      ASSEMBLY_MODES.map((assembly) => ({ ...pairing, ...assembly })),
+    ),
+  )(
+    'keeps a restored $ruleKind + $provenanceKind row UNREPRESENTABLE under $mode (eshyra-jhpt.4)',
+    ({ ruleKind, provenanceKind, error, unavailable }) => {
+      const db = bareDb();
+      const campaignPosition = formatCampaignPosition(p(1));
+      const identity = `restored-${ruleKind}-${provenanceKind}`;
+      insertRestoredRow(db, {
+        identity,
+        ruleKind,
+        provenanceKind,
+        position: campaignPosition,
+      });
+      // A valid neighbour proves ordinary rows keep their normal home.
+      insertRestoredRow(db, {
+        identity: 'restored-valid-house-rule',
+        ruleKind: 'house-rule',
+        provenanceKind: 'house-rule',
+        position: campaignPosition,
+      });
+
+      // The persisted shape is exactly what the domain validator rejects.
+      const restored = getCampaignRule(db, {
+        campaignId: 'c1',
+        ruleIdentity: identity,
+      });
+      if (restored === undefined) throw new Error('restored row missing');
+      expect(restored).toMatchObject({
+        ruleKind,
+        provenance: { kind: provenanceKind },
+      });
+      expect(hasValidCampaignRuleProvenancePairing(restored)).toBe(false);
+      expect(() => validateCampaignRule(restored)).toThrow(error);
+
+      const context = assembleCampaignRulesContext(
+        db,
+        'c1',
+        campaignPosition,
+        unavailable === undefined
+          ? resolveStrictCampaignRulesStack(db)
+          : undefined,
+        unavailable,
+      );
+      expect(
+        context.unrepresentableRules.map(({ ruleIdentity }) => ruleIdentity),
+      ).toEqual([identity]);
+      expect(context.rules.map(({ ruleIdentity }) => ruleIdentity)).toEqual([
+        'restored-valid-house-rule',
+      ]);
+      expect(context.unboundRulings).toEqual([]);
+      expect(context.unboundConflicts).toEqual([]);
+      for (const { ruling, conflictingRulings } of context.ambiguities) {
+        expect(ruling?.ruleIdentity).not.toBe(identity);
+        expect(
+          conflictingRulings.map(({ ruleIdentity }) => ruleIdentity),
+        ).not.toContain(identity);
+      }
+
+      // The single shared renderer marks it for DM and auditor alike.
+      const rendered = renderCampaignRulesSection(context) ?? '';
+      expect(rendered).toContain(
+        `- UNREPRESENTABLE ACTIVE CAMPAIGN RULE ${identity} (`,
+      );
+      expect(rendered).toContain(
+        'preserved restored content requires repair before it can be interpreted',
+      );
+      expect(rendered).not.toContain(`- [${ruleKind}] ${identity}`);
+      expect(rendered).not.toContain(`Active ruling ${identity}`);
+      expect(rendered).toContain('- [house-rule] restored-valid-house-rule');
+      if (unavailable !== undefined) {
+        expect(rendered).toContain('AMBIGUITY SOURCE UNAVAILABLE');
+      }
+
+      // Discovery placement does not hand the row out as a governing rule.
+      const seam = createCampaignRuleReadSeam(db, 'c1', campaignPosition);
+      expect(
+        seam
+          .activeRulesAtPosition({
+            candidateRecordKeys: ['spell:find-familiar'],
+          })
+          .map(({ ruleIdentity }) => ruleIdentity),
+      ).toEqual(['restored-valid-house-rule']);
+      expect(
+        seam
+          .activeRulingsForAmbiguities([], { includeAllActive: true })
+          .map(({ ruleIdentity }) => ruleIdentity),
+      ).not.toContain(identity);
+
+      // A3 evidence still retains the supplied identity for audit.
+      const evidence = campaignRulesEvidenceFrom(context);
+      expect(evidence.rules.map(({ ruleIdentity }) => ruleIdentity)).toEqual(
+        expect.arrayContaining([identity, 'restored-valid-house-rule']),
+      );
+      expect(
+        evidence.rulings.map(({ ruleIdentity }) => ruleIdentity),
+      ).not.toContain(identity);
+      db.close();
+    },
+  );
 
   it('isolates campaigns and rejects non-prospective lifecycle changes', () => {
     const db = bareDb();

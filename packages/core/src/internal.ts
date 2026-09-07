@@ -128,6 +128,7 @@ export {
   campaignRuleIntervalsOverlap,
   compareCampaignPositions,
   formatCampaignPosition,
+  hasValidCampaignRuleProvenancePairing,
   orderCampaignRules,
   parseCampaignPosition,
   precedenceOf,

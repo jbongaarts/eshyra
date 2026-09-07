@@ -215,6 +215,23 @@ function ambiguityFor(
     : options.ambiguityLookup?.(id);
 }
 
+/**
+ * Whether a rule's kind/provenance pairing is one the domain accepts. This is
+ * the same coupling {@link validateCampaignRule} enforces on writes: a ruling
+ * carries ambiguity or recurring-question provenance, a house rule carries
+ * house-rule provenance. Restore paths and migration 0025 constrain each enum
+ * independently, so a persisted row can violate the pairing; context
+ * accounting uses this predicate to keep such rows fail-closed regardless of
+ * rules-pack source availability.
+ */
+export function hasValidCampaignRuleProvenancePairing(
+  rule: Pick<CampaignRule, 'ruleKind' | 'provenance'>,
+): boolean {
+  return rule.ruleKind === 'ruling'
+    ? rule.provenance.kind !== 'house-rule'
+    : rule.provenance.kind === 'house-rule';
+}
+
 export function validateCampaignRule(
   rule: CampaignRule,
   options: CampaignRuleValidationOptions = {},
