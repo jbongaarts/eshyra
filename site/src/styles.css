@@ -460,22 +460,9 @@ a.brand-mark:hover {
   display: none;
 }
 
-.provenance summary span {
-  transition: transform 150ms ease;
-}
-
-.provenance[open] summary span {
-  transform: rotate(90deg);
-}
-
 .provenance > div {
   padding: 0.9rem 1rem;
   border-top: 2px solid var(--border);
-}
-
-.provenance p + p,
-.provenance table + p {
-  margin-top: 1rem;
 }
 
 .hashes code {
@@ -531,12 +518,6 @@ a.brand-mark:hover {
   margin-bottom: 1.3rem;
   background: var(--border);
   content: "";
-}
-
-.site-footer p + p {
-  margin-top: 0.4rem;
-  color: rgba(187, 147, 82, 0.7);
-  font-size: 0.95rem;
 }
 
 .site-footer a {
@@ -732,6 +713,32 @@ a.brand-mark:hover {
   font-size: 0.9rem;
   line-height: 1.5;
   white-space: normal;
+}
+
+/* --- Rules that outrank the plain `span` / `p` selectors above -----------
+   These sit after the footer, homepage, and article sections on purpose. Each
+   is more specific than a `.story-link span` / `.article p` rule declared
+   further up, and source order decides nothing when specificity already does,
+   so trailing them here keeps the cascade reading in ascending specificity
+   (biome style/noDescendingSpecificity) without changing any computed style. */
+
+.provenance summary span {
+  transition: transform 150ms ease;
+}
+
+.provenance[open] summary span {
+  transform: rotate(90deg);
+}
+
+.provenance p + p,
+.provenance table + p {
+  margin-top: 1rem;
+}
+
+.site-footer p + p {
+  margin-top: 0.4rem;
+  color: rgba(187, 147, 82, 0.7);
+  font-size: 0.95rem;
 }
 
 @keyframes pulse {
