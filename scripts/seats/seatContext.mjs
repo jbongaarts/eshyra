@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { isAbsolute, join, resolve } from 'node:path';
+import { delimiter, isAbsolute, join, resolve } from 'node:path';
 
 export const CAPTAIN_MODEL_PATTERN = /fable|opus/i;
 
@@ -189,4 +190,81 @@ export function renderSeatContext({
   }
   lines.push(RECONCILIATION_BLOCK);
   return `${lines.join('\n')}\n`;
+}
+
+// ---------------------------------------------------------------------------
+// Hook identity
+//
+// Codex executes a hook only when its stored trusted_hash equals the hash Codex
+// itself computes for the current declaration. That hash is not reproducible
+// outside Codex, so the seat proves execution by observation instead. For an
+// observation to mean anything it must be BOUND to what was observed: a bare
+// timestamp cannot tell you the declaration was edited afterwards, or that
+// Codex was upgraded and now hashes it differently. These helpers produce the
+// identity that the stamp records and `--check` re-derives.
+
+/** Split TOML-ish text into [{header, body}] sections, preserving order. */
+export function splitTomlTables(text) {
+  const sections = [];
+  let current = { header: '', body: [] };
+  for (const line of text.split('\n')) {
+    if (/^\s*\[/.test(line)) {
+      sections.push(current);
+      current = { header: line.trim(), body: [] };
+    } else {
+      current.body.push(line);
+    }
+  }
+  sections.push(current);
+  return sections;
+}
+
+/**
+ * Everything about the profile that can change what Codex will run: the hook
+ * declaration in full (including any field added beside ours, which changes the
+ * normalized identity) and the persisted trust state for this hook. Unrelated
+ * tables Codex writes into the same file -- UI nudges and the like -- are
+ * excluded so ordinary churn does not invalidate a good observation.
+ */
+export function hookDeclarationIdentity(profileText, key) {
+  const wanted = splitTomlTables(profileText).filter(
+    (section) =>
+      section.header.startsWith('[[hooks.SessionStart') ||
+      section.header.startsWith('[hooks.SessionStart') ||
+      section.header === `[hooks.state.${JSON.stringify(key)}]`,
+  );
+  return wanted
+    .map((section) => `${section.header}\n${section.body.join('\n').trim()}`)
+    .join('\n');
+}
+
+/** Identity of the Codex build that ran the hook, so an upgrade invalidates it. */
+export function codexBinaryIdentity(env = process.env) {
+  if (env.ESHYRA_SEAT_CODEX_ID) return env.ESHYRA_SEAT_CODEX_ID;
+  for (const dir of (env.PATH ?? '').split(delimiter)) {
+    if (dir === '') continue;
+    try {
+      const resolved = realpathSync(`${dir}/codex`);
+      const stat = statSync(resolved);
+      return `${resolved}:${stat.size}:${Math.trunc(stat.mtimeMs)}`;
+    } catch {
+      // not here; keep looking
+    }
+  }
+  return 'unresolved';
+}
+
+export function seatHookIdentity(profilePath, env = process.env) {
+  let profileText = '';
+  try {
+    profileText = readFileSync(profilePath, 'utf8');
+  } catch {
+    return null;
+  }
+  const key = `${profilePath}:session_start:0:0`;
+  return `sha256:${createHash('sha256')
+    .update(hookDeclarationIdentity(profileText, key))
+    .update('\u0000')
+    .update(codexBinaryIdentity(env))
+    .digest('hex')}`;
 }

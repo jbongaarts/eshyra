@@ -60,21 +60,27 @@ matches the hash it computes for the current declaration. That hash is not
 reproducible outside Codex, and mirroring it would rot the moment Codex changed
 its normalisation. So `--check` does not infer execution from config text: the
 installed shim stamps `.last-run` every time Codex actually dispatches the hook,
-and the installer clears that stamp whenever it rewrites the declaration or the
-shim. The states are:
+and the stamp records the *identity* of what ran — a digest of the hook
+declaration plus its persisted trust state, and of the Codex binary that
+executed it. An old observation therefore cannot certify a hook that has since
+been edited, re-trusted with a different hash, disabled, or handed to an
+upgraded Codex. Unrelated tables Codex writes into the same profile are excluded
+from that digest, so ordinary churn does not invalidate a good observation.
 
 | State | Meaning | Exit |
 |---|---|---|
-| `trusted` | this declaration has been observed running | 0 |
-| `unverified` | trust recorded, but not yet observed running | 1 |
+| `trusted` | observed running, and still describes what Codex would run | 0 |
+| `superseded` | observed earlier, but the declaration or Codex build changed since | 1 |
+| `unverified` | trust recorded, but never observed running | 1 |
 | `untrusted` | no state entry, or no usable `trusted_hash` | 1 |
 | `disabled` | trusted but `enabled = false` | 1 |
 | `stale` | declaration changed since install | 1 |
 | `unknown` | profile not installed | 1 |
 
-So the normal lifecycle is: install → `unverified` → start one `codex-captain`
-session and approve the prompt → `trusted`. An observed run is what proves a
-stale hash, a disabled hook, or a Codex upgrade has not quietly removed the seat.
+The normal lifecycle is: install → `unverified` → start one `codex-captain`
+session and approve the prompt → `trusted`. After a Codex upgrade or any edit to
+the declaration the state drops to `superseded` until the next Captain session
+re-establishes it.
 
 ## Dispatch marker contract
 
@@ -92,8 +98,12 @@ node scripts/seats/probe-dispatch-markers.mjs <launcher-path> --baseline <pre-ch
 node scripts/seats/probe-dispatch-markers.mjs <launcher-path> --print-digest
 ```
 
-`--baseline` additionally proves the launcher differs from its pre-change copy
-only by the marker injection: nothing removed, and no unrelated line added.
+`--baseline` additionally proves the launcher is its pre-change copy plus the
+authorized marker injection and nothing else, compared as an **ordered**
+program: removing the authorized additions must leave the baseline
+byte-for-byte. Shell line order is behaviour, so a comparison that ignored
+sequence would accept a safety guard moved after the launch.
+
 `--print-digest` pins the launcher bytes; that is an identity pin, not semantic
 proof.
 

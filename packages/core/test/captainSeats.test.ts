@@ -16,7 +16,11 @@ import {
   digest,
   probeLauncher,
 } from '../../../scripts/seats/probe-dispatch-markers.mjs';
-import { resolveSeatRoots } from '../../../scripts/seats/seatContext.mjs';
+import {
+  codexBinaryIdentity,
+  hookDeclarationIdentity,
+  resolveSeatRoots,
+} from '../../../scripts/seats/seatContext.mjs';
 
 // Permanent evidence for eshyra-itnm. Captain routing and the advisory
 // handoff boundary must remain structural across future hook changes.
@@ -418,55 +422,106 @@ ${librarySource}`,
   });
 
   it('treats Codex trust states Codex would not execute as not trusted', () => {
-    // Permanent evidence for the second F2 round on PR #527. Codex runs a hook
-    // only when it is enabled AND its persisted trusted_hash equals the hash it
+    // Permanent evidence for the F2 rounds on PR #527. Codex runs a hook only
+    // when it is enabled AND its stored trusted_hash equals the hash Codex
     // computes for the current declaration. That hash is not reproducible here,
-    // and an earlier revision papered over that by asserting a fabricated
-    // `sha256:x` was trusted -- a value that could never be a real hash. The
-    // checker now requires an OBSERVED run of the current declaration, which
-    // covers stale hashes, disabled hooks, and Codex upgrades alike.
+    // so execution is proven by observation -- but an observation only counts
+    // while it still DESCRIBES what Codex would run, which is why the stamp
+    // carries an identity rather than a bare timestamp.
     const profile = '/tmp/example/.codex/eshyra-captain.config.toml';
     const declaration = '[[hooks.SessionStart]]\nmatcher = ""\n';
     const key = `${profile}:session_start:0:0`;
     const realHash = `sha256:${'a'.repeat(64)}`;
+    const identity = `sha256:${'c'.repeat(64)}`;
     const entry = (body: string) =>
       `${declaration}\n[hooks.state.${JSON.stringify(key)}]\n${body}`;
-    const call = (profileText: string | null, observedRun = true) =>
+    const call = (
+      profileText: string | null,
+      observedIdentity: string | null = identity,
+      currentIdentity: string | null = identity,
+    ) =>
       hookTrustState({
         profileText,
         declaringFile: profile,
         declaration,
-        observedRun,
+        observedIdentity,
+        currentIdentity,
       });
 
     expect(call(null)).toBe('unknown');
-    // Declaration absent or changed since install.
     expect(
       call(
         `[hooks.state.${JSON.stringify(key)}]\ntrusted_hash = "${realHash}"\n`,
       ),
     ).toBe('stale');
-    // No state entry at all.
     expect(call(declaration)).toBe('untrusted');
-    // Entry present but no hash, or a hash that cannot be a real one.
     expect(call(entry('enabled = true\n'))).toBe('untrusted');
+    // A fabricated hash must never read as trusted: it cannot be a real one.
     expect(call(entry('trusted_hash = "sha256:x"\n'))).toBe('untrusted');
-    // Trusted but explicitly disabled: Codex will not run it.
     expect(call(entry(`trusted_hash = "${realHash}"\nenabled = false\n`))).toBe(
       'disabled',
     );
-    // Trust recorded for a DIFFERENT hook must not count as ours.
     expect(
       call(
         `${declaration}\n[hooks.state."/other/hooks.json:session_start:0:0"]\ntrusted_hash = "${realHash}"\n`,
       ),
     ).toBe('untrusted');
-    // Well-formed and enabled, but never observed running -> not trusted.
-    expect(call(entry(`trusted_hash = "${realHash}"\n`), false)).toBe(
+    // Never observed running.
+    expect(call(entry(`trusted_hash = "${realHash}"\n`), null)).toBe(
       'unverified',
     );
-    // Only an observed run of this declaration counts as trusted.
-    expect(call(entry(`trusted_hash = "${realHash}"\n`), true)).toBe('trusted');
+    // Observed, but the declaration or the Codex build has changed since.
+    expect(
+      call(
+        entry(`trusted_hash = "${realHash}"\n`),
+        identity,
+        `sha256:${'d'.repeat(64)}`,
+      ),
+    ).toBe('superseded');
+    // Observed, and still describes what Codex would run.
+    expect(call(entry(`trusted_hash = "${realHash}"\n`))).toBe('trusted');
+  });
+
+  it('binds the observed identity to the declaration and the Codex build', () => {
+    const key = '/p/eshyra-captain.config.toml:session_start:0:0';
+    const base = [
+      '[[hooks.SessionStart]]',
+      'matcher = ""',
+      '',
+      '[[hooks.SessionStart.hooks]]',
+      'type = "command"',
+      'command = "/p/shim.sh"',
+      'statusMessage = "Loading Codex Captain seat"',
+      '',
+      `[hooks.state.${JSON.stringify(key)}]`,
+      'trusted_hash = "sha256:1111"',
+      '',
+      '[tui.model_availability_nux]',
+      '"gpt-5.5" = 4',
+    ].join('\n');
+
+    const identityOf = (text: string) => hookDeclarationIdentity(text, key);
+
+    // A different stored trust hash changes the identity.
+    expect(identityOf(base.replace('sha256:1111', 'sha256:2222'))).not.toBe(
+      identityOf(base),
+    );
+    // An identity-changing field added beside the declaration changes it.
+    expect(
+      identityOf(
+        base.replace(
+          'statusMessage = "Loading Codex Captain seat"',
+          'statusMessage = "Loading Codex Captain seat"\ntimeout = 30',
+        ),
+      ),
+    ).not.toBe(identityOf(base));
+    // Unrelated tables Codex writes into the same file must NOT change it,
+    // or ordinary churn would keep invalidating a perfectly good observation.
+    expect(identityOf(`${base}\n"gpt-6" = 1`)).toBe(identityOf(base));
+    // The Codex build is part of the identity, so an upgrade invalidates it.
+    expect(codexBinaryIdentity({ ESHYRA_SEAT_CODEX_ID: 'codex-a' })).not.toBe(
+      codexBinaryIdentity({ ESHYRA_SEAT_CODEX_ID: 'codex-b' }),
+    );
   });
 
   it('round-trips a handoff and leaves the working tree untouched', () => {
@@ -592,11 +647,20 @@ ${librarySource}`,
     }
   }, 60_000);
 
-  it('permits only the intended marker injection against the baseline', () => {
-    const baseline = ['set -eu', 'MODEL="luna"', 'exec codex "$@"'].join('\n');
+  it('permits only the intended marker injection, as an ordered transform', () => {
+    // Shell line order is behaviour, so preservation is checked as an ordered
+    // program: removing the authorized additions must leave the baseline
+    // byte-for-byte. A counted multiset accepts a guard moved after the launch.
+    const baseline = [
+      'set -eu',
+      'MODEL="luna"',
+      'refuse_if_parent_checkout',
+      'exec codex "$@"',
+    ].join('\n');
     const marked = [
       'set -eu',
       'MODEL="luna"',
+      'refuse_if_parent_checkout',
       '# mark dispatched implementation workers',
       'SEAT_ROLE="dispatched-worker"',
       'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$C" \\',
@@ -604,17 +668,35 @@ ${librarySource}`,
     ].join('\n');
     expect(diffAgainstBaseline(marked, baseline)).toEqual([]);
 
-    // A dropped guard must be caught.
-    const guardRemoved = marked.replace('set -eu\n', '');
-    expect(diffAgainstBaseline(guardRemoved, baseline).join(' ')).toContain(
-      'baseline line removed',
+    // A guard moved after the launch keeps every line and count intact.
+    const reordered = [
+      'set -eu',
+      'MODEL="luna"',
+      'SEAT_ROLE="dispatched-worker"',
+      'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$C" \\',
+      'exec codex "$@"',
+      'refuse_if_parent_checkout',
+    ].join('\n');
+    expect(diffAgainstBaseline(reordered, baseline).join(' ')).toContain(
+      'unauthorized change',
     );
 
-    // So must an unrelated behaviour change smuggled in alongside the markers.
-    const smuggled = `${marked}\nMODEL="something-else"`;
-    expect(diffAgainstBaseline(smuggled, baseline).join(' ')).toContain(
-      'unrelated line added',
+    // A default changed on a line that merely mentions a marker token.
+    const smuggled = marked.replace(
+      '# mark dispatched implementation workers',
+      'MODEL=opus # ESHYRA_SEAT_ROLE',
     );
+    expect(diffAgainstBaseline(smuggled, baseline).join(' ')).toContain(
+      'unauthorized change',
+    );
+
+    // An outright removed guard.
+    expect(
+      diffAgainstBaseline(
+        marked.replace('refuse_if_parent_checkout\n', ''),
+        baseline,
+      ).join(' '),
+    ).toContain('unauthorized change');
 
     expect(digest('a')).toBe(digest('a'));
     expect(digest('a')).not.toBe(digest('b'));

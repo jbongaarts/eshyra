@@ -12,6 +12,7 @@ import {
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { seatHookIdentity } from './seatContext.mjs';
 
 const repoRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 // Tests install into a temporary root; operators always install into $HOME.
@@ -49,7 +50,8 @@ const shim = `#!/bin/sh
 # Installed by scripts/seats/install-captain-seats.mjs. Do not edit in place:
 # the executable closure behind Codex's one-time hook trust must change only
 # through an explicit reinstall. Run \`npm run seat:install\` instead.
-date -u +%Y-%m-%dT%H:%M:%SZ > ${shellQuote(lastRunPath)} 2>/dev/null || true
+ESHYRA_SEAT_STAMP=${shellQuote(lastRunPath)} \\
+ESHYRA_SEAT_PROFILE=${shellQuote(profilePath)} \\
 exec node ${shellQuote(runtimePath)}
 `;
 
@@ -143,15 +145,13 @@ function reportCharters() {
 //
 // Codex executes a hook only when it is enabled AND its persisted trusted_hash
 // equals the hash it computes for the current declaration. That hash is not
-// reproducible here: its normalisation is undocumented, and any attempt to
-// mirror it silently rots the moment Codex changes normalisation or a default.
-// So this does not infer execution from the config text. The installed shim
-// stamps `.last-run` every time Codex actually dispatches the hook, and the
-// installer clears that stamp whenever it rewrites the declaration. An observed
-// run therefore proves the CURRENT declaration really executes -- which covers
-// a stale hash, a disabled hook, an identity-changing field added beside the
-// declaration, and a Codex upgrade that changes hashing, none of which a text
-// comparison can catch.
+// reproducible here: its normalisation is undocumented, and mirroring it would
+// rot the moment Codex changed normalisation or a default. So execution is not
+// inferred from config text at all. The installed shim stamps `.last-run` when
+// Codex actually dispatches the hook, and the stamp carries the identity of the
+// declaration and the Codex build that produced it -- so an old observation
+// cannot certify a hook that has since been edited, re-trusted with a different
+// hash, disabled, or handed to an upgraded Codex.
 export function parseHookState(profileText, key) {
   const header = `[hooks.state.${JSON.stringify(key)}]`;
   const start = profileText.indexOf(header);
@@ -168,7 +168,8 @@ export function hookTrustState({
   profileText,
   declaringFile = profilePath,
   declaration = PROFILE_DECLARATION,
-  observedRun = false,
+  observedIdentity = null,
+  currentIdentity = null,
 }) {
   if (profileText === null || profileText === undefined) return 'unknown';
   if (!profileText.includes(declaration)) return 'stale';
@@ -177,12 +178,18 @@ export function hookTrustState({
     `${declaringFile}:session_start:0:0`,
   );
   if (state === null) return 'untrusted';
-  if (!/^sha256:[0-9a-f]{64}$/.test(state.trustedHash ?? ''))
+  if (!/^sha256:[0-9a-f]{64}$/.test(state.trustedHash ?? '')) {
     return 'untrusted';
+  }
   if (!state.enabled) return 'disabled';
   // A recorded hash cannot be compared against Codex's computed one, so the
-  // only sound evidence that this declaration executes is that it has.
-  return observedRun ? 'trusted' : 'unverified';
+  // only sound evidence that this declaration executes is that it has. The
+  // observation must also still DESCRIBE what Codex would run now: a
+  // syntactically valid but wrong trusted_hash, an identity-changing field
+  // added beside the declaration, and a Codex upgrade each change the identity
+  // while leaving an old timestamp perfectly intact.
+  if (observedIdentity === null) return 'unverified';
+  return observedIdentity === currentIdentity ? 'trusted' : 'superseded';
 }
 
 function readProfile() {
@@ -195,8 +202,8 @@ function readProfile() {
 
 function readLastRun() {
   try {
-    const stamp = readFileSync(lastRunPath, 'utf8').trim();
-    return stamp === '' ? null : stamp;
+    const stamp = JSON.parse(readFileSync(lastRunPath, 'utf8'));
+    return typeof stamp?.identity === 'string' ? stamp : null;
   } catch {
     return null;
   }
@@ -206,11 +213,13 @@ function reportHookTrust() {
   const lastRun = readLastRun();
   const state = hookTrustState({
     profileText: readProfile(),
-    observedRun: lastRun !== null,
+    observedIdentity: lastRun?.identity ?? null,
+    currentIdentity: seatHookIdentity(profilePath),
   });
   const message = {
-    trusted: `trusted ${profilePath} (observed running ${lastRun})`,
+    trusted: `trusted ${profilePath} (observed running ${lastRun?.at})`,
     unverified: `unverified ${profilePath} (trust recorded, but this declaration has not been observed running; start one codex-captain session)`,
+    superseded: `superseded ${profilePath} (the declaration or the Codex build changed since the last observed run ${lastRun?.at}; start one codex-captain session)`,
     untrusted: `untrusted ${profilePath} (approve once on the first codex-captain launch; until then Codex skips the hook silently)`,
     disabled: `disabled ${profilePath} (hook trusted but disabled; Codex will not run it)`,
     stale: `stale ${profilePath} (declaration changed since install; run npm run seat:install)`,

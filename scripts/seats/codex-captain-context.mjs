@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   classifyCodexSession,
@@ -9,12 +9,32 @@ import {
   renderSeatContext,
   resolveSeatRoots,
   SEATS,
+  seatHookIdentity,
 } from './seatContext.mjs';
 
 process.stdout.on('error', (err) => {
   if (err.code === 'EPIPE') process.exit(0);
   throw err;
 });
+
+// Record that Codex actually dispatched this hook, bound to the declaration and
+// the Codex build that produced the run, so a later edit or upgrade cannot be
+// certified by an old observation. Only the installed shim asks for this; the
+// repository copy is never asked and so never writes.
+const stampPath = process.env.ESHYRA_SEAT_STAMP;
+if (stampPath) {
+  try {
+    writeFileSync(
+      stampPath,
+      `${JSON.stringify({
+        at: new Date().toISOString(),
+        identity: seatHookIdentity(process.env.ESHYRA_SEAT_PROFILE ?? ''),
+      })}\n`,
+    );
+  } catch {
+    // An unwritable stamp must never stop the seat from loading.
+  }
+}
 
 let raw;
 try {

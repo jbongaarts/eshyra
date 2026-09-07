@@ -125,37 +125,67 @@ export function probeLauncher(launcherPath, waitMs = 4000) {
   return failures;
 }
 
+const MARKER_NAMES = new Set([ROLE, CHILD, 'SEAT_ROLE']);
+
 /**
- * Establish that the launcher differs from its pre-change baseline only by the
- * intended marker injection: nothing removed, and every added line marker- or
- * comment-related. The digest pins identity; this pins the change itself.
+ * An added line is authorized only if it is a comment, or it mentions a marker
+ * and assigns nothing but markers. Requiring a marker TOKEN alone is not
+ * enough: `MODEL=opus # ESHYRA_SEAT_ROLE` mentions one while changing a default.
+ */
+function isAuthorizedAddition(line) {
+  const trimmed = line.trim();
+  if (trimmed === '' || trimmed.startsWith('#')) return true;
+  if (![...MARKER_NAMES].some((name) => line.includes(name))) return false;
+  const assigned = [...line.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)=/g)].map(
+    (match) => match[1],
+  );
+  if (assigned.length > 0) return assigned.every((n) => MARKER_NAMES.has(n));
+  // No assignment: allow only a continuation of quoted marker references.
+  return /^[\s"'$\\{}A-Za-z0-9_]*$/.test(line);
+}
+
+/**
+ * Establish that the launcher is the baseline plus the authorized marker
+ * injection and nothing else. This walks both files as ORDERED programs:
+ * shell line order is behaviour, so a comparison that ignores sequence accepts
+ * a safety guard moved after the launch while every line and count survives.
+ * Removing the authorized additions must leave the baseline byte-for-byte.
  */
 export function diffAgainstBaseline(current, baseline) {
   const failures = [];
-  // Counted, not set-based: a line present twice in the baseline and once now
-  // is a removal, and a set comparison would call it unchanged.
-  const tally = (text) => {
-    const counts = new Map();
-    for (const line of text.split('\n')) {
-      counts.set(line, (counts.get(line) ?? 0) + 1);
+  const currentLines = current.split('\n');
+  const baselineLines = baseline.split('\n');
+  let i = 0;
+  let j = 0;
+  while (i < currentLines.length && j < baselineLines.length) {
+    if (currentLines[i] === baselineLines[j]) {
+      i += 1;
+      j += 1;
+      continue;
     }
-    return counts;
-  };
-  const baselineCounts = tally(baseline);
-  const currentCounts = tally(current);
-  for (const [line, count] of baselineCounts) {
-    if (line.trim() !== '' && (currentCounts.get(line) ?? 0) < count) {
-      failures.push(`baseline line removed: ${line.trim().slice(0, 80)}`);
+    if (isAuthorizedAddition(currentLines[i])) {
+      i += 1;
+      continue;
+    }
+    failures.push(
+      `unauthorized change at baseline line ${j + 1}: expected ${JSON.stringify(
+        baselineLines[j].trim().slice(0, 60),
+      )}, found ${JSON.stringify(currentLines[i].trim().slice(0, 60))}`,
+    );
+    return failures;
+  }
+  for (; j < baselineLines.length; j += 1) {
+    if (baselineLines[j].trim() !== '') {
+      failures.push(
+        `baseline line removed or moved: ${baselineLines[j].trim().slice(0, 60)}`,
+      );
     }
   }
-  const baselineLines = new Set(baseline.split('\n'));
-  for (const line of current.split('\n')) {
-    if (line.trim() === '' || baselineLines.has(line)) continue;
-    const isComment = line.trim().startsWith('#');
-    const isMarker =
-      line.includes(ROLE) || line.includes(CHILD) || line.includes('SEAT_ROLE');
-    if (!isComment && !isMarker) {
-      failures.push(`unrelated line added: ${line.trim().slice(0, 80)}`);
+  for (; i < currentLines.length; i += 1) {
+    if (!isAuthorizedAddition(currentLines[i])) {
+      failures.push(
+        `unrelated line added: ${currentLines[i].trim().slice(0, 60)}`,
+      );
     }
   }
   return failures;
