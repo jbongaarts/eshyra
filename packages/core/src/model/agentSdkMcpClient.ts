@@ -2,6 +2,7 @@ import type {
   SDKResultError,
   SDKResultSuccess,
   SDKSystemMessage,
+  SdkMcpToolDefinition,
 } from '@anthropic-ai/claude-agent-sdk';
 import {
   buildModelCallEvent,
@@ -198,13 +199,20 @@ function toStopReason(
  * delegates to the executor bridge and records the call/result; it NEVER runs
  * gameplay logic itself. A tool failure is returned as a tool result (with
  * `isError`) rather than thrown, so one bad call cannot crash the agent loop.
+ *
+ * The return type names the zod-4 shape {@link toolInputSchemaToZodShape}
+ * actually produces. Writing `ReturnType<AgentSdkRuntime['tool']>` instead
+ * erases `tool()`'s generic to its constraint `AnyZodRawShape`, which SDK
+ * 0.3.260 widened from zod-4-only to `zod/v3 | zod/v4`; `SdkMcpToolDefinition`
+ * is invariant in that parameter (its handler takes `InferShape<Schema>`), so
+ * the erased form stopped describing what this adapter builds.
  */
 function buildMcpTool(
   tool: AgentSdkRuntime['tool'],
   def: ModelToolDefinition,
   executor: ModelToolExecutor | undefined,
   executed: ProviderExecutedToolCall[],
-): ReturnType<AgentSdkRuntime['tool']> {
+): SdkMcpToolDefinition<ReturnType<typeof toolInputSchemaToZodShape>> {
   return tool(
     def.name,
     def.description,
