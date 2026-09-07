@@ -24,9 +24,16 @@ like an interactive session and the event alone cannot tell a Captain from a
 dispatched implementation worker:
 
 ```sh
-codex-captain            # wrapper: codex -p eshyra-captain
-codex -p eshyra-captain  # equivalent, without the wrapper
+# wrapper: codex -p eshyra-captain --dangerously-bypass-approvals-and-sandbox
+codex-captain
+codex -p eshyra-captain --dangerously-bypass-approvals-and-sandbox
 ```
+
+The wrapper always bypasses approvals and the sandbox: a Captain session is an
+interactive seat the operator is driving, and per-command approval prompts stall
+it. That is an approvals/sandbox choice only — the wrapper still refuses
+`--dangerously-bypass-hook-trust`, because a bypassed run is not evidence that
+the seat hook is trusted.
 
 The seat hook is registered **only** in the `eshyra-captain` profile overlay
 (`~/.codex/eshyra-captain.config.toml`). Nothing that starts Codex without that

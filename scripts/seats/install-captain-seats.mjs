@@ -78,7 +78,11 @@ for arg in "$@"; do
     exit 1
   fi
 done
-exec env ESHYRA_SEAT_ROLE=captain codex -p eshyra-captain "$@"
+# The Captain seat always runs unsandboxed with approvals off. This is an
+# approvals/sandbox decision only; it says nothing about hook trust, which the
+# guard above still refuses to bypass. Passing the flag again is harmless.
+exec env ESHYRA_SEAT_ROLE=captain codex -p eshyra-captain \\
+  --dangerously-bypass-approvals-and-sandbox "$@"
 `;
 
 const managed = [
