@@ -848,7 +848,7 @@ CREATE TABLE turn_trace (
   memory_updates_json TEXT NOT NULL,
   human_corrections_json TEXT NOT NULL,
   quality_flags_json TEXT NOT NULL,
-  created_at TEXT NOT NULL,
+  created_at TEXT NOT NULL, campaign_rules_evidence TEXT,
   PRIMARY KEY (campaign_id, session_id, turn_id)
 );
 

@@ -538,6 +538,41 @@ describe('runPlay', () => {
     dispose();
   });
 
+  it('handles /rules management inside the play session (eshyra-jhpt.5)', async () => {
+    const { db, dispose } = makeDb();
+    const { io, lines } = scriptedIO([
+      'import',
+      'mira',
+      '/rules add --kind house-rule --identity braced-shield --prose "Shields grant a small bonus when braced." --scope combat --records equipment:shield',
+      '/rules list --at 1',
+      '/rules show braced-shield',
+      '/rules ambiguities',
+      '/rules bogus',
+      '/quit',
+    ]);
+
+    const code = await runPlay(baseDeps(db, io), { dbPath: 'demo.db' });
+
+    expect(code).toBe(0);
+    const out = lines.join('\n');
+    expect(out).toContain("Added house-rule 'braced-shield'");
+    expect(out).toContain('braced-shield  [house-rule/active]  effective 1');
+    expect(out).toContain('Rule braced-shield');
+    expect(out).toContain('  prose: Shields grant a small bonus when braced.');
+    expect(out).toContain(
+      'ambiguity:create-undead-ghast-wight-composition  status: unresolved',
+    );
+    expect(out).toContain('usage: /rules');
+    expect(
+      db
+        .prepare(
+          'SELECT rule_identity FROM campaign_rule WHERE campaign_id = ?',
+        )
+        .all(campaignId(db)),
+    ).toEqual([{ rule_identity: 'braced-shield' }]);
+    dispose();
+  });
+
   it('handles /wallet and /money inside the play session', async () => {
     const { db, dispose } = makeDb();
     const { io, lines } = scriptedIO([

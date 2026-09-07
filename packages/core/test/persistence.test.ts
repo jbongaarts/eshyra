@@ -16,6 +16,10 @@ describe('persistence', () => {
       ledger.map((_row, index) => index + 1),
     );
     expect(ledger[0].name).toBe('initial');
+    expect(ledger.at(-1)).toMatchObject({
+      version: 27,
+      name: 'turn_trace_campaign_rules_evidence',
+    });
     db.close();
   });
 

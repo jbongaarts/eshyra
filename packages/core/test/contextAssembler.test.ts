@@ -14,6 +14,7 @@ import {
   appendSceneLog,
   assembleCampaignRulesContext,
   assembleContext,
+  campaignRulesEvidenceFrom,
   closeOpenArcAndOpenNext,
   closeScene,
   createCharacterChronicleStore,
@@ -34,6 +35,7 @@ import {
   revokeCampaignRule as persistRevokeCampaignRule,
   supersedeCampaignRule as persistSupersedeCampaignRule,
   recordSceneSummary,
+  renderCampaignRulesSection,
   renderContextMessage,
   resolveCampaignPosition,
   rollupSessionRecap,
@@ -41,6 +43,7 @@ import {
   startAdventureRun,
   writeCampaignRulesBinding,
 } from '../src/internal.js';
+import { buildAuditUserMessage } from '../src/orchestrator/turnAuditor.js';
 import { resolveStrictCampaignRulesStack } from '../src/state/campaignRecordLookup.js';
 import {
   NEARBY_INVENTORY_MAX_BYTES,
@@ -130,6 +133,10 @@ function supersedeCampaignRule(
   });
 }
 
+function campaignRulesSectionOf(message: string): string | undefined {
+  return message.match(/## Campaign Rules\n[\s\S]*?(?=\n\n## |$)/)?.[0];
+}
+
 function logTurn(
   db: Db,
   sceneId: string,
@@ -191,6 +198,19 @@ function testSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
 }
 
 describe('Context Assembler', () => {
+  it('omits an empty campaign-rules section', () => {
+    expect(
+      renderCampaignRulesSection({
+        position: formatCampaignPosition(campaignPosition(1)),
+        rules: [],
+        unboundRulings: [],
+        unboundConflicts: [],
+        unrepresentableRules: [],
+        ambiguities: [],
+      }),
+    ).toBeUndefined();
+  });
+
   it('fails clearly when the bound rules pack is unavailable', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     createCampaignRule(db, campaignRule('still-playable', 1));
@@ -359,6 +379,133 @@ describe('Context Assembler', () => {
     expect(renderContextMessage(context)).toContain(
       'AMBIGUITY SOURCE UNAVAILABLE',
     );
+    db.close();
+  });
+
+  it('keeps a restored invalid-pairing row UNREPRESENTABLE through the real ambiguity-source degradation path (eshyra-jhpt.4)', () => {
+    const db = freshDbWithSession({ sessionId: SESSION });
+    const restoredPosition = formatCampaignPosition(campaignPosition(1));
+    db.prepare(`
+      INSERT INTO campaign_rule (
+        campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
+        ambiguity_id, selected_interpretation_id, question_id, rationale,
+        effective_position, temporal_mode, disputed_position, superseded_by,
+        revoked_position, scope, governing_record_keys_json, prose, provenance,
+        session_id, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `).run(
+      CAMPAIGN,
+      'restored-invalid-provenance',
+      'house-rule',
+      'active',
+      'player-approved',
+      'ambiguity',
+      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
+      'presence-required',
+      null,
+      null,
+      restoredPosition,
+      'prospective',
+      null,
+      null,
+      null,
+      'test',
+      JSON.stringify(['spell:find-familiar']),
+      'Restored invalid rule',
+      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp#presence-required',
+      SESSION,
+      '2026-09-03T00:00:00.000Z',
+    );
+    const original = getBundledDnd5eSrdPack();
+    const addon: RulesPack = {
+      ...original,
+      meta: {
+        ...original.meta,
+        packId: 'rules:test-malformed-ambiguity',
+        role: 'addon',
+        order: 1,
+        compatibleBaseSystems: [
+          {
+            systemId: original.meta.systemId,
+            versions: [original.meta.version],
+          },
+        ],
+      },
+      records: [
+        {
+          ...original.records[0],
+          key: 'feature:malformed-ambiguity',
+          data: {
+            mechanics: {
+              ambiguities: [{ id: 'ambiguity:Foo_Bar' }],
+            },
+          },
+        },
+      ],
+    };
+    writeCampaignRulesBinding(db, {
+      base: {
+        systemId: original.meta.systemId,
+        packId: original.meta.packId,
+        version: original.meta.version,
+      },
+      addons: [
+        {
+          systemId: addon.meta.systemId,
+          packId: addon.meta.packId,
+          version: addon.meta.version,
+        },
+      ],
+      resolvedAt: '2026-05-20T09:00:00.000Z',
+    });
+    const context = assembleContext({
+      db,
+      campaignId: CAMPAIGN,
+      campaignPosition: formatCampaignPosition(campaignPosition(1)),
+      sessionId: SESSION,
+      playerInput: 'continue',
+      resolveRulesPack: (ref) =>
+        ref.packId === original.meta.packId
+          ? original
+          : ref.packId === addon.meta.packId
+            ? addon
+            : undefined,
+    });
+    expect(context.campaignRules.ambiguitySourceUnavailable).toContain(
+      'feature:malformed-ambiguity.data.mechanics.ambiguities[0].id must be a stable ambiguity:<kebab-case> ID',
+    );
+    expect(
+      context.campaignRules.unrepresentableRules.map(
+        ({ ruleIdentity }) => ruleIdentity,
+      ),
+    ).toEqual(['restored-invalid-provenance']);
+    expect(
+      context.campaignRules.rules.map(({ ruleIdentity }) => ruleIdentity),
+    ).not.toContain('restored-invalid-provenance');
+    expect(context.campaignRules.unboundRulings).toEqual([]);
+    expect(context.campaignRules.unboundConflicts).toEqual([]);
+    const rendered = renderContextMessage(context);
+    expect(rendered).toContain('AMBIGUITY SOURCE UNAVAILABLE');
+    expect(rendered).toContain(
+      'UNREPRESENTABLE ACTIVE CAMPAIGN RULE restored-invalid-provenance',
+    );
+    expect(rendered).not.toContain('[house-rule] restored-invalid-provenance');
+    const audited = buildAuditUserMessage({
+      playerInput: 'continue',
+      candidateResponse: 'The familiar returns.',
+      providedToolNames: [],
+      executedToolCalls: [],
+      campaignRules: context.campaignRules,
+    });
+    expect(audited).toContain(
+      'UNREPRESENTABLE ACTIVE CAMPAIGN RULE restored-invalid-provenance',
+    );
+    expect(audited).not.toContain('[house-rule] restored-invalid-provenance');
+    expect(
+      campaignRulesEvidenceFrom(context.campaignRules).rules.map(
+        ({ ruleIdentity }) => ruleIdentity,
+      ),
+    ).toContain('restored-invalid-provenance');
     db.close();
   });
 
@@ -552,6 +699,82 @@ describe('Context Assembler', () => {
         campaignRules: rebound,
       }),
     ).toContain('ambiguity absent from current pack');
+
+    createCampaignRule(db, campaignRule('scheduled-rule', 6), {
+      currentPosition,
+    });
+    const disputedPosition = resolveCampaignPosition(db, {
+      campaignId: CAMPAIGN,
+      sessionId: SESSION,
+      turnId: 'turn-2',
+    });
+    createCampaignRule(
+      db,
+      campaignRule('disputed-turn-rule', 2, {
+        effectivePosition: disputedPosition,
+        temporalMode: { mode: 'disputed-turn', disputedPosition },
+      }),
+      { currentPosition },
+    );
+
+    const parityContexts = [
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: formatCampaignPosition(campaignPosition(1)),
+        sessionId: SESSION,
+        playerInput: 'before supersession',
+      }),
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: formatCampaignPosition(campaignPosition(4)),
+        sessionId: SESSION,
+        playerInput: 'after revocation',
+      }),
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: formatCampaignPosition(disputedPosition),
+        sessionId: SESSION,
+        playerInput: 'replay disputed turn',
+      }),
+    ];
+    for (const assembled of parityContexts) {
+      const shared = renderCampaignRulesSection(assembled.campaignRules);
+      const auditor = buildAuditUserMessage({
+        playerInput: assembled.playerInput,
+        candidateResponse: 'candidate',
+        providedToolNames: [],
+        executedToolCalls: [],
+        campaignRules: assembled.campaignRules,
+      });
+      expect(campaignRulesSectionOf(renderContextMessage(assembled))).toBe(
+        shared,
+      );
+      expect(campaignRulesSectionOf(auditor)).toBe(shared);
+    }
+    expect(
+      parityContexts[0].campaignRules.rules.map((rule) => rule.ruleIdentity),
+    ).toEqual(['ordered-a', 'ordered-z', 'revoked-rule', 'superseded-rule']);
+    const afterRevocationIds = parityContexts[1].campaignRules.rules.map(
+      (rule) => rule.ruleIdentity,
+    );
+    for (const absent of [
+      'revoked-rule',
+      'scheduled-rule',
+      'superseded-rule',
+    ]) {
+      expect(afterRevocationIds).not.toContain(absent);
+    }
+    expect(
+      parityContexts[1].campaignRules.ambiguities.find(
+        ({ ambiguity }) => ambiguity.id === familiar.ambiguity.id,
+      )?.ruling?.ruleIdentity,
+    ).toBe('familiar-ruling');
+    expect(
+      parityContexts[2].campaignRules.rules.map((rule) => rule.ruleIdentity),
+    ).toContain('disputed-turn-rule');
     const packAfter = readFileSync(packPath);
     expect(packBefore).toEqual(packAfter);
     db.close();

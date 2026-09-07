@@ -46,6 +46,10 @@ export {
   listAdventureRuns,
   startAdventureRun,
 } from './campaign/adventureRun.js';
+export {
+  lookupCampaignAmbiguity,
+  recordAmbiguityRuling,
+} from './campaign/ambiguityResolution.js';
 export type { CampaignInfo, CreateCampaignInput } from './campaign/campaign.js';
 // Campaign lifecycle.
 export {
@@ -53,6 +57,36 @@ export {
   createCampaign,
   getCampaign,
 } from './campaign/campaign.js';
+export type { CampaignRulesContext } from './campaign/campaignContext.js';
+// Campaign-owned rulings and house rules. These are stable because the CLI
+// exposes their durable management workflow to external users.
+export { assembleCampaignRulesContext } from './campaign/campaignContext.js';
+export {
+  getCampaignPositionAtOrdinal,
+  getCurrentCampaignPosition,
+} from './campaign/campaignPosition.js';
+export {
+  createCampaignRule,
+  getCampaignRule,
+  listActiveCampaignRulesAtPosition,
+  listCampaignRules,
+  revokeCampaignRule,
+  supersedeCampaignRule,
+} from './campaign/campaignRuleStore.js';
+export type {
+  CampaignPosition,
+  CampaignRule,
+  CampaignRuleKind,
+  CampaignRuleProvenance,
+  CampaignRuleStatus,
+} from './campaign/campaignRules.js';
+export {
+  CampaignRuleError,
+  formatCampaignPosition,
+  hasValidCampaignRuleProvenancePairing,
+  parseCampaignPosition,
+  validateCampaignRules,
+} from './campaign/campaignRules.js';
 export type {
   CreateDemoCampaignOptions,
   DemoCampaign,
@@ -486,6 +520,7 @@ export {
 export type {
   CompatibleBaseSystem,
   RecordProvenance,
+  RulesAmbiguity,
   RulesPack,
   RulesPackLicense,
   RulesPackLicenseClass,
@@ -528,6 +563,7 @@ export {
   setActiveCharacterId,
 } from './state/activeCharacter.js';
 export type { CampaignRulesPackResolver } from './state/campaignRecordLookup.js';
+export { resolveStrictCampaignRulesStack } from './state/campaignRecordLookup.js';
 export type { CombatInstance } from './state/encounterCombatants.js';
 // Active-combat lookup (used by the resume conflict-resolution UX to warn
 // before catching a character up mid-combat — ADR 0012, eshyra-lupf.14.4).

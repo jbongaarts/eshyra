@@ -3,6 +3,7 @@ import { listAdventureRuns } from '../campaign/adventureRun.js';
 import {
   assembleCampaignRulesContext,
   type CampaignRulesContext,
+  renderCampaignRulesSection,
 } from '../campaign/campaignContext.js';
 import type {
   CharacterChronicleRecord,
@@ -1036,48 +1037,8 @@ export function renderContextMessage(ctx: AssembledContext): string {
     );
   }
 
-  if (
-    ctx.campaignRules.ambiguitySourceUnavailable !== undefined ||
-    ctx.campaignRules.rules.length > 0 ||
-    ctx.campaignRules.unboundRulings.length > 0 ||
-    ctx.campaignRules.unrepresentableRules.length > 0 ||
-    ctx.campaignRules.ambiguities.length > 0
-  ) {
-    const unavailable =
-      ctx.campaignRules.ambiguitySourceUnavailable === undefined
-        ? []
-        : [
-            `- AMBIGUITY SOURCE UNAVAILABLE: ${ctx.campaignRules.ambiguitySourceUnavailable}; immutable ambiguity metadata is omitted until the bound pack is available`,
-          ];
-    const rules = ctx.campaignRules.rules.map(
-      (rule) =>
-        `- [${rule.ruleKind}] ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): ${rule.prose ?? ''}`,
-    );
-    const unboundRulings = ctx.campaignRules.unboundRulings.map(
-      (ruling) =>
-        `- [ruling] ${ruling.ruleIdentity} (${ruling.provenance}; ambiguity absent from current pack; effective ${ruling.effectivePosition}; records: ${ruling.governingRecordKeys.join(', ') || '(none)'}): ${ruling.prose ?? ''}`,
-    );
-    const unrepresentableRules = ctx.campaignRules.unrepresentableRules.map(
-      (rule) =>
-        `- UNREPRESENTABLE ACTIVE CAMPAIGN RULE ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): preserved restored content requires repair before it can be interpreted`,
-    );
-    const ambiguityLines = ctx.campaignRules.ambiguities.flatMap(
-      ({ ambiguity, ruling, conflictingRulings }) => [
-        `- ${ambiguity.id}: ${ambiguity.question}`,
-        ...ambiguity.interpretations.map(
-          (item) => `  - ${item.id}: ${item.summary}`,
-        ),
-        conflictingRulings.length > 1
-          ? `  CONFLICT: active rulings ${conflictingRulings.map((item) => item.ruleIdentity).join(', ')} contradict one another; none is authoritative.`
-          : ruling === undefined
-            ? '  UNRESOLVED: do not assert a canonical answer or silently choose an interpretation.'
-            : `  Active ruling ${ruling.ruleIdentity} (${ruling.selectedInterpretationId}): ${ruling.prose ?? ''}`,
-      ],
-    );
-    sections.push(
-      `## Campaign Rules\n${[...unavailable, ...rules, ...unboundRulings, ...unrepresentableRules, ...ambiguityLines].join('\n')}`,
-    );
-  }
+  const campaignRules = renderCampaignRulesSection(ctx.campaignRules);
+  if (campaignRules !== undefined) sections.push(campaignRules);
 
   if (ctx.scene !== undefined) {
     const transcript =

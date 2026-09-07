@@ -5,17 +5,20 @@ import { gracefulClose } from './playClose.js';
 import { runMoneyCommand, showWallet } from './playCurrency.js';
 import { showParty, switchActiveCharacter } from './playParty.js';
 import { runLevelUpCommand, showProgression } from './playProgression.js';
+import { offerAmbiguityRulings } from './playRulings.js';
 import type { PlayDeps } from './playTypes.js';
+import { runRulesSlashCommand } from './rules.js';
 
 /** Inputs that end the turn loop and trigger a graceful close. */
 const QUIT_COMMANDS = new Set(['/quit', '/exit']);
 
 /**
- * Handle a party-management slash command. Returns true if `input` was a
+ * Handle a session-management slash command (party, progression, money,
+ * campaign rules). Returns true if `input` was a
  * recognized command (and was handled), so the caller skips the turn.
  * Unrecognized slash inputs return false and fall through to a normal turn.
  */
-async function handlePartyCommand(
+async function handleSessionCommand(
   deps: PlayDeps,
   db: Db,
   campaignId: string,
@@ -49,6 +52,9 @@ async function handlePartyCommand(
       return true;
     case '/money':
       runMoneyCommand(deps, db, sessionId, arg);
+      return true;
+    case '/rules':
+      runRulesSlashCommand(deps.io, db, campaignId, arg);
       return true;
     default:
       return false;
@@ -88,7 +94,7 @@ export async function turnLoop(
     }
     if (
       input.startsWith('/') &&
-      (await handlePartyCommand(deps, db, campaignId, sessionId, input))
+      (await handleSessionCommand(deps, db, campaignId, sessionId, input))
     ) {
       continue;
     }
@@ -123,6 +129,7 @@ export async function turnLoop(
       // and `runTurn` resolves once the turn is finished, so narration is
       // written in one shot rather than streamed token-by-token (see ADR 0002).
       deps.io.write(result.narration);
+      await offerAmbiguityRulings(deps, db, campaignId, result.toolCalls);
     } else if (result.isRateLimit) {
       const retryHint =
         result.retryAfterSeconds !== undefined

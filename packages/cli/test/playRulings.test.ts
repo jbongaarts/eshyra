@@ -1,0 +1,306 @@
+import {
+  createDefaultToolRegistry,
+  createSeededRng,
+  type ExecutedToolCall,
+  formatCampaignPosition,
+  getCampaignRule,
+  initSchema,
+  lookupCampaignAmbiguity,
+  openDatabase,
+  recordAmbiguityRuling,
+  revokeCampaignRule,
+  supersedeCampaignRule,
+} from '@eshyra/core';
+import { resolveCampaignPosition } from '@eshyra/core/internal';
+import { describe, expect, it } from 'vitest';
+import { offerAmbiguityRulings } from '../src/playRulings.js';
+import type { PlayDeps } from '../src/playTypes.js';
+
+const AMBIGUITY_ID = 'ambiguity:create-undead-ghast-wight-composition';
+const INTERPRETATIONS = [
+  { id: 'homogeneous-alternative', summary: 'Use one creature type.' },
+  { id: 'mixed-within-total', summary: 'Mix creature types.' },
+] as const;
+
+function setup(): {
+  db: ReturnType<typeof openDatabase>;
+  lines: string[];
+  prompts: string[];
+  deps: PlayDeps;
+} {
+  const db = openDatabase(':memory:');
+  initSchema(db);
+  resolveCampaignPosition(db, {
+    campaignId: 'campaign-1',
+    sessionId: 'session-1',
+    turnId: 'turn-1',
+  });
+  const lines: string[] = [];
+  const prompts: string[] = [];
+  const deps = {
+    io: {
+      write: (line: string) => lines.push(line),
+      prompt: async (question: string) => {
+        prompts.push(question);
+        return '2';
+      },
+    },
+  } as unknown as PlayDeps;
+  return { db, lines, prompts, deps };
+}
+
+function call(status: string, ambiguityId = AMBIGUITY_ID): ExecutedToolCall {
+  const resultData = {
+    ambiguityId,
+    question: 'Can the total include both a ghast and a wight?',
+    interpretations: INTERPRETATIONS,
+    status,
+    ruling:
+      status === 'resolved'
+        ? {
+            ruleIdentity: `ruling:${ambiguityId.slice('ambiguity:'.length)}:`,
+            selectedInterpretationId: 'mixed-within-total',
+            prose: 'Use mixed types.',
+          }
+        : null,
+  };
+  return {
+    tool: 'request_ambiguity_ruling',
+    args: { ambiguityId },
+    result: { ok: true, data: resultData },
+    mutates: false,
+    source: 'native',
+  };
+}
+
+describe('play ambiguity rulings', () => {
+  it('records the selected interpretation and prints the prospective confirmation', async () => {
+    const { db, lines, prompts, deps } = setup();
+    await offerAmbiguityRulings(deps, db, 'campaign-1', [call('unresolved')]);
+    expect(
+      getCampaignRule(db, {
+        campaignId: 'campaign-1',
+        ruleIdentity: `ruling:${AMBIGUITY_ID.slice('ambiguity:'.length)}:2`,
+      }),
+    ).toMatchObject({
+      origin: 'player-approved',
+      provenance: {
+        selectedInterpretationId: 'mixed-within-total',
+      },
+      effectivePosition: { ordinal: 2 },
+    });
+    expect(prompts).toEqual([
+      'Choose an interpretation number, or press Enter to leave it unresolved: ',
+    ]);
+    expect(lines.at(-1)).toContain('Ruling recorded');
+    db.close();
+  });
+
+  it.each(['', 'not-a-number'])(
+    'does not create a ruling for input %j',
+    async (answer) => {
+      const { db, lines, deps } = setup();
+      deps.io.prompt = async () => answer;
+      await offerAmbiguityRulings(deps, db, 'campaign-1', [call('unresolved')]);
+      expect(
+        db.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
+      ).toEqual({ count: 0 });
+      expect(lines.at(-1)).toBe('Left unresolved.');
+      db.close();
+    },
+  );
+
+  it('prompts only through a successful request_ambiguity_ruling call (eshyra-jhpt.6)', async () => {
+    const { db, lines, prompts, deps } = setup();
+    const failed: ExecutedToolCall = {
+      ...call('unresolved'),
+      result: {
+        ok: false,
+        code: 'lookup_failed',
+        message: 'ambiguity lookup failed',
+      },
+    };
+    const narration: ExecutedToolCall = {
+      tool: 'lookup_rules',
+      args: { key: 'spell:create-undead' },
+      result: { ok: true, data: { ambiguityId: AMBIGUITY_ID } },
+      mutates: false,
+      source: 'native',
+    };
+    await offerAmbiguityRulings(deps, db, 'campaign-1', [narration, failed]);
+    expect(prompts).toHaveLength(0);
+    expect(lines).toHaveLength(0);
+    expect(
+      db.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
+    ).toEqual({ count: 0 });
+    db.close();
+  });
+
+  it('fails closed on conflicting rulings end to end: no prompt, no third ruling, repair via /rules (eshyra-jhpt.4/.6)', async () => {
+    const { db, lines, prompts, deps } = setup();
+    const insert = db.prepare(`
+      INSERT INTO campaign_rule (
+        campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
+        ambiguity_id, selected_interpretation_id, question_id, rationale,
+        effective_position, temporal_mode, disputed_position, superseded_by,
+        revoked_position, scope, governing_record_keys_json, prose, provenance,
+        session_id, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `);
+    const p1 = { sessionId: 'session-1', turnId: 'turn-1', ordinal: 1 };
+    for (const [identity, selected] of [
+      ['raw-ruling-one', 'homogeneous-alternative'],
+      ['raw-ruling-two', 'mixed-within-total'],
+    ]) {
+      insert.run(
+        'campaign-1',
+        identity,
+        'ruling',
+        'active',
+        'player-approved',
+        'ambiguity',
+        AMBIGUITY_ID,
+        selected,
+        null,
+        null,
+        formatCampaignPosition(p1),
+        'prospective',
+        null,
+        null,
+        null,
+        'test',
+        '[]',
+        identity,
+        `${AMBIGUITY_ID}#${selected}`,
+        'test',
+        '2026-09-06T00:00:00.000Z',
+      );
+    }
+
+    // The tool the DM must call reports the conflict rather than a choice.
+    const registry = createDefaultToolRegistry();
+    const toolResult = registry.invoke(
+      'request_ambiguity_ruling',
+      { ambiguityId: AMBIGUITY_ID },
+      {
+        db,
+        rng: createSeededRng(1),
+        campaignId: 'campaign-1',
+        sessionId: 'session-1',
+        turnId: 'turn-1',
+        at: '2026-09-06T00:00:00.000Z',
+        position: p1,
+      },
+    );
+    expect(toolResult).toMatchObject({
+      ok: true,
+      data: {
+        status: 'conflicting',
+        conflictingRulings: ['raw-ruling-one', 'raw-ruling-two'],
+        ruling: null,
+      },
+    });
+
+    // The post-turn workflow never prompts and never persists for a conflict.
+    const executed: ExecutedToolCall = {
+      tool: 'request_ambiguity_ruling',
+      args: { ambiguityId: AMBIGUITY_ID },
+      result: toolResult,
+      mutates: false,
+      source: 'native',
+    };
+    await offerAmbiguityRulings(deps, db, 'campaign-1', [executed, executed]);
+    expect(prompts).toHaveLength(0);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain(
+      `Rulings raw-ruling-one, raw-ruling-two for ${AMBIGUITY_ID} conflict; none is authoritative`,
+    );
+    expect(lines[0]).toContain("'/rules revoke <ruleIdentity>'");
+    expect(lines[0]).not.toContain('supersede');
+
+    // Ordinary supersession is NOT an advertised repair: a same-ambiguity
+    // successor still overlaps the other conflicting ruling and is rejected.
+    const one = getCampaignRule(db, {
+      campaignId: 'campaign-1',
+      ruleIdentity: 'raw-ruling-one',
+    });
+    if (one === undefined) throw new Error('seeded ruling missing');
+    expect(() =>
+      supersedeCampaignRule(db, {
+        campaignId: 'campaign-1',
+        ruleIdentity: 'raw-ruling-one',
+        successor: {
+          ...one,
+          ruleIdentity: 'raw-ruling-one-successor',
+          effectivePosition: { ...p1, ordinal: 2 },
+          temporalMode: { mode: 'prospective' },
+          governingRecordKeys: ['spell:create-undead'],
+          prose: 'Use the mixed reading.',
+        },
+        currentPosition: p1,
+        validation: {
+          ambiguity: lookupCampaignAmbiguity(db, {
+            campaignId: 'campaign-1',
+            ambiguityId: AMBIGUITY_ID,
+            position: p1,
+          }).ambiguity,
+        },
+      }),
+    ).toThrow("overlaps 'raw-ruling-two'");
+    expect(
+      db.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
+    ).toEqual({ count: 2 });
+
+    // Ordinary recording cannot paper over the conflict with a third ruling.
+    expect(() =>
+      recordAmbiguityRuling(db, {
+        campaignId: 'campaign-1',
+        ambiguityId: AMBIGUITY_ID,
+        interpretationId: 'mixed-within-total',
+        currentPosition: p1,
+      }),
+    ).toThrow(
+      'has conflicting active rulings raw-ruling-one, raw-ruling-two; revoke one with /rules revoke',
+    );
+    expect(
+      db.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
+    ).toEqual({ count: 2 });
+
+    // Management repair is the only path: revoking one ruling resolves it.
+    revokeCampaignRule(db, {
+      campaignId: 'campaign-1',
+      ruleIdentity: 'raw-ruling-one',
+      revokedPosition: { ...p1, ordinal: 2 },
+      currentPosition: p1,
+    });
+    expect(
+      lookupCampaignAmbiguity(db, {
+        campaignId: 'campaign-1',
+        ambiguityId: AMBIGUITY_ID,
+        position: { ...p1, ordinal: 2 },
+      }),
+    ).toMatchObject({
+      status: 'resolved',
+      ruling: { ruleIdentity: 'raw-ruling-two' },
+      conflictingRulings: [],
+    });
+    db.close();
+  });
+
+  it('does not prompt a resolved ambiguity and deduplicates repeated requests', async () => {
+    const resolved = setup();
+    await offerAmbiguityRulings(resolved.deps, resolved.db, 'campaign-1', [
+      call('resolved'),
+    ]);
+    expect(resolved.prompts).toHaveLength(0);
+    resolved.db.close();
+
+    const duplicate = setup();
+    await offerAmbiguityRulings(duplicate.deps, duplicate.db, 'campaign-1', [
+      call('unresolved'),
+      call('unresolved'),
+    ]);
+    expect(duplicate.prompts).toHaveLength(1);
+    duplicate.db.close();
+  });
+});

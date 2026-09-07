@@ -1,3 +1,7 @@
+import {
+  type CampaignRulesContext,
+  renderCampaignRulesSection,
+} from '../campaign/campaignContext.js';
 import { redactSecrets } from '../memory/turnFailureDiagnostic.js';
 import type { ModelClient, ModelTraceMetadata } from '../model/client.js';
 import type { RecentSceneEvidence, StateSnapshot } from './contextAssembler.js';
@@ -102,6 +106,8 @@ export interface TurnAuditInput {
    * all count as executed evidence.
    */
   readonly executedToolCalls: readonly ExecutedToolCall[];
+  /** Exact campaign-rule context rendered for the primary DM this turn. */
+  readonly campaignRules?: CampaignRulesContext;
   /**
    * Structured current state already present in the DM's bounded context. This
    * is evidence for read-only claims and avoids requiring memory drilldown for
@@ -291,6 +297,45 @@ export function buildAuditSystemPrompt(): string {
     '',
     AUDIT_POLICY,
     '',
+    'Active campaign rulings and house rules are binding on both the DM and',
+    'auditor. Judge the candidate against canonical pack semantics plus these',
+    'campaign rules. When relying on one, cite its ruleIdentity in the reason.',
+    'Never propose creating or modifying a campaign rule.',
+    'The Campaign Rules section is the shared authority on which entries are',
+    'binding, and its explicit exceptions win over the general statement above:',
+    'an entry marked CONFLICT (active rulings contradict one another; none is',
+    'authoritative) binds nobody; an entry marked UNREPRESENTABLE ACTIVE',
+    'CAMPAIGN RULE requires repair before it can be interpreted, so never treat',
+    'it as binding or rely on it in either direction.',
+    'CONFLICT is distinct from UNRESOLVED and is NOT repaired through',
+    '`request_ambiguity_ruling` or a player-choice prompt: the request cannot be',
+    'completed while two rulings overlap, and no prompt follows the turn. Reject',
+    'a candidate that asserts a definite outcome for a CONFLICT ambiguity, that',
+    'applies either conflicting ruling, or that promises the player a choice',
+    'prompt for it, citing the ambiguity id. Do not require',
+    '`request_ambiguity_ruling` for a CONFLICT ambiguity. A candidate that says',
+    'the rulings conflict and that the player must revoke one with /rules',
+    'revoke before the outcome can be adjudicated may be accepted. A CONFLICT',
+    'entry whose ambiguity is absent or whose source is unavailable is still a',
+    'CONFLICT: the contradiction is known from the rulings themselves.',
+    'A candidate that asserts a definite outcome for an ambiguity listed as',
+    'UNRESOLVED without an active ruling must be rejected, with a reason citing',
+    'the ambiguity id. Deferring to the player is only acceptable through the',
+    'player-ruling workflow: when an UNRESOLVED ambiguity is material to the',
+    'candidate (the outcome the candidate narrates or defers depends on it), the',
+    'executed calls MUST include a successful `request_ambiguity_ruling` for that',
+    'ambiguity id. If they do not, reject with missingRequiredCalls',
+    '[{"tool":"request_ambiguity_ruling","target":"<ambiguity id>"}] — a',
+    'candidate that merely narrates the uncertainty without that call leaves the',
+    'ambiguity unresolved for every later turn and must not be accepted. A',
+    'candidate whose executed calls include that successful request, which',
+    'presents the interpretations neutrally, and which selects none of them may',
+    'be accepted. An ambiguity that is already resolved by an active ruling needs',
+    'no request; judge the candidate against the ruling instead. This required',
+    'call applies only when `request_ambiguity_ruling` is listed under Provided',
+    'Tools; a DM cannot call a tool it was not given, so in that case judge only',
+    'that the candidate asserts no definite outcome for the ambiguity.',
+    '',
     'Respond with ONLY a single JSON object, no prose and no code fences, of the',
     'exact shape:',
     '{"verdict":"accept"|"reject","missingRequiredCalls":[{"tool":"<tool>","target":"<record/intent>"}],"disallowedToolCalls":["<tool>"],"reason":"<short>","repairInstruction":"<short>","presentationOnlyRepair":null|{"kind":"roll_ledger"}}',
@@ -454,6 +499,10 @@ export function buildAuditUserMessage(input: TurnAuditInput): string {
     .map(summarizeCanonTierEvidence)
     .filter((entry): entry is Record<string, unknown> => entry !== undefined);
   const explicitActionTools = input.requiresExplicitActionTools ?? [];
+  const campaignRules =
+    input.campaignRules === undefined
+      ? undefined
+      : renderCampaignRulesSection(input.campaignRules);
   return [
     '## Provided Tools',
     input.providedToolNames.length > 0
@@ -486,6 +535,8 @@ export function buildAuditUserMessage(input: TurnAuditInput): string {
     input.currentStateSnapshot === undefined
       ? '(not supplied)'
       : boundedAuditJson(input.currentStateSnapshot),
+    '',
+    campaignRules ?? '## Campaign Rules\n(none)',
     '',
     '## Player Input',
     input.playerInput,
