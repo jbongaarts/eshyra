@@ -61,7 +61,10 @@ export type { CampaignRulesContext } from './campaign/campaignContext.js';
 // Campaign-owned rulings and house rules. These are stable because the CLI
 // exposes their durable management workflow to external users.
 export { assembleCampaignRulesContext } from './campaign/campaignContext.js';
-export { getCurrentCampaignPosition } from './campaign/campaignPosition.js';
+export {
+  getCampaignPositionAtOrdinal,
+  getCurrentCampaignPosition,
+} from './campaign/campaignPosition.js';
 export {
   createCampaignRule,
   getCampaignRule,

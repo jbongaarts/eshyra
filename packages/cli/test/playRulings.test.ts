@@ -103,6 +103,32 @@ describe('play ambiguity rulings', () => {
     },
   );
 
+  it('prompts only through a successful request_ambiguity_ruling call (eshyra-jhpt.6)', async () => {
+    const { db, lines, prompts, deps } = setup();
+    const failed: ExecutedToolCall = {
+      ...call('unresolved'),
+      result: {
+        ok: false,
+        code: 'lookup_failed',
+        message: 'ambiguity lookup failed',
+      },
+    };
+    const narration: ExecutedToolCall = {
+      tool: 'lookup_rules',
+      args: { key: 'spell:create-undead' },
+      result: { ok: true, data: { ambiguityId: AMBIGUITY_ID } },
+      mutates: false,
+      source: 'native',
+    };
+    await offerAmbiguityRulings(deps, db, 'campaign-1', [narration, failed]);
+    expect(prompts).toHaveLength(0);
+    expect(lines).toHaveLength(0);
+    expect(
+      db.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
+    ).toEqual({ count: 0 });
+    db.close();
+  });
+
   it('does not prompt a resolved ambiguity and deduplicates repeated requests', async () => {
     const resolved = setup();
     await offerAmbiguityRulings(resolved.deps, resolved.db, 'campaign-1', [

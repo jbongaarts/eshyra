@@ -18,6 +18,7 @@ import {
   createCampaignRule,
   formatCampaignPosition,
   getCampaign,
+  getCampaignPositionAtOrdinal,
   getCampaignRule,
   getCurrentCampaignPosition,
   listActiveCampaignRulesAtPosition,
@@ -154,35 +155,64 @@ function withCampaign(
   }
 }
 
+/**
+ * Resolve a player-supplied `--at` / `--effective` value to a canonical
+ * campaign position.
+ *
+ * A bare ordinal names the persisted chronology anchor at that ordinal when
+ * one exists, so `--at 10` and the formatted real P10 anchor describe the same
+ * active set (including a disputed-turn rule effective exactly at P10). Only
+ * an ordinal with no persisted anchor yet resolves to the reserved future
+ * anchor. A formatted position at an already-persisted ordinal must match the
+ * persisted anchor; a fabricated anchor at that ordinal would otherwise move
+ * the same-ordinal tie-break and change the active set.
+ */
 function parsePosition(
   value: string,
-  current: CampaignPosition,
+  db: Db,
+  campaignId: string,
 ): CampaignPosition {
   if (/^\d+$/.test(value)) {
     const ordinal = Number(value);
     if (!Number.isSafeInteger(ordinal)) {
       throw new CampaignRuleError(`invalid campaign position ordinal ${value}`);
     }
-    return {
-      sessionId: FUTURE_POSITION_ANCHOR,
-      turnId: FUTURE_POSITION_ANCHOR,
-      ordinal,
-    };
+    return (
+      getCampaignPositionAtOrdinal(db, campaignId, ordinal) ?? {
+        sessionId: FUTURE_POSITION_ANCHOR,
+        turnId: FUTURE_POSITION_ANCHOR,
+        ordinal,
+      }
+    );
   }
-  // `current` is part of the signature to make this helper's use explicit at
-  // every command boundary; formatted positions carry their own anchor.
-  void current;
-  return parseCampaignPosition(value);
+  const position = parseCampaignPosition(value);
+  const persisted = getCampaignPositionAtOrdinal(
+    db,
+    campaignId,
+    position.ordinal,
+  );
+  if (
+    persisted !== undefined &&
+    (persisted.sessionId !== position.sessionId ||
+      persisted.turnId !== position.turnId)
+  ) {
+    throw new CampaignRuleError(
+      `campaign position ${value} does not match the persisted turn at ordinal ${position.ordinal} (${formatCampaignPosition(persisted)})`,
+    );
+  }
+  return position;
 }
 
 function effectivePosition(
   parsed: ParsedArgs,
+  db: Db,
+  campaignId: string,
   current: CampaignPosition,
 ): CampaignPosition {
   const explicit = flag(parsed, 'effective');
   return explicit === undefined
     ? { ...current, ordinal: current.ordinal + 1 }
-    : parsePosition(explicit, current);
+    : parsePosition(explicit, db, campaignId);
 }
 
 function recordsFromFlag(value: string): string[] {
@@ -373,7 +403,7 @@ function listCommand(args: readonly string[], deps: RulesDeps): number {
       const at =
         flag(parsed, 'at') === undefined
           ? current
-          : parsePosition(flag(parsed, 'at') as string, current);
+          : parsePosition(flag(parsed, 'at') as string, db, id);
       const rules = parsed.booleans.has('all')
         ? listCampaignRules(db, { campaignId: id })
         : listActiveCampaignRulesAtPosition(db, id, formatCampaignPosition(at));
@@ -413,7 +443,7 @@ function ambiguitiesCommand(args: readonly string[], deps: RulesDeps): number {
         });
         const status =
           resolution.status === 'resolved'
-            ? `resolved:${resolution.ruling?.selectedInterpretationId ?? '(unknown)'}`
+            ? `resolved:${resolution.ruling?.ruleIdentity ?? '(unknown)'}`
             : resolution.status;
         deps.log(
           `${item.ambiguity.id}  status: ${status}  interpretations: ${item.ambiguity.interpretations.map(({ id: interpretationId }) => interpretationId).join(', ')}`,
@@ -581,7 +611,7 @@ function addCommand(args: readonly string[], deps: RulesDeps): number {
       const prose = requiredFlag(parsed, 'prose');
       const scope = requiredFlag(parsed, 'scope');
       const records = recordsFromFlag(requiredFlag(parsed, 'records'));
-      const effective = effectivePosition(parsed, current);
+      const effective = effectivePosition(parsed, db, id, current);
       const rule: CampaignRule = {
         ruleIdentity:
           flag(parsed, 'identity') ?? slugIdentity(kind, prose, effective),
@@ -670,7 +700,7 @@ function supersedeCommand(args: readonly string[], deps: RulesDeps): number {
         );
       }
       const prose = requiredFlag(parsed, 'prose');
-      const successorEffective = effectivePosition(parsed, current);
+      const successorEffective = effectivePosition(parsed, db, id, current);
       const successor: CampaignRule = {
         ruleIdentity:
           flag(parsed, 'identity') ??
@@ -730,7 +760,7 @@ function revokeCommand(args: readonly string[], deps: RulesDeps): number {
       const revokedPosition =
         flag(parsed, 'at') === undefined
           ? { ...current, ordinal: current.ordinal + 1 }
-          : parsePosition(flag(parsed, 'at') as string, current);
+          : parsePosition(flag(parsed, 'at') as string, db, id);
       const stored = revokeCampaignRule(db, {
         campaignId: id,
         ruleIdentity: identity as string,

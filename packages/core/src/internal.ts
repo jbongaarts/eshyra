@@ -89,6 +89,7 @@ export {
   renderCampaignRulesSection,
 } from './campaign/campaignContext.js';
 export {
+  getCampaignPositionAtOrdinal,
   getCurrentCampaignPosition,
   resolveCampaignPosition,
 } from './campaign/campaignPosition.js';

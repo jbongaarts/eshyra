@@ -3,7 +3,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   assembleCampaignRulesContext,
+  type CampaignPosition,
   createCampaign,
+  createCampaignRule,
   EMBERFALL_HOLLOW,
   formatCampaignPosition,
   getCampaignRule,
@@ -76,6 +78,42 @@ function advance(dbPath: string, through: number, campaignId = 'c1'): void {
         turnId: `turn-${ordinal}`,
       });
     }
+  } finally {
+    db.close();
+  }
+}
+
+function persistedPosition(ordinal: number): CampaignPosition {
+  return { sessionId: 'cli-session', turnId: `turn-${ordinal}`, ordinal };
+}
+
+/** Persist a house rule effective at the start of the (disputed) current turn. */
+function createDisputedTurnRule(
+  dbPath: string,
+  ruleIdentity: string,
+  current: CampaignPosition,
+): void {
+  const db = openDatabase(dbPath);
+  try {
+    createCampaignRule(
+      db,
+      {
+        ruleIdentity,
+        campaignId: 'c1',
+        ruleKind: 'house-rule',
+        status: 'active',
+        origin: 'player-approved',
+        provenance: { kind: 'house-rule', rationale: 'disputed replay' },
+        effectivePosition: current,
+        temporalMode: { mode: 'disputed-turn', disputedPosition: current },
+        supersededBy: null,
+        revokedPosition: null,
+        scope: 'combat',
+        governingRecordKeys: ['rule:one'],
+        prose: 'Applies from the start of the disputed turn.',
+      },
+      { currentPosition: current },
+    );
   } finally {
     db.close();
   }
@@ -411,6 +449,102 @@ describe('runRulesCommand', () => {
     }
   });
 
+  it('reads a bare --at ordinal as the persisted anchor so a disputed-turn rule at that turn is included (eshyra-jhpt.5)', () => {
+    const dbPath = campaignDb();
+    advance(dbPath, 10);
+    const p10 = persistedPosition(10);
+    createDisputedTurnRule(dbPath, 'disputed-p10', p10);
+
+    const byOrdinal = invoke(dbPath, ['list', '--at', '10']);
+    const byAnchor = invoke(dbPath, [
+      'list',
+      '--at',
+      formatCampaignPosition(p10),
+    ]);
+    expect(byOrdinal.code).toBe(0);
+    expect(byAnchor.code).toBe(0);
+    expect(byOrdinal.output).toContain(`at ${formatCampaignPosition(p10)}`);
+    expect(byOrdinal.output).toContain('disputed-p10');
+    expect(byOrdinal.output).toBe(byAnchor.output);
+    expect(invoke(dbPath, ['list']).output).toBe(byOrdinal.output);
+    expect(invoke(dbPath, ['list', '--at', '9']).output).not.toContain(
+      'disputed-p10',
+    );
+  });
+
+  it('rejects a fabricated formatted anchor at an already-persisted ordinal (eshyra-jhpt.5)', () => {
+    const dbPath = campaignDb();
+    advance(dbPath, 10);
+    const p10 = persistedPosition(10);
+    createDisputedTurnRule(dbPath, 'disputed-p10', p10);
+    const fabricated = formatCampaignPosition({
+      sessionId: 'forged-session',
+      turnId: 'forged-turn',
+      ordinal: 10,
+    });
+
+    for (const args of [
+      ['list', '--at', fabricated],
+      ['revoke', 'disputed-p10', '--at', fabricated],
+      [
+        'add',
+        '--kind',
+        'house-rule',
+        '--prose',
+        'Forged anchor rule.',
+        '--scope',
+        'combat',
+        '--records',
+        'rule:one',
+        '--effective',
+        fabricated,
+      ],
+    ]) {
+      const result = invoke(dbPath, args);
+      expect(result.code).toBe(1);
+      expect(result.output).toContain(
+        `does not match the persisted turn at ordinal 10 (${formatCampaignPosition(p10)})`,
+      );
+    }
+    expect(invoke(dbPath, ['list', '--all']).output).not.toContain(
+      'forged-anchor-rule',
+    );
+    expect(invoke(dbPath, ['list', '--at', '10']).output).toContain(
+      'disputed-p10  [house-rule/active]',
+    );
+  });
+
+  it('still reads a genuinely future ordinal at the future anchor with its scheduled rule (eshyra-jhpt.5)', () => {
+    const dbPath = campaignDb();
+    advance(dbPath, 3);
+    const added = invoke(dbPath, [
+      'add',
+      '--kind',
+      'house-rule',
+      '--identity',
+      'scheduled-p7',
+      '--prose',
+      'Scheduled for turn seven.',
+      '--scope',
+      'combat',
+      '--records',
+      'rule:one',
+      '--effective',
+      '7',
+    ]);
+    expect(added.code).toBe(0);
+    const future = invoke(dbPath, ['list', '--at', '7']);
+    expect(future.code).toBe(0);
+    expect(future.output).toContain(
+      'at cp1~000000000007~__future__~__future__',
+    );
+    expect(future.output).toContain('scheduled-p7');
+    expect(invoke(dbPath, ['list', '--at', '6']).output).not.toContain(
+      'scheduled-p7',
+    );
+    expect(invoke(dbPath, ['list']).output).not.toContain('scheduled-p7');
+  });
+
   it('accepts a formatted --at position and rejects malformed command arguments', () => {
     const dbPath = campaignDb();
     const malformed = invoke(dbPath, ['list', '--at']);
@@ -489,6 +623,40 @@ describe('runRulesCommand', () => {
     ]);
     expect(second.code).toBe(0);
     expect(second.output).toContain('already resolved by');
+  });
+
+  it('reports the durable ruling identity for a resolved ambiguity (eshyra-jhpt.6)', () => {
+    const dbPath = campaignDb();
+    advance(dbPath, 1);
+    const resolved = invoke(dbPath, [
+      'resolve',
+      'ambiguity:create-undead-ghast-wight-composition',
+      '--interpretation',
+      'mixed-within-total',
+    ]);
+    expect(resolved.code).toBe(0);
+    expect(resolved.output).toContain(
+      'ruling:create-undead-ghast-wight-composition:2',
+    );
+    expect(invoke(dbPath, ['ambiguities']).output).toContain(
+      'ambiguity:create-undead-ghast-wight-composition  status: unresolved',
+    );
+
+    advance(dbPath, 2);
+    const result = invoke(dbPath, ['ambiguities']);
+    expect(result.code).toBe(0);
+    const line = result.output
+      .split('\n')
+      .find((entry) =>
+        entry.startsWith('ambiguity:create-undead-ghast-wight-composition'),
+      );
+    expect(line).toContain(
+      'status: resolved:ruling:create-undead-ghast-wight-composition:2',
+    );
+    expect(line).not.toContain('resolved:mixed-within-total');
+    expect(line).toContain('interpretations:');
+    expect(line).toContain('homogeneous-alternative');
+    expect(line).toContain('mixed-within-total');
   });
 
   it('lists known interpretations for an unknown resolve choice', () => {

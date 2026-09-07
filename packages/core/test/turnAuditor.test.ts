@@ -252,6 +252,61 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
     expect(prompt).toContain('Never propose creating or modifying');
   });
 
+  it('requires the player-ruling request for a material unresolved ambiguity (eshyra-jhpt.6)', () => {
+    const prompt = buildAuditSystemPrompt();
+    expect(prompt).toContain(
+      'UNRESOLVED without an active ruling must be rejected',
+    );
+    expect(prompt).toContain(
+      'executed calls MUST include a successful `request_ambiguity_ruling` for that',
+    );
+    expect(prompt).toContain(
+      '[{"tool":"request_ambiguity_ruling","target":"<ambiguity id>"}]',
+    );
+    expect(prompt).toContain(
+      'merely narrates the uncertainty without that call leaves the',
+    );
+    expect(prompt).toContain('selects none of them may');
+    expect(prompt).toContain('already resolved by an active ruling needs');
+    expect(prompt).not.toContain('defers to the player is acceptable');
+  });
+
+  it('honors the shared CONFLICT and UNREPRESENTABLE exceptions over the binding rule (eshyra-jhpt.4)', () => {
+    const prompt = buildAuditSystemPrompt();
+    expect(prompt).toContain(
+      'explicit exceptions win over the general statement',
+    );
+    expect(prompt).toContain('marked CONFLICT');
+    expect(prompt).toContain(
+      'binds nobody, so treat that ambiguity as UNRESOLVED',
+    );
+    expect(prompt).toContain(
+      'marked UNREPRESENTABLE ACTIVE CAMPAIGN RULE requires repair',
+    );
+    expect(prompt).toContain('never treat it as binding');
+  });
+
+  it('carries a verdict that names the missing ambiguity request by ambiguity id', async () => {
+    const model = new FakeAuditModel(
+      '{"verdict":"reject","missingRequiredCalls":[{"tool":"request_ambiguity_ruling","target":"ambiguity:create-undead-ghast-wight-composition"}],"disallowedToolCalls":[],"reason":"ambiguity:create-undead-ghast-wight-composition is unresolved and material","repairInstruction":"call request_ambiguity_ruling"}',
+    );
+    const auditor = new ModelTurnAuditor(model, 'm');
+    const verdict = await auditor.audit({
+      playerInput: 'Can I mix a ghast and a wight?',
+      candidateResponse: 'The source is ambiguous; I need your choice.',
+      providedToolNames: ['lookup_rules', 'request_ambiguity_ruling'],
+      executedToolCalls: [],
+    });
+    expect(verdict.verdict).toBe('reject');
+    expect(verdict.missingRequiredCalls).toEqual([
+      {
+        tool: 'request_ambiguity_ruling',
+        target: 'ambiguity:create-undead-ghast-wight-composition',
+      },
+    ]);
+    expect(verdict.missingRequiredTools).toEqual(['request_ambiguity_ruling']);
+  });
+
   it('user message lists the explicit-action-only tools for the turn', () => {
     const message = buildAuditUserMessage({
       playerInput: 'What am I equipped with?',
@@ -318,6 +373,131 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
     expect(message.indexOf('## Campaign Rules')).toBeLessThan(
       message.indexOf('## Player Input'),
     );
+  });
+});
+
+describe('audit prompt campaign-rule authority states (eshyra-jhpt.4)', () => {
+  const ambiguity = {
+    id: 'ambiguity:conflict-test',
+    question: 'Which reading governs?',
+    source: [{ locator: 'test', clauseId: 'clause:conflict' }],
+    affects: ['record:conflict'],
+    interpretations: [
+      { id: 'reading-a', summary: 'Reading A.' },
+      { id: 'reading-b', summary: 'Reading B.' },
+    ],
+    canonicalResolution: null,
+    runtimeDisposition: { status: 'model-adjudication', owner: 'primary-dm' },
+  } as const;
+  const ruling = (identity: string, interpretation: string) =>
+    ({
+      ruleIdentity: identity,
+      ruleKind: 'ruling',
+      status: 'active',
+      origin: 'player-approved',
+      provenance: `ambiguity:${ambiguity.id}#${interpretation}`,
+      effectivePosition: 'cp1~000000000001~session-1~turn-1',
+      supersededBy: null,
+      revokedPosition: null,
+      scope: 'tests',
+      governingRecordKeys: ['record:conflict'],
+      ambiguityId: ambiguity.id,
+      selectedInterpretationId: interpretation,
+      prose: `Use ${interpretation}.`,
+    }) as const;
+  const base = {
+    playerInput: 'I test the ruling.',
+    candidateResponse: 'The ruling applies.',
+    providedToolNames: [],
+    executedToolCalls: [],
+  };
+
+  it('renders two conflicting active rulings as non-authoritative', () => {
+    const message = buildAuditUserMessage({
+      ...base,
+      campaignRules: {
+        position: 'cp1~000000000001~session-1~turn-1',
+        rules: [],
+        unboundRulings: [],
+        unrepresentableRules: [],
+        ambiguities: [
+          {
+            ambiguity,
+            ruling: undefined,
+            conflictingRulings: [
+              ruling('ruling:conflict-a', 'reading-a'),
+              ruling('ruling:conflict-b', 'reading-b'),
+            ],
+          },
+        ],
+      },
+    });
+    expect(message).toContain(
+      'CONFLICT: active rulings ruling:conflict-a, ruling:conflict-b contradict one another; none is authoritative.',
+    );
+    expect(message).not.toContain('Active ruling ruling:conflict-a');
+    expect(message).not.toContain('Active ruling ruling:conflict-b');
+  });
+
+  it('renders an unrepresentable restored rule as requiring repair, not binding', () => {
+    const message = buildAuditUserMessage({
+      ...base,
+      campaignRules: {
+        position: 'cp1~000000000001~session-1~turn-1',
+        rules: [],
+        unboundRulings: [],
+        unrepresentableRules: [
+          {
+            ruleIdentity: 'rule:restored-broken',
+            ruleKind: 'house-rule',
+            status: 'active',
+            origin: 'player-approved',
+            provenance: 'house-rule',
+            effectivePosition: 'cp1~000000000001~session-1~turn-1',
+            supersededBy: null,
+            revokedPosition: null,
+            scope: 'tests',
+            governingRecordKeys: ['record:broken'],
+            prose: undefined,
+          },
+        ],
+        ambiguities: [],
+      },
+    });
+    expect(message).toContain(
+      'UNREPRESENTABLE ACTIVE CAMPAIGN RULE rule:restored-broken',
+    );
+    expect(message).toContain(
+      'preserved restored content requires repair before it can be interpreted',
+    );
+    expect(message).not.toContain('- [house-rule] rule:restored-broken');
+  });
+
+  it('keeps an ordinary valid ruling binding under its stable identity', () => {
+    const message = buildAuditUserMessage({
+      ...base,
+      campaignRules: {
+        position: 'cp1~000000000001~session-1~turn-1',
+        rules: [],
+        unboundRulings: [],
+        unrepresentableRules: [],
+        ambiguities: [
+          {
+            ambiguity,
+            ruling: ruling('ruling:conflict-test:1', 'reading-a'),
+            conflictingRulings: [],
+          },
+        ],
+      },
+    });
+    expect(message).toContain(
+      'Active ruling ruling:conflict-test:1 (reading-a): Use reading-a.',
+    );
+    expect(message).not.toContain('CONFLICT');
+    expect(message).not.toContain('UNRESOLVED');
+    const system = buildAuditSystemPrompt();
+    expect(system).toContain('binding on both the DM and');
+    expect(system).toContain('cite its ruleIdentity in the reason');
   });
 });
 
