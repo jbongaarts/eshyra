@@ -1,0 +1,15 @@
+@after "EFFORT=\"medium\""
++
++# Every child launched here is a dispatched implementation worker, never a
++# Captain seat occupant. `codex exec` fires SessionStart exactly like an
++# interactive session, so the event alone cannot tell the two apart; the marker
++# below is the explicit, durable launch identity that can. It is defence in
++# depth: the Codex Captain hook is registered only in the `eshyra-captain`
++# profile overlay, which this launcher never loads. Exported unconditionally so
++# a Captain terminal that dispatches cannot leak its own role into the child.
++SEAT_ROLE="dispatched-worker"
+@after "  printf ' <prompt: %s bytes from %s>\\n' \"${#PROMPT}\" \"$PROMPT_FILE\""
++  printf '  env:  ESHYRA_SEAT_ROLE=%s ESHYRA_DISPATCH_CHILD=%s\n' \
++    "$SEAT_ROLE" "$CHILD"
+@after "# the dispatch closed if the worktree vanished between the check and the launch."
++ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$CHILD" \

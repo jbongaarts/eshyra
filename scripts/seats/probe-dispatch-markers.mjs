@@ -125,68 +125,144 @@ export function probeLauncher(launcherPath, waitMs = 4000) {
   return failures;
 }
 
-const MARKER_NAMES = new Set([ROLE, CHILD, 'SEAT_ROLE']);
-
 /**
- * An added line is authorized only if it is a comment, or it mentions a marker
- * and assigns nothing but markers. Requiring a marker TOKEN alone is not
- * enough: `MODEL=opus # ESHYRA_SEAT_ROLE` mentions one while changing a default.
+ * Preservation is proven against an EXACT authorized patch, not a syntax class.
+ * A permissive grammar always leaks: a marker assignment can prefix an
+ * arbitrary command, a marker reference can be an argument to one, and a
+ * comment can be a new shebang that changes the interpreter. So the allowed
+ * external change is expressed as ordered hunks, each anchored to the baseline
+ * line it follows, and removing exactly those hunks must leave the baseline
+ * byte-for-byte.
+ *
+ * A hunk is { after: <exact baseline line, or null for start-of-file>,
+ *             lines: [<exact added lines>] }.
  */
-function isAuthorizedAddition(line) {
-  const trimmed = line.trim();
-  if (trimmed === '' || trimmed.startsWith('#')) return true;
-  if (![...MARKER_NAMES].some((name) => line.includes(name))) return false;
-  const assigned = [...line.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)=/g)].map(
-    (match) => match[1],
-  );
-  if (assigned.length > 0) return assigned.every((n) => MARKER_NAMES.has(n));
-  // No assignment: allow only a continuation of quoted marker references.
-  return /^[\s"'$\\{}A-Za-z0-9_]*$/.test(line);
+export function parseAuthorizedPatch(text) {
+  const hunks = [];
+  let current = null;
+  for (const line of text.split('\n')) {
+    if (line.startsWith('@after ')) {
+      current = { after: JSON.parse(line.slice('@after '.length)), lines: [] };
+      hunks.push(current);
+    } else if (line.startsWith('+') && current !== null) {
+      current.lines.push(line.slice(1));
+    }
+  }
+  return hunks;
 }
 
-/**
- * Establish that the launcher is the baseline plus the authorized marker
- * injection and nothing else. This walks both files as ORDERED programs:
- * shell line order is behaviour, so a comparison that ignores sequence accepts
- * a safety guard moved after the launch while every line and count survives.
- * Removing the authorized additions must leave the baseline byte-for-byte.
- */
-export function diffAgainstBaseline(current, baseline) {
-  const failures = [];
+export function formatAuthorizedPatch(hunks) {
+  return hunks
+    .map(
+      (hunk) =>
+        `@after ${JSON.stringify(hunk.after)}\n${hunk.lines
+          .map((line) => `+${line}`)
+          .join('\n')}`,
+    )
+    .join('\n');
+}
+
+/** Derive the hunks that turn baseline into current, or null if any baseline
+ * line was removed, changed, or reordered. Used to author the patch once, under
+ * human review; verification then pins the launcher to it. */
+export function derivePatch(current, baseline) {
   const currentLines = current.split('\n');
   const baselineLines = baseline.split('\n');
+  const hunks = [];
   let i = 0;
   let j = 0;
-  while (i < currentLines.length && j < baselineLines.length) {
-    if (currentLines[i] === baselineLines[j]) {
+  let pending = null;
+  while (i < currentLines.length) {
+    if (j < baselineLines.length && currentLines[i] === baselineLines[j]) {
+      pending = baselineLines[j];
       i += 1;
       j += 1;
       continue;
     }
-    if (isAuthorizedAddition(currentLines[i])) {
+    const last = hunks[hunks.length - 1];
+    if (last !== undefined && last.after === pending && last.open) {
+      last.lines.push(currentLines[i]);
+    } else {
+      for (const hunk of hunks) hunk.open = false;
+      hunks.push({ after: pending, lines: [currentLines[i]], open: true });
+    }
+    i += 1;
+  }
+  if (j < baselineLines.length) return null;
+  return hunks.map(({ after, lines }) => ({ after, lines }));
+}
+
+export function diffAgainstBaseline(current, baseline, authorizedPatch = []) {
+  const failures = [];
+  const currentLines = current.split('\n');
+  const baselineLines = baseline.split('\n');
+  const expected = authorizedPatch.map((hunk) => ({ ...hunk }));
+  let i = 0;
+  let j = 0;
+  let previousBaseline = null;
+  let hunkIndex = 0;
+  let withinHunk = 0;
+
+  while (i < currentLines.length) {
+    if (j < baselineLines.length && currentLines[i] === baselineLines[j]) {
+      if (withinHunk !== 0) {
+        failures.push(
+          `authorized block truncated after ${JSON.stringify(currentLines[i - 1].trim().slice(0, 50))}`,
+        );
+        return failures;
+      }
+      previousBaseline = baselineLines[j];
       i += 1;
+      j += 1;
       continue;
     }
+    const hunk = expected[hunkIndex];
+    // Diagnose only after the authorized match fails: a line that reappears
+    // later in the baseline means the baseline line here was removed or moved,
+    // but a duplicated line must not be mistaken for that.
+    const unmatched =
+      hunk === undefined || currentLines[i] !== hunk.lines[withinHunk];
+    if (unmatched) {
+      if (
+        withinHunk === 0 &&
+        j < baselineLines.length &&
+        baselineLines.indexOf(currentLines[i], j + 1) !== -1
+      ) {
+        failures.push(
+          `baseline line removed or moved: ${baselineLines[j].trim().slice(0, 60)}`,
+        );
+        return failures;
+      }
+      failures.push(
+        `unauthorized addition: ${JSON.stringify(currentLines[i].trim().slice(0, 60))}`,
+      );
+      return failures;
+    }
+    if (withinHunk === 0 && hunk.after !== previousBaseline) {
+      failures.push(
+        `authorized block appears at the wrong anchor: expected it after ${JSON.stringify(
+          (hunk.after ?? '<start of file>').trim().slice(0, 50),
+        )}, found it after ${JSON.stringify(
+          (previousBaseline ?? '<start of file>').trim().slice(0, 50),
+        )}`,
+      );
+      return failures;
+    }
+    withinHunk += 1;
+    i += 1;
+    if (withinHunk === hunk.lines.length) {
+      hunkIndex += 1;
+      withinHunk = 0;
+    }
+  }
+
+  if (j < baselineLines.length) {
     failures.push(
-      `unauthorized change at baseline line ${j + 1}: expected ${JSON.stringify(
-        baselineLines[j].trim().slice(0, 60),
-      )}, found ${JSON.stringify(currentLines[i].trim().slice(0, 60))}`,
+      `baseline line removed or moved: ${baselineLines[j].trim().slice(0, 60)}`,
     );
-    return failures;
   }
-  for (; j < baselineLines.length; j += 1) {
-    if (baselineLines[j].trim() !== '') {
-      failures.push(
-        `baseline line removed or moved: ${baselineLines[j].trim().slice(0, 60)}`,
-      );
-    }
-  }
-  for (; i < currentLines.length; i += 1) {
-    if (!isAuthorizedAddition(currentLines[i])) {
-      failures.push(
-        `unrelated line added: ${currentLines[i].trim().slice(0, 60)}`,
-      );
-    }
+  if (hunkIndex < expected.length) {
+    failures.push('an authorized block is missing from the launcher');
   }
   return failures;
 }
@@ -208,14 +284,43 @@ if (invokedDirectly) {
     );
     process.exit(2);
   }
-  const failures = probeLauncher(launcher);
+  const authorizeIndex = rest.indexOf('--authorize');
   const baselineIndex = rest.indexOf('--baseline');
+  const patchIndex = rest.indexOf('--patch');
+
+  // Authoring mode: derive the patch once, for human review, then pin to it.
+  if (authorizeIndex !== -1) {
+    if (baselineIndex === -1) {
+      process.stderr.write('--authorize requires --baseline\n');
+      process.exit(2);
+    }
+    const derived = derivePatch(
+      readFileSync(launcher, 'utf8'),
+      readFileSync(rest[baselineIndex + 1], 'utf8'),
+    );
+    if (derived === null) {
+      process.stderr.write('launcher removed or reordered baseline lines\n');
+      process.exit(1);
+    }
+    writeFileSync(
+      rest[authorizeIndex + 1],
+      `${formatAuthorizedPatch(derived)}\n`,
+    );
+    process.stdout.write(`wrote ${rest[authorizeIndex + 1]}\n`);
+    process.exit(0);
+  }
+
+  const failures = probeLauncher(launcher);
   if (baselineIndex !== -1) {
-    const baselinePath = rest[baselineIndex + 1];
+    const patch =
+      patchIndex === -1
+        ? []
+        : parseAuthorizedPatch(readFileSync(rest[patchIndex + 1], 'utf8'));
     failures.push(
       ...diffAgainstBaseline(
         readFileSync(launcher, 'utf8'),
-        readFileSync(baselinePath, 'utf8'),
+        readFileSync(rest[baselineIndex + 1], 'utf8'),
+        patch,
       ),
     );
   }

@@ -61,11 +61,19 @@ reproducible outside Codex, and mirroring it would rot the moment Codex changed
 its normalisation. So `--check` does not infer execution from config text: the
 installed shim stamps `.last-run` every time Codex actually dispatches the hook,
 and the stamp records the *identity* of what ran — a digest of the hook
-declaration plus its persisted trust state, and of the Codex binary that
+declaration plus its persisted trust state, and of the Codex runtime that
 executed it. An old observation therefore cannot certify a hook that has since
 been edited, re-trusted with a different hash, disabled, or handed to an
 upgraded Codex. Unrelated tables Codex writes into the same profile are excluded
 from that digest, so ordinary churn does not invalidate a good observation.
+
+The runtime half is deliberately the runtime's own report (`codex --version`)
+rather than a stat of whatever `codex` resolves to on `PATH`: the npm CLI ships
+a JavaScript launcher that spawns a separate native build, so the launcher can
+be byte-identical while the build that executes hooks changes underneath it. If
+no runtime can be identified the identity is `null` and the state is
+`runtime-unknown` — it never collapses to a placeholder that would keep one
+observation valid across every future upgrade.
 
 | State | Meaning | Exit |
 |---|---|---|
@@ -75,6 +83,7 @@ from that digest, so ordinary churn does not invalidate a good observation.
 | `untrusted` | no state entry, or no usable `trusted_hash` | 1 |
 | `disabled` | trusted but `enabled = false` | 1 |
 | `stale` | declaration changed since install | 1 |
+| `runtime-unknown` | the Codex runtime could not be identified | 1 |
 | `unknown` | profile not installed | 1 |
 
 The normal lifecycle is: install → `unverified` → start one `codex-captain`
@@ -98,11 +107,27 @@ node scripts/seats/probe-dispatch-markers.mjs <launcher-path> --baseline <pre-ch
 node scripts/seats/probe-dispatch-markers.mjs <launcher-path> --print-digest
 ```
 
-`--baseline` additionally proves the launcher is its pre-change copy plus the
-authorized marker injection and nothing else, compared as an **ordered**
-program: removing the authorized additions must leave the baseline
-byte-for-byte. Shell line order is behaviour, so a comparison that ignored
-sequence would accept a safety guard moved after the launch.
+`--baseline` additionally proves the launcher is its pre-change copy plus an
+**exact authorized patch** and nothing else. The patch is ordered hunks, each
+anchored to the baseline line it follows, kept at
+`scripts/seats/dispatch-marker-patch.txt` so the authorized external change is
+reviewable in this repository:
+
+```sh
+# after an intentional launcher change, re-derive the patch for human review
+node scripts/seats/probe-dispatch-markers.mjs <launcher-path> \
+  --baseline <pre-change-copy> --authorize scripts/seats/dispatch-marker-patch.txt
+
+# routine verification pins the launcher to it
+node scripts/seats/probe-dispatch-markers.mjs <launcher-path> \
+  --baseline <pre-change-copy> --patch scripts/seats/dispatch-marker-patch.txt
+```
+
+Authorizing a *syntax class* rather than the exact patch always leaks — a marker
+assignment can prefix an arbitrary command, a marker reference can be an
+argument to one, and a comment can be a new shebang that changes the
+interpreter. Pinning to the exact anchored hunks refuses all of those, and
+refuses a correct block moved to a different anchor.
 
 `--print-digest` pins the launcher bytes; that is an identity pin, not semantic
 proof.

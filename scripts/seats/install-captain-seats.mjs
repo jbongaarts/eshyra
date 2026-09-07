@@ -189,6 +189,9 @@ export function hookTrustState({
   // added beside the declaration, and a Codex upgrade each change the identity
   // while leaving an old timestamp perfectly intact.
   if (observedIdentity === null) return 'unverified';
+  // Fail closed: an unidentifiable runtime cannot certify anything, and must
+  // never collapse to a constant that keeps an old observation alive forever.
+  if (currentIdentity === null) return 'runtime-unknown';
   return observedIdentity === currentIdentity ? 'trusted' : 'superseded';
 }
 
@@ -223,6 +226,7 @@ function reportHookTrust() {
     untrusted: `untrusted ${profilePath} (approve once on the first codex-captain launch; until then Codex skips the hook silently)`,
     disabled: `disabled ${profilePath} (hook trusted but disabled; Codex will not run it)`,
     stale: `stale ${profilePath} (declaration changed since install; run npm run seat:install)`,
+    'runtime-unknown': `runtime-unknown ${profilePath} (the Codex runtime could not be identified, so no observation can be trusted)`,
     unknown: `unknown ${profilePath} (profile not installed)`,
   }[state];
   process.stdout.write(`${message}\n`);

@@ -238,20 +238,49 @@ export function hookDeclarationIdentity(profileText, key) {
     .join('\n');
 }
 
-/** Identity of the Codex build that ran the hook, so an upgrade invalidates it. */
-export function codexBinaryIdentity(env = process.env) {
+/**
+ * Identity of the Codex RUNTIME that ran the hook, so an upgrade invalidates an
+ * earlier observation.
+ *
+ * Stat of the `codex` entry on PATH is not sufficient. The official npm CLI
+ * ships `bin/codex.js`, a launcher that resolves a separate platform package
+ * and spawns its native binary: the launcher can be byte-identical while the
+ * build that actually executes hooks changes underneath it. So the identity is
+ * anchored on what the runtime reports about itself, with the resolved entry
+ * included only as a secondary signal.
+ *
+ * Fails CLOSED: if the runtime cannot be identified this returns null rather
+ * than a constant, because a stable placeholder would let one observation stay
+ * "trusted" across every future upgrade.
+ */
+export function codexRuntimeIdentity(env = process.env) {
   if (env.ESHYRA_SEAT_CODEX_ID) return env.ESHYRA_SEAT_CODEX_ID;
+  let version = '';
+  try {
+    version = execFileSync('codex', ['--version'], {
+      encoding: 'utf8',
+      timeout: 15000,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      env,
+    }).trim();
+  } catch {
+    return null;
+  }
+  if (version === '') return null;
+
+  let entry = 'unresolved-entry';
   for (const dir of (env.PATH ?? '').split(delimiter)) {
     if (dir === '') continue;
     try {
       const resolved = realpathSync(`${dir}/codex`);
       const stat = statSync(resolved);
-      return `${resolved}:${stat.size}:${Math.trunc(stat.mtimeMs)}`;
+      entry = `${resolved}:${stat.size}:${Math.trunc(stat.mtimeMs)}`;
+      break;
     } catch {
       // not here; keep looking
     }
   }
-  return 'unresolved';
+  return `${version}|${entry}`;
 }
 
 export function seatHookIdentity(profilePath, env = process.env) {
@@ -261,10 +290,13 @@ export function seatHookIdentity(profilePath, env = process.env) {
   } catch {
     return null;
   }
+  const runtime = codexRuntimeIdentity(env);
+  // No runtime identity means no provable observation.
+  if (runtime === null) return null;
   const key = `${profilePath}:session_start:0:0`;
   return `sha256:${createHash('sha256')
     .update(hookDeclarationIdentity(profileText, key))
     .update('\u0000')
-    .update(codexBinaryIdentity(env))
+    .update(runtime)
     .digest('hex')}`;
 }

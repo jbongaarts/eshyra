@@ -12,12 +12,15 @@ import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { hookTrustState } from '../../../scripts/seats/install-captain-seats.mjs';
 import {
+  derivePatch,
   diffAgainstBaseline,
   digest,
+  formatAuthorizedPatch,
+  parseAuthorizedPatch,
   probeLauncher,
 } from '../../../scripts/seats/probe-dispatch-markers.mjs';
 import {
-  codexBinaryIdentity,
+  codexRuntimeIdentity,
   hookDeclarationIdentity,
   resolveSeatRoots,
 } from '../../../scripts/seats/seatContext.mjs';
@@ -482,7 +485,7 @@ ${librarySource}`,
     expect(call(entry(`trusted_hash = "${realHash}"\n`))).toBe('trusted');
   });
 
-  it('binds the observed identity to the declaration and the Codex build', () => {
+  it('binds the observed identity to the declaration and the Codex runtime', () => {
     const key = '/p/eshyra-captain.config.toml:session_start:0:0';
     const base = [
       '[[hooks.SessionStart]]',
@@ -499,14 +502,11 @@ ${librarySource}`,
       '[tui.model_availability_nux]',
       '"gpt-5.5" = 4',
     ].join('\n');
-
     const identityOf = (text: string) => hookDeclarationIdentity(text, key);
 
-    // A different stored trust hash changes the identity.
     expect(identityOf(base.replace('sha256:1111', 'sha256:2222'))).not.toBe(
       identityOf(base),
     );
-    // An identity-changing field added beside the declaration changes it.
     expect(
       identityOf(
         base.replace(
@@ -515,14 +515,48 @@ ${librarySource}`,
         ),
       ),
     ).not.toBe(identityOf(base));
-    // Unrelated tables Codex writes into the same file must NOT change it,
-    // or ordinary churn would keep invalidating a perfectly good observation.
+    // Unrelated tables Codex writes into the same file must NOT change it.
     expect(identityOf(`${base}\n"gpt-6" = 1`)).toBe(identityOf(base));
-    // The Codex build is part of the identity, so an upgrade invalidates it.
-    expect(codexBinaryIdentity({ ESHYRA_SEAT_CODEX_ID: 'codex-a' })).not.toBe(
-      codexBinaryIdentity({ ESHYRA_SEAT_CODEX_ID: 'codex-b' }),
-    );
   });
+
+  it('identifies the Codex runtime, not the launcher that spawns it', () => {
+    // The npm CLI ships a JS launcher that resolves a separate platform package
+    // and spawns its native binary, so the launcher file can be byte-identical
+    // while the build that actually executes hooks changes underneath it. The
+    // identity must follow the runtime's own report, and must fail closed when
+    // no runtime can be identified rather than collapse to a constant that
+    // keeps one observation "trusted" across every future upgrade.
+    const dir = mkdtempSync(join(tmpdir(), 'eshyra-codex-stub-'));
+    try {
+      const launcher = join(dir, 'codex');
+      writeFileSync(
+        launcher,
+        '#!/bin/sh\necho "codex-cli $FAKE_CODEX_VERSION"\n',
+        { mode: 0o755 },
+      );
+      const withVersion = (version: string) =>
+        codexRuntimeIdentity({
+          PATH: dir,
+          FAKE_CODEX_VERSION: version,
+        });
+
+      // Same launcher file, different runtime build.
+      const before = withVersion('0.153.4');
+      const after = withVersion('0.154.0');
+      expect(before).not.toBeNull();
+      expect(before).not.toBe(after);
+      expect(before).toContain('0.153.4');
+
+      // No codex on PATH at all: fail closed, never a stable placeholder.
+      expect(codexRuntimeIdentity({ PATH: join(dir, 'absent') })).toBeNull();
+
+      // A runtime that cannot report a version is equally unusable.
+      writeFileSync(launcher, '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+      expect(codexRuntimeIdentity({ PATH: dir })).toBeNull();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 30_000);
 
   it('round-trips a handoff and leaves the working tree untouched', () => {
     const stateDir = join(tmp, 'state');
@@ -647,56 +681,85 @@ ${librarySource}`,
     }
   }, 60_000);
 
-  it('permits only the intended marker injection, as an ordered transform', () => {
-    // Shell line order is behaviour, so preservation is checked as an ordered
-    // program: removing the authorized additions must leave the baseline
-    // byte-for-byte. A counted multiset accepts a guard moved after the launch.
+  it('permits only the exact authorized marker patch, at its anchor', () => {
+    // Preservation is proven against an exact ordered patch, not a syntax
+    // class. A permissive grammar always leaks: a marker assignment can prefix
+    // an arbitrary command, a marker reference can be an argument to one, and a
+    // comment can be a new shebang that changes the interpreter.
     const baseline = [
+      '#!/usr/bin/env bash',
       'set -eu',
       'MODEL="luna"',
       'refuse_if_parent_checkout',
       'exec codex "$@"',
     ].join('\n');
     const marked = [
+      '#!/usr/bin/env bash',
       'set -eu',
       'MODEL="luna"',
-      'refuse_if_parent_checkout',
       '# mark dispatched implementation workers',
       'SEAT_ROLE="dispatched-worker"',
+      'refuse_if_parent_checkout',
       'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$C" \\',
       'exec codex "$@"',
     ].join('\n');
-    expect(diffAgainstBaseline(marked, baseline)).toEqual([]);
 
-    // A guard moved after the launch keeps every line and count intact.
-    const reordered = [
-      'set -eu',
-      'MODEL="luna"',
-      'SEAT_ROLE="dispatched-worker"',
-      'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$C" \\',
-      'exec codex "$@"',
-      'refuse_if_parent_checkout',
-    ].join('\n');
-    expect(diffAgainstBaseline(reordered, baseline).join(' ')).toContain(
-      'unauthorized change',
-    );
+    const patch = derivePatch(marked, baseline);
+    expect(patch).not.toBeNull();
+    // The derived patch round-trips through its serialized form.
+    const pinned = parseAuthorizedPatch(formatAuthorizedPatch(patch ?? []));
+    expect(diffAgainstBaseline(marked, baseline, pinned)).toEqual([]);
 
-    // A default changed on a line that merely mentions a marker token.
-    const smuggled = marked.replace(
-      '# mark dispatched implementation workers',
-      'MODEL=opus # ESHYRA_SEAT_ROLE',
-    );
-    expect(diffAgainstBaseline(smuggled, baseline).join(' ')).toContain(
-      'unauthorized change',
-    );
+    const reject = (text: string) =>
+      diffAgainstBaseline(text, baseline, pinned).join(' ');
 
-    // An outright removed guard.
+    // A command hidden behind a marker assignment.
     expect(
-      diffAgainstBaseline(
-        marked.replace('refuse_if_parent_checkout\n', ''),
-        baseline,
-      ).join(' '),
-    ).toContain('unauthorized change');
+      reject(
+        marked.replace(
+          'SEAT_ROLE="dispatched-worker"',
+          'SEAT_ROLE="dispatched-worker"\nESHYRA_SEAT_ROLE=dispatched-worker touch /tmp/x',
+        ),
+      ),
+    ).toContain('unauthorized addition');
+    // A command that merely references a marker.
+    expect(
+      reject(
+        marked.replace(
+          'SEAT_ROLE="dispatched-worker"',
+          'SEAT_ROLE="dispatched-worker"\ntouch $ESHYRA_SEAT_ROLE',
+        ),
+      ),
+    ).toContain('unauthorized addition');
+    // A comment that is actually an interpreter change.
+    expect(reject(`#!/bin/sh\n${marked}`)).toContain('unauthorized addition');
+    // The authorized block moved to a different anchor.
+    const moved = [
+      '#!/usr/bin/env bash',
+      '# mark dispatched implementation workers',
+      'SEAT_ROLE="dispatched-worker"',
+      'set -eu',
+      'MODEL="luna"',
+      'refuse_if_parent_checkout',
+      'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$C" \\',
+      'exec codex "$@"',
+    ].join('\n');
+    expect(reject(moved)).toContain('wrong anchor');
+    // A removed guard that an authorized block was anchored to is rejected as
+    // a misplaced block; a removal elsewhere is reported as a removal. Both are
+    // refusals -- what matters is that neither can pass.
+    expect(reject(marked.replace('refuse_if_parent_checkout\n', ''))).toContain(
+      'wrong anchor',
+    );
+    expect(reject(marked.replace('set -eu\n', ''))).toContain(
+      'baseline line removed or moved',
+    );
+    // A changed default is refused as an unauthorized line.
+    expect(reject(marked.replace('MODEL="luna"', 'MODEL="opus"'))).toContain(
+      'unauthorized addition',
+    );
+    // A launcher that reorders baseline lines cannot even be authorized.
+    expect(derivePatch(moved.replace('set -eu\n', ''), baseline)).toBeNull();
 
     expect(digest('a')).toBe(digest('a'));
     expect(digest('a')).not.toBe(digest('b'));
