@@ -10,11 +10,12 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  checkDispatchMarkers,
-  digest,
-} from '../../../scripts/seats/check-dispatch-markers.mjs';
 import { hookTrustState } from '../../../scripts/seats/install-captain-seats.mjs';
+import {
+  diffAgainstBaseline,
+  digest,
+  probeLauncher,
+} from '../../../scripts/seats/probe-dispatch-markers.mjs';
 import { resolveSeatRoots } from '../../../scripts/seats/seatContext.mjs';
 
 // Permanent evidence for eshyra-itnm. Captain routing and the advisory
@@ -416,30 +417,56 @@ ${librarySource}`,
     }
   });
 
-  it('reports Codex hook trust using the real key, in the declaring file', () => {
-    // Measured against Codex 0.153.4: trust is keyed by the DECLARING file plus
-    // event and group/handler indices, and is written back into that same file
-    // rather than ~/.codex/config.toml. An earlier revision looked for the shim
-    // path in config.toml, which reported a genuinely trusted hook as untrusted.
+  it('treats Codex trust states Codex would not execute as not trusted', () => {
+    // Permanent evidence for the second F2 round on PR #527. Codex runs a hook
+    // only when it is enabled AND its persisted trusted_hash equals the hash it
+    // computes for the current declaration. That hash is not reproducible here,
+    // and an earlier revision papered over that by asserting a fabricated
+    // `sha256:x` was trusted -- a value that could never be a real hash. The
+    // checker now requires an OBSERVED run of the current declaration, which
+    // covers stale hashes, disabled hooks, and Codex upgrades alike.
     const profile = '/tmp/example/.codex/eshyra-captain.config.toml';
     const declaration = '[[hooks.SessionStart]]\nmatcher = ""\n';
     const key = `${profile}:session_start:0:0`;
-    const trustEntry = `[hooks.state.${JSON.stringify(key)}]\ntrusted_hash = "sha256:x"\n`;
-
-    expect(hookTrustState(null, profile, declaration)).toBe('unknown');
-    expect(hookTrustState(declaration, profile, declaration)).toBe('untrusted');
-    expect(
-      hookTrustState(`${declaration}\n${trustEntry}`, profile, declaration),
-    ).toBe('trusted');
-    expect(hookTrustState(trustEntry, profile, declaration)).toBe('stale');
-    // Trust recorded for a different hook must not count as ours.
-    expect(
-      hookTrustState(
-        `${declaration}\n[hooks.state."/other/hooks.json:session_start:0:0"]\n`,
-        profile,
+    const realHash = `sha256:${'a'.repeat(64)}`;
+    const entry = (body: string) =>
+      `${declaration}\n[hooks.state.${JSON.stringify(key)}]\n${body}`;
+    const call = (profileText: string | null, observedRun = true) =>
+      hookTrustState({
+        profileText,
+        declaringFile: profile,
         declaration,
+        observedRun,
+      });
+
+    expect(call(null)).toBe('unknown');
+    // Declaration absent or changed since install.
+    expect(
+      call(
+        `[hooks.state.${JSON.stringify(key)}]\ntrusted_hash = "${realHash}"\n`,
+      ),
+    ).toBe('stale');
+    // No state entry at all.
+    expect(call(declaration)).toBe('untrusted');
+    // Entry present but no hash, or a hash that cannot be a real one.
+    expect(call(entry('enabled = true\n'))).toBe('untrusted');
+    expect(call(entry('trusted_hash = "sha256:x"\n'))).toBe('untrusted');
+    // Trusted but explicitly disabled: Codex will not run it.
+    expect(call(entry(`trusted_hash = "${realHash}"\nenabled = false\n`))).toBe(
+      'disabled',
+    );
+    // Trust recorded for a DIFFERENT hook must not count as ours.
+    expect(
+      call(
+        `${declaration}\n[hooks.state."/other/hooks.json:session_start:0:0"]\ntrusted_hash = "${realHash}"\n`,
       ),
     ).toBe('untrusted');
+    // Well-formed and enabled, but never observed running -> not trusted.
+    expect(call(entry(`trusted_hash = "${realHash}"\n`), false)).toBe(
+      'unverified',
+    );
+    // Only an observed run of this declaration counts as trusted.
+    expect(call(entry(`trusted_hash = "${realHash}"\n`), true)).toBe('trusted');
   });
 
   it('round-trips a handoff and leaves the working tree untouched', () => {
@@ -500,59 +527,95 @@ ${librarySource}`,
     }
   });
 
-  it('verifies that a dispatch launcher marks the workers it starts', () => {
-    // Permanent evidence for the F3 producer-boundary finding on PR #527. The
-    // approved launcher lives outside this repository, so its contract is
-    // checked here against fixtures; the checker itself holds no dispatch
-    // policy and hardcodes no launcher path, so it is safe for any agent to
-    // read. Real-artifact runs are recorded on the owning bead.
-    const prefixForm = [
-      'SEAT_ROLE="dispatched-worker"',
-      'PROMPT="$(cat "$PROMPT_FILE")"',
-      'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$CHILD" \\',
-      'setsid bash -c \'exec codex "$@"\' _ "$WT"',
-    ].join('\n');
-    expect(checkDispatchMarkers(prefixForm)).toEqual([]);
+  it('observes the real child environment rather than reading the launcher', () => {
+    // Permanent evidence for the second F3 round on PR #527. A textual check
+    // accepted a launcher that exported both markers and then unset them; the
+    // child received neither. Verification therefore runs the launcher with
+    // `codex` replaced by a stub that records its own environment.
+    const dir = mkdtempSync(join(tmpdir(), 'eshyra-launcher-fixtures-'));
+    const write = (name: string, body: string) => {
+      const path = join(dir, name);
+      writeFileSync(path, body, { mode: 0o755 });
+      return path;
+    };
+    try {
+      const good = write(
+        'good.sh',
+        [
+          '#!/usr/bin/env bash',
+          'SEAT_ROLE="dispatched-worker"',
+          'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$1" \\',
+          'exec codex exec',
+          '',
+        ].join('\n'),
+      );
+      expect(probeLauncher(good)).toEqual([]);
 
-    const exportForm = [
-      'export ESHYRA_SEAT_ROLE=dispatched-worker',
-      'export ESHYRA_DISPATCH_CHILD="$CHILD"',
+      // Exported, then unset before the launch: the old textual check passed this.
+      const unset = write(
+        'unset.sh',
+        [
+          '#!/usr/bin/env bash',
+          'export ESHYRA_SEAT_ROLE=dispatched-worker',
+          'export ESHYRA_DISPATCH_CHILD="$1"',
+          'unset ESHYRA_SEAT_ROLE ESHYRA_DISPATCH_CHILD',
+          'exec codex exec',
+          '',
+        ].join('\n'),
+      );
+      expect(probeLauncher(unset)).toHaveLength(2);
+
+      // `dispatched-worker` present only in a comment, wrong value at launch.
+      const wrongValue = write(
+        'wrong.sh',
+        [
+          '#!/usr/bin/env bash',
+          '# marks each child as a dispatched-worker',
+          'ESHYRA_SEAT_ROLE=captain ESHYRA_DISPATCH_CHILD="$1" exec codex exec',
+          '',
+        ].join('\n'),
+      );
+      expect(probeLauncher(wrongValue).join(' ')).toContain(
+        'expected "dispatched-worker"',
+      );
+
+      // A launcher that never reaches a child is a failure, not a pass.
+      const noLaunch = write(
+        'nolaunch.sh',
+        '#!/usr/bin/env bash\nexport ESHYRA_SEAT_ROLE=dispatched-worker\nexit 0\n',
+      );
+      expect(probeLauncher(noLaunch).join(' ')).toContain(
+        'never reached the child process',
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  it('permits only the intended marker injection against the baseline', () => {
+    const baseline = ['set -eu', 'MODEL="luna"', 'exec codex "$@"'].join('\n');
+    const marked = [
+      'set -eu',
+      'MODEL="luna"',
+      '# mark dispatched implementation workers',
+      'SEAT_ROLE="dispatched-worker"',
+      'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$C" \\',
       'exec codex "$@"',
     ].join('\n');
-    expect(checkDispatchMarkers(exportForm)).toEqual([]);
+    expect(diffAgainstBaseline(marked, baseline)).toEqual([]);
 
-    // Unmarked launcher: both markers missing.
-    expect(checkDispatchMarkers('setsid bash -c \'exec codex "$@"\'')).toEqual([
-      'ESHYRA_SEAT_ROLE is never set',
-      'ESHYRA_DISPATCH_CHILD is never set',
-    ]);
+    // A dropped guard must be caught.
+    const guardRemoved = marked.replace('set -eu\n', '');
+    expect(diffAgainstBaseline(guardRemoved, baseline).join(' ')).toContain(
+      'baseline line removed',
+    );
 
-    // Only one marker set.
-    expect(
-      checkDispatchMarkers(
-        'ESHYRA_SEAT_ROLE=dispatched-worker setsid codex exec',
-      ),
-    ).toEqual(['ESHYRA_DISPATCH_CHILD is never set']);
+    // So must an unrelated behaviour change smuggled in alongside the markers.
+    const smuggled = `${marked}\nMODEL="something-else"`;
+    expect(diffAgainstBaseline(smuggled, baseline).join(' ')).toContain(
+      'unrelated line added',
+    );
 
-    // Wrong role value must not pass as a marked worker.
-    expect(
-      checkDispatchMarkers(
-        'ESHYRA_SEAT_ROLE=captain ESHYRA_DISPATCH_CHILD="$C" setsid codex exec',
-      ),
-    ).toContain('ESHYRA_SEAT_ROLE is not set to dispatched-worker');
-
-    // Plain shell assignments stay in the parent and never reach the child.
-    const parentOnly = [
-      'ESHYRA_SEAT_ROLE=dispatched-worker',
-      'ESHYRA_DISPATCH_CHILD="$CHILD"',
-      'printf "%s" "$ESHYRA_SEAT_ROLE" > /dev/null',
-    ].join('\n');
-    expect(checkDispatchMarkers(parentOnly)).toEqual([
-      'ESHYRA_SEAT_ROLE never reaches the child process',
-      'ESHYRA_DISPATCH_CHILD never reaches the child process',
-    ]);
-
-    // The digest is what pins "nothing else changed" for an operator.
     expect(digest('a')).toBe(digest('a'));
     expect(digest('a')).not.toBe(digest('b'));
     expect(digest('a')).toMatch(/^sha256:[0-9a-f]{64}$/);

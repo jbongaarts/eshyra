@@ -37,9 +37,7 @@ construction rather than by request.
 
 Codex requires persisted per-hook trust and **silently runs nothing** without
 it, so the first `codex-captain` launch prompts once ("Hooks need review").
-Until it is approved the seat does not inject, which is safe but quiet;
-`npm run seat:install -- --check` reports the trust state and exits non-zero
-when the hook is not trusted, so it cannot go unnoticed.
+Until it is approved the seat does not inject, which is safe but quiet.
 
 Codex runs command hooks **outside its sandbox**, and its trust decision covers
 the hook *declaration*, not whatever that command later executes. Everything
@@ -55,22 +53,49 @@ Trust is keyed by the declaring file plus event and handler indices, and Codex
 writes it back **into that same profile file**. The installer therefore owns
 only the hook declaration inside `~/.codex/eshyra-captain.config.toml` and
 leaves Codex's `[hooks.state]` alone, so reinstalling does not silently revoke
-trust. Changing the declaration does invalidate it, and Codex prompts again.
+trust.
+
+Codex executes a hook only when it is enabled *and* its stored `trusted_hash`
+matches the hash it computes for the current declaration. That hash is not
+reproducible outside Codex, and mirroring it would rot the moment Codex changed
+its normalisation. So `--check` does not infer execution from config text: the
+installed shim stamps `.last-run` every time Codex actually dispatches the hook,
+and the installer clears that stamp whenever it rewrites the declaration or the
+shim. The states are:
+
+| State | Meaning | Exit |
+|---|---|---|
+| `trusted` | this declaration has been observed running | 0 |
+| `unverified` | trust recorded, but not yet observed running | 1 |
+| `untrusted` | no state entry, or no usable `trusted_hash` | 1 |
+| `disabled` | trusted but `enabled = false` | 1 |
+| `stale` | declaration changed since install | 1 |
+| `unknown` | profile not installed | 1 |
+
+So the normal lifecycle is: install → `unverified` → start one `codex-captain`
+session and approve the prompt → `trusted`. An observed run is what proves a
+stale hash, a disabled hook, or a Codex upgrade has not quietly removed the seat.
 
 ## Dispatch marker contract
 
 Dispatched Codex workers are marked `ESHYRA_SEAT_ROLE=dispatched-worker` with
 `ESHYRA_DISPATCH_CHILD=<child>`, which the Captain classifier treats as a hard
-refusal. The launcher that sets them lives outside this repository, so verify it
-by path:
+refusal. Reading the launcher cannot prove it does this — an exported value can
+be unset again before the launch, and the literal `dispatched-worker` can appear
+in a comment while the variable is assigned something else. So the probe runs
+the real launcher in a disposable sandbox with `codex` replaced by a stub that
+records its own environment, and asserts the exact values the child received:
 
 ```sh
-node scripts/seats/check-dispatch-markers.mjs <launcher-path>
-node scripts/seats/check-dispatch-markers.mjs <launcher-path> --print-digest
-node scripts/seats/check-dispatch-markers.mjs <launcher-path> --baseline sha256:…
+node scripts/seats/probe-dispatch-markers.mjs <launcher-path>
+node scripts/seats/probe-dispatch-markers.mjs <launcher-path> --baseline <pre-change-copy>
+node scripts/seats/probe-dispatch-markers.mjs <launcher-path> --print-digest
 ```
 
-`--baseline` pins the launcher so unrelated edits are caught too.
+`--baseline` additionally proves the launcher differs from its pre-change copy
+only by the marker injection: nothing removed, and no unrelated line added.
+`--print-digest` pins the launcher bytes; that is an identity pin, not semantic
+proof.
 
 Install or check the user-local Codex pieces with:
 

@@ -5,6 +5,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
@@ -22,6 +23,7 @@ const libraryPath = join(seatsDir, 'seatContext.mjs');
 const shimPath = join(seatsDir, 'codex-captain-context.sh');
 const profilePath = join(installRoot, '.codex', 'eshyra-captain.config.toml');
 const wrapperPath = join(installRoot, '.local', 'bin', 'codex-captain');
+const lastRunPath = join(seatsDir, '.last-run');
 
 function tomlQuote(value) {
   return JSON.stringify(value);
@@ -47,6 +49,7 @@ const shim = `#!/bin/sh
 # Installed by scripts/seats/install-captain-seats.mjs. Do not edit in place:
 # the executable closure behind Codex's one-time hook trust must change only
 # through an explicit reinstall. Run \`npm run seat:install\` instead.
+date -u +%Y-%m-%dT%H:%M:%SZ > ${shellQuote(lastRunPath)} 2>/dev/null || true
 exec node ${shellQuote(runtimePath)}
 `;
 
@@ -132,31 +135,54 @@ function reportCharters() {
   }
 }
 
-// Codex requires persisted per-hook trust and runs nothing without it, silently
-// -- an untrusted seat hook is indistinguishable from a working one until you
-// notice the charter never arrived. Trust is keyed by the hook's SOURCE file
-// (this profile), its event, and the group/handler indices within it; the shim
-// path is not part of the key and may legitimately never appear in config.toml.
-export function hookTrustState(
+// Codex requires persisted per-hook trust and runs nothing without it,
+// silently -- an untrusted seat hook is indistinguishable from a working one
+// until you notice the charter never arrived. Trust is keyed by the DECLARING
+// file (this profile), its event, and the group/handler indices within it, and
+// Codex writes the record back into that same file.
+//
+// Codex executes a hook only when it is enabled AND its persisted trusted_hash
+// equals the hash it computes for the current declaration. That hash is not
+// reproducible here: its normalisation is undocumented, and any attempt to
+// mirror it silently rots the moment Codex changes normalisation or a default.
+// So this does not infer execution from the config text. The installed shim
+// stamps `.last-run` every time Codex actually dispatches the hook, and the
+// installer clears that stamp whenever it rewrites the declaration. An observed
+// run therefore proves the CURRENT declaration really executes -- which covers
+// a stale hash, a disabled hook, an identity-changing field added beside the
+// declaration, and a Codex upgrade that changes hashing, none of which a text
+// comparison can catch.
+export function parseHookState(profileText, key) {
+  const header = `[hooks.state.${JSON.stringify(key)}]`;
+  const start = profileText.indexOf(header);
+  if (start === -1) return null;
+  const rest = profileText.slice(start + header.length);
+  const next = rest.search(/^\s*\[/m);
+  const body = next === -1 ? rest : rest.slice(0, next);
+  const hash = body.match(/^\s*trusted_hash\s*=\s*"([^"]*)"/m)?.[1] ?? null;
+  const enabled = body.match(/^\s*enabled\s*=\s*(true|false)/m)?.[1];
+  return { trustedHash: hash, enabled: enabled !== 'false' };
+}
+
+export function hookTrustState({
   profileText,
   declaringFile = profilePath,
   declaration = PROFILE_DECLARATION,
-) {
-  if (profileText === null) return 'unknown';
-  // Measured against Codex 0.153.4: trust is keyed by the DECLARING file, its
-  // event, and the group/handler indices within it, and is written back into
-  // that same file -- not into ~/.codex/config.toml.
-  const key = `${declaringFile}:session_start:0:0`;
-  if (!profileText.includes(`[hooks.state.${JSON.stringify(key)}]`)) {
+  observedRun = false,
+}) {
+  if (profileText === null || profileText === undefined) return 'unknown';
+  if (!profileText.includes(declaration)) return 'stale';
+  const state = parseHookState(
+    profileText,
+    `${declaringFile}:session_start:0:0`,
+  );
+  if (state === null) return 'untrusted';
+  if (!/^sha256:[0-9a-f]{64}$/.test(state.trustedHash ?? ''))
     return 'untrusted';
-  }
-  // The recorded hash cannot be recomputed here (Codex does not expose the
-  // algorithm), but it does not need to be: trust was granted for the exact
-  // declaration text, so a declaration that still matches ours is still the one
-  // that was trusted. A hand-edited declaration fails the byte comparison in
-  // currentMatches, is reported as `differs`, and is rewritten on install --
-  // which is precisely when Codex re-prompts.
-  return profileText.includes(declaration) ? 'trusted' : 'stale';
+  if (!state.enabled) return 'disabled';
+  // A recorded hash cannot be compared against Codex's computed one, so the
+  // only sound evidence that this declaration executes is that it has.
+  return observedRun ? 'trusted' : 'unverified';
 }
 
 function readProfile() {
@@ -167,19 +193,34 @@ function readProfile() {
   }
 }
 
+function readLastRun() {
+  try {
+    const stamp = readFileSync(lastRunPath, 'utf8').trim();
+    return stamp === '' ? null : stamp;
+  } catch {
+    return null;
+  }
+}
+
 function reportHookTrust() {
-  const state = hookTrustState(readProfile());
+  const lastRun = readLastRun();
+  const state = hookTrustState({
+    profileText: readProfile(),
+    observedRun: lastRun !== null,
+  });
   const message = {
-    trusted: `trusted ${profilePath} (Codex hook trust recorded)`,
+    trusted: `trusted ${profilePath} (observed running ${lastRun})`,
+    unverified: `unverified ${profilePath} (trust recorded, but this declaration has not been observed running; start one codex-captain session)`,
     untrusted: `untrusted ${profilePath} (approve once on the first codex-captain launch; until then Codex skips the hook silently)`,
-    stale: `stale ${profilePath} (declaration changed since it was trusted; Codex will prompt again)`,
+    disabled: `disabled ${profilePath} (hook trusted but disabled; Codex will not run it)`,
+    stale: `stale ${profilePath} (declaration changed since install; run npm run seat:install)`,
     unknown: `unknown ${profilePath} (profile not installed)`,
   }[state];
   process.stdout.write(`${message}\n`);
   return state;
 }
 
-// Importing this module (tests reuse hookTrustState) must never install
+// Importing this module (tests reuse the trust helpers) must never install
 // anything: run the command-line behaviour only when invoked directly.
 const invokedDirectly =
   process.argv[1] !== undefined &&
@@ -225,6 +266,11 @@ if (!invokedDirectly) {
     writeFileSync(entry.path, entry.content, { mode: entry.mode });
     if (entry.mode !== undefined) chmodSync(entry.path, entry.mode);
     process.stdout.write(`wrote ${entry.path}\n`);
+    if (entry.path === profilePath || entry.path === shimPath) {
+      // The declaration or the trusted command changed, so any earlier
+      // observation no longer describes what Codex will now run.
+      rmSync(lastRunPath, { force: true });
+    }
   }
   reportCharters();
   reportHookTrust();
