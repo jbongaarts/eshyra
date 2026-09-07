@@ -35,6 +35,8 @@
     "diff:rules-pack": "tsx packages/core/scripts/rules-pack-audit/cli.ts diff",
     "audit-bundle:dnd5e-srd": "tsx packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts",
     "beads:sync": "node scripts/beads-sync.mjs",
+    "seat:handoff": "node scripts/seats/seat-handoff.mjs",
+    "seat:install": "node scripts/seats/install-captain-seats.mjs",
     "agent:preflight": "node scripts/agent-preflight-main.mjs",
     "verify:worktree": "node scripts/verify-current-worktree.mjs",
     "verify:worktree:sandbox": "node scripts/verify-current-worktree.mjs --sandbox",
