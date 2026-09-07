@@ -110,20 +110,36 @@ function knownInterpretationIds(ambiguity: RulesAmbiguity): string {
     .join(', ');
 }
 
-function activeRulingAtNextPosition(
+/**
+ * The ambiguity's state at the next turn, where a new ruling would take
+ * effect. Conflicting rulings fail closed here: a third overlapping ruling
+ * would not resolve the conflict, so the caller must revoke or supersede one
+ * of the existing rulings through management first.
+ */
+function resolutionAtNextPosition(
   db: Db,
   input: RecordAmbiguityRulingInput,
-): CampaignRulingProjection | undefined {
+): CampaignAmbiguityResolution {
   const nextPosition = {
     ...input.currentPosition,
     ordinal: input.currentPosition.ordinal + 1,
   };
-  return findAmbiguity(db, {
+  const resolution = findAmbiguity(db, {
     campaignId: input.campaignId,
     ambiguityId: input.ambiguityId,
     position: nextPosition,
     resolveRulesPack: input.resolveRulesPack,
-  }).ruling;
+  });
+  if (resolution.status === 'conflicting') {
+    throw new CampaignRuleError(
+      `ambiguity ${input.ambiguityId} has conflicting active rulings ${resolution.conflictingRulings
+        .map(({ ruleIdentity }) => ruleIdentity)
+        .join(
+          ', ',
+        )}; revoke or supersede one with /rules before recording a ruling`,
+    );
+  }
+  return resolution;
 }
 
 /** Persist a player-approved interpretation as a prospective campaign ruling. */
@@ -131,7 +147,7 @@ export function recordAmbiguityRuling(
   db: Db,
   input: RecordAmbiguityRulingInput,
 ): RecordAmbiguityRulingResult {
-  const existing = activeRulingAtNextPosition(db, input);
+  const existing = resolutionAtNextPosition(db, input).ruling;
   if (existing !== undefined) {
     const rule = listActiveCampaignRulesAtPosition(
       db,

@@ -1,8 +1,14 @@
 import {
+  createDefaultToolRegistry,
+  createSeededRng,
   type ExecutedToolCall,
+  formatCampaignPosition,
   getCampaignRule,
   initSchema,
+  lookupCampaignAmbiguity,
   openDatabase,
+  recordAmbiguityRuling,
+  revokeCampaignRule,
 } from '@eshyra/core';
 import { resolveCampaignPosition } from '@eshyra/core/internal';
 import { describe, expect, it } from 'vitest';
@@ -126,6 +132,123 @@ describe('play ambiguity rulings', () => {
     expect(
       db.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
     ).toEqual({ count: 0 });
+    db.close();
+  });
+
+  it('fails closed on conflicting rulings end to end: no prompt, no third ruling, repair via /rules (eshyra-jhpt.4/.6)', async () => {
+    const { db, lines, prompts, deps } = setup();
+    const insert = db.prepare(`
+      INSERT INTO campaign_rule (
+        campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
+        ambiguity_id, selected_interpretation_id, question_id, rationale,
+        effective_position, temporal_mode, disputed_position, superseded_by,
+        revoked_position, scope, governing_record_keys_json, prose, provenance,
+        session_id, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `);
+    const p1 = { sessionId: 'session-1', turnId: 'turn-1', ordinal: 1 };
+    for (const [identity, selected] of [
+      ['raw-ruling-one', 'homogeneous-alternative'],
+      ['raw-ruling-two', 'mixed-within-total'],
+    ]) {
+      insert.run(
+        'campaign-1',
+        identity,
+        'ruling',
+        'active',
+        'player-approved',
+        'ambiguity',
+        AMBIGUITY_ID,
+        selected,
+        null,
+        null,
+        formatCampaignPosition(p1),
+        'prospective',
+        null,
+        null,
+        null,
+        'test',
+        '[]',
+        identity,
+        `${AMBIGUITY_ID}#${selected}`,
+        'test',
+        '2026-09-06T00:00:00.000Z',
+      );
+    }
+
+    // The tool the DM must call reports the conflict rather than a choice.
+    const registry = createDefaultToolRegistry();
+    const toolResult = registry.invoke(
+      'request_ambiguity_ruling',
+      { ambiguityId: AMBIGUITY_ID },
+      {
+        db,
+        rng: createSeededRng(1),
+        campaignId: 'campaign-1',
+        sessionId: 'session-1',
+        turnId: 'turn-1',
+        at: '2026-09-06T00:00:00.000Z',
+        position: p1,
+      },
+    );
+    expect(toolResult).toMatchObject({
+      ok: true,
+      data: {
+        status: 'conflicting',
+        conflictingRulings: ['raw-ruling-one', 'raw-ruling-two'],
+        ruling: null,
+      },
+    });
+
+    // The post-turn workflow never prompts and never persists for a conflict.
+    const executed: ExecutedToolCall = {
+      tool: 'request_ambiguity_ruling',
+      args: { ambiguityId: AMBIGUITY_ID },
+      result: toolResult,
+      mutates: false,
+      source: 'native',
+    };
+    await offerAmbiguityRulings(deps, db, 'campaign-1', [executed, executed]);
+    expect(prompts).toHaveLength(0);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain(
+      `Rulings raw-ruling-one, raw-ruling-two for ${AMBIGUITY_ID} conflict; none is authoritative`,
+    );
+    expect(lines[0]).toContain("'/rules revoke <ruleIdentity>'");
+
+    // Ordinary recording cannot paper over the conflict with a third ruling.
+    expect(() =>
+      recordAmbiguityRuling(db, {
+        campaignId: 'campaign-1',
+        ambiguityId: AMBIGUITY_ID,
+        interpretationId: 'mixed-within-total',
+        currentPosition: p1,
+      }),
+    ).toThrow(
+      'has conflicting active rulings raw-ruling-one, raw-ruling-two; revoke or supersede one with /rules',
+    );
+    expect(
+      db.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
+    ).toEqual({ count: 2 });
+
+    // Management repair is the only path: revoking one ruling resolves it.
+    revokeCampaignRule(db, {
+      campaignId: 'campaign-1',
+      ruleIdentity: 'raw-ruling-one',
+      revokedPosition: { ...p1, ordinal: 2 },
+      currentPosition: p1,
+    });
+    expect(
+      lookupCampaignAmbiguity(db, {
+        campaignId: 'campaign-1',
+        ambiguityId: AMBIGUITY_ID,
+        position: { ...p1, ordinal: 2 },
+      }),
+    ).toMatchObject({
+      status: 'resolved',
+      ruling: { ruleIdentity: 'raw-ruling-two' },
+      conflictingRulings: [],
+    });
     db.close();
   });
 

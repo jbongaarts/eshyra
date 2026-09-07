@@ -277,13 +277,23 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
       'explicit exceptions win over the general statement',
     );
     expect(prompt).toContain('marked CONFLICT');
+    expect(prompt).toContain('authoritative) binds nobody');
+    expect(prompt).toContain('marked UNREPRESENTABLE ACTIVE');
+    expect(prompt).toContain('it as binding or rely on it in either direction');
+  });
+
+  it('keeps CONFLICT out of the player-choice contract instead of promising a prompt (eshyra-jhpt.4/.6)', () => {
+    const prompt = buildAuditSystemPrompt();
     expect(prompt).toContain(
-      'binds nobody, so treat that ambiguity as UNRESOLVED',
+      'CONFLICT is distinct from UNRESOLVED and is NOT repaired through',
     );
+    expect(prompt).toContain('no prompt follows the turn');
+    expect(prompt).toContain('promises the player a choice');
+    expect(prompt).toContain('Do not require');
     expect(prompt).toContain(
-      'marked UNREPRESENTABLE ACTIVE CAMPAIGN RULE requires repair',
+      '`request_ambiguity_ruling` for a CONFLICT ambiguity',
     );
-    expect(prompt).toContain('never treat it as binding');
+    expect(prompt).toContain('revoke or supersede one with');
   });
 
   it('carries a verdict that names the missing ambiguity request by ambiguity id', async () => {
@@ -434,6 +444,9 @@ describe('audit prompt campaign-rule authority states (eshyra-jhpt.4)', () => {
     });
     expect(message).toContain(
       'CONFLICT: active rulings ruling:conflict-a, ruling:conflict-b contradict one another; none is authoritative.',
+    );
+    expect(message).toContain(
+      'do not request a player choice for it, and do not promise one: the player must first revoke or supersede one of the conflicting rulings with /rules',
     );
     expect(message).not.toContain('Active ruling ruling:conflict-a');
     expect(message).not.toContain('Active ruling ruling:conflict-b');

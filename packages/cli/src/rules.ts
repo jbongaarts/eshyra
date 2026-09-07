@@ -1,10 +1,13 @@
 /**
- * `eshyra rules` — explicit campaign ruling and house-rule management.
+ * `/rules` — explicit campaign ruling and house-rule management inside the
+ * play session.
  *
  * This is deliberately a prose-only workflow. The core owns identity,
  * chronology, validation, and lifecycle transitions; the CLI only collects
- * player input, resolves the campaign database, and renders the durable
- * record. No model is involved in any command here.
+ * player input and renders the durable record. No model is involved in any
+ * command here. The commands run against the campaign database the session
+ * already opened and migrated, so management never creates a second campaign
+ * lifecycle or database-open path.
  */
 
 import type { Db } from '@eshyra/core';
@@ -17,21 +20,19 @@ import {
   type CampaignRuleProvenance,
   createCampaignRule,
   formatCampaignPosition,
-  getCampaign,
   getCampaignPositionAtOrdinal,
   getCampaignRule,
   getCurrentCampaignPosition,
   listActiveCampaignRulesAtPosition,
   listCampaignRules,
   lookupCampaignAmbiguity,
-  openDatabase,
   parseCampaignPosition,
   recordAmbiguityRuling,
   resolveStrictCampaignRulesStack,
   revokeCampaignRule,
   supersedeCampaignRule,
 } from '@eshyra/core';
-import { resolveCampaignDbPath } from './campaigns.js';
+import type { CliIO } from './playTypes.js';
 
 const FUTURE_POSITION_ANCHOR = '__future__';
 const BOOTSTRAP_POSITION: CampaignPosition = {
@@ -40,16 +41,14 @@ const BOOTSTRAP_POSITION: CampaignPosition = {
   ordinal: 0,
 };
 
-/** Host seam for the rules commands. */
-export interface RulesDeps {
-  /** The resolved per-user data root (for registry campaign lookup). */
-  root: string;
-  /** Environment map — read for the `ESHYRA_DB_PATH` explicit override. */
-  env: Record<string, string | undefined>;
+/** The open play session a `/rules` command operates on. */
+export interface RulesSession {
+  /** The session's already-open, already-migrated campaign database. */
+  db: Db;
+  /** The campaign the session is playing. */
+  campaignId: string;
   /** Output sink. */
   log: (message: string) => void;
-  /** Open a campaign database at a path. Injectable for tests. */
-  openDb?: (path: string) => Db;
 }
 
 interface ParsedArgs {
@@ -59,7 +58,7 @@ interface ParsedArgs {
 }
 
 const USAGE =
-  'usage: eshyra rules <list|show|history|add|supersede|revoke|ambiguities|resolve> [flags] [campaign-id]';
+  'usage: /rules <list|show|history|add|supersede|revoke|ambiguities|resolve> [flags]';
 
 function parseArgs(
   args: readonly string[],
@@ -112,46 +111,19 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function resolveDb(
-  deps: RulesDeps,
-  campaignId: string | undefined,
-): { ok: true; dbPath: string } | { ok: false } {
-  const resolved = resolveCampaignDbPath(deps.root, {
-    explicitDbPath: deps.env.ESHYRA_DB_PATH?.trim() || undefined,
-    campaignId,
-  });
-  if (!resolved.ok) {
-    deps.log(resolved.message);
-    return { ok: false };
-  }
-  return { ok: true, dbPath: resolved.dbPath };
-}
-
-function withCampaign(
-  deps: RulesDeps,
-  campaignId: string | undefined,
+function withSession(
+  session: RulesSession,
   run: (db: Db, campaignId: string, current: CampaignPosition) => void,
 ): boolean {
-  const resolved = resolveDb(deps, campaignId);
-  if (!resolved.ok) return false;
-  const open = deps.openDb ?? openDatabase;
-  let db: Db | undefined;
   try {
-    db = open(resolved.dbPath);
-    const campaign = getCampaign(db);
-    if (campaign === undefined) {
-      deps.log('that database has no campaign');
-      return false;
-    }
     const current =
-      getCurrentCampaignPosition(db, campaign.campaignId) ?? BOOTSTRAP_POSITION;
-    run(db, campaign.campaignId, current);
+      getCurrentCampaignPosition(session.db, session.campaignId) ??
+      BOOTSTRAP_POSITION;
+    run(session.db, session.campaignId, current);
     return true;
   } catch (error) {
-    deps.log(errorMessage(error));
+    session.log(errorMessage(error));
     return false;
-  } finally {
-    db?.close();
   }
 }
 
@@ -369,37 +341,36 @@ function formatNullablePosition(position: CampaignPosition | null): string {
   return position === null ? 'none' : formatCampaignPosition(position);
 }
 
-function commandPositionals(
+function commandIdentity(
   parsed: ParsedArgs,
   identityRequired: boolean,
-): { identity: string | undefined; campaignId: string | undefined } {
+): string | undefined {
   const namedIdentity = flag(parsed, 'identity');
-  const [first, second, ...extra] = parsed.positional;
+  const [first, ...extra] = parsed.positional;
   if (
     extra.length > 0 ||
-    (namedIdentity !== undefined && second !== undefined)
+    (namedIdentity !== undefined && first !== undefined)
   ) {
     throw new CampaignRuleError(USAGE);
   }
-  if (identityRequired && namedIdentity === undefined && first === undefined) {
-    throw new CampaignRuleError(USAGE);
+  if (!identityRequired) {
+    if (first !== undefined) throw new CampaignRuleError(USAGE);
+    return undefined;
   }
-  return {
-    identity: namedIdentity ?? (identityRequired ? first : undefined),
-    campaignId:
-      namedIdentity === undefined && identityRequired ? second : first,
-  };
+  const identity = namedIdentity ?? first;
+  if (identity === undefined) throw new CampaignRuleError(USAGE);
+  return identity;
 }
 
-function listCommand(args: readonly string[], deps: RulesDeps): number {
+function listCommand(args: readonly string[], session: RulesSession): number {
   try {
     const parsed = parseArgs(args, ['at'], ['all']);
     if (parsed.booleans.has('all') && flag(parsed, 'at') !== undefined) {
-      deps.log('--all and --at cannot be used together');
+      session.log('--all and --at cannot be used together');
       return 1;
     }
-    const { campaignId } = commandPositionals(parsed, false);
-    const result = withCampaign(deps, campaignId, (db, id, current) => {
+    commandIdentity(parsed, false);
+    const result = withSession(session, (db, id, current) => {
       const at =
         flag(parsed, 'at') === undefined
           ? current
@@ -407,28 +378,30 @@ function listCommand(args: readonly string[], deps: RulesDeps): number {
       const rules = parsed.booleans.has('all')
         ? listCampaignRules(db, { campaignId: id })
         : listActiveCampaignRulesAtPosition(db, id, formatCampaignPosition(at));
-      deps.log(
+      session.log(
         `Campaign rules for ${id} at ${formatCampaignPosition(at)} (${rules.length}):`,
       );
       for (const rule of rules) {
-        deps.log(
+        session.log(
           `  ${rule.ruleIdentity}  [${rule.ruleKind}/${rule.status}]  effective ${rule.effectivePosition.ordinal}  ${provenanceLabel(rule.provenance)}  — ${rule.prose.slice(0, 80)}`,
         );
       }
     });
     return result ? 0 : 1;
   } catch (error) {
-    deps.log(errorMessage(error));
+    session.log(errorMessage(error));
     return 1;
   }
 }
 
-function ambiguitiesCommand(args: readonly string[], deps: RulesDeps): number {
+function ambiguitiesCommand(
+  args: readonly string[],
+  session: RulesSession,
+): number {
   try {
     const parsed = parseArgs(args, []);
-    const [campaignId, ...extra] = parsed.positional;
-    if (extra.length > 0) throw new CampaignRuleError(USAGE);
-    const result = withCampaign(deps, campaignId, (db, id, current) => {
+    if (parsed.positional.length > 0) throw new CampaignRuleError(USAGE);
+    const result = withSession(session, (db, id, current) => {
       const context = assembleCampaignRulesContext(
         db,
         id,
@@ -445,25 +418,28 @@ function ambiguitiesCommand(args: readonly string[], deps: RulesDeps): number {
           resolution.status === 'resolved'
             ? `resolved:${resolution.ruling?.ruleIdentity ?? '(unknown)'}`
             : resolution.status;
-        deps.log(
+        session.log(
           `${item.ambiguity.id}  status: ${status}  interpretations: ${item.ambiguity.interpretations.map(({ id: interpretationId }) => interpretationId).join(', ')}`,
         );
       }
     });
     return result ? 0 : 1;
   } catch (error) {
-    deps.log(errorMessage(error));
+    session.log(errorMessage(error));
     return 1;
   }
 }
 
-function resolveCommand(args: readonly string[], deps: RulesDeps): number {
+function resolveCommand(
+  args: readonly string[],
+  session: RulesSession,
+): number {
   try {
     const parsed = parseArgs(args, ['interpretation', 'prose', 'effective']);
-    const [ambiguityId, campaignId, ...extra] = parsed.positional;
+    const [ambiguityId, ...extra] = parsed.positional;
     if (ambiguityId === undefined || extra.length > 0)
       throw new CampaignRuleError(USAGE);
-    const result = withCampaign(deps, campaignId, (db, id, current) => {
+    const result = withSession(session, (db, id, current) => {
       const interpretationId = requiredFlag(parsed, 'interpretation');
       const effective = flag(parsed, 'effective');
       let effectiveOrdinal: number | undefined;
@@ -488,31 +464,31 @@ function resolveCommand(args: readonly string[], deps: RulesDeps): number {
         ...(effectiveOrdinal === undefined ? {} : { effectiveOrdinal }),
       });
       if (!recorded.created) {
-        deps.log(
+        session.log(
           `already resolved by '${recorded.rule.ruleIdentity}' (takes effect from turn ${recorded.rule.effectivePosition.ordinal}).`,
         );
         return;
       }
-      deps.log(
+      session.log(
         `Added ${recorded.rule.ruleKind} '${recorded.rule.ruleIdentity}' (status: ${recorded.rule.status}, effective ordinal ${recorded.rule.effectivePosition.ordinal}, provenance: ${provenanceLabel(recorded.rule.provenance)}); takes effect from turn ${recorded.rule.effectivePosition.ordinal}.`,
       );
     });
     return result ? 0 : 1;
   } catch (error) {
-    deps.log(errorMessage(error));
+    session.log(errorMessage(error));
     return 1;
   }
 }
 
 function showCommand(
   args: readonly string[],
-  deps: RulesDeps,
+  session: RulesSession,
   history: boolean,
 ): number {
   try {
     const parsed = parseArgs(args, ['identity']);
-    const { identity, campaignId } = commandPositionals(parsed, true);
-    const result = withCampaign(deps, campaignId, (db, id) => {
+    const identity = commandIdentity(parsed, true);
+    const result = withSession(session, (db, id) => {
       const rules = listCampaignRules(db, { campaignId: id });
       const rule = rules.find(
         (candidate) => candidate.ruleIdentity === identity,
@@ -549,39 +525,41 @@ function showCommand(
                 );
           if (next !== undefined) chain.push(next);
         }
-        deps.log(`History for ${identity}:`);
+        session.log(`History for ${identity}:`);
         for (const hop of chain) {
-          deps.log(
+          session.log(
             `  ${hop.ruleIdentity} [${hop.status}] effective ${formatCampaignPosition(hop.effectivePosition)} revoked ${formatNullablePosition(hop.revokedPosition)} supersededBy ${hop.supersededBy ?? 'none'}`,
           );
         }
         return;
       }
-      deps.log(`Rule ${rule.ruleIdentity}`);
-      deps.log(`  kind: ${rule.ruleKind}`);
-      deps.log(`  status: ${rule.status}`);
-      deps.log(`  origin: ${rule.origin}`);
-      deps.log(`  provenance: ${provenanceLabel(rule.provenance)}`);
-      deps.log(`  scope: ${rule.scope}`);
-      deps.log(`  governing records: ${rule.governingRecordKeys.join(', ')}`);
-      deps.log(
+      session.log(`Rule ${rule.ruleIdentity}`);
+      session.log(`  kind: ${rule.ruleKind}`);
+      session.log(`  status: ${rule.status}`);
+      session.log(`  origin: ${rule.origin}`);
+      session.log(`  provenance: ${provenanceLabel(rule.provenance)}`);
+      session.log(`  scope: ${rule.scope}`);
+      session.log(
+        `  governing records: ${rule.governingRecordKeys.join(', ')}`,
+      );
+      session.log(
         `  effective position: ${formatCampaignPosition(rule.effectivePosition)}`,
       );
-      deps.log(`  temporal mode: ${rule.temporalMode.mode}`);
-      deps.log(`  superseded by: ${rule.supersededBy ?? 'none'}`);
-      deps.log(
+      session.log(`  temporal mode: ${rule.temporalMode.mode}`);
+      session.log(`  superseded by: ${rule.supersededBy ?? 'none'}`);
+      session.log(
         `  revoked position: ${formatNullablePosition(rule.revokedPosition)}`,
       );
-      deps.log(`  prose: ${rule.prose}`);
+      session.log(`  prose: ${rule.prose}`);
     });
     return result ? 0 : 1;
   } catch (error) {
-    deps.log(errorMessage(error));
+    session.log(errorMessage(error));
     return 1;
   }
 }
 
-function addCommand(args: readonly string[], deps: RulesDeps): number {
+function addCommand(args: readonly string[], session: RulesSession): number {
   try {
     const parsed = parseArgs(args, [
       'kind',
@@ -596,8 +574,8 @@ function addCommand(args: readonly string[], deps: RulesDeps): number {
       'interpretation',
       'question',
     ]);
-    const { campaignId } = commandPositionals(parsed, false);
-    const result = withCampaign(deps, campaignId, (db, id, current) => {
+    commandIdentity(parsed, false);
+    const result = withSession(session, (db, id, current) => {
       const kind = requiredFlag(parsed, 'kind') as CampaignRule['ruleKind'];
       if (kind !== 'ruling' && kind !== 'house-rule') {
         throw new CampaignRuleError('--kind must be ruling or house-rule');
@@ -642,13 +620,13 @@ function addCommand(args: readonly string[], deps: RulesDeps): number {
               }
             : undefined,
       });
-      deps.log(
+      session.log(
         `Added ${stored.ruleKind} '${stored.ruleIdentity}' (status: ${stored.status}, effective ordinal ${stored.effectivePosition.ordinal}, provenance: ${provenanceLabel(stored.provenance)}); takes effect from turn ${stored.effectivePosition.ordinal}.`,
       );
     });
     return result ? 0 : 1;
   } catch (error) {
-    deps.log(errorMessage(error));
+    session.log(errorMessage(error));
     return 1;
   }
 }
@@ -673,7 +651,10 @@ function contextAmbiguity(
   return found.ambiguity;
 }
 
-function supersedeCommand(args: readonly string[], deps: RulesDeps): number {
+function supersedeCommand(
+  args: readonly string[],
+  session: RulesSession,
+): number {
   try {
     const parsed = parseArgs(args, [
       'prose',
@@ -686,10 +667,10 @@ function supersedeCommand(args: readonly string[], deps: RulesDeps): number {
       'interpretation',
       'question',
     ]);
-    const [priorIdentity, campaignId, ...extra] = parsed.positional;
+    const [priorIdentity, ...extra] = parsed.positional;
     if (priorIdentity === undefined || extra.length > 0)
       throw new CampaignRuleError(USAGE);
-    const result = withCampaign(deps, campaignId, (db, id, current) => {
+    const result = withSession(session, (db, id, current) => {
       const prior = getCampaignRule(db, {
         campaignId: id,
         ruleIdentity: priorIdentity,
@@ -731,13 +712,13 @@ function supersedeCommand(args: readonly string[], deps: RulesDeps): number {
             ? undefined
             : { ambiguity: storedAmbiguity(successor, db, id, current) },
       });
-      deps.log(
+      session.log(
         `Superseded '${prior.ruleIdentity}' -> '${stored.ruleIdentity}' (prior effective ${formatCampaignPosition(prior.effectivePosition)}, successor effective ${formatCampaignPosition(stored.effectivePosition)}, provenance: ${provenanceLabel(stored.provenance)}); takes effect from turn ${stored.effectivePosition.ordinal}.`,
       );
     });
     return result ? 0 : 1;
   } catch (error) {
-    deps.log(errorMessage(error));
+    session.log(errorMessage(error));
     return 1;
   }
 }
@@ -752,11 +733,11 @@ function storedAmbiguity(
   return contextAmbiguity(db, campaignId, current, rule.provenance.ambiguityId);
 }
 
-function revokeCommand(args: readonly string[], deps: RulesDeps): number {
+function revokeCommand(args: readonly string[], session: RulesSession): number {
   try {
     const parsed = parseArgs(args, ['at', 'identity']);
-    const { identity, campaignId } = commandPositionals(parsed, true);
-    const result = withCampaign(deps, campaignId, (db, id, current) => {
+    const identity = commandIdentity(parsed, true);
+    const result = withSession(session, (db, id, current) => {
       const revokedPosition =
         flag(parsed, 'at') === undefined
           ? { ...current, ordinal: current.ordinal + 1 }
@@ -767,39 +748,106 @@ function revokeCommand(args: readonly string[], deps: RulesDeps): number {
         revokedPosition,
         currentPosition: current,
       });
-      deps.log(
+      session.log(
         `revoked from turn ${stored.revokedPosition?.ordinal ?? revokedPosition.ordinal} '${stored.ruleIdentity}' (effective ${formatCampaignPosition(stored.effectivePosition)}, provenance: ${provenanceLabel(stored.provenance)}).`,
       );
     });
     return result ? 0 : 1;
   } catch (error) {
-    deps.log(errorMessage(error));
+    session.log(errorMessage(error));
     return 1;
   }
 }
 
-/** `eshyra rules <list|show|history|add|supersede|revoke> ...`. */
-export function runRulesCommand(args: string[], deps: RulesDeps): number {
+/** `/rules <list|show|history|add|supersede|revoke|ambiguities|resolve> ...`. */
+/**
+ * Split a `/rules` command line into arguments. Double or single quotes group
+ * words (so `--prose "Shields grant a bonus."` stays one argument); a
+ * backslash escapes the next character inside or outside quotes.
+ */
+export function tokenizeRulesCommandLine(input: string): string[] {
+  const tokens: string[] = [];
+  let current = '';
+  let quote: '"' | "'" | undefined;
+  let pending = false;
+  for (let index = 0; index < input.length; index += 1) {
+    const char = input[index] as string;
+    if (char === '\\' && index + 1 < input.length) {
+      current += input[index + 1];
+      pending = true;
+      index += 1;
+      continue;
+    }
+    if (quote !== undefined) {
+      if (char === quote) {
+        quote = undefined;
+      } else {
+        current += char;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      pending = true;
+      continue;
+    }
+    if (/\s/.test(char)) {
+      if (pending || current.length > 0) tokens.push(current);
+      current = '';
+      pending = false;
+      continue;
+    }
+    current += char;
+  }
+  if (quote !== undefined) {
+    throw new CampaignRuleError('unterminated quote in /rules command');
+  }
+  if (pending || current.length > 0) tokens.push(current);
+  return tokens;
+}
+
+/** Handle `/rules <subcommand> ...` from the play session's turn loop. */
+export function runRulesSlashCommand(
+  io: CliIO,
+  db: Db,
+  campaignId: string,
+  commandLine: string,
+): void {
+  let args: string[];
+  try {
+    args = tokenizeRulesCommandLine(commandLine);
+  } catch (error) {
+    io.write(errorMessage(error));
+    return;
+  }
+  runRulesCommand(args, { db, campaignId, log: (line) => io.write(line) });
+}
+
+/** Run one rules management subcommand against the open session. */
+export function runRulesCommand(
+  args: readonly string[],
+  session: RulesSession,
+): number {
   const [subcommand, ...rest] = args;
   switch (subcommand) {
     case 'list':
-      return listCommand(rest, deps);
+      return listCommand(rest, session);
     case 'show':
-      return showCommand(rest, deps, false);
+      return showCommand(rest, session, false);
     case 'history':
-      return showCommand(rest, deps, true);
+      return showCommand(rest, session, true);
     case 'add':
-      return addCommand(rest, deps);
+      return addCommand(rest, session);
     case 'supersede':
-      return supersedeCommand(rest, deps);
+      return supersedeCommand(rest, session);
     case 'revoke':
-      return revokeCommand(rest, deps);
+      return revokeCommand(rest, session);
     case 'ambiguities':
-      return ambiguitiesCommand(rest, deps);
+      return ambiguitiesCommand(rest, session);
     case 'resolve':
-      return resolveCommand(rest, deps);
+      return resolveCommand(rest, session);
     default:
-      deps.log(USAGE);
+      session.log(USAGE);
       return 1;
   }
 }

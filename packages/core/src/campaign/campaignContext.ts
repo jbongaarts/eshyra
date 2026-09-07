@@ -215,7 +215,7 @@ export function renderCampaignRulesSection(
         (item) => `  - ${item.id}: ${item.summary}`,
       ),
       conflictingRulings.length > 1
-        ? `  CONFLICT: active rulings ${conflictingRulings.map((item) => item.ruleIdentity).join(', ')} contradict one another; none is authoritative.`
+        ? `  CONFLICT: active rulings ${conflictingRulings.map((item) => item.ruleIdentity).join(', ')} contradict one another; none is authoritative. Do not assert a canonical answer, do not request a player choice for it, and do not promise one: the player must first revoke or supersede one of the conflicting rulings with /rules before this ambiguity can be relied on.`
         : ruling === undefined
           ? '  UNRESOLVED: do not assert a canonical answer or silently choose an interpretation.'
           : `  Active ruling ${ruling.ruleIdentity} (${ruling.selectedInterpretationId}): ${ruling.prose ?? ''}`,

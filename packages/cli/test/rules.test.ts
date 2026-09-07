@@ -8,6 +8,7 @@ import {
   createCampaignRule,
   EMBERFALL_HOLLOW,
   formatCampaignPosition,
+  getCampaign,
   getCampaignRule,
   initSchema,
   listCampaignRules,
@@ -16,7 +17,11 @@ import {
 } from '@eshyra/core';
 import { resolveCampaignPosition } from '@eshyra/core/internal';
 import { afterEach, describe, expect, it } from 'vitest';
-import { type RulesDeps, runRulesCommand } from '../src/rules.js';
+import {
+  runRulesCommand,
+  runRulesSlashCommand,
+  tokenizeRulesCommandLine,
+} from '../src/rules.js';
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -43,29 +48,28 @@ function campaignDb(campaignId = 'c1'): string {
   return dbPath;
 }
 
-interface Harness {
-  readonly deps: RulesDeps;
-  readonly logs: string[];
-}
-
-function harness(dbPath?: string): Harness {
-  const logs: string[] = [];
-  return {
-    logs,
-    deps: {
-      root: join(tempDir('esh-rules-root-'), 'data'),
-      env: dbPath === undefined ? {} : { ESHYRA_DB_PATH: dbPath },
-      log: (message) => logs.push(message),
-    },
-  };
-}
-
+/**
+ * Run one `/rules` subcommand the way the play session does: against an
+ * already-open, already-migrated campaign database for the session's campaign.
+ */
 function invoke(
   dbPath: string,
   args: string[],
 ): { code: number; output: string } {
-  const h = harness(dbPath);
-  return { code: runRulesCommand(args, h.deps), output: h.logs.join('\n') };
+  const logs: string[] = [];
+  const db = openDatabase(dbPath);
+  try {
+    const campaign = getCampaign(db);
+    if (campaign === undefined) throw new Error('test db has no campaign');
+    const code = runRulesCommand(args, {
+      db,
+      campaignId: campaign.campaignId,
+      log: (message) => logs.push(message),
+    });
+    return { code, output: logs.join('\n') };
+  } finally {
+    db.close();
+  }
 }
 
 function advance(dbPath: string, through: number, campaignId = 'c1'): void {
@@ -150,13 +154,78 @@ describe('runRulesCommand', () => {
   it('rejects an unknown subcommand with usage', () => {
     const result = invoke(campaignDb(), ['bogus']);
     expect(result.code).toBe(1);
-    expect(result.output).toContain('usage: eshyra rules');
+    expect(result.output).toContain('usage: /rules');
   });
 
-  it('fails cleanly when no campaign can be resolved', () => {
-    const h = harness();
-    expect(runRulesCommand(['list'], h.deps)).toBe(1);
-    expect(h.logs.join('\n')).toContain('no campaigns');
+  it('rejects a stray positional campaign argument now that the session owns the campaign', () => {
+    const dbPath = campaignDb();
+    for (const args of [
+      ['list', 'c1'],
+      ['ambiguities', 'c1'],
+      ['show', 'some-rule', 'c1'],
+    ]) {
+      const result = invoke(dbPath, args);
+      expect(result.code).toBe(1);
+      expect(result.output).toContain('usage: /rules');
+    }
+  });
+
+  it('tokenizes a slash command line with quoted prose and dispatches it against the open session', () => {
+    expect(
+      tokenizeRulesCommandLine(
+        `add --kind house-rule --prose "Shields grant a bonus when braced." --scope combat --records 'equipment:shield,rule:one'`,
+      ),
+    ).toEqual([
+      'add',
+      '--kind',
+      'house-rule',
+      '--prose',
+      'Shields grant a bonus when braced.',
+      '--scope',
+      'combat',
+      '--records',
+      'equipment:shield,rule:one',
+    ]);
+    expect(tokenizeRulesCommandLine('  list   --all ')).toEqual([
+      'list',
+      '--all',
+    ]);
+    expect(tokenizeRulesCommandLine('add --prose ""')).toEqual([
+      'add',
+      '--prose',
+      '',
+    ]);
+    expect(() => tokenizeRulesCommandLine('add --prose "open')).toThrow(
+      'unterminated quote',
+    );
+
+    const dbPath = campaignDb();
+    const db = openDatabase(dbPath);
+    const lines: string[] = [];
+    const io = {
+      write: (line: string) => lines.push(line),
+      prompt: async () => undefined,
+    };
+    try {
+      runRulesSlashCommand(
+        io,
+        db,
+        'c1',
+        'add --kind house-rule --identity braced-shield --prose "Shields grant a bonus when braced." --scope combat --records equipment:shield',
+      );
+      runRulesSlashCommand(io, db, 'c1', 'list --at 1');
+      runRulesSlashCommand(io, db, 'c1', 'show "unterminated');
+      expect(
+        getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'braced-shield' })
+          ?.prose,
+      ).toBe('Shields grant a bonus when braced.');
+    } finally {
+      db.close();
+    }
+    const output = lines.join('\n');
+    expect(output).toContain("Added house-rule 'braced-shield'");
+    expect(output).toContain('braced-shield  [house-rule/active]  effective 1');
+    expect(output).toContain('unterminated quote in /rules command');
   });
 
   it('adds a house rule with deterministic identity and confirmation metadata', () => {

@@ -8,7 +8,7 @@ export const requestAmbiguityRulingTool: Tool = {
   name: 'request_ambiguity_ruling',
   mutates: false,
   description:
-    'Call when an outcome depends on an ambiguity marked UNRESOLVED in Campaign Rules. Then narrate the published uncertainty, present the interpretations neutrally, and tell the player they will be asked to choose. Never choose an interpretation yourself. If status is resolved, apply the active ruling.',
+    'Call when an outcome depends on an ambiguity marked UNRESOLVED in Campaign Rules. Then narrate the published uncertainty, present the interpretations neutrally, and tell the player they will be asked to choose. Never choose an interpretation yourself. If status is resolved, apply the active ruling. If status is conflicting, no player choice follows: the listed conflictingRulings must be revoked or superseded with /rules before the ambiguity can be relied on.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -48,6 +48,9 @@ export const requestAmbiguityRulingTool: Tool = {
         question: result.ambiguity.question,
         interpretations: result.ambiguity.interpretations,
         status: result.status,
+        conflictingRulings: result.conflictingRulings.map(
+          (ruling) => ruling.ruleIdentity,
+        ),
         ruling:
           result.ruling === undefined
             ? null

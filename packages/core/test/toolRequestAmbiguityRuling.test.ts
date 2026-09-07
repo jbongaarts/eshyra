@@ -39,6 +39,7 @@ describe('request_ambiguity_ruling tool', () => {
       ok: true,
       data: {
         status: 'unresolved',
+        conflictingRulings: [],
         interpretations: [
           { id: 'homogeneous-alternative' },
           { id: 'mixed-within-total' },

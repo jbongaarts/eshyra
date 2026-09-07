@@ -13,6 +13,24 @@ interface AmbiguityPromptData {
   readonly status: string;
 }
 
+interface AmbiguityConflictData {
+  readonly ambiguityId: string;
+  readonly status: 'conflicting';
+  readonly conflictingRulings: readonly string[];
+}
+
+function isConflictData(value: unknown): value is AmbiguityConflictData {
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    return false;
+  const data = value as Record<string, unknown>;
+  return (
+    typeof data.ambiguityId === 'string' &&
+    data.status === 'conflicting' &&
+    Array.isArray(data.conflictingRulings) &&
+    data.conflictingRulings.every((item) => typeof item === 'string')
+  );
+}
+
 function isPromptData(value: unknown): value is AmbiguityPromptData {
   if (typeof value !== 'object' || value === null || Array.isArray(value))
     return false;
@@ -44,7 +62,14 @@ function ambiguityIdFromCall(call: ExecutedToolCall): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-/** Offer player choices for unresolved ambiguity requests emitted by a turn. */
+/**
+ * Offer player choices for unresolved ambiguity requests emitted by a turn.
+ *
+ * A request whose ambiguity is `conflicting` (two active rulings overlap, so
+ * neither is authoritative) is not a choice: recording a third ruling cannot
+ * repair it, so the player is told to revoke or supersede one of the
+ * conflicting rulings with `/rules` instead of being prompted.
+ */
 export async function offerAmbiguityRulings(
   deps: PlayDeps,
   db: Db,
@@ -54,6 +79,16 @@ export async function offerAmbiguityRulings(
   const offered = new Set<string>();
   for (const call of toolCalls) {
     if (call.tool !== 'request_ambiguity_ruling' || !call.result.ok) continue;
+    if (isConflictData(call.result.data)) {
+      const ambiguityId =
+        ambiguityIdFromCall(call) ?? call.result.data.ambiguityId;
+      if (offered.has(ambiguityId)) continue;
+      offered.add(ambiguityId);
+      deps.io.write(
+        `Rulings ${call.result.data.conflictingRulings.join(', ')} for ${ambiguityId} conflict; none is authoritative and no choice can be recorded until one is repaired. Use '/rules revoke <ruleIdentity>' or '/rules supersede <ruleIdentity> ...' to repair it.`,
+      );
+      continue;
+    }
     if (!isPromptData(call.result.data)) continue;
     const ambiguityId =
       ambiguityIdFromCall(call) ?? call.result.data.ambiguityId;
