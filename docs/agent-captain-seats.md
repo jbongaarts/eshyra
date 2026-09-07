@@ -97,6 +97,16 @@ value cannot freeze the identity in a real session.
 | `runtime-unknown` | the Codex runtime could not be identified | 1 |
 | `unknown` | profile not installed | 1 |
 
+Only a run Codex admitted under **normal persisted trust** counts.
+`--dangerously-bypass-hook-trust` runs enabled hooks without requiring trust, so
+a hook Codex would otherwise classify Modified still executes; if such a run
+could stamp, it would launder a stale trust state into `trusted` and the next
+ordinary session would silently get no Captain context. The runtime is `exec`'d
+by the shim, so its parent process is Codex itself and its argv carries the
+admission flags — checked as an exact argument, never a substring. Unknown
+admission does not stamp. The `codex-captain` wrapper also refuses to forward
+that flag.
+
 The normal lifecycle is: install → `unverified` → start one `codex-captain`
 session and approve the prompt → `trusted`. After a Codex upgrade or any edit to
 the declaration the state drops to `superseded` until the next Captain session
@@ -110,7 +120,14 @@ refusal. Reading the launcher cannot prove it does this — an exported value ca
 be unset again before the launch, and the literal `dispatched-worker` can appear
 in a comment while the variable is assigned something else. So the probe runs
 the real launcher in a disposable sandbox with `codex` replaced by a stub that
-records its own environment, and asserts the exact values the child received:
+records its own environment **and argv**, and asserts the exact values the child
+received across every launch-producing option path.
+
+Argv matters as much as the environment: profile non-loading is the *primary*
+boundary and the markers are defense in depth, so a launcher that delivered
+both markers correctly while selecting `-p eshyra-captain` would break the
+structural boundary and still pass an environment-only probe. The probe refuses
+any Captain-profile selection in a dispatched launch:
 
 ```sh
 node scripts/seats/probe-dispatch-markers.mjs <launcher-path>

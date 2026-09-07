@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   classifyCodexSession,
+  hookAdmission,
   readCharter,
   readHandoff,
   readHookInput,
@@ -21,7 +22,9 @@ process.stdout.on('error', (err) => {
 // the Codex build that produced the run, so a later edit or upgrade cannot be
 // certified by an old observation. Only the installed shim asks for this; the
 // repository copy is never asked and so never writes.
-const stampPath = process.env.ESHYRA_SEAT_STAMP;
+// Only a run Codex admitted under normal persisted trust is evidence of trust.
+const stampPath =
+  hookAdmission() === 'persisted-trust' ? process.env.ESHYRA_SEAT_STAMP : null;
 if (stampPath) {
   try {
     writeFileSync(

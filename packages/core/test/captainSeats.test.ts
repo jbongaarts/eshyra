@@ -23,6 +23,7 @@ import {
 import {
   codexRuntimeIdentity,
   extractHookDeclarationRegion,
+  hookAdmission,
   hookDeclarationIdentity,
   resolveSeatRoots,
 } from '../../../scripts/seats/seatContext.mjs';
@@ -868,9 +869,13 @@ ${librarySource}`,
     );
   });
 
-  it('pins the real launcher patch to the real pre-change baseline', () => {
-    // The tracked patch is the authorization for the external change, so its
-    // shape is repository-reviewable evidence rather than a local artifact.
+  it('pins the tracked dispatch patch to its exact approved content', () => {
+    // Permanent evidence for F3-C. An earlier version of this test asserted
+    // only that each authorized line mentioned a marker token -- the same
+    // proof defect that was removed from the verifier, relocated into its
+    // evidence. `touch /tmp/x "$CHILD"` satisfies a token predicate. The patch
+    // is therefore pinned to its exact approved content, so any widening of the
+    // authorization changes this file and forces explicit review.
     const patch = parseAuthorizedPatch(
       readFileSync(
         join(process.cwd(), 'scripts/seats/dispatch-marker-patch.txt'),
@@ -878,20 +883,109 @@ ${librarySource}`,
       ),
     );
     expect(patch.baselineDigest).toMatch(/^sha256:[0-9a-f]{64}$/);
-    expect(patch.hunks.length).toBeGreaterThan(0);
-    for (const hunk of patch.hunks) {
-      expect(Number.isInteger(hunk.afterIndex)).toBe(true);
-      expect(hunk.lines.length).toBeGreaterThan(0);
+    expect(
+      patch.hunks.map((hunk) => ({
+        afterIndex: hunk.afterIndex,
+        lines: hunk.lines,
+      })),
+    ).toEqual([
+      {
+        afterIndex: 21,
+        lines: [
+          '',
+          '# Every child launched here is a dispatched implementation worker, never a',
+          '# Captain seat occupant. `codex exec` fires SessionStart exactly like an',
+          '# interactive session, so the event alone cannot tell the two apart; the marker',
+          '# below is the explicit, durable launch identity that can. It is defence in',
+          '# depth: the Codex Captain hook is registered only in the `eshyra-captain`',
+          '# profile overlay, which this launcher never loads. Exported unconditionally so',
+          '# a Captain terminal that dispatches cannot leak its own role into the child.',
+          'SEAT_ROLE="dispatched-worker"',
+        ],
+      },
+      {
+        afterIndex: 101,
+        lines: [
+          "  printf '  env:  ESHYRA_SEAT_ROLE=%s ESHYRA_DISPATCH_CHILD=%s\\n' \\",
+          '    "$SEAT_ROLE" "$CHILD"',
+        ],
+      },
+      {
+        afterIndex: 114,
+        lines: [
+          'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$CHILD" \\',
+        ],
+      },
+    ]);
+  });
+
+  it('refuses a dispatcher that selects the Captain profile for a worker', () => {
+    // Permanent evidence for F4. Profile non-loading is the PRIMARY boundary;
+    // the markers are defense in depth. A launcher that delivered both markers
+    // correctly while selecting `-p eshyra-captain` would pass an env-only
+    // probe with the structural boundary broken and the Captain hook running
+    // inside a worker, so the probe records argv too.
+    const dir = mkdtempSync(join(tmpdir(), 'eshyra-launcher-profile-'));
+    try {
+      const write = (name: string, body: string) => {
+        const path = join(dir, name);
+        writeFileSync(path, body, { mode: 0o755 });
+        return path;
+      };
+      const marked = [
+        '#!/usr/bin/env bash',
+        'SEAT_ROLE="dispatched-worker"',
+        'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$1" \\',
+      ].join('\n');
+
+      expect(
+        probeLauncher(write('ok.sh', `${marked}\nexec codex exec\n`)),
+      ).toEqual([]);
+
+      for (const selection of [
+        '-p eshyra-captain',
+        '--profile eshyra-captain',
+        '--profile=eshyra-captain',
+      ]) {
+        expect(
+          probeLauncher(
+            write('leaky.sh', `${marked}\nexec codex ${selection} exec\n`),
+          ).join(' '),
+        ).toContain('selected the eshyra-captain profile');
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
-    // Every authorized line is marker-related or a comment: the patch must not
-    // have quietly grown to authorize unrelated launcher behaviour.
-    for (const line of patch.hunks.flatMap((hunk) => hunk.lines)) {
-      const trimmed = line.trim();
-      if (trimmed === '' || trimmed.startsWith('#')) continue;
-      expect(line).toMatch(
-        /ESHYRA_SEAT_ROLE|ESHYRA_DISPATCH_CHILD|SEAT_ROLE|CHILD/,
-      );
-    }
+  }, 60_000);
+
+  it('binds trust evidence to normal admission, not mere execution', () => {
+    // Permanent evidence for F2-C. `--dangerously-bypass-hook-trust` runs
+    // enabled hooks WITHOUT persisted trust, so a hook Codex would classify
+    // Modified still executes. If such a run could stamp, it would launder a
+    // stale trust state into "trusted" and the next ordinary session would
+    // silently receive no Captain context.
+    expect(hookAdmission(() => ['codex', 'exec', '-p', 'eshyra-captain'])).toBe(
+      'persisted-trust',
+    );
+    expect(
+      hookAdmission(() => ['codex', 'exec', '--dangerously-bypass-hook-trust']),
+    ).toBe('bypassed');
+    // Unknown admission must fail closed rather than assume the good case.
+    expect(hookAdmission(() => null)).toBe('unknown');
+    expect(hookAdmission(() => [])).toBe('unknown');
+    // Exact argument, never a substring: the flag text can appear inside an
+    // unrelated ancestor's command line or inside a prompt argument.
+    expect(
+      hookAdmission(() => [
+        'codex',
+        'exec',
+        'explain --dangerously-bypass-hook-trust to me',
+      ]),
+    ).toBe('persisted-trust');
+    // The wrapper refuses to forward the flag at all.
+    const installer = readFileSync(installerScript, 'utf8');
+    expect(installer).toContain('--dangerously-bypass-hook-trust');
+    expect(installer).toContain('codex-captain refuses');
   });
 
   it('keeps privileged supervisor text and wiring out of shared surfaces', () => {

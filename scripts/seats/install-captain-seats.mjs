@@ -72,6 +72,12 @@ if [ "\${ESHYRA_SEAT_ROLE+x}" = x ] && [ "\${ESHYRA_SEAT_ROLE}" != captain ]; th
   echo "codex-captain refuses to run for a non-captain seat role" >&2
   exit 1
 fi
+for arg in "$@"; do
+  if [ "$arg" = --dangerously-bypass-hook-trust ]; then
+    echo "codex-captain refuses --dangerously-bypass-hook-trust: a bypassed run is not evidence that the seat hook is trusted" >&2
+    exit 1
+  fi
+done
 exec env ESHYRA_SEAT_ROLE=captain codex -p eshyra-captain "$@"
 `;
 

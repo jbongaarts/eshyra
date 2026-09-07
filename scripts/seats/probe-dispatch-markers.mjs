@@ -61,12 +61,18 @@ function buildSandbox() {
   const binDir = join(root, 'stub-bin');
   mkdirSync(binDir, { recursive: true });
   const record = join(root, 'child-env.txt');
+  const argvRecord = join(root, 'child-argv.txt');
+  // Record argv as well as env: the marker contract is only half the boundary.
+  // The primary one is that a dispatched worker never LOADS the Captain
+  // profile, and a launcher that selected it would still deliver correct
+  // markers -- so an env-only probe would pass while the structural boundary
+  // was broken and the Captain hook ran in a worker.
   writeFileSync(
     join(binDir, 'codex'),
-    `#!/bin/sh\nenv > ${JSON.stringify(record)}\nexit 0\n`,
+    `#!/bin/sh\nenv > ${JSON.stringify(record)}\nfor a in "$@"; do echo "$a"; done > ${JSON.stringify(argvRecord)}\nexit 0\n`,
     { mode: 0o755 },
   );
-  return { root, binDir, record };
+  return { root, binDir, record, argvRecord };
 }
 
 function sleepSync(ms) {
@@ -86,12 +92,32 @@ function readRecordedEnv(record, timeoutMs = 4000) {
   return null;
 }
 
-export function probeLauncher(launcherPath, waitMs = 4000) {
+const CAPTAIN_PROFILE = 'eshyra-captain';
+
+function selectsCaptainProfile(argv) {
+  return argv.some((argument, index) => {
+    if (
+      argument === `--profile=${CAPTAIN_PROFILE}` ||
+      argument === `-p=${CAPTAIN_PROFILE}`
+    ) {
+      return true;
+    }
+    if (argument === '--profile' || argument === '-p') {
+      return argv[index + 1] === CAPTAIN_PROFILE;
+    }
+    return (
+      argument.startsWith('-c') &&
+      argv[index + 1] === `profile=${CAPTAIN_PROFILE}`
+    );
+  });
+}
+
+export function probeLauncher(launcherPath, extraArgs = [], waitMs = 4000) {
   const failures = [];
-  const { root, binDir, record } = buildSandbox();
+  const { root, binDir, record, argvRecord } = buildSandbox();
   try {
     // Execute directly so the launcher's own shebang selects its interpreter.
-    const run = spawnSync(launcherPath, [CHILD_ID], {
+    const run = spawnSync(launcherPath, [CHILD_ID, ...extraArgs], {
       cwd: root,
       env: { ...process.env, PATH: `${binDir}:${process.env.PATH}` },
       encoding: 'utf8',
@@ -117,6 +143,16 @@ export function probeLauncher(launcherPath, waitMs = 4000) {
     if (seen.get(CHILD) !== CHILD_ID) {
       failures.push(
         `child received ${CHILD}=${JSON.stringify(seen.get(CHILD) ?? null)}, expected ${JSON.stringify(CHILD_ID)}`,
+      );
+    }
+    const argv = existsSync(argvRecord)
+      ? readFileSync(argvRecord, 'utf8')
+          .split('\n')
+          .filter((a) => a !== '')
+      : [];
+    if (selectsCaptainProfile(argv)) {
+      failures.push(
+        `launcher selected the ${CAPTAIN_PROFILE} profile for a dispatched worker: ${argv.join(' ').slice(0, 120)}`,
       );
     }
   } finally {
@@ -317,7 +353,23 @@ if (invokedDirectly) {
     process.exit(0);
   }
 
-  const failures = probeLauncher(launcher);
+  // Exercise every launch-producing option path the dispatcher supports, so a
+  // profile selection cannot hide behind a mode the probe never ran.
+  const modes = [
+    [],
+    ['--model', 'gpt-5.6-luna'],
+    ['--effort', 'high'],
+    ['--sandbox'],
+    ['--model', 'gpt-5.6-luna', '--effort', 'low'],
+  ];
+  const failures = [];
+  for (const mode of modes) {
+    for (const failure of probeLauncher(launcher, mode)) {
+      failures.push(
+        mode.length === 0 ? failure : `[${mode.join(' ')}] ${failure}`,
+      );
+    }
+  }
   if (baselineIndex !== -1) {
     const patch =
       patchIndex === -1
@@ -337,7 +389,7 @@ if (invokedDirectly) {
   for (const failure of failures) process.stdout.write(`FAIL ${failure}\n`);
   if (failures.length === 0) {
     process.stdout.write(
-      `PASS ${launcher} placed both markers in the child environment\n`,
+      `PASS ${launcher} placed both markers in the child environment and never selected the Captain profile (${modes.length} launch modes)\n`,
     );
   }
   process.exit(failures.length === 0 ? 0 : 1);

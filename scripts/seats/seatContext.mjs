@@ -313,6 +313,53 @@ export function codexRuntimeIdentity(env = process.env) {
   return `${version}|${entry}`;
 }
 
+/**
+ * How Codex admitted this hook run.
+ *
+ * `--dangerously-bypass-hook-trust` runs enabled hooks WITHOUT requiring
+ * persisted trust, so a hook Codex would otherwise classify Modified still
+ * executes. If such a run were allowed to stamp, it would launder a stale
+ * trust state into "trusted" and the next ordinary session would silently get
+ * no Captain context. A bypassed run and a normally-trusted run must therefore
+ * not be observationally equivalent.
+ *
+ * The runtime is exec'd by the shim, so its parent process IS the Codex
+ * process and its command line carries the admission flags. Unknown admission
+ * is treated as not-trusted: no stamp, rather than a stamp we cannot justify.
+ */
+export function readParentArguments(pid = process.ppid) {
+  try {
+    // procfs gives the argv vector NUL-separated, so arguments stay distinct.
+    return readFileSync(`/proc/${pid}/cmdline`, 'utf8')
+      .split('\u0000')
+      .filter((argument) => argument !== '');
+  } catch {
+    // No procfs (macOS, BSD): ask ps and split on whitespace.
+  }
+  try {
+    return execFileSync('ps', ['-o', 'args=', '-p', String(pid)], {
+      encoding: 'utf8',
+      timeout: 5000,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .trim()
+      .split(/\s+/)
+      .filter((argument) => argument !== '');
+  } catch {
+    return null;
+  }
+}
+
+export function hookAdmission(readArguments = readParentArguments) {
+  const argv = readArguments();
+  if (!Array.isArray(argv) || argv.length === 0) return 'unknown';
+  // Exact argument, never a substring: the flag's text can appear inside an
+  // unrelated ancestor's command line or inside a prompt argument.
+  return argv.includes('--dangerously-bypass-hook-trust')
+    ? 'bypassed'
+    : 'persisted-trust';
+}
+
 export function seatHookIdentity(profilePath, env = process.env) {
   let profileText = '';
   try {
