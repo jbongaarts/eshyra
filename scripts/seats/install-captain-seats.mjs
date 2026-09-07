@@ -24,14 +24,12 @@ const shim = `#!/bin/sh
 payload=$(cat 2>/dev/null) || exit 0
 cwd=$(printf '%s' "$payload" | node -e 'let raw=""; process.stdin.on("data", chunk => { raw += chunk; }); process.stdin.on("end", () => { try { const value = JSON.parse(raw); if (value && typeof value.cwd === "string" && value.cwd !== "") process.stdout.write(value.cwd); } catch {} });' 2>/dev/null) || exit 0
 [ -n "$cwd" ] || exit 0
-git_common_dir=$(git -C "$cwd" rev-parse --git-common-dir 2>/dev/null) || exit 0
-[ -n "$git_common_dir" ] || exit 0
-case "$git_common_dir" in
-  /*) ;;
-  *) git_common_dir=$(cd "$cwd" 2>/dev/null && cd "$(dirname "$git_common_dir")" 2>/dev/null && pwd -P)/$(basename "$git_common_dir") || exit 0 ;;
-esac
-[ -d "$git_common_dir" ] || exit 0
-seat_script=$(dirname "$git_common_dir")/scripts/seats/codex-captain-context.mjs
+# The working tree root, not the git common dir: a linked worktree must run its
+# own checked-out seat script, and the common dir would resolve every worktree
+# back to the parent checkout instead.
+top_level=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || exit 0
+[ -n "$top_level" ] || exit 0
+seat_script="$top_level/scripts/seats/codex-captain-context.mjs"
 [ -f "$seat_script" ] || exit 0
 printf '%s' "$payload" | exec node "$seat_script"
 `;

@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 
 export const CAPTAIN_MODEL_PATTERN = /fable|opus/i;
 
@@ -79,12 +79,18 @@ export function resolveSeatRoots(cwd, env) {
   if (typeof cwd !== 'string' || cwd.trim() === '') return null;
   try {
     if (!statSync(cwd).isDirectory()) return null;
-    const commonDirOutput = execFileSync(
+    // Two different roots, deliberately. The common dir is shared by every
+    // linked worktree of the clone; the top level is the working tree you are
+    // actually standing in. State keys off the former so all worktrees agree,
+    // repository content keys off the latter so a worktree reads its own files.
+    const [commonDirOutput = '', topLevelOutput = ''] = execFileSync(
       'git',
-      ['rev-parse', '--git-common-dir'],
+      ['rev-parse', '--git-common-dir', '--show-toplevel'],
       { cwd, encoding: 'utf8', stdio: 'pipe', timeout: 2000 },
-    ).trim();
-    if (commonDirOutput === '') return null;
+    )
+      .trim()
+      .split('\n');
+    if (commonDirOutput === '' || topLevelOutput === '') return null;
     const commonDir = isAbsolute(commonDirOutput)
       ? resolve(commonDirOutput)
       : resolve(cwd, commonDirOutput);
@@ -95,7 +101,7 @@ export function resolveSeatRoots(cwd, env) {
     return {
       charterDir: null,
       stateDir: join(commonDir, 'eshyra-seats'),
-      checkoutRoot: dirname(commonDir),
+      checkoutRoot: resolve(topLevelOutput),
       mode: 'repo',
     };
   } catch {

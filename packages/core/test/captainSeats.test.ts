@@ -10,6 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { resolveSeatRoots } from '../../../scripts/seats/seatContext.mjs';
 
 // Permanent evidence for eshyra-itnm. Captain routing and the advisory
 // handoff boundary must remain structural across future hook changes.
@@ -301,6 +302,40 @@ describe('agent captain seats', () => {
       join(absoluteCommonDir, 'eshyra-seats', 'claude-captain', 'handoff.md'),
     );
     expect(resolved.startsWith(`${absoluteCommonDir}/`)).toBe(true);
+  });
+
+  it('separates shared seat state from the worktree that supplies the code', () => {
+    // Regression: deriving repository content from the git COMMON dir sends a
+    // linked worktree to the parent checkout, where its own seat script does
+    // not exist yet, and the seat silently never loads. State keys off the
+    // common dir so worktrees agree; content keys off the working tree root.
+    const roots = resolveSeatRoots(process.cwd(), {});
+    expect(roots).not.toBeNull();
+    const commonDir = resolve(
+      execFileSync('git', ['rev-parse', '--show-toplevel'], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+      }).trim(),
+      execFileSync('git', ['rev-parse', '--git-common-dir'], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+      }).trim(),
+    );
+    expect(roots?.stateDir).toBe(join(commonDir, 'eshyra-seats'));
+    expect(roots?.checkoutRoot).toBe(
+      execFileSync('git', ['rev-parse', '--show-toplevel'], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+      }).trim(),
+    );
+    expect(existsSync(join(roots?.checkoutRoot ?? '', 'AGENTS.md'))).toBe(true);
+
+    // The installed Codex shim must locate the seat script the same way.
+    const installer = readFileSync(installerScript, 'utf8');
+    expect(installer).toContain('rev-parse --show-toplevel');
+    expect(installer).not.toMatch(
+      /dirname "\$git_common_dir"\)\/scripts\/seats/,
+    );
   });
 
   it('round-trips a handoff and leaves the working tree untouched', () => {
