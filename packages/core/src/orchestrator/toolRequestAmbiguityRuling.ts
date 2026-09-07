@@ -8,7 +8,7 @@ export const requestAmbiguityRulingTool: Tool = {
   name: 'request_ambiguity_ruling',
   mutates: false,
   description:
-    'Call when an outcome depends on an ambiguity marked UNRESOLVED in Campaign Rules. Then narrate the published uncertainty, present the interpretations neutrally, and tell the player they will be asked to choose. Never choose an interpretation yourself. If status is resolved, apply the active ruling. If status is conflicting, no player choice follows: the listed conflictingRulings must be revoked or superseded with /rules before the ambiguity can be relied on.',
+    'Call when an outcome depends on an ambiguity marked UNRESOLVED in Campaign Rules. Then narrate the published uncertainty, present the interpretations neutrally, and tell the player they will be asked to choose. Never choose an interpretation yourself. If status is resolved, apply the active ruling. If status is conflicting, no player choice follows: one of the listed conflictingRulings must be revoked with /rules revoke before the ambiguity can be relied on.',
   inputSchema: {
     type: 'object',
     properties: {

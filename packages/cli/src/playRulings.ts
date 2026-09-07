@@ -67,8 +67,9 @@ function ambiguityIdFromCall(call: ExecutedToolCall): string | undefined {
  *
  * A request whose ambiguity is `conflicting` (two active rulings overlap, so
  * neither is authoritative) is not a choice: recording a third ruling cannot
- * repair it, so the player is told to revoke or supersede one of the
- * conflicting rulings with `/rules` instead of being prompted.
+ * repair it (nor can a same-ambiguity supersession, which still overlaps the
+ * other ruling), so the player is told to revoke one of the conflicting
+ * rulings with `/rules revoke` instead of being prompted.
  */
 export async function offerAmbiguityRulings(
   deps: PlayDeps,
@@ -85,7 +86,7 @@ export async function offerAmbiguityRulings(
       if (offered.has(ambiguityId)) continue;
       offered.add(ambiguityId);
       deps.io.write(
-        `Rulings ${call.result.data.conflictingRulings.join(', ')} for ${ambiguityId} conflict; none is authoritative and no choice can be recorded until one is repaired. Use '/rules revoke <ruleIdentity>' or '/rules supersede <ruleIdentity> ...' to repair it.`,
+        `Rulings ${call.result.data.conflictingRulings.join(', ')} for ${ambiguityId} conflict; none is authoritative and no choice can be recorded until one is repaired. Use '/rules revoke <ruleIdentity>' on one of them to repair it.`,
       );
       continue;
     }

@@ -21,6 +21,17 @@ export interface CampaignAmbiguityContext {
   readonly conflictingRulings: readonly CampaignRulingProjection[];
 }
 
+/**
+ * Several simultaneously active rulings claim one ambiguity id whose immutable
+ * ambiguity could not be bound (absent from the resolved stack, or the
+ * ambiguity source was unavailable). The conflict is known from durable
+ * provenance alone, so none of the rulings is authoritative.
+ */
+export interface CampaignUnboundConflict {
+  readonly ambiguityId: string;
+  readonly rulings: readonly CampaignRulingProjection[];
+}
+
 export interface CampaignRulesContext {
   readonly position: string;
   /** Error detail when the bound immutable ambiguity source was unavailable. */
@@ -28,6 +39,8 @@ export interface CampaignRulesContext {
   readonly rules: readonly CampaignRuleProjection[];
   /** Active rulings whose ambiguity is absent from the bound pack. */
   readonly unboundRulings: readonly CampaignRulingProjection[];
+  /** Contradictory active rulings whose ambiguity could not be bound. */
+  readonly unboundConflicts: readonly CampaignUnboundConflict[];
   /** Active restored rows that cannot be represented by a valid context branch. */
   readonly unrepresentableRules: readonly CampaignRuleProjection[];
   readonly ambiguities: readonly CampaignAmbiguityContext[];
@@ -102,7 +115,7 @@ export function assembleCampaignRulesContext(
     campaignId,
     position,
   );
-  const rulings = activeRules
+  const allRulings = activeRules
     .filter(
       (
         rule,
@@ -111,7 +124,6 @@ export function assembleCampaignRulesContext(
         provenance: Extract<typeof rule.provenance, { kind: 'ambiguity' }>;
       } => rule.ruleKind === 'ruling' && rule.provenance.kind === 'ambiguity',
     )
-    .filter((rule) => ambiguityIds.has(rule.provenance.ambiguityId))
     .map((rule) => {
       const projection = projectCampaignRule(rule);
       return {
@@ -121,12 +133,31 @@ export function assembleCampaignRulesContext(
         selectedInterpretationId: rule.provenance.selectedInterpretationId,
       };
     });
-  const rulingsByAmbiguity = new Map<string, CampaignRulingProjection[]>();
-  for (const ruling of rulings) {
-    const existing = rulingsByAmbiguity.get(ruling.ambiguityId) ?? [];
+  // Conflict multiplicity is a durable-provenance fact: it is computed over
+  // every active ambiguity ruling, whether or not its ambiguity can be bound.
+  const allRulingsByAmbiguity = new Map<string, CampaignRulingProjection[]>();
+  for (const ruling of allRulings) {
+    const existing = allRulingsByAmbiguity.get(ruling.ambiguityId) ?? [];
     existing.push(ruling);
-    rulingsByAmbiguity.set(ruling.ambiguityId, existing);
+    allRulingsByAmbiguity.set(ruling.ambiguityId, existing);
   }
+  const rulingsByAmbiguity = new Map<string, CampaignRulingProjection[]>();
+  const unboundConflicts: CampaignUnboundConflict[] = [];
+  for (const [ambiguityId, group] of allRulingsByAmbiguity) {
+    if (ambiguityIds.has(ambiguityId)) {
+      rulingsByAmbiguity.set(ambiguityId, group);
+    } else if (group.length > 1) {
+      unboundConflicts.push({ ambiguityId, rulings: group });
+    }
+  }
+  unboundConflicts.sort((a, b) =>
+    a.ambiguityId < b.ambiguityId ? -1 : a.ambiguityId > b.ambiguityId ? 1 : 0,
+  );
+  const unboundConflictIdentities = new Set(
+    unboundConflicts.flatMap(({ rulings }) =>
+      rulings.map(({ ruleIdentity }) => ruleIdentity),
+    ),
+  );
   return {
     position,
     ...(ambiguitySourceUnavailable === undefined
@@ -134,27 +165,20 @@ export function assembleCampaignRulesContext(
       : { ambiguitySourceUnavailable }),
     rules: activeRules
       .filter(
-        (rule) => stack === undefined || rule.provenance.kind !== 'ambiguity',
+        (rule) =>
+          !unboundConflictIdentities.has(rule.ruleIdentity) &&
+          (stack === undefined || rule.provenance.kind !== 'ambiguity'),
       )
       .map(projectCampaignRule),
-    unboundRulings: activeRules
-      .filter(
-        (
-          rule,
-        ): rule is typeof rule & {
-          provenance: Extract<typeof rule.provenance, { kind: 'ambiguity' }>;
-        } =>
-          stack !== undefined &&
-          rule.provenance.kind === 'ambiguity' &&
-          !ambiguityIds.has(rule.provenance.ambiguityId),
-      )
-      .map((rule) => projectCampaignRule(rule))
-      .filter(
-        (rule): rule is CampaignRulingProjection =>
-          rule.ruleKind === 'ruling' &&
-          'selectedInterpretationId' in rule &&
-          typeof rule.selectedInterpretationId === 'string',
-      ),
+    unboundRulings:
+      stack === undefined
+        ? []
+        : allRulings.filter(
+            (ruling) =>
+              !ambiguityIds.has(ruling.ambiguityId) &&
+              !unboundConflictIdentities.has(ruling.ruleIdentity),
+          ),
+    unboundConflicts,
     unrepresentableRules: activeRules
       .filter(
         (rule) =>
@@ -177,6 +201,14 @@ export function assembleCampaignRulesContext(
   };
 }
 
+/**
+ * The only executable repair for contradictory active rulings. Ordinary
+ * supersession is deliberately not offered: a same-ambiguity successor still
+ * overlaps the other conflicting ruling and is rejected by the store.
+ */
+const CONFLICT_REPAIR_GUIDANCE =
+  'Do not assert a canonical answer, do not apply either ruling, do not request a player choice for it, and do not promise one: the player must first revoke one of the conflicting rulings with /rules revoke before this ambiguity can be relied on.';
+
 /** Render the campaign-rule prompt section shared by the DM and auditor. */
 export function renderCampaignRulesSection(
   ctx: CampaignRulesContext,
@@ -185,6 +217,7 @@ export function renderCampaignRulesSection(
     ctx.ambiguitySourceUnavailable === undefined &&
     ctx.rules.length === 0 &&
     ctx.unboundRulings.length === 0 &&
+    ctx.unboundConflicts.length === 0 &&
     ctx.unrepresentableRules.length === 0 &&
     ctx.ambiguities.length === 0
   ) {
@@ -204,6 +237,15 @@ export function renderCampaignRulesSection(
     (ruling) =>
       `- [ruling] ${ruling.ruleIdentity} (${ruling.provenance}; ambiguity absent from current pack; effective ${ruling.effectivePosition}; records: ${ruling.governingRecordKeys.join(', ') || '(none)'}): ${ruling.prose ?? ''}`,
   );
+  const unboundConflicts = ctx.unboundConflicts.flatMap(
+    ({ ambiguityId, rulings }) => [
+      `- CONFLICT: active rulings ${rulings.map((item) => item.ruleIdentity).join(', ')} for ${ambiguityId} (ambiguity ${ctx.ambiguitySourceUnavailable === undefined ? 'absent from current pack' : 'source unavailable'}) contradict one another; none is authoritative. ${CONFLICT_REPAIR_GUIDANCE}`,
+      ...rulings.map(
+        (ruling) =>
+          `  - ${ruling.ruleIdentity} (${ruling.provenance}; effective ${ruling.effectivePosition}; records: ${ruling.governingRecordKeys.join(', ') || '(none)'}): ${ruling.prose ?? ''}`,
+      ),
+    ],
+  );
   const unrepresentableRules = ctx.unrepresentableRules.map(
     (rule) =>
       `- UNREPRESENTABLE ACTIVE CAMPAIGN RULE ${rule.ruleIdentity} (${rule.provenance}; effective ${rule.effectivePosition}; records: ${rule.governingRecordKeys.join(', ') || '(none)'}): preserved restored content requires repair before it can be interpreted`,
@@ -215,7 +257,7 @@ export function renderCampaignRulesSection(
         (item) => `  - ${item.id}: ${item.summary}`,
       ),
       conflictingRulings.length > 1
-        ? `  CONFLICT: active rulings ${conflictingRulings.map((item) => item.ruleIdentity).join(', ')} contradict one another; none is authoritative. Do not assert a canonical answer, do not request a player choice for it, and do not promise one: the player must first revoke or supersede one of the conflicting rulings with /rules before this ambiguity can be relied on.`
+        ? `  CONFLICT: active rulings ${conflictingRulings.map((item) => item.ruleIdentity).join(', ')} contradict one another; none is authoritative. ${CONFLICT_REPAIR_GUIDANCE}`
         : ruling === undefined
           ? '  UNRESOLVED: do not assert a canonical answer or silently choose an interpretation.'
           : `  Active ruling ${ruling.ruleIdentity} (${ruling.selectedInterpretationId}): ${ruling.prose ?? ''}`,
@@ -225,6 +267,7 @@ export function renderCampaignRulesSection(
     ...unavailable,
     ...rules,
     ...unboundRulings,
+    ...unboundConflicts,
     ...unrepresentableRules,
     ...ambiguityLines,
   ].join('\n')}`;

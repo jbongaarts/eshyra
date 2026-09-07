@@ -293,7 +293,10 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
     expect(prompt).toContain(
       '`request_ambiguity_ruling` for a CONFLICT ambiguity',
     );
-    expect(prompt).toContain('revoke or supersede one with');
+    expect(prompt).toContain('the player must revoke one with /rules');
+    expect(prompt).toContain(
+      'absent or whose source is unavailable is still a',
+    );
   });
 
   it('carries a verdict that names the missing ambiguity request by ambiguity id', async () => {
@@ -340,6 +343,7 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
         position: 'cp1~000000000001~session-1~turn-1',
         rules: [],
         unboundRulings: [],
+        unboundConflicts: [],
         unrepresentableRules: [],
         ambiguities: [],
       },
@@ -372,6 +376,7 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
           },
         ],
         unboundRulings: [],
+        unboundConflicts: [],
         unrepresentableRules: [],
         ambiguities: [],
       },
@@ -429,6 +434,7 @@ describe('audit prompt campaign-rule authority states (eshyra-jhpt.4)', () => {
         position: 'cp1~000000000001~session-1~turn-1',
         rules: [],
         unboundRulings: [],
+        unboundConflicts: [],
         unrepresentableRules: [],
         ambiguities: [
           {
@@ -446,8 +452,9 @@ describe('audit prompt campaign-rule authority states (eshyra-jhpt.4)', () => {
       'CONFLICT: active rulings ruling:conflict-a, ruling:conflict-b contradict one another; none is authoritative.',
     );
     expect(message).toContain(
-      'do not request a player choice for it, and do not promise one: the player must first revoke or supersede one of the conflicting rulings with /rules',
+      'do not apply either ruling, do not request a player choice for it, and do not promise one: the player must first revoke one of the conflicting rulings with /rules revoke',
     );
+    expect(message).not.toContain('supersede');
     expect(message).not.toContain('Active ruling ruling:conflict-a');
     expect(message).not.toContain('Active ruling ruling:conflict-b');
   });
@@ -459,6 +466,7 @@ describe('audit prompt campaign-rule authority states (eshyra-jhpt.4)', () => {
         position: 'cp1~000000000001~session-1~turn-1',
         rules: [],
         unboundRulings: [],
+        unboundConflicts: [],
         unrepresentableRules: [
           {
             ruleIdentity: 'rule:restored-broken',
@@ -486,6 +494,36 @@ describe('audit prompt campaign-rule authority states (eshyra-jhpt.4)', () => {
     expect(message).not.toContain('- [house-rule] rule:restored-broken');
   });
 
+  it('renders contradictory rulings as CONFLICT even when their ambiguity is unbound', () => {
+    const message = buildAuditUserMessage({
+      ...base,
+      campaignRules: {
+        position: 'cp1~000000000001~session-1~turn-1',
+        ambiguitySourceUnavailable: 'pack ambiguity source failed',
+        rules: [],
+        unboundRulings: [],
+        unboundConflicts: [
+          {
+            ambiguityId: ambiguity.id,
+            rulings: [
+              ruling('ruling:conflict-a', 'reading-a'),
+              ruling('ruling:conflict-b', 'reading-b'),
+            ],
+          },
+        ],
+        unrepresentableRules: [],
+        ambiguities: [],
+      },
+    });
+    expect(message).toContain(
+      `- CONFLICT: active rulings ruling:conflict-a, ruling:conflict-b for ${ambiguity.id} (ambiguity source unavailable) contradict one another; none is authoritative.`,
+    );
+    expect(message).toContain('  - ruling:conflict-a (');
+    expect(message).toContain('  - ruling:conflict-b (');
+    expect(message).not.toContain('- [ruling] ruling:conflict-a');
+    expect(message).not.toContain('Active ruling');
+  });
+
   it('keeps an ordinary valid ruling binding under its stable identity', () => {
     const message = buildAuditUserMessage({
       ...base,
@@ -493,6 +531,7 @@ describe('audit prompt campaign-rule authority states (eshyra-jhpt.4)', () => {
         position: 'cp1~000000000001~session-1~turn-1',
         rules: [],
         unboundRulings: [],
+        unboundConflicts: [],
         unrepresentableRules: [],
         ambiguities: [
           {

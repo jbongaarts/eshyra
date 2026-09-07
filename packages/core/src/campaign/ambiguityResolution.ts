@@ -113,8 +113,9 @@ function knownInterpretationIds(ambiguity: RulesAmbiguity): string {
 /**
  * The ambiguity's state at the next turn, where a new ruling would take
  * effect. Conflicting rulings fail closed here: a third overlapping ruling
- * would not resolve the conflict, so the caller must revoke or supersede one
- * of the existing rulings through management first.
+ * would not resolve the conflict (and a same-ambiguity successor would still
+ * overlap the other ruling), so the caller must revoke one of the existing
+ * rulings through management first.
  */
 function resolutionAtNextPosition(
   db: Db,
@@ -134,9 +135,7 @@ function resolutionAtNextPosition(
     throw new CampaignRuleError(
       `ambiguity ${input.ambiguityId} has conflicting active rulings ${resolution.conflictingRulings
         .map(({ ruleIdentity }) => ruleIdentity)
-        .join(
-          ', ',
-        )}; revoke or supersede one with /rules before recording a ruling`,
+        .join(', ')}; revoke one with /rules revoke before recording a ruling`,
     );
   }
   return resolution;

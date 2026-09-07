@@ -203,6 +203,7 @@ describe('Context Assembler', () => {
         position: formatCampaignPosition(campaignPosition(1)),
         rules: [],
         unboundRulings: [],
+        unboundConflicts: [],
         unrepresentableRules: [],
         ambiguities: [],
       }),

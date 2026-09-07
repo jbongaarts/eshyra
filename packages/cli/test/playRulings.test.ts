@@ -9,6 +9,7 @@ import {
   openDatabase,
   recordAmbiguityRuling,
   revokeCampaignRule,
+  supersedeCampaignRule,
 } from '@eshyra/core';
 import { resolveCampaignPosition } from '@eshyra/core/internal';
 import { describe, expect, it } from 'vitest';
@@ -215,6 +216,40 @@ describe('play ambiguity rulings', () => {
       `Rulings raw-ruling-one, raw-ruling-two for ${AMBIGUITY_ID} conflict; none is authoritative`,
     );
     expect(lines[0]).toContain("'/rules revoke <ruleIdentity>'");
+    expect(lines[0]).not.toContain('supersede');
+
+    // Ordinary supersession is NOT an advertised repair: a same-ambiguity
+    // successor still overlaps the other conflicting ruling and is rejected.
+    const one = getCampaignRule(db, {
+      campaignId: 'campaign-1',
+      ruleIdentity: 'raw-ruling-one',
+    });
+    if (one === undefined) throw new Error('seeded ruling missing');
+    expect(() =>
+      supersedeCampaignRule(db, {
+        campaignId: 'campaign-1',
+        ruleIdentity: 'raw-ruling-one',
+        successor: {
+          ...one,
+          ruleIdentity: 'raw-ruling-one-successor',
+          effectivePosition: { ...p1, ordinal: 2 },
+          temporalMode: { mode: 'prospective' },
+          governingRecordKeys: ['spell:create-undead'],
+          prose: 'Use the mixed reading.',
+        },
+        currentPosition: p1,
+        validation: {
+          ambiguity: lookupCampaignAmbiguity(db, {
+            campaignId: 'campaign-1',
+            ambiguityId: AMBIGUITY_ID,
+            position: p1,
+          }).ambiguity,
+        },
+      }),
+    ).toThrow("overlaps 'raw-ruling-two'");
+    expect(
+      db.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),
+    ).toEqual({ count: 2 });
 
     // Ordinary recording cannot paper over the conflict with a third ruling.
     expect(() =>
@@ -225,7 +260,7 @@ describe('play ambiguity rulings', () => {
         currentPosition: p1,
       }),
     ).toThrow(
-      'has conflicting active rulings raw-ruling-one, raw-ruling-two; revoke or supersede one with /rules',
+      'has conflicting active rulings raw-ruling-one, raw-ruling-two; revoke one with /rules revoke',
     );
     expect(
       db.prepare('SELECT COUNT(*) AS count FROM campaign_rule').get(),

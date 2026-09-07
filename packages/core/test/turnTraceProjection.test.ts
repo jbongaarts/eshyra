@@ -38,6 +38,7 @@ const campaignRulesContext: CampaignRulesContext = {
     },
   ],
   unboundRulings: [],
+  unboundConflicts: [],
   unrepresentableRules: [],
   ambiguities: [
     {

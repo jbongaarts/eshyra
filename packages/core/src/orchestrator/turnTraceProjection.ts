@@ -42,6 +42,9 @@ export function campaignRulesEvidenceFrom(
   const rulings = new Map<string, CampaignRulingProjection>();
   for (const ruling of ctx.unboundRulings)
     rulings.set(ruling.ruleIdentity, ruling);
+  for (const conflict of ctx.unboundConflicts)
+    for (const ruling of conflict.rulings)
+      rulings.set(ruling.ruleIdentity, ruling);
   for (const { ruling, conflictingRulings } of ctx.ambiguities) {
     if (ruling !== undefined) rulings.set(ruling.ruleIdentity, ruling);
     for (const conflicting of conflictingRulings)
@@ -69,9 +72,12 @@ export function campaignRulesEvidenceFrom(
           ruling === undefined && conflictingRulings.length <= 1,
       )
       .map(({ ambiguity }) => ambiguity.id),
-    conflictingAmbiguityIds: ctx.ambiguities
-      .filter(({ conflictingRulings }) => conflictingRulings.length > 1)
-      .map(({ ambiguity }) => ambiguity.id),
+    conflictingAmbiguityIds: [
+      ...ctx.ambiguities
+        .filter(({ conflictingRulings }) => conflictingRulings.length > 1)
+        .map(({ ambiguity }) => ambiguity.id),
+      ...ctx.unboundConflicts.map(({ ambiguityId }) => ambiguityId),
+    ],
     ...(ctx.ambiguitySourceUnavailable === undefined
       ? {}
       : { ambiguitySourceUnavailable: ctx.ambiguitySourceUnavailable }),

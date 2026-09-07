@@ -3,6 +3,7 @@ import type { CampaignPosition, CampaignRule } from '../src/internal.js';
 import {
   assembleCampaignRulesContext,
   assembleContext,
+  campaignRulesEvidenceFrom,
   createCampaignRuleReadSeam,
   formatCampaignPosition,
   getCampaignRule,
@@ -14,6 +15,7 @@ import {
   createCampaignRule as persistCampaignRule,
   revokeCampaignRule as persistRevokeCampaignRule,
   supersedeCampaignRule as persistSupersedeCampaignRule,
+  renderCampaignRulesSection,
   renderContextMessage,
   resolveCampaignPosition,
   validateCampaignRule,
@@ -1293,6 +1295,132 @@ describe('campaign rule persistence', () => {
     );
     db.close();
   });
+
+  it.each([
+    {
+      sibling: 'ambiguity absent from an otherwise resolved stack',
+      stack: (db: ReturnType<typeof bareDb>) => {
+        const full = resolveStrictCampaignRulesStack(db);
+        return {
+          stack: {
+            ...full,
+            recordsByKey: new Map(
+              [...full.recordsByKey].filter(
+                ([key]) => key !== 'spell:find-familiar',
+              ),
+            ),
+          },
+          unavailable: undefined,
+          label: 'ambiguity absent from current pack',
+        };
+      },
+    },
+    {
+      sibling: 'ambiguity source unavailable (stack omitted)',
+      stack: () => ({
+        stack: undefined,
+        unavailable: 'ambiguity source failed for the bound pack',
+        label: 'ambiguity source unavailable',
+      }),
+    },
+  ])(
+    'keeps contradictory restored rulings non-authoritative when $sibling (eshyra-jhpt.4/.6)',
+    ({ stack: build }) => {
+      const db = bareDb();
+      const campaignPosition = formatCampaignPosition(p(1));
+      const ambiguityId =
+        'ambiguity:find-familiar-permanent-dismissal-after-zero-hp';
+      const insert = db.prepare(`
+      INSERT INTO campaign_rule (
+        campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
+        ambiguity_id, selected_interpretation_id, question_id, rationale,
+        effective_position, temporal_mode, disputed_position, superseded_by,
+        revoked_position, scope, governing_record_keys_json, prose, provenance,
+        session_id, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `);
+      for (const [identity, selected, ambiguity] of [
+        ['raw-ruling-one', 'presence-required', ambiguityId],
+        ['raw-ruling-two', 'active-link-sufficient', ambiguityId],
+        ['lone-ruling', 'homogeneous-alternative', 'ambiguity:gone-elsewhere'],
+      ]) {
+        insert.run(
+          'c1',
+          identity,
+          'ruling',
+          'active',
+          'player-approved',
+          'ambiguity',
+          ambiguity,
+          selected,
+          null,
+          null,
+          campaignPosition,
+          'prospective',
+          null,
+          null,
+          null,
+          'test',
+          '[]',
+          identity,
+          `${ambiguity}#${selected}`,
+          'test',
+          '2026-09-03T00:00:00.000Z',
+        );
+      }
+      const { stack, unavailable, label } = build(db);
+      const context = assembleCampaignRulesContext(
+        db,
+        'c1',
+        campaignPosition,
+        stack,
+        unavailable,
+      );
+
+      // The contradiction is classified from durable provenance alone.
+      expect(context.unboundConflicts).toEqual([
+        {
+          ambiguityId,
+          rulings: [
+            expect.objectContaining({ ruleIdentity: 'raw-ruling-one' }),
+            expect.objectContaining({ ruleIdentity: 'raw-ruling-two' }),
+          ],
+        },
+      ]);
+      expect(
+        context.ambiguities.map(({ ambiguity }) => ambiguity.id),
+      ).not.toContain(ambiguityId);
+      const asBinding = [...context.rules, ...context.unboundRulings].map(
+        ({ ruleIdentity }) => ruleIdentity,
+      );
+      expect(asBinding).not.toContain('raw-ruling-one');
+      expect(asBinding).not.toContain('raw-ruling-two');
+      // A single unbound ruling keeps its prior (visible, non-conflicting) home.
+      expect(asBinding).toContain('lone-ruling');
+
+      const rendered = renderCampaignRulesSection(context) ?? '';
+      expect(rendered).toContain(
+        `- CONFLICT: active rulings raw-ruling-one, raw-ruling-two for ${ambiguityId} (${label}) contradict one another; none is authoritative.`,
+      );
+      expect(rendered).toContain('do not apply either ruling');
+      expect(rendered).toContain('revoke one of the conflicting rulings');
+      expect(rendered).toContain('  - raw-ruling-one (');
+      expect(rendered).toContain('  - raw-ruling-two (');
+      expect(rendered).not.toContain('- [ruling] raw-ruling-one');
+      expect(rendered).not.toContain('- [ruling] raw-ruling-two');
+
+      // A3 evidence retains the conflict identity and both rulings.
+      const evidence = campaignRulesEvidenceFrom(context);
+      expect(evidence.conflictingAmbiguityIds).toEqual([ambiguityId]);
+      expect(evidence.rulings.map(({ ruleIdentity }) => ruleIdentity)).toEqual(
+        expect.arrayContaining(['raw-ruling-one', 'raw-ruling-two']),
+      );
+      expect(
+        evidence.rules.map(({ ruleIdentity }) => ruleIdentity),
+      ).not.toContain('raw-ruling-one');
+      db.close();
+    },
+  );
 
   it('accounts for restored house rules with ambiguity provenance', () => {
     const db = bareDb();
