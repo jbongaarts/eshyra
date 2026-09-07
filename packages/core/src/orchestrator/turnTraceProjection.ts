@@ -1,5 +1,9 @@
 import type { CampaignRulesContext } from '../campaign/campaignContext.js';
-import type { CampaignRulingProjection } from '../campaign/campaignRules.js';
+import {
+  type CampaignRuleProjection,
+  type CampaignRulingProjection,
+  isCampaignRulingProjection,
+} from '../campaign/campaignRules.js';
 import type {
   CampaignRulesEvidence,
   TraceJsonValue,
@@ -40,6 +44,15 @@ export function campaignRulesEvidenceFrom(
   ctx: CampaignRulesContext,
 ): CampaignRulesEvidence {
   const rulings = new Map<string, CampaignRulingProjection>();
+  // Classify by durable ruling provenance, not by the source-binding bucket:
+  // when the ambiguity source is unavailable the shared context carries valid
+  // nonconflicting ambiguity rulings in `rules`, and A3 must still record
+  // them as rulings with their ambiguity/interpretation identities.
+  const genericRules: CampaignRuleProjection[] = [];
+  for (const rule of ctx.rules) {
+    if (isCampaignRulingProjection(rule)) rulings.set(rule.ruleIdentity, rule);
+    else genericRules.push(rule);
+  }
   for (const ruling of ctx.unboundRulings)
     rulings.set(ruling.ruleIdentity, ruling);
   for (const conflict of ctx.unboundConflicts)
@@ -52,7 +65,7 @@ export function campaignRulesEvidenceFrom(
   }
   return {
     position: ctx.position,
-    rules: [...ctx.rules, ...ctx.unrepresentableRules].map((rule) => ({
+    rules: [...genericRules, ...ctx.unrepresentableRules].map((rule) => ({
       ruleIdentity: rule.ruleIdentity,
       ruleKind: rule.ruleKind,
       status: rule.status,

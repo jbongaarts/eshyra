@@ -513,6 +513,22 @@ export function orderCampaignRules(
   });
 }
 
+/**
+ * Whether a projection is a valid ambiguity ruling by its durable provenance
+ * (a ruling carrying an ambiguity id and selected interpretation), regardless
+ * of which context bucket a source-binding pass placed it in.
+ */
+export function isCampaignRulingProjection(
+  projection: CampaignRuleProjection,
+): projection is CampaignRulingProjection {
+  return (
+    projection.ruleKind === 'ruling' &&
+    typeof projection.ambiguityId === 'string' &&
+    'selectedInterpretationId' in projection &&
+    typeof projection.selectedInterpretationId === 'string'
+  );
+}
+
 export function projectCampaignRule(
   rule: CampaignRule,
 ): CampaignRuleProjection | CampaignRulingProjection {

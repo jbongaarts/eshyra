@@ -129,6 +129,7 @@ export {
   compareCampaignPositions,
   formatCampaignPosition,
   hasValidCampaignRuleProvenancePairing,
+  isCampaignRulingProjection,
   orderCampaignRules,
   parseCampaignPosition,
   precedenceOf,
