@@ -202,6 +202,20 @@ Load-bearing principles:
   implementation details). New core symbols default to internal — promote to
   the root export only when a real consumer needs the API.
 
+## Agent Captain Seats
+
+Claude Captain and Codex Captain are durable seats occupied by disposable model
+sessions. Their personal seat state helps a session resume a role, while the
+repository remains the source of truth.
+
+- Seat charters and handoffs are personal, untracked, and never repository
+  authority.
+- Repository authority always outranks any seat charter or predecessor handoff.
+- A handoff is advisory; reconcile every claim against live beads/Git/PR/process
+  state before acting.
+- See [docs/agent-captain-seats.md](docs/agent-captain-seats.md) for operator
+  details.
+
 ## Non-Interactive Shell
 
 Always pass non-interactive flags so aliased confirmation prompts can't hang
