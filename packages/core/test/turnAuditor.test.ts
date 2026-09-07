@@ -269,6 +269,9 @@ describe('audit prompt explicit-action policy (eshyra-4ia4)', () => {
     expect(prompt).toContain('selects none of them may');
     expect(prompt).toContain('already resolved by an active ruling needs');
     expect(prompt).not.toContain('defers to the player is acceptable');
+    expect(prompt).toContain(
+      'applies only when `request_ambiguity_ruling` is listed under Provided',
+    );
   });
 
   it('honors the shared CONFLICT and UNREPRESENTABLE exceptions over the binding rule (eshyra-jhpt.4)', () => {

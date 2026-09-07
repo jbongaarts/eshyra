@@ -23,6 +23,7 @@ import {
   getCampaignPositionAtOrdinal,
   getCampaignRule,
   getCurrentCampaignPosition,
+  hasValidCampaignRuleProvenancePairing,
   listActiveCampaignRulesAtPosition,
   listCampaignRules,
   lookupCampaignAmbiguity,
@@ -381,9 +382,42 @@ function listCommand(args: readonly string[], session: RulesSession): number {
       session.log(
         `Campaign rules for ${id} at ${formatCampaignPosition(at)} (${rules.length}):`,
       );
+      // Mirror the shared context's fail-closed classifications so the
+      // management view names what `/rules revoke` must repair.
+      const activeByAmbiguity = new Map<string, string[]>();
       for (const rule of rules) {
+        if (
+          rule.status === 'active' &&
+          rule.ruleKind === 'ruling' &&
+          rule.provenance.kind === 'ambiguity'
+        ) {
+          const group =
+            activeByAmbiguity.get(rule.provenance.ambiguityId) ?? [];
+          group.push(rule.ruleIdentity);
+          activeByAmbiguity.set(rule.provenance.ambiguityId, group);
+        }
+      }
+      for (const rule of rules) {
+        const flags: string[] = [];
+        if (!hasValidCampaignRuleProvenancePairing(rule)) {
+          flags.push('UNREPRESENTABLE: kind/provenance mismatch; not binding');
+        }
+        if (
+          rule.status === 'active' &&
+          rule.ruleKind === 'ruling' &&
+          rule.provenance.kind === 'ambiguity'
+        ) {
+          const others = (
+            activeByAmbiguity.get(rule.provenance.ambiguityId) ?? []
+          ).filter((identity) => identity !== rule.ruleIdentity);
+          if (others.length > 0) {
+            flags.push(
+              `CONFLICT with ${others.join(', ')}; none is authoritative until one is revoked`,
+            );
+          }
+        }
         session.log(
-          `  ${rule.ruleIdentity}  [${rule.ruleKind}/${rule.status}]  effective ${rule.effectivePosition.ordinal}  ${provenanceLabel(rule.provenance)}  — ${rule.prose.slice(0, 80)}`,
+          `  ${rule.ruleIdentity}  [${rule.ruleKind}/${rule.status}]  effective ${rule.effectivePosition.ordinal}  ${provenanceLabel(rule.provenance)}  — ${rule.prose.slice(0, 80)}${flags.length > 0 ? `  !! ${flags.join('; ')}` : ''}`,
         );
       }
     });
@@ -419,7 +453,11 @@ function ambiguitiesCommand(
             ? `resolved:${resolution.ruling?.ruleIdentity ?? '(unknown)'}`
             : resolution.status;
         session.log(
-          `${item.ambiguity.id}  status: ${status}  interpretations: ${item.ambiguity.interpretations.map(({ id: interpretationId }) => interpretationId).join(', ')}`,
+          `${item.ambiguity.id}  status: ${status}  interpretations: ${item.ambiguity.interpretations.map(({ id: interpretationId }) => interpretationId).join(', ')}${
+            resolution.status === 'conflicting'
+              ? `  conflicting rulings: ${resolution.conflictingRulings.map(({ ruleIdentity }) => ruleIdentity).join(', ')} (revoke one with /rules revoke)`
+              : ''
+          }`,
         );
       }
     });

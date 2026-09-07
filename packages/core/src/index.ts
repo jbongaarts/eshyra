@@ -83,6 +83,7 @@ export type {
 export {
   CampaignRuleError,
   formatCampaignPosition,
+  hasValidCampaignRuleProvenancePairing,
   parseCampaignPosition,
   validateCampaignRules,
 } from './campaign/campaignRules.js';

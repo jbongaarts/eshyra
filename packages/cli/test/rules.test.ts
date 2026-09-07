@@ -694,6 +694,81 @@ describe('runRulesCommand', () => {
     expect(second.output).toContain('already resolved by');
   });
 
+  it('flags conflicting and unrepresentable rows in list and names conflicting rulings in ambiguities', () => {
+    const dbPath = campaignDb();
+    advance(dbPath, 1);
+    const db = openDatabase(dbPath);
+    try {
+      const insert = db.prepare(`
+        INSERT INTO campaign_rule (
+          campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
+          ambiguity_id, selected_interpretation_id, question_id, rationale,
+          effective_position, temporal_mode, disputed_position, superseded_by,
+          revoked_position, scope, governing_record_keys_json, prose, provenance,
+          session_id, updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      `);
+      const position = formatCampaignPosition(persistedPosition(1));
+      const ambiguityId = 'ambiguity:create-undead-ghast-wight-composition';
+      for (const [identity, kind, selected] of [
+        ['raw-ruling-one', 'ruling', 'homogeneous-alternative'],
+        ['raw-ruling-two', 'ruling', 'mixed-within-total'],
+        ['restored-invalid', 'house-rule', 'mixed-within-total'],
+      ]) {
+        insert.run(
+          'c1',
+          identity,
+          kind,
+          'active',
+          'player-approved',
+          'ambiguity',
+          ambiguityId,
+          selected,
+          null,
+          null,
+          position,
+          'prospective',
+          null,
+          null,
+          null,
+          'test',
+          JSON.stringify(['spell:create-undead']),
+          `Prose ${identity}`,
+          `${ambiguityId}#${selected}`,
+          'test',
+          '2026-09-07T00:00:00.000Z',
+        );
+      }
+    } finally {
+      db.close();
+    }
+    const list = invoke(dbPath, ['list']);
+    expect(list.code).toBe(0);
+    expect(list.output).toContain(
+      'raw-ruling-one  [ruling/active]  effective 1  ambiguity ambiguity:create-undead-ghast-wight-composition, interpretation homogeneous-alternative  — Prose raw-ruling-one  !! CONFLICT with raw-ruling-two; none is authoritative until one is revoked',
+    );
+    expect(list.output).toContain(
+      'raw-ruling-two  [ruling/active]  effective 1  ambiguity ambiguity:create-undead-ghast-wight-composition, interpretation mixed-within-total  — Prose raw-ruling-two  !! CONFLICT with raw-ruling-one; none is authoritative until one is revoked',
+    );
+    expect(list.output).toContain(
+      'restored-invalid  [house-rule/active]  effective 1  ambiguity ambiguity:create-undead-ghast-wight-composition, interpretation mixed-within-total  — Prose restored-invalid  !! UNREPRESENTABLE: kind/provenance mismatch; not binding',
+    );
+    const ambiguities = invoke(dbPath, ['ambiguities']);
+    expect(ambiguities.output).toContain(
+      'ambiguity:create-undead-ghast-wight-composition  status: conflicting  interpretations: homogeneous-alternative, mixed-within-total  conflicting rulings: raw-ruling-one, raw-ruling-two (revoke one with /rules revoke)',
+    );
+
+    // The advertised repair works from the management view.
+    expect(invoke(dbPath, ['revoke', 'raw-ruling-one']).code).toBe(0);
+    advance(dbPath, 2);
+    const repaired = invoke(dbPath, ['list']);
+    expect(repaired.output).not.toContain('CONFLICT');
+    expect(repaired.output).toContain('raw-ruling-two  [ruling/active]');
+    expect(invoke(dbPath, ['ambiguities']).output).toContain(
+      'status: resolved:raw-ruling-two',
+    );
+  });
+
   it('reports the durable ruling identity for a resolved ambiguity (eshyra-jhpt.6)', () => {
     const dbPath = campaignDb();
     advance(dbPath, 1);
