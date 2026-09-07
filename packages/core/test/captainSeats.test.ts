@@ -12,6 +12,7 @@ import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { hookTrustState } from '../../../scripts/seats/install-captain-seats.mjs';
 import {
+  applyAuthorizedPatch,
   derivePatch,
   diffAgainstBaseline,
   digest,
@@ -21,6 +22,7 @@ import {
 } from '../../../scripts/seats/probe-dispatch-markers.mjs';
 import {
   codexRuntimeIdentity,
+  extractHookDeclarationRegion,
   hookDeclarationIdentity,
   resolveSeatRoots,
 } from '../../../scripts/seats/seatContext.mjs';
@@ -485,6 +487,71 @@ ${librarySource}`,
     expect(call(entry(`trusted_hash = "${realHash}"\n`))).toBe('trusted');
   });
 
+  it('owns the whole hook declaration, not a substring of it', () => {
+    // Permanent evidence for F2-A. Codex keys hook state by the handler's real
+    // group/handler indices, so a sibling SessionStart group moves the managed
+    // handler off `0:0` and the checker would read the sibling's state. And an
+    // extra field on the managed handler can change its semantics outright:
+    // `async = true` makes Codex schedule it separately and drop it from the
+    // results whose stdout becomes the session's additional context, so the
+    // runtime still executes and stamps while NO Captain context is injected.
+    const declaration = [
+      '[[hooks.SessionStart]]',
+      'matcher = ""',
+      '',
+      '[[hooks.SessionStart.hooks]]',
+      'type = "command"',
+      'command = "/p/shim.sh"',
+      'statusMessage = "Loading Codex Captain seat"',
+      '',
+    ].join('\n');
+    const region = (text: string) => extractHookDeclarationRegion(text);
+
+    // Codex's own state tables and unrelated tables are not ours to own.
+    expect(
+      region(
+        `${declaration}\n[hooks.state]\n\n[hooks.state."k"]\ntrusted_hash = "x"\n\n[tui.model_availability_nux]\n"gpt-5.5" = 4\n`,
+      ),
+    ).toBe(region(declaration));
+
+    // A prepended sibling SessionStart group shifts the managed handler's key.
+    expect(
+      region(
+        `[[hooks.SessionStart]]\nmatcher = ""\n\n[[hooks.SessionStart.hooks]]\ntype = "command"\ncommand = "/bin/true"\n\n${declaration}`,
+      ),
+    ).not.toBe(region(declaration));
+
+    // An extra field on the managed handler changes what Codex does with it.
+    for (const extra of ['async = true', 'timeout = 30']) {
+      expect(
+        region(
+          declaration.replace(
+            'statusMessage = "Loading Codex Captain seat"',
+            `statusMessage = "Loading Codex Captain seat"\n${extra}`,
+          ),
+        ),
+      ).not.toBe(region(declaration));
+    }
+
+    // And each of those makes the trust state fail closed rather than certify.
+    const stale = (text: string) =>
+      hookTrustState({
+        profileText: text,
+        declaringFile: '/p/eshyra-captain.config.toml',
+        declaration,
+        observedIdentity: 'sha256:x',
+        currentIdentity: 'sha256:x',
+      });
+    expect(
+      stale(
+        declaration.replace(
+          'statusMessage = "Loading Codex Captain seat"',
+          'statusMessage = "Loading Codex Captain seat"\nasync = true',
+        ),
+      ),
+    ).toBe('stale');
+  });
+
   it('binds the observed identity to the declaration and the Codex runtime', () => {
     const key = '/p/eshyra-captain.config.toml:session_start:0:0';
     const base = [
@@ -535,10 +602,9 @@ ${librarySource}`,
         { mode: 0o755 },
       );
       const withVersion = (version: string) =>
-        codexRuntimeIdentity({
-          PATH: dir,
-          FAKE_CODEX_VERSION: version,
-        });
+        codexRuntimeIdentity({ PATH: dir, FAKE_CODEX_VERSION: version });
+      const withInherited = (env: NodeJS.ProcessEnv, version: string) =>
+        codexRuntimeIdentity({ ...env, FAKE_CODEX_VERSION: version });
 
       // Same launcher file, different runtime build.
       const before = withVersion('0.153.4');
@@ -553,6 +619,27 @@ ${librarySource}`,
       // A runtime that cannot report a version is equally unusable.
       writeFileSync(launcher, '#!/bin/sh\nexit 1\n', { mode: 0o755 });
       expect(codexRuntimeIdentity({ PATH: dir })).toBeNull();
+      // The test seam must be unreachable in production: the installed hook
+      // inherits the ambient environment, so an inherited ESHYRA_SEAT_CODEX_ID
+      // must not be able to freeze the runtime half of the identity across an
+      // upgrade. Without a test root it is ignored entirely.
+      writeFileSync(
+        launcher,
+        '#!/bin/sh\necho "codex-cli $FAKE_CODEX_VERSION"\n',
+        { mode: 0o755 },
+      );
+      const inherited = { PATH: dir, ESHYRA_SEAT_CODEX_ID: 'frozen' };
+      const inheritedBefore = withInherited(inherited, '0.153.4');
+      const inheritedAfter = withInherited(inherited, '0.154.0');
+      expect(inheritedBefore).not.toBe('frozen');
+      expect(inheritedBefore).not.toBe(inheritedAfter);
+      // With the test root present it is honoured, for unit tests only.
+      expect(
+        codexRuntimeIdentity({
+          ...inherited,
+          ESHYRA_SEAT_TEST_ROOT: dir,
+        }),
+      ).toBe('frozen');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -681,11 +768,13 @@ ${librarySource}`,
     }
   }, 60_000);
 
-  it('permits only the exact authorized marker patch, at its anchor', () => {
-    // Preservation is proven against an exact ordered patch, not a syntax
-    // class. A permissive grammar always leaks: a marker assignment can prefix
-    // an arbitrary command, a marker reference can be an argument to one, and a
-    // comment can be a new shebang that changes the interpreter.
+  it('reconstructs the only launcher the authorization permits', () => {
+    // Permanent evidence for F3-A and F3-B. Preservation is proven by
+    // reconstruction: the PINNED pre-change baseline plus the exact hunks, each
+    // at an exact baseline line INDEX, must reproduce the launcher byte for
+    // byte. Anchoring to line text alone let an exact block move between two
+    // equal lines; trusting whatever file is handed in as the baseline let the
+    // same unauthorized edit be applied to both files and still verify.
     const baseline = [
       '#!/usr/bin/env bash',
       'set -eu',
@@ -704,66 +793,105 @@ ${librarySource}`,
       'exec codex "$@"',
     ].join('\n');
 
-    const patch = derivePatch(marked, baseline);
-    expect(patch).not.toBeNull();
-    // The derived patch round-trips through its serialized form.
-    const pinned = parseAuthorizedPatch(formatAuthorizedPatch(patch ?? []));
+    const derived = derivePatch(marked, baseline);
+    expect(derived).not.toBeNull();
+    const pinned = parseAuthorizedPatch(formatAuthorizedPatch(derived));
+    expect(pinned.baselineDigest).toBe(digest(baseline));
     expect(diffAgainstBaseline(marked, baseline, pinned)).toEqual([]);
+    // Baseline plus the patch determines the launcher exactly.
+    expect(applyAuthorizedPatch(baseline, pinned.hunks)).toBe(marked);
 
-    const reject = (text: string) =>
-      diffAgainstBaseline(text, baseline, pinned).join(' ');
+    const reject = (text: string, base = baseline) =>
+      diffAgainstBaseline(text, base, pinned).join(' ');
 
-    // A command hidden behind a marker assignment.
-    expect(
-      reject(
-        marked.replace(
-          'SEAT_ROLE="dispatched-worker"',
-          'SEAT_ROLE="dispatched-worker"\nESHYRA_SEAT_ROLE=dispatched-worker touch /tmp/x',
+    // F3-B: the baseline itself must be the pinned pre-change artifact.
+    const tampered = `${baseline}\nQ_UNAUTHORIZED=1`;
+    expect(reject(marked, tampered)).toContain('not the pinned pre-change');
+    // The same unauthorized edit applied to BOTH files must still be refused.
+    expect(reject(`${marked}\nQ_UNAUTHORIZED=1`, tampered)).toContain(
+      'not the pinned pre-change',
+    );
+
+    // Command hidden behind a marker assignment, and a marker-referencing one.
+    for (const injected of [
+      'ESHYRA_SEAT_ROLE=dispatched-worker touch /tmp/x',
+      'touch $ESHYRA_SEAT_ROLE',
+    ]) {
+      expect(
+        reject(
+          marked.replace(
+            'SEAT_ROLE="dispatched-worker"',
+            `SEAT_ROLE="dispatched-worker"\n${injected}`,
+          ),
         ),
-      ),
-    ).toContain('unauthorized addition');
-    // A command that merely references a marker.
-    expect(
-      reject(
-        marked.replace(
-          'SEAT_ROLE="dispatched-worker"',
-          'SEAT_ROLE="dispatched-worker"\ntouch $ESHYRA_SEAT_ROLE',
-        ),
-      ),
-    ).toContain('unauthorized addition');
+      ).toContain('differs from baseline plus the authorized patch');
+    }
     // A comment that is actually an interpreter change.
-    expect(reject(`#!/bin/sh\n${marked}`)).toContain('unauthorized addition');
-    // The authorized block moved to a different anchor.
-    const moved = [
-      '#!/usr/bin/env bash',
-      '# mark dispatched implementation workers',
-      'SEAT_ROLE="dispatched-worker"',
-      'set -eu',
-      'MODEL="luna"',
-      'refuse_if_parent_checkout',
-      'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$C" \\',
-      'exec codex "$@"',
-    ].join('\n');
-    expect(reject(moved)).toContain('wrong anchor');
-    // A removed guard that an authorized block was anchored to is rejected as
-    // a misplaced block; a removal elsewhere is reported as a removal. Both are
-    // refusals -- what matters is that neither can pass.
+    expect(reject(`#!/bin/sh\n${marked}`)).toContain('differs from baseline');
+    // Removed guard and changed default.
     expect(reject(marked.replace('refuse_if_parent_checkout\n', ''))).toContain(
-      'wrong anchor',
+      'differs from baseline',
     );
-    expect(reject(marked.replace('set -eu\n', ''))).toContain(
-      'baseline line removed or moved',
-    );
-    // A changed default is refused as an unauthorized line.
     expect(reject(marked.replace('MODEL="luna"', 'MODEL="opus"'))).toContain(
-      'unauthorized addition',
+      'differs from baseline',
     );
-    // A launcher that reorders baseline lines cannot even be authorized.
-    expect(derivePatch(moved.replace('set -eu\n', ''), baseline)).toBeNull();
+    // Reordering cannot even be authorized.
+    expect(
+      derivePatch(
+        [
+          '#!/usr/bin/env bash',
+          'MODEL="luna"',
+          'set -eu',
+          'refuse_if_parent_checkout',
+          'exec codex "$@"',
+        ].join('\n'),
+        baseline,
+      ),
+    ).toBeNull();
+  });
 
-    expect(digest('a')).toBe(digest('a'));
-    expect(digest('a')).not.toBe(digest('b'));
-    expect(digest('a')).toMatch(/^sha256:[0-9a-f]{64}$/);
+  it('binds an authorized block to one baseline occurrence, not its text', () => {
+    // F3-A: with a repeated anchor line, an exact authorized block moved from
+    // the first occurrence to the second changes the launcher's behaviour while
+    // every authorized byte is unchanged.
+    const baseline = ['a', 'ANCHOR', 'b', 'ANCHOR', 'c'].join('\n');
+    const atFirst = ['a', 'ANCHOR', 'MARK', 'b', 'ANCHOR', 'c'].join('\n');
+    const atSecond = ['a', 'ANCHOR', 'b', 'ANCHOR', 'MARK', 'c'].join('\n');
+
+    const pinned = parseAuthorizedPatch(
+      formatAuthorizedPatch(derivePatch(atFirst, baseline)),
+    );
+    expect(pinned.hunks[0].afterIndex).toBe(1);
+    expect(diffAgainstBaseline(atFirst, baseline, pinned)).toEqual([]);
+    expect(diffAgainstBaseline(atSecond, baseline, pinned).join(' ')).toContain(
+      'differs from baseline plus the authorized patch',
+    );
+  });
+
+  it('pins the real launcher patch to the real pre-change baseline', () => {
+    // The tracked patch is the authorization for the external change, so its
+    // shape is repository-reviewable evidence rather than a local artifact.
+    const patch = parseAuthorizedPatch(
+      readFileSync(
+        join(process.cwd(), 'scripts/seats/dispatch-marker-patch.txt'),
+        'utf8',
+      ),
+    );
+    expect(patch.baselineDigest).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(patch.hunks.length).toBeGreaterThan(0);
+    for (const hunk of patch.hunks) {
+      expect(Number.isInteger(hunk.afterIndex)).toBe(true);
+      expect(hunk.lines.length).toBeGreaterThan(0);
+    }
+    // Every authorized line is marker-related or a comment: the patch must not
+    // have quietly grown to authorize unrelated launcher behaviour.
+    for (const line of patch.hunks.flatMap((hunk) => hunk.lines)) {
+      const trimmed = line.trim();
+      if (trimmed === '' || trimmed.startsWith('#')) continue;
+      expect(line).toMatch(
+        /ESHYRA_SEAT_ROLE|ESHYRA_DISPATCH_CHILD|SEAT_ROLE|CHILD/,
+      );
+    }
   });
 
   it('keeps privileged supervisor text and wiring out of shared surfaces', () => {

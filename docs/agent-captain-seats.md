@@ -67,13 +67,24 @@ been edited, re-trusted with a different hash, disabled, or handed to an
 upgraded Codex. Unrelated tables Codex writes into the same profile are excluded
 from that digest, so ordinary churn does not invalidate a good observation.
 
+The installer owns the profile's **whole hook-declaration region**, not a
+substring of it. Codex keys hook state by the handler's real group and handler
+indices, so a sibling `SessionStart` group would move the managed handler off
+`0:0`; and an extra field on the handler can change its semantics outright —
+`async = true` makes Codex schedule it separately and drop it from the results
+whose stdout becomes the session's additional context, so the runtime would
+still execute and stamp while no Captain context was injected. Both now read as
+`stale`. Codex's own `[hooks.state]` tables and unrelated tables are excluded.
+
 The runtime half is deliberately the runtime's own report (`codex --version`)
 rather than a stat of whatever `codex` resolves to on `PATH`: the npm CLI ships
 a JavaScript launcher that spawns a separate native build, so the launcher can
 be byte-identical while the build that executes hooks changes underneath it. If
 no runtime can be identified the identity is `null` and the state is
 `runtime-unknown` — it never collapses to a placeholder that would keep one
-observation valid across every future upgrade.
+observation valid across every future upgrade. The `ESHYRA_SEAT_CODEX_ID`
+override is honoured only alongside `ESHYRA_SEAT_TEST_ROOT`, so an inherited
+value cannot freeze the identity in a real session.
 
 | State | Meaning | Exit |
 |---|---|---|
@@ -108,10 +119,12 @@ node scripts/seats/probe-dispatch-markers.mjs <launcher-path> --print-digest
 ```
 
 `--baseline` additionally proves the launcher is its pre-change copy plus an
-**exact authorized patch** and nothing else. The patch is ordered hunks, each
-anchored to the baseline line it follows, kept at
+**exact authorized patch** and nothing else, by reconstruction: the pinned
+baseline plus the exact hunks — each at an exact baseline line *index* — must
+reproduce the launcher byte-for-byte. The patch lives at
 `scripts/seats/dispatch-marker-patch.txt` so the authorized external change is
-reviewable in this repository:
+reviewable in this repository, and it pins the pre-change baseline's digest so a
+baseline that is not the original artifact is rejected before anything else:
 
 ```sh
 # after an intentional launcher change, re-derive the patch for human review
@@ -123,11 +136,10 @@ node scripts/seats/probe-dispatch-markers.mjs <launcher-path> \
   --baseline <pre-change-copy> --patch scripts/seats/dispatch-marker-patch.txt
 ```
 
-Authorizing a *syntax class* rather than the exact patch always leaks — a marker
-assignment can prefix an arbitrary command, a marker reference can be an
-argument to one, and a comment can be a new shebang that changes the
-interpreter. Pinning to the exact anchored hunks refuses all of those, and
-refuses a correct block moved to a different anchor.
+Anchoring to line *text* would let an exact authorized block move between two
+equal baseline lines, and trusting whatever file is supplied as `--baseline`
+would let the same unauthorized edit be applied to both files and still verify.
+Both are refused.
 
 `--print-digest` pins the launcher bytes; that is an identity pin, not semantic
 proof.

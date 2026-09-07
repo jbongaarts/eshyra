@@ -126,143 +126,150 @@ export function probeLauncher(launcherPath, waitMs = 4000) {
 }
 
 /**
- * Preservation is proven against an EXACT authorized patch, not a syntax class.
- * A permissive grammar always leaks: a marker assignment can prefix an
- * arbitrary command, a marker reference can be an argument to one, and a
- * comment can be a new shebang that changes the interpreter. So the allowed
- * external change is expressed as ordered hunks, each anchored to the baseline
- * line it follows, and removing exactly those hunks must leave the baseline
- * byte-for-byte.
+ * Preservation is proven by RECONSTRUCTION: the pinned pre-change baseline plus
+ * the exact authorized hunks, each at an exact baseline line index, must
+ * reproduce the current launcher byte-for-byte.
  *
- * A hunk is { after: <exact baseline line, or null for start-of-file>,
- *             lines: [<exact added lines>] }.
+ * Two things this closes that an ordered walk did not. Anchoring a hunk to
+ * baseline line TEXT lets the same authorized block move between two equal
+ * lines; anchoring to the line INDEX does not. And trusting whatever file is
+ * passed as --baseline loses the fact that it was the pre-change artifact: the
+ * same unauthorized edit applied to both files would still verify. The
+ * baseline's digest is therefore pinned inside the patch and checked first.
+ *
+ * Patch format: `@baseline "<sha256:...>"`, then `@after <index> <json text>`
+ * hunks (index -1 means start of file) followed by `+<line>` additions.
  */
 export function parseAuthorizedPatch(text) {
   const hunks = [];
+  let baselineDigest = null;
   let current = null;
   for (const line of text.split('\n')) {
-    if (line.startsWith('@after ')) {
-      current = { after: JSON.parse(line.slice('@after '.length)), lines: [] };
+    if (line.startsWith('@baseline ')) {
+      baselineDigest = JSON.parse(line.slice('@baseline '.length));
+    } else if (line.startsWith('@after ')) {
+      const rest = line.slice('@after '.length);
+      const space = rest.indexOf(' ');
+      current = {
+        afterIndex: Number.parseInt(rest.slice(0, space), 10),
+        after: JSON.parse(rest.slice(space + 1)),
+        lines: [],
+      };
       hunks.push(current);
     } else if (line.startsWith('+') && current !== null) {
       current.lines.push(line.slice(1));
     }
   }
-  return hunks;
+  return { baselineDigest, hunks };
 }
 
-export function formatAuthorizedPatch(hunks) {
-  return hunks
-    .map(
-      (hunk) =>
-        `@after ${JSON.stringify(hunk.after)}\n${hunk.lines
-          .map((line) => `+${line}`)
-          .join('\n')}`,
-    )
-    .join('\n');
+export function formatAuthorizedPatch({ baselineDigest, hunks }) {
+  const header = `@baseline ${JSON.stringify(baselineDigest)}`;
+  const body = hunks.map(
+    (hunk) =>
+      `@after ${hunk.afterIndex} ${JSON.stringify(hunk.after)}\n${hunk.lines
+        .map((line) => `+${line}`)
+        .join('\n')}`,
+  );
+  return [header, ...body].join('\n');
 }
 
-/** Derive the hunks that turn baseline into current, or null if any baseline
+/**
+ * Derive the hunks that turn baseline into current, or null if any baseline
  * line was removed, changed, or reordered. Used to author the patch once, under
- * human review; verification then pins the launcher to it. */
+ * human review; verification then pins the launcher to it.
+ */
 export function derivePatch(current, baseline) {
   const currentLines = current.split('\n');
   const baselineLines = baseline.split('\n');
   const hunks = [];
   let i = 0;
   let j = 0;
-  let pending = null;
+  let open = null;
   while (i < currentLines.length) {
     if (j < baselineLines.length && currentLines[i] === baselineLines[j]) {
-      pending = baselineLines[j];
+      open = null;
       i += 1;
       j += 1;
       continue;
     }
-    const last = hunks[hunks.length - 1];
-    if (last !== undefined && last.after === pending && last.open) {
-      last.lines.push(currentLines[i]);
-    } else {
-      for (const hunk of hunks) hunk.open = false;
-      hunks.push({ after: pending, lines: [currentLines[i]], open: true });
+    if (open === null) {
+      open = {
+        afterIndex: j - 1,
+        after: j === 0 ? '' : baselineLines[j - 1],
+        lines: [],
+      };
+      hunks.push(open);
     }
+    open.lines.push(currentLines[i]);
     i += 1;
   }
   if (j < baselineLines.length) return null;
-  return hunks.map(({ after, lines }) => ({ after, lines }));
+  return { baselineDigest: digest(baseline), hunks };
 }
 
-export function diffAgainstBaseline(current, baseline, authorizedPatch = []) {
-  const failures = [];
-  const currentLines = current.split('\n');
+/** Rebuild the only launcher the authorization permits. */
+export function applyAuthorizedPatch(baseline, hunks) {
   const baselineLines = baseline.split('\n');
-  const expected = authorizedPatch.map((hunk) => ({ ...hunk }));
-  let i = 0;
-  let j = 0;
-  let previousBaseline = null;
-  let hunkIndex = 0;
-  let withinHunk = 0;
-
-  while (i < currentLines.length) {
-    if (j < baselineLines.length && currentLines[i] === baselineLines[j]) {
-      if (withinHunk !== 0) {
-        failures.push(
-          `authorized block truncated after ${JSON.stringify(currentLines[i - 1].trim().slice(0, 50))}`,
-        );
-        return failures;
-      }
-      previousBaseline = baselineLines[j];
-      i += 1;
-      j += 1;
-      continue;
-    }
-    const hunk = expected[hunkIndex];
-    // Diagnose only after the authorized match fails: a line that reappears
-    // later in the baseline means the baseline line here was removed or moved,
-    // but a duplicated line must not be mistaken for that.
-    const unmatched =
-      hunk === undefined || currentLines[i] !== hunk.lines[withinHunk];
-    if (unmatched) {
-      if (
-        withinHunk === 0 &&
-        j < baselineLines.length &&
-        baselineLines.indexOf(currentLines[i], j + 1) !== -1
-      ) {
-        failures.push(
-          `baseline line removed or moved: ${baselineLines[j].trim().slice(0, 60)}`,
-        );
-        return failures;
-      }
-      failures.push(
-        `unauthorized addition: ${JSON.stringify(currentLines[i].trim().slice(0, 60))}`,
-      );
-      return failures;
-    }
-    if (withinHunk === 0 && hunk.after !== previousBaseline) {
-      failures.push(
-        `authorized block appears at the wrong anchor: expected it after ${JSON.stringify(
-          (hunk.after ?? '<start of file>').trim().slice(0, 50),
-        )}, found it after ${JSON.stringify(
-          (previousBaseline ?? '<start of file>').trim().slice(0, 50),
-        )}`,
-      );
-      return failures;
-    }
-    withinHunk += 1;
-    i += 1;
-    if (withinHunk === hunk.lines.length) {
-      hunkIndex += 1;
-      withinHunk = 0;
-    }
+  const additions = new Map();
+  for (const hunk of hunks) {
+    const at = additions.get(hunk.afterIndex) ?? [];
+    at.push(...hunk.lines);
+    additions.set(hunk.afterIndex, at);
   }
+  const out = [...(additions.get(-1) ?? [])];
+  for (let index = 0; index < baselineLines.length; index += 1) {
+    out.push(baselineLines[index]);
+    out.push(...(additions.get(index) ?? []));
+  }
+  return out.join('\n');
+}
 
-  if (j < baselineLines.length) {
+export function diffAgainstBaseline(current, baseline, authorizedPatch) {
+  const patch = authorizedPatch ?? { baselineDigest: null, hunks: [] };
+  const failures = [];
+  if (
+    patch.baselineDigest !== null &&
+    digest(baseline) !== patch.baselineDigest
+  ) {
     failures.push(
-      `baseline line removed or moved: ${baselineLines[j].trim().slice(0, 60)}`,
+      `baseline is not the pinned pre-change artifact: ${digest(baseline)} != ${patch.baselineDigest}`,
     );
+    return failures;
   }
-  if (hunkIndex < expected.length) {
-    failures.push('an authorized block is missing from the launcher');
+  for (const hunk of patch.hunks) {
+    const baselineLines = baseline.split('\n');
+    const at = hunk.afterIndex;
+    if (at !== -1 && baselineLines[at] !== hunk.after) {
+      failures.push(
+        `authorized block is anchored to baseline line ${at + 1}, which is not ${JSON.stringify(hunk.after.trim().slice(0, 50))}`,
+      );
+      return failures;
+    }
+  }
+  const expected = applyAuthorizedPatch(baseline, patch.hunks);
+  if (expected === current) return failures;
+
+  // Same gate either way; this only makes the failure legible.
+  const expectedLines = expected.split('\n');
+  const currentLines = current.split('\n');
+  const at = expectedLines.findIndex(
+    (line, index) => currentLines[index] !== line,
+  );
+  if (at === -1) {
+    failures.push(
+      `launcher has ${currentLines.length - expectedLines.length} unauthorized trailing line(s)`,
+    );
+  } else if (currentLines[at] === undefined) {
+    failures.push(
+      `launcher is missing an authorized line: ${JSON.stringify(expectedLines[at].trim().slice(0, 60))}`,
+    );
+  } else {
+    failures.push(
+      `launcher differs from baseline plus the authorized patch at line ${at + 1}: expected ${JSON.stringify(
+        expectedLines[at].trim().slice(0, 50),
+      )}, found ${JSON.stringify(currentLines[at].trim().slice(0, 50))}`,
+    );
   }
   return failures;
 }
@@ -314,7 +321,7 @@ if (invokedDirectly) {
   if (baselineIndex !== -1) {
     const patch =
       patchIndex === -1
-        ? []
+        ? null
         : parseAuthorizedPatch(readFileSync(rest[patchIndex + 1], 'utf8'));
     failures.push(
       ...diffAgainstBaseline(

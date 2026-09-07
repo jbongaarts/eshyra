@@ -12,7 +12,10 @@ import {
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { seatHookIdentity } from './seatContext.mjs';
+import {
+  extractHookDeclarationRegion,
+  seatHookIdentity,
+} from './seatContext.mjs';
 
 const repoRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 // Tests install into a temporary root; operators always install into $HOME.
@@ -104,7 +107,8 @@ function currentMatches(entry) {
     if (!statSync(entry.path).isFile()) return false;
     const actual = readFileSync(entry.path, 'utf8');
     const matches = entry.ownsDeclarationOnly
-      ? actual.includes(entry.content)
+      ? extractHookDeclarationRegion(actual) ===
+        extractHookDeclarationRegion(entry.content)
       : actual === entry.content;
     return matches && modeMatches(entry.path, entry.mode);
   } catch {
@@ -172,7 +176,16 @@ export function hookTrustState({
   currentIdentity = null,
 }) {
   if (profileText === null || profileText === undefined) return 'unknown';
-  if (!profileText.includes(declaration)) return 'stale';
+  // Exact ownership of every hook-declaring table, not a substring: a sibling
+  // SessionStart group moves this handler's persisted state key off `0:0`, and
+  // an extra field on the handler (notably `async = true`) can stop Captain
+  // context being injected at all while the runtime still runs and stamps.
+  if (
+    extractHookDeclarationRegion(profileText) !==
+    extractHookDeclarationRegion(declaration)
+  ) {
+    return 'stale';
+  }
   const state = parseHookState(
     profileText,
     `${declaringFile}:session_start:0:0`,

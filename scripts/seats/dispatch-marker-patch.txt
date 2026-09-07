@@ -1,4 +1,5 @@
-@after "EFFORT=\"medium\""
+@baseline "sha256:6436a04c43a5beb11a058b8bb9a1dc3b8623e96e25b9402f854b2962c12431f9"
+@after 21 "EFFORT=\"medium\""
 +
 +# Every child launched here is a dispatched implementation worker, never a
 +# Captain seat occupant. `codex exec` fires SessionStart exactly like an
@@ -8,8 +9,8 @@
 +# profile overlay, which this launcher never loads. Exported unconditionally so
 +# a Captain terminal that dispatches cannot leak its own role into the child.
 +SEAT_ROLE="dispatched-worker"
-@after "  printf ' <prompt: %s bytes from %s>\\n' \"${#PROMPT}\" \"$PROMPT_FILE\""
+@after 101 "  printf ' <prompt: %s bytes from %s>\\n' \"${#PROMPT}\" \"$PROMPT_FILE\""
 +  printf '  env:  ESHYRA_SEAT_ROLE=%s ESHYRA_DISPATCH_CHILD=%s\n' \
 +    "$SEAT_ROLE" "$CHILD"
-@after "# the dispatch closed if the worktree vanished between the check and the launch."
+@after 114 "# the dispatch closed if the worktree vanished between the check and the launch."
 +ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$CHILD" \

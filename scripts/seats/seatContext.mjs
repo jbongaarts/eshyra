@@ -226,6 +226,29 @@ export function splitTomlTables(text) {
  * tables Codex writes into the same file -- UI nudges and the like -- are
  * excluded so ordinary churn does not invalidate a good observation.
  */
+/**
+ * Every hook-declaring table in the profile, excluding the `[hooks.state]`
+ * tables Codex writes and any unrelated table. This is what the installer owns:
+ * comparing it as a whole refuses a prepended or duplicate SessionStart group
+ * (which would move the managed handler's persisted state key off `0:0`) and
+ * refuses extra fields on the managed handler. `async = true` is the reason
+ * that matters -- Codex then schedules the hook separately and drops it from
+ * the results whose stdout becomes the session's additional context, so the
+ * runtime would still execute and stamp while no Captain context is injected.
+ */
+export function extractHookDeclarationRegion(profileText) {
+  return splitTomlTables(profileText)
+    .filter(
+      (section) =>
+        (section.header.startsWith('[[hooks.') ||
+          section.header.startsWith('[hooks.')) &&
+        !section.header.startsWith('[hooks.state'),
+    )
+    .map((section) => `${section.header}\n${section.body.join('\n').trim()}`)
+    .join('\n')
+    .trim();
+}
+
 export function hookDeclarationIdentity(profileText, key) {
   const wanted = splitTomlTables(profileText).filter(
     (section) =>
@@ -254,7 +277,14 @@ export function hookDeclarationIdentity(profileText, key) {
  * "trusted" across every future upgrade.
  */
 export function codexRuntimeIdentity(env = process.env) {
-  if (env.ESHYRA_SEAT_CODEX_ID) return env.ESHYRA_SEAT_CODEX_ID;
+  // The override is a TEST seam and must be unreachable in production: the
+  // installed hook inherits the ambient environment, so an inherited value
+  // would freeze the runtime half of the identity and let one observation
+  // survive every future upgrade -- defeating the fail-closed behaviour this
+  // exists to provide. It is honoured only alongside the test root.
+  if (env.ESHYRA_SEAT_TEST_ROOT && env.ESHYRA_SEAT_CODEX_ID) {
+    return env.ESHYRA_SEAT_CODEX_ID;
+  }
   let version = '';
   try {
     version = execFileSync('codex', ['--version'], {
