@@ -10,31 +10,47 @@ import {
 } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const userHome = homedir();
-const shimPath = join(userHome, '.codex', 'seats', 'codex-captain-context.sh');
-const profilePath = join(userHome, '.codex', 'eshyra-captain.config.toml');
-const wrapperPath = join(userHome, '.local', 'bin', 'codex-captain');
+const repoRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+// Tests install into a temporary root; operators always install into $HOME.
+const installRoot = process.env.ESHYRA_SEAT_INSTALL_ROOT || homedir();
+
+const seatsDir = join(installRoot, '.codex', 'seats');
+const runtimePath = join(seatsDir, 'codex-captain-context.mjs');
+const libraryPath = join(seatsDir, 'seatContext.mjs');
+const shimPath = join(seatsDir, 'codex-captain-context.sh');
+const profilePath = join(installRoot, '.codex', 'eshyra-captain.config.toml');
+const wrapperPath = join(installRoot, '.local', 'bin', 'codex-captain');
 
 function tomlQuote(value) {
   return JSON.stringify(value);
 }
 
+function shellQuote(value) {
+  return `'${value.replaceAll("'", `'\\''`)}'`;
+}
+
+function repoSource(name) {
+  return readFileSync(join(repoRoot, 'scripts', 'seats', name), 'utf8');
+}
+
+// Codex records hook trust against this command STRING, and that decision does
+// not extend to whatever the command later chooses to execute. So everything
+// reachable from here is user-local and changes only on an explicit
+// `npm run seat:install`. Executing the seat script out of a worktree instead
+// would let any branch, or any dispatched implementation worker able to write
+// repository files, obtain unsandboxed user-level execution at the next Captain
+// startup with no new trust prompt -- the one thing this boundary exists to
+// prevent. `node` reads the hook payload from stdin, which exec preserves.
 const shim = `#!/bin/sh
-payload=$(cat 2>/dev/null) || exit 0
-cwd=$(printf '%s' "$payload" | node -e 'let raw=""; process.stdin.on("data", chunk => { raw += chunk; }); process.stdin.on("end", () => { try { const value = JSON.parse(raw); if (value && typeof value.cwd === "string" && value.cwd !== "") process.stdout.write(value.cwd); } catch {} });' 2>/dev/null) || exit 0
-[ -n "$cwd" ] || exit 0
-# The working tree root, not the git common dir: a linked worktree must run its
-# own checked-out seat script, and the common dir would resolve every worktree
-# back to the parent checkout instead.
-top_level=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || exit 0
-[ -n "$top_level" ] || exit 0
-seat_script="$top_level/scripts/seats/codex-captain-context.mjs"
-[ -f "$seat_script" ] || exit 0
-printf '%s' "$payload" | exec node "$seat_script"
+# Installed by scripts/seats/install-captain-seats.mjs. Do not edit in place:
+# the executable closure behind Codex's one-time hook trust must change only
+# through an explicit reinstall. Run \`npm run seat:install\` instead.
+exec node ${shellQuote(runtimePath)}
 `;
 
-const profile = `[[hooks.SessionStart]]
+const PROFILE_DECLARATION = `[[hooks.SessionStart]]
 matcher = ""
 
 [[hooks.SessionStart.hooks]]
@@ -52,14 +68,26 @@ exec env ESHYRA_SEAT_ROLE=captain codex -p eshyra-captain "$@"
 `;
 
 const managed = [
+  { path: libraryPath, content: repoSource('seatContext.mjs') },
+  { path: runtimePath, content: repoSource('codex-captain-context.mjs') },
   { path: shimPath, content: shim, mode: 0o755 },
-  { path: profilePath, content: profile },
+  // Codex persists hook trust INTO the file that declares the hook, so this
+  // profile is shared with Codex and must not be compared or rewritten
+  // byte-for-byte: doing so destroys the trust record on every reinstall and
+  // silently returns the seat to "untrusted". Ownership is the declaration
+  // only. When the declaration itself changes, rewriting is correct -- the old
+  // trusted hash no longer describes it and Codex must prompt again.
+  {
+    path: profilePath,
+    content: PROFILE_DECLARATION,
+    ownsDeclarationOnly: true,
+  },
   { path: wrapperPath, content: wrapper, mode: 0o755 },
 ];
 
 const reportedCharters = [
-  join(userHome, '.claude', 'seats', 'claude-captain.md'),
-  join(userHome, '.codex', 'seats', 'codex-captain.md'),
+  join(installRoot, '.claude', 'seats', 'claude-captain.md'),
+  join(installRoot, '.codex', 'seats', 'codex-captain.md'),
 ];
 
 function modeMatches(path, mode) {
@@ -68,11 +96,12 @@ function modeMatches(path, mode) {
 
 function currentMatches(entry) {
   try {
-    return (
-      statSync(entry.path).isFile() &&
-      readFileSync(entry.path, 'utf8') === entry.content &&
-      modeMatches(entry.path, entry.mode)
-    );
+    if (!statSync(entry.path).isFile()) return false;
+    const actual = readFileSync(entry.path, 'utf8');
+    const matches = entry.ownsDeclarationOnly
+      ? actual.includes(entry.content)
+      : actual === entry.content;
+    return matches && modeMatches(entry.path, entry.mode);
   } catch {
     return false;
   }
@@ -103,40 +132,73 @@ function reportCharters() {
   }
 }
 
-// Codex requires persisted per-hook trust and silently runs nothing when it is
-// absent, so an untrusted seat hook looks identical to a working one until you
-// notice the charter never arrived. Report it rather than let it fail quietly.
-// Trust is granted once, interactively, on the first `codex-captain` launch;
-// the recorded hash covers the hook COMMAND STRING, so editing the shim body or
-// the charter never revokes it.
-function reportHookTrust() {
-  const configPath = join(userHome, '.codex', 'config.toml');
-  let config = '';
-  try {
-    config = readFileSync(configPath, 'utf8');
-  } catch {
-    process.stdout.write(`missing ${configPath} (Codex hook trust unknown)\n`);
-    return;
+// Codex requires persisted per-hook trust and runs nothing without it, silently
+// -- an untrusted seat hook is indistinguishable from a working one until you
+// notice the charter never arrived. Trust is keyed by the hook's SOURCE file
+// (this profile), its event, and the group/handler indices within it; the shim
+// path is not part of the key and may legitimately never appear in config.toml.
+export function hookTrustState(
+  profileText,
+  declaringFile = profilePath,
+  declaration = PROFILE_DECLARATION,
+) {
+  if (profileText === null) return 'unknown';
+  // Measured against Codex 0.153.4: trust is keyed by the DECLARING file, its
+  // event, and the group/handler indices within it, and is written back into
+  // that same file -- not into ~/.codex/config.toml.
+  const key = `${declaringFile}:session_start:0:0`;
+  if (!profileText.includes(`[hooks.state.${JSON.stringify(key)}]`)) {
+    return 'untrusted';
   }
-  const trusted =
-    config.includes('[hooks.state]') || config.includes('[hooks.state.');
-  process.stdout.write(
-    trusted && config.includes(shimPath)
-      ? `trusted ${shimPath} (Codex hook trust recorded)\n`
-      : `untrusted ${shimPath} (approve once on the first codex-captain launch; until then Codex skips the hook silently)\n`,
-  );
+  // The recorded hash cannot be recomputed here (Codex does not expose the
+  // algorithm), but it does not need to be: trust was granted for the exact
+  // declaration text, so a declaration that still matches ours is still the one
+  // that was trusted. A hand-edited declaration fails the byte comparison in
+  // currentMatches, is reported as `differs`, and is rewritten on install --
+  // which is precisely when Codex re-prompts.
+  return profileText.includes(declaration) ? 'trusted' : 'stale';
 }
 
+function readProfile() {
+  try {
+    return readFileSync(profilePath, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+function reportHookTrust() {
+  const state = hookTrustState(readProfile());
+  const message = {
+    trusted: `trusted ${profilePath} (Codex hook trust recorded)`,
+    untrusted: `untrusted ${profilePath} (approve once on the first codex-captain launch; until then Codex skips the hook silently)`,
+    stale: `stale ${profilePath} (declaration changed since it was trusted; Codex will prompt again)`,
+    unknown: `unknown ${profilePath} (profile not installed)`,
+  }[state];
+  process.stdout.write(`${message}\n`);
+  return state;
+}
+
+// Importing this module (tests reuse hookTrustState) must never install
+// anything: run the command-line behaviour only when invoked directly.
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
 const args = process.argv.slice(2);
-if (args.length > 1 || (args.length === 1 && args[0] !== '--check')) {
+if (!invokedDirectly) {
+  // no-op on import
+} else if (args.length > 1 || (args.length === 1 && args[0] !== '--check')) {
   process.stderr.write(
     'Usage: node scripts/seats/install-captain-seats.mjs [--check]\n',
   );
   process.exit(2);
 }
 
-const checkOnly = args[0] === '--check';
-if (checkOnly) {
+const checkOnly = invokedDirectly && args[0] === '--check';
+if (!invokedDirectly) {
+  // imported: expose helpers only
+} else if (checkOnly) {
   let clean = true;
   for (const entry of managed) {
     const result = status(entry);
@@ -144,7 +206,8 @@ if (checkOnly) {
     if (result !== 'current') clean = false;
   }
   reportCharters();
-  reportHookTrust();
+  // An untrusted hook means the seat does not load, so the check must fail.
+  if (reportHookTrust() !== 'trusted') clean = false;
   if (!clean) process.exitCode = 1;
 } else {
   for (const entry of managed) {

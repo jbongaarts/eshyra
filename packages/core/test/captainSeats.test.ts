@@ -10,6 +10,11 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  checkDispatchMarkers,
+  digest,
+} from '../../../scripts/seats/check-dispatch-markers.mjs';
+import { hookTrustState } from '../../../scripts/seats/install-captain-seats.mjs';
 import { resolveSeatRoots } from '../../../scripts/seats/seatContext.mjs';
 
 // Permanent evidence for eshyra-itnm. Captain routing and the advisory
@@ -304,38 +309,137 @@ describe('agent captain seats', () => {
     expect(resolved.startsWith(`${absoluteCommonDir}/`)).toBe(true);
   });
 
-  it('separates shared seat state from the worktree that supplies the code', () => {
-    // Regression: deriving repository content from the git COMMON dir sends a
-    // linked worktree to the parent checkout, where its own seat script does
-    // not exist yet, and the seat silently never loads. State keys off the
-    // common dir so worktrees agree; content keys off the working tree root.
+  it('keeps state shared across worktrees while content stays worktree-local', () => {
     const roots = resolveSeatRoots(process.cwd(), {});
     expect(roots).not.toBeNull();
+    const topLevel = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+    }).trim();
     const commonDir = resolve(
-      execFileSync('git', ['rev-parse', '--show-toplevel'], {
-        cwd: process.cwd(),
-        encoding: 'utf8',
-      }).trim(),
+      topLevel,
       execFileSync('git', ['rev-parse', '--git-common-dir'], {
         cwd: process.cwd(),
         encoding: 'utf8',
       }).trim(),
     );
     expect(roots?.stateDir).toBe(join(commonDir, 'eshyra-seats'));
-    expect(roots?.checkoutRoot).toBe(
-      execFileSync('git', ['rev-parse', '--show-toplevel'], {
-        cwd: process.cwd(),
-        encoding: 'utf8',
-      }).trim(),
-    );
-    expect(existsSync(join(roots?.checkoutRoot ?? '', 'AGENTS.md'))).toBe(true);
+    expect(roots?.checkoutRoot).toBe(topLevel);
+  });
 
-    // The installed Codex shim must locate the seat script the same way.
-    const installer = readFileSync(installerScript, 'utf8');
-    expect(installer).toContain('rev-parse --show-toplevel');
-    expect(installer).not.toMatch(
-      /dirname "\$git_common_dir"\)\/scripts\/seats/,
-    );
+  it('pins the trusted Codex hook to code no worktree edit can change', () => {
+    // Permanent evidence for the F1 trust-boundary finding on PR #527. Codex
+    // runs command hooks OUTSIDE its sandbox and its one-time trust decision
+    // covers only the hook declaration, not whatever that command later
+    // executes. An earlier revision resolved the seat script from the active
+    // worktree, so any branch -- or any dispatched implementation worker able
+    // to write repository files -- could have obtained unsandboxed user-level
+    // execution at the next Captain startup with no new prompt.
+    const installRoot = mkdtempSync(join(tmpdir(), 'eshyra-seat-install-'));
+    const env = { ...baseEnv, ESHYRA_SEAT_INSTALL_ROOT: installRoot };
+    try {
+      execFileSync(process.execPath, [installerScript], {
+        env,
+        encoding: 'utf8',
+      });
+      const shim = readFileSync(
+        join(installRoot, '.codex/seats/codex-captain-context.sh'),
+        'utf8',
+      );
+      // The trusted command must reach only user-local, installed code.
+      expect(shim).toContain(
+        join(installRoot, '.codex/seats/codex-captain-context.mjs'),
+      );
+      expect(shim).not.toContain('rev-parse');
+      expect(shim).not.toContain(process.cwd());
+
+      const payload = JSON.stringify({
+        session_id: 's',
+        cwd: process.cwd(),
+        hook_event_name: 'SessionStart',
+        source: 'startup',
+      });
+      // Charters are user-local and deliberately unmanaged, so drive the
+      // installed runtime through the hermetic test root instead.
+      const hookEnv = { ...baseEnv, ESHYRA_SEAT_TEST_ROOT: tmp };
+      const before = execFileSync(
+        'sh',
+        [join(installRoot, '.codex/seats/codex-captain-context.sh')],
+        { input: payload, env: hookEnv, encoding: 'utf8' },
+      );
+      expect(before).toContain('<!-- eshyra-seat: codex-captain -->');
+      expect(before).toContain('Codex charter');
+
+      // Poison BOTH the entrypoint and a transitive dependency in the repo.
+      const entry = join(
+        process.cwd(),
+        'scripts/seats/codex-captain-context.mjs',
+      );
+      const library = join(process.cwd(), 'scripts/seats/seatContext.mjs');
+      const entrySource = readFileSync(entry, 'utf8');
+      const librarySource = readFileSync(library, 'utf8');
+      try {
+        writeFileSync(
+          entry,
+          `console.log('POISONED_ENTRY');
+${entrySource}`,
+        );
+        writeFileSync(
+          library,
+          `console.log('POISONED_LIBRARY');
+${librarySource}`,
+        );
+        const after = execFileSync(
+          'sh',
+          [join(installRoot, '.codex/seats/codex-captain-context.sh')],
+          { input: payload, env: hookEnv, encoding: 'utf8' },
+        );
+        expect(after).not.toContain('POISONED_ENTRY');
+        expect(after).not.toContain('POISONED_LIBRARY');
+        expect(after).toContain('Codex charter');
+
+        // Only an explicit install may change what the trusted hook runs, and
+        // --check must surface the drift rather than hide it.
+        expect(() =>
+          execFileSync(process.execPath, [installerScript, '--check'], {
+            env,
+            encoding: 'utf8',
+            stdio: 'pipe',
+          }),
+        ).toThrow();
+      } finally {
+        writeFileSync(entry, entrySource);
+        writeFileSync(library, librarySource);
+      }
+    } finally {
+      rmSync(installRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('reports Codex hook trust using the real key, in the declaring file', () => {
+    // Measured against Codex 0.153.4: trust is keyed by the DECLARING file plus
+    // event and group/handler indices, and is written back into that same file
+    // rather than ~/.codex/config.toml. An earlier revision looked for the shim
+    // path in config.toml, which reported a genuinely trusted hook as untrusted.
+    const profile = '/tmp/example/.codex/eshyra-captain.config.toml';
+    const declaration = '[[hooks.SessionStart]]\nmatcher = ""\n';
+    const key = `${profile}:session_start:0:0`;
+    const trustEntry = `[hooks.state.${JSON.stringify(key)}]\ntrusted_hash = "sha256:x"\n`;
+
+    expect(hookTrustState(null, profile, declaration)).toBe('unknown');
+    expect(hookTrustState(declaration, profile, declaration)).toBe('untrusted');
+    expect(
+      hookTrustState(`${declaration}\n${trustEntry}`, profile, declaration),
+    ).toBe('trusted');
+    expect(hookTrustState(trustEntry, profile, declaration)).toBe('stale');
+    // Trust recorded for a different hook must not count as ours.
+    expect(
+      hookTrustState(
+        `${declaration}\n[hooks.state."/other/hooks.json:session_start:0:0"]\n`,
+        profile,
+        declaration,
+      ),
+    ).toBe('untrusted');
   });
 
   it('round-trips a handoff and leaves the working tree untouched', () => {
@@ -394,6 +498,64 @@ describe('agent captain seats', () => {
         }),
       ).toThrow();
     }
+  });
+
+  it('verifies that a dispatch launcher marks the workers it starts', () => {
+    // Permanent evidence for the F3 producer-boundary finding on PR #527. The
+    // approved launcher lives outside this repository, so its contract is
+    // checked here against fixtures; the checker itself holds no dispatch
+    // policy and hardcodes no launcher path, so it is safe for any agent to
+    // read. Real-artifact runs are recorded on the owning bead.
+    const prefixForm = [
+      'SEAT_ROLE="dispatched-worker"',
+      'PROMPT="$(cat "$PROMPT_FILE")"',
+      'ESHYRA_SEAT_ROLE="$SEAT_ROLE" ESHYRA_DISPATCH_CHILD="$CHILD" \\',
+      'setsid bash -c \'exec codex "$@"\' _ "$WT"',
+    ].join('\n');
+    expect(checkDispatchMarkers(prefixForm)).toEqual([]);
+
+    const exportForm = [
+      'export ESHYRA_SEAT_ROLE=dispatched-worker',
+      'export ESHYRA_DISPATCH_CHILD="$CHILD"',
+      'exec codex "$@"',
+    ].join('\n');
+    expect(checkDispatchMarkers(exportForm)).toEqual([]);
+
+    // Unmarked launcher: both markers missing.
+    expect(checkDispatchMarkers('setsid bash -c \'exec codex "$@"\'')).toEqual([
+      'ESHYRA_SEAT_ROLE is never set',
+      'ESHYRA_DISPATCH_CHILD is never set',
+    ]);
+
+    // Only one marker set.
+    expect(
+      checkDispatchMarkers(
+        'ESHYRA_SEAT_ROLE=dispatched-worker setsid codex exec',
+      ),
+    ).toEqual(['ESHYRA_DISPATCH_CHILD is never set']);
+
+    // Wrong role value must not pass as a marked worker.
+    expect(
+      checkDispatchMarkers(
+        'ESHYRA_SEAT_ROLE=captain ESHYRA_DISPATCH_CHILD="$C" setsid codex exec',
+      ),
+    ).toContain('ESHYRA_SEAT_ROLE is not set to dispatched-worker');
+
+    // Plain shell assignments stay in the parent and never reach the child.
+    const parentOnly = [
+      'ESHYRA_SEAT_ROLE=dispatched-worker',
+      'ESHYRA_DISPATCH_CHILD="$CHILD"',
+      'printf "%s" "$ESHYRA_SEAT_ROLE" > /dev/null',
+    ].join('\n');
+    expect(checkDispatchMarkers(parentOnly)).toEqual([
+      'ESHYRA_SEAT_ROLE never reaches the child process',
+      'ESHYRA_DISPATCH_CHILD never reaches the child process',
+    ]);
+
+    // The digest is what pins "nothing else changed" for an operator.
+    expect(digest('a')).toBe(digest('a'));
+    expect(digest('a')).not.toBe(digest('b'));
+    expect(digest('a')).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
   it('keeps privileged supervisor text and wiring out of shared surfaces', () => {
