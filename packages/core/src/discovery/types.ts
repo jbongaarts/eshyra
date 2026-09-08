@@ -239,6 +239,26 @@ export interface RetentionTrace extends StageTrace<RetainedCandidate> {
   readonly overflow: readonly RetentionOverflow[];
 }
 
+/**
+ * A campaign ruling as the bounded capability preflight receives it
+ * (amendment A2, `eshyra-o9bd.19.13`).
+ *
+ * Every field is quoted from the projection the `eshyra-jhpt` seam returned.
+ * Discovery does not resolve, re-derive, cache or store rulings, so this shape
+ * deliberately carries no interpretation of its own: it is the durable
+ * identity, the selected interpretation, and the lifecycle status a consumer
+ * needs in order to tell an active ruling from a superseded or revoked one.
+ */
+export interface PreflightCampaignRuling {
+  readonly ruleIdentity: string;
+  readonly ambiguityId: string;
+  readonly selectedInterpretationId: string;
+  readonly status: string;
+  readonly effectivePosition: string;
+  readonly supersededBy: string | null;
+  readonly revokedPosition: string | null;
+}
+
 export interface CapabilityPreflight {
   readonly status: 'available' | 'blocked' | 'not-evaluated-offline';
   readonly capabilityId: string;
@@ -253,6 +273,16 @@ export interface CapabilityPreflight {
   readonly readinessInput?: ItemOperationReadinessInput;
   readonly blockingClauseIds?: readonly string[];
   readonly message?: string;
+  /**
+   * Active campaign rulings governing this candidate, as the `eshyra-jhpt`
+   * seam supplied them (amendment A2). Present only where a readiness
+   * derivation actually ran: a `not-evaluated-offline` entry evaluated
+   * nothing, so attaching rulings to it would claim a consultation that never
+   * happened. A ruling never changes readiness; it travels with the preflight
+   * so the execution owner can consult the selected interpretation once the
+   * clause is executable.
+   */
+  readonly campaignRulings?: readonly PreflightCampaignRuling[];
 }
 
 export interface ProjectionLimitNote {

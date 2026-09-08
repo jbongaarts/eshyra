@@ -563,6 +563,7 @@ export type {
   InjectedSignal,
   OfflineCapabilityDeclaration,
   PacketCandidate,
+  PreflightCampaignRuling,
   ProjectionLimitNote,
   RetentionBudget,
   RouteClass,

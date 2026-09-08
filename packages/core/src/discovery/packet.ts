@@ -15,10 +15,49 @@ import type {
   OfflineCapabilityDeclaration,
   PacketCandidate,
   PacketTrace,
+  PreflightCampaignRuling,
   ProjectionLimitNote,
   RetentionOverflow,
   RetentionTrace,
 } from './types.js';
+
+/**
+ * Amendment A2 (`eshyra-o9bd.19.13`): a ruling reaches a bounded capability
+ * only through the `eshyra-jhpt` read interface, and reaching it changes
+ * nothing about readiness. Stated as an exclusion so a consumer of the packet
+ * cannot read the ruling's presence as authorization.
+ */
+const CAMPAIGN_RULING_EXCLUSION =
+  'A campaign ruling supplied through the eshyra-jhpt read interface selects an interpretation only; it does not satisfy, weaken, or green any clause of this readiness contract.';
+
+/**
+ * Quote the rulings the join placed on this candidate.
+ *
+ * The association is jhpt's: a ruling is on this candidate because its own
+ * `governingRecordKeys` named this record. Discovery re-derives nothing, asks
+ * no second question, and keeps no store of its own — so a capability can
+ * never consult a ruling that did not come through jhpt.
+ *
+ * Every ruling governing the record travels, not a subset filtered to the
+ * selected operation. Deciding which ambiguity a given operation depends on
+ * means resolving the state transition, which happens after this gate and
+ * belongs to the engine owner; narrowing here would be discovery asserting an
+ * execution fact it did not establish. The exclusion below keeps the wider set
+ * from reading as authorization.
+ */
+function preflightRulings(
+  candidate: DiscoveryCandidate,
+): readonly PreflightCampaignRuling[] {
+  return candidate.campaignRulings.map((ruling) => ({
+    ruleIdentity: ruling.ruleIdentity,
+    ambiguityId: ruling.ambiguityId,
+    selectedInterpretationId: ruling.selectedInterpretationId,
+    status: ruling.status,
+    effectivePosition: ruling.effectivePosition,
+    supersededBy: ruling.supersededBy,
+    revokedPosition: ruling.revokedPosition,
+  }));
+}
 
 type Obj = Record<string, unknown>;
 function object(value: unknown): Obj | undefined {
@@ -206,6 +245,10 @@ function capability(
         };
   }
   const contract = MAGIC_ITEM_OPERATION_READINESS_CAPABILITY;
+  const rulings = preflightRulings(candidate);
+  const rulingFields = rulings.length === 0 ? {} : { campaignRulings: rulings };
+  const rulingExclusions =
+    rulings.length === 0 ? [] : [CAMPAIGN_RULING_EXCLUSION];
   try {
     const readinessInput = deriveItemOperationReadinessInput(
       candidate.entry.record,
@@ -219,6 +262,7 @@ function capability(
     );
     return {
       status: 'available',
+      ...rulingFields,
       // The contract's own identity and operation, quoted rather than
       // restated (design section 7.1).
       capabilityId: contract.operationId,
@@ -227,7 +271,7 @@ function capability(
       variantId,
       readinessInput,
       inputs: contract.requiredInputs,
-      exclusions: contract.exclusions,
+      exclusions: [...contract.exclusions, ...rulingExclusions],
       residualInterpretation: contract.residualDmInterpretation.join(' '),
     };
   } catch (error) {
@@ -241,6 +285,7 @@ function capability(
       throw error;
     return {
       status: 'blocked',
+      ...rulingFields,
       capabilityId: contract.operationId,
       revision: contract.revision,
       operationId,
@@ -255,6 +300,7 @@ function capability(
       exclusions: [
         'A blocked readiness contract cannot be treated as an executable capability.',
         ...contract.exclusions,
+        ...rulingExclusions,
       ],
       residualInterpretation:
         'An engine owner must resolve the named readiness clauses. ' +
