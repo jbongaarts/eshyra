@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  replaySnapshot,
+  restoreReplaySnapshot,
+} from '../src/campaign/turnReplayStore.js';
 import { ABILITY_SCORE_NAMES } from '../src/character/abilities.js';
 import type { AbilityScoreName } from '../src/character/creation.js';
 import type {
@@ -17,6 +21,7 @@ import {
   listCharacterWalletEvents,
   MutateStateError,
   openDatabase,
+  withTransaction,
 } from '../src/internal.js';
 import { DEFAULT_TEST_SESSION_ID } from './support/db.js';
 
@@ -148,7 +153,7 @@ describe('character currency wallet', () => {
     expect(store.load('pc-1')?.wallet).toEqual(result.wallet);
   });
 
-  it('keeps same-timestamp wallet events in SQLite insertion order', () => {
+  it('keeps same-timestamp wallet events in insertion order through replay and subsequent writes', () => {
     createSqliteCharacterSheetStore(db).save(
       'pc-1',
       makeSheet({ wallet: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } }),
@@ -156,8 +161,12 @@ describe('character currency wallet', () => {
     for (let i = 0; i < 12; i += 1) {
       adjustCharacterCurrency(db, { kind: 'gain', amounts: { cp: 1 } }, ctx());
     }
+    const before = listCharacterWalletEvents(db);
+    withTransaction(db, () => restoreReplaySnapshot(db, replaySnapshot(db)));
+    expect(listCharacterWalletEvents(db)).toEqual(before);
+    adjustCharacterCurrency(db, { kind: 'gain', amounts: { cp: 1 } }, ctx());
     expect(listCharacterWalletEvents(db).map((event) => event.id)).toEqual(
-      Array.from({ length: 12 }, (_, i) => `pc-1:wallet:${i + 1}`),
+      Array.from({ length: 13 }, (_, i) => `pc-1:wallet:${i + 1}`),
     );
   });
 

@@ -103,6 +103,12 @@ export {
   DemoModeError,
   getDemoTurnBudget,
 } from './campaign/demoMode.js';
+export type { DisputeTurnInput } from './campaign/disputedTurn.js';
+export {
+  disputeTurn,
+  getPendingDisputedTurn,
+  resumeDisputedTurn,
+} from './campaign/disputedTurn.js';
 // Guided character-creation building blocks (the wizard UI renders on these):
 // shared ability constants, ability-allocation helpers, the incremental draft
 // engine, the SRD recipe, level-1 required-choice enumeration, the rules-pack

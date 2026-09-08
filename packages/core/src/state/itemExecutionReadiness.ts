@@ -69,6 +69,7 @@ export const MAGIC_ITEM_OPERATION_READINESS_CAPABILITY: DeterministicCapabilityC
       'A validated operation id and its bound economies, effects, state-machine, and spell-store inputs.',
     ],
     exclusions: [
+      'Campaign rulings are contextual inputs and never discharge engine-pending readiness clauses.',
       'Does not execute the item operation or supply missing item semantics.',
       'Does not claim that every clause of the item record is implemented.',
       'Does not infer a capability from typed mechanics fields or an absent readiness binding.',

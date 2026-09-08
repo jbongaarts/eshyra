@@ -4,7 +4,7 @@ import { quoteIdent } from '../sql.js';
 import { type Checkpoint, DoltRepo } from './doltRepo.js';
 import { assertSeparateFromBeads } from './separation.js';
 import type { SnapshotRecord } from './serialize.js';
-import { serializeCampaign } from './serialize.js';
+import { readSnapshotSchema, serializeCampaign } from './serialize.js';
 
 const RESTORE_TEMP_SUFFIX = 'restore';
 
@@ -83,10 +83,19 @@ export function materializeSnapshot(
       withTransaction(db, (txnDb) => {
         // Resets automatically at commit; must be set per transaction.
         txnDb.pragma('defer_foreign_keys = ON');
-        for (const r of records.filter((x) => x.kind === 'schema')) {
-          const { create } = JSON.parse(r.payload) as { create: string };
-          txnDb.exec(`${create};`);
-        }
+        const schemas = records
+          .filter((r) => r.kind === 'schema')
+          .map(readSnapshotSchema);
+        // Create relations before data; defer triggers until after loading so
+        // historical grandfathered rows and side-effect triggers replay exactly.
+        for (const type of ['table', 'view'])
+          for (const schema of schemas.filter((s) => s.type === type))
+            txnDb.exec(schema.create);
+        // Foreign keys may reference a standalone UNIQUE index. It must exist
+        // before INSERT preparation, even with deferred FK enforcement.
+        for (const schema of schemas)
+          for (const object of schema.objects.filter((o) => o.type === 'index'))
+            txnDb.exec(object.sql);
         for (const r of records.filter((x) => x.kind === 'row')) {
           const row = JSON.parse(r.payload) as Record<string, unknown>;
           const cols = Object.keys(row);
@@ -108,6 +117,12 @@ export function materializeSnapshot(
             )
             .run(...vals);
         }
+        // Triggers must not fire on historical insertion, but guard every live write.
+        for (const schema of schemas)
+          for (const object of schema.objects.filter(
+            (o) => o.type === 'trigger',
+          ))
+            txnDb.exec(object.sql);
       });
     } finally {
       db.close();

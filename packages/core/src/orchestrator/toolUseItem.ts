@@ -77,7 +77,7 @@ export const useItemTool: Tool = {
       );
     } catch (error) {
       if (error instanceof ItemStateError)
-        return err('item_error', error.message);
+        return err('item_error', error.message, error.capabilityPreflight);
       throw error;
     }
   },

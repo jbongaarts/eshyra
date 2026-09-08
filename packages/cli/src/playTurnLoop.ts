@@ -1,8 +1,9 @@
 import type { Db } from '@eshyra/core';
-import { getDemoTurnBudget } from '@eshyra/core';
+import { getDemoTurnBudget, getPendingDisputedTurn } from '@eshyra/core';
 import { createAdditionalCharacter } from './playCharacter.js';
 import { gracefulClose } from './playClose.js';
 import { runMoneyCommand, showWallet } from './playCurrency.js';
+import { runDisputeCommand } from './playDispute.js';
 import { showParty, switchActiveCharacter } from './playParty.js';
 import { runLevelUpCommand, showProgression } from './playProgression.js';
 import { offerAmbiguityRulings } from './playRulings.js';
@@ -53,6 +54,9 @@ async function handleSessionCommand(
     case '/money':
       runMoneyCommand(deps, db, sessionId, arg);
       return true;
+    case '/dispute':
+      await runDisputeCommand(deps, db, campaignId, arg);
+      return true;
     case '/rules':
       runRulesSlashCommand(deps.io, db, campaignId, arg);
       return true;
@@ -90,6 +94,15 @@ export async function turnLoop(
       break;
     }
     if (input.length === 0) {
+      continue;
+    }
+    if (
+      getPendingDisputedTurn(db, campaignId) &&
+      input.toLowerCase() !== '/dispute retry'
+    ) {
+      deps.io.write(
+        'A disputed replay is pending. Use /dispute retry, or /quit to save recovery state.',
+      );
       continue;
     }
     if (

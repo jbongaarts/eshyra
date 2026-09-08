@@ -5,6 +5,7 @@ import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.j
 import {
   assembleCampaignRulesContext,
   type CampaignAmbiguityContext,
+  campaignAmbiguitySourceKeys,
 } from './campaignContext.js';
 import {
   createCampaignRule,
@@ -33,6 +34,7 @@ export interface CampaignAmbiguityResolution {
 }
 
 export interface RecordAmbiguityRulingInput {
+  readonly updatedAt?: string;
   readonly campaignId: string;
   readonly ambiguityId: string;
   readonly interpretationId: string;
@@ -164,11 +166,12 @@ export function recordAmbiguityRuling(
   }
 
   const position = formatCampaignPosition(input.currentPosition);
+  const stack = resolveStrictCampaignRulesStack(db, input.resolveRulesPack);
   const context = assembleCampaignRulesContext(
     db,
     input.campaignId,
     position,
-    resolveStrictCampaignRulesStack(db, input.resolveRulesPack),
+    stack,
   );
   const found = context.ambiguities.find(
     ({ ambiguity }) => ambiguity.id === input.ambiguityId,
@@ -207,16 +210,14 @@ export function recordAmbiguityRuling(
     supersededBy: null,
     revokedPosition: null,
     scope: 'rules-ambiguity',
-    governingRecordKeys:
-      found.ambiguity.affects.length > 0
-        ? found.ambiguity.affects
-        : [`ambiguity:${input.ambiguityId}`],
+    governingRecordKeys: campaignAmbiguitySourceKeys(stack, input.ambiguityId),
     prose:
       input.prose ??
       `${found.ambiguity.question} Ruling: ${interpretation.summary}`,
   };
   const persisted = createCampaignRule(db, rule, {
     currentPosition: input.currentPosition,
+    updatedAt: input.updatedAt,
     ...(input.sessionId === undefined ? {} : { sessionId: input.sessionId }),
     validation: { ambiguity: found.ambiguity },
   });

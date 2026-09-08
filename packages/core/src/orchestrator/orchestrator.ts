@@ -1,6 +1,16 @@
 import { randomUUID } from 'node:crypto';
+import { recordAmbiguityRuling } from '../campaign/ambiguityResolution.js';
 import { resolveCampaignPosition } from '../campaign/campaignPosition.js';
-import { formatCampaignPosition } from '../campaign/campaignRules.js';
+import {
+  type CampaignRule,
+  formatCampaignPosition,
+} from '../campaign/campaignRules.js';
+import {
+  assertReplayState,
+  readTurnReplay,
+  replaySnapshot,
+  retainTurnReplay,
+} from '../campaign/turnReplayStore.js';
 import type { CharacterChronicleStore } from '../character/characterChronicle.js';
 import type {
   CandidateDisposition,
@@ -39,6 +49,7 @@ import { assembleContext, renderContextMessage } from './contextAssembler.js';
 import { appendPlayerVisibleRollLedger } from './playerVisibleRollLedger.js';
 import { buildSystemPrompt, type ToolProtocol } from './protocol.js';
 import { createSeededRng } from './rng.js';
+import type { AmbiguityPrecedentProposal } from './toolAcceptAmbiguityPrecedent.js';
 import type { ToolContext, ToolRegistry } from './tools.js';
 import {
   AuditError,
@@ -550,6 +561,25 @@ export async function runTurn(
 
   db.exec(`SAVEPOINT ${TURN_SAVEPOINT}`);
   try {
+    const replay = readTurnReplay(db, input.campaignId);
+    if (replay?.status === 'pending') {
+      if (replay.input_json !== JSON.stringify(input))
+        throw new OrchestratorError(
+          'A disputed replay is pending; resume it before playing another turn.',
+        );
+      assertReplayState(db, replay);
+    } else if (
+      db
+        .prepare(
+          'SELECT 1 FROM turn_trace WHERE campaign_id=? AND session_id=? AND turn_id=?',
+        )
+        .get(input.campaignId, input.sessionId, input.turnId)
+    ) {
+      throw new OrchestratorError(
+        'An accepted turn cannot be overwritten; use the explicit dispute workflow.',
+      );
+    }
+    const before = replaySnapshot(db);
     // Resolve inside the turn savepoint. A new failed attempt must not leave a
     // chronology hole behind, while INSERT OR IGNORE still preserves the
     // durable position of an intentional replay.
@@ -605,12 +635,28 @@ export async function runTurn(
     const maxAttempts = deps.auditor ? DEFAULT_MAX_AUDITED_ATTEMPTS : 1;
     let narration = '';
     let toolCalls: ExecutedToolCall[] = [];
+    const committedPrecedents: CampaignRule[] = [];
     let correctiveNote: string | undefined;
     let cumulativeVerdict: AuditVerdict | undefined;
     const seenRequirementKeys = new Set<string>();
     for (let attempt = 1; ; attempt += 1) {
       dispositionAttempt = attempt;
       db.exec(`SAVEPOINT ${ATTEMPT_SAVEPOINT}`);
+      const precedents: AmbiguityPrecedentProposal[] = [];
+      toolCtx.proposeAmbiguityPrecedent =
+        deps.auditor === undefined
+          ? undefined
+          : (proposal) => {
+              if (
+                precedents.some(
+                  (prior) => prior.ambiguityId === proposal.ambiguityId,
+                )
+              )
+                throw new OrchestratorError(
+                  'Only one precedent proposal per ambiguity is allowed in a candidate.',
+                );
+              precedents.push(proposal);
+            };
       const candidate = await runModelLoop({
         model,
         registry,
@@ -650,10 +696,14 @@ export async function runTurn(
             }
           : {}),
       });
-      const candidateNarration = appendPlayerVisibleRollLedger(
+      let candidateNarration = appendPlayerVisibleRollLedger(
         candidate.narration,
         candidate.toolCalls,
       );
+
+      if (precedents.length > 0) {
+        candidateNarration += `\n\nCampaign precedent accepted for future turns:\n${precedents.map((proposal) => proposal.prose).join('\n')}`;
+      }
 
       if (deps.auditor === undefined) {
         db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
@@ -760,6 +810,23 @@ export async function runTurn(
       });
 
       if (accepted) {
+        for (const proposal of precedents) {
+          const recorded = recordAmbiguityRuling(db, {
+            campaignId: input.campaignId,
+            ambiguityId: proposal.ambiguityId,
+            interpretationId: proposal.interpretationId,
+            updatedAt: input.at,
+            prose: proposal.prose,
+            currentPosition: campaignPosition,
+            sessionId: input.sessionId,
+            resolveRulesPack: deps.resolveRulesPack,
+          });
+          if (!recorded.created)
+            throw new OrchestratorError(
+              'An existing prospective ruling prevents this precedent.',
+            );
+          committedPrecedents.push(recorded.rule);
+        }
         db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
         recordDispositionDebug(
           deps.debug,
@@ -827,6 +894,11 @@ export async function runTurn(
     });
 
     phase = 'turn_trace';
+    const traceFields = deriveTraceFields(
+      toolCalls,
+      closedSceneIds,
+      assembled.campaignRules,
+    );
     recordTurnTrace(db, {
       campaignId: input.campaignId,
       sessionId: input.sessionId,
@@ -849,12 +921,19 @@ export async function runTurn(
           ...(c.stopReason ? { stopReason: c.stopReason } : {}),
         }),
       ),
-      ...deriveTraceFields(toolCalls, closedSceneIds, assembled.campaignRules),
+      ...traceFields,
+      acceptedStateDelta: [
+        ...traceFields.acceptedStateDelta,
+        ...committedPrecedents.map((rule) => ({
+          campaignRule: rule as unknown as TraceJsonValue,
+        })),
+      ],
       finalNarration: narration,
       humanCorrections: [],
       createdAt: input.at,
     });
 
+    retainTurnReplay(db, { ...input, actingCharacterId }, before);
     db.exec(`RELEASE ${TURN_SAVEPOINT}`);
     recordTurnOutcome(
       deps.diagnostics,

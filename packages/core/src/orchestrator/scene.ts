@@ -253,14 +253,15 @@ export function appendSceneLog(db: Db, input: SceneLogInput): SceneLogRecord {
     const inserted = txnDb
       .prepare(
         `INSERT INTO scene_log(
-           campaign_id, session_id, scene_id, seq, turn_id, role, content, created_at
+           campaign_id, session_id, scene_id, seq, turn_id, role, content, created_at, insertion_order
          )
          VALUES (
            ?, ?, ?,
            (SELECT COALESCE(MAX(seq), 0) + 1
               FROM scene_log
               WHERE campaign_id = ? AND session_id = ? AND scene_id = ?),
-           ?, ?, ?, ?
+           ?, ?, ?, ?,
+           (SELECT COALESCE(MAX(insertion_order), 0) + 1 FROM scene_log)
          )
          RETURNING seq`,
       )
@@ -308,7 +309,7 @@ export function listSceneLog(db: Db, key: SceneKey): SceneLogRecord[] {
  * after their scene and session close (close only flips a status flag), so this
  * sees the DM's last words from a cleanly-ended prior session, which the play
  * UI replays as a resume recap at session start. Ordered by wall-clock then
- * insertion order (`rowid`) so the truly-last line wins even when two rows
+ * persisted insertion order so the truly-last line wins even when two rows
  * share a timestamp (common in tests and within a single turn).
  */
 export function getLastDmOutput(
@@ -320,7 +321,7 @@ export function getLastDmOutput(
       `SELECT campaign_id, session_id, scene_id, seq, turn_id, role, content, created_at
        FROM scene_log
        WHERE campaign_id = ? AND role = 'dm'
-       ORDER BY created_at DESC, rowid DESC
+       ORDER BY created_at DESC, insertion_order DESC
        LIMIT 1`,
     )
     .get(selector.campaignId) as SceneLogRow | undefined;

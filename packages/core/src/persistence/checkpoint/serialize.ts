@@ -1,4 +1,5 @@
-import type { Db } from '../db.js';
+import { type Db, withTransaction } from '../db.js';
+import { quoteIdent } from '../sql.js';
 
 export interface SnapshotRecord {
   table: string;
@@ -7,44 +8,91 @@ export interface SnapshotRecord {
   payload: string;
 }
 
+export interface SnapshotSchema {
+  version: 2;
+  type: 'table' | 'view';
+  create: string;
+  /** SQLite autoindexes have null SQL and are recreated by table constraints. */
+  objects: { type: 'index' | 'trigger'; name: string; sql: string }[];
+}
+
+/** Old snapshots cannot establish which enforcement objects were discarded. */
+export function readSnapshotSchema(record: SnapshotRecord): SnapshotSchema {
+  const schema = JSON.parse(record.payload) as SnapshotSchema;
+  if (
+    schema === null ||
+    typeof schema !== 'object' ||
+    schema.version !== 2 ||
+    !['table', 'view'].includes(schema.type) ||
+    typeof schema.create !== 'string' ||
+    !Array.isArray(schema.objects) ||
+    !schema.objects.every(
+      (object) =>
+        object !== null &&
+        typeof object === 'object' &&
+        ['index', 'trigger'].includes(object.type) &&
+        typeof object.name === 'string' &&
+        typeof object.sql === 'string',
+    )
+  )
+    throw new Error(
+      'Checkpoint lacks complete schema metadata; create a new checkpoint from the original campaign database before restoring.',
+    );
+  return schema;
+}
+
 interface MasterRow {
+  type: 'table' | 'view' | 'index' | 'trigger';
   name: string;
-  sql: string | null;
+  tbl_name: string;
+  sql: string;
 }
 
 export function serializeCampaign(db: Db): SnapshotRecord[] {
-  const tables = (
-    db
+  // One SQLite read transaction binds schema and rows to the same database state.
+  return withTransaction(db, () => {
+    const master = db
       .prepare(
-        "SELECT name, sql FROM sqlite_master WHERE type='table' " +
-          "AND name NOT LIKE 'sqlite_%' ORDER BY name",
+        "SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT GLOB 'sqlite_*' AND sql IS NOT NULL ORDER BY type,name",
       )
-      .all() as MasterRow[]
-  ).filter((t) => t.sql !== null);
-
-  const records: SnapshotRecord[] = [];
-
-  for (const t of tables) {
-    records.push({
-      table: t.name,
-      kind: 'schema',
-      ordinal: 0,
-      payload: JSON.stringify({ create: t.sql }),
-    });
-  }
-  for (const t of tables) {
-    const rows = db.prepare(`SELECT * FROM "${t.name}"`).all() as Record<
-      string,
-      unknown
-    >[];
-    const encoded = rows
-      .map((r) => canonicalRow(r))
-      .sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
-    encoded.forEach((payload, i) => {
-      records.push({ table: t.name, kind: 'row', ordinal: i, payload });
-    });
-  }
-  return records;
+      .all() as MasterRow[];
+    const relations = master
+      .filter((r) => r.type === 'table' || r.type === 'view')
+      .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    const records: SnapshotRecord[] = [];
+    for (const relation of relations) {
+      records.push({
+        table: relation.name,
+        kind: 'schema',
+        ordinal: 0,
+        payload: JSON.stringify({
+          version: 2,
+          type: relation.type,
+          create: relation.sql,
+          objects: master
+            .filter(
+              (o) =>
+                o.tbl_name === relation.name &&
+                (o.type === 'index' || o.type === 'trigger'),
+            )
+            .map((o) => ({ type: o.type, name: o.name, sql: o.sql })),
+        }),
+      });
+    }
+    for (const relation of relations) {
+      if (relation.type !== 'table') continue;
+      const rows = db
+        .prepare(`SELECT * FROM ${quoteIdent(relation.name)}`)
+        .all() as Record<string, unknown>[];
+      rows
+        .map(canonicalRow)
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        .forEach((payload, ordinal) => {
+          records.push({ table: relation.name, kind: 'row', ordinal, payload });
+        });
+    }
+    return records;
+  });
 }
 
 function canonicalRow(row: Record<string, unknown>): string {

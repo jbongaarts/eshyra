@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { preflightCampaignItemOperation } from '../src/campaign/capabilityPreflight.js';
 import type { RulesPack, RulesRecord } from '../src/internal.js';
 import {
   createInitialItemState,
@@ -17,11 +18,13 @@ import {
   withTransaction,
   writeItemState,
 } from '../src/internal.js';
+import { writeCampaignRulesBinding } from '../src/rules/binding.js';
 import {
   assertMagicItemOperationReady,
   ItemExecutionReadinessError,
   MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
 } from '../src/state/itemExecutionReadiness.js';
+import { deriveItemOperationReadinessInput } from '../src/state/itemState.js';
 import { freshDbWithSession } from './support/db.js';
 
 const MUTATION = {
@@ -124,6 +127,182 @@ function useInput(
     ...MUTATION,
   };
 }
+
+describe('bounded campaign item preflight', () => {
+  const bundled = getBundledDnd5eSrdPack();
+  const source = bundled.records.find((r) => r.key === 'spell:create-undead');
+  if (source === undefined) throw new Error('missing source ambiguity fixture');
+  const declaration = (
+    source.data as {
+      mechanics: { ambiguities: unknown[] };
+    }
+  ).mechanics.ambiguities[0] as Record<string, unknown>;
+  it.each([
+    ['malformed', false],
+    ['duplicate', false],
+    ['malformed', true],
+    ['duplicate', true],
+  ] as const)(
+    'ignores unrelated %s declarations (addon=%s) through useItem',
+    (defect, addon) => {
+      for (const targetHasAmbiguity of [false, true]) {
+        const db = freshDbWithSession();
+        try {
+          const target = item('bounded-toggle', {
+            operations: [{ id: 'activate' }],
+            stateMachine: {
+              initial: 'off',
+              states: [{ id: 'off' }, { id: 'on' }],
+              transitions: [{ from: 'off', to: 'on', via: 'activate' }],
+            },
+            ...(targetHasAmbiguity
+              ? {
+                  ambiguities: [
+                    { ...declaration, id: 'ambiguity:target-toggle' },
+                  ],
+                }
+              : {}),
+          });
+          const bad = item('unrelated-one', {
+            ambiguities: [
+              {
+                ...declaration,
+                id: defect === 'malformed' ? 'bad-id' : 'ambiguity:unrelated',
+              },
+            ],
+          });
+          const sibling = item('unrelated-two', {
+            ambiguities: [{ ...declaration, id: 'ambiguity:unrelated' }],
+          });
+          const basePack = pack(target, ...(addon ? [] : [bad, sibling]));
+          const extra: RulesPack = {
+            ...pack(bad, sibling),
+            meta: {
+              ...bundled.meta,
+              packId: 'test-addon',
+              role: 'addon',
+              compatibleBaseSystems: [
+                {
+                  systemId: bundled.meta.systemId,
+                  versions: [bundled.meta.version],
+                },
+              ],
+            },
+          };
+          const resolveRulesPack = (ref: { packId: string }) =>
+            ref.packId === extra.meta.packId ? extra : basePack;
+          writeCampaignRulesBinding(db, {
+            base: basePack.meta,
+            addons: addon ? [extra.meta] : [],
+            resolvedAt: MUTATION.at,
+          });
+          const operation = deriveItemOperationReadinessInput(
+            target,
+            undefined,
+            'activate',
+          );
+          const preflight = preflightCampaignItemOperation(db, {
+            campaignId: 'campaign-1',
+            record: target,
+            operation,
+            resolveRulesPack,
+          });
+          expect(preflight.status).toBe('available');
+          expect(preflight.ambiguities.map((a) => a.ambiguity.id)).toEqual(
+            targetHasAmbiguity ? ['ambiguity:target-toggle'] : [],
+          );
+          const granted = giveItem(
+            db,
+            {
+              id: 'ignored',
+              name: 'Toggle',
+              packRef: target.key,
+              stateful: true,
+            },
+            MUTATION,
+          );
+          writeItemState(
+            db,
+            granted.id,
+            createInitialItemState(target.key, target),
+            MUTATION,
+          );
+          expect(
+            useItem(db, {
+              ...useInput(basePack, granted.id, 'activate'),
+              resolveRulesPack,
+            }).state.machineState,
+          ).toBe('on');
+        } finally {
+          db.close();
+        }
+      }
+    },
+  );
+  it.each(['duplicate', 'malformed', 'missing'])(
+    'rejects %s relevant declarations in the bound stack',
+    (defect) => {
+      const db = freshDbWithSession();
+      try {
+        const target = item('target', {
+          operations: [{ id: 'activate' }],
+          ambiguities: [declaration],
+        });
+        const bad = item('bad-related', {
+          ambiguities: [
+            defect === 'malformed'
+              ? { ...declaration, interpretations: [] }
+              : declaration,
+          ],
+        });
+        const bound = defect === 'missing' ? pack() : pack(target, bad);
+        expect(() =>
+          preflightCampaignItemOperation(db, {
+            campaignId: 'campaign-1',
+            record: target,
+            operation: deriveItemOperationReadinessInput(
+              target,
+              undefined,
+              'activate',
+            ),
+            resolveRulesPack: resolver(bound),
+          }),
+        ).toThrow(/ambiguity|interpretations/);
+      } finally {
+        db.close();
+      }
+    },
+  );
+  it.each([
+    { ambiguities: [] },
+    { ambiguities: [{ ...declaration, id: 'bad-id' }] },
+  ])(
+    'rejects malformed target ambiguity material $ambiguities',
+    ({ ambiguities }) => {
+      const db = freshDbWithSession();
+      try {
+        const target = item('bad-target', {
+          operations: [{ id: 'activate' }],
+          ambiguities,
+        });
+        expect(() =>
+          preflightCampaignItemOperation(db, {
+            campaignId: 'campaign-1',
+            record: target,
+            operation: deriveItemOperationReadinessInput(
+              target,
+              undefined,
+              'activate',
+            ),
+            resolveRulesPack: resolver(pack(target)),
+          }),
+        ).toThrow();
+      } finally {
+        db.close();
+      }
+    },
+  );
+});
 
 describe('magic-item live instance state', () => {
   it('declares the bounded magic-item readiness capability in ADR 0020 shape', () => {

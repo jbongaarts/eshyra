@@ -1,3 +1,7 @@
+import {
+  type CampaignCapabilityPreflight,
+  preflightCampaignItemOperation,
+} from '../campaign/capabilityPreflight.js';
 import { rollDice } from '../orchestrator/dice.js';
 import type { Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
@@ -33,11 +37,7 @@ import {
   type ItemDepletionResolution,
   resolveItemDepletion,
 } from './itemDepletion.js';
-import {
-  assertMagicItemOperationReady,
-  ItemExecutionReadinessError,
-  type ItemOperationReadinessInput,
-} from './itemExecutionReadiness.js';
+import type { ItemOperationReadinessInput } from './itemExecutionReadiness.js';
 import {
   ItemRandomInitializationError,
   type ItemRandomInitializationState,
@@ -145,7 +145,10 @@ export interface UseItemResult {
 }
 
 export class ItemStateError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly capabilityPreflight?: CampaignCapabilityPreflight,
+  ) {
     super(message);
     this.name = 'ItemStateError';
   }
@@ -1925,13 +1928,18 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       variantId,
       input.operationId,
     );
-    try {
-      assertMagicItemOperationReady(hit.record, variantId, readinessInput);
-    } catch (error) {
-      if (error instanceof ItemExecutionReadinessError)
-        throw new ItemStateError(error.message);
-      throw error;
-    }
+    const preflight = preflightCampaignItemOperation(txnDb, {
+      campaignId: input.campaignId,
+      record: hit.record,
+      variantId,
+      operation: readinessInput,
+      resolveRulesPack: input.resolveRulesPack,
+    });
+    if (preflight.status === 'blocked')
+      throw new ItemStateError(
+        preflight.reason ?? 'Item operation is blocked.',
+        preflight,
+      );
     const refs = validateRecordReferences(mechanics, packRef);
     let operation = refs.operations.find(
       (candidate) => candidate.id === input.operationId,

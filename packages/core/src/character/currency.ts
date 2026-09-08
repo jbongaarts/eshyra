@@ -238,7 +238,7 @@ export function listCharacterWalletEvents(
               source, occurred_at, provenance, session_id
          FROM character_wallet_event
         WHERE character_id = ?
-        ORDER BY occurred_at, rowid`,
+        ORDER BY occurred_at, insertion_order`,
     )
     .all(charId) as CharacterWalletEventRow[];
   return rows.map(rowToWalletEvent);
@@ -372,8 +372,9 @@ function recordCharacterWalletEvent(
   db.prepare(
     `INSERT INTO character_wallet_event(
        id, character_id, kind, amounts_json, resulting_wallet_json, source,
-       occurred_at, provenance, session_id
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       occurred_at, provenance, session_id, insertion_order
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,
+       (SELECT COALESCE(MAX(insertion_order), 0) + 1 FROM character_wallet_event))`,
   ).run(
     id,
     input.characterId,

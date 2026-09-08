@@ -106,7 +106,7 @@ function baseInput(overrides: Record<string, unknown> = {}) {
 }
 
 describe('orchestrator turn loop', () => {
-  it('does not consume chronology for a failed turn and reuses replay positions', async () => {
+  it('does not consume chronology for a failed turn and rejects unauthorised turn overwrites', async () => {
     const db = freshDbWithSession();
     withOpenScene(db);
 
@@ -128,7 +128,8 @@ describe('orchestrator turn loop', () => {
       },
       baseInput({ turnId: 'turn-a', playerInput: 'Replay the first turn.' }),
     );
-    expect(replay.ok).toBe(true);
+    expect(replay.ok).toBe(false);
+    expect(replay.error).toContain('An accepted turn cannot be overwritten');
 
     const failed = await runTurn(
       {

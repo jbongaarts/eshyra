@@ -19,6 +19,10 @@ export type ToolResult =
   | { ok: false; code: string; message: string; data?: unknown };
 
 export interface ToolContext {
+  /** Turn-owned staging; never supplied outside the audited candidate boundary. */
+  proposeAmbiguityPrecedent?: (
+    proposal: import('./toolAcceptAmbiguityPrecedent.js').AmbiguityPrecedentProposal,
+  ) => void;
   db: import('../persistence/db.js').Db;
   rng: import('./rng.js').Rng;
   campaignId: string;

@@ -371,7 +371,7 @@ CREATE TABLE character_wallet_event (
   occurred_at TEXT NOT NULL,
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL
-);
+, insertion_order INTEGER NOT NULL DEFAULT 0);
 
 CREATE TABLE clock (
   id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -791,7 +791,7 @@ CREATE TABLE scene_log (
   turn_id TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('player', 'dm')),
   content TEXT NOT NULL,
-  created_at TEXT NOT NULL,
+  created_at TEXT NOT NULL, insertion_order INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (campaign_id, session_id, scene_id, seq)
 );
 
@@ -827,6 +827,25 @@ CREATE TABLE turn_failure_diagnostic (
   error_name TEXT NOT NULL,
   error_message TEXT NOT NULL,
   model_rounds INTEGER NOT NULL CHECK (model_rounds >= 0),
+  PRIMARY KEY (campaign_id, session_id, turn_id)
+);
+
+CREATE TABLE turn_replay (
+  campaign_id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL,
+  turn_id TEXT NOT NULL,
+  input_json TEXT NOT NULL,
+  before_json TEXT NOT NULL,
+  state_hash TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('available', 'pending', 'replayed'))
+);
+
+CREATE TABLE turn_replay_diagnostic (
+  campaign_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  turn_id TEXT NOT NULL,
+  original_trace_json TEXT NOT NULL,
+  rule_identity TEXT NOT NULL,
   PRIMARY KEY (campaign_id, session_id, turn_id)
 );
 
@@ -897,6 +916,8 @@ CREATE INDEX campaign_turn_position_ordinal
 CREATE INDEX character_spell_slot_character
   ON character_spell_slot(character_id, pool_kind, spell_level);
 
+CREATE UNIQUE INDEX character_wallet_event_insertion_order ON character_wallet_event(insertion_order);
+
 CREATE UNIQUE INDEX combat_instance_one_active_per_campaign
   ON combat_instance(campaign_id) WHERE status = 'active';
 
@@ -932,6 +953,8 @@ CREATE INDEX inventory_wear_state_character
   ON inventory_wear_state(character_id, wear_state, inventory_id);
 
 CREATE INDEX rest_event_long_benefit_time ON rest_event(campaign_id, kind, end_elapsed_minutes);
+
+CREATE UNIQUE INDEX scene_log_insertion_order ON scene_log(insertion_order);
 
 CREATE TRIGGER inventory_identity_insert_guard
 BEFORE INSERT ON inventory

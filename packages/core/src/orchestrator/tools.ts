@@ -20,6 +20,7 @@ export { isMarkSceneToolData } from './toolMarkScene.js';
 export type { Tool, ToolContext, ToolResult } from './toolRegistry.js';
 export { ToolRegistry } from './toolRegistry.js';
 
+import { acceptAmbiguityPrecedentTool } from './toolAcceptAmbiguityPrecedent.js';
 import { addConditionTool } from './toolAddCondition.js';
 import { adjustHpTool } from './toolAdjustHp.js';
 import { adoptItemTool } from './toolAdoptItem.js';
@@ -95,6 +96,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   markSceneTool,
   lookupRulesTool,
   requestAmbiguityRulingTool,
+  acceptAmbiguityPrecedentTool,
   startEncounterTool,
   updateCombatantTool,
   closeCombatInstanceTool,

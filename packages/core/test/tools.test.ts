@@ -146,6 +146,7 @@ describe('ToolRegistry', () => {
     const names = createDefaultToolRegistry().list().sort();
     expect(names).toEqual(
       [
+        'accept_ambiguity_precedent',
         'add_condition',
         'adjust_hp',
         'advance_time',
@@ -1897,6 +1898,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
     const names = definitions.map((d) => d.name).sort();
     expect(names).toEqual(
       [
+        'accept_ambiguity_precedent',
         'add_condition',
         'adjust_hp',
         'adopt_item',
