@@ -222,7 +222,9 @@ async function extractPdfPages(pdfPath: string): Promise<PageExtractResult[]> {
     return pages;
   } finally {
     await pdf.cleanup();
-    await pdf.destroy();
+    // pdfjs 6 removed `PDFDocumentProxy.destroy()`; destroy the loading task,
+    // which is what that method delegated to.
+    await loadingTask.destroy();
   }
 }
 
