@@ -71,17 +71,20 @@ export async function runDisputeCommand(
         questionId = await deps.io.prompt('Recurring question ID: ');
       }
     }
-    const records = await deps.io.prompt(
-      'Governing source record keys (comma separated): ',
-    );
-    if (!records?.trim()) {
-      deps.io.write('Dispute cancelled: governing source keys are required.');
-      return;
+    let governingRecordKeys: string[] = [];
+    if (ambiguityId === undefined) {
+      const records = await deps.io.prompt(
+        'Governing source record keys (comma separated): ',
+      );
+      if (!records?.trim()) {
+        deps.io.write('Dispute cancelled: governing source keys are required.');
+        return;
+      }
+      governingRecordKeys = records
+        .split(',')
+        .map((key) => key.trim())
+        .filter(Boolean);
     }
-    const governingRecordKeys = records
-      .split(',')
-      .map((key) => key.trim())
-      .filter(Boolean);
     const supersedes = await deps.io.prompt(
       'Existing rule identity to supersede (leave blank for a new rule): ',
     );

@@ -17,8 +17,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 28,
-      name: 'disputed_turn_replay',
+      version: 29,
+      name: 'persistent_event_order',
     });
     db.close();
   });

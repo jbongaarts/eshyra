@@ -48,6 +48,22 @@ async function setup(answers: string[], fail = false) {
 }
 
 describe('explicit CLI objections', () => {
+  it('derives source associations without asking the player for record keys', async () => {
+    const { db, deps, output } = await setup([
+      'ruling',
+      'ambiguity:create-undead-ghast-wight-composition',
+      'mixed-within-total',
+      '',
+      'yes',
+    ]);
+    await runDisputeCommand(deps, db, base.campaignId, 'Mix within the total.');
+    expect(output).toContain('The spell succeeds under your house rule.');
+    expect(
+      listCampaignRules(db, { campaignId: base.campaignId })[0]
+        .governingRecordKeys,
+    ).toEqual(['spell:create-undead']);
+    db.close();
+  });
   it('obtains approval before replaying the same player input', async () => {
     const { db, deps, output } = await setup([
       'house-rule',

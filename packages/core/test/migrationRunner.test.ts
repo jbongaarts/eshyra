@@ -2,6 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { listCharacterWalletEvents } from '../src/character/currency.js';
+import { getLastDmOutput } from '../src/orchestrator/scene.js';
 import type { Db } from '../src/persistence/db.js';
 import { openDatabase } from '../src/persistence/db.js';
 import {
@@ -76,6 +78,42 @@ describe('normalizeMigrationSql / migrationChecksum', () => {
     const crlf = normalizeMigrationSql('CREATE TABLE t (id INTEGER);\r\n');
     expect(migrationChecksum(lf)).toBe(migrationChecksum(crlf));
   });
+});
+
+it('migration 0029 preserves legacy insertion chronology for scene and wallet consumers', () => {
+  const dir = makeMigrationDir(
+    Object.fromEntries(
+      discoverMigrations()
+        .filter((m) => m.version < 29)
+        .map((m) => [
+          `${String(m.version).padStart(4, '0')}_${m.name}.sql`,
+          m.sql,
+        ]),
+    ),
+  );
+  const db = openDatabase(':memory:');
+  try {
+    runMigrations(db, { dir });
+    for (const id of ['z-first', 'a-last']) {
+      db.prepare(
+        "INSERT INTO scene_log VALUES ('c','s',?,1,?,'dm',?,'same-time')",
+      ).run(id, id, id);
+      db.prepare(
+        "INSERT INTO character_wallet_event VALUES (?, 'pc', 'gain', ?, ?, 'test', 'same-time', 'test', 's')",
+      ).run(
+        id,
+        JSON.stringify({ cp: 1 }),
+        JSON.stringify({ cp: 1, sp: 0, ep: 0, gp: 0, pp: 0 }),
+      );
+    }
+    expect(runMigrations(db).applied).toEqual([29]);
+    expect(getLastDmOutput(db, { campaignId: 'c' })?.turnId).toBe('a-last');
+    expect(
+      listCharacterWalletEvents(db, 'pc').map((event) => event.id),
+    ).toEqual(['z-first', 'a-last']);
+  } finally {
+    db.close();
+  }
 });
 
 describe('discoverMigrations', () => {

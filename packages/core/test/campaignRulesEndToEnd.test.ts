@@ -25,12 +25,16 @@ import {
   type TurnAuditor,
 } from '../src/index.js';
 import {
+  appendSceneLog,
+  closeScene,
   deriveItemOperationReadinessInput,
   getBundledDnd5eSrdPack,
+  getLastDmOutput,
   getTurnTrace,
   listSceneLog,
   openScene,
   renderCampaignRulesSection,
+  writeCampaignRulesBinding,
 } from '../src/internal.js';
 import { serializeCampaign } from '../src/persistence/checkpoint/serialize.js';
 import { materializeSnapshot } from '../src/persistence/checkpoint/store.js';
@@ -755,6 +759,134 @@ describe('campaign-rule runtime end-to-end acceptance', () => {
         )
         .run('x'.repeat(257)),
     ).toThrow('inventory id/name exceeds UTF-8 identity bounds');
+    deps.db.close();
+  });
+  it.each([false, true])(
+    'derives disputed ambiguity source keys from the bound stack (addon=%s)',
+    async (addon) => {
+      const deps = setup(['Original.', 'Corrected.']);
+      const bundled = getBundledDnd5eSrdPack();
+      const source = required(
+        bundled.records.find((record) => record.key === 'spell:create-undead'),
+      );
+      const declaringKey = addon ? 'spell:addon-undead' : source.key;
+      const extra = {
+        ...bundled,
+        meta: {
+          ...bundled.meta,
+          packId: 'rules:test-addon',
+          role: 'addon' as const,
+          compatibleBaseSystems: [
+            {
+              systemId: bundled.meta.systemId,
+              versions: [bundled.meta.version],
+            },
+          ],
+        },
+        records: [{ ...source, key: declaringKey }],
+      };
+      const empty = {
+        ...bundled,
+        meta: { ...bundled.meta, packId: 'rules:test-base' },
+        records: [],
+      };
+      const runtime = {
+        ...deps,
+        resolveRulesPack: addon
+          ? (ref: { packId: string }) =>
+              ref.packId === extra.meta.packId ? extra : empty
+          : undefined,
+      };
+      if (addon)
+        writeCampaignRulesBinding(deps.db, {
+          base: empty.meta,
+          addons: [extra.meta],
+          resolvedAt: at,
+        });
+      const initial = await runTurn(runtime, base);
+      expect(initial.ok, initial.error).toBe(true);
+      const result = await disputeTurn(runtime, {
+        ...base,
+        approvedRule: {
+          kind: 'ruling',
+          ambiguityId,
+          interpretationId: 'mixed-within-total',
+          prose: 'Mix within the total.',
+          governingRecordKeys: ['invented:wrong-source'],
+        },
+      });
+      expect(result.ok, result.error).toBe(true);
+      const rules = listCampaignRules(deps.db, { campaignId: base.campaignId });
+      expect(rules[0].governingRecordKeys).toEqual([declaringKey]);
+      expect(
+        JSON.stringify(getTurnTrace(deps.db, base)?.retrievedContext),
+      ).not.toContain('invented:wrong-source');
+      deps.db.close();
+    },
+  );
+
+  it('preserves equal-timestamp insertion order through the real last-DM consumer at replay start', async () => {
+    const deps = setup(['Disputed.', 'Replayed.']);
+    appendSceneLog(deps.db, {
+      ...base,
+      sceneId: 'scene',
+      turnId: 'older',
+      role: 'dm',
+      content: 'Z older insertion',
+    });
+    closeScene(deps.db, { ...base, sceneId: 'scene' });
+    openScene(deps.db, {
+      ...base,
+      sceneId: 'other-scene',
+      title: 'Next scene',
+    });
+    appendSceneLog(deps.db, {
+      ...base,
+      sceneId: 'other-scene',
+      turnId: 'newer',
+      role: 'dm',
+      content: 'A newer insertion',
+    });
+    expect(getLastDmOutput(deps.db, base)?.turnId).toBe('newer');
+    const dir = mkdtempSync(join(tmpdir(), 'jhpt-order-'));
+    try {
+      const dest = join(dir, 'restored.sqlite');
+      materializeSnapshot(serializeCampaign(deps.db), dest);
+      const restored = openDatabase(dest);
+      try {
+        expect(getLastDmOutput(restored, base)?.turnId).toBe('newer');
+        appendSceneLog(restored, {
+          ...base,
+          sceneId: 'other-scene',
+          turnId: 'after-checkpoint',
+          role: 'dm',
+          content: 'After restore',
+        });
+        expect(getLastDmOutput(restored, base)?.turnId).toBe(
+          'after-checkpoint',
+        );
+      } finally {
+        restored.close();
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    await runTurn(deps, base);
+    const complete = deps.model.complete.bind(deps.model);
+    let observed: string | undefined;
+    deps.model.complete = async (input) => {
+      observed = getLastDmOutput(deps.db, base)?.turnId;
+      return complete(input);
+    };
+    await disputeTurn(deps, {
+      ...base,
+      approvedRule: {
+        kind: 'house-rule',
+        prose: 'No components.',
+        governingRecordKeys: ['rule:components'],
+      },
+    });
+    expect(observed).toBe('newer');
     deps.db.close();
   });
 });

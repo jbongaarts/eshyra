@@ -6,7 +6,11 @@ import {
   runTurn,
 } from '../orchestrator/orchestrator.js';
 import { withTransaction } from '../persistence/db.js';
-import { lookupCampaignAmbiguity } from './ambiguityResolution.js';
+import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
+import {
+  assembleCampaignRulesContext,
+  campaignAmbiguitySourceKeys,
+} from './campaignContext.js';
 import {
   getCurrentCampaignPosition,
   resolveCampaignPosition,
@@ -15,7 +19,11 @@ import {
   createCampaignRule,
   supersedeCampaignRule,
 } from './campaignRuleStore.js';
-import { type CampaignRule, CampaignRuleError } from './campaignRules.js';
+import {
+  type CampaignRule,
+  CampaignRuleError,
+  formatCampaignPosition,
+} from './campaignRules.js';
 import {
   assertReplayState,
   readTurnReplay,
@@ -30,6 +38,7 @@ export interface DisputeTurnInput {
   sessionId: string;
   approvedRule: {
     prose: string;
+    /** Source ambiguity associations are derived from the bound stack; this field applies to other rules. */
     governingRecordKeys: readonly string[];
     kind: 'house-rule' | 'ruling';
     ambiguityId?: string;
@@ -92,15 +101,23 @@ export async function disputeTurn(
       throw new CampaignRuleError(
         'Choose source ambiguity or recurring-question provenance, not both.',
       );
-    const ambiguity =
+    const stack =
       selection.ambiguityId === undefined
         ? undefined
-        : lookupCampaignAmbiguity(db, {
-            campaignId: input.campaignId,
-            ambiguityId: selection.ambiguityId,
-            position: current,
-            resolveRulesPack: deps.resolveRulesPack,
-          }).ambiguity;
+        : resolveStrictCampaignRulesStack(db, deps.resolveRulesPack);
+    const ambiguity =
+      stack === undefined
+        ? undefined
+        : assembleCampaignRulesContext(
+            db,
+            input.campaignId,
+            formatCampaignPosition(current),
+            stack,
+          ).ambiguities.find(
+            ({ ambiguity }) => ambiguity.id === selection.ambiguityId,
+          )?.ambiguity;
+    if (selection.ambiguityId !== undefined && ambiguity === undefined)
+      throw new CampaignRuleError(`unknown ambiguity ${selection.ambiguityId}`);
     const rule: CampaignRule = {
       campaignId: input.campaignId,
       ruleIdentity: `dispute:${randomUUID()}`,
@@ -126,7 +143,10 @@ export async function disputeTurn(
       supersededBy: null,
       revokedPosition: null,
       scope: 'campaign',
-      governingRecordKeys: selection.governingRecordKeys,
+      governingRecordKeys:
+        stack !== undefined && ambiguity !== undefined
+          ? campaignAmbiguitySourceKeys(stack, ambiguity.id)
+          : selection.governingRecordKeys,
     };
     restoreReplaySnapshot(db, JSON.parse(saved.before_json));
     const position = resolveCampaignPosition(db, input);
