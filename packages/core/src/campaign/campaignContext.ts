@@ -277,3 +277,25 @@ export function renderCampaignRulesSection(
     ...ambiguityLines,
   ].join('\n')}`;
 }
+
+/** Source-record associations come from the declaring record, not affects labels. */
+export function campaignAmbiguitySourceKeys(
+  stack: ResolvedRulesStack,
+  ambiguityId: string,
+): string[] {
+  const keys: string[] = [];
+  for (const entry of stack.recordsByKey.values()) {
+    const data = entry.record.data as {
+      mechanics?: Record<string, unknown>;
+    } | null;
+    if (
+      data?.mechanics &&
+      optRulesAmbiguities(
+        data.mechanics,
+        `${entry.record.key}.data.mechanics`,
+      ).has(ambiguityId)
+    )
+      keys.push(entry.record.key);
+  }
+  return keys.sort();
+}

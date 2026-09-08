@@ -145,6 +145,11 @@ During play, type `/quit` or `/exit` to close the session gracefully. When Dolt
 is available, graceful close writes a checkpoint beside the campaign database;
 without Dolt, play still works and closes without checkpoint history.
 
+Use `/rules` to manage campaign rulings and house rules. `/dispute` lets you
+approve a rule and replay the latest adjudication; `/dispute retry` recovers a
+failed replay. Pending replay recovery stays saved on quit. See
+[campaign rules and disputed turns](docs/campaign-rules.md).
+
 ## Configuration
 
 The installed CLI stores non-secret local data under a per-user data root:

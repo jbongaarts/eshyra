@@ -17,8 +17,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 27,
-      name: 'turn_trace_campaign_rules_evidence',
+      version: 28,
+      name: 'disputed_turn_replay',
     });
     db.close();
   });

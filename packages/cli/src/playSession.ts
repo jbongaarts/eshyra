@@ -2,6 +2,7 @@ import type { CampaignInfo, Db, SessionLaunchState } from '@eshyra/core';
 import {
   createCampaign,
   getCampaign,
+  getPendingDisputedTurn,
   getSessionLaunchState,
   startSession,
 } from '@eshyra/core';
@@ -82,6 +83,13 @@ export async function launch(
   dbPath: string,
   campaign: CampaignInfo,
 ): Promise<string> {
+  const pending = getPendingDisputedTurn(db, campaign.campaignId);
+  if (pending) {
+    deps.io.write(
+      'A disputed replay is pending. Use /dispute retry to resume your approved action.',
+    );
+    return pending.sessionId;
+  }
   const state = getSessionLaunchState(db, { campaignId: campaign.campaignId });
   if (state.kind === 'start_new') {
     // Returning to a campaign whose last session closed cleanly: replay the

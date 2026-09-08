@@ -16,6 +16,7 @@ import {
   extractCampaignBible,
   getCampaignBible,
   getClosedSessionsInOpenArc,
+  getPendingDisputedTurn,
   getSessionRecap,
   listClosedArcSummaries,
   openArcIfMissing,
@@ -223,6 +224,12 @@ export async function gracefulClose(
   campaignId: string,
   sessionId: string,
 ): Promise<void> {
+  if (getPendingDisputedTurn(db, campaignId)) {
+    deps.io.write(
+      'Replay recovery state saved. The session remains open; resume with /dispute retry.',
+    );
+    return;
+  }
   // Open (or reuse) the campaign's arc BEFORE closing the session so the
   // arc_id stamp and session close land in the same DB transaction.
   const now = deps.now();
