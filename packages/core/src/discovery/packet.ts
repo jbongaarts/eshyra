@@ -15,7 +15,6 @@ import type {
   OfflineCapabilityDeclaration,
   PacketCandidate,
   PacketTrace,
-  PreflightCampaignRuling,
   ProjectionLimitNote,
   RetentionOverflow,
   RetentionTrace,
@@ -29,35 +28,6 @@ import type {
  */
 const CAMPAIGN_RULING_EXCLUSION =
   'A campaign ruling supplied through the eshyra-jhpt read interface selects an interpretation only; it does not satisfy, weaken, or green any clause of this readiness contract.';
-
-/**
- * Quote the rulings the join placed on this candidate.
- *
- * The association is jhpt's: a ruling is on this candidate because its own
- * `governingRecordKeys` named this record. Discovery re-derives nothing, asks
- * no second question, and keeps no store of its own — so a capability can
- * never consult a ruling that did not come through jhpt.
- *
- * Every ruling governing the record travels, not a subset filtered to the
- * selected operation. Deciding which ambiguity a given operation depends on
- * means resolving the state transition, which happens after this gate and
- * belongs to the engine owner; narrowing here would be discovery asserting an
- * execution fact it did not establish. The exclusion below keeps the wider set
- * from reading as authorization.
- */
-function preflightRulings(
-  candidate: DiscoveryCandidate,
-): readonly PreflightCampaignRuling[] {
-  return candidate.campaignRulings.map((ruling) => ({
-    ruleIdentity: ruling.ruleIdentity,
-    ambiguityId: ruling.ambiguityId,
-    selectedInterpretationId: ruling.selectedInterpretationId,
-    status: ruling.status,
-    effectivePosition: ruling.effectivePosition,
-    supersededBy: ruling.supersededBy,
-    revokedPosition: ruling.revokedPosition,
-  }));
-}
 
 type Obj = Record<string, unknown>;
 function object(value: unknown): Obj | undefined {
@@ -245,7 +215,10 @@ function capability(
         };
   }
   const contract = MAGIC_ITEM_OPERATION_READINESS_CAPABILITY;
-  const rulings = preflightRulings(candidate);
+  // The jhpt projection, passed through: a ruling is on this candidate because
+  // its own `governingRecordKeys` named this record, and discovery neither
+  // re-derives that association nor reshapes what the owner returned.
+  const rulings = candidate.campaignRulings;
   const rulingFields = rulings.length === 0 ? {} : { campaignRulings: rulings };
   const rulingExclusions =
     rulings.length === 0 ? [] : [CAMPAIGN_RULING_EXCLUSION];

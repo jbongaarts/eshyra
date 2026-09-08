@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { preflightCampaignItemOperation } from '../../src/campaign/capabilityPreflight.js';
 import { createDefaultToolRegistry, runTurn } from '../../src/index.js';
@@ -415,19 +415,19 @@ describe('W11 campaign-rule read-interface consumption', () => {
       const trace = discover(db, CUBE_SCENARIO, effective);
       const capability = packetCandidate(trace, CUBE)?.capability;
 
-      // A2: the ruling reached the bounded preflight, quoted from the jhpt
-      // projection -- identity, selected interpretation, and lifecycle status.
-      expect(capability?.campaignRulings).toEqual([
-        {
-          ruleIdentity: rule.ruleIdentity,
-          ambiguityId: CUBE_AMBIGUITY,
-          selectedInterpretationId: CUBE_INTERPRETATION,
-          status: 'active',
-          effectivePosition: formatCampaignPosition(rule.effectivePosition),
-          supersededBy: null,
-          revokedPosition: null,
-        },
+      // A2: the ruling reached the bounded preflight as the jhpt projection
+      // ITSELF, not a discovery-shaped copy of it. Exact equality with
+      // `projectCampaignRule` is the assertion that matters: a narrowed local
+      // shape would pass a field-by-field check while silently dropping the
+      // governing association and the prose an execution owner needs.
+      expect(capability?.campaignRulings).toEqual([projectCampaignRule(rule)]);
+      expect(capability?.campaignRulings).toEqual(
+        packetCandidate(trace, CUBE)?.campaignRulings,
+      );
+      expect(capability?.campaignRulings?.[0].governingRecordKeys).toEqual([
+        CUBE,
       ]);
+      expect(capability?.campaignRulings?.[0].prose).toEqual(rule.prose);
       // A ruling resolves interpretation only. Every press-face clause is
       // engine-pending, so readiness stays blocked and the packet says so
       // rather than letting the ruling read as authorization.
@@ -590,68 +590,94 @@ describe('W11 campaign-rule read-interface consumption', () => {
     }
   });
 
-  it('contains no rule store, recording tool, resolver, or lifecycle of its own', () => {
-    const dir = 'packages/core/src/discovery';
-    const sources = readdirSync(dir)
-      .filter((file) => file.endsWith('.ts'))
-      .map((file) => ({
-        file: `${dir}/${file}`,
-        text: readFileSync(`${dir}/${file}`, 'utf8'),
-      }));
-    expect(sources.length).toBeGreaterThan(0);
-    const importsOf = (text: string) =>
-      [...text.matchAll(/from '([^']+)'/gu)].map((match) => match[1]);
+  it('re-reads jhpt at the same position after a lifecycle change, retaining nothing', () => {
+    const db = freshDbWithSession();
+    try {
+      const [authoring] = turns(db, 1);
+      const adjudicated = {
+        sessionId: SESSION_ID,
+        turnId: 'turn-2',
+        ordinal: authoring.ordinal + 1,
+      };
 
-    // The ONLY campaign module discovery may reach is the shared read
-    // vocabulary. Every writer, resolver, position allocator and context
-    // assembler stays on jhpt's side of the seam.
-    const campaignImports = new Set(
-      sources.flatMap(({ text }) =>
-        importsOf(text).filter((item) => item.includes('/campaign/')),
-      ),
-    );
-    expect([...campaignImports]).toEqual(['../campaign/campaignRules.js']);
+      // The adversary the structural checker cannot see: a cache or shadow
+      // resolver keyed by position would answer every query below from the
+      // first result. Each query names the SAME adjudicated position, and jhpt
+      // state changes between them -- unlike the supersession and revocation
+      // cases above, which make all their writes before their first query and
+      // so would be satisfied by a cache populated on the first read.
+      expect(
+        packetCandidate(discover(db, FIREBALL_SCENARIO, adjudicated), FIREBALL)
+          ?.campaignRules,
+      ).toEqual([]);
 
-    // Positive control: the seam vocabulary really is consumed, so the
-    // assertion above is about a boundary rather than about absence.
+      const original = houseRule(db, {
+        ruleIdentity: 'house-rule:components-v1',
+        currentPosition: authoring,
+        effectivePosition: adjudicated,
+        governingRecordKeys: [FIREBALL],
+        prose: 'No material components at all.',
+      });
+      const [, current] = turns(db, 2);
+      expect(current).toEqual(adjudicated);
+
+      // A rule that did not exist at the first query is present at the second.
+      const afterCreate = packetCandidate(
+        discover(db, FIREBALL_SCENARIO, adjudicated),
+        FIREBALL,
+      )?.campaignRules;
+      expect(afterCreate?.map((item) => item.ruleIdentity)).toEqual([
+        original.ruleIdentity,
+      ]);
+      expect(afterCreate?.[0].status).toBe('active');
+
+      supersedeCampaignRule(db, {
+        campaignId: CAMPAIGN_ID,
+        ruleIdentity: original.ruleIdentity,
+        currentPosition: current,
+        successor: {
+          ...original,
+          ruleIdentity: 'house-rule:components-v2',
+          prose: 'Only costly material components are required.',
+          effectivePosition: {
+            ...adjudicated,
+            turnId: 'turn-3',
+            ordinal: adjudicated.ordinal + 1,
+          },
+        },
+      });
+
+      // Same position, same rule, different lifecycle status -- the successor
+      // is not yet in effect here, so jhpt still selects the original, but its
+      // status is no longer `active`. Retained state would report `active`.
+      const afterSupersede = packetCandidate(
+        discover(db, FIREBALL_SCENARIO, adjudicated),
+        FIREBALL,
+      )?.campaignRules;
+      expect(afterSupersede?.map((item) => item.ruleIdentity)).toEqual([
+        original.ruleIdentity,
+      ]);
+      expect(afterSupersede?.[0]).toMatchObject({
+        status: 'superseded',
+        supersededBy: 'house-rule:components-v2',
+      });
+      expect(afterSupersede?.[0].prose).toBe('No material components at all.');
+    } finally {
+      db.close();
+    }
+  });
+
+  it('proves its ownership boundary structurally in a dedicated checker', () => {
+    // The source-level half of "no discovery-side rule store" is
+    // `discoveryOwnershipBoundary.test.ts`, which runs an AST analyzer over the
+    // complete recursive discovery surface and, first, proves that analyzer
+    // rejects each prohibited class. It is separate because its rejection
+    // fixtures are the substance of that evidence, not a footnote to this file.
     expect(
-      sources.some(({ text }) => text.includes('CampaignRuleReadSeam')),
-    ).toBe(true);
-
-    // No persistence, no recording tool, no resolver, no lifecycle.
-    const forbidden = [
-      'campaign_rule',
-      '.prepare(',
-      'withTransaction',
-      'createCampaignRule',
-      'recordAmbiguityRuling',
-      'supersedeCampaignRule',
-      'revokeCampaignRule',
-      'listCampaignRules',
-      'listActiveCampaignRulesAtPosition',
-      'listActiveRulingsForAmbiguitiesAtPosition',
-      'createCampaignRuleReadSeam',
-      'assembleCampaignRulesContext',
-      'resolveCampaignPosition',
-      'projectCampaignRule',
-    ];
-    expect(
-      sources.flatMap(({ file, text }) =>
-        forbidden
-          .filter((symbol) => text.includes(symbol))
-          .map((symbol) => `${file}: ${symbol}`),
+      readFileSync(
+        'packages/core/test/discovery/discoveryOwnershipBoundary.test.ts',
+        'utf8',
       ),
-    ).toEqual([]);
-
-    // A store needs somewhere to keep things. Discovery has no module-level
-    // mutable binding anywhere in the path.
-    expect(
-      sources.flatMap(({ file, text }) =>
-        text
-          .split('\n')
-          .filter((line) => /^(?:let|var) /u.test(line))
-          .map((line) => `${file}: ${line.trim()}`),
-      ),
-    ).toEqual([]);
+    ).toContain('owns no rule schema, store, cache, resolver, or lifecycle');
   });
 });
