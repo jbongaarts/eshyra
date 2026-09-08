@@ -14,6 +14,7 @@ import {
 import {
   assembleCampaignRulesContext,
   type CampaignAmbiguityContext,
+  CampaignRulesPackAuthoringError,
 } from './campaignContext.js';
 import { getCurrentCampaignPosition } from './campaignPosition.js';
 import { formatCampaignPosition } from './campaignRules.js';
@@ -48,12 +49,6 @@ export function preflightCampaignItemOperation(
       ordinal: 0,
     },
   );
-  const context = assembleCampaignRulesContext(
-    db,
-    input.campaignId,
-    position,
-    resolveStrictCampaignRulesStack(db, input.resolveRulesPack),
-  );
   const data = input.record.data as { mechanics?: Record<string, unknown> };
   const ids =
     data?.mechanics === undefined
@@ -62,21 +57,36 @@ export function preflightCampaignItemOperation(
           data.mechanics,
           `${input.record.key}.data.mechanics`,
         );
+  const relevant =
+    ids.size === 0
+      ? []
+      : assembleCampaignRulesContext(
+          db,
+          input.campaignId,
+          position,
+          resolveStrictCampaignRulesStack(db, input.resolveRulesPack),
+          undefined,
+          ids,
+        ).ambiguities;
+  for (const id of ids) {
+    if (!relevant.some((entry) => entry.ambiguity.id === id))
+      throw new CampaignRulesPackAuthoringError(
+        `Relevant ambiguity '${id}' is absent from the bound rules stack`,
+      );
+  }
   const evidence = {
     capabilityId: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.operationId,
     revision: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.revision,
     position,
-    ambiguities: context.ambiguities
-      .filter(({ ambiguity }) => ids.has(ambiguity.id))
-      .map((entry) => ({
-        ...entry,
-        status:
-          entry.conflictingRulings.length > 0
-            ? ('conflicting' as const)
-            : entry.ruling === undefined
-              ? ('unresolved' as const)
-              : ('resolved' as const),
-      })),
+    ambiguities: relevant.map((entry) => ({
+      ...entry,
+      status:
+        entry.conflictingRulings.length > 0
+          ? ('conflicting' as const)
+          : entry.ruling === undefined
+            ? ('unresolved' as const)
+            : ('resolved' as const),
+    })),
   };
   try {
     assertMagicItemOperationReady(

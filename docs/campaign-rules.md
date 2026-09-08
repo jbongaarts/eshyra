@@ -59,17 +59,32 @@ introducing further retroactive rules.
 
 Migration 0028 adds one replaceable recovery snapshot per campaign and a
 separate abandoned-trace diagnostic table. Snapshots use the existing checkpoint
-row serialization, exclude recovery and failure-diagnostic tables to avoid
-recursive history, and include the original turn input. A post-turn hash guards
+serialization, exclude recovery and failure-diagnostic rows to avoid
+recursive history, and include the original turn input. All table/view schemas,
+standalone indexes, and triggers participate in the replay hash, including the
+schemas of diagnostic tables. A post-turn hash guards
 against overwriting later state. Restoration, rule admission, and pending
 recovery are one SQLite transaction; model execution follows under the existing
 turn and candidate savepoints. No Dolt process runs on the per-turn path.
 Storage and snapshot work scale with the campaign database; only one recovery
 snapshot is retained, not a snapshot for every turn.
 
+Checkpoint schema payload version 2 preserves enforcement objects as well as
+rows. Restore creates tables/views and indexes, inserts historical rows with deferred
+foreign keys, then reinstalls triggers before publishing the database. Triggers
+do not fire during historical loading; they protect subsequent live writes.
+Older checkpoints omitted those objects, and their migration ledger cannot prove
+which objects existed. Restore rejects these incomplete payloads: create a new
+checkpoint from the original campaign database. It never silently publishes a
+weaker schema or re-runs already-applied migrations to guess what was lost.
+
 The campaign-owned item preflight reads active ambiguity rulings at the persisted
 campaign position and returns them with the bounded capability result. The
-`use_item` error carries that context when blocked. Resolving the Cube of Force
+`use_item` error carries that context when blocked. Preflight validates the target
+record's declared ambiguity IDs before expanding matching declarations in the bound
+stack. Unrelated malformed or duplicate ambiguity declarations do not gate the
+target item. Missing, malformed, or duplicate declarations for a relevant ID fail
+before item mutation; an empty or unrecognized declaration is never readiness. Resolving the Cube of Force
 same-face duration ambiguity does **not** discharge engine-pending clauses:
 both known choices still leave its operation blocked. This supplies ruling
 context to capability preflight; it does not add a new item capability or compile

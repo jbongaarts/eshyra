@@ -60,7 +60,10 @@ export class CampaignRulesPackAuthoringError extends CampaignRuleError {
   }
 }
 
-function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
+function ambiguitiesFromStack(
+  stack: ResolvedRulesStack,
+  relevantIds?: ReadonlySet<string>,
+): RulesAmbiguity[] {
   const found = new Map<
     string,
     { ambiguity: RulesAmbiguity; recordKey: string }
@@ -76,10 +79,32 @@ function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
       Array.isArray(mechanics)
     )
       continue;
+    const rawValues = (mechanics as { ambiguities?: unknown }).ambiguities;
+    // A bounded capability may depend on these IDs, never on the health of
+    // unrelated discovery material. Validate matching declarations fully, and
+    // retain global duplicate detection for every ID actually requested.
+    const values =
+      relevantIds === undefined
+        ? rawValues
+        : Array.isArray(rawValues)
+          ? rawValues.filter(
+              (value) =>
+                typeof value === 'object' &&
+                value !== null &&
+                relevantIds.has(value.id),
+            )
+          : [];
+    if (
+      relevantIds !== undefined &&
+      (!Array.isArray(values) || values.length === 0)
+    )
+      continue;
     let ambiguityIds: ReadonlySet<string>;
     try {
       ambiguityIds = optRulesAmbiguities(
-        mechanics as Record<string, unknown>,
+        relevantIds === undefined
+          ? (mechanics as Record<string, unknown>)
+          : { ambiguities: values },
         `${entry.record.key}.data.mechanics`,
       );
     } catch (error) {
@@ -89,7 +114,6 @@ function ambiguitiesFromStack(stack: ResolvedRulesStack): RulesAmbiguity[] {
       const message = error instanceof Error ? error.message : String(error);
       throw new CampaignRulesPackAuthoringError(message);
     }
-    const values = (mechanics as { ambiguities?: unknown }).ambiguities;
     if (!Array.isArray(values) || ambiguityIds.size === 0) continue;
     for (const value of values) {
       const ambiguity = value as RulesAmbiguity;
@@ -113,8 +137,13 @@ export function assembleCampaignRulesContext(
   position: string,
   stack: ResolvedRulesStack | undefined,
   ambiguitySourceUnavailable?: string,
+  /** For bounded capability consumers; ordinary DM/auditor context stays global. */
+  relevantAmbiguityIds?: ReadonlySet<string>,
 ): CampaignRulesContext {
-  const ambiguities = stack === undefined ? [] : ambiguitiesFromStack(stack);
+  const ambiguities =
+    stack === undefined
+      ? []
+      : ambiguitiesFromStack(stack, relevantAmbiguityIds);
   const ambiguityIds = new Set(ambiguities.map((item) => item.id));
   const activeRows = listActiveCampaignRulesAtPosition(
     db,

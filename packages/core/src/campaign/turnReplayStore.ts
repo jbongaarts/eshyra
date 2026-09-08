@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { RunTurnInput } from '../orchestrator/orchestrator.js';
 import {
+  readSnapshotSchema,
   type SnapshotRecord,
   serializeCampaign,
 } from '../persistence/checkpoint/serialize.js';
@@ -25,7 +26,9 @@ export interface TurnReplayRow {
 }
 
 export function replaySnapshot(db: Db): SnapshotRecord[] {
-  return serializeCampaign(db).filter((record) => !EXCLUDED.has(record.table));
+  return serializeCampaign(db).filter(
+    (record) => record.kind === 'schema' || !EXCLUDED.has(record.table),
+  );
 }
 
 export function replayStateHash(db: Db): string {
@@ -102,7 +105,11 @@ export function restoreReplaySnapshot(db: Db, records: SnapshotRecord[]): void {
     db.exec(`DROP TRIGGER ${quoteIdent(trigger.name)}`);
   db.pragma('defer_foreign_keys = ON');
   for (const record of schema)
-    db.exec(`DELETE FROM ${quoteIdent(record.table)}`);
+    if (
+      readSnapshotSchema(record).type === 'table' &&
+      !EXCLUDED.has(record.table)
+    )
+      db.exec(`DELETE FROM ${quoteIdent(record.table)}`);
   for (const record of records) {
     if (record.kind !== 'row') continue;
     const row = JSON.parse(record.payload) as Record<string, unknown>;

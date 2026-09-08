@@ -31,6 +31,7 @@ import {
   getBundledDnd5eSrdPack,
   getLastDmOutput,
   getTurnTrace,
+  initSchema,
   listSceneLog,
   openScene,
   renderCampaignRulesSection,
@@ -637,6 +638,28 @@ describe('campaign-rule runtime end-to-end acceptance', () => {
       materializeSnapshot(records, dest);
       const restored = openDatabase(dest);
       try {
+        initSchema(restored);
+        const objects = (db: typeof restored) =>
+          db
+            .prepare(
+              "SELECT type,name,tbl_name,sql FROM sqlite_master WHERE type IN ('index','trigger','view') AND sql IS NOT NULL ORDER BY type,name",
+            )
+            .all();
+        expect(objects(restored)).toEqual(objects(deps.db));
+        expect(() =>
+          restored
+            .prepare(
+              "INSERT INTO inventory(id,name,quantity) VALUES (?, 'bad', 1)",
+            )
+            .run('x'.repeat(257)),
+        ).toThrow('identity bounds');
+        expect(() =>
+          restored
+            .prepare(
+              "INSERT INTO campaign_session(campaign_id,session_id,status,started_at) VALUES (?, 'second', 'open', ?)",
+            )
+            .run(base.campaignId, at),
+        ).toThrow('UNIQUE');
         const result = await resumeDisputedTurn(
           { ...deps, db: restored },
           base.campaignId,
@@ -729,6 +752,7 @@ describe('campaign-rule runtime end-to-end acceptance', () => {
 
   it('restoring a replay preserves insert guards and rolls back invalid rule admission', async () => {
     const deps = setup(['Original accepted turn.', 'Replayed.']);
+    deps.db.exec('CREATE VIEW live_item_names AS SELECT name FROM inventory');
     await runTurn(deps, base);
     const before = replaySnapshot(deps.db);
     await expect(
@@ -887,6 +911,30 @@ describe('campaign-rule runtime end-to-end acceptance', () => {
       },
     });
     expect(observed).toBe('newer');
+    deps.db.close();
+  });
+  it.each([
+    'DROP TRIGGER inventory_identity_insert_guard',
+    'DROP INDEX campaign_session_one_open',
+    'CREATE TRIGGER recovery_schema_guard BEFORE UPDATE ON turn_replay BEGIN SELECT 1; END',
+    'DROP TRIGGER inventory_identity_update_guard; CREATE TRIGGER inventory_identity_update_guard BEFORE UPDATE ON inventory BEGIN SELECT 1; END',
+  ])('rejects semantic schema drift after acceptance: %s', async (sql) => {
+    const deps = setup(['Accepted.', 'Must not replay.']);
+    expect((await runTurn(deps, base)).ok).toBe(true);
+    deps.db.exec(sql);
+    await expect(
+      disputeTurn(deps, {
+        ...base,
+        approvedRule: {
+          kind: 'house-rule',
+          prose: 'Correction',
+          governingRecordKeys: ['rule:components'],
+        },
+      }),
+    ).rejects.toThrow('Campaign state changed');
+    expect(listCampaignRules(deps.db, { campaignId: base.campaignId })).toEqual(
+      [],
+    );
     deps.db.close();
   });
 });
