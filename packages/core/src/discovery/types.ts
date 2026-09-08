@@ -317,6 +317,46 @@ export interface PacketTrace extends StageTrace<PacketCandidate> {
   readonly dropped: readonly RetentionTrace['dropped'][number][];
 }
 
+/**
+ * Phase 2 runtime observations (design section 12.2).
+ *
+ * These are facts about the REAL turn that surrounds a shadow run, recorded so
+ * M10 and M11 are derivable from the durable evidence without re-running
+ * discovery or re-auditing the turn. They describe what the runtime did; they
+ * never describe what the model attended to, which section 12.3 forbids
+ * inferring from packet membership.
+ */
+export type RuntimeCapabilityOutcome =
+  | 'available'
+  | 'blocked'
+  | 'not-a-capability-outcome';
+
+export interface RuntimeCapabilityInvocation {
+  readonly tool: string;
+  readonly instanceId?: string;
+  readonly operationId?: string;
+  /** Record key the captured scenario bound this instance to, when known. */
+  readonly recordKey?: string;
+  /** Capability identity the runtime preflight reported, when it reported one. */
+  readonly capabilityId?: string;
+  readonly outcome: RuntimeCapabilityOutcome;
+  readonly detail?: string;
+}
+
+export interface RuntimeAuditAttempt {
+  readonly attempt: number;
+  readonly verdict: string;
+  readonly action: 'accept' | 'repair' | 'retry' | 'fail';
+  readonly retryCause: string | null;
+  /**
+   * Tool names the verdict named as missing. The coarse retry cause cannot
+   * carry the M11 attribution on its own: `missing_state` is classified before
+   * `missing_world_evidence`, so a verdict missing both a state tool and
+   * `lookup_rules` reports only the former.
+   */
+  readonly missingTools: readonly string[];
+}
+
 export interface DiscoveryRunInput {
   readonly db: Db;
   readonly scenario: DiscoveryScenario;

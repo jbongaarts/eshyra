@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { measureDiscovery, runDiscoveryStages } from '../../src/internal.js';
+import {
+  measureDiscovery,
+  projectDiscoveryTrace,
+  runDiscoveryStages,
+} from '../../src/internal.js';
 import type {
   DiagnosticTarget,
   TypedRelationshipExpectation,
@@ -104,7 +108,7 @@ describe('offline discovery diagnostic probes', () => {
             Array.isArray(fixture.requiredRelationshipExpansion)
               ? fixture.requiredRelationshipExpansion
               : [];
-          const measurements = measureDiscovery(trace, {
+          const measurements = measureDiscovery(projectDiscoveryTrace(trace), {
             mustIncludeTargetRefs: mustRefs,
             mustNotIncludeTargetRefs:
               fixture.mustNotIncludeTargets.map(targetRef),

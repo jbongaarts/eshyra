@@ -9,7 +9,7 @@ import {
 import { discoverMigrations } from '../src/persistence/migrationRunner.js';
 
 describe('structured turn traces', () => {
-  it('preserves a pre-0027 row and decodes its new evidence field as absent', () => {
+  it('preserves a pre-0027 row and decodes its later evidence fields as absent', () => {
     const db = openDatabase(':memory:');
     const migrations = discoverMigrations();
     for (const migration of migrations) {
@@ -45,9 +45,15 @@ describe('structured turn traces', () => {
       '[]',
       '2026-05-19T05:00:00.000Z',
     );
-    const migration = migrations.find((candidate) => candidate.version === 27);
-    if (migration === undefined) throw new Error('missing migration 0027');
-    db.exec(migration.sql);
+    // Apply 0027 and everything after it, so each later additive evidence
+    // column is proved to leave the legacy row readable rather than only the
+    // first one that needed it.
+    const later = migrations.filter((candidate) => candidate.version >= 27);
+    if (!later.some((candidate) => candidate.version === 27))
+      throw new Error('missing migration 0027');
+    if (!later.some((candidate) => candidate.version === 31))
+      throw new Error('missing migration 0031');
+    for (const migration of later) db.exec(migration.sql);
 
     const trace = getTurnTrace(db, {
       campaignId: 'campaign-legacy',
@@ -55,6 +61,7 @@ describe('structured turn traces', () => {
       turnId: 'turn-legacy',
     });
     expect(trace).not.toHaveProperty('campaignRulesEvidence');
+    expect(trace).not.toHaveProperty('discoveryShadow');
     db.close();
   });
 

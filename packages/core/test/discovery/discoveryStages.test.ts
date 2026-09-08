@@ -8,6 +8,7 @@ import {
   joinCampaignRules,
   MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
   measureDiscovery,
+  projectDiscoveryTrace,
   resolveDiscoveryCandidates,
   resolveRulesStack,
   retainCandidates,
@@ -220,7 +221,7 @@ describe('offline discovery stage boundaries', () => {
       expect(trace.retention.overflow[0].routes.length).toBeGreaterThan(0);
       expect(trace.retention.overflow[0].reason.length).toBeGreaterThan(0);
 
-      const measurements = measureDiscovery(trace, {
+      const measurements = measureDiscovery(projectDiscoveryTrace(trace), {
         mustIncludeTargetRefs: ['rule:cover', 'rule:concentration'],
       });
       // M6 is observable as failed, which it never could be while the harness
@@ -266,7 +267,7 @@ describe('offline discovery stage boundaries', () => {
       expect(trace.packet.byteOverflow[0].routes.length).toBeGreaterThan(0);
       expect(trace.packet.byteOverflow[0].reason).toContain('byte budget');
 
-      const measurements = measureDiscovery(trace, {
+      const measurements = measureDiscovery(projectDiscoveryTrace(trace), {
         mustIncludeTargetRefs: ['creature:adult-black-dragon'],
       });
       expect(measurements.m6.overflowed).toBe(true);
@@ -321,7 +322,7 @@ describe('offline discovery stage boundaries', () => {
       for (const drop of trimmed.packet.dropped)
         expect(drop.reason.length).toBeGreaterThan(0);
       expect(
-        measureDiscovery(trimmed, {
+        measureDiscovery(projectDiscoveryTrace(trimmed), {
           mustIncludeTargetRefs: ['condition:incapacitated'],
         }).m6.overflowed,
       ).toBe(false);
@@ -344,7 +345,7 @@ describe('offline discovery stage boundaries', () => {
       // declares today contains a character JSON encoding would alter, so this
       // is a positive check on the matcher rather than a regression guard for
       // a live defect; searching prose removes the latent trap.
-      const measurements = measureDiscovery(trace, {
+      const measurements = measureDiscovery(projectDiscoveryTrace(trace), {
         requiredFacts: [
           {
             targetRef: 'rule:concentration',
@@ -557,7 +558,7 @@ describe('offline discovery stage boundaries', () => {
       expect(candidate?.campaignRules[0].ruleIdentity).toBe(
         'house-rule-components',
       );
-      const measurements = measureDiscovery(trace, {
+      const measurements = measureDiscovery(projectDiscoveryTrace(trace), {
         mustIncludeTargetRefs: ['spell:fireball'],
       });
       expect(measurements.m1['spell:fireball']).toBe(true);
@@ -598,7 +599,7 @@ describe('offline discovery stage boundaries', () => {
           ],
         },
       });
-      const measurements = measureDiscovery(trace);
+      const measurements = measureDiscovery(projectDiscoveryTrace(trace));
       expect(measurements.m5.returned).toEqual(['ruling-nowhere']);
       expect(measurements.m5.unplaced).toEqual(['ruling-nowhere']);
       // An unplaced ruling never reached the packet, so it cannot be reported
@@ -880,9 +881,9 @@ describe('offline discovery stage boundaries', () => {
       // this record must-consider, expansion is bounded at two passes, and the
       // truncation is named rather than hidden.
       expect(trace.unexpandedPromotions).toContain(LATE_AMBIGUITY_TARGET_KEY);
-      expect(measureDiscovery(trace).m5.unexpandedPromotions).toContain(
-        LATE_AMBIGUITY_TARGET_KEY,
-      );
+      expect(
+        measureDiscovery(projectDiscoveryTrace(trace)).m5.unexpandedPromotions,
+      ).toContain(LATE_AMBIGUITY_TARGET_KEY);
     } finally {
       db.close();
     }
@@ -936,7 +937,7 @@ describe('offline discovery stage boundaries', () => {
         ),
       ).toHaveLength(1);
 
-      const measurements = measureDiscovery(trace);
+      const measurements = measureDiscovery(projectDiscoveryTrace(trace));
       expect(measurements.m5.returned).toEqual(['house-rule-components']);
       expect(measurements.m5.matched).toEqual(['house-rule-components']);
       expect(measurements.m5.placed).toEqual([
@@ -991,9 +992,10 @@ describe('offline discovery stage boundaries', () => {
       );
       expect(trace.lateRuleJoin.outcome).toBe('ran');
       expect(trace.lateRuleJoin.returnedRuleIdentities).toEqual([]);
-      expect(measureDiscovery(trace).m5.unresolvedAmbiguityIds).toContain(
-        LATE_AMBIGUITY_ID,
-      );
+      expect(
+        measureDiscovery(projectDiscoveryTrace(trace)).m5
+          .unresolvedAmbiguityIds,
+      ).toContain(LATE_AMBIGUITY_ID);
 
       const firstCandidate = trace.packet.packet.candidates[0];
       if (firstCandidate === undefined)
@@ -1032,7 +1034,8 @@ describe('offline discovery stage boundaries', () => {
         },
       };
       expect(
-        measureDiscovery(packetWithUnqueriedAmbiguity).m5.unqueriedAmbiguityIds,
+        measureDiscovery(projectDiscoveryTrace(packetWithUnqueriedAmbiguity)).m5
+          .unqueriedAmbiguityIds,
       ).toEqual(['ambiguity:not-offered']);
     } finally {
       db.close();
@@ -1195,7 +1198,7 @@ describe('offline discovery stage boundaries', () => {
         LATE_AMBIGUITY_ID,
       );
 
-      const measurements = measureDiscovery(trace);
+      const measurements = measureDiscovery(projectDiscoveryTrace(trace));
       // M5's rule-request evidence derives only from the first call...
       expect(measurements.m5.ruleQueryCount).toBe(1);
       expect(measurements.m5.allActiveRulingsRequested).toBe(true);

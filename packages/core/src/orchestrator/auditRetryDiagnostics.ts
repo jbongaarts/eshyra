@@ -50,10 +50,25 @@ const WORLD_EVIDENCE_TOOLS = new Set([
 ]);
 
 function missingTools(verdict: AuditVerdict): Set<string> {
-  return new Set([
-    ...verdict.missingRequiredTools,
-    ...verdict.missingRequiredCalls.map((call) => call.tool),
-  ]);
+  return new Set(auditMissingToolNames(verdict));
+}
+
+/**
+ * Every tool name a verdict named as missing, from both the tool-level and the
+ * call-level requirement. Exported because the coarse retry cause cannot carry
+ * the ADR 0020 M11 attribution on its own: `missing_state` is classified
+ * before `missing_world_evidence`, so a verdict missing both a state tool and
+ * `lookup_rules` reports only the former.
+ */
+export function auditMissingToolNames(
+  verdict: AuditVerdict,
+): readonly string[] {
+  return [
+    ...new Set([
+      ...verdict.missingRequiredTools,
+      ...verdict.missingRequiredCalls.map((call) => call.tool),
+    ]),
+  ];
 }
 
 function readField(value: unknown, key: string): unknown {

@@ -1,4 +1,11 @@
-import type { DiscoveryTrace, TypedTraversal } from './types.js';
+import type { ProjectedDiscoveryTrace } from './traceProjection.js';
+import type {
+  CapabilityPreflight,
+  RuntimeAuditAttempt,
+  RuntimeCapabilityInvocation,
+  RuntimeCapabilityOutcome,
+  TypedTraversal,
+} from './types.js';
 
 /**
  * A field-9 packet-retention fact. Design amendment 11.1 narrows field 9 to
@@ -178,7 +185,7 @@ function valueAt(root: unknown, pointer: string): unknown {
     : undefined;
 }
 export function measureDiscovery(
-  trace: DiscoveryTrace,
+  trace: ProjectedDiscoveryTrace,
   input: DiscoveryMeasurementInput = {},
 ): DiscoveryMeasurements {
   const keys = new Set(
@@ -426,5 +433,132 @@ export function measureDiscovery(
         },
       ]),
     ),
+  };
+}
+
+/**
+ * The one tool that fetches rules material, and therefore the only evidence
+ * that distinguishes an M11 "missing rule evidence" retry from every other
+ * rejection cause. `world_query` and `memory_drilldown` share its coarse
+ * `missing_world_evidence` cause but fetch campaign canon and memory, not
+ * rules.
+ */
+const RULE_EVIDENCE_TOOLS: readonly string[] = ['lookup_rules'];
+
+export interface RuntimeDiscoveryObservations {
+  readonly capabilityInvocations: readonly RuntimeCapabilityInvocation[];
+  readonly auditAttempts: readonly RuntimeAuditAttempt[];
+}
+
+export interface RuntimeDiscoveryMeasurements {
+  /**
+   * M10 — capability preflight agreement with runtime.
+   *
+   * Shadow discovery runs BEFORE the model chooses a tool, so it cannot know
+   * which operation the turn will invoke. `not-invoked` and
+   * `absentFromPacket` are therefore ordinary, informative outcomes rather
+   * than failures, and `not-comparable` is never counted as agreement.
+   */
+  readonly m10: {
+    readonly comparisons: readonly {
+      readonly candidateKey: string;
+      readonly capabilityId: string;
+      readonly packetStatus: CapabilityPreflight['status'];
+      readonly runtimeOutcome: RuntimeCapabilityOutcome | 'not-invoked';
+      readonly agreement: 'agreed' | 'disagreed' | 'not-comparable';
+    }[];
+    /**
+     * Capability outcomes the runtime produced that the shadow packet never
+     * preflighted. This is the substantive Phase 2 signal: discovery did not
+     * anticipate a capability the turn actually exercised.
+     */
+    readonly runtimeInvocationsAbsentFromPacket: readonly RuntimeCapabilityInvocation[];
+  };
+  /**
+   * M11 — auditor retry count, with the missing-rule-evidence share
+   * distinguished from every other rejection cause (design section 13.1).
+   */
+  readonly m11: {
+    readonly primaryDmCandidates: number;
+    readonly retries: number;
+    readonly presentationRepairs: number;
+    readonly failures: number;
+    readonly byCause: Readonly<Record<string, number>>;
+    readonly missingRuleEvidenceRetries: number;
+    /** Retries whose verdict named no missing tool at all. */
+    readonly retriesWithNoNamedMissingTool: number;
+    /** True when no auditor ran, so every count above is structurally zero. */
+    readonly auditorAbsent: boolean;
+  };
+}
+
+/**
+ * M10 and M11 from the durable Phase 2 evidence. Both read recorded runtime
+ * observations beside the recorded trace; neither re-runs discovery, re-invokes
+ * a capability, or re-audits the turn.
+ */
+export function measureRuntimeDiscovery(
+  trace: ProjectedDiscoveryTrace,
+  runtime: RuntimeDiscoveryObservations,
+): RuntimeDiscoveryMeasurements {
+  const capabilityOutcomes = runtime.capabilityInvocations.filter(
+    (invocation) => invocation.outcome !== 'not-a-capability-outcome',
+  );
+  const consumed = new Set<RuntimeCapabilityInvocation>();
+  const comparisons = trace.packet.packet.candidates
+    .filter((item) => item.capability !== undefined)
+    .map((item) => {
+      const preflight = item.capability as CapabilityPreflight;
+      const invocation = capabilityOutcomes.find(
+        (candidate) =>
+          candidate.recordKey === item.identity.key &&
+          (preflight.operationId === undefined ||
+            candidate.operationId === preflight.operationId),
+      );
+      if (invocation !== undefined) consumed.add(invocation);
+      const runtimeOutcome = invocation?.outcome ?? ('not-invoked' as const);
+      return {
+        candidateKey: item.identity.key,
+        capabilityId: preflight.capabilityId,
+        packetStatus: preflight.status,
+        runtimeOutcome,
+        agreement:
+          runtimeOutcome === 'not-invoked' ||
+          preflight.status === 'not-evaluated-offline'
+            ? ('not-comparable' as const)
+            : runtimeOutcome === preflight.status
+              ? ('agreed' as const)
+              : ('disagreed' as const),
+      };
+    });
+  const attempts = runtime.auditAttempts;
+  const retries = attempts.filter((item) => item.action === 'retry');
+  const byCause: Record<string, number> = {};
+  for (const attempt of attempts) {
+    if (attempt.retryCause === null) continue;
+    byCause[attempt.retryCause] = (byCause[attempt.retryCause] ?? 0) + 1;
+  }
+  return {
+    m10: {
+      comparisons,
+      runtimeInvocationsAbsentFromPacket: capabilityOutcomes.filter(
+        (invocation) => !consumed.has(invocation),
+      ),
+    },
+    m11: {
+      primaryDmCandidates: attempts.length,
+      retries: retries.length,
+      presentationRepairs: attempts.filter((item) => item.action === 'repair')
+        .length,
+      failures: attempts.filter((item) => item.action === 'fail').length,
+      byCause,
+      missingRuleEvidenceRetries: retries.filter((item) =>
+        item.missingTools.some((tool) => RULE_EVIDENCE_TOOLS.includes(tool)),
+      ).length,
+      retriesWithNoNamedMissingTool: retries.filter(
+        (item) => item.missingTools.length === 0,
+      ).length,
+      auditorAbsent: attempts.length === 0,
+    },
   };
 }

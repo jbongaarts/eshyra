@@ -52,6 +52,17 @@ export interface TurnTraceRecord {
   rulesResolution: TraceJsonValue;
   /** Active campaign-rule identities supplied to both models for this turn. */
   campaignRulesEvidence?: CampaignRulesEvidence;
+  /**
+   * ADR 0020 Phase 2 shadow-mode discovery evidence (`eshyra-o9bd.19.11`),
+   * stored as an opaque JSON value. The shape belongs to the discovery
+   * experiment, which owns its schema tag, encoder and reader; restating it
+   * here would make this module a second owner of that schema and would couple
+   * the accepted-turn trace authority to an experiment's revisions.
+   *
+   * Nothing in this column reached the DM: shadow mode records what discovery
+   * would have proposed and injects nothing.
+   */
+  discoveryShadow?: TraceJsonValue;
   acceptedStateDelta: TraceJsonValue[];
   rejectedCandidates: TraceJsonValue[];
   finalNarration: string;
@@ -84,6 +95,7 @@ const traceColumns = {
   campaignRulesEvidence: jsonColumn<CampaignRulesEvidence>(
     'turn_trace.campaign_rules_evidence',
   ),
+  discoveryShadow: jsonColumn<TraceJsonValue>('turn_trace.discovery_shadow'),
   acceptedStateDelta: jsonColumn<TraceJsonValue[]>(
     'turn_trace.accepted_state_delta',
   ),
@@ -113,6 +125,7 @@ export function recordTurnTrace(db: Db, trace: TurnTraceRecord): void {
            tool_calls_json,
            rules_resolution_json,
            campaign_rules_evidence,
+           discovery_shadow,
            accepted_state_delta_json,
            rejected_candidates_json,
            final_narration,
@@ -121,7 +134,7 @@ export function recordTurnTrace(db: Db, trace: TurnTraceRecord): void {
            quality_flags_json,
            created_at
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(campaign_id, session_id, turn_id) DO UPDATE SET
            consent_scope = excluded.consent_scope,
            player_input = excluded.player_input,
@@ -132,6 +145,7 @@ export function recordTurnTrace(db: Db, trace: TurnTraceRecord): void {
            tool_calls_json = excluded.tool_calls_json,
            rules_resolution_json = excluded.rules_resolution_json,
            campaign_rules_evidence = excluded.campaign_rules_evidence,
+           discovery_shadow = excluded.discovery_shadow,
            accepted_state_delta_json = excluded.accepted_state_delta_json,
            rejected_candidates_json = excluded.rejected_candidates_json,
            final_narration = excluded.final_narration,
@@ -157,6 +171,9 @@ export function recordTurnTrace(db: Db, trace: TurnTraceRecord): void {
           : traceColumns.campaignRulesEvidence.encode(
               trace.campaignRulesEvidence,
             ),
+        trace.discoveryShadow === undefined
+          ? null
+          : traceColumns.discoveryShadow.encode(trace.discoveryShadow),
         traceColumns.acceptedStateDelta.encode(trace.acceptedStateDelta),
         traceColumns.rejectedCandidates.encode(trace.rejectedCandidates),
         trace.finalNarration,
@@ -187,6 +204,7 @@ export function getTurnTrace(
          tool_calls_json,
          rules_resolution_json,
          campaign_rules_evidence,
+         discovery_shadow,
          accepted_state_delta_json,
          rejected_candidates_json,
          final_narration,
@@ -229,6 +247,7 @@ export function listTurnTraces(
          tool_calls_json,
          rules_resolution_json,
          campaign_rules_evidence,
+         discovery_shadow,
          accepted_state_delta_json,
          rejected_candidates_json,
          final_narration,
@@ -266,6 +285,13 @@ function turnTraceFromRow(row: TurnTraceRow): TurnTraceRecord {
       : {
           campaignRulesEvidence: traceColumns.campaignRulesEvidence.decode(
             row.campaign_rules_evidence,
+          ),
+        }),
+    ...(row.discovery_shadow === null
+      ? {}
+      : {
+          discoveryShadow: traceColumns.discoveryShadow.decode(
+            row.discovery_shadow,
           ),
         }),
     acceptedStateDelta: traceColumns.acceptedStateDelta.decode(
@@ -314,6 +340,7 @@ interface TurnTraceRow {
   tool_calls_json: string;
   rules_resolution_json: string;
   campaign_rules_evidence: string | null;
+  discovery_shadow: string | null;
   accepted_state_delta_json: string;
   rejected_candidates_json: string;
   final_narration: string;

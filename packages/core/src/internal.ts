@@ -531,6 +531,13 @@ export {
 } from './debug/sessionDebug.js';
 export type { CandidateAccounting } from './discovery/accounting.js';
 export { accountCandidates } from './discovery/accounting.js';
+export type {
+  BlockerRepairObservation,
+  BlockerRepairProbeInput,
+  BlockerRepairStatus,
+  BlockerToolSchemaSource,
+} from './discovery/blockerRepairs.js';
+export { observeBlockerRepairs } from './discovery/blockerRepairs.js';
 export {
   joinCampaignRules,
   NULL_CAMPAIGN_RULE_SEAM,
@@ -543,11 +550,46 @@ export type {
   DiscoveryMeasurementInput,
   DiscoveryMeasurements,
   RequiredPacketFact,
+  RuntimeDiscoveryMeasurements,
+  RuntimeDiscoveryObservations,
 } from './discovery/measurements.js';
-export { measureDiscovery } from './discovery/measurements.js';
+export {
+  measureDiscovery,
+  measureRuntimeDiscovery,
+} from './discovery/measurements.js';
 export { buildContextPacket } from './discovery/packet.js';
 export { DEFAULT_BUDGET, retainCandidates } from './discovery/retention.js';
+export type {
+  DiscoveryShadowCapture,
+  DiscoveryShadowEvidence,
+  ShadowAdventureSeat,
+  ShadowDiscoveryInput,
+  ShadowExecutedToolCall,
+  ShadowFailure,
+  ShadowItemInstanceBinding,
+  ShadowScenarioRecord,
+} from './discovery/shadow.js';
+export {
+  captureDiscoveryShadow,
+  completeDiscoveryShadowEvidence,
+  DISCOVERY_SHADOW_SCHEMA,
+  DiscoveryShadowSchemaError,
+  encodeDiscoveryShadowEvidence,
+  observeRuntimeCapabilityInvocations,
+  readDiscoveryShadowEvidence,
+} from './discovery/shadow.js';
 export { extractDiscoverySignals } from './discovery/signals.js';
+export type {
+  ProjectedCandidate,
+  ProjectedDiscoveryTrace,
+  ProjectedPacketTrace,
+  ProjectedPackIdentity,
+  ProjectedRetentionTrace,
+  ProjectedRuleJoinTrace,
+  ProjectedSignal,
+  ProjectedStageTrace,
+} from './discovery/traceProjection.js';
+export { projectDiscoveryTrace } from './discovery/traceProjection.js';
 // Offline discovery pilot (experiment-only; intentionally absent from the
 // stable root export and not imported by runtime modules).
 export type {
@@ -566,6 +608,9 @@ export type {
   ProjectionLimitNote,
   RetentionBudget,
   RouteClass,
+  RuntimeAuditAttempt,
+  RuntimeCapabilityInvocation,
+  RuntimeCapabilityOutcome,
   StageLoss,
   StageTrace,
   TypedTraversal,
