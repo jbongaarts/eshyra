@@ -81,16 +81,21 @@ describe('normalizeMigrationSql / migrationChecksum', () => {
 });
 
 it('migration 0029 preserves legacy insertion chronology for scene and wallet consumers', () => {
-  const dir = makeMigrationDir(
-    Object.fromEntries(
-      discoverMigrations()
-        .filter((m) => m.version < 29)
-        .map((m) => [
-          `${String(m.version).padStart(4, '0')}_${m.name}.sql`,
-          m.sql,
-        ]),
-    ),
-  );
+  // Two dirs bound this test to its subject: seed at 0028, then apply exactly
+  // 0029. Running the default dir for the second pass would make every later
+  // migration show up in `applied`.
+  const dirThrough = (highest: number) =>
+    makeMigrationDir(
+      Object.fromEntries(
+        discoverMigrations()
+          .filter((m) => m.version <= highest)
+          .map((m) => [
+            `${String(m.version).padStart(4, '0')}_${m.name}.sql`,
+            m.sql,
+          ]),
+      ),
+    );
+  const dir = dirThrough(28);
   const db = openDatabase(':memory:');
   try {
     runMigrations(db, { dir });
@@ -106,7 +111,7 @@ it('migration 0029 preserves legacy insertion chronology for scene and wallet co
         JSON.stringify({ cp: 1, sp: 0, ep: 0, gp: 0, pp: 0 }),
       );
     }
-    expect(runMigrations(db).applied).toEqual([29]);
+    expect(runMigrations(db, { dir: dirThrough(29) }).applied).toEqual([29]);
     expect(getLastDmOutput(db, { campaignId: 'c' })?.turnId).toBe('a-last');
     expect(
       listCharacterWalletEvents(db, 'pc').map((event) => event.id),
