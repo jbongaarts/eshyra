@@ -900,12 +900,6 @@ CREATE INDEX campaign_overlay_lore_npc
 CREATE INDEX campaign_rule_ambiguity
   ON campaign_rule(campaign_id, provenance_kind, ambiguity_id, effective_position, rule_identity);
 
-CREATE INDEX campaign_rule_effective_position
-  ON campaign_rule(campaign_id, effective_position, rule_identity);
-
-CREATE INDEX campaign_rule_status_position
-  ON campaign_rule(campaign_id, status, effective_position, rule_identity);
-
 CREATE UNIQUE INDEX campaign_session_one_open
   ON campaign_session(campaign_id)
   WHERE status = 'open';

@@ -17,8 +17,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 29,
-      name: 'persistent_event_order',
+      version: 30,
+      name: 'drop_unused_campaign_rule_indexes',
     });
     db.close();
   });
