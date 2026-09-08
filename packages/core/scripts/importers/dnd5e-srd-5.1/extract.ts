@@ -457,7 +457,10 @@ export async function extractPdfText(
     }));
   } finally {
     await pdf.cleanup();
-    await pdf.destroy();
+    // pdfjs 6 removed `PDFDocumentProxy.destroy()`; the loading task owns
+    // teardown (it is what the removed method delegated to), so destroy it
+    // directly to release the worker.
+    await loadingTask.destroy();
   }
 }
 
