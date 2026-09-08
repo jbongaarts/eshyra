@@ -28,6 +28,17 @@ import {
   VARIANT_READINESS_OPERATION,
 } from './support/variantReadinessAddon.js';
 
+/**
+ * The inline seams below stay hand-written on purpose after W11
+ * (`eshyra-o9bd.19.13`) replaced the W8 stub everywhere it served as evidence.
+ * These are unit tests of the join stage's own bookkeeping — an unplaceable
+ * rule, a stage with nothing to ask, a rule whose governing key resolves only
+ * in the active stack — and jhpt validates those states out of existence at
+ * write time, so a real store cannot produce them. The acceptance evidence
+ * that discovery consumes the real interface lives in
+ * `campaignRuleConsumption.test.ts` and in every probe execution.
+ */
+
 describe('offline discovery stage boundaries', () => {
   const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
   it('expands the real reverse condition relationship and preserves both endpoints', () => {

@@ -253,6 +253,21 @@ export interface CapabilityPreflight {
   readonly readinessInput?: ItemOperationReadinessInput;
   readonly blockingClauseIds?: readonly string[];
   readonly message?: string;
+  /**
+   * Active campaign rulings governing this candidate, as the `eshyra-jhpt`
+   * seam supplied them (amendment A2) — the jhpt-owned projection itself,
+   * passed through unchanged. Discovery must not define a ruling shape of its
+   * own (design section 8.4), and a narrowed copy would both drift from the
+   * owner and silently drop jhpt-owned fields the execution owner needs, such
+   * as the governing association and the prose.
+   *
+   * Present only where a readiness derivation actually ran: a
+   * `not-evaluated-offline` entry evaluated nothing, so attaching rulings to
+   * it would claim a consultation that never happened. A ruling never changes
+   * readiness; it travels with the preflight so the execution owner can
+   * consult the selected interpretation once the clause is executable.
+   */
+  readonly campaignRulings?: readonly CampaignRulingProjection[];
 }
 
 export interface ProjectionLimitNote {

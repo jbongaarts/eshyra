@@ -11,7 +11,6 @@ import type {
   FixtureExecution,
 } from '../../diagnostics/fixtureContract.js';
 import { installCursedAttunementAddon } from '../../support/cursedAttunementAddon.js';
-import { oracleCampaignRuleSeam } from './oracleCampaignRules.js';
 
 function isNone(value: unknown): boolean {
   return (
@@ -144,5 +143,3 @@ export function moduleForFixture(
     'packages/core/data/adventure-modules/eshyra_hollow-beneath-emberfall',
   );
 }
-
-export { oracleCampaignRuleSeam };

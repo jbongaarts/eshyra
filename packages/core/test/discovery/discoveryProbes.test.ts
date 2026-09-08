@@ -7,11 +7,11 @@ import type {
 import { DIAGNOSTIC_FIXTURES } from '../diagnostics/index.js';
 import { freshDbWithSession } from '../support/db.js';
 import { assertEvidenceNote } from './support/factEvidence.js';
+import { installJhptCampaignRules } from './support/jhptCampaignRules.js';
 import {
   declaredBindingLabels,
   installScenarioBinding,
   moduleForFixture,
-  oracleCampaignRuleSeam,
   scenarioForFixture,
 } from './support/scenario.js';
 
@@ -78,11 +78,23 @@ describe('offline discovery diagnostic probes', () => {
         try {
           const moduleJson = moduleForFixture(fixture);
           const rulesPackResolver = installScenarioBinding(fixture, db);
+          // W11 (`eshyra-o9bd.19.13`): the seam is the real jhpt runtime bound
+          // to a real persisted campaign position, not the W8 stub. The
+          // fixture's own `campaignPosition` state field is a human label
+          // (`turn-12`), never a canonical chronology anchor, so the run is
+          // given the position jhpt actually assigned.
+          const campaignRules = installJhptCampaignRules(
+            db,
+            fixture,
+            execution,
+            rulesPackResolver,
+          );
           const trace = runDiscoveryStages({
             db,
             rulesPackResolver,
             scenario: scenarioForFixture(fixture, execution, moduleJson),
-            campaignRuleSeam: oracleCampaignRuleSeam(fixture, execution),
+            campaignRuleSeam: campaignRules.seam,
+            campaignPosition: campaignRules.campaignPosition,
           });
           expect(trace.stageOrder).toEqual([...STAGES]);
           expect(trace.packet.packet.modelUsageClaim).toBeNull();
@@ -185,6 +197,26 @@ describe('offline discovery diagnostic probes', () => {
               (loss) => loss.reason === 'unplaced-rule',
             ),
           ).toEqual([]);
+
+          // W11: every rule jhpt actually persisted for this execution reached
+          // the packet under the identity jhpt assigned. Without this the
+          // real-runtime wiring could regress to an empty seam and every M5
+          // assertion above would still pass vacuously, because they are all
+          // conditioned on something having been supplied.
+          const placedIdentities = measurements.m5.placed.map(
+            (item) => item.ruleIdentity,
+          );
+          for (const identity of campaignRules.ruleIdentities)
+            expect(
+              placedIdentities,
+              `${label} did not place jhpt-persisted rule ${identity}`,
+            ).toContain(identity);
+          // The fixture never invents a durable identity; jhpt owns it.
+          const declaredCases = execution.expectedCampaignRuleOrRulingState;
+          expect(
+            campaignRules.ruleIdentities.length,
+            `${label} declares campaign-rule cases that jhpt did not persist`,
+          ).toBe('cases' in declaredCases ? declaredCases.cases.length : 0);
 
           // Field 11 must agree with the trace. An ambiguity the fixture
           // declares resolved must not be reported unresolved, and vice
@@ -311,7 +343,10 @@ describe('offline discovery diagnostic probes', () => {
 
           // Anything the harness or the fixture supplied rather than
           // discovered is labelled, so an oracle-assisted pass is never read
-          // as end-to-end success.
+          // as end-to-end success. A campaign rule stays oracle-supplied after
+          // W11: jhpt now owns its identity, storage and active-at-position
+          // resolution, but the FIXTURE still decides that the rule exists,
+          // and discovery did not find that out on its own.
           const oracleLabels = [
             ...trace.signals.oracleSuppliedSignalLabels,
             ...declaredBindingLabels(fixture),

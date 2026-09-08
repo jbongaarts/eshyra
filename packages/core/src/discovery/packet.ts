@@ -20,6 +20,15 @@ import type {
   RetentionTrace,
 } from './types.js';
 
+/**
+ * Amendment A2 (`eshyra-o9bd.19.13`): a ruling reaches a bounded capability
+ * only through the `eshyra-jhpt` read interface, and reaching it changes
+ * nothing about readiness. Stated as an exclusion so a consumer of the packet
+ * cannot read the ruling's presence as authorization.
+ */
+const CAMPAIGN_RULING_EXCLUSION =
+  'A campaign ruling supplied through the eshyra-jhpt read interface selects an interpretation only; it does not satisfy, weaken, or green any clause of this readiness contract.';
+
 type Obj = Record<string, unknown>;
 function object(value: unknown): Obj | undefined {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -206,6 +215,13 @@ function capability(
         };
   }
   const contract = MAGIC_ITEM_OPERATION_READINESS_CAPABILITY;
+  // The jhpt projection, passed through: a ruling is on this candidate because
+  // its own `governingRecordKeys` named this record, and discovery neither
+  // re-derives that association nor reshapes what the owner returned.
+  const rulings = candidate.campaignRulings;
+  const rulingFields = rulings.length === 0 ? {} : { campaignRulings: rulings };
+  const rulingExclusions =
+    rulings.length === 0 ? [] : [CAMPAIGN_RULING_EXCLUSION];
   try {
     const readinessInput = deriveItemOperationReadinessInput(
       candidate.entry.record,
@@ -219,6 +235,7 @@ function capability(
     );
     return {
       status: 'available',
+      ...rulingFields,
       // The contract's own identity and operation, quoted rather than
       // restated (design section 7.1).
       capabilityId: contract.operationId,
@@ -227,7 +244,7 @@ function capability(
       variantId,
       readinessInput,
       inputs: contract.requiredInputs,
-      exclusions: contract.exclusions,
+      exclusions: [...contract.exclusions, ...rulingExclusions],
       residualInterpretation: contract.residualDmInterpretation.join(' '),
     };
   } catch (error) {
@@ -241,6 +258,7 @@ function capability(
       throw error;
     return {
       status: 'blocked',
+      ...rulingFields,
       capabilityId: contract.operationId,
       revision: contract.revision,
       operationId,
@@ -255,6 +273,7 @@ function capability(
       exclusions: [
         'A blocked readiness contract cannot be treated as an executable capability.',
         ...contract.exclusions,
+        ...rulingExclusions,
       ],
       residualInterpretation:
         'An engine owner must resolve the named readiness clauses. ' +
