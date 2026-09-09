@@ -2,7 +2,10 @@ import type { AdventureModule } from '../adventure/types.js';
 import type { TraceJsonValue } from '../memory/turnTrace.js';
 import type { Db } from '../persistence/db.js';
 import type { CampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
-import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
+import {
+  memoizeCampaignRulesPackResolver,
+  resolveStrictCampaignRulesStack,
+} from '../state/campaignRecordLookup.js';
 import type {
   BlockerRepairObservation,
   BlockerToolSchemaSource,
@@ -115,6 +118,16 @@ export interface ShadowDiscoveryInput {
   readonly resolveAdventureModule?: (
     moduleId: string,
   ) => AdventureModule | undefined;
+  /**
+   * Resolver for packs the campaign binds that core does not bundle.
+   *
+   * The capture MEMOIZES it, so every resolution this capture triggers — its
+   * own strict stack, B3's call into the real deterministic lookup, and the
+   * discovery run — is built from the same pack objects. Nothing contracts a
+   * `CampaignRulesPackResolver` to be pure or to keep answering; without the
+   * memo the blocker statuses could qualify one source resolution while the
+   * persisted trace described another.
+   */
   readonly resolveRulesPack?: CampaignRulesPackResolver;
   /**
    * The jhpt read seam, already bound to `campaignPosition` by its owner.
@@ -152,8 +165,8 @@ export function captureDiscoveryShadow(
     adventureSeatNotes: [],
   };
   try {
-    // The caller hands in the resolution the real turn already made, so this
-    // does not read the adventure source a second time.
+    // The caller hands in a memoized resolver, so this reads the adventure
+    // source the real turn already resolved rather than a second time.
     const module =
       input.adventure === undefined
         ? undefined
@@ -195,33 +208,36 @@ export function captureDiscoveryShadow(
             },
           }),
     };
-    // The stack is resolved once: both the blocker probes and the run must
-    // report on the SAME stack, or the recorded repair state would describe a
-    // different resolution than the evidence it qualifies.
+    // The stack is resolved ONCE and threaded through, and the resolver behind
+    // it is memoized, so the blocker probes and the discovery run cannot end up
+    // qualifying and tracing two different resolutions of the campaign's packs.
     stage = 'stack';
-    const stack = resolveStrictCampaignRulesStack(
-      input.db,
+    // The B3 probe deliberately calls the real deterministic lookup, which
+    // resolves the stack itself; that call is the discriminator and must not be
+    // replaced by a pinned stack. Memoizing the resolver keeps it honest
+    // anyway: it still resolves, but from the packs everything else here saw.
+    const resolveRulesPack = memoizeCampaignRulesPackResolver(
       input.resolveRulesPack,
     );
+    const stack = resolveStrictCampaignRulesStack(input.db, resolveRulesPack);
     stage = 'blockers';
     blockerRepairs = observeBlockerRepairs({
       db: input.db,
       stack,
       tools: input.tools,
-      ...(input.resolveRulesPack === undefined
-        ? {}
-        : { resolveRulesPack: input.resolveRulesPack }),
+      ...(resolveRulesPack === undefined ? {} : { resolveRulesPack }),
       adventureResolverSupplied: input.resolveAdventureModule !== undefined,
     });
     stage = 'discovery';
     const trace = runDiscoveryStages({
       db: input.db,
       scenario,
+      stack,
       campaignPosition: input.campaignPosition,
       campaignRuleSeam: input.campaignRuleSeam,
-      ...(input.resolveRulesPack === undefined
+      ...(resolveRulesPack === undefined
         ? {}
-        : { rulesPackResolver: input.resolveRulesPack }),
+        : { rulesPackResolver: resolveRulesPack }),
     });
     return {
       ...base,
@@ -277,12 +293,13 @@ function field(value: unknown, key: string): unknown {
  *
  * SUBJECT IDENTITY. The readiness contract is derived per
  * `(record, variantId, operationId)`, so the subject is not identified by the
- * record and operation alone. A successful `use_item` reports the pack ref and
- * variant it actually resolved, and that is used. When it does not — the
- * blocked and non-capability paths — the pre-model inventory binding is
- * recorded instead and LABELLED as such, because the model may have changed
- * the instance before invoking the tool. M10 will not compare on a labelled
- * fallback; a snapshot that merely usually agrees is not identity.
+ * record and operation alone. Both real outcomes report their own subject: a
+ * successful `use_item` reports the pack ref and variant it resolved, and a
+ * blocked one carries the preflight's `subject`. The pre-model inventory
+ * binding is used ONLY when neither did, and is then LABELLED as a snapshot,
+ * because the model may have changed the instance before invoking the tool.
+ * M10 will not compare on a labelled fallback; a snapshot that merely usually
+ * agrees is not identity.
  */
 export function observeRuntimeCapabilityInvocations(
   toolCalls: readonly ShadowExecutedToolCall[],
@@ -310,44 +327,67 @@ export function observeRuntimeCapabilityInvocations(
           outcome: 'available',
         };
       }
-      const binding =
-        typeof instanceId === 'string'
-          ? bindings.find((item) => item.instanceId === instanceId)
-          : undefined;
-      const snapshot = {
-        ...(binding === undefined
-          ? {}
-          : {
-              recordKey: binding.recordKey,
-              ...(binding.variantId === undefined
-                ? {}
-                : { variantId: binding.variantId }),
-            }),
-        subjectSource:
-          binding === undefined
-            ? ('unavailable' as const)
-            : ('pre-model-binding' as const),
-      };
       const preflight = call.result.data;
       const capabilityId = field(preflight, 'capabilityId');
       if (
         field(preflight, 'status') === 'blocked' &&
         typeof capabilityId === 'string'
-      )
+      ) {
+        // The blocked preflight names its own subject, so the snapshot is not
+        // consulted for a real capability outcome in either direction. It is
+        // reached only by an older payload that predates the subject field.
+        const subject = field(preflight, 'subject');
+        const recordKey = field(subject, 'recordKey');
+        const variantId = field(subject, 'variantId');
+        const fallback = bindingSubject(instanceId, bindings);
         return {
           ...identity,
-          ...snapshot,
+          ...(typeof recordKey === 'string'
+            ? {
+                recordKey,
+                ...(typeof variantId === 'string' ? { variantId } : {}),
+              }
+            : fallback.identity),
+          subjectSource:
+            typeof recordKey === 'string' ? 'runtime-result' : fallback.source,
           capabilityId,
           outcome: 'blocked',
           detail: call.result.message,
         };
+      }
+      const snapshot = bindingSubject(instanceId, bindings);
       return {
         ...identity,
-        ...snapshot,
+        ...snapshot.identity,
+        subjectSource: snapshot.source,
         outcome: 'not-a-capability-outcome',
         detail: `${call.result.code}: ${call.result.message}`,
       };
     });
+}
+
+/** The pre-model snapshot, used only where no runtime outcome named a subject. */
+function bindingSubject(
+  instanceId: unknown,
+  bindings: readonly ShadowItemInstanceBinding[],
+): {
+  readonly identity: { recordKey?: string; variantId?: string };
+  readonly source: 'pre-model-binding' | 'unavailable';
+} {
+  const binding =
+    typeof instanceId === 'string'
+      ? bindings.find((item) => item.instanceId === instanceId)
+      : undefined;
+  if (binding === undefined) return { identity: {}, source: 'unavailable' };
+  return {
+    identity: {
+      recordKey: binding.recordKey,
+      ...(binding.variantId === undefined
+        ? {}
+        : { variantId: binding.variantId }),
+    },
+    source: 'pre-model-binding',
+  };
 }
 
 export function completeDiscoveryShadowEvidence(
@@ -389,6 +429,10 @@ export function encodeDiscoveryShadowEvidence(
   return JSON.parse(JSON.stringify(evidence)) as TraceJsonValue;
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export class DiscoveryShadowSchemaError extends Error {
   constructor(message: string) {
     super(message);
@@ -396,134 +440,389 @@ export class DiscoveryShadowSchemaError extends Error {
   }
 }
 
-const REQUIRED_STAGES: readonly string[] = [
-  'signals',
-  'candidates',
-  'expansion',
-  'ruleJoin',
-  'ruleExpansion',
-  'lateRuleJoin',
-  'dedup',
-  'retention',
-  'packet',
-];
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function requireV1(condition: boolean, detail: string): void {
-  if (!condition)
-    throw new DiscoveryShadowSchemaError(
-      `recorded ${DISCOVERY_SHADOW_SCHEMA} evidence is malformed: ${detail}`,
-    );
-}
-
 /**
- * Structural validation of a stored v1 row.
+ * Fail-closed structural validation of a stored v1 row.
  *
  * The TypeScript union that makes "neither a trace nor a failure" impossible
- * lives only in memory; the SQLite JSON boundary erases it, so without this a
- * row of `{"schema":"discovery-shadow-v1"}` would be cast straight back into
- * `DiscoveryShadowEvidence` and measured as a green nothing. Same-version
- * corruption fails closed here, exactly as an unknown schema tag does.
+ * lives only in memory; the SQLite JSON boundary erases every guarantee, so
+ * without this a row of `{"schema":"discovery-shadow-v1"}` would be cast
+ * straight back into evidence and measured as a green nothing. Checking only
+ * the common fields is not enough either: a row missing
+ * `ruleJoin.requestedRuleRecordKeys` would pass a shallow check and then make
+ * M5 spread `undefined`, and an arbitrary `outcome` string would be accepted as
+ * stage accounting.
  *
- * The trace is checked for the stage accounting every measurement reads, not
- * deep-validated field by field: the invariant being defended is that a value
- * returned as evidence actually satisfied v1, not that a full schema validator
- * is duplicated for a shape this module also writes.
+ * The rule applied below is therefore: **every field M1-M11 or baseline
+ * qualification dereferences is validated, with its enum and its cross-field
+ * invariant.** Fields nothing consumes are not invented here.
  */
+
+type Check = (value: unknown, path: string) => void;
+
+function failAt(path: string, detail: string): never {
+  throw new DiscoveryShadowSchemaError(
+    `recorded ${DISCOVERY_SHADOW_SCHEMA} evidence is malformed at ${path}: ${detail}`,
+  );
+}
+
+function asObject(value: unknown, path: string): Record<string, unknown> {
+  if (!isObject(value)) failAt(path, 'expected an object');
+  return value;
+}
+
+function asArray(value: unknown, path: string): readonly unknown[] {
+  if (!Array.isArray(value)) failAt(path, 'expected an array');
+  return value;
+}
+
+function asString(value: unknown, path: string): string {
+  if (typeof value !== 'string') failAt(path, 'expected a string');
+  return value;
+}
+
+function asNumber(value: unknown, path: string): void {
+  if (typeof value !== 'number' || !Number.isFinite(value))
+    failAt(path, 'expected a finite number');
+}
+
+function asBoolean(value: unknown, path: string): boolean {
+  if (typeof value !== 'boolean') failAt(path, 'expected a boolean');
+  return value;
+}
+
+function asEnum(
+  value: unknown,
+  path: string,
+  allowed: readonly string[],
+): string {
+  const text = asString(value, path);
+  if (!allowed.includes(text))
+    failAt(path, `'${text}' is not one of ${allowed.join(', ')}`);
+  return text;
+}
+
+function optional(value: unknown, path: string, check: Check): void {
+  if (value !== undefined && value !== null) check(value, path);
+}
+
+function each(value: unknown, path: string, check: Check): void {
+  asArray(value, path).forEach((item, index) => {
+    check(item, `${path}[${index}]`);
+  });
+}
+
+function strings(value: unknown, path: string): void {
+  each(value, path, (item, at) => {
+    asString(item, at);
+  });
+}
+
+const STAGE_OUTCOMES = ['ran', 'skipped', 'failed-to-run'] as const;
+const RULING_SCOPES = ['none', 'requested-ambiguities', 'all-active'] as const;
+const CAPABILITY_STATUSES = [
+  'available',
+  'blocked',
+  'not-evaluated-offline',
+] as const;
+const BANDS = ['must-consider', 'related', 'exploratory'] as const;
+const BLOCKER_IDS = ['B1', 'B2', 'B3', 'B4', 'B5'] as const;
+const BLOCKER_STATUSES = [
+  'repaired',
+  'unrepaired',
+  'not-discriminable',
+] as const;
+const CAPABILITY_OUTCOMES = [
+  'available',
+  'blocked',
+  'not-a-capability-outcome',
+] as const;
+const SUBJECT_SOURCES = [
+  'runtime-result',
+  'pre-model-binding',
+  'unavailable',
+] as const;
+const AUDIT_ACTIONS = ['accept', 'repair', 'retry', 'fail'] as const;
+const FAILURE_STAGES = ['scenario', 'stack', 'blockers', 'discovery'] as const;
+
+/** M3 reads each route's class/trigger/signal identity; M1/M2 read the rest. */
+function checkRoutes(value: unknown, path: string): void {
+  each(value, path, (route, at) => {
+    const fields = asObject(route, at);
+    asString(fields.routeClass, `${at}.routeClass`);
+    asString(fields.trigger, `${at}.trigger`);
+    asString(fields.signalId, `${at}.signalId`);
+    asObject(fields.evidence, `${at}.evidence`);
+  });
+}
+
+/** M4 deep-equals a declared traversal against these. */
+function checkTraversals(value: unknown, path: string): void {
+  each(value, path, (traversal, at) => {
+    const fields = asObject(traversal, at);
+    for (const key of [
+      'sourceRecordKey',
+      'linkField',
+      'relation',
+      'targetRecordKey',
+    ])
+      asString(fields[key], `${at}.${key}`);
+  });
+}
+
+function checkDrops(value: unknown, path: string): void {
+  each(value, path, (drop, at) => {
+    const fields = asObject(drop, at);
+    asString(fields.candidateKey, `${at}.candidateKey`);
+    asEnum(fields.band, `${at}.band`, BANDS);
+    asString(fields.reason, `${at}.reason`);
+    checkRoutes(fields.routes, `${at}.routes`);
+  });
+}
+
+function checkStage(value: unknown, path: string): Record<string, unknown> {
+  const stage = asObject(value, path);
+  asString(stage.stage, `${path}.stage`);
+  asArray(stage.outputsProduced, `${path}.outputsProduced`);
+  for (const key of ['produced', 'modified', 'carriedForward'])
+    strings(stage[key], `${path}.${key}`);
+  each(stage.losses, `${path}.losses`, (loss, at) => {
+    const fields = asObject(loss, at);
+    asString(fields.reason, `${at}.reason`);
+    asObject(fields.detail, `${at}.detail`);
+  });
+  const outcome = asEnum(stage.outcome, `${path}.outcome`, STAGE_OUTCOMES);
+  const failedToRun = asBoolean(stage.failedToRun, `${path}.failedToRun`);
+  // Section 13.3 gives these two one meaning; a row where they disagree would
+  // let a failed stage read as a pass in exactly one of the two places a
+  // measurement looks.
+  if (failedToRun !== (outcome === 'failed-to-run'))
+    failAt(
+      `${path}.failedToRun`,
+      `is ${String(failedToRun)} while outcome is '${outcome}'`,
+    );
+  return stage;
+}
+
+function checkCandidateStage(value: unknown, path: string, banded: boolean) {
+  const stage = checkStage(value, path);
+  each(stage.outputsProduced, `${path}.outputsProduced`, (item, at) => {
+    const fields = asObject(item, at);
+    asString(fields.candidateKey, `${at}.candidateKey`);
+    asString(fields.targetKind, `${at}.targetKind`);
+    checkRoutes(fields.routes, `${at}.routes`);
+    checkTraversals(fields.traversals, `${at}.traversals`);
+    strings(fields.campaignRuleIdentities, `${at}.campaignRuleIdentities`);
+    strings(fields.campaignRulingIdentities, `${at}.campaignRulingIdentities`);
+    if (banded) asEnum(fields.band, `${at}.band`, BANDS);
+  });
+  return stage;
+}
+
+function checkRuleJoin(value: unknown, path: string): void {
+  const stage = checkCandidateStage(value, path, false);
+  for (const key of [
+    'requestedRuleRecordKeys',
+    'requestedAmbiguityIds',
+    'returnedRuleIdentities',
+    'returnedAmbiguityIds',
+    'placedRuleIdentities',
+    'unplacedRuleIdentities',
+    'surfacedCandidateKeys',
+    'resolvedAmbiguityIds',
+  ])
+    strings(stage[key], `${path}.${key}`);
+  asEnum(stage.rulingQueryScope, `${path}.rulingQueryScope`, RULING_SCOPES);
+  asBoolean(stage.ruleQueryExecuted, `${path}.ruleQueryExecuted`);
+  asBoolean(stage.rulingQueryExecuted, `${path}.rulingQueryExecuted`);
+  each(stage.placedRules, `${path}.placedRules`, (placed, at) => {
+    const fields = asObject(placed, at);
+    asString(fields.ruleIdentity, `${at}.ruleIdentity`);
+    asString(fields.governingRecordKey, `${at}.governingRecordKey`);
+  });
+  each(
+    stage.unresolvedAmbiguities,
+    `${path}.unresolvedAmbiguities`,
+    (item, at) => {
+      asObject(item, at);
+    },
+  );
+}
+
+function checkPacket(value: unknown, path: string): void {
+  const stage = checkStage(value, path);
+  asBoolean(stage.byteBudgetExceeded, `${path}.byteBudgetExceeded`);
+  checkDrops(stage.byteOverflow, `${path}.byteOverflow`);
+  checkDrops(stage.dropped, `${path}.dropped`);
+  const packet = asObject(stage.packet, `${path}.packet`);
+  asNumber(packet.bytes, `${path}.packet.bytes`);
+  asArray(packet.projectionLimitNotes, `${path}.packet.projectionLimitNotes`);
+  if (packet.modelUsageClaim !== null)
+    failAt(`${path}.packet.modelUsageClaim`, 'expected the non-claim `null`');
+  each(packet.candidates, `${path}.packet.candidates`, (item, at) => {
+    const candidate = asObject(item, at);
+    const identity = asObject(candidate.identity, `${at}.identity`);
+    for (const key of ['key', 'kind', 'name'])
+      asString(identity[key], `${at}.identity.${key}`);
+    const provenance = asObject(candidate.provenance, `${at}.provenance`);
+    asString(provenance.sourceRef, `${at}.provenance.sourceRef`);
+    asString(provenance.source, `${at}.provenance.source`);
+    if (!('license' in provenance))
+      failAt(`${at}.provenance.license`, 'is absent');
+    asObject(candidate.sourceProse, `${at}.sourceProse`);
+    checkRoutes(candidate.routes, `${at}.routes`);
+    checkTraversals(candidate.traversals, `${at}.traversals`);
+    for (const key of ['ambiguities', 'campaignRules', 'campaignRulings'])
+      asArray(candidate[key], `${at}.${key}`);
+    asArray(candidate.projectionLimits, `${at}.projectionLimits`);
+    optional(candidate.capability, `${at}.capability`, (raw, where) => {
+      const capability = asObject(raw, where);
+      asEnum(capability.status, `${where}.status`, CAPABILITY_STATUSES);
+      asString(capability.capabilityId, `${where}.capabilityId`);
+      optional(capability.operationId, `${where}.operationId`, (x, w) => {
+        asString(x, w);
+      });
+      optional(capability.variantId, `${where}.variantId`, (x, w) => {
+        asString(x, w);
+      });
+    });
+  });
+}
+
+function checkTrace(value: unknown, path: string): void {
+  const trace = asObject(value, path);
+  checkStage(trace.signals, `${path}.signals`);
+  each(
+    (trace.signals as Record<string, unknown>).outputsProduced,
+    `${path}.signals.outputsProduced`,
+    (item, at) => {
+      const signal = asObject(item, at);
+      asString(signal.signalId, `${at}.signalId`);
+      asString(signal.kind, `${at}.kind`);
+      asString(signal.proposes, `${at}.proposes`);
+    },
+  );
+  for (const key of [
+    'unconsumedStateFields',
+    'stateBindings',
+    'ambiguousNames',
+  ])
+    asArray((trace.signals as Record<string, unknown>)[key], `${path}.${key}`);
+  strings(
+    (trace.signals as Record<string, unknown>).oracleSuppliedSignalLabels,
+    `${path}.signals.oracleSuppliedSignalLabels`,
+  );
+
+  const candidates = checkCandidateStage(
+    trace.candidates,
+    `${path}.candidates`,
+    false,
+  );
+  strings(candidates.unresolvedTargets, `${path}.candidates.unresolvedTargets`);
+  for (const key of ['expansion', 'ruleExpansion']) {
+    const stage = checkCandidateStage(trace[key], `${path}.${key}`, false);
+    checkTraversals(stage.traversals, `${path}.${key}.traversals`);
+  }
+  checkRuleJoin(trace.ruleJoin, `${path}.ruleJoin`);
+  checkRuleJoin(trace.lateRuleJoin, `${path}.lateRuleJoin`);
+  const dedup = checkCandidateStage(trace.dedup, `${path}.dedup`, false);
+  asObject(dedup.routeCountBeforeDedup, `${path}.dedup.routeCountBeforeDedup`);
+  asObject(dedup.routeCountAfterDedup, `${path}.dedup.routeCountAfterDedup`);
+  const retention = checkCandidateStage(
+    trace.retention,
+    `${path}.retention`,
+    true,
+  );
+  checkDrops(retention.dropped, `${path}.retention.dropped`);
+  checkDrops(retention.overflow, `${path}.retention.overflow`);
+  asBoolean(retention.overflowed, `${path}.retention.overflowed`);
+  checkPacket(trace.packet, `${path}.packet`);
+
+  strings(trace.unexpandedPromotions, `${path}.unexpandedPromotions`);
+  strings(trace.stageOrder, `${path}.stageOrder`);
+  const stack = asObject(trace.stack, `${path}.stack`);
+  const packIdentity: Check = (raw, where) => {
+    const pack = asObject(raw, where);
+    for (const key of ['systemId', 'packId', 'version', 'role'])
+      asString(pack[key], `${where}.${key}`);
+  };
+  packIdentity(stack.base, `${path}.stack.base`);
+  each(stack.addons, `${path}.stack.addons`, packIdentity);
+}
+
 function assertV1(stored: Record<string, unknown>): void {
-  requireV1(isObject(stored.scenario), 'scenario is not an object');
-  const scenario = stored.scenario as Record<string, unknown>;
-  requireV1(
-    typeof scenario.playerInput === 'string',
-    'scenario.playerInput is not a string',
+  asString(stored.campaignPosition, 'campaignPosition');
+  asString(stored.capturedAt, 'capturedAt');
+  if (stored.modelUsageClaim !== null)
+    failAt('modelUsageClaim', 'expected the recorded non-claim `null`');
+
+  const scenario = asObject(stored.scenario, 'scenario');
+  asString(scenario.playerInput, 'scenario.playerInput');
+  strings(scenario.stateFieldRoots, 'scenario.stateFieldRoots');
+  strings(scenario.adventureSeatNotes, 'scenario.adventureSeatNotes');
+  each(scenario.itemInstances, 'scenario.itemInstances', (item, at) => {
+    const binding = asObject(item, at);
+    asString(binding.instanceId, `${at}.instanceId`);
+    asString(binding.recordKey, `${at}.recordKey`);
+    optional(binding.variantId, `${at}.variantId`, (x, w) => {
+      asString(x, w);
+    });
+  });
+  optional(scenario.adventure, 'scenario.adventure', (raw, where) => {
+    asString(asObject(raw, where).moduleId, `${where}.moduleId`);
+  });
+
+  // Baseline qualification reads these, so a malformed one would let a capture
+  // be read as a baseline on a status nothing produced.
+  each(stored.blockerRepairs, 'blockerRepairs', (item, at) => {
+    const observation = asObject(item, at);
+    asEnum(observation.blockerId, `${at}.blockerId`, BLOCKER_IDS);
+    asEnum(observation.status, `${at}.status`, BLOCKER_STATUSES);
+    asString(observation.owner, `${at}.owner`);
+    asString(observation.evidence, `${at}.evidence`);
+    strings(observation.gates, `${at}.gates`);
+  });
+
+  const runtime = asObject(stored.runtime, 'runtime');
+  each(
+    runtime.capabilityInvocations,
+    'runtime.capabilityInvocations',
+    (item, at) => {
+      const fields = asObject(item, at);
+      asString(fields.tool, `${at}.tool`);
+      asEnum(fields.outcome, `${at}.outcome`, CAPABILITY_OUTCOMES);
+      asEnum(fields.subjectSource, `${at}.subjectSource`, SUBJECT_SOURCES);
+      for (const key of ['instanceId', 'operationId', 'recordKey', 'variantId'])
+        optional(fields[key], `${at}.${key}`, (x, w) => {
+          asString(x, w);
+        });
+    },
   );
-  requireV1(
-    Array.isArray(scenario.itemInstances),
-    'scenario.itemInstances is not an array',
-  );
-  requireV1(
-    Array.isArray(scenario.adventureSeatNotes),
-    'scenario.adventureSeatNotes is not an array',
-  );
-  requireV1(
-    typeof stored.campaignPosition === 'string',
-    'campaignPosition is not a string',
-  );
-  requireV1(
-    typeof stored.capturedAt === 'string',
-    'capturedAt is not a string',
-  );
-  requireV1(
-    Array.isArray(stored.blockerRepairs),
-    'blockerRepairs is not an array',
-  );
-  requireV1(
-    stored.modelUsageClaim === null,
-    'modelUsageClaim is not the recorded non-claim `null`',
-  );
-  requireV1(isObject(stored.runtime), 'runtime is not an object');
-  const runtime = stored.runtime as Record<string, unknown>;
-  requireV1(
-    Array.isArray(runtime.capabilityInvocations),
-    'runtime.capabilityInvocations is not an array',
-  );
-  requireV1(
-    Array.isArray(runtime.auditAttempts),
-    'runtime.auditAttempts is not an array',
-  );
+  each(runtime.auditAttempts, 'runtime.auditAttempts', (item, at) => {
+    const fields = asObject(item, at);
+    asNumber(fields.attempt, `${at}.attempt`);
+    asString(fields.verdict, `${at}.verdict`);
+    asEnum(fields.action, `${at}.action`, AUDIT_ACTIONS);
+    strings(fields.missingTools, `${at}.missingTools`);
+    if (fields.retryCause !== null)
+      asString(fields.retryCause, `${at}.retryCause`);
+  });
 
   const hasTrace = stored.trace !== undefined && stored.trace !== null;
   const hasFailure = stored.failure !== undefined && stored.failure !== null;
-  requireV1(
-    hasTrace !== hasFailure,
-    hasTrace
-      ? 'it carries both a trace and a failure'
-      : 'it carries neither a trace nor a failure',
-  );
-  if (hasFailure) {
-    requireV1(isObject(stored.failure), 'failure is not an object');
-    const failure = stored.failure as Record<string, unknown>;
-    requireV1(
-      typeof failure.stage === 'string' && typeof failure.message === 'string',
-      'failure is missing its stage or message',
+  if (hasTrace === hasFailure)
+    failAt(
+      'trace/failure',
+      hasTrace
+        ? 'it carries both a trace and a failure'
+        : 'it carries neither a trace nor a failure',
     );
+  if (hasFailure) {
+    const failure = asObject(stored.failure, 'failure');
+    asEnum(failure.stage, 'failure.stage', FAILURE_STAGES);
+    asString(failure.message, 'failure.message');
     return;
   }
-  requireV1(isObject(stored.trace), 'trace is not an object');
-  const trace = stored.trace as Record<string, unknown>;
-  for (const name of REQUIRED_STAGES) {
-    const stage = trace[name];
-    requireV1(isObject(stage), `trace.${name} is not an object`);
-    const fields = stage as Record<string, unknown>;
-    requireV1(
-      typeof fields.outcome === 'string',
-      `trace.${name}.outcome is not a string`,
-    );
-    requireV1(
-      typeof fields.failedToRun === 'boolean',
-      `trace.${name}.failedToRun is not a boolean`,
-    );
-    for (const list of [
-      'outputsProduced',
-      'produced',
-      'modified',
-      'carriedForward',
-      'losses',
-    ])
-      requireV1(
-        Array.isArray(fields[list]),
-        `trace.${name}.${list} is not an array`,
-      );
-  }
-  const packet = (trace.packet as Record<string, unknown>).packet;
-  requireV1(isObject(packet), 'trace.packet.packet is not an object');
-  requireV1(
-    Array.isArray((packet as Record<string, unknown>).candidates),
-    'trace.packet.packet.candidates is not an array',
-  );
+  checkTrace(stored.trace, 'trace');
 }
 
 /**

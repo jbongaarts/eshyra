@@ -77,6 +77,12 @@ export interface DiscoveryMeasurements {
      * seam. Design section 12.1 makes the pipeline closed, so this is
      * checkable and must be empty. */
     readonly unqueriedAmbiguityIds: readonly string[];
+    /**
+     * Ambiguities an active jhpt ruling resolved. A ruling match is otherwise
+     * only inferable from `returned`, which cannot distinguish a ruling from a
+     * house rule, so the positive ruling case would not be measurable.
+     */
+    readonly resolvedAmbiguityIds: readonly string[];
     readonly unresolvedAmbiguityIds: readonly string[];
     readonly placed: readonly {
       readonly ruleIdentity: string;
@@ -389,6 +395,12 @@ export function measureDiscovery(
           ),
         ];
       })(),
+      resolvedAmbiguityIds: [
+        ...new Set([
+          ...trace.ruleJoin.resolvedAmbiguityIds,
+          ...trace.lateRuleJoin.resolvedAmbiguityIds,
+        ]),
+      ],
       unresolvedAmbiguityIds: trace.lateRuleJoin.unresolvedAmbiguities
         .map((item) => item.id)
         .filter((id): id is string => typeof id === 'string'),

@@ -12,10 +12,9 @@ import type { DiscoveryRunInput, DiscoveryTrace } from './types.js';
 /** Execute the seven offline stages. The database is used only to resolve the
  * active rules stack; the returned trace is the sole evidence surface. */
 export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
-  const stack = resolveStrictCampaignRulesStack(
-    input.db,
-    input.rulesPackResolver,
-  );
+  const stack =
+    input.stack ??
+    resolveStrictCampaignRulesStack(input.db, input.rulesPackResolver);
   const signals = extractDiscoverySignals(input.scenario, stack);
   const candidates = resolveDiscoveryCandidates(signals, stack, input.scenario);
   const expansion = expandTypedRelationships(candidates.outputsProduced, stack);

@@ -49,6 +49,7 @@ import type {
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
 import type { CampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
+import { memoizeCampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
 import {
   auditMissingToolNames,
   classifyAuditPresentationRepair,
@@ -747,6 +748,14 @@ export async function runTurn(
     const resolveAdventureModule = memoizeAdventureResolver(
       deps.resolveAdventureModule,
     );
+    // Same reasoning as the adventure resolver, for the rules-pack source: the
+    // context assembler resolves the strict stack, and the shadow capture
+    // resolves it again to qualify and trace the campaign's packs. Sharing one
+    // memo keeps the persisted evidence describing the source the DM context
+    // was built from. The tool context keeps the raw resolver.
+    const resolveRulesPack = memoizeCampaignRulesPackResolver(
+      deps.resolveRulesPack,
+    );
 
     phase = 'assemble_context';
     const assembled = assembleContext({
@@ -759,7 +768,7 @@ export async function runTurn(
       resolveAdventureModule,
       characterChronicle: deps.characterChronicle,
       campaignPosition: canonicalPosition,
-      resolveRulesPack: deps.resolveRulesPack,
+      resolveRulesPack,
     });
 
     // ADR 0020 Phase 2 seam (design section 12.2): discovery observes the turn
@@ -786,9 +795,7 @@ export async function runTurn(
             ...(resolveAdventureModule === undefined
               ? {}
               : { resolveAdventureModule }),
-            ...(deps.resolveRulesPack === undefined
-              ? {}
-              : { resolveRulesPack: deps.resolveRulesPack }),
+            ...(resolveRulesPack === undefined ? {} : { resolveRulesPack }),
             tools: registry,
           })
         : undefined;

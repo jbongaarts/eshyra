@@ -381,6 +381,14 @@ export interface RuntimeAuditAttempt {
 
 export interface DiscoveryRunInput {
   readonly db: Db;
+  /**
+   * A rules stack the caller has already resolved. When present it is used
+   * verbatim rather than re-resolved, so a caller that must qualify the SAME
+   * source it traces (the W9 shadow capture, whose blocker observations
+   * describe one resolution) cannot end up describing two. Absent, the run
+   * resolves the campaign's strict stack itself.
+   */
+  readonly stack?: ResolvedRulesStack;
   readonly scenario: DiscoveryScenario;
   readonly campaignRuleSeam?: CampaignRuleReadSeam;
   readonly campaignPosition?: string;

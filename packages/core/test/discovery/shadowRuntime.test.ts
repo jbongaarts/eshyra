@@ -158,22 +158,29 @@ function requireTrace(
 const RUNTIME_REACH: Readonly<
   Record<string, Readonly<Record<string, string | null>>>
 > = {
-  P1: { 'rule:cover': 'signals' },
-  P2: { 'rule:opportunity-attacks': 'signals', 'creature:goblin': null },
-  P3: { 'creature:adult-black-dragon': null },
-  P4: { 'spell:fireball': null },
-  P5: { 'condition:incapacitated': null, 'rule:concentration': 'signals' },
-  P6: { 'feature:fighter:action-surge': null },
-  P7: { 'magic-item:cube-of-force': null },
-  P8: { 'magic-item:ammunition-1-2-or-3': null },
-  P9: {
+  'P1/default': { 'rule:cover': 'signals' },
+  'P2/default': {
+    'rule:opportunity-attacks': 'signals',
+    'creature:goblin': null,
+  },
+  'P3/default': { 'creature:adult-black-dragon': null },
+  'P4/default': { 'spell:fireball': null },
+  'P5/default': {
+    'condition:incapacitated': null,
+    'rule:concentration': 'signals',
+  },
+  'P6/default': { 'feature:fighter:action-surge': null },
+  'P7/without-active-ruling': { 'magic-item:cube-of-force': null },
+  'P7/with-active-ruling': { 'magic-item:cube-of-force': null },
+  'P8/default': { 'magic-item:ammunition-1-2-or-3': null },
+  'P9/default': {
     'creature:goblin': null,
     'eshyra:hollow-beneath-emberfall#encounter:enc-mouth-ambush': null,
     'eshyra:hollow-beneath-emberfall#location:loc-watchtower-mouth': null,
   },
-  P10: { 'spell:fireball': null },
-  P11: { 'magic-item:ring-of-protection': null },
-  P12: { 'class:fighter': null },
+  'P10/default': { 'spell:fireball': null },
+  'P11/default': { 'magic-item:ring-of-protection': null },
+  'P12/default': { 'class:fighter': null },
 };
 
 /** Design section 12.1 declares exactly these two stages conditional. */
@@ -244,163 +251,217 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     expect(await tables(true)).toEqual(await tables(false));
   });
 
+  it('runs every authored fixture execution, not one per probe', () => {
+    // The Phase 1 probe runner loops `fixture.executions`; taking `[0]` here
+    // silently dropped P7's `with-active-ruling` — the corpus's only positive
+    // jhpt ruling case — and would drop any execution authored later. The
+    // corpus and the reach table must name exactly the same cases.
+    const authored = DIAGNOSTIC_FIXTURES.flatMap((fixture) =>
+      fixture.executions.map(
+        (execution) => `${fixture.probeId}/${execution.executionId}`,
+      ),
+    );
+    expect(authored.length).toBeGreaterThan(DIAGNOSTIC_FIXTURES.length);
+    expect([...authored].sort()).toEqual(Object.keys(RUNTIME_REACH).sort());
+    // ... and the extra execution is the one that matters: the per-execution
+    // M5 assertion below is `toBe(declaredRuling)`, which would pass vacuously
+    // if no authored execution declared an active jhpt ruling.
+    expect(
+      DIAGNOSTIC_FIXTURES.flatMap((fixture) => fixture.executions).filter(
+        (execution) =>
+          'cases' in execution.expectedCampaignRuleOrRulingState &&
+          execution.expectedCampaignRuleOrRulingState.cases.some(
+            (item) => item.ambiguityId !== undefined,
+          ),
+      ),
+    ).toHaveLength(1);
+  });
+
   for (const fixture of DIAGNOSTIC_FIXTURES) {
-    const execution = fixture.executions[0];
-    it(`${fixture.probeId} records shadow evidence for a real turn`, async () => {
-      const db = seedCampaign();
-      try {
-        const rulesPackResolver = installScenarioBinding(fixture, db);
-        installJhptCampaignRules(db, fixture, execution, rulesPackResolver);
-        const runtimeState = installProbeCampaignState(fixture, db);
-        const result = await runTurn(
-          {
+    for (const execution of fixture.executions) {
+      const label = `${fixture.probeId}/${execution.executionId}`;
+      it(`${label} records shadow evidence for a real turn`, async () => {
+        const db = seedCampaign();
+        try {
+          const rulesPackResolver = installScenarioBinding(fixture, db);
+          const installed = installJhptCampaignRules(
             db,
-            model: new ScriptedModel(),
-            registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
-            ...(rulesPackResolver === undefined
-              ? {}
-              : { resolveRulesPack: rulesPackResolver }),
-            ...runtimeState,
-          },
-          turnInput(fixture.playerInput),
-        );
-        expect(result.ok).toBe(true);
+            fixture,
+            execution,
+            rulesPackResolver,
+          );
+          const runtimeState = installProbeCampaignState(fixture, db);
+          const result = await runTurn(
+            {
+              db,
+              model: new ScriptedModel(),
+              registry: createDefaultToolRegistry(),
+              recordDiscoveryShadow: true,
+              ...(rulesPackResolver === undefined
+                ? {}
+                : { resolveRulesPack: rulesPackResolver }),
+              ...runtimeState,
+            },
+            turnInput(fixture.playerInput),
+          );
+          expect(result.ok).toBe(true);
 
-        const evidence = recordedEvidence(db);
-        expect(evidence?.schema).toBe('discovery-shadow-v1');
-        expect(evidence?.failure).toBeUndefined();
-        expect(evidence?.modelUsageClaim).toBeNull();
-        // The seam is bound to the canonical anchor the turn allocated, not to
-        // a fixture's human turn label.
-        expect(evidence?.campaignPosition).toMatch(/^cp1~/u);
+          const evidence = recordedEvidence(db);
+          expect(evidence?.schema).toBe('discovery-shadow-v1');
+          expect(evidence?.failure).toBeUndefined();
+          expect(evidence?.modelUsageClaim).toBeNull();
+          // The seam is bound to the canonical anchor the turn allocated, not to
+          // a fixture's human turn label.
+          expect(evidence?.campaignPosition).toMatch(/^cp1~/u);
 
-        // Every blocker is observed at capture time (design section 9.6), so a
-        // pre-repair capture can never be read as a baseline.
-        expect(evidence?.blockerRepairs.map((item) => item.blockerId)).toEqual([
-          'B1',
-          'B2',
-          'B3',
-          'B4',
-          'B5',
-        ]);
-        for (const observation of evidence?.blockerRepairs ?? [])
-          expect(observation.evidence.length).toBeGreaterThan(0);
-        const status = Object.fromEntries(
-          (evidence?.blockerRepairs ?? []).map((item) => [
-            item.blockerId,
-            item.status,
-          ]),
-        );
-        expect(status.B1).toBe('repaired');
-        expect(status.B4).toBe('repaired');
-        expect(status.B5).toBe('repaired');
-        // B2 repaired the CLI's handoff to `runTurn`. A capture taken inside
-        // core cannot see that: a direct caller could always supply a
-        // resolver, before and after the repair. So the status is never
-        // `repaired` here, and the capture-local fact — whether adventure
-        // context reached this turn — is carried by the scenario seat instead.
-        expect(status.B2).toBe('not-discriminable');
-        const b2 = evidence?.blockerRepairs.find(
-          (item) => item.blockerId === 'B2',
-        );
-        expect(b2?.evidence).toContain(
-          runtimeState.resolveAdventureModule === undefined
-            ? 'was not supplied'
-            : 'was supplied',
-        );
-        // B3 discriminates only where an add-on overrides a base record.
-        expect(status.B3).toBe(
-          fixture.probeId === 'P11' ? 'repaired' : 'not-discriminable',
-        );
-
-        // The adventure seat is campaign truth, not a fixture field: the run's
-        // module and the clock's location, plus the one pending encounter
-        // staged there. Probes without an adventure run record no seat at all.
-        expect(evidence?.scenario.adventure).toEqual(
-          fixture.probeId === 'P9'
-            ? {
-                moduleId: 'eshyra:hollow-beneath-emberfall',
-                locationId: 'loc-watchtower-mouth',
-                encounterId: 'enc-mouth-ambush',
-              }
-            : undefined,
-        );
-        expect(evidence?.scenario.adventureSeatNotes).toEqual([]);
-
-        const trace = requireTrace(evidence);
-        const targets = RUNTIME_REACH[fixture.probeId];
-        const measurements = measureDiscovery(trace, {
-          mustIncludeTargetRefs: Object.keys(targets),
-          mustNotIncludeTargetRefs: fixture.mustNotIncludeTargets.map(
-            (target) =>
-              target.targetKind === 'adventure-entity'
-                ? `${target.moduleId}#${target.entityKind}:${target.entityId}`
-                : target.recordKey,
-          ),
-        });
-
-        // M1 and M2 together: what was reached, and for a miss the exact stage
-        // that lost it.
-        expect(measurements.m2).toEqual(targets);
-        expect(measurements.m1).toEqual(
-          Object.fromEntries(
-            Object.entries(targets).map(([key, lost]) => [key, lost === null]),
-          ),
-        );
-        // M6: a must-consider overflow fails the probe (design section 6.3).
-        expect(measurements.m6.overflow).toEqual([]);
-        expect(measurements.m6.overflowed).toBe(false);
-        // M8: nothing whose provenance is known-false or absent is presented.
-        expect(measurements.m8).toEqual({
-          forbiddenPresent: [],
-          unattributedPresent: [],
-        });
-        // M3, M4, M7, M9 are computable from the same recorded trace.
-        expect(measurements.m7.candidateCount).toBe(
-          trace.packet.packet.candidates.length,
-        );
-        for (const [key, routes] of Object.entries(measurements.m3))
+          // Every blocker is observed at capture time (design section 9.6), so a
+          // pre-repair capture can never be read as a baseline.
           expect(
-            routes.producedAcrossStages,
-            `${key} reached a stage with no route`,
-          ).toBeGreaterThan(0);
+            evidence?.blockerRepairs.map((item) => item.blockerId),
+          ).toEqual(['B1', 'B2', 'B3', 'B4', 'B5']);
+          for (const observation of evidence?.blockerRepairs ?? [])
+            expect(observation.evidence.length).toBeGreaterThan(0);
+          const status = Object.fromEntries(
+            (evidence?.blockerRepairs ?? []).map((item) => [
+              item.blockerId,
+              item.status,
+            ]),
+          );
+          expect(status.B1).toBe('repaired');
+          expect(status.B4).toBe('repaired');
+          expect(status.B5).toBe('repaired');
+          // B2 repaired the CLI's handoff to `runTurn`. A capture taken inside
+          // core cannot see that: a direct caller could always supply a
+          // resolver, before and after the repair. So the status is never
+          // `repaired` here, and the capture-local fact — whether adventure
+          // context reached this turn — is carried by the scenario seat instead.
+          expect(status.B2).toBe('not-discriminable');
+          const b2 = evidence?.blockerRepairs.find(
+            (item) => item.blockerId === 'B2',
+          );
+          expect(b2?.evidence).toContain(
+            runtimeState.resolveAdventureModule === undefined
+              ? 'was not supplied'
+              : 'was supplied',
+          );
+          // B3 discriminates only where an add-on overrides a base record.
+          expect(status.B3).toBe(
+            fixture.probeId === 'P11' ? 'repaired' : 'not-discriminable',
+          );
 
-        // Stage accounting: a conditional stage may report `skipped` and must
-        // then have produced nothing; no other stage may, and `failed-to-run`
-        // is never read as a pass (design section 13.3).
-        for (const [name, stage] of Object.entries(measurements.perStage)) {
-          expect(['ran', 'skipped', 'failed-to-run']).toContain(stage.outcome);
-          if (stage.outcome === 'skipped') {
-            expect(CONDITIONAL_STAGES.has(name)).toBe(true);
-            expect(stage.produced).toEqual([]);
+          // The adventure seat is campaign truth, not a fixture field: the run's
+          // module and the clock's location, plus the one pending encounter
+          // staged there. Probes without an adventure run record no seat at all.
+          expect(evidence?.scenario.adventure).toEqual(
+            fixture.probeId === 'P9'
+              ? {
+                  moduleId: 'eshyra:hollow-beneath-emberfall',
+                  locationId: 'loc-watchtower-mouth',
+                  encounterId: 'enc-mouth-ambush',
+                }
+              : undefined,
+          );
+          expect(evidence?.scenario.adventureSeatNotes).toEqual([]);
+
+          const trace = requireTrace(evidence);
+          const targets = RUNTIME_REACH[label];
+          const measurements = measureDiscovery(trace, {
+            mustIncludeTargetRefs: Object.keys(targets),
+            mustNotIncludeTargetRefs: fixture.mustNotIncludeTargets.map(
+              (target) =>
+                target.targetKind === 'adventure-entity'
+                  ? `${target.moduleId}#${target.entityKind}:${target.entityId}`
+                  : target.recordKey,
+            ),
+          });
+
+          // M1 and M2 together: what was reached, and for a miss the exact stage
+          // that lost it.
+          expect(measurements.m2).toEqual(targets);
+          expect(measurements.m1).toEqual(
+            Object.fromEntries(
+              Object.entries(targets).map(([key, lost]) => [
+                key,
+                lost === null,
+              ]),
+            ),
+          );
+          // M6: a must-consider overflow fails the probe (design section 6.3).
+          expect(measurements.m6.overflow).toEqual([]);
+          expect(measurements.m6.overflowed).toBe(false);
+          // M8: nothing whose provenance is known-false or absent is presented.
+          expect(measurements.m8).toEqual({
+            forbiddenPresent: [],
+            unattributedPresent: [],
+          });
+          // M3, M4, M7, M9 are computable from the same recorded trace.
+          expect(measurements.m7.candidateCount).toBe(
+            trace.packet.packet.candidates.length,
+          );
+          for (const [key, routes] of Object.entries(measurements.m3))
+            expect(
+              routes.producedAcrossStages,
+              `${key} reached a stage with no route`,
+            ).toBeGreaterThan(0);
+
+          // Stage accounting: a conditional stage may report `skipped` and must
+          // then have produced nothing; no other stage may, and `failed-to-run`
+          // is never read as a pass (design section 13.3).
+          for (const [name, stage] of Object.entries(measurements.perStage)) {
+            expect(['ran', 'skipped', 'failed-to-run']).toContain(
+              stage.outcome,
+            );
+            if (stage.outcome === 'skipped') {
+              expect(CONDITIONAL_STAGES.has(name)).toBe(true);
+              expect(stage.produced).toEqual([]);
+            }
+            expect(stage.failedToRun).toBe(stage.outcome === 'failed-to-run');
           }
-          expect(stage.failedToRun).toBe(stage.outcome === 'failed-to-run');
-        }
-        // P1's turn is the corpus's recorded runtime miss: the signals stage
-        // extracted nothing at all, which section 13.3 names failure-to-run
-        // rather than a pass.
-        expect(measurements.perStage.signals.failedToRun).toBe(
-          fixture.probeId === 'P1',
-        );
+          // P1's turn is the corpus's recorded runtime miss: the signals stage
+          // extracted nothing at all, which section 13.3 names failure-to-run
+          // rather than a pass.
+          expect(measurements.perStage.signals.failedToRun).toBe(
+            fixture.probeId === 'P1',
+          );
 
-        // M10 and M11 come from the same recorded evidence.
-        const runtime = measureRuntimeDiscovery(
-          trace,
-          evidence?.runtime ?? {
-            capabilityInvocations: [],
-            auditAttempts: [],
-          },
-        );
-        expect(runtime.m10.runtimeInvocationsAbsentFromPacket).toEqual([]);
-        // No auditor was wired for these turns, so M11 says so rather than
-        // reporting a green zero.
-        expect(runtime.m11.auditorAbsent).toBe(true);
-        expect(runtime.m11.retries).toBe(0);
-      } finally {
-        db.close();
-      }
-    });
+          // M10 and M11 come from the same recorded evidence.
+          const runtime = measureRuntimeDiscovery(
+            trace,
+            evidence?.runtime ?? {
+              capabilityInvocations: [],
+              auditAttempts: [],
+            },
+          );
+          expect(runtime.m10.runtimeInvocationsAbsentFromPacket).toEqual([]);
+          // No auditor was wired for these turns, so M11 says so rather than
+          // reporting a green zero.
+          expect(runtime.m11.auditorAbsent).toBe(true);
+          expect(runtime.m11.retries).toBe(0);
+
+          // M5 bound to THIS execution's declared campaign-rule state, so an
+          // execution that authors a jhpt rule or ruling cannot pass on a run
+          // that persisted neither. `installed` carries the identities jhpt
+          // itself assigned; the fixture invents none of them.
+          expect([...measurements.m5.returned].sort()).toEqual(
+            [...installed.ruleIdentities].sort(),
+          );
+          expect(measurements.m5.unplaced).toEqual([]);
+          expect(measurements.m5.unqueriedAmbiguityIds).toEqual([]);
+          const declaredRuling =
+            'cases' in execution.expectedCampaignRuleOrRulingState &&
+            execution.expectedCampaignRuleOrRulingState.cases.some(
+              (item) => item.ambiguityId !== undefined,
+            );
+          // A ruling reaches the trace only through the seam's ruling query, so
+          // the positive case must show a resolved ambiguity, not just a rule.
+          expect(measurements.m5.resolvedAmbiguityIds.length > 0).toBe(
+            declaredRuling,
+          );
+        } finally {
+          db.close();
+        }
+      });
+    }
   }
 
   it('places the jhpt house rule beside its governing source on a real turn', async () => {

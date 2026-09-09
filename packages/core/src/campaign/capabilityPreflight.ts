@@ -19,11 +19,29 @@ import {
 import { getCurrentCampaignPosition } from './campaignPosition.js';
 import { formatCampaignPosition } from './campaignRules.js';
 
+/**
+ * The exact subject the readiness capability was asserted about.
+ *
+ * `assertMagicItemOperationReady` derives its contract per
+ * `(record, variantId, operationId)`, so the record alone does not name what
+ * was preflighted: two instances of one record and operation but different
+ * variants are different subjects with possibly different readiness. A blocked
+ * preflight is reported to the caller as tool-error data and would otherwise
+ * carry no identity at all, leaving an observer to guess from state that may
+ * have changed since.
+ */
+export interface CampaignCapabilitySubject {
+  readonly recordKey: string;
+  readonly variantId?: string;
+  readonly operationId: string;
+}
+
 export interface CampaignCapabilityPreflight {
   status: 'available' | 'blocked';
   reason?: string;
   capabilityId: string;
   revision: string;
+  subject: CampaignCapabilitySubject;
   position: string;
   /** Campaign-owned read projection; never caller-selected interpretations. */
   ambiguities: readonly (CampaignAmbiguityContext & {
@@ -77,6 +95,11 @@ export function preflightCampaignItemOperation(
   const evidence = {
     capabilityId: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.operationId,
     revision: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.revision,
+    subject: {
+      recordKey: input.record.key,
+      ...(input.variantId === undefined ? {} : { variantId: input.variantId }),
+      operationId: input.operation.operationId,
+    },
     position,
     ambiguities: relevant.map((entry) => ({
       ...entry,
