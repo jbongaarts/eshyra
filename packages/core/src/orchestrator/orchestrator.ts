@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { AdventureModule } from '../adventure/types.js';
 import { recordAmbiguityRuling } from '../campaign/ambiguityResolution.js';
 import { resolveCampaignPosition } from '../campaign/campaignPosition.js';
 import { createCampaignRuleReadSeam } from '../campaign/campaignRuleStore.js';
@@ -561,6 +562,35 @@ function shadowScenarioFrom(
   };
 }
 
+/**
+ * One adventure-module resolution per module id, per turn.
+ *
+ * The resolver is a caller-supplied function; nothing contracts it to be pure,
+ * idempotent, or even to succeed twice. Without this, the context assembler
+ * resolved a module and the shadow capture resolved it AGAIN, so a resolver
+ * that succeeded once and then threw would abort a shadow-enabled turn that
+ * succeeds with shadow off, and one that answered differently would leave the
+ * DM context describing one module while the persisted evidence described
+ * another.
+ *
+ * This memo is shared by exactly the two readers W9 must keep in agreement —
+ * the context assembler and the shadow capture — so enabling the observation
+ * costs the turn no additional resolver call. The tool context keeps the raw
+ * resolver: how tools resolve modules is not W9's to change.
+ */
+function memoizeAdventureResolver(
+  resolve: AdventureModuleResolver | undefined,
+): AdventureModuleResolver | undefined {
+  if (resolve === undefined) return undefined;
+  const resolved = new Map<string, AdventureModule | undefined>();
+  return (moduleId: string) => {
+    if (resolved.has(moduleId)) return resolved.get(moduleId);
+    const module = resolve(moduleId);
+    resolved.set(moduleId, module);
+    return module;
+  };
+}
+
 /** Best-effort audit-retry recording; a sink failure must never break a turn. */
 function recordAuditUsage(
   sink: TurnDiagnosticsSink | undefined,
@@ -714,6 +744,9 @@ export async function runTurn(
     );
     toolCtx.actingCharacterId = actingCharacterId;
     const canonicalPosition = formatCampaignPosition(campaignPosition);
+    const resolveAdventureModule = memoizeAdventureResolver(
+      deps.resolveAdventureModule,
+    );
 
     phase = 'assemble_context';
     const assembled = assembleContext({
@@ -723,7 +756,7 @@ export async function runTurn(
       playerInput: input.playerInput,
       recentSessionLimit: input.recentSessionLimit,
       actingCharacterId,
-      resolveAdventureModule: deps.resolveAdventureModule,
+      resolveAdventureModule,
       characterChronicle: deps.characterChronicle,
       campaignPosition: canonicalPosition,
       resolveRulesPack: deps.resolveRulesPack,
@@ -750,9 +783,9 @@ export async function runTurn(
             playerInput: input.playerInput,
             actingCharacterId,
             ...shadowScenarioFrom(assembled),
-            ...(deps.resolveAdventureModule === undefined
+            ...(resolveAdventureModule === undefined
               ? {}
-              : { resolveAdventureModule: deps.resolveAdventureModule }),
+              : { resolveAdventureModule }),
             ...(deps.resolveRulesPack === undefined
               ? {}
               : { resolveRulesPack: deps.resolveRulesPack }),

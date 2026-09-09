@@ -106,6 +106,14 @@ export interface UseItemInput {
 export interface UseItemResult {
   readonly instanceId: string;
   readonly packRef: string;
+  /**
+   * The canonical variant identity this use resolved from the instance, when
+   * the instance carries one. It participates in the readiness preflight
+   * (`assertMagicItemOperationReady(record, variantId, …)`) and in mechanics
+   * selection, so an observer that only sees the tool result would otherwise
+   * be unable to say WHICH subject the capability was asserted about.
+   */
+  readonly variantId?: string;
   readonly operationId: string;
   readonly costs: readonly {
     readonly economy: string;
@@ -2274,6 +2282,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
     return {
       instanceId: input.instanceId,
       packRef,
+      ...(variantId === undefined ? {} : { variantId }),
       operationId: input.operationId,
       costs,
       effects: effectIds.map((id) => refs.effects.get(id)),

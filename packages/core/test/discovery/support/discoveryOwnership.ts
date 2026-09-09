@@ -53,14 +53,16 @@ export const REVIEWED_FOREIGN_DEPENDENCIES: readonly string[] = [
   '../campaign/campaignRules.js',
   // W9 (`eshyra-o9bd.19.11`) additions. None is a campaign-rule owner:
   // `turnTrace` is the accepted-turn trace authority design section 12.2 names
-  // as the attachment point for shadow evidence; `lookup` and the two
-  // `toolSchema` modules are what the capture-time B4 and B1 blocker probes
-  // observe. `campaignRuleStore` is deliberately still ABSENT — the runtime
-  // hands discovery a bound read seam rather than letting it build one.
+  // as the attachment point for shadow evidence; `lookup`, `bundledSrdPack`
+  // and the two `toolSchema` modules are what the capture-time B1, B3 and B4
+  // blocker probes observe. `campaignRuleStore` is deliberately still ABSENT —
+  // the runtime hands discovery a bound read seam rather than letting it build
+  // one.
   '../memory/turnTrace.js',
   '../model/toolSchema.js',
   '../model/toolSchemaValidation.js',
   '../persistence/db.js',
+  '../rules/bundledSrdPack.js',
   '../rules/conditionRelations.js',
   '../rules/lookup.js',
   '../rules/stack.js',

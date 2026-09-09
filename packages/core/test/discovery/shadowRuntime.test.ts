@@ -295,14 +295,21 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
         expect(status.B1).toBe('repaired');
         expect(status.B4).toBe('repaired');
         expect(status.B5).toBe('repaired');
-        // B2 is a property of THIS turn: only the probe that needs an authored
-        // module is given a resolver, and the rest truthfully report otherwise.
-        expect(status.B2).toBe(
-          runtimeState.resolveAdventureModule === undefined
-            ? 'unrepaired'
-            : 'repaired',
+        // B2 repaired the CLI's handoff to `runTurn`. A capture taken inside
+        // core cannot see that: a direct caller could always supply a
+        // resolver, before and after the repair. So the status is never
+        // `repaired` here, and the capture-local fact — whether adventure
+        // context reached this turn — is carried by the scenario seat instead.
+        expect(status.B2).toBe('not-discriminable');
+        const b2 = evidence?.blockerRepairs.find(
+          (item) => item.blockerId === 'B2',
         );
-        // B3 discriminates only where the campaign resolves an add-on stack.
+        expect(b2?.evidence).toContain(
+          runtimeState.resolveAdventureModule === undefined
+            ? 'was not supplied'
+            : 'was supplied',
+        );
+        // B3 discriminates only where an add-on overrides a base record.
         expect(status.B3).toBe(
           fixture.probeId === 'P11' ? 'repaired' : 'not-discriminable',
         );
@@ -635,6 +642,60 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
         db.close();
       }
     });
+  });
+
+  it('reads the adventure source once, and never a second time for the shadow', async () => {
+    const fixture = DIAGNOSTIC_FIXTURES.find((item) => item.probeId === 'P9');
+    if (fixture === undefined) throw new Error('P9 fixture is missing');
+
+    // A resolver that answers once and then refuses. Nothing contracts a
+    // caller-supplied resolver to be idempotent, and before the per-turn memo
+    // the shadow capture called it a SECOND time — so enabling the observation
+    // could abort a turn that succeeds with it off, or persist evidence about
+    // a different module than the DM context was built from.
+    const run = async (recordDiscoveryShadow: boolean) => {
+      const db = seedCampaign();
+      try {
+        const seated = installProbeCampaignState(fixture, db);
+        if (seated.resolveAdventureModule === undefined)
+          throw new Error('P9 must seat an adventure run');
+        let calls = 0;
+        const resolveAdventureModule = (moduleId: string) => {
+          calls += 1;
+          if (calls > 1)
+            throw new Error('adventure module source is no longer readable');
+          return seated.resolveAdventureModule?.(moduleId);
+        };
+        const model = new ScriptedModel();
+        const result = await runTurn(
+          {
+            db,
+            model,
+            registry: createDefaultToolRegistry(),
+            recordDiscoveryShadow,
+            resolveAdventureModule,
+          },
+          turnInput(fixture.playerInput),
+        );
+        expect(result.ok).toBe(true);
+        return { seen: model.seen, calls, evidence: recordedEvidence(db) };
+      } finally {
+        db.close();
+      }
+    };
+
+    const off = await run(false);
+    const on = await run(true);
+
+    expect(on.calls).toBe(1);
+    expect(on.calls).toBe(off.calls);
+    expect(JSON.stringify(on.seen)).toBe(JSON.stringify(off.seen));
+    // The evidence describes the source the real turn assembled from.
+    expect(on.evidence?.scenario.adventureModuleResolved).toBe(true);
+    expect(on.evidence?.scenario.adventure?.moduleId).toBe(
+      'eshyra:hollow-beneath-emberfall',
+    );
+    expect(on.evidence?.failure).toBeUndefined();
   });
 
   it('survives a live inventory row whose pack ref does not resolve', async () => {

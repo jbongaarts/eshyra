@@ -331,12 +331,34 @@ export type RuntimeCapabilityOutcome =
   | 'blocked'
   | 'not-a-capability-outcome';
 
+/**
+ * Where an invocation's SUBJECT identity came from.
+ *
+ * `runtime-result` is the only source that can be compared with a packet
+ * preflight: it is what the runtime itself reported about the invocation.
+ * `pre-model-binding` is the inventory binding the capture snapshotted before
+ * the model ran; it can be stale by the time the tool executes, and it cannot
+ * be trusted to name the same variant, so M10 refuses to compare on it.
+ */
+export type RuntimeCapabilitySubjectSource =
+  | 'runtime-result'
+  | 'pre-model-binding'
+  | 'unavailable';
+
 export interface RuntimeCapabilityInvocation {
   readonly tool: string;
   readonly instanceId?: string;
   readonly operationId?: string;
-  /** Record key the captured scenario bound this instance to, when known. */
+  /** Rules-record key of the subject the capability was asserted about. */
   readonly recordKey?: string;
+  /**
+   * Canonical variant identity of that subject, when it has one. The readiness
+   * contract is derived per `(record, variantId, operationId)`, so two
+   * instances of one record and operation but different variants are different
+   * subjects with possibly different readiness.
+   */
+  readonly variantId?: string;
+  readonly subjectSource: RuntimeCapabilitySubjectSource;
   /** Capability identity the runtime preflight reported, when it reported one. */
   readonly capabilityId?: string;
   readonly outcome: RuntimeCapabilityOutcome;

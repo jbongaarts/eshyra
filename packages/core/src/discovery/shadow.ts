@@ -67,7 +67,7 @@ export interface ShadowScenarioRecord {
 
 export interface ShadowFailure {
   /** Which part of the capture was running when it failed. */
-  readonly stage: 'stack' | 'blockers' | 'discovery';
+  readonly stage: 'scenario' | 'stack' | 'blockers' | 'discovery';
   readonly message: string;
 }
 
@@ -132,67 +132,85 @@ function message(error: unknown): string {
 export function captureDiscoveryShadow(
   input: ShadowDiscoveryInput,
 ): DiscoveryShadowCapture {
-  const module =
-    input.adventure === undefined
-      ? undefined
-      : input.resolveAdventureModule?.(input.adventure.moduleId);
-  const scenarioRecord: ShadowScenarioRecord = {
-    playerInput: input.playerInput,
-    ...(input.actingCharacterId === undefined
-      ? {}
-      : { actingCharacterId: input.actingCharacterId }),
-    stateFieldRoots: Object.keys(input.stateFields).map((key) => `/${key}`),
-    itemInstances: input.itemInstances,
-    ...(input.adventure === undefined
-      ? {}
-      : {
-          adventure: input.adventure,
-          adventureModuleResolved: module !== undefined,
-        }),
-    adventureSeatNotes: input.adventureSeatNotes ?? [],
+  const base = {
+    capturedAt: input.capturedAt,
+    campaignPosition: input.campaignPosition,
   };
-  const scenario: DiscoveryScenario = {
-    playerInput: input.playerInput,
-    ...(input.actingCharacterId === undefined
-      ? {}
-      : { actingCharacterId: input.actingCharacterId }),
-    stateFields: input.stateFields,
-    itemInstances: input.itemInstances,
-    ...(input.adventure === undefined || module === undefined
-      ? {}
-      : {
-          adventure: {
-            moduleId: input.adventure.moduleId,
-            ...(input.adventure.locationId === undefined
-              ? {}
-              : { locationId: input.adventure.locationId }),
-            ...(input.adventure.encounterId === undefined
-              ? {}
-              : { encounterId: input.adventure.encounterId }),
-            module,
-          },
-        }),
-  };
-  // The stack is resolved once, up front: both the blocker probes and the run
-  // must report on the SAME stack, or the recorded repair state would describe
-  // a different resolution than the evidence it qualifies.
-  //
-  // Everything after this point is inside one guard, tracking which part was
-  // running. That makes this function TOTAL: it always returns a capture, so
-  // the orchestrator's observation point needs no guard of its own and cannot
-  // destabilize a turn. A failure is still reported — an empty capture that
-  // reads as a green nothing would be the worse outcome.
-  let stage: ShadowFailure['stage'] = 'stack';
+  // EVERY shadow-only operation is inside this one guard, tracking which part
+  // was running — the adventure-source read included, because the resolver is
+  // caller-supplied and nothing contracts it to succeed. That makes this
+  // function TOTAL: it always returns a capture, so the orchestrator's
+  // observation point needs no guard of its own and cannot destabilize a turn.
+  // A failure is still reported; an empty capture that reads as a green
+  // nothing would be the worse outcome.
+  let stage: ShadowFailure['stage'] = 'scenario';
   let blockerRepairs: readonly BlockerRepairObservation[] = [];
+  let scenarioRecord: ShadowScenarioRecord = {
+    playerInput: input.playerInput,
+    stateFieldRoots: [],
+    itemInstances: [],
+    adventureSeatNotes: [],
+  };
   try {
+    // The caller hands in the resolution the real turn already made, so this
+    // does not read the adventure source a second time.
+    const module =
+      input.adventure === undefined
+        ? undefined
+        : input.resolveAdventureModule?.(input.adventure.moduleId);
+    scenarioRecord = {
+      playerInput: input.playerInput,
+      ...(input.actingCharacterId === undefined
+        ? {}
+        : { actingCharacterId: input.actingCharacterId }),
+      stateFieldRoots: Object.keys(input.stateFields).map((key) => `/${key}`),
+      itemInstances: input.itemInstances,
+      ...(input.adventure === undefined
+        ? {}
+        : {
+            adventure: input.adventure,
+            adventureModuleResolved: module !== undefined,
+          }),
+      adventureSeatNotes: input.adventureSeatNotes ?? [],
+    };
+    const scenario: DiscoveryScenario = {
+      playerInput: input.playerInput,
+      ...(input.actingCharacterId === undefined
+        ? {}
+        : { actingCharacterId: input.actingCharacterId }),
+      stateFields: input.stateFields,
+      itemInstances: input.itemInstances,
+      ...(input.adventure === undefined || module === undefined
+        ? {}
+        : {
+            adventure: {
+              moduleId: input.adventure.moduleId,
+              ...(input.adventure.locationId === undefined
+                ? {}
+                : { locationId: input.adventure.locationId }),
+              ...(input.adventure.encounterId === undefined
+                ? {}
+                : { encounterId: input.adventure.encounterId }),
+              module,
+            },
+          }),
+    };
+    // The stack is resolved once: both the blocker probes and the run must
+    // report on the SAME stack, or the recorded repair state would describe a
+    // different resolution than the evidence it qualifies.
+    stage = 'stack';
     const stack = resolveStrictCampaignRulesStack(
       input.db,
       input.resolveRulesPack,
     );
     stage = 'blockers';
     blockerRepairs = observeBlockerRepairs({
+      db: input.db,
       stack,
       tools: input.tools,
+      ...(input.resolveRulesPack === undefined
+        ? {}
+        : { resolveRulesPack: input.resolveRulesPack }),
       adventureResolverSupplied: input.resolveAdventureModule !== undefined,
     });
     stage = 'discovery';
@@ -206,16 +224,14 @@ export function captureDiscoveryShadow(
         : { rulesPackResolver: input.resolveRulesPack }),
     });
     return {
-      capturedAt: input.capturedAt,
-      campaignPosition: input.campaignPosition,
+      ...base,
       blockerRepairs,
       scenario: scenarioRecord,
       trace: projectDiscoveryTrace(trace),
     };
   } catch (error) {
     return {
-      capturedAt: input.capturedAt,
-      campaignPosition: input.campaignPosition,
+      ...base,
       blockerRepairs,
       scenario: scenarioRecord,
       failure: { stage, message: message(error) },
@@ -258,6 +274,15 @@ function field(value: unknown, key: string): unknown {
  * result cannot say whether the capability was consulted at all. Recording
  * those as `not-a-capability-outcome` keeps M10 from crediting or blaming a
  * capability for an outcome that was never its own.
+ *
+ * SUBJECT IDENTITY. The readiness contract is derived per
+ * `(record, variantId, operationId)`, so the subject is not identified by the
+ * record and operation alone. A successful `use_item` reports the pack ref and
+ * variant it actually resolved, and that is used. When it does not — the
+ * blocked and non-capability paths — the pre-model inventory binding is
+ * recorded instead and LABELLED as such, because the model may have changed
+ * the instance before invoking the tool. M10 will not compare on a labelled
+ * fallback; a snapshot that merely usually agrees is not identity.
  */
 export function observeRuntimeCapabilityInvocations(
   toolCalls: readonly ShadowExecutedToolCall[],
@@ -268,17 +293,41 @@ export function observeRuntimeCapabilityInvocations(
     .map((call): RuntimeCapabilityInvocation => {
       const instanceId = field(call.args, 'instanceId');
       const operationId = field(call.args, 'operationId');
-      const binding =
-        typeof instanceId === 'string'
-          ? bindings.find((item) => item.instanceId === instanceId)
-          : undefined;
       const identity = {
         tool: call.tool,
         ...(typeof instanceId === 'string' ? { instanceId } : {}),
         ...(typeof operationId === 'string' ? { operationId } : {}),
-        ...(binding === undefined ? {} : { recordKey: binding.recordKey }),
       };
-      if (call.result.ok) return { ...identity, outcome: 'available' };
+      if (call.result.ok) {
+        const recordKey = field(call.result.data, 'packRef');
+        const variantId = field(call.result.data, 'variantId');
+        return {
+          ...identity,
+          ...(typeof recordKey === 'string' ? { recordKey } : {}),
+          ...(typeof variantId === 'string' ? { variantId } : {}),
+          subjectSource:
+            typeof recordKey === 'string' ? 'runtime-result' : 'unavailable',
+          outcome: 'available',
+        };
+      }
+      const binding =
+        typeof instanceId === 'string'
+          ? bindings.find((item) => item.instanceId === instanceId)
+          : undefined;
+      const snapshot = {
+        ...(binding === undefined
+          ? {}
+          : {
+              recordKey: binding.recordKey,
+              ...(binding.variantId === undefined
+                ? {}
+                : { variantId: binding.variantId }),
+            }),
+        subjectSource:
+          binding === undefined
+            ? ('unavailable' as const)
+            : ('pre-model-binding' as const),
+      };
       const preflight = call.result.data;
       const capabilityId = field(preflight, 'capabilityId');
       if (
@@ -287,12 +336,14 @@ export function observeRuntimeCapabilityInvocations(
       )
         return {
           ...identity,
+          ...snapshot,
           capabilityId,
           outcome: 'blocked',
           detail: call.result.message,
         };
       return {
         ...identity,
+        ...snapshot,
         outcome: 'not-a-capability-outcome',
         detail: `${call.result.code}: ${call.result.message}`,
       };
@@ -345,20 +396,157 @@ export class DiscoveryShadowSchemaError extends Error {
   }
 }
 
+const REQUIRED_STAGES: readonly string[] = [
+  'signals',
+  'candidates',
+  'expansion',
+  'ruleJoin',
+  'ruleExpansion',
+  'lateRuleJoin',
+  'dedup',
+  'retention',
+  'packet',
+];
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function requireV1(condition: boolean, detail: string): void {
+  if (!condition)
+    throw new DiscoveryShadowSchemaError(
+      `recorded ${DISCOVERY_SHADOW_SCHEMA} evidence is malformed: ${detail}`,
+    );
+}
+
 /**
- * Read shadow evidence back off a recorded turn trace. A stored value carrying
- * a schema tag this build does not know is an error, not an absence: measuring
- * it as if it were absent would report a green nothing for a capture that
- * exists.
+ * Structural validation of a stored v1 row.
+ *
+ * The TypeScript union that makes "neither a trace nor a failure" impossible
+ * lives only in memory; the SQLite JSON boundary erases it, so without this a
+ * row of `{"schema":"discovery-shadow-v1"}` would be cast straight back into
+ * `DiscoveryShadowEvidence` and measured as a green nothing. Same-version
+ * corruption fails closed here, exactly as an unknown schema tag does.
+ *
+ * The trace is checked for the stage accounting every measurement reads, not
+ * deep-validated field by field: the invariant being defended is that a value
+ * returned as evidence actually satisfied v1, not that a full schema validator
+ * is duplicated for a shape this module also writes.
+ */
+function assertV1(stored: Record<string, unknown>): void {
+  requireV1(isObject(stored.scenario), 'scenario is not an object');
+  const scenario = stored.scenario as Record<string, unknown>;
+  requireV1(
+    typeof scenario.playerInput === 'string',
+    'scenario.playerInput is not a string',
+  );
+  requireV1(
+    Array.isArray(scenario.itemInstances),
+    'scenario.itemInstances is not an array',
+  );
+  requireV1(
+    Array.isArray(scenario.adventureSeatNotes),
+    'scenario.adventureSeatNotes is not an array',
+  );
+  requireV1(
+    typeof stored.campaignPosition === 'string',
+    'campaignPosition is not a string',
+  );
+  requireV1(
+    typeof stored.capturedAt === 'string',
+    'capturedAt is not a string',
+  );
+  requireV1(
+    Array.isArray(stored.blockerRepairs),
+    'blockerRepairs is not an array',
+  );
+  requireV1(
+    stored.modelUsageClaim === null,
+    'modelUsageClaim is not the recorded non-claim `null`',
+  );
+  requireV1(isObject(stored.runtime), 'runtime is not an object');
+  const runtime = stored.runtime as Record<string, unknown>;
+  requireV1(
+    Array.isArray(runtime.capabilityInvocations),
+    'runtime.capabilityInvocations is not an array',
+  );
+  requireV1(
+    Array.isArray(runtime.auditAttempts),
+    'runtime.auditAttempts is not an array',
+  );
+
+  const hasTrace = stored.trace !== undefined && stored.trace !== null;
+  const hasFailure = stored.failure !== undefined && stored.failure !== null;
+  requireV1(
+    hasTrace !== hasFailure,
+    hasTrace
+      ? 'it carries both a trace and a failure'
+      : 'it carries neither a trace nor a failure',
+  );
+  if (hasFailure) {
+    requireV1(isObject(stored.failure), 'failure is not an object');
+    const failure = stored.failure as Record<string, unknown>;
+    requireV1(
+      typeof failure.stage === 'string' && typeof failure.message === 'string',
+      'failure is missing its stage or message',
+    );
+    return;
+  }
+  requireV1(isObject(stored.trace), 'trace is not an object');
+  const trace = stored.trace as Record<string, unknown>;
+  for (const name of REQUIRED_STAGES) {
+    const stage = trace[name];
+    requireV1(isObject(stage), `trace.${name} is not an object`);
+    const fields = stage as Record<string, unknown>;
+    requireV1(
+      typeof fields.outcome === 'string',
+      `trace.${name}.outcome is not a string`,
+    );
+    requireV1(
+      typeof fields.failedToRun === 'boolean',
+      `trace.${name}.failedToRun is not a boolean`,
+    );
+    for (const list of [
+      'outputsProduced',
+      'produced',
+      'modified',
+      'carriedForward',
+      'losses',
+    ])
+      requireV1(
+        Array.isArray(fields[list]),
+        `trace.${name}.${list} is not an array`,
+      );
+  }
+  const packet = (trace.packet as Record<string, unknown>).packet;
+  requireV1(isObject(packet), 'trace.packet.packet is not an object');
+  requireV1(
+    Array.isArray((packet as Record<string, unknown>).candidates),
+    'trace.packet.packet.candidates is not an array',
+  );
+}
+
+/**
+ * Read shadow evidence back off a recorded turn trace.
+ *
+ * A stored value carrying a schema tag this build does not know is an error,
+ * not an absence: measuring it as if it were absent would report a green
+ * nothing for a capture that exists. Same-version corruption fails closed the
+ * same way, through {@link assertV1}.
  */
 export function readDiscoveryShadowEvidence(
   stored: TraceJsonValue | undefined,
 ): DiscoveryShadowEvidence | undefined {
   if (stored === undefined || stored === null) return undefined;
-  const schema = field(stored, 'schema');
+  if (!isObject(stored))
+    throw new DiscoveryShadowSchemaError(
+      'recorded discovery shadow evidence is not a JSON object',
+    );
+  const schema = stored.schema;
   if (schema !== DISCOVERY_SHADOW_SCHEMA)
     throw new DiscoveryShadowSchemaError(
       `recorded discovery shadow evidence has schema '${String(schema)}', not '${DISCOVERY_SHADOW_SCHEMA}'`,
     );
+  assertV1(stored);
   return stored as unknown as DiscoveryShadowEvidence;
 }

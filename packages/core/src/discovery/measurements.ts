@@ -445,6 +445,32 @@ export function measureDiscovery(
  */
 const RULE_EVIDENCE_TOOLS: readonly string[] = ['lookup_rules'];
 
+/**
+ * Why an M10 comparison could not be made. Each of these is a refusal to
+ * compare, never a disagreement: reporting one as `disagreed` would attribute
+ * a mismatch to the capability that belongs to the measurement's own limits.
+ */
+export type IncomparableReason =
+  | 'not-invoked'
+  | 'packet-status-not-evaluated-offline'
+  | 'runtime-subject-identity-not-reported'
+  | 'ambiguous-runtime-invocation';
+
+function incomparableReason(
+  preflight: CapabilityPreflight,
+  matches: readonly RuntimeCapabilityInvocation[],
+): IncomparableReason | undefined {
+  if (preflight.status === 'not-evaluated-offline')
+    return 'packet-status-not-evaluated-offline';
+  if (matches.length === 0) return 'not-invoked';
+  // Two invocations of the same subject in one turn can have different
+  // outcomes; picking the first would be a coin flip presented as a result.
+  if (matches.length > 1) return 'ambiguous-runtime-invocation';
+  return matches[0].subjectSource === 'runtime-result'
+    ? undefined
+    : 'runtime-subject-identity-not-reported';
+}
+
 export interface RuntimeDiscoveryObservations {
   readonly capabilityInvocations: readonly RuntimeCapabilityInvocation[];
   readonly auditAttempts: readonly RuntimeAuditAttempt[];
@@ -466,6 +492,8 @@ export interface RuntimeDiscoveryMeasurements {
       readonly packetStatus: CapabilityPreflight['status'];
       readonly runtimeOutcome: RuntimeCapabilityOutcome | 'not-invoked';
       readonly agreement: 'agreed' | 'disagreed' | 'not-comparable';
+      /** Present whenever `agreement` is `not-comparable`. */
+      readonly incomparableBecause?: IncomparableReason;
     }[];
     /**
      * Capability outcomes the runtime produced that the shadow packet never
@@ -509,26 +537,37 @@ export function measureRuntimeDiscovery(
     .filter((item) => item.capability !== undefined)
     .map((item) => {
       const preflight = item.capability as CapabilityPreflight;
-      const invocation = capabilityOutcomes.find(
+      // Identity is (record, variant, operation) — the exact triple the
+      // readiness contract is derived from. Matching on record and operation
+      // alone would pair one variant's packet preflight with another
+      // variant's runtime result and report a fabricated agreement or
+      // disagreement between two different subjects.
+      const matches = capabilityOutcomes.filter(
         (candidate) =>
           candidate.recordKey === item.identity.key &&
-          (preflight.operationId === undefined ||
-            candidate.operationId === preflight.operationId),
+          candidate.operationId === preflight.operationId &&
+          candidate.variantId === preflight.variantId,
       );
-      if (invocation !== undefined) consumed.add(invocation);
+      for (const match of matches) consumed.add(match);
+      const invocation = matches[0];
       const runtimeOutcome = invocation?.outcome ?? ('not-invoked' as const);
+      const reason = incomparableReason(preflight, matches);
       return {
         candidateKey: item.identity.key,
         capabilityId: preflight.capabilityId,
         packetStatus: preflight.status,
         runtimeOutcome,
-        agreement:
-          runtimeOutcome === 'not-invoked' ||
-          preflight.status === 'not-evaluated-offline'
-            ? ('not-comparable' as const)
-            : runtimeOutcome === preflight.status
-              ? ('agreed' as const)
-              : ('disagreed' as const),
+        ...(reason === undefined
+          ? {
+              agreement:
+                runtimeOutcome === preflight.status
+                  ? ('agreed' as const)
+                  : ('disagreed' as const),
+            }
+          : {
+              agreement: 'not-comparable' as const,
+              incomparableBecause: reason,
+            }),
       };
     });
   const attempts = runtime.auditAttempts;
