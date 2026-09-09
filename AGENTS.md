@@ -295,10 +295,6 @@ Git-graph check instead of reconstructing squashed diffs.
 
 ### PR Review Authority and Lifecycle
 
-Reviewers and PR authors work from the same authority: this file, accepted ADRs
-and design documents, the owning bead, and the exact implementation at an exact
-head SHA. There is no separate review-contract system.
-
 Anyone authorizing a design or reviewing a PR must follow the detailed,
 provider-neutral methodology in
 [Design Authorization and Pull Request Review Policy](docs/design-and-pr-review-policy.md)
@@ -306,61 +302,10 @@ together with the applicable repository instructions, accepted ADR/design
 authority, owning bead, current dependencies/blockers/findings, and exact
 implementation under review.
 
-- **The owning bead is the specification boundary.** A normal implementation PR
-  should have an owning bead wherever repository task tracking applies; that
-  bead carries ownership, scope, acceptance criteria, dependencies, known
-  constraints, and the required next state. It does **not** need a specially
-  formatted `## REVIEW CONTRACT` section unless some accepted authority
-  explicitly requires that format for that work, and the absence of such a
-  section is never itself grounds to reject a PR.
-- **No default contract or checkpoint ceremony.** A reviewer must not require a
-  contract hash, an authorization comment, a review checkpoint, a mirrored
-  GitHub contract comment, a `## REVIEW CONTRACT` heading, or a
-  `review:preflight` / `review:handoff` / `review:checkpoint` /
-  `review:invalidate` step merely because a change is `semantic-system` or
-  `rules-clause-complete`. That machinery was proposed on PR #481
-  (`eshyra-o9bd.19.1.17`, protocol `eshyra-review-v2`) and closed unmerged on
-  2026-07-29; it is not repository authority, and nothing on that branch is.
-  Such artifacts become required only where an accepted ADR, repository policy,
-  an explicit assignment, or other current authority specifically establishes
-  them for the work being reviewed.
-- **Authority-first review remains mandatory.** Before reviewing
-  implementation, read the applicable repository instructions, accepted ADRs and
-  design documents, the owning bead, active dependencies and blockers,
-  invalidation markers, existing accepted findings, the exact implementation,
-  and its real producers and consumers. PR prose, agent self-reports, tests,
-  readiness labels, generated artifacts, and prior conclusions are claims, not
-  evidence. Withhold approval when genuinely required authority is missing,
-  stale, malformed, inaccessible, or contradictory. An abandoned review-contract
-  system is not required authority and must not be treated as such.
-- **Profiles select review depth, not ceremony.** `standard` <
-  `semantic-system` < `rules-clause-complete`; use the stricter of the declared
-  profile and the repository minimum. A profile decides which invariants must be
-  reviewed, how broadly siblings and consumers must be examined, what permanent
-  evidence is required, and whether source fidelity, discovery, adjudication,
-  capability, and state integrity must be considered independently. A profile
-  never by itself creates a requirement for a separate contract or authorization
-  artifact.
-- **Approval binds to an exact head SHA.** Any new substantive commit
-  invalidates implementation approval and requires review of the new head. A
-  bounded fix to a previously identified defect class may receive bounded fix
-  verification when it is demonstrably non-material; a material repair requires
-  a fresh full review. A newly discovered defect class triggers the existing
-  invalidation and re-authorization lifecycle where applicable.
-  `DESIGN_INVALIDATED` is terminal for that PR — an invalidated PR can never
-  later be approved. There are no "nonblocking", "minor", "optional", or
-  "follow-up" findings: a fix-worthy defect blocks the PR it was found in.
-  GitHub review and comment state, the exact SHA, beads state, and accepted
-  repository authority already carry these states; do not invent a checkpoint
-  artifact to represent them.
-- **A process transition may omit the artifact it replaces.** A user-authorized
-  reset, bootstrap, or architecture/process transition — established by the
-  user, the assignment, an accepted ADR, or current repository authority — is
-  reviewed against that assignment and the current repository state. Do not
-  require the process being changed as a prerequisite for changing it, and do
-  not demand a superseded or not-yet-created process. ADR 0020 / PR #482 is the
-  worked example: it recorded that the `eshyra-review-v2` protocol was absent
-  from `main` and proceeded under the ordinary workflow above.
+This section establishes the obligation and authority relationship. The linked
+document is the single owner of the detailed review methodology; the surrounding
+Git/PR sections remain the owner of operational branch, handoff, merge, and Bead
+lifecycle rules.
 
 #### Handing off a PR for review
 
@@ -368,8 +313,7 @@ Normally give the reviewer the owning bead ID; concise scope and deliberate
 exclusions; verification performed; relevant generated or importer evidence
 where applicable; any known dependency or unresolved design question; and the
 PR URL. Rules-pack work additionally follows `docs/importer-fix-protocol.md`
-and the compiler protocols it points to. Do not manufacture review-contract or
-checkpoint boilerplate that no active authority consumes.
+and the compiler protocols it points to.
 
 ## Beads Issue Tracker
 

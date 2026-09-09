@@ -26,6 +26,13 @@ authorizing a design or reviewing an implementation, read the applicable:
 - real producers, consumers, discovery paths, state transitions, execution
   paths, and external artifacts on which the change relies.
 
+Where repository task tracking applies, the owning Bead is the specification
+boundary. It carries ownership, scope, acceptance criteria, dependencies,
+constraints, exclusions, and the required next state. It needs no specially
+formatted review contract or other review artifact unless current accepted
+authority explicitly requires one, and the absence of an unrequired artifact
+is never grounds to reject a PR.
+
 When Bead ownership, dependencies, blockers, scope, acceptance criteria, or
 status matter, resolve the current `refs/beads/state` projection and inspect the
 relevant records. The projection is disposable and read-only. Never use it to
@@ -39,11 +46,16 @@ missing, stale, malformed, inaccessible, contradictory, or unresolved blocks
 authorization or approval.
 
 Repository authority applies equally to every model, provider, harness, agent
-role, and Captain seat. Model-specific or provider-specific instructions,
-private project configuration, seat charters, and predecessor handoffs never
-outrank it. A process transition may omit the process it replaces; a
-superseded, abandoned, or not-yet-created process is not a prerequisite for
-changing that process.
+role, and Captain seat. Generated boilerplate, advisory seat or private state,
+seat charters, and predecessor handoffs never outrank it. An explicit assignment
+or a session-injected policy that deliberately narrows `AGENTS.md` for a
+specific operating role may refine this policy and take precedence within the
+scope it states, exactly as `AGENTS.md` permits. Keep such authorized, scoped
+refinements distinct from advisory or private state, and do not strand general
+repository rules in a role-specific instruction layer.
+
+A process transition may omit the process it replaces. A superseded, abandoned,
+or not-yet-created process is not a prerequisite for changing that process.
 
 ## Design authorization
 
@@ -218,10 +230,17 @@ an observed execution proves only the property it actually measures.
 
 ## Findings discipline
 
-There are no nonblocking, minor, optional, follow-up, or nice-to-have review
-findings. If a defect is important enough to publish as a finding, it blocks
-approval and is repaired in the current PR. Otherwise, do not publish it as a
-finding.
+If a defect is worth fixing ever, it is worth fixing now. Every valid finding
+blocks approval and is repaired in the current PR regardless of its size or
+impact. Labels such as nonblocking, minor, optional, follow-up, and nice-to-have
+must never defer an accepted finding or make it ignorable.
+
+Disposition every proposed finding explicitly. Either accept it and repair it
+before approval, or permanently reject it with recorded reasoning that explains
+why the governing invariant and authority require no change. Permanent rejection
+is not deferred work. Do not avoid this rule by declining to publish a valid
+defect, and do not create a follow-up Bead for work that belongs to the current
+PR.
 
 A finding identifies, where applicable:
 
@@ -245,18 +264,12 @@ review duties, not new checkpoint artifacts.
 ## Invalidation and normal PR lifecycle
 
 `DESIGN_INVALIDATED` is terminal for the PR. Stop substantive implementation
-and review on that PR, keep it draft where appropriate, preserve its branch and
-findings as evidence, establish successor ownership, and close it unmerged.
-Substantive continuation belongs to successor work. Patching an invalidated PR
+and review on that PR and keep it draft. Preserve its branch and findings as
+evidence, establish successor ownership, and only then close it unmerged.
+Substantive continuation requires a successor PR. Patching an invalidated PR
 cannot make it approvable.
 
-Do not create a second PR or Bead lifecycle. Follow `AGENTS.md`: establish and
-claim the owning Bead, use the required base and worktree, run prescribed
-verification before committing mutated files, commit and push the feature
-branch, open the PR, hand off the Bead ID plus scope, exclusions, verification,
-dependencies, and relevant evidence, and review the exact head. Merge only
-after explicit authorization and satisfied checks.
-
-Honor the documented distinction for dispatched children whose deliverable is
-a commit handed to an integrating agent. A Bead whose deliverable is a PR stays
-`in_progress` until the PR merges.
+Do not create a second PR or Bead lifecycle. The normal branch, worktree,
+verification, commit, push, PR handoff, merge, dispatched-child, and Bead-status
+lifecycle is owned by the **Git & PR Workflow** and **Session Completion**
+sections of `AGENTS.md`; follow those sections directly.
