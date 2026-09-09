@@ -6,6 +6,8 @@ interface PackageJson {
   scripts?: Record<string, string>;
 }
 
+const POLICY_PATH = 'docs/design-and-pr-review-policy.md';
+
 function readText(path: string): string {
   return readFileSync(join(process.cwd(), path), 'utf8');
 }
@@ -17,6 +19,21 @@ function readText(path: string): string {
 // this, so the distinctions it draws are pinned here. Prose is matched with
 // `\s+` between words because AGENTS.md is hard-wrapped.
 describe('PR review authority and lifecycle policy', () => {
+  it('makes the canonical detailed policy reachable from common authority', () => {
+    const agents = readText('AGENTS.md');
+    const policy = readText(POLICY_PATH);
+
+    expect(agents).toContain(
+      '[Design Authorization and Pull Request Review Policy](docs/design-and-pr-review-policy.md)',
+    );
+    expect(agents).toMatch(
+      /Anyone authorizing a design or reviewing a PR must follow the detailed,\s+provider-neutral methodology/,
+    );
+    expect(policy).toContain(
+      '# Design Authorization and Pull Request Review Policy',
+    );
+  });
+
   it('documents the review lifecycle next to the Git & PR workflow', () => {
     const agents = readText('AGENTS.md');
 
@@ -42,6 +59,7 @@ describe('PR review authority and lifecycle policy', () => {
 
   it('states that a review profile implies no checkpoint ceremony', () => {
     const agents = readText('AGENTS.md');
+    const policy = readText(POLICY_PATH);
 
     expect(agents).toContain('**Profiles select review depth, not ceremony.**');
     expect(agents).toMatch(
@@ -50,10 +68,15 @@ describe('PR review authority and lifecycle policy', () => {
     expect(agents).toMatch(
       /must not require a\s+contract hash, an authorization comment, a review checkpoint/,
     );
+    expect(policy).toContain('Profiles select review depth, never');
+    expect(policy).toMatch(
+      /it does not create a contract,\s+hash, checkpoint, or authorization artifact/,
+    );
   });
 
   it('records that the PR #481 review machinery is not active authority', () => {
     const agents = readText('AGENTS.md');
+    const policy = readText(POLICY_PATH);
 
     expect(agents).toMatch(
       /proposed on PR #481\s+\(`eshyra-o9bd\.19\.1\.17`, protocol `eshyra-review-v2`\) and closed unmerged on\s+2026-07-29; it is not repository authority/,
@@ -61,6 +84,21 @@ describe('PR review authority and lifecycle policy', () => {
     expect(agents).toMatch(
       /An abandoned review-contract\s+system is not required authority and must not be treated as such\./,
     );
+    expect(policy).toMatch(
+      /`eshyra-review-v2` machinery proposed on PR #481\s+closed unmerged and is not repository authority/,
+    );
+  });
+
+  it('keeps repository authority above model-specific instructions', () => {
+    const policy = readText(POLICY_PATH);
+
+    expect(policy).toMatch(
+      /Repository authority applies equally to every model, provider, harness, agent\s+role, and Captain seat\./,
+    );
+    expect(policy).toMatch(
+      /Model-specific or provider-specific instructions,\s+private project configuration, seat charters, and predecessor handoffs never\s+outrank it\./,
+    );
+    expect(policy).not.toContain('ChatGPT Project');
   });
 
   it('keeps explicit accepted authority able to require more artifacts', () => {

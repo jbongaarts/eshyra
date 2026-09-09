@@ -299,6 +299,13 @@ Reviewers and PR authors work from the same authority: this file, accepted ADRs
 and design documents, the owning bead, and the exact implementation at an exact
 head SHA. There is no separate review-contract system.
 
+Anyone authorizing a design or reviewing a PR must follow the detailed,
+provider-neutral methodology in
+[Design Authorization and Pull Request Review Policy](docs/design-and-pr-review-policy.md)
+together with the applicable repository instructions, accepted ADR/design
+authority, owning bead, current dependencies/blockers/findings, and exact
+implementation under review.
+
 - **The owning bead is the specification boundary.** A normal implementation PR
   should have an owning bead wherever repository task tracking applies; that
   bead carries ownership, scope, acceptance criteria, dependencies, known
