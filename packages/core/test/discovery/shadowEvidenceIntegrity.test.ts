@@ -401,11 +401,33 @@ describe('durable v1 evidence fails closed', () => {
       const row = clone();
       const candidates = packetCandidates(row);
       expect(candidates.length).toBeGreaterThan(1);
-      (stage(row, 'packet').packet as Row).candidates = [
-        ...candidates,
-        candidates[0],
-      ];
-      rejects(row, 'repeats an emitted identity');
+      const duplicated = [...candidates, candidates[0]];
+      // Duplicated on BOTH packet surfaces and accounted for, so the row is
+      // internally consistent and only the uniqueness rule rejects it.
+      (stage(row, 'packet').packet as Row).candidates = duplicated;
+      stage(row, 'packet').outputsProduced = duplicated;
+      stage(row, 'packet').produced = duplicated.map(
+        (candidate) => (candidate.identity as Row).key as string,
+      );
+      const packet = stage(row, 'packet').packet as Row;
+      packet.bytes = Buffer.byteLength(
+        JSON.stringify(packet.candidates),
+        'utf8',
+      );
+      // Whichever uniqueness rule speaks first, a duplicate cannot be
+      // admitted: M1, M3 and M7 would all count it twice.
+      rejects(row, 'repeat an identity');
+    });
+
+    it('rejects packet surfaces that disagree about what reached the packet', () => {
+      // M2 reads the stage's outputs; M1, M3 and M7 read the packet's
+      // candidates. A same-count substitution would let one row tell two
+      // stories.
+      const row = clone();
+      const outputs = stage(row, 'packet').outputsProduced as Row[];
+      expect(outputs.length).toBeGreaterThan(1);
+      stage(row, 'packet').outputsProduced = [outputs[1], ...outputs.slice(1)];
+      rejects(row, 'while the packet holds');
     });
   });
 
@@ -548,6 +570,286 @@ describe('durable v1 evidence fails closed', () => {
       const row = clone();
       (runtime(row).auditAttempts as Row[])[0].action = 'accept';
       rejects(row, 'not coherent with verdict');
+    });
+  });
+
+  /**
+   * COORDINATED corruptions: both sides of a relation moved together, so every
+   * field stays locally well-formed and only the relation that gives them
+   * meaning is violated. A pairwise flag check cannot see any of these.
+   */
+  describe('coordinated cross-surface contradictions', () => {
+    /** A row whose retention really dropped a must-consider candidate. */
+    function withMustConsiderDrop(): Row {
+      const row = clone();
+      const retention = stage(row, 'retention');
+      const key = emittedIds(row, 'retention')[0];
+      const record = {
+        candidateKey: key,
+        band: 'must-consider',
+        routes: [],
+        reason: 'must-consider set exceeds maxCandidates',
+      };
+      retention.dropped = [record];
+      retention.overflow = [record];
+      retention.overflowed = true;
+      return row;
+    }
+
+    it('rejects a must-consider drop whose overflow was cleared with the flag', () => {
+      const witness = withMustConsiderDrop();
+      // The fixture really is in the state being corrupted.
+      expect(
+        readDiscoveryShadowEvidence(witness as TraceJsonValue)?.trace?.retention
+          .overflowed,
+      ).toBe(true);
+      const retention = stage(witness, 'retention');
+      // Both sides move together: the drop stays, the overflow and its flag go.
+      retention.overflow = [];
+      retention.overflowed = false;
+      rejects(witness, 'while no overflow record names it');
+    });
+
+    it('rejects a must-consider packet drop whose byte overflow was cleared', () => {
+      const row = clone();
+      const packet = stage(row, 'packet');
+      const key = emittedIds(row, 'packet')[0];
+      const record = {
+        candidateKey: key,
+        band: 'must-consider',
+        routes: [],
+        reason: 'packet byte budget: candidate needs 10 bytes, 0 remain',
+      };
+      packet.dropped = [record];
+      packet.byteOverflow = [record];
+      packet.byteBudgetExceeded = true;
+      expect(
+        readDiscoveryShadowEvidence(row as TraceJsonValue)?.trace?.packet
+          .byteOverflow,
+      ).toHaveLength(1);
+      packet.byteOverflow = [];
+      packet.byteBudgetExceeded = false;
+      rejects(row, 'while no overflow record names it');
+    });
+
+    it('rejects an expansion traversal no emitted candidate carries', () => {
+      const property = ['expansion', 'ruleExpansion'].find(
+        (name) => (stage(VALID, name).traversals as unknown[]).length > 0,
+      );
+      if (property === undefined)
+        throw new Error('the valid fixture records no traversal');
+      const row = clone();
+      const target = stage(row, property);
+      // Shape-valid and entirely invented: M4 would report it as `fired`.
+      target.traversals = [
+        ...(target.traversals as unknown[]),
+        {
+          sourceRecordKey: 'rule:invented',
+          linkField: 'invented',
+          relation: 'invented',
+          targetRecordKey: 'rule:also-invented',
+        },
+      ];
+      rejects(row, 'carried by no candidate this stage emitted');
+    });
+
+    describe('rule-join query and result history', () => {
+      function join(row: Row): Row {
+        return stage(row, 'ruleJoin');
+      }
+
+      it('has a real query history to contradict', () => {
+        expect(join(VALID).rulingQueryExecuted).toBe(true);
+        expect(join(VALID).rulingQueryScope).toBe('all-active');
+        expect(join(VALID).outcome).toBe('ran');
+      });
+
+      it('rejects a query that never ran but returned identities', () => {
+        const row = clone();
+        join(row).ruleQueryExecuted = false;
+        join(row).rulingQueryExecuted = false;
+        join(row).rulingQueryScope = 'none';
+        join(row).outcome = 'failed-to-run';
+        join(row).failedToRun = true;
+        join(row).requestedRuleRecordKeys = [];
+        join(row).requestedAmbiguityIds = [];
+        // Coordinated all the way down — and still impossible, because the
+        // stage claims identities a query it says never ran had returned.
+        join(row).returnedRuleIdentities = ['house-rule:invented'];
+        join(row).unplacedRuleIdentities = ['house-rule:invented'];
+        rejects(row, 'records identities while no query executed');
+      });
+
+      it('rejects a scope that disagrees with the executed queries', () => {
+        const row = clone();
+        join(row).rulingQueryScope = 'requested-ambiguities';
+        rejects(row, 'while the executed queries make it');
+      });
+
+      it('rejects an outcome that disagrees with the query evidence', () => {
+        const row = clone();
+        join(row).outcome = 'failed-to-run';
+        join(row).failedToRun = true;
+        join(row).produced = [];
+        join(row).modified = [];
+        join(row).losses = [];
+        rejects(row, 'while rulingQueryExecuted is true');
+      });
+
+      it('rejects a placement of an identity the seam never returned', () => {
+        const row = clone();
+        join(row).placedRuleIdentities = ['house-rule:never-returned'];
+        rejects(row, 'not a partition of the returned');
+      });
+
+      it('rejects a placement beside material the stage did not emit', () => {
+        const row = clone();
+        join(row).returnedRuleIdentities = ['house-rule:x'];
+        join(row).placedRuleIdentities = ['house-rule:x'];
+        join(row).unplacedRuleIdentities = [];
+        join(row).placedRules = [
+          { ruleIdentity: 'house-rule:x', governingRecordKey: 'rule:absent' },
+        ];
+        rejects(row, 'which this stage did not emit');
+      });
+
+      it('rejects a resolved ambiguity no ruling query returned', () => {
+        const row = clone();
+        join(row).resolvedAmbiguityIds = ['ambiguity:never-returned'];
+        rejects(row, 'which no ruling query returned');
+      });
+
+      it('rejects surfaced material the stage did not newly produce', () => {
+        const row = clone();
+        join(row).surfacedCandidateKeys = [emittedIds(row, 'ruleJoin')[0]];
+        rejects(row, 'which this stage did not newly produce');
+      });
+    });
+
+    describe('stage transitions', () => {
+      it('rejects a produced identity reclassified as carried forward', () => {
+        // The reviewer's example: still a valid partition of the stage's own
+        // outputs, but it claims the stage carried an identity forward from a
+        // previous candidate set that never held it.
+        const property = ['expansion', 'ruleJoin', 'dedup'].find(
+          (name) => (stage(VALID, name).produced as string[]).length > 0,
+        );
+        if (property === undefined)
+          throw new Error(
+            'the valid fixture has no produced candidate to move',
+          );
+        const row = clone();
+        const target = stage(row, property);
+        const moved = (target.produced as string[])[0];
+        target.produced = (target.produced as string[]).slice(1);
+        target.carriedForward = [...(target.carriedForward as string[]), moved];
+        rejects(row, 'but the recorded outputs and the previous stage make it');
+      });
+
+      it('rejects a carried-forward identity reclassified as modified', () => {
+        const property = ['expansion', 'ruleJoin', 'dedup'].find(
+          (name) =>
+            stage(VALID, name).outcome === 'ran' &&
+            (stage(VALID, name).carriedForward as string[]).length > 0,
+        );
+        if (property === undefined)
+          throw new Error(
+            'the valid fixture has no running stage that carries anything forward',
+          );
+        const row = clone();
+        const target = stage(row, property);
+        const moved = (target.carriedForward as string[])[0];
+        target.carriedForward = (target.carriedForward as string[]).slice(1);
+        target.modified = [...(target.modified as string[]), moved];
+        rejects(row, 'but the recorded outputs and the previous stage make it');
+      });
+
+      it('sees a traversal gained without a route, as section 12.1 requires', () => {
+        // The identity a stage classifies by is route AND traversal AND
+        // rule/ruling evidence: a candidate can gain a traversal without
+        // gaining a route, and a route-only comparison would report that
+        // mutation as untouched pass-through.
+        const property = ['expansion', 'ruleJoin', 'dedup'].find(
+          (name) =>
+            stage(VALID, name).outcome === 'ran' &&
+            (stage(VALID, name).carriedForward as string[]).length > 0,
+        );
+        if (property === undefined)
+          throw new Error(
+            'the valid fixture has no running stage that carries anything forward',
+          );
+        const row = clone();
+        const target = stage(row, property);
+        const key = (target.carriedForward as string[])[0];
+        const candidate = (target.outputsProduced as Row[]).find(
+          (item) => item.candidateKey === key,
+        ) as Row;
+        candidate.traversals = [
+          ...(candidate.traversals as unknown[]),
+          {
+            sourceRecordKey: key,
+            linkField: 'invented',
+            relation: 'invented',
+            targetRecordKey: 'rule:invented',
+          },
+        ];
+        // The accounting still calls it carried forward; the recorded evidence
+        // now says it changed.
+        rejects(row, 'but the recorded outputs and the previous stage make it');
+      });
+
+      it('rejects a retention that claims to have produced a candidate', () => {
+        const row = clone();
+        const retention = stage(row, 'retention');
+        const moved = (retention.modified as string[])[0];
+        retention.modified = (retention.modified as string[]).slice(1);
+        retention.produced = [moved];
+        rejects(row, 'retention produces no new candidate');
+      });
+    });
+
+    describe('accepted-turn audit lifecycle', () => {
+      function attempts(row: Row): Row[] {
+        return (row.runtime as Row).auditAttempts as Row[];
+      }
+
+      it('has a real retry-then-accept history to contradict', () => {
+        expect(attempts(VALID).map((item) => item.action)).toEqual([
+          'retry',
+          'accept',
+        ]);
+      });
+
+      for (const [verdict, action] of [
+        ['accept', 'accept'],
+        ['reject', 'repair'],
+        ['reject', 'fail'],
+      ] as const)
+        it(`rejects an intermediate ${action} verdict`, () => {
+          const row = clone();
+          // Locally coherent on every row, and the history still ends in
+          // `accept` — but the turn loop exits on accept/repair and throws on
+          // fail, so no such accepted turn could have run.
+          attempts(row)[0].verdict = verdict;
+          attempts(row)[0].action = action;
+          attempts(row)[0].retryCause = null;
+          rejects(row, 'only the final audited candidate');
+        });
+
+      it('rejects a capability event from an attempt that never ran', () => {
+        const row = clone();
+        expect(attempts(row)).toHaveLength(2);
+        ((row.runtime as Row).capabilityInvocations as Row[])[0].attempt = 3;
+        rejects(row, 'candidate attempt(s)');
+      });
+
+      it('rejects an attempt-2 event on a turn that ran no auditor', () => {
+        const row = clone();
+        (row.runtime as Row).auditorPresent = false;
+        (row.runtime as Row).auditAttempts = [];
+        ((row.runtime as Row).capabilityInvocations as Row[])[0].attempt = 2;
+        rejects(row, 'candidate attempt(s)');
+      });
     });
   });
 
