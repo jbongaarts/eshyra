@@ -4,7 +4,9 @@ import type {
   CampaignRuleReadSeam,
   CampaignRulingProjection,
   DiscoveryCandidate,
+  ReturnedRuleProjection,
   RuleJoinTrace,
+  SeamQuery,
 } from './types.js';
 import { NULL_CAMPAIGN_RULE_SEAM } from './types.js';
 
@@ -284,12 +286,44 @@ export function joinCampaignRules(
     );
   const outputs = [...result.values()];
   const accounting = accountCandidates(candidates, outputs);
+  // The canonical facts the durable projection carries. Every M5 summary below
+  // is derived from these at measurement time rather than trusted separately,
+  // so no stored summary can contradict the history it summarizes.
+  const seamQueries: SeamQuery[] = [
+    ...(ruleQueryExecuted
+      ? [{ kind: 'active-rules' as const, candidateRecordKeys: keys }]
+      : []),
+    ...(rulingQueryExecuted
+      ? [
+          {
+            kind: 'active-rulings' as const,
+            scope:
+              options.rulingsOnly === true
+                ? ('requested-ambiguities' as const)
+                : ('all-active' as const),
+            ambiguityIds,
+          },
+        ]
+      : []),
+  ];
+  // Passed through unchanged; discovery declares no shape of its own for it.
+  const returnedProjections: ReturnedRuleProjection[] = [...projections];
+  const consideredAmbiguityIds = [
+    ...new Set(
+      rawAmbiguities
+        .filter((item) => typeof item.id === 'string')
+        .map((item) => item.id as string),
+    ),
+  ];
   // A query that executed and returned nothing still RAN: under section 8.2 R7
   // that absence is itself evidence. Only a stage with nothing to ask about
   // is skipped.
   const didWork = asked;
   return {
     stage: options.stageName ?? 'rule-join',
+    seamQueries,
+    returnedProjections,
+    consideredAmbiguityIds,
     produced: accounting.produced,
     modified: accounting.modified,
     carriedForward: accounting.carriedForward,

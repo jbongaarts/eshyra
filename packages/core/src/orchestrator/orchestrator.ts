@@ -29,7 +29,8 @@ import {
   runtimeCapabilityInvocation,
 } from '../discovery/shadow.js';
 import type {
-  RuntimeAuditAttempt,
+  RuntimeAuditOutcome,
+  RuntimeAuditRetry,
   RuntimeCapabilityInvocation,
 } from '../discovery/types.js';
 import {
@@ -721,8 +722,12 @@ export async function runTurn(
   let dispositionAttempt = 0;
   let auditorCallCount = 0;
   const retryCauses: AuditRetryCause[] = [];
-  // Phase 2 M11 evidence: one entry per audited primary-DM candidate.
-  const shadowAuditAttempts: RuntimeAuditAttempt[] = [];
+  // Phase 2 M11 evidence, as the canonical audit lifecycle: the candidates the
+  // auditor rejected, then how the accepted one was admitted. A turn that fails
+  // its audit throws and persists no trace, so no failing terminal state is
+  // representable here.
+  const shadowAuditRetries: RuntimeAuditRetry[] = [];
+  let shadowAuditOutcome: RuntimeAuditOutcome | undefined;
   // Phase 2 M10 evidence, owned by the TURN rather than by any candidate
   // attempt. A rejected candidate's canonical writes roll back with its
   // savepoint; the fact that its capability preflight executed does not, so
@@ -988,13 +993,19 @@ export async function runTurn(
       if (retryCause !== null) {
         retryCauses.push(retryCause);
       }
-      shadowAuditAttempts.push({
-        attempt,
-        verdict: verdict.verdict,
-        action,
-        retryCause,
-        missingTools: auditMissingToolNames(verdict),
-      });
+      if (action === 'retry')
+        shadowAuditRetries.push({
+          retryCause,
+          missingTools: auditMissingToolNames(verdict),
+        });
+      else if (action === 'accept')
+        shadowAuditOutcome = { disposition: 'accepted' };
+      else if (action === 'repair')
+        shadowAuditOutcome = {
+          disposition: 'repaired',
+          retryCause: retryCause ?? 'presentation_only_roll_ledger',
+          missingTools: auditMissingToolNames(verdict),
+        };
       recordAuditDebug(deps.debug, {
         kind: 'turn_audit',
         trace: { ...auditTrace, purpose: 'turn_audit' },
@@ -1153,8 +1164,14 @@ export async function runTurn(
             discoveryShadow: encodeDiscoveryShadowEvidence(
               completeDiscoveryShadowEvidence(shadowCapture, {
                 capabilityInvocations: shadowCapabilityInvocations,
-                auditAttempts: shadowAuditAttempts,
-                auditorPresent: deps.auditor !== undefined,
+                audit:
+                  deps.auditor === undefined || shadowAuditOutcome === undefined
+                    ? { auditor: 'absent' }
+                    : {
+                        auditor: 'present',
+                        retries: shadowAuditRetries,
+                        outcome: shadowAuditOutcome,
+                      },
               }),
             ),
           }),

@@ -7,7 +7,7 @@
  * exploratory-only seed must not promote its typed neighbourhood into the
  * Related band and change retention pressure.
  */
-import type { CandidateBand, DiscoveryCandidate, RouteClass } from './types.js';
+import type { CandidateBand, DiscoveryRoute, RouteClass } from './types.js';
 
 const MUST_CONSIDER_ROUTES: readonly RouteClass[] = [
   'direct-state-ref',
@@ -18,8 +18,16 @@ const MUST_CONSIDER_ROUTES: readonly RouteClass[] = [
   'capability-preflight',
 ];
 
-/** The strongest band any of the candidate's routes earns. */
-export function candidateBand(candidate: DiscoveryCandidate): CandidateBand {
+/**
+ * The strongest band any of the candidate's routes earns.
+ *
+ * Takes only the routes, so the durable projection — which carries routes but
+ * not record bodies — can derive a band with this same rule instead of storing
+ * a second copy of it.
+ */
+export function candidateBand(candidate: {
+  readonly routes: readonly DiscoveryRoute[];
+}): CandidateBand {
   if (
     candidate.routes.some((route) =>
       MUST_CONSIDER_ROUTES.includes(route.routeClass),

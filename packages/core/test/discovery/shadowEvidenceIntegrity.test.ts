@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   CampaignRulesPackResolver,
+  ProjectedDiscoveryTrace,
   RulesPack,
   RuntimeCapabilityInvocation,
   TraceJsonValue,
@@ -10,8 +11,11 @@ import {
   completeDiscoveryShadowEvidence,
   createDefaultToolRegistry,
   DiscoveryShadowSchemaError,
+  deriveDiscoveryTrace,
   encodeDiscoveryShadowEvidence,
   MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
+  measureDiscovery,
+  measureRuntimeDiscovery,
   NULL_CAMPAIGN_RULE_SEAM,
   readDiscoveryShadowEvidence,
 } from '../../src/internal.js';
@@ -25,21 +29,29 @@ import {
 } from '../support/db.js';
 
 /**
- * The durable v1 read boundary.
+ * The durable v1 boundary, after the canonical-evidence redesign.
  *
- * The contract this suite defends: if `readDiscoveryShadowEvidence` returns a
- * `discovery-shadow-v1` value, every invariant M1-M11 or baseline qualification
- * relies on is ALREADY TRUE. Malformed same-version state must fail here rather
- * than becoming an absence, a vacuously green flag, an invented count, or an
- * exception inside a measurement.
+ * The record now holds canonical facts ONCE — the candidate stream, the seam's
+ * queries and returned projections, one retention disposition per decided
+ * candidate, one packet inclusion decision plus the included content, and the
+ * audit lifecycle as a discriminated shape. Every summary M1-M11 reports is
+ * derived from those at measurement time.
  *
- * Leaf types are the easy half. The invariants that keep costing review cycles
- * are semantic: required MEMBERSHIP (the five blockers), stage IDENTITY and
- * lifecycle legality, accounting PARTITIONS, and cross-field agreement. Those
- * are what this suite corrupts.
+ * That changes what has to be proved, so this suite proves two things rather
+ * than one:
  *
- * Every mutation asserts that the unmodified fixture really contains the state
- * it breaks, so no case can pass vacuously.
+ * 1. **Fail-closed admission.** A canonical record that could not have been
+ *    emitted — a broken identity, an uncovered decision, an impossible
+ *    lifecycle — is rejected at the read boundary.
+ * 2. **Truthful derivation.** A canonical record that IS admissible produces a
+ *    measurement that matches it, including when corrupted. There is no second
+ *    copy of any fact to move, so a corruption cannot make one surface say a
+ *    candidate was dropped while another says the packet is clean; it changes
+ *    the measurement truthfully instead.
+ *
+ * The second class is the one that closes the defect that survived four rounds
+ * of validator hardening, and it is why this file is much smaller than the
+ * predicate matrix it replaces.
  */
 
 const AT = '2026-05-20T10:00:00.000Z';
@@ -48,10 +60,10 @@ const CUBE = 'magic-item:cube-of-force';
 type Row = Record<string, unknown>;
 
 /**
- * One rich valid row: a Cube of Force capture (an ambiguity on the packet
+ * One rich valid row: a Cube of Force capture (ambiguities on the packet
  * candidate and on both rule joins, plus a blocked capability preflight) with a
- * real audit history and a runtime capability event. A fixture missing any of
- * that would make the corresponding mutations vacuous.
+ * real audit lifecycle and a runtime capability event. A fixture missing any of
+ * that would make the corresponding cases vacuous.
  */
 const VALID: Row = (() => {
   const db = freshDbWithSession();
@@ -80,23 +92,16 @@ const VALID: Row = (() => {
         }),
         {
           capabilityInvocations: [invocation],
-          auditorPresent: true,
-          auditAttempts: [
-            {
-              attempt: 1,
-              verdict: 'reject',
-              action: 'retry',
-              retryCause: 'missing_world_evidence',
-              missingTools: ['lookup_rules'],
-            },
-            {
-              attempt: 2,
-              verdict: 'accept',
-              action: 'accept',
-              retryCause: null,
-              missingTools: [],
-            },
-          ],
+          audit: {
+            auditor: 'present',
+            retries: [
+              {
+                retryCause: 'missing_world_evidence',
+                missingTools: ['lookup_rules'],
+              },
+            ],
+            outcome: { disposition: 'accepted' },
+          },
         },
       ),
     ) as Row;
@@ -109,13 +114,41 @@ function clone(): Row {
   return JSON.parse(JSON.stringify(VALID)) as Row;
 }
 
-/**
- * A clone with one field genuinely ABSENT at the given dotted path.
- *
- * Rebuilt rather than deleted or set to `undefined`: a stored row that lost a
- * field lost it entirely, and setting the key to `undefined` would test a shape
- * SQLite could never hold.
- */
+function trace(row: Row): Row {
+  return row.trace as Row;
+}
+
+function stage(row: Row, property: string): Row {
+  return trace(row)[property] as Row;
+}
+
+function candidates(row: Row, property: string): Row[] {
+  return stage(row, property).outputsProduced as Row[];
+}
+
+function packetContent(row: Row): Row[] {
+  return stage(row, 'packet').candidates as Row[];
+}
+
+function admitted(row: Row): ProjectedDiscoveryTrace {
+  const evidence = readDiscoveryShadowEvidence(row as TraceJsonValue);
+  if (evidence?.trace === undefined)
+    throw new Error('the row was admitted without a trace');
+  return evidence.trace;
+}
+
+function rejects(row: unknown, at: string): void {
+  let thrown: unknown;
+  try {
+    readDiscoveryShadowEvidence(row as TraceJsonValue);
+  } catch (error) {
+    thrown = error;
+  }
+  expect(thrown).toBeInstanceOf(DiscoveryShadowSchemaError);
+  expect((thrown as Error).message).toContain(at);
+}
+
+/** A clone with one field genuinely ABSENT at the given dotted path. */
 function withoutField(path: string): Row {
   const parts = path.split('.');
   const last = parts[parts.length - 1];
@@ -132,82 +165,8 @@ function withoutField(path: string): Row {
   return row;
 }
 
-function trace(row: Row): Row {
-  return row.trace as Row;
-}
-
-function stage(row: Row, property: string): Row {
-  return trace(row)[property] as Row;
-}
-
-function packetCandidates(row: Row): Row[] {
-  return (stage(row, 'packet').packet as Row).candidates as Row[];
-}
-
-/** The Cube of Force packet candidate: the one carrying ambiguities and a capability. */
-function cubeCandidate(row: Row): Row {
-  const found = packetCandidates(row).find(
-    (candidate) => (candidate.identity as Row).key === CUBE,
-  );
-  if (found === undefined)
-    throw new Error('the valid fixture has no Cube of Force packet candidate');
-  return found;
-}
-
-function cubeIndex(): number {
-  return packetCandidates(VALID).findIndex(
-    (candidate) => (candidate.identity as Row).key === CUBE,
-  );
-}
-
-function emittedIds(row: Row, property: string): string[] {
-  const outputs = stage(row, property).outputsProduced as Row[];
-  if (property === 'signals')
-    return outputs.map((item) => item.signalId as string);
-  if (property === 'packet')
-    return outputs.map((item) => (item.identity as Row).key as string);
-  return outputs.map((item) => item.candidateKey as string);
-}
-
-/** The stage property whose recorded state a mutation needs, or a hard failure. */
-function stageWith(predicate: (stage: Row) => boolean): string {
-  const property = [
-    'signals',
-    'candidates',
-    'expansion',
-    'ruleJoin',
-    'ruleExpansion',
-    'lateRuleJoin',
-    'dedup',
-    'retention',
-    'packet',
-  ].find((name) => predicate(stage(VALID, name)));
-  if (property === undefined)
-    throw new Error('the valid fixture has no stage in the required state');
-  return property;
-}
-
-function rejects(row: unknown, at: string): void {
-  let thrown: unknown;
-  try {
-    readDiscoveryShadowEvidence(row as TraceJsonValue);
-  } catch (error) {
-    thrown = error;
-  }
-  expect(thrown).toBeInstanceOf(DiscoveryShadowSchemaError);
-  expect((thrown as Error).message).toContain(at);
-}
-
-describe('durable v1 evidence fails closed', () => {
-  it('accepts the value it writes, and reads absence as absence', () => {
-    expect(readDiscoveryShadowEvidence(VALID as TraceJsonValue)?.schema).toBe(
-      'discovery-shadow-v1',
-    );
-    expect(readDiscoveryShadowEvidence(undefined)).toBeUndefined();
-    expect(readDiscoveryShadowEvidence(null)).toBeUndefined();
-  });
-
-  it('has the rich state the mutations below corrupt', () => {
+describe('the canonical durable record', () => {
+  it('holds the rich state the cases below rely on', () => {
     expect((VALID.blockerRepairs as Row[]).map((b) => b.blockerId)).toEqual([
       'B1',
       'B2',
@@ -215,18 +174,59 @@ describe('durable v1 evidence fails closed', () => {
       'B4',
       'B5',
     ]);
-    const cube = cubeCandidate(VALID);
+    const cube = packetContent(VALID).find(
+      (item) => (item.identity as Row).key === CUBE,
+    );
+    if (cube === undefined)
+      throw new Error(
+        'the valid fixture has no Cube of Force packet candidate',
+      );
     expect((cube.ambiguities as unknown[]).length).toBeGreaterThan(0);
     expect(cube.capability).toMatchObject({ status: 'blocked' });
     for (const join of ['ruleJoin', 'lateRuleJoin'])
       expect(
-        (stage(VALID, join).unresolvedAmbiguities as unknown[]).length,
+        (stage(VALID, join).consideredAmbiguityIds as unknown[]).length,
       ).toBeGreaterThan(0);
-    expect((VALID.runtime as Row).auditorPresent).toBe(true);
-    expect(((VALID.runtime as Row).auditAttempts as unknown[]).length).toBe(2);
+    expect((stage(VALID, 'ruleJoin').seamQueries as unknown[]).length).toBe(2);
     expect(
-      ((VALID.runtime as Row).capabilityInvocations as unknown[]).length,
-    ).toBe(1);
+      (stage(VALID, 'retention').dispositions as unknown[]).length,
+    ).toBeGreaterThan(1);
+    expect((VALID.runtime as Row).audit).toMatchObject({ auditor: 'present' });
+  });
+
+  it('records no summary a measurement could contradict', () => {
+    // The redundant surfaces the previous rounds kept re-proving consistent are
+    // simply not stored any more.
+    for (const property of ['signals', 'candidates', 'expansion', 'dedup'])
+      for (const field of [
+        'produced',
+        'modified',
+        'carriedForward',
+        'failedToRun',
+      ])
+        expect(stage(VALID, property)[field]).toBeUndefined();
+    expect(stage(VALID, 'expansion').traversals).toBeUndefined();
+    for (const field of ['returnedRuleIdentities', 'placedRuleIdentities'])
+      expect(stage(VALID, 'ruleJoin')[field]).toBeUndefined();
+    for (const field of ['dropped', 'overflow', 'overflowed', 'losses'])
+      expect(stage(VALID, 'retention')[field]).toBeUndefined();
+    for (const field of [
+      'bytes',
+      'byteOverflow',
+      'byteBudgetExceeded',
+      'losses',
+    ])
+      expect(stage(VALID, 'packet')[field]).toBeUndefined();
+    expect(trace(VALID).stageOrder).toBeUndefined();
+    expect((VALID.runtime as Row).auditorPresent).toBeUndefined();
+  });
+
+  it('accepts the value it writes, and reads absence as absence', () => {
+    expect(readDiscoveryShadowEvidence(VALID as TraceJsonValue)?.schema).toBe(
+      'discovery-shadow-v1',
+    );
+    expect(readDiscoveryShadowEvidence(undefined)).toBeUndefined();
+    expect(readDiscoveryShadowEvidence(null)).toBeUndefined();
   });
 
   it('rejects a non-object and an unknown schema tag', () => {
@@ -243,32 +243,215 @@ describe('durable v1 evidence fails closed', () => {
       'trace/failure',
     );
   });
+});
 
+/**
+ * A corrupted canonical fact changes the measurement TRUTHFULLY. This is the
+ * property the redesign buys: with no independently trusted second copy, a
+ * coordinated corruption cannot exist, because there is nothing to coordinate
+ * with.
+ */
+describe('measurements follow the canonical record', () => {
+  it('reports a dropped must-consider candidate as an overflow, always', () => {
+    const row = clone();
+    const dispositions = stage(row, 'retention').dispositions as Row[];
+    const target = dispositions.find((item) => item.retained === true) as Row;
+    const key = target.candidateKey as string;
+    expect(measureDiscovery(admitted(row)).m6.allMustConsiderRetained).toBe(
+      true,
+    );
+
+    // Flip the ONE canonical fact. There is no overflow array or flag to leave
+    // behind: M6's overflow, its flag and M7's drop list are all derived from
+    // this decision.
+    target.retained = false;
+    target.reason = 'must-consider set exceeds maxCandidates';
+    // The packet decided over the retained set, so its decision goes too.
+    stage(row, 'packet').decisions = (
+      stage(row, 'packet').decisions as Row[]
+    ).filter((item) => item.candidateKey !== key);
+    stage(row, 'packet').candidates = packetContent(row).filter(
+      (item) => (item.identity as Row).key !== key,
+    );
+
+    const derived = deriveDiscoveryTrace(admitted(row));
+    expect(derived.retention.overflowed).toBe(true);
+    expect(derived.retention.overflow.map((item) => item.candidateKey)).toEqual(
+      [key],
+    );
+    const m = measureDiscovery(admitted(row), {
+      mustIncludeTargetRefs: [key],
+    });
+    expect(m.m6.allMustConsiderRetained).toBe(false);
+    expect(m.m6.overflow.map((item) => item.candidateKey)).toEqual([key]);
+    // ... and the same fact reaches M1/M2/M7 rather than contradicting them.
+    expect(m.m1[key]).toBe(false);
+    expect(m.m2[key]).toBe('retention');
+    expect(m.m7.drops.map((item) => item.candidateKey)).toContain(key);
+  });
+
+  it('reports a traversal as fired only while a candidate carries it', () => {
+    const row = clone();
+    const carrier = candidates(row, 'expansion').find(
+      (item) => (item.traversals as unknown[]).length > 0,
+    );
+    if (carrier === undefined)
+      throw new Error('the valid fixture records no traversal');
+    const traversal = (carrier.traversals as Record<string, unknown>[])[0];
+    expect(
+      measureDiscovery(admitted(row), {
+        requiredRelationshipExpansion: [traversal as never],
+      }).m4[0].result,
+    ).not.toBe('not-fired');
+
+    // Remove it from the candidate — the only place it is recorded. There is
+    // no stage-level list left holding the opposite claim.
+    for (const item of candidates(row, 'expansion'))
+      item.traversals = (item.traversals as Record<string, unknown>[]).filter(
+        (entry) => JSON.stringify(entry) !== JSON.stringify(traversal),
+      );
+    expect(
+      deriveDiscoveryTrace(admitted(row)).expansion.traversals,
+    ).not.toContainEqual(traversal);
+    expect(
+      measureDiscovery(admitted(row), {
+        requiredRelationshipExpansion: [traversal as never],
+      }).m4[0].result,
+    ).toBe('not-fired');
+  });
+
+  it('reports a rule as matched only while a placement records it', () => {
+    const db = freshDbWithSession();
+    try {
+      // A capture whose join really placed a rule beside governing material.
+      const resolver = installCursedAttunementAddon(db, AT);
+      const ring = CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF;
+      const seam = {
+        activeRulesAtPosition: () => [
+          {
+            ruleIdentity: 'house-rule:test',
+            ruleKind: 'house-rule' as const,
+            status: 'active',
+            origin: 'player-authored',
+            provenance: 'house-rule',
+            effectivePosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+            supersededBy: null,
+            revokedPosition: null,
+            scope: 'campaign',
+            governingRecordKeys: [ring],
+          },
+        ],
+        activeRulingsForAmbiguities: () => [],
+      };
+      const capture = captureDiscoveryShadow({
+        db,
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+        capturedAt: AT,
+        playerInput: 'I turn the ring over.',
+        stateFields: { itemRecord: ring },
+        itemInstances: [],
+        campaignRuleSeam: seam,
+        resolveRulesPack: resolver,
+        tools: createDefaultToolRegistry(),
+      });
+      const row = JSON.parse(
+        JSON.stringify(
+          encodeDiscoveryShadowEvidence(
+            completeDiscoveryShadowEvidence(capture, {
+              capabilityInvocations: [],
+              audit: { auditor: 'absent' },
+            }),
+          ),
+        ),
+      ) as Row;
+      expect(
+        (stage(row, 'ruleJoin').placements as unknown[]).length,
+      ).toBeGreaterThan(0);
+      expect(measureDiscovery(admitted(row)).m5.matched).toEqual([
+        'house-rule:test',
+      ]);
+
+      // Remove the placement. `matched`, `unplaced` and the placement detail
+      // all move together because all three are derived from it.
+      stage(row, 'ruleJoin').placements = [];
+      const m5 = measureDiscovery(admitted(row)).m5;
+      expect(m5.matched).toEqual([]);
+      expect(m5.unplaced).toEqual(['house-rule:test']);
+      expect(m5.placed).toEqual([]);
+      // The retrieval itself is unchanged, because that is a different fact.
+      expect(m5.returned).toEqual(['house-rule:test']);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('cannot resolve an ambiguity no returned ruling decided', () => {
+    const row = clone();
+    // M5 reports the LATE join's unresolved set, so that is the stage to try
+    // this on.
+    const join = stage(row, 'lateRuleJoin');
+    expect(join.returnedProjections).toEqual([]);
+    // Adding an id to what the stage considered cannot manufacture a
+    // resolution: resolution derives from a placed RULING, not from a list.
+    join.consideredAmbiguityIds = [
+      ...(join.consideredAmbiguityIds as string[]),
+      'ambiguity:invented',
+    ];
+    const m5 = measureDiscovery(admitted(row)).m5;
+    expect(m5.resolvedAmbiguityIds).toEqual([]);
+    expect(m5.unresolvedAmbiguityIds).toContain('ambiguity:invented');
+  });
+
+  it('derives auditor presence and causes from the lifecycle alone', () => {
+    const row = clone();
+    const observations = (record: Row) => ({
+      capabilityInvocations: [],
+      audit: (record.runtime as Row).audit as never,
+    });
+    const withAuditor = measureRuntimeDiscovery(
+      admitted(row),
+      observations(row),
+    ).m11;
+    expect(withAuditor).toMatchObject({
+      auditorAbsent: false,
+      primaryDmCandidates: 2,
+      retries: 1,
+      failures: 0,
+      missingRuleEvidenceRetries: 1,
+      byCause: { missing_world_evidence: 1 },
+    });
+
+    (row.runtime as Row).audit = { auditor: 'absent' };
+    expect(
+      measureRuntimeDiscovery(admitted(row), observations(row)).m11,
+    ).toMatchObject({
+      auditorAbsent: true,
+      primaryDmCandidates: 0,
+      retries: 0,
+    });
+  });
+});
+
+/** Canonical records a real run could not have emitted are refused. */
+describe('canonical admissibility', () => {
   describe('blocker membership', () => {
-    it('rejects an omitted blocker', () => {
-      const row = clone();
-      row.blockerRepairs = (row.blockerRepairs as Row[]).filter(
+    it('rejects an omitted, duplicated or empty blocker set', () => {
+      const omitted = clone();
+      omitted.blockerRepairs = (omitted.blockerRepairs as Row[]).filter(
         (item) => item.blockerId !== 'B1',
       );
-      expect((row.blockerRepairs as Row[]).length).toBe(4);
-      rejects(row, 'omits B1');
-    });
+      rejects(omitted, 'omits B1');
 
-    it('rejects a duplicated blocker', () => {
-      const row = clone();
-      const b3 = (row.blockerRepairs as Row[]).find(
-        (item) => item.blockerId === 'B3',
-      );
-      row.blockerRepairs = [...(row.blockerRepairs as Row[]), b3 as Row];
-      rejects(row, 'repeats a blocker id');
-    });
+      const duplicated = clone();
+      duplicated.blockerRepairs = [
+        ...(duplicated.blockerRepairs as Row[]),
+        (duplicated.blockerRepairs as Row[])[2],
+      ];
+      rejects(duplicated, 'repeats a blocker id');
 
-    it('rejects an empty blocker list on a successful trace', () => {
-      // The dangerous shape: every `all repaired` baseline check passes
-      // vacuously over an empty set.
-      const row = clone();
-      row.blockerRepairs = [];
-      rejects(row, 'omits B1');
+      const empty = clone();
+      empty.blockerRepairs = [];
+      rejects(empty, 'omits B1');
     });
 
     it('still requires the complete set when discovery itself failed', () => {
@@ -287,223 +470,267 @@ describe('durable v1 evidence fails closed', () => {
           readDiscoveryShadowEvidence(row as TraceJsonValue)?.failure?.stage,
         ).toBe(stageName);
       }
-      // ... but never a duplicate, whenever it did record some.
-      const b1 = (VALID.blockerRepairs as Row[])[0];
-      row.blockerRepairs = [b1, b1];
-      row.failure = { stage: 'blockers', message: 'x' };
-      rejects(row, 'repeats a blocker id');
     });
   });
 
-  describe('stage identity, order and lifecycle', () => {
+  describe('stage identity and lifecycle', () => {
     it('rejects a mandatory stage reporting a conditional skip', () => {
       const row = clone();
-      const signals = stage(row, 'signals');
-      expect(signals.outcome).toBe('ran');
-      signals.outcome = 'skipped';
-      signals.produced = [];
-      signals.modified = [];
-      signals.carriedForward = emittedIds(row, 'signals');
-      signals.losses = [];
+      expect(stage(row, 'signals').outcome).toBe('ran');
+      stage(row, 'signals').outcome = 'skipped';
       rejects(row, 'not a conditional stage');
     });
 
     it('rejects a conditional stage reporting failed-to-run', () => {
       const row = clone();
-      const conditional = stage(row, 'lateRuleJoin');
-      expect(conditional.outcome).toBe('skipped');
-      conditional.outcome = 'failed-to-run';
-      conditional.failedToRun = true;
+      expect(stage(row, 'lateRuleJoin').outcome).toBe('skipped');
+      stage(row, 'lateRuleJoin').outcome = 'failed-to-run';
       rejects(row, "never 'failed-to-run'");
-    });
-
-    it('rejects a stage that claims work while reporting it did none', () => {
-      const row = clone();
-      const signals = stage(row, 'signals');
-      signals.outcome = 'failed-to-run';
-      signals.failedToRun = true;
-      rejects(row, 'did no work');
     });
 
     it('rejects a wrong embedded stage name', () => {
       const row = clone();
-      expect(stage(row, 'dedup').stage).toBe('dedup');
       stage(row, 'dedup').stage = 'retention';
       rejects(row, 'not the v1 stage');
     });
+  });
 
-    it('rejects a reordered stage order', () => {
+  describe('decision coverage', () => {
+    it('rejects a retention that decided over fewer candidates than dedup emitted', () => {
       const row = clone();
-      const order = trace(row).stageOrder as string[];
-      expect(order[0]).toBe('signals');
-      trace(row).stageOrder = [order[1], order[0], ...order.slice(2)];
-      rejects(row, 'not the v1 order');
+      const dispositions = stage(row, 'retention').dispositions as Row[];
+      expect(dispositions.length).toBeGreaterThan(1);
+      const dropped = dispositions[0].candidateKey as string;
+      // A silent omission: no disposition, no drop, no loss — the candidate
+      // would simply vanish from every measurement at once.
+      stage(row, 'retention').dispositions = dispositions.slice(1);
+      stage(row, 'packet').decisions = (
+        stage(row, 'packet').decisions as Row[]
+      ).filter((item) => item.candidateKey !== dropped);
+      stage(row, 'packet').candidates = packetContent(row).filter(
+        (item) => (item.identity as Row).key !== dropped,
+      );
+      rejects(row, 'records no disposition for');
     });
 
-    it('rejects a truncated stage order', () => {
+    it('rejects a retention that decided a candidate twice', () => {
       const row = clone();
-      trace(row).stageOrder = (trace(row).stageOrder as string[]).slice(0, 8);
-      rejects(row, 'not the v1 order');
+      const dispositions = stage(row, 'retention').dispositions as Row[];
+      stage(row, 'retention').dispositions = [...dispositions, dispositions[0]];
+      rejects(row, 'decides one candidate twice');
+    });
+
+    it('rejects a retained candidate carrying an exclusion reason', () => {
+      const row = clone();
+      (stage(row, 'retention').dispositions as Row[])[0].reason = 'invented';
+      rejects(row, 'is present on a retained candidate');
+    });
+
+    it('rejects a dropped candidate with no reason', () => {
+      const row = clone();
+      const dispositions = stage(row, 'retention').dispositions as Row[];
+      dispositions[0].retained = false;
+      rejects(row, 'dispositions[0].reason');
+    });
+
+    it('rejects packet content for a candidate the packet excluded', () => {
+      const row = clone();
+      const decisions = stage(row, 'packet').decisions as Row[];
+      decisions[0].retained = false;
+      decisions[0].reason = 'packet byte budget';
+      rejects(row, 'while the recorded decisions include');
+    });
+
+    it('rejects packet content the decisions never included', () => {
+      const row = clone();
+      const content = packetContent(row);
+      stage(row, 'packet').candidates = [...content, content[0]];
+      rejects(row, 'repeats a candidate identity');
+    });
+
+    it('rejects a packet that decided over something retention did not keep', () => {
+      const row = clone();
+      stage(row, 'packet').decisions = [
+        ...(stage(row, 'packet').decisions as Row[]),
+        { candidateKey: 'rule:never-retained', retained: false, reason: 'x' },
+      ];
+      rejects(row, 'decides');
+    });
+
+    it('rejects losses stored on a stage that derives them', () => {
+      const row = clone();
+      stage(row, 'retention').losses = [
+        { reason: 'invented', detail: { candidateKey: 'x' } },
+      ];
+      rejects(row, 'whose losses are derived from its decisions');
     });
   });
 
-  describe('stage accounting integrity', () => {
-    it('rejects a repeated accounting identity', () => {
-      const property = stageWith(
-        (item) => (item.produced as string[]).length > 0,
-      );
+  describe('canonical seam evidence', () => {
+    function join(row: Row): Row {
+      return stage(row, 'ruleJoin');
+    }
+
+    it('rejects two queries of one kind in one stage', () => {
       const row = clone();
-      const target = stage(row, property);
-      target.produced = [
-        ...(target.produced as string[]),
-        (target.produced as string[])[0],
+      const queries = join(row).seamQueries as Row[];
+      join(row).seamQueries = [...queries, queries[0]];
+      rejects(row, 'records a second');
+    });
+
+    it('rejects a placement of an identity the seam did not return', () => {
+      const row = clone();
+      join(row).placements = [
+        { ruleIdentity: 'house-rule:never', governingRecordKey: CUBE },
       ];
-      rejects(row, 'repeat an identity');
+      rejects(row, 'which the seam did not return here');
     });
 
-    it('rejects one identity claimed by two accounting sets', () => {
-      const property = stageWith(
-        (item) =>
-          item.outcome === 'ran' &&
-          (item.carriedForward as string[]).length > 0,
-      );
+    it('rejects a placement beside material the stage did not emit', () => {
       const row = clone();
-      const target = stage(row, property);
-      target.modified = [
-        ...(target.modified as string[]),
-        (target.carriedForward as string[])[0],
-      ];
-      rejects(row, 'repeat an identity');
-    });
-
-    it('rejects an emitted identity missing from the accounting', () => {
-      const property = stageWith(
-        (item) => (item.produced as string[]).length > 1,
-      );
-      const row = clone();
-      const target = stage(row, property);
-      target.produced = (target.produced as string[]).slice(1);
-      rejects(row, 'but emitted');
-    });
-
-    it('rejects accounting for an identity that was never emitted', () => {
-      const property = stageWith(
-        (item) => (item.produced as string[]).length > 0,
-      );
-      const row = clone();
-      const target = stage(row, property);
-      const kept = target.produced as string[];
-      target.produced = [...kept.slice(1), 'candidate:never-emitted'];
-      rejects(row, 'which it did not emit');
-    });
-
-    it('rejects a duplicated emitted packet candidate', () => {
-      const row = clone();
-      const candidates = packetCandidates(row);
-      expect(candidates.length).toBeGreaterThan(1);
-      const duplicated = [...candidates, candidates[0]];
-      // Duplicated on BOTH packet surfaces and accounted for, so the row is
-      // internally consistent and only the uniqueness rule rejects it.
-      (stage(row, 'packet').packet as Row).candidates = duplicated;
-      stage(row, 'packet').outputsProduced = duplicated;
-      stage(row, 'packet').produced = duplicated.map(
-        (candidate) => (candidate.identity as Row).key as string,
-      );
-      const packet = stage(row, 'packet').packet as Row;
-      packet.bytes = Buffer.byteLength(
-        JSON.stringify(packet.candidates),
-        'utf8',
-      );
-      // Whichever uniqueness rule speaks first, a duplicate cannot be
-      // admitted: M1, M3 and M7 would all count it twice.
-      rejects(row, 'repeat an identity');
-    });
-
-    it('rejects packet surfaces that disagree about what reached the packet', () => {
-      // M2 reads the stage's outputs; M1, M3 and M7 read the packet's
-      // candidates. A same-count substitution would let one row tell two
-      // stories.
-      const row = clone();
-      const outputs = stage(row, 'packet').outputsProduced as Row[];
-      expect(outputs.length).toBeGreaterThan(1);
-      stage(row, 'packet').outputsProduced = [outputs[1], ...outputs.slice(1)];
-      rejects(row, 'while the packet holds');
-    });
-  });
-
-  describe('cross-field semantics M6 and M7 read', () => {
-    it('rejects an overflow record that the flag denies', () => {
-      const row = clone();
-      const retention = stage(row, 'retention');
-      expect(retention.overflowed).toBe(false);
-      retention.overflow = [
+      join(row).returnedProjections = [
         {
-          candidateKey: emittedIds(row, 'retention')[0],
-          band: 'must-consider',
-          routes: [],
-          reason: 'forged',
+          ruleIdentity: 'house-rule:x',
+          ruleKind: 'house-rule',
+          status: 'active',
+          origin: 'player-authored',
+          provenance: 'house-rule',
+          effectivePosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+          supersededBy: null,
+          revokedPosition: null,
+          scope: 'campaign',
+          governingRecordKeys: ['rule:absent'],
         },
       ];
-      rejects(row, 'overflow record(s) are present');
+      join(row).placements = [
+        { ruleIdentity: 'house-rule:x', governingRecordKey: 'rule:absent' },
+      ];
+      rejects(row, 'which this stage did not emit');
     });
 
-    it('rejects a forged packet byte count', () => {
+    it('rejects a returned ruling with no ambiguity link', () => {
       const row = clone();
-      const packet = stage(row, 'packet').packet as Row;
-      expect(typeof packet.bytes).toBe('number');
-      packet.bytes = 12;
-      rejects(row, 'serialize to');
+      join(row).returnedProjections = [
+        {
+          ruleIdentity: 'ruling:x',
+          ruleKind: 'ruling',
+          status: 'active',
+          origin: 'player-authored',
+          provenance: 'ambiguity:x#y',
+          effectivePosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+          supersededBy: null,
+          revokedPosition: null,
+          scope: 'campaign',
+          governingRecordKeys: [CUBE],
+        },
+      ];
+      rejects(row, 'ambiguityId');
+    });
+
+    it('rejects a repeated returned identity', () => {
+      const row = clone();
+      const projection = {
+        ruleIdentity: 'house-rule:x',
+        ruleKind: 'house-rule',
+        status: 'active',
+        origin: 'player-authored',
+        provenance: 'house-rule',
+        effectivePosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+        supersededBy: null,
+        revokedPosition: null,
+        scope: 'campaign',
+        governingRecordKeys: [CUBE],
+      };
+      join(row).returnedProjections = [projection, projection];
+      rejects(row, 'repeats a rule identity');
     });
   });
 
-  describe('packet capability identity', () => {
-    function evaluated(row: Row): Row {
-      return cubeCandidate(row).capability as Row;
-    }
+  describe('candidate and packet identity', () => {
+    it('rejects a repeated emitted candidate', () => {
+      const row = clone();
+      const emitted = candidates(row, 'dedup');
+      stage(row, 'dedup').outputsProduced = [...emitted, emitted[0]];
+      rejects(row, 'repeats a candidate identity');
+    });
+
+    it('rejects a repeated signal identity', () => {
+      const row = clone();
+      const emitted = candidates(row, 'signals');
+      stage(row, 'signals').outputsProduced = [...emitted, emitted[0]];
+      rejects(row, 'repeats a signal identity');
+    });
 
     for (const key of ['capabilityId', 'revision', 'operationId'])
       it(`rejects an evaluated capability missing ${key}`, () => {
-        expect(evaluated(VALID)[key]).toBeDefined();
+        const index = packetContent(VALID).findIndex(
+          (item) => item.capability !== undefined,
+        );
+        expect(index).toBeGreaterThanOrEqual(0);
         rejects(
-          withoutField(
-            `trace.packet.packet.candidates.${cubeIndex()}.capability.${key}`,
-          ),
+          withoutField(`trace.packet.candidates.${index}.capability.${key}`),
           `capability.${key}`,
         );
       });
 
-    it('accepts a not-evaluated-offline declaration without them', () => {
+    for (const broken of [{}, { id: 7 }, { id: null }])
+      it(`rejects a packet ambiguity of ${JSON.stringify(broken)}`, () => {
+        const row = clone();
+        const cube = packetContent(row).find(
+          (item) => (item.identity as Row).key === CUBE,
+        ) as Row;
+        expect((cube.ambiguities as unknown[]).length).toBeGreaterThan(0);
+        (cube.ambiguities as unknown[])[0] = broken;
+        rejects(row, 'ambiguities[0].id');
+      });
+
+    it('rejects a jhpt projection carrying no rule identity', () => {
       const row = clone();
-      const capability = evaluated(row);
-      capability.status = 'not-evaluated-offline';
-      capability.revision = undefined;
-      capability.operationId = undefined;
-      // The packet's recorded size is part of the same evidence, so a rewritten
-      // packet has to carry the size it actually serializes to.
-      const packet = stage(row, 'packet').packet as Row;
-      packet.bytes = Buffer.byteLength(
-        JSON.stringify(packet.candidates),
-        'utf8',
-      );
-      expect(readDiscoveryShadowEvidence(row as TraceJsonValue)?.schema).toBe(
-        'discovery-shadow-v1',
-      );
+      packetContent(row)[0].campaignRulings = [{ prose: 'no identity' }];
+      rejects(row, 'campaignRulings[0].ruleIdentity');
     });
   });
 
-  describe('runtime capability events', () => {
-    function invocation(row: Row): Row {
-      return ((row.runtime as Row).capabilityInvocations as Row[])[0];
+  describe('audit lifecycle', () => {
+    function audit(row: Row): Row {
+      return (row.runtime as Row).audit as Row;
     }
 
-    for (const key of [
-      'recordKey',
-      'capabilityRevision',
-      'operationId',
-      'instanceId',
-    ])
-      it(`rejects an event missing ${key}`, () => {
-        expect(invocation(VALID)[key]).toBeDefined();
+    it('rejects an accepted outcome carrying a rejection cause', () => {
+      const row = clone();
+      (audit(row).outcome as Row).retryCause = 'missing_world_evidence';
+      rejects(row, 'is present on an accepted verdict');
+    });
+
+    it('rejects retries or an outcome recorded for an absent auditor', () => {
+      const row = clone();
+      const retries = audit(row).retries;
+      (row.runtime as Row).audit = { auditor: 'absent', retries };
+      rejects(row, 'while no auditor ran');
+    });
+
+    it('rejects an outcome that is neither acceptance nor repair', () => {
+      const row = clone();
+      (audit(row).outcome as Row).disposition = 'failed';
+      rejects(row, 'outcome.disposition');
+    });
+
+    it('rejects a capability event from an attempt that never ran', () => {
+      const row = clone();
+      // One retry plus the acceptance is two candidates; there was no third.
+      ((row.runtime as Row).capabilityInvocations as Row[])[0].attempt = 3;
+      rejects(row, 'candidate attempt(s)');
+    });
+
+    it('rejects an attempt-2 event on a turn that ran no auditor', () => {
+      const row = clone();
+      (row.runtime as Row).audit = { auditor: 'absent' };
+      ((row.runtime as Row).capabilityInvocations as Row[])[0].attempt = 2;
+      rejects(row, 'candidate attempt(s)');
+    });
+
+    for (const key of ['recordKey', 'capabilityRevision', 'operationId'])
+      it(`rejects a capability event missing ${key}`, () => {
         rejects(
           withoutField(`runtime.capabilityInvocations.0.${key}`),
           `capabilityInvocations[0].${key}`,
@@ -511,502 +738,39 @@ describe('durable v1 evidence fails closed', () => {
       });
 
     for (const attempt of [0, 1.5, -1])
-      it(`rejects an event with attempt ${attempt}`, () => {
+      it(`rejects a capability event with attempt ${attempt}`, () => {
         const row = clone();
-        invocation(row).attempt = attempt;
+        ((row.runtime as Row).capabilityInvocations as Row[])[0].attempt =
+          attempt;
         rejects(row, 'a candidate attempt is an integer from 1');
       });
-
-    it('rejects an outcome that is not a capability status', () => {
-      const row = clone();
-      invocation(row).outcome = 'not-a-capability-outcome';
-      rejects(row, 'capabilityInvocations[0].outcome');
-    });
   });
 
-  describe('M11 auditor presence and history', () => {
-    function runtime(row: Row): Row {
-      return row.runtime as Row;
-    }
-
-    it('rejects a present auditor with no recorded verdict', () => {
+  describe('scenario and non-claim', () => {
+    it('rejects a fabricated non-claim', () => {
       const row = clone();
-      runtime(row).auditAttempts = [];
-      rejects(row, 'is empty while runtime.auditorPresent is true');
+      row.modelUsageClaim = 'the model used it';
+      rejects(row, 'modelUsageClaim');
     });
 
-    it('rejects an absent auditor with recorded verdicts', () => {
+    it('rejects a malformed scenario binding', () => {
       const row = clone();
-      runtime(row).auditorPresent = false;
-      rejects(row, 'runtime.auditorPresent is false');
+      (row.scenario as Row).itemInstances = [{ instanceId: 'x' }];
+      rejects(row, 'scenario.itemInstances[0].recordKey');
     });
 
-    it('rejects non-sequential attempt numbers', () => {
-      const row = clone();
-      (runtime(row).auditAttempts as Row[])[1].attempt = 3;
-      rejects(row, 'numbered sequentially from 1');
-    });
-
-    it('rejects duplicated attempt numbers', () => {
-      const row = clone();
-      (runtime(row).auditAttempts as Row[])[1].attempt = 1;
-      rejects(row, 'numbered sequentially from 1');
-    });
-
-    it('rejects an accepted-turn history ending in a retry or a failure', () => {
-      for (const [verdict, action] of [
-        ['reject', 'retry'],
-        ['reject', 'fail'],
-      ] as const) {
-        const row = clone();
-        const attempts = runtime(row).auditAttempts as Row[];
-        attempts[1].verdict = verdict;
-        attempts[1].action = action;
-        rejects(row, "ends in 'accept' or 'repair'");
-      }
-    });
-
-    it('rejects an incoherent verdict and action', () => {
-      const row = clone();
-      (runtime(row).auditAttempts as Row[])[0].action = 'accept';
-      rejects(row, 'not coherent with verdict');
-    });
-  });
-
-  /**
-   * COORDINATED corruptions: both sides of a relation moved together, so every
-   * field stays locally well-formed and only the relation that gives them
-   * meaning is violated. A pairwise flag check cannot see any of these.
-   */
-  describe('coordinated cross-surface contradictions', () => {
-    /** A row whose retention really dropped a must-consider candidate. */
-    function withMustConsiderDrop(): Row {
-      const row = clone();
-      const retention = stage(row, 'retention');
-      const key = emittedIds(row, 'retention')[0];
-      const record = {
-        candidateKey: key,
-        band: 'must-consider',
-        routes: [],
-        reason: 'must-consider set exceeds maxCandidates',
-      };
-      retention.dropped = [record];
-      retention.overflow = [record];
-      retention.overflowed = true;
-      return row;
-    }
-
-    it('rejects a must-consider drop whose overflow was cleared with the flag', () => {
-      const witness = withMustConsiderDrop();
-      // The fixture really is in the state being corrupted.
-      expect(
-        readDiscoveryShadowEvidence(witness as TraceJsonValue)?.trace?.retention
-          .overflowed,
-      ).toBe(true);
-      const retention = stage(witness, 'retention');
-      // Both sides move together: the drop stays, the overflow and its flag go.
-      retention.overflow = [];
-      retention.overflowed = false;
-      rejects(witness, 'while no overflow record names it');
-    });
-
-    it('rejects a must-consider packet drop whose byte overflow was cleared', () => {
-      const row = clone();
-      const packet = stage(row, 'packet');
-      const key = emittedIds(row, 'packet')[0];
-      const record = {
-        candidateKey: key,
-        band: 'must-consider',
-        routes: [],
-        reason: 'packet byte budget: candidate needs 10 bytes, 0 remain',
-      };
-      packet.dropped = [record];
-      packet.byteOverflow = [record];
-      packet.byteBudgetExceeded = true;
-      expect(
-        readDiscoveryShadowEvidence(row as TraceJsonValue)?.trace?.packet
-          .byteOverflow,
-      ).toHaveLength(1);
-      packet.byteOverflow = [];
-      packet.byteBudgetExceeded = false;
-      rejects(row, 'while no overflow record names it');
-    });
-
-    it('rejects an expansion traversal no emitted candidate carries', () => {
-      const property = ['expansion', 'ruleExpansion'].find(
-        (name) => (stage(VALID, name).traversals as unknown[]).length > 0,
-      );
-      if (property === undefined)
-        throw new Error('the valid fixture records no traversal');
-      const row = clone();
-      const target = stage(row, property);
-      // Shape-valid and entirely invented: M4 would report it as `fired`.
-      target.traversals = [
-        ...(target.traversals as unknown[]),
-        {
-          sourceRecordKey: 'rule:invented',
-          linkField: 'invented',
-          relation: 'invented',
-          targetRecordKey: 'rule:also-invented',
-        },
-      ];
-      rejects(row, 'carried by no candidate this stage emitted');
-    });
-
-    describe('rule-join query and result history', () => {
-      function join(row: Row): Row {
-        return stage(row, 'ruleJoin');
-      }
-
-      it('has a real query history to contradict', () => {
-        expect(join(VALID).rulingQueryExecuted).toBe(true);
-        expect(join(VALID).rulingQueryScope).toBe('all-active');
-        expect(join(VALID).outcome).toBe('ran');
-      });
-
-      it('rejects a query that never ran but returned identities', () => {
-        const row = clone();
-        join(row).ruleQueryExecuted = false;
-        join(row).rulingQueryExecuted = false;
-        join(row).rulingQueryScope = 'none';
-        join(row).outcome = 'failed-to-run';
-        join(row).failedToRun = true;
-        join(row).requestedRuleRecordKeys = [];
-        join(row).requestedAmbiguityIds = [];
-        // Coordinated all the way down — and still impossible, because the
-        // stage claims identities a query it says never ran had returned.
-        join(row).returnedRuleIdentities = ['house-rule:invented'];
-        join(row).unplacedRuleIdentities = ['house-rule:invented'];
-        rejects(row, 'records identities while no query executed');
-      });
-
-      it('rejects a scope that disagrees with the executed queries', () => {
-        const row = clone();
-        join(row).rulingQueryScope = 'requested-ambiguities';
-        rejects(row, 'while the executed queries make it');
-      });
-
-      it('rejects an outcome that disagrees with the query evidence', () => {
-        const row = clone();
-        join(row).outcome = 'failed-to-run';
-        join(row).failedToRun = true;
-        join(row).produced = [];
-        join(row).modified = [];
-        join(row).losses = [];
-        rejects(row, 'while rulingQueryExecuted is true');
-      });
-
-      it('rejects a placement of an identity the seam never returned', () => {
-        const row = clone();
-        join(row).placedRuleIdentities = ['house-rule:never-returned'];
-        rejects(row, 'not a partition of the returned');
-      });
-
-      it('rejects a placement beside material the stage did not emit', () => {
-        const row = clone();
-        join(row).returnedRuleIdentities = ['house-rule:x'];
-        join(row).placedRuleIdentities = ['house-rule:x'];
-        join(row).unplacedRuleIdentities = [];
-        join(row).placedRules = [
-          { ruleIdentity: 'house-rule:x', governingRecordKey: 'rule:absent' },
-        ];
-        rejects(row, 'which this stage did not emit');
-      });
-
-      it('rejects a resolved ambiguity no ruling query returned', () => {
-        const row = clone();
-        join(row).resolvedAmbiguityIds = ['ambiguity:never-returned'];
-        rejects(row, 'which no ruling query returned');
-      });
-
-      it('rejects surfaced material the stage did not newly produce', () => {
-        const row = clone();
-        join(row).surfacedCandidateKeys = [emittedIds(row, 'ruleJoin')[0]];
-        rejects(row, 'which this stage did not newly produce');
-      });
-    });
-
-    describe('stage transitions', () => {
-      it('rejects a produced identity reclassified as carried forward', () => {
-        // The reviewer's example: still a valid partition of the stage's own
-        // outputs, but it claims the stage carried an identity forward from a
-        // previous candidate set that never held it.
-        const property = ['expansion', 'ruleJoin', 'dedup'].find(
-          (name) => (stage(VALID, name).produced as string[]).length > 0,
-        );
-        if (property === undefined)
-          throw new Error(
-            'the valid fixture has no produced candidate to move',
-          );
-        const row = clone();
-        const target = stage(row, property);
-        const moved = (target.produced as string[])[0];
-        target.produced = (target.produced as string[]).slice(1);
-        target.carriedForward = [...(target.carriedForward as string[]), moved];
-        rejects(row, 'but the recorded outputs and the previous stage make it');
-      });
-
-      it('rejects a carried-forward identity reclassified as modified', () => {
-        const property = ['expansion', 'ruleJoin', 'dedup'].find(
-          (name) =>
-            stage(VALID, name).outcome === 'ran' &&
-            (stage(VALID, name).carriedForward as string[]).length > 0,
-        );
-        if (property === undefined)
-          throw new Error(
-            'the valid fixture has no running stage that carries anything forward',
-          );
-        const row = clone();
-        const target = stage(row, property);
-        const moved = (target.carriedForward as string[])[0];
-        target.carriedForward = (target.carriedForward as string[]).slice(1);
-        target.modified = [...(target.modified as string[]), moved];
-        rejects(row, 'but the recorded outputs and the previous stage make it');
-      });
-
-      it('sees a traversal gained without a route, as section 12.1 requires', () => {
-        // The identity a stage classifies by is route AND traversal AND
-        // rule/ruling evidence: a candidate can gain a traversal without
-        // gaining a route, and a route-only comparison would report that
-        // mutation as untouched pass-through.
-        const property = ['expansion', 'ruleJoin', 'dedup'].find(
-          (name) =>
-            stage(VALID, name).outcome === 'ran' &&
-            (stage(VALID, name).carriedForward as string[]).length > 0,
-        );
-        if (property === undefined)
-          throw new Error(
-            'the valid fixture has no running stage that carries anything forward',
-          );
-        const row = clone();
-        const target = stage(row, property);
-        const key = (target.carriedForward as string[])[0];
-        const candidate = (target.outputsProduced as Row[]).find(
-          (item) => item.candidateKey === key,
-        ) as Row;
-        candidate.traversals = [
-          ...(candidate.traversals as unknown[]),
-          {
-            sourceRecordKey: key,
-            linkField: 'invented',
-            relation: 'invented',
-            targetRecordKey: 'rule:invented',
-          },
-        ];
-        // The accounting still calls it carried forward; the recorded evidence
-        // now says it changed.
-        rejects(row, 'but the recorded outputs and the previous stage make it');
-      });
-
-      it('rejects a retention that claims to have produced a candidate', () => {
-        const row = clone();
-        const retention = stage(row, 'retention');
-        const moved = (retention.modified as string[])[0];
-        retention.modified = (retention.modified as string[]).slice(1);
-        retention.produced = [moved];
-        rejects(row, 'retention produces no new candidate');
-      });
-    });
-
-    describe('accepted-turn audit lifecycle', () => {
-      function attempts(row: Row): Row[] {
-        return (row.runtime as Row).auditAttempts as Row[];
-      }
-
-      it('has a real retry-then-accept history to contradict', () => {
-        expect(attempts(VALID).map((item) => item.action)).toEqual([
-          'retry',
-          'accept',
-        ]);
-      });
-
-      for (const [verdict, action] of [
-        ['accept', 'accept'],
-        ['reject', 'repair'],
-        ['reject', 'fail'],
-      ] as const)
-        it(`rejects an intermediate ${action} verdict`, () => {
-          const row = clone();
-          // Locally coherent on every row, and the history still ends in
-          // `accept` — but the turn loop exits on accept/repair and throws on
-          // fail, so no such accepted turn could have run.
-          attempts(row)[0].verdict = verdict;
-          attempts(row)[0].action = action;
-          attempts(row)[0].retryCause = null;
-          rejects(row, 'only the final audited candidate');
-        });
-
-      it('rejects a capability event from an attempt that never ran', () => {
-        const row = clone();
-        expect(attempts(row)).toHaveLength(2);
-        ((row.runtime as Row).capabilityInvocations as Row[])[0].attempt = 3;
-        rejects(row, 'candidate attempt(s)');
-      });
-
-      it('rejects an attempt-2 event on a turn that ran no auditor', () => {
-        const row = clone();
-        (row.runtime as Row).auditorPresent = false;
-        (row.runtime as Row).auditAttempts = [];
-        ((row.runtime as Row).capabilityInvocations as Row[])[0].attempt = 2;
-        rejects(row, 'candidate attempt(s)');
-      });
-    });
-  });
-
-  describe('nested identities the measurements filter rather than fail on', () => {
-    function cubeAmbiguities(row: Row): unknown[] {
-      return cubeCandidate(row).ambiguities as unknown[];
-    }
-
-    for (const broken of [{}, { id: 7 }, { id: null }])
-      it(`rejects a packet ambiguity of ${JSON.stringify(broken)}`, () => {
-        const row = clone();
-        expect(cubeAmbiguities(row).length).toBeGreaterThan(0);
-        cubeAmbiguities(row)[0] = broken;
-        rejects(row, 'ambiguities[0].id');
-      });
-
-    for (const join of ['ruleJoin', 'lateRuleJoin'])
-      it(`rejects an unresolved ambiguity with no id on ${join}`, () => {
-        const row = clone();
-        expect(
-          (stage(row, join).unresolvedAmbiguities as unknown[]).length,
-        ).toBeGreaterThan(0);
-        stage(row, join).unresolvedAmbiguities = [{ note: 'no id here' }];
-        rejects(row, `trace.${join}.unresolvedAmbiguities[0].id`);
-      });
-
-    it('rejects a jhpt projection carrying no rule identity', () => {
-      const row = clone();
-      packetCandidates(row)[0].campaignRulings = [{ prose: 'no identity' }];
-      rejects(row, 'campaignRulings[0].ruleIdentity');
-    });
-  });
-
-  describe('leaf families each measurement dereferences', () => {
-    const MUTATIONS: readonly [string, () => Row, string][] = [
-      [
-        'stage outcome enum',
-        () => {
-          const row = clone();
-          stage(row, 'dedup').outcome = 'probably-ran';
-          return row;
-        },
-        'trace.dedup.outcome',
-      ],
-      [
-        'failedToRun invariant',
-        () => {
-          const row = clone();
-          stage(row, 'dedup').failedToRun = true;
-          return row;
-        },
-        'trace.dedup.failedToRun',
-      ],
-      [
-        'route identity',
-        () => {
-          const row = clone();
-          (stage(row, 'candidates').outputsProduced as Row[])[0].routes = [{}];
-          return row;
-        },
-        'routes[0]',
-      ],
-      [
-        'rule-join field',
-        () => withoutField('trace.ruleJoin.requestedRuleRecordKeys'),
-        'trace.ruleJoin.requestedRuleRecordKeys',
-      ],
-      [
-        'ruling query scope enum',
-        () => {
-          const row = clone();
-          stage(row, 'ruleJoin').rulingQueryScope = 'sometimes';
-          return row;
-        },
-        'trace.ruleJoin.rulingQueryScope',
-      ],
-      [
-        'traversal shape',
-        () => {
-          const row = clone();
-          stage(row, 'expansion').traversals = [{ relation: 'x' }];
-          return row;
-        },
-        'trace.expansion.traversals[0]',
-      ],
-      [
-        'drop reason',
-        () => {
-          const row = clone();
-          stage(row, 'retention').dropped = [{ candidateKey: 'k' }];
-          return row;
-        },
-        'trace.retention.dropped[0]',
-      ],
-      [
-        'retained band enum',
-        () => {
-          const row = clone();
-          (stage(row, 'retention').outputsProduced as Row[])[0].band = 'urgent';
-          return row;
-        },
-        '.band',
-      ],
-      [
-        'packet provenance',
-        () => withoutField('trace.packet.packet.candidates.0.provenance'),
-        '.provenance',
-      ],
-      [
-        'packet non-claim',
-        () => {
-          const row = clone();
-          (stage(row, 'packet').packet as Row).modelUsageClaim = 'used';
-          return row;
-        },
-        'modelUsageClaim',
-      ],
-      [
-        'stack identity',
-        () => withoutField('trace.stack.base.version'),
+    it('rejects a malformed stack identity', () => {
+      rejects(
+        withoutField('trace.stack.base.version'),
         'trace.stack.base.version',
-      ],
-      [
-        'scenario binding',
-        () => {
-          const row = clone();
-          (row.scenario as Row).itemInstances = [{ instanceId: 'x' }];
-          return row;
-        },
-        'scenario.itemInstances[0].recordKey',
-      ],
-      [
-        'recorded non-claim',
-        () => {
-          const row = clone();
-          row.modelUsageClaim = 'the model used it';
-          return row;
-        },
-        'modelUsageClaim',
-      ],
-      [
-        'blocker status enum',
-        () => {
-          const row = clone();
-          (row.blockerRepairs as Row[])[0].status = 'probably-repaired';
-          return row;
-        },
-        'blockerRepairs[0].status',
-      ],
-    ];
+      );
+    });
 
-    for (const [family, build, at] of MUTATIONS)
-      it(`rejects a malformed ${family}`, () => {
-        const row = build();
-        expect(JSON.stringify(row)).not.toBe(JSON.stringify(VALID));
-        rejects(row, at);
-      });
+    it('rejects a malformed blocker status', () => {
+      const row = clone();
+      (row.blockerRepairs as Row[])[0].status = 'probably-repaired';
+      rejects(row, 'blockerRepairs[0].status');
+    });
   });
 });
 
@@ -1094,7 +858,7 @@ describe('one capture, one rules-pack source', () => {
       expect(
         result.blockerRepairs.find((item) => item.blockerId === 'B3')?.status,
       ).toBe('repaired');
-      const candidate = result.trace?.packet.packet.candidates.find(
+      const candidate = result.trace?.packet.candidates.find(
         (item) => item.identity.key === CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF,
       );
       expect(candidate).toBeDefined();

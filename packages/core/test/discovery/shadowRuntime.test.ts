@@ -605,7 +605,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           });
           // M3, M4, M7, M9 are computable from the same recorded trace.
           expect(measurements.m7.candidateCount).toBe(
-            trace.packet.packet.candidates.length,
+            trace.packet.candidates.length,
           );
           for (const [key, routes] of Object.entries(measurements.m3))
             expect(
@@ -904,11 +904,15 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
         expect(
           runtime.capabilityInvocations.filter((item) => item.attempt === 2),
         ).toEqual([]);
-        expect(runtime.auditorPresent).toBe(true);
-        expect(runtime.auditAttempts.map((item) => item.action)).toEqual([
-          'retry',
-          'accept',
-        ]);
+        // The canonical audit lifecycle: one rejected candidate, then the
+        // acceptance. No flag, no attempt numbering, nothing to disagree with.
+        expect(runtime.audit).toMatchObject({
+          auditor: 'present',
+          outcome: { disposition: 'accepted' },
+        });
+        expect(
+          runtime.audit.auditor === 'present' ? runtime.audit.retries : [],
+        ).toHaveLength(1);
 
         // M10 sees the event. The real runtime packet does not anticipate the
         // operation (shadow runs before the model chooses one), so it is

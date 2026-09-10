@@ -176,7 +176,42 @@ export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
 
 export { NULL_CAMPAIGN_RULE_SEAM } from '../campaign/campaignRules.js';
 
+/**
+ * One seam call this stage actually made. Canonical: the query evidence M5
+ * reports is derived from these, never stored as separate flags that could
+ * disagree with them.
+ */
+export type SeamQuery =
+  | {
+      readonly kind: 'active-rules';
+      readonly candidateRecordKeys: readonly string[];
+    }
+  | {
+      readonly kind: 'active-rulings';
+      readonly scope: 'requested-ambiguities' | 'all-active';
+      readonly ambiguityIds: readonly string[];
+    };
+
+/**
+ * What the seam returned, as the seam returned it.
+ *
+ * Deliberately the jhpt-owned projection rather than a discovery-declared
+ * shape: design section 8.4 forbids discovery from declaring a rule or ruling
+ * schema of its own, and a narrowed copy would both drift from the owner and
+ * drop fields the owner considers part of the projection. `ruleKind`,
+ * `ambiguityId` and `governingRecordKeys` are read from it; none is redefined.
+ */
+export type ReturnedRuleProjection =
+  | CampaignRuleProjection
+  | CampaignRulingProjection;
+
 export interface RuleJoinTrace extends StageTrace<DiscoveryCandidate> {
+  /** Canonical: the seam calls this stage made, in order. */
+  readonly seamQueries: readonly SeamQuery[];
+  /** Canonical: what the seam returned, unchanged. */
+  readonly returnedProjections: readonly ReturnedRuleProjection[];
+  /** Canonical: every ambiguity id this stage's candidate set carried. */
+  readonly consideredAmbiguityIds: readonly string[];
   /** Keys passed to the active-rule query, empty unless it executed. */
   readonly requestedRuleRecordKeys: readonly string[];
   /** Ids passed to the ruling query, empty unless it executed. When the scope
@@ -358,10 +393,21 @@ export interface RuntimeCapabilityInvocation {
   readonly outcome: 'available' | 'blocked';
 }
 
-export interface RuntimeAuditAttempt {
-  readonly attempt: number;
-  readonly verdict: 'accept' | 'reject';
-  readonly action: 'accept' | 'repair' | 'retry' | 'fail';
+/**
+ * The turn's mechanics-audit history, as one canonical lifecycle.
+ *
+ * Discriminated rather than a flat list plus flags, so the states a real turn
+ * cannot reach are unrepresentable rather than merely rejected: an accepted
+ * verdict carrying a retry cause, an intermediate acceptance, a turn-failing
+ * verdict inside an accepted trace, a non-sequential attempt number, or an
+ * "auditor present" claim with nothing recorded. M11's auditor presence, retry
+ * counts and cause breakdown are derived from this, never stored beside it.
+ *
+ * A turn that FAILS its audit throws and persists no accepted trace, so no
+ * failing terminal state appears here at all.
+ */
+export interface RuntimeAuditRetry {
+  /** Structural cause the auditor's rejection was classified as, if any. */
   readonly retryCause: string | null;
   /**
    * Tool names the verdict named as missing. The coarse retry cause cannot
@@ -371,6 +417,24 @@ export interface RuntimeAuditAttempt {
    */
   readonly missingTools: readonly string[];
 }
+
+export type RuntimeAuditOutcome =
+  | { readonly disposition: 'accepted' }
+  | {
+      readonly disposition: 'repaired';
+      readonly retryCause: string;
+      readonly missingTools: readonly string[];
+    };
+
+export type RuntimeAudit =
+  | { readonly auditor: 'absent' }
+  | {
+      readonly auditor: 'present';
+      /** Candidates the auditor rejected, in order; the turn retried each. */
+      readonly retries: readonly RuntimeAuditRetry[];
+      /** How the accepted candidate was admitted. */
+      readonly outcome: RuntimeAuditOutcome;
+    };
 
 export interface DiscoveryRunInput {
   readonly db: Db;

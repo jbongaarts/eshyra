@@ -112,7 +112,7 @@ function captureForOperation(
       campaignRuleSeam: NULL_CAMPAIGN_RULE_SEAM,
       tools: createDefaultToolRegistry(),
     }),
-    { capabilityInvocations: [], auditAttempts: [], auditorPresent: false },
+    { capabilityInvocations: [], audit: { auditor: 'absent' } },
   );
 }
 
@@ -125,7 +125,7 @@ function traceOf(evidence: DiscoveryShadowEvidence): ProjectedDiscoveryTrace {
 }
 
 function packetCapability(trace: ProjectedDiscoveryTrace) {
-  const candidate = trace.packet.packet.candidates.find(
+  const candidate = trace.packet.candidates.find(
     (item) => item.capability !== undefined,
   );
   if (candidate?.capability === undefined)
@@ -136,7 +136,7 @@ function packetCapability(trace: ProjectedDiscoveryTrace) {
 function observations(
   capabilityInvocations: readonly RuntimeCapabilityInvocation[],
 ): RuntimeDiscoveryObservations {
-  return { capabilityInvocations, auditAttempts: [], auditorPresent: false };
+  return { capabilityInvocations, audit: { auditor: 'absent' } };
 }
 
 /** A synthetic event, for the pairing/identity states that need no execution. */
@@ -440,20 +440,17 @@ describe('runtime capability events reach M10', () => {
           ...trace,
           packet: {
             ...trace.packet,
-            packet: {
-              ...trace.packet.packet,
-              candidates: trace.packet.packet.candidates.map((candidate) =>
-                candidate.capability === undefined
-                  ? candidate
-                  : {
-                      ...candidate,
-                      capability: {
-                        ...candidate.capability,
-                        status: 'not-evaluated-offline' as const,
-                      },
+            candidates: trace.packet.candidates.map((candidate) =>
+              candidate.capability === undefined
+                ? candidate
+                : {
+                    ...candidate,
+                    capability: {
+                      ...candidate.capability,
+                      status: 'not-evaluated-offline' as const,
                     },
-              ),
-            },
+                  },
+            ),
           },
         };
         expect(

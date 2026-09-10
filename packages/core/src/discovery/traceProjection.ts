@@ -1,45 +1,49 @@
-import type { RulesAmbiguity } from '../rules/types.js';
 import type {
-  CandidateBand,
-  ContextPacket,
   DiscoveryCandidate,
   DiscoveryRoute,
   DiscoveryTrace,
   PacketCandidate,
-  RetentionOverflow,
+  ReturnedRuleProjection,
+  SeamQuery,
   StageLoss,
   StageOutcome,
   TypedTraversal,
 } from './types.js';
 
 /**
- * The measurement-ready, JSON-safe projection of one discovery run.
+ * The durable, JSON-safe record of one discovery run.
  *
- * Phase 2 (design section 12.2) requires that every section-13 measurement be
+ * Phase 2 (design section 12.2) requires every section-13 measurement to be
  * derivable from a RECORDED trace without re-running discovery. A recorded
  * `DiscoveryTrace` cannot serve: it holds the whole resolved rules stack and,
  * on every candidate of every stage, the full `RulesStackRecordEntry` — the
- * same records repeated nine times over. So the durable shape is this
- * projection, and `measureDiscovery` reads THIS rather than the live trace, so
- * the offline probe suite (the M1-M9 gate) exercises the exact shape the
- * runtime persists. A field the projection drops is a field no measurement may
- * silently depend on.
+ * same records repeated nine times over.
  *
- * What is dropped is record BODIES, never identities, routes, decisions or
- * reasons: the packet still carries each retained candidate's own projected
- * source prose, which is the material design section 7.1 requires and which M9
- * measures.
+ * This shape records CANONICAL FACTS ONCE and nothing else. Every summary a
+ * measurement reports — stage accounting, traversal lists, the rule/ruling
+ * query and placement history, retained/dropped/overflow, packet bytes and
+ * drops, auditor presence and retry counts — is DERIVED from these facts at
+ * measurement time by `traceDerivation.ts`, not stored beside them.
+ *
+ * That is the point, and it is the repair for a defect class that survived
+ * several rounds of validator hardening: two independently persisted claims
+ * about one fact can be changed TOGETHER, leaving every local check satisfied
+ * while a measurement reports something the run never did. A summary that is
+ * derived cannot disagree with the fact it is derived from, so the durable
+ * reader is responsible only for the admissibility of the canonical
+ * representation — schema, identity, coverage and lifecycle — rather than for
+ * an ever-growing network of consistency theorems over redundant copies.
+ *
+ * What is dropped is record BODIES, never identities, decisions or reasons:
+ * the packet still carries each included candidate's own projected source
+ * prose, which is the material design section 7.1 requires and M9 measures.
  */
 
-export interface ProjectedStageTrace<T> {
+export interface ProjectedStage<T> {
   readonly stage: string;
-  readonly outputsProduced: readonly T[];
-  readonly produced: readonly string[];
-  readonly modified: readonly string[];
-  readonly carriedForward: readonly string[];
-  readonly losses: readonly StageLoss[];
   readonly outcome: StageOutcome;
-  readonly failedToRun: boolean;
+  readonly losses: readonly StageLoss[];
+  readonly outputsProduced: readonly T[];
 }
 
 export interface ProjectedSignal {
@@ -54,24 +58,22 @@ export interface ProjectedSignal {
 }
 
 /**
- * A candidate as the stage accounting sees it. `entry` and `adventureEntity`
- * are deliberately absent — a candidate's identity, routes, traversals and the
- * jhpt identities placed on it are what the measurements read, and the record
- * body reaches the durable evidence exactly once, through the packet.
+ * A candidate as the durable record holds it.
+ *
+ * `entry` and `adventureEntity` are deliberately absent — the record body
+ * reaches the evidence exactly once, through the packet. `band` is absent for
+ * the same reason as the rule and ruling identities a join placed on this
+ * candidate: both are functions of facts already recorded here or on the join
+ * that placed them, and a second copy is a second thing to go wrong.
  */
 export interface ProjectedCandidate {
   readonly candidateKey: string;
   readonly targetKind: DiscoveryCandidate['targetKind'];
   readonly routes: readonly DiscoveryRoute[];
   readonly traversals: readonly TypedTraversal[];
-  readonly campaignRuleIdentities: readonly string[];
-  readonly campaignRulingIdentities: readonly string[];
-  /** Present only where the stage assigns a band (retention onward). */
-  readonly band?: CandidateBand;
 }
 
-export interface ProjectedSignalsTrace
-  extends ProjectedStageTrace<ProjectedSignal> {
+export interface ProjectedSignalsStage extends ProjectedStage<ProjectedSignal> {
   readonly unconsumedStateFields: readonly {
     readonly path: string;
     readonly valueShape: string;
@@ -87,58 +89,65 @@ export interface ProjectedSignalsTrace
     readonly keys: readonly string[];
     readonly evidence: Record<string, unknown>;
   }[];
-  readonly oracleSuppliedSignalLabels: readonly string[];
 }
 
-export interface ProjectedCandidatesTrace
-  extends ProjectedStageTrace<ProjectedCandidate> {
+export interface ProjectedCandidatesStage
+  extends ProjectedStage<ProjectedCandidate> {
   readonly unresolvedTargets: readonly string[];
 }
 
-export interface ProjectedExpansionTrace
-  extends ProjectedStageTrace<ProjectedCandidate> {
-  readonly traversals: readonly TypedTraversal[];
-}
+/**
+ * An expansion stage records only its candidates. M4's traversal list is
+ * derived as the traversals that newly appear on the candidate stream here,
+ * so a traversal cannot be claimed without a candidate carrying it, and a
+ * carried traversal cannot be omitted from the list.
+ */
+export type ProjectedExpansionStage = ProjectedStage<ProjectedCandidate>;
 
-export interface ProjectedRuleJoinTrace
-  extends ProjectedStageTrace<ProjectedCandidate> {
-  readonly requestedRuleRecordKeys: readonly string[];
-  readonly requestedAmbiguityIds: readonly string[];
-  readonly rulingQueryScope: 'none' | 'requested-ambiguities' | 'all-active';
-  readonly ruleQueryExecuted: boolean;
-  readonly rulingQueryExecuted: boolean;
-  readonly returnedRuleIdentities: readonly string[];
-  readonly returnedAmbiguityIds: readonly string[];
-  readonly placedRuleIdentities: readonly string[];
-  readonly unplacedRuleIdentities: readonly string[];
-  readonly surfacedCandidateKeys: readonly string[];
-  readonly placedRules: readonly {
+export interface ProjectedRuleJoinStage
+  extends ProjectedStage<ProjectedCandidate> {
+  readonly seamQueries: readonly SeamQuery[];
+  readonly returnedProjections: readonly ReturnedRuleProjection[];
+  readonly placements: readonly {
     readonly ruleIdentity: string;
     readonly governingRecordKey: string;
   }[];
-  readonly resolvedAmbiguityIds: readonly string[];
-  readonly unresolvedAmbiguities: readonly RulesAmbiguity[];
+  readonly consideredAmbiguityIds: readonly string[];
 }
 
-export interface ProjectedDedupTrace
-  extends ProjectedStageTrace<ProjectedCandidate> {
-  readonly routeCountBeforeDedup: Readonly<Record<string, number>>;
-  readonly routeCountAfterDedup: Readonly<Record<string, number>>;
+/** Dedup's route bookkeeping is derived from the candidate streams it joins. */
+export type ProjectedDedupStage = ProjectedStage<ProjectedCandidate>;
+
+/**
+ * Retention records ONE disposition per candidate it decided over, in the rank
+ * order it decided them. Retained candidates, dropped candidates, the overflow
+ * set, the overflow flag and the stage's own losses are all derived from this
+ * single list, so a drop cannot be recorded while the overflow or the loss that
+ * must accompany it is not.
+ */
+export interface ProjectedDisposition {
+  readonly candidateKey: string;
+  readonly retained: boolean;
+  /** Why it was excluded. Present exactly when `retained` is false. */
+  readonly reason?: string;
 }
 
-export interface ProjectedRetentionTrace
-  extends ProjectedStageTrace<ProjectedCandidate> {
-  readonly dropped: readonly RetentionOverflow[];
-  readonly overflowed: boolean;
-  readonly overflow: readonly RetentionOverflow[];
+export interface ProjectedRetentionStage {
+  readonly stage: string;
+  readonly outcome: StageOutcome;
+  readonly dispositions: readonly ProjectedDisposition[];
 }
 
-export interface ProjectedPacketTrace
-  extends ProjectedStageTrace<PacketCandidate> {
-  readonly packet: ContextPacket;
-  readonly byteBudgetExceeded: boolean;
-  readonly byteOverflow: readonly RetentionOverflow[];
-  readonly dropped: readonly RetentionOverflow[];
+/**
+ * The packet records one inclusion decision per retained candidate plus the
+ * content it included. Byte count, byte-overflow set, the overflow flag, the
+ * drop list and the stage's losses are all derived from those.
+ */
+export interface ProjectedPacketStage {
+  readonly stage: string;
+  readonly outcome: StageOutcome;
+  readonly decisions: readonly ProjectedDisposition[];
+  readonly candidates: readonly PacketCandidate[];
 }
 
 /** Identity of one pack in the stack the run resolved against. */
@@ -150,17 +159,15 @@ export interface ProjectedPackIdentity {
 }
 
 export interface ProjectedDiscoveryTrace {
-  readonly signals: ProjectedSignalsTrace;
-  readonly candidates: ProjectedCandidatesTrace;
-  readonly expansion: ProjectedExpansionTrace;
-  readonly ruleJoin: ProjectedRuleJoinTrace;
-  readonly ruleExpansion: ProjectedExpansionTrace;
-  readonly lateRuleJoin: ProjectedRuleJoinTrace;
-  readonly unexpandedPromotions: readonly string[];
-  readonly dedup: ProjectedDedupTrace;
-  readonly retention: ProjectedRetentionTrace;
-  readonly packet: ProjectedPacketTrace;
-  readonly stageOrder: readonly string[];
+  readonly signals: ProjectedSignalsStage;
+  readonly candidates: ProjectedCandidatesStage;
+  readonly expansion: ProjectedExpansionStage;
+  readonly ruleJoin: ProjectedRuleJoinStage;
+  readonly ruleExpansion: ProjectedExpansionStage;
+  readonly lateRuleJoin: ProjectedRuleJoinStage;
+  readonly dedup: ProjectedDedupStage;
+  readonly retention: ProjectedRetentionStage;
+  readonly packet: ProjectedPacketStage;
   /**
    * Which packs produced this evidence, never their records. Two captures that
    * disagree are only comparable when they resolved the same stack, so the
@@ -172,41 +179,28 @@ export interface ProjectedDiscoveryTrace {
   };
 }
 
-function stage<T, P>(
-  source: ProjectedStageTrace<T>,
-  outputsProduced: readonly P[],
-): ProjectedStageTrace<P> {
-  return {
-    stage: source.stage,
-    outputsProduced,
-    produced: source.produced,
-    modified: source.modified,
-    carriedForward: source.carriedForward,
-    losses: source.losses,
-    outcome: source.outcome,
-    failedToRun: source.failedToRun,
-  };
-}
-
-function candidate(item: {
-  readonly candidateKey: string;
-  readonly targetKind: DiscoveryCandidate['targetKind'];
-  readonly routes: readonly DiscoveryRoute[];
-  readonly traversals: readonly TypedTraversal[];
-  readonly campaignRules: readonly { readonly ruleIdentity: string }[];
-  readonly campaignRulings: readonly { readonly ruleIdentity: string }[];
-  readonly band?: CandidateBand;
-}): ProjectedCandidate {
+function candidate(item: DiscoveryCandidate): ProjectedCandidate {
   return {
     candidateKey: item.candidateKey,
     targetKind: item.targetKind,
     routes: item.routes,
     traversals: item.traversals,
-    campaignRuleIdentities: item.campaignRules.map((rule) => rule.ruleIdentity),
-    campaignRulingIdentities: item.campaignRulings.map(
-      (ruling) => ruling.ruleIdentity,
-    ),
-    ...(item.band === undefined ? {} : { band: item.band }),
+  };
+}
+
+function base<T>(
+  source: {
+    readonly stage: string;
+    readonly outcome: StageOutcome;
+    readonly losses: readonly StageLoss[];
+  },
+  outputsProduced: readonly T[],
+): ProjectedStage<T> {
+  return {
+    stage: source.stage,
+    outcome: source.outcome,
+    losses: source.losses,
+    outputsProduced,
   };
 }
 
@@ -226,12 +220,41 @@ function packIdentity(pack: {
   };
 }
 
+function projectRuleJoin(
+  join: DiscoveryTrace['ruleJoin'],
+): ProjectedRuleJoinStage {
+  return {
+    ...base(join, join.outputsProduced.map(candidate)),
+    seamQueries: join.seamQueries,
+    returnedProjections: join.returnedProjections,
+    placements: join.placedRules,
+    consideredAmbiguityIds: join.consideredAmbiguityIds,
+  };
+}
+
 export function projectDiscoveryTrace(
   trace: DiscoveryTrace,
 ): ProjectedDiscoveryTrace {
+  // Retention decided over everything dedup emitted; the packet decided over
+  // everything retention kept. Recording one disposition per decision, in the
+  // order it was made, is the whole of that stage's evidence.
+  const retainedKeys = new Set(
+    trace.retention.outputsProduced.map((item) => item.candidateKey),
+  );
+  const retentionDrops = new Map(
+    trace.retention.dropped.map((item) => [item.candidateKey, item.reason]),
+  );
+  const packetDrops = new Map(
+    trace.packet.dropped
+      .filter((item) => !retentionDrops.has(item.candidateKey))
+      .map((item) => [item.candidateKey, item.reason]),
+  );
+  const includedKeys = new Set(
+    trace.packet.packet.candidates.map((item) => item.identity.key),
+  );
   return {
     signals: {
-      ...stage(
+      ...base(
         trace.signals,
         trace.signals.outputsProduced.map(
           (signal): ProjectedSignal => ({
@@ -254,72 +277,58 @@ export function projectDiscoveryTrace(
       unconsumedStateFields: trace.signals.unconsumedStateFields,
       stateBindings: trace.signals.stateBindings,
       ambiguousNames: trace.signals.ambiguousNames,
-      oracleSuppliedSignalLabels: trace.signals.oracleSuppliedSignalLabels,
     },
     candidates: {
-      ...stage(
+      ...base(
         trace.candidates,
         trace.candidates.outputsProduced.map(candidate),
       ),
       unresolvedTargets: trace.candidates.unresolvedTargets,
     },
-    expansion: {
-      ...stage(trace.expansion, trace.expansion.outputsProduced.map(candidate)),
-      traversals: trace.expansion.traversals,
-    },
+    expansion: base(
+      trace.expansion,
+      trace.expansion.outputsProduced.map(candidate),
+    ),
     ruleJoin: projectRuleJoin(trace.ruleJoin),
-    ruleExpansion: {
-      ...stage(
-        trace.ruleExpansion,
-        trace.ruleExpansion.outputsProduced.map(candidate),
-      ),
-      traversals: trace.ruleExpansion.traversals,
-    },
+    ruleExpansion: base(
+      trace.ruleExpansion,
+      trace.ruleExpansion.outputsProduced.map(candidate),
+    ),
     lateRuleJoin: projectRuleJoin(trace.lateRuleJoin),
-    unexpandedPromotions: trace.unexpandedPromotions,
-    dedup: {
-      ...stage(trace.dedup, trace.dedup.outputsProduced.map(candidate)),
-      routeCountBeforeDedup: trace.dedup.routeCountBeforeDedup,
-      routeCountAfterDedup: trace.dedup.routeCountAfterDedup,
-    },
+    dedup: base(trace.dedup, trace.dedup.outputsProduced.map(candidate)),
     retention: {
-      ...stage(trace.retention, trace.retention.outputsProduced.map(candidate)),
-      dropped: trace.retention.dropped,
-      overflowed: trace.retention.overflowed,
-      overflow: trace.retention.overflow,
+      stage: trace.retention.stage,
+      outcome: trace.retention.outcome,
+      // The retained set in rank order, then the drops in rank order. The
+      // interleaving of the two is not recorded because nothing reads it; what
+      // is recorded is one decision per candidate the stage decided over.
+      dispositions: [
+        ...trace.retention.outputsProduced.map((item) => ({
+          candidateKey: item.candidateKey,
+          retained: true,
+        })),
+        ...trace.retention.dropped.map((item) => ({
+          candidateKey: item.candidateKey,
+          retained: false,
+          reason: item.reason,
+        })),
+      ],
     },
     packet: {
-      ...stage(trace.packet, trace.packet.outputsProduced),
-      packet: trace.packet.packet,
-      byteBudgetExceeded: trace.packet.byteBudgetExceeded,
-      byteOverflow: trace.packet.byteOverflow,
-      dropped: trace.packet.dropped,
+      stage: trace.packet.stage,
+      outcome: trace.packet.outcome,
+      decisions: [...retainedKeys].map((key) => ({
+        candidateKey: key,
+        retained: includedKeys.has(key),
+        ...(includedKeys.has(key)
+          ? {}
+          : { reason: packetDrops.get(key) ?? 'excluded from the packet' }),
+      })),
+      candidates: trace.packet.packet.candidates,
     },
-    stageOrder: trace.stageOrder,
     stack: {
       base: packIdentity(trace.stack.base),
       addons: trace.stack.addons.map(packIdentity),
     },
-  };
-}
-
-function projectRuleJoin(
-  join: DiscoveryTrace['ruleJoin'],
-): ProjectedRuleJoinTrace {
-  return {
-    ...stage(join, join.outputsProduced.map(candidate)),
-    requestedRuleRecordKeys: join.requestedRuleRecordKeys,
-    requestedAmbiguityIds: join.requestedAmbiguityIds,
-    rulingQueryScope: join.rulingQueryScope,
-    ruleQueryExecuted: join.ruleQueryExecuted,
-    rulingQueryExecuted: join.rulingQueryExecuted,
-    returnedRuleIdentities: join.returnedRuleIdentities,
-    returnedAmbiguityIds: join.returnedAmbiguityIds,
-    placedRuleIdentities: join.placedRuleIdentities,
-    unplacedRuleIdentities: join.unplacedRuleIdentities,
-    surfacedCandidateKeys: join.surfacedCandidateKeys,
-    placedRules: join.placedRules,
-    resolvedAmbiguityIds: join.resolvedAmbiguityIds,
-    unresolvedAmbiguities: join.unresolvedAmbiguities,
   };
 }

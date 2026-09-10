@@ -580,14 +580,21 @@ export {
 } from './discovery/shadow.js';
 export { extractDiscoverySignals } from './discovery/signals.js';
 export type {
+  DerivedDiscoveryTrace,
+  DerivedPacket,
+  DerivedRetention,
+  DerivedRuleJoin,
+} from './discovery/traceDerivation.js';
+export { deriveDiscoveryTrace } from './discovery/traceDerivation.js';
+export type {
   ProjectedCandidate,
   ProjectedDiscoveryTrace,
-  ProjectedPacketTrace,
+  ProjectedPacketStage,
   ProjectedPackIdentity,
-  ProjectedRetentionTrace,
-  ProjectedRuleJoinTrace,
+  ProjectedRetentionStage,
+  ProjectedRuleJoinStage,
   ProjectedSignal,
-  ProjectedStageTrace,
+  ProjectedStage,
 } from './discovery/traceProjection.js';
 export { projectDiscoveryTrace } from './discovery/traceProjection.js';
 // Offline discovery pilot (experiment-only; intentionally absent from the
@@ -608,7 +615,9 @@ export type {
   ProjectionLimitNote,
   RetentionBudget,
   RouteClass,
-  RuntimeAuditAttempt,
+  RuntimeAudit,
+  RuntimeAuditOutcome,
+  RuntimeAuditRetry,
   RuntimeCapabilityInvocation,
   StageLoss,
   StageTrace,

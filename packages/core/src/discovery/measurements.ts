@@ -1,7 +1,11 @@
-import type { ProjectedDiscoveryTrace } from './traceProjection.js';
+import { deriveDiscoveryTrace } from './traceDerivation.js';
+import type {
+  ProjectedCandidate,
+  ProjectedDiscoveryTrace,
+} from './traceProjection.js';
 import type {
   CapabilityPreflight,
-  RuntimeAuditAttempt,
+  RuntimeAudit,
   RuntimeCapabilityInvocation,
   TypedTraversal,
 } from './types.js';
@@ -190,9 +194,13 @@ function valueAt(root: unknown, pointer: string): unknown {
     : undefined;
 }
 export function measureDiscovery(
-  trace: ProjectedDiscoveryTrace,
+  recorded: ProjectedDiscoveryTrace,
   input: DiscoveryMeasurementInput = {},
 ): DiscoveryMeasurements {
+  // Every summary below is DERIVED from the canonical record. Nothing here
+  // reads a stored count, membership, flag or partition, so no measurement can
+  // report something the recorded facts do not say.
+  const trace = deriveDiscoveryTrace(recorded);
   const keys = new Set(
     trace.packet.packet.candidates.map((candidate) => candidate.identity.key),
   );
@@ -227,16 +235,17 @@ export function measureDiscovery(
       lastHeld < 0 ? 'signals' : (stages[lastHeld + 1]?.[0] ?? 'packet');
   }
   const producedRoutes = new Map<string, Set<string>>();
-  for (const stage of [
-    trace.candidates,
-    trace.expansion,
-    trace.ruleJoin,
-    trace.ruleExpansion,
-    trace.lateRuleJoin,
-    trace.dedup,
-    trace.retention,
-  ])
-    for (const candidate of stage.outputsProduced) {
+  const candidateStages: readonly (readonly ProjectedCandidate[])[] = [
+    recorded.candidates.outputsProduced,
+    recorded.expansion.outputsProduced,
+    recorded.ruleJoin.outputsProduced,
+    recorded.ruleExpansion.outputsProduced,
+    recorded.lateRuleJoin.outputsProduced,
+    recorded.dedup.outputsProduced,
+    trace.retention.outputsProduced,
+  ];
+  for (const stage of candidateStages)
+    for (const candidate of stage) {
       const seen =
         producedRoutes.get(candidate.candidateKey) ?? new Set<string>();
       for (const route of candidate.routes) seen.add(routeIdentity(route));
@@ -400,9 +409,7 @@ export function measureDiscovery(
           ...trace.lateRuleJoin.resolvedAmbiguityIds,
         ]),
       ],
-      unresolvedAmbiguityIds: trace.lateRuleJoin.unresolvedAmbiguities
-        .map((item) => item.id)
-        .filter((id): id is string => typeof id === 'string'),
+      unresolvedAmbiguityIds: trace.lateRuleJoin.unresolvedAmbiguityIds,
       placed: [
         ...trace.ruleJoin.placedRules,
         ...trace.lateRuleJoin.placedRules,
@@ -501,15 +508,13 @@ function incomparableReason(
 
 export interface RuntimeDiscoveryObservations {
   readonly capabilityInvocations: readonly RuntimeCapabilityInvocation[];
-  readonly auditAttempts: readonly RuntimeAuditAttempt[];
   /**
-   * Whether the turn was configured with a mechanics auditor, recorded from the
-   * turn's own configuration. M11's `auditorAbsent` is derived from THIS, never
-   * from an empty attempt list: "no auditor ran" and "the auditor recorded
-   * nothing" are different facts, and inferring the first from the second is
-   * how an empty evidence collection becomes a green flag.
+   * The turn's audit lifecycle. Auditor presence, retry and repair counts, and
+   * the cause breakdown are all derived from this one canonical shape — "no
+   * auditor ran" and "the auditor recorded nothing" are different facts, and a
+   * discriminated union states which without a second flag to disagree with.
    */
-  readonly auditorPresent: boolean;
+  readonly audit: RuntimeAudit;
 }
 
 export interface RuntimeDiscoveryMeasurements {
@@ -572,7 +577,7 @@ export function measureRuntimeDiscovery(
   // Every recorded invocation is a real event, so none is filtered out here.
   const capabilityOutcomes = runtime.capabilityInvocations;
   const consumed = new Set<RuntimeCapabilityInvocation>();
-  const comparisons = trace.packet.packet.candidates
+  const comparisons = trace.packet.candidates
     .filter((item) => item.capability !== undefined)
     .map((item) => {
       const preflight = item.capability as CapabilityPreflight;
@@ -611,13 +616,18 @@ export function measureRuntimeDiscovery(
             }),
       };
     });
-  const attempts = runtime.auditAttempts;
-  const retries = attempts.filter((item) => item.action === 'retry');
+  const audit = runtime.audit;
+  const retries = audit.auditor === 'present' ? audit.retries : [];
+  const repaired =
+    audit.auditor === 'present' && audit.outcome.disposition === 'repaired';
   const byCause: Record<string, number> = {};
-  for (const attempt of attempts) {
-    if (attempt.retryCause === null) continue;
-    byCause[attempt.retryCause] = (byCause[attempt.retryCause] ?? 0) + 1;
-  }
+  for (const cause of [
+    ...retries.map((retry) => retry.retryCause),
+    ...(repaired && audit.auditor === 'present'
+      ? [(audit.outcome as { retryCause: string }).retryCause]
+      : []),
+  ])
+    if (cause !== null) byCause[cause] = (byCause[cause] ?? 0) + 1;
   return {
     m10: {
       comparisons,
@@ -626,19 +636,20 @@ export function measureRuntimeDiscovery(
       ),
     },
     m11: {
-      primaryDmCandidates: attempts.length,
+      primaryDmCandidates: audit.auditor === 'absent' ? 0 : retries.length + 1,
       retries: retries.length,
-      presentationRepairs: attempts.filter((item) => item.action === 'repair')
-        .length,
-      failures: attempts.filter((item) => item.action === 'fail').length,
+      presentationRepairs: repaired ? 1 : 0,
+      // A turn that fails its audit throws and persists no accepted trace, so
+      // this is structurally zero here rather than a count nothing produced.
+      failures: 0,
       byCause,
-      missingRuleEvidenceRetries: retries.filter((item) =>
-        item.missingTools.some((tool) => RULE_EVIDENCE_TOOLS.includes(tool)),
+      missingRuleEvidenceRetries: retries.filter((retry) =>
+        retry.missingTools.some((tool) => RULE_EVIDENCE_TOOLS.includes(tool)),
       ).length,
       retriesWithNoNamedMissingTool: retries.filter(
-        (item) => item.missingTools.length === 0,
+        (retry) => retry.missingTools.length === 0,
       ).length,
-      auditorAbsent: !runtime.auditorPresent,
+      auditorAbsent: audit.auditor === 'absent',
     },
   };
 }
