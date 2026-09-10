@@ -183,6 +183,40 @@ function hasKind(
 
 const rules: readonly ClassificationRule[] = [
   {
+    name: 'Foundation 1 designed-adjudication boundary',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      kindIs('spell')({ recordKinds }) &&
+      fieldPath.startsWith('data.mechanics.procedures[].adjudicationBoundary.'),
+    classify: () =>
+      result(
+        'scalar-like',
+        'model-adjudicated',
+        'evaluateFoundation1Proof verifies the exact source-bound boundary; deterministic resolution is deliberately not claimed',
+        'validateBoundedProceduresForPack enforces the closed designed-adjudication boundary shape',
+        'the Foundation 1 proof discharges the boundary to its exact generated-pack atom',
+        'AdjudicatedStressProcedure.adjudicationBoundary',
+        'verticalProcedureProof.ts and boundedProcedures.ts',
+      ),
+  },
+  {
+    name: 'Foundation 1 bounded procedure atoms',
+    matches: ({ system, fieldPath, recordKinds }) =>
+      system === 'dnd5e-srd' &&
+      hasKind('equipment', 'feature', 'hazard', 'spell')({ recordKinds }) &&
+      fieldPath.startsWith('data.mechanics.procedures[]'),
+    classify: () =>
+      result(
+        'scalar-like',
+        'complete',
+        'executeBoundedProcedure consumes the redacted procedure data through one of five positively selected operations',
+        'validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes',
+        'evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms',
+        'BoundedProcedure / executeBoundedProcedure',
+        'boundedProcedures.ts and verticalProcedureProof.ts',
+      ),
+  },
+  {
     name: 'magic-item curse lifecycle state and effect references',
     matches: ({ system, fieldPath, recordKinds }) =>
       system === 'dnd5e-srd' &&

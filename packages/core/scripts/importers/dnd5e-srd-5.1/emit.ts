@@ -36,6 +36,10 @@ import {
 import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { equipmentMechanicsFor } from './equipmentMechanics.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
+import {
+  applyFoundation1ProcedureProjections,
+  canApplyFoundation1ProcedureProjections,
+} from './foundation1ProcedureProjections.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
 import {
   attachMagicItemExecutionReadiness,
@@ -1701,6 +1705,12 @@ export function buildPack(input: BuildPackInput): RulesPack {
   let records = linked.sort((a, b) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0,
   );
+  // Foundation 1 is deliberately bounded to five real procedures. Reduced
+  // parser fixtures do not carry the complete proof corpus, while the real
+  // SRD import does; only the latter receives these source-gated projections.
+  if (canApplyFoundation1ProcedureProjections(records)) {
+    records = [...applyFoundation1ProcedureProjections(records)];
+  }
   // Clause integrity runs only after owner table links and every record exist.
   // Every completed family feeds the same source-keyed registry. Structured
   // table/stat-block bindings are projected here, after owner links exist.

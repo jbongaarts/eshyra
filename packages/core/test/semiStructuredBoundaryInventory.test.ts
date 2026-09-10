@@ -174,6 +174,34 @@ describe('semi-structured boundary inventory', () => {
     });
   });
 
+  it('keeps Foundation 1 procedure support bounded and the DM boundary explicit', () => {
+    const artifact = buildInventoryArtifact();
+    expect(
+      row(artifact, 'data.mechanics.procedures[].selector', 'equipment'),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining(
+        'executeBoundedProcedure',
+      ),
+      currentAuditReadiness: expect.stringContaining(
+        'evaluateFoundation1Proof',
+      ),
+    });
+    expect(
+      row(
+        artifact,
+        'data.mechanics.procedures[].adjudicationBoundary.adjudicator',
+        'spell',
+      ),
+    ).toMatchObject({
+      disposition: 'model-adjudicated',
+      typedSchemaOrConsumer: 'AdjudicatedStressProcedure.adjudicationBoundary',
+      deterministicConsumers: expect.stringContaining(
+        'deterministic resolution is deliberately not claimed',
+      ),
+    });
+  });
+
   it('preserves the exact unsupported residual set and structural invariants', () => {
     const artifact = buildInventoryArtifact();
     const unsupported = artifact.rows
