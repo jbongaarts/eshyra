@@ -54,6 +54,19 @@ const TURN = 'w11-discovery-turn';
 const AT = '2026-05-20T10:00:00.000Z';
 const NARRATION = 'You weigh the situation.';
 
+/** Replays structured provider results, for the native tool transport. */
+class StructuredScriptedModel implements ModelClient {
+  private index = 0;
+  readonly seen: ModelCompleteInput[] = [];
+  constructor(private readonly results: readonly ModelCompleteResult[]) {}
+  complete(input: ModelCompleteInput): Promise<ModelCompleteResult> {
+    this.seen.push(input);
+    const result = this.results[this.index] ?? { text: NARRATION };
+    this.index += 1;
+    return Promise.resolve(result);
+  }
+}
+
 class ScriptedModel implements ModelClient {
   private index = 0;
   readonly seen: ModelCompleteInput[] = [];
@@ -125,6 +138,15 @@ function recordedEvidence(
       turnId: TURN,
     })?.discoveryShadow,
   );
+}
+
+/** The recorded observations, or a hard failure — never a silent empty stand-in. */
+function requireRuntime(
+  evidence: DiscoveryShadowEvidence | undefined,
+): NonNullable<DiscoveryShadowEvidence['runtime']> {
+  if (evidence?.runtime === undefined)
+    throw new Error('shadow evidence recorded no runtime observations');
+  return evidence.runtime;
 }
 
 function requireTrace(
@@ -222,6 +244,193 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     // ... and the comparison is not vacuous: the shadow run really did record.
     expect(on.shadow).toBe(true);
     expect(off.shadow).toBe(false);
+  });
+
+  /**
+   * The parity proof, over real TOOL ROUNDS.
+   *
+   * Comparing the whole model-input history with shadow off and on is necessary
+   * but not sufficient on its own: if an observation changed the public tool
+   * result, BOTH branches would carry the same changed payload and the
+   * comparison would false-green. So this suite does two independent things —
+   * it compares the two branches, and `shadowCapabilityEvents.test.ts` pins the
+   * public `use_item` shapes against the pre-W9 contract directly.
+   *
+   * A tool round is where a leak would show: `turnLoop` renders fenced results
+   * into the next user message and attaches native results to it, and the
+   * mechanics auditor projects the same executed calls.
+   */
+  describe('a real tool round is byte-identical with shadow off and on', () => {
+    const AMMO = 'magic-item:ammunition-1-2-or-3';
+    const GEM = 'magic-item:gem-of-brightness';
+
+    interface Round {
+      readonly label: string;
+      /** Seeds the state that decides the readiness/downstream outcome. */
+      readonly seed: (db: ReturnType<typeof freshDbWithSession>) => void;
+      readonly call: { instanceId: string; operationId: string };
+    }
+
+    function held(
+      db: ReturnType<typeof freshDbWithSession>,
+      id: string,
+      packRef: string,
+      quantity: number,
+    ): void {
+      db.prepare(
+        `INSERT INTO inventory(
+           id, character_id, name, quantity, location, properties_json,
+           pack_ref, provenance, session_id, updated_at
+         ) VALUES (?, 'pc-1', ?, ?, NULL, '{}', ?, 'test:w9', ?, ?)`,
+      ).run(id, `Item ${id}`, quantity, packRef, DEFAULT_TEST_SESSION_ID, AT);
+    }
+
+    const ROUNDS: readonly Round[] = [
+      {
+        label: 'readiness available and the tool succeeds',
+        seed: (db) => {
+          db.prepare(
+            "UPDATE clock SET current_location_id='camp' WHERE id=1",
+          ).run();
+          held(db, 'ammo-1', AMMO, 20);
+        },
+        call: { instanceId: 'ammo-1', operationId: 'hit-target' },
+      },
+      {
+        label: 'readiness blocked',
+        seed: (db) => {
+          held(db, 'gem-1', GEM, 1);
+        },
+        call: { instanceId: 'gem-1', operationId: 'blinding-beam' },
+      },
+      {
+        label: 'readiness available and an unrelated downstream failure',
+        seed: (db) => {
+          // No campaign location: the capability reports `available` and the
+          // spend then fails placing the unheld remainder.
+          held(db, 'ammo-1', AMMO, 20);
+        },
+        call: { instanceId: 'ammo-1', operationId: 'hit-target' },
+      },
+    ];
+
+    for (const round of ROUNDS)
+      for (const toolProtocol of ['fenced', 'native'] as const)
+        it(`${round.label} (${toolProtocol})`, async () => {
+          const run = async (recordDiscoveryShadow: boolean) => {
+            const db = seedCampaign();
+            try {
+              round.seed(db);
+              const model =
+                toolProtocol === 'fenced'
+                  ? new ScriptedModel([
+                      `I use it.\n${toolCall('use_item', round.call)}`,
+                      'You lower your hand.',
+                    ])
+                  : new StructuredScriptedModel([
+                      {
+                        text: 'I use it.',
+                        toolCalls: [
+                          {
+                            id: 'call-1',
+                            name: 'use_item',
+                            args: round.call,
+                          },
+                        ],
+                        stopReason: 'tool_use',
+                      },
+                      { text: 'You lower your hand.', stopReason: 'end_turn' },
+                    ]);
+              const result = await runTurn(
+                {
+                  db,
+                  model,
+                  registry: createDefaultToolRegistry(),
+                  recordDiscoveryShadow,
+                },
+                { ...turnInput('I use it.'), toolProtocol },
+              );
+              expect(result.ok).toBe(true);
+              return {
+                seen: model.seen,
+                toolCalls: result.toolCalls,
+                observed: recordedEvidence(db) !== undefined,
+                events:
+                  recordedEvidence(db)?.runtime.capabilityInvocations ?? [],
+              };
+            } finally {
+              db.close();
+            }
+          };
+          const off = await run(false);
+          const on = await run(true);
+
+          // The DM's whole view: system prompt, tool definitions, and every
+          // message including the rendered fenced results and the attached
+          // native results.
+          expect(JSON.stringify(on.seen)).toBe(JSON.stringify(off.seen));
+          // Two model calls, so a tool round really happened.
+          expect(on.seen.length).toBe(2);
+          // The persisted/returned tool calls the auditor and the ordinary
+          // accepted trace read are equally unchanged.
+          expect(JSON.stringify(on.toolCalls)).toBe(
+            JSON.stringify(off.toolCalls),
+          );
+          // ... and the comparison is not vacuous: the observation happened.
+          expect(on.observed).toBe(true);
+          expect(off.observed).toBe(false);
+          expect(on.events).toHaveLength(1);
+        });
+  });
+
+  it('observes a capability invoked through the provider-owned MCP bridge', async () => {
+    // All three transports run tools through one `registry.invoke(…, toolCtx)`,
+    // so the observer is installed on the provider-owned path too. This drives
+    // that path directly rather than assuming the shared seam covers it.
+    const db = seedCampaign();
+    try {
+      db.prepare(
+        "UPDATE clock SET current_location_id='camp' WHERE id=1",
+      ).run();
+      db.prepare(
+        `INSERT INTO inventory(
+           id, character_id, name, quantity, location, properties_json,
+           pack_ref, provenance, session_id, updated_at
+         ) VALUES ('ammo-1', 'pc-1', 'Magic Ammunition', 20, NULL, '{}', ?, 'test:w9', ?, ?)`,
+      ).run('magic-item:ammunition-1-2-or-3', DEFAULT_TEST_SESSION_ID, AT);
+      const mcpModel: ModelClient = {
+        complete(input: ModelCompleteInput): Promise<ModelCompleteResult> {
+          const executed = input.executeTool?.({
+            name: 'use_item',
+            args: { instanceId: 'ammo-1', operationId: 'hit-target' },
+          });
+          expect(executed?.ok).toBe(true);
+          return Promise.resolve({ text: 'The arrow strikes home.' });
+        },
+      };
+      const result = await runTurn(
+        {
+          db,
+          model: mcpModel,
+          registry: createDefaultToolRegistry(),
+          recordDiscoveryShadow: true,
+        },
+        turnInput('I loose the arrow.'),
+      );
+      expect(result.ok).toBe(true);
+      expect(
+        requireRuntime(recordedEvidence(db)).capabilityInvocations,
+      ).toMatchObject([
+        {
+          tool: 'use_item',
+          attempt: 1,
+          recordKey: 'magic-item:ammunition-1-2-or-3',
+          outcome: 'available',
+        },
+      ]);
+    } finally {
+      db.close();
+    }
   });
 
   it('adds no table to the live store', async () => {
@@ -427,10 +636,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           // M10 and M11 come from the same recorded evidence.
           const runtime = measureRuntimeDiscovery(
             trace,
-            evidence?.runtime ?? {
-              capabilityInvocations: [],
-              auditAttempts: [],
-            },
+            requireRuntime(evidence),
           );
           expect(runtime.m10.runtimeInvocationsAbsentFromPacket).toEqual([]);
           // No auditor was wired for these turns, so M11 says so rather than
@@ -523,10 +729,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
       const evidence = recordedEvidence(db);
       const runtime = measureRuntimeDiscovery(
         requireTrace(evidence),
-        evidence?.runtime ?? {
-          capabilityInvocations: [],
-          auditAttempts: [],
-        },
+        requireRuntime(evidence),
       );
       // Shadow discovery runs before the model chooses a tool, so it cannot
       // anticipate the operation; M10 reports the gap rather than agreement.
@@ -587,10 +790,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
       const evidence = recordedEvidence(db);
       const runtime = measureRuntimeDiscovery(
         requireTrace(evidence),
-        evidence?.runtime ?? {
-          capabilityInvocations: [],
-          auditAttempts: [],
-        },
+        requireRuntime(evidence),
       );
       expect(runtime.m11.auditorAbsent).toBe(false);
       expect(runtime.m11.primaryDmCandidates).toBe(2);
@@ -612,6 +812,164 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
    * The runtime-level claim rests on this plus `discoveryBoundary.test.ts`,
    * which pins the capture as the only discovery entry point runtime code has.
    */
+  /**
+   * A capability invocation belongs to the CAPABILITY boundary; whether the
+   * candidate containing it is accepted belongs to candidate acceptance. An
+   * audit-rejected attempt's canonical writes roll back — that is the point of
+   * the attempt savepoint — but the fact that its readiness preflight executed
+   * is not a canonical mutation and cannot roll back with it. M12 is the
+   * accepted state-effect measurement; M10 has no accepted-attempt restriction.
+   */
+  describe('capability events survive an audit-rejected attempt', () => {
+    const AMMO = 'magic-item:ammunition-1-2-or-3';
+
+    function seedAmmunition(db: ReturnType<typeof freshDbWithSession>): void {
+      db.prepare(
+        "UPDATE clock SET current_location_id='camp' WHERE id=1",
+      ).run();
+      db.prepare(
+        `INSERT INTO inventory(
+           id, character_id, name, quantity, location, properties_json,
+           pack_ref, provenance, session_id, updated_at
+         ) VALUES ('ammo-1', 'pc-1', 'Magic Ammunition', 20, NULL, '{}', ?, 'test:w9', ?, ?)`,
+      ).run(AMMO, DEFAULT_TEST_SESSION_ID, AT);
+    }
+
+    const useAmmunition = `I loose the arrow.\n${toolCall('use_item', {
+      instanceId: 'ammo-1',
+      operationId: 'hit-target',
+    })}`;
+
+    const REJECT: AuditVerdict = {
+      verdict: 'reject',
+      missingRequiredTools: ['roll'],
+      missingRequiredCalls: [{ tool: 'roll', target: 'attack' }],
+      disallowedToolCalls: [],
+      reason: 'asserted a hit without rolling',
+      repairInstruction: 'roll the attack first',
+    };
+
+    function quantityOf(db: ReturnType<typeof freshDbWithSession>): number {
+      return (
+        db
+          .prepare("SELECT quantity FROM inventory WHERE id='ammo-1'")
+          .get() as { quantity: number }
+      ).quantity;
+    }
+
+    it("keeps the rejected attempt's invocation after its writes roll back", async () => {
+      const db = seedCampaign();
+      try {
+        seedAmmunition(db);
+        const result = await runTurn(
+          {
+            db,
+            model: new ScriptedModel([
+              // Attempt 1 really spends the ammunition...
+              useAmmunition,
+              'The arrow strikes home.',
+              // ... attempt 2 is accepted without touching the capability.
+              'You steady yourself and take stock instead.',
+            ]),
+            registry: createDefaultToolRegistry(),
+            recordDiscoveryShadow: true,
+            auditor: new ScriptedAuditor([REJECT]),
+          },
+          {
+            ...turnInput('I loose the arrow.'),
+            toolProtocol: 'fenced' as const,
+          },
+        );
+        expect(result.ok).toBe(true);
+        // The candidate's canonical mutation rolled back with its savepoint.
+        expect(quantityOf(db)).toBe(20);
+        expect(result.toolCalls).toEqual([]);
+
+        const evidence = recordedEvidence(db);
+        const runtime = requireRuntime(evidence);
+        // ... and the observation that its capability ran did not.
+        expect(runtime.capabilityInvocations).toEqual([
+          {
+            tool: 'use_item',
+            attempt: 1,
+            instanceId: 'ammo-1',
+            recordKey: AMMO,
+            operationId: 'hit-target',
+            capabilityId: 'assertMagicItemOperationReady',
+            capabilityRevision: 'derived-magic-item-clauses-v1',
+            outcome: 'available',
+          },
+        ]);
+        // Nothing is fabricated for the accepted attempt, which invoked nothing.
+        expect(
+          runtime.capabilityInvocations.filter((item) => item.attempt === 2),
+        ).toEqual([]);
+        expect(runtime.auditorPresent).toBe(true);
+        expect(runtime.auditAttempts.map((item) => item.action)).toEqual([
+          'retry',
+          'accept',
+        ]);
+
+        // M10 sees the event. The real runtime packet does not anticipate the
+        // operation (shadow runs before the model chooses one), so it is
+        // reported as absent from the packet — never as `not-invoked`.
+        const m10 = measureRuntimeDiscovery(
+          requireTrace(evidence),
+          runtime,
+        ).m10;
+        expect(m10.comparisons).toEqual([]);
+        expect(
+          m10.runtimeInvocationsAbsentFromPacket.map((item) => item.attempt),
+        ).toEqual([1]);
+      } finally {
+        db.close();
+      }
+    });
+
+    it('retains one event per attempt when both attempts invoke the same subject', async () => {
+      const db = seedCampaign();
+      try {
+        seedAmmunition(db);
+        const result = await runTurn(
+          {
+            db,
+            model: new ScriptedModel([
+              useAmmunition,
+              'The arrow strikes home.',
+              useAmmunition,
+              'I rolled first: the arrow strikes home.',
+            ]),
+            registry: createDefaultToolRegistry(),
+            recordDiscoveryShadow: true,
+            auditor: new ScriptedAuditor([REJECT]),
+          },
+          {
+            ...turnInput('I loose the arrow.'),
+            toolProtocol: 'fenced' as const,
+          },
+        );
+        expect(result.ok).toBe(true);
+        // Only the accepted attempt's spend survives.
+        expect(quantityOf(db)).toBe(19);
+        const runtime = requireRuntime(recordedEvidence(db));
+        // Two real invocations, retained individually and attributed to their
+        // own attempts. Collapsing them would erase a real event.
+        expect(
+          runtime.capabilityInvocations.map((item) => ({
+            attempt: item.attempt,
+            recordKey: item.recordKey,
+            outcome: item.outcome,
+          })),
+        ).toEqual([
+          { attempt: 1, recordKey: AMMO, outcome: 'available' },
+          { attempt: 2, recordKey: AMMO, outcome: 'available' },
+        ]);
+      } finally {
+        db.close();
+      }
+    });
+  });
+
   describe('a failed capture is recorded, never raised', () => {
     const captureInput = (db: ReturnType<typeof freshDbWithSession>) => ({
       db,

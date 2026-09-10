@@ -1,5 +1,7 @@
 import {
+  type CampaignCapabilityInvocationEvent,
   type CampaignCapabilityPreflight,
+  campaignCapabilityInvocationEvent,
   preflightCampaignItemOperation,
 } from '../campaign/capabilityPreflight.js';
 import { rollDice } from '../orchestrator/dice.js';
@@ -101,30 +103,21 @@ export interface UseItemInput {
   readonly sessionId: string;
   readonly at: string;
   readonly rng?: Rng;
+  /**
+   * INTERNAL runtime observation of the bounded readiness capability, called
+   * the instant the preflight returns. It is not part of the tool result, the
+   * DM's view, the auditor's view, or the persisted tool call: an observer of
+   * the capability must not be able to change what the capability's caller
+   * sees. Synchronous, and expected to do nothing but record.
+   */
+  readonly onCapabilityInvocation?: (
+    event: CampaignCapabilityInvocationEvent,
+  ) => void;
 }
 
 export interface UseItemResult {
   readonly instanceId: string;
-  /**
-   * The readiness capability event this use ran through, exactly as
-   * `preflightCampaignItemOperation` reported it: its identity, revision,
-   * subject and status.
-   *
-   * It is reported on success as well as on refusal because the capability is
-   * a positive bounded commitment, and an observer that had to infer it from
-   * whether the surrounding tool call ultimately succeeded would lose both the
-   * identity it committed under and the fact that it was consulted at all.
-   */
-  readonly capabilityPreflight: CampaignCapabilityPreflight;
   readonly packRef: string;
-  /**
-   * The canonical variant identity this use resolved from the instance, when
-   * the instance carries one. It participates in the readiness preflight
-   * (`assertMagicItemOperationReady(record, variantId, …)`) and in mechanics
-   * selection, so an observer that only sees the tool result would otherwise
-   * be unable to say WHICH subject the capability was asserted about.
-   */
-  readonly variantId?: string;
   readonly operationId: string;
   readonly costs: readonly {
     readonly economy: string;
@@ -171,26 +164,6 @@ export class ItemStateError extends Error {
     super(message);
     this.name = 'ItemStateError';
   }
-}
-
-/**
- * Record, once, the readiness capability that was consulted before this
- * failure. Used where a capability reported `available` and the operation then
- * failed on live state: the invocation still happened, and rebuilding the error
- * to carry it would discard the subclass (`ItemStateAmbiguityError`) and the
- * fields a caller reads off it.
- */
-function attachCapabilityPreflight(
-  error: ItemStateError,
-  preflight: CampaignCapabilityPreflight,
-): void {
-  if (error.capabilityPreflight !== undefined) return;
-  Object.defineProperty(error, 'capabilityPreflight', {
-    value: preflight,
-    enumerable: true,
-    writable: false,
-    configurable: false,
-  });
 }
 
 export class ItemStateAmbiguityError extends ItemStateError {
@@ -1900,27 +1873,6 @@ function splitNonmagicalSingleUseInventory(
 }
 
 export function useItem(db: Db, input: UseItemInput): UseItemResult {
-  // The capability event, captured the moment it happens. Everything after the
-  // preflight runs on live state that can fail for reasons of its own; without
-  // this, an `available` capability followed by an ordinary downstream failure
-  // would leave no trace that the capability was invoked at all.
-  let invoked: CampaignCapabilityPreflight | undefined;
-  try {
-    return useItemInTransaction(db, input, (preflight) => {
-      invoked = preflight;
-    });
-  } catch (error) {
-    if (error instanceof ItemStateError && invoked !== undefined)
-      attachCapabilityPreflight(error, invoked);
-    throw error;
-  }
-}
-
-function useItemInTransaction(
-  db: Db,
-  input: UseItemInput,
-  onPreflight: (preflight: CampaignCapabilityPreflight) => void,
-): UseItemResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
       .prepare(
@@ -1995,7 +1947,20 @@ function useItemInTransaction(
       operation: readinessInput,
       resolveRulesPack: input.resolveRulesPack,
     });
-    onPreflight(preflight);
+    // The capability event, emitted the instant the bounded preflight returns
+    // and BEFORE the blocked refusal, reference validation, state
+    // initialization, cost accounting, world-location work, or any other
+    // downstream item work. Its subject is the exact triple that was passed to
+    // the preflight, not something rediscovered afterwards. Whether the use
+    // then succeeds, fails on unrelated live state, or belongs to a candidate
+    // the auditor rejects changes none of it.
+    input.onCapabilityInvocation?.(
+      campaignCapabilityInvocationEvent(preflight, {
+        recordKey: hit.record.key,
+        ...(variantId === undefined ? {} : { variantId }),
+        operationId: readinessInput.operationId,
+      }),
+    );
     if (preflight.status === 'blocked')
       throw new ItemStateError(
         preflight.reason ?? 'Item operation is blocked.',
@@ -2334,9 +2299,7 @@ function useItemInTransaction(
     const effectIds = [...operationEffectIds, ...transitionEffectIds];
     return {
       instanceId: input.instanceId,
-      capabilityPreflight: preflight,
       packRef,
-      ...(variantId === undefined ? {} : { variantId }),
       operationId: input.operationId,
       costs,
       effects: effectIds.map((id) => refs.effects.get(id)),

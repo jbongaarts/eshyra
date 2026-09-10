@@ -3,7 +3,6 @@ import type {
   CapabilityPreflight,
   RuntimeAuditAttempt,
   RuntimeCapabilityInvocation,
-  RuntimeCapabilityOutcome,
   TypedTraversal,
 } from './types.js';
 
@@ -462,11 +461,19 @@ const RULE_EVIDENCE_TOOLS: readonly string[] = ['lookup_rules'];
  * compare, never a disagreement: reporting one as `disagreed` would attribute
  * a mismatch to the capability that belongs to the measurement's own limits.
  */
+/**
+ * Why an M10 comparison could not be made. Each is a refusal to compare, never
+ * a disagreement: reporting one as `disagreed` would attribute to the
+ * capability a mismatch that belongs to the measurement's own limits.
+ *
+ * There is no reason here for an incompletely identified runtime event.
+ * Runtime capability events are recorded at the execution boundary and are
+ * structurally complete or rejected at the durable read boundary, so a
+ * half-identified one is malformed evidence rather than an M10 state.
+ */
 export type IncomparableReason =
   | 'not-invoked'
   | 'packet-status-not-evaluated-offline'
-  | 'runtime-subject-identity-not-reported'
-  | 'capability-identity-not-reported'
   | 'capability-identity-mismatch'
   | 'ambiguous-runtime-invocation';
 
@@ -478,23 +485,15 @@ function incomparableReason(
     return 'packet-status-not-evaluated-offline';
   if (matches.length === 0) return 'not-invoked';
   // Two invocations of the same subject in one turn can have different
-  // outcomes; picking the first would be a coin flip presented as a result.
+  // outcomes; picking one would be a coin flip presented as a result, and
+  // collapsing them would erase a real event.
   if (matches.length > 1) return 'ambiguous-runtime-invocation';
-  const invocation = matches[0];
-  if (invocation.subjectSource !== 'runtime-result')
-    return 'runtime-subject-identity-not-reported';
   // A capability is a bounded positive commitment made under a named identity
   // and revision. Two preflights over the same subject can be two different
   // commitments, so agreement across them would be agreement about nothing.
   if (
-    invocation.capabilityId === undefined ||
-    invocation.capabilityRevision === undefined ||
-    preflight.revision === undefined
-  )
-    return 'capability-identity-not-reported';
-  if (
-    invocation.capabilityId !== preflight.capabilityId ||
-    invocation.capabilityRevision !== preflight.revision
+    matches[0].capabilityId !== preflight.capabilityId ||
+    matches[0].capabilityRevision !== preflight.revision
   )
     return 'capability-identity-mismatch';
   return undefined;
@@ -503,6 +502,14 @@ function incomparableReason(
 export interface RuntimeDiscoveryObservations {
   readonly capabilityInvocations: readonly RuntimeCapabilityInvocation[];
   readonly auditAttempts: readonly RuntimeAuditAttempt[];
+  /**
+   * Whether the turn was configured with a mechanics auditor, recorded from the
+   * turn's own configuration. M11's `auditorAbsent` is derived from THIS, never
+   * from an empty attempt list: "no auditor ran" and "the auditor recorded
+   * nothing" are different facts, and inferring the first from the second is
+   * how an empty evidence collection becomes a green flag.
+   */
+  readonly auditorPresent: boolean;
 }
 
 export interface RuntimeDiscoveryMeasurements {
@@ -519,7 +526,7 @@ export interface RuntimeDiscoveryMeasurements {
       readonly candidateKey: string;
       readonly capabilityId: string;
       readonly packetStatus: CapabilityPreflight['status'];
-      readonly runtimeOutcome: RuntimeCapabilityOutcome | 'not-invoked';
+      readonly runtimeOutcome: 'available' | 'blocked' | 'not-invoked';
       readonly agreement: 'agreed' | 'disagreed' | 'not-comparable';
       /** Present whenever `agreement` is `not-comparable`. */
       readonly incomparableBecause?: IncomparableReason;
@@ -544,7 +551,11 @@ export interface RuntimeDiscoveryMeasurements {
     readonly missingRuleEvidenceRetries: number;
     /** Retries whose verdict named no missing tool at all. */
     readonly retriesWithNoNamedMissingTool: number;
-    /** True when no auditor ran, so every count above is structurally zero. */
+    /**
+     * True when the turn ran no auditor, so every count above is structurally
+     * zero. Read from the turn's configuration, not inferred from an empty
+     * attempt list.
+     */
     readonly auditorAbsent: boolean;
   };
 }
@@ -558,9 +569,8 @@ export function measureRuntimeDiscovery(
   trace: ProjectedDiscoveryTrace,
   runtime: RuntimeDiscoveryObservations,
 ): RuntimeDiscoveryMeasurements {
-  const capabilityOutcomes = runtime.capabilityInvocations.filter(
-    (invocation) => invocation.outcome !== 'not-a-capability-outcome',
-  );
+  // Every recorded invocation is a real event, so none is filtered out here.
+  const capabilityOutcomes = runtime.capabilityInvocations;
   const consumed = new Set<RuntimeCapabilityInvocation>();
   const comparisons = trace.packet.packet.candidates
     .filter((item) => item.capability !== undefined)
@@ -628,7 +638,7 @@ export function measureRuntimeDiscovery(
       retriesWithNoNamedMissingTool: retries.filter(
         (item) => item.missingTools.length === 0,
       ).length,
-      auditorAbsent: attempts.length === 0,
+      auditorAbsent: !runtime.auditorPresent,
     },
   };
 }

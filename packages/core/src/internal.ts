@@ -562,9 +562,9 @@ export { DEFAULT_BUDGET, retainCandidates } from './discovery/retention.js';
 export type {
   DiscoveryShadowCapture,
   DiscoveryShadowEvidence,
+  ObservedCapabilityInvocation,
   ShadowAdventureSeat,
   ShadowDiscoveryInput,
-  ShadowExecutedToolCall,
   ShadowFailure,
   ShadowItemInstanceBinding,
   ShadowScenarioRecord,
@@ -575,8 +575,8 @@ export {
   DISCOVERY_SHADOW_SCHEMA,
   DiscoveryShadowSchemaError,
   encodeDiscoveryShadowEvidence,
-  observeRuntimeCapabilityInvocations,
   readDiscoveryShadowEvidence,
+  runtimeCapabilityInvocation,
 } from './discovery/shadow.js';
 export { extractDiscoverySignals } from './discovery/signals.js';
 export type {
@@ -610,7 +610,6 @@ export type {
   RouteClass,
   RuntimeAuditAttempt,
   RuntimeCapabilityInvocation,
-  RuntimeCapabilityOutcome,
   StageLoss,
   StageTrace,
   TypedTraversal,
@@ -927,6 +926,7 @@ export {
   resolveSpellUpcast,
   SpellUpcastError,
 } from './orchestrator/spellUpcast.js';
+export type { CapabilityInvocationObservation } from './orchestrator/toolRegistry.js';
 export type {
   ToolRequest,
   ToolRequestSource,

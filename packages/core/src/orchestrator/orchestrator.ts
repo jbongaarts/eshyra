@@ -26,8 +26,12 @@ import {
   captureDiscoveryShadow,
   completeDiscoveryShadowEvidence,
   encodeDiscoveryShadowEvidence,
+  runtimeCapabilityInvocation,
 } from '../discovery/shadow.js';
-import type { RuntimeAuditAttempt } from '../discovery/types.js';
+import type {
+  RuntimeAuditAttempt,
+  RuntimeCapabilityInvocation,
+} from '../discovery/types.js';
 import {
   recordTurnFailureDiagnostic,
   sanitizeDiagnosticMessage,
@@ -64,6 +68,7 @@ import { appendPlayerVisibleRollLedger } from './playerVisibleRollLedger.js';
 import { buildSystemPrompt, type ToolProtocol } from './protocol.js';
 import { createSeededRng } from './rng.js';
 import type { AmbiguityPrecedentProposal } from './toolAcceptAmbiguityPrecedent.js';
+import type { CapabilityInvocationObservation } from './toolRegistry.js';
 import type { ToolContext, ToolRegistry } from './tools.js';
 import {
   AuditError,
@@ -689,6 +694,20 @@ export async function runTurn(
     at: input.at,
     resolveAdventureModule: deps.resolveAdventureModule,
     resolveRulesPack: deps.resolveRulesPack,
+    // Installed only when this turn is recording observations, so a turn that
+    // is not observing has no observer at all. The hook cannot reach the tool's
+    // own result; it only appends to the turn-owned buffer above.
+    ...(deps.recordDiscoveryShadow === true
+      ? {
+          observeCapabilityInvocation: (
+            observation: CapabilityInvocationObservation,
+          ) => {
+            shadowCapabilityInvocations.push(
+              runtimeCapabilityInvocation(observation, capabilityAttempt),
+            );
+          },
+        }
+      : {}),
   };
 
   // Tracked here (not inside runModelLoop) so the failure path can still
@@ -704,6 +723,13 @@ export async function runTurn(
   const retryCauses: AuditRetryCause[] = [];
   // Phase 2 M11 evidence: one entry per audited primary-DM candidate.
   const shadowAuditAttempts: RuntimeAuditAttempt[] = [];
+  // Phase 2 M10 evidence, owned by the TURN rather than by any candidate
+  // attempt. A rejected candidate's canonical writes roll back with its
+  // savepoint; the fact that its capability preflight executed does not, so
+  // this buffer is never cleared and is never derived from the accepted
+  // candidate's tool calls.
+  const shadowCapabilityInvocations: RuntimeCapabilityInvocation[] = [];
+  let capabilityAttempt = 0;
   const rejectedAttemptToolNames = new Set<string>();
   let toolsRerunDuringRetry: readonly string[] = [];
 
@@ -830,6 +856,9 @@ export async function runTurn(
     const seenRequirementKeys = new Set<string>();
     for (let attempt = 1; ; attempt += 1) {
       dispositionAttempt = attempt;
+      // Bind the attempt this candidate's capability events belong to, before
+      // any of its tools can run.
+      capabilityAttempt = attempt;
       db.exec(`SAVEPOINT ${ATTEMPT_SAVEPOINT}`);
       const precedents: AmbiguityPrecedentProposal[] = [];
       toolCtx.proposeAmbiguityPrecedent =
@@ -1123,8 +1152,9 @@ export async function runTurn(
         : {
             discoveryShadow: encodeDiscoveryShadowEvidence(
               completeDiscoveryShadowEvidence(shadowCapture, {
-                toolCalls,
+                capabilityInvocations: shadowCapabilityInvocations,
                 auditAttempts: shadowAuditAttempts,
+                auditorPresent: deps.auditor !== undefined,
               }),
             ),
           }),

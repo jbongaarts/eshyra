@@ -18,7 +18,6 @@ import { projectDiscoveryTrace } from './traceProjection.js';
 import type {
   CampaignRuleReadSeam,
   DiscoveryScenario,
-  RuntimeAuditAttempt,
   RuntimeCapabilityInvocation,
 } from './types.js';
 
@@ -255,184 +254,72 @@ export function captureDiscoveryShadow(
   }
 }
 
-/** Structural view of one executed tool call, so discovery imports no orchestrator. */
-export interface ShadowExecutedToolCall {
+/**
+ * A capability invocation as the tool layer observes it.
+ *
+ * Declared structurally so discovery imports nothing from the orchestrator: the
+ * runtime hands its observation in, and the tool registry's own
+ * `CapabilityInvocationObservation` satisfies this without either side
+ * depending on the other's module.
+ */
+export interface ObservedCapabilityInvocation {
   readonly tool: string;
-  readonly args?: unknown;
-  readonly result:
-    | { readonly ok: true; readonly data?: unknown }
-    | {
-        readonly ok: false;
-        readonly code: string;
-        readonly message: string;
-        readonly data?: unknown;
-      };
-}
-
-function field(value: unknown, key: string): unknown {
-  return typeof value === 'object' && value !== null
-    ? (value as Record<string, unknown>)[key]
-    : undefined;
-}
-
-/**
- * The runtime capability events of one accepted turn, for M10.
- *
- * `use_item` is the only runtime path that reaches
- * `assertMagicItemOperationReady` — it is the sole caller of
- * `preflightCampaignItemOperation` — so it is the only tool that can carry one.
- *
- * What is read is the PREFLIGHT EVENT, never the tool's terminal result. The
- * two are different facts: a capability can report `available` and the use can
- * still fail afterwards on live state, and inferring the capability's outcome
- * from the tool's would erase that invocation entirely. `useItem` therefore
- * reports its preflight on success, on refusal, and on a downstream failure
- * that happened after the capability was consulted; each carries the identity,
- * revision, subject and status the capability committed under.
- *
- * `not-a-capability-outcome` is left for a `use_item` that failed BEFORE the
- * preflight ran — an unresolvable pack ref, a missing attunement, a quarantined
- * instance. Nothing was invoked, so there is nothing for M10 to compare.
- *
- * The pre-model inventory binding is consulted only where no preflight event
- * was reported, and is then LABELLED as a snapshot: the model may have changed
- * the instance before invoking the tool, and a snapshot that merely usually
- * agrees is not identity.
- */
-export function observeRuntimeCapabilityInvocations(
-  toolCalls: readonly ShadowExecutedToolCall[],
-  bindings: readonly ShadowItemInstanceBinding[],
-): readonly RuntimeCapabilityInvocation[] {
-  return toolCalls
-    .filter((call) => call.tool === 'use_item')
-    .map((call): RuntimeCapabilityInvocation => {
-      const instanceId = field(call.args, 'instanceId');
-      const operationId = field(call.args, 'operationId');
-      const identity = {
-        tool: call.tool,
-        ...(typeof instanceId === 'string' ? { instanceId } : {}),
-        ...(typeof operationId === 'string' ? { operationId } : {}),
-      };
-      const event = preflightEvent(call.result.data);
-      if (event === undefined) {
-        const snapshot = bindingSubject(instanceId, bindings);
-        return {
-          ...identity,
-          ...snapshot.identity,
-          subjectSource: snapshot.source,
-          outcome: 'not-a-capability-outcome',
-          detail: call.result.ok
-            ? 'the tool reported no readiness preflight'
-            : `${call.result.code}: ${call.result.message}`,
-        };
-      }
-      // A preflight that named no subject leaves the identity unproved even
-      // though the event itself is real, so the snapshot is recorded and
-      // labelled rather than being passed off as the runtime's own answer.
-      const subject =
-        event.subject === undefined
-          ? bindingSubject(instanceId, bindings)
-          : { identity: event.subject, source: 'runtime-result' as const };
-      return {
-        ...identity,
-        ...subject.identity,
-        subjectSource: subject.source,
-        capabilityId: event.capabilityId,
-        ...(event.capabilityRevision === undefined
-          ? {}
-          : { capabilityRevision: event.capabilityRevision }),
-        outcome: event.outcome,
-        ...(call.result.ok
-          ? {}
-          : { detail: `${call.result.code}: ${call.result.message}` }),
-      };
-    });
-}
-
-/**
- * The preflight as the runtime reported it, wherever it rides: nested on a
- * successful `useItem` result, or as the error payload of a refusal or of a
- * failure that happened after the capability was consulted.
- */
-function preflightEvent(data: unknown):
-  | {
-      readonly subject?: {
-        readonly recordKey: string;
-        readonly variantId?: string;
-      };
-      readonly capabilityId: string;
-      readonly capabilityRevision?: string;
-      readonly outcome: 'available' | 'blocked';
-    }
-  | undefined {
-  const preflight = field(data, 'capabilityPreflight') ?? data;
-  const capabilityId = field(preflight, 'capabilityId');
-  const status = field(preflight, 'status');
-  if (
-    typeof capabilityId !== 'string' ||
-    (status !== 'available' && status !== 'blocked')
-  )
-    return undefined;
-  const revision = field(preflight, 'revision');
-  const subject = field(preflight, 'subject');
-  const recordKey = field(subject, 'recordKey');
-  const variantId = field(subject, 'variantId');
-  return {
-    ...(typeof recordKey === 'string'
-      ? {
-          subject: {
-            recordKey,
-            ...(typeof variantId === 'string' ? { variantId } : {}),
-          },
-        }
-      : {}),
-    capabilityId,
-    ...(typeof revision === 'string' ? { capabilityRevision: revision } : {}),
-    outcome: status,
+  readonly instanceId: string;
+  readonly capabilityId: string;
+  readonly revision: string;
+  readonly status: 'available' | 'blocked';
+  readonly subject: {
+    readonly recordKey: string;
+    readonly variantId?: string;
+    readonly operationId: string;
   };
 }
 
-/** The pre-model snapshot, used only where no runtime outcome named a subject. */
-function bindingSubject(
-  instanceId: unknown,
-  bindings: readonly ShadowItemInstanceBinding[],
-): {
-  readonly identity: { recordKey?: string; variantId?: string };
-  readonly source: 'pre-model-binding' | 'unavailable';
-} {
-  const binding =
-    typeof instanceId === 'string'
-      ? bindings.find((item) => item.instanceId === instanceId)
-      : undefined;
-  if (binding === undefined) return { identity: {}, source: 'unavailable' };
+/**
+ * Project one observed capability invocation into the durable W9 shape.
+ *
+ * Discovery owns the durable evidence shape, so it owns this projection rather
+ * than leaving each caller to spell it out — a caller-side mapping is one more
+ * place for the recorded fields to drift from the ones the reader validates and
+ * M10 consumes. The `attempt` comes from the turn, which is the only layer that
+ * knows which primary-DM candidate was running.
+ */
+export function runtimeCapabilityInvocation(
+  observation: ObservedCapabilityInvocation,
+  attempt: number,
+): RuntimeCapabilityInvocation {
   return {
-    identity: {
-      recordKey: binding.recordKey,
-      ...(binding.variantId === undefined
-        ? {}
-        : { variantId: binding.variantId }),
-    },
-    source: 'pre-model-binding',
+    tool: observation.tool,
+    attempt,
+    instanceId: observation.instanceId,
+    recordKey: observation.subject.recordKey,
+    ...(observation.subject.variantId === undefined
+      ? {}
+      : { variantId: observation.subject.variantId }),
+    operationId: observation.subject.operationId,
+    capabilityId: observation.capabilityId,
+    capabilityRevision: observation.revision,
+    outcome: observation.status,
   };
 }
 
+/**
+ * Attach the turn's recorded runtime observations to a capture.
+ *
+ * The observations are handed in already recorded. Nothing here infers a
+ * capability invocation from a tool result, an inventory snapshot, or the
+ * accepted candidate's tool calls: a capability invocation and the terminal
+ * result of the tool containing it are different events, and only the first is
+ * M10's subject. This module serializes observations; it does not observe.
+ */
 export function completeDiscoveryShadowEvidence(
   capture: DiscoveryShadowCapture,
-  runtime: {
-    readonly toolCalls: readonly ShadowExecutedToolCall[];
-    readonly auditAttempts: readonly RuntimeAuditAttempt[];
-  },
+  runtime: RuntimeDiscoveryObservations,
 ): DiscoveryShadowEvidence {
   return {
     ...capture,
     schema: DISCOVERY_SHADOW_SCHEMA,
-    runtime: {
-      capabilityInvocations: observeRuntimeCapabilityInvocations(
-        runtime.toolCalls,
-        capture.scenario.itemInstances,
-      ),
-      auditAttempts: runtime.auditAttempts,
-    },
+    runtime,
     modelUsageClaim: null,
   };
 }
@@ -557,16 +444,8 @@ const BLOCKER_STATUSES = [
   'unrepaired',
   'not-discriminable',
 ] as const;
-const CAPABILITY_OUTCOMES = [
-  'available',
-  'blocked',
-  'not-a-capability-outcome',
-] as const;
-const SUBJECT_SOURCES = [
-  'runtime-result',
-  'pre-model-binding',
-  'unavailable',
-] as const;
+const CAPABILITY_OUTCOMES = ['available', 'blocked'] as const;
+const AUDIT_VERDICTS = ['accept', 'reject'] as const;
 const AUDIT_ACTIONS = ['accept', 'repair', 'retry', 'fail'] as const;
 const FAILURE_STAGES = ['scenario', 'stack', 'blockers', 'discovery'] as const;
 
@@ -623,9 +502,81 @@ function checkDrops(value: unknown, path: string): void {
   });
 }
 
-function checkStage(value: unknown, path: string): Record<string, unknown> {
+/**
+ * The v1 stage contract, declared HERE rather than imported from the producer.
+ *
+ * A validator that reads the producer's own constant cannot catch the producer
+ * drifting: both sides would move together and every recorded row would stay
+ * "valid" by construction. This table is the checker's independent statement of
+ * the accepted contract — design section 12.1's stage sequence, and section
+ * 13.3's rule that ONLY the two conditional stages may report `skipped`.
+ */
+const V1_STAGES: readonly {
+  readonly property: string;
+  readonly name: string;
+  readonly conditional: boolean;
+}[] = [
+  { property: 'signals', name: 'signals', conditional: false },
+  { property: 'candidates', name: 'candidates', conditional: false },
+  { property: 'expansion', name: 'expansion', conditional: false },
+  { property: 'ruleJoin', name: 'rule-join', conditional: false },
+  {
+    property: 'ruleExpansion',
+    name: 'campaign-rule-expansion',
+    conditional: true,
+  },
+  { property: 'lateRuleJoin', name: 'late-ruling-join', conditional: true },
+  { property: 'dedup', name: 'dedup', conditional: false },
+  { property: 'retention', name: 'retention', conditional: false },
+  { property: 'packet', name: 'packet', conditional: false },
+];
+
+/**
+ * Stage accounting integrity.
+ *
+ * `produced`, `modified` and `carriedForward` are a PARTITION of the identities
+ * the stage emitted: each identity appears exactly once across the three, and
+ * nothing appears that was not emitted. Validating the three as bare string
+ * arrays would let a row claim work over an identity it never emitted, or omit
+ * an emitted one, and M2's loss attribution and the per-stage report would
+ * quietly describe a stage that never existed.
+ */
+function checkAccounting(
+  stage: Record<string, unknown>,
+  path: string,
+  emitted: readonly string[],
+): void {
+  const accounted = [
+    ...(stage.produced as string[]),
+    ...(stage.modified as string[]),
+    ...(stage.carriedForward as string[]),
+  ];
+  if (new Set(accounted).size !== accounted.length)
+    failAt(path, 'produced/modified/carriedForward repeat an identity');
+  if (new Set(emitted).size !== emitted.length)
+    failAt(path, 'outputsProduced repeats an emitted identity');
+  if (accounted.length !== emitted.length)
+    failAt(
+      path,
+      `accounts for ${accounted.length} identities but emitted ${emitted.length}`,
+    );
+  const emittedSet = new Set(emitted);
+  for (const key of accounted)
+    if (!emittedSet.has(key))
+      failAt(path, `accounts for '${key}', which it did not emit`);
+}
+
+function checkStage(
+  value: unknown,
+  path: string,
+  declared: { readonly name: string; readonly conditional: boolean },
+): Record<string, unknown> {
   const stage = asObject(value, path);
-  asString(stage.stage, `${path}.stage`);
+  if (asString(stage.stage, `${path}.stage`) !== declared.name)
+    failAt(
+      `${path}.stage`,
+      `is '${String(stage.stage)}', not the v1 stage '${declared.name}'`,
+    );
   asArray(stage.outputsProduced, `${path}.outputsProduced`);
   for (const key of ['produced', 'modified', 'carriedForward'])
     strings(stage[key], `${path}.${key}`);
@@ -644,14 +595,44 @@ function checkStage(value: unknown, path: string): Record<string, unknown> {
       `${path}.failedToRun`,
       `is ${String(failedToRun)} while outcome is '${outcome}'`,
     );
+  // Only a conditional stage may be `skipped`, and only a non-conditional one
+  // can fail to run: a mandatory stage that recorded nothing has failed, and
+  // calling that a conditional skip is precisely how "recognizing nothing looks
+  // green" gets into durable evidence.
+  if (outcome === 'skipped' && !declared.conditional)
+    failAt(
+      `${path}.outcome`,
+      `'${declared.name}' is not a conditional stage and may not report 'skipped'`,
+    );
+  if (outcome === 'failed-to-run' && declared.conditional)
+    failAt(
+      `${path}.outcome`,
+      `'${declared.name}' is conditional and reports 'skipped', never 'failed-to-run'`,
+    );
+  // Both non-`ran` outcomes mean the stage did NO WORK. Pass-through is not
+  // work (section 12.1), so `carriedForward` and forwarded output stay legal;
+  // produced candidates, modifications and losses do not.
+  if (outcome !== 'ran')
+    for (const key of ['produced', 'modified', 'losses'])
+      if ((stage[key] as unknown[]).length > 0)
+        failAt(
+          `${path}.${key}`,
+          `is non-empty on a stage that reports '${outcome}', which means it did no work`,
+        );
   return stage;
 }
 
-function checkCandidateStage(value: unknown, path: string, banded: boolean) {
-  const stage = checkStage(value, path);
+function checkCandidateStage(
+  value: unknown,
+  path: string,
+  declared: { readonly name: string; readonly conditional: boolean },
+  banded: boolean,
+) {
+  const stage = checkStage(value, path, declared);
+  const emitted: string[] = [];
   each(stage.outputsProduced, `${path}.outputsProduced`, (item, at) => {
     const fields = asObject(item, at);
-    asString(fields.candidateKey, `${at}.candidateKey`);
+    emitted.push(asString(fields.candidateKey, `${at}.candidateKey`));
     asString(fields.targetKind, `${at}.targetKind`);
     checkRoutes(fields.routes, `${at}.routes`);
     checkTraversals(fields.traversals, `${at}.traversals`);
@@ -659,11 +640,16 @@ function checkCandidateStage(value: unknown, path: string, banded: boolean) {
     strings(fields.campaignRulingIdentities, `${at}.campaignRulingIdentities`);
     if (banded) asEnum(fields.band, `${at}.band`, BANDS);
   });
+  checkAccounting(stage, path, emitted);
   return stage;
 }
 
-function checkRuleJoin(value: unknown, path: string): void {
-  const stage = checkCandidateStage(value, path, false);
+function checkRuleJoin(
+  value: unknown,
+  path: string,
+  declared: { readonly name: string; readonly conditional: boolean },
+): void {
+  const stage = checkCandidateStage(value, path, declared, false);
   for (const key of [
     'requestedRuleRecordKeys',
     'requestedAmbiguityIds',
@@ -692,8 +678,12 @@ function checkRuleJoin(value: unknown, path: string): void {
   );
 }
 
-function checkPacket(value: unknown, path: string): void {
-  const stage = checkStage(value, path);
+function checkPacket(
+  value: unknown,
+  path: string,
+  declared: { readonly name: string; readonly conditional: boolean },
+): void {
+  const stage = checkStage(value, path, declared);
   asBoolean(stage.byteBudgetExceeded, `${path}.byteBudgetExceeded`);
   checkDrops(stage.byteOverflow, `${path}.byteOverflow`);
   checkDrops(stage.dropped, `${path}.dropped`);
@@ -702,10 +692,12 @@ function checkPacket(value: unknown, path: string): void {
   asArray(packet.projectionLimitNotes, `${path}.packet.projectionLimitNotes`);
   if (packet.modelUsageClaim !== null)
     failAt(`${path}.packet.modelUsageClaim`, 'expected the non-claim `null`');
+  const emitted: string[] = [];
   each(packet.candidates, `${path}.packet.candidates`, (item, at) => {
     const candidate = asObject(item, at);
     const identity = asObject(candidate.identity, `${at}.identity`);
-    for (const key of ['key', 'kind', 'name'])
+    emitted.push(asString(identity.key, `${at}.identity.key`));
+    for (const key of ['kind', 'name'])
       asString(identity[key], `${at}.identity.${key}`);
     const provenance = asObject(candidate.provenance, `${at}.provenance`);
     asString(provenance.sourceRef, `${at}.provenance.sourceRef`);
@@ -719,62 +711,119 @@ function checkPacket(value: unknown, path: string): void {
     for (const key of ['campaignRules', 'campaignRulings'])
       each(candidate[key], `${at}.${key}`, checkRuleIdentity);
     asArray(candidate.projectionLimits, `${at}.projectionLimits`);
-    optional(candidate.capability, `${at}.capability`, (raw, where) => {
-      const capability = asObject(raw, where);
-      asEnum(capability.status, `${where}.status`, CAPABILITY_STATUSES);
-      asString(capability.capabilityId, `${where}.capabilityId`);
-      optional(capability.operationId, `${where}.operationId`, (x, w) => {
+    optional(candidate.capability, `${at}.capability`, checkCapability);
+  });
+  // The packet's outputs ARE its candidates, so the accounting is checked
+  // against the same list M1, M3 and M7 read.
+  checkAccounting(stage, path, emitted);
+  if (
+    asArray(stage.outputsProduced, `${path}.outputsProduced`).length !==
+    emitted.length
+  )
+    failAt(
+      `${path}.outputsProduced`,
+      `holds ${(stage.outputsProduced as unknown[]).length} entries while the packet holds ${emitted.length}`,
+    );
+  // M7 reports these bytes as the packet's size. A finite but fabricated count
+  // is not evidence, so it is recomputed from the recorded candidates using the
+  // representation v1 writes.
+  const recomputed = Buffer.byteLength(
+    JSON.stringify(packet.candidates),
+    'utf8',
+  );
+  if (packet.bytes !== recomputed)
+    failAt(
+      `${path}.packet.bytes`,
+      `records ${String(packet.bytes)} but the recorded candidates serialize to ${recomputed}`,
+    );
+}
+
+/**
+ * A packet capability preflight.
+ *
+ * An EVALUATED status is a bounded commitment and must name the identity,
+ * revision and operation it was made under, or M10 could not require a runtime
+ * event to match it — and deleting `revision` would silently downgrade a
+ * malformed row into a merely "non-comparable" measurement.
+ */
+function checkCapability(value: unknown, path: string): void {
+  const capability = asObject(value, path);
+  const status = asEnum(
+    capability.status,
+    `${path}.status`,
+    CAPABILITY_STATUSES,
+  );
+  for (const key of ['capabilityId', 'revision', 'operationId'])
+    if (status === 'not-evaluated-offline')
+      optional(capability[key], `${path}.${key}`, (x, w) => {
         asString(x, w);
       });
-      optional(capability.variantId, `${where}.variantId`, (x, w) => {
-        asString(x, w);
-      });
-      // M10 requires the identity a capability committed under before it will
-      // compare anything, so a malformed revision must not read as absence.
-      optional(capability.revision, `${where}.revision`, (x, w) => {
-        asString(x, w);
-      });
-    });
+    else asString(capability[key], `${path}.${key}`);
+  optional(capability.variantId, `${path}.variantId`, (x, w) => {
+    asString(x, w);
   });
 }
 
 function checkTrace(value: unknown, path: string): void {
   const trace = asObject(value, path);
-  checkStage(trace.signals, `${path}.signals`);
+  const declared = (property: string) => {
+    const entry = V1_STAGES.find((item) => item.property === property);
+    if (entry === undefined) throw new Error(`unknown v1 stage ${property}`);
+    return entry;
+  };
+
+  const signals = checkStage(
+    trace.signals,
+    `${path}.signals`,
+    declared('signals'),
+  );
+  const signalIds: string[] = [];
   each(
-    (trace.signals as Record<string, unknown>).outputsProduced,
+    signals.outputsProduced,
     `${path}.signals.outputsProduced`,
     (item, at) => {
       const signal = asObject(item, at);
-      asString(signal.signalId, `${at}.signalId`);
+      signalIds.push(asString(signal.signalId, `${at}.signalId`));
       asString(signal.kind, `${at}.kind`);
       asString(signal.proposes, `${at}.proposes`);
     },
   );
+  checkAccounting(signals, `${path}.signals`, signalIds);
   for (const key of [
     'unconsumedStateFields',
     'stateBindings',
     'ambiguousNames',
   ])
-    asArray((trace.signals as Record<string, unknown>)[key], `${path}.${key}`);
+    asArray(signals[key], `${path}.signals.${key}`);
   strings(
-    (trace.signals as Record<string, unknown>).oracleSuppliedSignalLabels,
+    signals.oracleSuppliedSignalLabels,
     `${path}.signals.oracleSuppliedSignalLabels`,
   );
 
   const candidates = checkCandidateStage(
     trace.candidates,
     `${path}.candidates`,
+    declared('candidates'),
     false,
   );
   strings(candidates.unresolvedTargets, `${path}.candidates.unresolvedTargets`);
   for (const key of ['expansion', 'ruleExpansion']) {
-    const stage = checkCandidateStage(trace[key], `${path}.${key}`, false);
+    const stage = checkCandidateStage(
+      trace[key],
+      `${path}.${key}`,
+      declared(key),
+      false,
+    );
     checkTraversals(stage.traversals, `${path}.${key}.traversals`);
   }
-  checkRuleJoin(trace.ruleJoin, `${path}.ruleJoin`);
-  checkRuleJoin(trace.lateRuleJoin, `${path}.lateRuleJoin`);
-  const dedup = checkCandidateStage(trace.dedup, `${path}.dedup`, false);
+  checkRuleJoin(trace.ruleJoin, `${path}.ruleJoin`, declared('ruleJoin'));
+  checkRuleJoin(
+    trace.lateRuleJoin,
+    `${path}.lateRuleJoin`,
+    declared('lateRuleJoin'),
+  );
+  checkCandidateStage(trace.dedup, `${path}.dedup`, declared('dedup'), false);
+  const dedup = asObject(trace.dedup, `${path}.dedup`);
   for (const key of ['routeCountBeforeDedup', 'routeCountAfterDedup'])
     for (const [name, count] of Object.entries(
       asObject(dedup[key], `${path}.dedup.${key}`),
@@ -783,15 +832,36 @@ function checkTrace(value: unknown, path: string): void {
   const retention = checkCandidateStage(
     trace.retention,
     `${path}.retention`,
+    declared('retention'),
     true,
   );
   checkDrops(retention.dropped, `${path}.retention.dropped`);
   checkDrops(retention.overflow, `${path}.retention.overflow`);
-  asBoolean(retention.overflowed, `${path}.retention.overflowed`);
-  checkPacket(trace.packet, `${path}.packet`);
+  const overflowed = asBoolean(
+    retention.overflowed,
+    `${path}.retention.overflowed`,
+  );
+  // M6 reads the flag; a row where the flag and the record disagree would let
+  // an overflow that section 6.3 says fails the probe report as clean.
+  if (overflowed !== (retention.overflow as unknown[]).length > 0)
+    failAt(
+      `${path}.retention.overflowed`,
+      `is ${String(overflowed)} while ${(retention.overflow as unknown[]).length} overflow record(s) are present`,
+    );
+  checkPacket(trace.packet, `${path}.packet`, declared('packet'));
 
   strings(trace.unexpandedPromotions, `${path}.unexpandedPromotions`);
   strings(trace.stageOrder, `${path}.stageOrder`);
+  const order = trace.stageOrder as string[];
+  const expected = V1_STAGES.map((stage) => stage.name);
+  if (
+    order.length !== expected.length ||
+    order.some((n, i) => n !== expected[i])
+  )
+    failAt(
+      `${path}.stageOrder`,
+      `is [${order.join(', ')}], not the v1 order [${expected.join(', ')}]`,
+    );
   const stack = asObject(trace.stack, `${path}.stack`);
   const packIdentity: Check = (raw, where) => {
     const pack = asObject(raw, where);
@@ -800,6 +870,45 @@ function checkTrace(value: unknown, path: string): void {
   };
   packIdentity(stack.base, `${path}.stack.base`);
   each(stack.addons, `${path}.stack.addons`, packIdentity);
+}
+
+/**
+ * The five pre-experiment blockers a capture must qualify itself against.
+ *
+ * Declared here rather than read from `observeBlockerRepairs()` for the same
+ * reason as the stage table: a checker that asks the producer what it produced
+ * proves nothing. An empty or partial list is the dangerous shape — every
+ * `every(status === 'repaired')` baseline check passes vacuously over it.
+ */
+const V1_BLOCKERS: readonly string[] = ['B1', 'B2', 'B3', 'B4', 'B5'];
+
+function checkBlockerMembership(
+  observations: readonly unknown[],
+  complete: boolean,
+): void {
+  const seen = observations.map(
+    (item) => (item as Record<string, unknown>).blockerId as string,
+  );
+  const unique = new Set(seen);
+  if (unique.size !== seen.length)
+    failAt('blockerRepairs', 'repeats a blocker id');
+  if (!complete) {
+    for (const id of seen)
+      if (!V1_BLOCKERS.includes(id))
+        failAt('blockerRepairs', `records unknown blocker '${id}'`);
+    return;
+  }
+  for (const id of V1_BLOCKERS)
+    if (!unique.has(id))
+      failAt(
+        'blockerRepairs',
+        `omits ${id}; a capture that reached discovery observed all of ${V1_BLOCKERS.join(', ')}`,
+      );
+  if (unique.size !== V1_BLOCKERS.length)
+    failAt(
+      'blockerRepairs',
+      `records ${unique.size} blockers, not the ${V1_BLOCKERS.length} the capture observes`,
+    );
 }
 
 function assertV1(stored: Record<string, unknown>): void {
@@ -829,9 +938,10 @@ function assertV1(stored: Record<string, unknown>): void {
       });
   });
 
-  // Baseline qualification reads these, so a malformed one would let a capture
-  // be read as a baseline on a status nothing produced.
-  each(stored.blockerRepairs, 'blockerRepairs', (item, at) => {
+  // Baseline qualification reads these, so a malformed or incomplete set would
+  // let a capture be read as a baseline on a status nothing produced.
+  const blockers = asArray(stored.blockerRepairs, 'blockerRepairs');
+  each(blockers, 'blockerRepairs', (item, at) => {
     const observation = asObject(item, at);
     asEnum(observation.blockerId, `${at}.blockerId`, BLOCKER_IDS);
     asEnum(observation.status, `${at}.status`, BLOCKER_STATUSES);
@@ -841,36 +951,90 @@ function assertV1(stored: Record<string, unknown>): void {
   });
 
   const runtime = asObject(stored.runtime, 'runtime');
+  // Every recorded invocation is an EVENT, so every identity field is
+  // mandatory. There is no partial-identity path to soften.
   each(
     runtime.capabilityInvocations,
     'runtime.capabilityInvocations',
     (item, at) => {
       const fields = asObject(item, at);
-      asString(fields.tool, `${at}.tool`);
-      asEnum(fields.outcome, `${at}.outcome`, CAPABILITY_OUTCOMES);
-      asEnum(fields.subjectSource, `${at}.subjectSource`, SUBJECT_SOURCES);
       for (const key of [
+        'tool',
         'instanceId',
-        'operationId',
         'recordKey',
-        'variantId',
+        'operationId',
         'capabilityId',
         'capabilityRevision',
       ])
-        optional(fields[key], `${at}.${key}`, (x, w) => {
-          asString(x, w);
-        });
+        asString(fields[key], `${at}.${key}`);
+      optional(fields.variantId, `${at}.variantId`, (x, w) => {
+        asString(x, w);
+      });
+      asEnum(fields.outcome, `${at}.outcome`, CAPABILITY_OUTCOMES);
+      asNumber(fields.attempt, `${at}.attempt`);
+      const attempt = fields.attempt as number;
+      if (!Number.isInteger(attempt) || attempt < 1)
+        failAt(
+          `${at}.attempt`,
+          `is ${String(attempt)}; a candidate attempt is an integer from 1`,
+        );
     },
   );
-  each(runtime.auditAttempts, 'runtime.auditAttempts', (item, at) => {
+
+  // M11's `auditorAbsent` is derived from this flag, never from an empty
+  // attempt list: "no auditor ran" and "the auditor recorded nothing" are
+  // different facts, and inferring the first from the second is how an empty
+  // evidence collection becomes a green flag.
+  const auditorPresent = asBoolean(
+    runtime.auditorPresent,
+    'runtime.auditorPresent',
+  );
+  const attempts = asArray(runtime.auditAttempts, 'runtime.auditAttempts');
+  each(attempts, 'runtime.auditAttempts', (item, at) => {
     const fields = asObject(item, at);
     asNumber(fields.attempt, `${at}.attempt`);
-    asString(fields.verdict, `${at}.verdict`);
-    asEnum(fields.action, `${at}.action`, AUDIT_ACTIONS);
+    asEnum(fields.verdict, `${at}.verdict`, AUDIT_VERDICTS);
+    const action = asEnum(fields.action, `${at}.action`, AUDIT_ACTIONS);
     strings(fields.missingTools, `${at}.missingTools`);
     if (fields.retryCause !== null)
       asString(fields.retryCause, `${at}.retryCause`);
+    // An accepted verdict can only have been accepted; a rejected one cannot
+    // have been.
+    const accepted = fields.verdict === 'accept';
+    if (accepted !== (action === 'accept'))
+      failAt(
+        `${at}.action`,
+        `'${action}' is not coherent with verdict '${String(fields.verdict)}'`,
+      );
   });
+  if (!auditorPresent && attempts.length > 0)
+    failAt(
+      'runtime.auditAttempts',
+      `records ${attempts.length} attempt(s) while runtime.auditorPresent is false`,
+    );
+  if (auditorPresent && attempts.length === 0)
+    failAt(
+      'runtime.auditAttempts',
+      'is empty while runtime.auditorPresent is true; an auditor that ran recorded at least one verdict',
+    );
+  attempts.forEach((item, index) => {
+    const attempt = (item as Record<string, unknown>).attempt;
+    if (attempt !== index + 1)
+      failAt(
+        `runtime.auditAttempts[${index}].attempt`,
+        `is ${String(attempt)}; audited candidates are numbered sequentially from 1`,
+      );
+  });
+  if (attempts.length > 0) {
+    const last = attempts[attempts.length - 1] as Record<string, unknown>;
+    // This evidence hangs off an ACCEPTED turn trace, so the audit history
+    // cannot end in a retry that never happened or a turn-failing verdict.
+    if (last.action !== 'accept' && last.action !== 'repair')
+      failAt(
+        `runtime.auditAttempts[${attempts.length - 1}].action`,
+        `is '${String(last.action)}'; a persisted accepted-turn trace ends in 'accept' or 'repair'`,
+      );
+  }
 
   const hasTrace = stored.trace !== undefined && stored.trace !== null;
   const hasFailure = stored.failure !== undefined && stored.failure !== null;
@@ -883,10 +1047,16 @@ function assertV1(stored: Record<string, unknown>): void {
     );
   if (hasFailure) {
     const failure = asObject(stored.failure, 'failure');
-    asEnum(failure.stage, 'failure.stage', FAILURE_STAGES);
+    const stage = asEnum(failure.stage, 'failure.stage', FAILURE_STAGES);
     asString(failure.message, 'failure.message');
+    // A capture that failed IN discovery had already completed its blocker
+    // observations, so the same complete set is required. A capture that failed
+    // earlier could not have observed them, and inventing observations it never
+    // made would be worse than recording none.
+    checkBlockerMembership(blockers, stage === 'discovery');
     return;
   }
+  checkBlockerMembership(blockers, true);
   checkTrace(stored.trace, 'trace');
 }
 

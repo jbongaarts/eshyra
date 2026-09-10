@@ -326,54 +326,41 @@ export interface PacketTrace extends StageTrace<PacketCandidate> {
  * never describe what the model attended to, which section 12.3 forbids
  * inferring from packet membership.
  */
-export type RuntimeCapabilityOutcome =
-  | 'available'
-  | 'blocked'
-  | 'not-a-capability-outcome';
 
 /**
- * Where an invocation's SUBJECT identity came from.
+ * One bounded readiness capability invocation that actually happened.
  *
- * `runtime-result` is the only source that can be compared with a packet
- * preflight: it is what the runtime itself reported about the invocation.
- * `pre-model-binding` is the inventory binding the capture snapshotted before
- * the model ran; it can be stale by the time the tool executes, and it cannot
- * be trusted to name the same variant, so M10 refuses to compare on it.
+ * Every field is required because this is an EVENT, recorded at the execution
+ * boundary the instant the preflight returned — not a reconstruction from a
+ * tool result, a pre-model inventory snapshot, or discovery's own packet. There
+ * is consequently no "maybe" state here: a runtime capability event that cannot
+ * name its subject or the identity it committed under is malformed evidence and
+ * is rejected at the durable read boundary rather than being softened into
+ * something M10 declines to compare.
  */
-export type RuntimeCapabilitySubjectSource =
-  | 'runtime-result'
-  | 'pre-model-binding'
-  | 'unavailable';
-
 export interface RuntimeCapabilityInvocation {
+  /** Registry name of the tool the capability was invoked inside. */
   readonly tool: string;
-  readonly instanceId?: string;
-  readonly operationId?: string;
-  /** Rules-record key of the subject the capability was asserted about. */
-  readonly recordKey?: string;
   /**
-   * Canonical variant identity of that subject, when it has one. The readiness
-   * contract is derived per `(record, variantId, operationId)`, so two
-   * instances of one record and operation but different variants are different
-   * subjects with possibly different readiness.
+   * Primary-DM candidate attempt this invocation happened on, counting from 1.
+   *
+   * An audit-rejected attempt's canonical writes roll back; the fact that its
+   * capability preflight executed does not. The attempt number is what keeps
+   * those observations interpretable instead of anonymous.
    */
+  readonly attempt: number;
+  readonly instanceId: string;
+  readonly recordKey: string;
   readonly variantId?: string;
-  readonly subjectSource: RuntimeCapabilitySubjectSource;
-  /**
-   * Identity and revision the runtime capability committed under. A capability
-   * is a bounded positive commitment, so an observation that cannot name which
-   * commitment it observed is not comparable with a packet preflight however
-   * well its subject matches.
-   */
-  readonly capabilityId?: string;
-  readonly capabilityRevision?: string;
-  readonly outcome: RuntimeCapabilityOutcome;
-  readonly detail?: string;
+  readonly operationId: string;
+  readonly capabilityId: string;
+  readonly capabilityRevision: string;
+  readonly outcome: 'available' | 'blocked';
 }
 
 export interface RuntimeAuditAttempt {
   readonly attempt: number;
-  readonly verdict: string;
+  readonly verdict: 'accept' | 'reject';
   readonly action: 'accept' | 'repair' | 'retry' | 'fail';
   readonly retryCause: string | null;
   /**

@@ -1,3 +1,4 @@
+import type { CampaignCapabilityInvocationEvent } from '../campaign/capabilityPreflight.js';
 import { resolveCharacterId } from '../state/activeCharacter.js';
 import { ItemStateError, useItem } from '../state/itemState.js';
 import type { Tool } from './toolRegistry.js';
@@ -9,8 +10,10 @@ import {
   resolveTargetCharacterId,
 } from './toolRegistry.js';
 
+const TOOL_NAME = 'use_item';
+
 export const useItemTool: Tool = {
-  name: 'use_item',
+  name: TOOL_NAME,
   mutates: true,
   requiresExplicitAction: true,
   description:
@@ -53,6 +56,7 @@ export const useItemTool: Tool = {
         'use_item requires { instanceId, operationId }',
       );
     }
+    const instanceId = a.instanceId;
     const target = resolveTargetCharacterId(a.character, ctx);
     if ('ok' in target) return target;
     try {
@@ -68,6 +72,32 @@ export const useItemTool: Tool = {
               ? (a.args as Record<string, unknown>)
               : undefined,
           characterId: resolveCharacterId(ctx.db, target.id),
+          // Bridges the item-domain capability event to the turn's observer,
+          // adding only what the tool layer knows. The item domain neither
+          // imports nor knows about discovery; the result below is untouched.
+          ...(ctx.observeCapabilityInvocation === undefined
+            ? {}
+            : {
+                onCapabilityInvocation: (
+                  event: CampaignCapabilityInvocationEvent,
+                ) => {
+                  try {
+                    ctx.observeCapabilityInvocation?.({
+                      ...event,
+                      tool: TOOL_NAME,
+                      instanceId,
+                    });
+                  } catch {
+                    // An observer must not be able to change what the tool
+                    // returns, or observing would itself be intervention: this
+                    // runs inside `useItem`, so a throw would abort the
+                    // operation and surface as `item_error` to the DM and the
+                    // mechanics auditor. Unreachable by contract — the only
+                    // installed observer appends to a turn-owned array — and
+                    // guarded regardless.
+                  }
+                },
+              }),
           resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
