@@ -4,6 +4,7 @@
  */
 
 import type { AdventureModule } from '../adventure/types.js';
+import type { CampaignCapabilityInvocationEvent } from '../campaign/capabilityPreflight.js';
 import type {
   ModelToolDefinition,
   ToolInputSchema,
@@ -18,7 +19,33 @@ export type ToolResult =
   | { ok: true; data: unknown }
   | { ok: false; code: string; message: string; data?: unknown };
 
+/**
+ * One bounded capability invocation observed inside a tool call.
+ *
+ * Turn-internal telemetry. It is deliberately NOT part of {@link ToolResult}:
+ * the DM sees tool results, the mechanics auditor sees them, and they are
+ * persisted on the accepted turn, so anything added there would change what
+ * the model receives. An observer of a capability must be able to watch
+ * without being seen.
+ */
+export interface CapabilityInvocationObservation
+  extends CampaignCapabilityInvocationEvent {
+  /** Registry name of the tool the capability was invoked inside. */
+  readonly tool: string;
+  /** Inventory instance the operation was invoked on. */
+  readonly instanceId: string;
+}
+
 export interface ToolContext {
+  /**
+   * Optional turn-internal capability observer. Installed only by a caller that
+   * is recording runtime observations; absent, nothing observes and nothing
+   * changes. Synchronous and trivial by contract — it must not be able to
+   * affect the tool's own result.
+   */
+  observeCapabilityInvocation?: (
+    observation: CapabilityInvocationObservation,
+  ) => void;
   /** Turn-owned staging; never supplied outside the audited candidate boundary. */
   proposeAmbiguityPrecedent?: (
     proposal: import('./toolAcceptAmbiguityPrecedent.js').AmbiguityPrecedentProposal,

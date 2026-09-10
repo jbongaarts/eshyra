@@ -31,6 +31,54 @@ export interface CampaignCapabilityPreflight {
   })[];
 }
 
+/**
+ * The exact subject a readiness capability was asserted about.
+ *
+ * `assertMagicItemOperationReady` derives its contract per
+ * `(record, variantId, operationId)`, so the record alone does not name what
+ * was preflighted: two instances of one record and operation but different
+ * variants are different subjects with possibly different readiness.
+ */
+export interface CampaignCapabilitySubject {
+  readonly recordKey: string;
+  readonly variantId?: string;
+  readonly operationId: string;
+}
+
+/**
+ * One bounded readiness capability invocation, as it happened.
+ *
+ * INTERNAL runtime observation, not part of any model-facing, auditor-facing,
+ * or persisted-tool-result contract. It exists because a capability invocation
+ * and the terminal result of the tool containing it are different events: the
+ * tool can succeed, fail afterwards on unrelated live state, or belong to a
+ * candidate the auditor rejects, and none of that erases or redefines what the
+ * capability decided.
+ *
+ * It carries only what an observer of the capability needs. The full
+ * {@link CampaignCapabilityPreflight} is different evidence — campaign
+ * position, ambiguity projections, refusal prose — and is not this.
+ */
+export interface CampaignCapabilityInvocationEvent {
+  readonly capabilityId: string;
+  readonly revision: string;
+  readonly status: 'available' | 'blocked';
+  readonly subject: CampaignCapabilitySubject;
+}
+
+/** Build the invocation event from a preflight result and its exact subject. */
+export function campaignCapabilityInvocationEvent(
+  preflight: CampaignCapabilityPreflight,
+  subject: CampaignCapabilitySubject,
+): CampaignCapabilityInvocationEvent {
+  return {
+    capabilityId: preflight.capabilityId,
+    revision: preflight.revision,
+    status: preflight.status,
+    subject,
+  };
+}
+
 /** A2: join campaign decisions to the bounded readiness gate without granting readiness. */
 export function preflightCampaignItemOperation(
   db: Db,

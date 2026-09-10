@@ -24,6 +24,7 @@ import {
   NULL_CAMPAIGN_RULE_SEAM,
   openScene,
   projectCampaignRule,
+  projectDiscoveryTrace,
   recordAmbiguityRuling,
   resolveCampaignPosition,
   revokeCampaignRule,
@@ -211,7 +212,7 @@ describe('W11 campaign-rule read-interface consumption', () => {
       expect(candidate?.sourceProse).toBeDefined();
       expect(JSON.stringify(candidate?.sourceProse)).toContain('8d6');
 
-      const placed = measureDiscovery(trace, {
+      const placed = measureDiscovery(projectDiscoveryTrace(trace), {
         mustIncludeTargetRefs: [FIREBALL],
         mustNotIncludeTargetRefs: [],
         requiredFacts: [],
@@ -540,7 +541,7 @@ describe('W11 campaign-rule read-interface consumption', () => {
       // M5 agrees with that trace at the same position, so the measurement
       // needs no discovery-owned record of what was retrieved.
       const measured = measureDiscovery(
-        discover(db, FIREBALL_SCENARIO, turnPosition),
+        projectDiscoveryTrace(discover(db, FIREBALL_SCENARIO, turnPosition)),
         {
           mustIncludeTargetRefs: [FIREBALL],
           mustNotIncludeTargetRefs: [],

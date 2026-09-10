@@ -124,11 +124,13 @@ export type {
   CampaignTemporalMode,
 } from './campaign/campaignRules.js';
 export {
+  CAMPAIGN_RULE_KINDS,
   CampaignRuleError,
   campaignRuleIntervalsOverlap,
   compareCampaignPositions,
   formatCampaignPosition,
   hasValidCampaignRuleProvenancePairing,
+  isCampaignRuleKind,
   isCampaignRulingProjection,
   orderCampaignRules,
   parseCampaignPosition,
@@ -531,6 +533,13 @@ export {
 } from './debug/sessionDebug.js';
 export type { CandidateAccounting } from './discovery/accounting.js';
 export { accountCandidates } from './discovery/accounting.js';
+export type {
+  BlockerRepairObservation,
+  BlockerRepairProbeInput,
+  BlockerRepairStatus,
+  BlockerToolSchemaSource,
+} from './discovery/blockerRepairs.js';
+export { observeBlockerRepairs } from './discovery/blockerRepairs.js';
 export {
   joinCampaignRules,
   NULL_CAMPAIGN_RULE_SEAM,
@@ -543,11 +552,53 @@ export type {
   DiscoveryMeasurementInput,
   DiscoveryMeasurements,
   RequiredPacketFact,
+  RuntimeDiscoveryMeasurements,
+  RuntimeDiscoveryObservations,
 } from './discovery/measurements.js';
-export { measureDiscovery } from './discovery/measurements.js';
+export {
+  measureDiscovery,
+  measureRuntimeDiscovery,
+} from './discovery/measurements.js';
 export { buildContextPacket } from './discovery/packet.js';
 export { DEFAULT_BUDGET, retainCandidates } from './discovery/retention.js';
+export type {
+  DiscoveryShadowCapture,
+  DiscoveryShadowEvidence,
+  ObservedCapabilityInvocation,
+  ShadowAdventureSeat,
+  ShadowDiscoveryInput,
+  ShadowFailure,
+  ShadowItemInstanceBinding,
+  ShadowScenarioRecord,
+} from './discovery/shadow.js';
+export {
+  captureDiscoveryShadow,
+  completeDiscoveryShadowEvidence,
+  DISCOVERY_SHADOW_SCHEMA,
+  DiscoveryShadowSchemaError,
+  encodeDiscoveryShadowEvidence,
+  readDiscoveryShadowEvidence,
+  runtimeCapabilityInvocation,
+} from './discovery/shadow.js';
 export { extractDiscoverySignals } from './discovery/signals.js';
+export type {
+  DerivedDiscoveryTrace,
+  DerivedPacket,
+  DerivedRetention,
+  DerivedRuleJoin,
+} from './discovery/traceDerivation.js';
+export { deriveDiscoveryTrace } from './discovery/traceDerivation.js';
+export type {
+  ProjectedCandidate,
+  ProjectedDiscoveryTrace,
+  ProjectedPacketStage,
+  ProjectedPackIdentity,
+  ProjectedRetentionStage,
+  ProjectedRuleJoinStage,
+  ProjectedSignal,
+  ProjectedStage,
+} from './discovery/traceProjection.js';
+export { projectDiscoveryTrace } from './discovery/traceProjection.js';
 // Offline discovery pilot (experiment-only; intentionally absent from the
 // stable root export and not imported by runtime modules).
 export type {
@@ -566,6 +617,10 @@ export type {
   ProjectionLimitNote,
   RetentionBudget,
   RouteClass,
+  RuntimeAudit,
+  RuntimeAuditOutcome,
+  RuntimeAuditRetry,
+  RuntimeCapabilityInvocation,
   StageLoss,
   StageTrace,
   TypedTraversal,
@@ -882,6 +937,7 @@ export {
   resolveSpellUpcast,
   SpellUpcastError,
 } from './orchestrator/spellUpcast.js';
+export type { CapabilityInvocationObservation } from './orchestrator/toolRegistry.js';
 export type {
   ToolRequest,
   ToolRequestSource,

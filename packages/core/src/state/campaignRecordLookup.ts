@@ -65,6 +65,29 @@ function exactPack(
   return pack;
 }
 
+/**
+ * One resolution per bound pack, for as long as the returned resolver lives.
+ *
+ * A `CampaignRulesPackResolver` is caller-supplied and nothing contracts it to
+ * be pure, to keep answering, or to answer the same way twice. Any consumer
+ * that resolves the stack more than once and must describe ONE source — the
+ * per-turn context assembler and the ADR 0020 shadow capture beside it, for
+ * instance — wraps it here so every resolution is built from the same packs.
+ */
+export function memoizeCampaignRulesPackResolver(
+  resolve: CampaignRulesPackResolver | undefined,
+): CampaignRulesPackResolver | undefined {
+  if (resolve === undefined) return undefined;
+  const resolved = new Map<string, RulesPack | undefined>();
+  return (ref) => {
+    const key = `${ref.systemId}\u0000${ref.packId}\u0000${ref.version}`;
+    if (resolved.has(key)) return resolved.get(key);
+    const pack = resolve(ref);
+    resolved.set(key, pack);
+    return pack;
+  };
+}
+
 /** Resolve the complete exact campaign binding, including ordered add-ons. */
 export function resolveStrictCampaignRulesStack(
   db: Db,

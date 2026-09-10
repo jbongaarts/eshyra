@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import type { AdventureModule } from '../adventure/types.js';
 import { recordAmbiguityRuling } from '../campaign/ambiguityResolution.js';
 import { resolveCampaignPosition } from '../campaign/campaignPosition.js';
+import { createCampaignRuleReadSeam } from '../campaign/campaignRuleStore.js';
 import {
   type CampaignRule,
   formatCampaignPosition,
@@ -19,6 +21,18 @@ import type {
   ToolCallDisposition,
   TurnCandidateDispositionEvent,
 } from '../debug/sessionDebug.js';
+import type { ShadowItemInstanceBinding } from '../discovery/shadow.js';
+import {
+  captureDiscoveryShadow,
+  completeDiscoveryShadowEvidence,
+  encodeDiscoveryShadowEvidence,
+  runtimeCapabilityInvocation,
+} from '../discovery/shadow.js';
+import type {
+  RuntimeAuditOutcome,
+  RuntimeAuditRetry,
+  RuntimeCapabilityInvocation,
+} from '../discovery/types.js';
 import {
   recordTurnFailureDiagnostic,
   sanitizeDiagnosticMessage,
@@ -40,16 +54,22 @@ import type {
 import type { Db } from '../persistence/db.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
 import type { CampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
+import { memoizeCampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
 import {
+  auditMissingToolNames,
   classifyAuditPresentationRepair,
   classifyAuditRetryCause,
 } from './auditRetryDiagnostics.js';
-import type { AdventureModuleResolver } from './contextAssembler.js';
+import type {
+  AdventureModuleResolver,
+  AssembledContext,
+} from './contextAssembler.js';
 import { assembleContext, renderContextMessage } from './contextAssembler.js';
 import { appendPlayerVisibleRollLedger } from './playerVisibleRollLedger.js';
 import { buildSystemPrompt, type ToolProtocol } from './protocol.js';
 import { createSeededRng } from './rng.js';
 import type { AmbiguityPrecedentProposal } from './toolAcceptAmbiguityPrecedent.js';
+import type { CapabilityInvocationObservation } from './toolRegistry.js';
 import type { ToolContext, ToolRegistry } from './tools.js';
 import {
   AuditError,
@@ -139,6 +159,16 @@ export interface RunTurnDeps {
    * as character memory, separate from campaign canon.
    */
   characterChronicle?: CharacterChronicleStore;
+  /**
+   * ADR 0020 Phase 2 shadow-mode discovery observation (`eshyra-o9bd.19.11`,
+   * design section 12.2). When true, discovery runs between `assembleContext`
+   * and `renderContextMessage` and its proposed packet is recorded on this
+   * turn's trace. The DM sees exactly what it sees with the flag off: nothing
+   * observed here is injected, and a shadow failure is recorded rather than
+   * raised. Off by default because the observation is an experiment, not part
+   * of play.
+   */
+  recordDiscoveryShadow?: boolean;
 }
 
 export interface RunTurnInput {
@@ -446,6 +476,128 @@ function recordToolUsage(
   }
 }
 
+/**
+ * Build the Phase 2 shadow-mode scenario from the live turn (design section
+ * 12.2). Everything here is READ: the assembled context, the resolved item
+ * bindings and the adventure seat are the turn's own facts, and nothing this
+ * function touches reaches the DM.
+ *
+ * Only one adventure run can be seated, because a discovery scenario declares
+ * one. With several active runs, seating "the first" would be an arbitrary
+ * choice presented as a fact, so none is seated and the reason is recorded.
+ */
+interface ShadowAdventureSeating {
+  readonly adventure?: {
+    readonly moduleId: string;
+    readonly locationId?: string;
+    readonly encounterId?: string;
+  };
+  readonly adventureSeatNotes: readonly string[];
+}
+
+/**
+ * Seat the turn's adventure context, or say why it could not be.
+ *
+ * A discovery scenario declares one adventure, one location and one encounter,
+ * and every one of those must be campaign truth rather than a pick from a
+ * list. So: the single active run; the clock's current location; and the one
+ * PENDING encounter staged at that location — the encounter the party is
+ * standing in. The slice's other pending encounters belong to the same scene
+ * but to other locations, and seating one of those would be a guess presented
+ * as a fact. Each thing that cannot be seated is recorded, because an unseated
+ * run and a campaign with no adventure look identical in the trace otherwise.
+ */
+function shadowAdventureSeating(
+  runs: AssembledContext['adventures'],
+): ShadowAdventureSeating {
+  if (runs.length === 0) return { adventureSeatNotes: [] };
+  if (runs.length > 1)
+    return {
+      adventureSeatNotes: [
+        `${runs.length} adventure runs are active; a discovery scenario seats exactly one and this turn offers no non-arbitrary choice`,
+      ],
+    };
+  const run = runs[0];
+  const location = run.currentLocation;
+  if (location === undefined)
+    return {
+      adventure: { moduleId: run.moduleId },
+      adventureSeatNotes: ['the campaign clock names no current location'],
+    };
+  const here = run.pendingEncounters.filter(
+    (encounter) => encounter.locationId === location.id,
+  );
+  return {
+    adventure: {
+      moduleId: run.moduleId,
+      locationId: location.id,
+      ...(here.length === 1 ? { encounterId: here[0].id } : {}),
+    },
+    adventureSeatNotes:
+      here.length > 1
+        ? [
+            `${here.length} pending encounters are staged at the current location; no single current encounter is seated`,
+          ]
+        : [],
+  };
+}
+
+/**
+ * Build the Phase 2 shadow-mode scenario from the live turn (design section
+ * 12.2). Everything here is READ: the live state snapshot, the inventory rows'
+ * own pack bindings, and the adventure seat are the turn's own facts, and
+ * nothing this function touches reaches the DM.
+ */
+function shadowScenarioFrom(
+  assembled: AssembledContext,
+): ShadowAdventureSeating & {
+  readonly stateFields: Readonly<Record<string, unknown>>;
+  readonly itemInstances: readonly ShadowItemInstanceBinding[];
+} {
+  return {
+    stateFields: assembled.state as unknown as Readonly<
+      Record<string, unknown>
+    >,
+    itemInstances: assembled.state.inventory
+      .filter((item) => item.packRef !== undefined)
+      .map((item) => ({
+        instanceId: item.id,
+        recordKey: item.packRef as string,
+        ...(item.variantId === undefined ? {} : { variantId: item.variantId }),
+      })),
+    ...shadowAdventureSeating(assembled.adventures),
+  };
+}
+
+/**
+ * One adventure-module resolution per module id, per turn.
+ *
+ * The resolver is a caller-supplied function; nothing contracts it to be pure,
+ * idempotent, or even to succeed twice. Without this, the context assembler
+ * resolved a module and the shadow capture resolved it AGAIN, so a resolver
+ * that succeeded once and then threw would abort a shadow-enabled turn that
+ * succeeds with shadow off, and one that answered differently would leave the
+ * DM context describing one module while the persisted evidence described
+ * another.
+ *
+ * This memo is shared by exactly the two readers W9 must keep in agreement —
+ * the context assembler and the shadow capture — so enabling the observation
+ * costs the turn no additional resolver call. The tool context keeps the raw
+ * resolver: how tools resolve modules is not W9's to change.
+ */
+function memoizeAdventureResolver(
+  resolve: AdventureModuleResolver | undefined,
+): AdventureModuleResolver | undefined {
+  if (resolve === undefined) return undefined;
+  const resolved = new Map<string, AdventureModule | undefined>();
+  return (moduleId: string) => {
+    if (resolved.has(moduleId)) return resolved.get(moduleId);
+    const module = resolve(moduleId);
+    resolved.set(moduleId, module);
+    return module;
+  };
+}
+
 /** Best-effort audit-retry recording; a sink failure must never break a turn. */
 function recordAuditUsage(
   sink: TurnDiagnosticsSink | undefined,
@@ -543,6 +695,20 @@ export async function runTurn(
     at: input.at,
     resolveAdventureModule: deps.resolveAdventureModule,
     resolveRulesPack: deps.resolveRulesPack,
+    // Installed only when this turn is recording observations, so a turn that
+    // is not observing has no observer at all. The hook cannot reach the tool's
+    // own result; it only appends to the turn-owned buffer above.
+    ...(deps.recordDiscoveryShadow === true
+      ? {
+          observeCapabilityInvocation: (
+            observation: CapabilityInvocationObservation,
+          ) => {
+            shadowCapabilityInvocations.push(
+              runtimeCapabilityInvocation(observation, capabilityAttempt),
+            );
+          },
+        }
+      : {}),
   };
 
   // Tracked here (not inside runModelLoop) so the failure path can still
@@ -556,6 +722,19 @@ export async function runTurn(
   let dispositionAttempt = 0;
   let auditorCallCount = 0;
   const retryCauses: AuditRetryCause[] = [];
+  // Phase 2 M11 evidence, as the canonical audit lifecycle: the candidates the
+  // auditor rejected, then how the accepted one was admitted. A turn that fails
+  // its audit throws and persists no trace, so no failing terminal state is
+  // representable here.
+  const shadowAuditRetries: RuntimeAuditRetry[] = [];
+  let shadowAuditOutcome: RuntimeAuditOutcome | undefined;
+  // Phase 2 M10 evidence, owned by the TURN rather than by any candidate
+  // attempt. A rejected candidate's canonical writes roll back with its
+  // savepoint; the fact that its capability preflight executed does not, so
+  // this buffer is never cleared and is never derived from the accepted
+  // candidate's tool calls.
+  const shadowCapabilityInvocations: RuntimeCapabilityInvocation[] = [];
+  let capabilityAttempt = 0;
   const rejectedAttemptToolNames = new Set<string>();
   let toolsRerunDuringRetry: readonly string[] = [];
 
@@ -596,6 +775,18 @@ export async function runTurn(
       input.actingCharacterId,
     );
     toolCtx.actingCharacterId = actingCharacterId;
+    const canonicalPosition = formatCampaignPosition(campaignPosition);
+    const resolveAdventureModule = memoizeAdventureResolver(
+      deps.resolveAdventureModule,
+    );
+    // Same reasoning as the adventure resolver, for the rules-pack source: the
+    // context assembler resolves the strict stack, and the shadow capture
+    // resolves it again to qualify and trace the campaign's packs. Sharing one
+    // memo keeps the persisted evidence describing the source the DM context
+    // was built from. The tool context keeps the raw resolver.
+    const resolveRulesPack = memoizeCampaignRulesPackResolver(
+      deps.resolveRulesPack,
+    );
 
     phase = 'assemble_context';
     const assembled = assembleContext({
@@ -605,11 +796,40 @@ export async function runTurn(
       playerInput: input.playerInput,
       recentSessionLimit: input.recentSessionLimit,
       actingCharacterId,
-      resolveAdventureModule: deps.resolveAdventureModule,
+      resolveAdventureModule,
       characterChronicle: deps.characterChronicle,
-      campaignPosition: formatCampaignPosition(campaignPosition),
-      resolveRulesPack: deps.resolveRulesPack,
+      campaignPosition: canonicalPosition,
+      resolveRulesPack,
     });
+
+    // ADR 0020 Phase 2 seam (design section 12.2): discovery observes the turn
+    // here, AFTER assembleContext and BEFORE renderContextMessage, and records
+    // what it would have proposed. `assembled` is not touched, so
+    // `baseUserMessage` below is byte-identical with the flag on or off.
+    const shadowCapture =
+      deps.recordDiscoveryShadow === true
+        ? captureDiscoveryShadow({
+            db,
+            campaignPosition: canonicalPosition,
+            // The seam is bound by its owner to the same anchor the assembled
+            // context used, so shadow evidence and DM context can never be
+            // read at two different campaign positions.
+            campaignRuleSeam: createCampaignRuleReadSeam(
+              db,
+              input.campaignId,
+              canonicalPosition,
+            ),
+            capturedAt: input.at,
+            playerInput: input.playerInput,
+            actingCharacterId,
+            ...shadowScenarioFrom(assembled),
+            ...(resolveAdventureModule === undefined
+              ? {}
+              : { resolveAdventureModule }),
+            ...(resolveRulesPack === undefined ? {} : { resolveRulesPack }),
+            tools: registry,
+          })
+        : undefined;
 
     phase = 'model_loop';
     const system = buildSystemPrompt(registry, {
@@ -641,6 +861,9 @@ export async function runTurn(
     const seenRequirementKeys = new Set<string>();
     for (let attempt = 1; ; attempt += 1) {
       dispositionAttempt = attempt;
+      // Bind the attempt this candidate's capability events belong to, before
+      // any of its tools can run.
+      capabilityAttempt = attempt;
       db.exec(`SAVEPOINT ${ATTEMPT_SAVEPOINT}`);
       const precedents: AmbiguityPrecedentProposal[] = [];
       toolCtx.proposeAmbiguityPrecedent =
@@ -770,6 +993,19 @@ export async function runTurn(
       if (retryCause !== null) {
         retryCauses.push(retryCause);
       }
+      if (action === 'retry')
+        shadowAuditRetries.push({
+          retryCause,
+          missingTools: auditMissingToolNames(verdict),
+        });
+      else if (action === 'accept')
+        shadowAuditOutcome = { disposition: 'accepted' };
+      else if (action === 'repair')
+        shadowAuditOutcome = {
+          disposition: 'repaired',
+          retryCause: retryCause ?? 'presentation_only_roll_ledger',
+          missingTools: auditMissingToolNames(verdict),
+        };
       recordAuditDebug(deps.debug, {
         kind: 'turn_audit',
         trace: { ...auditTrace, purpose: 'turn_audit' },
@@ -922,6 +1158,23 @@ export async function runTurn(
         }),
       ),
       ...traceFields,
+      ...(shadowCapture === undefined
+        ? {}
+        : {
+            discoveryShadow: encodeDiscoveryShadowEvidence(
+              completeDiscoveryShadowEvidence(shadowCapture, {
+                capabilityInvocations: shadowCapabilityInvocations,
+                audit:
+                  deps.auditor === undefined || shadowAuditOutcome === undefined
+                    ? { auditor: 'absent' }
+                    : {
+                        auditor: 'present',
+                        retries: shadowAuditRetries,
+                        outcome: shadowAuditOutcome,
+                      },
+              }),
+            ),
+          }),
       acceptedStateDelta: [
         ...traceFields.acceptedStateDelta,
         ...committedPrecedents.map((rule) => ({

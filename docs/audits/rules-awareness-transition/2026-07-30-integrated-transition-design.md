@@ -1020,11 +1020,38 @@ by this work (**§14 W5 — item-readiness fail-open repair**); coordinate with
 - **Runtime shadow-mode comparison is not a valid baseline until the applicable
   blockers are fixed.** Specifically: no `stat-block` probe evidence before B1;
   no adventure-context probe evidence (P9) before B2; no deterministic-agreement
-  measurement (§13 M11) before B3; no capability-agreement evidence (P8) before
-  B5; and no probe may treat `table:starting-wealth-by-class` as SRD authority at
-  any time (B4).
+  measurement (**§13 M12** — see Erratum 1) before B3; no capability-agreement
+  evidence (P8) before B5; and no probe may treat
+  `table:starting-wealth-by-class` as SRD authority at any time (B4).
 - **Campaign-rule integration work depends on or coordinates with
   `eshyra-jhpt`**, and never replaces it (§8.4).
+
+#### Erratum 1 — the deterministic-agreement measurement B3 gates is M12
+
+- **Date:** 2026-09-09. **Raised by:** review of PR #539
+  (`eshyra-o9bd.19.11`, W9). **Owning bead:** `eshyra-o9bd.19.11`.
+- **Status:** corrects a cross-reference. It changes no decision, no
+  measurement definition, no phase gate, and no ownership.
+
+As first written, the clause above named "the deterministic-agreement
+measurement (§13 M11)". §13.1 defines **M11** as *auditor retry count* and
+**M12** as *accepted state-effect agreement* — "whether the accepted
+deterministic state effect matches the fixture's expectation". The
+deterministic-agreement measurement in §13.1 is therefore M12, and the
+reference to M11 was a numbering slip. §13.2 and the §13.3 phase table are
+consistent with §13.1 throughout, so M11/M12 have one meaning everywhere else
+in this document.
+
+The correction has a consequence worth stating plainly rather than leaving to
+be rediscovered: M12 is a **Phase 3** measurement (§13.3 admits M1–M11 at Phase
+2 and M1–M12 from Phase 3), so **B3 gates no Phase 2 measurement**. A Phase 2
+shadow capture is not disqualified as a baseline by B3's status. B3 still gates
+Phase 3's deterministic-agreement measurement, and it remains a real
+prerequisite for any probe resolving an add-on stack (§9.6, second bullet,
+P11).
+
+The owning bead `eshyra-o9bd.19.11` repeated the original wording in its own
+dependency statement; its notes record this erratum.
 
 ---
 

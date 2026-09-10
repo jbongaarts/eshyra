@@ -1,5 +1,7 @@
 import {
+  type CampaignCapabilityInvocationEvent,
   type CampaignCapabilityPreflight,
+  campaignCapabilityInvocationEvent,
   preflightCampaignItemOperation,
 } from '../campaign/capabilityPreflight.js';
 import { rollDice } from '../orchestrator/dice.js';
@@ -101,6 +103,16 @@ export interface UseItemInput {
   readonly sessionId: string;
   readonly at: string;
   readonly rng?: Rng;
+  /**
+   * INTERNAL runtime observation of the bounded readiness capability, called
+   * the instant the preflight returns. It is not part of the tool result, the
+   * DM's view, the auditor's view, or the persisted tool call: an observer of
+   * the capability must not be able to change what the capability's caller
+   * sees. Synchronous, and expected to do nothing but record.
+   */
+  readonly onCapabilityInvocation?: (
+    event: CampaignCapabilityInvocationEvent,
+  ) => void;
 }
 
 export interface UseItemResult {
@@ -1935,6 +1947,20 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       operation: readinessInput,
       resolveRulesPack: input.resolveRulesPack,
     });
+    // The capability event, emitted the instant the bounded preflight returns
+    // and BEFORE the blocked refusal, reference validation, state
+    // initialization, cost accounting, world-location work, or any other
+    // downstream item work. Its subject is the exact triple that was passed to
+    // the preflight, not something rediscovered afterwards. Whether the use
+    // then succeeds, fails on unrelated live state, or belongs to a candidate
+    // the auditor rejects changes none of it.
+    input.onCapabilityInvocation?.(
+      campaignCapabilityInvocationEvent(preflight, {
+        recordKey: hit.record.key,
+        ...(variantId === undefined ? {} : { variantId }),
+        operationId: readinessInput.operationId,
+      }),
+    );
     if (preflight.status === 'blocked')
       throw new ItemStateError(
         preflight.reason ?? 'Item operation is blocked.',

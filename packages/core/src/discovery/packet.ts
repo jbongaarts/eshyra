@@ -9,6 +9,7 @@ import {
   ItemStateError,
 } from '../state/itemState.js';
 import type {
+  CandidateDisposition,
   CapabilityPreflight,
   ContextPacket,
   DiscoveryCandidate,
@@ -359,6 +360,11 @@ export function buildContextPacket(
     candidate,
     packet: packetCandidate(candidate, declarations),
   }));
+  // ONE decision per retained candidate, recorded AT the byte comparison that
+  // makes it. An exclusion's reason is the budget arithmetic that excluded it,
+  // authored here and nowhere else: the included-candidate list below says what
+  // the packet holds, which cannot say why anything is missing from it.
+  const decisions: CandidateDisposition[] = [];
   const kept: PacketCandidate[] = [];
   const byteDropped: RetentionTrace['dropped'][number][] = [];
   const byteOverflow: RetentionOverflow[] = [];
@@ -369,15 +375,25 @@ export function buildContextPacket(
       Buffer.byteLength(JSON.stringify(item.packet), 'utf8') +
       (kept.length === 0 ? 0 : 1);
     if (bytes + cost <= maxPacketBytes) {
+      decisions.push({
+        candidateKey: item.candidate.candidateKey,
+        retained: true,
+      });
       kept.push(item.packet);
       bytes += cost;
       continue;
     }
+    const reason = `packet byte budget: candidate needs ${cost} bytes, ${maxPacketBytes - bytes} remain`;
+    decisions.push({
+      candidateKey: item.candidate.candidateKey,
+      retained: false,
+      reason,
+    });
     const record = {
       candidateKey: item.candidate.candidateKey,
       band: item.band,
       routes: item.candidate.routes,
-      reason: `packet byte budget: candidate needs ${cost} bytes, ${maxPacketBytes - bytes} remain`,
+      reason,
     };
     byteDropped.push(record);
     if (item.band === 'must-consider') byteOverflow.push(record);
@@ -396,6 +412,7 @@ export function buildContextPacket(
     inputsConsumed: retained.outputsProduced.map((candidate) => ({
       candidateKey: candidate.candidateKey,
     })),
+    decisions,
     outputsProduced: kept,
     losses: dropped.map((item) => ({
       reason: item.reason,
