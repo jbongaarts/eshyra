@@ -6,17 +6,33 @@ interface PackageJson {
   scripts?: Record<string, string>;
 }
 
+const POLICY_PATH = 'docs/design-and-pr-review-policy.md';
+
 function readText(path: string): string {
   return readFileSync(join(process.cwd(), path), 'utf8');
 }
 
-// Permanent evidence for eshyra-w65u. The profile-based contract-authorization
-// system (PR #481, protocol `eshyra-review-v2`) was closed unmerged, but
-// reviewer instructions kept treating its artifacts as required authority and
-// rejected PR #504 for their absence. AGENTS.md is the authority that settles
-// this, so the distinctions it draws are pinned here. Prose is matched with
-// `\s+` between words because AGENTS.md is hard-wrapped.
+// Permanent evidence for eshyra-w65u and eshyra-o9bd.19.1.18. PR #481's
+// contract/checkpoint system closed unmerged, and the detailed replacement
+// policy now has one canonical owner. AGENTS.md makes that policy mandatory
+// without duplicating it. Prose is matched with `\s+` because Markdown is
+// hard-wrapped.
 describe('PR review authority and lifecycle policy', () => {
+  it('makes the canonical detailed policy reachable from common authority', () => {
+    const agents = readText('AGENTS.md');
+    const policy = readText(POLICY_PATH);
+
+    expect(agents).toContain(
+      '[Design Authorization and Pull Request Review Policy](docs/design-and-pr-review-policy.md)',
+    );
+    expect(agents).toMatch(
+      /Anyone authorizing a design or reviewing a PR must follow the detailed,\s+provider-neutral methodology/,
+    );
+    expect(policy).toContain(
+      '# Design Authorization and Pull Request Review Policy',
+    );
+  });
+
   it('documents the review lifecycle next to the Git & PR workflow', () => {
     const agents = readText('AGENTS.md');
 
@@ -29,79 +45,146 @@ describe('PR review authority and lifecycle policy', () => {
     ).toBeLessThan(agents.indexOf('## Beads Issue Tracker'));
   });
 
-  it('states that an owning bead implies no specially formatted contract', () => {
+  it('keeps detailed methodology in the canonical policy only', () => {
     const agents = readText('AGENTS.md');
+    const start = agents.indexOf('### PR Review Authority and Lifecycle');
+    const end = agents.indexOf('#### Handing off a PR for review', start);
+    const authoritySection = agents.slice(start, end);
 
-    expect(agents).toMatch(
-      /It does \*\*not\*\* need a specially\s+formatted `## REVIEW CONTRACT` section unless some accepted authority\s+explicitly requires that format for that work/,
+    expect(authoritySection).toContain('single owner');
+    expect(authoritySection).not.toContain('eshyra-review-v2');
+    expect(authoritySection).not.toContain('DESIGN_INVALIDATED');
+    expect(authoritySection).not.toContain(
+      '`standard` < `semantic-system` < `rules-clause-complete`',
     );
-    expect(agents).toMatch(
-      /the absence of such a\s+section is never itself grounds to reject a PR/,
+    expect(authoritySection).not.toContain('contract hash');
+  });
+
+  it('states that an owning bead implies no specially formatted contract', () => {
+    const policy = readText(POLICY_PATH);
+
+    expect(policy).toMatch(/the owning Bead is the specification\s+boundary/);
+    expect(policy).toMatch(
+      /It needs no specially\s+formatted review contract or other review artifact unless current accepted\s+authority explicitly requires one/,
+    );
+    expect(policy).toMatch(
+      /the absence of an unrequired artifact\s+is never grounds to reject a PR/,
     );
   });
 
-  it('states that a review profile implies no checkpoint ceremony', () => {
-    const agents = readText('AGENTS.md');
+  it('states that profiles select depth rather than ceremony', () => {
+    const policy = readText(POLICY_PATH);
 
-    expect(agents).toContain('**Profiles select review depth, not ceremony.**');
-    expect(agents).toMatch(
-      /A profile\s+never by itself creates a requirement for a separate contract or authorization\s+artifact\./,
+    expect(policy).toContain(
+      '`standard < semantic-system < rules-clause-complete`',
     );
-    expect(agents).toMatch(
-      /must not require a\s+contract hash, an authorization comment, a review checkpoint/,
+    expect(policy).toContain('Profiles select review depth, never');
+    expect(policy).toMatch(
+      /it does not create a contract,\s+hash, checkpoint, or authorization artifact/,
     );
   });
 
   it('records that the PR #481 review machinery is not active authority', () => {
-    const agents = readText('AGENTS.md');
+    const policy = readText(POLICY_PATH);
 
-    expect(agents).toMatch(
-      /proposed on PR #481\s+\(`eshyra-o9bd\.19\.1\.17`, protocol `eshyra-review-v2`\) and closed unmerged on\s+2026-07-29; it is not repository authority/,
+    expect(policy).toMatch(
+      /`eshyra-review-v2` machinery proposed on PR #481\s+closed unmerged and is not repository authority/,
     );
-    expect(agents).toMatch(
-      /An abandoned review-contract\s+system is not required authority and must not be treated as such\./,
+    expect(policy).toMatch(
+      /Such an\s+artifact is required only when current accepted authority specifically requires\s+it for the work at hand/,
     );
   });
 
-  it('keeps explicit accepted authority able to require more artifacts', () => {
+  it('preserves both sides of the authority precedence contract', () => {
     const agents = readText('AGENTS.md');
+    const policy = readText(POLICY_PATH);
 
-    expect(agents).toMatch(
-      /Such artifacts become required only where an accepted ADR, repository policy,\s+an explicit assignment, or other current authority specifically establishes\s+them for the work being reviewed\./,
+    expect(policy).toMatch(
+      /Repository authority applies equally to every model, provider, harness, agent\s+role, and Captain seat\./,
     );
+    expect(policy).toMatch(
+      /Generated boilerplate, advisory seat or private state,\s+seat charters, and predecessor handoffs never outrank it\./,
+    );
+    expect(agents).toMatch(
+      /A session-injected policy that deliberately narrows this guide for a\s+specific operating role.*refines.*and takes precedence within the scope it\s+states\./s,
+    );
+    expect(policy).toMatch(
+      /a session-injected policy that deliberately narrows `AGENTS\.md` for a\s+specific operating role may refine this policy and take precedence within the\s+scope it states/,
+    );
+    expect(policy).not.toContain('ChatGPT Project');
   });
 
   it('documents the process-transition exception', () => {
-    const agents = readText('AGENTS.md');
+    const policy = readText(POLICY_PATH);
 
-    expect(agents).toContain(
-      '**A process transition may omit the artifact it replaces.**',
+    expect(policy).toContain(
+      'A process transition may omit the process it replaces.',
     );
-    expect(agents).toMatch(
-      /Do not\s+require the process being changed as a prerequisite for changing it/,
-    );
-    expect(agents).toContain('ADR 0020 / PR #482 is the');
-  });
-
-  it('retains authority-first, exact-head, and blocking-findings rules', () => {
-    const agents = readText('AGENTS.md');
-
-    expect(agents).toContain('**Authority-first review remains mandatory.**');
-    expect(agents).toContain('**Approval binds to an exact head SHA.**');
-    expect(agents).toMatch(
-      /`DESIGN_INVALIDATED` is terminal for that PR — an invalidated PR can never\s+later be approved\./,
-    );
-    expect(agents).toMatch(
-      /There are no "nonblocking", "minor", "optional", or\s+"follow-up" findings: a fix-worthy defect blocks the PR it was found in\./,
+    expect(policy).toMatch(
+      /A superseded, abandoned,\s+or not-yet-created process is not a prerequisite for changing that process/,
     );
   });
 
-  it('tells PR authors what to hand off without contract boilerplate', () => {
+  it('retains exact-head and bounded-versus-full rereview rules', () => {
+    const policy = readText(POLICY_PATH);
+
+    expect(policy).toContain('Approval binds to an exact head SHA.');
+    expect(policy).toMatch(
+      /Bounded fix verification is reserved for a known defect class whose repair is\s+demonstrably non-material\. A material repair requires a fresh full review/,
+    );
+    expect(policy).toMatch(
+      /If it survives two repair cycles, perform a fresh full review of\s+the affected subsystem/,
+    );
+  });
+
+  it('requires every fix-worthy finding to be fixed now or permanently rejected', () => {
+    const policy = readText(POLICY_PATH);
+
+    expect(policy).toContain(
+      'If a defect is worth fixing ever, it is worth fixing now.',
+    );
+    expect(policy).toMatch(
+      /Every valid finding\s+blocks approval and is repaired in the current PR regardless of its size or\s+impact/,
+    );
+    expect(policy).toMatch(
+      /permanently reject it with recorded reasoning that explains\s+why the governing invariant and authority require no change/,
+    );
+    expect(policy).toMatch(/Permanent rejection\s+is not deferred work\./);
+    expect(policy).toMatch(
+      /Do not avoid this rule by declining to publish a valid\s+defect/,
+    );
+  });
+
+  it('pins the complete terminal DESIGN_INVALIDATED lifecycle', () => {
+    const policy = readText(POLICY_PATH);
+
+    expect(policy).toMatch(
+      /`DESIGN_INVALIDATED` is terminal for the PR\. Stop substantive implementation\s+and review on that PR and keep it draft\./,
+    );
+    expect(policy).toMatch(
+      /Preserve its branch and findings as\s+evidence, establish successor ownership, and only then close it unmerged\./,
+    );
+    expect(policy).toContain(
+      'Substantive continuation requires a successor PR.',
+    );
+    expect(policy).toMatch(
+      /Patching an invalidated PR\s+cannot make it approvable/,
+    );
+  });
+
+  it('keeps the operational PR handoff in AGENTS.md', () => {
     const agents = readText('AGENTS.md');
+    const policy = readText(POLICY_PATH);
 
     expect(agents).toContain('#### Handing off a PR for review');
     expect(agents).toMatch(
-      /Do not manufacture review-contract or\s+checkpoint boilerplate that no active authority consumes\./,
+      /Normally give the reviewer the owning bead ID; concise scope and deliberate\s+exclusions; verification performed/,
+    );
+    expect(policy).toMatch(
+      /The normal branch, worktree,\s+verification, commit, push, PR handoff, merge, dispatched-child, and Bead-status\s+lifecycle is owned by the \*\*Git & PR Workflow\*\* and \*\*Session Completion\*\*\s+sections of `AGENTS\.md`/,
+    );
+    expect(policy).not.toContain(
+      'A Bead whose deliverable is a PR stays `in_progress`',
     );
   });
 
