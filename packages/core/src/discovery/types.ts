@@ -359,8 +359,14 @@ export interface RuntimeCapabilityInvocation {
    */
   readonly variantId?: string;
   readonly subjectSource: RuntimeCapabilitySubjectSource;
-  /** Capability identity the runtime preflight reported, when it reported one. */
+  /**
+   * Identity and revision the runtime capability committed under. A capability
+   * is a bounded positive commitment, so an observation that cannot name which
+   * commitment it observed is not comparable with a packet preflight however
+   * well its subject matches.
+   */
   readonly capabilityId?: string;
+  readonly capabilityRevision?: string;
   readonly outcome: RuntimeCapabilityOutcome;
   readonly detail?: string;
 }

@@ -466,6 +466,8 @@ export type IncomparableReason =
   | 'not-invoked'
   | 'packet-status-not-evaluated-offline'
   | 'runtime-subject-identity-not-reported'
+  | 'capability-identity-not-reported'
+  | 'capability-identity-mismatch'
   | 'ambiguous-runtime-invocation';
 
 function incomparableReason(
@@ -478,9 +480,24 @@ function incomparableReason(
   // Two invocations of the same subject in one turn can have different
   // outcomes; picking the first would be a coin flip presented as a result.
   if (matches.length > 1) return 'ambiguous-runtime-invocation';
-  return matches[0].subjectSource === 'runtime-result'
-    ? undefined
-    : 'runtime-subject-identity-not-reported';
+  const invocation = matches[0];
+  if (invocation.subjectSource !== 'runtime-result')
+    return 'runtime-subject-identity-not-reported';
+  // A capability is a bounded positive commitment made under a named identity
+  // and revision. Two preflights over the same subject can be two different
+  // commitments, so agreement across them would be agreement about nothing.
+  if (
+    invocation.capabilityId === undefined ||
+    invocation.capabilityRevision === undefined ||
+    preflight.revision === undefined
+  )
+    return 'capability-identity-not-reported';
+  if (
+    invocation.capabilityId !== preflight.capabilityId ||
+    invocation.capabilityRevision !== preflight.revision
+  )
+    return 'capability-identity-mismatch';
+  return undefined;
 }
 
 export interface RuntimeDiscoveryObservations {
@@ -549,11 +566,13 @@ export function measureRuntimeDiscovery(
     .filter((item) => item.capability !== undefined)
     .map((item) => {
       const preflight = item.capability as CapabilityPreflight;
-      // Identity is (record, variant, operation) — the exact triple the
-      // readiness contract is derived from. Matching on record and operation
-      // alone would pair one variant's packet preflight with another
-      // variant's runtime result and report a fabricated agreement or
-      // disagreement between two different subjects.
+      // Pairing is by SUBJECT — the exact `(record, variant, operation)` triple
+      // the readiness contract is derived from — and the capability identity is
+      // then required to match before anything is compared. Pairing on identity
+      // too would hide a real finding: a runtime commitment over this subject
+      // under a different capability or revision is exactly what
+      // `capability-identity-mismatch` exists to report, not something to drop
+      // silently into `not-invoked`.
       const matches = capabilityOutcomes.filter(
         (candidate) =>
           candidate.recordKey === item.identity.key &&

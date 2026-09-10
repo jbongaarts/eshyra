@@ -105,6 +105,17 @@ export interface UseItemInput {
 
 export interface UseItemResult {
   readonly instanceId: string;
+  /**
+   * The readiness capability event this use ran through, exactly as
+   * `preflightCampaignItemOperation` reported it: its identity, revision,
+   * subject and status.
+   *
+   * It is reported on success as well as on refusal because the capability is
+   * a positive bounded commitment, and an observer that had to infer it from
+   * whether the surrounding tool call ultimately succeeded would lose both the
+   * identity it committed under and the fact that it was consulted at all.
+   */
+  readonly capabilityPreflight: CampaignCapabilityPreflight;
   readonly packRef: string;
   /**
    * The canonical variant identity this use resolved from the instance, when
@@ -160,6 +171,26 @@ export class ItemStateError extends Error {
     super(message);
     this.name = 'ItemStateError';
   }
+}
+
+/**
+ * Record, once, the readiness capability that was consulted before this
+ * failure. Used where a capability reported `available` and the operation then
+ * failed on live state: the invocation still happened, and rebuilding the error
+ * to carry it would discard the subclass (`ItemStateAmbiguityError`) and the
+ * fields a caller reads off it.
+ */
+function attachCapabilityPreflight(
+  error: ItemStateError,
+  preflight: CampaignCapabilityPreflight,
+): void {
+  if (error.capabilityPreflight !== undefined) return;
+  Object.defineProperty(error, 'capabilityPreflight', {
+    value: preflight,
+    enumerable: true,
+    writable: false,
+    configurable: false,
+  });
 }
 
 export class ItemStateAmbiguityError extends ItemStateError {
@@ -1869,6 +1900,27 @@ function splitNonmagicalSingleUseInventory(
 }
 
 export function useItem(db: Db, input: UseItemInput): UseItemResult {
+  // The capability event, captured the moment it happens. Everything after the
+  // preflight runs on live state that can fail for reasons of its own; without
+  // this, an `available` capability followed by an ordinary downstream failure
+  // would leave no trace that the capability was invoked at all.
+  let invoked: CampaignCapabilityPreflight | undefined;
+  try {
+    return useItemInTransaction(db, input, (preflight) => {
+      invoked = preflight;
+    });
+  } catch (error) {
+    if (error instanceof ItemStateError && invoked !== undefined)
+      attachCapabilityPreflight(error, invoked);
+    throw error;
+  }
+}
+
+function useItemInTransaction(
+  db: Db,
+  input: UseItemInput,
+  onPreflight: (preflight: CampaignCapabilityPreflight) => void,
+): UseItemResult {
   return withTransaction(db, (txnDb) => {
     const row = txnDb
       .prepare(
@@ -1943,6 +1995,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
       operation: readinessInput,
       resolveRulesPack: input.resolveRulesPack,
     });
+    onPreflight(preflight);
     if (preflight.status === 'blocked')
       throw new ItemStateError(
         preflight.reason ?? 'Item operation is blocked.',
@@ -2281,6 +2334,7 @@ export function useItem(db: Db, input: UseItemInput): UseItemResult {
     const effectIds = [...operationEffectIds, ...transitionEffectIds];
     return {
       instanceId: input.instanceId,
+      capabilityPreflight: preflight,
       packRef,
       ...(variantId === undefined ? {} : { variantId }),
       operationId: input.operationId,

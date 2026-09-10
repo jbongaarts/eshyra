@@ -276,29 +276,27 @@ function field(value: unknown, key: string): unknown {
 }
 
 /**
- * The runtime capability outcomes of one accepted turn, for M10.
+ * The runtime capability events of one accepted turn, for M10.
  *
  * `use_item` is the only runtime path that reaches
  * `assertMagicItemOperationReady` — it is the sole caller of
- * `preflightCampaignItemOperation` — so it is the only tool whose outcome can
- * be a capability outcome.
+ * `preflightCampaignItemOperation` — so it is the only tool that can carry one.
  *
- * A failed `use_item` is only a BLOCKED capability when it carries the
- * preflight payload. Without it the failure came from somewhere else — a
- * missing attunement, an unresolvable pack ref, or an operation that passed the
- * preflight and then failed on live state — and in that last case the tool
- * result cannot say whether the capability was consulted at all. Recording
- * those as `not-a-capability-outcome` keeps M10 from crediting or blaming a
- * capability for an outcome that was never its own.
+ * What is read is the PREFLIGHT EVENT, never the tool's terminal result. The
+ * two are different facts: a capability can report `available` and the use can
+ * still fail afterwards on live state, and inferring the capability's outcome
+ * from the tool's would erase that invocation entirely. `useItem` therefore
+ * reports its preflight on success, on refusal, and on a downstream failure
+ * that happened after the capability was consulted; each carries the identity,
+ * revision, subject and status the capability committed under.
  *
- * SUBJECT IDENTITY. The readiness contract is derived per
- * `(record, variantId, operationId)`, so the subject is not identified by the
- * record and operation alone. Both real outcomes report their own subject: a
- * successful `use_item` reports the pack ref and variant it resolved, and a
- * blocked one carries the preflight's `subject`. The pre-model inventory
- * binding is used ONLY when neither did, and is then LABELLED as a snapshot,
- * because the model may have changed the instance before invoking the tool.
- * M10 will not compare on a labelled fallback; a snapshot that merely usually
+ * `not-a-capability-outcome` is left for a `use_item` that failed BEFORE the
+ * preflight ran — an unresolvable pack ref, a missing attunement, a quarantined
+ * instance. Nothing was invoked, so there is nothing for M10 to compare.
+ *
+ * The pre-model inventory binding is consulted only where no preflight event
+ * was reported, and is then LABELLED as a snapshot: the model may have changed
+ * the instance before invoking the tool, and a snapshot that merely usually
  * agrees is not identity.
  */
 export function observeRuntimeCapabilityInvocations(
@@ -315,55 +313,83 @@ export function observeRuntimeCapabilityInvocations(
         ...(typeof instanceId === 'string' ? { instanceId } : {}),
         ...(typeof operationId === 'string' ? { operationId } : {}),
       };
-      if (call.result.ok) {
-        const recordKey = field(call.result.data, 'packRef');
-        const variantId = field(call.result.data, 'variantId');
+      const event = preflightEvent(call.result.data);
+      if (event === undefined) {
+        const snapshot = bindingSubject(instanceId, bindings);
         return {
           ...identity,
-          ...(typeof recordKey === 'string' ? { recordKey } : {}),
-          ...(typeof variantId === 'string' ? { variantId } : {}),
-          subjectSource:
-            typeof recordKey === 'string' ? 'runtime-result' : 'unavailable',
-          outcome: 'available',
+          ...snapshot.identity,
+          subjectSource: snapshot.source,
+          outcome: 'not-a-capability-outcome',
+          detail: call.result.ok
+            ? 'the tool reported no readiness preflight'
+            : `${call.result.code}: ${call.result.message}`,
         };
       }
-      const preflight = call.result.data;
-      const capabilityId = field(preflight, 'capabilityId');
-      if (
-        field(preflight, 'status') === 'blocked' &&
-        typeof capabilityId === 'string'
-      ) {
-        // The blocked preflight names its own subject, so the snapshot is not
-        // consulted for a real capability outcome in either direction. It is
-        // reached only by an older payload that predates the subject field.
-        const subject = field(preflight, 'subject');
-        const recordKey = field(subject, 'recordKey');
-        const variantId = field(subject, 'variantId');
-        const fallback = bindingSubject(instanceId, bindings);
-        return {
-          ...identity,
-          ...(typeof recordKey === 'string'
-            ? {
-                recordKey,
-                ...(typeof variantId === 'string' ? { variantId } : {}),
-              }
-            : fallback.identity),
-          subjectSource:
-            typeof recordKey === 'string' ? 'runtime-result' : fallback.source,
-          capabilityId,
-          outcome: 'blocked',
-          detail: call.result.message,
-        };
-      }
-      const snapshot = bindingSubject(instanceId, bindings);
+      // A preflight that named no subject leaves the identity unproved even
+      // though the event itself is real, so the snapshot is recorded and
+      // labelled rather than being passed off as the runtime's own answer.
+      const subject =
+        event.subject === undefined
+          ? bindingSubject(instanceId, bindings)
+          : { identity: event.subject, source: 'runtime-result' as const };
       return {
         ...identity,
-        ...snapshot.identity,
-        subjectSource: snapshot.source,
-        outcome: 'not-a-capability-outcome',
-        detail: `${call.result.code}: ${call.result.message}`,
+        ...subject.identity,
+        subjectSource: subject.source,
+        capabilityId: event.capabilityId,
+        ...(event.capabilityRevision === undefined
+          ? {}
+          : { capabilityRevision: event.capabilityRevision }),
+        outcome: event.outcome,
+        ...(call.result.ok
+          ? {}
+          : { detail: `${call.result.code}: ${call.result.message}` }),
       };
     });
+}
+
+/**
+ * The preflight as the runtime reported it, wherever it rides: nested on a
+ * successful `useItem` result, or as the error payload of a refusal or of a
+ * failure that happened after the capability was consulted.
+ */
+function preflightEvent(data: unknown):
+  | {
+      readonly subject?: {
+        readonly recordKey: string;
+        readonly variantId?: string;
+      };
+      readonly capabilityId: string;
+      readonly capabilityRevision?: string;
+      readonly outcome: 'available' | 'blocked';
+    }
+  | undefined {
+  const preflight = field(data, 'capabilityPreflight') ?? data;
+  const capabilityId = field(preflight, 'capabilityId');
+  const status = field(preflight, 'status');
+  if (
+    typeof capabilityId !== 'string' ||
+    (status !== 'available' && status !== 'blocked')
+  )
+    return undefined;
+  const revision = field(preflight, 'revision');
+  const subject = field(preflight, 'subject');
+  const recordKey = field(subject, 'recordKey');
+  const variantId = field(subject, 'variantId');
+  return {
+    ...(typeof recordKey === 'string'
+      ? {
+          subject: {
+            recordKey,
+            ...(typeof variantId === 'string' ? { variantId } : {}),
+          },
+        }
+      : {}),
+    capabilityId,
+    ...(typeof revision === 'string' ? { capabilityRevision: revision } : {}),
+    outcome: status,
+  };
 }
 
 /** The pre-model snapshot, used only where no runtime outcome named a subject. */
@@ -555,6 +581,24 @@ function checkRoutes(value: unknown, path: string): void {
   });
 }
 
+/**
+ * The ambiguity identity M5 consumes, in every place it consumes one.
+ *
+ * `unqueriedAmbiguityIds` and `unresolvedAmbiguityIds` both read `id` and then
+ * `.filter((id) => typeof id === 'string')`. Validating only that the container
+ * is an array of objects would let `{}` or `{id: 7}` be stored and then simply
+ * vanish from the measurement — the same "malformed identity becomes absence"
+ * defect the reader exists to prevent.
+ */
+function checkAmbiguityIdentity(value: unknown, path: string): void {
+  asString(asObject(value, path).id, `${path}.id`);
+}
+
+/** The jhpt-owned projection identity the packet carries as evidence. */
+function checkRuleIdentity(value: unknown, path: string): void {
+  asString(asObject(value, path).ruleIdentity, `${path}.ruleIdentity`);
+}
+
 /** M4 deep-equals a declared traversal against these. */
 function checkTraversals(value: unknown, path: string): void {
   each(value, path, (traversal, at) => {
@@ -639,12 +683,12 @@ function checkRuleJoin(value: unknown, path: string): void {
     asString(fields.ruleIdentity, `${at}.ruleIdentity`);
     asString(fields.governingRecordKey, `${at}.governingRecordKey`);
   });
+  // M5 reads these ids and filters non-strings, so a malformed identity would
+  // become an ABSENCE from `unresolvedAmbiguityIds` rather than a rejection.
   each(
     stage.unresolvedAmbiguities,
     `${path}.unresolvedAmbiguities`,
-    (item, at) => {
-      asObject(item, at);
-    },
+    checkAmbiguityIdentity,
   );
 }
 
@@ -671,8 +715,9 @@ function checkPacket(value: unknown, path: string): void {
     asObject(candidate.sourceProse, `${at}.sourceProse`);
     checkRoutes(candidate.routes, `${at}.routes`);
     checkTraversals(candidate.traversals, `${at}.traversals`);
-    for (const key of ['ambiguities', 'campaignRules', 'campaignRulings'])
-      asArray(candidate[key], `${at}.${key}`);
+    each(candidate.ambiguities, `${at}.ambiguities`, checkAmbiguityIdentity);
+    for (const key of ['campaignRules', 'campaignRulings'])
+      each(candidate[key], `${at}.${key}`, checkRuleIdentity);
     asArray(candidate.projectionLimits, `${at}.projectionLimits`);
     optional(candidate.capability, `${at}.capability`, (raw, where) => {
       const capability = asObject(raw, where);
@@ -682,6 +727,11 @@ function checkPacket(value: unknown, path: string): void {
         asString(x, w);
       });
       optional(capability.variantId, `${where}.variantId`, (x, w) => {
+        asString(x, w);
+      });
+      // M10 requires the identity a capability committed under before it will
+      // compare anything, so a malformed revision must not read as absence.
+      optional(capability.revision, `${where}.revision`, (x, w) => {
         asString(x, w);
       });
     });
@@ -725,8 +775,11 @@ function checkTrace(value: unknown, path: string): void {
   checkRuleJoin(trace.ruleJoin, `${path}.ruleJoin`);
   checkRuleJoin(trace.lateRuleJoin, `${path}.lateRuleJoin`);
   const dedup = checkCandidateStage(trace.dedup, `${path}.dedup`, false);
-  asObject(dedup.routeCountBeforeDedup, `${path}.dedup.routeCountBeforeDedup`);
-  asObject(dedup.routeCountAfterDedup, `${path}.dedup.routeCountAfterDedup`);
+  for (const key of ['routeCountBeforeDedup', 'routeCountAfterDedup'])
+    for (const [name, count] of Object.entries(
+      asObject(dedup[key], `${path}.dedup.${key}`),
+    ))
+      asNumber(count, `${path}.dedup.${key}.${name}`);
   const retention = checkCandidateStage(
     trace.retention,
     `${path}.retention`,
@@ -768,7 +821,12 @@ function assertV1(stored: Record<string, unknown>): void {
     });
   });
   optional(scenario.adventure, 'scenario.adventure', (raw, where) => {
-    asString(asObject(raw, where).moduleId, `${where}.moduleId`);
+    const seat = asObject(raw, where);
+    asString(seat.moduleId, `${where}.moduleId`);
+    for (const key of ['locationId', 'encounterId'])
+      optional(seat[key], `${where}.${key}`, (x, w) => {
+        asString(x, w);
+      });
   });
 
   // Baseline qualification reads these, so a malformed one would let a capture
@@ -791,7 +849,14 @@ function assertV1(stored: Record<string, unknown>): void {
       asString(fields.tool, `${at}.tool`);
       asEnum(fields.outcome, `${at}.outcome`, CAPABILITY_OUTCOMES);
       asEnum(fields.subjectSource, `${at}.subjectSource`, SUBJECT_SOURCES);
-      for (const key of ['instanceId', 'operationId', 'recordKey', 'variantId'])
+      for (const key of [
+        'instanceId',
+        'operationId',
+        'recordKey',
+        'variantId',
+        'capabilityId',
+        'capabilityRevision',
+      ])
         optional(fields[key], `${at}.${key}`, (x, w) => {
           asString(x, w);
         });

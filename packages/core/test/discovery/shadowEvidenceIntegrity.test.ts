@@ -15,6 +15,7 @@ import {
   DiscoveryShadowSchemaError,
   encodeDiscoveryShadowEvidence,
   getTurnTrace,
+  MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
   measureRuntimeDiscovery,
   NULL_CAMPAIGN_RULE_SEAM,
   observeRuntimeCapabilityInvocations,
@@ -35,8 +36,11 @@ import {
 const AT = '2026-05-20T10:00:00.000Z';
 const AMMO = 'magic-item:ammunition-1-2-or-3';
 /** No attunement, and `blinding-beam` is readiness-blocked in the SRD pack. */
+const CUBE = 'magic-item:cube-of-force';
 const GEM = 'magic-item:gem-of-brightness';
 const BLOCKED_OPERATION = 'blinding-beam';
+const CAPABILITY_ID = MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.operationId;
+const CAPABILITY_REVISION = MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.revision;
 
 /**
  * A REAL capture, so the packet side of every M10 case below is the packet the
@@ -127,16 +131,18 @@ function invocation(
     operationId: 'hit-target',
     recordKey: AMMO,
     subjectSource: 'runtime-result',
+    capabilityId: CAPABILITY_ID,
+    capabilityRevision: CAPABILITY_REVISION,
     outcome: 'available',
     ...overrides,
   };
 }
 
 describe('M10 capability identity', () => {
-  it('reads the subject the runtime reported, not the pre-model binding', () => {
-    // A successful `use_item` reports the pack ref and variant it resolved.
-    // The pre-model binding disagrees on purpose: if the snapshot were used,
-    // the observation would name the stale variant.
+  it('reads the capability event the runtime reported, not the pre-model binding', () => {
+    // A successful `use_item` carries the preflight event it ran through. The
+    // pre-model binding disagrees on purpose: if the snapshot were used, the
+    // observation would name the stale variant.
     expect(
       observeRuntimeCapabilityInvocations(
         [
@@ -152,6 +158,16 @@ describe('M10 capability identity', () => {
                 packRef: AMMO,
                 variantId: '2',
                 operationId: 'hit-target',
+                capabilityPreflight: {
+                  status: 'available',
+                  capabilityId: CAPABILITY_ID,
+                  revision: CAPABILITY_REVISION,
+                  subject: {
+                    recordKey: AMMO,
+                    variantId: '2',
+                    operationId: 'hit-target',
+                  },
+                },
               },
             },
           },
@@ -166,12 +182,14 @@ describe('M10 capability identity', () => {
         recordKey: AMMO,
         variantId: '2',
         subjectSource: 'runtime-result',
+        capabilityId: CAPABILITY_ID,
+        capabilityRevision: CAPABILITY_REVISION,
         outcome: 'available',
       },
     ]);
   });
 
-  it('labels a fallback to the pre-model binding when the runtime reports no subject', () => {
+  it('labels a fallback to the pre-model binding when the event names no subject', () => {
     const observed = observeRuntimeCapabilityInvocations(
       [
         {
@@ -181,14 +199,20 @@ describe('M10 capability identity', () => {
             ok: false,
             code: 'item_error',
             message: 'blocked',
-            data: { status: 'blocked', capabilityId: 'x' },
+            data: { status: 'blocked', capabilityId: CAPABILITY_ID },
           },
         },
       ],
       [{ instanceId: 'ammunition-stack-1', recordKey: AMMO, variantId: '1' }],
     );
-    expect(observed[0].subjectSource).toBe('pre-model-binding');
-    expect(observed[0].variantId).toBe('1');
+    // The event is real, so it is recorded — but its subject is not proved,
+    // and the snapshot standing in for it is labelled, so M10 refuses it.
+    expect(observed[0]).toMatchObject({
+      subjectSource: 'pre-model-binding',
+      variantId: '1',
+      capabilityId: CAPABILITY_ID,
+      outcome: 'blocked',
+    });
   });
 
   it('does not pair one variant with another variant of the same record', () => {
@@ -250,6 +274,47 @@ describe('M10 capability identity', () => {
         agreement: 'not-comparable',
         incomparableBecause: 'runtime-subject-identity-not-reported',
       });
+    } finally {
+      db.close();
+    }
+  });
+
+  it('refuses to compare across capability identities or revisions', () => {
+    const db = freshDbWithSession();
+    try {
+      const trace = captureWithPreflight(db, '1')
+        .trace as ProjectedDiscoveryTrace;
+      // Same subject, a different bounded commitment. Agreement here would be
+      // agreement about nothing: two preflights over one subject can be two
+      // different capabilities, or two revisions of one.
+      for (const [reason, overrides] of [
+        [
+          'capability-identity-mismatch',
+          { capabilityId: 'someOtherCapability' },
+        ],
+        ['capability-identity-mismatch', { capabilityRevision: 'v99' }],
+        ['capability-identity-not-reported', { capabilityId: undefined }],
+        ['capability-identity-not-reported', { capabilityRevision: undefined }],
+      ] as const) {
+        const observed = invocation({ variantId: '1', ...overrides });
+        expect(
+          measureRuntimeDiscovery(trace, {
+            capabilityInvocations: [observed],
+            auditAttempts: [],
+          }).m10.comparisons[0],
+          `${reason} for ${JSON.stringify(overrides)}`,
+        ).toMatchObject({
+          agreement: 'not-comparable',
+          incomparableBecause: reason,
+        });
+      }
+      // The control: the same observation with matching identity compares.
+      expect(
+        measureRuntimeDiscovery(trace, {
+          capabilityInvocations: [invocation({ variantId: '1' })],
+          auditAttempts: [],
+        }).m10.comparisons[0].agreement,
+      ).not.toBe('not-comparable');
     } finally {
       db.close();
     }
@@ -349,6 +414,17 @@ describe('durable shadow evidence fails closed', () => {
     else node[last] = value;
     return clone;
   }
+
+  const rejectsIn = (stored: unknown, at: string): void => {
+    let thrown: unknown;
+    try {
+      readDiscoveryShadowEvidence(stored as TraceJsonValue);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(DiscoveryShadowSchemaError);
+    expect((thrown as Error).message).toContain(at);
+  };
 
   const rejects = (stored: unknown, at: string): void => {
     let thrown: unknown;
@@ -482,6 +558,136 @@ describe('durable shadow evidence fails closed', () => {
       ).toThrowError(DiscoveryShadowSchemaError);
     });
 
+  /**
+   * The mutation row above is an ammunition capture, which carries no
+   * ambiguities at all — so none of its thirty cases can reach the nested
+   * identities M5 consumes. Cube of Force does carry one, on the packet
+   * candidate and on both rule joins, which is the state this block corrupts.
+   */
+  describe('nested ambiguity identity, which M5 filters rather than fails on', () => {
+    const ambiguous = (() => {
+      const db = freshDbWithSession();
+      try {
+        return encodeDiscoveryShadowEvidence(
+          completeDiscoveryShadowEvidence(
+            captureDiscoveryShadow({
+              db,
+              campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+              capturedAt: AT,
+              playerInput: 'I press a face of the cube.',
+              stateFields: {
+                itemRecord: CUBE,
+                operationId: 'press-face-1',
+              },
+              itemInstances: [],
+              campaignRuleSeam: NULL_CAMPAIGN_RULE_SEAM,
+              tools: createDefaultToolRegistry(),
+            }),
+            { toolCalls: [], auditAttempts: [] },
+          ),
+        ) as Record<string, unknown>;
+      } finally {
+        db.close();
+      }
+    })();
+
+    function trace(): Record<string, unknown> {
+      return (ambiguous.trace as Record<string, unknown>) ?? {};
+    }
+
+    function packetAmbiguities(row: Record<string, unknown>): unknown[] {
+      const candidates = (
+        (
+          (row.trace as Record<string, unknown>).packet as Record<
+            string,
+            unknown
+          >
+        ).packet as Record<string, unknown>
+      ).candidates as Record<string, unknown>[];
+      const cube = candidates.find(
+        (candidate) =>
+          (candidate.identity as Record<string, unknown>).key === CUBE,
+      );
+      return (cube as Record<string, unknown>).ambiguities as unknown[];
+    }
+
+    function clone(): Record<string, unknown> {
+      return JSON.parse(JSON.stringify(ambiguous)) as Record<string, unknown>;
+    }
+
+    it('has ambiguities to corrupt, so these cases are not vacuous', () => {
+      expect(packetAmbiguities(ambiguous).length).toBeGreaterThan(0);
+      for (const join of ['ruleJoin', 'lateRuleJoin'])
+        expect(
+          (
+            (trace()[join] as Record<string, unknown>)
+              .unresolvedAmbiguities as unknown[]
+          ).length,
+        ).toBeGreaterThan(0);
+      expect(
+        readDiscoveryShadowEvidence(ambiguous as TraceJsonValue)?.schema,
+      ).toBe('discovery-shadow-v1');
+    });
+
+    for (const broken of [{}, { id: 7 }, { id: null }])
+      it(`rejects a packet ambiguity of ${JSON.stringify(broken)}`, () => {
+        const row = clone();
+        packetAmbiguities(row)[0] = broken;
+        expect(() =>
+          readDiscoveryShadowEvidence(row as TraceJsonValue),
+        ).toThrowError(DiscoveryShadowSchemaError);
+      });
+
+    for (const join of ['ruleJoin', 'lateRuleJoin'])
+      it(`rejects an unresolved ambiguity with no id on ${join}`, () => {
+        const row = clone();
+        (
+          (row.trace as Record<string, unknown>)[join] as Record<
+            string,
+            unknown
+          >
+        ).unresolvedAmbiguities = [{ note: 'no id here' }];
+        rejectsIn(row, `trace.${join}.unresolvedAmbiguities[0].id`);
+      });
+
+    it('rejects a jhpt projection carrying no rule identity', () => {
+      const row = clone();
+      const candidates = (
+        (
+          (row.trace as Record<string, unknown>).packet as Record<
+            string,
+            unknown
+          >
+        ).packet as Record<string, unknown>
+      ).candidates as Record<string, unknown>[];
+      candidates[0].campaignRulings = [{ prose: 'no identity' }];
+      expect(() =>
+        readDiscoveryShadowEvidence(row as TraceJsonValue),
+      ).toThrowError(DiscoveryShadowSchemaError);
+    });
+
+    it('rejects a malformed capability revision M10 would read as absent', () => {
+      const row = clone();
+      const candidates = (
+        (
+          (row.trace as Record<string, unknown>).packet as Record<
+            string,
+            unknown
+          >
+        ).packet as Record<string, unknown>
+      ).candidates as Record<string, unknown>[];
+      const withCapability = candidates.find(
+        (candidate) => candidate.capability !== undefined,
+      );
+      expect(withCapability).toBeDefined();
+      (withCapability as Record<string, unknown>).capability = {
+        ...((withCapability as Record<string, unknown>).capability as object),
+        revision: 3,
+      };
+      rejectsIn(row, 'revision');
+    });
+  });
+
   it('names the exact path it rejected', () => {
     rejects(
       mutated('trace.ruleJoin.rulingQueryScope', 'sometimes'),
@@ -584,7 +790,8 @@ describe('M10 over a real readiness-blocked capability', () => {
           operationId: BLOCKED_OPERATION,
           recordKey: GEM,
           subjectSource: 'runtime-result',
-          capabilityId: 'assertMagicItemOperationReady',
+          capabilityId: CAPABILITY_ID,
+          capabilityRevision: CAPABILITY_REVISION,
           outcome: 'blocked',
           detail: expect.any(String),
         },
@@ -613,6 +820,65 @@ describe('M10 over a real readiness-blocked capability', () => {
           },
         ],
         runtimeInvocationsAbsentFromPacket: [],
+      });
+    } finally {
+      db.close();
+    }
+  });
+
+  it('records an available capability that a downstream failure then swallowed', () => {
+    const db = freshDbWithSession();
+    try {
+      // Magic ammunition with no campaign location: the readiness capability
+      // reports `available`, and `useItem` then fails placing the spent piece
+      // as an unheld item. Inferring the capability's outcome from the tool's
+      // would erase an invocation that really happened and really succeeded.
+      db.prepare(
+        `INSERT INTO inventory(
+           id, character_id, name, quantity, location, properties_json,
+           pack_ref, provenance, session_id, updated_at
+         ) VALUES ('ammo-1', 'pc-1', 'Magic Ammunition', 20, NULL, '{}', ?, 'test:w9', ?, ?)`,
+      ).run(AMMO, DEFAULT_TEST_SESSION_ID, AT);
+      const result = createDefaultToolRegistry().invoke(
+        'use_item',
+        { instanceId: 'ammo-1', operationId: 'hit-target' },
+        {
+          db,
+          rng: createSeededRng(1),
+          campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+          sessionId: DEFAULT_TEST_SESSION_ID,
+          turnId: 'turn-1',
+          at: AT,
+        },
+      );
+      expect(result.ok).toBe(false);
+      // The failure is downstream of the capability, not the capability's.
+      expect((result as { message: string }).message).toContain(
+        'current campaign location',
+      );
+      expect(
+        observeRuntimeCapabilityInvocations(
+          [
+            {
+              tool: 'use_item',
+              args: { instanceId: 'ammo-1', operationId: 'hit-target' },
+              result: result as {
+                ok: false;
+                code: string;
+                message: string;
+                data?: unknown;
+              },
+            },
+          ],
+          [],
+        )[0],
+      ).toMatchObject({
+        recordKey: AMMO,
+        operationId: 'hit-target',
+        subjectSource: 'runtime-result',
+        capabilityId: CAPABILITY_ID,
+        capabilityRevision: CAPABILITY_REVISION,
+        outcome: 'available',
       });
     } finally {
       db.close();
