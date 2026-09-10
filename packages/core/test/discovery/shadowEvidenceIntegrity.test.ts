@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { candidateBand } from '../../src/discovery/bands.js';
 import type {
   CampaignRulesPackResolver,
+  DiscoveryTrace,
   ProjectedDiscoveryTrace,
   RulesPack,
   RuntimeCapabilityInvocation,
@@ -17,7 +19,9 @@ import {
   measureDiscovery,
   measureRuntimeDiscovery,
   NULL_CAMPAIGN_RULE_SEAM,
+  projectDiscoveryTrace,
   readDiscoveryShadowEvidence,
+  runDiscoveryStages,
 } from '../../src/internal.js';
 import {
   CURSED_ATTUNEMENT_OVERRIDDEN_ITEM_REF,
@@ -27,6 +31,12 @@ import {
   DEFAULT_TEST_CAMPAIGN_POSITION,
   freshDbWithSession,
 } from '../support/db.js';
+import {
+  installRepeatedTraversalCampaign,
+  REPEATED_TRAVERSAL,
+  REPEATED_TRAVERSAL_INPUT,
+  REPEATED_TRAVERSAL_STATE_FIELDS,
+} from './support/repeatedTraversal.js';
 
 /**
  * The durable v1 boundary, after the canonical-evidence redesign.
@@ -130,6 +140,28 @@ function packetContent(row: Row): Row[] {
   return stage(row, 'packet').candidates as Row[];
 }
 
+const CANDIDATE_STAGES = [
+  'candidates',
+  'expansion',
+  'ruleJoin',
+  'ruleExpansion',
+  'lateRuleJoin',
+  'dedup',
+] as const;
+
+/** Remove one relationship from the cumulative traversal state of every
+ * candidate that carries it, leaving the stage event lists alone. */
+function stripTraversalState(row: Row, traversal: Row): void {
+  const drop = (holder: Row) => {
+    holder.traversals = (holder.traversals as Row[]).filter(
+      (entry) => JSON.stringify(entry) !== JSON.stringify(traversal),
+    );
+  };
+  for (const property of CANDIDATE_STAGES)
+    for (const item of candidates(row, property)) drop(item);
+  for (const item of packetContent(row)) drop(item);
+}
+
 function admitted(row: Row): ProjectedDiscoveryTrace {
   const evidence = readDiscoveryShadowEvidence(row as TraceJsonValue);
   if (evidence?.trace === undefined)
@@ -163,6 +195,40 @@ function withoutField(path: string): Row {
   const grandparent = at(row, parts.slice(0, -2));
   grandparent[parts[parts.length - 2]] = rebuilt;
   return row;
+}
+
+/**
+ * A durable row whose trace is a REAL run under the given budget.
+ *
+ * The valid fixture retains everything, so a budget-driven exclusion has to be
+ * produced by the real producer rather than typed into the JSON: the cases
+ * below need a genuine `retainCandidates()` count-budget decision and a genuine
+ * `buildContextPacket()` byte-budget decision, complete with the reason each
+ * authored at its own comparison.
+ */
+function rowWithRun(budget: {
+  readonly maxCandidates?: number;
+  readonly maxPacketBytes?: number;
+}): { row: Row; live: DiscoveryTrace } {
+  const db = freshDbWithSession();
+  try {
+    const campaign = installRepeatedTraversalCampaign(db);
+    const live = runDiscoveryStages({
+      db,
+      scenario: {
+        playerInput: REPEATED_TRAVERSAL_INPUT,
+        stateFields: REPEATED_TRAVERSAL_STATE_FIELDS,
+      },
+      campaignPosition: campaign.campaignPosition,
+      campaignRuleSeam: campaign.seam,
+      budget,
+    });
+    const row = clone();
+    row.trace = JSON.parse(JSON.stringify(projectDiscoveryTrace(live))) as Row;
+    return { row, live };
+  } finally {
+    db.close();
+  }
 }
 
 describe('the canonical durable record', () => {
@@ -205,7 +271,12 @@ describe('the canonical durable record', () => {
         'failedToRun',
       ])
         expect(stage(VALID, property)[field]).toBeUndefined();
+    // The cumulative-state copy is gone; the stage's own EVENT list is not a
+    // summary of it and is deliberately stored under a different name.
     expect(stage(VALID, 'expansion').traversals).toBeUndefined();
+    expect(
+      (stage(VALID, 'expansion').traversalEvents as unknown[]).length,
+    ).toBeGreaterThan(0);
     for (const field of ['returnedRuleIdentities', 'placedRuleIdentities'])
       expect(stage(VALID, 'ruleJoin')[field]).toBeUndefined();
     for (const field of ['dropped', 'overflow', 'overflowed', 'losses'])
@@ -290,26 +361,24 @@ describe('measurements follow the canonical record', () => {
     expect(m.m7.drops.map((item) => item.candidateKey)).toContain(key);
   });
 
-  it('reports a traversal as fired only while a candidate carries it', () => {
+  it('reports a traversal as fired from the stage event that fired it', () => {
     const row = clone();
-    const carrier = candidates(row, 'expansion').find(
-      (item) => (item.traversals as unknown[]).length > 0,
-    );
-    if (carrier === undefined)
-      throw new Error('the valid fixture records no traversal');
-    const traversal = (carrier.traversals as Record<string, unknown>[])[0];
+    const events = stage(row, 'expansion').traversalEvents as Row[];
+    if (events.length === 0)
+      throw new Error('the valid fixture records no traversal event');
+    const traversal = events[0];
     expect(
       measureDiscovery(admitted(row), {
         requiredRelationshipExpansion: [traversal as never],
       }).m4[0].result,
     ).not.toBe('not-fired');
 
-    // Remove it from the candidate — the only place it is recorded. There is
-    // no stage-level list left holding the opposite claim.
-    for (const item of candidates(row, 'expansion'))
-      item.traversals = (item.traversals as Record<string, unknown>[]).filter(
-        (entry) => JSON.stringify(entry) !== JSON.stringify(traversal),
-      );
+    // Erase the traversal as a whole: the EVENT that fired it and the state it
+    // produced. Those are two facts, but each is recorded exactly once, so
+    // there is no third surface left holding the opposite claim — the
+    // measurement simply becomes truthful about a run that never traversed it.
+    stage(row, 'expansion').traversalEvents = events.slice(1);
+    stripTraversalState(row, traversal);
     expect(
       deriveDiscoveryTrace(admitted(row)).expansion.traversals,
     ).not.toContainEqual(traversal);
@@ -771,6 +840,441 @@ describe('canonical admissibility', () => {
       (row.blockerRepairs as Row[])[0].status = 'probably-repaired';
       rejects(row, 'blockerRepairs[0].status');
     });
+  });
+});
+
+/**
+ * Retention and packet exclusions are PRODUCER decisions, and traversals are
+ * PRODUCER events.
+ *
+ * The projection copies both; it reconstructs neither. These cases exercise the
+ * real producers so that the reason a measurement reports is the reason the
+ * budget comparison actually authored, and so that a stage's traversal list is
+ * what that pass executed rather than what happened to appear in state.
+ */
+describe('producer-owned decisions and events', () => {
+  it('copies a real count-budget retention exclusion, reason and all', () => {
+    const { row, live } = rowWithRun({ maxCandidates: 1 });
+    const excluded = live.retention.dispositions.filter(
+      (item) => !item.retained,
+    );
+    expect(excluded.length).toBeGreaterThan(0);
+    // The producer decided; nothing downstream re-decides.
+    for (const item of excluded)
+      expect(item.retained === false && item.reason.length).toBeGreaterThan(0);
+    expect(live.retention.overflow.length).toBeGreaterThan(0);
+
+    // The projection is a copy, compared against the LIVE producer trace —
+    // never against another call of the projection.
+    const admittedTrace = admitted(row);
+    expect(admittedTrace.retention.dispositions).toEqual(
+      JSON.parse(JSON.stringify(live.retention.dispositions)),
+    );
+
+    // One reason, reaching both views. The live producer used to author two
+    // different strings for this single decision.
+    const overflowKey = live.retention.overflow[0].candidateKey;
+    const decision = live.retention.dispositions.find(
+      (item) => item.candidateKey === overflowKey,
+    );
+    expect(decision?.retained).toBe(false);
+    const reason = live.retention.overflow[0].reason;
+    expect(reason).toBe(
+      live.retention.dropped.find((item) => item.candidateKey === overflowKey)
+        ?.reason,
+    );
+    expect(decision?.retained === false && decision.reason).toBe(reason);
+
+    const derived = deriveDiscoveryTrace(admittedTrace);
+    expect(derived.retention.overflowed).toBe(true);
+    expect(
+      derived.retention.dropped.find(
+        (item) => item.candidateKey === overflowKey,
+      )?.reason,
+    ).toBe(reason);
+    const m = measureDiscovery(admittedTrace);
+    expect(m.m6.allMustConsiderRetained).toBe(false);
+    expect(
+      m.m6.overflow.find((item) => item.candidateKey === overflowKey)?.reason,
+    ).toBe(reason);
+    expect(
+      m.m7.drops.find((item) => item.candidateKey === overflowKey)?.reason,
+    ).toBe(reason);
+  });
+
+  it('copies a real byte-budget packet exclusion, reason and all', () => {
+    const { row, live } = rowWithRun({ maxPacketBytes: 4000 });
+    const excluded = live.packet.decisions.filter((item) => !item.retained);
+    expect(excluded.length).toBeGreaterThan(0);
+    const key = excluded[0].candidateKey;
+    const reason = excluded[0].retained === false ? excluded[0].reason : '';
+    // The real budget arithmetic, not a label invented after the fact.
+    expect(reason).toContain('packet byte budget');
+    expect(reason).toContain('bytes');
+
+    const admittedTrace = admitted(row);
+    expect(admittedTrace.packet.decisions).toEqual(
+      JSON.parse(JSON.stringify(live.packet.decisions)),
+    );
+    const derived = deriveDiscoveryTrace(admittedTrace);
+    expect(
+      derived.packet.dropped.find((item) => item.candidateKey === key)?.reason,
+    ).toBe(reason);
+    const m = measureDiscovery(admittedTrace);
+    expect(m.m7.drops.find((item) => item.candidateKey === key)?.reason).toBe(
+      reason,
+    );
+    expect(m.m6.overflowed).toBe(live.packet.byteOverflow.length > 0);
+  });
+
+  it('rejects a persisted exclusion whose reason was removed or emptied', () => {
+    for (const property of ['retention', 'packet'] as const) {
+      const field = property === 'retention' ? 'dispositions' : 'decisions';
+      const { row } = rowWithRun(
+        property === 'retention'
+          ? { maxCandidates: 1 }
+          : { maxPacketBytes: 4000 },
+      );
+      const decisions = stage(row, property)[field] as Row[];
+      const index = decisions.findIndex((item) => item.retained === false);
+      expect(index).toBeGreaterThanOrEqual(0);
+
+      const removed = JSON.parse(JSON.stringify(row)) as Row;
+      const target = (stage(removed, property)[field] as Row[])[index];
+      (stage(removed, property)[field] as Row[])[index] = Object.fromEntries(
+        Object.entries(target).filter(([key]) => key !== 'reason'),
+      );
+      rejects(removed, `${field}[${index}].reason`);
+
+      const emptied = JSON.parse(JSON.stringify(row)) as Row;
+      (stage(emptied, property)[field] as Row[])[index].reason = '';
+      rejects(emptied, 'is empty; an exclusion carries the reason');
+    }
+  });
+
+  it('rejects a packet decision removed even with its content adjusted', () => {
+    const row = clone();
+    const decisions = stage(row, 'packet').decisions as Row[];
+    const dropped = decisions[0].candidateKey as string;
+    // Coordinated so nothing else is left dangling: the decision and its
+    // content go together. Coverage still rejects, because retention kept a
+    // candidate the packet then decided nothing about.
+    stage(row, 'packet').decisions = decisions.slice(1);
+    stage(row, 'packet').candidates = packetContent(row).filter(
+      (item) => (item.identity as Row).key !== dropped,
+    );
+    rejects(row, 'records no disposition for');
+  });
+
+  it('rejects `failed-to-run` on a stage that recorded decisions', () => {
+    for (const property of ['retention', 'packet'] as const) {
+      const row = clone();
+      const field = property === 'retention' ? 'dispositions' : 'decisions';
+      expect((stage(row, property)[field] as unknown[]).length).toBeGreaterThan(
+        0,
+      );
+      stage(row, property).outcome = 'failed-to-run';
+      rejects(row, 'on a stage that recorded decisions');
+    }
+  });
+});
+
+describe('traversal events against the state they produced', () => {
+  function expansionEvents(row: Row): Row[] {
+    return stage(row, 'expansion').traversalEvents as Row[];
+  }
+
+  it('rejects an event no emitted candidate carries', () => {
+    const absent = clone();
+    expansionEvents(absent).push({
+      sourceRecordKey: 'rule:not-a-candidate',
+      linkField: 'data.mechanics.conditions',
+      relation: 'exclusion',
+      targetRecordKey: 'rule:also-not-a-candidate',
+    });
+    rejects(absent, 'which this stage did not emit as a candidate');
+
+    // Both endpoints exist, but neither carries the relationship.
+    const uncarried = clone();
+    const emitted = candidates(uncarried, 'expansion');
+    expect(emitted.length).toBeGreaterThan(1);
+    expansionEvents(uncarried).push({
+      sourceRecordKey: emitted[0].candidateKey,
+      linkField: 'data.invented',
+      relation: 'invented',
+      targetRecordKey: emitted[1].candidateKey,
+    });
+    rejects(uncarried, 'does not carry the relationship afterwards');
+  });
+
+  it('rejects a repeated identical event within one stage', () => {
+    const row = clone();
+    const events = expansionEvents(row);
+    expect(events.length).toBeGreaterThan(0);
+    stage(row, 'expansion').traversalEvents = [...events, events[0]];
+    rejects(row, 'repeats a traversal this stage already recorded once');
+  });
+
+  it('rejects state a candidate gained here with no event to explain it', () => {
+    const row = clone();
+    const emitted = candidates(row, 'expansion');
+    const before =
+      (candidates(row, 'candidates').find(
+        (item) => item.candidateKey === emitted[0].candidateKey,
+      )?.traversals as Row[] | undefined) ?? [];
+    const invented = {
+      sourceRecordKey: emitted[0].candidateKey as string,
+      linkField: 'data.invented',
+      relation: 'invented',
+      targetRecordKey: emitted[0].candidateKey as string,
+    };
+    expect(before).not.toContainEqual(invented);
+    emitted[0].traversals = [...(emitted[0].traversals as Row[]), invented];
+    rejects(row, 'with no traversal event recorded for this stage');
+  });
+
+  it('accepts a traversal carried into a later stage that never fired it', () => {
+    // Pass-through is not work. The valid fixture promotes nothing, so the
+    // second expansion is `skipped` while still forwarding candidates that
+    // carry the first pass's relationships.
+    expect(stage(VALID, 'ruleExpansion').outcome).toBe('skipped');
+    expect(stage(VALID, 'ruleExpansion').traversalEvents).toEqual([]);
+    expect(
+      candidates(VALID, 'ruleExpansion').some(
+        (item) => (item.traversals as unknown[]).length > 0,
+      ),
+    ).toBe(true);
+    // Accepted, and the derivation manufactures no event out of that state.
+    expect(
+      deriveDiscoveryTrace(admitted(clone())).ruleExpansion.traversals,
+    ).toEqual([]);
+  });
+
+  it('rejects a `skipped` expansion that claims a traversal event', () => {
+    const row = clone();
+    expect(stage(row, 'ruleExpansion').outcome).toBe('skipped');
+    const carried = candidates(row, 'ruleExpansion').find(
+      (item) => (item.traversals as unknown[]).length > 0,
+    ) as Row;
+    stage(row, 'ruleExpansion').traversalEvents = [
+      (carried.traversals as Row[])[0],
+    ];
+    rejects(row, 'is non-empty on a stage reporting `skipped`');
+  });
+
+  it('rejects a `skipped` late join that claims a seam query', () => {
+    const row = clone();
+    expect(stage(row, 'lateRuleJoin').outcome).toBe('skipped');
+    stage(row, 'lateRuleJoin').seamQueries = [
+      { kind: 'active-rulings', scope: 'all-active', ambiguityIds: [] },
+    ];
+    rejects(row, 'on a stage reporting `skipped`');
+  });
+
+  it('accepts a relationship fired again after both endpoints carried it', () => {
+    // The real second-pass execution, through the whole durable boundary.
+    const db = freshDbWithSession();
+    try {
+      const campaign = installRepeatedTraversalCampaign(db);
+      const row = encodeDiscoveryShadowEvidence(
+        completeDiscoveryShadowEvidence(
+          captureDiscoveryShadow({
+            db,
+            campaignPosition: campaign.campaignPosition,
+            capturedAt: AT,
+            playerInput: REPEATED_TRAVERSAL_INPUT,
+            stateFields: REPEATED_TRAVERSAL_STATE_FIELDS,
+            itemInstances: [],
+            campaignRuleSeam: campaign.seam,
+            tools: createDefaultToolRegistry(),
+          }),
+          { capabilityInvocations: [], audit: { auditor: 'absent' } },
+        ),
+      ) as Row;
+      const admittedTrace = admitted(row);
+      // Non-vacuity: the endpoints already carried it before the second pass.
+      for (const key of [
+        REPEATED_TRAVERSAL.sourceRecordKey,
+        REPEATED_TRAVERSAL.targetRecordKey,
+      ])
+        expect(
+          admittedTrace.ruleJoin.outputsProduced.find(
+            (item) => item.candidateKey === key,
+          )?.traversals,
+        ).toContainEqual(REPEATED_TRAVERSAL);
+      expect(admittedTrace.expansion.traversalEvents).toContainEqual(
+        REPEATED_TRAVERSAL,
+      );
+      expect(admittedTrace.ruleExpansion.traversalEvents).toContainEqual(
+        REPEATED_TRAVERSAL,
+      );
+      const derived = deriveDiscoveryTrace(admittedTrace);
+      expect(derived.expansion.traversals).toContainEqual(REPEATED_TRAVERSAL);
+      expect(derived.ruleExpansion.traversals).toContainEqual(
+        REPEATED_TRAVERSAL,
+      );
+    } finally {
+      db.close();
+    }
+  });
+});
+
+/**
+ * Closed semantic discriminants fail closed.
+ *
+ * ADR 0020 section 3: unrecognized is not a safety property. A value whose
+ * meaning is a closed vocabulary, and on which a derivation BRANCHES, must be
+ * rejected when unknown rather than falling through to whichever branch happens
+ * to be last. Ordinary open identifiers — a tool name, a rule identity, an
+ * operation id, a trigger, a retry cause — are deliberately not included.
+ */
+describe('closed discriminants fail closed', () => {
+  it('rejects an unknown route class instead of softening a mandatory drop', () => {
+    const { row, live } = rowWithRun({ maxCandidates: 1 });
+    // Non-vacuity, twice over: there IS a must-consider drop, and M6 is red.
+    const overflow = live.retention.overflow;
+    expect(overflow.length).toBeGreaterThan(0);
+    const key = overflow[0].candidateKey;
+    expect(measureDiscovery(admitted(row)).m6.allMustConsiderRetained).toBe(
+      false,
+    );
+
+    // Corrupt the route class that makes it mandatory. `candidateBand()` used
+    // to send any unrecognized string to `exploratory`, so this row would have
+    // been admitted and M6 would have turned GREEN over malformed evidence.
+    // The must-consider vocabulary, stated here rather than imported, so the
+    // case cannot go vacuous by moving with the producer.
+    const mandatory = [
+      'direct-state-ref',
+      'direct-adventure-ref',
+      'explicit-name-or-alias',
+      'campaign-rule',
+      'campaign-ruling',
+      'capability-preflight',
+    ];
+    let corrupted = 0;
+    for (const property of CANDIDATE_STAGES)
+      for (const item of candidates(row, property))
+        if (item.candidateKey === key)
+          for (const route of item.routes as Row[])
+            if (mandatory.includes(route.routeClass as string)) {
+              route.routeClass = `${route.routeClass as string}-typo`;
+              corrupted += 1;
+            }
+    expect(corrupted).toBeGreaterThan(0);
+    rejects(row, 'routeClass');
+  });
+
+  it('refuses to band an impossible route class rather than softening it', () => {
+    // Defence in depth behind the read boundary above, not a replacement for
+    // it: `candidateBand()` used to ask two positive questions and send
+    // everything else to `exploratory`, so any route class it did not
+    // recognize — a new one nobody classified, or a corrupted one — silently
+    // acquired the weakest band. It now has an exhaustive table, and adding a
+    // `RouteClass` fails to compile until someone classifies it.
+    expect(
+      candidateBand({
+        routes: [
+          {
+            routeClass: 'campaign-rule',
+            trigger: 't',
+            evidence: {},
+            signalId: 's',
+          },
+        ],
+      }),
+    ).toBe('must-consider');
+    expect(() =>
+      candidateBand({
+        routes: [
+          {
+            routeClass: 'direct-state-ref-typo' as never,
+            trigger: 't',
+            evidence: {},
+            signalId: 's',
+          },
+        ],
+      }),
+    ).toThrow('has no band classification');
+  });
+
+  it('rejects an unknown signal kind', () => {
+    const row = clone();
+    const signals = candidates(row, 'signals');
+    expect(signals.length).toBeGreaterThan(0);
+    expect(signals[0].kind).toBe('state-ref');
+    signals[0].kind = 'state-reff';
+    rejects(row, 'signals.outputsProduced[0].kind');
+  });
+
+  it('rejects an unknown candidate target kind', () => {
+    const row = clone();
+    const emitted = candidates(row, 'candidates');
+    expect(emitted[0].targetKind).toBe('rules-record');
+    emitted[0].targetKind = 'rules-recrod';
+    rejects(row, 'targetKind');
+  });
+
+  it('rejects an unknown jhpt rule kind through the owner vocabulary', () => {
+    const projection = {
+      ruleIdentity: 'house-rule:x',
+      status: 'active',
+      origin: 'player-authored',
+      provenance: 'house-rule',
+      effectivePosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+      supersededBy: null,
+      revokedPosition: null,
+      scope: 'campaign',
+      governingRecordKeys: [CUBE],
+    };
+    // Non-vacuity: the same row with a kind the OWNER recognizes is admitted.
+    const valid = clone();
+    stage(valid, 'ruleJoin').returnedProjections = [
+      { ...projection, ruleKind: 'house-rule' },
+    ];
+    expect(
+      admitted(valid).ruleJoin.returnedProjections.map(
+        (item) => item.ruleIdentity,
+      ),
+    ).toEqual(['house-rule:x']);
+
+    // A misspelled ruling used to become "not a ruling" and silently remove an
+    // ambiguity resolution rather than failing.
+    for (const ruleKind of ['rulign', 'ruling-draft', '']) {
+      const row = clone();
+      stage(row, 'ruleJoin').returnedProjections = [
+        { ...projection, ruleKind },
+      ];
+      rejects(row, 'is not a campaign rule kind');
+    }
+  });
+
+  it('rejects a pack role that contradicts its position in the stack', () => {
+    const base = clone();
+    expect(((trace(base).stack as Row).base as Row).role).toBe('base');
+    ((trace(base).stack as Row).base as Row).role = 'addon';
+    rejects(base, "is 'addon' in the stack's base position");
+
+    const unknown = clone();
+    ((trace(unknown).stack as Row).base as Row).role = 'primary';
+    rejects(unknown, 'stack.base.role');
+
+    const addon = clone();
+    (trace(addon).stack as Row).addons = [
+      { ...((trace(addon).stack as Row).base as Row as Row), role: 'base' },
+    ];
+    rejects(addon, "is 'base' in the stack's addon position");
+  });
+
+  it('rejects an unknown projection-limit kind', () => {
+    const row = clone();
+    const index = packetContent(row).findIndex(
+      (item) => (item.projectionLimits as unknown[]).length > 0,
+    );
+    expect(index).toBeGreaterThanOrEqual(0);
+    (packetContent(row)[index].projectionLimits as Row[])[0].kind =
+      'execution-readyness';
+    rejects(row, `candidates[${index}].projectionLimits[0].kind`);
   });
 });
 

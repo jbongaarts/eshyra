@@ -124,11 +124,13 @@ export type {
   CampaignTemporalMode,
 } from './campaign/campaignRules.js';
 export {
+  CAMPAIGN_RULE_KINDS,
   CampaignRuleError,
   campaignRuleIntervalsOverlap,
   compareCampaignPositions,
   formatCampaignPosition,
   hasValidCampaignRuleProvenancePairing,
+  isCampaignRuleKind,
   isCampaignRulingProjection,
   orderCampaignRules,
   parseCampaignPosition,

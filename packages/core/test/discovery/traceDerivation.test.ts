@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   deriveDiscoveryTrace,
+  measureDiscovery,
   projectDiscoveryTrace,
   runDiscoveryStages,
 } from '../../src/internal.js';
 import { DIAGNOSTIC_FIXTURES } from '../diagnostics/index.js';
 import { freshDbWithSession } from '../support/db.js';
 import { installJhptCampaignRules } from './support/jhptCampaignRules.js';
+import {
+  installRepeatedTraversalCampaign,
+  REPEATED_TRAVERSAL,
+  REPEATED_TRAVERSAL_INPUT,
+  REPEATED_TRAVERSAL_STATE_FIELDS,
+} from './support/repeatedTraversal.js';
 import {
   installScenarioBinding,
   moduleForFixture,
@@ -79,7 +86,104 @@ describe('derived accounting follows section 12.1 identity', () => {
       const derived = deriveDiscoveryTrace(gained);
       expect(derived.expansion.modified).toContain(key);
       expect(derived.expansion.carriedForward).not.toContain(key);
-      expect(derived.expansion.traversals).toHaveLength(1);
+      // The synthetic traversal is candidate STATE. It is not an event, and a
+      // derivation that manufactured one from it would be reinstating the lossy
+      // equivalence this design removed: the stage's traversal list is the
+      // producer's own event history, unchanged by a state edit.
+      expect(derived.expansion.traversals).toEqual(live.expansion.traversals);
+      expect(derived.expansion.traversals).not.toContainEqual(
+        gained.expansion.outputsProduced.find(
+          (item) => item.candidateKey === key,
+        )?.traversals[0],
+      );
+    } finally {
+      db.close();
+    }
+  });
+});
+
+/**
+ * The state/event distinction, on real mechanics.
+ *
+ * This is the case the corpus does not contain and the previous derivation
+ * could not represent: a typed relationship that fires in expansion pass 1 and
+ * fires AGAIN in campaign-rule expansion, having already been carried into the
+ * second pass. The old rule — "the stage traversed what newly appeared on the
+ * candidate stream" — reports the second execution as nothing at all, because
+ * cumulative state is identical before and after it.
+ *
+ * The chain is built out of the real producers (`runDiscoveryStages`, the real
+ * typed-link expansion, and a house rule written through jhpt's own writer),
+ * not hand-assembled arrays, so it also proves the promotion path that produces
+ * the state actually exists.
+ */
+describe('a traversal that fires in both expansion passes', () => {
+  it('survives as an event in each stage that fired it', () => {
+    const db = freshDbWithSession();
+    try {
+      const campaign = installRepeatedTraversalCampaign(db);
+      const live = runDiscoveryStages({
+        db,
+        scenario: {
+          playerInput: REPEATED_TRAVERSAL_INPUT,
+          stateFields: REPEATED_TRAVERSAL_STATE_FIELDS,
+        },
+        campaignPosition: campaign.campaignPosition,
+        campaignRuleSeam: campaign.seam,
+      });
+
+      // Non-vacuity, in the order the mechanism runs.
+      expect(live.expansion.traversals).toContainEqual(REPEATED_TRAVERSAL);
+      expect(live.ruleExpansion.outcome).toBe('ran');
+      const promoted = live.ruleJoin.outputsProduced.find(
+        (item) => item.candidateKey === REPEATED_TRAVERSAL.sourceRecordKey,
+      );
+      expect(promoted?.routes.map((route) => route.routeClass)).toContain(
+        'campaign-rule',
+      );
+
+      // The load-bearing precondition: BEFORE the second pass, both endpoints
+      // already carry the relationship. A set difference over the candidate
+      // stream therefore has nothing to report, which is exactly why the old
+      // derivation lost the event.
+      for (const key of [
+        REPEATED_TRAVERSAL.sourceRecordKey,
+        REPEATED_TRAVERSAL.targetRecordKey,
+      ])
+        expect(
+          live.ruleJoin.outputsProduced.find(
+            (item) => item.candidateKey === key,
+          )?.traversals,
+        ).toContainEqual(REPEATED_TRAVERSAL);
+
+      // ... and the second pass fired it anyway.
+      expect(live.ruleExpansion.traversals).toContainEqual(REPEATED_TRAVERSAL);
+
+      const projected = JSON.parse(
+        JSON.stringify(projectDiscoveryTrace(live)),
+      ) as ReturnType<typeof projectDiscoveryTrace>;
+      expect(projected.expansion.traversalEvents).toEqual(
+        live.expansion.traversals,
+      );
+      expect(projected.ruleExpansion.traversalEvents).toEqual(
+        live.ruleExpansion.traversals,
+      );
+      expect(projected.ruleExpansion.traversalEvents).toContainEqual(
+        REPEATED_TRAVERSAL,
+      );
+
+      const derived = deriveDiscoveryTrace(projected);
+      expect(derived.expansion.traversals).toContainEqual(REPEATED_TRAVERSAL);
+      expect(derived.ruleExpansion.traversals).toContainEqual(
+        REPEATED_TRAVERSAL,
+      );
+
+      // M4 asks which declared traversals FIRED. Both stages did.
+      expect(
+        measureDiscovery(projected, {
+          requiredRelationshipExpansion: [REPEATED_TRAVERSAL],
+        }).m4[0].result,
+      ).toBe('fired');
     } finally {
       db.close();
     }
@@ -112,11 +216,33 @@ describe('derived summaries reproduce the producer', () => {
             ...(rulesPackResolver === undefined ? {} : { rulesPackResolver }),
           });
           // Through the durable shape and back, exactly as a persisted row.
-          const derived = deriveDiscoveryTrace(
-            JSON.parse(
-              JSON.stringify(projectDiscoveryTrace(live)),
-            ) as ReturnType<typeof projectDiscoveryTrace>,
+          const projected = JSON.parse(
+            JSON.stringify(projectDiscoveryTrace(live)),
+          ) as ReturnType<typeof projectDiscoveryTrace>;
+
+          // The canonical decisions and events are COPIES. Expected comes from
+          // the live producer trace, never from a second call of the
+          // projection — a projection compared against itself proves nothing
+          // about whether it recorded what the run did.
+          const roundTrip = (value: unknown) =>
+            JSON.parse(JSON.stringify(value)) as unknown;
+          expect(
+            projected.retention.dispositions,
+            'retention.dispositions',
+          ).toEqual(roundTrip(live.retention.dispositions));
+          expect(projected.packet.decisions, 'packet.decisions').toEqual(
+            roundTrip(live.packet.decisions),
           );
+          expect(
+            projected.expansion.traversalEvents,
+            'expansion.traversalEvents',
+          ).toEqual(roundTrip(live.expansion.traversals));
+          expect(
+            projected.ruleExpansion.traversalEvents,
+            'ruleExpansion.traversalEvents',
+          ).toEqual(roundTrip(live.ruleExpansion.traversals));
+
+          const derived = deriveDiscoveryTrace(projected);
 
           for (const key of [
             'signals',

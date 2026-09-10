@@ -43,6 +43,30 @@ export type CampaignTemporalMode =
 
 export type CampaignRuleStatus = 'active' | 'revoked' | 'superseded';
 export type CampaignRuleKind = 'ruling' | 'house-rule';
+
+/**
+ * The campaign-rule kinds, as the OWNER of the vocabulary states them.
+ *
+ * `eshyra-jhpt` owns campaign-rule and ruling semantics; design section 8.4
+ * forbids discovery from declaring a rule or ruling schema of its own. A
+ * consumer that must reject an unknown `ruleKind` in stored evidence therefore
+ * asks here rather than pinning a private copy of this list — a discovery-owned
+ * copy would be discovery defining a domain it does not own. (Contrast the W9
+ * durable reader's route-class vocabulary, which discovery DOES own and pins
+ * independently of its own producer.)
+ */
+export const CAMPAIGN_RULE_KINDS: readonly CampaignRuleKind[] = [
+  'ruling',
+  'house-rule',
+];
+
+/** Whether a value is a campaign rule kind this owner recognizes. */
+export function isCampaignRuleKind(value: unknown): value is CampaignRuleKind {
+  return (
+    typeof value === 'string' &&
+    (CAMPAIGN_RULE_KINDS as readonly string[]).includes(value)
+  );
+}
 export type CampaignRuleOrigin =
   | 'player-authored'
   | 'player-approved'

@@ -9,14 +9,57 @@
  */
 import type { CandidateBand, DiscoveryRoute, RouteClass } from './types.js';
 
-const MUST_CONSIDER_ROUTES: readonly RouteClass[] = [
-  'direct-state-ref',
-  'direct-adventure-ref',
-  'explicit-name-or-alias',
-  'campaign-rule',
-  'campaign-ruling',
-  'capability-preflight',
-];
+/**
+ * Every route class's band, stated exhaustively.
+ *
+ * `Record<RouteClass, CandidateBand>` is load-bearing: adding a route class to
+ * the union stops compilation here until someone decides which band it earns.
+ * The predecessor asked two positive questions and sent everything else to
+ * `exploratory`, so a route class introduced later — or a corrupted one that
+ * reached this function from stored JSON — silently acquired the WEAKEST band.
+ * ADR 0020 section 3 forbids exactly that: unrecognized is not a safety
+ * property, and softening a mandatory candidate into an exploratory one is how
+ * a must-consider overflow turns green.
+ */
+const ROUTE_BANDS: Readonly<Record<RouteClass, CandidateBand>> = {
+  'direct-state-ref': 'must-consider',
+  'direct-adventure-ref': 'must-consider',
+  'explicit-name-or-alias': 'must-consider',
+  'campaign-rule': 'must-consider',
+  'campaign-ruling': 'must-consider',
+  'capability-preflight': 'must-consider',
+  'typed-relationship': 'related',
+  'situation-cue': 'exploratory',
+  'auditor-missing-target': 'exploratory',
+};
+
+const BAND_STRENGTH: Readonly<Record<CandidateBand, number>> = {
+  'must-consider': 0,
+  related: 1,
+  exploratory: 2,
+};
+
+const MUST_CONSIDER_ROUTES: readonly RouteClass[] = (
+  Object.keys(ROUTE_BANDS) as RouteClass[]
+).filter((routeClass) => ROUTE_BANDS[routeClass] === 'must-consider');
+
+/**
+ * The band one route earns.
+ *
+ * A route class with no entry cannot be classified, and guessing is the defect
+ * this exists to prevent, so it throws. In typed producer code the case is
+ * unreachable; the throw is the runtime floor under a value that came back
+ * through JSON, where the durable reader's independent route vocabulary is the
+ * first line of defence.
+ */
+function bandOfRoute(routeClass: RouteClass): CandidateBand {
+  const band = ROUTE_BANDS[routeClass];
+  if (band === undefined)
+    throw new Error(
+      `route class '${String(routeClass)}' has no band classification; it cannot be treated as exploratory by default`,
+    );
+  return band;
+}
 
 /**
  * The strongest band any of the candidate's routes earns.
@@ -28,17 +71,12 @@ const MUST_CONSIDER_ROUTES: readonly RouteClass[] = [
 export function candidateBand(candidate: {
   readonly routes: readonly DiscoveryRoute[];
 }): CandidateBand {
-  if (
-    candidate.routes.some((route) =>
-      MUST_CONSIDER_ROUTES.includes(route.routeClass),
-    )
-  )
-    return 'must-consider';
-  if (
-    candidate.routes.some((route) => route.routeClass === 'typed-relationship')
-  )
-    return 'related';
-  return 'exploratory';
+  let strongest: CandidateBand = 'exploratory';
+  for (const route of candidate.routes) {
+    const band = bandOfRoute(route.routeClass);
+    if (BAND_STRENGTH[band] < BAND_STRENGTH[strongest]) strongest = band;
+  }
+  return strongest;
 }
 
-export { MUST_CONSIDER_ROUTES };
+export { MUST_CONSIDER_ROUTES, ROUTE_BANDS };

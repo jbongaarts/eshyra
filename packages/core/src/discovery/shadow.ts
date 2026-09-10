@@ -1,4 +1,5 @@
 import type { AdventureModule } from '../adventure/types.js';
+import { isCampaignRuleKind } from '../campaign/campaignRules.js';
 import type { TraceJsonValue } from '../memory/turnTrace.js';
 import type { Db } from '../persistence/db.js';
 import type { CampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
@@ -487,6 +488,61 @@ const V1_STAGES: readonly {
 ];
 
 const STAGE_OUTCOMES = ['ran', 'skipped', 'failed-to-run'] as const;
+
+/**
+ * The v1 durable route vocabulary, pinned HERE.
+ *
+ * `routeClass` is not descriptive text: `candidateBand()` branches on it, and
+ * must-consider is the band whose loss fails a probe (design section 6.3). A
+ * reader that accepted any string let a corrupted `direct-state-ref` — say
+ * `direct-state-ref-typo` — through, where the band rule would have to guess;
+ * a dropped mandatory candidate then reads as an ordinary exploratory drop and
+ * M6 turns green over malformed evidence. ADR 0020 section 3: unrecognized is
+ * not a safety property.
+ *
+ * Declared independently of `RouteClass` for the same reason as `V1_STAGES`: a
+ * validator that imports the producer's own list cannot catch the producer
+ * drifting, because both sides move together. A producer that adds or renames a
+ * route must not thereby make old v1 rows valid.
+ */
+const V1_ROUTE_CLASSES = [
+  'direct-state-ref',
+  'direct-adventure-ref',
+  'explicit-name-or-alias',
+  'typed-relationship',
+  'situation-cue',
+  'auditor-missing-target',
+  'campaign-rule',
+  'campaign-ruling',
+  'capability-preflight',
+] as const;
+
+/** The v1 signal kinds. `kind` selects how a signal proposed its target. */
+const V1_SIGNAL_KINDS = [
+  'state-ref',
+  'adventure-ref',
+  'name-mention',
+  'situation-cue',
+  'capability-preflight',
+  'auditor-missing-target',
+] as const;
+
+/** What a candidate points at. The packet and M1/M9 read the two differently. */
+const V1_TARGET_KINDS = ['rules-record', 'adventure-entity'] as const;
+
+/** The disclosure kinds a packet candidate's projection limits may carry. */
+const V1_PROJECTION_LIMIT_KINDS = [
+  'success-branch',
+  'area',
+  'execution-readiness',
+] as const;
+
+/**
+ * Pack roles. A stack has exactly one base and any number of add-ons, and
+ * comparability of two captures depends on that identity, so a base recorded as
+ * an add-on (or the reverse) is malformed rather than merely odd.
+ */
+const V1_PACK_ROLES = ['base', 'addon'] as const;
 const RULING_SCOPES = ['requested-ambiguities', 'all-active'] as const;
 const CAPABILITY_STATUSES = [
   'available',
@@ -550,7 +606,7 @@ function checkStageHeader(
 function checkRoutes(value: unknown, path: string): void {
   each(value, path, (route, at) => {
     const fields = asObject(route, at);
-    asString(fields.routeClass, `${at}.routeClass`);
+    asEnum(fields.routeClass, `${at}.routeClass`, V1_ROUTE_CLASSES);
     asString(fields.trigger, `${at}.trigger`);
     asString(fields.signalId, `${at}.signalId`);
     asObject(fields.evidence, `${at}.evidence`);
@@ -593,13 +649,104 @@ function checkCandidates(
   each(stage.outputsProduced, `${path}.outputsProduced`, (item, at) => {
     const fields = asObject(item, at);
     keys.push(asString(fields.candidateKey, `${at}.candidateKey`));
-    asString(fields.targetKind, `${at}.targetKind`);
+    asEnum(fields.targetKind, `${at}.targetKind`, V1_TARGET_KINDS);
     checkRoutes(fields.routes, `${at}.routes`);
     checkTraversals(fields.traversals, `${at}.traversals`);
   });
   if (new Set(keys).size !== keys.length)
     failAt(`${path}.outputsProduced`, 'repeats a candidate identity');
   return keys;
+}
+
+/** The cumulative traversal state each candidate of a stage carries. */
+function traversalStateOf(
+  stage: Record<string, unknown>,
+): ReadonlyMap<string, ReadonlySet<string>> {
+  const state = new Map<string, ReadonlySet<string>>();
+  for (const raw of stage.outputsProduced as readonly Record<
+    string,
+    unknown
+  >[]) {
+    const traversals = raw.traversals as readonly unknown[];
+    state.set(
+      raw.candidateKey as string,
+      new Set(traversals.map((item) => JSON.stringify(item))),
+    );
+  }
+  return state;
+}
+
+/**
+ * An expansion stage's traversal EVENTS, against the state they produced.
+ *
+ * State and event are different facts, so this is deliberately not a global
+ * set-difference: a relationship already carried before this pass may fire
+ * again in it, and a checker that rejected the repeat would reinstate exactly
+ * the lossy equivalence this design removed. What is checked is the narrow
+ * integrity relation between an execution event and its result:
+ *
+ * - the event is structurally complete;
+ * - the same event is recorded once per pass, which is the producer's contract;
+ * - both endpoints exist in this stage's output, because the producer emits
+ *   both;
+ * - both endpoints carry the relationship afterwards;
+ * - every traversal a candidate GAINED here is explained by an event here;
+ * - a conditional stage that reports `skipped` traversed nothing.
+ *
+ * An applicable stage that ran and found no links records no event, which is a
+ * truthful result and not a defect, so emptiness is never required.
+ */
+function checkTraversalEvents(
+  stage: Record<string, unknown>,
+  path: string,
+  before: ReadonlyMap<string, ReadonlySet<string>>,
+): void {
+  const at = `${path}.traversalEvents`;
+  checkTraversals(stage.traversalEvents, at);
+  const events = stage.traversalEvents as readonly Record<string, unknown>[];
+  const after = traversalStateOf(stage);
+  const seen = new Set<string>();
+  events.forEach((event, index) => {
+    const where = `${at}[${index}]`;
+    const key = JSON.stringify({
+      sourceRecordKey: event.sourceRecordKey,
+      linkField: event.linkField,
+      relation: event.relation,
+      targetRecordKey: event.targetRecordKey,
+    });
+    if (seen.has(key))
+      failAt(where, 'repeats a traversal this stage already recorded once');
+    seen.add(key);
+    for (const role of ['sourceRecordKey', 'targetRecordKey'] as const) {
+      const endpoint = event[role] as string;
+      const carried = after.get(endpoint);
+      if (carried === undefined)
+        failAt(
+          where,
+          `traverses ${role} '${endpoint}', which this stage did not emit as a candidate`,
+        );
+      if (!carried.has(key))
+        failAt(
+          where,
+          `traverses ${role} '${endpoint}', which does not carry the relationship afterwards`,
+        );
+    }
+  });
+  // The other direction: state a candidate gained here needs an event here.
+  for (const [candidateKey, carried] of after) {
+    const had = before.get(candidateKey) ?? new Set<string>();
+    for (const traversal of carried)
+      if (!had.has(traversal) && !seen.has(traversal))
+        failAt(
+          `${path}.outputsProduced`,
+          `'${candidateKey}' gained traversal ${traversal} with no traversal event recorded for this stage`,
+        );
+  }
+  if (stage.outcome === 'skipped' && events.length > 0)
+    failAt(
+      at,
+      'is non-empty on a stage reporting `skipped`, which performed no work',
+    );
 }
 
 function checkRuleJoin(
@@ -637,7 +784,18 @@ function checkRuleJoin(
     // The jhpt-owned projection, as the seam returned it. Only what the
     // derivation reads is checked; discovery neither redefines the shape nor
     // decides what else belongs in it.
-    asString(fields.ruleKind, `${at}.ruleKind`);
+    //
+    // `ruleKind` is closed and the derivation branches on it: `deriveRuleJoin`
+    // asks whether a projection is a ruling, and an unrecognized kind would
+    // quietly become "not a ruling", removing an ambiguity resolution instead
+    // of rejecting the row. It is validated against the CAMPAIGN OWNER's
+    // vocabulary, not a discovery-local copy: W11 and design section 8.4 keep
+    // rule/ruling domain semantics with `eshyra-jhpt`.
+    if (!isCampaignRuleKind(fields.ruleKind))
+      failAt(
+        `${at}.ruleKind`,
+        `'${String(fields.ruleKind)}' is not a campaign rule kind the campaign-rule owner recognizes`,
+      );
     strings(fields.governingRecordKeys, `${at}.governingRecordKeys`);
     // A ruling decides an ambiguity; without that link a resolution could be
     // derived for an ambiguity no returned ruling ever named.
@@ -670,6 +828,21 @@ function checkRuleJoin(
       );
   });
   strings(stage.consideredAmbiguityIds, `${path}.consideredAmbiguityIds`);
+  // A conditional join reports `skipped` only when it had nothing to ask. A
+  // recorded seam call is the stage having executed, so the two cannot coexist.
+  // Pass-through output is untouched by this: forwarding is not work.
+  if (stage.outcome === 'skipped') {
+    if ((stage.seamQueries as readonly unknown[]).length > 0)
+      failAt(
+        `${path}.seamQueries`,
+        'records a seam query on a stage reporting `skipped`, which asked nothing',
+      );
+    if ((stage.returnedProjections as readonly unknown[]).length > 0)
+      failAt(
+        `${path}.returnedProjections`,
+        'records a seam result on a stage reporting `skipped`',
+      );
+  }
   return keys;
 }
 
@@ -689,7 +862,11 @@ function checkDispositions(
       retained.push(key);
       if (fields.reason !== undefined)
         failAt(`${at}.reason`, 'is present on a retained candidate');
-    } else asString(fields.reason, `${at}.reason`);
+    } else if (asString(fields.reason, `${at}.reason`).length === 0)
+      failAt(
+        `${at}.reason`,
+        'is empty; an exclusion carries the reason its producer recorded',
+      );
   });
   if (new Set(seen).size !== seen.length)
     failAt(path, 'decides one candidate twice');
@@ -749,7 +926,7 @@ function checkTrace(value: unknown, path: string): void {
     (item, at) => {
       const signal = asObject(item, at);
       signalIds.push(asString(signal.signalId, `${at}.signalId`));
-      asString(signal.kind, `${at}.kind`);
+      asEnum(signal.kind, `${at}.kind`, V1_SIGNAL_KINDS);
       asString(signal.proposes, `${at}.proposes`);
     },
   );
@@ -770,16 +947,31 @@ function checkTrace(value: unknown, path: string): void {
   checkCandidates(candidates, `${path}.candidates`);
   strings(candidates.unresolvedTargets, `${path}.candidates.unresolvedTargets`);
 
-  for (const property of ['expansion', 'ruleExpansion'])
-    checkCandidates(
-      checkStageHeader(
-        trace[property],
-        `${path}.${property}`,
-        declared(property),
-      ),
-      `${path}.${property}`,
-    );
+  // Each expansion pass is checked against the traversal state it was handed,
+  // which is the output of the stage immediately before it.
+  const expansion = checkStageHeader(
+    trace.expansion,
+    `${path}.expansion`,
+    declared('expansion'),
+  );
+  checkCandidates(expansion, `${path}.expansion`);
+  checkTraversalEvents(
+    expansion,
+    `${path}.expansion`,
+    traversalStateOf(candidates),
+  );
   checkRuleJoin(trace.ruleJoin, `${path}.ruleJoin`, declared('ruleJoin'));
+  const ruleExpansion = checkStageHeader(
+    trace.ruleExpansion,
+    `${path}.ruleExpansion`,
+    declared('ruleExpansion'),
+  );
+  checkCandidates(ruleExpansion, `${path}.ruleExpansion`);
+  checkTraversalEvents(
+    ruleExpansion,
+    `${path}.ruleExpansion`,
+    traversalStateOf(asObject(trace.ruleJoin, `${path}.ruleJoin`)),
+  );
   checkRuleJoin(
     trace.lateRuleJoin,
     `${path}.lateRuleJoin`,
@@ -800,6 +992,16 @@ function checkTrace(value: unknown, path: string): void {
     `${path}.retention.dispositions`,
     dedupKeys,
   );
+  // A stage that decided something ran. `failed-to-run` beside real decisions
+  // is a lifecycle claim the producer could not have made.
+  if (
+    retention.outcome === 'failed-to-run' &&
+    (retention.dispositions as readonly unknown[]).length > 0
+  )
+    failAt(
+      `${path}.retention.outcome`,
+      'is `failed-to-run` on a stage that recorded decisions',
+    );
   const packet = checkStageHeader(
     trace.packet,
     `${path}.packet`,
@@ -810,6 +1012,14 @@ function checkTrace(value: unknown, path: string): void {
     `${path}.packet.decisions`,
     retained,
   );
+  if (
+    packet.outcome === 'failed-to-run' &&
+    (packet.decisions as readonly unknown[]).length > 0
+  )
+    failAt(
+      `${path}.packet.outcome`,
+      'is `failed-to-run` on a stage that recorded decisions',
+    );
   const content: string[] = [];
   each(packet.candidates, `${path}.packet.candidates`, (item, at) => {
     const item_ = asObject(item, at);
@@ -828,7 +1038,13 @@ function checkTrace(value: unknown, path: string): void {
     each(item_.ambiguities, `${at}.ambiguities`, checkAmbiguityIdentity);
     for (const key of ['campaignRules', 'campaignRulings'])
       each(item_[key], `${at}.${key}`, checkRuleIdentity);
-    asArray(item_.projectionLimits, `${at}.projectionLimits`);
+    each(item_.projectionLimits, `${at}.projectionLimits`, (note, where) => {
+      asEnum(
+        asObject(note, where).kind,
+        `${where}.kind`,
+        V1_PROJECTION_LIMIT_KINDS,
+      );
+    });
     optional(item_.capability, `${at}.capability`, checkCapability);
   });
   // The included content is the packet. It is one list, not a second copy of
@@ -846,13 +1062,21 @@ function checkTrace(value: unknown, path: string): void {
     );
 
   const stack = asObject(trace.stack, `${path}.stack`);
-  const packIdentity: Check = (raw, where) => {
-    const pack = asObject(raw, where);
-    for (const key of ['systemId', 'packId', 'version', 'role'])
-      asString(pack[key], `${where}.${key}`);
-  };
-  packIdentity(stack.base, `${path}.stack.base`);
-  each(stack.addons, `${path}.stack.addons`, packIdentity);
+  const packIdentity =
+    (expected: (typeof V1_PACK_ROLES)[number]): Check =>
+    (raw, where) => {
+      const pack = asObject(raw, where);
+      for (const key of ['systemId', 'packId', 'version'])
+        asString(pack[key], `${where}.${key}`);
+      const role = asEnum(pack.role, `${where}.role`, V1_PACK_ROLES);
+      if (role !== expected)
+        failAt(
+          `${where}.role`,
+          `is '${role}' in the stack's ${expected} position`,
+        );
+    };
+  packIdentity('base')(stack.base, `${path}.stack.base`);
+  each(stack.addons, `${path}.stack.addons`, packIdentity('addon'));
 }
 
 /**

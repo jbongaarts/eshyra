@@ -114,6 +114,28 @@ export interface StageLoss {
  */
 export type StageOutcome = 'ran' | 'skipped' | 'failed-to-run';
 
+/**
+ * One retention or packet decision, recorded WHERE THE DECISION IS MADE.
+ *
+ * This is an EVENT, not a shape inferred later from which candidates survived.
+ * A final candidate list can say what state exists after a stage; it cannot say
+ * why something is missing from it, and reconstructing an exclusion from
+ * "absent from the output" fabricates a reason the producer never recorded.
+ * The union makes the two malformed shapes unrepresentable in producer code: an
+ * exclusion cannot exist without its reason, and a retained decision cannot
+ * carry one.
+ */
+export type CandidateDisposition =
+  | {
+      readonly candidateKey: string;
+      readonly retained: true;
+    }
+  | {
+      readonly candidateKey: string;
+      readonly retained: false;
+      readonly reason: string;
+    };
+
 export interface StageTrace<T> {
   readonly stage: string;
   readonly inputsConsumed: readonly Record<string, unknown>[];
@@ -264,6 +286,14 @@ export interface RetentionOverflow {
 }
 
 export interface RetentionTrace extends StageTrace<RetainedCandidate> {
+  /**
+   * Canonical: one decision per candidate this stage decided over, in the rank
+   * order it decided them. `outputsProduced`, `dropped`, `overflow`,
+   * `overflowed` and `losses` are all VIEWS of this list, computed from it
+   * rather than authored beside it, so no two of them can describe the same
+   * exclusion differently.
+   */
+  readonly dispositions: readonly CandidateDisposition[];
   readonly dropped: readonly {
     readonly candidateKey: string;
     readonly band: CandidateBand;
@@ -342,6 +372,13 @@ export interface ContextPacket {
 }
 
 export interface PacketTrace extends StageTrace<PacketCandidate> {
+  /**
+   * Canonical: one inclusion decision per retained candidate, recorded at the
+   * byte-budget comparison. An excluded candidate carries the real budget
+   * arithmetic that excluded it; the packet content below is what was
+   * included, which is a different fact and is not a substitute for this one.
+   */
+  readonly decisions: readonly CandidateDisposition[];
   readonly packet: ContextPacket;
   /** Recorded rather than thrown, so the trace survives a budget overrun. */
   readonly byteBudgetExceeded: boolean;

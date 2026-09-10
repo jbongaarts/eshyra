@@ -187,32 +187,6 @@ function allProduced(ids: readonly string[]) {
   return { produced: ids, modified: [], carriedForward: [] };
 }
 
-function traversalKey(traversal: TypedTraversal): string {
-  return JSON.stringify(traversal);
-}
-
-/**
- * The traversals a stage performed: those newly appearing on the candidate
- * stream here. Each traversal is attached to both of its endpoints, so this is
- * exactly what the stage recorded — and it cannot claim one no candidate
- * carries, nor omit one a candidate does.
- */
-function traversalsOf(
-  before: readonly ProjectedCandidate[],
-  after: readonly ProjectedCandidate[],
-): TypedTraversal[] {
-  const had = new Set(
-    before.flatMap((candidate) => candidate.traversals.map(traversalKey)),
-  );
-  const gained = new Map<string, TypedTraversal>();
-  for (const candidate of after)
-    for (const traversal of candidate.traversals) {
-      const key = traversalKey(traversal);
-      if (!had.has(key) && !gained.has(key)) gained.set(key, traversal);
-    }
-  return [...gained.values()];
-}
-
 function deriveRuleJoin(
   join: ProjectedRuleJoinStage,
   before: readonly ProjectedCandidate[],
@@ -319,10 +293,10 @@ export function deriveDiscoveryTrace(
         beforeJoins,
       ),
     ),
-    traversals: traversalsOf(
-      trace.candidates.outputsProduced,
-      trace.expansion.outputsProduced,
-    ),
+    // The events the stage recorded while it ran, copied through. Set
+    // difference over the candidate stream would silently drop a relationship
+    // that fired again in a later pass over material it had already reached.
+    traversals: trace.expansion.traversalEvents,
   };
   const ruleJoin = deriveRuleJoin(
     trace.ruleJoin,
@@ -341,10 +315,7 @@ export function deriveDiscoveryTrace(
         afterFirstJoin,
       ),
     ),
-    traversals: traversalsOf(
-      trace.ruleJoin.outputsProduced,
-      trace.ruleExpansion.outputsProduced,
-    ),
+    traversals: trace.ruleExpansion.traversalEvents,
   };
   const lateRuleJoin = deriveRuleJoin(
     trace.lateRuleJoin,
@@ -372,13 +343,17 @@ export function deriveDiscoveryTrace(
   const dropped: RetentionOverflow[] = [];
   for (const decision of trace.retention.dispositions) {
     const item = byKey.get(decision.candidateKey);
-    if (item === undefined) continue;
+    // A decision about a candidate dedup never emitted is malformed evidence,
+    // not something to skip past: skipping would erase the decision from every
+    // measurement at once. The durable reader rejects this shape; this throw is
+    // the floor under a projection that did not come through it.
+    if (item === undefined)
+      throw new Error(
+        `retention decided '${decision.candidateKey}', which dedup did not emit`,
+      );
     if (decision.retained)
       retained.push({ ...item, band: candidateBand(item) });
-    else
-      dropped.push(
-        overflowRecord(item, decision.reason ?? 'excluded by retention'),
-      );
+    else dropped.push(overflowRecord(item, decision.reason));
   }
   const overflow = dropped.filter((item) => item.band === 'must-consider');
   const retention: DerivedRetention = {
@@ -411,12 +386,16 @@ export function deriveDiscoveryTrace(
   );
   const byteDropped: RetentionOverflow[] = [];
   for (const decision of trace.packet.decisions) {
-    if (decision.retained) continue;
     const item = retainedByKey.get(decision.candidateKey);
-    if (item === undefined) continue;
-    byteDropped.push(
-      overflowRecord(item, decision.reason ?? 'excluded from the packet'),
-    );
+    if (item === undefined)
+      throw new Error(
+        `the packet decided '${decision.candidateKey}', which retention did not keep`,
+      );
+    if (decision.retained) continue;
+    // The producer's own byte-budget reason. There is no fallback: an exclusion
+    // without one cannot be constructed by the producer and is rejected by the
+    // durable reader, so inventing prose here could only hide a broken producer.
+    byteDropped.push(overflowRecord(item, decision.reason));
   }
   const byteOverflow = byteDropped.filter(
     (item) => item.band === 'must-consider',

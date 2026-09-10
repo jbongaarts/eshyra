@@ -1,6 +1,8 @@
 import type {
+  CandidateDisposition,
   DiscoveryCandidate,
   DiscoveryRoute,
+  DiscoverySignalKind,
   DiscoveryTrace,
   PacketCandidate,
   ReturnedRuleProjection,
@@ -18,6 +20,21 @@ import type {
  * `DiscoveryTrace` cannot serve: it holds the whole resolved rules stack and,
  * on every candidate of every stage, the full `RulesStackRecordEntry` — the
  * same records repeated nine times over.
+ *
+ * A canonical fact is of exactly one of two kinds, and the distinction is the
+ * whole architecture here:
+ *
+ * - STATE — what exists after a stage (the candidate stream, the packet's
+ *   content, a candidate's cumulative traversal list);
+ * - EVENT/DECISION — what happened while the stage ran (a relationship it
+ *   traversed, a candidate it excluded and why).
+ *
+ * A final state cannot always reproduce the events that produced it. A typed
+ * relationship can fire in expansion pass 1 and fire AGAIN in campaign-rule
+ * expansion pass 2, and cumulative state is identical either way; an exclusion
+ * reason exists nowhere in the surviving output. Reconstructing either from
+ * resultant state loses the fact — or, worse, invents one. So both kinds are
+ * recorded once, by their producer, and copied here.
  *
  * This shape records CANONICAL FACTS ONCE and nothing else. Every summary a
  * measurement reports — stage accounting, traversal lists, the rule/ruling
@@ -48,7 +65,7 @@ export interface ProjectedStage<T> {
 
 export interface ProjectedSignal {
   readonly signalId: string;
-  readonly kind: string;
+  readonly kind: DiscoverySignalKind;
   /** The candidate key or adventure-entity ref this signal proposes. */
   readonly proposes: string;
   readonly evidence: Record<string, unknown>;
@@ -97,12 +114,26 @@ export interface ProjectedCandidatesStage
 }
 
 /**
- * An expansion stage records only its candidates. M4's traversal list is
- * derived as the traversals that newly appear on the candidate stream here,
- * so a traversal cannot be claimed without a candidate carrying it, and a
- * carried traversal cannot be omitted from the list.
+ * An expansion stage records its candidate STATE and its traversal EVENTS.
+ *
+ * The two names are deliberately unlike each other. A candidate's own
+ * `.traversals` is the cumulative set of relationships it carries; this
+ * stage's `.traversalEvents` is what THIS pass actually traversed. A previous
+ * revision derived the second from the first by set-difference over the
+ * candidate stream, which is false under the bounded two-pass architecture:
+ * `expandTypedRelationships()` records each relationship it processes in that
+ * pass, while `withLink()` deliberately does not re-add a traversal a
+ * candidate already carries. A relationship promoted into the second pass by
+ * the campaign-rule join therefore fires again while cumulative state does not
+ * move, and the set-difference erases the event. M4 asks which traversals
+ * FIRED, so the event is the fact it needs.
  */
-export type ProjectedExpansionStage = ProjectedStage<ProjectedCandidate>;
+export interface ProjectedExpansionStage
+  extends ProjectedStage<ProjectedCandidate> {
+  /** Relationships this stage traversed, exactly as the producer recorded
+   * them. Not deduplicated against earlier stages: a repeat is a real event. */
+  readonly traversalEvents: readonly TypedTraversal[];
+}
 
 export interface ProjectedRuleJoinStage
   extends ProjectedStage<ProjectedCandidate> {
@@ -119,18 +150,17 @@ export interface ProjectedRuleJoinStage
 export type ProjectedDedupStage = ProjectedStage<ProjectedCandidate>;
 
 /**
- * Retention records ONE disposition per candidate it decided over, in the rank
- * order it decided them. Retained candidates, dropped candidates, the overflow
- * set, the overflow flag and the stage's own losses are all derived from this
- * single list, so a drop cannot be recorded while the overflow or the loss that
- * must accompany it is not.
+ * Retention's decision history, copied from the producer.
+ *
+ * `retainCandidates()` records ONE disposition per candidate it decided over,
+ * at the ranking/budget boundary where the decision is made, in the order it
+ * made them. Retained candidates, dropped candidates, the overflow set, the
+ * overflow flag and the stage's own losses are all derived from this single
+ * list, so a drop cannot be recorded while the overflow or the loss that must
+ * accompany it is not — and an exclusion cannot exist without the reason the
+ * producer gave it, because the union has no shape for one that does.
  */
-export interface ProjectedDisposition {
-  readonly candidateKey: string;
-  readonly retained: boolean;
-  /** Why it was excluded. Present exactly when `retained` is false. */
-  readonly reason?: string;
-}
+export type ProjectedDisposition = CandidateDisposition;
 
 export interface ProjectedRetentionStage {
   readonly stage: string;
@@ -139,9 +169,16 @@ export interface ProjectedRetentionStage {
 }
 
 /**
- * The packet records one inclusion decision per retained candidate plus the
- * content it included. Byte count, byte-overflow set, the overflow flag, the
- * drop list and the stage's losses are all derived from those.
+ * The packet's decision history and the content it included — two facts.
+ *
+ * `buildContextPacket()` records one inclusion decision per retained candidate
+ * at the byte comparison that makes it, carrying the real budget arithmetic for
+ * an exclusion. `candidates` is what the packet holds. Byte count, byte-overflow
+ * set, the overflow flag, the drop list and the stage's losses are derived from
+ * those. Nothing here infers an exclusion from absence of content: an earlier
+ * revision did, and had to invent the string `'excluded from the packet'` for a
+ * producer drop that was missing — laundering a producer failure into evidence
+ * that reads as valid.
  */
 export interface ProjectedPacketStage {
   readonly stage: string;
@@ -220,6 +257,17 @@ function packIdentity(pack: {
   };
 }
 
+function projectExpansion(
+  stage: DiscoveryTrace['expansion'],
+): ProjectedExpansionStage {
+  return {
+    ...base(stage, stage.outputsProduced.map(candidate)),
+    // Copied, not recomputed. `expandTypedRelationships()` recorded these as it
+    // executed; that IS the event history for this pass.
+    traversalEvents: stage.traversals,
+  };
+}
+
 function projectRuleJoin(
   join: DiscoveryTrace['ruleJoin'],
 ): ProjectedRuleJoinStage {
@@ -235,23 +283,10 @@ function projectRuleJoin(
 export function projectDiscoveryTrace(
   trace: DiscoveryTrace,
 ): ProjectedDiscoveryTrace {
-  // Retention decided over everything dedup emitted; the packet decided over
-  // everything retention kept. Recording one disposition per decision, in the
-  // order it was made, is the whole of that stage's evidence.
-  const retainedKeys = new Set(
-    trace.retention.outputsProduced.map((item) => item.candidateKey),
-  );
-  const retentionDrops = new Map(
-    trace.retention.dropped.map((item) => [item.candidateKey, item.reason]),
-  );
-  const packetDrops = new Map(
-    trace.packet.dropped
-      .filter((item) => !retentionDrops.has(item.candidateKey))
-      .map((item) => [item.candidateKey, item.reason]),
-  );
-  const includedKeys = new Set(
-    trace.packet.packet.candidates.map((item) => item.identity.key),
-  );
+  // Every field below is a COPY of a fact its producer recorded. Nothing here
+  // reconstructs a decision from what survived it or an event from resultant
+  // state; if the live trace is inconsistent, that is malformed evidence for
+  // the durable reader to reject, not something this function repairs.
   return {
     signals: {
       ...base(
@@ -285,45 +320,20 @@ export function projectDiscoveryTrace(
       ),
       unresolvedTargets: trace.candidates.unresolvedTargets,
     },
-    expansion: base(
-      trace.expansion,
-      trace.expansion.outputsProduced.map(candidate),
-    ),
+    expansion: projectExpansion(trace.expansion),
     ruleJoin: projectRuleJoin(trace.ruleJoin),
-    ruleExpansion: base(
-      trace.ruleExpansion,
-      trace.ruleExpansion.outputsProduced.map(candidate),
-    ),
+    ruleExpansion: projectExpansion(trace.ruleExpansion),
     lateRuleJoin: projectRuleJoin(trace.lateRuleJoin),
     dedup: base(trace.dedup, trace.dedup.outputsProduced.map(candidate)),
     retention: {
       stage: trace.retention.stage,
       outcome: trace.retention.outcome,
-      // The retained set in rank order, then the drops in rank order. The
-      // interleaving of the two is not recorded because nothing reads it; what
-      // is recorded is one decision per candidate the stage decided over.
-      dispositions: [
-        ...trace.retention.outputsProduced.map((item) => ({
-          candidateKey: item.candidateKey,
-          retained: true,
-        })),
-        ...trace.retention.dropped.map((item) => ({
-          candidateKey: item.candidateKey,
-          retained: false,
-          reason: item.reason,
-        })),
-      ],
+      dispositions: trace.retention.dispositions,
     },
     packet: {
       stage: trace.packet.stage,
       outcome: trace.packet.outcome,
-      decisions: [...retainedKeys].map((key) => ({
-        candidateKey: key,
-        retained: includedKeys.has(key),
-        ...(includedKeys.has(key)
-          ? {}
-          : { reason: packetDrops.get(key) ?? 'excluded from the packet' }),
-      })),
+      decisions: trace.packet.decisions,
       candidates: trace.packet.packet.candidates,
     },
     stack: {
