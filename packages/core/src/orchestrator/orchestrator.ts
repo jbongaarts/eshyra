@@ -898,9 +898,13 @@ export async function runTurn(
           delivery: {
             mode: 'intervened',
             injected: false,
-            reason:
-              intervention.capture.failure?.message ??
-              'discovery intervention produced no rendered packet and no recorded failure',
+            // The capture's own failure message, not a second account of the
+            // same event. `DiscoveryInterventionCapture` pairs an absent
+            // render with a failure-bearing capture, so there is no
+            // no-render-and-no-failure state left to invent a reason for —
+            // which matters, because the durable reader rejects exactly that
+            // row.
+            reason: intervention.capture.failure.message,
           },
         };
       } else {

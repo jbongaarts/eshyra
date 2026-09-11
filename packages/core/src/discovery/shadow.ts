@@ -369,20 +369,30 @@ export function captureDiscoveryShadow(
  * `captureDiscoveryShadow` would have recorded, plus what rendering it
  * produced.
  *
- * `rendered` is a second field rather than folded into `capture` because
- * "did discovery run" and "is there DM-visible text" are different facts
- * once rendering can itself fail: `capture` can hold a trace while `rendered`
- * is absent, which is exactly the render-failure case below. What must NOT
- * be representable is `rendered` present beside a `capture` failure — that
- * would let the orchestrator inject text for a capture it is about to record
- * as having failed — and the implementation, not the type, guarantees that:
- * every path that fails to render returns a failure `capture` instead.
+ * A union, not a capture beside an optional `rendered`, because the two
+ * fields are not independent and the durable reader already refuses rows that
+ * pretend they are. `assertV2` rejects `delivery.injected: false` under
+ * `intervened` unless the capture carries a failure explaining it — so a
+ * shape that let `rendered` be absent beside a trace-bearing capture would
+ * oblige the orchestrator to invent a reason, and the row it then wrote would
+ * fail its own admission. Pairing each arm with the capture shape that
+ * belongs to it makes both halves unrepresentable instead: there is no
+ * un-rendered success to explain, and no rendered failure to inject from.
  */
-export interface DiscoveryInterventionCapture {
-  readonly capture: DiscoveryShadowCapture;
-  /** Absent when the capture failed, so nothing can be injected. */
-  readonly rendered?: RenderedContextPacket;
-}
+export type DiscoveryInterventionCapture =
+  | {
+      readonly capture: DiscoveryShadowCapture & {
+        readonly trace: ProjectedDiscoveryTrace;
+      };
+      readonly rendered: RenderedContextPacket;
+    }
+  | {
+      readonly capture: DiscoveryShadowCapture & {
+        readonly failure: ShadowFailure;
+      };
+      /** Absent when the capture failed, so nothing can be injected. */
+      readonly rendered?: undefined;
+    };
 
 /**
  * Design section 12.3 (Phase 3, `eshyra-o9bd.19.12`): run the SAME capture
@@ -402,11 +412,30 @@ export function captureDiscoveryIntervention(
   input: ShadowDiscoveryInput,
 ): DiscoveryInterventionCapture {
   const raw = captureRawShadow(input);
-  if (raw.trace === undefined) return { capture: projectCapture(raw) };
-  try {
+  if (raw.trace === undefined)
     return {
-      capture: projectCapture(raw),
-      rendered: renderContextPacketMessage(raw.trace),
+      capture: {
+        capturedAt: raw.capturedAt,
+        campaignPosition: raw.campaignPosition,
+        blockerRepairs: raw.blockerRepairs,
+        scenario: raw.scenario,
+        failure: raw.failure,
+      },
+    };
+  try {
+    // Rendered from the LIVE trace before projection, and paired with the
+    // projected capture in one expression, so the text the orchestrator may
+    // inject and the evidence describing it come from one discovery run.
+    const rendered = renderContextPacketMessage(raw.trace);
+    return {
+      capture: {
+        capturedAt: raw.capturedAt,
+        campaignPosition: raw.campaignPosition,
+        blockerRepairs: raw.blockerRepairs,
+        scenario: raw.scenario,
+        trace: projectDiscoveryTrace(raw.trace),
+      },
+      rendered,
     };
   } catch (error) {
     return {
