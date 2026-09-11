@@ -554,8 +554,61 @@ export interface StateEffectMeasurement {
   readonly disagreements: readonly StateEffectDisagreement[];
 }
 
-function valuesEqual(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+/**
+ * Structural deep equality for M12 argument comparison (eshyra-o9bd.19.12.7
+ * F3/F4/F5 repair). The prior implementation compared `JSON.stringify(a) ===
+ * JSON.stringify(b)`, which is an encoding-order comparison, not a
+ * structural one: two nested objects built by different code paths with the
+ * same keys inserted in a different order stringify to different text and
+ * were reported as disagreeing, even though the contract is that a declared
+ * argument field DEEP-EQUALS the executed value, not that it re-serializes
+ * identically.
+ *
+ * - Objects: key-order-independent — same key set, each value deep-equal.
+ * - Arrays: order- AND length-significant — an array is a sequence, not a
+ *   set, so `[1, 2]` and `[2, 1]` disagree and so do arrays of different
+ *   length.
+ * - Primitives: exact, via `Object.is` — this keeps `null` and `undefined`
+ *   distinct (a fixture asserting a field is explicitly `null` is a
+ *   different claim than one silent on that field, whose executed value
+ *   reads back `undefined`) and treats `NaN` as equal to itself, unlike
+ *   `===`.
+ *
+ * This is EXACT equality at every level once a value is being compared, not
+ * a subset match. `measureAcceptedStateEffect` below is deliberately a
+ * subset comparison only at its OWN top level: it iterates the fixture's
+ * declared `operation.args` fields and never requires the executed args to
+ * declare nothing else. That subset rule does not recurse into this
+ * function — a declared nested object's value must fully agree with the
+ * executed nested object, key for key, at every depth. Letting extra keys
+ * inside a declared nested object pass silently would mean a fixture could
+ * assert `{a: 1}` and admit an executed `{a: 1, b: 'unrelated-but-unchecked-
+ * state'}`, which is exactly the unverified-mechanical-claim gap M12 exists
+ * to close.
+ */
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b)) return false;
+    if (a.length !== b.length) return false;
+    return a.every((item, index) => deepEqual(item, b[index]));
+  }
+  if (
+    typeof a !== 'object' ||
+    a === null ||
+    typeof b !== 'object' ||
+    b === null
+  )
+    return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  const bRecord = b as Record<string, unknown>;
+  const aRecord = a as Record<string, unknown>;
+  return aKeys.every(
+    (key) =>
+      Object.hasOwn(bRecord, key) && deepEqual(aRecord[key], bRecord[key]),
+  );
 }
 
 /** M12 compares always-present fixture and accepted event sets (§13.2). */
@@ -593,7 +646,7 @@ export function measureAcceptedStateEffect(
       consumed.add(index);
       const effect = acceptedEffects[index];
       for (const [field, value] of Object.entries(operation.args ?? {}))
-        if (!valuesEqual(value, effect.args[field]))
+        if (!deepEqual(value, effect.args[field]))
           disagreements.push({
             kind: 'argument-mismatch',
             tool: effect.tool,
