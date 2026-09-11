@@ -1062,6 +1062,106 @@ describe('canonical admissibility', () => {
         'runtime.stateEffects[0].narration',
       );
     });
+
+    it('rejects attempt 0', () => {
+      rejects(
+        withEffect((effect) => {
+          effect.attempt = 0;
+        }),
+        'runtime.stateEffects[0].attempt',
+      );
+    });
+
+    /**
+     * F4 (eshyra-o9bd.19.12.7, PR #543 review): `runtime.stateEffects` is by
+     * contract ONE accepted candidate's executed-tool stream (see
+     * `RuntimeStateEffect` in types.ts) — a rejected attempt's writes roll
+     * back with its savepoint and contribute no event. That forces three
+     * constraints beyond "each effect looks well-formed in isolation", none
+     * of which a single-effect fixture can even express: the shared attempt
+     * must be a real candidate attempt (reusing the same `attemptCount` the
+     * audit lifecycle already yields — the VALID fixture's one retry plus
+     * its acceptance means attempts 1 and 2 are real and 3 is not), every
+     * effect in the stream must agree on that one attempt, and `ordinal`
+     * must be the stream's own canonical position (0-based, strictly
+     * increasing, no gaps, no duplicates). Each case below installs a
+     * genuinely well-formed THREE-effect stream first and breaks exactly one
+     * thing, so no rejection here could also be explained by an unrelated
+     * defect.
+     */
+    describe('lifecycle constraints on the accepted effect stream', () => {
+      const STREAM: readonly Row[] = [
+        { attempt: 1, ordinal: 0, tool: 'use_item', args: { step: 'a' } },
+        { attempt: 1, ordinal: 1, tool: 'adjust_hp', args: { step: 'b' } },
+        { attempt: 1, ordinal: 2, tool: 'use_item', args: { step: 'c' } },
+      ];
+
+      function withStream(mutate: (effects: Row[]) => void): Row {
+        const row = clone();
+        const effects = JSON.parse(JSON.stringify(STREAM)) as Row[];
+        mutate(effects);
+        (row.runtime as Row).stateEffects = effects;
+        return row;
+      }
+
+      it('admits the well-formed multi-effect stream', () => {
+        expect(() =>
+          readDiscoveryShadowEvidence(withStream(() => {}) as TraceJsonValue),
+        ).not.toThrow();
+      });
+
+      it("rejects an attempt above the row's real candidate count", () => {
+        // The VALID fixture ran one retry plus an acceptance: attempts 1 and
+        // 2 are real, 3 is not. All three effects move together so this
+        // isolates the range check from the shared-attempt check below.
+        rejects(
+          withStream((effects) => {
+            for (const effect of effects) effect.attempt = 3;
+          }),
+          'runtime.stateEffects[0].attempt',
+        );
+      });
+
+      it('rejects two effects in one stream recording different attempts', () => {
+        // Attempt 2 is itself in range (the fixture ran two attempts), so
+        // this fails only the shared-attempt check, not the range check.
+        rejects(
+          withStream((effects) => {
+            effects[1].attempt = 2;
+          }),
+          'runtime.stateEffects[1].attempt',
+        );
+      });
+
+      it('rejects duplicate ordinals', () => {
+        rejects(
+          withStream((effects) => {
+            effects[1].ordinal = 0;
+          }),
+          'runtime.stateEffects[1].ordinal',
+        );
+      });
+
+      it('rejects a gap in ordinals', () => {
+        rejects(
+          withStream((effects) => {
+            effects[1].ordinal = 2;
+            effects[2].ordinal = 3;
+          }),
+          'runtime.stateEffects[1].ordinal',
+        );
+      });
+
+      it('rejects descending ordinals', () => {
+        rejects(
+          withStream((effects) => {
+            effects[1].ordinal = 2;
+            effects[2].ordinal = 1;
+          }),
+          'runtime.stateEffects[1].ordinal',
+        );
+      });
+    });
   });
 
   describe('scenario and non-claim', () => {

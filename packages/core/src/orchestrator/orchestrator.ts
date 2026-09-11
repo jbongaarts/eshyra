@@ -960,6 +960,18 @@ export async function runTurn(
     const maxAttempts = deps.auditor ? DEFAULT_MAX_AUDITED_ATTEMPTS : 1;
     let narration = '';
     let toolCalls: ExecutedToolCall[] = [];
+    // The exact `initialUserMessage` the ACCEPTED attempt received, captured
+    // at the same place its narration and tool calls are taken (eshyra-
+    // o9bd.19.12.7 F3). `baseUserMessage` alone is only every attempt's
+    // common prefix: an audit retry appends a corrective note that grows with
+    // each rejection, so on a turn with any rejection the accepted attempt's
+    // real input is `baseUserMessage` plus that note. Recording this captured
+    // value — rather than re-deriving it after the loop by re-concatenating
+    // `baseUserMessage` with whatever `correctiveNote` last holds — keeps
+    // there from being two accounts of the model's input that could disagree:
+    // this IS the string handed to `runModelLoop` for the winning attempt,
+    // not a reconstruction of it.
+    let acceptedUserMessage = '';
     const committedPrecedents: CampaignRule[] = [];
     let correctiveNote: string | undefined;
     let cumulativeVerdict: AuditVerdict | undefined;
@@ -985,15 +997,16 @@ export async function runTurn(
                 );
               precedents.push(proposal);
             };
+      const attemptUserMessage =
+        correctiveNote === undefined
+          ? baseUserMessage
+          : `${baseUserMessage}\n\n${correctiveNote}`;
       const candidate = await runModelLoop({
         model,
         registry,
         toolCtx,
         system,
-        initialUserMessage:
-          correctiveNote === undefined
-            ? baseUserMessage
-            : `${baseUserMessage}\n\n${correctiveNote}`,
+        initialUserMessage: attemptUserMessage,
         maxToolRounds,
         onRoundStart: () => {
           rounds += 1;
@@ -1052,6 +1065,7 @@ export async function runTurn(
         );
         narration = candidateNarration;
         toolCalls = candidate.toolCalls;
+        acceptedUserMessage = attemptUserMessage;
         break;
       }
 
@@ -1193,6 +1207,7 @@ export async function runTurn(
         );
         narration = candidateNarration;
         toolCalls = candidate.toolCalls;
+        acceptedUserMessage = attemptUserMessage;
         toolsRerunDuringRetry = repeatedAcceptedRetryTools(
           candidate.toolCalls,
           rejectedAttemptToolNames,
@@ -1261,11 +1276,13 @@ export async function runTurn(
       consentScope: input.consentScope ?? 'private',
       playerInput: input.playerInput,
       actingCharacterId,
-      // The message the model ACTUALLY received, not a fresh re-render of
-      // `assembled`: under `intervene` those differ by the appended packet,
-      // and recording the base message while the DM got the injected one
-      // would make the trace lie about the turn (design section 12.3).
-      retrievedContext: [baseUserMessage],
+      // The message the ACCEPTED attempt actually received, captured at
+      // accept time above — not a fresh re-render of `assembled` or of
+      // `baseUserMessage`: under `intervene` those differ by the appended
+      // packet, and an audit retry differs further by its corrective note,
+      // so recording anything reconstructed here instead of the captured
+      // value would make the trace lie about the turn (design section 12.3).
+      retrievedContext: [acceptedUserMessage],
       promptProfile: input.promptProfile ?? 'default',
       modelOutput: narration,
       toolCalls: toolCalls.map(

@@ -304,6 +304,116 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     }
   });
 
+  /**
+   * F3 (PR #543 review): `retrieved_context` on an AUDIT-RETRY turn.
+   *
+   * `baseUserMessage` is only every attempt's common prefix. A rejection
+   * appends a corrective note, so the accepted attempt's real input is the
+   * base message plus that note. Persisting the base message would leave the
+   * accepted narration and tool calls describing attempt 2 while the recorded
+   * input describes the pre-correction context — a trace that lies about the
+   * turn, and one this PR's own comment claimed could not happen.
+   *
+   * The assertion binds to the string the model was ACTUALLY handed for the
+   * accepted attempt (`model.seen`), never to a re-concatenation this test
+   * performs, because a reconstruction here would pass even if the production
+   * code reconstructed it differently.
+   */
+  it('records the ACCEPTED attempt input on an intervene turn that retried', async () => {
+    const db = seedCampaign();
+    try {
+      const model = new ScriptedModel([
+        'A first answer the auditor rejects.',
+        'A second answer the auditor accepts.',
+      ]);
+      const result = await runTurn(
+        {
+          db,
+          model,
+          registry: createDefaultToolRegistry(),
+          discoveryMode: 'intervene',
+          auditor: new ScriptedAuditor([
+            {
+              verdict: 'reject',
+              missingRequiredTools: ['lookup_rules'],
+              missingRequiredCalls: [
+                { tool: 'lookup_rules', target: 'spell:fireball' },
+              ],
+              disallowedToolCalls: [],
+              reason: 'ruled on the spell without looking it up',
+              repairInstruction: 'look the spell up first',
+            },
+          ]),
+        },
+        turnInput('I cast fireball at the goblin sentries.'),
+      );
+      expect(result.ok).toBe(true);
+
+      // Two primary-DM candidates ran, and their inputs are NOT the same
+      // string — otherwise this test would pass without exercising anything.
+      expect(model.seen.length).toBeGreaterThanOrEqual(2);
+      const first = model.seen[0]?.messages[0]?.content;
+      const accepted = model.seen[1]?.messages[0]?.content;
+      if (first === undefined || accepted === undefined)
+        throw new Error('the model saw fewer than two candidate inputs');
+      expect(accepted).not.toBe(first);
+      // The retry input is the first attempt's input plus the corrective
+      // note, so the first attempt's message is a strict prefix of it.
+      expect(accepted.startsWith(first)).toBe(true);
+
+      const trace = getTurnTrace(db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: TURN,
+      });
+      expect(trace?.retrievedContext).toEqual([accepted]);
+
+      // ... and the packet binding still holds on the retry path: the
+      // injected packet sits between the assembled context and the corrective
+      // note, and `delivery` still fingerprints exactly it. The packet region
+      // is located against a real `off`-mode render of the same turn rather
+      // than by re-rendering the packet here, so this checks the production
+      // text rather than restating it.
+      const evidence = recordedEvidence(db);
+      const delivery = evidence?.delivery;
+      if (delivery?.mode !== 'intervened' || !delivery.injected)
+        throw new Error(
+          `expected an injected intervention delivery, got ${JSON.stringify(delivery)}`,
+        );
+      const bare = seedCampaign();
+      let assembled: string;
+      try {
+        const offModel = new ScriptedModel();
+        const offResult = await runTurn(
+          {
+            db: bare,
+            model: offModel,
+            registry: createDefaultToolRegistry(),
+            discoveryMode: 'off',
+          },
+          turnInput('I cast fireball at the goblin sentries.'),
+        );
+        expect(offResult.ok).toBe(true);
+        const seen = offModel.seen[0]?.messages[0]?.content;
+        if (seen === undefined)
+          throw new Error('the off-mode model saw nothing');
+        assembled = seen;
+      } finally {
+        bare.close();
+      }
+      expect(first.startsWith(`${assembled}\n\n`)).toBe(true);
+      const packetText = first.slice(assembled.length + 2);
+      expect(Buffer.byteLength(packetText, 'utf8')).toBe(
+        delivery.renderedBytes,
+      );
+      expect(
+        createHash('sha256').update(packetText, 'utf8').digest('hex'),
+      ).toBe(delivery.renderedSha256);
+    } finally {
+      db.close();
+    }
+  });
+
   it("under 'intervene', a capture failure injects nothing, records the honest delivery arm, and does not fail the turn", async () => {
     const db = seedCampaign();
     try {

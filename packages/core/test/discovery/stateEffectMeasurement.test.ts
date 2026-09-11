@@ -238,4 +238,150 @@ describe('M12 accepted state-effect agreement', () => {
       0, 1,
     ]);
   });
+
+  /**
+   * F5 (eshyra-o9bd.19.12.7): argument comparison is real structural deep
+   * equality, not `JSON.stringify` equality. These cases exercise the shapes
+   * that distinguish the two: object key order, array order/length, and the
+   * deliberate decision that the top-level subset rule (tested above) does
+   * NOT recurse into a declared nested object.
+   */
+  describe('structural deep equality of declared arguments', () => {
+    it('agrees when a nested argument object has reordered keys', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([effect('use_item', 0, { payload: { b: 2, a: 1 } })]),
+        {
+          expectation: 'effect',
+          operations: [{ tool: 'use_item', args: { payload: { a: 1, b: 2 } } }],
+        },
+      );
+      expect(measured.agreement).toBe('agreed');
+      expect(measured.disagreements).toEqual([]);
+    });
+
+    it('disagrees when a declared array argument is reordered', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([effect('use_item', 0, { targets: ['b', 'a'] })]),
+        {
+          expectation: 'effect',
+          operations: [{ tool: 'use_item', args: { targets: ['a', 'b'] } }],
+        },
+      );
+      expect(measured.agreement).toBe('disagreed');
+      expect(measured.disagreements).toEqual([
+        {
+          kind: 'argument-mismatch',
+          tool: 'use_item',
+          attempt: 1,
+          ordinal: 0,
+          field: 'targets',
+          expected: ['a', 'b'],
+          observed: ['b', 'a'],
+        },
+      ]);
+    });
+
+    it('disagrees when a declared array argument has a different length', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([effect('use_item', 0, { targets: ['a', 'b', 'c'] })]),
+        {
+          expectation: 'effect',
+          operations: [{ tool: 'use_item', args: { targets: ['a', 'b'] } }],
+        },
+      );
+      expect(measured.agreement).toBe('disagreed');
+      expect(measured.disagreements).toEqual([
+        {
+          kind: 'argument-mismatch',
+          tool: 'use_item',
+          attempt: 1,
+          ordinal: 0,
+          field: 'targets',
+          expected: ['a', 'b'],
+          observed: ['a', 'b', 'c'],
+        },
+      ]);
+    });
+
+    it('disagrees on a different value nested inside a declared argument, naming the top-level declared field', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([effect('use_item', 0, { payload: { a: 1, b: 3 } })]),
+        {
+          expectation: 'effect',
+          operations: [{ tool: 'use_item', args: { payload: { a: 1, b: 2 } } }],
+        },
+      );
+      expect(measured.agreement).toBe('disagreed');
+      expect(measured.disagreements).toEqual([
+        {
+          kind: 'argument-mismatch',
+          tool: 'use_item',
+          attempt: 1,
+          ordinal: 0,
+          field: 'payload',
+          expected: { a: 1, b: 2 },
+          observed: { a: 1, b: 3 },
+        },
+      ]);
+    });
+
+    it('disagrees when a declared nested field is absent from the executed argument object', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([effect('use_item', 0, { payload: { a: 1 } })]),
+        {
+          expectation: 'effect',
+          operations: [{ tool: 'use_item', args: { payload: { a: 1, b: 2 } } }],
+        },
+      );
+      expect(measured.agreement).toBe('disagreed');
+      expect(measured.disagreements).toEqual([
+        {
+          kind: 'argument-mismatch',
+          tool: 'use_item',
+          attempt: 1,
+          ordinal: 0,
+          field: 'payload',
+          expected: { a: 1, b: 2 },
+          observed: { a: 1 },
+        },
+      ]);
+    });
+
+    /**
+     * Deliberate decision (documented beside `deepEqual` in
+     * measurements.ts): the top-level subset rule exercised above — a
+     * fixture need not restate every argument the tool takes — does NOT
+     * recurse into a declared nested object. Once a declared field is
+     * selected for comparison, its value must fully agree with the executed
+     * value at every depth, so an executed nested object carrying a key the
+     * fixture never declared disagrees rather than passing silently. The
+     * alternative (letting the subset rule recurse) would let a fixture
+     * assert `{a: 1}` and admit any executed nested shape that merely
+     * contains it, which is exactly the unverified-mechanical-claim gap M12
+     * exists to close.
+     */
+    it('disagrees when the executed argument object nested inside a declared field carries an extra key', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([
+          effect('use_item', 0, { payload: { a: 1, b: 2, c: 3 } }),
+        ]),
+        {
+          expectation: 'effect',
+          operations: [{ tool: 'use_item', args: { payload: { a: 1, b: 2 } } }],
+        },
+      );
+      expect(measured.agreement).toBe('disagreed');
+      expect(measured.disagreements).toEqual([
+        {
+          kind: 'argument-mismatch',
+          tool: 'use_item',
+          attempt: 1,
+          ordinal: 0,
+          field: 'payload',
+          expected: { a: 1, b: 2 },
+          observed: { a: 1, b: 2, c: 3 },
+        },
+      ]);
+    });
+  });
 });

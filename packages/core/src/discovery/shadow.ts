@@ -1505,17 +1505,54 @@ function assertV2(stored: Record<string, unknown>): void {
         );
     },
   );
-  each(runtime.stateEffects, 'runtime.stateEffects', (item, at) => {
+  // `runtime.stateEffects` is, by contract (see `RuntimeStateEffect` in
+  // types.ts), ONE accepted candidate's executed-tool stream: a rejected
+  // attempt's writes roll back with its savepoint and contribute no event
+  // here. That single fact forces three checks beyond "each item looks like
+  // an effect", which a per-item-only check (as `each` alone would give)
+  // cannot express because it never compares one item against another:
+  //
+  //   1. `attempt` is a real candidate attempt — reusing `attemptCount` from
+  //      `checkAudit` above, exactly as `capabilityInvocations` does, rather
+  //      than recomputing it a second way that could disagree.
+  //   2. Every recorded effect shares that SAME attempt: two different
+  //      attempt numbers in one stream is not "two effects", it is evidence
+  //      stitched together from two different candidates, which no real
+  //      producer can emit for an accepted turn.
+  //   3. `ordinal` is this one stream's own canonical position: the i-th
+  //      effect in stored order must carry ordinal `i`. That single equality
+  //      is exactly "0-based, strictly increasing, no gaps, no duplicates" —
+  //      any permutation, gap, repeat, or descending order fails it.
+  const stateEffects = asArray(runtime.stateEffects, 'runtime.stateEffects');
+  let stateEffectAttempt: number | undefined;
+  stateEffects.forEach((item, index) => {
+    const at = `runtime.stateEffects[${index}]`;
     const effect = asObject(item, at);
     exactKeys(effect, ['attempt', 'ordinal', 'tool', 'args'], at);
     const tool = asString(effect.tool, `${at}.tool`);
     if (tool.length === 0) failAt(`${at}.tool`, 'must not be empty');
     asNumber(effect.attempt, `${at}.attempt`);
-    if (!Number.isInteger(effect.attempt) || (effect.attempt as number) < 0)
-      failAt(`${at}.attempt`, 'must be a non-negative integer');
+    const attempt = effect.attempt as number;
+    if (!Number.isInteger(attempt) || attempt < 1 || attempt > attemptCount)
+      failAt(
+        `${at}.attempt`,
+        `is ${String(attempt)}; an accepted state effect's attempt is an integer in 1..${attemptCount}`,
+      );
+    if (stateEffectAttempt === undefined) {
+      stateEffectAttempt = attempt;
+    } else if (attempt !== stateEffectAttempt) {
+      failAt(
+        `${at}.attempt`,
+        `is ${String(attempt)}, but an earlier effect in this same stream recorded attempt ${String(stateEffectAttempt)}; stateEffects is one accepted candidate's stream and cannot mix attempts`,
+      );
+    }
     asNumber(effect.ordinal, `${at}.ordinal`);
-    if (!Number.isInteger(effect.ordinal) || (effect.ordinal as number) < 0)
-      failAt(`${at}.ordinal`, 'must be a non-negative integer');
+    const ordinal = effect.ordinal as number;
+    if (!Number.isInteger(ordinal) || ordinal !== index)
+      failAt(
+        `${at}.ordinal`,
+        `is ${String(ordinal)}; the canonical position of this stream's effect ${String(index)} is ${String(index)}`,
+      );
     asObject(effect.args, `${at}.args`);
   });
 
