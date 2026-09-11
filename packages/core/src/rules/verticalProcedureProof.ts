@@ -3,6 +3,7 @@ import {
   type BoundedProcedure,
   BoundedProcedureError,
   readBoundedProcedures,
+  readFeatureChoiceBinding,
 } from './boundedProcedures.js';
 import type { RulesRecord, RulesRecordKind } from './types.js';
 
@@ -10,6 +11,7 @@ export type Foundation1Facet =
   | 'save'
   | 'damage'
   | 'repeat-timing'
+  | 'entry-transition'
   | 'termination'
   | 'mode-selector'
   | 'choice-cardinality'
@@ -120,6 +122,13 @@ function atomsForProcedure(
     return [
       atom(
         record,
+        `${base}/entryTransition`,
+        `${semanticBase}/entryTransition`,
+        'entry-transition',
+        procedure.entryTransition,
+      ),
+      atom(
+        record,
         `${base}/initial/save`,
         `${semanticBase}/initial/save`,
         'save',
@@ -183,35 +192,19 @@ function atomsForProcedure(
     ];
   }
   if (procedure.kind === 'feature-options') {
-    const choices = Array.isArray(data.choices) ? data.choices : [];
-    const matchingChoices = choices.flatMap((value, choiceIndex) => {
-      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-        return [];
-      }
-      const choice = value as Record<string, unknown>;
-      return choice.id === procedure.choiceId ? [{ choice, choiceIndex }] : [];
-    });
-    if (matchingChoices.length !== 1) {
-      throw new BoundedProcedureError(
-        `record.data must contain exactly one choice matching feature procedure choiceId ${JSON.stringify(procedure.choiceId)}`,
-      );
-    }
-    const [{ choice, choiceIndex }] = matchingChoices;
-    if (!Number.isInteger(choice.choose)) {
-      throw new BoundedProcedureError(
-        `record.data.choices[${choiceIndex}].choose must be an integer`,
-      );
-    }
+    const choiceBinding = readFeatureChoiceBinding(data, procedure);
     return [
       atom(
         record,
-        `/data/choices/${choiceIndex}`,
+        `/data/choices/${choiceBinding.choiceIndex}`,
         `${semanticBase}/choice/${procedure.choiceId}`,
         'choice-cardinality',
         {
-          choiceId: choice.id,
-          choose: choice.choose,
+          choiceId: choiceBinding.choiceId,
+          choose: choiceBinding.choose,
           procedureChoiceId: procedure.choiceId,
+          offeredOptionIds: choiceBinding.offeredOptionIds,
+          procedureOptionIds: choiceBinding.procedureOptionIds,
         },
       ),
       atom(

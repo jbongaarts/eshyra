@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type {
   BoundedProcedureRequest,
+  FeatureOptionApplicabilityContext,
   RulesPack,
   RulesRecord,
 } from '../src/internal.js';
@@ -36,6 +37,19 @@ describe('bounded provider-neutral procedure execution', () => {
       executeBoundedProcedure(hazard, {
         kind: 'hazard-save',
         phase: 'initial',
+        rollTotal: 13,
+      }),
+    ).toEqual({
+      kind: 'hazard-save',
+      succeeded: true,
+      successfulSaves: 0,
+      repeatActive: false,
+      ended: true,
+    });
+    expect(
+      executeBoundedProcedure(hazard, {
+        kind: 'hazard-save',
+        phase: 'initial',
         rollTotal: 12,
       }),
     ).toEqual({
@@ -43,6 +57,22 @@ describe('bounded provider-neutral procedure execution', () => {
       succeeded: false,
       damage: { dice: '3d6', type: 'poison' },
       successfulSaves: 0,
+      repeatActive: true,
+      ended: false,
+    });
+    expect(
+      executeBoundedProcedure(hazard, {
+        kind: 'hazard-save',
+        phase: 'repeat',
+        rollTotal: 12,
+        repeatActive: true,
+      }),
+    ).toEqual({
+      kind: 'hazard-save',
+      succeeded: false,
+      damage: { dice: '1d6', type: 'poison' },
+      successfulSaves: 0,
+      repeatActive: true,
       ended: false,
     });
     expect(
@@ -51,13 +81,34 @@ describe('bounded provider-neutral procedure execution', () => {
         phase: 'repeat',
         rollTotal: 13,
         priorSuccessfulSaves: 2,
+        repeatActive: true,
       }),
     ).toEqual({
       kind: 'hazard-save',
       succeeded: true,
       successfulSaves: 3,
+      repeatActive: false,
       ended: true,
     });
+  });
+
+  it('fails closed when a repeat hazard save is attempted without active recurrence', () => {
+    expect(() =>
+      executeBoundedProcedure(data('hazard:burnt-othur-fumes'), {
+        kind: 'hazard-save',
+        phase: 'repeat',
+        rollTotal: 13,
+        repeatActive: false,
+      } as unknown as BoundedProcedureRequest),
+    ).toThrow(BoundedProcedureError);
+    expect(() =>
+      executeBoundedProcedure(data('hazard:burnt-othur-fumes'), {
+        kind: 'hazard-save',
+        phase: 'initial',
+        rollTotal: 13,
+        repeatActive: true,
+      } as unknown as BoundedProcedureRequest),
+    ).toThrow(BoundedProcedureError);
   });
 
   it('selects exactly one Longsword damage mode from hands used', () => {
@@ -107,6 +158,137 @@ describe('bounded provider-neutral procedure execution', () => {
       }),
     ).toThrow(BoundedProcedureError);
   });
+
+  it.each(['delete', 'replace', 'add'] as const)(
+    'rejects a Fighting Style choice/procedure membership %s divergence',
+    (mutation) => {
+      const fightingStyle = structuredClone(
+        data('feature:fighter:fighting-style'),
+      ) as Record<string, unknown>;
+      const choices = fightingStyle.choices as Record<string, unknown>[];
+      const options = choices[0].options as Record<string, unknown>[];
+      if (mutation === 'delete') options.shift();
+      if (mutation === 'replace') {
+        options[0].id = 'fighting-style:unreviewed';
+      }
+      if (mutation === 'add') {
+        options.push({
+          id: 'fighting-style:unreviewed',
+          text: 'Unreviewed option.',
+        });
+      }
+      expect(() =>
+        executeBoundedProcedure(fightingStyle, {
+          kind: 'select-feature-option',
+          optionId: 'fighting-style:archery',
+          alreadySelected: [],
+        }),
+      ).toThrow(BoundedProcedureError);
+    },
+  );
+
+  it('accepts Fighting Style menu reordering without weakening membership closure', () => {
+    const fightingStyle = structuredClone(
+      data('feature:fighter:fighting-style'),
+    ) as Record<string, unknown>;
+    const choices = fightingStyle.choices as Record<string, unknown>[];
+    const options = choices[0].options as Record<string, unknown>[];
+    options.reverse();
+    expect(
+      executeBoundedProcedure(fightingStyle, {
+        kind: 'select-feature-option',
+        optionId: 'fighting-style:archery',
+        alreadySelected: [],
+      }),
+    ).toMatchObject({ optionId: 'fighting-style:archery' });
+  });
+
+  it('executes Great Weapon Fighting any-of property applicability', () => {
+    const fightingStyle = data('feature:fighter:fighting-style');
+    const request = (weaponProperties: readonly string[]) =>
+      executeBoundedProcedure(fightingStyle, {
+        kind: 'feature-option-applicability',
+        optionId: 'fighting-style:great-weapon-fighting',
+        context: {
+          weaponRange: 'melee',
+          handsUsed: 2,
+          weaponProperties,
+        },
+      });
+    expect(request(['two-handed'])).toMatchObject({ applicable: true });
+    expect(request(['versatile'])).toMatchObject({ applicable: true });
+    expect(request([])).toMatchObject({ applicable: false });
+  });
+
+  it('executes Protection with explicit attacker and protected-target roles', () => {
+    const fightingStyle = data('feature:fighter:fighting-style');
+    const request = (
+      overrides: Record<string, unknown> = {},
+    ): ReturnType<typeof executeBoundedProcedure> =>
+      executeBoundedProcedure(fightingStyle, {
+        kind: 'feature-option-applicability',
+        optionId: 'fighting-style:protection',
+        context: {
+          attackerVisibleToYou: true,
+          protectedTargetIsYou: false,
+          protectedTargetDistanceFromYouFeet: 5,
+          wieldingShield: true,
+          reactionAvailable: true,
+          ...overrides,
+        },
+      });
+    expect(request()).toMatchObject({ applicable: true });
+    expect(request({ attackerVisibleToYou: false })).toMatchObject({
+      applicable: false,
+    });
+    expect(request({ protectedTargetIsYou: true })).toMatchObject({
+      applicable: false,
+    });
+    expect(request({ protectedTargetDistanceFromYouFeet: 10 })).toMatchObject({
+      applicable: false,
+    });
+    expect(request({ reactionAvailable: false })).toMatchObject({
+      applicable: false,
+    });
+    expect(request({ wieldingShield: false })).toMatchObject({
+      applicable: false,
+    });
+  });
+
+  it.each([
+    [
+      'fighting-style:archery',
+      { weaponRange: 'ranged' },
+      { weaponRange: 'melee' },
+    ],
+    ['fighting-style:defense', { wearingArmor: true }, { wearingArmor: false }],
+    [
+      'fighting-style:dueling',
+      { weaponRange: 'melee', handsUsed: 1, noOtherWeapon: true },
+      { weaponRange: 'melee', handsUsed: 1, noOtherWeapon: false },
+    ],
+    [
+      'fighting-style:two-weapon-fighting',
+      { twoWeaponFighting: true },
+      { twoWeaponFighting: false },
+    ],
+  ] satisfies readonly (readonly [
+    string,
+    FeatureOptionApplicabilityContext,
+    FeatureOptionApplicabilityContext,
+  ])[])(
+    'executes the bounded applicability predicate for %s',
+    (optionId, qualifying, nonQualifying) => {
+      const execute = (context: FeatureOptionApplicabilityContext) =>
+        executeBoundedProcedure(data('feature:fighter:fighting-style'), {
+          kind: 'feature-option-applicability',
+          optionId,
+          context,
+        });
+      expect(execute(qualifying)).toMatchObject({ applicable: true });
+      expect(execute(nonQualifying)).toMatchObject({ applicable: false });
+    },
+  );
 
   it('executes both Font of Magic conversions from source-derived tables', () => {
     const font = data('feature:sorcerer:font-of-magic');
@@ -188,11 +370,21 @@ describe('bounded provider-neutral procedure execution', () => {
   it.each([
     [
       'hazard:burnt-othur-fumes',
-      { kind: 'hazard-save', phase: 'repeat', rollTotal: Number.NaN },
+      {
+        kind: 'hazard-save',
+        phase: 'repeat',
+        rollTotal: Number.NaN,
+        repeatActive: true,
+      },
     ],
     [
       'hazard:burnt-othur-fumes',
-      { kind: 'hazard-save', phase: 'repeat', rollTotal: -1 },
+      {
+        kind: 'hazard-save',
+        phase: 'repeat',
+        rollTotal: -1,
+        repeatActive: true,
+      },
     ],
     [
       'hazard:burnt-othur-fumes',
@@ -201,6 +393,7 @@ describe('bounded provider-neutral procedure execution', () => {
         phase: 'repeat',
         rollTotal: 13,
         priorSuccessfulSaves: 3,
+        repeatActive: true,
       },
     ],
     [
@@ -210,7 +403,7 @@ describe('bounded provider-neutral procedure execution', () => {
         phase: 'initial',
         rollTotal: 13,
         priorSuccessfulSaves: 1,
-      },
+      } as unknown as BoundedProcedureRequest,
     ],
     [
       'feature:sorcerer:font-of-magic',
@@ -344,12 +537,14 @@ describe('bounded provider-neutral procedure execution', () => {
         kind: 'hazard-save',
         phase: 'repeat',
         rollTotal: 16,
+        repeatActive: true,
       }),
     ).toEqual({
       kind: 'hazard-save',
       succeeded: false,
       damage: { dice: '2d8', type: 'psychic' },
       successfulSaves: 0,
+      repeatActive: true,
       ended: false,
     });
   });

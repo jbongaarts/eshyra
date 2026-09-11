@@ -15,6 +15,10 @@ export interface DamageAtom {
 export interface RepeatSaveHazardProcedure {
   readonly id: string;
   readonly kind: 'repeat-save-hazard';
+  readonly entryTransition: {
+    readonly onInitialSuccess: 'end';
+    readonly onInitialFailure: 'activate-repeat';
+  };
   readonly initial: {
     readonly save: SaveAtom;
     readonly failureDamage: DamageAtom;
@@ -65,13 +69,21 @@ export type FeatureOptionEffect =
       readonly keepReroll: true;
       readonly weaponRange: 'melee';
       readonly handsUsed: 2;
-      readonly requiredProperties: readonly ['two-handed', 'versatile'];
+      readonly propertyRequirement: {
+        readonly kind: 'any-of';
+        readonly properties: readonly ['two-handed', 'versatile'];
+      };
     }
   | {
       readonly kind: 'reaction-attack-disadvantage';
-      readonly target: 'other-creature';
-      readonly rangeFeet: number;
-      readonly requiresSight: true;
+      readonly actionCost: 'reaction';
+      readonly attacker: {
+        readonly mustBeVisibleToYou: true;
+      };
+      readonly protectedTarget: {
+        readonly mustBeOtherThanYou: true;
+        readonly maximumDistanceFromYouFeet: 5;
+      };
       readonly requiresShield: true;
     }
   | {
@@ -260,8 +272,29 @@ function validateDamage(value: unknown, path: string): void {
 function validateRepeatSaveHazard(procedure: JsonObject, path: string): void {
   requireOnlyKeys(
     procedure,
-    ['id', 'kind', 'initial', 'repeat', 'termination'],
+    ['id', 'kind', 'entryTransition', 'initial', 'repeat', 'termination'],
     path,
+  );
+  const entryTransition = objectAt(
+    procedure.entryTransition,
+    `${path}.entryTransition`,
+  );
+  requireOnlyKeys(
+    entryTransition,
+    ['onInitialSuccess', 'onInitialFailure'],
+    `${path}.entryTransition`,
+  );
+  literalAt(
+    entryTransition,
+    'onInitialSuccess',
+    'end',
+    `${path}.entryTransition`,
+  );
+  literalAt(
+    entryTransition,
+    'onInitialFailure',
+    'activate-repeat',
+    `${path}.entryTransition`,
   );
   const initial = objectAt(procedure.initial, `${path}.initial`);
   requireOnlyKeys(initial, ['save', 'failureDamage'], `${path}.initial`);
@@ -372,7 +405,7 @@ function validateFeatureOptionEffect(effect: JsonObject, path: string): void {
         'keepReroll',
         'weaponRange',
         'handsUsed',
-        'requiredProperties',
+        'propertyRequirement',
       ],
       path,
     );
@@ -387,14 +420,29 @@ function validateFeatureOptionEffect(effect: JsonObject, path: string): void {
     literalAt(effect, 'keepReroll', true, path);
     literalAt(effect, 'weaponRange', 'melee', path);
     literalAt(effect, 'handsUsed', 2, path);
+    const propertyRequirement = objectAt(
+      effect.propertyRequirement,
+      `${path}.propertyRequirement`,
+    );
+    requireOnlyKeys(
+      propertyRequirement,
+      ['kind', 'properties'],
+      `${path}.propertyRequirement`,
+    );
+    literalAt(
+      propertyRequirement,
+      'kind',
+      'any-of',
+      `${path}.propertyRequirement`,
+    );
     if (
-      !Array.isArray(effect.requiredProperties) ||
-      effect.requiredProperties.length !== 2 ||
-      effect.requiredProperties[0] !== 'two-handed' ||
-      effect.requiredProperties[1] !== 'versatile'
+      !Array.isArray(propertyRequirement.properties) ||
+      propertyRequirement.properties.length !== 2 ||
+      propertyRequirement.properties[0] !== 'two-handed' ||
+      propertyRequirement.properties[1] !== 'versatile'
     ) {
       throw new BoundedProcedureError(
-        `${path}.requiredProperties must be ["two-handed", "versatile"]`,
+        `${path}.propertyRequirement.properties must be ["two-handed", "versatile"]`,
       );
     }
     return;
@@ -402,12 +450,34 @@ function validateFeatureOptionEffect(effect: JsonObject, path: string): void {
   if (kind === 'reaction-attack-disadvantage') {
     requireOnlyKeys(
       effect,
-      ['kind', 'target', 'rangeFeet', 'requiresSight', 'requiresShield'],
+      ['kind', 'actionCost', 'attacker', 'protectedTarget', 'requiresShield'],
       path,
     );
-    literalAt(effect, 'target', 'other-creature', path);
-    integerAt(effect, 'rangeFeet', path, 1);
-    literalAt(effect, 'requiresSight', true, path);
+    literalAt(effect, 'actionCost', 'reaction', path);
+    const attacker = objectAt(effect.attacker, `${path}.attacker`);
+    requireOnlyKeys(attacker, ['mustBeVisibleToYou'], `${path}.attacker`);
+    literalAt(attacker, 'mustBeVisibleToYou', true, `${path}.attacker`);
+    const protectedTarget = objectAt(
+      effect.protectedTarget,
+      `${path}.protectedTarget`,
+    );
+    requireOnlyKeys(
+      protectedTarget,
+      ['mustBeOtherThanYou', 'maximumDistanceFromYouFeet'],
+      `${path}.protectedTarget`,
+    );
+    literalAt(
+      protectedTarget,
+      'mustBeOtherThanYou',
+      true,
+      `${path}.protectedTarget`,
+    );
+    literalAt(
+      protectedTarget,
+      'maximumDistanceFromYouFeet',
+      5,
+      `${path}.protectedTarget`,
+    );
     literalAt(effect, 'requiresShield', true, path);
     return;
   }
@@ -708,18 +778,117 @@ function procedureOfKind<K extends BoundedProcedure['kind']>(
   return matches[0];
 }
 
+export interface FeatureChoiceBinding {
+  readonly choiceIndex: number;
+  readonly choiceId: string;
+  readonly choose: 1;
+  readonly offeredOptionIds: readonly string[];
+  readonly procedureOptionIds: readonly string[];
+}
+
+/** Resolves and closes the real player-facing menu against its bounded effects. */
+export function readFeatureChoiceBinding(
+  data: unknown,
+  procedure: FeatureOptionProcedure,
+): FeatureChoiceBinding {
+  const root = objectAt(data, 'record.data');
+  const choices = arrayAt(root.choices, 'record.data.choices');
+  const matchingChoices = choices.flatMap((value, choiceIndex) => {
+    const choice = objectAt(value, `record.data.choices[${choiceIndex}]`);
+    return choice.id === procedure.choiceId ? [{ choice, choiceIndex }] : [];
+  });
+  if (matchingChoices.length !== 1) {
+    throw new BoundedProcedureError(
+      `record.data must contain exactly one choice matching feature procedure choiceId ${JSON.stringify(procedure.choiceId)}`,
+    );
+  }
+  const [{ choice, choiceIndex }] = matchingChoices;
+  if (choice.choose !== 1) {
+    throw new BoundedProcedureError(
+      `record.data.choices[${choiceIndex}].choose must be 1`,
+    );
+  }
+  const offeredOptions = arrayAt(
+    choice.options,
+    `record.data.choices[${choiceIndex}].options`,
+  );
+  const offeredOptionIds = offeredOptions.map((value, optionIndex) =>
+    stringAt(
+      objectAt(
+        value,
+        `record.data.choices[${choiceIndex}].options[${optionIndex}]`,
+      ),
+      'id',
+      `record.data.choices[${choiceIndex}].options[${optionIndex}]`,
+    ),
+  );
+  if (new Set(offeredOptionIds).size !== offeredOptionIds.length) {
+    throw new BoundedProcedureError(
+      `record.data.choices[${choiceIndex}].options duplicates an id`,
+    );
+  }
+  const sortedOfferedIds = [...offeredOptionIds].sort();
+  const sortedProcedureIds = procedure.options
+    .map((option) => option.id)
+    .sort();
+  if (
+    sortedOfferedIds.length !== sortedProcedureIds.length ||
+    sortedOfferedIds.some(
+      (optionId, index) => optionId !== sortedProcedureIds[index],
+    )
+  ) {
+    throw new BoundedProcedureError(
+      `record.data.choices[${choiceIndex}].options must exactly match feature procedure options`,
+    );
+  }
+  return {
+    choiceIndex,
+    choiceId: procedure.choiceId,
+    choose: 1,
+    offeredOptionIds: sortedOfferedIds,
+    procedureOptionIds: sortedProcedureIds,
+  };
+}
+
+export interface FeatureOptionApplicabilityContext {
+  readonly weaponRange?: 'melee' | 'ranged';
+  readonly handsUsed?: 1 | 2;
+  readonly weaponProperties?: readonly string[];
+  readonly wearingArmor?: boolean;
+  readonly noOtherWeapon?: boolean;
+  readonly attackerVisibleToYou?: boolean;
+  readonly protectedTargetIsYou?: boolean;
+  readonly protectedTargetDistanceFromYouFeet?: number;
+  readonly wieldingShield?: boolean;
+  readonly reactionAvailable?: boolean;
+  readonly twoWeaponFighting?: boolean;
+}
+
 export type BoundedProcedureRequest =
   | {
       readonly kind: 'hazard-save';
-      readonly phase: 'initial' | 'repeat';
+      readonly phase: 'initial';
+      readonly rollTotal: number;
+      readonly priorSuccessfulSaves?: never;
+      readonly repeatActive?: never;
+    }
+  | {
+      readonly kind: 'hazard-save';
+      readonly phase: 'repeat';
       readonly rollTotal: number;
       readonly priorSuccessfulSaves?: number;
+      readonly repeatActive: true;
     }
   | { readonly kind: 'weapon-damage'; readonly handsUsed: 1 | 2 }
   | {
       readonly kind: 'select-feature-option';
       readonly optionId: string;
       readonly alreadySelected: readonly string[];
+    }
+  | {
+      readonly kind: 'feature-option-applicability';
+      readonly optionId: string;
+      readonly context: FeatureOptionApplicabilityContext;
     }
   | {
       readonly kind: 'create-spell-slot';
@@ -753,6 +922,7 @@ export type BoundedProcedureResult =
       readonly succeeded: boolean;
       readonly damage?: DamageAtom;
       readonly successfulSaves: number;
+      readonly repeatActive: boolean;
       readonly ended: boolean;
     }
   | { readonly kind: 'weapon-damage'; readonly damage: DamageAtom }
@@ -760,6 +930,11 @@ export type BoundedProcedureResult =
       readonly kind: 'feature-option-selected';
       readonly optionId: string;
       readonly effect: FeatureOptionEffect;
+    }
+  | {
+      readonly kind: 'feature-option-applicability';
+      readonly optionId: string;
+      readonly applicable: boolean;
     }
   | {
       readonly kind: 'resource-transition';
@@ -805,6 +980,131 @@ function finiteInteger(
   return value;
 }
 
+function featureApplicabilityContext(
+  value: unknown,
+): FeatureOptionApplicabilityContext {
+  const context = objectAt(value, 'feature applicability context');
+  requireOnlyKeys(
+    context,
+    [
+      'weaponRange',
+      'handsUsed',
+      'weaponProperties',
+      'wearingArmor',
+      'noOtherWeapon',
+      'attackerVisibleToYou',
+      'protectedTargetIsYou',
+      'protectedTargetDistanceFromYouFeet',
+      'wieldingShield',
+      'reactionAvailable',
+      'twoWeaponFighting',
+    ],
+    'feature applicability context',
+  );
+  if (
+    context.weaponRange !== undefined &&
+    context.weaponRange !== 'melee' &&
+    context.weaponRange !== 'ranged'
+  ) {
+    throw new BoundedProcedureError(
+      'feature applicability context.weaponRange must be melee or ranged',
+    );
+  }
+  if (context.handsUsed !== undefined) {
+    finiteInteger(
+      context.handsUsed as number,
+      'feature applicability context.handsUsed',
+      1,
+      2,
+    );
+  }
+  if (
+    context.weaponProperties !== undefined &&
+    (!Array.isArray(context.weaponProperties) ||
+      context.weaponProperties.some((value) => typeof value !== 'string'))
+  ) {
+    throw new BoundedProcedureError(
+      'feature applicability context.weaponProperties must be an array of strings',
+    );
+  }
+  for (const key of [
+    'wearingArmor',
+    'noOtherWeapon',
+    'attackerVisibleToYou',
+    'protectedTargetIsYou',
+    'wieldingShield',
+    'reactionAvailable',
+    'twoWeaponFighting',
+  ] as const) {
+    if (context[key] !== undefined && typeof context[key] !== 'boolean') {
+      throw new BoundedProcedureError(
+        `feature applicability context.${key} must be boolean`,
+      );
+    }
+  }
+  if (context.protectedTargetDistanceFromYouFeet !== undefined) {
+    const distance = context.protectedTargetDistanceFromYouFeet;
+    if (
+      typeof distance !== 'number' ||
+      !Number.isFinite(distance) ||
+      distance < 0
+    ) {
+      throw new BoundedProcedureError(
+        'feature applicability context.protectedTargetDistanceFromYouFeet must be finite and non-negative',
+      );
+    }
+  }
+  return context as FeatureOptionApplicabilityContext;
+}
+
+function featureOptionApplies(
+  effect: FeatureOptionEffect,
+  rawContext: unknown,
+): boolean {
+  const context = featureApplicabilityContext(rawContext);
+  if (effect.kind === 'attack-roll-bonus') {
+    return context.weaponRange === effect.weaponRange;
+  }
+  if (effect.kind === 'armor-class-bonus') {
+    return effect.whileWearingArmor && context.wearingArmor === true;
+  }
+  if (effect.kind === 'damage-roll-bonus') {
+    return (
+      context.weaponRange === effect.weaponRange &&
+      context.handsUsed === effect.weaponHands &&
+      effect.noOtherWeapon &&
+      context.noOtherWeapon === true
+    );
+  }
+  if (effect.kind === 'damage-die-reroll') {
+    const weaponProperties = context.weaponProperties ?? [];
+    return (
+      context.weaponRange === effect.weaponRange &&
+      context.handsUsed === effect.handsUsed &&
+      effect.propertyRequirement.kind === 'any-of' &&
+      effect.propertyRequirement.properties.some((property) =>
+        weaponProperties.includes(property),
+      )
+    );
+  }
+  if (effect.kind === 'reaction-attack-disadvantage') {
+    const distance = context.protectedTargetDistanceFromYouFeet;
+    return (
+      effect.actionCost === 'reaction' &&
+      context.reactionAvailable === true &&
+      effect.attacker.mustBeVisibleToYou &&
+      context.attackerVisibleToYou === true &&
+      effect.protectedTarget.mustBeOtherThanYou &&
+      context.protectedTargetIsYou === false &&
+      distance !== undefined &&
+      distance <= effect.protectedTarget.maximumDistanceFromYouFeet &&
+      effect.requiresShield &&
+      context.wieldingShield === true
+    );
+  }
+  return effect.addAbilityModifier && context.twoWeaponFighting === true;
+}
+
 /**
  * Executes only the five positively selected procedures. The harness receives
  * redacted record data: no record key, source metadata, obligation, or proof
@@ -828,16 +1128,42 @@ export function executeBoundedProcedure(
         'initial hazard save cannot have prior successful saves',
       );
     }
+    if (request.phase === 'initial' && request.repeatActive !== undefined) {
+      throw new BoundedProcedureError(
+        'initial hazard save cannot carry repeat lifecycle state',
+      );
+    }
+    if (request.phase === 'repeat' && request.repeatActive !== true) {
+      throw new BoundedProcedureError(
+        'repeat hazard save requires an active repeat lifecycle',
+      );
+    }
     const branch =
       request.phase === 'initial' ? procedure.initial : procedure.repeat;
     const succeeded = request.rollTotal >= branch.save.dc;
+    if (request.phase === 'initial') {
+      const ended =
+        succeeded && procedure.entryTransition.onInitialSuccess === 'end';
+      return {
+        kind: 'hazard-save',
+        succeeded,
+        ...(succeeded ? {} : { damage: branch.failureDamage }),
+        successfulSaves: 0,
+        repeatActive:
+          !succeeded &&
+          procedure.entryTransition.onInitialFailure === 'activate-repeat',
+        ended,
+      };
+    }
     const successfulSaves = priorSuccessfulSaves + (succeeded ? 1 : 0);
+    const ended = successfulSaves >= procedure.termination.count;
     return {
       kind: 'hazard-save',
       succeeded,
       ...(succeeded ? {} : { damage: branch.failureDamage }),
       successfulSaves,
-      ended: successfulSaves >= procedure.termination.count,
+      repeatActive: !ended,
+      ended,
     };
   }
   if (request.kind === 'weapon-damage') {
@@ -855,6 +1181,7 @@ export function executeBoundedProcedure(
   }
   if (request.kind === 'select-feature-option') {
     const procedure = procedureOfKind(data, 'feature-options');
+    readFeatureChoiceBinding(data, procedure);
     if (
       procedure.duplicateSelection === 'prohibited' &&
       request.alreadySelected.includes(request.optionId)
@@ -875,6 +1202,23 @@ export function executeBoundedProcedure(
       kind: 'feature-option-selected',
       optionId: options[0].id,
       effect: options[0].effect,
+    };
+  }
+  if (request.kind === 'feature-option-applicability') {
+    const procedure = procedureOfKind(data, 'feature-options');
+    readFeatureChoiceBinding(data, procedure);
+    const options = procedure.options.filter(
+      (option) => option.id === request.optionId,
+    );
+    if (options.length !== 1) {
+      throw new BoundedProcedureError(
+        `feature procedure does not define option ${JSON.stringify(request.optionId)}`,
+      );
+    }
+    return {
+      kind: 'feature-option-applicability',
+      optionId: options[0].id,
+      applicable: featureOptionApplies(options[0].effect, request.context),
     };
   }
   if (

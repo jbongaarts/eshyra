@@ -1000,6 +1000,8 @@ export type {
   BoundedProcedure,
   BoundedProcedureRequest,
   BoundedProcedureResult,
+  FeatureChoiceBinding,
+  FeatureOptionApplicabilityContext,
   FeatureOptionEffect,
   FeatureOptionProcedure,
   RepeatSaveHazardProcedure,
@@ -1011,6 +1013,7 @@ export {
   BoundedProcedureError,
   executeBoundedProcedure,
   readBoundedProcedures,
+  readFeatureChoiceBinding,
 } from './rules/boundedProcedures.js';
 export {
   DND5E_SRD_PACK_ID,

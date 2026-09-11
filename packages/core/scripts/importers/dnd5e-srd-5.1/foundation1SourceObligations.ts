@@ -119,6 +119,25 @@ const DRAFTS: readonly ObligationDraft[] = [
   },
   {
     procedureId: 'burnt-othur-fumes',
+    ordinal: 7,
+    owner: BURNT_OTHUR,
+    anchors: [
+      anchor(
+        204,
+        'subjected to this poison must succeed on a DC 13',
+        'Constitution saving throw or take 10 (3d6) poison',
+        'damage, and must repeat the saving throw at the',
+      ),
+    ],
+    facet: 'entry-transition',
+    localityPointer: '/procedure/burnt-othur-fumes/entryTransition',
+    expected: {
+      onInitialSuccess: 'end',
+      onInitialFailure: 'activate-repeat',
+    },
+  },
+  {
+    procedureId: 'burnt-othur-fumes',
     ordinal: 3,
     owner: BURNT_OTHUR,
     anchors: [
@@ -246,6 +265,22 @@ const DRAFTS: readonly ObligationDraft[] = [
       choiceId: 'fighting-style',
       choose: 1,
       procedureChoiceId: 'fighting-style',
+      offeredOptionIds: [
+        'fighting-style:archery',
+        'fighting-style:defense',
+        'fighting-style:dueling',
+        'fighting-style:great-weapon-fighting',
+        'fighting-style:protection',
+        'fighting-style:two-weapon-fighting',
+      ],
+      procedureOptionIds: [
+        'fighting-style:archery',
+        'fighting-style:defense',
+        'fighting-style:dueling',
+        'fighting-style:great-weapon-fighting',
+        'fighting-style:protection',
+        'fighting-style:two-weapon-fighting',
+      ],
     },
   },
   {
@@ -361,7 +396,10 @@ const DRAFTS: readonly ObligationDraft[] = [
         keepReroll: true,
         weaponRange: 'melee',
         handsUsed: 2,
-        requiredProperties: ['two-handed', 'versatile'],
+        propertyRequirement: {
+          kind: 'any-of',
+          properties: ['two-handed', 'versatile'],
+        },
       },
     },
   },
@@ -386,9 +424,12 @@ const DRAFTS: readonly ObligationDraft[] = [
       id: 'fighting-style:protection',
       effect: {
         kind: 'reaction-attack-disadvantage',
-        target: 'other-creature',
-        rangeFeet: 5,
-        requiresSight: true,
+        actionCost: 'reaction',
+        attacker: { mustBeVisibleToYou: true },
+        protectedTarget: {
+          mustBeOtherThanYou: true,
+          maximumDistanceFromYouFeet: 5,
+        },
         requiresShield: true,
       },
     },

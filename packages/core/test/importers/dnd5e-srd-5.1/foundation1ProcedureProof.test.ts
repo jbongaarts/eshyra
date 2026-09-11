@@ -67,6 +67,7 @@ const EXPECTED_DISCHARGE_ATOM_IDS = [
   'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/pool/reset',
   'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/initial/failureDamage',
   'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/initial/save',
+  'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/entryTransition',
   'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/repeat/failureDamage',
   'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/repeat/save',
   'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/repeat/timing',
@@ -127,10 +128,10 @@ function projectedAtom(id: string): Foundation1ProjectedAtom {
 }
 
 describe('Foundation 1 source authority', () => {
-  it('produces 32 unique obligations for exactly five bounded procedures', () => {
-    expect(obligations).toHaveLength(32);
+  it('produces 33 unique obligations for exactly five bounded procedures', () => {
+    expect(obligations).toHaveLength(33);
     expect(new Set(obligations.map((obligation) => obligation.id)).size).toBe(
-      32,
+      33,
     );
     expect(
       [
@@ -212,7 +213,7 @@ describe('Foundation 1 independent discharge', () => {
     );
     expect(report.ok).toBe(false);
     expect(report.discharges).toHaveLength(0);
-    expect(report.failures).toHaveLength(32);
+    expect(report.failures).toHaveLength(33);
     expect(new Set(report.failures.map((failure) => failure.code))).toEqual(
       new Set(['MISSING_FACET']),
     );
@@ -312,6 +313,64 @@ describe('Foundation 1 independent discharge', () => {
     );
   });
 
+  it.each(['delete', 'replace', 'add', 'duplicate'] as const)(
+    'fails when the selected feature choice option membership has a %s divergence',
+    (mutation) => {
+      const changed = cloneRecords();
+      const fightingStyle = record(changed, 'feature:fighter:fighting-style');
+      const data = fightingStyle.data as Record<string, unknown>;
+      const choices = data.choices as Record<string, unknown>[];
+      const choiceOptions = choices[0].options as Record<string, unknown>[];
+      if (mutation === 'delete') choiceOptions.shift();
+      if (mutation === 'replace') {
+        choiceOptions[0].id = 'fighting-style:unreviewed';
+      }
+      if (mutation === 'add') {
+        choiceOptions.push({
+          id: 'fighting-style:unreviewed',
+          text: 'Unreviewed option.',
+        });
+      }
+      if (mutation === 'duplicate') {
+        choiceOptions.push(structuredClone(choiceOptions[0]));
+      }
+
+      const report = evaluateFoundation1Proof(changed, obligations);
+      expect(report.ok).toBe(false);
+      expect(report.failures).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: expect.stringMatching(/MISSING_FACET|MALFORMED_PROJECTION/),
+          }),
+        ]),
+      );
+    },
+  );
+
+  it.each(['removed', 'changed'] as const)(
+    'fails when the initial-failure transition is %s',
+    (mutation) => {
+      const changed = cloneRecords();
+      const hazard = procedure(changed, 'hazard:burnt-othur-fumes');
+      if (mutation === 'removed') {
+        Reflect.deleteProperty(hazard, 'entryTransition');
+      } else {
+        const entryTransition = hazard.entryTransition as Record<
+          string,
+          unknown
+        >;
+        entryTransition.onInitialFailure = 'end';
+      }
+      const report = evaluateFoundation1Proof(changed, obligations);
+      expect(report.ok).toBe(false);
+      expect(report.failures).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'MALFORMED_PROJECTION' }),
+        ]),
+      );
+    },
+  );
+
   it('keeps selector-bound discharges stable when modes and options are reordered', () => {
     const changed = cloneRecords();
     const modes = procedure(changed, 'equipment:longsword').modes as Record<
@@ -322,6 +381,19 @@ describe('Foundation 1 independent discharge', () => {
     const options = procedure(changed, 'feature:fighter:fighting-style')
       .options as Record<string, unknown>[];
     options.reverse();
+
+    const report = evaluateFoundation1Proof(changed, obligations);
+    expect(report.ok).toBe(true);
+    expect(report.discharges).toHaveLength(obligations.length);
+  });
+
+  it('keeps choice membership discharge stable under independent menu reordering', () => {
+    const changed = cloneRecords();
+    const fightingStyle = record(changed, 'feature:fighter:fighting-style');
+    const data = fightingStyle.data as Record<string, unknown>;
+    const choices = data.choices as Record<string, unknown>[];
+    const choiceOptions = choices[0].options as Record<string, unknown>[];
+    choiceOptions.reverse();
 
     const report = evaluateFoundation1Proof(changed, obligations);
     expect(report.ok).toBe(true);

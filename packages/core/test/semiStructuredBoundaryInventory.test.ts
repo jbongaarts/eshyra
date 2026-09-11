@@ -212,6 +212,18 @@ describe('semi-structured boundary inventory', () => {
     expect(
       row(
         artifact,
+        'data.mechanics.procedures[].options[].effect.propertyRequirement.kind',
+        'feature',
+      ),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining(
+        'executeBoundedProcedure reads',
+      ),
+    });
+    expect(
+      row(
+        artifact,
         'data.mechanics.procedures[].adjudicationBoundary.adjudicator',
         'spell',
       ),

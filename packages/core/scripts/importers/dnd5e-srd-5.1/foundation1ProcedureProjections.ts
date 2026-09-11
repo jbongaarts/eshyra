@@ -112,6 +112,10 @@ function burntOthurProcedure(data: JsonObject): BoundedProcedure {
   return {
     id: 'burnt-othur-fumes',
     kind: 'repeat-save-hazard',
+    entryTransition: {
+      onInitialSuccess: 'end',
+      onInitialFailure: 'activate-repeat',
+    },
     initial: {
       save: { ability: 'constitution', dc: 13 },
       failureDamage: { dice: '3d6', type: 'poison' },
@@ -196,16 +200,22 @@ const FIGHTING_STYLE_EFFECTS: ReadonlyMap<string, FeatureOptionEffect> =
         keepReroll: true,
         weaponRange: 'melee',
         handsUsed: 2,
-        requiredProperties: ['two-handed', 'versatile'],
+        propertyRequirement: {
+          kind: 'any-of',
+          properties: ['two-handed', 'versatile'],
+        },
       },
     ],
     [
       'fighting-style:protection',
       {
         kind: 'reaction-attack-disadvantage',
-        target: 'other-creature',
-        rangeFeet: 5,
-        requiresSight: true,
+        actionCost: 'reaction',
+        attacker: { mustBeVisibleToYou: true },
+        protectedTarget: {
+          mustBeOtherThanYou: true,
+          maximumDistanceFromYouFeet: 5,
+        },
         requiresShield: true,
       },
     ],
