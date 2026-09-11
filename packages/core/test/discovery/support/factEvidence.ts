@@ -25,8 +25,19 @@ function routeClasses(candidate: PacketCandidate | undefined): string[] {
   return (candidate?.routes ?? []).map((route) => route.routeClass);
 }
 
+/**
+ * Both halves of a candidate's record body, combined into one searchable
+ * string. These ASSERTIONS check that authored/retrieved CONTENT reached the
+ * packet (an encounter name, an NPC id) — not which side of the F2
+ * source/projection split it landed on, which `packetMessage.test.ts` and M9
+ * already cover directly. Searching both keeps this helper answering the
+ * question it was written for.
+ */
 function proseOf(candidate: PacketCandidate | undefined): string {
-  return JSON.stringify(candidate?.sourceProse ?? {});
+  return JSON.stringify({
+    sourceMaterial: candidate?.sourceMaterial ?? {},
+    projection: candidate?.projection ?? {},
+  });
 }
 
 /** Typed assertions naming each packet-semantic and substrate-fact claim. */

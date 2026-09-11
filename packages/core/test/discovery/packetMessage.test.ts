@@ -110,6 +110,72 @@ function render(
   }
 }
 
+/** Render one probe and ALSO hand back its packet candidates, so a test can
+ * compare rendered text against the structured `PacketCandidate` it came
+ * from (F2's generic evidence case needs both). */
+function renderWithCandidates(
+  probeId: string,
+  options?: Parameters<typeof run>[1],
+): {
+  readonly rendered: ReturnType<typeof renderContextPacketMessage>;
+  readonly candidates: DiscoveryTrace['packet']['packet']['candidates'];
+} {
+  const { trace, db } = run(probeId, options);
+  try {
+    return {
+      rendered: renderContextPacketMessage(trace),
+      candidates: trace.packet.packet.candidates,
+    };
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * One heading's own block within a candidate span: from the line after the
+ * heading to the next `### ` heading, or to the end of the span. Mirrors
+ * `candidateSpan`'s reasoning at the sub-heading level — "under the Typed
+ * projection heading" and "under the Source prose heading" are claims about
+ * WHICH block text sits in, and a bare `toContain` over the whole candidate
+ * span cannot tell the two apart.
+ */
+function headingBlock(span: string, heading: string): string {
+  const start = span.indexOf(heading);
+  if (start < 0) throw new Error(`heading '${heading}' missing from span`);
+  const from = start + heading.length;
+  const next = span.indexOf('\n### ', from);
+  return next < 0 ? span.slice(from) : span.slice(from, next);
+}
+
+/**
+ * Every JSON-pointer-qualified STRING leaf under `value`, rendered exactly as
+ * `emitLeaves` (`packetMessage.ts`) would render it: `${pointer}: ${value}`.
+ * Used to check a projection leaf's own rendered line, not a bare value —
+ * "half" is both `mechanics.saves[0].damageOnSuccess` AND an ordinary English
+ * word inside Fireball's description prose, so only the pointer-qualified
+ * line is a claim about WHICH heading a specific FIELD landed under.
+ */
+function stringLeafLines(
+  value: unknown,
+  path: string,
+  out: string[] = [],
+): string[] {
+  if (typeof value === 'string') {
+    out.push(`${path}: ${value}`);
+    return out;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      stringLeafLines(item, `${path}/${index}`, out);
+    });
+    return out;
+  }
+  if (value !== null && typeof value === 'object')
+    for (const [key, item] of Object.entries(value))
+      stringLeafLines(item, `${path}/${key}`, out);
+  return out;
+}
+
 describe('context-packet message renderer', () => {
   // E1 — source prose reaches the text verbatim, not as a JSON encoding.
   it('renders dragon and Fireball source prose verbatim', () => {
@@ -123,6 +189,172 @@ describe('context-packet message renderer', () => {
       expect(rendered.text).not.toContain('\\n');
       expect(rendered.text).not.toContain('\\"');
       expect(rendered.bytes).toBe(Buffer.byteLength(rendered.text, 'utf8'));
+    }
+  });
+
+  /**
+   * F2 (PR #543 review, `eshyra-o9bd.19.12.8`): the packet used to split a
+   * candidate's record body by primitive TYPE — every string under "Source
+   * prose", every non-string under "Typed projection" — which is not a
+   * provenance boundary. `spell:fireball`'s `mechanics.saves[0]` is
+   * `{ability: 'dexterity', damageOnSuccess: 'half'}`: both importer-derived
+   * typed values, both strings, both therefore landing under "verbatim;
+   * authoritative" source prose. These cases prove the repair: the split is
+   * now by declared projection CONTAINER (`PROJECTION_CONTAINER_KEYS` in
+   * `packet.ts`), positionally, at build time in the producer.
+   */
+  it("F2 — moves fireball's typed string values out of source prose and into projection", () => {
+    const span = candidateSpan(render('P4').text, 'spell:fireball');
+    const source = headingBlock(
+      span,
+      '### Source prose (verbatim; authoritative)',
+    );
+    const projection = headingBlock(
+      span,
+      '### Typed projection (does not replace the source prose above)',
+    );
+    // The exact defect verified against the real pack: both values are
+    // strings, and only their CONTAINER (`mechanics`), not their JS type,
+    // may decide where they land.
+    expect(projection).toContain('/data/mechanics/saves/0/ability: dexterity');
+    expect(projection).toContain(
+      '/data/mechanics/saves/0/damageOnSuccess: half',
+    );
+    expect(source).not.toContain('/data/mechanics/saves/0/ability: dexterity');
+    expect(source).not.toContain(
+      '/data/mechanics/saves/0/damageOnSuccess: half',
+    );
+    // Source prose is not merely absent of the projection values — it still
+    // carries the real prose, verbatim, including the area design section 7.2
+    // says the typed projection omits.
+    expect(source).toContain('a 20-foot-radius sphere');
+    expect(source).toContain(
+      'A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one',
+    );
+  });
+
+  /**
+   * F2, positional case: `creature:adult-black-dragon` `data.actions[5]` has
+   * a `.text` prose field and a sibling `.mechanics` projection at the SAME
+   * array index. A top-level-only rule gets this wrong (nothing at the
+   * top level of a `creature` record is named `mechanics`); the rule must
+   * apply at any depth.
+   */
+  it('F2 — splits a nested actions[5].text/actions[5].mechanics pair positionally', () => {
+    const span = candidateSpan(
+      render('P3').text,
+      'creature:adult-black-dragon',
+    );
+    const source = headingBlock(
+      span,
+      '### Source prose (verbatim; authoritative)',
+    );
+    const projection = headingBlock(
+      span,
+      '### Typed projection (does not replace the source prose above)',
+    );
+    expect(source).toContain('/data/actions/5/text: ');
+    expect(source).toContain('or half as much damage on a successful one');
+    expect(source).not.toContain('/data/actions/5/mechanics');
+    // The whole mechanics subtree — object, array, and number leaves reached
+    // only by descending through it — is projection, not just its top field.
+    expect(projection).toContain('/data/actions/5/mechanics/recharge/roll: d6');
+    expect(projection).toContain(
+      '/data/actions/5/mechanics/saves/0/ability: dexterity',
+    );
+    expect(projection).toContain('/data/actions/5/mechanics/saves/0/dc: 18');
+    expect(projection).toContain(
+      '/data/actions/5/mechanics/damage/0/average: 54',
+    );
+    expect(projection).toContain(
+      '/data/actions/5/mechanics/damage/0/dice: 12d8',
+    );
+    expect(projection).not.toContain('/data/actions/5/text');
+  });
+
+  // F2 — a NULL-valued projection leaf (`magic-item:cube-of-force`'s
+  // `mechanics.ambiguities[0].canonicalResolution`, verified null in the real
+  // pack) stays projection. A type-based rule already handled null one way
+  // consistently; this proves the CONTAINER rule does too, for the one
+  // primitive type `emitLeaves` treats specially at the object-vs-leaf split.
+  it('F2 — keeps a null-valued projection leaf under Typed projection', () => {
+    const span = candidateSpan(
+      render('P7', { executionId: 'without-active-ruling' }).text,
+      'magic-item:cube-of-force',
+    );
+    const source = headingBlock(
+      span,
+      '### Source prose (verbatim; authoritative)',
+    );
+    const projection = headingBlock(
+      span,
+      '### Typed projection (does not replace the source prose above)',
+    );
+    expect(projection).toContain(
+      '/data/mechanics/ambiguities/0/canonicalResolution: null',
+    );
+    expect(source).not.toContain(
+      '/data/mechanics/ambiguities/0/canonicalResolution',
+    );
+  });
+
+  // F2, P10: the review names P10 by id without specifying which of its
+  // fields are prose versus typed. P10 targets the SAME `spell:fireball`
+  // record as P4 (this time beside an active house rule), so it carries the
+  // identical split: `components` and the failed-save description are source
+  // prose, `mechanics.saves`/`mechanics.damage`/`upcast` are projection.
+  it('F2 — P10 splits its governing spell:fireball record the same way as P4', () => {
+    const span = candidateSpan(render('P10').text, 'spell:fireball');
+    const source = headingBlock(
+      span,
+      '### Source prose (verbatim; authoritative)',
+    );
+    const projection = headingBlock(
+      span,
+      '### Typed projection (does not replace the source prose above)',
+    );
+    // Prose fields P10's own fixture facts require (design amendment 11.1).
+    expect(source).toContain('/data/components/0: V');
+    expect(source).toContain('A target takes 8d6 fire damage on a failed save');
+    // The same typed fields P4 proves, present here too and still projection.
+    expect(projection).toContain('/data/mechanics/saves/0/ability: dexterity');
+    expect(projection).toContain(
+      '/data/mechanics/saves/0/damageOnSuccess: half',
+    );
+    expect(source).not.toContain('/data/mechanics/saves/0/ability: dexterity');
+    expect(source).not.toContain(
+      '/data/mechanics/saves/0/damageOnSuccess: half',
+    );
+  });
+
+  /**
+   * F2, generic evidence case. The named-field assertions above prove the
+   * split for specific values the reviewer named; none of them would catch a
+   * NEW projection string introduced later under an already-declared
+   * container regressing back onto the source side (e.g. a renderer change
+   * that iterates the wrong field). This case instead walks every STRING leaf
+   * actually present in EVERY retained candidate's structured `projection`
+   * (P9 retains both `rules-record` and `adventure-entity` candidates, so the
+   * check exercises both `packetCandidate` branches), and asserts that exact
+   * pointer-qualified line never appears under that SAME candidate's Source
+   * prose heading. It is a structural check, not a named-value one, so it
+   * regresses on ANY future leak, not just the ones already known.
+   */
+  it('F2 — no string-valued projection leaf appears under Source prose, for every retained candidate', () => {
+    const { rendered, candidates } = renderWithCandidates('P9');
+    expect(candidates.length).toBeGreaterThan(1);
+    for (const candidate of candidates) {
+      const span = candidateSpan(rendered.text, candidate.identity.key);
+      const source = headingBlock(
+        span,
+        '### Source prose (verbatim; authoritative)',
+      );
+      const projectionStringLines = stringLeafLines(candidate.projection, '');
+      for (const line of projectionStringLines)
+        expect(
+          source,
+          `${candidate.identity.key} leaked projection line "${line}" into source prose`,
+        ).not.toContain(line);
     }
   });
 

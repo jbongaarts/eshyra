@@ -1721,8 +1721,11 @@ describe('one capture, one rules-pack source', () => {
       );
       expect(candidate).toBeDefined();
       // The add-on's overriding content reached the packet: the trace was
-      // built from the same resolution B3 qualified, not a later one.
-      expect(JSON.stringify(candidate?.sourceProse)).toContain(
+      // built from the same resolution B3 qualified, not a later one. The
+      // curse is injected under `data.mechanics.curse` (see
+      // `cursedAttunementAddon.ts`), a declared projection container, so it
+      // is asserted against `projection` rather than `sourceMaterial`.
+      expect(JSON.stringify(candidate?.projection)).toContain(
         'test-addon-curse',
       );
     } finally {

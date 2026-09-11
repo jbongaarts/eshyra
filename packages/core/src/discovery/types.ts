@@ -342,6 +342,25 @@ export interface ProjectionLimitNote {
   readonly preservedProse: string;
 }
 
+/**
+ * One place in a candidate's record body the source/projection walk (`W10`,
+ * PR #543 review finding F2) could not classify as either side.
+ *
+ * `RulesRecord.data` is typed `unknown` and the pack declares no per-field
+ * provenance (`rules/types.ts`), so the walk that partitions it is written
+ * defensively against shapes the corpus does not currently produce — a
+ * function, symbol, bigint, or a non-plain object such as a `Date` or `Map`.
+ * Silently dropping such a value into source or into projection would be
+ * exactly the kind of unstated, undiscoverable default the review forbids;
+ * recording it here instead makes it visible in the packet and in the
+ * evidence rather than invisible in either heading. Every JSON-shaped record
+ * the real pack contains today produces an empty list.
+ */
+export interface RecordDataResidue {
+  readonly pointer: string;
+  readonly shape: string;
+}
+
 export interface PacketCandidate {
   readonly identity: {
     readonly key: string;
@@ -354,7 +373,34 @@ export interface PacketCandidate {
     readonly source: string;
     readonly license: unknown;
   };
-  readonly sourceProse: Readonly<Record<string, unknown>>;
+  /**
+   * Verbatim, source-extracted record content: everything in the candidate's
+   * record body that does NOT fall under a declared projection container (see
+   * `PROJECTION_CONTAINER_KEYS` in `packet.ts`, W10's stated boundary). Shaped
+   * exactly like the record body it was sliced from — minus the projection
+   * subtrees — so a JSON pointer into it addresses the same value it always
+   * did. This is the ONLY material the renderer may present as "verbatim;
+   * authoritative" (design section 7.2): F2 found the previous single
+   * `sourceProse` field split by primitive type, which promoted importer-
+   * derived typed strings (e.g. `spell:fireball`'s
+   * `mechanics.saves[0].ability`) to source authority they never had.
+   */
+  readonly sourceMaterial: Readonly<Record<string, unknown>>;
+  /**
+   * Importer-derived typed material sliced from the SAME record body along
+   * the SAME boundary, at the SAME shape and pointers it occupied in the
+   * source. A container's own quoted source text (e.g.
+   * `mechanics.scaling.sourceText`) stays here rather than being pulled back
+   * out into `sourceMaterial`: it is the projection's own record of what it
+   * derived from, not a second, independent source citation, and carving it
+   * out case-by-case would be the start of the field-name list the review
+   * forbids.
+   */
+  readonly projection: Readonly<Record<string, unknown>>;
+  /** See `RecordDataResidue`. Empty for every record kind the real pack
+   * carries today; present so an unclassifiable shape is disclosed rather
+   * than silently folded into either `sourceMaterial` or `projection`. */
+  readonly residue: readonly RecordDataResidue[];
   readonly routes: readonly DiscoveryRoute[];
   readonly traversals: readonly TypedTraversal[];
   readonly ambiguities: readonly RulesAmbiguity[];

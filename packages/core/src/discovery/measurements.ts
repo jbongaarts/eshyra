@@ -310,16 +310,33 @@ export function measureDiscovery(
         : trace.packet.packet.candidates.find(
             (item) => item.identity.key === fact.targetRef,
           );
+    // F2 (PR #543 review): a field-9 fact no longer names ONE packet field to
+    // search. `packetCandidate` now splits a record body into `sourceMaterial`
+    // and `projection` along W10's declared container boundary
+    // (`packet.ts`), and a fixture fact's own pointer or substring can land on
+    // either side — P8's `/data/mechanics/economies/use` is projection,
+    // `creature:goblin`'s `/data/armorClass/value` is source material. M9
+    // asks "did the packet retain this," not "which half did it land in," so
+    // it checks both; a fact present on neither side is genuinely missing.
     const present =
       fact.exactSubstring === undefined
         ? fact.typedPath !== undefined &&
           (fact.expectedValue === undefined
-            ? valueAt(candidate?.sourceProse, fact.typedPath) !== undefined
+            ? valueAt(candidate?.sourceMaterial, fact.typedPath) !==
+                undefined ||
+              valueAt(candidate?.projection, fact.typedPath) !== undefined
             : equal(
-                valueAt(candidate?.sourceProse, fact.typedPath),
+                valueAt(candidate?.sourceMaterial, fact.typedPath),
+                fact.expectedValue,
+              ) ||
+              equal(
+                valueAt(candidate?.projection, fact.typedPath),
                 fact.expectedValue,
               ))
-        : proseStrings(candidate?.sourceProse).some((text) =>
+        : proseStrings(candidate?.sourceMaterial).some((text) =>
+            text.includes(fact.exactSubstring as string),
+          ) ||
+          proseStrings(candidate?.projection).some((text) =>
             text.includes(fact.exactSubstring as string),
           );
     if (!present) missing.push(fact);

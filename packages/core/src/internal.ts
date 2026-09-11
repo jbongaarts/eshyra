@@ -630,6 +630,7 @@ export type {
   OfflineCapabilityDeclaration,
   PacketCandidate,
   ProjectionLimitNote,
+  RecordDataResidue,
   RetentionBudget,
   RetentionOverflow,
   RouteClass,
