@@ -99,7 +99,7 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'save',
-    localityPointer: '/data/mechanics/procedures/0/initial',
+    localityPointer: '/procedure/burnt-othur-fumes/initial',
     expected: { ability: 'constitution', dc: 13 },
   },
   {
@@ -114,7 +114,7 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'damage',
-    localityPointer: '/data/mechanics/procedures/0/initial',
+    localityPointer: '/procedure/burnt-othur-fumes/initial',
     expected: { dice: '3d6', type: 'poison' },
   },
   {
@@ -129,7 +129,7 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'repeat-timing',
-    localityPointer: '/data/mechanics/procedures/0/repeat',
+    localityPointer: '/procedure/burnt-othur-fumes/repeat',
     expected: 'start-of-affected-turn',
   },
   {
@@ -144,7 +144,7 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'save',
-    localityPointer: '/data/mechanics/procedures/0/repeat',
+    localityPointer: '/procedure/burnt-othur-fumes/repeat',
     expected: { ability: 'constitution', dc: 13 },
   },
   {
@@ -159,7 +159,7 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'damage',
-    localityPointer: '/data/mechanics/procedures/0/repeat',
+    localityPointer: '/procedure/burnt-othur-fumes/repeat',
     expected: { dice: '1d6', type: 'poison' },
   },
   {
@@ -174,7 +174,7 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'termination',
-    localityPointer: '/data/mechanics/procedures/0/termination',
+    localityPointer: '/procedure/burnt-othur-fumes/termination',
     expected: { kind: 'successful-saves', count: 3 },
   },
   {
@@ -191,7 +191,7 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'mode-selector',
-    localityPointer: '/data/mechanics/procedures/0',
+    localityPointer: '/procedure/longsword-damage',
     expected: 'hands-used',
   },
   {
@@ -200,8 +200,12 @@ const DRAFTS: readonly ObligationDraft[] = [
     owner: LONGSWORD,
     anchors: [anchor(66, 'Longsword 15 gp 1d8 slashing')],
     facet: 'damage',
-    localityPointer: '/data/mechanics/procedures/0/modes/0',
-    expected: { dice: '1d8', type: 'slashing' },
+    localityPointer: '/procedure/longsword-damage/mode/one-handed',
+    expected: {
+      id: 'one-handed',
+      hands: 1,
+      damage: { dice: '1d8', type: 'slashing' },
+    },
   },
   {
     procedureId: 'longsword-damage',
@@ -218,8 +222,12 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'damage',
-    localityPointer: '/data/mechanics/procedures/0/modes/1',
-    expected: { dice: '1d10', type: 'slashing' },
+    localityPointer: '/procedure/longsword-damage/mode/two-handed',
+    expected: {
+      id: 'two-handed',
+      hands: 2,
+      damage: { dice: '1d10', type: 'slashing' },
+    },
   },
   {
     procedureId: 'fighter-fighting-style',
@@ -233,8 +241,12 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'choice-cardinality',
-    localityPointer: '/data/choices/0',
-    expected: 1,
+    localityPointer: '/procedure/fighter-fighting-style/choice/fighting-style',
+    expected: {
+      choiceId: 'fighting-style',
+      choose: 1,
+      procedureChoiceId: 'fighting-style',
+    },
   },
   {
     procedureId: 'fighter-fighting-style',
@@ -248,7 +260,7 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'duplicate-selection',
-    localityPointer: '/data/mechanics/procedures/0',
+    localityPointer: '/procedure/fighter-fighting-style',
     expected: 'prohibited',
   },
   {
@@ -264,8 +276,12 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'option-effect',
-    localityPointer: '/data/mechanics/procedures/0/options/0',
-    expected: { kind: 'attack-roll-bonus', amount: 2, weaponRange: 'ranged' },
+    localityPointer:
+      '/procedure/fighter-fighting-style/option/fighting-style:archery',
+    expected: {
+      id: 'fighting-style:archery',
+      effect: { kind: 'attack-roll-bonus', amount: 2, weaponRange: 'ranged' },
+    },
   },
   {
     procedureId: 'fighter-fighting-style',
@@ -280,8 +296,16 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'option-effect',
-    localityPointer: '/data/mechanics/procedures/0/options/1',
-    expected: { kind: 'armor-class-bonus', amount: 1, whileWearingArmor: true },
+    localityPointer:
+      '/procedure/fighter-fighting-style/option/fighting-style:defense',
+    expected: {
+      id: 'fighting-style:defense',
+      effect: {
+        kind: 'armor-class-bonus',
+        amount: 1,
+        whileWearingArmor: true,
+      },
+    },
   },
   {
     procedureId: 'fighter-fighting-style',
@@ -297,13 +321,17 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'option-effect',
-    localityPointer: '/data/mechanics/procedures/0/options/2',
+    localityPointer:
+      '/procedure/fighter-fighting-style/option/fighting-style:dueling',
     expected: {
-      kind: 'damage-roll-bonus',
-      amount: 2,
-      weaponRange: 'melee',
-      weaponHands: 1,
-      noOtherWeapon: true,
+      id: 'fighting-style:dueling',
+      effect: {
+        kind: 'damage-roll-bonus',
+        amount: 2,
+        weaponRange: 'melee',
+        weaponHands: 1,
+        noOtherWeapon: true,
+      },
     },
   },
   {
@@ -323,14 +351,18 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'option-effect',
-    localityPointer: '/data/mechanics/procedures/0/options/3',
+    localityPointer:
+      '/procedure/fighter-fighting-style/option/fighting-style:great-weapon-fighting',
     expected: {
-      kind: 'damage-die-reroll',
-      rerollValues: [1, 2],
-      keepReroll: true,
-      weaponRange: 'melee',
-      handsUsed: 2,
-      requiredProperties: ['two-handed', 'versatile'],
+      id: 'fighting-style:great-weapon-fighting',
+      effect: {
+        kind: 'damage-die-reroll',
+        rerollValues: [1, 2],
+        keepReroll: true,
+        weaponRange: 'melee',
+        handsUsed: 2,
+        requiredProperties: ['two-handed', 'versatile'],
+      },
     },
   },
   {
@@ -348,13 +380,17 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'option-effect',
-    localityPointer: '/data/mechanics/procedures/0/options/4',
+    localityPointer:
+      '/procedure/fighter-fighting-style/option/fighting-style:protection',
     expected: {
-      kind: 'reaction-attack-disadvantage',
-      target: 'other-creature',
-      rangeFeet: 5,
-      requiresSight: true,
-      requiresShield: true,
+      id: 'fighting-style:protection',
+      effect: {
+        kind: 'reaction-attack-disadvantage',
+        target: 'other-creature',
+        rangeFeet: 5,
+        requiresSight: true,
+        requiresShield: true,
+      },
     },
   },
   {
@@ -371,10 +407,14 @@ const DRAFTS: readonly ObligationDraft[] = [
       ),
     ],
     facet: 'option-effect',
-    localityPointer: '/data/mechanics/procedures/0/options/5',
+    localityPointer:
+      '/procedure/fighter-fighting-style/option/fighting-style:two-weapon-fighting',
     expected: {
-      kind: 'offhand-damage-ability-modifier',
-      addAbilityModifier: true,
+      id: 'fighting-style:two-weapon-fighting',
+      effect: {
+        kind: 'offhand-damage-ability-modifier',
+        addAbilityModifier: true,
+      },
     },
   },
   {
@@ -755,7 +795,10 @@ export function buildFoundation1SourceObligations(
       owner: draft.owner,
       derivedFrom,
       facet: draft.facet,
-      localityPointer: draft.localityPointer,
+      localityPointer: draft.localityPointer.replace(
+        '/data/mechanics/procedures/0',
+        `/procedure/${draft.procedureId}`,
+      ),
       expected: draft.expected,
     } satisfies Foundation1Obligation;
   });

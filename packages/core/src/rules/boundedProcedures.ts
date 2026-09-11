@@ -82,6 +82,7 @@ export type FeatureOptionEffect =
 export interface FeatureOptionProcedure {
   readonly id: string;
   readonly kind: 'feature-options';
+  readonly choiceId: string;
   readonly duplicateSelection: 'prohibited';
   readonly options: readonly {
     readonly id: string;
@@ -313,9 +314,10 @@ function validateWeaponDamageModes(procedure: JsonObject, path: string): void {
 function validateFeatureOptions(procedure: JsonObject, path: string): void {
   requireOnlyKeys(
     procedure,
-    ['id', 'kind', 'duplicateSelection', 'options'],
+    ['id', 'kind', 'choiceId', 'duplicateSelection', 'options'],
     path,
   );
+  stringAt(procedure, 'choiceId', path);
   literalAt(procedure, 'duplicateSelection', 'prohibited', path);
   const options = arrayAt(procedure.options, `${path}.options`);
   const ids = new Set<string>();
@@ -627,6 +629,7 @@ export function assertBoundedProcedures(
 ): asserts value is readonly BoundedProcedure[] {
   const procedures = arrayAt(value, path);
   const ids = new Set<string>();
+  const kinds = new Set<string>();
   for (const [index, value] of procedures.entries()) {
     const procedurePath = `${path}[${index}]`;
     const procedure = objectAt(value, procedurePath);
@@ -638,6 +641,12 @@ export function assertBoundedProcedures(
     }
     ids.add(id);
     const kind = stringAt(procedure, 'kind', procedurePath);
+    if (kinds.has(kind)) {
+      throw new BoundedProcedureError(
+        `${path} duplicates kind ${JSON.stringify(kind)}`,
+      );
+    }
+    kinds.add(kind);
     if (kind === 'repeat-save-hazard') {
       validateRepeatSaveHazard(procedure, procedurePath);
     } else if (kind === 'weapon-damage-modes') {
@@ -723,6 +732,7 @@ export type BoundedProcedureRequest =
       readonly classLevel: number;
       readonly currentPoints: number;
       readonly slotLevel: number;
+      readonly currentSlotCount: number;
     }
   | {
       readonly kind: 'begin-wish-stress';
@@ -772,6 +782,29 @@ export type BoundedProcedureResult =
     }
   | { readonly kind: 'wish-stress-recovery'; readonly remainingDays: number };
 
+function finiteInteger(
+  value: number,
+  name: string,
+  minimum?: number,
+  maximum?: number,
+): number {
+  if (
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    (minimum !== undefined && value < minimum) ||
+    (maximum !== undefined && value > maximum)
+  ) {
+    const range =
+      minimum === undefined
+        ? ''
+        : maximum === undefined
+          ? ` >= ${minimum}`
+          : ` between ${minimum} and ${maximum}`;
+    throw new BoundedProcedureError(`${name} must be a finite integer${range}`);
+  }
+  return value;
+}
+
 /**
  * Executes only the five positively selected procedures. The harness receives
  * redacted record data: no record key, source metadata, obligation, or proof
@@ -783,11 +816,22 @@ export function executeBoundedProcedure(
 ): BoundedProcedureResult {
   if (request.kind === 'hazard-save') {
     const procedure = procedureOfKind(data, 'repeat-save-hazard');
+    finiteInteger(request.rollTotal, 'hazard rollTotal', 0);
+    const priorSuccessfulSaves = finiteInteger(
+      request.priorSuccessfulSaves ?? 0,
+      'hazard priorSuccessfulSaves',
+      0,
+      procedure.termination.count - 1,
+    );
+    if (request.phase === 'initial' && priorSuccessfulSaves !== 0) {
+      throw new BoundedProcedureError(
+        'initial hazard save cannot have prior successful saves',
+      );
+    }
     const branch =
       request.phase === 'initial' ? procedure.initial : procedure.repeat;
     const succeeded = request.rollTotal >= branch.save.dc;
-    const successfulSaves =
-      (request.priorSuccessfulSaves ?? 0) + (succeeded ? 1 : 0);
+    const successfulSaves = priorSuccessfulSaves + (succeeded ? 1 : 0);
     return {
       kind: 'hazard-save',
       succeeded,
@@ -798,6 +842,7 @@ export function executeBoundedProcedure(
   }
   if (request.kind === 'weapon-damage') {
     const procedure = procedureOfKind(data, 'weapon-damage-modes');
+    finiteInteger(request.handsUsed, 'weapon handsUsed', 1, 2);
     const modes = procedure.modes.filter(
       (mode) => mode.hands === request.handsUsed,
     );
@@ -837,12 +882,20 @@ export function executeBoundedProcedure(
     request.kind === 'convert-spell-slot'
   ) {
     const procedure = procedureOfKind(data, 'resource-conversion');
+    finiteInteger(request.classLevel, 'resource classLevel', 1, 20);
+    finiteInteger(request.currentPoints, 'resource currentPoints', 0);
+    finiteInteger(request.slotLevel, 'resource slotLevel', 1, 9);
     const maximum = procedure.pool.maximumByLevel.find(
       (entry) => entry.level === request.classLevel,
     )?.maximum;
     if (maximum === undefined) {
       throw new BoundedProcedureError(
         `resource procedure has no maximum for class level ${request.classLevel}`,
+      );
+    }
+    if (request.currentPoints > maximum) {
+      throw new BoundedProcedureError(
+        `resource currentPoints exceeds the class-level maximum ${maximum}`,
       );
     }
     if (request.kind === 'create-spell-slot') {
@@ -873,6 +926,7 @@ export function executeBoundedProcedure(
       };
     }
     const operation = procedure.operations.convertSpellSlot;
+    finiteInteger(request.currentSlotCount, 'resource currentSlotCount', 1);
     if (
       request.slotLevel < 1 ||
       request.currentPoints + request.slotLevel > maximum
@@ -891,16 +945,9 @@ export function executeBoundedProcedure(
   }
   const procedure = procedureOfKind(data, 'adjudicated-stress');
   if (request.kind === 'begin-wish-stress') {
-    if (request.recoveryDaysRoll < 2 || request.recoveryDaysRoll > 8) {
-      throw new BoundedProcedureError(
-        'wish recoveryDaysRoll must be a 2d4 result',
-      );
-    }
-    if (request.percentileRoll < 1 || request.percentileRoll > 100) {
-      throw new BoundedProcedureError(
-        'wish percentileRoll must be between 1 and 100',
-      );
-    }
+    finiteInteger(request.currentStrength, 'wish currentStrength', 0, 30);
+    finiteInteger(request.recoveryDaysRoll, 'wish recoveryDaysRoll', 2, 8);
+    finiteInteger(request.percentileRoll, 'wish percentileRoll', 1, 100);
     return {
       kind: 'wish-stress-started',
       strength: Math.min(
@@ -913,11 +960,7 @@ export function executeBoundedProcedure(
     };
   }
   if (request.kind === 'wish-stress-spell') {
-    if (!Number.isInteger(request.spellLevel) || request.spellLevel < 0) {
-      throw new BoundedProcedureError(
-        'spellLevel must be a non-negative integer',
-      );
-    }
+    finiteInteger(request.spellLevel, 'wish spellLevel', 0, 9);
     const perLevel = procedure.stress.recurringDamage.dicePerSpellLevel;
     const dice = /^(\d+)d(\d+)$/.exec(perLevel);
     if (dice === null) {
@@ -934,12 +977,21 @@ export function executeBoundedProcedure(
       preventable: procedure.stress.recurringDamage.preventable,
     };
   }
-  const reduction =
-    request.activity === 'light'
-      ? procedure.stress.recovery.restDayReduction
-      : procedure.stress.recovery.ordinaryDayReduction;
-  return {
-    kind: 'wish-stress-recovery',
-    remainingDays: Math.max(0, request.remainingDays - reduction),
-  };
+  if (request.kind === 'wish-stress-recovery-day') {
+    finiteInteger(request.remainingDays, 'wish remainingDays', 0);
+    if (request.activity !== 'light' && request.activity !== 'strenuous') {
+      throw new BoundedProcedureError(
+        'wish activity must be light or strenuous',
+      );
+    }
+    const reduction =
+      request.activity === 'light'
+        ? procedure.stress.recovery.restDayReduction
+        : procedure.stress.recovery.ordinaryDayReduction;
+    return {
+      kind: 'wish-stress-recovery',
+      remainingDays: Math.max(0, request.remainingDays - reduction),
+    };
+  }
+  throw new BoundedProcedureError('unsupported bounded procedure request');
 }

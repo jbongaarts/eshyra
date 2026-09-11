@@ -79042,6 +79042,7 @@
           {
             "id": "fighter-fighting-style",
             "kind": "feature-options",
+            "choiceId": "fighting-style",
             "duplicateSelection": "prohibited",
             "options": [
               {

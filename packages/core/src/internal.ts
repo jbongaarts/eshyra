@@ -1222,6 +1222,7 @@ export type {
 export {
   enumerateFoundation1Atoms,
   evaluateFoundation1Proof,
+  matchFoundation1Candidates,
 } from './rules/verticalProcedureProof.js';
 export type {
   BeginTurnInput,

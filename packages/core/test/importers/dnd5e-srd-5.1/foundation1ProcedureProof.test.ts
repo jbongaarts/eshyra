@@ -15,8 +15,11 @@ import {
 } from '../../../scripts/importers/dnd5e-srd-5.1/foundation1SourceObligations.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 import {
+  enumerateFoundation1Atoms,
   evaluateFoundation1Proof,
   type Foundation1Obligation,
+  type Foundation1ProjectedAtom,
+  matchFoundation1Candidates,
 } from '../../../src/rules/verticalProcedureProof.js';
 
 const PDF_PATH = join(
@@ -42,38 +45,38 @@ beforeAll(async () => {
 });
 
 const EXPECTED_DISCHARGE_ATOM_IDS = [
-  'atom/equipment:longsword/data/mechanics/procedures/0/modes/0/damage',
-  'atom/equipment:longsword/data/mechanics/procedures/0/modes/1/damage',
-  'atom/equipment:longsword/data/mechanics/procedures/0/selector',
-  'atom/feature:fighter:fighting-style/data/choices/0/choose',
-  'atom/feature:fighter:fighting-style/data/mechanics/procedures/0/duplicateSelection',
-  'atom/feature:fighter:fighting-style/data/mechanics/procedures/0/options/0/effect',
-  'atom/feature:fighter:fighting-style/data/mechanics/procedures/0/options/1/effect',
-  'atom/feature:fighter:fighting-style/data/mechanics/procedures/0/options/2/effect',
-  'atom/feature:fighter:fighting-style/data/mechanics/procedures/0/options/3/effect',
-  'atom/feature:fighter:fighting-style/data/mechanics/procedures/0/options/4/effect',
-  'atom/feature:fighter:fighting-style/data/mechanics/procedures/0/options/5/effect',
-  'atom/feature:sorcerer:font-of-magic/data/mechanics/procedures/0/operations/convertSpellSlot/actionCost',
-  'atom/feature:sorcerer:font-of-magic/data/mechanics/procedures/0/operations/convertSpellSlot/pointsGained',
-  'atom/feature:sorcerer:font-of-magic/data/mechanics/procedures/0/operations/createSpellSlot/actionCost',
-  'atom/feature:sorcerer:font-of-magic/data/mechanics/procedures/0/operations/createSpellSlot/costBySlotLevel',
-  'atom/feature:sorcerer:font-of-magic/data/mechanics/procedures/0/operations/createSpellSlot/createdSlotExpires',
-  'atom/feature:sorcerer:font-of-magic/data/mechanics/procedures/0/operations/createSpellSlot/maximumSlotLevel',
-  'atom/feature:sorcerer:font-of-magic/data/mechanics/procedures/0/pool',
-  'atom/feature:sorcerer:font-of-magic/data/mechanics/procedures/0/pool/maximumByLevel',
-  'atom/feature:sorcerer:font-of-magic/data/mechanics/procedures/0/pool/reset',
-  'atom/hazard:burnt-othur-fumes/data/mechanics/procedures/0/initial/failureDamage',
-  'atom/hazard:burnt-othur-fumes/data/mechanics/procedures/0/initial/save',
-  'atom/hazard:burnt-othur-fumes/data/mechanics/procedures/0/repeat/failureDamage',
-  'atom/hazard:burnt-othur-fumes/data/mechanics/procedures/0/repeat/save',
-  'atom/hazard:burnt-othur-fumes/data/mechanics/procedures/0/repeat/timing',
-  'atom/hazard:burnt-othur-fumes/data/mechanics/procedures/0/termination',
-  'atom/spell:wish/data/mechanics/procedures/0/adjudicationBoundary',
-  'atom/spell:wish/data/mechanics/procedures/0/stress/recovery',
-  'atom/spell:wish/data/mechanics/procedures/0/stress/recurringDamage',
-  'atom/spell:wish/data/mechanics/procedures/0/stress/strength',
-  'atom/spell:wish/data/mechanics/procedures/0/stress/trigger',
-  'atom/spell:wish/data/mechanics/procedures/0/stress/wishLoss',
+  'atom/equipment:longsword/procedure/longsword-damage/mode/one-handed',
+  'atom/equipment:longsword/procedure/longsword-damage/mode/two-handed',
+  'atom/equipment:longsword/procedure/longsword-damage/selector',
+  'atom/feature:fighter:fighting-style/procedure/fighter-fighting-style/choice/fighting-style',
+  'atom/feature:fighter:fighting-style/procedure/fighter-fighting-style/duplicateSelection',
+  'atom/feature:fighter:fighting-style/procedure/fighter-fighting-style/option/fighting-style:archery',
+  'atom/feature:fighter:fighting-style/procedure/fighter-fighting-style/option/fighting-style:defense',
+  'atom/feature:fighter:fighting-style/procedure/fighter-fighting-style/option/fighting-style:dueling',
+  'atom/feature:fighter:fighting-style/procedure/fighter-fighting-style/option/fighting-style:great-weapon-fighting',
+  'atom/feature:fighter:fighting-style/procedure/fighter-fighting-style/option/fighting-style:protection',
+  'atom/feature:fighter:fighting-style/procedure/fighter-fighting-style/option/fighting-style:two-weapon-fighting',
+  'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/operations/convertSpellSlot/actionCost',
+  'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/operations/convertSpellSlot/pointsGained',
+  'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/operations/createSpellSlot/actionCost',
+  'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/operations/createSpellSlot/costBySlotLevel',
+  'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/operations/createSpellSlot/createdSlotExpires',
+  'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/operations/createSpellSlot/maximumSlotLevel',
+  'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/pool',
+  'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/pool/maximumByLevel',
+  'atom/feature:sorcerer:font-of-magic/procedure/font-of-magic/pool/reset',
+  'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/initial/failureDamage',
+  'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/initial/save',
+  'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/repeat/failureDamage',
+  'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/repeat/save',
+  'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/repeat/timing',
+  'atom/hazard:burnt-othur-fumes/procedure/burnt-othur-fumes/termination',
+  'atom/spell:wish/procedure/wish-nonstandard-effect/adjudicationBoundary',
+  'atom/spell:wish/procedure/wish-nonstandard-effect/stress/recovery',
+  'atom/spell:wish/procedure/wish-nonstandard-effect/stress/recurringDamage',
+  'atom/spell:wish/procedure/wish-nonstandard-effect/stress/strength',
+  'atom/spell:wish/procedure/wish-nonstandard-effect/stress/trigger',
+  'atom/spell:wish/procedure/wish-nonstandard-effect/stress/wishLoss',
 ] as const;
 
 function cloneRecords(): RulesRecord[] {
@@ -101,6 +104,26 @@ function procedure(input: RulesRecord[], key: string): Record<string, unknown> {
   const data = record(input, key).data as Record<string, unknown>;
   const mechanics = data.mechanics as Record<string, unknown>;
   return (mechanics.procedures as Record<string, unknown>[])[0];
+}
+
+function procedures(
+  input: RulesRecord[],
+  key: string,
+): Record<string, unknown>[] {
+  const data = record(input, key).data as Record<string, unknown>;
+  const mechanics = data.mechanics as Record<string, unknown>;
+  return mechanics.procedures as Record<string, unknown>[];
+}
+
+function projectedAtom(id: string): Foundation1ProjectedAtom {
+  return {
+    id,
+    recordKey: 'hazard:synthetic',
+    pointer: `/data/${id}`,
+    semanticPointer: `/procedure/synthetic/${id}`,
+    facet: 'save',
+    value: { ability: 'constitution', dc: 13 },
+  };
 }
 
 describe('Foundation 1 source authority', () => {
@@ -161,17 +184,23 @@ describe('Foundation 1 independent discharge', () => {
     expect(report.discharges.map((entry) => entry.atomId).sort()).toEqual(
       [...EXPECTED_DISCHARGE_ATOM_IDS].sort(),
     );
+    const atomsById = new Map(
+      records
+        .flatMap((entry) => enumerateFoundation1Atoms(entry))
+        .map((atom) => [atom.id, atom]),
+    );
     for (const discharge of report.discharges) {
-      expect(discharge.atomId).toBe(
-        `atom/${discharge.recordKey}${discharge.pointer}`,
-      );
       const obligation = obligations.find(
         (candidate) => candidate.id === discharge.obligationId,
       );
+      const projectedAtom = atomsById.get(discharge.atomId);
       expect(obligation).toBeDefined();
+      expect(projectedAtom).toBeDefined();
       expect(
-        discharge.pointer === obligation?.localityPointer ||
-          discharge.pointer.startsWith(`${obligation?.localityPointer}/`),
+        projectedAtom?.semanticPointer === obligation?.localityPointer ||
+          projectedAtom?.semanticPointer.startsWith(
+            `${obligation?.localityPointer}/`,
+          ),
       ).toBe(true);
     }
   });
@@ -182,16 +211,11 @@ describe('Foundation 1 independent discharge', () => {
       obligations,
     );
     expect(report.ok).toBe(false);
-    expect(report.discharges).toHaveLength(1);
-    expect(report.failures).toHaveLength(31);
+    expect(report.discharges).toHaveLength(0);
+    expect(report.failures).toHaveLength(32);
     expect(new Set(report.failures.map((failure) => failure.code))).toEqual(
       new Set(['MISSING_FACET']),
     );
-    const discharged = obligations.find(
-      (obligation) => obligation.id === report.discharges[0]?.obligationId,
-    );
-    expect(discharged?.facet).toBe('choice-cardinality');
-    expect(report.discharges[0]?.pointer).toBe('/data/choices/0/choose');
   });
 
   it.each([
@@ -255,6 +279,106 @@ describe('Foundation 1 independent discharge', () => {
     ).toHaveLength(2);
   });
 
+  it('binds damage and option effects to their semantic selectors', () => {
+    const changed = cloneRecords();
+    const modes = procedure(changed, 'equipment:longsword').modes as Record<
+      string,
+      unknown
+    >[];
+    [modes[0].hands, modes[1].hands] = [modes[1].hands, modes[0].hands];
+    const options = procedure(changed, 'feature:fighter:fighting-style')
+      .options as Record<string, unknown>[];
+    [options[0].id, options[1].id] = [options[1].id, options[0].id];
+    const report = evaluateFoundation1Proof(changed, obligations);
+    expect(report.ok).toBe(false);
+    expect(
+      report.failures.filter((failure) => failure.code === 'MISSING_FACET'),
+    ).toHaveLength(4);
+  });
+
+  it('binds the existing feature choice to the projected option procedure', () => {
+    const changed = cloneRecords();
+    const fightingStyle = record(changed, 'feature:fighter:fighting-style');
+    const data = fightingStyle.data as Record<string, unknown>;
+    const choices = data.choices as Record<string, unknown>[];
+    choices.push({ id: 'other-choice', choose: 1, options: [] });
+    procedure(changed, fightingStyle.key).choiceId = 'other-choice';
+    const report = evaluateFoundation1Proof(changed, obligations);
+    expect(report.ok).toBe(false);
+    expect(report.failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'MISSING_FACET' }),
+      ]),
+    );
+  });
+
+  it('keeps selector-bound discharges stable when modes and options are reordered', () => {
+    const changed = cloneRecords();
+    const modes = procedure(changed, 'equipment:longsword').modes as Record<
+      string,
+      unknown
+    >[];
+    modes.reverse();
+    const options = procedure(changed, 'feature:fighter:fighting-style')
+      .options as Record<string, unknown>[];
+    options.reverse();
+
+    const report = evaluateFoundation1Proof(changed, obligations);
+    expect(report.ok).toBe(true);
+    expect(report.discharges).toHaveLength(obligations.length);
+  });
+
+  it.each([
+    'hazard:burnt-othur-fumes',
+    'equipment:longsword',
+    'feature:fighter:fighting-style',
+    'feature:sorcerer:font-of-magic',
+    'spell:wish',
+  ])('rejects duplicate and competing procedures for %s', (key) => {
+    const duplicateRecords = cloneRecords();
+    const duplicate = structuredClone(procedure(duplicateRecords, key));
+    procedures(duplicateRecords, key).push(duplicate);
+    expect(
+      evaluateFoundation1Proof(duplicateRecords, obligations),
+    ).toMatchObject({
+      ok: false,
+      failures: expect.arrayContaining([
+        expect.objectContaining({ code: 'MALFORMED_PROJECTION' }),
+      ]),
+    });
+
+    const competingRecords = cloneRecords();
+    const competing = structuredClone(procedure(competingRecords, key));
+    competing.id = `${String(competing.id)}-competitor`;
+    procedures(competingRecords, key).push(competing);
+    expect(
+      evaluateFoundation1Proof(competingRecords, obligations),
+    ).toMatchObject({
+      ok: false,
+      failures: expect.arrayContaining([
+        expect.objectContaining({ code: 'MALFORMED_PROJECTION' }),
+      ]),
+    });
+  });
+
+  it.each([
+    ['hazard:burnt-othur-fumes', 'equipment:longsword'],
+    ['equipment:longsword', 'hazard:burnt-othur-fumes'],
+    ['feature:fighter:fighting-style', 'equipment:longsword'],
+    ['feature:sorcerer:font-of-magic', 'equipment:longsword'],
+    ['spell:wish', 'equipment:longsword'],
+  ] as const)(
+    'keeps semantic discharge stable when %s procedures are reordered',
+    (key, donorKey) => {
+      const changed = cloneRecords();
+      const donor = structuredClone(procedure(changed, donorKey));
+      procedures(changed, key).unshift(donor);
+      const report = evaluateFoundation1Proof(changed, obligations);
+      expect(report.ok).toBe(true);
+      expect(report.discharges).toHaveLength(obligations.length);
+    },
+  );
+
   it('requires unique source-owner resolution without embedding a record key in identity', () => {
     const changed = cloneRecords();
     const duplicate = structuredClone(
@@ -270,6 +394,53 @@ describe('Foundation 1 independent discharge', () => {
       ]),
     );
   });
+});
+
+describe('Foundation 1 injective matching', () => {
+  const [atomA, atomB, atomC] = ['atom-a', 'atom-b', 'atom-c'].map(
+    projectedAtom,
+  );
+
+  it('preserves a displaced obligation after successful reassignment', () => {
+    const matches = matchFoundation1Candidates(
+      new Map([
+        ['broad', [atomA, atomB]],
+        ['specific', [atomA]],
+      ]),
+    );
+    expect(
+      [...matches.entries()].map(([key, value]) => [key, value.id]),
+    ).toEqual([
+      ['broad', 'atom-b'],
+      ['specific', 'atom-a'],
+    ]);
+  });
+
+  it.each([
+    [
+      [
+        ['broad-a', [atomA, atomB, atomC]],
+        ['broad-b', [atomA, atomB]],
+        ['specific', [atomA]],
+      ],
+    ],
+    [
+      [
+        ['specific', [atomA]],
+        ['broad-b', [atomA, atomB]],
+        ['broad-a', [atomA, atomB, atomC]],
+      ],
+    ],
+  ] as const)(
+    'finds a longer augmenting chain regardless of order',
+    (entries) => {
+      const matches = matchFoundation1Candidates(new Map(entries));
+      expect(matches.size).toBe(3);
+      expect(new Set([...matches.values()].map((atom) => atom.id))).toEqual(
+        new Set(['atom-a', 'atom-b', 'atom-c']),
+      );
+    },
+  );
 });
 
 describe('Foundation 1 projector boundary', () => {
@@ -299,6 +470,55 @@ describe('Foundation 1 projector boundary', () => {
       Foundation1ProjectionError,
     );
   });
+
+  it.each([
+    [
+      'feature:fighter:fighting-style',
+      (data: Record<string, unknown>) => {
+        const choices = data.choices as Record<string, unknown>[];
+        const options = choices[0].options as Record<string, unknown>[];
+        options[0].text = String(options[0].text).replace('+2', '+9');
+      },
+    ],
+    [
+      'feature:fighter:fighting-style',
+      (data: Record<string, unknown>) => {
+        const choices = data.choices as Record<string, unknown>[];
+        const options = choices[0].options as Record<string, unknown>[];
+        options[2].text = String(options[2].text).replace(
+          'no other weapons',
+          'an empty other hand',
+        );
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      (data: Record<string, unknown>) => {
+        data.description = String(data.description).replace(
+          'as a bonus action on your turn',
+          'as an action on your turn',
+        );
+      },
+    ],
+    [
+      'spell:wish',
+      (data: Record<string, unknown>) => {
+        data.description = String(data.description).replace(
+          'until you finish a long rest, you take 1d10',
+          'until you finish a short rest, you take 1d10',
+        );
+      },
+    ],
+  ] as const)(
+    'rejects curated semantic drift in %s source inputs',
+    (key, mutate) => {
+      const changed = stripProcedures(records);
+      mutate(record(changed, key).data as Record<string, unknown>);
+      expect(() => applyFoundation1ProcedureProjections(changed)).toThrow(
+        Foundation1ProjectionError,
+      );
+    },
+  );
 
   it('has no import path from the projector to the obligation authority', () => {
     const projectorSource = readFileSync(

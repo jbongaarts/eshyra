@@ -218,6 +218,33 @@ const FIGHTING_STYLE_EFFECTS: ReadonlyMap<string, FeatureOptionEffect> =
     ],
   ]);
 
+const FIGHTING_STYLE_SOURCE_TEXT: ReadonlyMap<string, string> = new Map([
+  [
+    'fighting-style:archery',
+    'You gain a +2 bonus to attack rolls you make with ranged weapons.',
+  ],
+  [
+    'fighting-style:defense',
+    'While you are wearing armor, you gain a +1 bonus to AC.',
+  ],
+  [
+    'fighting-style:dueling',
+    'When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.',
+  ],
+  [
+    'fighting-style:great-weapon-fighting',
+    'When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit.',
+  ],
+  [
+    'fighting-style:protection',
+    'When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield.',
+  ],
+  [
+    'fighting-style:two-weapon-fighting',
+    'When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack.',
+  ],
+]);
+
 function fightingStyleProcedure(data: JsonObject): BoundedProcedure {
   const description = stringAt(
     data,
@@ -260,6 +287,12 @@ function fightingStyleProcedure(data: JsonObject): BoundedProcedure {
         `feature:fighter:fighting-style has unreviewed option ${JSON.stringify(id)}`,
       );
     }
+    const sourceText = FIGHTING_STYLE_SOURCE_TEXT.get(id);
+    if (sourceText === undefined || option.text !== sourceText) {
+      throw new Foundation1ProjectionError(
+        `feature:fighter:fighting-style option ${JSON.stringify(id)} source text drifted`,
+      );
+    }
     return { id, effect };
   });
   if (options.length !== FIGHTING_STYLE_EFFECTS.size) {
@@ -270,6 +303,7 @@ function fightingStyleProcedure(data: JsonObject): BoundedProcedure {
   return {
     id: 'fighter-fighting-style',
     kind: 'feature-options',
+    choiceId: 'fighting-style',
     duplicateSelection: 'prohibited',
     options,
   };
@@ -324,10 +358,14 @@ function fontOfMagicProcedure(
     'feature:sorcerer:font-of-magic.data',
   );
   for (const phrase of [
+    'You can never have more sorcery points than shown on the table for your level.',
     'You regain all spent sorcery points when you finish a long rest.',
+    'The Creating Spell Slots table shows the cost of creating a spell slot of a given level.',
     'You can create spell slots no higher in level than 5th.',
     'Any spell slot you create with this feature vanishes when you finish a long rest.',
     'gain a number of sorcery points equal to the slot’s level.',
+    'Creating Spell Slots. You can transform unexpended sorcery points into one spell slot as a bonus action on your turn.',
+    'Converting a Spell Slot to Sorcery Points. As a bonus action on your turn, you can expend one spell slot and gain a number of sorcery points equal to the slot’s level.',
   ]) {
     assertIncludes(description, phrase, 'feature:sorcerer:font-of-magic');
   }
@@ -410,13 +448,14 @@ function fontOfMagicProcedure(
 function wishProcedure(data: JsonObject): BoundedProcedure {
   const description = stringAt(data, 'description', 'spell:wish.data');
   for (const phrase of [
+    'You might be able to achieve something beyond the scope of the above examples.',
     'The GM has great latitude in ruling what occurs in such an instance',
     'effect other than duplicating another spell weakens you',
-    'you take 1d10 necrotic damage per level of that spell',
+    'each time you cast a spell until you finish a long rest, you take 1d10 necrotic damage per level of that spell',
     'This damage can’t be reduced or prevented in any way',
     'your Strength drops to 3, if it isn’t 3 or lower already, for 2d4 days',
-    'your remaining recovery time decreases by 2 days',
-    'there is a 33 percent chance that you are unable to cast wish ever again',
+    'For each of those days that you spend resting and doing nothing more than light activity, your remaining recovery time decreases by 2 days.',
+    'there is a 33 percent chance that you are unable to cast wish ever again if you suffer this stress',
   ]) {
     assertIncludes(description, phrase, 'spell:wish');
   }

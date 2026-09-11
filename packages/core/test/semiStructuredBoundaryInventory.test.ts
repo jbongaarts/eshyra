@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildInventoryArtifact,
+  type ClassificationContext,
+  classifyField,
   type InventoryRow,
   renderInventoryJson,
   renderInventoryMarkdown,
@@ -181,10 +183,30 @@ describe('semi-structured boundary inventory', () => {
     ).toMatchObject({
       disposition: 'complete',
       deterministicConsumers: expect.stringContaining(
-        'executeBoundedProcedure',
+        'reference harness does not claim execution ownership',
       ),
       currentAuditReadiness: expect.stringContaining(
         'evaluateFoundation1Proof',
+      ),
+    });
+    expect(
+      row(
+        artifact,
+        'data.mechanics.procedures[].modes[].damage.dice',
+        'equipment',
+      ),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining(
+        'executeBoundedProcedure reads',
+      ),
+    });
+    expect(
+      row(artifact, 'data.mechanics.procedures[].pool.reset', 'feature'),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining(
+        'reference harness does not claim execution ownership',
       ),
     });
     expect(
@@ -200,6 +222,37 @@ describe('semi-structured boundary inventory', () => {
         'deterministic resolution is deliberately not claimed',
       ),
     });
+  });
+
+  it('does not generalize Foundation 1 ownership beyond exact reviewed records, fields, and values', () => {
+    const classify = (
+      overrides: Partial<ClassificationContext>,
+    ): ReturnType<typeof classifyField> =>
+      classifyField({
+        system: 'dnd5e-srd',
+        recordKinds: ['equipment'],
+        recordKeys: ['equipment:longsword'],
+        fieldPath: 'data.mechanics.procedures[].selector',
+        representativeValues: ['hands-used'],
+        ...overrides,
+      });
+
+    expect(classify({})).toMatchObject({ disposition: 'complete' });
+    for (const candidate of [
+      classify({
+        fieldPath: 'data.mechanics.procedures[].unreviewedField',
+      }),
+      classify({ representativeValues: ['feet-used'] }),
+      classify({ recordKeys: ['equipment:unreviewed'] }),
+    ]) {
+      expect(candidate).toMatchObject({
+        disposition: 'model-adjudicated',
+        deterministicConsumers:
+          'no deterministic consumer is registered for this field',
+        typedSchemaOrConsumer: null,
+        owner: null,
+      });
+    }
   });
 
   it('preserves the exact unsupported residual set and structural invariants', () => {

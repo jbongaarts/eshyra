@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { RulesPack, RulesRecord } from '../src/internal.js';
+import type {
+  BoundedProcedureRequest,
+  RulesPack,
+  RulesRecord,
+} from '../src/internal.js';
 import {
   BoundedProcedureError,
   executeBoundedProcedure,
@@ -127,6 +131,7 @@ describe('bounded provider-neutral procedure execution', () => {
         classLevel: 5,
         currentPoints: 2,
         slotLevel: 3,
+        currentSlotCount: 1,
       }),
     ).toEqual({
       kind: 'resource-transition',
@@ -141,6 +146,7 @@ describe('bounded provider-neutral procedure execution', () => {
         classLevel: 5,
         currentPoints: 4,
         slotLevel: 2,
+        currentSlotCount: 1,
       }),
     ).toThrow(/exceeds the resource maximum/);
   });
@@ -178,6 +184,135 @@ describe('bounded provider-neutral procedure execution', () => {
       }),
     ).toEqual({ kind: 'wish-stress-recovery', remainingDays: 4 });
   });
+
+  it.each([
+    [
+      'hazard:burnt-othur-fumes',
+      { kind: 'hazard-save', phase: 'repeat', rollTotal: Number.NaN },
+    ],
+    [
+      'hazard:burnt-othur-fumes',
+      { kind: 'hazard-save', phase: 'repeat', rollTotal: -1 },
+    ],
+    [
+      'hazard:burnt-othur-fumes',
+      {
+        kind: 'hazard-save',
+        phase: 'repeat',
+        rollTotal: 13,
+        priorSuccessfulSaves: 3,
+      },
+    ],
+    [
+      'hazard:burnt-othur-fumes',
+      {
+        kind: 'hazard-save',
+        phase: 'initial',
+        rollTotal: 13,
+        priorSuccessfulSaves: 1,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'convert-spell-slot',
+        classLevel: 5,
+        currentPoints: 1,
+        slotLevel: 1.5,
+        currentSlotCount: 1,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 5.5,
+        currentPoints: 5,
+        slotLevel: 1,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 5,
+        currentPoints: Number.NaN,
+        slotLevel: 1,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 5,
+        currentPoints: 4.5,
+        slotLevel: 1,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 5,
+        currentPoints: 6,
+        slotLevel: 1,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'convert-spell-slot',
+        classLevel: 5,
+        currentPoints: 1,
+        slotLevel: 1,
+        currentSlotCount: 0,
+      },
+    ],
+    [
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: Number.NaN,
+        recoveryDaysRoll: 4,
+        percentileRoll: 50,
+      },
+    ],
+    [
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: 10,
+        recoveryDaysRoll: 3.5,
+        percentileRoll: 50,
+      },
+    ],
+    [
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: 10,
+        recoveryDaysRoll: 4,
+        percentileRoll: Number.NaN,
+      },
+    ],
+    ['spell:wish', { kind: 'wish-stress-spell', spellLevel: 9.5 }],
+    ['spell:wish', { kind: 'wish-stress-spell', spellLevel: 10 }],
+    [
+      'spell:wish',
+      {
+        kind: 'wish-stress-recovery-day',
+        remainingDays: Number.NaN,
+        activity: 'light',
+      },
+    ],
+  ] satisfies readonly (readonly [string, BoundedProcedureRequest])[])(
+    'rejects invalid numeric state for %s',
+    (key, request) => {
+      expect(() => executeBoundedProcedure(data(key), request)).toThrow(
+        BoundedProcedureError,
+      );
+    },
+  );
 
   it('dispatches by redacted structure, independent of record identity', () => {
     const redacted = structuredClone(data('equipment:longsword'));
@@ -218,6 +353,127 @@ describe('bounded provider-neutral procedure execution', () => {
       ended: false,
     });
   });
+
+  it.each([
+    [
+      'hazard:burnt-othur-fumes',
+      { kind: 'hazard-save', phase: 'initial', rollTotal: 12 },
+    ],
+    ['equipment:longsword', { kind: 'weapon-damage', handsUsed: 2 }],
+    [
+      'feature:fighter:fighting-style',
+      {
+        kind: 'select-feature-option',
+        optionId: 'fighting-style:archery',
+        alreadySelected: [],
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 5,
+        currentPoints: 5,
+        slotLevel: 3,
+      },
+    ],
+    ['spell:wish', { kind: 'wish-stress-spell', spellLevel: 2 }],
+  ] satisfies readonly (readonly [string, BoundedProcedureRequest])[])(
+    'rejects duplicate and competing execution procedures for %s',
+    (key, request) => {
+      const duplicateData = structuredClone(data(key)) as Record<
+        string,
+        unknown
+      >;
+      const duplicateMechanics = duplicateData.mechanics as Record<
+        string,
+        unknown
+      >;
+      const duplicateProcedures = duplicateMechanics.procedures as Record<
+        string,
+        unknown
+      >[];
+      duplicateProcedures.push(structuredClone(duplicateProcedures[0]));
+      expect(() => executeBoundedProcedure(duplicateData, request)).toThrow(
+        BoundedProcedureError,
+      );
+
+      const competingData = structuredClone(data(key)) as Record<
+        string,
+        unknown
+      >;
+      const competingMechanics = competingData.mechanics as Record<
+        string,
+        unknown
+      >;
+      const competingProcedures = competingMechanics.procedures as Record<
+        string,
+        unknown
+      >[];
+      const competing = structuredClone(competingProcedures[0]);
+      competing.id = `${String(competing.id)}-competitor`;
+      competingProcedures.push(competing);
+      expect(() => executeBoundedProcedure(competingData, request)).toThrow(
+        BoundedProcedureError,
+      );
+    },
+  );
+
+  it.each([
+    [
+      'hazard:burnt-othur-fumes',
+      'equipment:longsword',
+      { kind: 'hazard-save', phase: 'initial', rollTotal: 12 },
+    ],
+    [
+      'equipment:longsword',
+      'hazard:burnt-othur-fumes',
+      { kind: 'weapon-damage', handsUsed: 2 },
+    ],
+    [
+      'feature:fighter:fighting-style',
+      'equipment:longsword',
+      {
+        kind: 'select-feature-option',
+        optionId: 'fighting-style:archery',
+        alreadySelected: [],
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      'equipment:longsword',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 5,
+        currentPoints: 5,
+        slotLevel: 3,
+      },
+    ],
+    [
+      'spell:wish',
+      'equipment:longsword',
+      { kind: 'wish-stress-spell', spellLevel: 2 },
+    ],
+  ] satisfies readonly (readonly [string, string, BoundedProcedureRequest])[])(
+    'executes %s identically after unrelated procedure reordering',
+    (key, donorKey, request) => {
+      const reordered = structuredClone(data(key)) as Record<string, unknown>;
+      const mechanics = reordered.mechanics as Record<string, unknown>;
+      const targetProcedures = mechanics.procedures as Record<
+        string,
+        unknown
+      >[];
+      const donor = structuredClone(data(donorKey)) as Record<string, unknown>;
+      const donorMechanics = donor.mechanics as Record<string, unknown>;
+      const donorProcedure = (
+        donorMechanics.procedures as Record<string, unknown>[]
+      )[0];
+      targetProcedures.unshift(donorProcedure);
+      expect(executeBoundedProcedure(reordered, request)).toEqual(
+        executeBoundedProcedure(data(key), request),
+      );
+    },
+  );
 
   it('refuses malformed or absent fields without a prose fallback', () => {
     const wish = structuredClone(data('spell:wish')) as Record<string, unknown>;
