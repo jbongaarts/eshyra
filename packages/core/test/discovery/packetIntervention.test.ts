@@ -961,9 +961,11 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
         report.m8.forbiddenPresent.length === 0 &&
         report.m12.agreement === 'agreed',
     ).length;
-    expect(passing).toBeGreaterThan(0);
-    expect(passing).toBeLessThanOrEqual(PROBE_REPORTS.length);
-    expect(Number.isInteger(passing)).toBe(true);
+    // Pinned EXACTLY, not bounded. `passing > 0` would still hold with twelve
+    // of the thirteen regressed, which is the "nothing failed looks green"
+    // reading design section 13.3 forbids. A count is only evidence when a
+    // change to it fails.
+    expect(passing).toBe(13);
     // The aggregate itself is checked the same way a per-probe report is: no
     // coverage/readiness/completeness/score/rate field anywhere in it.
     const hits: string[] = [];
