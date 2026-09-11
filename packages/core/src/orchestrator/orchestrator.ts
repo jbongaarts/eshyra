@@ -23,6 +23,7 @@ import type {
 } from '../debug/sessionDebug.js';
 import type { ShadowItemInstanceBinding } from '../discovery/shadow.js';
 import {
+  acceptedStateEffects,
   captureDiscoveryShadow,
   completeDiscoveryShadowEvidence,
   encodeDiscoveryShadowEvidence,
@@ -32,6 +33,7 @@ import type {
   RuntimeAuditOutcome,
   RuntimeAuditRetry,
   RuntimeCapabilityInvocation,
+  RuntimeStateEffect,
 } from '../discovery/types.js';
 import {
   recordTurnFailureDiagnostic,
@@ -87,6 +89,7 @@ import { summarizeClosedScenes } from './turnSceneSummary.js';
 import {
   deriveTraceFields,
   extractClosedSceneIds,
+  isAcceptedStateMutation,
 } from './turnTraceProjection.js';
 import { appendTurnTranscript } from './turnTranscript.js';
 
@@ -734,6 +737,7 @@ export async function runTurn(
   // this buffer is never cleared and is never derived from the accepted
   // candidate's tool calls.
   const shadowCapabilityInvocations: RuntimeCapabilityInvocation[] = [];
+  let shadowStateEffects: RuntimeStateEffect[] = [];
   let capabilityAttempt = 0;
   const rejectedAttemptToolNames = new Set<string>();
   let toolsRerunDuringRetry: readonly string[] = [];
@@ -929,6 +933,13 @@ export async function runTurn(
       }
 
       if (deps.auditor === undefined) {
+        if (deps.recordDiscoveryShadow === true)
+          shadowStateEffects = [
+            ...acceptedStateEffects(
+              candidate.toolCalls.filter(isAcceptedStateMutation),
+              attempt,
+            ),
+          ];
         db.exec(`RELEASE ${ATTEMPT_SAVEPOINT}`);
         recordDispositionDebug(
           deps.debug,
@@ -1046,6 +1057,13 @@ export async function runTurn(
       });
 
       if (accepted) {
+        if (deps.recordDiscoveryShadow === true)
+          shadowStateEffects = [
+            ...acceptedStateEffects(
+              candidate.toolCalls.filter(isAcceptedStateMutation),
+              attempt,
+            ),
+          ];
         for (const proposal of precedents) {
           const recorded = recordAmbiguityRuling(db, {
             campaignId: input.campaignId,
@@ -1164,6 +1182,7 @@ export async function runTurn(
             discoveryShadow: encodeDiscoveryShadowEvidence(
               completeDiscoveryShadowEvidence(shadowCapture, {
                 capabilityInvocations: shadowCapabilityInvocations,
+                stateEffects: shadowStateEffects,
                 audit:
                   deps.auditor === undefined || shadowAuditOutcome === undefined
                     ? { auditor: 'absent' }

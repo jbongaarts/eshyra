@@ -132,6 +132,15 @@ export const P08_AMMUNITION: DiagnosticFixture = {
           'A stateless single-use spend consumes one unit, splits the consumed unit out of the stack, and creates nonmagical inventory.',
         evidence:
           'splitNonmagicalSingleUseInventory preserves the physical row while nulling the magic binding for the transformed unit.',
+        operations: [
+          {
+            tool: 'use_item',
+            args: {
+              instanceId: 'ammunition-stack-1',
+              operationId: 'hit-target',
+            },
+          },
+        ],
       },
       oracleSignals: [],
     },

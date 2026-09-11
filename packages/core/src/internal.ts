@@ -551,11 +551,16 @@ export { runDiscoveryStages } from './discovery/harness.js';
 export type {
   DiscoveryMeasurementInput,
   DiscoveryMeasurements,
+  ExpectedStateEffect,
+  ExpectedStateEffectOperation,
   RequiredPacketFact,
   RuntimeDiscoveryMeasurements,
   RuntimeDiscoveryObservations,
+  StateEffectDisagreement,
+  StateEffectMeasurement,
 } from './discovery/measurements.js';
 export {
+  measureAcceptedStateEffect,
   measureDiscovery,
   measureRuntimeDiscovery,
 } from './discovery/measurements.js';
@@ -570,6 +575,7 @@ export type {
   DiscoveryShadowCapture,
   DiscoveryShadowEvidence,
   ObservedCapabilityInvocation,
+  ObservedStateMutation,
   ShadowAdventureSeat,
   ShadowDiscoveryInput,
   ShadowFailure,
@@ -577,6 +583,7 @@ export type {
   ShadowScenarioRecord,
 } from './discovery/shadow.js';
 export {
+  acceptedStateEffects,
   captureDiscoveryShadow,
   completeDiscoveryShadowEvidence,
   DISCOVERY_SHADOW_SCHEMA,
@@ -627,6 +634,7 @@ export type {
   RuntimeAuditOutcome,
   RuntimeAuditRetry,
   RuntimeCapabilityInvocation,
+  RuntimeStateEffect,
   StageLoss,
   StageTrace,
   TypedTraversal,

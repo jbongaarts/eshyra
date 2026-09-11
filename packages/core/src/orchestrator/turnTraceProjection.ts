@@ -39,6 +39,13 @@ export interface DerivedTraceFields {
   qualityFlags: string[];
 }
 
+/** The single definition of a deterministic mutation accepted by the turn. */
+export function isAcceptedStateMutation(call: ExecutedToolCall): boolean {
+  if (!call.mutates || !call.result.ok) return false;
+  if (call.tool !== 'spend_spell_slot') return true;
+  return (call.result.data as Record<string, unknown>).spent === true;
+}
+
 /** Project the exact assembled campaign-rule context into durable A3 evidence. */
 export function campaignRulesEvidenceFrom(
   ctx: CampaignRulesContext,
@@ -136,12 +143,7 @@ export function deriveTraceFields(
       );
 
   const acceptedStateDelta = toolCalls
-    .filter((call) => {
-      if (!call.mutates || !call.result.ok) return false;
-      if (call.tool !== 'spend_spell_slot') return true;
-      const data = call.result.data as Record<string, unknown>;
-      return data.spent === true;
-    })
+    .filter(isAcceptedStateMutation)
     .map((call): TraceJsonValue => {
       if (call.tool !== 'spend_spell_slot' || !call.result.ok) {
         return argsOf(call);

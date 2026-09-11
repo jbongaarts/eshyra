@@ -431,6 +431,24 @@ export interface RuntimeCapabilityInvocation {
 }
 
 /**
+ * One deterministic state effect accepted by the primary-DM candidate.
+ * `tool`, `args`, `attempt`, and `ordinal` are all required so the event can
+ * be compared with a fixture operation and located in the executed stream.
+ * This is recorded at the ACCEPT boundary, not reconstructed from
+ * `accepted_state_delta`; a rejected attempt rolls back its mutations and
+ * therefore contributes no event here.
+ */
+export interface RuntimeStateEffect {
+  /** Primary-DM candidate attempt this effect was accepted on, counting from 1. */
+  readonly attempt: number;
+  /** Position in the accepted candidate's executed tool stream, from 0. */
+  readonly ordinal: number;
+  readonly tool: string;
+  /** The tool's arguments, as executed. */
+  readonly args: Readonly<Record<string, unknown>>;
+}
+
+/**
  * The turn's mechanics-audit history, as one canonical lifecycle.
  *
  * Discriminated rather than a flat list plus flags, so the states a real turn

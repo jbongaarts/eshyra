@@ -1447,6 +1447,23 @@ within it, so a guard cannot be satisfied by a file merely existing. This
 field is fixture metadata and evidence routing. **It is not an input to M1–M9**
 and may never be aggregated into a coverage or completeness figure.
 
+### 11.2 Amendment D — the expected deterministic state effect is machine-comparable
+
+- **Date:** 2026-09-10. **Owning bead:** `eshyra-o9bd.19.12` (W10).
+- **Status:** narrows the expected deterministic state-effect field to a
+  machine-comparable operation list. It does not change the M12 measurement,
+  the other fixture fields, or runtime state-effect semantics.
+
+**The defect.** The effect expectation carried only statement and evidence
+prose, so §13.1's M12 could not compare the accepted deterministic state effect
+with the fixture expectation.
+
+**The change.** An effect expectation now carries a non-empty ordered list of
+mutating tool operations, each with a tool name and optional argument subset.
+Explicit none remains the expectation of no operations. This changes no
+measurement definition — §13.1's M12 is unchanged — and only makes the
+fixture side of that comparison expressible.
+
 ---
 
 ## 12. Experiment phases
