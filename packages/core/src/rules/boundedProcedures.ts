@@ -1,3 +1,7 @@
+import {
+  LIVE_STATE_MAX_ABILITY_SCORE,
+  LIVE_STATE_MIN_ABILITY_SCORE,
+} from '../character/abilities.js';
 import { RulesPackError } from './types.js';
 
 type JsonObject = Record<string, unknown>;
@@ -850,19 +854,32 @@ export function readFeatureChoiceBinding(
   };
 }
 
-export interface FeatureOptionApplicabilityContext {
-  readonly weaponRange?: 'melee' | 'ranged';
-  readonly handsUsed?: 1 | 2;
-  readonly weaponProperties?: readonly string[];
-  readonly wearingArmor?: boolean;
-  readonly noOtherWeapon?: boolean;
-  readonly attackerVisibleToYou?: boolean;
-  readonly protectedTargetIsYou?: boolean;
-  readonly protectedTargetDistanceFromYouFeet?: number;
-  readonly wieldingShield?: boolean;
-  readonly reactionAvailable?: boolean;
-  readonly twoWeaponFighting?: boolean;
-}
+/**
+ * The complete known facts for one bounded Fighting Style predicate. Runtime
+ * admission selects the exact member from the generated option effect and
+ * rejects missing or unrelated facts instead of interpreting absence as false.
+ */
+export type FeatureOptionApplicabilityContext =
+  | { readonly weaponRange: 'melee' | 'ranged' }
+  | { readonly wearingArmor: boolean }
+  | {
+      readonly weaponRange: 'melee' | 'ranged';
+      readonly handsUsed: 1 | 2;
+      readonly noOtherWeapon: boolean;
+    }
+  | {
+      readonly weaponRange: 'melee' | 'ranged';
+      readonly handsUsed: 1 | 2;
+      readonly weaponProperties: readonly string[];
+    }
+  | {
+      readonly attackerVisibleToYou: boolean;
+      readonly protectedTargetIsYou: boolean;
+      readonly protectedTargetDistanceFromYouFeet: number;
+      readonly wieldingShield: boolean;
+      readonly reactionAvailable: boolean;
+    }
+  | { readonly twoWeaponFighting: boolean };
 
 export type BoundedProcedureRequest =
   | {
@@ -876,7 +893,7 @@ export type BoundedProcedureRequest =
       readonly kind: 'hazard-save';
       readonly phase: 'repeat';
       readonly rollTotal: number;
-      readonly priorSuccessfulSaves?: number;
+      readonly priorSuccessfulSaves: number;
       readonly repeatActive: true;
     }
   | { readonly kind: 'weapon-damage'; readonly handsUsed: 1 | 2 }
@@ -958,12 +975,13 @@ export type BoundedProcedureResult =
   | { readonly kind: 'wish-stress-recovery'; readonly remainingDays: number };
 
 function finiteInteger(
-  value: number,
+  value: unknown,
   name: string,
   minimum?: number,
   maximum?: number,
 ): number {
   if (
+    typeof value !== 'number' ||
     !Number.isFinite(value) ||
     !Number.isInteger(value) ||
     (minimum !== undefined && value < minimum) ||
@@ -980,104 +998,244 @@ function finiteInteger(
   return value;
 }
 
-function featureApplicabilityContext(
+function exactKeys(
+  object: JsonObject,
+  keys: readonly string[],
+  path: string,
+): void {
+  requireOnlyKeys(object, keys, path);
+  for (const key of keys) {
+    if (!Object.hasOwn(object, key)) {
+      throw new BoundedProcedureError(
+        `${path} is missing required key ${JSON.stringify(key)}`,
+      );
+    }
+  }
+}
+
+function booleanAt(object: JsonObject, key: string, path: string): boolean {
+  const value = object[key];
+  if (typeof value !== 'boolean') {
+    throw new BoundedProcedureError(`${path}.${key} must be boolean`);
+  }
+  return value;
+}
+
+function stringArray(value: unknown, path: string): readonly string[] {
+  if (!Array.isArray(value)) {
+    throw new BoundedProcedureError(`${path} must be an array of strings`);
+  }
+  const strings = value.map((entry, index) => {
+    if (typeof entry !== 'string' || entry.length === 0) {
+      throw new BoundedProcedureError(
+        `${path}[${index}] must be a non-empty string`,
+      );
+    }
+    return entry;
+  });
+  if (new Set(strings).size !== strings.length) {
+    throw new BoundedProcedureError(`${path} must not contain duplicates`);
+  }
+  return strings;
+}
+
+function validateBoundedProcedureRequest(
   value: unknown,
-): FeatureOptionApplicabilityContext {
-  const context = objectAt(value, 'feature applicability context');
-  requireOnlyKeys(
-    context,
-    [
-      'weaponRange',
-      'handsUsed',
-      'weaponProperties',
-      'wearingArmor',
-      'noOtherWeapon',
-      'attackerVisibleToYou',
-      'protectedTargetIsYou',
-      'protectedTargetDistanceFromYouFeet',
-      'wieldingShield',
-      'reactionAvailable',
-      'twoWeaponFighting',
-    ],
-    'feature applicability context',
-  );
-  if (
-    context.weaponRange !== undefined &&
-    context.weaponRange !== 'melee' &&
-    context.weaponRange !== 'ranged'
-  ) {
+): BoundedProcedureRequest {
+  const request = objectAt(value, 'bounded procedure request');
+  const kind = stringAt(request, 'kind', 'bounded procedure request');
+  if (kind === 'hazard-save') {
+    const phase = request.phase;
+    if (phase === 'initial') {
+      exactKeys(
+        request,
+        ['kind', 'phase', 'rollTotal'],
+        'initial hazard request',
+      );
+      finiteInteger(request.rollTotal, 'hazard rollTotal');
+      return request as unknown as BoundedProcedureRequest;
+    }
+    if (phase === 'repeat') {
+      exactKeys(
+        request,
+        ['kind', 'phase', 'rollTotal', 'priorSuccessfulSaves', 'repeatActive'],
+        'repeat hazard request',
+      );
+      finiteInteger(request.rollTotal, 'hazard rollTotal');
+      finiteInteger(
+        request.priorSuccessfulSaves,
+        'hazard priorSuccessfulSaves',
+        0,
+      );
+      literalAt(request, 'repeatActive', true, 'repeat hazard request');
+      return request as unknown as BoundedProcedureRequest;
+    }
     throw new BoundedProcedureError(
-      'feature applicability context.weaponRange must be melee or ranged',
+      'hazard request.phase must be initial or repeat',
     );
   }
-  if (context.handsUsed !== undefined) {
+  if (kind === 'weapon-damage') {
+    exactKeys(request, ['kind', 'handsUsed'], 'weapon damage request');
+    finiteInteger(request.handsUsed, 'weapon handsUsed', 1, 2);
+    return request as unknown as BoundedProcedureRequest;
+  }
+  if (kind === 'select-feature-option') {
+    exactKeys(
+      request,
+      ['kind', 'optionId', 'alreadySelected'],
+      'feature selection request',
+    );
+    stringAt(request, 'optionId', 'feature selection request');
+    stringArray(
+      request.alreadySelected,
+      'feature selection request.alreadySelected',
+    );
+    return request as unknown as BoundedProcedureRequest;
+  }
+  if (kind === 'feature-option-applicability') {
+    exactKeys(
+      request,
+      ['kind', 'optionId', 'context'],
+      'feature applicability request',
+    );
+    stringAt(request, 'optionId', 'feature applicability request');
+    objectAt(request.context, 'feature applicability context');
+    return request as unknown as BoundedProcedureRequest;
+  }
+  if (kind === 'create-spell-slot') {
+    exactKeys(
+      request,
+      ['kind', 'classLevel', 'currentPoints', 'slotLevel'],
+      'create spell slot request',
+    );
+    finiteInteger(request.classLevel, 'resource classLevel', 1);
+    finiteInteger(request.currentPoints, 'resource currentPoints', 0);
+    finiteInteger(request.slotLevel, 'resource slotLevel', 1, 9);
+    return request as unknown as BoundedProcedureRequest;
+  }
+  if (kind === 'convert-spell-slot') {
+    exactKeys(
+      request,
+      ['kind', 'classLevel', 'currentPoints', 'slotLevel', 'currentSlotCount'],
+      'convert spell slot request',
+    );
+    finiteInteger(request.classLevel, 'resource classLevel', 1);
+    finiteInteger(request.currentPoints, 'resource currentPoints', 0);
+    finiteInteger(request.slotLevel, 'resource slotLevel', 1, 9);
+    finiteInteger(request.currentSlotCount, 'resource currentSlotCount', 1);
+    return request as unknown as BoundedProcedureRequest;
+  }
+  if (kind === 'begin-wish-stress') {
+    exactKeys(
+      request,
+      ['kind', 'currentStrength', 'recoveryDaysRoll', 'percentileRoll'],
+      'begin wish stress request',
+    );
     finiteInteger(
-      context.handsUsed as number,
-      'feature applicability context.handsUsed',
-      1,
-      2,
+      request.currentStrength,
+      'wish currentStrength',
+      LIVE_STATE_MIN_ABILITY_SCORE,
+      LIVE_STATE_MAX_ABILITY_SCORE,
     );
+    finiteInteger(request.recoveryDaysRoll, 'wish recoveryDaysRoll', 2, 8);
+    finiteInteger(request.percentileRoll, 'wish percentileRoll', 1, 100);
+    return request as unknown as BoundedProcedureRequest;
   }
-  if (
-    context.weaponProperties !== undefined &&
-    (!Array.isArray(context.weaponProperties) ||
-      context.weaponProperties.some((value) => typeof value !== 'string'))
-  ) {
-    throw new BoundedProcedureError(
-      'feature applicability context.weaponProperties must be an array of strings',
+  if (kind === 'wish-stress-spell') {
+    exactKeys(request, ['kind', 'spellLevel'], 'wish stress spell request');
+    finiteInteger(request.spellLevel, 'wish spellLevel', 0, 9);
+    return request as unknown as BoundedProcedureRequest;
+  }
+  if (kind === 'wish-stress-recovery-day') {
+    exactKeys(
+      request,
+      ['kind', 'remainingDays', 'activity'],
+      'wish stress recovery request',
     );
-  }
-  for (const key of [
-    'wearingArmor',
-    'noOtherWeapon',
-    'attackerVisibleToYou',
-    'protectedTargetIsYou',
-    'wieldingShield',
-    'reactionAvailable',
-    'twoWeaponFighting',
-  ] as const) {
-    if (context[key] !== undefined && typeof context[key] !== 'boolean') {
+    finiteInteger(request.remainingDays, 'wish remainingDays', 0);
+    if (request.activity !== 'light' && request.activity !== 'strenuous') {
       throw new BoundedProcedureError(
-        `feature applicability context.${key} must be boolean`,
+        'wish activity must be light or strenuous',
       );
     }
+    return request as unknown as BoundedProcedureRequest;
   }
-  if (context.protectedTargetDistanceFromYouFeet !== undefined) {
-    const distance = context.protectedTargetDistanceFromYouFeet;
-    if (
-      typeof distance !== 'number' ||
-      !Number.isFinite(distance) ||
-      distance < 0
-    ) {
-      throw new BoundedProcedureError(
-        'feature applicability context.protectedTargetDistanceFromYouFeet must be finite and non-negative',
-      );
-    }
-  }
-  return context as FeatureOptionApplicabilityContext;
+  throw new BoundedProcedureError(
+    `unsupported bounded procedure request kind ${JSON.stringify(kind)}`,
+  );
 }
 
 function featureOptionApplies(
   effect: FeatureOptionEffect,
   rawContext: unknown,
 ): boolean {
-  const context = featureApplicabilityContext(rawContext);
+  const context = objectAt(rawContext, 'feature applicability context');
   if (effect.kind === 'attack-roll-bonus') {
+    exactKeys(context, ['weaponRange'], 'feature applicability context');
+    if (context.weaponRange !== 'melee' && context.weaponRange !== 'ranged') {
+      throw new BoundedProcedureError(
+        'feature applicability context.weaponRange must be melee or ranged',
+      );
+    }
     return context.weaponRange === effect.weaponRange;
   }
   if (effect.kind === 'armor-class-bonus') {
-    return effect.whileWearingArmor && context.wearingArmor === true;
+    exactKeys(context, ['wearingArmor'], 'feature applicability context');
+    return (
+      effect.whileWearingArmor &&
+      booleanAt(context, 'wearingArmor', 'feature applicability context')
+    );
   }
   if (effect.kind === 'damage-roll-bonus') {
+    exactKeys(
+      context,
+      ['weaponRange', 'handsUsed', 'noOtherWeapon'],
+      'feature applicability context',
+    );
+    if (context.weaponRange !== 'melee' && context.weaponRange !== 'ranged') {
+      throw new BoundedProcedureError(
+        'feature applicability context.weaponRange must be melee or ranged',
+      );
+    }
+    finiteInteger(
+      context.handsUsed,
+      'feature applicability context.handsUsed',
+      1,
+      2,
+    );
+    const noOtherWeapon = booleanAt(
+      context,
+      'noOtherWeapon',
+      'feature applicability context',
+    );
     return (
       context.weaponRange === effect.weaponRange &&
       context.handsUsed === effect.weaponHands &&
       effect.noOtherWeapon &&
-      context.noOtherWeapon === true
+      noOtherWeapon
     );
   }
   if (effect.kind === 'damage-die-reroll') {
-    const weaponProperties = context.weaponProperties ?? [];
+    exactKeys(
+      context,
+      ['weaponRange', 'handsUsed', 'weaponProperties'],
+      'feature applicability context',
+    );
+    if (context.weaponRange !== 'melee' && context.weaponRange !== 'ranged') {
+      throw new BoundedProcedureError(
+        'feature applicability context.weaponRange must be melee or ranged',
+      );
+    }
+    finiteInteger(
+      context.handsUsed,
+      'feature applicability context.handsUsed',
+      1,
+      2,
+    );
+    const weaponProperties = stringArray(
+      context.weaponProperties,
+      'feature applicability context.weaponProperties',
+    );
     return (
       context.weaponRange === effect.weaponRange &&
       context.handsUsed === effect.handsUsed &&
@@ -1088,21 +1246,64 @@ function featureOptionApplies(
     );
   }
   if (effect.kind === 'reaction-attack-disadvantage') {
+    exactKeys(
+      context,
+      [
+        'attackerVisibleToYou',
+        'protectedTargetIsYou',
+        'protectedTargetDistanceFromYouFeet',
+        'wieldingShield',
+        'reactionAvailable',
+      ],
+      'feature applicability context',
+    );
+    const attackerVisibleToYou = booleanAt(
+      context,
+      'attackerVisibleToYou',
+      'feature applicability context',
+    );
+    const protectedTargetIsYou = booleanAt(
+      context,
+      'protectedTargetIsYou',
+      'feature applicability context',
+    );
+    const wieldingShield = booleanAt(
+      context,
+      'wieldingShield',
+      'feature applicability context',
+    );
+    const reactionAvailable = booleanAt(
+      context,
+      'reactionAvailable',
+      'feature applicability context',
+    );
     const distance = context.protectedTargetDistanceFromYouFeet;
+    if (
+      typeof distance !== 'number' ||
+      !Number.isFinite(distance) ||
+      distance < 0
+    ) {
+      throw new BoundedProcedureError(
+        'feature applicability context.protectedTargetDistanceFromYouFeet must be finite and non-negative',
+      );
+    }
     return (
       effect.actionCost === 'reaction' &&
-      context.reactionAvailable === true &&
+      reactionAvailable &&
       effect.attacker.mustBeVisibleToYou &&
-      context.attackerVisibleToYou === true &&
+      attackerVisibleToYou &&
       effect.protectedTarget.mustBeOtherThanYou &&
-      context.protectedTargetIsYou === false &&
-      distance !== undefined &&
+      !protectedTargetIsYou &&
       distance <= effect.protectedTarget.maximumDistanceFromYouFeet &&
       effect.requiresShield &&
-      context.wieldingShield === true
+      wieldingShield
     );
   }
-  return effect.addAbilityModifier && context.twoWeaponFighting === true;
+  exactKeys(context, ['twoWeaponFighting'], 'feature applicability context');
+  return (
+    effect.addAbilityModifier &&
+    booleanAt(context, 'twoWeaponFighting', 'feature applicability context')
+  );
 }
 
 /**
@@ -1112,32 +1313,20 @@ function featureOptionApplies(
  */
 export function executeBoundedProcedure(
   data: unknown,
-  request: BoundedProcedureRequest,
+  rawRequest: unknown,
 ): BoundedProcedureResult {
+  const request = validateBoundedProcedureRequest(rawRequest);
   if (request.kind === 'hazard-save') {
     const procedure = procedureOfKind(data, 'repeat-save-hazard');
-    finiteInteger(request.rollTotal, 'hazard rollTotal', 0);
-    const priorSuccessfulSaves = finiteInteger(
-      request.priorSuccessfulSaves ?? 0,
-      'hazard priorSuccessfulSaves',
-      0,
-      procedure.termination.count - 1,
-    );
-    if (request.phase === 'initial' && priorSuccessfulSaves !== 0) {
-      throw new BoundedProcedureError(
-        'initial hazard save cannot have prior successful saves',
-      );
-    }
-    if (request.phase === 'initial' && request.repeatActive !== undefined) {
-      throw new BoundedProcedureError(
-        'initial hazard save cannot carry repeat lifecycle state',
-      );
-    }
-    if (request.phase === 'repeat' && request.repeatActive !== true) {
-      throw new BoundedProcedureError(
-        'repeat hazard save requires an active repeat lifecycle',
-      );
-    }
+    const priorSuccessfulSaves =
+      request.phase === 'initial'
+        ? 0
+        : finiteInteger(
+            request.priorSuccessfulSaves,
+            'hazard priorSuccessfulSaves',
+            0,
+            procedure.termination.count - 1,
+          );
     const branch =
       request.phase === 'initial' ? procedure.initial : procedure.repeat;
     const succeeded = request.rollTotal >= branch.save.dc;
@@ -1181,13 +1370,28 @@ export function executeBoundedProcedure(
   }
   if (request.kind === 'select-feature-option') {
     const procedure = procedureOfKind(data, 'feature-options');
-    readFeatureChoiceBinding(data, procedure);
+    const choice = readFeatureChoiceBinding(data, procedure);
+    const procedureOptionIds = new Set(
+      procedure.options.map((option) => option.id),
+    );
+    for (const selectedOptionId of request.alreadySelected) {
+      if (!procedureOptionIds.has(selectedOptionId)) {
+        throw new BoundedProcedureError(
+          `feature selection state contains unknown option ${JSON.stringify(selectedOptionId)}`,
+        );
+      }
+    }
     if (
       procedure.duplicateSelection === 'prohibited' &&
       request.alreadySelected.includes(request.optionId)
     ) {
       throw new BoundedProcedureError(
         `feature option ${JSON.stringify(request.optionId)} is already selected`,
+      );
+    }
+    if (request.alreadySelected.length >= choice.choose) {
+      throw new BoundedProcedureError(
+        `feature choice ${JSON.stringify(choice.choiceId)} is already fulfilled`,
       );
     }
     const options = procedure.options.filter(
@@ -1226,9 +1430,6 @@ export function executeBoundedProcedure(
     request.kind === 'convert-spell-slot'
   ) {
     const procedure = procedureOfKind(data, 'resource-conversion');
-    finiteInteger(request.classLevel, 'resource classLevel', 1, 20);
-    finiteInteger(request.currentPoints, 'resource currentPoints', 0);
-    finiteInteger(request.slotLevel, 'resource slotLevel', 1, 9);
     const maximum = procedure.pool.maximumByLevel.find(
       (entry) => entry.level === request.classLevel,
     )?.maximum;
@@ -1270,7 +1471,6 @@ export function executeBoundedProcedure(
       };
     }
     const operation = procedure.operations.convertSpellSlot;
-    finiteInteger(request.currentSlotCount, 'resource currentSlotCount', 1);
     if (
       request.slotLevel < 1 ||
       request.currentPoints + request.slotLevel > maximum
@@ -1289,9 +1489,6 @@ export function executeBoundedProcedure(
   }
   const procedure = procedureOfKind(data, 'adjudicated-stress');
   if (request.kind === 'begin-wish-stress') {
-    finiteInteger(request.currentStrength, 'wish currentStrength', 0, 30);
-    finiteInteger(request.recoveryDaysRoll, 'wish recoveryDaysRoll', 2, 8);
-    finiteInteger(request.percentileRoll, 'wish percentileRoll', 1, 100);
     return {
       kind: 'wish-stress-started',
       strength: Math.min(
@@ -1304,7 +1501,6 @@ export function executeBoundedProcedure(
     };
   }
   if (request.kind === 'wish-stress-spell') {
-    finiteInteger(request.spellLevel, 'wish spellLevel', 0, 9);
     const perLevel = procedure.stress.recurringDamage.dicePerSpellLevel;
     const dice = /^(\d+)d(\d+)$/.exec(perLevel);
     if (dice === null) {
@@ -1322,12 +1518,6 @@ export function executeBoundedProcedure(
     };
   }
   if (request.kind === 'wish-stress-recovery-day') {
-    finiteInteger(request.remainingDays, 'wish remainingDays', 0);
-    if (request.activity !== 'light' && request.activity !== 'strenuous') {
-      throw new BoundedProcedureError(
-        'wish activity must be light or strenuous',
-      );
-    }
     const reduction =
       request.activity === 'light'
         ? procedure.stress.recovery.restDayReduction

@@ -8,8 +8,11 @@ import type {
   RulesRecord,
 } from '../src/internal.js';
 import {
+  abilityModifier,
   BoundedProcedureError,
+  createSeededRng,
   executeBoundedProcedure,
+  resolveD20,
   validateRulesPack,
 } from '../src/internal.js';
 
@@ -65,6 +68,7 @@ describe('bounded provider-neutral procedure execution', () => {
         kind: 'hazard-save',
         phase: 'repeat',
         rollTotal: 12,
+        priorSuccessfulSaves: 0,
         repeatActive: true,
       }),
     ).toEqual({
@@ -98,8 +102,9 @@ describe('bounded provider-neutral procedure execution', () => {
         kind: 'hazard-save',
         phase: 'repeat',
         rollTotal: 13,
+        priorSuccessfulSaves: 0,
         repeatActive: false,
-      } as unknown as BoundedProcedureRequest),
+      }),
     ).toThrow(BoundedProcedureError);
     expect(() =>
       executeBoundedProcedure(data('hazard:burnt-othur-fumes'), {
@@ -107,7 +112,60 @@ describe('bounded provider-neutral procedure execution', () => {
         phase: 'initial',
         rollTotal: 13,
         repeatActive: true,
-      } as unknown as BoundedProcedureRequest),
+      }),
+    ).toThrow(BoundedProcedureError);
+  });
+
+  it('accepts a negative canonical d20 total without treating it as malformed', () => {
+    let resolved = resolveD20(
+      {
+        kind: 'saving_throw',
+        modifiers: [{ label: 'Strength 1', value: abilityModifier(1) }],
+      },
+      createSeededRng(0),
+    );
+    for (let seed = 1; resolved.total >= 0 && seed < 10_000; seed += 1) {
+      resolved = resolveD20(
+        {
+          kind: 'saving_throw',
+          modifiers: [{ label: 'Strength 1', value: abilityModifier(1) }],
+        },
+        createSeededRng(seed),
+      );
+    }
+    expect(resolved.total).toBeLessThan(0);
+    expect(
+      executeBoundedProcedure(data('hazard:burnt-othur-fumes'), {
+        kind: 'hazard-save',
+        phase: 'repeat',
+        rollTotal: resolved.total,
+        priorSuccessfulSaves: 1,
+        repeatActive: true,
+      }),
+    ).toMatchObject({
+      succeeded: false,
+      successfulSaves: 1,
+      repeatActive: true,
+    });
+  });
+
+  it('requires explicit repeat progress and forbids it on the initial transition', () => {
+    const hazard = data('hazard:burnt-othur-fumes');
+    expect(() =>
+      executeBoundedProcedure(hazard, {
+        kind: 'hazard-save',
+        phase: 'repeat',
+        rollTotal: 13,
+        repeatActive: true,
+      }),
+    ).toThrow(BoundedProcedureError);
+    expect(() =>
+      executeBoundedProcedure(hazard, {
+        kind: 'hazard-save',
+        phase: 'initial',
+        rollTotal: 13,
+        priorSuccessfulSaves: 0,
+      }),
     ).toThrow(BoundedProcedureError);
   });
 
@@ -155,6 +213,30 @@ describe('bounded provider-neutral procedure execution', () => {
         kind: 'select-feature-option',
         optionId: 'fighting-style:archery',
         alreadySelected: ['fighting-style:archery'],
+      }),
+    ).toThrow(BoundedProcedureError);
+    expect(() =>
+      executeBoundedProcedure(fightingStyle, {
+        kind: 'select-feature-option',
+        optionId: 'fighting-style:archery',
+        alreadySelected: ['fighting-style:defense'],
+      }),
+    ).toThrow(BoundedProcedureError);
+  });
+
+  it.each([
+    null,
+    'fighting-style:archery',
+    [42],
+    [''],
+    ['fighting-style:defense', 'fighting-style:defense'],
+    ['fighting-style:stale-option'],
+  ])('rejects malformed or stale authoritative selection state %#', (state) => {
+    expect(() =>
+      executeBoundedProcedure(data('feature:fighter:fighting-style'), {
+        kind: 'select-feature-option',
+        optionId: 'fighting-style:archery',
+        alreadySelected: state,
       }),
     ).toThrow(BoundedProcedureError);
   });
@@ -290,6 +372,184 @@ describe('bounded provider-neutral procedure execution', () => {
     },
   );
 
+  it.each([
+    ['fighting-style:archery', [{ weaponRange: 'melee' }]],
+    ['fighting-style:defense', [{ wearingArmor: false }]],
+    [
+      'fighting-style:dueling',
+      [
+        { weaponRange: 'ranged', handsUsed: 1, noOtherWeapon: true },
+        { weaponRange: 'melee', handsUsed: 2, noOtherWeapon: true },
+        { weaponRange: 'melee', handsUsed: 1, noOtherWeapon: false },
+      ],
+    ],
+    [
+      'fighting-style:great-weapon-fighting',
+      [
+        {
+          weaponRange: 'ranged',
+          handsUsed: 2,
+          weaponProperties: ['versatile'],
+        },
+        { weaponRange: 'melee', handsUsed: 1, weaponProperties: ['versatile'] },
+        { weaponRange: 'melee', handsUsed: 2, weaponProperties: [] },
+      ],
+    ],
+    [
+      'fighting-style:protection',
+      [
+        {
+          attackerVisibleToYou: false,
+          protectedTargetIsYou: false,
+          protectedTargetDistanceFromYouFeet: 5,
+          wieldingShield: true,
+          reactionAvailable: true,
+        },
+        {
+          attackerVisibleToYou: true,
+          protectedTargetIsYou: true,
+          protectedTargetDistanceFromYouFeet: 5,
+          wieldingShield: true,
+          reactionAvailable: true,
+        },
+        {
+          attackerVisibleToYou: true,
+          protectedTargetIsYou: false,
+          protectedTargetDistanceFromYouFeet: 5.5,
+          wieldingShield: true,
+          reactionAvailable: true,
+        },
+        {
+          attackerVisibleToYou: true,
+          protectedTargetIsYou: false,
+          protectedTargetDistanceFromYouFeet: 5,
+          wieldingShield: false,
+          reactionAvailable: true,
+        },
+        {
+          attackerVisibleToYou: true,
+          protectedTargetIsYou: false,
+          protectedTargetDistanceFromYouFeet: 5,
+          wieldingShield: true,
+          reactionAvailable: false,
+        },
+      ],
+    ],
+    ['fighting-style:two-weapon-fighting', [{ twoWeaponFighting: false }]],
+  ] satisfies readonly (readonly [
+    string,
+    readonly FeatureOptionApplicabilityContext[],
+  ])[])(
+    'distinguishes explicit non-qualifying facts for every %s operand',
+    (optionId, contexts) => {
+      for (const context of contexts) {
+        expect(
+          executeBoundedProcedure(data('feature:fighter:fighting-style'), {
+            kind: 'feature-option-applicability',
+            optionId,
+            context,
+          }),
+        ).toMatchObject({ applicable: false });
+      }
+    },
+  );
+
+  it.each([
+    ['fighting-style:archery', { weaponRange: 'ranged' }],
+    ['fighting-style:defense', { wearingArmor: true }],
+    [
+      'fighting-style:dueling',
+      { weaponRange: 'melee', handsUsed: 1, noOtherWeapon: true },
+    ],
+    [
+      'fighting-style:great-weapon-fighting',
+      {
+        weaponRange: 'melee',
+        handsUsed: 2,
+        weaponProperties: ['two-handed'],
+      },
+    ],
+    [
+      'fighting-style:protection',
+      {
+        attackerVisibleToYou: true,
+        protectedTargetIsYou: false,
+        protectedTargetDistanceFromYouFeet: 5,
+        wieldingShield: true,
+        reactionAvailable: true,
+      },
+    ],
+    ['fighting-style:two-weapon-fighting', { twoWeaponFighting: true }],
+  ] satisfies readonly (readonly [
+    string,
+    FeatureOptionApplicabilityContext,
+  ])[])('refuses unknown applicability facts for %s', (optionId, complete) => {
+    for (const key of Object.keys(complete)) {
+      const incomplete = { ...complete } as Record<string, unknown>;
+      Reflect.deleteProperty(incomplete, key);
+      expect(() =>
+        executeBoundedProcedure(data('feature:fighter:fighting-style'), {
+          kind: 'feature-option-applicability',
+          optionId,
+          context: incomplete,
+        }),
+      ).toThrow(BoundedProcedureError);
+      expect(() =>
+        executeBoundedProcedure(data('feature:fighter:fighting-style'), {
+          kind: 'feature-option-applicability',
+          optionId,
+          context: { ...complete, [key]: null },
+        }),
+      ).toThrow(BoundedProcedureError);
+    }
+  });
+
+  it.each([
+    ['fighting-style:archery', { weaponRange: 'thrown' }],
+    ['fighting-style:defense', { wearingArmor: 1 }],
+    [
+      'fighting-style:dueling',
+      { weaponRange: 'melee', handsUsed: 1.5, noOtherWeapon: true },
+    ],
+    [
+      'fighting-style:great-weapon-fighting',
+      {
+        weaponRange: 'melee',
+        handsUsed: 2,
+        weaponProperties: ['versatile', 'versatile'],
+      },
+    ],
+    [
+      'fighting-style:protection',
+      {
+        attackerVisibleToYou: true,
+        protectedTargetIsYou: false,
+        protectedTargetDistanceFromYouFeet: Number.NaN,
+        wieldingShield: true,
+        reactionAvailable: true,
+      },
+    ],
+    ['fighting-style:two-weapon-fighting', { twoWeaponFighting: 'yes' }],
+  ])('rejects malformed applicability facts for %s', (optionId, context) => {
+    expect(() =>
+      executeBoundedProcedure(data('feature:fighter:fighting-style'), {
+        kind: 'feature-option-applicability',
+        optionId,
+        context,
+      }),
+    ).toThrow(BoundedProcedureError);
+  });
+
+  it('rejects applicability facts unrelated to the selected effect', () => {
+    expect(() =>
+      executeBoundedProcedure(data('feature:fighter:fighting-style'), {
+        kind: 'feature-option-applicability',
+        optionId: 'fighting-style:archery',
+        context: { weaponRange: 'ranged', wearingArmor: true },
+      }),
+    ).toThrow(BoundedProcedureError);
+  });
+
   it('executes both Font of Magic conversions from source-derived tables', () => {
     const font = data('feature:sorcerer:font-of-magic');
     expect(
@@ -369,11 +629,195 @@ describe('bounded provider-neutral procedure execution', () => {
 
   it.each([
     [
+      'hazard initial',
+      'hazard:burnt-othur-fumes',
+      { kind: 'hazard-save', phase: 'initial', rollTotal: 12 },
+    ],
+    [
+      'hazard repeat',
+      'hazard:burnt-othur-fumes',
+      {
+        kind: 'hazard-save',
+        phase: 'repeat',
+        rollTotal: 12,
+        priorSuccessfulSaves: 0,
+        repeatActive: true,
+      },
+    ],
+    [
+      'weapon damage',
+      'equipment:longsword',
+      { kind: 'weapon-damage', handsUsed: 1 },
+    ],
+    [
+      'feature selection',
+      'feature:fighter:fighting-style',
+      {
+        kind: 'select-feature-option',
+        optionId: 'fighting-style:archery',
+        alreadySelected: [],
+      },
+    ],
+    [
+      'feature applicability',
+      'feature:fighter:fighting-style',
+      {
+        kind: 'feature-option-applicability',
+        optionId: 'fighting-style:archery',
+        context: { weaponRange: 'ranged' },
+      },
+    ],
+    [
+      'slot creation',
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 5,
+        currentPoints: 5,
+        slotLevel: 3,
+      },
+    ],
+    [
+      'slot conversion',
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'convert-spell-slot',
+        classLevel: 5,
+        currentPoints: 2,
+        slotLevel: 3,
+        currentSlotCount: 1,
+      },
+    ],
+    [
+      'wish stress entry',
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: 10,
+        recoveryDaysRoll: 4,
+        percentileRoll: 50,
+      },
+    ],
+    [
+      'wish stress spell',
+      'spell:wish',
+      { kind: 'wish-stress-spell', spellLevel: 1 },
+    ],
+    [
+      'wish recovery',
+      'spell:wish',
+      {
+        kind: 'wish-stress-recovery-day',
+        remainingDays: 2,
+        activity: 'light',
+      },
+    ],
+  ] as const)(
+    'enforces every required and forbidden top-level field for %s requests',
+    (_name, recordKey, admittedRequest) => {
+      expect(() =>
+        executeBoundedProcedure(data(recordKey), admittedRequest),
+      ).not.toThrow();
+      for (const key of Object.keys(admittedRequest)) {
+        const missing = { ...admittedRequest } as Record<string, unknown>;
+        Reflect.deleteProperty(missing, key);
+        expect(() => executeBoundedProcedure(data(recordKey), missing)).toThrow(
+          BoundedProcedureError,
+        );
+        const admittedValue =
+          admittedRequest[key as keyof typeof admittedRequest];
+        const malformedValue =
+          typeof admittedValue === 'number'
+            ? Number.NaN
+            : typeof admittedValue === 'boolean'
+              ? !admittedValue
+              : null;
+        expect(() =>
+          executeBoundedProcedure(data(recordKey), {
+            ...admittedRequest,
+            [key]: malformedValue,
+          }),
+        ).toThrow(BoundedProcedureError);
+      }
+      expect(() =>
+        executeBoundedProcedure(data(recordKey), {
+          ...admittedRequest,
+          crossVariantState: 0,
+        }),
+      ).toThrow(BoundedProcedureError);
+    },
+  );
+
+  it('accepts owner-defined lower and upper numeric boundaries', () => {
+    const font = data('feature:sorcerer:font-of-magic');
+    const wish = data('spell:wish');
+    expect(() =>
+      executeBoundedProcedure(font, {
+        kind: 'create-spell-slot',
+        classLevel: 2,
+        currentPoints: 2,
+        slotLevel: 1,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      executeBoundedProcedure(font, {
+        kind: 'create-spell-slot',
+        classLevel: 20,
+        currentPoints: 20,
+        slotLevel: 5,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      executeBoundedProcedure(font, {
+        kind: 'convert-spell-slot',
+        classLevel: 20,
+        currentPoints: 11,
+        slotLevel: 9,
+        currentSlotCount: 1,
+      }),
+    ).not.toThrow();
+    for (const currentStrength of [1, 30]) {
+      for (const recoveryDaysRoll of [2, 8]) {
+        for (const percentileRoll of [1, 100]) {
+          expect(() =>
+            executeBoundedProcedure(wish, {
+              kind: 'begin-wish-stress',
+              currentStrength,
+              recoveryDaysRoll,
+              percentileRoll,
+            }),
+          ).not.toThrow();
+        }
+      }
+    }
+    for (const spellLevel of [0, 9]) {
+      expect(() =>
+        executeBoundedProcedure(wish, {
+          kind: 'wish-stress-spell',
+          spellLevel,
+        }),
+      ).not.toThrow();
+    }
+    expect(() =>
+      executeBoundedProcedure(wish, {
+        kind: 'wish-stress-recovery-day',
+        remainingDays: 0,
+        activity: 'strenuous',
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ['equipment:longsword', { kind: 'weapon-damage', handsUsed: 0 }],
+    ['equipment:longsword', { kind: 'weapon-damage', handsUsed: 1.5 }],
+    ['equipment:longsword', { kind: 'weapon-damage', handsUsed: 3 }],
+    [
       'hazard:burnt-othur-fumes',
       {
         kind: 'hazard-save',
         phase: 'repeat',
         rollTotal: Number.NaN,
+        priorSuccessfulSaves: 0,
         repeatActive: true,
       },
     ],
@@ -382,7 +826,18 @@ describe('bounded provider-neutral procedure execution', () => {
       {
         kind: 'hazard-save',
         phase: 'repeat',
-        rollTotal: -1,
+        rollTotal: 12.5,
+        priorSuccessfulSaves: 0,
+        repeatActive: true,
+      },
+    ],
+    [
+      'hazard:burnt-othur-fumes',
+      {
+        kind: 'hazard-save',
+        phase: 'repeat',
+        rollTotal: 13,
+        priorSuccessfulSaves: -1,
         repeatActive: true,
       },
     ],
@@ -403,7 +858,7 @@ describe('bounded provider-neutral procedure execution', () => {
         phase: 'initial',
         rollTotal: 13,
         priorSuccessfulSaves: 1,
-      } as unknown as BoundedProcedureRequest,
+      },
     ],
     [
       'feature:sorcerer:font-of-magic',
@@ -462,12 +917,112 @@ describe('bounded provider-neutral procedure execution', () => {
       },
     ],
     [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 1,
+        currentPoints: 0,
+        slotLevel: 1,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 21,
+        currentPoints: 2,
+        slotLevel: 1,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 5,
+        currentPoints: -1,
+        slotLevel: 1,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'create-spell-slot',
+        classLevel: 5,
+        currentPoints: 5,
+        slotLevel: 0,
+      },
+    ],
+    [
+      'feature:sorcerer:font-of-magic',
+      {
+        kind: 'convert-spell-slot',
+        classLevel: 20,
+        currentPoints: 0,
+        slotLevel: 10,
+        currentSlotCount: 1,
+      },
+    ],
+    [
       'spell:wish',
       {
         kind: 'begin-wish-stress',
         currentStrength: Number.NaN,
         recoveryDaysRoll: 4,
         percentileRoll: 50,
+      },
+    ],
+    [
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: 0,
+        recoveryDaysRoll: 4,
+        percentileRoll: 50,
+      },
+    ],
+    [
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: 31,
+        recoveryDaysRoll: 4,
+        percentileRoll: 50,
+      },
+    ],
+    [
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: 10,
+        recoveryDaysRoll: 1,
+        percentileRoll: 50,
+      },
+    ],
+    [
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: 10,
+        recoveryDaysRoll: 9,
+        percentileRoll: 50,
+      },
+    ],
+    [
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: 10,
+        recoveryDaysRoll: 4,
+        percentileRoll: 0,
+      },
+    ],
+    [
+      'spell:wish',
+      {
+        kind: 'begin-wish-stress',
+        currentStrength: 10,
+        recoveryDaysRoll: 4,
+        percentileRoll: 101,
       },
     ],
     [
@@ -488,6 +1043,7 @@ describe('bounded provider-neutral procedure execution', () => {
         percentileRoll: Number.NaN,
       },
     ],
+    ['spell:wish', { kind: 'wish-stress-spell', spellLevel: -1 }],
     ['spell:wish', { kind: 'wish-stress-spell', spellLevel: 9.5 }],
     ['spell:wish', { kind: 'wish-stress-spell', spellLevel: 10 }],
     [
@@ -498,7 +1054,15 @@ describe('bounded provider-neutral procedure execution', () => {
         activity: 'light',
       },
     ],
-  ] satisfies readonly (readonly [string, BoundedProcedureRequest])[])(
+    [
+      'spell:wish',
+      {
+        kind: 'wish-stress-recovery-day',
+        remainingDays: -1,
+        activity: 'light',
+      },
+    ],
+  ] satisfies readonly (readonly [string, unknown])[])(
     'rejects invalid numeric state for %s',
     (key, request) => {
       expect(() => executeBoundedProcedure(data(key), request)).toThrow(
@@ -537,6 +1101,7 @@ describe('bounded provider-neutral procedure execution', () => {
         kind: 'hazard-save',
         phase: 'repeat',
         rollTotal: 16,
+        priorSuccessfulSaves: 0,
         repeatActive: true,
       }),
     ).toEqual({
