@@ -13,6 +13,7 @@ import {
   createSeededRng,
   executeBoundedProcedure,
   resolveD20,
+  resolveDamage,
   validateRulesPack,
 } from '../src/internal.js';
 
@@ -197,7 +198,8 @@ describe('bounded provider-neutral procedure execution', () => {
       executeBoundedProcedure(fightingStyle, {
         kind: 'select-feature-option',
         optionId: 'fighting-style:archery',
-        alreadySelected: [],
+        historicalSelections: [],
+        currentChoiceSelections: [],
       }),
     ).toEqual({
       kind: 'feature-option-selected',
@@ -212,31 +214,59 @@ describe('bounded provider-neutral procedure execution', () => {
       executeBoundedProcedure(fightingStyle, {
         kind: 'select-feature-option',
         optionId: 'fighting-style:archery',
-        alreadySelected: ['fighting-style:archery'],
+        historicalSelections: ['fighting-style:archery'],
+        currentChoiceSelections: [],
       }),
     ).toThrow(BoundedProcedureError);
     expect(() =>
       executeBoundedProcedure(fightingStyle, {
         kind: 'select-feature-option',
         optionId: 'fighting-style:archery',
-        alreadySelected: ['fighting-style:defense'],
+        historicalSelections: ['fighting-style:defense'],
+        currentChoiceSelections: [],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      executeBoundedProcedure(fightingStyle, {
+        kind: 'select-feature-option',
+        optionId: 'fighting-style:archery',
+        historicalSelections: ['fighting-style:defense'],
+        currentChoiceSelections: ['fighting-style:dueling'],
       }),
     ).toThrow(BoundedProcedureError);
   });
 
-  it.each([
-    null,
-    'fighting-style:archery',
-    [42],
-    [''],
-    ['fighting-style:defense', 'fighting-style:defense'],
-    ['fighting-style:stale-option'],
-  ])('rejects malformed or stale authoritative selection state %#', (state) => {
+  it.each(['historicalSelections', 'currentChoiceSelections'] as const)(
+    'rejects malformed, duplicated, or stale %s state',
+    (stateField) => {
+      for (const state of [
+        null,
+        'fighting-style:archery',
+        [42],
+        [''],
+        ['fighting-style:defense', 'fighting-style:defense'],
+        ['fighting-style:stale-option'],
+      ]) {
+        expect(() =>
+          executeBoundedProcedure(data('feature:fighter:fighting-style'), {
+            kind: 'select-feature-option',
+            optionId: 'fighting-style:archery',
+            historicalSelections: [],
+            currentChoiceSelections: [],
+            [stateField]: state,
+          }),
+        ).toThrow(BoundedProcedureError);
+      }
+    },
+  );
+
+  it('rejects state duplicated across historical and current choice dimensions', () => {
     expect(() =>
       executeBoundedProcedure(data('feature:fighter:fighting-style'), {
         kind: 'select-feature-option',
         optionId: 'fighting-style:archery',
-        alreadySelected: state,
+        historicalSelections: ['fighting-style:defense'],
+        currentChoiceSelections: ['fighting-style:defense'],
       }),
     ).toThrow(BoundedProcedureError);
   });
@@ -263,7 +293,8 @@ describe('bounded provider-neutral procedure execution', () => {
         executeBoundedProcedure(fightingStyle, {
           kind: 'select-feature-option',
           optionId: 'fighting-style:archery',
-          alreadySelected: [],
+          historicalSelections: [],
+          currentChoiceSelections: [],
         }),
       ).toThrow(BoundedProcedureError);
     },
@@ -280,7 +311,8 @@ describe('bounded provider-neutral procedure execution', () => {
       executeBoundedProcedure(fightingStyle, {
         kind: 'select-feature-option',
         optionId: 'fighting-style:archery',
-        alreadySelected: [],
+        historicalSelections: [],
+        currentChoiceSelections: [],
       }),
     ).toMatchObject({ optionId: 'fighting-style:archery' });
   });
@@ -655,7 +687,8 @@ describe('bounded provider-neutral procedure execution', () => {
       {
         kind: 'select-feature-option',
         optionId: 'fighting-style:archery',
-        alreadySelected: [],
+        historicalSelections: [],
+        currentChoiceSelections: [],
       },
     ],
     [
@@ -790,13 +823,33 @@ describe('bounded provider-neutral procedure execution', () => {
         }
       }
     }
-    for (const spellLevel of [0, 9]) {
-      expect(() =>
-        executeBoundedProcedure(wish, {
-          kind: 'wish-stress-spell',
-          spellLevel,
-        }),
-      ).not.toThrow();
+    expect(
+      executeBoundedProcedure(wish, {
+        kind: 'wish-stress-spell',
+        spellLevel: 0,
+      }),
+    ).toEqual({
+      kind: 'wish-stress-no-damage',
+      spellLevel: 0,
+      damage: 0,
+    });
+    for (const spellLevel of Array.from(
+      { length: 9 },
+      (_, index) => index + 1,
+    )) {
+      const result = executeBoundedProcedure(wish, {
+        kind: 'wish-stress-spell',
+        spellLevel,
+      });
+      if (result.kind !== 'wish-stress-damage') {
+        throw new Error(`spell level ${spellLevel} did not produce damage`);
+      }
+      const resolved = resolveDamage(
+        { packets: [result.damage] },
+        createSeededRng(spellLevel),
+      );
+      expect(resolved.packets[0].declaredDice).toBe(`${spellLevel}d10`);
+      expect(resolved.packets[0].type).toBe('necrotic');
     }
     expect(() =>
       executeBoundedProcedure(wish, {
@@ -1125,7 +1178,8 @@ describe('bounded provider-neutral procedure execution', () => {
       {
         kind: 'select-feature-option',
         optionId: 'fighting-style:archery',
-        alreadySelected: [],
+        historicalSelections: [],
+        currentChoiceSelections: [],
       },
     ],
     [
@@ -1196,7 +1250,8 @@ describe('bounded provider-neutral procedure execution', () => {
       {
         kind: 'select-feature-option',
         optionId: 'fighting-style:archery',
-        alreadySelected: [],
+        historicalSelections: [],
+        currentChoiceSelections: [],
       },
     ],
     [

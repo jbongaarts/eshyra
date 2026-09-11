@@ -900,7 +900,10 @@ export type BoundedProcedureRequest =
   | {
       readonly kind: 'select-feature-option';
       readonly optionId: string;
-      readonly alreadySelected: readonly string[];
+      /** Option IDs selected in completed earlier occurrences of this choice. */
+      readonly historicalSelections: readonly string[];
+      /** Option IDs occupying this specific choice occurrence. */
+      readonly currentChoiceSelections: readonly string[];
     }
   | {
       readonly kind: 'feature-option-applicability';
@@ -969,8 +972,16 @@ export type BoundedProcedureResult =
     }
   | {
       readonly kind: 'wish-stress-damage';
-      readonly damage: DamageAtom;
+      readonly damage: {
+        readonly dice: string;
+        readonly type: 'necrotic';
+      };
       readonly preventable: false;
+    }
+  | {
+      readonly kind: 'wish-stress-no-damage';
+      readonly spellLevel: 0;
+      readonly damage: 0;
     }
   | { readonly kind: 'wish-stress-recovery'; readonly remainingDays: number };
 
@@ -1082,13 +1093,17 @@ function validateBoundedProcedureRequest(
   if (kind === 'select-feature-option') {
     exactKeys(
       request,
-      ['kind', 'optionId', 'alreadySelected'],
+      ['kind', 'optionId', 'historicalSelections', 'currentChoiceSelections'],
       'feature selection request',
     );
     stringAt(request, 'optionId', 'feature selection request');
     stringArray(
-      request.alreadySelected,
-      'feature selection request.alreadySelected',
+      request.historicalSelections,
+      'feature selection request.historicalSelections',
+    );
+    stringArray(
+      request.currentChoiceSelections,
+      'feature selection request.currentChoiceSelections',
     );
     return request as unknown as BoundedProcedureRequest;
   }
@@ -1374,22 +1389,33 @@ export function executeBoundedProcedure(
     const procedureOptionIds = new Set(
       procedure.options.map((option) => option.id),
     );
-    for (const selectedOptionId of request.alreadySelected) {
+    for (const selectedOptionId of [
+      ...request.historicalSelections,
+      ...request.currentChoiceSelections,
+    ]) {
       if (!procedureOptionIds.has(selectedOptionId)) {
         throw new BoundedProcedureError(
           `feature selection state contains unknown option ${JSON.stringify(selectedOptionId)}`,
         );
       }
     }
+    const duplicatedAcrossState = request.currentChoiceSelections.find(
+      (optionId) => request.historicalSelections.includes(optionId),
+    );
+    if (duplicatedAcrossState !== undefined) {
+      throw new BoundedProcedureError(
+        `feature selection state duplicates option ${JSON.stringify(duplicatedAcrossState)} across historical and current-choice state`,
+      );
+    }
     if (
       procedure.duplicateSelection === 'prohibited' &&
-      request.alreadySelected.includes(request.optionId)
+      request.historicalSelections.includes(request.optionId)
     ) {
       throw new BoundedProcedureError(
         `feature option ${JSON.stringify(request.optionId)} is already selected`,
       );
     }
-    if (request.alreadySelected.length >= choice.choose) {
+    if (request.currentChoiceSelections.length >= choice.choose) {
       throw new BoundedProcedureError(
         `feature choice ${JSON.stringify(choice.choiceId)} is already fulfilled`,
       );
@@ -1501,6 +1527,13 @@ export function executeBoundedProcedure(
     };
   }
   if (request.kind === 'wish-stress-spell') {
+    if (request.spellLevel === 0) {
+      return {
+        kind: 'wish-stress-no-damage',
+        spellLevel: 0,
+        damage: 0,
+      };
+    }
     const perLevel = procedure.stress.recurringDamage.dicePerSpellLevel;
     const dice = /^(\d+)d(\d+)$/.exec(perLevel);
     if (dice === null) {
