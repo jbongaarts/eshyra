@@ -965,6 +965,7 @@ export {
   campaignRulesEvidenceFrom,
   deriveTraceFields,
   extractClosedSceneIds,
+  isAcceptedStateMutation,
 } from './orchestrator/turnTraceProjection.js';
 export type { ResolveDoltOptions } from './persistence/checkpoint/doltBinary.js';
 export {

@@ -101,13 +101,27 @@ function candidateBlock(candidate: PacketCandidate): string {
       : [`- locator: ${candidate.provenance.locator}`]),
     `- source: ${candidate.provenance.source}`,
     '### License identity',
-    '### Source prose (verbatim; authoritative)',
   ];
-  emitStringLeaves(candidate.sourceProse, '', lines);
+  // The licence belongs to provenance, not to the record's prose. Emitting it
+  // after the source-prose heading put the licence text inside the block a
+  // reader is told is the authoritative source, and left this heading empty.
   emitStringLeaves(candidate.provenance.license, '/license', lines);
   emitNonStringLeaves(candidate.provenance.license, '/license', lines);
+  if (candidate.provenance.license === null) lines.push('- /license: null');
+  lines.push('### Source prose (verbatim; authoritative)');
+  emitStringLeaves(candidate.sourceProse, '', lines);
   lines.push('### Typed projection (does not replace the source prose above)');
   emitNonStringLeaves(candidate.sourceProse, '', lines);
+  // Design section 7.2 requires a partial projection's omissions to be
+  // disclosed IN BAND, beside the projection. These notes previously trailed
+  // the whole candidate block, several sections below the projection they
+  // qualify; a disclosure a reader meets after the capability contract is not
+  // beside the thing it qualifies.
+  for (const note of candidate.projectionLimits) {
+    lines.push(`### Projection limit (${note.kind})`);
+    lines.push(`- ${note.note}`);
+    lines.push(`- evidence: ${valueText(note.evidence)}`);
+  }
   lines.push('### Retrieval routes');
   routeLines(candidate.routes, lines);
   lines.push('### Traversed relationships');
@@ -122,7 +136,16 @@ function candidateBlock(candidate: PacketCandidate): string {
     lines.push(
       `- interpretations: ${ambiguity.interpretations.map((item) => item.id).join(', ') || 'none'}`,
     );
-    lines.push('- canonical resolution: absent');
+    // Read, never assumed. `canonicalResolution` is null throughout the pack
+    // today, but hardcoding "absent" would state as a fact about THIS record
+    // something the renderer never looked at, and would silently present a
+    // resolved ambiguity as unresolved if one ever carried a resolution.
+    lines.push(
+      ambiguity.canonicalResolution === null ||
+        ambiguity.canonicalResolution === undefined
+        ? '- canonical resolution: absent'
+        : `- canonical resolution: ${valueText(ambiguity.canonicalResolution)}`,
+    );
   }
   if (candidate.ambiguities.length === 0) lines.push('- none');
   lines.push('### Campaign rules and rulings');
@@ -146,16 +169,39 @@ function candidateBlock(candidate: PacketCandidate): string {
   )
     lines.push('- none');
   lines.push('### Deterministic capability');
-  if (candidate.capability === undefined) {
-    lines.push('- no capability was positively selected.');
+  // Three states, and only ONE of them is a positive selection.
+  //
+  // `available` and `blocked` are both real commitments a capability contract
+  // made over this subject: the contract selected the operation, and the
+  // second reports why it cannot run. `not-evaluated-offline` is neither — the
+  // phase declared a capability identity it never evaluated — and rendering it
+  // as a bounded contract was laundering an unevaluated declaration into an
+  // authority claim, which design sections 7.2 and 7.3 forbid. The negative
+  // form and its disclaimer therefore cover both "nothing selected" and
+  // "declared but never evaluated".
+  const capability = candidate.capability;
+  if (capability === undefined || capability.status === 'not-evaluated-offline')
     lines.push(
+      '- no capability was positively selected.',
       '- This is not a claim that the record has no mechanics, is irrelevant, or is safe to ignore.',
     );
-  } else {
-    const capability = candidate.capability;
+  if (capability !== undefined && capability.status === 'not-evaluated-offline')
+    lines.push(
+      `- a capability identity was DECLARED but not evaluated in this phase: capability=${capability.capabilityId}; revision=${capability.revision ?? 'not declared'}. A declaration is not a selection and grants nothing.`,
+      `- declared exclusions: ${capability.exclusions?.join('; ') || 'none'}`,
+    );
+  if (
+    capability !== undefined &&
+    capability.status !== 'not-evaluated-offline'
+  ) {
     lines.push(
       `- POSITIVE BOUNDED CONTRACT: operation=${capability.operationId ?? 'not declared'}; capability=${capability.capabilityId}; revision=${capability.revision ?? 'not declared'}; status=${capability.status}`,
     );
+    if (capability.status === 'blocked')
+      lines.push(
+        `- BLOCKED, and a blocked contract is not an executable capability: ${capability.message ?? 'no message recorded'}`,
+        `- blocking clauses: ${capability.blockingClauseIds?.join(', ') || 'none named'}`,
+      );
     lines.push(`- required inputs: ${capability.inputs?.join(', ') || 'none'}`);
     lines.push(
       `- explicit exclusions: ${capability.exclusions?.join('; ') || 'none'}`,
@@ -163,11 +209,6 @@ function candidateBlock(candidate: PacketCandidate): string {
     lines.push(
       `- residual DM interpretation: ${capability.residualInterpretation ?? 'not declared'}`,
     );
-  }
-  for (const note of candidate.projectionLimits) {
-    lines.push(`### Projection limit (${note.kind})`);
-    lines.push(`- ${note.note}`);
-    lines.push(`- evidence: ${valueText(note.evidence)}`);
   }
   return lines.join('\n');
 }

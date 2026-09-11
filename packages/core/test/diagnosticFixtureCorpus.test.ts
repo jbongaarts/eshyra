@@ -457,6 +457,71 @@ describe('ADR 0020 diagnostic fixture corpus', () => {
     noRuling.expectedRouteClasses[0]?.routes.push('campaign-ruling');
     expectInvalid(noRulingRoute);
 
+    /**
+     * Design section 11.2 (Amendment D): an effect expectation must be
+     * machine-comparable, so the CONTRACT rejects a prose-only one. M12
+     * carries no classification logic to make up the difference — that is the
+     * defect Amendment C already corrected once, for field 9.
+     */
+    const p8Execution = (mutated: DiagnosticFixture[]) => {
+      const execution = mutated.find((item) => item.probeId === 'P8')
+        ?.executions[0];
+      if (execution === undefined) throw new Error('P8 execution missing');
+      return execution as { expectedDeterministicStateEffect: unknown };
+    };
+    const effectExecution = (mutated: DiagnosticFixture[]) => {
+      const expected = p8Execution(mutated).expectedDeterministicStateEffect;
+      if (
+        typeof expected !== 'object' ||
+        expected === null ||
+        !('operations' in expected)
+      )
+        throw new Error('P8 deterministic state effect missing');
+      return expected as { operations: unknown };
+    };
+
+    // Rebuilt WITHOUT the key rather than set to `undefined`: the contract
+    // rejects an absent field, and an explicit `undefined` is a different
+    // shape that would not reproduce the case.
+    const proseOnlyEffect = fixture();
+    const execution = p8Execution(proseOnlyEffect);
+    execution.expectedDeterministicStateEffect = Object.fromEntries(
+      Object.entries(
+        effectExecution(proseOnlyEffect) as Record<string, unknown>,
+      ).filter(([key]) => key !== 'operations'),
+    );
+    expectInvalid(proseOnlyEffect);
+
+    const emptyOperations = fixture();
+    effectExecution(emptyOperations).operations = [];
+    expectInvalid(emptyOperations);
+
+    const unnamedOperation = fixture();
+    effectExecution(unnamedOperation).operations = [{ tool: '' }];
+    expectInvalid(unnamedOperation);
+
+    const nonObjectOperation = fixture();
+    effectExecution(nonObjectOperation).operations = ['use_item'];
+    expectInvalid(nonObjectOperation);
+
+    // `args` is optional: an operation that pins only the tool is valid, and
+    // requiring `args` would contradict the declared type.
+    const toolOnlyOperation = fixture();
+    effectExecution(toolOnlyOperation).operations = [{ tool: 'use_item' }];
+    expect(() => validateDiagnosticCorpus(toolOnlyOperation)).not.toThrow();
+
+    const nonObjectArgs = fixture();
+    effectExecution(nonObjectArgs).operations = [
+      { tool: 'use_item', args: 'instanceId=ammunition-stack-1' },
+    ];
+    expectInvalid(nonObjectArgs);
+
+    const unknownOperationKey = fixture();
+    effectExecution(unknownOperationKey).operations = [
+      { tool: 'use_item', statement: 'a prose field that does not belong' },
+    ];
+    expectInvalid(unknownOperationKey);
+
     const noRulingCase = fixture();
     const noRulingCases = noRulingCase[6]?.executions[0];
     if (noRulingCases === undefined) throw new Error('P7 execution missing');

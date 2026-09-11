@@ -818,6 +818,112 @@ describe('canonical admissibility', () => {
       });
   });
 
+  /**
+   * W10 (`eshyra-o9bd.19.12`): the accepted deterministic state effect is a
+   * canonical event, so the durable boundary admits it or rejects it — it is
+   * never softened into a value M12 declines to compare.
+   *
+   * The valid row above carries an EMPTY effect set, which is a real
+   * observation but would let every rejection below pass vacuously. Each case
+   * therefore installs a well-formed effect first and then breaks exactly one
+   * field of it.
+   */
+  describe('accepted state effects', () => {
+    const EFFECT = {
+      attempt: 1,
+      ordinal: 0,
+      tool: 'use_item',
+      args: { instanceId: 'cube-1', operationId: 'press-face-1' },
+    };
+
+    function withEffect(mutate: (effect: Row) => void = () => {}): Row {
+      const row = clone();
+      const effect = JSON.parse(JSON.stringify(EFFECT)) as Row;
+      mutate(effect);
+      (row.runtime as Row).stateEffects = [effect];
+      return row;
+    }
+
+    it('admits a well-formed effect', () => {
+      expect(() =>
+        readDiscoveryShadowEvidence(withEffect() as TraceJsonValue),
+      ).not.toThrow();
+    });
+
+    it('rejects a stateEffects field that is not an array', () => {
+      const row = clone();
+      (row.runtime as Row).stateEffects = { tool: 'use_item' };
+      rejects(row, 'runtime.stateEffects');
+    });
+
+    it('rejects an absent stateEffects field', () => {
+      rejects(withoutField('runtime.stateEffects'), 'runtime.stateEffects');
+    });
+
+    it('rejects an effect that is not an object', () => {
+      const row = clone();
+      (row.runtime as Row).stateEffects = ['use_item'];
+      rejects(row, 'runtime.stateEffects[0]');
+    });
+
+    for (const key of ['tool', 'attempt', 'ordinal', 'args'])
+      it(`rejects an effect missing ${key}`, () => {
+        rejects(
+          withEffect((effect) => {
+            delete effect[key];
+          }),
+          `runtime.stateEffects[0].${key}`,
+        );
+      });
+
+    it('rejects an empty tool name', () => {
+      rejects(
+        withEffect((effect) => {
+          effect.tool = '';
+        }),
+        'runtime.stateEffects[0].tool',
+      );
+    });
+
+    for (const attempt of [-1, 1.5])
+      it(`rejects an effect with attempt ${attempt}`, () => {
+        rejects(
+          withEffect((effect) => {
+            effect.attempt = attempt;
+          }),
+          'runtime.stateEffects[0].attempt',
+        );
+      });
+
+    for (const ordinal of [-1, 0.5])
+      it(`rejects an effect with ordinal ${ordinal}`, () => {
+        rejects(
+          withEffect((effect) => {
+            effect.ordinal = ordinal;
+          }),
+          'runtime.stateEffects[0].ordinal',
+        );
+      });
+
+    it('rejects non-object args', () => {
+      rejects(
+        withEffect((effect) => {
+          effect.args = 'instanceId=cube-1';
+        }),
+        'runtime.stateEffects[0].args',
+      );
+    });
+
+    it('rejects an unknown key on an effect', () => {
+      rejects(
+        withEffect((effect) => {
+          effect.narration = 'the arrow strikes home';
+        }),
+        'runtime.stateEffects[0].narration',
+      );
+    });
+  });
+
   describe('scenario and non-claim', () => {
     it('rejects a fabricated non-claim', () => {
       const row = clone();
