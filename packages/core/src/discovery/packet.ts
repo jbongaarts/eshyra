@@ -17,6 +17,7 @@ import type {
   PacketCandidate,
   PacketTrace,
   ProjectionLimitNote,
+  RecordDataResidue,
   RetentionOverflow,
   RetentionTrace,
 } from './types.js';
@@ -51,6 +52,202 @@ function ambiguities(candidate: DiscoveryCandidate): readonly RulesAmbiguity[] {
       typeof item === 'object' && item !== null && !Array.isArray(item),
   );
 }
+
+/**
+ * W10's stated source/projection boundary (PR #543 review finding F2).
+ *
+ * The reviewer verified two things that force this design: `RulesRecord.data`
+ * is typed `unknown` (`rules/types.ts`) with NO per-field provenance, so there
+ * is no existing boundary to read out of the data — this constant states one,
+ * for the first time, with its reasoning recorded here; and a field-name
+ * allow/deny list (naming `ability`, `dice`, `damageOnSuccess`, ...) is
+ * explicitly rejected as not being a provenance boundary either, because it
+ * grows forever and still says nothing about material the importer has not
+ * been taught to name yet.
+ *
+ * Instead: the rules-pack COMPILER already routes every derived value it
+ * computes — as opposed to transcribes — into one of a small, closed set of
+ * named containers. A key that matches one of these names, AT ANY DEPTH in a
+ * record body, makes everything beneath it a typed projection; everything
+ * else is source material the compiler extracted but did not interpret. This
+ * is positional, not top-level-only, because the compiler nests containers
+ * inside per-entry structures (`creature:adult-black-dragon`
+ * `data.actions[5].mechanics` sits beside that action's own `.text`) — a
+ * top-level-only rule would leave every nested container misclassified as
+ * source prose, which is the same defect this constant exists to fix.
+ *
+ * Verified against the real `dnd5e-srd-5.1` pack (`records.json`, 1812
+ * records) rather than taken on the spec's word:
+ *
+ * - `mechanics` — 2268 occurrences, both top-level (`spell`, `feat`, `feature`,
+ *   `condition`, `hazard`, `magic-item`, `action`, `stat-block`) and nested
+ *   three levels deep inside `creature` `actions`/`legendaryActions`/
+ *   `reactions` entries. The spec-named container this repair was written
+ *   against.
+ * - `upcast` — 92 occurrences, always top-level on `spell` records
+ *   (`data.upcast`, e.g. `fireball:higher-slot`). Spec-named.
+ * - `executionReadiness` — 240 occurrences, always top-level on `magic-item`
+ *   records (`derived-magic-item-clauses-v1` engine-hook clauses).
+ *   Spec-named.
+ * - `projection` — 22 occurrences, always top-level on `table` records
+ *   (`kindSchemas.ts`'s table-projection validators: `beastShapeOptions`,
+ *   `destroyUndead`, trade-goods and service-price rows, ...). NOT named by
+ *   the review; found during verification. Structurally identical to
+ *   `mechanics` — a `kind`-discriminated, importer-computed object — so
+ *   omitting it would leave every table's derived rows misclassified as
+ *   source prose, repeating the exact defect class this bead exists to fix.
+ *   Added.
+ * - `useProfile` — 35 occurrences, always top-level on `equipment` records
+ *   (consumption kind, clause ids, owner attribution, structured semantics;
+ *   `kindSchemas.ts` `validateEquipmentUseProfile`). Also not named by the
+ *   review; also found during verification; also structurally identical in
+ *   kind to `mechanics` (it even carries its own quoted source phrases, e.g.
+ *   `clauses[].sourcePhrase`, exactly as `mechanics.scaling.sourceText` does
+ *   — see the projection-quotes-source-text note below). Added.
+ *
+ * Nothing else in the corpus's 108 distinct top-level `data` keys carries this
+ * shape: fields such as `armorClass`, `hitPoints`, `abilityScores`, or
+ * `speed` are structured, but they are the compiler's direct transcription of
+ * a stat block header, not an interpretation that could omit rule nuance the
+ * way a save DC, a damage die, or a recharge clause can — W10's disclosure
+ * obligation (design section 7.2) is about the latter. If a future importer
+ * change adds a genuinely interpretive container under a different name, this
+ * comment — and this constant, and nothing else — is where it is declared.
+ *
+ * A container can quote the very source text it was derived from (e.g.
+ * `mechanics.scaling.sourceText`, `upcast.sourcePhrase`,
+ * `useProfile.clauses[].sourcePhrase`). That string stays classified as
+ * projection: it is the projection's own record of what it derived from, not
+ * an independent source citation, and the record body's top-level prose
+ * fields (`description`, `higherLevels`, `scalingSourceText`, ...) already
+ * carry the same text as genuine source material. Pulling the quoted copy
+ * back out case-by-case would be the first entry in the leaf-name list this
+ * design forbids.
+ */
+// A plain readonly array, not a module-scope `Set`: `discoveryOwnership.ts`
+// forbids discovery from holding a module-scope mutable container (it cannot
+// tell a rule/ruling CACHE apart from a fixed lookup literal by syntax alone,
+// so it bans the shape outright), and this constant is exactly the accepted
+// alternative its own test fixture demonstrates.
+const PROJECTION_CONTAINER_KEYS: readonly string[] = [
+  'mechanics',
+  'upcast',
+  'executionReadiness',
+  'projection',
+  'useProfile',
+];
+
+function isPlainObject(value: unknown): value is Obj {
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    return false;
+  const proto: unknown = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+/** What `splitRecordBody` calls a shape it declined to classify, so a residue
+ * entry says WHAT was unrepresentable rather than just WHERE. */
+function residueShape(value: unknown): string {
+  if (value === undefined) return 'undefined';
+  if (typeof value === 'function') return 'function';
+  if (typeof value === 'symbol') return 'symbol';
+  if (typeof value === 'bigint') return 'bigint';
+  const ctor = (value as { constructor?: { name?: string } })?.constructor;
+  return `non-plain-object:${ctor?.name ?? 'unknown'}`;
+}
+
+interface Split {
+  /** `undefined` means this value contributed nothing on this side. */
+  readonly source: unknown;
+  readonly projection: unknown;
+}
+
+/**
+ * Partition one record-body value into source material and typed projection
+ * along `PROJECTION_CONTAINER_KEYS`, recording anything it cannot classify as
+ * residue rather than guessing.
+ *
+ * `projecting` is the walk's only piece of state: once a key matches a
+ * container, every descendant inherits `projecting: true` and can never
+ * become source again, which is what makes
+ * `creature:adult-black-dragon`'s `data.actions[5].mechanics` fully projection
+ * while its sibling `.text` stays source, at the SAME recursion depth. Arrays
+ * stay index-aligned on both sides (an index with nothing on one side gets
+ * `null` there, never a shift) because a JSON pointer's array index is
+ * positional, and `sourceMaterial`/`projection` must stay independently
+ * addressable at the pointers callers already use (M9's `typedPath` facts,
+ * design section 7.1's `actions[i].text`).
+ */
+function splitRecordBody(
+  value: unknown,
+  pointer: string,
+  projecting: boolean,
+  residue: RecordDataResidue[],
+): Split {
+  if (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  )
+    return projecting
+      ? { source: undefined, projection: value }
+      : { source: value, projection: undefined };
+  if (Array.isArray(value)) {
+    const sourceItems: unknown[] = [];
+    const projectionItems: unknown[] = [];
+    let sourceContributed = false;
+    let projectionContributed = false;
+    value.forEach((item, index) => {
+      const child = splitRecordBody(
+        item,
+        `${pointer}/${index}`,
+        projecting,
+        residue,
+      );
+      sourceItems.push(child.source === undefined ? null : child.source);
+      projectionItems.push(
+        child.projection === undefined ? null : child.projection,
+      );
+      if (child.source !== undefined) sourceContributed = true;
+      if (child.projection !== undefined) projectionContributed = true;
+    });
+    return {
+      source: sourceContributed ? sourceItems : undefined,
+      projection: projectionContributed ? projectionItems : undefined,
+    };
+  }
+  if (isPlainObject(value)) {
+    const sourceOut: Obj = {};
+    const projectionOut: Obj = {};
+    for (const [key, child] of Object.entries(value)) {
+      const childProjecting =
+        projecting || PROJECTION_CONTAINER_KEYS.includes(key);
+      const result = splitRecordBody(
+        child,
+        `${pointer}/${key}`,
+        childProjecting,
+        residue,
+      );
+      if (result.source !== undefined) sourceOut[key] = result.source;
+      if (result.projection !== undefined)
+        projectionOut[key] = result.projection;
+    }
+    return {
+      source: Object.keys(sourceOut).length > 0 ? sourceOut : undefined,
+      projection:
+        Object.keys(projectionOut).length > 0 ? projectionOut : undefined,
+    };
+  }
+  // A shape plain JSON cannot represent (function, symbol, bigint, or a
+  // non-plain object such as a Date or Map). The real pack is parsed JSON and
+  // never produces one; this branch exists because `RulesRecord.data` is
+  // typed `unknown`, and a defect that silently assigned this to either side
+  // is exactly what the review forbids ("do not invent a third silent
+  // default").
+  residue.push({ pointer, shape: residueShape(value) });
+  return { source: undefined, projection: undefined };
+}
+
 /**
  * Every place a typed save projection lives, with the JSON pointer that
  * addresses it. Creature actions carry their own nested `mechanics`, so a
@@ -282,6 +479,30 @@ function capability(
     };
   }
 }
+/**
+ * Run the W10 source/projection split (`splitRecordBody`) over one candidate's
+ * record body and shape the result exactly like the pre-F2 `sourceProse` it
+ * replaces: always wrapped the same way (an adventure entity unwrapped, a pack
+ * record under `data`) and always present, even when a side is empty, so a
+ * caller's JSON pointer resolves the same root it always did.
+ */
+function splitBody(
+  body: Obj,
+  pointerPrefix: string,
+): {
+  readonly sourceMaterial: Obj;
+  readonly projection: Obj;
+  readonly residue: readonly RecordDataResidue[];
+} {
+  const residue: RecordDataResidue[] = [];
+  const result = splitRecordBody(body, pointerPrefix, false, residue);
+  return {
+    sourceMaterial: (result.source as Obj | undefined) ?? {},
+    projection: (result.projection as Obj | undefined) ?? {},
+    residue,
+  };
+}
+
 function packetCandidate(
   candidate: DiscoveryCandidate,
   declarations: readonly OfflineCapabilityDeclaration[],
@@ -294,6 +515,11 @@ function packetCandidate(
     const holder = candidate.adventureEntity ?? {};
     const entity = object(holder.entity) ?? {};
     const provenance = object(holder.provenance);
+    // Unwrapped, matching the entity's own shape: today's authored modules
+    // carry none of `PROJECTION_CONTAINER_KEYS`, so this is a no-op split, not
+    // dead code — a future authored container would be caught by the same
+    // rule a pack record is, rather than by a second, kind-specific one.
+    const split = splitBody(entity, '');
     return {
       identity: {
         key: candidate.candidateKey,
@@ -310,7 +536,9 @@ function packetCandidate(
         source: String(holder.moduleId ?? 'adventure-module'),
         license: holder.license ?? null,
       },
-      sourceProse: entity,
+      sourceMaterial: split.sourceMaterial,
+      projection: split.projection,
+      residue: split.residue,
       routes: candidate.routes,
       traversals: candidate.traversals,
       ambiguities: [],
@@ -320,6 +548,7 @@ function packetCandidate(
     };
   }
   const record = candidate.entry.record;
+  const split = splitBody(object(record.data) ?? {}, '/data');
   return {
     identity: { key: record.key, kind: record.kind, name: record.name },
     provenance: {
@@ -328,7 +557,9 @@ function packetCandidate(
       source: record.source,
       license: candidate.entry.license,
     },
-    sourceProse: { data: object(record.data) ?? {} },
+    sourceMaterial: { data: split.sourceMaterial },
+    projection: { data: split.projection },
+    residue: split.residue,
     routes: candidate.routes,
     traversals: candidate.traversals,
     ambiguities: ambiguities(candidate),

@@ -1277,7 +1277,19 @@ function checkTrace(value: unknown, path: string): void {
     asString(provenance.source, `${at}.provenance.source`);
     if (!('license' in provenance))
       failAt(`${at}.provenance.license`, 'is absent');
-    asObject(item_.sourceProse, `${at}.sourceProse`);
+    // F2 (PR #543 review): `sourceProse` was one field split by leaf TYPE at
+    // render time. `packetCandidate` now performs the real split at build
+    // time along a declared projection-container boundary (`packet.ts`), so
+    // the durable shape carries both halves plus whatever it could not place
+    // on either — the admission check follows the producer's shape rather
+    // than re-deriving it.
+    asObject(item_.sourceMaterial, `${at}.sourceMaterial`);
+    asObject(item_.projection, `${at}.projection`);
+    each(item_.residue, `${at}.residue`, (entry, where) => {
+      const residueEntry = asObject(entry, where);
+      asString(residueEntry.pointer, `${where}.pointer`);
+      asString(residueEntry.shape, `${where}.shape`);
+    });
     checkRoutes(item_.routes, `${at}.routes`);
     checkTraversals(item_.traversals, `${at}.traversals`);
     each(item_.ambiguities, `${at}.ambiguities`, checkAmbiguityIdentity);

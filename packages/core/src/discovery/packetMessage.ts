@@ -40,47 +40,37 @@ function valueText(value: unknown): string {
   }
 }
 
-function emitStringLeaves(value: unknown, path: string, lines: string[]): void {
-  if (typeof value === 'string') {
-    lines.push(`- ${path}: ${value}`);
-    return;
-  }
+/**
+ * Emit one line per leaf under `value`, at whatever JSON pointer reaches it.
+ *
+ * F2 (PR #543 review): this used to be two functions, one that emitted only
+ * STRING leaves and one that emitted only every OTHER leaf, and the caller ran
+ * both over the SAME object — the record body's primitive TYPE was standing in
+ * for a provenance boundary that was never actually drawn. `packet.ts` now
+ * performs the real split (`splitRecordBody`, by declared projection
+ * container) and hands this renderer two ALREADY-CLASSIFIED objects; this
+ * function's only job is to walk whichever one it is given and print every
+ * leaf inside it, string or not, because by the time it runs that heading
+ * question is already answered.
+ */
+function emitLeaves(value: unknown, path: string, lines: string[]): void {
   if (Array.isArray(value)) {
     value.forEach((item, index) => {
-      emitStringLeaves(item, `${path}/${index}`, lines);
+      emitLeaves(item, `${path}/${index}`, lines);
     });
     return;
   }
   if (value !== null && typeof value === 'object') {
-    Object.entries(value).forEach(([key, item]) => {
-      emitStringLeaves(item, `${path}/${key}`, lines);
-    });
-  }
-}
-
-function emitNonStringLeaves(
-  value: unknown,
-  path: string,
-  lines: string[],
-): void {
-  if (typeof value === 'string' || value === null || value === undefined)
-    return;
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => {
-      emitNonStringLeaves(item, `${path}/${index}`, lines);
-    });
-    return;
-  }
-  if (typeof value === 'object') {
     const entries = Object.entries(value);
-    if (entries.length === 0) lines.push(`- ${path}: {}`);
-    for (const [key, item] of entries) {
-      if (typeof item === 'string') continue;
-      if (item === null || item === undefined || typeof item !== 'object')
-        lines.push(`- ${path}/${key}: ${valueText(item)}`);
-      else emitNonStringLeaves(item, `${path}/${key}`, lines);
+    if (entries.length === 0) {
+      lines.push(`- ${path}: {}`);
+      return;
     }
+    for (const [key, item] of entries)
+      emitLeaves(item, `${path}/${key}`, lines);
+    return;
   }
+  lines.push(`- ${path}: ${valueText(value)}`);
 }
 
 function routeLines(routes: readonly DiscoveryRoute[], lines: string[]): void {
@@ -105,13 +95,26 @@ function candidateBlock(candidate: PacketCandidate): string {
   // The licence belongs to provenance, not to the record's prose. Emitting it
   // after the source-prose heading put the licence text inside the block a
   // reader is told is the authoritative source, and left this heading empty.
-  emitStringLeaves(candidate.provenance.license, '/license', lines);
-  emitNonStringLeaves(candidate.provenance.license, '/license', lines);
-  if (candidate.provenance.license === null) lines.push('- /license: null');
+  // Licence metadata is neither source prose nor an importer projection of
+  // the record's mechanics, so it gets the plain full-leaf walk, unsplit.
+  emitLeaves(candidate.provenance.license, '/license', lines);
   lines.push('### Source prose (verbatim; authoritative)');
-  emitStringLeaves(candidate.sourceProse, '', lines);
+  emitLeaves(candidate.sourceMaterial, '', lines);
   lines.push('### Typed projection (does not replace the source prose above)');
-  emitNonStringLeaves(candidate.sourceProse, '', lines);
+  emitLeaves(candidate.projection, '', lines);
+  if (candidate.residue.length > 0) {
+    // W10's boundary (`PROJECTION_CONTAINER_KEYS` in packet.ts) classifies
+    // every shape the real pack produces; this heading exists for the shape
+    // it defensively could not, so an unclassifiable value is disclosed
+    // instead of silently landing under either heading above. Placed
+    // immediately beside the two headings it is an exception to, not in a
+    // trailing appendix.
+    lines.push(
+      '### Unclassified record data (neither source prose nor typed projection)',
+    );
+    for (const item of candidate.residue)
+      lines.push(`- ${item.pointer}: ${item.shape}`);
+  }
   // Design section 7.2 requires a partial projection's omissions to be
   // disclosed IN BAND, beside the projection. These notes previously trailed
   // the whole candidate block, several sections below the projection they
