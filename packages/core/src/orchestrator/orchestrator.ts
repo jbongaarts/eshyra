@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { AdventureModule } from '../adventure/types.js';
 import { recordAmbiguityRuling } from '../campaign/ambiguityResolution.js';
 import { resolveCampaignPosition } from '../campaign/campaignPosition.js';
@@ -21,9 +21,14 @@ import type {
   ToolCallDisposition,
   TurnCandidateDispositionEvent,
 } from '../debug/sessionDebug.js';
-import type { ShadowItemInstanceBinding } from '../discovery/shadow.js';
+import type {
+  DiscoveryShadowCapture,
+  ShadowDelivery,
+  ShadowItemInstanceBinding,
+} from '../discovery/shadow.js';
 import {
   acceptedStateEffects,
+  captureDiscoveryIntervention,
   captureDiscoveryShadow,
   completeDiscoveryShadowEvidence,
   encodeDiscoveryShadowEvidence,
@@ -163,15 +168,31 @@ export interface RunTurnDeps {
    */
   characterChronicle?: CharacterChronicleStore;
   /**
-   * ADR 0020 Phase 2 shadow-mode discovery observation (`eshyra-o9bd.19.11`,
-   * design section 12.2). When true, discovery runs between `assembleContext`
-   * and `renderContextMessage` and its proposed packet is recorded on this
-   * turn's trace. The DM sees exactly what it sees with the flag off: nothing
-   * observed here is injected, and a shadow failure is recorded rather than
-   * raised. Off by default because the observation is an experiment, not part
-   * of play.
+   * ADR 0020 discovery mode (design sections 12.2 and 12.3): `off` (default),
+   * `shadow` (`eshyra-o9bd.19.11`), or `intervene` (`eshyra-o9bd.19.12`).
+   *
+   * A boolean plus an "also inject" flag would make `{shadow: false,
+   * intervene: true}` representable and meaningless, so this is a three-way
+   * union instead of two booleans — the states really are mutually exclusive:
+   *
+   * - `off` — discovery does not run at all.
+   * - `shadow` — discovery runs between `assembleContext` and
+   *   `renderContextMessage`, and its proposed packet is recorded on this
+   *   turn's trace. The DM sees exactly what it sees under `off`: nothing
+   *   observed here is injected, and a shadow failure is recorded rather than
+   *   raised.
+   * - `intervene` — the first mode in which the DM's input differs from
+   *   `off`. It observes and records exactly as `shadow` does, and
+   *   additionally appends the rendered packet to the DM's user message when
+   *   rendering succeeds. This is an experiment, not part of released play:
+   *   packet presence is never evidence the model used the material (design
+   *   section 12.3), and an intervention-capture failure injects nothing
+   *   rather than raising, exactly like a shadow failure.
+   *
+   * Off by default because both non-`off` modes are experiments, not part of
+   * play.
    */
-  recordDiscoveryShadow?: boolean;
+  discoveryMode?: 'off' | 'shadow' | 'intervene';
 }
 
 export interface RunTurnInput {
@@ -689,6 +710,13 @@ export async function runTurn(
 ): Promise<RunTurnResult> {
   const { db, model, registry } = deps;
   const maxToolRounds = input.maxToolRounds ?? DEFAULT_MAX_TOOL_ROUNDS;
+  // `shadow` and `intervene` both observe and record; only `intervene` also
+  // injects. Everywhere below that gates on "is discovery running at all"
+  // reads this rather than comparing against each mode by name, so a third
+  // observing-but-not-injecting mode (should one ever exist) would not have
+  // to be added to every one of those sites individually.
+  const discoveryMode = deps.discoveryMode ?? 'off';
+  const discoveryObserving = discoveryMode !== 'off';
   const toolCtx: ToolContext = {
     db,
     rng: createSeededRng(input.seed),
@@ -701,7 +729,7 @@ export async function runTurn(
     // Installed only when this turn is recording observations, so a turn that
     // is not observing has no observer at all. The hook cannot reach the tool's
     // own result; it only appends to the turn-owned buffer above.
-    ...(deps.recordDiscoveryShadow === true
+    ...(discoveryObserving
       ? {
           observeCapabilityInvocation: (
             observation: CapabilityInvocationObservation,
@@ -806,40 +834,115 @@ export async function runTurn(
       resolveRulesPack,
     });
 
-    // ADR 0020 Phase 2 seam (design section 12.2): discovery observes the turn
-    // here, AFTER assembleContext and BEFORE renderContextMessage, and records
-    // what it would have proposed. `assembled` is not touched, so
-    // `baseUserMessage` below is byte-identical with the flag on or off.
-    const shadowCapture =
-      deps.recordDiscoveryShadow === true
-        ? captureDiscoveryShadow({
+    // ADR 0020 Phase 2/3 seam (design sections 12.2 and 12.3): discovery
+    // observes the turn here, AFTER assembleContext and BEFORE
+    // renderContextMessage. `assembled` is never touched by any of this, so
+    // the rendered context below is byte-identical across every mode; only
+    // what gets APPENDED after it differs, and only under `intervene`.
+    const discoveryCaptureInput = discoveryObserving
+      ? {
+          db,
+          campaignPosition: canonicalPosition,
+          // The seam is bound by its owner to the same anchor the assembled
+          // context used, so shadow evidence and DM context can never be
+          // read at two different campaign positions.
+          campaignRuleSeam: createCampaignRuleReadSeam(
             db,
-            campaignPosition: canonicalPosition,
-            // The seam is bound by its owner to the same anchor the assembled
-            // context used, so shadow evidence and DM context can never be
-            // read at two different campaign positions.
-            campaignRuleSeam: createCampaignRuleReadSeam(
-              db,
-              input.campaignId,
-              canonicalPosition,
-            ),
-            capturedAt: input.at,
-            playerInput: input.playerInput,
-            actingCharacterId,
-            ...shadowScenarioFrom(assembled),
-            ...(resolveAdventureModule === undefined
-              ? {}
-              : { resolveAdventureModule }),
-            ...(resolveRulesPack === undefined ? {} : { resolveRulesPack }),
-            tools: registry,
-          })
-        : undefined;
+            input.campaignId,
+            canonicalPosition,
+          ),
+          capturedAt: input.at,
+          playerInput: input.playerInput,
+          actingCharacterId,
+          ...shadowScenarioFrom(assembled),
+          ...(resolveAdventureModule === undefined
+            ? {}
+            : { resolveAdventureModule }),
+          ...(resolveRulesPack === undefined ? {} : { resolveRulesPack }),
+          tools: registry,
+        }
+      : undefined;
+    // `capture` and `delivery` are set together, in one assignment, rather
+    // than as two separately-settable variables: they are read together below
+    // (`shadowCapture === undefined` gates whether ANY discovery evidence is
+    // recorded at all), and a shape that let one be set without the other
+    // would make "discovery ran but delivery is unknown" representable.
+    let discoveryEvidenceBasis:
+      | {
+          readonly capture: DiscoveryShadowCapture;
+          readonly delivery: ShadowDelivery;
+        }
+      | undefined;
+    // Set only under `intervene`, and only when discovery produced text to
+    // append. `baseUserMessage` reads this rather than re-deriving anything
+    // from the capture, so the message the model receives and the text
+    // `delivery` describes are read from the exact same render.
+    let renderedInterventionText: string | undefined;
+    if (discoveryMode === 'shadow' && discoveryCaptureInput !== undefined) {
+      discoveryEvidenceBasis = {
+        capture: captureDiscoveryShadow(discoveryCaptureInput),
+        delivery: { mode: 'observed', injected: false },
+      };
+    } else if (
+      discoveryMode === 'intervene' &&
+      discoveryCaptureInput !== undefined
+    ) {
+      const intervention = captureDiscoveryIntervention(discoveryCaptureInput);
+      if (intervention.rendered === undefined) {
+        // Total and failure-tolerant, exactly like shadow mode: the capture
+        // that failed to produce a render is the same capture recorded below,
+        // so its own failure message is `delivery`'s reason rather than a
+        // second, independently-worded account of the same event.
+        discoveryEvidenceBasis = {
+          capture: intervention.capture,
+          delivery: {
+            mode: 'intervened',
+            injected: false,
+            // The capture's own failure message, not a second account of the
+            // same event. `DiscoveryInterventionCapture` pairs an absent
+            // render with a failure-bearing capture, so there is no
+            // no-render-and-no-failure state left to invent a reason for —
+            // which matters, because the durable reader rejects exactly that
+            // row.
+            reason: intervention.capture.failure.message,
+          },
+        };
+      } else {
+        renderedInterventionText = intervention.rendered.text;
+        discoveryEvidenceBasis = {
+          capture: intervention.capture,
+          delivery: {
+            mode: 'intervened',
+            injected: true,
+            renderedBytes: intervention.rendered.bytes,
+            // Binds this record to the exact text appended to
+            // `baseUserMessage` below and recorded verbatim in
+            // `retrieved_context`, so a reader never has to trust that two
+            // independently written copies agree.
+            renderedSha256: createHash('sha256')
+              .update(intervention.rendered.text, 'utf8')
+              .digest('hex'),
+            candidateCount: intervention.rendered.candidateCount,
+            mustConsiderOverflow: intervention.rendered.mustConsiderOverflow,
+          },
+        };
+      }
+    }
 
     phase = 'model_loop';
     const system = buildSystemPrompt(registry, {
       toolProtocol: input.toolProtocol ?? 'native',
     });
-    const baseUserMessage = renderContextMessage(assembled);
+    const assembledMessage = renderContextMessage(assembled);
+    // Additive, never rewriting (design section 12.3): the assembled message
+    // is always an exact prefix, joined the same way `renderContextMessage`
+    // joins its own sections, so discovery can only ever add a further
+    // section — never edit, reorder, or filter what the context assembler
+    // produced.
+    const baseUserMessage =
+      renderedInterventionText === undefined
+        ? assembledMessage
+        : `${assembledMessage}\n\n${renderedInterventionText}`;
     const auditTrace = {
       campaignId: input.campaignId,
       sessionId: input.sessionId,
@@ -933,7 +1036,7 @@ export async function runTurn(
       }
 
       if (deps.auditor === undefined) {
-        if (deps.recordDiscoveryShadow === true)
+        if (discoveryObserving)
           shadowStateEffects = [
             ...acceptedStateEffects(
               candidate.toolCalls.filter(isAcceptedStateMutation),
@@ -1057,7 +1160,7 @@ export async function runTurn(
       });
 
       if (accepted) {
-        if (deps.recordDiscoveryShadow === true)
+        if (discoveryObserving)
           shadowStateEffects = [
             ...acceptedStateEffects(
               candidate.toolCalls.filter(isAcceptedStateMutation),
@@ -1160,7 +1263,11 @@ export async function runTurn(
       consentScope: input.consentScope ?? 'private',
       playerInput: input.playerInput,
       actingCharacterId,
-      retrievedContext: [renderContextMessage(assembled)],
+      // The message the model ACTUALLY received, not a fresh re-render of
+      // `assembled`: under `intervene` those differ by the appended packet,
+      // and recording the base message while the DM got the injected one
+      // would make the trace lie about the turn (design section 12.3).
+      retrievedContext: [baseUserMessage],
       promptProfile: input.promptProfile ?? 'default',
       modelOutput: narration,
       toolCalls: toolCalls.map(
@@ -1176,22 +1283,27 @@ export async function runTurn(
         }),
       ),
       ...traceFields,
-      ...(shadowCapture === undefined
+      ...(discoveryEvidenceBasis === undefined
         ? {}
         : {
             discoveryShadow: encodeDiscoveryShadowEvidence(
-              completeDiscoveryShadowEvidence(shadowCapture, {
-                capabilityInvocations: shadowCapabilityInvocations,
-                stateEffects: shadowStateEffects,
-                audit:
-                  deps.auditor === undefined || shadowAuditOutcome === undefined
-                    ? { auditor: 'absent' }
-                    : {
-                        auditor: 'present',
-                        retries: shadowAuditRetries,
-                        outcome: shadowAuditOutcome,
-                      },
-              }),
+              completeDiscoveryShadowEvidence(
+                discoveryEvidenceBasis.capture,
+                {
+                  capabilityInvocations: shadowCapabilityInvocations,
+                  stateEffects: shadowStateEffects,
+                  audit:
+                    deps.auditor === undefined ||
+                    shadowAuditOutcome === undefined
+                      ? { auditor: 'absent' }
+                      : {
+                          auditor: 'present',
+                          retries: shadowAuditRetries,
+                          outcome: shadowAuditOutcome,
+                        },
+                },
+                discoveryEvidenceBasis.delivery,
+              ),
             ),
           }),
       acceptedStateDelta: [

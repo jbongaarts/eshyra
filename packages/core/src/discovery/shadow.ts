@@ -14,11 +14,15 @@ import type {
 import { observeBlockerRepairs } from './blockerRepairs.js';
 import { runDiscoveryStages } from './harness.js';
 import type { RuntimeDiscoveryObservations } from './measurements.js';
+import type { RenderedContextPacket } from './packetMessage.js';
+import { renderContextPacketMessage } from './packetMessage.js';
 import type { ProjectedDiscoveryTrace } from './traceProjection.js';
 import { projectDiscoveryTrace } from './traceProjection.js';
 import type {
   CampaignRuleReadSeam,
   DiscoveryScenario,
+  DiscoveryTrace,
+  RetentionOverflow,
   RuntimeCapabilityInvocation,
   RuntimeStateEffect,
 } from './types.js';
@@ -70,8 +74,16 @@ export interface ShadowScenarioRecord {
 }
 
 export interface ShadowFailure {
-  /** Which part of the capture was running when it failed. */
-  readonly stage: 'scenario' | 'stack' | 'blockers' | 'discovery';
+  /**
+   * Which part of the capture was running when it failed. `render` exists
+   * only for {@link captureDiscoveryIntervention}: a capture that reached a
+   * live trace but could not turn it into DM-visible text is a capture
+   * failure, not a successful capture with nothing to show for it — the same
+   * "an observation point that can abort a turn is worse than none" reasoning
+   * that governs the other four stages applies to rendering too, once the
+   * packet is load-bearing.
+   */
+  readonly stage: 'scenario' | 'stack' | 'blockers' | 'discovery' | 'render';
   readonly message: string;
 }
 
@@ -93,15 +105,65 @@ export type DiscoveryShadowCapture = DiscoveryShadowCaptureBase &
     | { readonly trace?: undefined; readonly failure: ShadowFailure }
   );
 
+/**
+ * What actually reached the DM for this turn's discovery output, as one
+ * canonical lifecycle rather than a boolean plus optional fields.
+ *
+ * `mode` alone cannot answer "did the DM get this?": an `intervene`-mode
+ * request whose capture or render failed injects nothing, exactly like
+ * `shadow` mode's request never tries to. A `{injected: boolean}` field beside
+ * an independent `renderedSha256?` would let the two disagree — `injected:
+ * true` with no identity, or `injected: false` with one left over from a
+ * prior write path — so the identity fields live inside the `injected: true`
+ * arm itself, where an impossible pairing cannot be constructed.
+ *
+ * - `observed` — shadow mode. Never injects; this is W9's contract, unchanged.
+ * - `intervened` + `injected: true` — the rendered packet was appended to the
+ *   DM's user message. `renderedSha256` binds this record to the exact text
+ *   `turn_trace.retrieved_context` recorded for the turn, so a reader never
+ *   has to trust that two independently written copies agree — there is only
+ *   one copy, and this is its fingerprint.
+ * - `intervened` + `injected: false` — intervention was requested but the
+ *   capture or the render failed, so nothing reached the DM. `reason` carries
+ *   the capture's own failure message. This arm, not an optional field a
+ *   reader could forget to check, is why `ShadowDelivery` is a union: a reader
+ *   asking "was this injected?" is answered by `mode`+`injected` together, and
+ *   every other field it might want is only ever present on the arm where it
+ *   means something.
+ */
+export type ShadowDelivery =
+  | { readonly mode: 'observed'; readonly injected: false }
+  | {
+      readonly mode: 'intervened';
+      readonly injected: true;
+      readonly renderedBytes: number;
+      /**
+       * SHA-256 of the rendered packet text, binding this evidence to the
+       * message recorded in `turn_trace.retrieved_context`.
+       */
+      readonly renderedSha256: string;
+      readonly candidateCount: number;
+      readonly mustConsiderOverflow: readonly RetentionOverflow[];
+    }
+  | {
+      readonly mode: 'intervened';
+      readonly injected: false;
+      readonly reason: string;
+    };
+
 export type DiscoveryShadowEvidence = DiscoveryShadowCapture & {
   readonly schema: typeof DISCOVERY_SHADOW_SCHEMA;
   readonly runtime: RuntimeDiscoveryObservations;
   /**
-   * Design section 12.3: presence in a packet is never evidence that the model
-   * used the material. Shadow mode injects nothing at all, so the non-claim is
-   * recorded explicitly rather than left to a reader's restraint.
+   * Design section 12.3: presence in a packet is never evidence that the
+   * model used the material — true in `shadow` mode, which injects nothing,
+   * and equally true in `intervene` mode, which may have injected something.
+   * `delivery` says whether the DM received the packet; this field never
+   * answers whether the DM attended to it.
    */
   readonly modelUsageClaim: null;
+  /** What actually reached the DM for this turn. See {@link ShadowDelivery}. */
+  readonly delivery: ShadowDelivery;
 };
 
 export interface ShadowDiscoveryInput {
@@ -143,9 +205,27 @@ function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export function captureDiscoveryShadow(
+/**
+ * The base fields every capture carries, paired with either the LIVE
+ * discovery trace or the failure that stopped it before one existed.
+ *
+ * Kept apart from {@link DiscoveryShadowCapture}: `captureDiscoveryIntervention`
+ * must render from the live trace (§7's source prose is dropped by
+ * `projectDiscoveryTrace`, so a render from the projection would either fail
+ * or quote nothing), while every durable and shadow-mode consumer wants the
+ * projected form. This is the one place the live shape is allowed to exist
+ * after discovery has run, so both entry points can build it once, from one
+ * discovery execution, rather than each re-running `runDiscoveryStages`.
+ */
+type RawDiscoveryShadowCapture = DiscoveryShadowCaptureBase &
+  (
+    | { readonly trace: DiscoveryTrace; readonly failure?: undefined }
+    | { readonly trace?: undefined; readonly failure: ShadowFailure }
+  );
+
+function captureRawShadow(
   input: ShadowDiscoveryInput,
-): DiscoveryShadowCapture {
+): RawDiscoveryShadowCapture {
   const base = {
     capturedAt: input.capturedAt,
     campaignPosition: input.campaignPosition,
@@ -153,10 +233,10 @@ export function captureDiscoveryShadow(
   // EVERY shadow-only operation is inside this one guard, tracking which part
   // was running — the adventure-source read included, because the resolver is
   // caller-supplied and nothing contracts it to succeed. That makes this
-  // function TOTAL: it always returns a capture, so the orchestrator's
-  // observation point needs no guard of its own and cannot destabilize a turn.
-  // A failure is still reported; an empty capture that reads as a green
-  // nothing would be the worse outcome.
+  // function TOTAL: it always returns a capture, so both callers' observation
+  // points need no guard of their own and cannot destabilize a turn. A
+  // failure is still reported; an empty capture that reads as a green nothing
+  // would be the worse outcome.
   let stage: ShadowFailure['stage'] = 'scenario';
   let blockerRepairs: readonly BlockerRepairObservation[] = [];
   let scenarioRecord: ShadowScenarioRecord = {
@@ -244,7 +324,7 @@ export function captureDiscoveryShadow(
       ...base,
       blockerRepairs,
       scenario: scenarioRecord,
-      trace: projectDiscoveryTrace(trace),
+      trace,
     };
   } catch (error) {
     return {
@@ -252,6 +332,120 @@ export function captureDiscoveryShadow(
       blockerRepairs,
       scenario: scenarioRecord,
       failure: { stage, message: message(error) },
+    };
+  }
+}
+
+/** Project a raw capture's live trace away, once, for every durable and
+ * shadow-mode consumer. */
+function projectCapture(
+  raw: RawDiscoveryShadowCapture,
+): DiscoveryShadowCapture {
+  if (raw.trace === undefined)
+    return {
+      capturedAt: raw.capturedAt,
+      campaignPosition: raw.campaignPosition,
+      blockerRepairs: raw.blockerRepairs,
+      scenario: raw.scenario,
+      failure: raw.failure,
+    };
+  return {
+    capturedAt: raw.capturedAt,
+    campaignPosition: raw.campaignPosition,
+    blockerRepairs: raw.blockerRepairs,
+    scenario: raw.scenario,
+    trace: projectDiscoveryTrace(raw.trace),
+  };
+}
+
+export function captureDiscoveryShadow(
+  input: ShadowDiscoveryInput,
+): DiscoveryShadowCapture {
+  return projectCapture(captureRawShadow(input));
+}
+
+/**
+ * The intervention capture's result: the same durable capture
+ * `captureDiscoveryShadow` would have recorded, plus what rendering it
+ * produced.
+ *
+ * A union, not a capture beside an optional `rendered`, because the two
+ * fields are not independent and the durable reader already refuses rows that
+ * pretend they are. `assertV2` rejects `delivery.injected: false` under
+ * `intervened` unless the capture carries a failure explaining it — so a
+ * shape that let `rendered` be absent beside a trace-bearing capture would
+ * oblige the orchestrator to invent a reason, and the row it then wrote would
+ * fail its own admission. Pairing each arm with the capture shape that
+ * belongs to it makes both halves unrepresentable instead: there is no
+ * un-rendered success to explain, and no rendered failure to inject from.
+ */
+export type DiscoveryInterventionCapture =
+  | {
+      readonly capture: DiscoveryShadowCapture & {
+        readonly trace: ProjectedDiscoveryTrace;
+      };
+      readonly rendered: RenderedContextPacket;
+    }
+  | {
+      readonly capture: DiscoveryShadowCapture & {
+        readonly failure: ShadowFailure;
+      };
+      /** Absent when the capture failed, so nothing can be injected. */
+      readonly rendered?: undefined;
+    };
+
+/**
+ * Design section 12.3 (Phase 3, `eshyra-o9bd.19.12`): run the SAME capture
+ * path `captureDiscoveryShadow` runs, from the same discovery execution, and
+ * additionally render the packet the orchestrator may inject.
+ *
+ * As total and failure-tolerant as the shadow capture: rendering runs inside
+ * the same guarantee that a capture failure is RECORDED, never thrown into
+ * the turn, so a render defect can make an experimental turn's context
+ * plainer, never abort it. A render failure downgrades the whole capture to
+ * a failure — never a trace-bearing capture with `rendered` left absent for
+ * an unexplained reason — because {@link DiscoveryInterventionCapture}'s
+ * contract is that `rendered`'s absence always has a `capture.failure`
+ * beside it to explain it.
+ */
+export function captureDiscoveryIntervention(
+  input: ShadowDiscoveryInput,
+): DiscoveryInterventionCapture {
+  const raw = captureRawShadow(input);
+  if (raw.trace === undefined)
+    return {
+      capture: {
+        capturedAt: raw.capturedAt,
+        campaignPosition: raw.campaignPosition,
+        blockerRepairs: raw.blockerRepairs,
+        scenario: raw.scenario,
+        failure: raw.failure,
+      },
+    };
+  try {
+    // Rendered from the LIVE trace before projection, and paired with the
+    // projected capture in one expression, so the text the orchestrator may
+    // inject and the evidence describing it come from one discovery run.
+    const rendered = renderContextPacketMessage(raw.trace);
+    return {
+      capture: {
+        capturedAt: raw.capturedAt,
+        campaignPosition: raw.campaignPosition,
+        blockerRepairs: raw.blockerRepairs,
+        scenario: raw.scenario,
+        trace: projectDiscoveryTrace(raw.trace),
+      },
+      rendered,
+    };
+  } catch (error) {
+    return {
+      capture: {
+        capturedAt: raw.capturedAt,
+        campaignPosition: raw.campaignPosition,
+        blockerRepairs: raw.blockerRepairs,
+        scenario: raw.scenario,
+        failure: { stage: 'render', message: message(error) },
+      },
     };
   }
 }
@@ -324,23 +518,31 @@ export function acceptedStateEffects(
 }
 
 /**
- * Attach the turn's recorded runtime observations to a capture.
+ * Attach the turn's recorded runtime observations and delivery outcome to a
+ * capture.
  *
  * The observations are handed in already recorded. Nothing here infers a
  * capability invocation from a tool result, an inventory snapshot, or the
  * accepted candidate's tool calls: a capability invocation and the terminal
  * result of the tool containing it are different events, and only the first is
  * M10's subject. This module serializes observations; it does not observe.
+ *
+ * `delivery` is likewise handed in rather than inferred from `capture`: the
+ * orchestrator is the only party that knows whether it actually injected the
+ * rendered text (design section 12.3), so it is the only party that can state
+ * {@link ShadowDelivery} truthfully.
  */
 export function completeDiscoveryShadowEvidence(
   capture: DiscoveryShadowCapture,
   runtime: RuntimeDiscoveryObservations,
+  delivery: ShadowDelivery,
 ): DiscoveryShadowEvidence {
   return {
     ...capture,
     schema: DISCOVERY_SHADOW_SCHEMA,
     runtime,
     modelUsageClaim: null,
+    delivery,
   };
 }
 
@@ -584,7 +786,23 @@ const BLOCKER_STATUSES = [
   'not-discriminable',
 ] as const;
 const CAPABILITY_OUTCOMES = ['available', 'blocked'] as const;
-const FAILURE_STAGES = ['scenario', 'stack', 'blockers', 'discovery'] as const;
+const FAILURE_STAGES = [
+  'scenario',
+  'stack',
+  'blockers',
+  'discovery',
+  'render',
+] as const;
+const DELIVERY_MODES = ['observed', 'intervened'] as const;
+
+/**
+ * The v1 candidate-band vocabulary, pinned HERE for the same reason as
+ * `V1_ROUTE_CLASSES`: `ShadowDelivery`'s `mustConsiderOverflow` stores each
+ * dropped candidate's band, and a must-consider drop is exactly the one that
+ * fails a probe (design section 6.3), so a corrupted band must not be
+ * softened into an unrecognized-but-accepted string.
+ */
+const V1_CANDIDATE_BANDS = ['must-consider', 'related', 'exploratory'] as const;
 
 /** The identity and lifecycle every stage record carries. */
 function checkStageHeader(
@@ -1170,11 +1388,84 @@ function checkAudit(value: unknown, path: string): number {
   return (audit.retries as unknown[]).length + 1;
 }
 
+/** `RetentionOverflow`, as `ShadowDelivery`'s injected arm stores it. */
+function checkRetentionOverflow(value: unknown, path: string): void {
+  const overflow = asObject(value, path);
+  asString(overflow.candidateKey, `${path}.candidateKey`);
+  asEnum(overflow.band, `${path}.band`, V1_CANDIDATE_BANDS);
+  checkRoutes(overflow.routes, `${path}.routes`);
+  const reason = asString(overflow.reason, `${path}.reason`);
+  if (reason.length === 0)
+    failAt(`${path}.reason`, 'must not be empty on a recorded overflow');
+}
+
+/**
+ * `ShadowDelivery`, admitted narrowly. This is the field a reader consults to
+ * learn whether the DM actually received the packet (design section 12.3), so
+ * every arm's identity fields are mandatory rather than softened into
+ * optionals a reader could forget to check, and `exactKeys` keeps a field from
+ * one arm leaking onto another (an `injected: false` row still carrying a
+ * `renderedSha256` from a previous shape, say).
+ */
+function checkDelivery(value: unknown, path: string): void {
+  const delivery = asObject(value, path);
+  const mode = asEnum(delivery.mode, `${path}.mode`, DELIVERY_MODES);
+  const injected = asBoolean(delivery.injected, `${path}.injected`);
+  if (mode === 'observed') {
+    if (injected)
+      failAt(
+        `${path}.injected`,
+        "is true while mode is 'observed', which never injects",
+      );
+    exactKeys(delivery, ['mode', 'injected'], path);
+    return;
+  }
+  if (injected) {
+    exactKeys(
+      delivery,
+      [
+        'mode',
+        'injected',
+        'renderedBytes',
+        'renderedSha256',
+        'candidateCount',
+        'mustConsiderOverflow',
+      ],
+      path,
+    );
+    asNumber(delivery.renderedBytes, `${path}.renderedBytes`);
+    if ((delivery.renderedBytes as number) < 0)
+      failAt(`${path}.renderedBytes`, 'must be non-negative');
+    const sha256 = asString(delivery.renderedSha256, `${path}.renderedSha256`);
+    if (!/^[0-9a-f]{64}$/u.test(sha256))
+      failAt(
+        `${path}.renderedSha256`,
+        'is not a 64-character lowercase hex sha-256 digest',
+      );
+    asNumber(delivery.candidateCount, `${path}.candidateCount`);
+    if (
+      !Number.isInteger(delivery.candidateCount as number) ||
+      (delivery.candidateCount as number) < 0
+    )
+      failAt(`${path}.candidateCount`, 'must be a non-negative integer');
+    each(
+      delivery.mustConsiderOverflow,
+      `${path}.mustConsiderOverflow`,
+      checkRetentionOverflow,
+    );
+    return;
+  }
+  exactKeys(delivery, ['mode', 'injected', 'reason'], path);
+  const reason = asString(delivery.reason, `${path}.reason`);
+  if (reason.length === 0) failAt(`${path}.reason`, 'must not be empty');
+}
+
 function assertV2(stored: Record<string, unknown>): void {
   asString(stored.campaignPosition, 'campaignPosition');
   asString(stored.capturedAt, 'capturedAt');
   if (stored.modelUsageClaim !== null)
     failAt('modelUsageClaim', 'expected the recorded non-claim `null`');
+  checkDelivery(stored.delivery, 'delivery');
 
   const scenario = asObject(stored.scenario, 'scenario');
   asString(scenario.playerInput, 'scenario.playerInput');
@@ -1267,15 +1558,39 @@ function assertV2(stored: Record<string, unknown>): void {
         ? 'it carries both a trace and a failure'
         : 'it carries neither a trace nor a failure',
     );
+  // `delivery` and `trace`/`failure` are recorded by different parties — the
+  // orchestrator states delivery, discovery states the capture — so a
+  // corrupted row could set them independently. Only `intervened` has
+  // anything to cross-check: `observed` never injects regardless of whether
+  // the capture succeeded, but `intervened`'s two arms each claim a fact
+  // about the capture beside it (§7's "an impossible state" reasoning applies
+  // across the two fields the same way it applies within one).
+  const delivery = stored.delivery as Record<string, unknown>;
+  if (delivery.mode === 'intervened') {
+    if (delivery.injected === true && !hasTrace)
+      failAt(
+        'delivery.injected',
+        'is true while the capture recorded no trace to have rendered from',
+      );
+    if (delivery.injected === false && !hasFailure)
+      failAt(
+        'delivery.injected',
+        "is false under mode 'intervened' while the capture recorded no failure to explain it",
+      );
+  }
   if (hasFailure) {
     const failure = asObject(stored.failure, 'failure');
     const stage = asEnum(failure.stage, 'failure.stage', FAILURE_STAGES);
     asString(failure.message, 'failure.message');
-    // A capture that failed IN discovery had already completed its blocker
-    // observations, so the same complete set is required. One that failed
-    // earlier could not have observed them, and inventing observations it never
-    // made would be worse than recording none.
-    checkBlockerMembership(blockers, stage === 'discovery');
+    // A capture that failed IN discovery, or after discovery while rendering,
+    // had already completed its blocker observations, so the same complete
+    // set is required. One that failed earlier could not have observed them,
+    // and inventing observations it never made would be worse than recording
+    // none.
+    checkBlockerMembership(
+      blockers,
+      stage === 'discovery' || stage === 'render',
+    );
     return;
   }
   checkBlockerMembership(blockers, true);
