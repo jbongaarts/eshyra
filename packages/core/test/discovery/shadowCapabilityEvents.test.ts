@@ -112,7 +112,11 @@ function captureForOperation(
       campaignRuleSeam: NULL_CAMPAIGN_RULE_SEAM,
       tools: createDefaultToolRegistry(),
     }),
-    { capabilityInvocations: [], audit: { auditor: 'absent' } },
+    {
+      capabilityInvocations: [],
+      stateEffects: [],
+      audit: { auditor: 'absent' },
+    },
   );
 }
 
@@ -136,7 +140,11 @@ function packetCapability(trace: ProjectedDiscoveryTrace) {
 function observations(
   capabilityInvocations: readonly RuntimeCapabilityInvocation[],
 ): RuntimeDiscoveryObservations {
-  return { capabilityInvocations, audit: { auditor: 'absent' } };
+  return {
+    capabilityInvocations,
+    stateEffects: [],
+    audit: { auditor: 'absent' },
+  };
 }
 
 /** A synthetic event, for the pairing/identity states that need no execution. */

@@ -20,6 +20,7 @@ import type {
   CampaignRuleReadSeam,
   DiscoveryScenario,
   RuntimeCapabilityInvocation,
+  RuntimeStateEffect,
 } from './types.js';
 
 /**
@@ -37,7 +38,7 @@ import type {
  * capture, and never rethrown into the turn.
  */
 
-export const DISCOVERY_SHADOW_SCHEMA = 'discovery-shadow-v1';
+export const DISCOVERY_SHADOW_SCHEMA = 'discovery-shadow-v2';
 
 export interface ShadowItemInstanceBinding {
   readonly instanceId: string;
@@ -304,6 +305,24 @@ export function runtimeCapabilityInvocation(
   };
 }
 
+export interface ObservedStateMutation {
+  readonly tool: string;
+  readonly args?: unknown;
+}
+
+/** Project already-filtered accepted mutations into discovery's event shape. */
+export function acceptedStateEffects(
+  calls: readonly ObservedStateMutation[],
+  attempt: number,
+): readonly RuntimeStateEffect[] {
+  return calls.map((call, ordinal) => ({
+    tool: call.tool,
+    attempt,
+    ordinal,
+    args: isObject(call.args) ? call.args : {},
+  }));
+}
+
 /**
  * Attach the turn's recorded runtime observations to a capture.
  *
@@ -355,7 +374,7 @@ export class DiscoveryShadowSchemaError extends Error {
 }
 
 /**
- * Fail-closed admission of a stored v1 row.
+ * Fail-closed admission of a stored v2 row.
  *
  * The TypeScript shapes live only in memory; the SQLite JSON boundary erases
  * them, so without this a row of `{"schema":"discovery-shadow-v1"}` would be
@@ -397,6 +416,15 @@ function asString(value: unknown, path: string): string {
 function asNumber(value: unknown, path: string): void {
   if (typeof value !== 'number' || !Number.isFinite(value))
     failAt(path, 'expected a finite number');
+}
+
+function exactKeys(
+  value: Record<string, unknown>,
+  allowed: readonly string[],
+  path: string,
+): void {
+  for (const key of Object.keys(value))
+    if (!allowed.includes(key)) failAt(`${path}.${key}`, 'is an unknown key');
 }
 
 function asBoolean(value: unknown, path: string): boolean {
@@ -1142,7 +1170,7 @@ function checkAudit(value: unknown, path: string): number {
   return (audit.retries as unknown[]).length + 1;
 }
 
-function assertV1(stored: Record<string, unknown>): void {
+function assertV2(stored: Record<string, unknown>): void {
   asString(stored.campaignPosition, 'campaignPosition');
   asString(stored.capturedAt, 'capturedAt');
   if (stored.modelUsageClaim !== null)
@@ -1216,6 +1244,19 @@ function assertV1(stored: Record<string, unknown>): void {
         );
     },
   );
+  each(runtime.stateEffects, 'runtime.stateEffects', (item, at) => {
+    const effect = asObject(item, at);
+    exactKeys(effect, ['attempt', 'ordinal', 'tool', 'args'], at);
+    const tool = asString(effect.tool, `${at}.tool`);
+    if (tool.length === 0) failAt(`${at}.tool`, 'must not be empty');
+    asNumber(effect.attempt, `${at}.attempt`);
+    if (!Number.isInteger(effect.attempt) || (effect.attempt as number) < 0)
+      failAt(`${at}.attempt`, 'must be a non-negative integer');
+    asNumber(effect.ordinal, `${at}.ordinal`);
+    if (!Number.isInteger(effect.ordinal) || (effect.ordinal as number) < 0)
+      failAt(`${at}.ordinal`, 'must be a non-negative integer');
+    asObject(effect.args, `${at}.args`);
+  });
 
   const hasTrace = stored.trace !== undefined && stored.trace !== null;
   const hasFailure = stored.failure !== undefined && stored.failure !== null;
@@ -1247,7 +1288,7 @@ function assertV1(stored: Record<string, unknown>): void {
  * A stored value carrying a schema tag this build does not know is an error,
  * not an absence: measuring it as if it were absent would report a green
  * nothing for a capture that exists. Same-version corruption fails closed the
- * same way, through {@link assertV1}.
+ * same way, through {@link assertV2}.
  */
 export function readDiscoveryShadowEvidence(
   stored: TraceJsonValue | undefined,
@@ -1262,6 +1303,6 @@ export function readDiscoveryShadowEvidence(
     throw new DiscoveryShadowSchemaError(
       `recorded discovery shadow evidence has schema '${String(schema)}', not '${DISCOVERY_SHADOW_SCHEMA}'`,
     );
-  assertV1(stored);
+  assertV2(stored);
   return stored as unknown as DiscoveryShadowEvidence;
 }

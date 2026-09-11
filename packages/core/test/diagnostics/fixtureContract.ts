@@ -176,6 +176,12 @@ export interface DeterministicStateEffect {
   readonly kind: 'effect';
   readonly statement: string;
   readonly evidence: string;
+  readonly operations: readonly ExpectedStateEffectOperation[];
+}
+
+export interface ExpectedStateEffectOperation {
+  readonly tool: string;
+  readonly args?: Readonly<Record<string, unknown>>;
 }
 
 /**
@@ -940,6 +946,19 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
       value.expectedDeterministicStateEffect.evidence,
       `fixture ${index}.expectedDeterministicStateEffect.evidence`,
     );
+    const operations = value.expectedDeterministicStateEffect.operations;
+    if (!Array.isArray(operations) || operations.length === 0)
+      throw new Error(
+        `fixture ${index}.expectedDeterministicStateEffect.operations must be non-empty`,
+      );
+    operations.forEach((operation, operationIndex) => {
+      const path = `fixture ${index}.expectedDeterministicStateEffect.operations[${operationIndex}]`;
+      if (!isRecord(operation)) throw new Error(`${path} must be an object`);
+      checkExactKeys(operation, new Set(['tool', 'args']), path);
+      nonEmptyString(operation.tool, `${path}.tool`);
+      if (operation.args !== undefined && !isRecord(operation.args))
+        throw new Error(`${path}.args must be an object`);
+    });
   }
   if (!/^P(?:[1-9]|1[0-2])$/.test(String(value.probeId)))
     throw new Error(`fixture ${index}.probeId is invalid`);

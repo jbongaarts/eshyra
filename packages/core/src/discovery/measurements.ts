@@ -7,6 +7,7 @@ import type {
   CapabilityPreflight,
   RuntimeAudit,
   RuntimeCapabilityInvocation,
+  RuntimeStateEffect,
   TypedTraversal,
 } from './types.js';
 
@@ -508,6 +509,7 @@ function incomparableReason(
 
 export interface RuntimeDiscoveryObservations {
   readonly capabilityInvocations: readonly RuntimeCapabilityInvocation[];
+  readonly stateEffects: readonly RuntimeStateEffect[];
   /**
    * The turn's audit lifecycle. Auditor presence, retry and repair counts, and
    * the cause breakdown are all derived from this one canonical shape — "no
@@ -515,6 +517,110 @@ export interface RuntimeDiscoveryObservations {
    * discriminated union states which without a second flag to disagree with.
    */
   readonly audit: RuntimeAudit;
+}
+
+export interface ExpectedStateEffectOperation {
+  readonly tool: string;
+  readonly args?: Readonly<Record<string, unknown>>;
+}
+export type ExpectedStateEffect =
+  | { readonly expectation: 'none' }
+  | {
+      readonly expectation: 'effect';
+      readonly operations: readonly ExpectedStateEffectOperation[];
+    };
+export type StateEffectDisagreement =
+  | {
+      readonly kind: 'unexpected-effect';
+      readonly tool: string;
+      readonly attempt: number;
+      readonly ordinal: number;
+    }
+  | { readonly kind: 'missing-expected-operation'; readonly tool: string }
+  | {
+      readonly kind: 'argument-mismatch';
+      readonly tool: string;
+      readonly attempt: number;
+      readonly ordinal: number;
+      readonly field: string;
+      readonly expected: unknown;
+      readonly observed: unknown;
+    };
+export interface StateEffectMeasurement {
+  readonly expectation: 'none' | 'effect';
+  readonly expectedOperations: readonly ExpectedStateEffectOperation[];
+  readonly acceptedEffects: readonly RuntimeStateEffect[];
+  readonly agreement: 'agreed' | 'disagreed';
+  readonly disagreements: readonly StateEffectDisagreement[];
+}
+
+function valuesEqual(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/** M12 compares always-present fixture and accepted event sets (§13.2). */
+export function measureAcceptedStateEffect(
+  runtime: RuntimeDiscoveryObservations,
+  expected: ExpectedStateEffect,
+): StateEffectMeasurement {
+  const acceptedEffects = [...runtime.stateEffects].sort(
+    (a, b) => a.ordinal - b.ordinal,
+  );
+  const expectedOperations =
+    expected.expectation === 'none' ? [] : expected.operations;
+  const disagreements: StateEffectDisagreement[] = [];
+  if (expected.expectation === 'none') {
+    for (const effect of acceptedEffects)
+      disagreements.push({
+        kind: 'unexpected-effect',
+        tool: effect.tool,
+        attempt: effect.attempt,
+        ordinal: effect.ordinal,
+      });
+  } else {
+    const consumed = new Set<number>();
+    for (const operation of expected.operations) {
+      const index = acceptedEffects.findIndex(
+        (effect, i) => !consumed.has(i) && effect.tool === operation.tool,
+      );
+      if (index < 0) {
+        disagreements.push({
+          kind: 'missing-expected-operation',
+          tool: operation.tool,
+        });
+        continue;
+      }
+      consumed.add(index);
+      const effect = acceptedEffects[index];
+      for (const [field, value] of Object.entries(operation.args ?? {}))
+        if (!valuesEqual(value, effect.args[field]))
+          disagreements.push({
+            kind: 'argument-mismatch',
+            tool: effect.tool,
+            attempt: effect.attempt,
+            ordinal: effect.ordinal,
+            field,
+            expected: value,
+            observed: effect.args[field],
+          });
+    }
+    acceptedEffects.forEach((effect, index) => {
+      if (!consumed.has(index))
+        disagreements.push({
+          kind: 'unexpected-effect',
+          tool: effect.tool,
+          attempt: effect.attempt,
+          ordinal: effect.ordinal,
+        });
+    });
+  }
+  return {
+    expectation: expected.expectation,
+    expectedOperations,
+    acceptedEffects,
+    agreement: disagreements.length === 0 ? 'agreed' : 'disagreed',
+    disagreements,
+  };
 }
 
 export interface RuntimeDiscoveryMeasurements {

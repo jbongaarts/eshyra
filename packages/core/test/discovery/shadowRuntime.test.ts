@@ -516,7 +516,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           expect(result.ok).toBe(true);
 
           const evidence = recordedEvidence(db);
-          expect(evidence?.schema).toBe('discovery-shadow-v1');
+          expect(evidence?.schema).toBe('discovery-shadow-v2');
           expect(evidence?.failure).toBeUndefined();
           expect(evidence?.modelUsageClaim).toBeNull();
           // The seam is bound to the canonical anchor the turn allocated, not to

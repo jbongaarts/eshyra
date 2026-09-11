@@ -102,6 +102,7 @@ const VALID: Row = (() => {
         }),
         {
           capabilityInvocations: [invocation],
+          stateEffects: [],
           audit: {
             auditor: 'present',
             retries: [
@@ -294,14 +295,14 @@ describe('the canonical durable record', () => {
 
   it('accepts the value it writes, and reads absence as absence', () => {
     expect(readDiscoveryShadowEvidence(VALID as TraceJsonValue)?.schema).toBe(
-      'discovery-shadow-v1',
+      'discovery-shadow-v2',
     );
     expect(readDiscoveryShadowEvidence(undefined)).toBeUndefined();
     expect(readDiscoveryShadowEvidence(null)).toBeUndefined();
   });
 
   it('rejects a non-object and an unknown schema tag', () => {
-    for (const bad of ['nonsense', { ...VALID, schema: 'discovery-shadow-v2' }])
+    for (const bad of ['nonsense', { ...VALID, schema: 'discovery-shadow-v1' }])
       expect(() =>
         readDiscoveryShadowEvidence(bad as TraceJsonValue),
       ).toThrowError(DiscoveryShadowSchemaError);
@@ -428,6 +429,7 @@ describe('measurements follow the canonical record', () => {
           encodeDiscoveryShadowEvidence(
             completeDiscoveryShadowEvidence(capture, {
               capabilityInvocations: [],
+              stateEffects: [],
               audit: { auditor: 'absent' },
             }),
           ),
@@ -475,6 +477,7 @@ describe('measurements follow the canonical record', () => {
     const row = clone();
     const observations = (record: Row) => ({
       capabilityInvocations: [],
+      stateEffects: [],
       audit: (record.runtime as Row).audit as never,
     });
     const withAuditor = measureRuntimeDiscovery(
@@ -1088,7 +1091,11 @@ describe('traversal events against the state they produced', () => {
             campaignRuleSeam: campaign.seam,
             tools: createDefaultToolRegistry(),
           }),
-          { capabilityInvocations: [], audit: { auditor: 'absent' } },
+          {
+            capabilityInvocations: [],
+            stateEffects: [],
+            audit: { auditor: 'absent' },
+          },
         ),
       ) as Row;
       const admittedTrace = admitted(row);
