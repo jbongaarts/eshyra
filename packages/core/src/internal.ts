@@ -560,6 +560,11 @@ export {
   measureRuntimeDiscovery,
 } from './discovery/measurements.js';
 export { buildContextPacket } from './discovery/packet.js';
+export type {
+  RenderablePacketTrace,
+  RenderedContextPacket,
+} from './discovery/packetMessage.js';
+export { renderContextPacketMessage } from './discovery/packetMessage.js';
 export { DEFAULT_BUDGET, retainCandidates } from './discovery/retention.js';
 export type {
   DiscoveryShadowCapture,
@@ -616,6 +621,7 @@ export type {
   PacketCandidate,
   ProjectionLimitNote,
   RetentionBudget,
+  RetentionOverflow,
   RouteClass,
   RuntimeAudit,
   RuntimeAuditOutcome,
