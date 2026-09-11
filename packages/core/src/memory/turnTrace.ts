@@ -53,14 +53,21 @@ export interface TurnTraceRecord {
   /** Active campaign-rule identities supplied to both models for this turn. */
   campaignRulesEvidence?: CampaignRulesEvidence;
   /**
-   * ADR 0020 Phase 2 shadow-mode discovery evidence (`eshyra-o9bd.19.11`),
-   * stored as an opaque JSON value. The shape belongs to the discovery
-   * experiment, which owns its schema tag, encoder and reader; restating it
-   * here would make this module a second owner of that schema and would couple
-   * the accepted-turn trace authority to an experiment's revisions.
+   * ADR 0020 discovery evidence (`eshyra-o9bd.19.11` Phase 2 `shadow` mode;
+   * `eshyra-o9bd.19.12` Phase 3 `intervene` mode), stored as an opaque JSON
+   * value. The shape belongs to the discovery experiment, which owns its
+   * schema tag, encoder and reader; restating it here would make this module
+   * a second owner of that schema and would couple the accepted-turn trace
+   * authority to an experiment's revisions.
    *
-   * Nothing in this column reached the DM: shadow mode records what discovery
-   * would have proposed and injects nothing.
+   * Whether anything in this column reached the DM is no longer
+   * unconditionally "no" — that was true only while `shadow` was the only
+   * mode. Consult the evidence's own `delivery` field: it is the one place
+   * that states which, and every arm of it is checked at the durable read
+   * boundary, so this comment does not have to restate the answer, only
+   * point at where it lives. `retrieved_context` on this same trace row is
+   * always the message the model actually received, injected packet
+   * included, so it needs no `delivery` lookup to read.
    */
   discoveryShadow?: TraceJsonValue;
   acceptedStateDelta: TraceJsonValue[];

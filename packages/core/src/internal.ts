@@ -572,11 +572,13 @@ export type {
 export { renderContextPacketMessage } from './discovery/packetMessage.js';
 export { DEFAULT_BUDGET, retainCandidates } from './discovery/retention.js';
 export type {
+  DiscoveryInterventionCapture,
   DiscoveryShadowCapture,
   DiscoveryShadowEvidence,
   ObservedCapabilityInvocation,
   ObservedStateMutation,
   ShadowAdventureSeat,
+  ShadowDelivery,
   ShadowDiscoveryInput,
   ShadowFailure,
   ShadowItemInstanceBinding,
@@ -584,6 +586,7 @@ export type {
 } from './discovery/shadow.js';
 export {
   acceptedStateEffects,
+  captureDiscoveryIntervention,
   captureDiscoveryShadow,
   completeDiscoveryShadowEvidence,
   DISCOVERY_SHADOW_SCHEMA,

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import type {
   AuditVerdict,
@@ -214,10 +215,20 @@ const CONDITIONAL_STAGES = new Set([
 ]);
 
 describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
-  it('leaves the DM message byte-identical with shadow mode on and off', async () => {
+  /**
+   * The W9 parity guarantee, ported to the mode union (W10, design section
+   * 12.3), plus its complement: a parity test that passed under every mode
+   * would prove nothing about the one mode that matters. `intervene` is the
+   * first mode whose DM input differs from `off` AT ALL, so the second half
+   * of this test is the one comparison that must fail to be meaningful.
+   */
+  it("leaves the DM message byte-identical under 'shadow' and does not under 'intervene'", async () => {
     const run = async (
-      recordDiscoveryShadow: boolean,
-    ): Promise<{ seen: ModelCompleteInput[]; shadow: boolean }> => {
+      discoveryMode: 'off' | 'shadow' | 'intervene',
+    ): Promise<{
+      seen: ModelCompleteInput[];
+      evidence: DiscoveryShadowEvidence | undefined;
+    }> => {
       const db = seedCampaign();
       try {
         const model = new ScriptedModel();
@@ -225,27 +236,181 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           db,
           model,
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow,
+          discoveryMode,
         };
         const result = await runTurn(
           deps,
           turnInput('I cast fireball at the goblin sentries.'),
         );
         expect(result.ok).toBe(true);
-        return { seen: model.seen, shadow: recordedEvidence(db) !== undefined };
+        return { seen: model.seen, evidence: recordedEvidence(db) };
       } finally {
         db.close();
       }
     };
-    const off = await run(false);
-    const on = await run(true);
+    const off = await run('off');
+    const shadow = await run('shadow');
+    const intervene = await run('intervene');
 
     // Byte-for-byte over the whole model input: system prompt, tool
     // definitions and every message, not just the rendered context.
-    expect(JSON.stringify(on.seen)).toBe(JSON.stringify(off.seen));
-    // ... and the comparison is not vacuous: the shadow run really did record.
-    expect(on.shadow).toBe(true);
-    expect(off.shadow).toBe(false);
+    expect(JSON.stringify(shadow.seen)).toBe(JSON.stringify(off.seen));
+    expect(JSON.stringify(intervene.seen)).not.toBe(JSON.stringify(off.seen));
+    // ... and the comparisons are not vacuous: 'shadow' and 'intervene' both
+    // really recorded, 'off' really did not, and the delivery each recorded
+    // is the honest arm for its own mode.
+    expect(off.evidence).toBeUndefined();
+    expect(shadow.evidence?.delivery).toEqual({
+      mode: 'observed',
+      injected: false,
+    });
+    expect(intervene.evidence?.delivery).toMatchObject({
+      mode: 'intervened',
+      injected: true,
+    });
+  });
+
+  it('appends the rendered packet as an exact suffix, and the base message survives as an exact prefix', async () => {
+    const run = async (discoveryMode: 'off' | 'intervene') => {
+      const db = seedCampaign();
+      try {
+        const model = new ScriptedModel();
+        const result = await runTurn(
+          {
+            db,
+            model,
+            registry: createDefaultToolRegistry(),
+            discoveryMode,
+          },
+          turnInput('I cast fireball at the goblin sentries.'),
+        );
+        expect(result.ok).toBe(true);
+        const sent = model.seen[0]?.messages[0];
+        if (sent === undefined) throw new Error('the model saw no messages');
+        return { message: sent.content, evidence: recordedEvidence(db) };
+      } finally {
+        db.close();
+      }
+    };
+    const off = await run('off');
+    const intervene = await run('intervene');
+
+    // Additive, never rewriting (design section 12.3): the base message the
+    // context assembler produced is an exact PREFIX of what the model under
+    // `intervene` actually received.
+    expect(intervene.message.startsWith(off.message)).toBe(true);
+    const remainder = intervene.message.slice(off.message.length);
+    // Joined exactly the way `renderContextMessage` joins its own sections.
+    expect(remainder.startsWith('\n\n')).toBe(true);
+    const packetText = remainder.slice(2);
+    expect(packetText.length).toBeGreaterThan(0);
+
+    const delivery = intervene.evidence?.delivery;
+    if (delivery?.mode !== 'intervened' || !delivery.injected)
+      throw new Error(
+        `expected an injected intervention delivery, got ${JSON.stringify(delivery)}`,
+      );
+    // The remainder IS the rendered packet: bound through the identity
+    // `delivery` recorded, not re-rendered independently by this test (design
+    // section 12.3's requirement that the injected text is durably recorded
+    // exactly once).
+    expect(Buffer.byteLength(packetText, 'utf8')).toBe(delivery.renderedBytes);
+    expect(createHash('sha256').update(packetText, 'utf8').digest('hex')).toBe(
+      delivery.renderedSha256,
+    );
+  });
+
+  it('records turn_trace.retrieved_context as the message the model actually received, not the base message', async () => {
+    const db = seedCampaign();
+    try {
+      const model = new ScriptedModel();
+      const result = await runTurn(
+        {
+          db,
+          model,
+          registry: createDefaultToolRegistry(),
+          discoveryMode: 'intervene',
+        },
+        turnInput('I cast fireball at the goblin sentries.'),
+      );
+      expect(result.ok).toBe(true);
+      const sent = model.seen[0]?.messages[0];
+      if (sent === undefined) throw new Error('the model saw no messages');
+      const trace = getTurnTrace(db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: TURN,
+      });
+      // Recording a fresh re-render of the base context here — rather than
+      // this exact string — would make the trace lie about an intervention
+      // turn: the DM received the injected message, not the base one.
+      expect(trace?.retrievedContext).toEqual([sent.content]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("under 'intervene', a capture failure injects nothing, records the honest delivery arm, and does not fail the turn", async () => {
+    const db = seedCampaign();
+    try {
+      // A registry whose `.get` throws on its FIRST call and behaves normally
+      // afterward. Discovery's B1 blocker probe (`blockerRepairs.ts`) is the
+      // only caller of `tools.get('lookup_rules')` before `buildSystemPrompt`
+      // walks every registered name through the same method, so this fails
+      // exactly one thing: the capture's own blockers stage. Everything the
+      // rest of the turn needs from the registry — `definitions()`, `list()`,
+      // `invoke()` for a ScriptedModel that calls no tools at all — is
+      // untouched, so a real turn can reach this failure without the turn
+      // itself failing for an unrelated reason.
+      const registry = createDefaultToolRegistry();
+      const realGet = registry.get.bind(registry);
+      let calls = 0;
+      registry.get = ((name: string) => {
+        calls += 1;
+        if (calls === 1) throw new Error('tool registry unavailable');
+        return realGet(name);
+      }) as typeof realGet;
+
+      const model = new ScriptedModel();
+      const result = await runTurn(
+        {
+          db,
+          model,
+          registry,
+          discoveryMode: 'intervene',
+        },
+        turnInput('I press on into the dark.'),
+      );
+      // An observation point that can abort a player's turn is worse than no
+      // observation point (shadow.ts's header, applying with more force once
+      // the packet is load-bearing): the turn still succeeds.
+      expect(result.ok).toBe(true);
+      expect(calls).toBeGreaterThan(1);
+      const sent = model.seen[0]?.messages[0];
+      if (sent === undefined) throw new Error('the model saw no messages');
+      // Nothing was injected: the model saw exactly the base message, ending
+      // in the player-input section with no appended packet section after it.
+      expect(
+        sent.content.endsWith('## Player Input\nI press on into the dark.'),
+      ).toBe(true);
+      const evidence = recordedEvidence(db);
+      expect(evidence?.trace).toBeUndefined();
+      expect(evidence?.failure).toEqual({
+        stage: 'blockers',
+        message: 'tool registry unavailable',
+      });
+      expect(evidence?.delivery).toMatchObject({
+        mode: 'intervened',
+        injected: false,
+      });
+      expect(
+        evidence?.delivery.mode === 'intervened' && !evidence.delivery.injected
+          ? evidence.delivery.reason
+          : undefined,
+      ).toBe('tool registry unavailable');
+    } finally {
+      db.close();
+    }
   });
 
   /**
@@ -319,7 +484,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     for (const round of ROUNDS)
       for (const toolProtocol of ['fenced', 'native'] as const)
         it(`${round.label} (${toolProtocol})`, async () => {
-          const run = async (recordDiscoveryShadow: boolean) => {
+          const run = async (discoveryMode: 'off' | 'shadow') => {
             const db = seedCampaign();
             try {
               round.seed(db);
@@ -348,7 +513,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
                   db,
                   model,
                   registry: createDefaultToolRegistry(),
-                  recordDiscoveryShadow,
+                  discoveryMode,
                 },
                 { ...turnInput('I use it.'), toolProtocol },
               );
@@ -364,8 +529,8 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               db.close();
             }
           };
-          const off = await run(false);
-          const on = await run(true);
+          const off = await run('off');
+          const on = await run('shadow');
 
           // The DM's whole view: system prompt, tool definitions, and every
           // message including the rendered fenced results and the attached
@@ -415,7 +580,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           db,
           model: mcpModel,
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
         },
         turnInput('I loose the arrow.'),
       );
@@ -436,7 +601,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
   });
 
   it('adds no table to the live store', async () => {
-    const tables = async (recordDiscoveryShadow: boolean) => {
+    const tables = async (discoveryMode: 'off' | 'shadow' | 'intervene') => {
       const db = seedCampaign();
       try {
         await runTurn(
@@ -444,7 +609,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
             db,
             model: new ScriptedModel(),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow,
+            discoveryMode,
           },
           turnInput('I look for cover behind the low wall.'),
         );
@@ -459,7 +624,9 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
         db.close();
       }
     };
-    expect(await tables(true)).toEqual(await tables(false));
+    const off = await tables('off');
+    expect(await tables('shadow')).toEqual(off);
+    expect(await tables('intervene')).toEqual(off);
   });
 
   it('runs every authored fixture execution, not one per probe', () => {
@@ -507,7 +674,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               db,
               model: new ScriptedModel(),
               registry: createDefaultToolRegistry(),
-              recordDiscoveryShadow: true,
+              discoveryMode: 'shadow',
               ...(rulesPackResolver === undefined
                 ? {}
                 : { resolveRulesPack: rulesPackResolver }),
@@ -687,7 +854,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           db,
           model: new ScriptedModel(),
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
         },
         turnInput(fixture.playerInput),
       );
@@ -724,7 +891,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
             })}`,
           ]),
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
         },
         { ...turnInput(fixture.playerInput), toolProtocol: 'fenced' as const },
       );
@@ -773,7 +940,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
             'You check the rule first, then touch the ward.',
           ]),
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
           auditor: new ScriptedAuditor([
             {
               verdict: 'reject',
@@ -874,7 +1041,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               'You steady yourself and take stock instead.',
             ]),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
             auditor: new ScriptedAuditor([REJECT]),
           },
           {
@@ -946,7 +1113,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               'I rolled first: the arrow strikes home.',
             ]),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
             auditor: new ScriptedAuditor([REJECT]),
           },
           {
@@ -1078,7 +1245,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     // the shadow capture called it a SECOND time — so enabling the observation
     // could abort a turn that succeeds with it off, or persist evidence about
     // a different module than the DM context was built from.
-    const run = async (recordDiscoveryShadow: boolean) => {
+    const run = async (discoveryMode: 'off' | 'shadow') => {
       const db = seedCampaign();
       try {
         const seated = installProbeCampaignState(fixture, db);
@@ -1097,7 +1264,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
             db,
             model,
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow,
+            discoveryMode,
             resolveAdventureModule,
           },
           turnInput(fixture.playerInput),
@@ -1109,8 +1276,8 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
       }
     };
 
-    const off = await run(false);
-    const on = await run(true);
+    const off = await run('off');
+    const on = await run('shadow');
 
     expect(on.calls).toBe(1);
     expect(on.calls).toBe(off.calls);
@@ -1143,7 +1310,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           db,
           model: new ScriptedModel(),
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
         },
         turnInput('I turn the relic over in my hands.'),
       );
@@ -1211,7 +1378,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
             db,
             model: new ScriptedModel(),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
           },
           turnInput('I look around the camp.'),
         );
@@ -1243,7 +1410,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               'The arrow strikes home.',
             ]),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
           },
           {
             ...turnInput('I loose the arrow.'),
@@ -1282,7 +1449,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               'I rolled first: the arrow strikes home.',
             ]),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
             auditor: new ScriptedAuditor([REJECT]),
           },
           {
@@ -1325,7 +1492,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               'You steady yourself and take stock instead.',
             ]),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
             auditor: new ScriptedAuditor([REJECT]),
           },
           {
@@ -1402,7 +1569,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               'The arrow strikes home.',
             ]),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
           },
           {
             ...turnInput('I loose the arrow.'),
@@ -1453,7 +1620,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               'The arrow strikes home.',
             ]),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
           },
           {
             ...turnInput(fixture.playerInput),

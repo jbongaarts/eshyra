@@ -114,6 +114,7 @@ const VALID: Row = (() => {
             outcome: { disposition: 'accepted' },
           },
         },
+        { mode: 'observed', injected: false },
       ),
     ) as Row;
   } finally {
@@ -318,6 +319,157 @@ describe('the canonical durable record', () => {
 });
 
 /**
+ * `ShadowDelivery` (W10, design section 12.3): the field a reader consults to
+ * learn whether the DM actually received the packet. `VALID` is an `observed`
+ * capture, so the intervened arms are built explicitly here rather than by
+ * cloning it, and the `injected: false` arm needs a FAILED capture beside it
+ * — `injected: true` claims a trace was rendered, `injected: false` under
+ * `intervened` claims the capture failed, and the reader checks both claims
+ * against the same row's trace/failure rather than trusting the arm alone.
+ */
+describe('delivery', () => {
+  const OBSERVED = { mode: 'observed', injected: false };
+  const INTERVENED_OK = {
+    mode: 'intervened',
+    injected: true,
+    renderedBytes: 42,
+    renderedSha256: 'a'.repeat(64),
+    candidateCount: 1,
+    mustConsiderOverflow: [],
+  };
+
+  function interveneFailed(): Row {
+    const row = withoutField('trace');
+    row.failure = { stage: 'discovery', message: 'seam refused' };
+    return row;
+  }
+
+  it('admits the observed arm, and rejects it claiming an injection', () => {
+    expect(clone().delivery).toEqual(OBSERVED);
+    const injected = clone();
+    injected.delivery = { ...OBSERVED, injected: true };
+    rejects(injected, "is true while mode is 'observed'");
+  });
+
+  it('admits an injected intervened arm over a real trace, with a real overflow entry', () => {
+    const withOverflow = clone();
+    // A real must-consider overflow shape, from `V1_ROUTE_CLASSES`/bands,
+    // not typed loosely: `mustConsiderOverflow` is read by the same band and
+    // route vocabularies the trace itself is checked against.
+    withOverflow.delivery = {
+      ...INTERVENED_OK,
+      mustConsiderOverflow: [
+        {
+          candidateKey: CUBE,
+          band: 'must-consider',
+          routes: [
+            {
+              routeClass: 'campaign-rule',
+              trigger: 't',
+              evidence: {},
+              signalId: 's',
+            },
+          ],
+          reason: 'byte budget exceeded',
+        },
+      ],
+    };
+    expect(
+      readDiscoveryShadowEvidence(withOverflow as TraceJsonValue)?.delivery,
+    ).toEqual(withOverflow.delivery);
+  });
+
+  it('rejects an injected arm missing the rendered identity, or carrying a malformed one', () => {
+    for (const field of [
+      'renderedBytes',
+      'renderedSha256',
+      'candidateCount',
+      'mustConsiderOverflow',
+    ]) {
+      const row = clone();
+      row.delivery = { ...INTERVENED_OK };
+      delete (row.delivery as Row)[field];
+      rejects(row, `delivery.${field}`);
+    }
+
+    const negativeBytes = clone();
+    negativeBytes.delivery = { ...INTERVENED_OK, renderedBytes: -1 };
+    rejects(negativeBytes, 'delivery.renderedBytes');
+
+    const shortHash = clone();
+    shortHash.delivery = { ...INTERVENED_OK, renderedSha256: 'deadbeef' };
+    rejects(shortHash, 'delivery.renderedSha256');
+
+    const upperHash = clone();
+    upperHash.delivery = {
+      ...INTERVENED_OK,
+      renderedSha256: INTERVENED_OK.renderedSha256.toUpperCase(),
+    };
+    rejects(upperHash, 'delivery.renderedSha256');
+
+    const fractionalCount = clone();
+    fractionalCount.delivery = { ...INTERVENED_OK, candidateCount: 1.5 };
+    rejects(fractionalCount, 'delivery.candidateCount');
+
+    const unknownKey = clone();
+    unknownKey.delivery = { ...INTERVENED_OK, extra: 'field' };
+    rejects(unknownKey, 'delivery.extra');
+  });
+
+  it('admits an un-injected intervened arm beside a real failure, and rejects one with no reason', () => {
+    const row = interveneFailed();
+    row.delivery = {
+      mode: 'intervened',
+      injected: false,
+      reason: 'render failed: seam refused',
+    };
+    expect(
+      readDiscoveryShadowEvidence(row as TraceJsonValue)?.delivery,
+    ).toEqual(row.delivery);
+
+    const noReason = interveneFailed();
+    noReason.delivery = { mode: 'intervened', injected: false };
+    rejects(noReason, 'delivery.reason');
+
+    const emptyReason = interveneFailed();
+    emptyReason.delivery = { mode: 'intervened', injected: false, reason: '' };
+    rejects(emptyReason, 'delivery.reason');
+
+    const extraField = interveneFailed();
+    extraField.delivery = {
+      mode: 'intervened',
+      injected: false,
+      reason: 'x',
+      renderedBytes: 1,
+    };
+    rejects(extraField, 'delivery.renderedBytes');
+  });
+
+  it('rejects an unknown mode', () => {
+    const row = clone();
+    row.delivery = { mode: 'shadowed', injected: false };
+    rejects(row, 'delivery.mode');
+  });
+
+  it('rejects delivery claiming a fact about trace/failure the row does not carry', () => {
+    // `injected: true` claims a trace was rendered from; this row has none.
+    const injectedWithoutTrace = interveneFailed();
+    injectedWithoutTrace.delivery = INTERVENED_OK;
+    rejects(injectedWithoutTrace, 'delivery.injected');
+
+    // `injected: false` under `intervened` claims the capture failed; this
+    // row's capture succeeded.
+    const notInjectedWithTrace = clone();
+    notInjectedWithTrace.delivery = {
+      mode: 'intervened',
+      injected: false,
+      reason: 'x',
+    };
+    rejects(notInjectedWithTrace, 'delivery.injected');
+  });
+});
+
+/**
  * A corrupted canonical fact changes the measurement TRUTHFULLY. This is the
  * property the redesign buys: with no independently trusted second copy, a
  * coordinated corruption cannot exist, because there is nothing to coordinate
@@ -427,11 +579,15 @@ describe('measurements follow the canonical record', () => {
       const row = JSON.parse(
         JSON.stringify(
           encodeDiscoveryShadowEvidence(
-            completeDiscoveryShadowEvidence(capture, {
-              capabilityInvocations: [],
-              stateEffects: [],
-              audit: { auditor: 'absent' },
-            }),
+            completeDiscoveryShadowEvidence(
+              capture,
+              {
+                capabilityInvocations: [],
+                stateEffects: [],
+                audit: { auditor: 'absent' },
+              },
+              { mode: 'observed', injected: false },
+            ),
           ),
         ),
       ) as Row;
@@ -1202,6 +1358,7 @@ describe('traversal events against the state they produced', () => {
             stateEffects: [],
             audit: { auditor: 'absent' },
           },
+          { mode: 'observed', injected: false },
         ),
       ) as Row;
       const admittedTrace = admitted(row);

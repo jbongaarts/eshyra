@@ -117,6 +117,7 @@ function captureForOperation(
       stateEffects: [],
       audit: { auditor: 'absent' },
     },
+    { mode: 'observed', injected: false },
   );
 }
 
@@ -266,6 +267,7 @@ describe('runtime capability events reach M10', () => {
       const evidence = completeDiscoveryShadowEvidence(
         captureForOperation(db, GEM, BLOCKED_OPERATION),
         observations(events),
+        { mode: 'observed', injected: false },
       );
       recordTurnTrace(db, {
         campaignId: DEFAULT_TEST_CAMPAIGN_ID,
