@@ -33,6 +33,7 @@ import {
 } from '../support/db.js';
 import { installJhptCampaignRules } from './support/jhptCampaignRules.js';
 import { installProbeCampaignState } from './support/runtimeCampaignState.js';
+import { CONDITIONAL_STAGES, RUNTIME_REACH } from './support/runtimeReach.js';
 import { installScenarioBinding } from './support/scenario.js';
 
 /**
@@ -162,57 +163,10 @@ function requireTrace(
   return evidence.trace;
 }
 
-/**
- * Which offline must-include targets each probe's REAL turn actually reaches,
- * and, for a miss, the stage that lost it.
- *
- * This is the substantive Phase 2 result and is asserted exactly, in both
- * directions: a probe that starts reaching a target it did not reach, or stops
- * reaching one it did, fails here. Every miss is a named finding about runtime
- * discovery, never a tolerance:
- *
- * - P1 and P2 lose their targets at `signals`. Both cues read fixture state
- *   fields (`combat.geometry`, `movementIntent`) that the live `StateSnapshot`
- *   does not carry, so shadow mode extracts nothing for them.
- * - P5 reaches the condition from the player's words but not
- *   `rule:concentration`, which the offline fixture supplied as scenario state.
- * - P9's authored entities are reached because the campaign has a real
- *   adventure run and the turn is given a module resolver (B2's repair); the
- *   probe would report them lost at `signals` without it.
- */
-const RUNTIME_REACH: Readonly<
-  Record<string, Readonly<Record<string, string | null>>>
-> = {
-  'P1/default': { 'rule:cover': 'signals' },
-  'P2/default': {
-    'rule:opportunity-attacks': 'signals',
-    'creature:goblin': null,
-  },
-  'P3/default': { 'creature:adult-black-dragon': null },
-  'P4/default': { 'spell:fireball': null },
-  'P5/default': {
-    'condition:incapacitated': null,
-    'rule:concentration': 'signals',
-  },
-  'P6/default': { 'feature:fighter:action-surge': null },
-  'P7/without-active-ruling': { 'magic-item:cube-of-force': null },
-  'P7/with-active-ruling': { 'magic-item:cube-of-force': null },
-  'P8/default': { 'magic-item:ammunition-1-2-or-3': null },
-  'P9/default': {
-    'creature:goblin': null,
-    'eshyra:hollow-beneath-emberfall#encounter:enc-mouth-ambush': null,
-    'eshyra:hollow-beneath-emberfall#location:loc-watchtower-mouth': null,
-  },
-  'P10/default': { 'spell:fireball': null },
-  'P11/default': { 'magic-item:ring-of-protection': null },
-  'P12/default': { 'class:fighter': null },
-};
-
-/** Design section 12.1 declares exactly these two stages conditional. */
-const CONDITIONAL_STAGES = new Set([
-  'campaign-rule-expansion',
-  'late-ruling-join',
-]);
+// RUNTIME_REACH and CONDITIONAL_STAGES moved to ./support/runtimeReach.js
+// (eshyra-o9bd.19.12.4) so this suite and packetIntervention.test.ts import
+// one shared table rather than pinning two copies that could silently
+// diverge. See that module's header for the table's own rationale.
 
 describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
   /**
