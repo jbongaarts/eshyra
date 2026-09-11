@@ -334,8 +334,6 @@ describe('delivery', () => {
     injected: true,
     renderedBytes: 42,
     renderedSha256: 'a'.repeat(64),
-    candidateCount: 1,
-    mustConsiderOverflow: [],
   };
 
   function interveneFailed(): Row {
@@ -351,41 +349,31 @@ describe('delivery', () => {
     rejects(injected, "is true while mode is 'observed'");
   });
 
-  it('admits an injected intervened arm over a real trace, with a real overflow entry', () => {
-    const withOverflow = clone();
-    // A real must-consider overflow shape, from `V1_ROUTE_CLASSES`/bands,
-    // not typed loosely: `mustConsiderOverflow` is read by the same band and
-    // route vocabularies the trace itself is checked against.
-    withOverflow.delivery = {
-      ...INTERVENED_OK,
-      mustConsiderOverflow: [
-        {
-          candidateKey: CUBE,
-          band: 'must-consider',
-          routes: [
-            {
-              routeClass: 'campaign-rule',
-              trigger: 't',
-              evidence: {},
-              signalId: 's',
-            },
-          ],
-          reason: 'byte budget exceeded',
-        },
-      ],
-    };
+  it('admits an injected intervened arm over a real trace', () => {
+    const row = clone();
+    row.delivery = { ...INTERVENED_OK };
     expect(
-      readDiscoveryShadowEvidence(withOverflow as TraceJsonValue)?.delivery,
-    ).toEqual(withOverflow.delivery);
+      readDiscoveryShadowEvidence(row as TraceJsonValue)?.delivery,
+    ).toEqual(INTERVENED_OK);
+  });
+
+  /**
+   * The injected arm states facts about the DELIVERED TEXT and nothing else.
+   * `candidateCount` and `mustConsiderOverflow` were removed from it
+   * (`eshyra-o9bd.19.12.5`) because the trace already owns them, so a row
+   * carrying either is a stale shape and is rejected as an unknown key rather
+   * than quietly admitted and read as authority.
+   */
+  it('rejects a retained-candidate summary smuggled onto the delivery arm', () => {
+    for (const stale of [{ candidateCount: 1 }, { mustConsiderOverflow: [] }]) {
+      const row = clone();
+      row.delivery = { ...INTERVENED_OK, ...stale };
+      rejects(row, `delivery.${Object.keys(stale)[0]}`);
+    }
   });
 
   it('rejects an injected arm missing the rendered identity, or carrying a malformed one', () => {
-    for (const field of [
-      'renderedBytes',
-      'renderedSha256',
-      'candidateCount',
-      'mustConsiderOverflow',
-    ]) {
+    for (const field of ['renderedBytes', 'renderedSha256']) {
       const row = clone();
       row.delivery = { ...INTERVENED_OK };
       delete (row.delivery as Row)[field];
@@ -406,10 +394,6 @@ describe('delivery', () => {
       renderedSha256: INTERVENED_OK.renderedSha256.toUpperCase(),
     };
     rejects(upperHash, 'delivery.renderedSha256');
-
-    const fractionalCount = clone();
-    fractionalCount.delivery = { ...INTERVENED_OK, candidateCount: 1.5 };
-    rejects(fractionalCount, 'delivery.candidateCount');
 
     const unknownKey = clone();
     unknownKey.delivery = { ...INTERVENED_OK, extra: 'field' };

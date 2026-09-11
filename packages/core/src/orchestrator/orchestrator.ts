@@ -922,8 +922,6 @@ export async function runTurn(
             renderedSha256: createHash('sha256')
               .update(intervention.rendered.text, 'utf8')
               .digest('hex'),
-            candidateCount: intervention.rendered.candidateCount,
-            mustConsiderOverflow: intervention.rendered.mustConsiderOverflow,
           },
         };
       }

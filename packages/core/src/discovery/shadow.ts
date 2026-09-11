@@ -22,7 +22,6 @@ import type {
   CampaignRuleReadSeam,
   DiscoveryScenario,
   DiscoveryTrace,
-  RetentionOverflow,
   RuntimeCapabilityInvocation,
   RuntimeStateEffect,
 } from './types.js';
@@ -130,6 +129,17 @@ export type DiscoveryShadowCapture = DiscoveryShadowCaptureBase &
  *   asking "was this injected?" is answered by `mode`+`injected` together, and
  *   every other field it might want is only ever present on the arm where it
  *   means something.
+ *
+ * The injected arm carries ONLY facts about the delivered text — its size and
+ * its fingerprint — and deliberately no summary of what discovery retained.
+ * An earlier revision also stored `candidateCount` and `mustConsiderOverflow`
+ * here. Both are already derivable from `capture.trace`'s canonical
+ * dispositions, which is where M6 and M7 read them, so storing them again was
+ * a second copy of a fact the trace owns: the same "derive one from the
+ * other, never store both" rule this module applies to every stage summary
+ * (`eshyra-o9bd.19.12.5`). A reader wanting the retained-candidate picture
+ * measures the trace; `delivery` answers only whether the DM received the
+ * packet, and exactly which bytes.
  */
 export type ShadowDelivery =
   | { readonly mode: 'observed'; readonly injected: false }
@@ -142,8 +152,6 @@ export type ShadowDelivery =
        * message recorded in `turn_trace.retrieved_context`.
        */
       readonly renderedSha256: string;
-      readonly candidateCount: number;
-      readonly mustConsiderOverflow: readonly RetentionOverflow[];
     }
   | {
       readonly mode: 'intervened';
@@ -795,15 +803,6 @@ const FAILURE_STAGES = [
 ] as const;
 const DELIVERY_MODES = ['observed', 'intervened'] as const;
 
-/**
- * The v1 candidate-band vocabulary, pinned HERE for the same reason as
- * `V1_ROUTE_CLASSES`: `ShadowDelivery`'s `mustConsiderOverflow` stores each
- * dropped candidate's band, and a must-consider drop is exactly the one that
- * fails a probe (design section 6.3), so a corrupted band must not be
- * softened into an unrecognized-but-accepted string.
- */
-const V1_CANDIDATE_BANDS = ['must-consider', 'related', 'exploratory'] as const;
-
 /** The identity and lifecycle every stage record carries. */
 function checkStageHeader(
   value: unknown,
@@ -1388,17 +1387,6 @@ function checkAudit(value: unknown, path: string): number {
   return (audit.retries as unknown[]).length + 1;
 }
 
-/** `RetentionOverflow`, as `ShadowDelivery`'s injected arm stores it. */
-function checkRetentionOverflow(value: unknown, path: string): void {
-  const overflow = asObject(value, path);
-  asString(overflow.candidateKey, `${path}.candidateKey`);
-  asEnum(overflow.band, `${path}.band`, V1_CANDIDATE_BANDS);
-  checkRoutes(overflow.routes, `${path}.routes`);
-  const reason = asString(overflow.reason, `${path}.reason`);
-  if (reason.length === 0)
-    failAt(`${path}.reason`, 'must not be empty on a recorded overflow');
-}
-
 /**
  * `ShadowDelivery`, admitted narrowly. This is the field a reader consults to
  * learn whether the DM actually received the packet (design section 12.3), so
@@ -1423,14 +1411,7 @@ function checkDelivery(value: unknown, path: string): void {
   if (injected) {
     exactKeys(
       delivery,
-      [
-        'mode',
-        'injected',
-        'renderedBytes',
-        'renderedSha256',
-        'candidateCount',
-        'mustConsiderOverflow',
-      ],
+      ['mode', 'injected', 'renderedBytes', 'renderedSha256'],
       path,
     );
     asNumber(delivery.renderedBytes, `${path}.renderedBytes`);
@@ -1442,17 +1423,6 @@ function checkDelivery(value: unknown, path: string): void {
         `${path}.renderedSha256`,
         'is not a 64-character lowercase hex sha-256 digest',
       );
-    asNumber(delivery.candidateCount, `${path}.candidateCount`);
-    if (
-      !Number.isInteger(delivery.candidateCount as number) ||
-      (delivery.candidateCount as number) < 0
-    )
-      failAt(`${path}.candidateCount`, 'must be a non-negative integer');
-    each(
-      delivery.mustConsiderOverflow,
-      `${path}.mustConsiderOverflow`,
-      checkRetentionOverflow,
-    );
     return;
   }
   exactKeys(delivery, ['mode', 'injected', 'reason'], path);
