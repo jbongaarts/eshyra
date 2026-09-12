@@ -177,17 +177,20 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    // Source-coverage artifacts (eshyra-4a7.1): the regenerated
+    // Source-coverage artifacts (eshyra-4a7.1) + the field-provenance
+    // declaration table (eshyra-o9bd.19.1.3.1): the regenerated
     // source-inventory.json + source-coverage.json + source-region-ledger.json
-    // must match the committed copies byte-for-byte — the same exact-match
-    // contract records.json has.
-    // Drift means an importer/extractor/rule change altered the source
-    // accounting without a matching artifact regeneration.
+    // + field-provenance.json must match the committed copies byte-for-byte —
+    // the same exact-match contract records.json has.
+    // Drift means an importer/extractor/rule/declaration change altered the
+    // source accounting or field-provenance classification without a
+    // matching artifact regeneration.
     let artifactsDrifted = false;
     for (const artifact of [
       'source-inventory.json',
       'source-coverage.json',
       'source-region-ledger.json',
+      'field-provenance.json',
     ]) {
       let committedText: string;
       try {

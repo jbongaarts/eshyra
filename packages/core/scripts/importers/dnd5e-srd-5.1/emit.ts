@@ -15,6 +15,12 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import {
+  assertFieldProvenanceCoverage,
+  buildFieldProvenanceManifest,
+  type FieldProvenanceManifest,
+} from '../../../src/rules/fieldProvenance.js';
+import { PACK_FIELD_PROVENANCE_FILE } from '../../../src/rules/packLoader.js';
 import type {
   RecordProvenance,
   RulesPack,
@@ -36,6 +42,7 @@ import {
 import { deriveFeatureChoices } from './deriveFeatureChoices.js';
 import { equipmentMechanicsFor } from './equipmentMechanics.js';
 import { getEquipmentPackContents } from './equipmentPackContents.js';
+import { DND5E_FIELD_PROVENANCE_DECLARATIONS } from './fieldProvenanceDeclarations.js';
 import { linkOwnedTables } from './linkOwnedTables.js';
 import {
   attachMagicItemExecutionReadiness,
@@ -103,6 +110,18 @@ const SOURCE_DATE = '2023-01-27';
 
 const PROVENANCE_POLICY =
   'Each record names the SRD page it was extracted from when the upstream record carries a page; pageless records cite the SRD section as the locator.';
+
+/**
+ * The field-provenance declaration table (eshyra-o9bd.19.1.3.1), built once
+ * and reused both by the fail-closed coverage gate in `buildPack` and by the
+ * `field-provenance.json` artifact `writePackToDirectory` emits alongside
+ * `manifest.json` / `records.json`. Building it here (rather than inline at
+ * each use site) also means a malformed declaration (bad prefix, unknown
+ * class, duplicate `(kind, pointerPrefix)`) throws at module load time, not
+ * buried inside a build/write call.
+ */
+const FIELD_PROVENANCE_MANIFEST: FieldProvenanceManifest =
+  buildFieldProvenanceManifest(DND5E_FIELD_PROVENANCE_DECLARATIONS);
 
 export const SRD_5_1_LICENSE: RulesPackLicense = {
   licenseClass: 'open',
@@ -1722,7 +1741,16 @@ export function buildPack(input: BuildPackInput): RulesPack {
     records,
   };
   // Throws on schema / provenance / structural error.
-  return validateRulesPack(pack);
+  const validated = validateRulesPack(pack);
+  // Fail-closed field-provenance gate (eshyra-o9bd.19.1.3.1): every leaf value
+  // this build just emitted must resolve to exactly one declared class for
+  // its record kind, or the build stops here — before any output is written,
+  // matching every other fail-closed gate in this function. An unmatched
+  // pointer is never defaulted to a class (see fieldProvenance.ts); a future
+  // field the importer starts emitting without an accompanying declaration
+  // must fail here, not ship silently unclassified.
+  assertFieldProvenanceCoverage(validated.records, FIELD_PROVENANCE_MANIFEST);
+  return validated;
 }
 
 function uniqueKindsOf(records: readonly RulesRecord[]): readonly string[] {
@@ -1772,6 +1800,18 @@ export function writePackToDirectory(
   writeFileSync(
     join(options.outDir, 'records.json'),
     stringify(pack.records),
+    'utf8',
+  );
+  // Field-provenance manifest (eshyra-o9bd.19.1.3.1): a pack artifact, not a
+  // per-record duplication (see the module doc comment on
+  // FIELD_PROVENANCE_MANIFEST and fieldProvenance.ts). Written unconditionally
+  // alongside manifest.json/records.json — this file is specific to the
+  // dnd5e-srd-5.1 importer, so every caller of this function is building this
+  // pack's output, real or fixture. Same stable serialization as the rest of
+  // the emitter, so regeneration is byte-stable.
+  writeFileSync(
+    join(options.outDir, PACK_FIELD_PROVENANCE_FILE),
+    stringify(FIELD_PROVENANCE_MANIFEST),
     'utf8',
   );
 }
