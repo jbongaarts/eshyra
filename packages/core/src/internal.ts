@@ -1087,6 +1087,22 @@ export {
   isFeatureChoiceCategory,
 } from './rules/featureChoices.js';
 export type {
+  FieldProvenanceClass,
+  FieldProvenanceCoverageSummary,
+  FieldProvenanceDeclaration,
+  FieldProvenanceLeaf,
+  FieldProvenanceManifest,
+} from './rules/fieldProvenance.js';
+export {
+  assertFieldProvenanceCoverage,
+  buildFieldProvenanceManifest,
+  classifyFieldPointer,
+  FIELD_PROVENANCE_CLASSES,
+  FIELD_PROVENANCE_SCHEMA,
+  FieldProvenanceError,
+  walkFieldPointers,
+} from './rules/fieldProvenance.js';
+export type {
   EvidenceBasis,
   FindingProvenance,
   FindingRegistry,
@@ -1166,7 +1182,9 @@ export {
   resolveMagicItemVariant,
 } from './rules/magicItemVariants.js';
 export {
+  loadFieldProvenanceManifest,
   loadRulesPackFromDirectory,
+  PACK_FIELD_PROVENANCE_FILE,
   PACK_MANIFEST_FILE,
   PACK_RECORDS_FILE,
 } from './rules/packLoader.js';

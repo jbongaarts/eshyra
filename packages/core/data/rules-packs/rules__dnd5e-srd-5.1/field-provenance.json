@@ -1,0 +1,1247 @@
+{
+  "schema": "field-provenance-v1",
+  "declarations": [
+    {
+      "kind": "action",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the action's SRD description paragraph, quoted verbatim."
+    },
+    {
+      "kind": "action",
+      "pointerPrefix": "/mechanics",
+      "class": "compiler-projection",
+      "reason": "action.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the ancestry intro paragraph, quoted verbatim."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/abilityScoreIncreases",
+      "class": "source-derived",
+      "reason": "the fixed/choice ability-score bonus structure, parsed from the printed \"Ability Score Increase\" line."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/abilityScoreIncreases/*/sourceText",
+      "class": "source-prose",
+      "reason": "the verbatim printed Ability Score Increase clause, kept alongside the parsed fixed/choice structure."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/choices",
+      "class": "source-derived",
+      "reason": "structured creation-choice facts (category/choose/from/tableRef/roll/id)."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/choices/*/sourceText",
+      "class": "source-prose",
+      "reason": "source-derived, not source-prose (see module doc comment): kindSchemas.ts documents this as \"a source-cited display label, not guaranteed verbatim SRD prose\" — for the four rolled-table categories it is a compiler-constructed \"<table> (<die>).\" pointer, not a quote."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/choices/*/prompt",
+      "class": "compiler-projection",
+      "reason": "a compiler-authored, human-readable prompt string (see deriveFeatureChoices.ts), never a source quote."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/languages",
+      "class": "source-derived",
+      "reason": "structured language-grant facts (fixed/choose/from), parsed from the printed languages line."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/languages/*/sourceText",
+      "class": "source-prose",
+      "reason": "the verbatim printed languages clause, kept alongside the parsed grant structure."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/size",
+      "class": "source-derived",
+      "reason": "the size category word, extracted from the ancestry header line."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/source",
+      "class": "source-derived",
+      "reason": "a structural field describing where this ancestry sits in the source (page/section), not narrative prose."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/speed",
+      "class": "source-derived",
+      "reason": "the base walking speed, extracted from the ancestry header line."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/subraceOf",
+      "class": "source-derived",
+      "reason": "a record-key reference to the parent ancestry, not source text."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/subraces",
+      "class": "source-derived",
+      "reason": "a list of subrace record-key references, not source text."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/traits/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/traits/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/traits/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/traits[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "ancestry",
+      "pointerPrefix": "/traits/*/tableRefs",
+      "class": "source-derived",
+      "reason": "a list of this trait's linked `table:` record-key references, not source text."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the background intro paragraph, quoted verbatim."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/skillProficiencies",
+      "class": "source-derived",
+      "reason": "a list of skill names granted by the background, parsed from the printed proficiencies line."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/toolProficiencies",
+      "class": "source-derived",
+      "reason": "a list of tool names granted by the background, parsed from the printed proficiencies line."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/languages",
+      "class": "source-derived",
+      "reason": "structured language-grant facts, parsed from the printed languages line."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/languages/*/sourceText",
+      "class": "source-prose",
+      "reason": "the verbatim printed languages clause, kept alongside the parsed grant structure."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/equipment",
+      "class": "source-prose",
+      "reason": "the printed starting-equipment paragraph, quoted verbatim (the structured breakdown lives separately in equipmentGrants)."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/feature/name",
+      "class": "source-prose",
+      "reason": "the background feature's bold lead-in label, quoted verbatim."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/feature/text",
+      "class": "source-prose",
+      "reason": "the background feature's body text, quoted verbatim."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/feature/mechanics",
+      "class": "compiler-projection",
+      "reason": "background.feature.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/suggestedCharacteristics",
+      "class": "source-prose",
+      "reason": "the intro paragraph pointing at the suggested-characteristics roll tables, quoted verbatim."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/tableRefs",
+      "class": "source-derived",
+      "reason": "a list of linked `table:` record-key references, not source text."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/choices",
+      "class": "source-derived",
+      "reason": "structured creation-choice facts (category/choose/from/tableRef/roll/id)."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/choices/*/sourceText",
+      "class": "source-derived",
+      "reason": "source-derived, not source-prose — see the ancestry choices/*/sourceText note above and the module doc comment; the same optCreationChoices shape is shared by ancestry and background."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/choices/*/prompt",
+      "class": "compiler-projection",
+      "reason": "a compiler-authored, human-readable prompt string, never a source quote."
+    },
+    {
+      "kind": "background",
+      "pointerPrefix": "/equipmentGrants",
+      "class": "source-derived",
+      "reason": "the structured line-item breakdown (name/quantity/ref/detail/select) of the equipment paragraph above."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/armorProficiencies",
+      "class": "source-derived",
+      "reason": "a list of armor-category proficiencies, parsed from the printed proficiencies block."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/features",
+      "class": "source-derived",
+      "reason": "a list of this class's granted `feature:` record-key references, not source text."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/hitDie",
+      "class": "source-derived",
+      "reason": "the class's hit die size, parsed from the printed Hit Points block."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/primaryAbilities",
+      "class": "source-derived",
+      "reason": "a list of primary-ability names, parsed from the Multiclassing prerequisites listing (best-effort enrichment)."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/proficiencyNotes",
+      "class": "source-derived",
+      "reason": "structured (field, text) proficiency-restriction notes."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/proficiencyNotes/*/text",
+      "class": "source-prose",
+      "reason": "a proficiency-restriction clause (e.g. the Druid metal-armor restriction) lifted out of the normalized token, quoted verbatim."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/progression",
+      "class": "source-derived",
+      "reason": "the class's level-by-level advancement table, transcribed from the printed class progression table."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/progressionTableRef",
+      "class": "source-derived",
+      "reason": "a `table:` record-key reference to the class's printed progression table, not source text."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/savingThrowProficiencies",
+      "class": "source-derived",
+      "reason": "a list of saving-throw ability names, parsed from the printed proficiencies block."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/skillChoices",
+      "class": "source-derived",
+      "reason": "the structured skill-choice grant (choose/from/any), parsed from the printed proficiencies block."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/skillChoices/*/text",
+      "class": "source-prose",
+      "reason": "the verbatim printed skill-choice clause."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/spellPreparation",
+      "class": "source-derived",
+      "reason": "the class's machine-readable spell-preparation formula, deterministically derived from the class's own spellcasting rules text."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/spellPreparation/sourceText",
+      "class": "source-prose",
+      "reason": "the verbatim printed spell-preparation clause the formula was derived from."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/spellcastingAbility",
+      "class": "source-derived",
+      "reason": "the class's spellcasting ability name, parsed from its spellcasting rules text."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/startingEquipment",
+      "class": "source-derived",
+      "reason": "the class's structured starting-equipment grants, transcribed from the printed Equipment clause."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/startingEquipment/text",
+      "class": "source-prose",
+      "reason": "the printed starting-equipment paragraph, quoted verbatim."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/startingEquipment/entries/*/text",
+      "class": "source-prose",
+      "reason": "a printed starting-equipment line/option, quoted verbatim."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/startingEquipment/entries/*/sourceText",
+      "class": "source-prose",
+      "reason": "the verbatim printed starting-equipment clause for this entry, kept alongside its structured grants."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/startingEquipment/entries/*/options/*/text",
+      "class": "source-prose",
+      "reason": "a printed starting-equipment option line, quoted verbatim."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/toolProficiencies",
+      "class": "source-derived",
+      "reason": "a list of tool names, parsed from the printed proficiencies block."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/toolProficiencyChoices",
+      "class": "source-derived",
+      "reason": "the structured tool-choice grant (choose/from), parsed from the printed proficiencies block."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/toolProficiencyChoices/*/text",
+      "class": "source-prose",
+      "reason": "the verbatim printed tool-choice clause."
+    },
+    {
+      "kind": "class",
+      "pointerPrefix": "/weaponProficiencies",
+      "class": "source-derived",
+      "reason": "a list of weapon-category proficiencies, parsed from the printed proficiencies block."
+    },
+    {
+      "kind": "condition",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the condition's intro line, quoted verbatim."
+    },
+    {
+      "kind": "condition",
+      "pointerPrefix": "/effects",
+      "class": "source-prose",
+      "reason": "the printed bullet-point effect list, quoted verbatim per bullet."
+    },
+    {
+      "kind": "condition",
+      "pointerPrefix": "/levels",
+      "class": "source-derived",
+      "reason": "the condition's exhaustion-style level table structure (level numbers)."
+    },
+    {
+      "kind": "condition",
+      "pointerPrefix": "/levels/*/effect",
+      "class": "source-prose",
+      "reason": "a printed per-level effect line, quoted verbatim."
+    },
+    {
+      "kind": "condition",
+      "pointerPrefix": "/mechanics",
+      "class": "compiler-projection",
+      "reason": "condition.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/abilityScores",
+      "class": "source-derived",
+      "reason": "the six ability-score numbers, parsed from the printed ability table."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/actions/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/actions/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/actions/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/actions[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/reactions/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/reactions/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/reactions/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/reactions[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/traits/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/traits/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/traits/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/traits[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/legendaryActions/description",
+      "class": "source-prose",
+      "reason": "the legendary actions section's intro paragraph, quoted verbatim."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/legendaryActions/entries/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/legendaryActions/entries/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/legendaryActions/entries/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/legendaryActions/entries[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/alignment",
+      "class": "source-derived",
+      "reason": "the creature's alignment, parsed from the stat-block header line."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/armorClass",
+      "class": "source-derived",
+      "reason": "the creature's armor class — structured extraction from the source clause."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/armorClass/sourceText",
+      "class": "source-prose",
+      "reason": "the creature's armor class — sourceText is the source clause reproduced verbatim, kept alongside the structured extraction."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/armorClass/variants",
+      "class": "source-derived",
+      "reason": "conditional/alternate AC entries, parsed from the printed AC line parentheticals."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/category",
+      "class": "source-derived",
+      "reason": "the 'npc' discriminator (Appendix MM-B) — a classification the importer assigns from which appendix a stat block was parsed under, not printed text; absence means 'monster'."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/challengeRating",
+      "class": "source-derived",
+      "reason": "the challenge rating, parsed from the printed Challenge line."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/conditionImmunities",
+      "class": "source-derived",
+      "reason": "the condition-immunity list, parsed from the printed statline label."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/damageImmunities",
+      "class": "source-derived",
+      "reason": "the damage-immunity list, parsed from the printed statline label."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/damageResistances",
+      "class": "source-derived",
+      "reason": "the damage-resistance list, parsed from the printed statline label."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/damageVulnerabilities",
+      "class": "source-derived",
+      "reason": "the damage-vulnerability list, parsed from the printed statline label."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the trailing flavor paragraph printed after the stat block, quoted verbatim (eshyra-76b7)."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/experiencePoints",
+      "class": "source-derived",
+      "reason": "the creature's XP award, computed from its challenge rating via the standard CR-to-XP table."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/familyPath",
+      "class": "source-derived",
+      "reason": "the heading-only taxonomy path (e.g. [\"Dragons\",\"Chromatic Dragons\",\"Black Dragons\"]) this creature was grouped under, per the README's own \"source-derived\" terminology (eshyra-4a7.10.2)."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/hitPoints",
+      "class": "source-derived",
+      "reason": "the creature's average hit points and printed dice formula, parsed from the printed Hit Points line."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/hover",
+      "class": "source-derived",
+      "reason": "the boolean 'hovers' flag, parsed from the printed \"(hover)\" annotation on the Speed line."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/languages",
+      "class": "source-derived",
+      "reason": "the languages list, parsed from the printed statline label."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/savingThrows",
+      "class": "source-derived",
+      "reason": "the saving-throw proficiency list, parsed from the printed statline label."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/senses",
+      "class": "source-derived",
+      "reason": "the senses list, parsed from the printed statline label."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/size",
+      "class": "source-derived",
+      "reason": "the creature's size category, parsed from the stat-block header line."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/skills",
+      "class": "source-derived",
+      "reason": "the skill proficiency list, parsed from the printed statline label."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/speed",
+      "class": "source-derived",
+      "reason": "the mode->feet speed map, parsed from the printed Speed line."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/speedSourceText",
+      "class": "source-prose",
+      "reason": "the printed Speed line, quoted verbatim, kept alongside the parsed speed map."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/speedVariants",
+      "class": "source-derived",
+      "reason": "conditional/alternate speed entries (e.g. a lycanthrope form), parsed from the printed Speed line parentheticals."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/type",
+      "class": "source-derived",
+      "reason": "the creature's type (and subtype parenthetical), parsed from the stat-block header line."
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/variants/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/variants/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "creature",
+      "pointerPrefix": "/variants/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/variants[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/ac",
+      "class": "source-derived",
+      "reason": "a shorthand numeric AC value, parsed from the printed armor table row."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/armorClass",
+      "class": "source-derived",
+      "reason": "the item's structured AC formula (base/bonus/dexModifier/dexModifierCap), parsed from the printed armor table row."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/armorType",
+      "class": "source-derived",
+      "reason": "the armor category (light/medium/heavy/shield), parsed from the printed armor table."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/capacity",
+      "class": "source-derived",
+      "reason": "a container capacity value, parsed from the printed item description."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/carryingCapacity",
+      "class": "source-derived",
+      "reason": "a mount/vehicle carrying-capacity value, parsed from the printed item description."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/category",
+      "class": "source-derived",
+      "reason": "the item's equipment category, parsed from its printed table section."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/contents",
+      "class": "source-derived",
+      "reason": "the structured line-item contents of an equipment pack, parsed from the printed pack description."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/cost",
+      "class": "source-derived",
+      "reason": "the item price, parsed from the printed cost column."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/damageDie",
+      "class": "source-derived",
+      "reason": "the weapon damage die, parsed from the printed weapon table row."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/damageType",
+      "class": "source-derived",
+      "reason": "the weapon damage type, parsed from the printed weapon table row."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the item's SRD description prose, quoted verbatim."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/equipmentGroup",
+      "class": "source-derived",
+      "reason": "the item's structural table grouping (e.g. \"Armor\", \"Weapons\"), not narrative prose."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/properties",
+      "class": "source-derived",
+      "reason": "the list of weapon/armor property words, parsed from the printed table's Properties column."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/speed",
+      "class": "source-derived",
+      "reason": "a mount/vehicle speed value, parsed from the printed item description."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/stealthDisadvantage",
+      "class": "source-derived",
+      "reason": "the boolean stealth-disadvantage flag, parsed from the printed armor table."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/strengthRequirement",
+      "class": "source-derived",
+      "reason": "the minimum-Strength requirement, parsed from the printed armor table."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/useProfile",
+      "class": "compiler-projection",
+      "reason": "equipment.useProfile is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/weaponCategory",
+      "class": "source-derived",
+      "reason": "the weapon category (simple/martial), parsed from the printed weapon table."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/weaponProperties",
+      "class": "source-derived",
+      "reason": "structured weapon-property facts (e.g. versatile die, thrown/ammunition range), parsed from the printed Properties column."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/weaponRange",
+      "class": "source-derived",
+      "reason": "the weapon range category, parsed from the printed weapon table."
+    },
+    {
+      "kind": "equipment",
+      "pointerPrefix": "/weight",
+      "class": "source-derived",
+      "reason": "the item weight, parsed from the printed table's Weight column."
+    },
+    {
+      "kind": "feat",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the feat description paragraph, quoted verbatim."
+    },
+    {
+      "kind": "feat",
+      "pointerPrefix": "/prerequisites",
+      "class": "source-prose",
+      "reason": "the printed prerequisite line (e.g. \"Strength 13 or higher.\"), quoted verbatim."
+    },
+    {
+      "kind": "feat",
+      "pointerPrefix": "/mechanics",
+      "class": "compiler-projection",
+      "reason": "feat.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the feature description prose, quoted verbatim."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/source",
+      "class": "source-derived",
+      "reason": "the granting class/subclass record-key, not source text."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/level",
+      "class": "source-derived",
+      "reason": "the integer grant level, parsed from the class progression table."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/tableRefs",
+      "class": "source-derived",
+      "reason": "a list of linked `table:` record-key references, not source text."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/mechanics",
+      "class": "compiler-projection",
+      "reason": "feature.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices",
+      "class": "source-derived",
+      "reason": "structured player-choice facts this feature requires (Fighting Style, subclass selection, Metamagic, spell selection, ...), deterministically derived from the class/feature rules text."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/prompt",
+      "class": "compiler-projection",
+      "reason": "a compiler-authored, human-readable prompt string (deriveFeatureChoices.ts), never a source quote."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/options/*/text",
+      "class": "source-prose",
+      "reason": "a named option's printed descriptive clause (e.g. a Fighting Style option body), quoted verbatim."
+    },
+    {
+      "kind": "feature",
+      "pointerPrefix": "/choices/*/unsupported",
+      "class": "compiler-projection",
+      "reason": "the importer's own diagnostic note about a modeling gap for this choice — commentary about the compiler, not source-derived fact."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/category",
+      "class": "source-derived",
+      "reason": "the hazard's category (trap/disease/poison), a classification the importer assigns based on which SRD subsection it was parsed from."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the hazard's SRD description prose, quoted verbatim."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/poisonType",
+      "class": "source-derived",
+      "reason": "the poison-delivery category, parsed from the printed poison description."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/price",
+      "class": "source-derived",
+      "reason": "the poison price, parsed from the printed poison table/description."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/trapType",
+      "class": "source-derived",
+      "reason": "the trap category (mechanical/magic), parsed from the printed trap description."
+    },
+    {
+      "kind": "hazard",
+      "pointerPrefix": "/mechanics",
+      "class": "compiler-projection",
+      "reason": "hazard.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/attunementRequirement",
+      "class": "source-derived",
+      "reason": "the structured attunement qualifier (e.g. \"by a spellcaster\"), parsed from the printed attunement line."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the item's SRD description prose, quoted verbatim."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/executionReadiness",
+      "class": "compiler-projection",
+      "reason": "magic-item.executionReadiness is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/itemType",
+      "class": "source-derived",
+      "reason": "the item's equipment-category classification, parsed from its printed type line."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/mechanics",
+      "class": "compiler-projection",
+      "reason": "magic-item.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/rarity",
+      "class": "source-derived",
+      "reason": "the item rarity, parsed from the printed type line."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/requiresAttunement",
+      "class": "source-derived",
+      "reason": "the boolean attunement flag, parsed from the printed type line."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/statBlockRefs",
+      "class": "source-derived",
+      "reason": "a list of linked `stat-block:` record-key references, not source text."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/tableRefs",
+      "class": "source-derived",
+      "reason": "a list of linked `table:` record-key references, not source text."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/variants/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/variants/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/variants/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/variants[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/variants/*/rarity",
+      "class": "source-derived",
+      "reason": "a variant's own rarity, parsed from its printed type line."
+    },
+    {
+      "kind": "magic-item",
+      "pointerPrefix": "/variants/*/id",
+      "class": "source-derived",
+      "reason": "a stable variant identifier, not source text."
+    },
+    {
+      "kind": "rule",
+      "pointerPrefix": "/text",
+      "class": "source-prose",
+      "reason": "the rule body, quoted verbatim."
+    },
+    {
+      "kind": "rule",
+      "pointerPrefix": "/tableRefs",
+      "class": "source-derived",
+      "reason": "a list of linked `table:` record-key references, not source text."
+    },
+    {
+      "kind": "rule",
+      "pointerPrefix": "/skillsByAbility",
+      "class": "source-derived",
+      "reason": "the ability->skills grouping, parsed from the printed skills-by-ability table."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/castingTime",
+      "class": "source-derived",
+      "reason": "the printed casting time, parsed from the spell header block."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/classes",
+      "class": "source-derived",
+      "reason": "the list of class names that can cast this spell, computed from the spell-list appendix."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/componentMaterials",
+      "class": "source-prose",
+      "reason": "the printed material-component parenthetical clause, quoted verbatim."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/components",
+      "class": "source-derived",
+      "reason": "the V/S/M component-letter list, parsed from the spell header block."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the spell description prose, quoted verbatim (E5)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/duration",
+      "class": "source-derived",
+      "reason": "the printed spell duration, parsed from the spell header block."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/higherLevels",
+      "class": "source-prose",
+      "reason": "the \"At Higher Levels\" paragraph, quoted verbatim (E5)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/level",
+      "class": "source-derived",
+      "reason": "the spell level, parsed from the spell header block."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/mechanics",
+      "class": "compiler-projection",
+      "reason": "spell.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/range",
+      "class": "source-derived",
+      "reason": "the printed spell range, parsed from the spell header block."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/ritual",
+      "class": "source-derived",
+      "reason": "the boolean ritual flag, parsed from the spell header block."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/scalingSourceKind",
+      "class": "source-derived",
+      "reason": "a classification of where this spell's cantrip/slot scaling text lives, not source text itself."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/scalingSourceText",
+      "class": "source-prose",
+      "reason": "the printed scaling clause this spell's scaling was derived from, quoted verbatim."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/school",
+      "class": "source-derived",
+      "reason": "the spell school, parsed from the spell header block."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/tableRefs",
+      "class": "source-derived",
+      "reason": "a list of linked `table:` record-key references, not source text."
+    },
+    {
+      "kind": "spell",
+      "pointerPrefix": "/upcast",
+      "class": "compiler-projection",
+      "reason": "spell.upcast is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/abilityScores",
+      "class": "source-derived",
+      "reason": "the six ability-score numbers, parsed from the printed inline block."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/actions/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/actions/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/actions/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/actions[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/traits/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/traits/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/traits/*/mechanics",
+      "class": "compiler-projection",
+      "reason": "/traits[].mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/alignment",
+      "class": "source-derived",
+      "reason": "the alignment, parsed from the printed inline block header."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/armorClass",
+      "class": "source-derived",
+      "reason": "the AC value, parsed from the printed inline block (permissive shape; may be textual — eshyra-4a7.4)."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/challengeRating",
+      "class": "source-derived",
+      "reason": "the challenge rating, parsed from the printed inline block, when present."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/conditionImmunities",
+      "class": "source-derived",
+      "reason": "the condition-immunity list, parsed from the printed inline block."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/damageImmunities",
+      "class": "source-derived",
+      "reason": "the damage-immunity list, parsed from the printed inline block."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/experiencePoints",
+      "class": "source-derived",
+      "reason": "the XP award, computed from the challenge rating when present."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/hitPoints",
+      "class": "source-derived",
+      "reason": "the hit-point value/formula, parsed from the printed inline block."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/hitPoints/special",
+      "class": "source-prose",
+      "reason": "a derived/textual HP amount the source prints in place of a number+formula (e.g. \"half the hit point maximum of its summoner\"), quoted verbatim because it could not be reduced to a structured value."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/inlineSource",
+      "class": "source-derived",
+      "reason": "the containing-item + page pointer recording where this inline block is printed — a structural locator, not narrative prose."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/languages",
+      "class": "source-derived",
+      "reason": "the languages list, parsed from the printed inline block."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/senses",
+      "class": "source-derived",
+      "reason": "the senses list, parsed from the printed inline block."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/size",
+      "class": "source-derived",
+      "reason": "the size category, parsed from the printed inline block header."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/speed",
+      "class": "source-derived",
+      "reason": "the mode->feet speed map, parsed from the printed inline block."
+    },
+    {
+      "kind": "stat-block",
+      "pointerPrefix": "/type",
+      "class": "source-derived",
+      "reason": "the creature type, parsed from the printed inline block header."
+    },
+    {
+      "kind": "subclass",
+      "pointerPrefix": "/description",
+      "class": "source-prose",
+      "reason": "the subclass intro paragraph, quoted verbatim."
+    },
+    {
+      "kind": "subclass",
+      "pointerPrefix": "/features",
+      "class": "source-derived",
+      "reason": "a list of this subclass's granted `feature:` record-key references, not source text."
+    },
+    {
+      "kind": "subclass",
+      "pointerPrefix": "/featuresByLevel",
+      "class": "source-derived",
+      "reason": "the level-grouped feature-grant projection (one row per grant level), computed from the granted features' own levels — a derived index, not new source text."
+    },
+    {
+      "kind": "subclass",
+      "pointerPrefix": "/parentClass",
+      "class": "source-derived",
+      "reason": "the parent base `class` record-key, not source text."
+    },
+    {
+      "kind": "subclass",
+      "pointerPrefix": "/sections/*/name",
+      "class": "source-prose",
+      "reason": "literal bold lead-in label printed by the source for this entry"
+    },
+    {
+      "kind": "subclass",
+      "pointerPrefix": "/sections/*/text",
+      "class": "source-prose",
+      "reason": "literal entry body text printed by the source, re-flowed across wrapped lines but not otherwise altered"
+    },
+    {
+      "kind": "subclass",
+      "pointerPrefix": "/spellTableRefs",
+      "class": "source-derived",
+      "reason": "a list of linked `table:` record-key references, not source text."
+    },
+    {
+      "kind": "table",
+      "pointerPrefix": "/columns",
+      "class": "source-prose",
+      "reason": "the printed column header labels, quoted verbatim."
+    },
+    {
+      "kind": "table",
+      "pointerPrefix": "/legend",
+      "class": "source-prose",
+      "reason": "printed footnote/legend text accompanying the table, quoted verbatim."
+    },
+    {
+      "kind": "table",
+      "pointerPrefix": "/rows",
+      "class": "source-prose",
+      "reason": "the table's raw cells, reproduced verbatim from the source table (as opposed to `projection`, the compiler's structured reading of them)."
+    },
+    {
+      "kind": "table",
+      "pointerPrefix": "/projection",
+      "class": "compiler-projection",
+      "reason": "table.projection is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    }
+  ]
+}

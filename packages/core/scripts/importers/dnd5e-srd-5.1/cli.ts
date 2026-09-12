@@ -22,6 +22,11 @@
 import { readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertFieldProvenanceCoverage } from '../../../src/rules/fieldProvenance.js';
+import {
+  loadFieldProvenanceManifest,
+  loadRulesPackFromDirectory,
+} from '../../../src/rules/packLoader.js';
 import {
   EXPECTED_SRD_5_1_BACKGROUND_NAMES,
   EXPECTED_SRD_5_1_CREATURE_NAMES,
@@ -150,6 +155,26 @@ async function main(): Promise<void> {
   );
   console.log(`Source PDF SHA-256: ${result.sourceHash}`);
   console.log(`Output written to: ${result.outDir}`);
+  // Re-load the just-written field-provenance.json through the same loader a
+  // pack consumer would use, and re-run the fail-closed coverage gate over it
+  // (eshyra-o9bd.19.1.3.1). `buildPack` already enforced this before writing
+  // anything; doing it again here from the written files proves the on-disk
+  // artifact round-trips through `loadFieldProvenanceManifest` and reports the
+  // per-kind, per-class leaf counts (E2) for the regeneration record.
+  const writtenPack = loadRulesPackFromDirectory(result.outDir);
+  const fieldProvenanceManifest = loadFieldProvenanceManifest(result.outDir);
+  const coverage = assertFieldProvenanceCoverage(
+    writtenPack.records,
+    fieldProvenanceManifest,
+  );
+  console.log('Field provenance coverage (kind: prose/derived/projection):');
+  for (const [kind, counts] of [...coverage.entries()].sort(([a], [b]) =>
+    a < b ? -1 : a > b ? 1 : 0,
+  )) {
+    console.log(
+      `  ${kind}: ${counts['source-prose']}/${counts['source-derived']}/${counts['compiler-projection']}`,
+    );
+  }
 }
 
 main().catch((err) => {
