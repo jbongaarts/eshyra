@@ -66,7 +66,7 @@ or absence outside a separately bounded population.
 |---|---|---|---|---|
 | **Source fidelity** | A specified emitted value, source-derived assertion, or bounded source population faithfully corresponds to identified licensed source material and provenance. | Rules-pack compiler and source audit. | Canonical source identity and locator plus an independently justified source-to-output comparison.  The source and bounded population are authoritative inputs, not values derived from the emitted record under review. | It does not prove that the value is discovered at runtime, interpreted correctly, executable, or persisted correctly.  Record presence and a provenance-shaped field alone do not prove fidelity or omission-free coverage. |
 | **Discovery telemetry** | During one identified run, a discovery producer emitted the recorded signals, candidates, traversals, retention/packet decisions, and runtime observations. | Runtime discovery and turn-trace producer. | **Internal diagnostic trust model:** trust the admitted producer-owned observation for what that producer did, with the trace's identity, stage outcome, and decision accounting preserved.  Projections and measurements derive from those canonical facts rather than inventing a second observation. | It does not prove the producer should have found every relevant rule, that the source is faithful, that the DM read or understood the packet, that a capability executed, or that state changed correctly.  A trace is not an independent audit of its own producer. |
-| **Adjudication support** | Identified source-backed material, ambiguity, campaign ruling, and disclosed capability boundary were made available to the adjudicator for a bounded situation. | Discovery/context assembly and campaign-rule read seam. | A source-fidelity-qualified subject joined to execution-path evidence that the packet/context actually carried it, including retention/exclusion and stage outcomes. | It does not prove a model selected, understood, or correctly applied the material; it does not prove an outcome, capability execution, or global discovery completeness.  Retrieval or candidate presence alone is insufficient. |
+| **Adjudication support** | Identified source-backed material, ambiguity, campaign ruling, and disclosed capability boundary were made available to the adjudicator for a bounded situation. | Discovery/context assembly and campaign-rule read seam. | **Subject-appropriate authoritative qualification** joined to execution-path evidence that the packet/context actually carried the qualified subject, including retention/exclusion and stage outcomes: source material and source ambiguities use source-fidelity evidence; campaign rules/rulings use the campaign-rule owner's lifecycle/read seam; capability availability and limits use the capability owner's identified contract/preflight. | It does not prove a model selected, understood, or correctly applied the material; it does not prove an outcome, capability execution, or global discovery completeness.  Retrieval or candidate presence alone is insufficient.  A campaign house rule/ruling is not thereby asserted to be licensed-source content, and a capability disclosure is not thereby asserted to be source semantics. |
 | **Deterministic capability execution** | A named capability revision performed its declared bounded operation for an admitted input and produced the observed result according to its contract. | Capability/engine owner. | Positive invocation and behavior evidence at the real execution boundary, with declared operation, inputs, exclusions, identity/revision, and residual DM interpretation.  Tests must discriminate an invalid/missing/unrecognized input or excluded operation from a valid execution. | It does not prove the complete semantics of a record, all variants of a procedure, discovery, source fidelity, or state durability unless those are separately tested.  A capability registration, hook, symbol, schema-valid contract, or preflight status is not execution evidence. |
 | **Finding evidence** | A particular defect class is reproducible under stated conditions, or a repair distinguishes that bad state from the required good state across the declared scope. | Finding owner and regression-test/audit owner. | Reproduction plus a discriminating permanent regression predicate; scope membership and the generalized invariant are explicit.  A finding may combine source, discovery, capability, adjudication, and state evidence without collapsing their trust models. | A registry row, issue status, label, candidate list, or passing synthetic example does not prove the defect is fixed, exhaustive, or irrelevant elsewhere.  Retiring a superseded claim does not retire an underlying defect. |
 | **State integrity** | An identified operation performed the required authorized state transition atomically and with the claimed persistence, attribution, scope, replay/rollback, or migration property. | State tools, engine, persistence, and migration owners. | Execution evidence through the real state boundary plus observation of the resulting durable state and the relevant recovery/replay behavior.  Where authorization or visibility is claimed, the evidence varies the real actor/scope boundary. | It does not prove source fidelity, rule discovery, model interpretation, or semantic completeness of the input record.  A type, migration file, transaction helper, in-memory object, or code symbol is not proof that a runtime write occurred or persisted correctly. |
@@ -76,6 +76,30 @@ what a single observation proves.  For example, a trace can establish that a
 capability invocation was observed by discovery telemetry; the capability owner
 still needs capability-execution evidence for the operation's behavior, and the
 state owner still needs state-integrity evidence for any write it caused.
+
+### Subject authority within adjudication support
+
+Adjudication support is a delivery claim over heterogeneous subjects; it is not
+a source-fidelity claim with extra fields.  Before delivery is claimed, each
+subject is qualified by the authority that owns its content:
+
+- Source prose and source ambiguities are qualified by the source-fidelity
+  category.
+- Campaign rules and rulings are qualified by the campaign-rule owner through
+  its active lifecycle/read projection at the relevant campaign position.  A
+  player-authored or player-approved house rule is authoritative campaign
+  state, not licensed-source material.
+- Capability availability, inputs, exclusions, revision, and residual
+  interpretation are qualified by the capability owner's declared contract or
+  preflight; discovery quotes that boundary and does not redefine it.
+
+The adjudication-support evidence then proves that the correctly qualified
+subject reached the packet/context on the stated path.  It does not substitute
+one subject's authority for another: source fidelity does not validate a
+campaign ruling or capability contract; a campaign ruling does not satisfy a
+capability contract; and a capability preflight does not make source prose
+faithful.  This preserves the distinct authorities while allowing all of them
+to be presented together to the DM.
 
 ## Trust models are selected by responsibility
 
