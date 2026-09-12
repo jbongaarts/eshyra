@@ -1823,8 +1823,13 @@ describe('one capture, one rules-pack source', () => {
       // The add-on's overriding content reached the packet: the trace was
       // built from the same resolution B3 qualified, not a later one. The
       // curse is injected under `data.mechanics.curse` (see
-      // `cursedAttunementAddon.ts`), a declared projection container, so it
-      // is asserted against `projection` rather than `sourceMaterial`.
+      // `cursedAttunementAddon.ts`). Field-provenance classification is
+      // declared per `RulesRecordKind`, not per pack identity
+      // (`fieldProvenance.ts`), and the bundled SRD manifest's
+      // `(magic-item, /mechanics)` declaration is `compiler-projection`
+      // regardless of which pack's record carries the pointer, so this
+      // add-on's own field is asserted against `projection` rather than
+      // `sourceProse` or `sourceDerived`.
       expect(JSON.stringify(candidate?.projection)).toContain(
         'test-addon-curse',
       );

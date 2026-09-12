@@ -776,6 +776,16 @@ const V1_PROJECTION_LIMIT_KINDS = [
 ] as const;
 
 /**
+ * Why a candidate's `residue` entry could not be attributed to any of the
+ * three declared field-provenance classes (`RecordDataResidue`,
+ * `discovery/types.ts`; `eshyra-o9bd.19.12.11`'s F1-rr repair).
+ */
+const V1_RESIDUE_REASONS = [
+  'unrepresentable-shape',
+  'no-provenance-declaration',
+] as const;
+
+/**
  * Pack roles. A stack has exactly one base and any number of add-ons, and
  * comparability of two captures depends on that identity, so a base recorded as
  * an add-on (or the reverse) is malformed rather than merely odd.
@@ -1278,17 +1288,23 @@ function checkTrace(value: unknown, path: string): void {
     if (!('license' in provenance))
       failAt(`${at}.provenance.license`, 'is absent');
     // F2 (PR #543 review): `sourceProse` was one field split by leaf TYPE at
-    // render time. `packetCandidate` now performs the real split at build
-    // time along a declared projection-container boundary (`packet.ts`), so
-    // the durable shape carries both halves plus whatever it could not place
-    // on either — the admission check follows the producer's shape rather
-    // than re-deriving it.
-    asObject(item_.sourceMaterial, `${at}.sourceMaterial`);
+    // render time. `packetCandidate` then performed a two-way split at build
+    // time along a declared projection-container boundary; the second
+    // re-review (F1-rr, `eshyra-o9bd.19.12.11`) found that container-name
+    // heuristic was itself not a provenance boundary, and replaced it with a
+    // THREE-way split read from the pack's own field-provenance manifest —
+    // `sourceProse`, `sourceDerived`, `projection` — so the durable shape
+    // carries all three plus whatever it could not place on any of them. The
+    // admission check follows the producer's shape rather than re-deriving
+    // it.
+    asObject(item_.sourceProse, `${at}.sourceProse`);
+    asObject(item_.sourceDerived, `${at}.sourceDerived`);
     asObject(item_.projection, `${at}.projection`);
     each(item_.residue, `${at}.residue`, (entry, where) => {
       const residueEntry = asObject(entry, where);
       asString(residueEntry.pointer, `${where}.pointer`);
       asString(residueEntry.shape, `${where}.shape`);
+      asEnum(residueEntry.reason, `${where}.reason`, V1_RESIDUE_REASONS);
     });
     checkRoutes(item_.routes, `${at}.routes`);
     checkTraversals(item_.traversals, `${at}.traversals`);

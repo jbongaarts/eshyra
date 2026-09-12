@@ -26,16 +26,17 @@ function routeClasses(candidate: PacketCandidate | undefined): string[] {
 }
 
 /**
- * Both halves of a candidate's record body, combined into one searchable
- * string. These ASSERTIONS check that authored/retrieved CONTENT reached the
- * packet (an encounter name, an NPC id) — not which side of the F2
- * source/projection split it landed on, which `packetMessage.test.ts` and M9
- * already cover directly. Searching both keeps this helper answering the
+ * All three buckets of a candidate's record body, combined into one
+ * searchable string. These ASSERTIONS check that authored/retrieved CONTENT
+ * reached the packet (an encounter name, an NPC id) — not which bucket of the
+ * field-provenance split it landed in, which `packetMessage.test.ts` and M9
+ * already cover directly. Searching all three keeps this helper answering the
  * question it was written for.
  */
 function proseOf(candidate: PacketCandidate | undefined): string {
   return JSON.stringify({
-    sourceMaterial: candidate?.sourceMaterial ?? {},
+    sourceProse: candidate?.sourceProse ?? {},
+    sourceDerived: candidate?.sourceDerived ?? {},
     projection: candidate?.projection ?? {},
   });
 }

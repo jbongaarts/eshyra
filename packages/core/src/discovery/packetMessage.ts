@@ -47,8 +47,9 @@ function valueText(value: unknown): string {
  * STRING leaves and one that emitted only every OTHER leaf, and the caller ran
  * both over the SAME object — the record body's primitive TYPE was standing in
  * for a provenance boundary that was never actually drawn. `packet.ts` now
- * performs the real split (`splitRecordBody`, by declared projection
- * container) and hands this renderer two ALREADY-CLASSIFIED objects; this
+ * performs the real split (`classifyRecordBody`, reading the pack's declared
+ * field-provenance manifest) and hands this renderer THREE
+ * already-classified objects (F1-rr repair, `eshyra-o9bd.19.12.11`); this
  * function's only job is to walk whichever one it is given and print every
  * leaf inside it, string or not, because by the time it runs that heading
  * question is already answered.
@@ -99,21 +100,33 @@ function candidateBlock(candidate: PacketCandidate): string {
   // the record's mechanics, so it gets the plain full-leaf walk, unsplit.
   emitLeaves(candidate.provenance.license, '/license', lines);
   lines.push('### Source prose (verbatim; authoritative)');
-  emitLeaves(candidate.sourceMaterial, '', lines);
+  emitLeaves(candidate.sourceProse, '', lines);
+  // Neither the heading above nor this one: a deterministic parser product
+  // (`armorClass.value`) is truthful and attributable but NOT a quotation, so
+  // it gets its own heading that says so plainly rather than being folded
+  // into "verbatim; authoritative" (the W10 F1-rr defect this heading exists
+  // to close) or into the typed-projection heading below, which is about
+  // INTERPRETIVE compiler material, not deterministic parsing.
+  lines.push(
+    '### Source-derived facts (deterministic parser output from the cited source; NOT a verbatim quotation)',
+  );
+  emitLeaves(candidate.sourceDerived, '', lines);
   lines.push('### Typed projection (does not replace the source prose above)');
   emitLeaves(candidate.projection, '', lines);
   if (candidate.residue.length > 0) {
-    // W10's boundary (`PROJECTION_CONTAINER_KEYS` in packet.ts) classifies
-    // every shape the real pack produces; this heading exists for the shape
-    // it defensively could not, so an unclassifiable value is disclosed
-    // instead of silently landing under either heading above. Placed
-    // immediately beside the two headings it is an exception to, not in a
-    // trailing appendix.
+    // The pack's field-provenance manifest (`rules/fieldProvenance.ts`)
+    // classifies every leaf the real bundled SRD pack produces; this heading
+    // exists for what it could not — a pointer no declaration covers (which
+    // is also what every leaf becomes when no manifest was supplied at all,
+    // `eshyra-o9bd.19.12.11` item 5) or a JS shape the pack's JSON cannot
+    // represent. `item.reason` says which. Disclosed instead of silently
+    // landing under any of the three headings above, and placed immediately
+    // beside them, not in a trailing appendix.
     lines.push(
-      '### Unclassified record data (neither source prose nor typed projection)',
+      '### Unclassified record data (no field-provenance declaration covers this)',
     );
     for (const item of candidate.residue)
-      lines.push(`- ${item.pointer}: ${item.shape}`);
+      lines.push(`- ${item.pointer}: ${item.shape} (${item.reason})`);
   }
   // Design section 7.2 requires a partial projection's omissions to be
   // disclosed IN BAND, beside the projection. These notes previously trailed

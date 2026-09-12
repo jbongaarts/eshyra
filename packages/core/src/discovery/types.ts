@@ -343,22 +343,39 @@ export interface ProjectionLimitNote {
 }
 
 /**
- * One place in a candidate's record body the source/projection walk (`W10`,
- * PR #543 review finding F2) could not classify as either side.
+ * One place in a candidate's record body the field-provenance walk
+ * (`discovery/packet.ts`) could not attribute to any of the three declared
+ * classes (`source-prose`, `source-derived`, `compiler-projection`;
+ * `rules/fieldProvenance.ts`).
  *
- * `RulesRecord.data` is typed `unknown` and the pack declares no per-field
- * provenance (`rules/types.ts`), so the walk that partitions it is written
- * defensively against shapes the corpus does not currently produce — a
- * function, symbol, bigint, or a non-plain object such as a `Date` or `Map`.
- * Silently dropping such a value into source or into projection would be
- * exactly the kind of unstated, undiscoverable default the review forbids;
- * recording it here instead makes it visible in the packet and in the
- * evidence rather than invisible in either heading. Every JSON-shaped record
- * the real pack contains today produces an empty list.
+ * Two distinct reasons put a leaf here, and `reason` says which — conflating
+ * them would hide WHY a reader is looking at an unattested value instead of a
+ * classified one:
+ *
+ * - `'unrepresentable-shape'` — the leaf's own JS type (function, symbol,
+ *   bigint, or a non-plain object such as a `Date` or `Map`) is one the pack's
+ *   JSON cannot express. `RulesRecord.data` is typed `unknown`, so the walk
+ *   is written defensively against this even though every JSON-shaped record
+ *   the real pack contains today produces none.
+ * - `'no-provenance-declaration'` — `classifyFieldPointer`
+ *   (`fieldProvenance.ts`) matched the pointer to no declaration for this
+ *   record's kind, on purpose (that function never substitutes a default).
+ *   This is ALSO what happens to every leaf of a record whose pack ships no
+ *   field-provenance manifest at all — `loadFieldProvenanceManifest`
+ *   (`rules/packLoader.ts`) is optional, and a hand-authored test-corpus pack
+ *   may supply none — because an absent manifest is treated identically to
+ *   one that declares nothing: nothing in it covers anything, so nothing is
+ *   silently defaulted into the verbatim-authoritative bucket merely because
+ *   no manifest argument was passed (`eshyra-o9bd.19.12.11`, item 5).
+ *
+ * `shape` names the leaf's own JS type either way (`residueShape` in
+ * `packet.ts`), even for the second reason where the JS shape itself is not
+ * the problem — it still helps a reader who is looking at the disclosure.
  */
 export interface RecordDataResidue {
   readonly pointer: string;
   readonly shape: string;
+  readonly reason: 'unrepresentable-shape' | 'no-provenance-declaration';
 }
 
 export interface PacketCandidate {
@@ -374,32 +391,52 @@ export interface PacketCandidate {
     readonly license: unknown;
   };
   /**
-   * Verbatim, source-extracted record content: everything in the candidate's
-   * record body that does NOT fall under a declared projection container (see
-   * `PROJECTION_CONTAINER_KEYS` in `packet.ts`, W10's stated boundary). Shaped
-   * exactly like the record body it was sliced from — minus the projection
-   * subtrees — so a JSON pointer into it addresses the same value it always
-   * did. This is the ONLY material the renderer may present as "verbatim;
-   * authoritative" (design section 7.2): F2 found the previous single
-   * `sourceProse` field split by primitive type, which promoted importer-
-   * derived typed strings (e.g. `spell:fireball`'s
-   * `mechanics.saves[0].ability`) to source authority they never had.
+   * Literal, verbatim-quoted record content: every leaf the pack's
+   * field-provenance manifest (`rules/fieldProvenance.ts`) classifies
+   * `source-prose` for this record's kind, at the pointer that classified it.
+   * Shaped exactly like the record body it was sliced from, so a JSON
+   * pointer into it addresses the same value it always did. This is the ONLY
+   * material the renderer may present as "verbatim; authoritative" (design
+   * section 7.2).
+   *
+   * W10's second re-review (F1-rr) found the PREVIOUS boundary — a
+   * consumer-side container-name heuristic, `PROJECTION_CONTAINER_KEYS` — put
+   * `creature:adult-black-dragon`'s `armorClass.value: 19` here too: a
+   * deterministic PARSER PRODUCT, not a quotation of the printed "19 (natural
+   * armor)" statline. That is why classification now reads a fact the
+   * importer itself declared (per `(kind, pointerPrefix)`) instead of
+   * guessing from a container's name — see `sourceDerived` for exactly the
+   * class that case belongs to.
    */
-  readonly sourceMaterial: Readonly<Record<string, unknown>>;
+  readonly sourceProse: Readonly<Record<string, unknown>>;
   /**
-   * Importer-derived typed material sliced from the SAME record body along
-   * the SAME boundary, at the SAME shape and pointers it occupied in the
-   * source. A container's own quoted source text (e.g.
-   * `mechanics.scaling.sourceText`) stays here rather than being pulled back
-   * out into `sourceMaterial`: it is the projection's own record of what it
-   * derived from, not a second, independent source citation, and carving it
-   * out case-by-case would be the start of the field-name list the review
-   * forbids.
+   * Deterministically parsed or computed record content, sliced from the SAME
+   * record body along the SAME manifest boundary: every leaf classified
+   * `source-derived` — truthful and attributable to the cited source, but NOT
+   * a literal quotation of it (an armor class's numeric `value`, a creature's
+   * `hitPoints.formula`, a printed Speed line's `walk` entry). This is a
+   * THIRD bucket, not a subdivision of `sourceProse` or `projection`:
+   * collapsing it into either recreates the exact defect this split exists to
+   * fix, just moved to a new field. The renderer must disclose these plainly
+   * as parser products, never under the verbatim-authoritative heading.
+   */
+  readonly sourceDerived: Readonly<Record<string, unknown>>;
+  /**
+   * Interpretive or curated typed material, sliced from the SAME record body
+   * along the SAME manifest boundary: every leaf classified
+   * `compiler-projection` — material the compiler's curation stage
+   * authored or computed by interpreting the source, not merely transcribing
+   * or parsing it (`mechanics`, `upcast`, `executionReadiness`, a table's
+   * `projection`, an item's `useProfile`). A container's own quoted source
+   * text (e.g. `mechanics.scaling.sourceText`) stays here rather than being
+   * pulled back out into `sourceProse`: it is the projection's own record of
+   * what it derived from, not a second, independent source citation.
    */
   readonly projection: Readonly<Record<string, unknown>>;
-  /** See `RecordDataResidue`. Empty for every record kind the real pack
-   * carries today; present so an unclassifiable shape is disclosed rather
-   * than silently folded into either `sourceMaterial` or `projection`. */
+  /** See `RecordDataResidue`. Empty for every real-pack leaf the bundled SRD
+   * field-provenance manifest covers today; present so an uncovered pointer
+   * or an unclassifiable shape is disclosed rather than silently folded into
+   * `sourceProse`, `sourceDerived`, or `projection`. */
   readonly residue: readonly RecordDataResidue[];
   readonly routes: readonly DiscoveryRoute[];
   readonly traversals: readonly TypedTraversal[];

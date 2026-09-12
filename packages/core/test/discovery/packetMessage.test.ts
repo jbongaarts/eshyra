@@ -5,6 +5,10 @@ import type {
   RetentionBudget,
 } from '../../src/internal.js';
 import {
+  buildContextPacket,
+  classifyFieldPointer,
+  getBundledDnd5eSrdFieldProvenanceManifest,
+  getBundledDnd5eSrdPack,
   renderContextPacketMessage,
   runDiscoveryStages,
 } from '../../src/internal.js';
@@ -17,6 +21,18 @@ import {
   moduleForFixture,
   scenarioForFixture,
 } from './support/scenario.js';
+
+/**
+ * The three headings `packetMessage.ts` renders, quoted once here rather
+ * than retyped at every call site — the "Unclassified" heading is the fourth
+ * and appears only when a candidate actually carries residue, so it stays a
+ * literal at its one use site below instead of joining this list.
+ */
+const SOURCE_PROSE_HEADING = '### Source prose (verbatim; authoritative)';
+const SOURCE_DERIVED_HEADING =
+  '### Source-derived facts (deterministic parser output from the cited source; NOT a verbatim quotation)';
+const PROJECTION_HEADING =
+  '### Typed projection (does not replace the source prose above)';
 
 /**
  * W10 (`eshyra-o9bd.19.12`) permanent evidence for the context-packet
@@ -148,32 +164,69 @@ function headingBlock(span: string, heading: string): string {
 }
 
 /**
- * Every JSON-pointer-qualified STRING leaf under `value`, rendered exactly as
- * `emitLeaves` (`packetMessage.ts`) would render it: `${pointer}: ${value}`.
- * Used to check a projection leaf's own rendered line, not a bare value —
- * "half" is both `mechanics.saves[0].damageOnSuccess` AND an ordinary English
- * word inside Fireball's description prose, so only the pointer-qualified
- * line is a claim about WHICH heading a specific FIELD landed under.
+ * A leaf value rendered exactly as `emitLeaves`'s private `valueText`
+ * (`packetMessage.ts`) would render it: the string itself, or a JSON
+ * encoding for everything else. Duplicated here rather than imported because
+ * the renderer's own helper is module-private — this test independently
+ * reconstructs the rendered LINE FORMAT, not the renderer's behavior.
  */
-function stringLeafLines(
-  value: unknown,
-  path: string,
-  out: string[] = [],
-): string[] {
-  if (typeof value === 'string') {
-    out.push(`${path}: ${value}`);
-    return out;
+function rawValueText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value === undefined) return 'undefined';
+  if (value === null) return 'null';
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
   }
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => {
-      stringLeafLines(item, `${path}/${index}`, out);
+}
+
+/**
+ * Walk every leaf under a rules-record `data` value, calling `visit` with
+ * BOTH pointer conventions in play at once: `displayPointer` keeps concrete
+ * array indices (matching what `emitLeaves` actually renders, e.g.
+ * `/data/actions/5/mechanics/...`) and `normalizedPointer` collapses every
+ * index to `*` (matching `classifyFieldPointer`'s own required convention,
+ * `rules/fieldProvenance.ts`). `bead-E4`'s sweep needs both: one to look the
+ * leaf's class up in the manifest, the other to build the exact rendered
+ * line to search for.
+ */
+function walkClassifiedLeaves(
+  data: unknown,
+  visit: (
+    displayPointer: string,
+    normalizedPointer: string,
+    value: unknown,
+  ) => void,
+  displayPointer = '/data',
+  normalizedPointer = '',
+): void {
+  if (Array.isArray(data)) {
+    data.forEach((item, index) => {
+      walkClassifiedLeaves(
+        item,
+        visit,
+        `${displayPointer}/${index}`,
+        `${normalizedPointer}/*`,
+      );
     });
-    return out;
+    return;
   }
-  if (value !== null && typeof value === 'object')
-    for (const [key, item] of Object.entries(value))
-      stringLeafLines(item, `${path}/${key}`, out);
-  return out;
+  if (data !== null && typeof data === 'object') {
+    for (const [key, value] of Object.entries(
+      data as Record<string, unknown>,
+    )) {
+      if (value === undefined) continue;
+      walkClassifiedLeaves(
+        value,
+        visit,
+        `${displayPointer}/${key}`,
+        `${normalizedPointer}/${key}`,
+      );
+    }
+    return;
+  }
+  visit(displayPointer, normalizedPointer, data);
 }
 
 describe('context-packet message renderer', () => {
@@ -193,6 +246,55 @@ describe('context-packet message renderer', () => {
   });
 
   /**
+   * `eshyra-o9bd.19.12.11` evidence E1 (F1-rr, PR #543's second re-review):
+   * the defect this bead closes, verified directly against the real
+   * `creature:adult-black-dragon` record (`armorClass: {value: 19, source:
+   * 'natural armor', sourceText: '19 (natural armor)'}`). The deleted
+   * `PROJECTION_CONTAINER_KEYS` heuristic put ALL THREE of these under
+   * "Source prose (verbatim; authoritative)", because `armorClass` never
+   * matched a container name — but `value` and `source` are
+   * `parseArmorClassText`'s PARSED OUTPUT, not a quotation, and only
+   * `sourceText` is the literal printed statline. The bundled
+   * field-provenance manifest declares exactly that split: `(creature,
+   * /armorClass)` is `source-derived`, overridden at `(creature,
+   * /armorClass/sourceText)` to `source-prose`.
+   */
+  it('bead-E1/F1-rr — creature armorClass.value and .source are source-derived, never verbatim source prose', () => {
+    const span = candidateSpan(
+      render('P3').text,
+      'creature:adult-black-dragon',
+    );
+    const source = headingBlock(span, SOURCE_PROSE_HEADING);
+    const derived = headingBlock(span, SOURCE_DERIVED_HEADING);
+    expect(source).toContain('/data/armorClass/sourceText: 19 (natural armor)');
+    expect(derived).toContain('/data/armorClass/value: 19');
+    expect(derived).toContain('/data/armorClass/source: natural armor');
+    expect(source).not.toContain('/data/armorClass/value');
+    expect(source).not.toContain('/data/armorClass/source: natural armor');
+  });
+
+  // `eshyra-o9bd.19.12.11` evidence E2 — the re-review's named sibling class:
+  // every structured statline field a creature record carries renders as
+  // source-derived, never as verbatim source prose, exactly like
+  // `armorClass`.
+  it('bead-E2 — hit points, speed, and ability scores render as source-derived, never as verbatim prose', () => {
+    const span = candidateSpan(
+      render('P3').text,
+      'creature:adult-black-dragon',
+    );
+    const source = headingBlock(span, SOURCE_PROSE_HEADING);
+    const derived = headingBlock(span, SOURCE_DERIVED_HEADING);
+    expect(derived).toContain('/data/hitPoints/value: 195');
+    expect(derived).toContain('/data/hitPoints/formula: 17d12 + 85');
+    expect(derived).toContain('/data/speed/walk: 40');
+    expect(derived).toContain('/data/abilityScores/strength: 23');
+    expect(source).not.toContain('/data/hitPoints/value');
+    expect(source).not.toContain('/data/hitPoints/formula');
+    expect(source).not.toContain('/data/speed/walk');
+    expect(source).not.toContain('/data/abilityScores/strength');
+  });
+
+  /**
    * F2 (PR #543 review, `eshyra-o9bd.19.12.8`): the packet used to split a
    * candidate's record body by primitive TYPE — every string under "Source
    * prose", every non-string under "Typed projection" — which is not a
@@ -200,8 +302,9 @@ describe('context-packet message renderer', () => {
    * `{ability: 'dexterity', damageOnSuccess: 'half'}`: both importer-derived
    * typed values, both strings, both therefore landing under "verbatim;
    * authoritative" source prose. These cases prove the repair: the split is
-   * now by declared projection CONTAINER (`PROJECTION_CONTAINER_KEYS` in
-   * `packet.ts`), positionally, at build time in the producer.
+   * now read from the pack's own field-provenance manifest
+   * (`rules/fieldProvenance.ts`), by leaf pointer, at build time in the
+   * producer — `(spell, /mechanics)` is declared `compiler-projection`.
    */
   it("F2 — moves fireball's typed string values out of source prose and into projection", () => {
     const span = candidateSpan(render('P4').text, 'spell:fireball');
@@ -301,20 +404,20 @@ describe('context-packet message renderer', () => {
   // F2, P10: the review names P10 by id without specifying which of its
   // fields are prose versus typed. P10 targets the SAME `spell:fireball`
   // record as P4 (this time beside an active house rule), so it carries the
-  // identical split: `components` and the failed-save description are source
-  // prose, `mechanics.saves`/`mechanics.damage`/`upcast` are projection.
-  it('F2 — P10 splits its governing spell:fireball record the same way as P4', () => {
+  // identical split: `components` is source-DERIVED — a parsed
+  // "V"/"S"/"M" token list, not a quotation of source prose (F1-rr,
+  // `eshyra-o9bd.19.12.11`; the bundled manifest declares
+  // `(spell, /components)` as `source-derived`, not `source-prose`) — the
+  // failed-save description is source prose, and
+  // `mechanics.saves`/`mechanics.damage`/`upcast` are projection.
+  it('F2/F1-rr — P10 splits its governing spell:fireball record the same way as P4', () => {
     const span = candidateSpan(render('P10').text, 'spell:fireball');
-    const source = headingBlock(
-      span,
-      '### Source prose (verbatim; authoritative)',
-    );
-    const projection = headingBlock(
-      span,
-      '### Typed projection (does not replace the source prose above)',
-    );
+    const source = headingBlock(span, SOURCE_PROSE_HEADING);
+    const derived = headingBlock(span, SOURCE_DERIVED_HEADING);
+    const projection = headingBlock(span, PROJECTION_HEADING);
     // Prose fields P10's own fixture facts require (design amendment 11.1).
-    expect(source).toContain('/data/components/0: V');
+    expect(derived).toContain('/data/components/0: V');
+    expect(source).not.toContain('/data/components/0: V');
     expect(source).toContain('A target takes 8d6 fire damage on a failed save');
     // The same typed fields P4 proves, present here too and still projection.
     expect(projection).toContain('/data/mechanics/saves/0/ability: dexterity');
@@ -328,33 +431,134 @@ describe('context-packet message renderer', () => {
   });
 
   /**
-   * F2, generic evidence case. The named-field assertions above prove the
-   * split for specific values the reviewer named; none of them would catch a
-   * NEW projection string introduced later under an already-declared
-   * container regressing back onto the source side (e.g. a renderer change
-   * that iterates the wrong field). This case instead walks every STRING leaf
-   * actually present in EVERY retained candidate's structured `projection`
-   * (P9 retains both `rules-record` and `adventure-entity` candidates, so the
-   * check exercises both `packetCandidate` branches), and asserts that exact
-   * pointer-qualified line never appears under that SAME candidate's Source
-   * prose heading. It is a structural check, not a named-value one, so it
-   * regresses on ANY future leak, not just the ones already known.
+   * `eshyra-o9bd.19.12.11` evidence E4, generic sweep. The named-field
+   * assertions above prove the split for specific values the reviewer named;
+   * none of them would catch a NEW `source-derived` or `compiler-projection`
+   * leaf introduced later regressing back onto the verbatim-authoritative
+   * side (e.g. a renderer change that iterates the wrong field, or a future
+   * manifest edit this test never learns about because it hardcoded the OLD
+   * expectation instead of re-deriving one).
+   *
+   * This is why the check is driven from the MANIFEST at assertion time
+   * rather than from `packet.ts`'s own already-split candidate fields: it
+   * independently re-walks each retained candidate's REAL record (fetched
+   * fresh from `getBundledDnd5eSrdPack()`, not derived from the packet under
+   * test), classifies every leaf with the SAME `classifyFieldPointer` the
+   * producer uses, and asserts that a leaf the manifest calls
+   * `source-derived` or `compiler-projection` never appears — at its exact
+   * pointer-qualified rendered line — under that candidate's Source prose
+   * heading. A future reclassification in the manifest moves this test's own
+   * expectation with it, because the expectation is computed here, not
+   * copied from one run's output.
+   *
+   * P9 retains both `rules-record` and `adventure-entity` candidates, so the
+   * sweep exercises both `packetCandidate` branches (the adventure-entity
+   * branch contributes no rules-record leaves to check, and is skipped for
+   * exactly that reason).
    */
-  it('F2 — no string-valued projection leaf appears under Source prose, for every retained candidate', () => {
+  it('bead-E4 — no source-derived or compiler-projection leaf appears under Source prose, for every retained candidate', () => {
     const { rendered, candidates } = renderWithCandidates('P9');
     expect(candidates.length).toBeGreaterThan(1);
+    const manifest = getBundledDnd5eSrdFieldProvenanceManifest();
+    const pack = getBundledDnd5eSrdPack();
+    let checked = 0;
     for (const candidate of candidates) {
-      const span = candidateSpan(rendered.text, candidate.identity.key);
-      const source = headingBlock(
-        span,
-        '### Source prose (verbatim; authoritative)',
+      const record = pack.records.find(
+        (item) => item.key === candidate.identity.key,
       );
-      const projectionStringLines = stringLeafLines(candidate.projection, '');
-      for (const line of projectionStringLines)
-        expect(
-          source,
-          `${candidate.identity.key} leaked projection line "${line}" into source prose`,
-        ).not.toContain(line);
+      if (record === undefined) continue; // adventure-entity: no kind, no manifest.
+      const span = candidateSpan(rendered.text, candidate.identity.key);
+      const source = headingBlock(span, SOURCE_PROSE_HEADING);
+      walkClassifiedLeaves(
+        record.data,
+        (displayPointer, normalizedPointer, value) => {
+          const cls = classifyFieldPointer(
+            manifest,
+            record.kind,
+            normalizedPointer,
+          );
+          if (cls !== 'source-derived' && cls !== 'compiler-projection') return;
+          checked += 1;
+          const line = `${displayPointer}: ${rawValueText(value)}`;
+          expect(
+            source,
+            `${candidate.identity.key} rendered manifest-${cls} pointer "${displayPointer}" under Source prose`,
+          ).not.toContain(line);
+        },
+      );
+    }
+    // The sweep itself must exercise real classified leaves, or a corpus
+    // change that emptied every retained record could pass vacuously.
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  /**
+   * `eshyra-o9bd.19.12.11` evidence E5, the no-manifest case (design item 5).
+   *
+   * `loadFieldProvenanceManifest` is optional (`rules/packLoader.ts`), and a
+   * hand-authored test-corpus add-on pack may ship none. Decision: an absent
+   * manifest is treated IDENTICALLY to one that declares nothing —
+   * `buildContextPacket`'s manifest parameter defaults to `undefined`, and
+   * `classifyRecordBody` (`packet.ts`) never calls `classifyFieldPointer`
+   * when it is `undefined`, so every leaf becomes a
+   * `'no-provenance-declaration'` residue entry. A pack attesting nothing can
+   * never be read by a consumer as attesting verbatim source authority
+   * merely because the manifest argument was omitted.
+   *
+   * Exercised through the REAL exported `buildContextPacket`, over the REAL
+   * `RetentionTrace` the offline harness already produced for
+   * `creature:adult-black-dragon` — never a hand-authored packet — with only
+   * the manifest argument varied from the harness's own call.
+   */
+  it('bead-E5 — a packet built with no field-provenance manifest treats every leaf as unattested, never as verbatim source', () => {
+    const { trace, db } = run('P3');
+    try {
+      const noManifest = buildContextPacket(trace.retention);
+      const dragon = noManifest.packet.candidates.find(
+        (item) => item.identity.key === 'creature:adult-black-dragon',
+      );
+      expect(dragon).toBeDefined();
+      // Nothing is classified into any of the three declared buckets — each
+      // stays wrapped under `data` (the same shape a populated bucket would
+      // carry, per `splitRecordData`'s doc comment) but with no leaves in it.
+      expect(dragon?.sourceProse).toEqual({ data: {} });
+      expect(dragon?.sourceDerived).toEqual({ data: {} });
+      expect(dragon?.projection).toEqual({ data: {} });
+      // ...every leaf becomes disclosed residue instead, with the reason that
+      // says WHY: no manifest was supplied, so nothing attests it.
+      expect(dragon?.residue.length).toBeGreaterThan(0);
+      expect(
+        dragon?.residue.every(
+          (item) => item.reason === 'no-provenance-declaration',
+        ),
+      ).toBe(true);
+      expect(
+        dragon?.residue.some(
+          (item) => item.pointer === '/data/armorClass/value',
+        ),
+      ).toBe(true);
+      const rendered = renderContextPacketMessage({
+        retention: { overflow: trace.retention.overflow },
+        packet: {
+          packet: noManifest.packet,
+          byteOverflow: noManifest.byteOverflow,
+          dropped: noManifest.dropped,
+        },
+      });
+      const span = candidateSpan(rendered.text, 'creature:adult-black-dragon');
+      const source = headingBlock(span, SOURCE_PROSE_HEADING);
+      const derived = headingBlock(span, SOURCE_DERIVED_HEADING);
+      // A reader can tell "attested prose" from "unattested content": neither
+      // classified heading claims the armor class at all...
+      expect(source).not.toContain('armorClass');
+      expect(source).not.toContain('19 (natural armor)');
+      expect(derived).not.toContain('armorClass');
+      // ...and the disclosure names the exact pointer and why.
+      expect(span).toContain(
+        '- /data/armorClass/value: number (no-provenance-declaration)',
+      );
+    } finally {
+      db.close();
     }
   });
 
