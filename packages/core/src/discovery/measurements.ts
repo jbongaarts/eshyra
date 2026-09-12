@@ -1,3 +1,4 @@
+import { deepEqual } from './structuralEquality.js';
 import { deriveDiscoveryTrace } from './traceDerivation.js';
 import type {
   ProjectedCandidate,
@@ -143,9 +144,7 @@ export interface DiscoveryMeasurements {
     >
   >;
 }
-function equal(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
+
 /**
  * Stage outputs carry a target identity under three different shapes: signals
  * name it in `proposes`, candidate-bearing stages in `candidateKey`, and the
@@ -283,9 +282,9 @@ export function measureDiscovery(
     const fired = [
       ...trace.expansion.traversals,
       ...trace.ruleExpansion.traversals,
-    ].some((item) => equal(item, traversal));
+    ].some((item) => deepEqual(item, traversal));
     const retained = trace.packet.packet.candidates.some((candidate) =>
-      candidate.traversals.some((item) => equal(item, traversal)),
+      candidate.traversals.some((item) => deepEqual(item, traversal)),
     );
     return {
       traversal,
@@ -323,10 +322,16 @@ export function measureDiscovery(
     // establish — and most description prose is source-prose. M9 asks "did
     // the packet retain this," not "which bucket did it land in," so it
     // checks all three; a fact present in none of them is genuinely missing.
+    // `unattested` joins them (PR #543 re-review finding 1): a record from a
+    // pack with no associated provenance manifest carries its whole body
+    // there, and M9 asks whether the packet RETAINED a fact, not which
+    // heading it landed under. Omitting it would report every fixture fact
+    // about an add-on record as missing.
     const buckets = [
       candidate?.sourceProse,
       candidate?.sourceDerived,
       candidate?.projection,
+      candidate?.unattested,
     ];
     const present =
       fact.exactSubstring === undefined
@@ -337,7 +342,7 @@ export function measureDiscovery(
                   valueAt(bucket, fact.typedPath as string) !== undefined,
               )
             : buckets.some((bucket) =>
-                equal(
+                deepEqual(
                   valueAt(bucket, fact.typedPath as string),
                   fact.expectedValue,
                 ),
@@ -580,61 +585,15 @@ export interface StateEffectMeasurement {
 }
 
 /**
- * Structural deep equality for M12 argument comparison (eshyra-o9bd.19.12.7
- * F3/F4/F5 repair). The prior implementation compared `JSON.stringify(a) ===
- * JSON.stringify(b)`, which is an encoding-order comparison, not a
- * structural one: two nested objects built by different code paths with the
- * same keys inserted in a different order stringify to different text and
- * were reported as disagreeing, even though the contract is that a declared
- * argument field DEEP-EQUALS the executed value, not that it re-serializes
- * identically.
- *
- * - Objects: key-order-independent — same key set, each value deep-equal.
- * - Arrays: order- AND length-significant — an array is a sequence, not a
- *   set, so `[1, 2]` and `[2, 1]` disagree and so do arrays of different
- *   length.
- * - Primitives: exact, via `Object.is` — this keeps `null` and `undefined`
- *   distinct (a fixture asserting a field is explicitly `null` is a
- *   different claim than one silent on that field, whose executed value
- *   reads back `undefined`) and treats `NaN` as equal to itself, unlike
- *   `===`.
- *
- * This is EXACT equality at every level once a value is being compared, not
- * a subset match. `measureAcceptedStateEffect` below is deliberately a
- * subset comparison only at its OWN top level: it iterates the fixture's
- * declared `operation.args` fields and never requires the executed args to
- * declare nothing else. That subset rule does not recurse into this
- * function — a declared nested object's value must fully agree with the
- * executed nested object, key for key, at every depth. Letting extra keys
- * inside a declared nested object pass silently would mean a fixture could
- * assert `{a: 1}` and admit an executed `{a: 1, b: 'unrelated-but-unchecked-
- * state'}`, which is exactly the unverified-mechanical-claim gap M12 exists
- * to close.
+ * M12's argument comparison is EXACT at every level once a value is being
+ * compared. The subset rule `measureAcceptedStateEffect` applies is only at
+ * its OWN top level: it iterates the fixture's declared `operation.args`
+ * fields and never requires the executed args to declare nothing else. That
+ * rule deliberately does not recurse — a fixture asserting `{a: 1}` must not
+ * admit an executed `{a: 1, b: <unchecked state>}`, which is exactly the
+ * unverified-mechanical-claim gap M12 exists to close. `deepEqual` itself
+ * lives in `structuralEquality.ts`, shared with M4 and M9.
  */
-function deepEqual(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (Array.isArray(a) || Array.isArray(b)) {
-    if (!Array.isArray(a) || !Array.isArray(b)) return false;
-    if (a.length !== b.length) return false;
-    return a.every((item, index) => deepEqual(item, b[index]));
-  }
-  if (
-    typeof a !== 'object' ||
-    a === null ||
-    typeof b !== 'object' ||
-    b === null
-  )
-    return false;
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-  if (aKeys.length !== bKeys.length) return false;
-  const bRecord = b as Record<string, unknown>;
-  const aRecord = a as Record<string, unknown>;
-  return aKeys.every(
-    (key) =>
-      Object.hasOwn(bRecord, key) && deepEqual(aRecord[key], bRecord[key]),
-  );
-}
 
 /** M12 compares always-present fixture and accepted event sets (§13.2). */
 export function measureAcceptedStateEffect(

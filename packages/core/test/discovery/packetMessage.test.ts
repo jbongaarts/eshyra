@@ -524,19 +524,28 @@ describe('context-packet message renderer', () => {
       expect(dragon?.sourceProse).toEqual({ data: {} });
       expect(dragon?.sourceDerived).toEqual({ data: {} });
       expect(dragon?.projection).toEqual({ data: {} });
-      // ...every leaf becomes disclosed residue instead, with the reason that
-      // says WHY: no manifest was supplied, so nothing attests it.
-      expect(dragon?.residue.length).toBeGreaterThan(0);
+      // ...every leaf lands in `unattested` instead, KEEPING ITS VALUE. The
+      // earlier revision recorded only a pointer and dropped the value, which
+      // would have deleted an add-on's or a custom resolver's entire rules
+      // content from the DM's context — a worse and quieter failure than the
+      // laundering the producer binding exists to stop (PR #543 re-review
+      // finding 1).
+      if (dragon === undefined) throw new Error('dragon candidate missing');
+      const unattested = (
+        dragon.unattested as { data: Record<string, unknown> }
+      ).data;
+      expect(Object.keys(unattested).length).toBeGreaterThan(0);
       expect(
-        dragon?.residue.every(
-          (item) => item.reason === 'no-provenance-declaration',
-        ),
-      ).toBe(true);
+        (unattested.armorClass as Record<string, unknown> | undefined)?.value,
+      ).toBe(19);
       expect(
-        dragon?.residue.some(
-          (item) => item.pointer === '/data/armorClass/value',
-        ),
-      ).toBe(true);
+        (unattested.armorClass as Record<string, unknown> | undefined)
+          ?.sourceText,
+      ).toBe('19 (natural armor)');
+      // Residue is now reserved for shapes plain JSON cannot represent, which
+      // the real pack never produces — so it is empty here, and its emptiness
+      // is a fact rather than an absence nobody checked.
+      expect(dragon?.residue).toEqual([]);
       const rendered = renderContextPacketMessage({
         retention: { overflow: trace.retention.overflow },
         packet: {
@@ -553,9 +562,13 @@ describe('context-packet message renderer', () => {
       expect(source).not.toContain('armorClass');
       expect(source).not.toContain('19 (natural armor)');
       expect(derived).not.toContain('armorClass');
-      // ...and the disclosure names the exact pointer and why.
+      // ...and the content is SHOWN under a heading that refuses the
+      // authority claim outright, so a reader can tell "attested prose" from
+      // "unattested content" without either losing the content.
+      expect(span).toContain('### Unattested record content');
+      expect(span).toContain('- /data/armorClass/value: 19');
       expect(span).toContain(
-        '- /data/armorClass/value: number (no-provenance-declaration)',
+        '- /data/armorClass/sourceText: 19 (natural armor)',
       );
     } finally {
       db.close();

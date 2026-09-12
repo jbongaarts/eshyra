@@ -1823,14 +1823,26 @@ describe('one capture, one rules-pack source', () => {
       // The add-on's overriding content reached the packet: the trace was
       // built from the same resolution B3 qualified, not a later one. The
       // curse is injected under `data.mechanics.curse` (see
-      // `cursedAttunementAddon.ts`). Field-provenance classification is
-      // declared per `RulesRecordKind`, not per pack identity
-      // (`fieldProvenance.ts`), and the bundled SRD manifest's
-      // `(magic-item, /mechanics)` declaration is `compiler-projection`
-      // regardless of which pack's record carries the pointer, so this
-      // add-on's own field is asserted against `projection` rather than
-      // `sourceProse` or `sourceDerived`.
-      expect(JSON.stringify(candidate?.projection)).toContain(
+      // `cursedAttunementAddon.ts`).
+      //
+      // It lands in `unattested`, NOT in any classified bucket. The bundled
+      // SRD manifest attests what the SRD importer emitted; this record was
+      // produced by a hand-authored add-on pack, so no manifest speaks for it
+      // (PR #543 re-review finding 1). An earlier revision passed one manifest
+      // for the whole stack and classified this field `compiler-projection`
+      // purely because its pointer resembled an SRD one — which is the
+      // laundering the producer binding removes.
+      //
+      // The content is still PRESENT, which is the regression this case has
+      // always guarded: a producer binding that silently dropped foreign
+      // content would pass a "not laundered" check while being worse.
+      expect(JSON.stringify(candidate?.unattested)).toContain(
+        'test-addon-curse',
+      );
+      expect(JSON.stringify(candidate?.projection)).not.toContain(
+        'test-addon-curse',
+      );
+      expect(JSON.stringify(candidate?.sourceProse)).not.toContain(
         'test-addon-curse',
       );
     } finally {

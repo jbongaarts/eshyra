@@ -5,11 +5,12 @@ import type {
   CampaignRulingProjection,
 } from '../campaign/campaignRules.js';
 import type { Db } from '../persistence/db.js';
+import type { FieldProvenanceManifest } from '../rules/fieldProvenance.js';
 import type {
   ResolvedRulesStack,
   RulesStackRecordEntry,
 } from '../rules/stack.js';
-import type { RulesAmbiguity } from '../rules/types.js';
+import type { RulesAmbiguity, RulesPack } from '../rules/types.js';
 import type { ItemOperationReadinessInput } from '../state/itemExecutionReadiness.js';
 
 export type {
@@ -378,6 +379,27 @@ export interface RecordDataResidue {
   readonly reason: 'unrepresentable-shape' | 'no-provenance-declaration';
 }
 
+/**
+ * Which field-provenance manifest, if any, attests the values a given pack
+ * produced (PR #543 re-review finding 1).
+ *
+ * A function of the PRODUCING PACK rather than one manifest for the resolved
+ * stack. A manifest may attest only what its own producer emitted, so the
+ * association has to be made positively, per pack, by whoever knows which
+ * artifact a manifest describes. Returning `undefined` is the safe answer and
+ * the default one: the record's body then becomes disclosed residue instead of
+ * being labelled prose, derived, or projection on someone else's authority.
+ *
+ * Deliberately NOT inferable from `RulesRecordKind`, system id, compatible
+ * base system, pack id or version, field names, container names, or data
+ * shape. Every one of those is metadata a non-canonical pack can reproduce
+ * exactly while carrying different content, and provenance that can be
+ * obtained by resembling the real producer is not provenance.
+ */
+export type FieldProvenanceSource = (
+  pack: RulesPack,
+) => FieldProvenanceManifest | undefined;
+
 export interface PacketCandidate {
   readonly identity: {
     readonly key: string;
@@ -437,6 +459,20 @@ export interface PacketCandidate {
    * field-provenance manifest covers today; present so an uncovered pointer
    * or an unclassifiable shape is disclosed rather than silently folded into
    * `sourceProse`, `sourceDerived`, or `projection`. */
+  /**
+   * Record content that NO producing pack attested (PR #543 re-review
+   * finding 1). A record whose producer has no associated field-provenance
+   * manifest — an add-on, a custom resolver result, a foreign-system pack
+   * reusing familiar kinds — lands here whole.
+   *
+   * Its VALUES are kept, not dropped. Discarding them would delete that
+   * pack's actual rules content from the DM's context, which is a worse and
+   * quieter failure than the laundering the producer binding exists to stop.
+   * The renderer gives this its own heading stating plainly that nothing
+   * attested it, so it is visible to the DM and never confusable with
+   * `sourceProse`, the only bucket that may carry verbatim source authority.
+   */
+  readonly unattested: Readonly<Record<string, unknown>>;
   readonly residue: readonly RecordDataResidue[];
   readonly routes: readonly DiscoveryRoute[];
   readonly traversals: readonly TypedTraversal[];

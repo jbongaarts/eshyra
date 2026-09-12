@@ -113,6 +113,18 @@ function candidateBlock(candidate: PacketCandidate): string {
   emitLeaves(candidate.sourceDerived, '', lines);
   lines.push('### Typed projection (does not replace the source prose above)');
   emitLeaves(candidate.projection, '', lines);
+  // Content from a pack whose producer attested nothing (PR #543 re-review
+  // finding 1): an add-on, a custom resolver result, or a foreign-system pack.
+  // It is SHOWN, because deleting a pack's rules content from the DM's context
+  // would be a worse and quieter failure than mislabelling it — and it is
+  // shown under a heading that refuses the authority claim outright, so it can
+  // never be read as the verbatim source prose above.
+  if (Object.keys(candidate.unattested.data ?? {}).length > 0) {
+    lines.push(
+      '### Unattested record content (no producing pack declared provenance for these fields; NOT verified verbatim source prose)',
+    );
+    emitLeaves(candidate.unattested, '', lines);
+  }
   if (candidate.residue.length > 0) {
     // The pack's field-provenance manifest (`rules/fieldProvenance.ts`)
     // classifies every leaf the real bundled SRD pack produces; this heading

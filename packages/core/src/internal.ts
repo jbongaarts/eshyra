@@ -547,7 +547,10 @@ export {
 export { resolveDiscoveryCandidates } from './discovery/candidates.js';
 export { deduplicateCandidates } from './discovery/dedup.js';
 export { expandTypedRelationships } from './discovery/expansion.js';
-export { runDiscoveryStages } from './discovery/harness.js';
+export {
+  bundledDnd5eSrdFieldProvenanceSource,
+  runDiscoveryStages,
+} from './discovery/harness.js';
 export type {
   DiscoveryMeasurementInput,
   DiscoveryMeasurements,
@@ -596,6 +599,10 @@ export {
   runtimeCapabilityInvocation,
 } from './discovery/shadow.js';
 export { extractDiscoverySignals } from './discovery/signals.js';
+export {
+  canonicalKey,
+  deepEqual,
+} from './discovery/structuralEquality.js';
 export type {
   DerivedDiscoveryTrace,
   DerivedPacket,
@@ -626,6 +633,7 @@ export type {
   DiscoverySignal,
   DiscoverySignalKind,
   DiscoveryTrace,
+  FieldProvenanceSource,
   InjectedSignal,
   OfflineCapabilityDeclaration,
   PacketCandidate,

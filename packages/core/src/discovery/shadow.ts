@@ -16,6 +16,7 @@ import { runDiscoveryStages } from './harness.js';
 import type { RuntimeDiscoveryObservations } from './measurements.js';
 import type { RenderedContextPacket } from './packetMessage.js';
 import { renderContextPacketMessage } from './packetMessage.js';
+import { canonicalKey } from './structuralEquality.js';
 import type { ProjectedDiscoveryTrace } from './traceProjection.js';
 import { projectDiscoveryTrace } from './traceProjection.js';
 import type {
@@ -925,7 +926,7 @@ function traversalStateOf(
     const traversals = raw.traversals as readonly unknown[];
     state.set(
       raw.candidateKey as string,
-      new Set(traversals.map((item) => JSON.stringify(item))),
+      new Set(traversals.map((item) => canonicalKey(item))),
     );
   }
   return state;
@@ -963,7 +964,12 @@ function checkTraversalEvents(
   const seen = new Set<string>();
   events.forEach((event, index) => {
     const where = `${at}[${index}]`;
-    const key = JSON.stringify({
+    // Keyed through the SAME canonical form `traversalStateOf` uses, so the
+    // event key and the state key cannot disagree about a traversal that is
+    // structurally the same. Hand-writing a second fixed-order key here was
+    // safe only while the other side also serialized raw; it is exactly the
+    // "two competing definitions" hazard the shared module removes.
+    const key = canonicalKey({
       sourceRecordKey: event.sourceRecordKey,
       linkField: event.linkField,
       relation: event.relation,
@@ -1300,6 +1306,11 @@ function checkTrace(value: unknown, path: string): void {
     asObject(item_.sourceProse, `${at}.sourceProse`);
     asObject(item_.sourceDerived, `${at}.sourceDerived`);
     asObject(item_.projection, `${at}.projection`);
+    // Plus `unattested`, the fourth bucket the producer binding added: a
+    // record whose producing pack attested nothing keeps its content there
+    // rather than having it dropped. Required, not optional — an absent
+    // field and an empty one must not look the same at the durable boundary.
+    asObject(item_.unattested, `${at}.unattested`);
     each(item_.residue, `${at}.residue`, (entry, where) => {
       const residueEntry = asObject(entry, where);
       asString(residueEntry.pointer, `${where}.pointer`);

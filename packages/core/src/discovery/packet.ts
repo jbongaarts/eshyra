@@ -21,6 +21,7 @@ import type {
   CapabilityPreflight,
   ContextPacket,
   DiscoveryCandidate,
+  FieldProvenanceSource,
   OfflineCapabilityDeclaration,
   PacketCandidate,
   PacketTrace,
@@ -87,11 +88,12 @@ function residueShape(value: unknown): string {
   return `non-plain-object:${ctor?.name ?? 'unknown'}`;
 }
 
-interface ThreeWaySplit {
+interface ProvenanceSplit {
   /** `undefined` means this value contributed nothing on this side. */
   readonly sourceProse: unknown;
   readonly sourceDerived: unknown;
   readonly projection: unknown;
+  readonly unattested: unknown;
 }
 
 /**
@@ -138,7 +140,7 @@ function classifyRecordBody(
   displayPointer: string,
   normalizedPointer: string,
   residue: RecordDataResidue[],
-): ThreeWaySplit {
+): ProvenanceSplit {
   if (
     value === null ||
     typeof value === 'string' ||
@@ -150,30 +152,35 @@ function classifyRecordBody(
         ? undefined
         : classifyFieldPointer(manifest, kind, normalizedPointer);
     if (cls === undefined) {
-      residue.push({
-        pointer: displayPointer,
-        shape: residueShape(value),
-        reason: 'no-provenance-declaration',
-      });
+      // The VALUE is kept, in its own bucket, not discarded. Dropping it
+      // would delete an add-on's or a custom resolver's actual rules content
+      // from the DM's context entirely — a worse failure than the laundering
+      // this binding exists to stop, and a silent one. It is surfaced under a
+      // heading that states no producing pack attested it, which is what
+      // "unattested" has to mean: visible and labelled, not absent.
       return {
         sourceProse: undefined,
         sourceDerived: undefined,
         projection: undefined,
+        unattested: value,
       };
     }
     return {
       sourceProse: cls === 'source-prose' ? value : undefined,
       sourceDerived: cls === 'source-derived' ? value : undefined,
       projection: cls === 'compiler-projection' ? value : undefined,
+      unattested: undefined,
     };
   }
   if (Array.isArray(value)) {
     const proseItems: unknown[] = [];
     const derivedItems: unknown[] = [];
     const projectionItems: unknown[] = [];
+    const unattestedItems: unknown[] = [];
     let proseContributed = false;
     let derivedContributed = false;
     let projectionContributed = false;
+    let unattestedContributed = false;
     value.forEach((item, index) => {
       const child = classifyRecordBody(
         item,
@@ -192,20 +199,26 @@ function classifyRecordBody(
       projectionItems.push(
         child.projection === undefined ? null : child.projection,
       );
+      unattestedItems.push(
+        child.unattested === undefined ? null : child.unattested,
+      );
       if (child.sourceProse !== undefined) proseContributed = true;
       if (child.sourceDerived !== undefined) derivedContributed = true;
       if (child.projection !== undefined) projectionContributed = true;
+      if (child.unattested !== undefined) unattestedContributed = true;
     });
     return {
       sourceProse: proseContributed ? proseItems : undefined,
       sourceDerived: derivedContributed ? derivedItems : undefined,
       projection: projectionContributed ? projectionItems : undefined,
+      unattested: unattestedContributed ? unattestedItems : undefined,
     };
   }
   if (isPlainObject(value)) {
     const proseOut: Obj = {};
     const derivedOut: Obj = {};
     const projectionOut: Obj = {};
+    const unattestedOut: Obj = {};
     for (const [key, child] of Object.entries(value)) {
       const result = classifyRecordBody(
         child,
@@ -220,6 +233,8 @@ function classifyRecordBody(
         derivedOut[key] = result.sourceDerived;
       if (result.projection !== undefined)
         projectionOut[key] = result.projection;
+      if (result.unattested !== undefined)
+        unattestedOut[key] = result.unattested;
     }
     return {
       sourceProse: Object.keys(proseOut).length > 0 ? proseOut : undefined,
@@ -227,6 +242,8 @@ function classifyRecordBody(
         Object.keys(derivedOut).length > 0 ? derivedOut : undefined,
       projection:
         Object.keys(projectionOut).length > 0 ? projectionOut : undefined,
+      unattested:
+        Object.keys(unattestedOut).length > 0 ? unattestedOut : undefined,
     };
   }
   // A shape plain JSON cannot represent (function, symbol, bigint, or a
@@ -243,6 +260,7 @@ function classifyRecordBody(
     sourceProse: undefined,
     sourceDerived: undefined,
     projection: undefined,
+    unattested: undefined,
   };
 }
 
@@ -512,6 +530,7 @@ function splitRecordData(
   readonly sourceProse: Obj;
   readonly sourceDerived: Obj;
   readonly projection: Obj;
+  readonly unattested: Obj;
   readonly residue: readonly RecordDataResidue[];
 } {
   const residue: RecordDataResidue[] = [];
@@ -520,6 +539,7 @@ function splitRecordData(
     sourceProse: (result.sourceProse as Obj | undefined) ?? {},
     sourceDerived: (result.sourceDerived as Obj | undefined) ?? {},
     projection: (result.projection as Obj | undefined) ?? {},
+    unattested: (result.unattested as Obj | undefined) ?? {},
     residue,
   };
 }
@@ -527,7 +547,7 @@ function splitRecordData(
 function packetCandidate(
   candidate: DiscoveryCandidate,
   declarations: readonly OfflineCapabilityDeclaration[],
-  manifest: FieldProvenanceManifest | undefined,
+  provenanceSource: FieldProvenanceSource | undefined,
 ): PacketCandidate {
   if (candidate.routes.length === 0)
     throw new Error(
@@ -565,6 +585,12 @@ function packetCandidate(
       sourceProse: entity,
       sourceDerived: {},
       projection: {},
+      // An authored module is source material by construction, so nothing
+      // here is unattested in the field-provenance sense: its author IS the
+      // attestation, and the module's own provenance metadata above carries
+      // it. This is not the SRD importer's manifest speaking for a foreign
+      // pack, which is what the producer binding forbids.
+      unattested: {},
       residue: [],
       routes: candidate.routes,
       traversals: candidate.traversals,
@@ -579,10 +605,24 @@ function packetCandidate(
     };
   }
   const record = candidate.entry.record;
+  // The manifest is resolved from the pack that ACTUALLY PRODUCED this
+  // resolved record, never from the stack, the kind, or the campaign's base
+  // system. `candidate.entry.pack` is the winning producer: `mergeRecord` in
+  // `rules/stack.ts` sets it to the OVERRIDING pack and pushes the previous
+  // one onto `overrideChain`, so an add-on that overrides a spell's
+  // `description` is asked for ITS provenance, not the base pack's.
+  //
+  // A manifest attests only what its own producer emitted. Passing one
+  // manifest for a whole stack applied the SRD importer's authority to
+  // add-on, custom-resolver and foreign-system records whose values it never
+  // produced — laundering foreign content through SRD provenance. A pack with
+  // no positively associated manifest resolves to `undefined` here and takes
+  // the same fail-safe path as a pack that ships none: every leaf becomes
+  // disclosed residue, nothing is labelled prose, derived or projection.
   const split = splitRecordData(
     object(record.data) ?? {},
     record.kind,
-    manifest,
+    provenanceSource?.(candidate.entry.pack),
   );
   return {
     identity: { key: record.key, kind: record.kind, name: record.name },
@@ -595,6 +635,7 @@ function packetCandidate(
     sourceProse: { data: split.sourceProse },
     sourceDerived: { data: split.sourceDerived },
     projection: { data: split.projection },
+    unattested: { data: split.unattested },
     residue: split.residue,
     routes: candidate.routes,
     traversals: candidate.traversals,
@@ -617,26 +658,30 @@ function packetCandidate(
  * candidates are dropped with recorded reasons, and a must-consider candidate
  * that cannot fit is an explicit overflow that fails the probe.
  *
- * `fieldProvenanceManifest` is the pack-emitted classification
- * (`rules/fieldProvenance.ts`) every rules-record candidate's body is split
- * along (`packetCandidate`). It is optional and defaults to `undefined`
- * deliberately: a caller that has no manifest to hand (or omits the
- * argument) gets the SAME safe treatment as a pack that ships none — see
+ * `fieldProvenanceSource` associates a PRODUCING PACK with the classification
+ * that pack emitted (`rules/fieldProvenance.ts`). It is a function of the
+ * pack, not a single manifest for the whole stack, because a manifest attests
+ * only the values its own producer wrote: an add-on, a custom resolver result,
+ * or a foreign-system pack that merely reuses familiar `RulesRecordKind`s was
+ * not emitted by the SRD importer and must not inherit its authority.
+ *
+ * Optional, and `undefined` deliberately: a caller with no association to hand
+ * gets the SAME fail-safe treatment as a pack that ships no manifest — see
  * `classifyRecordBody`'s doc comment. Production discovery
- * (`discovery/harness.ts`) always passes the bundled SRD manifest
- * (`getBundledDnd5eSrdFieldProvenanceManifest`); the default here exists for
- * callers outside that path, evidence included.
+ * (`discovery/harness.ts`) passes
+ * `bundledDnd5eSrdFieldProvenanceSource()`, which answers only for the
+ * canonical bundled pack OBJECT and nothing else.
  */
 export function buildContextPacket(
   retained: RetentionTrace,
   declarations: readonly OfflineCapabilityDeclaration[] = [],
   maxPacketBytes = 512_000,
-  fieldProvenanceManifest?: FieldProvenanceManifest,
+  fieldProvenanceSource?: FieldProvenanceSource,
 ): PacketTrace {
   const built = retained.outputsProduced.map((candidate) => ({
     band: candidate.band,
     candidate,
-    packet: packetCandidate(candidate, declarations, fieldProvenanceManifest),
+    packet: packetCandidate(candidate, declarations, fieldProvenanceSource),
   }));
   // ONE decision per retained candidate, recorded AT the byte comparison that
   // makes it. An exclusion's reason is the budget arithmetic that excluded it,
