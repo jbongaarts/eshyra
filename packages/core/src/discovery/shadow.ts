@@ -1529,9 +1529,16 @@ function assertV2(stored: Record<string, unknown>): void {
   // an effect", which a per-item-only check (as `each` alone would give)
   // cannot express because it never compares one item against another:
   //
-  //   1. `attempt` is a real candidate attempt — reusing `attemptCount` from
-  //      `checkAudit` above, exactly as `capabilityInvocations` does, rather
-  //      than recomputing it a second way that could disagree.
+  //   1. `attempt` is the ACCEPTED candidate's attempt, which on an accepted
+  //      trace is the FINAL one — `attemptCount` from `checkAudit` above,
+  //      reused rather than recomputed a second way that could disagree. An
+  //      earlier attempt is not merely unusual here, it is impossible: it was
+  //      rejected, its savepoint rolled its writes back, and a rolled-back
+  //      write is not an accepted state effect. A `1..attemptCount` range
+  //      check was the earlier, weaker rule, and it admitted exactly that
+  //      rejected-attempt stream (PR #543 re-review, finding 2). Capability
+  //      invocations keep the range check on purpose: a preflight that ran is
+  //      not a canonical write and survives its candidate's rejection.
   //   2. Every recorded effect shares that SAME attempt: two different
   //      attempt numbers in one stream is not "two effects", it is evidence
   //      stitched together from two different candidates, which no real
@@ -1550,10 +1557,10 @@ function assertV2(stored: Record<string, unknown>): void {
     if (tool.length === 0) failAt(`${at}.tool`, 'must not be empty');
     asNumber(effect.attempt, `${at}.attempt`);
     const attempt = effect.attempt as number;
-    if (!Number.isInteger(attempt) || attempt < 1 || attempt > attemptCount)
+    if (!Number.isInteger(attempt) || attempt !== attemptCount)
       failAt(
         `${at}.attempt`,
-        `is ${String(attempt)}; an accepted state effect's attempt is an integer in 1..${attemptCount}`,
+        `is ${String(attempt)}; this turn accepted candidate attempt ${attemptCount}, and only the accepted candidate contributes state effects (an earlier attempt was rejected and its writes rolled back)`,
       );
     if (stateEffectAttempt === undefined) {
       stateEffectAttempt = attempt;

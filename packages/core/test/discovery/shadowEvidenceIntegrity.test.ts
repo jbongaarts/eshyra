@@ -980,8 +980,11 @@ describe('canonical admissibility', () => {
    * field of it.
    */
   describe('accepted state effects', () => {
+    // Attempt 2 is the ACCEPTED candidate on the valid fixture (one retry
+    // plus its acceptance). Only the accepted candidate contributes state
+    // effects, so a well-formed single effect carries that attempt.
     const EFFECT = {
-      attempt: 1,
+      attempt: 2,
       ordinal: 0,
       tool: 'use_item',
       args: { instanceId: 'cube-1', operationId: 'press-face-1' },
@@ -1101,10 +1104,33 @@ describe('canonical admissibility', () => {
      * defect.
      */
     describe('lifecycle constraints on the accepted effect stream', () => {
+      // The VALID fixture ran ONE retry plus its acceptance, so attempt 2 is
+      // the ACCEPTED candidate and attempt 1 is the rejected one. A stream is
+      // well-formed only on the accepted attempt: attempt 1's writes rolled
+      // back with its savepoint, so it has no accepted state effect to
+      // contribute. An earlier revision of this fixture used attempt 1 and
+      // asserted the reader ADMITTED it, which enshrined the very
+      // rejected-attempt stream the reader exists to refuse.
+      const ACCEPTED_ATTEMPT = 2;
       const STREAM: readonly Row[] = [
-        { attempt: 1, ordinal: 0, tool: 'use_item', args: { step: 'a' } },
-        { attempt: 1, ordinal: 1, tool: 'adjust_hp', args: { step: 'b' } },
-        { attempt: 1, ordinal: 2, tool: 'use_item', args: { step: 'c' } },
+        {
+          attempt: ACCEPTED_ATTEMPT,
+          ordinal: 0,
+          tool: 'use_item',
+          args: { step: 'a' },
+        },
+        {
+          attempt: ACCEPTED_ATTEMPT,
+          ordinal: 1,
+          tool: 'adjust_hp',
+          args: { step: 'b' },
+        },
+        {
+          attempt: ACCEPTED_ATTEMPT,
+          ordinal: 2,
+          tool: 'use_item',
+          args: { step: 'c' },
+        },
       ];
 
       function withStream(mutate: (effects: Row[]) => void): Row {
@@ -1121,10 +1147,9 @@ describe('canonical admissibility', () => {
         ).not.toThrow();
       });
 
-      it("rejects an attempt above the row's real candidate count", () => {
-        // The VALID fixture ran one retry plus an acceptance: attempts 1 and
-        // 2 are real, 3 is not. All three effects move together so this
-        // isolates the range check from the shared-attempt check below.
+      it('rejects an attempt above the accepted candidate', () => {
+        // All three effects move together so this isolates the accepted-
+        // attempt check from the shared-attempt check below.
         rejects(
           withStream((effects) => {
             for (const effect of effects) effect.attempt = 3;
@@ -1133,12 +1158,76 @@ describe('canonical admissibility', () => {
         );
       });
 
-      it('rejects two effects in one stream recording different attempts', () => {
-        // Attempt 2 is itself in range (the fixture ran two attempts), so
-        // this fails only the shared-attempt check, not the range check.
+      /**
+       * The load-bearing case, and the one a `1..attemptCount` range check
+       * admitted: attempt 1 REALLY RAN on this row, so "is it a real
+       * candidate attempt" says yes. It was rejected, though, and a rejected
+       * candidate's canonical writes roll back — so it contributes no
+       * accepted state effect, and evidence claiming otherwise is malformed
+       * rather than merely surprising.
+       */
+      it('rejects the rejected attempt, even though that attempt really ran', () => {
         rejects(
           withStream((effects) => {
-            effects[1].attempt = 2;
+            for (const effect of effects) effect.attempt = 1;
+          }),
+          'runtime.stateEffects[0].attempt',
+        );
+      });
+
+      /**
+       * The same rule across three different lifecycles, so it cannot
+       * collapse back into "any attempt that really ran". With N retries the
+       * accepted candidate is attempt N+1, and every earlier attempt is
+       * rejected.
+       */
+      describe('across retry lifecycles', () => {
+        function rowWithRetries(retryCount: number, attempt: number): Row {
+          const row = clone();
+          (((row.runtime as Row).audit as Row).retries as Row[]) = Array.from(
+            { length: retryCount },
+            () => ({
+              retryCause: 'missing_world_evidence',
+              missingTools: ['lookup_rules'],
+            }),
+          );
+          (row.runtime as Row).stateEffects = [
+            { attempt, ordinal: 0, tool: 'use_item', args: {} },
+          ];
+          // Capability invocations keep the RANGE rule, so the fixture's own
+          // invocation must stay inside the new attempt count.
+          for (const invocation of (row.runtime as Row)
+            .capabilityInvocations as Row[])
+            invocation.attempt = 1;
+          return row;
+        }
+
+        for (const retryCount of [0, 1, 2]) {
+          const accepted = retryCount + 1;
+          it(`admits attempt ${accepted} with ${retryCount} retr${retryCount === 1 ? 'y' : 'ies'}`, () => {
+            expect(() =>
+              readDiscoveryShadowEvidence(
+                rowWithRetries(retryCount, accepted) as TraceJsonValue,
+              ),
+            ).not.toThrow();
+          });
+          for (let earlier = 1; earlier < accepted; earlier += 1)
+            it(`rejects attempt ${earlier} with ${retryCount} retr${retryCount === 1 ? 'y' : 'ies'}`, () => {
+              rejects(
+                rowWithRetries(retryCount, earlier),
+                'runtime.stateEffects[0].attempt',
+              );
+            });
+        }
+      });
+
+      it('rejects two effects in one stream recording different attempts', () => {
+        // Every effect starts on the accepted attempt, so changing ONE of
+        // them trips the accepted-attempt check at that entry — the stream
+        // cannot be stitched together from two candidates.
+        rejects(
+          withStream((effects) => {
+            effects[1].attempt = 1;
           }),
           'runtime.stateEffects[1].attempt',
         );

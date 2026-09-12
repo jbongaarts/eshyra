@@ -510,6 +510,39 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
         campaignPosition: campaignRules.campaignPosition,
         ...(rulesPackResolver === undefined ? {} : { rulesPackResolver }),
       });
+      // STRUCTURAL first: the fixture's whole expectation is compared with
+      // the contract the packet actually built, before any rendered string is
+      // inspected. Checking a revision plus the mere presence of generic
+      // headings let two CONTRADICTORY contracts pass at once — the fixture
+      // claimed `magic-item-single-use-spend` with execution-shaped inputs
+      // while M10 compared the real `assertMagicItemOperationReady` — which
+      // is the defect this rewrite closes (PR #543 re-review, finding 3).
+      const expected = execution.expectedCapabilityStatus;
+      const candidate = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'magic-item:ammunition-1-2-or-3',
+      );
+      const contract = candidate?.capabilities.find(
+        (item) => item.operationId === 'hit-target',
+      );
+      if (contract === undefined)
+        throw new Error('the packet built no hit-target contract');
+      expect({
+        status: contract.status,
+        capabilityId: contract.capabilityId,
+        revision: contract.revision,
+        inputs: [...(contract.inputs ?? [])],
+        exclusions: [...(contract.exclusions ?? [])],
+        residualInterpretation: contract.residualInterpretation,
+      }).toEqual({
+        status: expected.status,
+        capabilityId: expected.capabilityId,
+        revision: expected.revision,
+        inputs: [...(expected.inputs ?? [])],
+        exclusions: [...(expected.exclusions ?? [])],
+        residualInterpretation: expected.residualInterpretation,
+      });
+
+      // ... and only then that the delivered TEXT states that same contract.
       const rendered = renderContextPacketMessage(trace);
       const span = candidateSpan(
         rendered.text,
@@ -517,14 +550,13 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
       );
       expect(span).toContain('POSITIVE BOUNDED CONTRACT');
       expect(span).toContain('operation=hit-target');
-      expect(span).toContain(
-        `revision=${String(execution.expectedCapabilityStatus.revision)}`,
-      );
+      expect(span).toContain(`capability=${String(expected.capabilityId)}`);
+      expect(span).toContain(`revision=${String(expected.revision)}`);
       expect(span).toContain('status=available');
-      expect(span).toContain('- required inputs:');
-      expect(span).toContain('- explicit exclusions:');
-      expect(span).toContain('- residual DM interpretation:');
-      expect(span).not.toContain('explicit exclusions: none');
+      for (const input of expected.inputs ?? []) expect(span).toContain(input);
+      for (const exclusion of expected.exclusions ?? [])
+        expect(span).toContain(exclusion);
+      expect(span).toContain(String(expected.residualInterpretation));
     } finally {
       db.close();
     }
