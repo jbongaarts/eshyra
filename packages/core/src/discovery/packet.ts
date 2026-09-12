@@ -1,4 +1,12 @@
-import type { RulesAmbiguity, RulesRecord } from '../rules/types.js';
+import {
+  classifyFieldPointer,
+  type FieldProvenanceManifest,
+} from '../rules/fieldProvenance.js';
+import type {
+  RulesAmbiguity,
+  RulesRecord,
+  RulesRecordKind,
+} from '../rules/types.js';
 import {
   assertMagicItemOperationReady,
   ItemExecutionReadinessError,
@@ -53,90 +61,6 @@ function ambiguities(candidate: DiscoveryCandidate): readonly RulesAmbiguity[] {
   );
 }
 
-/**
- * W10's stated source/projection boundary (PR #543 review finding F2).
- *
- * The reviewer verified two things that force this design: `RulesRecord.data`
- * is typed `unknown` (`rules/types.ts`) with NO per-field provenance, so there
- * is no existing boundary to read out of the data — this constant states one,
- * for the first time, with its reasoning recorded here; and a field-name
- * allow/deny list (naming `ability`, `dice`, `damageOnSuccess`, ...) is
- * explicitly rejected as not being a provenance boundary either, because it
- * grows forever and still says nothing about material the importer has not
- * been taught to name yet.
- *
- * Instead: the rules-pack COMPILER already routes every derived value it
- * computes — as opposed to transcribes — into one of a small, closed set of
- * named containers. A key that matches one of these names, AT ANY DEPTH in a
- * record body, makes everything beneath it a typed projection; everything
- * else is source material the compiler extracted but did not interpret. This
- * is positional, not top-level-only, because the compiler nests containers
- * inside per-entry structures (`creature:adult-black-dragon`
- * `data.actions[5].mechanics` sits beside that action's own `.text`) — a
- * top-level-only rule would leave every nested container misclassified as
- * source prose, which is the same defect this constant exists to fix.
- *
- * Verified against the real `dnd5e-srd-5.1` pack (`records.json`, 1812
- * records) rather than taken on the spec's word:
- *
- * - `mechanics` — 2268 occurrences, both top-level (`spell`, `feat`, `feature`,
- *   `condition`, `hazard`, `magic-item`, `action`, `stat-block`) and nested
- *   three levels deep inside `creature` `actions`/`legendaryActions`/
- *   `reactions` entries. The spec-named container this repair was written
- *   against.
- * - `upcast` — 92 occurrences, always top-level on `spell` records
- *   (`data.upcast`, e.g. `fireball:higher-slot`). Spec-named.
- * - `executionReadiness` — 240 occurrences, always top-level on `magic-item`
- *   records (`derived-magic-item-clauses-v1` engine-hook clauses).
- *   Spec-named.
- * - `projection` — 22 occurrences, always top-level on `table` records
- *   (`kindSchemas.ts`'s table-projection validators: `beastShapeOptions`,
- *   `destroyUndead`, trade-goods and service-price rows, ...). NOT named by
- *   the review; found during verification. Structurally identical to
- *   `mechanics` — a `kind`-discriminated, importer-computed object — so
- *   omitting it would leave every table's derived rows misclassified as
- *   source prose, repeating the exact defect class this bead exists to fix.
- *   Added.
- * - `useProfile` — 35 occurrences, always top-level on `equipment` records
- *   (consumption kind, clause ids, owner attribution, structured semantics;
- *   `kindSchemas.ts` `validateEquipmentUseProfile`). Also not named by the
- *   review; also found during verification; also structurally identical in
- *   kind to `mechanics` (it even carries its own quoted source phrases, e.g.
- *   `clauses[].sourcePhrase`, exactly as `mechanics.scaling.sourceText` does
- *   — see the projection-quotes-source-text note below). Added.
- *
- * Nothing else in the corpus's 108 distinct top-level `data` keys carries this
- * shape: fields such as `armorClass`, `hitPoints`, `abilityScores`, or
- * `speed` are structured, but they are the compiler's direct transcription of
- * a stat block header, not an interpretation that could omit rule nuance the
- * way a save DC, a damage die, or a recharge clause can — W10's disclosure
- * obligation (design section 7.2) is about the latter. If a future importer
- * change adds a genuinely interpretive container under a different name, this
- * comment — and this constant, and nothing else — is where it is declared.
- *
- * A container can quote the very source text it was derived from (e.g.
- * `mechanics.scaling.sourceText`, `upcast.sourcePhrase`,
- * `useProfile.clauses[].sourcePhrase`). That string stays classified as
- * projection: it is the projection's own record of what it derived from, not
- * an independent source citation, and the record body's top-level prose
- * fields (`description`, `higherLevels`, `scalingSourceText`, ...) already
- * carry the same text as genuine source material. Pulling the quoted copy
- * back out case-by-case would be the first entry in the leaf-name list this
- * design forbids.
- */
-// A plain readonly array, not a module-scope `Set`: `discoveryOwnership.ts`
-// forbids discovery from holding a module-scope mutable container (it cannot
-// tell a rule/ruling CACHE apart from a fixed lookup literal by syntax alone,
-// so it bans the shape outright), and this constant is exactly the accepted
-// alternative its own test fixture demonstrates.
-const PROJECTION_CONTAINER_KEYS: readonly string[] = [
-  'mechanics',
-  'upcast',
-  'executionReadiness',
-  'projection',
-  'useProfile',
-];
-
 function isPlainObject(value: unknown): value is Obj {
   if (typeof value !== 'object' || value === null || Array.isArray(value))
     return false;
@@ -144,10 +68,18 @@ function isPlainObject(value: unknown): value is Obj {
   return proto === Object.prototype || proto === null;
 }
 
-/** What `splitRecordBody` calls a shape it declined to classify, so a residue
- * entry says WHAT was unrepresentable rather than just WHERE. */
+/** What `classifyRecordBody` calls a shape it declined to classify, so a
+ * residue entry says WHAT the leaf's own JS type is — `RecordDataResidue`'s
+ * `reason` says WHY it landed here rather than in a classified bucket. */
 function residueShape(value: unknown): string {
   if (value === undefined) return 'undefined';
+  if (value === null) return 'null';
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  )
+    return typeof value;
   if (typeof value === 'function') return 'function';
   if (typeof value === 'symbol') return 'symbol';
   if (typeof value === 'bigint') return 'bigint';
@@ -155,85 +87,144 @@ function residueShape(value: unknown): string {
   return `non-plain-object:${ctor?.name ?? 'unknown'}`;
 }
 
-interface Split {
+interface ThreeWaySplit {
   /** `undefined` means this value contributed nothing on this side. */
-  readonly source: unknown;
+  readonly sourceProse: unknown;
+  readonly sourceDerived: unknown;
   readonly projection: unknown;
 }
 
 /**
- * Partition one record-body value into source material and typed projection
- * along `PROJECTION_CONTAINER_KEYS`, recording anything it cannot classify as
- * residue rather than guessing.
+ * Partition one record-body value into the pack's three declared
+ * field-provenance classes (`rules/fieldProvenance.ts`): `source-prose`,
+ * `source-derived`, and `compiler-projection`.
  *
- * `projecting` is the walk's only piece of state: once a key matches a
- * container, every descendant inherits `projecting: true` and can never
- * become source again, which is what makes
- * `creature:adult-black-dragon`'s `data.actions[5].mechanics` fully projection
- * while its sibling `.text` stays source, at the SAME recursion depth. Arrays
- * stay index-aligned on both sides (an index with nothing on one side gets
- * `null` there, never a shift) because a JSON pointer's array index is
- * positional, and `sourceMaterial`/`projection` must stay independently
- * addressable at the pointers callers already use (M9's `typedPath` facts,
- * design section 7.1's `actions[i].text`).
+ * This replaces the deleted `PROJECTION_CONTAINER_KEYS` consumer-side
+ * heuristic (W10's second re-review, F1-rr; `eshyra-o9bd.19.12.11`): a leaf's
+ * class is no longer guessed from its container's NAME, it is READ from the
+ * manifest the importer emitted, per leaf, by `classifyFieldPointer`. That
+ * function already resolves the "most specific declared prefix wins" rule
+ * (so `(creature, /armorClass)` classifies the whole structured statline
+ * `source-derived` while `(creature, /armorClass/sourceText)` overrides just
+ * the one verbatim-quote leaf to `source-prose`), so this walk carries no
+ * inherited "projecting" state of its own — each leaf is classified
+ * independently, by its own pointer.
+ *
+ * Two pointers are threaded through the walk, for two different readers.
+ * `displayPointer` keeps concrete array indices — it is what a caller already
+ * addresses by JSON pointer (M9's `typedPath` facts, the rendered
+ * `/data/actions/5/...` lines) and seeds every `RecordDataResidue.pointer`.
+ * `normalizedPointer` collapses every index to the literal segment `*`,
+ * because that is `classifyFieldPointer`'s own required convention
+ * (`fieldProvenance.ts`) and is never shown to a reader. Arrays stay
+ * index-aligned across all three output sides (an index with nothing on one
+ * side gets `null` there, never a shift), matching the display pointer's own
+ * positional convention.
+ *
+ * `manifest` is `undefined` exactly when no pack-emitted field-provenance
+ * manifest is available for this record at all — `loadFieldProvenanceManifest`
+ * (`rules/packLoader.ts`) is optional, and a hand-authored test-corpus pack
+ * may ship none (design item 5, `eshyra-o9bd.19.12.11`). That case is decided
+ * here identically to a declared-but-non-covering manifest:
+ * `classifyFieldPointer` is never even called, every leaf becomes a
+ * `'no-provenance-declaration'` residue entry, and nothing lands in
+ * `sourceProse` — a pack attesting nothing can never be read as attesting
+ * verbatim source authority merely because the manifest argument was omitted.
  */
-function splitRecordBody(
+function classifyRecordBody(
   value: unknown,
-  pointer: string,
-  projecting: boolean,
+  kind: RulesRecordKind,
+  manifest: FieldProvenanceManifest | undefined,
+  displayPointer: string,
+  normalizedPointer: string,
   residue: RecordDataResidue[],
-): Split {
+): ThreeWaySplit {
   if (
     value === null ||
     typeof value === 'string' ||
     typeof value === 'number' ||
     typeof value === 'boolean'
-  )
-    return projecting
-      ? { source: undefined, projection: value }
-      : { source: value, projection: undefined };
+  ) {
+    const cls =
+      manifest === undefined
+        ? undefined
+        : classifyFieldPointer(manifest, kind, normalizedPointer);
+    if (cls === undefined) {
+      residue.push({
+        pointer: displayPointer,
+        shape: residueShape(value),
+        reason: 'no-provenance-declaration',
+      });
+      return {
+        sourceProse: undefined,
+        sourceDerived: undefined,
+        projection: undefined,
+      };
+    }
+    return {
+      sourceProse: cls === 'source-prose' ? value : undefined,
+      sourceDerived: cls === 'source-derived' ? value : undefined,
+      projection: cls === 'compiler-projection' ? value : undefined,
+    };
+  }
   if (Array.isArray(value)) {
-    const sourceItems: unknown[] = [];
+    const proseItems: unknown[] = [];
+    const derivedItems: unknown[] = [];
     const projectionItems: unknown[] = [];
-    let sourceContributed = false;
+    let proseContributed = false;
+    let derivedContributed = false;
     let projectionContributed = false;
     value.forEach((item, index) => {
-      const child = splitRecordBody(
+      const child = classifyRecordBody(
         item,
-        `${pointer}/${index}`,
-        projecting,
+        kind,
+        manifest,
+        `${displayPointer}/${index}`,
+        `${normalizedPointer}/*`,
         residue,
       );
-      sourceItems.push(child.source === undefined ? null : child.source);
+      proseItems.push(
+        child.sourceProse === undefined ? null : child.sourceProse,
+      );
+      derivedItems.push(
+        child.sourceDerived === undefined ? null : child.sourceDerived,
+      );
       projectionItems.push(
         child.projection === undefined ? null : child.projection,
       );
-      if (child.source !== undefined) sourceContributed = true;
+      if (child.sourceProse !== undefined) proseContributed = true;
+      if (child.sourceDerived !== undefined) derivedContributed = true;
       if (child.projection !== undefined) projectionContributed = true;
     });
     return {
-      source: sourceContributed ? sourceItems : undefined,
+      sourceProse: proseContributed ? proseItems : undefined,
+      sourceDerived: derivedContributed ? derivedItems : undefined,
       projection: projectionContributed ? projectionItems : undefined,
     };
   }
   if (isPlainObject(value)) {
-    const sourceOut: Obj = {};
+    const proseOut: Obj = {};
+    const derivedOut: Obj = {};
     const projectionOut: Obj = {};
     for (const [key, child] of Object.entries(value)) {
-      const childProjecting =
-        projecting || PROJECTION_CONTAINER_KEYS.includes(key);
-      const result = splitRecordBody(
+      const result = classifyRecordBody(
         child,
-        `${pointer}/${key}`,
-        childProjecting,
+        kind,
+        manifest,
+        `${displayPointer}/${key}`,
+        `${normalizedPointer}/${key}`,
         residue,
       );
-      if (result.source !== undefined) sourceOut[key] = result.source;
+      if (result.sourceProse !== undefined) proseOut[key] = result.sourceProse;
+      if (result.sourceDerived !== undefined)
+        derivedOut[key] = result.sourceDerived;
       if (result.projection !== undefined)
         projectionOut[key] = result.projection;
     }
     return {
-      source: Object.keys(sourceOut).length > 0 ? sourceOut : undefined,
+      sourceProse: Object.keys(proseOut).length > 0 ? proseOut : undefined,
+      sourceDerived:
+        Object.keys(derivedOut).length > 0 ? derivedOut : undefined,
       projection:
         Object.keys(projectionOut).length > 0 ? projectionOut : undefined,
     };
@@ -241,11 +232,18 @@ function splitRecordBody(
   // A shape plain JSON cannot represent (function, symbol, bigint, or a
   // non-plain object such as a Date or Map). The real pack is parsed JSON and
   // never produces one; this branch exists because `RulesRecord.data` is
-  // typed `unknown`, and a defect that silently assigned this to either side
-  // is exactly what the review forbids ("do not invent a third silent
-  // default").
-  residue.push({ pointer, shape: residueShape(value) });
-  return { source: undefined, projection: undefined };
+  // typed `unknown`, and a defect that silently assigned this to any bucket
+  // is exactly what the review forbids ("do not invent a silent default").
+  residue.push({
+    pointer: displayPointer,
+    shape: residueShape(value),
+    reason: 'unrepresentable-shape',
+  });
+  return {
+    sourceProse: undefined,
+    sourceDerived: undefined,
+    projection: undefined,
+  };
 }
 
 /**
@@ -501,24 +499,26 @@ function capabilities(
   });
 }
 /**
- * Run the W10 source/projection split (`splitRecordBody`) over one candidate's
- * record body and shape the result exactly like the pre-F2 `sourceProse` it
- * replaces: always wrapped the same way (an adventure entity unwrapped, a pack
- * record under `data`) and always present, even when a side is empty, so a
- * caller's JSON pointer resolves the same root it always did.
+ * Run the field-provenance-manifest split (`classifyRecordBody`) over one
+ * rules-pack record's `data` and shape the result exactly like the two-bucket
+ * split it replaces: always present, even when a side is empty, so a caller's
+ * JSON pointer resolves the same root it always did.
  */
-function splitBody(
-  body: Obj,
-  pointerPrefix: string,
+function splitRecordData(
+  data: Obj,
+  kind: RulesRecordKind,
+  manifest: FieldProvenanceManifest | undefined,
 ): {
-  readonly sourceMaterial: Obj;
+  readonly sourceProse: Obj;
+  readonly sourceDerived: Obj;
   readonly projection: Obj;
   readonly residue: readonly RecordDataResidue[];
 } {
   const residue: RecordDataResidue[] = [];
-  const result = splitRecordBody(body, pointerPrefix, false, residue);
+  const result = classifyRecordBody(data, kind, manifest, '/data', '', residue);
   return {
-    sourceMaterial: (result.source as Obj | undefined) ?? {},
+    sourceProse: (result.sourceProse as Obj | undefined) ?? {},
+    sourceDerived: (result.sourceDerived as Obj | undefined) ?? {},
     projection: (result.projection as Obj | undefined) ?? {},
     residue,
   };
@@ -527,6 +527,7 @@ function splitBody(
 function packetCandidate(
   candidate: DiscoveryCandidate,
   declarations: readonly OfflineCapabilityDeclaration[],
+  manifest: FieldProvenanceManifest | undefined,
 ): PacketCandidate {
   if (candidate.routes.length === 0)
     throw new Error(
@@ -536,11 +537,15 @@ function packetCandidate(
     const holder = candidate.adventureEntity ?? {};
     const entity = object(holder.entity) ?? {};
     const provenance = object(holder.provenance);
-    // Unwrapped, matching the entity's own shape: today's authored modules
-    // carry none of `PROJECTION_CONTAINER_KEYS`, so this is a no-op split, not
-    // dead code — a future authored container would be caught by the same
-    // rule a pack record is, rather than by a second, kind-specific one.
-    const split = splitBody(entity, '');
+    // The field-provenance manifest classifies by `RulesRecordKind`
+    // (`fieldProvenance.ts`), and `adventure-entity` is not one — an authored
+    // module is never compiled by the SRD importer the manifest describes, so
+    // there is no per-leaf classification to read here at all. The whole
+    // entity is authored source material, wholesale, matching what a module
+    // author actually wrote rather than a compiler's typed extraction from
+    // it. A future authored container that starts behaving like a compiler
+    // projection is a new decision for whoever owns adventure content, not a
+    // silent inheritance of this record boundary.
     return {
       identity: {
         key: candidate.candidateKey,
@@ -557,9 +562,10 @@ function packetCandidate(
         source: String(holder.moduleId ?? 'adventure-module'),
         license: holder.license ?? null,
       },
-      sourceMaterial: split.sourceMaterial,
-      projection: split.projection,
-      residue: split.residue,
+      sourceProse: entity,
+      sourceDerived: {},
+      projection: {},
+      residue: [],
       routes: candidate.routes,
       traversals: candidate.traversals,
       ambiguities: [],
@@ -573,7 +579,11 @@ function packetCandidate(
     };
   }
   const record = candidate.entry.record;
-  const split = splitBody(object(record.data) ?? {}, '/data');
+  const split = splitRecordData(
+    object(record.data) ?? {},
+    record.kind,
+    manifest,
+  );
   return {
     identity: { key: record.key, kind: record.kind, name: record.name },
     provenance: {
@@ -582,7 +592,8 @@ function packetCandidate(
       source: record.source,
       license: candidate.entry.license,
     },
-    sourceMaterial: { data: split.sourceMaterial },
+    sourceProse: { data: split.sourceProse },
+    sourceDerived: { data: split.sourceDerived },
     projection: { data: split.projection },
     residue: split.residue,
     routes: candidate.routes,
@@ -605,16 +616,27 @@ function packetCandidate(
  * behaves exactly like the candidate-count budget: related and exploratory
  * candidates are dropped with recorded reasons, and a must-consider candidate
  * that cannot fit is an explicit overflow that fails the probe.
+ *
+ * `fieldProvenanceManifest` is the pack-emitted classification
+ * (`rules/fieldProvenance.ts`) every rules-record candidate's body is split
+ * along (`packetCandidate`). It is optional and defaults to `undefined`
+ * deliberately: a caller that has no manifest to hand (or omits the
+ * argument) gets the SAME safe treatment as a pack that ships none — see
+ * `classifyRecordBody`'s doc comment. Production discovery
+ * (`discovery/harness.ts`) always passes the bundled SRD manifest
+ * (`getBundledDnd5eSrdFieldProvenanceManifest`); the default here exists for
+ * callers outside that path, evidence included.
  */
 export function buildContextPacket(
   retained: RetentionTrace,
   declarations: readonly OfflineCapabilityDeclaration[] = [],
   maxPacketBytes = 512_000,
+  fieldProvenanceManifest?: FieldProvenanceManifest,
 ): PacketTrace {
   const built = retained.outputsProduced.map((candidate) => ({
     band: candidate.band,
     candidate,
-    packet: packetCandidate(candidate, declarations),
+    packet: packetCandidate(candidate, declarations, fieldProvenanceManifest),
   }));
   // ONE decision per retained candidate, recorded AT the byte comparison that
   // makes it. An exclusion's reason is the budget arithmetic that excluded it,

@@ -209,15 +209,15 @@ describe('W11 campaign-rule read-interface consumption', () => {
         revokedPosition: null,
       });
       // The governing source is placed BESIDE the rule, never replaced by it.
-      // "8d6" is asserted against `sourceMaterial` specifically (not the
-      // projection, and not a combined search) because the description prose
-      // itself reads "A target takes 8d6 fire damage on a failed save" —
-      // this is a claim about verbatim SOURCE prose surviving, the exact
-      // thing F2 found the previous `sourceProse` field could not
-      // distinguish from `mechanics.damage[0].dice`, which quotes the same
-      // digits as an importer-derived projection value.
-      expect(candidate?.sourceMaterial).toBeDefined();
-      expect(JSON.stringify(candidate?.sourceMaterial)).toContain('8d6');
+      // "8d6" is asserted against `sourceProse` specifically (not
+      // `sourceDerived`, not `projection`, and not a combined search)
+      // because the description prose itself reads "A target takes 8d6 fire
+      // damage on a failed save" — this is a claim about verbatim SOURCE
+      // prose surviving, the exact thing F2 found the previous `sourceProse`
+      // field could not distinguish from `mechanics.damage[0].dice`, which
+      // quotes the same digits as an importer-derived projection value.
+      expect(candidate?.sourceProse).toBeDefined();
+      expect(JSON.stringify(candidate?.sourceProse)).toContain('8d6');
 
       const placed = measureDiscovery(projectDiscoveryTrace(trace), {
         mustIncludeTargetRefs: [FIREBALL],

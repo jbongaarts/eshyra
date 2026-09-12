@@ -19,7 +19,11 @@
  */
 
 import { fileURLToPath } from 'node:url';
-import { loadRulesPackFromDirectory } from './packLoader.js';
+import type { FieldProvenanceManifest } from './fieldProvenance.js';
+import {
+  loadFieldProvenanceManifest,
+  loadRulesPackFromDirectory,
+} from './packLoader.js';
 import type { RulesPack } from './types.js';
 
 /** Canonical pack id for the runtime D&D 5e SRD 5.1 rules pack (ADR 0013). */
@@ -44,6 +48,7 @@ const PACK_DIR = fileURLToPath(
 );
 
 let cachedPack: RulesPack | undefined;
+let cachedFieldProvenanceManifest: FieldProvenanceManifest | undefined;
 
 /**
  * Load the bundled, importer-generated D&D 5e SRD 5.1 rules pack from the
@@ -55,4 +60,28 @@ let cachedPack: RulesPack | undefined;
 export function getBundledDnd5eSrdPack(): RulesPack {
   cachedPack ??= loadRulesPackFromDirectory(PACK_DIR);
   return cachedPack;
+}
+
+/**
+ * Load the bundled SRD pack's field-provenance manifest
+ * (`eshyra-o9bd.19.1.3.1`) from the SAME packaged data directory, cached the
+ * same way as the pack itself.
+ *
+ * `field-provenance.json` classifies every leaf pointer this pack's records
+ * emit as literal `source-prose`, deterministically `source-derived`, or
+ * interpretive `compiler-projection` (`fieldProvenance.ts`). This function
+ * lives here, beside `getBundledDnd5eSrdPack`, rather than in the discovery
+ * tree that consumes it: the classification is declared per `RulesRecordKind`
+ * (never per pack identity), so it applies to every record of a kind reached
+ * through an SRD-compatible stack — the base pack AND any add-on layered on
+ * it, since an add-on's records share the same kind schema
+ * (`resolveRulesStack`'s `assertCompatibleWithBase`). Discovery's packet
+ * builder (`discovery/packet.ts`, `eshyra-o9bd.19.12.11`) is this function's
+ * first consumer: the classification is the fact that stops a parser product
+ * (`armorClass.value`) from being rendered to the DM as verbatim source
+ * authority, which is the defect W10's second re-review found.
+ */
+export function getBundledDnd5eSrdFieldProvenanceManifest(): FieldProvenanceManifest {
+  cachedFieldProvenanceManifest ??= loadFieldProvenanceManifest(PACK_DIR);
+  return cachedFieldProvenanceManifest;
 }

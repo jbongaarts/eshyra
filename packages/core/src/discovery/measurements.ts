@@ -310,34 +310,42 @@ export function measureDiscovery(
         : trace.packet.packet.candidates.find(
             (item) => item.identity.key === fact.targetRef,
           );
-    // F2 (PR #543 review): a field-9 fact no longer names ONE packet field to
-    // search. `packetCandidate` now splits a record body into `sourceMaterial`
-    // and `projection` along W10's declared container boundary
-    // (`packet.ts`), and a fixture fact's own pointer or substring can land on
-    // either side — P8's `/data/mechanics/economies/use` is projection,
-    // `creature:goblin`'s `/data/armorClass/value` is source material. M9
-    // asks "did the packet retain this," not "which half did it land in," so
-    // it checks both; a fact present on neither side is genuinely missing.
+    // F2 (PR #543 review), then F1-rr (`eshyra-o9bd.19.12.11`): a field-9
+    // fact no longer names ONE packet field to search. `packetCandidate` now
+    // splits a record body into THREE manifest-classified buckets —
+    // `sourceProse`, `sourceDerived`, `projection` — reading the pack's own
+    // field-provenance manifest (`rules/fieldProvenance.ts`) rather than a
+    // consumer-side container-name heuristic, and a fixture fact's own
+    // pointer or substring can land in any of the three: P8's
+    // `/data/mechanics/economies/use` is projection, `creature:goblin`'s
+    // `/data/armorClass/value` is source-DERIVED — a parser product, never a
+    // verbatim quotation, which is the exact fact this repair exists to
+    // establish — and most description prose is source-prose. M9 asks "did
+    // the packet retain this," not "which bucket did it land in," so it
+    // checks all three; a fact present in none of them is genuinely missing.
+    const buckets = [
+      candidate?.sourceProse,
+      candidate?.sourceDerived,
+      candidate?.projection,
+    ];
     const present =
       fact.exactSubstring === undefined
         ? fact.typedPath !== undefined &&
           (fact.expectedValue === undefined
-            ? valueAt(candidate?.sourceMaterial, fact.typedPath) !==
-                undefined ||
-              valueAt(candidate?.projection, fact.typedPath) !== undefined
-            : equal(
-                valueAt(candidate?.sourceMaterial, fact.typedPath),
-                fact.expectedValue,
-              ) ||
-              equal(
-                valueAt(candidate?.projection, fact.typedPath),
-                fact.expectedValue,
+            ? buckets.some(
+                (bucket) =>
+                  valueAt(bucket, fact.typedPath as string) !== undefined,
+              )
+            : buckets.some((bucket) =>
+                equal(
+                  valueAt(bucket, fact.typedPath as string),
+                  fact.expectedValue,
+                ),
               ))
-        : proseStrings(candidate?.sourceMaterial).some((text) =>
-            text.includes(fact.exactSubstring as string),
-          ) ||
-          proseStrings(candidate?.projection).some((text) =>
-            text.includes(fact.exactSubstring as string),
+        : buckets.some((bucket) =>
+            proseStrings(bucket).some((text) =>
+              text.includes(fact.exactSubstring as string),
+            ),
           );
     if (!present) missing.push(fact);
   }

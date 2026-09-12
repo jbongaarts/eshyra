@@ -1074,6 +1074,7 @@ export {
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
   DND5E_SRD_VERSION,
+  getBundledDnd5eSrdFieldProvenanceManifest,
   getBundledDnd5eSrdPack,
   RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
 } from './rules/bundledSrdPack.js';

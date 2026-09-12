@@ -1,3 +1,4 @@
+import { getBundledDnd5eSrdFieldProvenanceManifest } from '../rules/bundledSrdPack.js';
 import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
 import { candidateBand } from './bands.js';
 import { joinCampaignRules } from './campaignRuleSeam.js';
@@ -108,6 +109,13 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
     retention,
     input.scenario.declaredCapabilities ?? [],
     input.budget?.maxPacketBytes,
+    // Every stack the offline harness resolves today is D&D 5e SRD-compatible
+    // (`resolveStrictCampaignRulesStack`'s base pack, plus any add-on that
+    // declares `compatibleBaseSystems` against it), and field-provenance
+    // classification is declared per `RulesRecordKind`, not per pack identity
+    // (`fieldProvenance.ts`), so the one bundled manifest applies to every
+    // candidate this harness can produce.
+    getBundledDnd5eSrdFieldProvenanceManifest(),
   );
   return {
     signals,
