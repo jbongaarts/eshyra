@@ -1,5 +1,6 @@
 import { MAGIC_ITEM_OPERATION_READINESS_CAPABILITY } from '../state/itemExecutionReadiness.js';
 import type { RulesPack, RulesRecord } from './types.js';
+import { validateRulesPack } from './validate.js';
 
 type ObjectValue = Record<string, unknown>;
 
@@ -192,9 +193,13 @@ function selectedCapability(): SelectedMagicItemCapability {
 export function buildMagicItemLegacyCapabilityBacklog(
   pack: RulesPack,
 ): MagicItemLegacyCapabilityBacklog {
+  // This bridge is not a second, weaker readiness parser. Reusing the
+  // canonical boundary preserves its closed readiness/hook invariants before
+  // any generated clause can become candidate evidence.
+  const validatedPack = validateRulesPack(pack);
   const candidates: MagicItemLegacyCapabilityCandidate[] = [];
   const candidateIds = new Set<string>();
-  for (const record of pack.records) {
+  for (const record of validatedPack.records) {
     if (record.kind !== 'magic-item') continue;
     const data = object(record.data);
     const readiness = object(data?.executionReadiness);

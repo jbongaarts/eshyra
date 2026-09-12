@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildMagicItemLegacyCapabilityBacklog,
   getBundledDnd5eSrdPack,
-  MagicItemLegacyCapabilityBacklogError,
   type RulesPack,
+  RulesPackError,
 } from '../src/internal.js';
 
 describe('magic-item legacy capability backlog', () => {
@@ -101,7 +101,9 @@ describe('magic-item legacy capability backlog', () => {
     ]);
   });
 
-  it('fails closed when a legacy missing-hook row lacks stable identity', () => {
+  function malformedPack(
+    mutate: (clause: Record<string, unknown>) => Record<string, unknown>,
+  ): RulesPack {
     const pack = getBundledDnd5eSrdPack();
     const record = pack.records.find(
       ({ key }) => key === 'magic-item:ammunition-1-2-or-3',
@@ -110,7 +112,7 @@ describe('magic-item legacy capability backlog', () => {
     const data = record?.data as {
       executionReadiness: { clauses: Record<string, unknown>[] };
     };
-    const malformed: RulesPack = {
+    return {
       ...pack,
       records: pack.records.map((entry) =>
         entry === record
@@ -123,7 +125,7 @@ describe('magic-item legacy capability backlog', () => {
                   clauses: data.executionReadiness.clauses.map((clause) =>
                     Array.isArray(clause.missingHooks) &&
                     clause.missingHooks.length > 0
-                      ? { ...clause, clauseId: '' }
+                      ? mutate(clause)
                       : clause,
                   ),
                 },
@@ -132,9 +134,55 @@ describe('magic-item legacy capability backlog', () => {
           : entry,
       ),
     };
+  }
+
+  it.each([
+    [
+      'an unknown readiness value',
+      (clause: Record<string, unknown>) => ({
+        ...clause,
+        readiness: 'unrecognized',
+      }),
+    ],
+    [
+      'an unknown engine family',
+      (clause: Record<string, unknown>) => ({
+        ...clause,
+        engineHooks: [
+          ...(clause.engineHooks as Record<string, unknown>[]),
+          { engine: 'F99', hook: 'unknown' },
+        ],
+      }),
+    ],
+    [
+      'a duplicate engine hook',
+      (clause: Record<string, unknown>) => ({
+        ...clause,
+        engineHooks: [
+          ...(clause.engineHooks as Record<string, unknown>[]),
+          (clause.engineHooks as Record<string, unknown>[])[0],
+        ],
+      }),
+    ],
+    [
+      'a missing hook outside the declared engine hooks',
+      (clause: Record<string, unknown>) => ({
+        ...clause,
+        missingHooks: [
+          ...(clause.missingHooks as Record<string, unknown>[]),
+          { engine: 'F1', hook: 'not-declared' },
+        ],
+      }),
+    ],
+    [
+      'missing hooks paired with green readiness',
+      (clause: Record<string, unknown>) => ({ ...clause, readiness: 'green' }),
+    ],
+  ])('fails closed on %s', (_label, mutate) => {
+    const malformed = malformedPack(mutate);
 
     expect(() => buildMagicItemLegacyCapabilityBacklog(malformed)).toThrow(
-      MagicItemLegacyCapabilityBacklogError,
+      RulesPackError,
     );
   });
 });
