@@ -717,6 +717,12 @@
     },
     {
       "kind": "equipment",
+      "pointerPrefix": "/mechanics",
+      "class": "compiler-projection",
+      "reason": "equipment.mechanics is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."
+    },
+    {
+      "kind": "equipment",
       "pointerPrefix": "/useProfile",
       "class": "compiler-projection",
       "reason": "equipment.useProfile is the compiler's typed projection of nearby source prose (DECIDED representation: mechanics/upcast/executionReadiness/useProfile/projection are always compiler-projection, whole subtree, including any embedded audit-lineage string)."

@@ -9,10 +9,10 @@
     "dnd5eSrd": 1812,
     "pathfinderFixture": 7
   },
-  "rowCount": 1793,
+  "rowCount": 1842,
   "dispositionCounts": {
-    "complete": 383,
-    "model-adjudicated": 1209,
+    "complete": 428,
+    "model-adjudicated": 1213,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 2,
     "unsupported": 6
@@ -10668,6 +10668,128 @@
       "recordKinds": [
         "equipment"
       ],
+      "fieldPath": "data.mechanics.procedures[].id",
+      "representativeValues": [
+        "longsword-damage"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.mechanics.procedures[].kind",
+      "representativeValues": [
+        "weapon-damage-modes"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.mechanics.procedures[].modes[].damage.dice",
+      "representativeValues": [
+        "1d8",
+        "1d10"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.mechanics.procedures[].modes[].damage.type",
+      "representativeValues": [
+        "slashing"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.mechanics.procedures[].modes[].id",
+      "representativeValues": [
+        "one-handed",
+        "two-handed"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "data.mechanics.procedures[].selector",
+      "representativeValues": [
+        "hands-used"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
       "fieldPath": "data.properties[]",
       "representativeValues": [
         "Versatile (1d10)",
@@ -14504,13 +14626,365 @@
       "recordKinds": [
         "feature"
       ],
+      "fieldPath": "data.mechanics.procedures[].choiceId",
+      "representativeValues": [
+        "fighting-style"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].duplicateSelection",
+      "representativeValues": [
+        "prohibited"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].id",
+      "representativeValues": [
+        "fighter-fighting-style",
+        "font-of-magic"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].kind",
+      "representativeValues": [
+        "feature-options",
+        "resource-conversion"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].operations.convertSpellSlot.actionCost",
+      "representativeValues": [
+        "bonus-action"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].operations.convertSpellSlot.pointsGained",
+      "representativeValues": [
+        "slot-level"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].operations.createSpellSlot.actionCost",
+      "representativeValues": [
+        "bonus-action"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].operations.createSpellSlot.createdSlotExpires",
+      "representativeValues": [
+        "long-rest"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].options[].effect.actionCost",
+      "representativeValues": [
+        "reaction"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].options[].effect.kind",
+      "representativeValues": [
+        "attack-roll-bonus",
+        "armor-class-bonus",
+        "damage-roll-bonus",
+        "damage-die-reroll",
+        "reaction-attack-disadvantage"
+      ],
+      "population": 6,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].options[].effect.propertyRequirement.kind",
+      "representativeValues": [
+        "any-of"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].options[].effect.propertyRequirement.properties[]",
+      "representativeValues": [
+        "two-handed",
+        "versatile"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].options[].effect.weaponRange",
+      "representativeValues": [
+        "ranged",
+        "melee"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].options[].id",
+      "representativeValues": [
+        "fighting-style:archery",
+        "fighting-style:defense",
+        "fighting-style:dueling",
+        "fighting-style:great-weapon-fighting",
+        "fighting-style:protection"
+      ],
+      "population": 6,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].pool.id",
+      "representativeValues": [
+        "sorcery-points"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].pool.name",
+      "representativeValues": [
+        "Sorcery Points"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.mechanics.procedures[].pool.reset",
+      "representativeValues": [
+        "long-rest"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
       "fieldPath": "data.mechanics.resources[].reset",
       "representativeValues": [
         "long-rest",
         "short-or-long-rest",
         "short-rest"
       ],
-      "population": 41,
+      "population": 40,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -15006,12 +15480,12 @@
       "fieldPath": "data.mechanics.damage[].dice",
       "representativeValues": [
         "1d12",
-        "3d6",
-        "1d6",
         "1d10",
-        "4d10"
+        "4d10",
+        "9d6",
+        "1d6"
       ],
-      "population": 18,
+      "population": 16,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -15035,7 +15509,7 @@
         "fire",
         "piercing"
       ],
-      "population": 18,
+      "population": 16,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -15051,13 +15525,253 @@
       "recordKinds": [
         "hazard"
       ],
+      "fieldPath": "data.mechanics.procedures[].entryTransition.onInitialFailure",
+      "representativeValues": [
+        "activate-repeat"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].entryTransition.onInitialSuccess",
+      "representativeValues": [
+        "end"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].id",
+      "representativeValues": [
+        "burnt-othur-fumes"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].initial.failureDamage.dice",
+      "representativeValues": [
+        "3d6"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].initial.failureDamage.type",
+      "representativeValues": [
+        "poison"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].initial.save.ability",
+      "representativeValues": [
+        "constitution"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].kind",
+      "representativeValues": [
+        "repeat-save-hazard"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].repeat.failureDamage.dice",
+      "representativeValues": [
+        "1d6"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].repeat.failureDamage.type",
+      "representativeValues": [
+        "poison"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].repeat.save.ability",
+      "representativeValues": [
+        "constitution"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].repeat.timing",
+      "representativeValues": [
+        "start-of-affected-turn"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.procedures[].termination.kind",
+      "representativeValues": [
+        "successful-saves"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
       "fieldPath": "data.mechanics.saves[].ability",
       "representativeValues": [
         "constitution",
         "dexterity",
         "strength"
       ],
-      "population": 24,
+      "population": 23,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -27940,7 +28654,7 @@
         "4d8",
         "3d10"
       ],
-      "population": 100,
+      "population": 99,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -27964,7 +28678,7 @@
         "bludgeoning",
         "slashing"
       ],
-      "population": 100,
+      "population": 99,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -32381,6 +33095,286 @@
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
       "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].adjudicationBoundary.adjudicator",
+      "representativeValues": [
+        "dm"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed designed-adjudication boundary shape",
+      "deterministicConsumers": "evaluateFoundation1Proof verifies the exact source-bound boundary; deterministic resolution is deliberately not claimed",
+      "currentAuditReadiness": "the Foundation 1 proof discharges the boundary to its exact generated-pack atom",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": "AdjudicatedStressProcedure.adjudicationBoundary",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].adjudicationBoundary.boundaryKind",
+      "representativeValues": [
+        "designed-adjudication"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed designed-adjudication boundary shape",
+      "deterministicConsumers": "evaluateFoundation1Proof verifies the exact source-bound boundary; deterministic resolution is deliberately not claimed",
+      "currentAuditReadiness": "the Foundation 1 proof discharges the boundary to its exact generated-pack atom",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": "AdjudicatedStressProcedure.adjudicationBoundary",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].adjudicationBoundary.id",
+      "representativeValues": [
+        "wish-beyond-listed-effects"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed designed-adjudication boundary shape",
+      "deterministicConsumers": "evaluateFoundation1Proof verifies the exact source-bound boundary; deterministic resolution is deliberately not claimed",
+      "currentAuditReadiness": "the Foundation 1 proof discharges the boundary to its exact generated-pack atom",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": "AdjudicatedStressProcedure.adjudicationBoundary",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].adjudicationBoundary.trigger",
+      "representativeValues": [
+        "beyond-listed-effects"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed designed-adjudication boundary shape",
+      "deterministicConsumers": "evaluateFoundation1Proof verifies the exact source-bound boundary; deterministic resolution is deliberately not claimed",
+      "currentAuditReadiness": "the Foundation 1 proof discharges the boundary to its exact generated-pack atom",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": "AdjudicatedStressProcedure.adjudicationBoundary",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].id",
+      "representativeValues": [
+        "wish-nonstandard-effect"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].kind",
+      "representativeValues": [
+        "adjudicated-stress"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].stress.recovery.maximumRestActivity",
+      "representativeValues": [
+        "light"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].stress.recurringDamage.damageType",
+      "representativeValues": [
+        "necrotic"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].stress.recurringDamage.dicePerSpellLevel",
+      "representativeValues": [
+        "1d10"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / executeBoundedProcedure",
+      "retainedProseBoundary": null,
+      "owner": "boundedProcedures.ts and verticalProcedureProof.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].stress.recurringDamage.event",
+      "representativeValues": [
+        "cast-spell-before-long-rest"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].stress.strength.durationDice",
+      "representativeValues": [
+        "2d4"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].stress.strength.unit",
+      "representativeValues": [
+        "day"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].stress.trigger",
+      "representativeValues": [
+        "non-duplication-effect"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "data.mechanics.procedures[].stress.wishLoss.state",
+      "representativeValues": [
+        "unable-to-cast-wish"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes",
+      "deterministicConsumers": "evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership",
+      "currentAuditReadiness": "evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "BoundedProcedure / evaluateFoundation1Proof",
+      "retainedProseBoundary": null,
+      "owner": "verticalProcedureProof.ts and boundedProcedures.ts",
       "futureWork": false
     },
     {

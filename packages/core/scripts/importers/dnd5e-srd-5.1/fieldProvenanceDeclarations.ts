@@ -732,6 +732,16 @@ derived(
   '/strengthRequirement',
   'the minimum-Strength requirement, parsed from the printed armor table.',
 );
+// `equipment` had no `/mechanics` key at all until PR #545's Foundation-1
+// stage (`applyFoundation1ProcedureProjections`) began emitting bounded
+// procedure projections onto `equipment:longsword`. The fail-closed gate
+// caught that on integration, which is exactly what it exists to do: a new
+// producer output must be classified or the build stops. These are
+// compiler-authored executable structure derived from source prose, so they
+// take the DECIDED whole-subtree `mechanics` rule the eight other kinds
+// already use. A deeper declaration still wins if a future field under
+// `/mechanics` needs a different class.
+mechanicsSubtree('equipment', '/mechanics', 'equipment.mechanics');
 mechanicsSubtree('equipment', '/useProfile', 'equipment.useProfile');
 derived(
   'equipment',

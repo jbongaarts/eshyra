@@ -1070,6 +1070,26 @@ export {
   formatAuditReport,
   formatDiffReport,
 } from './rules/audit.js';
+export type {
+  AdjudicatedStressProcedure,
+  BoundedProcedure,
+  BoundedProcedureRequest,
+  BoundedProcedureResult,
+  FeatureChoiceBinding,
+  FeatureOptionApplicabilityContext,
+  FeatureOptionEffect,
+  FeatureOptionProcedure,
+  RepeatSaveHazardProcedure,
+  ResourceConversionProcedure,
+  WeaponDamageModesProcedure,
+} from './rules/boundedProcedures.js';
+export {
+  assertBoundedProcedures,
+  BoundedProcedureError,
+  executeBoundedProcedure,
+  readBoundedProcedures,
+  readFeatureChoiceBinding,
+} from './rules/boundedProcedures.js';
 export {
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
@@ -1145,6 +1165,15 @@ export {
   lookupRulesRecord,
   RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP,
 } from './rules/lookup.js';
+export type {
+  MagicItemLegacyCapabilityBacklog,
+  MagicItemLegacyCapabilityCandidate,
+  SelectedMagicItemCapability,
+} from './rules/magicItemLegacyCapabilityBacklog.js';
+export {
+  buildMagicItemLegacyCapabilityBacklog,
+  MagicItemLegacyCapabilityBacklogError,
+} from './rules/magicItemLegacyCapabilityBacklog.js';
 export type {
   MagicItemActivationSpec,
   MagicItemContainment,
@@ -1286,6 +1315,21 @@ export {
 // Rules engine internals (pack validation, license policy, stack resolution,
 // record lookup, record-shape types).
 export { validateRulesPack } from './rules/validate.js';
+export type {
+  Foundation1Discharge,
+  Foundation1Facet,
+  Foundation1Obligation,
+  Foundation1ProjectedAtom,
+  Foundation1ProofFailure,
+  Foundation1ProofFailureCode,
+  Foundation1ProofReport,
+  Foundation1SourceSpan,
+} from './rules/verticalProcedureProof.js';
+export {
+  enumerateFoundation1Atoms,
+  evaluateFoundation1Proof,
+  matchFoundation1Candidates,
+} from './rules/verticalProcedureProof.js';
 export type {
   BeginTurnInput,
   BeginTurnResult,

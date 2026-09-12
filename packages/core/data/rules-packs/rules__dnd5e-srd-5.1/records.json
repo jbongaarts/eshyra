@@ -71609,7 +71609,34 @@
       ],
       "weaponCategory": "martial",
       "weaponRange": "melee",
-      "weight": "3 lb."
+      "weight": "3 lb.",
+      "mechanics": {
+        "procedures": [
+          {
+            "id": "longsword-damage",
+            "kind": "weapon-damage-modes",
+            "selector": "hands-used",
+            "modes": [
+              {
+                "id": "one-handed",
+                "hands": 1,
+                "damage": {
+                  "dice": "1d8",
+                  "type": "slashing"
+                }
+              },
+              {
+                "id": "two-handed",
+                "hands": 2,
+                "damage": {
+                  "dice": "1d10",
+                  "type": "slashing"
+                }
+              }
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 66",
     "license": {
@@ -79009,7 +79036,87 @@
             }
           ]
         }
-      ]
+      ],
+      "mechanics": {
+        "procedures": [
+          {
+            "id": "fighter-fighting-style",
+            "kind": "feature-options",
+            "choiceId": "fighting-style",
+            "duplicateSelection": "prohibited",
+            "options": [
+              {
+                "id": "fighting-style:archery",
+                "effect": {
+                  "kind": "attack-roll-bonus",
+                  "amount": 2,
+                  "weaponRange": "ranged"
+                }
+              },
+              {
+                "id": "fighting-style:defense",
+                "effect": {
+                  "kind": "armor-class-bonus",
+                  "amount": 1,
+                  "whileWearingArmor": true
+                }
+              },
+              {
+                "id": "fighting-style:dueling",
+                "effect": {
+                  "kind": "damage-roll-bonus",
+                  "amount": 2,
+                  "weaponRange": "melee",
+                  "weaponHands": 1,
+                  "noOtherWeapon": true
+                }
+              },
+              {
+                "id": "fighting-style:great-weapon-fighting",
+                "effect": {
+                  "kind": "damage-die-reroll",
+                  "rerollValues": [
+                    1,
+                    2
+                  ],
+                  "keepReroll": true,
+                  "weaponRange": "melee",
+                  "handsUsed": 2,
+                  "propertyRequirement": {
+                    "kind": "any-of",
+                    "properties": [
+                      "two-handed",
+                      "versatile"
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "fighting-style:protection",
+                "effect": {
+                  "kind": "reaction-attack-disadvantage",
+                  "actionCost": "reaction",
+                  "attacker": {
+                    "mustBeVisibleToYou": true
+                  },
+                  "protectedTarget": {
+                    "mustBeOtherThanYou": true,
+                    "maximumDistanceFromYouFeet": 5
+                  },
+                  "requiresShield": true
+                }
+              },
+              {
+                "id": "fighting-style:two-weapon-fighting",
+                "effect": {
+                  "kind": "offhand-damage-ability-modifier",
+                  "addAbilityModifier": true
+                }
+              }
+            ]
+          }
+        ]
+      }
     },
     "source": "SRD 5.1 p. 24",
     "license": {
@@ -83042,9 +83149,126 @@
       "level": 2,
       "description": "At 2nd level, you tap into a deep wellspring of magic within yourself. This wellspring is represented by sorcery points, which allow you to create a variety of magical effects. Sorcery Points You have 2 sorcery points, and you gain more as you reach higher levels, as shown in the Sorcery Points column of the Sorcerer table. You can never have more sorcery points than shown on the table for your level. You regain all spent sorcery points when you finish a long rest. Flexible Casting You can use your sorcery points to gain additional spell slots, or sacrifice spell slots to gain additional sorcery points. You learn other ways to use your sorcery points as you reach higher levels. Creating Spell Slots. You can transform unexpended sorcery points into one spell slot as a bonus action on your turn. The Creating Spell Slots table shows the cost of creating a spell slot of a given level. You can create spell slots no higher in level than 5th. Any spell slot you create with this feature vanishes when you finish a long rest. Converting a Spell Slot to Sorcery Points. As a bonus action on your turn, you can expend one spell slot and gain a number of sorcery points equal to the slot’s level.",
       "mechanics": {
-        "resources": [
+        "procedures": [
           {
-            "reset": "long-rest"
+            "id": "font-of-magic",
+            "kind": "resource-conversion",
+            "pool": {
+              "id": "sorcery-points",
+              "name": "Sorcery Points",
+              "maximumByLevel": [
+                {
+                  "level": 2,
+                  "maximum": 2
+                },
+                {
+                  "level": 3,
+                  "maximum": 3
+                },
+                {
+                  "level": 4,
+                  "maximum": 4
+                },
+                {
+                  "level": 5,
+                  "maximum": 5
+                },
+                {
+                  "level": 6,
+                  "maximum": 6
+                },
+                {
+                  "level": 7,
+                  "maximum": 7
+                },
+                {
+                  "level": 8,
+                  "maximum": 8
+                },
+                {
+                  "level": 9,
+                  "maximum": 9
+                },
+                {
+                  "level": 10,
+                  "maximum": 10
+                },
+                {
+                  "level": 11,
+                  "maximum": 11
+                },
+                {
+                  "level": 12,
+                  "maximum": 12
+                },
+                {
+                  "level": 13,
+                  "maximum": 13
+                },
+                {
+                  "level": 14,
+                  "maximum": 14
+                },
+                {
+                  "level": 15,
+                  "maximum": 15
+                },
+                {
+                  "level": 16,
+                  "maximum": 16
+                },
+                {
+                  "level": 17,
+                  "maximum": 17
+                },
+                {
+                  "level": 18,
+                  "maximum": 18
+                },
+                {
+                  "level": 19,
+                  "maximum": 19
+                },
+                {
+                  "level": 20,
+                  "maximum": 20
+                }
+              ],
+              "reset": "long-rest"
+            },
+            "operations": {
+              "createSpellSlot": {
+                "actionCost": "bonus-action",
+                "maximumSlotLevel": 5,
+                "costBySlotLevel": [
+                  {
+                    "slotLevel": 1,
+                    "cost": 2
+                  },
+                  {
+                    "slotLevel": 2,
+                    "cost": 3
+                  },
+                  {
+                    "slotLevel": 3,
+                    "cost": 5
+                  },
+                  {
+                    "slotLevel": 4,
+                    "cost": 6
+                  },
+                  {
+                    "slotLevel": 5,
+                    "cost": 7
+                  }
+                ],
+                "createdSlotExpires": "long-rest"
+              },
+              "convertSpellSlot": {
+                "actionCost": "bonus-action",
+                "pointsGained": "slot-level"
+              }
+            }
           }
         ]
       },
@@ -85305,22 +85529,39 @@
       "price": "500 gp",
       "description": "A creature subjected to this poison must succeed on a DC 13 Constitution saving throw or take 10 (3d6) poison damage, and must repeat the saving throw at the start of each of its turns. On each successive failed save, the character takes 3 (1d6) poison damage. After three successful saves, the poison ends.",
       "mechanics": {
-        "saves": [
+        "procedures": [
           {
-            "ability": "constitution",
-            "dc": 13
-          }
-        ],
-        "damage": [
-          {
-            "average": 10,
-            "dice": "3d6",
-            "type": "poison"
-          },
-          {
-            "average": 3,
-            "dice": "1d6",
-            "type": "poison"
+            "id": "burnt-othur-fumes",
+            "kind": "repeat-save-hazard",
+            "entryTransition": {
+              "onInitialSuccess": "end",
+              "onInitialFailure": "activate-repeat"
+            },
+            "initial": {
+              "save": {
+                "ability": "constitution",
+                "dc": 13
+              },
+              "failureDamage": {
+                "dice": "3d6",
+                "type": "poison"
+              }
+            },
+            "repeat": {
+              "timing": "start-of-affected-turn",
+              "save": {
+                "ability": "constitution",
+                "dc": 13
+              },
+              "failureDamage": {
+                "dice": "1d6",
+                "type": "poison"
+              }
+            },
+            "termination": {
+              "kind": "successful-saves",
+              "count": 3
+            }
           }
         ]
       }
@@ -178691,10 +178932,39 @@
         "duration": {
           "kind": "instantaneous"
         },
-        "damage": [
+        "procedures": [
           {
-            "dice": "1d10",
-            "type": "necrotic"
+            "id": "wish-nonstandard-effect",
+            "kind": "adjudicated-stress",
+            "adjudicationBoundary": {
+              "id": "wish-beyond-listed-effects",
+              "boundaryKind": "designed-adjudication",
+              "adjudicator": "dm",
+              "trigger": "beyond-listed-effects"
+            },
+            "stress": {
+              "trigger": "non-duplication-effect",
+              "recurringDamage": {
+                "event": "cast-spell-before-long-rest",
+                "dicePerSpellLevel": "1d10",
+                "damageType": "necrotic",
+                "preventable": false
+              },
+              "strength": {
+                "maximumAfterStress": 3,
+                "durationDice": "2d4",
+                "unit": "day"
+              },
+              "recovery": {
+                "ordinaryDayReduction": 1,
+                "restDayReduction": 2,
+                "maximumRestActivity": "light"
+              },
+              "wishLoss": {
+                "chancePercent": 33,
+                "state": "unable-to-cast-wish"
+              }
+            }
           }
         ]
       }

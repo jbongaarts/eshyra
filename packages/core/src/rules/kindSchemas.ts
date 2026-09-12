@@ -7,6 +7,7 @@
 // baseline check, so a new importer can ship records before its deeper schemas
 // exist.
 
+import { validateBoundedProceduresForPack } from './boundedProcedures.js';
 import { CONDITION_RELATION_VALUES } from './conditionRelations.js';
 import {
   FEATURE_CHOICE_CATEGORIES,
@@ -942,6 +943,12 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     throw new RulesPackError(`${path}.${key} must be an object when present`);
   }
   const mechanics = value as Obj;
+  if (mechanics.procedures !== undefined) {
+    validateBoundedProceduresForPack(
+      mechanics.procedures,
+      `${path}.${key}.procedures`,
+    );
+  }
   const ambiguityIds = optRulesAmbiguities(mechanics, `${path}.${key}`);
   const actionEconomy = mechanics.actionEconomy;
   if (actionEconomy !== undefined) {
@@ -4839,6 +4846,7 @@ function validateEquipmentUseProfile(data: Obj, path: string): void {
  */
 function validateDnd5eEquipment(record: RulesRecord, path: string): void {
   const data = dataObj(record, path);
+  optMechanics(data, 'mechanics', `${path}.data`);
   const contents = data.contents;
   if (contents !== undefined) {
     if (!Array.isArray(contents) || contents.length === 0) {
