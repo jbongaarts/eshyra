@@ -1130,6 +1130,15 @@ export {
   RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP,
 } from './rules/lookup.js';
 export type {
+  MagicItemLegacyCapabilityBacklog,
+  MagicItemLegacyCapabilityCandidate,
+  SelectedMagicItemCapability,
+} from './rules/magicItemLegacyCapabilityBacklog.js';
+export {
+  buildMagicItemLegacyCapabilityBacklog,
+  MagicItemLegacyCapabilityBacklogError,
+} from './rules/magicItemLegacyCapabilityBacklog.js';
+export type {
   MagicItemActivationSpec,
   MagicItemContainment,
   MagicItemCurse,
