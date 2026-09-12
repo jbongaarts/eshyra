@@ -208,8 +208,15 @@ function candidateBlock(candidate: PacketCandidate): string {
       );
       continue;
     }
+    // The LABEL tracks availability, not merely selection. Both statuses are
+    // real commitments and both are bounded contracts, but design section 7.1
+    // makes the positive claim about capability AVAILABILITY, and a reader
+    // skimming headings should never take "POSITIVE BOUNDED CONTRACT" from a
+    // preflight that reported the operation cannot run. The blocked lines
+    // below say so too; this keeps the first line from having to be walked
+    // back by the second.
     lines.push(
-      `- POSITIVE BOUNDED CONTRACT: operation=${capability.operationId ?? 'not declared'}; capability=${capability.capabilityId}; revision=${capability.revision ?? 'not declared'}; status=${capability.status}`,
+      `- ${capability.status === 'available' ? 'POSITIVE BOUNDED CONTRACT' : 'BOUNDED CONTRACT, NOT AVAILABLE'}: operation=${capability.operationId ?? 'not declared'}; capability=${capability.capabilityId}; revision=${capability.revision ?? 'not declared'}; status=${capability.status}`,
     );
     if (capability.status === 'blocked')
       lines.push(
