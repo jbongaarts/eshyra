@@ -83,3 +83,48 @@ export function canonicalKey(value: unknown): string {
   }
   return JSON.stringify(value) ?? 'undefined';
 }
+
+/**
+ * Deep structural equality ACROSS the record/partition container boundary: an
+ * array and an index map carrying the same index→value mapping are equal,
+ * everything else is compared exactly as {@link deepEqual} compares it.
+ *
+ * A classified partition represents what was an array in the record as an
+ * INDEX MAP — an object keyed by the indices that contributed to that class —
+ * because a JSON array cannot express a hole and any filler value is itself a
+ * legal rules value (`discovery/packet.ts`, PR #543 re-review round 5, finding
+ * 2). M9's `typedPath` facts are stated in the RECORD's shape (the fixture
+ * corpus validates every `expectedValue` against the record itself), so the
+ * two sides of that one comparison are the same fact written in two container
+ * forms, and the comparison normalizes both rather than reporting a false
+ * disagreement about representation.
+ *
+ * Index IDENTITY is still what is compared, so this is not a loosening: an
+ * index map missing index 1 does not equal a 3-element array, and an element
+ * belonging to another provenance class is absent rather than `null` — which
+ * is exactly what lets an `expectedValue: null` fact mean a real `null` in the
+ * record and nothing else.
+ *
+ * Deliberately NOT used by M4 or M12: a traversal record and a tool-argument
+ * value are not partitions of anything, and there an array must stay distinct
+ * from an object.
+ */
+export function partitionEqual(a: unknown, b: unknown): boolean {
+  return deepEqual(indexMapped(a), indexMapped(b));
+}
+
+/** An array as the index map a partition would carry for it, recursively;
+ * every other value unchanged. */
+function indexMapped(value: unknown): unknown {
+  if (Array.isArray(value))
+    return Object.fromEntries(
+      value.map((item, index) => [String(index), indexMapped(item)]),
+    );
+  if (typeof value === 'object' && value !== null) {
+    const record = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.keys(record).map((key) => [key, indexMapped(record[key])]),
+    );
+  }
+  return value;
+}

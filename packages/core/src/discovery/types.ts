@@ -340,7 +340,24 @@ export interface ProjectionLimitNote {
   readonly kind: 'success-branch' | 'area' | 'execution-readiness';
   readonly note: string;
   readonly evidence: Record<string, unknown>;
-  readonly preservedProse: string;
+  /**
+   * The prose that actually backed this note: text drawn ONLY from the
+   * candidate's `sourceProse` partition — leaves the producing pack's own
+   * field-provenance manifest classified `source-prose` — scoped to the
+   * container the note is about.
+   *
+   * Renamed from `preservedProse` and narrowed to attested material (PR #543
+   * re-review round 5, finding 1). That field held every string anywhere in
+   * the RAW record body, so a note could quote `source-derived` or
+   * `compiler-projection` strings, or an unattested add-on's strings, while
+   * probe evidence read the field as source prose — a second, independent
+   * route to the source authority the manifest never granted.
+   *
+   * Empty only where the note makes no claim about the source at all
+   * (`execution-readiness`); the two notes that DO make one are emitted only
+   * when attested prose backs them, so theirs is never empty.
+   */
+  readonly attestedProse: string;
 }
 
 /**
@@ -358,16 +375,17 @@ export interface ProjectionLimitNote {
  *   JSON cannot express. `RulesRecord.data` is typed `unknown`, so the walk
  *   is written defensively against this even though every JSON-shaped record
  *   the real pack contains today produces none.
- * - `'no-provenance-declaration'` — `classifyFieldPointer`
- *   (`fieldProvenance.ts`) matched the pointer to no declaration for this
- *   record's kind, on purpose (that function never substitutes a default).
- *   This is ALSO what happens to every leaf of a record whose pack ships no
- *   field-provenance manifest at all — `loadFieldProvenanceManifest`
- *   (`rules/packLoader.ts`) is optional, and a hand-authored test-corpus pack
- *   may supply none — because an absent manifest is treated identically to
- *   one that declares nothing: nothing in it covers anything, so nothing is
- *   silently defaulted into the verbatim-authoritative bucket merely because
- *   no manifest argument was passed (`eshyra-o9bd.19.12.11`, item 5).
+ * - `'no-provenance-declaration'` — a PRESENT field-provenance artifact failed
+ *   to classify one of its own producer's pointers: `classifyFieldPointer`
+ *   (`fieldProvenance.ts`) matched no declaration for this record's kind, on
+ *   purpose (that function never substitutes a default). That is a stale or
+ *   incomplete attestation — a producer defect — and naming the pointer is how
+ *   a reader tells it apart from a producer that supplied no artifact at all.
+ *   A record with NO artifact records no residue of this reason; its leaves
+ *   become `unattested` and `PacketCandidate.provenanceArtifact` says
+ *   `absent` (`eshyra-o9bd.19.12.11`, items 4 and 5, deliberately not
+ *   collapsed). Either way nothing is silently defaulted into the
+ *   verbatim-authoritative bucket.
  *
  * `shape` names the leaf's own JS type either way (`residueShape` in
  * `packet.ts`), even for the second reason where the JS shape itself is not
@@ -416,10 +434,19 @@ export interface PacketCandidate {
    * Literal, verbatim-quoted record content: every leaf the pack's
    * field-provenance manifest (`rules/fieldProvenance.ts`) classifies
    * `source-prose` for this record's kind, at the pointer that classified it.
-   * Shaped exactly like the record body it was sliced from, so a JSON
-   * pointer into it addresses the same value it always did. This is the ONLY
-   * material the renderer may present as "verbatim; authoritative" (design
-   * section 7.2).
+   * This is the ONLY material the renderer may present as "verbatim;
+   * authoritative" (design section 7.2), and the only material a
+   * `ProjectionLimitNote` may make a claim about the source from.
+   *
+   * Shaped like the record body it was sliced from with ONE deliberate
+   * difference: an array becomes an INDEX MAP — an object keyed by the
+   * decimal indices that contributed to this class — because a JSON array
+   * cannot express a hole and every filler value is a legal rules value
+   * (PR #543 re-review round 5, finding 2). A JSON pointer therefore still
+   * addresses the same value it always did, `/data/actions/5/text` included,
+   * while class-absence is expressed as the only thing that cannot be
+   * mistaken for a value: a key that is not there. `Array.isArray` is what is
+   * given up; the record itself remains the place to ask what shape it has.
    *
    * W10's second re-review (F1-rr) found the PREVIOUS boundary — a
    * consumer-side container-name heuristic, `PROJECTION_CONTAINER_KEYS` — put

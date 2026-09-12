@@ -310,7 +310,11 @@ describe('offline discovery diagnostic probes', () => {
             ).toBeDefined();
             if (required.evidencePath !== undefined)
               expect(note?.evidence.path).toBe(required.evidencePath);
-            expect(note?.preservedProse.length ?? 0).toBeGreaterThan(0);
+            // A `success-branch` or `area` note carries the ATTESTED prose
+            // that backed it; `execution-readiness` makes no source claim, so
+            // its attested prose may legitimately be empty.
+            if (required.kind !== 'execution-readiness')
+              expect(note?.attestedProse.length ?? 0).toBeGreaterThan(0);
           }
 
           const provenance = REQUIRED_ADVENTURE_PROVENANCE[fixture.probeId];

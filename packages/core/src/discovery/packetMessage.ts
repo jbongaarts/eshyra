@@ -48,11 +48,17 @@ function valueText(value: unknown): string {
  * both over the SAME object — the record body's primitive TYPE was standing in
  * for a provenance boundary that was never actually drawn. `packet.ts` now
  * performs the real split (`classifyRecordBody`, reading the pack's declared
- * field-provenance manifest) and hands this renderer THREE
- * already-classified objects (F1-rr repair, `eshyra-o9bd.19.12.11`); this
+ * field-provenance manifest) and hands this renderer the already-classified
+ * partitions (F1-rr repair, `eshyra-o9bd.19.12.11`, plus `unattested`); this
  * function's only job is to walk whichever one it is given and print every
  * leaf inside it, string or not, because by the time it runs that heading
  * question is already answered.
+ *
+ * A partitioned array arrives as an INDEX MAP — an object keyed by the indices
+ * that contributed (`packet.ts`) — so it is walked by the object branch and
+ * prints the same `/data/actions/5/text` pointers an array printed. The array
+ * branch remains for the unsplit values this also renders, such as the licence
+ * block.
  */
 function emitLeaves(value: unknown, path: string, lines: string[]): void {
   if (Array.isArray(value)) {
@@ -135,12 +141,14 @@ function candidateBlock(candidate: PacketCandidate): string {
   if (candidate.residue.length > 0) {
     // The pack's field-provenance manifest (`rules/fieldProvenance.ts`)
     // classifies every leaf the real bundled SRD pack produces; this heading
-    // exists for what it could not — a pointer no declaration covers (which
-    // is also what every leaf becomes when no manifest was supplied at all,
-    // `eshyra-o9bd.19.12.11` item 5) or a JS shape the pack's JSON cannot
-    // represent. `item.reason` says which. Disclosed instead of silently
-    // landing under any of the three headings above, and placed immediately
-    // beside them, not in a trailing appendix.
+    // exists for what a PRESENT artifact could not — a pointer no declaration
+    // of its own producer covers — or for a JS shape the pack's JSON cannot
+    // represent. `item.reason` says which. A record whose producer supplied NO
+    // artifact records no residue at all: that is not a producer defect, and
+    // the unattested heading above already states it (`eshyra-o9bd.19.12.11`
+    // items 4 and 5, kept distinct). Disclosed instead of silently landing
+    // under any of the headings above, and placed immediately beside them,
+    // not in a trailing appendix.
     lines.push(
       '### Unclassified record data (no field-provenance declaration covers this)',
     );
@@ -165,7 +173,18 @@ function candidateBlock(candidate: PacketCandidate): string {
       `- ${traversal.sourceRecordKey} via ${traversal.linkField}: ${traversal.relation} -> ${traversal.targetRecordKey}`,
     );
   if (candidate.traversals.length === 0) lines.push('- none');
-  lines.push('### Source ambiguities');
+  // NOT "source ambiguities" (PR #543 re-review round 5, finding 1, sibling
+  // sweep). An ambiguity record is compiler-curated interpretive material —
+  // its `question` and `interpretations` are authored by the curation stage,
+  // not quoted from the source — and `packet.ts` reads it from the record body
+  // rather than from the attested `projection` partition, deliberately,
+  // because an ambiguity id is the jhpt ruling seam's mechanism input. A
+  // heading calling it a SOURCE ambiguity would make exactly the unattested
+  // source claim this sweep exists to remove, including for a pack whose
+  // producer attested nothing.
+  lines.push(
+    '### Known ambiguities (compiler-curated interpretive record; NOT a source quotation)',
+  );
   for (const ambiguity of candidate.ambiguities) {
     lines.push(`- ${ambiguity.id}: ${ambiguity.question}`);
     lines.push(

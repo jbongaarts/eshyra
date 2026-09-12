@@ -53,6 +53,21 @@ function prose(value: unknown): string[] {
     return Object.values(value).flatMap(prose);
   return [];
 }
+/**
+ * The curated ambiguity records a candidate carries.
+ *
+ * Read from the record body rather than from the classified `projection`
+ * partition, deliberately (PR #543 re-review round 5, finding 1 sibling
+ * sweep): an ambiguity id is a MECHANISM input, not a content claim —
+ * `campaignRuleSeam.ts` queries the `eshyra-jhpt` read interface with it and a
+ * ruling resolves it — so withholding it for a pack whose producer attested
+ * nothing would silently disable ruling resolution for every add-on's content
+ * instead of merely declining to vouch for that content.
+ *
+ * Nothing here is therefore presented as attested: the renderer's heading
+ * calls this a compiler-curated interpretive record and explicitly not a
+ * source quotation, which is the claim the material can actually support.
+ */
 function ambiguities(candidate: DiscoveryCandidate): readonly RulesAmbiguity[] {
   const mechanics = object(object(candidate.entry?.record.data)?.mechanics);
   if (!Array.isArray(mechanics?.ambiguities)) return [];
@@ -118,20 +133,25 @@ interface ProvenanceSplit {
  * `/data/actions/5/...` lines) and seeds every `RecordDataResidue.pointer`.
  * `normalizedPointer` collapses every index to the literal segment `*`,
  * because that is `classifyFieldPointer`'s own required convention
- * (`fieldProvenance.ts`) and is never shown to a reader. Arrays stay
- * index-aligned across all three output sides (an index with nothing on one
- * side gets `null` there, never a shift), matching the display pointer's own
- * positional convention.
+ * (`fieldProvenance.ts`) and is never shown to a reader. Index identity is
+ * preserved on every output side by the KEY that addressed the element, never
+ * by a positional filler value — see the container branch below.
  *
  * `manifest` is `undefined` exactly when no pack-emitted field-provenance
  * manifest is available for this record at all — `loadFieldProvenanceManifest`
- * (`rules/packLoader.ts`) is optional, and a hand-authored test-corpus pack
- * may ship none (design item 5, `eshyra-o9bd.19.12.11`). That case is decided
- * here identically to a declared-but-non-covering manifest:
- * `classifyFieldPointer` is never even called, every leaf becomes a
- * `'no-provenance-declaration'` residue entry, and nothing lands in
- * `sourceProse` — a pack attesting nothing can never be read as attesting
+ * (`rules/packLoader.ts`) is optional, a hand-authored test-corpus pack may
+ * ship none, and a pack with no positively associated manifest resolves to
+ * `undefined` here (`FieldProvenanceSource`). Classification is decided
+ * identically to a declared-but-non-covering manifest — `classifyFieldPointer`
+ * is never even called, every leaf becomes `unattested`, and nothing lands in
+ * `sourceProse`, so a pack attesting nothing can never be read as attesting
  * verbatim source authority merely because the manifest argument was omitted.
+ *
+ * The DISCLOSURE differs, and deliberately (`eshyra-o9bd.19.12.11` items 4 and
+ * 5): a `'no-provenance-declaration'` residue entry names a pointer a PRESENT
+ * artifact failed to cover, which is a producer defect. No artifact at all is
+ * not a defect and records no residue; `PacketCandidate.provenanceArtifact`
+ * carries that state and the renderer states it under its own heading.
  */
 function classifyRecordBody(
   value: unknown,
@@ -187,60 +207,52 @@ function classifyRecordBody(
       unattested: undefined,
     };
   }
-  if (Array.isArray(value)) {
-    const proseItems: unknown[] = [];
-    const derivedItems: unknown[] = [];
-    const projectionItems: unknown[] = [];
-    const unattestedItems: unknown[] = [];
-    let proseContributed = false;
-    let derivedContributed = false;
-    let projectionContributed = false;
-    let unattestedContributed = false;
-    value.forEach((item, index) => {
-      const child = classifyRecordBody(
-        item,
-        kind,
-        manifest,
-        `${displayPointer}/${index}`,
-        `${normalizedPointer}/*`,
-        residue,
-      );
-      proseItems.push(
-        child.sourceProse === undefined ? null : child.sourceProse,
-      );
-      derivedItems.push(
-        child.sourceDerived === undefined ? null : child.sourceDerived,
-      );
-      projectionItems.push(
-        child.projection === undefined ? null : child.projection,
-      );
-      unattestedItems.push(
-        child.unattested === undefined ? null : child.unattested,
-      );
-      if (child.sourceProse !== undefined) proseContributed = true;
-      if (child.sourceDerived !== undefined) derivedContributed = true;
-      if (child.projection !== undefined) projectionContributed = true;
-      if (child.unattested !== undefined) unattestedContributed = true;
-    });
-    return {
-      sourceProse: proseContributed ? proseItems : undefined,
-      sourceDerived: derivedContributed ? derivedItems : undefined,
-      projection: projectionContributed ? projectionItems : undefined,
-      unattested: unattestedContributed ? unattestedItems : undefined,
-    };
-  }
-  if (isPlainObject(value)) {
+  if (Array.isArray(value) || isPlainObject(value)) {
+    // One branch for both container shapes, because a partition treats them
+    // identically: a child contributes to a class or it does not, and the key
+    // that addressed it is preserved either way.
+    //
+    // An ARRAY's partition is an INDEX MAP — an object whose keys are the
+    // decimal indices that contributed — never an array (PR #543 re-review
+    // round 5, finding 2). The previous revision kept arrays and pushed a
+    // literal `null` at every index that belonged to another class, to hold
+    // the positions. That manufactured a leaf: `null` is itself a legal
+    // `FieldProvenanceLeaf` and a legal rules value, so `[realValue, null]`
+    // in `sourceProse` could not be told apart from a record that really
+    // carries `null` at index 1 — and M9 then matched an `expectedValue: null`
+    // fact against padding that stands for "this index is in ANOTHER class".
+    // An absence sentinel may not alias a legal value, so absence is now
+    // expressed the only way JSON expresses it: the key is not there.
+    //
+    // Index identity survives exactly, because a JSON Pointer's array token
+    // and object key are the same string: `/data/actions/5/text` resolves
+    // through `{"5": {...}}` the same way it resolved through the array, so
+    // M9 `typedPath` facts, the rendered pointer lines, and every residue
+    // pointer are unchanged. What is lost is the JS `Array.isArray` answer,
+    // and deliberately: a partition is a VIEW of the record, not the record,
+    // and the record itself remains the place to ask what shape it has. A
+    // consumer that needs the contributing elements of a partitioned array
+    // reads `Object.values` of the index map (`partitionedElements` below).
+    //
+    // The shape does NOT depend on how much of the array contributed: a fully
+    // contributing array is an index map too. Switching representation on
+    // membership would make the shape itself a covert signal about
+    // classification, readable only by a consumer who knew to look.
     const proseOut: Obj = {};
     const derivedOut: Obj = {};
     const projectionOut: Obj = {};
     const unattestedOut: Obj = {};
+    const indexed = Array.isArray(value);
     for (const [key, child] of Object.entries(value)) {
       const result = classifyRecordBody(
         child,
         kind,
         manifest,
         `${displayPointer}/${key}`,
-        `${normalizedPointer}/${key}`,
+        // `classifyFieldPointer`'s own convention: an array index is the
+        // literal segment `*` in a declaration, a concrete index in a
+        // display pointer (`fieldProvenance.ts`).
+        `${normalizedPointer}/${indexed ? '*' : key}`,
         residue,
       );
       if (result.sourceProse !== undefined) proseOut[key] = result.sourceProse;
@@ -280,46 +292,63 @@ function classifyRecordBody(
 }
 
 /**
- * Every place a typed save projection lives, with the JSON pointer that
- * addresses it. Creature actions carry their own nested `mechanics`, so a
- * detector that looked only at `data.mechanics.saves` silently produced no
- * note for `creature:adult-black-dragon` Acid Breath — the exact case design
- * section 7.2 names as a worked example of a required disclosure.
+ * The elements of what was an ARRAY in the record, read back out of a
+ * partition's index map (`classifyRecordBody`). An already-array value is
+ * returned as is, so this reads both a partition and a raw record body.
  */
-function saveProjections(data: Obj): readonly {
-  pointer: string;
-  saves: readonly unknown[];
-  area: unknown;
-  localProse: string;
-}[] {
-  const found: {
-    pointer: string;
-    saves: readonly unknown[];
-    area: unknown;
-    localProse: string;
-  }[] = [];
-  const push = (pointer: string, holder: Obj | undefined, scope: unknown) => {
-    const mechanics = object(holder?.mechanics);
-    if (mechanics === undefined || !Array.isArray(mechanics.saves)) return;
-    found.push({
-      pointer: `${pointer}/mechanics/saves`,
-      saves: mechanics.saves,
-      area: mechanics.area,
-      // Scoped to this projection's own prose. A record-wide test let one
-      // action's success branch raise a spurious note on a sibling action
-      // whose save has no damage at all (Frightful Presence borrowing Acid
-      // Breath's "half as much").
-      localProse: prose(scope).join('\n'),
-    });
-  };
-  push('/data', data, data);
-  for (const field of ['actions', 'legendaryActions', 'reactions'] as const) {
-    const entries = data[field];
-    if (!Array.isArray(entries)) continue;
-    entries.forEach((entry, index) => {
-      push(`/data/${field}/${index}`, object(entry), entry);
-    });
+function partitionedElements(value: unknown): readonly unknown[] {
+  if (Array.isArray(value)) return value;
+  return isPlainObject(value) ? Object.values(value) : [];
+}
+
+interface MechanicsProjection {
+  /** Pointer to the node that HOLDS the `mechanics` object (`/data/actions/5`). */
+  readonly container: string;
+  /** Pointer to the `mechanics` object itself. */
+  readonly pointer: string;
+  readonly mechanics: Obj;
+}
+
+/**
+ * Every typed mechanics projection in a candidate's CLASSIFIED PROJECTION
+ * partition, with the pointer that addresses it and the pointer of the
+ * container that holds it.
+ *
+ * Read out of `split.projection` — the leaves the producing pack's own
+ * field-provenance manifest classified `compiler-projection` — never out of
+ * the raw record body (PR #543 re-review round 5, finding 1). Projection-limit
+ * notes are model-facing claims, and a claim about "the typed projection" may
+ * only be made about material the packet actually presents as a typed
+ * projection. A record whose producer attested nothing therefore has no typed
+ * projection to qualify, and gets no note: its content reaches the DM under
+ * the unattested heading, which claims nothing for it in the first place.
+ *
+ * The walk is STRUCTURAL rather than a list of container names: every node
+ * carrying a `mechanics` object counts, wherever it sits. The previous
+ * revision enumerated `actions`/`legendaryActions`/`reactions` by name, which
+ * both reproduced the field-name-list pattern this bead has twice been told to
+ * stop using and silently missed real cases — `legendaryActions` is an OBJECT
+ * whose entries live under `/legendaryActions/entries`, so it failed the
+ * enumeration's own `Array.isArray` test and was skipped entirely.
+ */
+function mechanicsProjections(
+  value: unknown,
+  pointer: string,
+  found: MechanicsProjection[],
+): readonly MechanicsProjection[] {
+  const holder = object(value);
+  if (holder !== undefined) {
+    const mechanics = object(holder.mechanics);
+    if (mechanics !== undefined)
+      found.push({
+        container: pointer,
+        pointer: `${pointer}/mechanics`,
+        mechanics,
+      });
   }
+  if (value !== null && typeof value === 'object')
+    for (const [key, child] of Object.entries(value))
+      mechanicsProjections(child, `${pointer}/${key}`, found);
   return found;
 }
 
@@ -342,51 +371,102 @@ function saveProjections(data: Obj): readonly {
 const AREA_PROSE = /\d{1,4}-foot[ -](?:radius|line|cone|cube|sphere)/iu;
 const SUCCESS_BRANCH_PROSE = /half as much|successful one/iu;
 
+/**
+ * Attested source prose, and nothing else: every string under the
+ * `source-prose` partition at `pointer`, joined.
+ *
+ * This is the ONLY text any projection-limit note may quote or reason about
+ * (PR #543 re-review round 5, finding 1). The previous revision ran its
+ * detectors over `prose(record.data)` — every string anywhere in the raw
+ * record — which independently recreated source authority the manifest never
+ * granted: an unattested add-on's strings could raise a note saying "source
+ * prose remains authoritative context", and a canonical record's own
+ * `source-derived` or `compiler-projection` strings could trigger a detector
+ * that then made a claim about THE SOURCE.
+ */
+function attestedProseAt(sourceProseRoot: Obj, pointer: string): string {
+  return prose(valueAtPointer(sourceProseRoot, pointer)).join('\n');
+}
+
+/** Resolve a `/data/...` display pointer against a partition root. Written
+ * against the partition's own index-map shape, where an array index and an
+ * object key are the same string token. */
+function valueAtPointer(root: Obj, pointer: string): unknown {
+  return pointer
+    .split('/')
+    .slice(1)
+    .reduce<unknown>((value, key) => object(value)?.[key], root);
+}
+
+/**
+ * The partial-projection disclosures design section 7.2 requires, each built
+ * from the partition that can back the claim it makes:
+ *
+ * - what the TYPED PROJECTION contains or omits comes from `projection`;
+ * - what THE SOURCE says comes from `sourceProse`, the only partition carrying
+ *   verbatim source authority.
+ *
+ * Nothing here reads the raw record body. `attestedProse` on the note is the
+ * prose that actually backed it, so a consumer that quotes it quotes attested
+ * material (the field it replaces, `preservedProse`, was raw record strings
+ * and was already being read as source prose by probe evidence).
+ */
 function projectionLimits(
-  candidate: DiscoveryCandidate,
+  sourceProseRoot: Obj,
+  projectionRoot: Obj,
 ): ProjectionLimitNote[] {
-  const record = candidate.entry?.record;
-  const data = object(record?.data);
-  if (record === undefined || data === undefined) return [];
-  const text = prose(record.data).join('\n');
   const notes: ProjectionLimitNote[] = [];
-  const projections = saveProjections(data);
+  const projections = mechanicsProjections(projectionRoot.data, '/data', []);
   for (const projection of projections) {
-    if (
-      !projection.saves.some(
-        (item) => object(item)?.damageOnSuccess === undefined,
-      ) ||
-      !SUCCESS_BRANCH_PROSE.test(projection.localProse)
-    )
+    const saves = projection.mechanics.saves;
+    if (saves === undefined) continue;
+    const entries = partitionedElements(saves);
+    if (!entries.some((item) => object(item)?.damageOnSuccess === undefined))
       continue;
+    // Scoped to the attested prose of THIS projection's own container. A
+    // record-wide test let one action's success branch raise a spurious note
+    // on a sibling action whose save has no damage at all (Frightful Presence
+    // borrowing Acid Breath's "half as much").
+    const localProse = attestedProseAt(sourceProseRoot, projection.container);
+    if (!SUCCESS_BRANCH_PROSE.test(localProse)) continue;
     notes.push({
       kind: 'success-branch',
       note: 'The typed save projection omits the source success branch; source prose remains authoritative context.',
-      evidence: { path: projection.pointer, missing: 'damageOnSuccess' },
-      preservedProse: projection.localProse,
+      evidence: {
+        path: `${projection.pointer}/saves`,
+        missing: 'damageOnSuccess',
+      },
+      attestedProse: localProse,
     });
   }
+  // The whole record's attested prose: the area claim is about the source, so
+  // it is made only when attested source prose describes one.
+  const recordProse = attestedProseAt(sourceProseRoot, '/data');
   if (
-    AREA_PROSE.test(text) &&
-    projections.every((projection) => projection.area === undefined) &&
-    object(data.mechanics)?.area === undefined
+    AREA_PROSE.test(recordProse) &&
+    projections.every((projection) => projection.mechanics.area === undefined)
   )
     notes.push({
       kind: 'area',
       note: 'The source describes an area, but no typed mechanics.area projection exists.',
       evidence: { missing: 'mechanics.area' },
-      preservedProse: text,
+      attestedProse: recordProse,
     });
-  const readiness = object(data.executionReadiness);
-  const pending = Array.isArray(readiness?.clauses)
-    ? readiness.clauses.filter((item) => object(item)?.readiness !== 'green')
-    : [];
+  const readiness = object(
+    valueAtPointer(projectionRoot, '/data/executionReadiness'),
+  );
+  const pending = partitionedElements(readiness?.clauses).filter(
+    (item) => object(item)?.readiness !== 'green',
+  );
   if (pending.length > 0)
     notes.push({
       kind: 'execution-readiness',
       note: 'The record has engine-pending readiness clauses; typed projections are not a capability.',
       evidence: { clauses: pending },
-      preservedProse: text,
+      // May be empty, and says so by being empty: this note makes no claim
+      // about the source at all, so it is not withheld when a record has no
+      // attested prose.
+      attestedProse: recordProse,
     });
   return notes;
 }
@@ -644,6 +724,8 @@ function packetCandidate(
     record.kind,
     provenanceSource?.(candidate.entry.pack),
   );
+  const sourceProseRoot = { data: split.sourceProse };
+  const projectionRoot = { data: split.projection };
   return {
     identity: { key: record.key, kind: record.kind, name: record.name },
     provenance: {
@@ -652,9 +734,9 @@ function packetCandidate(
       source: record.source,
       license: candidate.entry.license,
     },
-    sourceProse: { data: split.sourceProse },
+    sourceProse: sourceProseRoot,
     sourceDerived: { data: split.sourceDerived },
-    projection: { data: split.projection },
+    projection: projectionRoot,
     unattested: { data: split.unattested },
     // Which of the three states this record is in is decided HERE, where the
     // manifest lookup actually happened, not inferred later from whether any
@@ -670,7 +752,11 @@ function packetCandidate(
     campaignRules: candidate.campaignRules,
     campaignRulings: candidate.campaignRulings,
     capabilities: capabilities(candidate, declarations),
-    projectionLimits: projectionLimits(candidate),
+    // Built from the CLASSIFIED partitions this candidate carries, never from
+    // the raw record body: a projection-limit note is model-facing text, and
+    // the source-authority half of it may come only from attested prose
+    // (PR #543 re-review round 5, finding 1).
+    projectionLimits: projectionLimits(sourceProseRoot, projectionRoot),
   };
 }
 /**

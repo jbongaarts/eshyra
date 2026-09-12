@@ -1,4 +1,4 @@
-import { deepEqual } from './structuralEquality.js';
+import { deepEqual, partitionEqual } from './structuralEquality.js';
 import { deriveDiscoveryTrace } from './traceDerivation.js';
 import type {
   ProjectedCandidate,
@@ -327,6 +327,14 @@ export function measureDiscovery(
     // there, and M9 asks whether the packet RETAINED a fact, not which
     // heading it landed under. Omitting it would report every fixture fact
     // about an add-on record as missing.
+    //
+    // A `typedPath` resolves through a partitioned array's INDEX MAP exactly
+    // as it resolved through the array (`packet.ts`), and a path whose value
+    // belongs to another class now resolves to `undefined` rather than to the
+    // padding `null` the previous revision inserted to hold the position —
+    // so an `expectedValue: null` fact matches a real `null` in the record
+    // and can no longer be satisfied by class-absence (PR #543 re-review
+    // round 5, finding 2).
     const buckets = [
       candidate?.sourceProse,
       candidate?.sourceDerived,
@@ -342,7 +350,12 @@ export function measureDiscovery(
                   valueAt(bucket, fact.typedPath as string) !== undefined,
               )
             : buckets.some((bucket) =>
-                deepEqual(
+                // `partitionEqual`, not `deepEqual`: the fact is stated in the
+                // RECORD's container shape (the fixture corpus validates it
+                // against the record itself) while a bucket carries the
+                // partition's index-map shape. Index identity is still what is
+                // compared — see `structuralEquality.ts`.
+                partitionEqual(
                   valueAt(bucket, fact.typedPath as string),
                   fact.expectedValue,
                 ),
@@ -566,7 +579,26 @@ export type StateEffectDisagreement =
       readonly attempt: number;
       readonly ordinal: number;
     }
-  | { readonly kind: 'missing-expected-operation'; readonly tool: string }
+  | {
+      readonly kind: 'missing-expected-operation';
+      readonly tool: string;
+      /** Position in the fixture's ordered operation list, from 0. */
+      readonly position: number;
+    }
+  | {
+      /**
+       * The accepted stream ran a DIFFERENT operation at this position of the
+       * fixture's ordered list. Reported as its own kind rather than as a
+       * missing/unexpected pair, because the pair states two absences where
+       * the real finding is one ordering disagreement.
+       */
+      readonly kind: 'operation-order-mismatch';
+      readonly position: number;
+      readonly expectedTool: string;
+      readonly observedTool: string;
+      readonly attempt: number;
+      readonly ordinal: number;
+    }
   | {
       readonly kind: 'argument-mismatch';
       readonly tool: string;
@@ -593,6 +625,18 @@ export interface StateEffectMeasurement {
  * admit an executed `{a: 1, b: <unchecked state>}`, which is exactly the
  * unverified-mechanical-claim gap M12 exists to close. `deepEqual` itself
  * lives in `structuralEquality.ts`, shared with M4 and M9.
+ *
+ * The comparison is POSITIONAL, because amendment 11.2 (Amendment D) defines
+ * the fixture expectation as a non-empty ORDERED LIST of mutating tool
+ * operations and the accepted stream carries canonical ordinals. The previous
+ * revision searched the unmatched effects for ANY effect with the same tool
+ * name, so `[adjust_hp, remove_item]` agreed with an executed
+ * `[remove_item, adjust_hp]` — set-like matching nothing in the fixture
+ * contract or the design authorizes, and a real difference in what the turn
+ * did (PR #543 re-review round 5, finding 3). Canonicalization by `ordinal`
+ * still happens FIRST, so physically out-of-order persisted rows are ordered
+ * before anything is compared; position is then position in that canonical
+ * stream.
  */
 
 /** M12 compares always-present fixture and accepted event sets (§13.2). */
@@ -615,20 +659,47 @@ export function measureAcceptedStateEffect(
         ordinal: effect.ordinal,
       });
   } else {
-    const consumed = new Set<number>();
-    for (const operation of expected.operations) {
-      const index = acceptedEffects.findIndex(
-        (effect, i) => !consumed.has(i) && effect.tool === operation.tool,
-      );
-      if (index < 0) {
+    // One pass over the longer of the two ordered streams, comparing position
+    // to position. A shorter accepted stream leaves expected operations
+    // missing; a longer one leaves effects unexpected; the same tool repeated
+    // keeps its own arguments at its own position.
+    const length = Math.max(expected.operations.length, acceptedEffects.length);
+    for (let position = 0; position < length; position += 1) {
+      const operation = expected.operations[position];
+      const effect = acceptedEffects[position];
+      if (operation === undefined) {
+        // `effect` is defined here: `position` is below the max of the two
+        // lengths and the expected side has run out.
         disagreements.push({
-          kind: 'missing-expected-operation',
-          tool: operation.tool,
+          kind: 'unexpected-effect',
+          tool: effect.tool,
+          attempt: effect.attempt,
+          ordinal: effect.ordinal,
         });
         continue;
       }
-      consumed.add(index);
-      const effect = acceptedEffects[index];
+      if (effect === undefined) {
+        disagreements.push({
+          kind: 'missing-expected-operation',
+          tool: operation.tool,
+          position,
+        });
+        continue;
+      }
+      if (effect.tool !== operation.tool) {
+        disagreements.push({
+          kind: 'operation-order-mismatch',
+          position,
+          expectedTool: operation.tool,
+          observedTool: effect.tool,
+          attempt: effect.attempt,
+          ordinal: effect.ordinal,
+        });
+        // The arguments belong to a DIFFERENT operation, so comparing them
+        // against this expectation's fields would report a second, derived
+        // disagreement about a comparison that was never meaningful.
+        continue;
+      }
       for (const [field, value] of Object.entries(operation.args ?? {}))
         if (!deepEqual(value, effect.args[field]))
           disagreements.push({
@@ -641,15 +712,6 @@ export function measureAcceptedStateEffect(
             observed: effect.args[field],
           });
     }
-    acceptedEffects.forEach((effect, index) => {
-      if (!consumed.has(index))
-        disagreements.push({
-          kind: 'unexpected-effect',
-          tool: effect.tool,
-          attempt: effect.attempt,
-          ordinal: effect.ordinal,
-        });
-    });
   }
   return {
     expectation: expected.expectation,

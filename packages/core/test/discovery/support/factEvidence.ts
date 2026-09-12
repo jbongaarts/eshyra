@@ -53,24 +53,33 @@ export const ASSERTIONS: Readonly<
     );
   },
   'dragon-success-branch-disclosed': ({ candidate }) => {
-    const note = candidate(
-      'creature:adult-black-dragon',
-    )?.projectionLimits.find(
+    const dragon = candidate('creature:adult-black-dragon');
+    const note = dragon?.projectionLimits.find(
       (item) =>
         item.kind === 'success-branch' &&
         item.evidence.path === '/data/actions/5/mechanics/saves',
     );
     expect(note).toBeDefined();
-    expect(note?.preservedProse).toContain(
+    expect(note?.attestedProse).toContain(
+      'or half as much damage on a successful one',
+    );
+    // The note's prose is ATTESTED prose, not merely record text: every line
+    // of it is a `source-prose` leaf of this candidate (PR #543 re-review
+    // round 5, finding 1).
+    expect(JSON.stringify(dragon?.sourceProse)).toContain(
       'or half as much damage on a successful one',
     );
   },
   'fireball-area-disclosed': ({ candidate }) => {
-    const note = candidate('spell:fireball')?.projectionLimits.find(
+    const fireball = candidate('spell:fireball');
+    const note = fireball?.projectionLimits.find(
       (item) => item.kind === 'area',
     );
     expect(note).toBeDefined();
-    expect(note?.preservedProse).toContain('20-foot-radius sphere');
+    expect(note?.attestedProse).toContain('20-foot-radius sphere');
+    expect(JSON.stringify(fireball?.sourceProse)).toContain(
+      '20-foot-radius sphere',
+    );
   },
   'concentration-reached-by-cue-not-edge': ({ candidate, trace }) => {
     expect(routeClasses(candidate('rule:concentration'))).toContain(
@@ -154,7 +163,11 @@ export const ASSERTIONS: Readonly<
     // ...beside an SRD source that it neither replaced nor hid.
     const prose = proseOf(fireball);
     expect(prose).toContain('A target takes 8d6 fire damage on a failed save');
-    expect(prose).toContain('"V","S","M"');
+    // Each component value, not the array's serialization: a partitioned array
+    // is carried as an index map, and pinning `"V","S","M"` tested the
+    // container's encoding rather than the claim that the components survived.
+    for (const component of ['"V"', '"S"', '"M"'])
+      expect(prose).toContain(component);
     expect(fireball?.provenance.sourceRef).toContain('wizards.com');
   },
   'house-rule-is-not-an-ambiguity-choice': ({ candidate }) => {

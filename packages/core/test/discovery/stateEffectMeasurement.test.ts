@@ -126,7 +126,7 @@ describe('M12 accepted state-effect agreement', () => {
     });
     expect(measured.agreement).toBe('disagreed');
     expect(measured.disagreements).toEqual([
-      { kind: 'missing-expected-operation', tool: 'use_item' },
+      { kind: 'missing-expected-operation', tool: 'use_item', position: 0 },
     ]);
   });
 
@@ -215,7 +215,7 @@ describe('M12 accepted state-effect agreement', () => {
     );
     expect(measured.agreement).toBe('disagreed');
     expect(measured.disagreements).toEqual([
-      { kind: 'missing-expected-operation', tool: 'spend_usage' },
+      { kind: 'missing-expected-operation', tool: 'spend_usage', position: 1 },
     ]);
   });
 
@@ -382,6 +382,206 @@ describe('M12 accepted state-effect agreement', () => {
           observed: { a: 1, b: 2, c: 3 },
         },
       ]);
+    });
+  });
+  /**
+   * PR #543 re-review round 5, finding 3: the comparison is POSITIONAL.
+   *
+   * Design amendment 11.2 (Amendment D) defines the fixture expectation as a
+   * non-empty ORDERED LIST of mutating tool operations, and the accepted
+   * stream carries canonical ordinals. The previous revision searched the
+   * unmatched effects for ANY effect with the same tool name, so two
+   * different operations executed in the opposite order still agreed —
+   * set-like matching that neither the fixture contract nor the design
+   * authorizes, over a real difference in what the turn did.
+   */
+  describe('ordered comparison against the canonical accepted stream', () => {
+    it('disagrees when two distinct operations ran in the opposite order', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([
+          effect('remove_item', 0, { instanceId: 'arrow-1' }),
+          effect('adjust_hp', 1, { delta: -3 }),
+        ]),
+        {
+          expectation: 'effect',
+          operations: [
+            { tool: 'adjust_hp', args: { delta: -3 } },
+            { tool: 'remove_item', args: { instanceId: 'arrow-1' } },
+          ],
+        },
+      );
+      // Every argument matches SOME effect; only the order disagrees, which is
+      // exactly the case the old rule called agreement.
+      expect(measured.agreement).toBe('disagreed');
+      expect(measured.disagreements).toEqual([
+        {
+          kind: 'operation-order-mismatch',
+          position: 0,
+          expectedTool: 'adjust_hp',
+          observedTool: 'remove_item',
+          attempt: 1,
+          ordinal: 0,
+        },
+        {
+          kind: 'operation-order-mismatch',
+          position: 1,
+          expectedTool: 'remove_item',
+          observedTool: 'adjust_hp',
+          attempt: 1,
+          ordinal: 1,
+        },
+      ]);
+    });
+
+    it('agrees on the same two operations in the declared order', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([
+          effect('adjust_hp', 0, { delta: -3 }),
+          effect('remove_item', 1, { instanceId: 'arrow-1' }),
+        ]),
+        {
+          expectation: 'effect',
+          operations: [
+            { tool: 'adjust_hp', args: { delta: -3 } },
+            { tool: 'remove_item', args: { instanceId: 'arrow-1' } },
+          ],
+        },
+      );
+      expect(measured.agreement).toBe('agreed');
+      expect(measured.disagreements).toEqual([]);
+    });
+
+    /**
+     * A repeated tool: the tool name cannot distinguish the two positions, so
+     * only the ARGUMENTS can, and they are compared position by position.
+     */
+    it('holds a repeated tool to its declared argument order', () => {
+      const swapped = measureAcceptedStateEffect(
+        observations([
+          effect('spend_usage', 0, { usageId: 'b' }),
+          effect('spend_usage', 1, { usageId: 'a' }),
+        ]),
+        {
+          expectation: 'effect',
+          operations: [
+            { tool: 'spend_usage', args: { usageId: 'a' } },
+            { tool: 'spend_usage', args: { usageId: 'b' } },
+          ],
+        },
+      );
+      expect(swapped.agreement).toBe('disagreed');
+      expect(swapped.disagreements).toEqual([
+        {
+          kind: 'argument-mismatch',
+          tool: 'spend_usage',
+          attempt: 1,
+          ordinal: 0,
+          field: 'usageId',
+          expected: 'a',
+          observed: 'b',
+        },
+        {
+          kind: 'argument-mismatch',
+          tool: 'spend_usage',
+          attempt: 1,
+          ordinal: 1,
+          field: 'usageId',
+          expected: 'b',
+          observed: 'a',
+        },
+      ]);
+
+      const inOrder = measureAcceptedStateEffect(
+        observations([
+          effect('spend_usage', 0, { usageId: 'a' }),
+          effect('spend_usage', 1, { usageId: 'b' }),
+        ]),
+        {
+          expectation: 'effect',
+          operations: [
+            { tool: 'spend_usage', args: { usageId: 'a' } },
+            { tool: 'spend_usage', args: { usageId: 'b' } },
+          ],
+        },
+      );
+      expect(inOrder.agreement).toBe('agreed');
+    });
+
+    /**
+     * Canonicalization happens FIRST: rows persisted out of order are ordered
+     * by `ordinal` before position means anything, so the storage order of the
+     * evidence never decides the measurement.
+     */
+    it('canonicalizes physically out-of-order rows by ordinal before comparing', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([
+          effect('remove_item', 1, { instanceId: 'arrow-1' }),
+          effect('adjust_hp', 0, { delta: -3 }),
+        ]),
+        {
+          expectation: 'effect',
+          operations: [
+            { tool: 'adjust_hp', args: { delta: -3 } },
+            { tool: 'remove_item', args: { instanceId: 'arrow-1' } },
+          ],
+        },
+      );
+      expect(measured.agreement).toBe('agreed');
+      expect(measured.acceptedEffects.map((item) => item.tool)).toEqual([
+        'adjust_hp',
+        'remove_item',
+      ]);
+    });
+
+    /** Missing and extra operations keep the meanings they already had. */
+    it('reports a missing operation at its declared position and an extra one at its ordinal', () => {
+      const short = measureAcceptedStateEffect(
+        observations([effect('adjust_hp', 0, { delta: -3 })]),
+        {
+          expectation: 'effect',
+          operations: [{ tool: 'adjust_hp' }, { tool: 'remove_item' }],
+        },
+      );
+      expect(short.disagreements).toEqual([
+        {
+          kind: 'missing-expected-operation',
+          tool: 'remove_item',
+          position: 1,
+        },
+      ]);
+
+      const long = measureAcceptedStateEffect(
+        observations([
+          effect('adjust_hp', 0, { delta: -3 }),
+          effect('remove_item', 1, {}),
+        ]),
+        { expectation: 'effect', operations: [{ tool: 'adjust_hp' }] },
+      );
+      expect(long.disagreements).toEqual([
+        {
+          kind: 'unexpected-effect',
+          tool: 'remove_item',
+          attempt: 1,
+          ordinal: 1,
+        },
+      ]);
+    });
+
+    /** The top-level argument SUBSET rule is unchanged by the ordering repair. */
+    it('still admits executed arguments the fixture does not declare', () => {
+      const measured = measureAcceptedStateEffect(
+        observations([
+          effect('use_item', 0, {
+            instanceId: 'arrow-1',
+            operationId: 'hit-target',
+          }),
+        ]),
+        {
+          expectation: 'effect',
+          operations: [{ tool: 'use_item', args: { instanceId: 'arrow-1' } }],
+        },
+      );
+      expect(measured.agreement).toBe('agreed');
     });
   });
 });

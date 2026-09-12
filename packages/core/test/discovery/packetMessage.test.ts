@@ -497,13 +497,18 @@ describe('context-packet message renderer', () => {
    *
    * `loadFieldProvenanceManifest` is optional (`rules/packLoader.ts`), and a
    * hand-authored test-corpus add-on pack may ship none. Decision: an absent
-   * manifest is treated IDENTICALLY to one that declares nothing —
-   * `buildContextPacket`'s manifest parameter defaults to `undefined`, and
-   * `classifyRecordBody` (`packet.ts`) never calls `classifyFieldPointer`
-   * when it is `undefined`, so every leaf becomes a
-   * `'no-provenance-declaration'` residue entry. A pack attesting nothing can
-   * never be read by a consumer as attesting verbatim source authority
-   * merely because the manifest argument was omitted.
+   * manifest is treated IDENTICALLY to one that declares nothing FOR
+   * CLASSIFICATION — `buildContextPacket`'s manifest parameter defaults to
+   * `undefined`, and `classifyRecordBody` (`packet.ts`) never calls
+   * `classifyFieldPointer` when it is `undefined`, so every leaf becomes
+   * `unattested`. A pack attesting nothing can never be read by a consumer as
+   * attesting verbatim source authority merely because the manifest argument
+   * was omitted.
+   *
+   * The DISCLOSURE is not identical, deliberately (items 4 and 5): no
+   * artifact records no residue and reports `provenanceArtifact: 'absent'`,
+   * while a `'no-provenance-declaration'` residue entry names a pointer a
+   * PRESENT artifact failed to cover — a producer defect.
    *
    * Exercised through the REAL exported `buildContextPacket`, over the REAL
    * `RetentionTrace` the offline harness already produced for
