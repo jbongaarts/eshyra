@@ -89,7 +89,12 @@ export const ASSERTIONS: Readonly<
   },
   'cube-blocked-by-readiness': ({ candidate }) => {
     const item = candidate('magic-item:cube-of-force');
-    expect(item?.capability?.status).toBe('blocked');
+    // The cube declares several operations (F1 repair,
+    // `eshyra-o9bd.19.12.9`); this note is specifically about press-face-1.
+    const capability = item?.capabilities.find(
+      (entry) => entry.operationId === 'press-face-1',
+    );
+    expect(capability?.status).toBe('blocked');
     const note = item?.projectionLimits.find(
       (limit) => limit.kind === 'execution-readiness',
     );

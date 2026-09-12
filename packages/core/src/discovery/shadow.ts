@@ -1302,7 +1302,12 @@ function checkTrace(value: unknown, path: string): void {
         V1_PROJECTION_LIMIT_KINDS,
       );
     });
-    optional(item_.capability, `${at}.capability`, checkCapability);
+    // A candidate now carries a BOUNDED SET of preflights (W10 F1 repair,
+    // `eshyra-o9bd.19.12.9`), never a single optional one: `each` requires the
+    // field to be an array, so a malformed writer that reverted to the old
+    // single-object shape fails closed here rather than being silently
+    // admitted as zero preflights.
+    each(item_.capabilities, `${at}.capabilities`, checkCapability);
   });
   // The included content is the packet. It is one list, not a second copy of
   // the decisions: every included decision must have its content and nothing

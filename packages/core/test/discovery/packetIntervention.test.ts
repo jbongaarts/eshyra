@@ -473,15 +473,20 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
 
   // E8 (positive half) — the offline harness proves the renderer CAN state a
   // positive bounded contract, using the SAME `renderContextPacketMessage`
-  // that intervention injects. Proven offline rather than through a live
-  // `runTurn` round trip because real campaign state carries no literal
-  // `operationId` leaf for an item instance (`signals.ts` requires one to
-  // fire the `capability-preflight` signal), and `installProbeCampaignState`
-  // deliberately does not synthesize one -- the same "don't hand the signals
-  // stage the answer it is supposed to discover" policy that already governs
-  // P1/P2's documented runtime loss in RUNTIME_REACH. This is a real,
-  // pre-existing Phase 2/3 boundary, recorded in this bead's completion
-  // notes, not papered over here with a synthetic state field.
+  // that intervention injects.
+  //
+  // Historical note (F1 repair, `eshyra-o9bd.19.12.9`, PR #543 review): this
+  // used to be the ONLY place P8's positive contract could be shown, because
+  // the pre-repair `capability-preflight` signal fired only on a literal
+  // `/operationId` state leaf, which real campaign state deliberately never
+  // carries (the operation is a future model tool choice). That conflated
+  // "which operation the model will invoke" with "which operations the held
+  // item declares" -- the latter IS state the campaign already holds. The
+  // repair enumerates declared operations from the bound item instance, so
+  // the REAL turn now reaches the same positive contract too (see the
+  // `P8/default` case in the main loop below, and M10's real agreement).
+  // This offline case remains valid, permanent evidence in its own right; it
+  // is no longer evidence of a boundary the real turn cannot cross.
   it('E8 (positive half) — the offline packet states P8 as a positive bounded contract', () => {
     const fixture = fixtureFor('P8');
     const execution = fixture.executions[0];
@@ -520,6 +525,63 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
       expect(span).toContain('- explicit exclusions:');
       expect(span).toContain('- residual DM interpretation:');
       expect(span).not.toContain('explicit exclusions: none');
+    } finally {
+      db.close();
+    }
+  });
+
+  // F1 repair (`eshyra-o9bd.19.12.9`): P7's cube-of-force is the corpus's real
+  // multi-operation magic item. The pre-repair signal preflighted only the one
+  // operation an `/operationId` leaf named; this proves the packet now states
+  // a contract for EVERY operation the record declares (all seven, verified
+  // against the real pack), each one blocked, not a single entry standing in
+  // for the record.
+  it('P7 (offline) — the packet states a contract for every declared cube-of-force operation', () => {
+    const fixture = fixtureFor('P7');
+    const execution = fixture.executions[0];
+    const db = freshDbWithSession();
+    try {
+      const rulesPackResolver = installScenarioBinding(fixture, db);
+      const campaignRules = installJhptCampaignRules(
+        db,
+        fixture,
+        execution,
+        rulesPackResolver,
+      );
+      const trace = runDiscoveryStages({
+        db,
+        scenario: scenarioForFixture(
+          fixture,
+          execution,
+          moduleForFixture(fixture),
+        ),
+        campaignRuleSeam: campaignRules.seam,
+        campaignPosition: campaignRules.campaignPosition,
+        ...(rulesPackResolver === undefined ? {} : { rulesPackResolver }),
+      });
+      const candidate = trace.packet.packet.candidates.find(
+        (item) => item.identity.key === 'magic-item:cube-of-force',
+      );
+      expect(
+        candidate?.capabilities.map((item) => item.operationId).sort(),
+      ).toEqual(
+        [
+          'press-face-1',
+          'press-face-2',
+          'press-face-3',
+          'press-face-4',
+          'press-face-5',
+          'press-face-6',
+          'spell-contact-loss',
+        ].sort(),
+      );
+      for (const capability of candidate?.capabilities ?? [])
+        expect(capability.status).toBe('blocked');
+      const rendered = renderContextPacketMessage(trace);
+      const span = candidateSpan(rendered.text, 'magic-item:cube-of-force');
+      expect(occurrences(span, 'POSITIVE BOUNDED CONTRACT')).toBe(7);
+      expect(occurrences(span, 'BLOCKED, and a blocked contract')).toBe(7);
+      expect(span).not.toContain('no capability was positively selected');
     } finally {
       db.close();
     }
@@ -798,18 +860,23 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
             );
           }
 
-          // E8 (documented runtime boundary) — P8's real turn cannot
-          // preflight the specific operation (see the offline-proof test
-          // above for why), so its LIVE delivered packet carries the same
-          // negative form, pinned here as an explicit, checked fact rather
-          // than a silent difference from the offline suite.
+          // E1/E2 (F1 repair, `eshyra-o9bd.19.12.9`) — P8's real turn DOES
+          // reach the positive bounded contract: the character's ammunition
+          // is a genuine inventory row before the model runs, so its declared
+          // `hit-target` operation is preflighted from that held instance,
+          // never from a prediction of the model's tool choice. Pinned here,
+          // against the ACTUAL delivered message, as the load-bearing repair
+          // of the defect the pre-repair comment above this block used to
+          // document as a boundary.
           if (label === 'P8/default') {
             const span = candidateSpan(
               intervention.message,
               'magic-item:ammunition-1-2-or-3',
             );
-            expect(span).toContain('no capability was positively selected');
-            expect(span).not.toContain('POSITIVE BOUNDED CONTRACT');
+            expect(span).toContain('POSITIVE BOUNDED CONTRACT');
+            expect(span).toContain('operation=hit-target');
+            expect(span).toContain('status=available');
+            expect(span).not.toContain('no capability was positively selected');
           }
 
           // E9 — campaign rules and rulings, matching what M5 reports as
@@ -864,24 +931,23 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
           expect(runtimeMeasurements.m11.auditorAbsent).toBe(true);
           expect(runtimeMeasurements.m11.retries).toBe(0);
           if (fixture.probeId === 'P8') {
-            // Discovery runs before the model chooses a tool, so it cannot
-            // anticipate the operation: M10 reports the gap, never agreement.
-            expect(runtimeMeasurements.m10.comparisons).toEqual([]);
-            expect(
-              runtimeMeasurements.m10.runtimeInvocationsAbsentFromPacket.map(
-                (item) => ({
-                  tool: item.tool,
-                  recordKey: item.recordKey,
-                  operationId: item.operationId,
-                }),
-              ),
-            ).toEqual([
+            // F1 repair (`eshyra-o9bd.19.12.9`): the held ammunition is
+            // genuine pre-model state, so its declared `hit-target` operation
+            // is preflighted and the real `use_item` invocation pairs with it
+            // in agreement -- M10 reports agreement, not a gap, and nothing
+            // is left unaccounted for.
+            expect(runtimeMeasurements.m10.comparisons).toEqual([
               {
-                tool: 'use_item',
-                recordKey: 'magic-item:ammunition-1-2-or-3',
-                operationId: 'hit-target',
+                candidateKey: 'magic-item:ammunition-1-2-or-3',
+                capabilityId: 'assertMagicItemOperationReady',
+                packetStatus: 'available',
+                runtimeOutcome: 'available',
+                agreement: 'agreed',
               },
             ]);
+            expect(
+              runtimeMeasurements.m10.runtimeInvocationsAbsentFromPacket,
+            ).toEqual([]);
           } else {
             expect(
               runtimeMeasurements.m10.comparisons.every(

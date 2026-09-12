@@ -1,4 +1,4 @@
-import type { RulesAmbiguity } from '../rules/types.js';
+import type { RulesAmbiguity, RulesRecord } from '../rules/types.js';
 import {
   assertMagicItemOperationReady,
   ItemExecutionReadinessError,
@@ -360,7 +360,12 @@ function projectionLimits(
   return notes;
 }
 /**
- * Capability presentation for one candidate.
+ * One preflight for one `(record, variant, operation)` triple `signals.ts`
+ * enumerated (W10 F1 repair, `eshyra-o9bd.19.12.9`): capability AVAILABILITY
+ * is a property of the record plus the item's own state, not a prediction of
+ * which operation the model will invoke, so every operation the record
+ * declares for the instance's actual variant gets its own preflight here,
+ * never just the one operation a future tool call happens to name.
  *
  * The only capability this offline phase can positively establish is W13's
  * `MAGIC_ITEM_OPERATION_READINESS_CAPABILITY`, whose declared operation is
@@ -373,64 +378,27 @@ function projectionLimits(
  * asserted an execution commitment no contract backs and no code here
  * performs. If a single-use spend capability is wanted, it needs its own
  * contract bound to the real `use_item` execution and state-effect boundary.
- *
- * The preflight runs ONLY for a candidate carrying a `capability-preflight`
- * route, and only for the operation and variant that route selected. Falling
- * back to a scenario-global `operationId` would preflight unrelated magic
- * items that merely happen to be in context.
  */
-function capability(
-  candidate: DiscoveryCandidate,
-  declarations: readonly OfflineCapabilityDeclaration[],
-): CapabilityPreflight | undefined {
-  const route = candidate.routes.find(
-    (item) => item.routeClass === 'capability-preflight',
-  );
-  const operationId =
-    typeof route?.evidence.operationId === 'string'
-      ? route.evidence.operationId
-      : undefined;
-  const variantId =
-    typeof route?.evidence.variantId === 'string'
-      ? route.evidence.variantId
-      : undefined;
-  if (
-    candidate.entry?.record.kind !== 'magic-item' ||
-    operationId === undefined
-  ) {
-    const declaration = declarations.find(
-      (item) => item.candidateKey === candidate.candidateKey,
-    );
-    return declaration === undefined
-      ? undefined
-      : {
-          status: 'not-evaluated-offline',
-          capabilityId: declaration.capabilityId,
-          revision: declaration.revision,
-          inputs: declaration.inputs,
-          exclusions: declaration.exclusions,
-          residualInterpretation: declaration.residualInterpretation,
-        };
-  }
+function preflightOperation(
+  record: RulesRecord,
+  operationId: string,
+  variantId: string | undefined,
+  campaignRulings: DiscoveryCandidate['campaignRulings'],
+): CapabilityPreflight {
   const contract = MAGIC_ITEM_OPERATION_READINESS_CAPABILITY;
   // The jhpt projection, passed through: a ruling is on this candidate because
   // its own `governingRecordKeys` named this record, and discovery neither
   // re-derives that association nor reshapes what the owner returned.
-  const rulings = candidate.campaignRulings;
-  const rulingFields = rulings.length === 0 ? {} : { campaignRulings: rulings };
+  const rulingFields = campaignRulings.length === 0 ? {} : { campaignRulings };
   const rulingExclusions =
-    rulings.length === 0 ? [] : [CAMPAIGN_RULING_EXCLUSION];
+    campaignRulings.length === 0 ? [] : [CAMPAIGN_RULING_EXCLUSION];
   try {
     const readinessInput = deriveItemOperationReadinessInput(
-      candidate.entry.record,
+      record,
       variantId,
       operationId,
     );
-    assertMagicItemOperationReady(
-      candidate.entry.record,
-      variantId,
-      readinessInput,
-    );
+    assertMagicItemOperationReady(record, variantId, readinessInput);
     return {
       status: 'available',
       ...rulingFields,
@@ -478,6 +446,59 @@ function capability(
         contract.residualDmInterpretation.join(' '),
     };
   }
+}
+
+/**
+ * Capability presentation for one candidate: a BOUNDED SET, one entry per
+ * `capability-preflight` route `signals.ts` emitted for it (zero or more —
+ * design section 7.3 forbids treating "the candidate declares no operations"
+ * or "nothing was preflighted" as anything but the empty set, never a single
+ * missing value). A candidate carrying no such route falls back to the
+ * unrelated offline-declaration mechanism (`declarations`, e.g. a spell's
+ * upcast contract), which reports at most one `not-evaluated-offline` entry
+ * and never mixes with a real preflight.
+ */
+function capabilities(
+  candidate: DiscoveryCandidate,
+  declarations: readonly OfflineCapabilityDeclaration[],
+): readonly CapabilityPreflight[] {
+  const routes = candidate.routes.filter(
+    (item) => item.routeClass === 'capability-preflight',
+  );
+  if (candidate.entry?.record.kind !== 'magic-item' || routes.length === 0) {
+    const declaration = declarations.find(
+      (item) => item.candidateKey === candidate.candidateKey,
+    );
+    return declaration === undefined
+      ? []
+      : [
+          {
+            status: 'not-evaluated-offline',
+            capabilityId: declaration.capabilityId,
+            revision: declaration.revision,
+            inputs: declaration.inputs,
+            exclusions: declaration.exclusions,
+            residualInterpretation: declaration.residualInterpretation,
+          },
+        ];
+  }
+  const record = candidate.entry.record;
+  return routes.map((route) => {
+    // `signals.ts` never emits a `capability-preflight` route without an
+    // `operationId`; a route that somehow lacked one would name no operation
+    // to preflight, which is a signals-stage defect, not a packet-stage one.
+    const operationId = String(route.evidence.operationId);
+    const variantId =
+      typeof route.evidence.variantId === 'string'
+        ? route.evidence.variantId
+        : undefined;
+    return preflightOperation(
+      record,
+      operationId,
+      variantId,
+      candidate.campaignRulings,
+    );
+  });
 }
 /**
  * Run the W10 source/projection split (`splitRecordBody`) over one candidate's
@@ -544,6 +565,10 @@ function packetCandidate(
       ambiguities: [],
       campaignRules: candidate.campaignRules,
       campaignRulings: candidate.campaignRulings,
+      // An authored adventure entity is never a magic-item record, so it
+      // never carries a `capability-preflight` route and never has an offline
+      // declaration keyed to it: the bounded set is always empty here.
+      capabilities: [],
       projectionLimits: [],
     };
   }
@@ -565,7 +590,7 @@ function packetCandidate(
     ambiguities: ambiguities(candidate),
     campaignRules: candidate.campaignRules,
     campaignRulings: candidate.campaignRulings,
-    capability: capability(candidate, declarations),
+    capabilities: capabilities(candidate, declarations),
     projectionLimits: projectionLimits(candidate),
   };
 }

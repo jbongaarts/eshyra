@@ -753,10 +753,13 @@ export function measureRuntimeDiscovery(
   // Every recorded invocation is a real event, so none is filtered out here.
   const capabilityOutcomes = runtime.capabilityInvocations;
   const consumed = new Set<RuntimeCapabilityInvocation>();
-  const comparisons = trace.packet.candidates
-    .filter((item) => item.capability !== undefined)
-    .map((item) => {
-      const preflight = item.capability as CapabilityPreflight;
+  // A candidate now carries a BOUNDED SET of preflights (W10 F1 repair,
+  // `eshyra-o9bd.19.12.9`), one per `(record, variant, operation)` triple it
+  // preflighted, so this extends naturally from one comparison per candidate
+  // to one comparison per preflight ENTRY -- the pairing rule itself (subject
+  // first, capability identity second) is unchanged.
+  const comparisons = trace.packet.candidates.flatMap((item) =>
+    item.capabilities.map((preflight) => {
       // Pairing is by SUBJECT — the exact `(record, variant, operation)` triple
       // the readiness contract is derived from — and the capability identity is
       // then required to match before anything is compared. Pairing on identity
@@ -791,7 +794,8 @@ export function measureRuntimeDiscovery(
               incomparableBecause: reason,
             }),
       };
-    });
+    }),
+  );
   const audit = runtime.audit;
   const retries = audit.auditor === 'present' ? audit.retries : [];
   const repaired =

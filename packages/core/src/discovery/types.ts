@@ -406,7 +406,19 @@ export interface PacketCandidate {
   readonly ambiguities: readonly RulesAmbiguity[];
   readonly campaignRules: readonly CampaignRuleProjection[];
   readonly campaignRulings: readonly CampaignRulingProjection[];
-  readonly capability?: CapabilityPreflight;
+  /**
+   * The candidate's BOUNDED SET of positively selected or blocked capability
+   * contracts (W10 F1 repair, `eshyra-o9bd.19.12.9`). A candidate can declare
+   * several operations (`magic-item:cube-of-force`'s six faces plus its
+   * spell-contact operation), and each genuinely available one gets its own
+   * entry — a single optional field could not represent "two operations, one
+   * available and one blocked" without picking a winner. The negative form
+   * ("no capability was positively selected", design section 7.3) is this set
+   * being EMPTY, never a `blocked` entry standing in for it: a record whose
+   * every declared operation is blocked still has real contracts to show, each
+   * stating that a blocked contract is not an executable capability.
+   */
+  readonly capabilities: readonly CapabilityPreflight[];
   readonly projectionLimits: readonly ProjectionLimitNote[];
 }
 

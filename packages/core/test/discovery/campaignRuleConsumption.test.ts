@@ -421,7 +421,12 @@ describe('W11 campaign-rule read-interface consumption', () => {
       });
       const [, effective] = turns(db, 2);
       const trace = discover(db, CUBE_SCENARIO, effective);
-      const capability = packetCandidate(trace, CUBE)?.capability;
+      // The cube declares several operations (F1 repair,
+      // `eshyra-o9bd.19.12.9`); this test is about the one the scenario's
+      // ambiguity concerns.
+      const capability = packetCandidate(trace, CUBE)?.capabilities.find(
+        (item) => item.operationId === 'press-face-1',
+      );
 
       // A2: the ruling reached the bounded preflight as the jhpt projection
       // ITSELF, not a discovery-shaped copy of it. Exact equality with
@@ -479,7 +484,7 @@ describe('W11 campaign-rule read-interface consumption', () => {
       const capability = packetCandidate(
         discover(db, CUBE_SCENARIO, current),
         CUBE,
-      )?.capability;
+      )?.capabilities.find((item) => item.operationId === 'press-face-1');
       expect(capability?.status).toBe('blocked');
       // Negative control for the assertion above: absent a jhpt ruling the
       // field is absent, so its presence there is evidence of consumption

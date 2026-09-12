@@ -172,31 +172,42 @@ function candidateBlock(candidate: PacketCandidate): string {
   )
     lines.push('- none');
   lines.push('### Deterministic capability');
-  // Three states, and only ONE of them is a positive selection.
+  // The negative form ("no capability was positively selected") covers the
+  // BOUNDED SET being EMPTY, and also a set that holds only DECLARED-but-
+  // unevaluated entries (`not-evaluated-offline`) — neither is a positive
+  // selection. It is never a stand-in for "every entry happens to be
+  // blocked": a record whose every declared operation is blocked still has
+  // real contracts to render below, each one stating for itself that a
+  // blocked contract is not an executable capability (F1 repair,
+  // `eshyra-o9bd.19.12.9`; design sections 7.2/7.3). A magic-item preflight
+  // and an offline declaration never coexist in one candidate's set today
+  // (`packet.ts`'s `capabilities()`), but the check is written against BOTH
+  // rather than assuming that stays true.
+  const capabilities = candidate.capabilities;
+  const positivelySelected = capabilities.some(
+    (item) => item.status !== 'not-evaluated-offline',
+  );
+  if (!positivelySelected)
+    lines.push(
+      '- no capability was positively selected.',
+      '- This is not a claim that the record has no mechanics, is irrelevant, or is safe to ignore.',
+    );
+  // Three states per entry, and only ONE of them is a positive selection.
   //
   // `available` and `blocked` are both real commitments a capability contract
   // made over this subject: the contract selected the operation, and the
   // second reports why it cannot run. `not-evaluated-offline` is neither — the
   // phase declared a capability identity it never evaluated — and rendering it
   // as a bounded contract was laundering an unevaluated declaration into an
-  // authority claim, which design sections 7.2 and 7.3 forbid. The negative
-  // form and its disclaimer therefore cover both "nothing selected" and
-  // "declared but never evaluated".
-  const capability = candidate.capability;
-  if (capability === undefined || capability.status === 'not-evaluated-offline')
-    lines.push(
-      '- no capability was positively selected.',
-      '- This is not a claim that the record has no mechanics, is irrelevant, or is safe to ignore.',
-    );
-  if (capability !== undefined && capability.status === 'not-evaluated-offline')
-    lines.push(
-      `- a capability identity was DECLARED but not evaluated in this phase: capability=${capability.capabilityId}; revision=${capability.revision ?? 'not declared'}. A declaration is not a selection and grants nothing.`,
-      `- declared exclusions: ${capability.exclusions?.join('; ') || 'none'}`,
-    );
-  if (
-    capability !== undefined &&
-    capability.status !== 'not-evaluated-offline'
-  ) {
+  // authority claim, which design sections 7.2 and 7.3 forbid.
+  for (const capability of capabilities) {
+    if (capability.status === 'not-evaluated-offline') {
+      lines.push(
+        `- a capability identity was DECLARED but not evaluated in this phase: capability=${capability.capabilityId}; revision=${capability.revision ?? 'not declared'}. A declaration is not a selection and grants nothing.`,
+        `- declared exclusions: ${capability.exclusions?.join('; ') || 'none'}`,
+      );
+      continue;
+    }
     lines.push(
       `- POSITIVE BOUNDED CONTRACT: operation=${capability.operationId ?? 'not declared'}; capability=${capability.capabilityId}; revision=${capability.revision ?? 'not declared'}; status=${capability.status}`,
     );

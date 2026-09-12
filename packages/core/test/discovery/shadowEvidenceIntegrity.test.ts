@@ -250,7 +250,13 @@ describe('the canonical durable record', () => {
         'the valid fixture has no Cube of Force packet candidate',
       );
     expect((cube.ambiguities as unknown[]).length).toBeGreaterThan(0);
-    expect(cube.capability).toMatchObject({ status: 'blocked' });
+    // The cube declares several operations (F1 repair,
+    // `eshyra-o9bd.19.12.9`), all of them engine-pending, so the bounded set
+    // holds several contracts and every one of them is blocked.
+    const capabilities = cube.capabilities as Row[];
+    expect(capabilities.length).toBeGreaterThan(1);
+    for (const capability of capabilities)
+      expect(capability).toMatchObject({ status: 'blocked' });
     for (const join of ['ruleJoin', 'lateRuleJoin'])
       expect(
         (stage(VALID, join).consideredAmbiguityIds as unknown[]).length,
@@ -875,13 +881,18 @@ describe('canonical admissibility', () => {
 
     for (const key of ['capabilityId', 'revision', 'operationId'])
       it(`rejects an evaluated capability missing ${key}`, () => {
+        // The cube declares several operations (F1 repair,
+        // `eshyra-o9bd.19.12.9`), so its candidate carries a bounded SET of
+        // preflights; this breaks the first entry in that set.
         const index = packetContent(VALID).findIndex(
-          (item) => item.capability !== undefined,
+          (item) => (item.capabilities as unknown[])?.length > 0,
         );
         expect(index).toBeGreaterThanOrEqual(0);
         rejects(
-          withoutField(`trace.packet.candidates.${index}.capability.${key}`),
-          `capability.${key}`,
+          withoutField(
+            `trace.packet.candidates.${index}.capabilities.0.${key}`,
+          ),
+          `capabilities[0].${key}`,
         );
       });
 
