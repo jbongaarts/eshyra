@@ -1782,6 +1782,20 @@ export function buildGameplayReadinessReport(
     if (arrayValue(mechanics.conditions).length > 0) return true;
     if (arrayValue(mechanics.effects).length > 0) return true;
     if (arrayValue(mechanics.weaponDamageModifiers).length > 0) return true;
+    // Foundation 1's bounded Wish projection replaces the misleading
+    // unconditional 1d10 atom with a schema-validated stress procedure. Count
+    // that positive capability as deterministic effect semantics without
+    // claiming that its separately modeled DM adjudication boundary executes
+    // deterministically.
+    if (
+      arrayValue(mechanics.procedures).some(
+        (procedure) =>
+          objectValue(procedure)?.kind === 'adjudicated-stress' &&
+          objectValue(objectValue(procedure)?.stress) !== null,
+      )
+    ) {
+      return true;
+    }
     // `area` is casting metadata (like duration/concentration), NOT an
     // effect semantic — its presence alone must not promote a spell into
     // the deterministic bucket (eshyra-o9bd.18.7.4 review).

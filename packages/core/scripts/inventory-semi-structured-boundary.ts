@@ -49,12 +49,15 @@ export interface InventoryArtifact {
 interface Seen {
   readonly kind: string;
   readonly values: Set<string>;
+  readonly allValues: Set<string>;
+  readonly recordKeys: Set<string>;
   population: number;
 }
 
-interface ClassificationContext {
+export interface ClassificationContext {
   readonly system: string;
   readonly recordKinds: readonly string[];
+  readonly recordKeys: readonly string[];
   readonly fieldPath: string;
   readonly representativeValues: readonly string[];
 }
@@ -92,6 +95,7 @@ function add(
   seen: Map<string, Seen>,
   system: string,
   kind: string,
+  recordKey: string,
   path: string,
   value: unknown,
 ): void {
@@ -100,9 +104,13 @@ function add(
     const current = seen.get(key) ?? {
       kind,
       values: new Set<string>(),
+      allValues: new Set<string>(),
+      recordKeys: new Set<string>(),
       population: 0,
     };
     current.population += 1;
+    current.recordKeys.add(recordKey);
+    current.allValues.add(value);
     if (current.values.size < 5) current.values.add(value);
     seen.set(key, current);
     return;
@@ -113,21 +121,26 @@ function add(
       const current = seen.get(key) ?? {
         kind,
         values: new Set<string>(),
+        allValues: new Set<string>(),
+        recordKeys: new Set<string>(),
         population: 0,
       };
       current.population += 1;
+      current.recordKeys.add(recordKey);
+      for (const item of value) current.allValues.add(item);
       for (const item of value.slice(0, 5)) {
         if (current.values.size < 5) current.values.add(String(item));
       }
       seen.set(key, current);
       return;
     }
-    for (const item of value) add(seen, system, kind, `${path}[]`, item);
+    for (const item of value)
+      add(seen, system, kind, recordKey, `${path}[]`, item);
     return;
   }
   if (value && typeof value === 'object') {
     for (const [key, child] of Object.entries(value)) {
-      add(seen, system, kind, path ? `${path}.${key}` : key, child);
+      add(seen, system, kind, recordKey, path ? `${path}.${key}` : key, child);
     }
   }
 }
@@ -181,7 +194,214 @@ function hasKind(
   return ({ recordKinds }) => kinds.some((kind) => recordKinds.includes(kind));
 }
 
+const FOUNDATION1_RECORD_KEYS: Readonly<Record<string, ReadonlySet<string>>> = {
+  equipment: new Set(['equipment:longsword']),
+  feature: new Set([
+    'feature:fighter:fighting-style',
+    'feature:sorcerer:font-of-magic',
+  ]),
+  hazard: new Set(['hazard:burnt-othur-fumes']),
+  spell: new Set(['spell:wish']),
+};
+
+const FOUNDATION1_FIELD_VALUES: ReadonlyMap<
+  string,
+  ReadonlySet<string>
+> = new Map(
+  (
+    [
+      ['equipment', 'id', ['longsword-damage']],
+      ['equipment', 'kind', ['weapon-damage-modes']],
+      ['equipment', 'modes[].damage.dice', ['1d8', '1d10']],
+      ['equipment', 'modes[].damage.type', ['slashing']],
+      ['equipment', 'modes[].id', ['one-handed', 'two-handed']],
+      ['equipment', 'selector', ['hands-used']],
+      ['feature', 'choiceId', ['fighting-style']],
+      ['feature', 'duplicateSelection', ['prohibited']],
+      ['feature', 'id', ['fighter-fighting-style', 'font-of-magic']],
+      ['feature', 'kind', ['feature-options', 'resource-conversion']],
+      ['feature', 'operations.convertSpellSlot.actionCost', ['bonus-action']],
+      ['feature', 'operations.convertSpellSlot.pointsGained', ['slot-level']],
+      ['feature', 'operations.createSpellSlot.actionCost', ['bonus-action']],
+      [
+        'feature',
+        'operations.createSpellSlot.createdSlotExpires',
+        ['long-rest'],
+      ],
+      [
+        'feature',
+        'options[].effect.kind',
+        [
+          'attack-roll-bonus',
+          'armor-class-bonus',
+          'damage-roll-bonus',
+          'damage-die-reroll',
+          'reaction-attack-disadvantage',
+          'offhand-damage-ability-modifier',
+        ],
+      ],
+      [
+        'feature',
+        'options[].effect.propertyRequirement.properties[]',
+        ['two-handed', 'versatile'],
+      ],
+      ['feature', 'options[].effect.propertyRequirement.kind', ['any-of']],
+      ['feature', 'options[].effect.actionCost', ['reaction']],
+      ['feature', 'options[].effect.weaponRange', ['ranged', 'melee']],
+      [
+        'feature',
+        'options[].id',
+        [
+          'fighting-style:archery',
+          'fighting-style:defense',
+          'fighting-style:dueling',
+          'fighting-style:great-weapon-fighting',
+          'fighting-style:protection',
+          'fighting-style:two-weapon-fighting',
+        ],
+      ],
+      ['feature', 'pool.id', ['sorcery-points']],
+      ['feature', 'pool.name', ['Sorcery Points']],
+      ['feature', 'pool.reset', ['long-rest']],
+      ['hazard', 'id', ['burnt-othur-fumes']],
+      ['hazard', 'entryTransition.onInitialFailure', ['activate-repeat']],
+      ['hazard', 'entryTransition.onInitialSuccess', ['end']],
+      ['hazard', 'initial.failureDamage.dice', ['3d6']],
+      ['hazard', 'initial.failureDamage.type', ['poison']],
+      ['hazard', 'initial.save.ability', ['constitution']],
+      ['hazard', 'kind', ['repeat-save-hazard']],
+      ['hazard', 'repeat.failureDamage.dice', ['1d6']],
+      ['hazard', 'repeat.failureDamage.type', ['poison']],
+      ['hazard', 'repeat.save.ability', ['constitution']],
+      ['hazard', 'repeat.timing', ['start-of-affected-turn']],
+      ['hazard', 'termination.kind', ['successful-saves']],
+      ['spell', 'adjudicationBoundary.adjudicator', ['dm']],
+      ['spell', 'adjudicationBoundary.boundaryKind', ['designed-adjudication']],
+      ['spell', 'adjudicationBoundary.id', ['wish-beyond-listed-effects']],
+      ['spell', 'adjudicationBoundary.trigger', ['beyond-listed-effects']],
+      ['spell', 'id', ['wish-nonstandard-effect']],
+      ['spell', 'kind', ['adjudicated-stress']],
+      ['spell', 'stress.recovery.maximumRestActivity', ['light']],
+      ['spell', 'stress.recurringDamage.damageType', ['necrotic']],
+      ['spell', 'stress.recurringDamage.dicePerSpellLevel', ['1d10']],
+      [
+        'spell',
+        'stress.recurringDamage.event',
+        ['cast-spell-before-long-rest'],
+      ],
+      ['spell', 'stress.strength.durationDice', ['2d4']],
+      ['spell', 'stress.strength.unit', ['day']],
+      ['spell', 'stress.trigger', ['non-duplication-effect']],
+      ['spell', 'stress.wishLoss.state', ['unable-to-cast-wish']],
+    ] as const
+  ).map(([kind, suffix, values]): readonly [string, ReadonlySet<string>] => [
+    `${kind}|data.mechanics.procedures[].${suffix}`,
+    new Set(values),
+  ]),
+);
+
+const FOUNDATION1_EXECUTED_FIELDS = new Set([
+  'equipment|data.mechanics.procedures[].kind',
+  'equipment|data.mechanics.procedures[].modes[].damage.dice',
+  'equipment|data.mechanics.procedures[].modes[].damage.type',
+  'feature|data.mechanics.procedures[].choiceId',
+  'feature|data.mechanics.procedures[].duplicateSelection',
+  'feature|data.mechanics.procedures[].kind',
+  'feature|data.mechanics.procedures[].operations.convertSpellSlot.actionCost',
+  'feature|data.mechanics.procedures[].operations.createSpellSlot.actionCost',
+  'feature|data.mechanics.procedures[].operations.createSpellSlot.createdSlotExpires',
+  'feature|data.mechanics.procedures[].options[].effect.kind',
+  'feature|data.mechanics.procedures[].options[].effect.actionCost',
+  'feature|data.mechanics.procedures[].options[].effect.propertyRequirement.kind',
+  'feature|data.mechanics.procedures[].options[].effect.propertyRequirement.properties[]',
+  'feature|data.mechanics.procedures[].options[].effect.weaponRange',
+  'feature|data.mechanics.procedures[].options[].id',
+  'hazard|data.mechanics.procedures[].entryTransition.onInitialFailure',
+  'hazard|data.mechanics.procedures[].entryTransition.onInitialSuccess',
+  'hazard|data.mechanics.procedures[].initial.failureDamage.dice',
+  'hazard|data.mechanics.procedures[].initial.failureDamage.type',
+  'hazard|data.mechanics.procedures[].kind',
+  'hazard|data.mechanics.procedures[].repeat.failureDamage.dice',
+  'hazard|data.mechanics.procedures[].repeat.failureDamage.type',
+  'spell|data.mechanics.procedures[].kind',
+  'spell|data.mechanics.procedures[].stress.recurringDamage.damageType',
+  'spell|data.mechanics.procedures[].stress.recurringDamage.dicePerSpellLevel',
+]);
+
+function foundation1FieldKey(
+  context: ClassificationContext,
+): string | undefined {
+  if (context.system !== 'dnd5e-srd' || context.recordKinds.length !== 1) {
+    return undefined;
+  }
+  const kind = context.recordKinds[0];
+  const allowedRecords = FOUNDATION1_RECORD_KEYS[kind];
+  const key = `${kind}|${context.fieldPath}`;
+  const allowedValues = FOUNDATION1_FIELD_VALUES.get(key);
+  if (
+    allowedRecords === undefined ||
+    allowedValues === undefined ||
+    context.recordKeys.length === 0 ||
+    context.representativeValues.length === 0 ||
+    context.recordKeys.some((recordKey) => !allowedRecords.has(recordKey)) ||
+    context.representativeValues.some((value) => !allowedValues.has(value))
+  ) {
+    return undefined;
+  }
+  return key;
+}
+
 const rules: readonly ClassificationRule[] = [
+  {
+    name: 'Foundation 1 designed-adjudication boundary',
+    matches: (context) =>
+      foundation1FieldKey(context)?.startsWith(
+        'spell|data.mechanics.procedures[].adjudicationBoundary.',
+      ) === true,
+    classify: () =>
+      result(
+        'scalar-like',
+        'model-adjudicated',
+        'evaluateFoundation1Proof verifies the exact source-bound boundary; deterministic resolution is deliberately not claimed',
+        'validateBoundedProceduresForPack enforces the closed designed-adjudication boundary shape',
+        'the Foundation 1 proof discharges the boundary to its exact generated-pack atom',
+        'AdjudicatedStressProcedure.adjudicationBoundary',
+        'verticalProcedureProof.ts and boundedProcedures.ts',
+      ),
+  },
+  {
+    name: 'Foundation 1 executed bounded procedure fields',
+    matches: (context) => {
+      const fieldKey = foundation1FieldKey(context);
+      return (
+        fieldKey !== undefined && FOUNDATION1_EXECUTED_FIELDS.has(fieldKey)
+      );
+    },
+    classify: () =>
+      result(
+        'scalar-like',
+        'complete',
+        'executeBoundedProcedure reads this exact reviewed field through one of five positively selected operations',
+        'validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes',
+        'evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms',
+        'BoundedProcedure / executeBoundedProcedure',
+        'boundedProcedures.ts and verticalProcedureProof.ts',
+      ),
+  },
+  {
+    name: 'Foundation 1 proof-bound procedure fields',
+    matches: (context) => foundation1FieldKey(context) !== undefined,
+    classify: () =>
+      result(
+        'scalar-like',
+        'complete',
+        'evaluateFoundation1Proof binds this exact reviewed field to a source obligation; the reference harness does not claim execution ownership',
+        'validateBoundedProceduresForPack enforces the closed Foundation 1 procedure shapes',
+        'evaluateFoundation1Proof injectively discharges source obligations to exact generated-pack atoms',
+        'BoundedProcedure / evaluateFoundation1Proof',
+        'verticalProcedureProof.ts and boundedProcedures.ts',
+      ),
+  },
   {
     name: 'magic-item curse lifecycle state and effect references',
     matches: ({ system, fieldPath, recordKinds }) =>
@@ -792,10 +1012,11 @@ export function buildInventoryArtifact(): InventoryArtifact {
   for (const source of sources) {
     for (const record of source.records) {
       const kind = String(record.kind);
-      add(seen, source.system, kind, 'data', record.data);
+      const recordKey = String(record.key);
+      add(seen, source.system, kind, recordKey, 'data', record.data);
       for (const [key, value] of Object.entries(record)) {
         if (key !== 'data')
-          add(seen, source.system, kind, `record.${key}`, value);
+          add(seen, source.system, kind, recordKey, `record.${key}`, value);
       }
     }
   }
@@ -808,8 +1029,9 @@ export function buildInventoryArtifact(): InventoryArtifact {
       const classification = classifyField({
         system,
         recordKinds: [recordKind],
+        recordKeys: [...value.recordKeys].sort(),
         fieldPath,
-        representativeValues,
+        representativeValues: [...value.allValues],
       });
       return {
         system,

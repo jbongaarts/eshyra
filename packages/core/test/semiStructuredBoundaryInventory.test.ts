@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildInventoryArtifact,
+  type ClassificationContext,
+  classifyField,
   type InventoryRow,
   renderInventoryJson,
   renderInventoryMarkdown,
@@ -172,6 +174,97 @@ describe('semi-structured boundary inventory', () => {
       ),
       owner: expect.stringContaining('remove/transfer mutation boundaries'),
     });
+  });
+
+  it('keeps Foundation 1 procedure support bounded and the DM boundary explicit', () => {
+    const artifact = buildInventoryArtifact();
+    expect(
+      row(artifact, 'data.mechanics.procedures[].selector', 'equipment'),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining(
+        'reference harness does not claim execution ownership',
+      ),
+      currentAuditReadiness: expect.stringContaining(
+        'evaluateFoundation1Proof',
+      ),
+    });
+    expect(
+      row(
+        artifact,
+        'data.mechanics.procedures[].modes[].damage.dice',
+        'equipment',
+      ),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining(
+        'executeBoundedProcedure reads',
+      ),
+    });
+    expect(
+      row(artifact, 'data.mechanics.procedures[].pool.reset', 'feature'),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining(
+        'reference harness does not claim execution ownership',
+      ),
+    });
+    expect(
+      row(
+        artifact,
+        'data.mechanics.procedures[].options[].effect.propertyRequirement.kind',
+        'feature',
+      ),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining(
+        'executeBoundedProcedure reads',
+      ),
+    });
+    expect(
+      row(
+        artifact,
+        'data.mechanics.procedures[].adjudicationBoundary.adjudicator',
+        'spell',
+      ),
+    ).toMatchObject({
+      disposition: 'model-adjudicated',
+      typedSchemaOrConsumer: 'AdjudicatedStressProcedure.adjudicationBoundary',
+      deterministicConsumers: expect.stringContaining(
+        'deterministic resolution is deliberately not claimed',
+      ),
+    });
+  });
+
+  it('does not generalize Foundation 1 ownership beyond exact reviewed records, fields, and values', () => {
+    const classify = (
+      overrides: Partial<ClassificationContext>,
+    ): ReturnType<typeof classifyField> =>
+      classifyField({
+        system: 'dnd5e-srd',
+        recordKinds: ['equipment'],
+        recordKeys: ['equipment:longsword'],
+        fieldPath: 'data.mechanics.procedures[].selector',
+        representativeValues: ['hands-used'],
+        ...overrides,
+      });
+
+    expect(classify({})).toMatchObject({ disposition: 'complete' });
+    for (const candidate of [
+      classify({
+        fieldPath: 'data.mechanics.procedures[].unreviewedField',
+      }),
+      classify({ representativeValues: ['feet-used'] }),
+      classify({ recordKeys: ['equipment:unreviewed'] }),
+    ]) {
+      expect(candidate).toMatchObject({
+        disposition: 'model-adjudicated',
+        deterministicConsumers:
+          'no deterministic consumer is registered for this field',
+        typedSchemaOrConsumer: null,
+        owner: null,
+      });
+    }
   });
 
   it('preserves the exact unsupported residual set and structural invariants', () => {

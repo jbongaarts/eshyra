@@ -654,6 +654,15 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
     missingCount: 177,
     totalInKind: 218,
   },
+  // Foundation 1 models Longsword's mutually exclusive one- and two-handed
+  // damage modes as the first bounded equipment procedure. Other equipment
+  // records make no procedure-completeness claim.
+  {
+    kind: 'equipment',
+    field: 'mechanics',
+    missingCount: 217,
+    totalInKind: 218,
+  },
   {
     kind: 'equipment',
     field: 'properties',
@@ -720,8 +729,10 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // modifiers, resistances/immunities, healing/damage formulas, usage
   // resources) dropped it 110 -> 67, and the review's action-economy /
   // numeric re-audit (bonus actions, reactions, substitutions, resource
-  // regains, save-outcome semantics) dropped it 67 -> 49.
-  { kind: 'feature', field: 'mechanics', missingCount: 49, totalInKind: 184 },
+  // regains, save-outcome semantics) dropped it 67 -> 49. Foundation 1 adds
+  // the previously prose-only Fighting Style option procedure, reducing the
+  // missing count to 48; Font of Magic already carried a mechanics block.
+  { kind: 'feature', field: 'mechanics', missingCount: 48, totalInKind: 184 },
   // Feature-owned tables (eshyra-4a7.6): feature:cleric:destroy-undead ->
   // table:destroy-undead and feature:druid:wild-shape -> table:beast-shapes.
   // eshyra-o9bd.8.2 adds two more feature owners (feature:sorcerer:font-of-magic
