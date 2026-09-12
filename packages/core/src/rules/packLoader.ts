@@ -11,6 +11,19 @@
  *     records.json    — RulesRecord[]  (one flat array; importers may generate
  *                       this in any order; the loader sorts by `key` before
  *                       returning so output is always deterministic)
+ *     field-provenance.json — OPTIONAL (eshyra-o9bd.19.1.3.1). A
+ *                       `FieldProvenanceManifest` (see `fieldProvenance.ts`)
+ *                       classifying which JSON-pointer subtrees of each
+ *                       record kind's `data` are literal source prose,
+ *                       deterministically source-derived, or compiler
+ *                       projection. Not every pack ships one — only the D&D
+ *                       5e SRD importer emits it today — so it is loaded by
+ *                       the separate `loadFieldProvenanceManifest` below,
+ *                       never by `loadRulesPackFromDirectory`: `RulesPack`
+ *                       itself gains no new required field, so every
+ *                       existing pack constructor (hand-built test packs,
+ *                       the Pathfinder remaster stub, addon packs) keeps
+ *                       working unchanged.
  *
  * `<packId-safe>` is the pack identifier with every `:` replaced by `__`
  * (double underscore) so the directory name is valid on all platforms
@@ -41,13 +54,22 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { RulesPack } from './types.js';
-import { RulesPackError } from './types.js';
+import {
+  buildFieldProvenanceManifest,
+  FIELD_PROVENANCE_CLASSES,
+  FIELD_PROVENANCE_SCHEMA,
+  type FieldProvenanceDeclaration,
+  type FieldProvenanceManifest,
+} from './fieldProvenance.js';
+import type { RulesPack, RulesRecordKind } from './types.js';
+import { RULES_RECORD_KINDS, RulesPackError } from './types.js';
 import { validateRulesPack } from './validate.js';
 
 /** File names inside a generated pack directory. */
 export const PACK_MANIFEST_FILE = 'manifest.json';
 export const PACK_RECORDS_FILE = 'records.json';
+/** See the `field-provenance.json` note in the module doc comment above. */
+export const PACK_FIELD_PROVENANCE_FILE = 'field-provenance.json';
 
 /**
  * Load a generated rules pack from `dir`.
@@ -121,4 +143,101 @@ export function loadRulesPackFromDirectory(dir: string): RulesPack {
   }
 
   return validateRulesPack({ meta, records: rawRecords });
+}
+
+function parseFieldProvenanceDeclaration(
+  value: unknown,
+  path: string,
+): FieldProvenanceDeclaration {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(`${path} must be an object`);
+  }
+  const o = value as Record<string, unknown>;
+  const kind = o.kind;
+  if (
+    typeof kind !== 'string' ||
+    !RULES_RECORD_KINDS.includes(kind as RulesRecordKind)
+  ) {
+    throw new RulesPackError(`${path}.kind must be a known RulesRecordKind`);
+  }
+  const pointerPrefix = o.pointerPrefix;
+  if (typeof pointerPrefix !== 'string' || pointerPrefix.length === 0) {
+    throw new RulesPackError(
+      `${path}.pointerPrefix must be a non-empty string`,
+    );
+  }
+  const cls = o.class;
+  if (
+    typeof cls !== 'string' ||
+    !(FIELD_PROVENANCE_CLASSES as readonly string[]).includes(cls)
+  ) {
+    throw new RulesPackError(
+      `${path}.class must be one of ${FIELD_PROVENANCE_CLASSES.join(', ')}`,
+    );
+  }
+  const reason = o.reason;
+  if (typeof reason !== 'string' || reason.trim().length === 0) {
+    throw new RulesPackError(`${path}.reason must be a non-empty string`);
+  }
+  return {
+    kind: kind as RulesRecordKind,
+    pointerPrefix,
+    class: cls as FieldProvenanceDeclaration['class'],
+    reason,
+  };
+}
+
+/**
+ * Load `field-provenance.json` from `dir`, when the pack ships one (see the
+ * module doc comment). Throws `RulesPackError` if the file is missing,
+ * unparseable, or fails shape/duplicate validation
+ * (`buildFieldProvenanceManifest`, which also enforces the "no blanket
+ * declaration" rule described on `FieldProvenanceDeclaration.pointerPrefix`).
+ *
+ * Callers that want to know whether a pack ships this artifact at all
+ * (rather than treating its absence as an error) should check for the file
+ * themselves before calling; this loader always requires it to be present at
+ * `dir` once called, mirroring `loadRulesPackFromDirectory`'s treatment of
+ * `manifest.json` / `records.json`.
+ */
+export function loadFieldProvenanceManifest(
+  dir: string,
+): FieldProvenanceManifest {
+  const path = join(dir, PACK_FIELD_PROVENANCE_FILE);
+  let json: string;
+  try {
+    json = readFileSync(path, 'utf8');
+  } catch (cause) {
+    throw new RulesPackError(
+      `field provenance manifest not found at ${path}: ${(cause as Error).message}`,
+    );
+  }
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch (cause) {
+    throw new RulesPackError(
+      `field provenance manifest at ${path} is not valid JSON: ${(cause as Error).message}`,
+    );
+  }
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    throw new RulesPackError(
+      `field provenance manifest at ${path} must be an object`,
+    );
+  }
+  const o = raw as Record<string, unknown>;
+  if (o.schema !== FIELD_PROVENANCE_SCHEMA) {
+    throw new RulesPackError(
+      `field provenance manifest at ${path} has schema ${JSON.stringify(o.schema)}, expected ${JSON.stringify(FIELD_PROVENANCE_SCHEMA)}`,
+    );
+  }
+  if (!Array.isArray(o.declarations)) {
+    throw new RulesPackError(
+      `field provenance manifest at ${path}.declarations must be an array`,
+    );
+  }
+  const declarations = o.declarations.map((item, i) =>
+    parseFieldProvenanceDeclaration(item, `${path}.declarations[${i}]`),
+  );
+  return buildFieldProvenanceManifest(declarations);
 }
