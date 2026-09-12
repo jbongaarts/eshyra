@@ -28,6 +28,13 @@ import {
   DEFAULT_TEST_SESSION_ID,
   freshDbWithSession,
 } from '../support/db.js';
+import {
+  installVariantReadinessAddon,
+  PENDING_VARIANT_ID,
+  READY_VARIANT_ID,
+  VARIANT_READINESS_ITEM_KEY,
+  VARIANT_READINESS_OPERATION,
+} from './support/variantReadinessAddon.js';
 
 /**
  * M10's regression matrix, over the RUNTIME CAPABILITY EVENT.
@@ -95,7 +102,14 @@ function invokeUseItem(
   };
 }
 
-/** A capture whose packet preflights one specific item operation. */
+/**
+ * A capture whose packet state-references `itemRecord`. F1 repair
+ * (`eshyra-o9bd.19.12.9`): the capture now preflights EVERY operation the
+ * record declares, not only `operationId` -- that field stays here only
+ * because it is otherwise-unconsumed decorative scenario state (like
+ * `machineState` elsewhere in this corpus), never because it still selects
+ * which operation gets preflighted.
+ */
 function captureForOperation(
   db: Db,
   itemRecord: string,
@@ -129,13 +143,17 @@ function traceOf(evidence: DiscoveryShadowEvidence): ProjectedDiscoveryTrace {
   return evidence.trace;
 }
 
-function packetCapability(trace: ProjectedDiscoveryTrace) {
-  const candidate = trace.packet.candidates.find(
-    (item) => item.capability !== undefined,
+/** The one preflight entry for `operationId`, out of the candidate's bounded set. */
+function packetCapability(trace: ProjectedDiscoveryTrace, operationId: string) {
+  const candidate = trace.packet.candidates.find((item) =>
+    item.capabilities.some((entry) => entry.operationId === operationId),
   );
-  if (candidate?.capability === undefined)
+  const capability = candidate?.capabilities.find(
+    (entry) => entry.operationId === operationId,
+  );
+  if (candidate === undefined || capability === undefined)
     throw new Error('the capture produced no capability preflight');
-  return { key: candidate.identity.key, capability: candidate.capability };
+  return { key: candidate.identity.key, capability };
 }
 
 function observations(
@@ -298,38 +316,56 @@ describe('runtime capability events reach M10', () => {
       );
       if (stored === undefined) throw new Error('no shadow evidence persisted');
       expect(stored.runtime.capabilityInvocations).toEqual(events);
-      expect(packetCapability(traceOf(stored)).capability.status).toBe(
-        'blocked',
-      );
       expect(
-        measureRuntimeDiscovery(traceOf(stored), stored.runtime).m10,
-      ).toMatchObject({
-        comparisons: [
-          {
+        packetCapability(traceOf(stored), BLOCKED_OPERATION).capability.status,
+      ).toBe('blocked');
+      const m10 = measureRuntimeDiscovery(traceOf(stored), stored.runtime).m10;
+      // The gem declares four operations (F1 repair, `eshyra-o9bd.19.12.9`),
+      // so the candidate now carries four contracts and `comparisons` holds
+      // one entry per contract; this test is about the one the real
+      // invocation actually paired with.
+      expect(m10.comparisons).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
             candidateKey: GEM,
             packetStatus: 'blocked',
             runtimeOutcome: 'blocked',
             agreement: 'agreed',
-          },
-        ],
-        runtimeInvocationsAbsentFromPacket: [],
-      });
+          }),
+        ]),
+      );
+      expect(m10.runtimeInvocationsAbsentFromPacket).toEqual([]);
     } finally {
       db.close();
     }
   });
 
   describe('pairing and identity', () => {
+    /**
+     * The gem declares four operations (F1 repair, `eshyra-o9bd.19.12.9`), so
+     * its candidate now carries four preflight contracts and `m10.comparisons`
+     * holds one entry per contract, in the SAME order as the candidate's own
+     * `capabilities` (measurements.ts flatMaps candidates onto that array).
+     * This suite's pairing/identity assertions are about the ONE contract for
+     * `BLOCKED_OPERATION`, picked out by that shared index rather than by
+     * assuming it is the only (or the first) entry.
+     */
     function measured(db: Db, events: readonly RuntimeCapabilityInvocation[]) {
       const evidence = captureForOperation(db, GEM, BLOCKED_OPERATION);
-      return measureRuntimeDiscovery(traceOf(evidence), observations(events))
-        .m10;
+      const trace = traceOf(evidence);
+      const index = (trace.packet.candidates[0]?.capabilities ?? []).findIndex(
+        (item) => item.operationId === BLOCKED_OPERATION,
+      );
+      if (index < 0)
+        throw new Error('capture did not preflight the operation under test');
+      const m10 = measureRuntimeDiscovery(trace, observations(events)).m10;
+      return { m10, comparison: m10.comparisons[index] };
     }
 
     it('agrees on a matching subject, identity and status', () => {
       const db = freshDbWithSession();
       try {
-        expect(measured(db, [event()]).comparisons[0]).toMatchObject({
+        expect(measured(db, [event()]).comparison).toMatchObject({
           agreement: 'agreed',
           runtimeOutcome: 'blocked',
         });
@@ -342,7 +378,7 @@ describe('runtime capability events reach M10', () => {
       const db = freshDbWithSession();
       try {
         expect(
-          measured(db, [event({ outcome: 'available' })]).comparisons[0],
+          measured(db, [event({ outcome: 'available' })]).comparison,
         ).toMatchObject({
           agreement: 'disagreed',
           runtimeOutcome: 'available',
@@ -355,8 +391,8 @@ describe('runtime capability events reach M10', () => {
     it('does not pair a different variant of the same record and operation', () => {
       const db = freshDbWithSession();
       try {
-        const m10 = measured(db, [event({ variantId: '2' })]);
-        expect(m10.comparisons[0]).toMatchObject({
+        const { m10, comparison } = measured(db, [event({ variantId: '2' })]);
+        expect(comparison).toMatchObject({
           runtimeOutcome: 'not-invoked',
           agreement: 'not-comparable',
           incomparableBecause: 'not-invoked',
@@ -377,12 +413,10 @@ describe('runtime capability events reach M10', () => {
       it(`refuses to compare ${label}`, () => {
         const db = freshDbWithSession();
         try {
-          expect(measured(db, [event(overrides)]).comparisons[0]).toMatchObject(
-            {
-              agreement: 'not-comparable',
-              incomparableBecause: 'capability-identity-mismatch',
-            },
-          );
+          expect(measured(db, [event(overrides)]).comparison).toMatchObject({
+            agreement: 'not-comparable',
+            incomparableBecause: 'capability-identity-mismatch',
+          });
         } finally {
           db.close();
         }
@@ -391,7 +425,7 @@ describe('runtime capability events reach M10', () => {
     it('reports not-invoked when nothing ran', () => {
       const db = freshDbWithSession();
       try {
-        expect(measured(db, []).comparisons[0]).toMatchObject({
+        expect(measured(db, []).comparison).toMatchObject({
           runtimeOutcome: 'not-invoked',
           agreement: 'not-comparable',
           incomparableBecause: 'not-invoked',
@@ -408,8 +442,8 @@ describe('runtime capability events reach M10', () => {
           event({ attempt: 1, outcome: 'blocked' }),
           event({ attempt: 2, outcome: 'available' }),
         ];
-        const m10 = measured(db, both);
-        expect(m10.comparisons[0]).toMatchObject({
+        const { m10, comparison } = measured(db, both);
+        expect(comparison).toMatchObject({
           agreement: 'not-comparable',
           incomparableBecause: 'ambiguous-runtime-invocation',
         });
@@ -423,14 +457,14 @@ describe('runtime capability events reach M10', () => {
     it('reports an event the packet never preflighted', () => {
       const db = freshDbWithSession();
       try {
-        const m10 = measured(db, [
+        const { m10, comparison } = measured(db, [
           event({
             recordKey: AMMO,
             operationId: 'hit-target',
             instanceId: 'ammo-1',
           }),
         ]);
-        expect(m10.comparisons[0]).toMatchObject({
+        expect(comparison).toMatchObject({
           incomparableBecause: 'not-invoked',
         });
         expect(
@@ -450,19 +484,16 @@ describe('runtime capability events reach M10', () => {
           ...trace,
           packet: {
             ...trace.packet,
-            candidates: trace.packet.candidates.map((candidate) =>
-              candidate.capability === undefined
-                ? candidate
-                : {
-                    ...candidate,
-                    capability: {
-                      ...candidate.capability,
-                      status: 'not-evaluated-offline' as const,
-                    },
-                  },
-            ),
+            candidates: trace.packet.candidates.map((candidate) => ({
+              ...candidate,
+              capabilities: candidate.capabilities.map((capability) => ({
+                ...capability,
+                status: 'not-evaluated-offline' as const,
+              })),
+            })),
           },
         };
+        // Every entry was rewritten identically, so any index agrees.
         expect(
           measureRuntimeDiscovery(rewritten, observations([event()])).m10
             .comparisons[0],
@@ -474,6 +505,164 @@ describe('runtime capability events reach M10', () => {
         db.close();
       }
     });
+  });
+});
+
+/**
+ * E3 (F1 repair, `eshyra-o9bd.19.12.9`, PR #543 review): the adversarial,
+ * non-fixture-specific case. `magic-item:test-variant-readiness`
+ * (`variantReadinessAddon.ts`) is a synthetic magic item whose readiness
+ * differs by variant and which declares exactly one operation
+ * (`spend-one-use`) -- unlike the real pack's cube-of-force/ammunition,
+ * nothing about it is tailored to a diagnostic fixture. `variantId` is a
+ * property of the bound INSTANCE, never enumerated (design section 7.3 would
+ * forbid preflighting a variant the campaign is not in), so this proves the
+ * packet preflights the declared operation for the instance's ACTUAL variant.
+ */
+describe('E3 -- the adversarial case: variant-scoped preflight and an undeclared operation', () => {
+  function heldVariantItem(
+    db: Db,
+    id: string,
+    packRef: string,
+    variantId: string,
+  ): void {
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, quantity, location, properties_json,
+         pack_ref, variant_id, provenance, session_id, updated_at
+       ) VALUES (?, 'pc-1', ?, 1, NULL, '{}', ?, ?, 'test:w10-f1', ?, ?)`,
+    ).run(id, `Item ${id}`, packRef, variantId, DEFAULT_TEST_SESSION_ID, AT);
+  }
+
+  it('preflights the declared operation for the actual variant and pairs a real invocation', () => {
+    const db = freshDbWithSession();
+    try {
+      const resolver = installVariantReadinessAddon(db, AT);
+      // The item's `uses` economy is single-use, so a successful spend needs
+      // a current campaign location to place the depleted remainder, exactly
+      // as the ammunition cases above do.
+      db.prepare(
+        "UPDATE clock SET current_location_id='camp' WHERE id=1",
+      ).run();
+      heldVariantItem(
+        db,
+        'variant-item-1',
+        VARIANT_READINESS_ITEM_KEY,
+        READY_VARIANT_ID,
+      );
+      const events: RuntimeCapabilityInvocation[] = [];
+      const ctx: ToolContext = {
+        db,
+        rng: createSeededRng(1),
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: 'turn-1',
+        at: AT,
+        resolveRulesPack: resolver,
+        observeCapabilityInvocation: (observation) => {
+          events.push(runtimeCapabilityInvocation(observation, 1));
+        },
+      };
+      const result = createDefaultToolRegistry().invoke(
+        'use_item',
+        {
+          instanceId: 'variant-item-1',
+          operationId: VARIANT_READINESS_OPERATION,
+        },
+        ctx,
+      );
+      expect(result.ok).toBe(true);
+      expect(events).toHaveLength(1);
+
+      const capture = completeDiscoveryShadowEvidence(
+        captureDiscoveryShadow({
+          db,
+          campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+          capturedAt: AT,
+          playerInput: 'I use the item.',
+          stateFields: { heldInstance: 'variant-item-1' },
+          itemInstances: [
+            {
+              instanceId: 'variant-item-1',
+              recordKey: VARIANT_READINESS_ITEM_KEY,
+              variantId: READY_VARIANT_ID,
+            },
+          ],
+          campaignRuleSeam: NULL_CAMPAIGN_RULE_SEAM,
+          tools: createDefaultToolRegistry(),
+          resolveRulesPack: resolver,
+        }),
+        {
+          capabilityInvocations: [],
+          stateEffects: [],
+          audit: { auditor: 'absent' },
+        },
+        { mode: 'observed', injected: false },
+      );
+      const trace = traceOf(capture);
+      const candidate = trace.packet.candidates.find(
+        (item) => item.identity.key === VARIANT_READINESS_ITEM_KEY,
+      );
+      // Exactly the one declared operation, for the instance's actual
+      // variant -- never the OTHER variant the record also declares.
+      expect(candidate?.capabilities).toEqual([
+        expect.objectContaining({
+          operationId: VARIANT_READINESS_OPERATION,
+          variantId: READY_VARIANT_ID,
+          status: 'available',
+        }),
+      ]);
+      expect(
+        candidate?.capabilities.some(
+          (item) => item.variantId === PENDING_VARIANT_ID,
+        ),
+      ).toBe(false);
+
+      const m10 = measureRuntimeDiscovery(trace, observations(events)).m10;
+      expect(m10.comparisons).toEqual([
+        expect.objectContaining({
+          candidateKey: VARIANT_READINESS_ITEM_KEY,
+          runtimeOutcome: 'available',
+          agreement: 'agreed',
+        }),
+      ]);
+      expect(m10.runtimeInvocationsAbsentFromPacket).toEqual([]);
+
+      // An invocation of an operation the record does NOT declare is never
+      // silently paired with the one contract the packet actually holds. A
+      // real `useItem` call cannot produce this event (it throws before the
+      // preflight boundary for an undeclared operation -- see "observes
+      // nothing when the call fails BEFORE the preflight runs" above), so
+      // this is the same kind of synthetic event this file already uses for
+      // pairing states that need no execution (`event()`).
+      const undeclared: RuntimeCapabilityInvocation = {
+        tool: 'use_item',
+        attempt: 1,
+        instanceId: 'variant-item-1',
+        recordKey: VARIANT_READINESS_ITEM_KEY,
+        variantId: READY_VARIANT_ID,
+        operationId: 'an-operation-this-record-does-not-declare',
+        capabilityId: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.operationId,
+        capabilityRevision: MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.revision,
+        outcome: 'blocked',
+      };
+      const withUndeclared = measureRuntimeDiscovery(
+        trace,
+        observations([...events, undeclared]),
+      ).m10;
+      expect(
+        withUndeclared.runtimeInvocationsAbsentFromPacket.map(
+          (item) => item.operationId,
+        ),
+      ).toEqual(['an-operation-this-record-does-not-declare']);
+      // The real, declared invocation still pairs; the undeclared one never
+      // rides along with it.
+      expect(withUndeclared.comparisons).toEqual([
+        expect.objectContaining({ agreement: 'agreed' }),
+      ]);
+    } finally {
+      db.close();
+    }
   });
 });
 

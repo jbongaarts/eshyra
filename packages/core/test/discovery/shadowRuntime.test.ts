@@ -939,7 +939,17 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     }
   });
 
-  it('records a runtime capability outcome the shadow packet never preflighted', async () => {
+  // F1 repair (`eshyra-o9bd.19.12.9`, PR #543 review): this used to be titled
+  // "records a runtime capability outcome the shadow packet never
+  // preflighted" and asserted `m10.comparisons` empty on the theory that
+  // shadow discovery runs before the model chooses a tool and so can never
+  // anticipate the operation. That theory conflated "which operation the
+  // model will invoke" (a real future choice, correctly never predicted) with
+  // "which operations the character's held item declares" (a fact about
+  // state the campaign already holds). The character's ammunition is a real
+  // inventory row before the model runs, so its declared `hit-target`
+  // operation is preflighted, and the real invocation now pairs with it.
+  it('pairs a runtime capability invocation with the preflight the held item declares', async () => {
     const fixture = DIAGNOSTIC_FIXTURES.find((item) => item.probeId === 'P8');
     if (fixture === undefined) throw new Error('P8 fixture is missing');
     const db = seedCampaign();
@@ -964,22 +974,16 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
         requireTrace(evidence),
         requireRuntime(evidence),
       );
-      // Shadow discovery runs before the model chooses a tool, so it cannot
-      // anticipate the operation; M10 reports the gap rather than agreement.
-      expect(runtime.m10.comparisons).toEqual([]);
-      expect(
-        runtime.m10.runtimeInvocationsAbsentFromPacket.map((item) => ({
-          tool: item.tool,
-          recordKey: item.recordKey,
-          operationId: item.operationId,
-        })),
-      ).toEqual([
+      expect(runtime.m10.comparisons).toEqual([
         {
-          tool: 'use_item',
-          recordKey: 'magic-item:ammunition-1-2-or-3',
-          operationId: 'hit-target',
+          candidateKey: 'magic-item:ammunition-1-2-or-3',
+          capabilityId: 'assertMagicItemOperationReady',
+          packetStatus: 'available',
+          runtimeOutcome: 'available',
+          agreement: 'agreed',
         },
       ]);
+      expect(runtime.m10.runtimeInvocationsAbsentFromPacket).toEqual([]);
       // The record key was resolved through the binding the capture recorded,
       // not re-derived after the fact.
       expect(evidence?.scenario.itemInstances).toEqual([
@@ -1147,17 +1151,27 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           runtime.audit.auditor === 'present' ? runtime.audit.retries : [],
         ).toHaveLength(1);
 
-        // M10 sees the event. The real runtime packet does not anticipate the
-        // operation (shadow runs before the model chooses one), so it is
-        // reported as absent from the packet — never as `not-invoked`.
+        // M10 sees the event. F1 repair (`eshyra-o9bd.19.12.9`): the held
+        // ammunition is genuine pre-model state, so the packet preflights its
+        // declared `hit-target` operation regardless of which attempt later
+        // invokes it, and attempt 1's invocation pairs with that preflight in
+        // agreement even though its own canonical writes rolled back — the
+        // capability event is not a canonical mutation and does not roll back
+        // with it (the comment above this `describe` block).
         const m10 = measureRuntimeDiscovery(
           requireTrace(evidence),
           runtime,
         ).m10;
-        expect(m10.comparisons).toEqual([]);
-        expect(
-          m10.runtimeInvocationsAbsentFromPacket.map((item) => item.attempt),
-        ).toEqual([1]);
+        expect(m10.comparisons).toEqual([
+          {
+            candidateKey: AMMO,
+            capabilityId: 'assertMagicItemOperationReady',
+            packetStatus: 'available',
+            runtimeOutcome: 'available',
+            agreement: 'agreed',
+          },
+        ]);
+        expect(m10.runtimeInvocationsAbsentFromPacket).toEqual([]);
       } finally {
         db.close();
       }

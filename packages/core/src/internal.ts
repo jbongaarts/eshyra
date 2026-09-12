@@ -1572,6 +1572,7 @@ export type {
 } from './state/itemState.js';
 export {
   createInitialItemState,
+  declaredItemOperationIds,
   deriveItemOperationReadinessInput,
   ItemStateAmbiguityError,
   ItemStateError,

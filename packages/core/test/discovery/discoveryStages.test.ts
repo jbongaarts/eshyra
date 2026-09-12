@@ -375,16 +375,22 @@ describe('offline discovery stage boundaries', () => {
       const candidate = trace.packet.packet.candidates.find(
         (item) => item.identity.key === 'magic-item:ammunition-1-2-or-3',
       );
-      expect(candidate?.capability?.status).toBe('available');
+      // The record declares exactly one operation (`hit-target`), so the
+      // bounded set holds exactly one contract.
+      expect(candidate?.capabilities.map((item) => item.operationId)).toEqual([
+        'hit-target',
+      ]);
+      const capability = candidate?.capabilities[0];
+      expect(capability?.status).toBe('available');
       // Sourced from the contract W13 landed, so the packet cannot drift away
       // from the capability it claims to describe (design section 7.1).
-      expect(candidate?.capability?.revision).toBe(
+      expect(capability?.revision).toBe(
         MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.revision,
       );
-      expect(candidate?.capability?.inputs).toEqual(
+      expect(capability?.inputs).toEqual(
         MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.requiredInputs,
       );
-      expect(candidate?.capability?.exclusions).toEqual(
+      expect(capability?.exclusions).toEqual(
         MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.exclusions,
       );
     } finally {
@@ -392,26 +398,45 @@ describe('offline discovery stage boundaries', () => {
     }
   });
 
-  it('reports a blocked preflight for an engine-pending operation', () => {
+  // F1 repair (`eshyra-o9bd.19.12.9`): the record's declared operations are
+  // enumerated from the item the state genuinely references, never from a
+  // literal `/operationId` leaf real campaign state does not carry. The cube
+  // declares seven operations (`mechanics.operations[].id`, verified against
+  // the real pack), and every one of them is engine-pending, so the bounded
+  // set holds seven contracts, ALL blocked — not one, and not a mix.
+  it('enumerates every declared operation and reports each engine-pending one as blocked', () => {
     const db = freshDbWithSession();
     try {
       const trace = runDiscoveryStages({
         db,
         scenario: {
           playerInput: 'nothing',
-          stateFields: {
-            itemRecord: 'magic-item:cube-of-force',
-            operationId: 'press-face-1',
-          },
+          stateFields: { itemRecord: 'magic-item:cube-of-force' },
         },
       });
       const candidate = trace.packet.packet.candidates.find(
         (item) => item.identity.key === 'magic-item:cube-of-force',
       );
+      const operationIds = candidate?.capabilities
+        .map((item) => item.operationId)
+        .sort();
+      expect(operationIds).toEqual(
+        [
+          'press-face-1',
+          'press-face-2',
+          'press-face-3',
+          'press-face-4',
+          'press-face-5',
+          'press-face-6',
+          'spell-contact-loss',
+        ].sort(),
+      );
       // P7's premise: a jhpt ruling never makes an engine-pending readiness
       // clause green, and readiness runs ahead of the ambiguity in use_item.
-      expect(candidate?.capability?.status).toBe('blocked');
-      expect(candidate?.capability?.message?.length ?? 0).toBeGreaterThan(0);
+      for (const capability of candidate?.capabilities ?? []) {
+        expect(capability.status).toBe('blocked');
+        expect(capability.message?.length ?? 0).toBeGreaterThan(0);
+      }
       expect(candidate?.ambiguities.map((item) => item.id)).toContain(
         'ambiguity:cube-of-force-same-face-duration-reset',
       );
@@ -419,32 +444,43 @@ describe('offline discovery stage boundaries', () => {
       db.close();
     }
   });
-  it('preflights only the candidate the capability route selected', () => {
+
+  // F1 repair: the boundary that matters is whether the campaign's STATE
+  // genuinely holds an item, never which operation a fixture also happens to
+  // name. A magic item reached only by the PLAYER'S WORDS (name-mention) is
+  // not preflighted -- naming an item is not the campaign holding it, and
+  // preflighting on a mention would predict the model's future choice from
+  // narration rather than from state, exactly what this repair removes.
+  it('preflights a state-referenced item but not one reached only by name-mention', () => {
     const db = freshDbWithSession();
     try {
       const trace = runDiscoveryStages({
         db,
         scenario: {
-          playerInput: 'nothing',
-          stateFields: {
-            itemRecord: 'magic-item:ammunition-1-2-or-3',
-            operationId: 'hit-target',
-            // An unrelated magic item merely present in context. A
-            // scenario-global operationId fallback would preflight this too
-            // and report a capability for an item nothing selected.
-            alsoCarried: 'magic-item:cube-of-force',
-          },
+          playerInput: 'I fire my ammunition instead of the cube of force.',
+          stateFields: { itemRecord: 'magic-item:ammunition-1-2-or-3' },
         },
       });
       const selected = trace.packet.packet.candidates.find(
         (item) => item.identity.key === 'magic-item:ammunition-1-2-or-3',
       );
-      const unrelated = trace.packet.packet.candidates.find(
+      const mentioned = trace.packet.packet.candidates.find(
         (item) => item.identity.key === 'magic-item:cube-of-force',
       );
-      expect(selected?.capability?.status).toBe('available');
-      expect(unrelated).toBeDefined();
-      expect(unrelated?.capability).toBeUndefined();
+      expect(selected?.capabilities.map((item) => item.operationId)).toEqual([
+        'hit-target',
+      ]);
+      expect(selected?.capabilities[0]?.status).toBe('available');
+      // Reached (by name-mention, and via a typed relationship the real pack
+      // declares), but never state-referenced: no capability contract for it,
+      // and specifically no `capability-preflight` route.
+      expect(mentioned?.routes.map((route) => route.routeClass)).toEqual(
+        expect.arrayContaining(['explicit-name-or-alias']),
+      );
+      expect(mentioned?.routes.map((route) => route.routeClass)).not.toContain(
+        'capability-preflight',
+      );
+      expect(mentioned?.capabilities).toEqual([]);
     } finally {
       db.close();
     }
@@ -457,10 +493,7 @@ describe('offline discovery stage boundaries', () => {
         db,
         scenario: {
           playerInput: 'nothing',
-          stateFields: {
-            itemRecord: 'magic-item:ammunition-1-2-or-3',
-            operationId: 'hit-target',
-          },
+          stateFields: { itemRecord: 'magic-item:ammunition-1-2-or-3' },
         },
       });
       const candidate = trace.packet.packet.candidates.find(
@@ -469,10 +502,10 @@ describe('offline discovery stage boundaries', () => {
       // A green readiness preflight establishes the readiness capability and
       // nothing more. Relabelling it as a single-use SPEND would assert an
       // execution commitment no contract backs and no code here performs.
-      expect(candidate?.capability?.capabilityId).toBe(
+      expect(candidate?.capabilities[0]?.capabilityId).toBe(
         MAGIC_ITEM_OPERATION_READINESS_CAPABILITY.operationId,
       );
-      expect(candidate?.capability?.capabilityId).not.toBe(
+      expect(candidate?.capabilities[0]?.capabilityId).not.toBe(
         'magic-item-single-use-spend',
       );
     } finally {
@@ -493,15 +526,15 @@ describe('offline discovery stage boundaries', () => {
           rulesPackResolver: resolver,
           scenario: {
             playerInput: 'nothing',
-            stateFields: {
-              itemRecord: VARIANT_READINESS_ITEM_KEY,
-              operationId: VARIANT_READINESS_OPERATION,
-              variantId,
-            },
+            stateFields: { itemRecord: VARIANT_READINESS_ITEM_KEY, variantId },
           },
-        }).packet.packet.candidates.find(
-          (item) => item.identity.key === VARIANT_READINESS_ITEM_KEY,
-        )?.capability;
+        })
+          .packet.packet.candidates.find(
+            (item) => item.identity.key === VARIANT_READINESS_ITEM_KEY,
+          )
+          ?.capabilities.find(
+            (item) => item.operationId === VARIANT_READINESS_OPERATION,
+          );
 
       // Same record, same operation, different variant. Passing
       // variantId = undefined (as an earlier revision hardcoded) cannot tell
