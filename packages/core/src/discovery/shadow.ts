@@ -1311,6 +1311,13 @@ function checkTrace(value: unknown, path: string): void {
     // rather than having it dropped. Required, not optional — an absent
     // field and an empty one must not look the same at the durable boundary.
     asObject(item_.unattested, `${at}.unattested`);
+    // Which of the three attestation states this record was in, admitted as a
+    // closed enum so a corrupted row cannot report an unrecognized one and be
+    // read as either.
+    asEnum(item_.provenanceArtifact, `${at}.provenanceArtifact`, [
+      'present',
+      'absent',
+    ]);
     each(item_.residue, `${at}.residue`, (entry, where) => {
       const residueEntry = asObject(entry, where);
       asString(residueEntry.pointer, `${where}.pointer`);

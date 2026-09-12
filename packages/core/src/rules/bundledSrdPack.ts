@@ -57,8 +57,40 @@ let cachedFieldProvenanceManifest: FieldProvenanceManifest | undefined;
  * Throws `RulesPackError` if the bundled pack is missing or fails validation —
  * that is a packaging defect, not a recoverable runtime condition.
  */
+/**
+ * Recursively freeze every object and array reachable from `value`.
+ *
+ * `Object.freeze` is shallow, so freezing only the pack would leave
+ * `records[i].data.description` writable — which is the whole point here, not
+ * a detail. Cycles cannot occur in a pack parsed from JSON, but the `seen`
+ * guard costs nothing and keeps this total if a caller ever hands in
+ * something else.
+ */
+function deepFreeze<T>(value: T, seen = new WeakSet<object>()): T {
+  if (typeof value !== 'object' || value === null) return value;
+  if (seen.has(value)) return value;
+  seen.add(value);
+  for (const child of Object.values(value as Record<string, unknown>))
+    deepFreeze(child, seen);
+  return Object.freeze(value);
+}
+
 export function getBundledDnd5eSrdPack(): RulesPack {
-  cachedPack ??= loadRulesPackFromDirectory(PACK_DIR);
+  // DEEP-frozen at load, because object identity is used downstream as a
+  // PROOF that a record came out of this artifact
+  // (`bundledDnd5eSrdFieldProvenanceSource`, W10). An identity proof over a
+  // mutable object is only as good as the object's stability: the pack is a
+  // process-wide cached singleton, so without this a single
+  // `pack.records[i].data.description = …` anywhere in the process would
+  // leave `spell:fireball`'s description positively attested as verbatim SRD
+  // source prose while holding a value the importer never emitted.
+  //
+  // Freezing makes the two agree by construction — the content the identity
+  // attests can no longer drift — rather than by anyone remembering not to
+  // write to it. It is also the narrowest repair available: no new artifact,
+  // no hash, no re-derivation, and no weakening back toward metadata
+  // comparison.
+  cachedPack ??= deepFreeze(loadRulesPackFromDirectory(PACK_DIR));
   return cachedPack;
 }
 
@@ -69,19 +101,32 @@ export function getBundledDnd5eSrdPack(): RulesPack {
  *
  * `field-provenance.json` classifies every leaf pointer this pack's records
  * emit as literal `source-prose`, deterministically `source-derived`, or
- * interpretive `compiler-projection` (`fieldProvenance.ts`). This function
- * lives here, beside `getBundledDnd5eSrdPack`, rather than in the discovery
- * tree that consumes it: the classification is declared per `RulesRecordKind`
- * (never per pack identity), so it applies to every record of a kind reached
- * through an SRD-compatible stack — the base pack AND any add-on layered on
- * it, since an add-on's records share the same kind schema
- * (`resolveRulesStack`'s `assertCompatibleWithBase`). Discovery's packet
- * builder (`discovery/packet.ts`, `eshyra-o9bd.19.12.11`) is this function's
- * first consumer: the classification is the fact that stops a parser product
+ * interpretive `compiler-projection` (`fieldProvenance.ts`).
+ *
+ * It attests THIS ARTIFACT'S values and nothing else. An earlier revision of
+ * this comment claimed the classification applied to every record of a kind
+ * reached through an SRD-compatible stack, base pack and add-ons alike,
+ * because it is declared per `RulesRecordKind`; that was the laundering W10's
+ * third re-review rejected, and it is no longer the mechanism. Who this
+ * manifest may speak for is decided by
+ * `bundledDnd5eSrdFieldProvenanceSource` (`discovery/harness.ts`), which
+ * answers only for the pack object returned by `getBundledDnd5eSrdPack`
+ * above. An add-on, a custom resolver result, or a foreign-system pack gets
+ * no classification from this manifest, however compatible its metadata.
+ *
+ * Discovery's packet builder (`discovery/packet.ts`) is the first consumer:
+ * the classification is the fact that stops a parser product
  * (`armorClass.value`) from being rendered to the DM as verbatim source
- * authority, which is the defect W10's second re-review found.
+ * authority.
  */
 export function getBundledDnd5eSrdFieldProvenanceManifest(): FieldProvenanceManifest {
-  cachedFieldProvenanceManifest ??= loadFieldProvenanceManifest(PACK_DIR);
+  // Deep-frozen for the same reason the pack is: this object IS the
+  // attestation. A mutable manifest would let a single
+  // `declarations[i].class = 'source-prose'` silently reclassify every record
+  // of a kind as verbatim source authority, which is the same drift the
+  // frozen pack closes, approached from the other side of the proof.
+  cachedFieldProvenanceManifest ??= deepFreeze(
+    loadFieldProvenanceManifest(PACK_DIR),
+  );
   return cachedFieldProvenanceManifest;
 }

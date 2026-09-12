@@ -120,8 +120,15 @@ function candidateBlock(candidate: PacketCandidate): string {
   // shown under a heading that refuses the authority claim outright, so it can
   // never be read as the verbatim source prose above.
   if (Object.keys(candidate.unattested.data ?? {}).length > 0) {
+    // The heading distinguishes the two states the packet keeps apart: a
+    // producer that attested NOTHING, versus one whose attestation artifact
+    // exists and did not cover these fields. Both keep their values; only the
+    // second is a producer defect, and a reader who cannot tell them apart
+    // cannot tell a deliberate silence from a stale manifest.
     lines.push(
-      '### Unattested record content (no producing pack declared provenance for these fields; NOT verified verbatim source prose)',
+      candidate.provenanceArtifact === 'absent'
+        ? "### Unattested record content (this record's producing pack supplied NO field-provenance artifact; nothing here is verified verbatim source prose)"
+        : "### Unattested record content (this record's producing pack supplied a field-provenance artifact that does NOT cover these fields; nothing here is verified verbatim source prose)",
     );
     emitLeaves(candidate.unattested, '', lines);
   }

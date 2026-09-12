@@ -225,10 +225,10 @@ derived(
   '/choices',
   'structured creation-choice facts (category/choose/from/tableRef/roll/id).',
 );
-prose(
+derived(
   'ancestry',
   '/choices/*/sourceText',
-  'source-derived, not source-prose (see module doc comment): kindSchemas.ts documents this as "a source-cited display label, not guaranteed verbatim SRD prose" — for the four rolled-table categories it is a compiler-constructed "<table> (<die>)." pointer, not a quote.',
+  'a source-cited display LABEL, not guaranteed verbatim SRD prose. `kindSchemas.ts` `optCreationChoices` — the one validator governing BOTH ancestry and background creation choices — documents that for the rolled-table categories this is a compiler-constructed "<table name> (<die>)." pointer rather than a quote. The class is a property of what the SCHEMA permits at this pointer, not of what today\'s few ancestry records happen to hold: a future ancestry choice may use a constructed label at this same already-covered pointer. `source-derived` is the conservative class that stays truthful for both a constructed label and a value that happens to be verbatim, and it never claims verbatim authority for a value the importer composed. The `background` sibling has always been declared this way.',
 );
 projection(
   'ancestry',
@@ -271,29 +271,10 @@ derived(
   'a list of subrace record-key references, not source text.',
 );
 namedEntry('ancestry', '/traits');
-prose(
-  'ancestry',
-  '/traits/*/tableRefs',
-  'DECISION NOTE: tableRefs is a list of table record-key references (structural), reclassified below to source-derived — kept here only as a comment marker; see the source-derived declaration immediately after.',
-);
 derived(
   'ancestry',
   '/traits/*/tableRefs',
   "a list of this trait's linked `table:` record-key references, not source text.",
-);
-
-// The comment-marker prose() call above is a documentation artifact of an
-// earlier draft; the manifest build below de-duplicates by throwing on a
-// literal duplicate (kind, pointerPrefix), so remove the stray prose()
-// call rather than leaving two declarations for the same pointer.
-decls.splice(
-  decls.findIndex(
-    (d) =>
-      d.kind === 'ancestry' &&
-      d.pointerPrefix === '/traits/*/tableRefs' &&
-      d.class === 'source-prose',
-  ),
-  1,
 );
 
 // ---------------------------------------------------------------------------

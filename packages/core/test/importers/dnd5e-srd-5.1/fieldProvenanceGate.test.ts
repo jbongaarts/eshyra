@@ -25,6 +25,7 @@ import {
   classifyFieldPointer,
   FieldProvenanceError,
   type FieldProvenanceManifest,
+  getBundledDnd5eSrdPack,
   loadFieldProvenanceManifest,
   loadRulesPackFromDirectory,
   walkFieldPointers,
@@ -336,5 +337,67 @@ describe('magic-item:ioun-stone classification — nested array prose (E6)', () 
     expect(
       classifyFieldPointer(manifest, 'magic-item', '/variants/*/mechanics'),
     ).toBe('compiler-projection');
+  });
+});
+
+/**
+ * Finding 2 (PR #543 re-review round 4): the class declared at a pointer must
+ * be valid for every value the SCHEMA permits there, not merely for the values
+ * today's corpus happens to hold.
+ *
+ * `kindSchemas.ts` `optCreationChoices` — the one validator governing BOTH
+ * ancestry and background creation choices — documents `sourceText` as "a
+ * source-cited display label, not guaranteed verbatim SRD prose", constructed
+ * as "<table name> (<die>)." for the rolled-table categories. The declaration
+ * is per `(kind, pointer prefix)`, so a future ancestry choice may put a
+ * constructed label at this already-covered pointer and still pass coverage.
+ * `source-prose` was therefore unsound at that pointer regardless of what the
+ * thirteen current ancestry records contain — and the declaration's own reason
+ * string already said so while the call said otherwise.
+ */
+describe('creation-choice sourceText is classified by what the schema permits', () => {
+  const manifest = buildFieldProvenanceManifest(
+    DND5E_FIELD_PROVENANCE_DECLARATIONS,
+  );
+
+  it('never classifies a creation-choice label as verbatim source prose', () => {
+    for (const kind of ['ancestry', 'background'] as const)
+      expect(
+        classifyFieldPointer(manifest, kind, '/choices/*/sourceText'),
+      ).toBe('source-derived');
+  });
+
+  it('holds for a constructed label that is not literal SRD prose', () => {
+    // The schema-permitted shape the review named, at the SAME already-covered
+    // pointer. Classification is a property of the pointer, so a value the
+    // importer composed cannot acquire verbatim authority by appearing here.
+    const constructed = 'Acolyte Bonds (d6).';
+    expect(constructed).not.toMatch(/^[A-Z][a-z]+ [a-z]/u);
+    const cls = classifyFieldPointer(
+      manifest,
+      'ancestry',
+      '/choices/*/sourceText',
+    );
+    expect(cls).toBe('source-derived');
+    expect(cls).not.toBe('source-prose');
+  });
+
+  it('keeps genuinely verbatim ancestry choice text present, as source-derived', () => {
+    // The truthful-either-way property that makes `source-derived` the right
+    // conservative class: a value that IS verbatim is still deterministically
+    // derived from the cited source, so nothing is lost or hidden — only the
+    // unearned claim of verbatim authority is withheld.
+    const pack = getBundledDnd5eSrdPack();
+    const withChoices = pack.records.filter(
+      (record) =>
+        record.kind === 'ancestry' &&
+        Array.isArray((record.data as { choices?: unknown }).choices),
+    );
+    expect(withChoices.length).toBeGreaterThan(0);
+    for (const record of withChoices)
+      for (const choice of (
+        record.data as { choices: { sourceText?: unknown }[] }
+      ).choices)
+        expect(typeof choice.sourceText).toBe('string');
   });
 });

@@ -158,6 +158,21 @@ function classifyRecordBody(
       // this binding exists to stop, and a silent one. It is surfaced under a
       // heading that states no producing pack attested it, which is what
       // "unattested" has to mean: visible and labelled, not absent.
+      //
+      // TWO DIFFERENT STATES reach this branch and they are not collapsed
+      // (`eshyra-o9bd.19.12.11` items 4 and 5). No manifest at all is an
+      // intentional "this producer attests nothing"; a manifest that IS
+      // present and still fails to classify one of its own producer's
+      // pointers is a stale, incomplete or inconsistent attestation artifact
+      // — a producer defect. Only the second records a per-pointer residue
+      // entry, so a reader can tell "nobody attested this" from "the
+      // attestation exists and does not cover this field".
+      if (manifest !== undefined)
+        residue.push({
+          pointer: displayPointer,
+          shape: residueShape(value),
+          reason: 'no-provenance-declaration',
+        });
       return {
         sourceProse: undefined,
         sourceDerived: undefined,
@@ -531,6 +546,7 @@ function splitRecordData(
   readonly sourceDerived: Obj;
   readonly projection: Obj;
   readonly unattested: Obj;
+  readonly provenanceArtifact: 'present' | 'absent';
   readonly residue: readonly RecordDataResidue[];
 } {
   const residue: RecordDataResidue[] = [];
@@ -540,6 +556,7 @@ function splitRecordData(
     sourceDerived: (result.sourceDerived as Obj | undefined) ?? {},
     projection: (result.projection as Obj | undefined) ?? {},
     unattested: (result.unattested as Obj | undefined) ?? {},
+    provenanceArtifact: manifest === undefined ? 'absent' : 'present',
     residue,
   };
 }
@@ -591,6 +608,9 @@ function packetCandidate(
       // it. This is not the SRD importer's manifest speaking for a foreign
       // pack, which is what the producer binding forbids.
       unattested: {},
+      // An authored module carries its own authorship; no SRD-style
+      // provenance artifact is expected or consulted for it.
+      provenanceArtifact: 'absent',
       residue: [],
       routes: candidate.routes,
       traversals: candidate.traversals,
@@ -636,6 +656,13 @@ function packetCandidate(
     sourceDerived: { data: split.sourceDerived },
     projection: { data: split.projection },
     unattested: { data: split.unattested },
+    // Which of the three states this record is in is decided HERE, where the
+    // manifest lookup actually happened, not inferred later from whether any
+    // bucket came out empty. `absent` means this record's producing pack
+    // supplied no provenance artifact at all; `present` means it did, and any
+    // `no-provenance-declaration` residue beside it names a pointer that
+    // artifact failed to cover.
+    provenanceArtifact: split.provenanceArtifact,
     residue: split.residue,
     routes: candidate.routes,
     traversals: candidate.traversals,

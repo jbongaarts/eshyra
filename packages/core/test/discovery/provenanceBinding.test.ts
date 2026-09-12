@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RulesPack } from '../../src/internal.js';
 import {
   buildContextPacket,
+  buildFieldProvenanceManifest,
   bundledDnd5eSrdFieldProvenanceSource,
   classifyFieldPointer,
   getBundledDnd5eSrdFieldProvenanceManifest,
@@ -86,6 +87,93 @@ describe('field-provenance is bound to the producing pack', () => {
  * record's producing pack is decides which heading its content may appear
  * under.
  */
+/**
+ * A positive attestation may remain valid only while the exact artifact it
+ * attests is unchanged. Object identity is the proof, so the artifact it
+ * proves things about has to be incapable of drifting underneath it — these
+ * cases attack that directly, at every nesting depth rather than only the top
+ * level (PR #543 re-review round 4, finding 1).
+ */
+describe('the attested artifact cannot drift under its own proof', () => {
+  it('is deep-frozen: top-level, nested object, array element and array length', () => {
+    const pack = getBundledDnd5eSrdPack();
+    expect(Object.isFrozen(pack)).toBe(true);
+    expect(Object.isFrozen(pack.records)).toBe(true);
+
+    const fireball = pack.records.find((item) => item.key === 'spell:fireball');
+    if (fireball === undefined) throw new Error('spell:fireball missing');
+    const data = fireball.data as Record<string, unknown>;
+    expect(Object.isFrozen(fireball)).toBe(true);
+    expect(Object.isFrozen(data)).toBe(true);
+
+    // The exact drift the review named: a changed description must not remain
+    // attested as verbatim source prose.
+    const description = data.description;
+    expect(() => {
+      (data as { description: unknown }).description = 'TAMPERED';
+    }).toThrow(TypeError);
+    expect(data.description).toBe(description);
+
+    // Nested object, one level down.
+    const mechanics = data.mechanics as Record<string, unknown>;
+    expect(Object.isFrozen(mechanics)).toBe(true);
+    expect(() => {
+      (mechanics as { concentration: unknown }).concentration = true;
+    }).toThrow(TypeError);
+
+    // Array element AND array length — a frozen array must refuse both.
+    const saves = mechanics.saves as unknown[];
+    expect(Object.isFrozen(saves)).toBe(true);
+    expect(() => {
+      saves[0] = { ability: 'strength' };
+    }).toThrow(TypeError);
+    expect(() => saves.push({ ability: 'strength' })).toThrow(TypeError);
+
+    // An element deep inside that array is frozen too, which a shallow
+    // freeze of the array would have left writable.
+    const firstSave = saves[0] as Record<string, unknown>;
+    expect(Object.isFrozen(firstSave)).toBe(true);
+    expect(() => {
+      (firstSave as { ability: unknown }).ability = 'strength';
+    }).toThrow(TypeError);
+  });
+
+  /**
+   * The sibling found by searching this defect class rather than the reported
+   * example: the MANIFEST is the attestation, so a proof riding on it is only
+   * as stable as it is. A mutable declaration list would let one assignment
+   * reclassify a whole kind as verbatim source authority.
+   */
+  it('deep-freezes the manifest itself, not only the pack it attests', () => {
+    const manifest = getBundledDnd5eSrdFieldProvenanceManifest();
+    if (manifest === undefined) throw new Error('no bundled manifest');
+    expect(Object.isFrozen(manifest)).toBe(true);
+    expect(Object.isFrozen(manifest.declarations)).toBe(true);
+    const first = manifest.declarations[0];
+    if (first === undefined) throw new Error('empty manifest');
+    expect(Object.isFrozen(first)).toBe(true);
+    expect(() => {
+      (first as { class: unknown }).class = 'source-prose';
+    }).toThrow(TypeError);
+    expect(() =>
+      (manifest.declarations as unknown as unknown[]).push({}),
+    ).toThrow(TypeError);
+  });
+
+  it('freezes every record reachable in the pack, not just the sampled one', () => {
+    const pack = getBundledDnd5eSrdPack();
+    const unfrozen = pack.records.filter(
+      (record) =>
+        !Object.isFrozen(record) ||
+        (typeof record.data === 'object' &&
+          record.data !== null &&
+          !Object.isFrozen(record.data)),
+    );
+    expect(pack.records.length).toBeGreaterThan(1000);
+    expect(unfrozen.map((record) => record.key)).toEqual([]);
+  });
+});
+
 describe('packet classification follows the producing pack', () => {
   function packetFor(
     base: RulesPack,
@@ -234,6 +322,114 @@ describe('packet classification follows the producing pack', () => {
     expect(JSON.stringify(candidate.sourceDerived)).not.toContain(authored);
     expect(JSON.stringify(candidate.projection)).not.toContain(authored);
     expect(JSON.stringify(candidate.unattested)).toContain(authored);
+  });
+
+  /**
+   * The three attestation states, kept distinct (`eshyra-o9bd.19.12.11` items
+   * 4 and 5). A present-but-incomplete artifact is a PRODUCER DEFECT and must
+   * not read as the deliberate "this producer attests nothing" state.
+   */
+  it('distinguishes no artifact from an artifact that fails to cover a pointer', () => {
+    const real = getBundledDnd5eSrdPack();
+    const baseManifest = getBundledDnd5eSrdFieldProvenanceManifest();
+    if (baseManifest === undefined) throw new Error('no bundled manifest');
+
+    // A manifest that is genuinely PRESENT but deliberately incomplete: every
+    // declaration except the one covering a spell's description.
+    const incomplete = buildFieldProvenanceManifest(
+      baseManifest.declarations.filter(
+        (item) =>
+          !(item.kind === 'spell' && item.pointerPrefix === '/description'),
+      ),
+    );
+    expect(incomplete.declarations.length).toBe(
+      baseManifest.declarations.length - 1,
+    );
+
+    const stack = resolveRulesStack({ base: real });
+    const entry = stack.recordsByKey.get('spell:fireball');
+    if (entry === undefined) throw new Error('spell:fireball missing');
+    const candidateOf = (source: Parameters<typeof buildContextPacket>[3]) => {
+      const trace = buildContextPacket(
+        retainCandidates([
+          {
+            candidateKey: entry.record.key,
+            targetKind: 'rules-record' as const,
+            entry,
+            routes: [
+              {
+                routeClass: 'explicit-name-or-alias' as const,
+                trigger: 'test',
+                evidence: {},
+                signalId: 'signal-0',
+              },
+            ],
+            traversals: [],
+            campaignRules: [],
+            campaignRulings: [],
+          },
+        ]),
+        [],
+        512_000,
+        source,
+      );
+      const candidate = trace.packet.candidates[0];
+      if (candidate === undefined) throw new Error('no candidate built');
+      return { candidate, trace };
+    };
+
+    // State 2 — artifact present, this pointer uncovered.
+    const withIncomplete = candidateOf(() => incomplete);
+    expect(withIncomplete.candidate.provenanceArtifact).toBe('present');
+    const uncovered = withIncomplete.candidate.residue.filter(
+      (item) => item.reason === 'no-provenance-declaration',
+    );
+    expect(uncovered.map((item) => item.pointer)).toContain(
+      '/data/description',
+    );
+    // The VALUE is still delivered, never discarded...
+    expect(JSON.stringify(withIncomplete.candidate.unattested)).toContain(
+      'bright streak',
+    );
+    // ...and never as verbatim source prose.
+    expect(JSON.stringify(withIncomplete.candidate.sourceProse)).not.toContain(
+      'bright streak',
+    );
+
+    // State 1 — no artifact at all. Same value-preserving treatment, but NOT
+    // the same disclosure: nothing here is a producer defect.
+    const withNone = candidateOf(undefined);
+    expect(withNone.candidate.provenanceArtifact).toBe('absent');
+    expect(
+      withNone.candidate.residue.filter(
+        (item) => item.reason === 'no-provenance-declaration',
+      ),
+    ).toEqual([]);
+    expect(JSON.stringify(withNone.candidate.unattested)).toContain(
+      'bright streak',
+    );
+
+    // State 3 — positively classified, for contrast.
+    const withReal = candidateOf(bundledDnd5eSrdFieldProvenanceSource());
+    expect(withReal.candidate.provenanceArtifact).toBe('present');
+    expect(JSON.stringify(withReal.candidate.sourceProse)).toContain(
+      'bright streak',
+    );
+
+    // The rendered text separates states 1 and 2 for a reader.
+    const render = (built: ReturnType<typeof candidateOf>) =>
+      renderContextPacketMessage({
+        retention: { overflow: [] },
+        packet: {
+          packet: built.trace.packet,
+          byteOverflow: built.trace.byteOverflow,
+          dropped: built.trace.dropped,
+        },
+      }).text;
+    expect(render(withIncomplete)).toContain(
+      'supplied a field-provenance artifact that does NOT cover these fields',
+    );
+    expect(render(withNone)).toContain('supplied NO field-provenance artifact');
   });
 
   it('does not let a metadata-alias resolver result inherit the SRD manifest', () => {

@@ -473,6 +473,24 @@ export interface PacketCandidate {
    * `sourceProse`, the only bucket that may carry verbatim source authority.
    */
   readonly unattested: Readonly<Record<string, unknown>>;
+  /**
+   * Whether this record's PRODUCING pack supplied a field-provenance artifact
+   * at all (`eshyra-o9bd.19.12.11` items 4 and 5, kept distinct).
+   *
+   * Three reader-visible states, not two:
+   * - `absent` — the producer attests nothing. Every leaf is `unattested`.
+   *   An intentional state, not a defect.
+   * - `present` with `no-provenance-declaration` residue — the artifact
+   *   exists and failed to classify one of its own producer's pointers. That
+   *   is a stale or incomplete attestation, and naming the pointer is how a
+   *   reader tells it apart from the case above.
+   * - `present` with no such residue — the field was positively classified.
+   *
+   * Collapsing the first two would let a producer defect read as a deliberate
+   * "nothing attested", which is exactly the distinction the owning bead
+   * declares.
+   */
+  readonly provenanceArtifact: 'present' | 'absent';
   readonly residue: readonly RecordDataResidue[];
   readonly routes: readonly DiscoveryRoute[];
   readonly traversals: readonly TypedTraversal[];

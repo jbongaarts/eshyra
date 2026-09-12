@@ -40,8 +40,8 @@
     {
       "kind": "ancestry",
       "pointerPrefix": "/choices/*/sourceText",
-      "class": "source-prose",
-      "reason": "source-derived, not source-prose (see module doc comment): kindSchemas.ts documents this as \"a source-cited display label, not guaranteed verbatim SRD prose\" — for the four rolled-table categories it is a compiler-constructed \"<table> (<die>).\" pointer, not a quote."
+      "class": "source-derived",
+      "reason": "a source-cited display LABEL, not guaranteed verbatim SRD prose. `kindSchemas.ts` `optCreationChoices` — the one validator governing BOTH ancestry and background creation choices — documents that for the rolled-table categories this is a compiler-constructed \"<table name> (<die>).\" pointer rather than a quote. The class is a property of what the SCHEMA permits at this pointer, not of what today's few ancestry records happen to hold: a future ancestry choice may use a constructed label at this same already-covered pointer. `source-derived` is the conservative class that stays truthful for both a constructed label and a value that happens to be verbatim, and it never claims verbatim authority for a value the importer composed. The `background` sibling has always been declared this way."
     },
     {
       "kind": "ancestry",
