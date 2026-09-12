@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
   buildMagicItemLegacyCapabilityBacklog,
@@ -7,16 +8,16 @@ import {
 } from '../src/internal.js';
 
 describe('magic-item legacy capability backlog', () => {
-  it('keeps every legacy missing-hook clause as an explicit, source-linked unselected candidate', () => {
+  it('keeps every legacy engine-hook clause as an explicit, source-linked unselected candidate', () => {
     const backlog = buildMagicItemLegacyCapabilityBacklog(
       getBundledDnd5eSrdPack(),
     );
 
     expect(backlog).toMatchObject({
-      scope: 'legacy-magic-item-missing-hooks-only',
+      scope: 'legacy-magic-item-engine-hooks-only',
       source: 'derived-magic-item-clauses-v1',
     });
-    expect(backlog.candidates).toHaveLength(794);
+    expect(backlog.candidates).toHaveLength(795);
     expect(
       new Set(backlog.candidates.map(({ candidateId }) => candidateId)).size,
     ).toBe(backlog.candidates.length);
@@ -50,15 +51,37 @@ describe('magic-item legacy capability backlog', () => {
     ).toBe(true);
   });
 
-  it('does not promote a green legacy hook observation into the missing-hook backlog', () => {
+  it('retains the green-with-hook sibling while keeping missing hooks as unresolved detail', () => {
     const backlog = buildMagicItemLegacyCapabilityBacklog(
       getBundledDnd5eSrdPack(),
     );
 
-    expect(backlog.candidates).not.toContainEqual(
+    expect(backlog.candidates).toContainEqual(
       expect.objectContaining({
         candidateId: 'magic-item:candle-of-invocation/c1-burn-time',
+        legacyReadiness: 'green',
+        engineHooks: [{ engine: 'F5', hook: 'duration-budget accounting' }],
+        missingHooks: [],
+        disposition: 'unselected-backlog',
       }),
+    );
+  });
+
+  it('pins the exact hook-backed identity set, not merely its denominator', () => {
+    const backlog = buildMagicItemLegacyCapabilityBacklog(
+      getBundledDnd5eSrdPack(),
+    );
+    const fingerprint = createHash('sha256')
+      .update(
+        backlog.candidates.map(({ candidateId }) => candidateId).join('\n'),
+      )
+      .digest('hex');
+
+    expect(fingerprint).toBe(
+      '62dd4d96f6c1b7e04bc946f62683ef1dac57d237dec378c525b8066f9a2fd5c2',
+    );
+    expect(backlog.candidates.map(({ candidateId }) => candidateId)).toContain(
+      'magic-item:candle-of-invocation/c1-burn-time',
     );
   });
 

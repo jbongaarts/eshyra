@@ -21,11 +21,11 @@ export class MagicItemLegacyCapabilityBacklogError extends Error {
 }
 
 /**
- * A source-linked candidate extracted from one legacy `missingHooks` clause.
+ * A source-linked candidate extracted from one legacy `engineHooks` clause.
  *
  * This is deliberately a candidate/backlog row rather than a capability
  * declaration. A generated engine:F label says only that the legacy compiler
- * recorded a missing hook for this bounded clause; it cannot demonstrate an
+ * recorded an engine hook for this bounded clause; it cannot demonstrate an
  * invocation, behavior, source completeness, or a selected operation.
  */
 export interface MagicItemLegacyCapabilityCandidate {
@@ -38,12 +38,17 @@ export interface MagicItemLegacyCapabilityCandidate {
     readonly sourceRef: string;
     readonly locator?: string;
   };
-  /** The legacy family/hook labels, retained as backlog detail only. */
+  /** The legacy family/hook labels that define this bounded population. */
+  readonly engineHooks: readonly {
+    readonly engine: string;
+    readonly hook: string;
+  }[];
+  /** Unresolved-hook detail; absent for the green Candle sibling. */
   readonly missingHooks: readonly {
     readonly engine: string;
     readonly hook: string;
   }[];
-  readonly legacyReadiness: 'engine-pending' | 'design-blocked';
+  readonly legacyReadiness: string;
   /** No legacy row becomes selected merely by appearing in this inventory. */
   readonly disposition: 'unselected-backlog';
   readonly evidence: {
@@ -74,8 +79,8 @@ export interface SelectedMagicItemCapability {
 }
 
 export interface MagicItemLegacyCapabilityBacklog {
-  /** Explicitly bounds the denominator to legacy clauses with `missingHooks`. */
-  readonly scope: 'legacy-magic-item-missing-hooks-only';
+  /** Explicitly bounds the denominator to legacy clauses with `engineHooks`. */
+  readonly scope: 'legacy-magic-item-engine-hooks-only';
   readonly source: typeof MAGIC_ITEM_LEGACY_CAPABILITY_BACKLOG_SOURCE;
   readonly candidates: readonly MagicItemLegacyCapabilityCandidate[];
   readonly selectedCapabilities: readonly SelectedMagicItemCapability[];
@@ -92,11 +97,11 @@ function candidateFromClause(
     throw new MagicItemLegacyCapabilityBacklogError(
       `${context} must be an object`,
     );
-  const missingHooks = value.missingHooks;
-  if (missingHooks === undefined) return undefined;
-  if (!Array.isArray(missingHooks) || missingHooks.length === 0)
+  const engineHooks = value.engineHooks;
+  if (engineHooks === undefined) return undefined;
+  if (!Array.isArray(engineHooks) || engineHooks.length === 0)
     throw new MagicItemLegacyCapabilityBacklogError(
-      `${context}.missingHooks must be a non-empty array when present`,
+      `${context}.engineHooks must be a non-empty array when present`,
     );
   const clauseId = value.clauseId;
   const readiness = value.readiness;
@@ -104,11 +109,24 @@ function candidateFromClause(
     throw new MagicItemLegacyCapabilityBacklogError(
       `${context}.clauseId is required`,
     );
-  if (readiness !== 'engine-pending' && readiness !== 'design-blocked')
+  if (typeof readiness !== 'string' || readiness.length === 0)
     throw new MagicItemLegacyCapabilityBacklogError(
-      `${context} has missing hooks but is not an explicit unresolved backlog row`,
+      `${context}.readiness is required for an engine-hook candidate`,
     );
-  const hooks = missingHooks.map((rawHook, hookIndex) => {
+  const hooks = engineHooks.map((rawHook, hookIndex) => {
+    const hook = object(rawHook);
+    if (typeof hook?.engine !== 'string' || typeof hook.hook !== 'string')
+      throw new MagicItemLegacyCapabilityBacklogError(
+        `${context}.engineHooks[${hookIndex}] must name engine and hook`,
+      );
+    return { engine: hook.engine, hook: hook.hook };
+  });
+  const missingHooks = value.missingHooks;
+  if (missingHooks !== undefined && !Array.isArray(missingHooks))
+    throw new MagicItemLegacyCapabilityBacklogError(
+      `${context}.missingHooks must be an array when present`,
+    );
+  const unresolvedHooks = (missingHooks ?? []).map((rawHook, hookIndex) => {
     const hook = object(rawHook);
     if (typeof hook?.engine !== 'string' || typeof hook.hook !== 'string')
       throw new MagicItemLegacyCapabilityBacklogError(
@@ -127,13 +145,14 @@ function candidateFromClause(
         ? {}
         : { locator: record.provenance.locator }),
     },
-    missingHooks: hooks,
+    engineHooks: hooks,
+    missingHooks: unresolvedHooks,
     legacyReadiness: readiness,
     disposition: 'unselected-backlog',
     evidence: {
       claimStrength: 'candidate-only-not-capability-execution-evidence',
       exactClaim:
-        'The generated legacy readiness clause records these missing engine hooks for this identified magic-item source location.',
+        'The generated legacy readiness clause records these engine hooks for this identified magic-item source location.',
       nonClaims: [
         'Does not demonstrate deterministic capability invocation or behavior.',
         'Does not establish source fidelity, source-negative absence, or corpus completeness.',
@@ -166,7 +185,7 @@ function selectedCapability(): SelectedMagicItemCapability {
 }
 
 /**
- * Reconcile the bounded legacy `missingHooks` backlog with the positive
+ * Reconcile the bounded legacy `engineHooks` backlog with the positive
  * capability contract without turning either clause status or finding
  * membership into a capability-universe claim.
  */
@@ -199,7 +218,7 @@ export function buildMagicItemLegacyCapabilityBacklog(
     }
   }
   return {
-    scope: 'legacy-magic-item-missing-hooks-only',
+    scope: 'legacy-magic-item-engine-hooks-only',
     source: MAGIC_ITEM_LEGACY_CAPABILITY_BACKLOG_SOURCE,
     candidates: candidates.sort((a, b) =>
       a.candidateId.localeCompare(b.candidateId),
