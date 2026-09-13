@@ -5,6 +5,7 @@ import {
   deduplicateCandidates,
   expandTypedRelationships,
   getBundledDnd5eSrdPack,
+  getBundledDnd5eSrdRecordRelationshipManifest,
   joinCampaignRules,
   MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
   measureDiscovery,
@@ -68,6 +69,7 @@ describe('offline discovery stage boundaries', () => {
     const expanded = expandTypedRelationships(
       candidates.outputsProduced,
       stack,
+      { relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest() },
     );
     const condition = expanded.outputsProduced.find(
       (item) => item.candidateKey === 'condition:incapacitated',
@@ -659,15 +661,17 @@ describe('offline discovery stage boundaries', () => {
       campaignRulings: [],
     });
     const dodgeReached = (candidates: readonly DiscoveryCandidate[]) =>
-      expandTypedRelationships(candidates, stack).outputsProduced.some(
-        (item) => item.candidateKey === 'action:dodge',
-      );
+      expandTypedRelationships(candidates, stack, {
+        relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest(),
+      }).outputsProduced.some((item) => item.candidateKey === 'action:dodge');
 
     // Identical typed link, two different origin bands.
     expect(dodgeReached([seed('direct-state-ref')])).toBe(true);
     expect(dodgeReached([seed('situation-cue')])).toBe(false);
 
-    const skipped = expandTypedRelationships([seed('situation-cue')], stack);
+    const skipped = expandTypedRelationships([seed('situation-cue')], stack, {
+      relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest(),
+    });
     expect(skipped.losses.map((loss) => loss.reason)).toContain(
       'expansion-origin-not-must-consider',
     );
@@ -883,7 +887,7 @@ describe('offline discovery stage boundaries', () => {
       expect(trace.ruleExpansion.traversals).toContainEqual({
         sourceRecordKey: LATE_AMBIGUITY_ROOT_KEY,
         linkField: 'data.source',
-        relation: 'data.source',
+        relation: 'granted-by',
         targetRecordKey: LATE_AMBIGUITY_TARGET_KEY,
       });
 

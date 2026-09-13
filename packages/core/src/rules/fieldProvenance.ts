@@ -241,11 +241,22 @@ function isLeafValue(value: unknown): value is FieldProvenanceLeaf {
  */
 export function walkFieldPointers(
   data: unknown,
-  visit: (pointer: string, value: FieldProvenanceLeaf) => void,
+  visit: (
+    pointer: string,
+    value: FieldProvenanceLeaf,
+    actualPointer: string,
+  ) => void,
   pointer = '',
+  actualPointer = '',
 ): void {
   if (Array.isArray(data)) {
-    for (const item of data) walkFieldPointers(item, visit, `${pointer}/*`);
+    for (const [index, item] of data.entries())
+      walkFieldPointers(
+        item,
+        visit,
+        `${pointer}/*`,
+        `${actualPointer}/${index}`,
+      );
     return;
   }
   if (data !== null && typeof data === 'object') {
@@ -253,12 +264,17 @@ export function walkFieldPointers(
       data as Record<string, unknown>,
     )) {
       if (value === undefined) continue;
-      walkFieldPointers(value, visit, `${pointer}/${key}`);
+      walkFieldPointers(
+        value,
+        visit,
+        `${pointer}/${key}`,
+        `${actualPointer}/${key}`,
+      );
     }
     return;
   }
   if (pointer === '' || !isLeafValue(data)) return;
-  visit(pointer, data);
+  visit(pointer, data, actualPointer);
 }
 
 /** Per-(kind, class) leaf counts, for the required "counts per class per kind" report (E2). */

@@ -5,7 +5,9 @@ import type {
   CampaignRulingProjection,
 } from '../campaign/campaignRules.js';
 import type { Db } from '../persistence/db.js';
+import type { RuleDeterministicCapabilityDisposition } from '../rules/deterministicCapabilityLedger.js';
 import type { FieldProvenanceManifest } from '../rules/fieldProvenance.js';
+import type { RelationshipResolution } from '../rules/recordRelationships.js';
 import type {
   ResolvedRulesStack,
   RulesStackRecordEntry,
@@ -195,6 +197,8 @@ export interface TypedTraversal {
 
 export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
   readonly traversals: readonly TypedTraversal[];
+  readonly relationshipResolutions: readonly RelationshipResolution[];
+  readonly relationshipManifestAbsent: boolean;
 }
 
 export { NULL_CAMPAIGN_RULE_SEAM } from '../campaign/campaignRules.js';
@@ -537,6 +541,7 @@ export interface PacketCandidate {
    * stating that a blocked contract is not an executable capability.
    */
   readonly capabilities: readonly CapabilityPreflight[];
+  readonly deterministicCapabilityDisposition?: RuleDeterministicCapabilityDisposition;
   readonly projectionLimits: readonly ProjectionLimitNote[];
 }
 

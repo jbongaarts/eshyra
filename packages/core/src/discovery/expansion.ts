@@ -1,5 +1,8 @@
-import { CONDITION_RELATION_VALUES } from '../rules/conditionRelations.js';
-import { normalizeRulesRecordName } from '../rules/stack.js';
+import {
+  type RecordRelationshipManifest,
+  type RelationshipResolution,
+  resolveRecordRelationships,
+} from '../rules/recordRelationships.js';
 import type { RulesRecordKind } from '../rules/types.js';
 import { accountCandidates } from './accounting.js';
 import { candidateBand } from './bands.js';
@@ -19,72 +22,23 @@ type Stack = {
     { byName: ReadonlyMap<string, readonly Entry[]> }
   >;
 };
-type Obj = Record<string, unknown>;
-
-function object(value: unknown): Obj | undefined {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? (value as Obj)
-    : undefined;
+function manifestLinks(
+  entry: Entry,
+  stack: Stack,
+  manifest: RecordRelationshipManifest,
+): RelationshipResolution[] {
+  return [...resolveRecordRelationships(manifest, entry.record, stack)];
 }
 
-function directLinks(entry: Entry, stack: Stack): TypedTraversal[] {
-  const data = object(entry.record.data);
-  if (data === undefined) return [];
-  const links: TypedTraversal[] = [];
-  const add = (field: string, raw: unknown, relation: string) => {
-    if (typeof raw !== 'string') return;
-    const target = stack.recordsByKey.get(raw);
-    if (target !== undefined)
-      links.push({
-        sourceRecordKey: entry.record.key,
-        linkField: field,
-        relation,
-        targetRecordKey: raw,
-      });
+function traversalOf(
+  resolution: Extract<RelationshipResolution, { outcome: 'resolved' }>,
+): TypedTraversal {
+  return {
+    sourceRecordKey: resolution.sourceRecordKey,
+    linkField: resolution.declaration.linkField,
+    relation: resolution.relation,
+    targetRecordKey: resolution.targetRecordKey,
   };
-  add('data.source', data.source, 'data.source');
-  add('data.parentClass', data.parentClass, 'data.parentClass');
-  add(
-    'data.progressionTableRef',
-    data.progressionTableRef,
-    'data.progressionTableRef',
-  );
-  for (const field of [
-    'tableRefs',
-    'spellTableRefs',
-    'statBlockRefs',
-  ] as const) {
-    const values = data[field];
-    if (Array.isArray(values))
-      for (const value of values) add(`data.${field}`, value, `data.${field}`);
-  }
-  const mechanics = object(data.mechanics);
-  if (mechanics !== undefined && Array.isArray(mechanics.conditions))
-    for (const raw of mechanics.conditions) {
-      const condition = object(raw);
-      if (condition === undefined || typeof condition.condition !== 'string')
-        continue;
-      const relation = condition.relation;
-      if (
-        typeof relation !== 'string' ||
-        !CONDITION_RELATION_VALUES.includes(relation as never)
-      )
-        continue;
-      const index = stack.recordsByKind.get('condition')?.byName;
-      // The byName index is keyed by normalizeName, which does more than
-      // lowercase (apostrophes, trailing parentheticals). toLowerCase would
-      // silently miss any condition whose name needs real normalization.
-      const matches =
-        index?.get(normalizeRulesRecordName(condition.condition)) ?? [];
-      for (const target of matches)
-        links.push({
-          sourceRecordKey: entry.record.key,
-          linkField: 'data.mechanics.conditions',
-          relation,
-          targetRecordKey: target.record.key,
-        });
-    }
-  return links;
 }
 
 function route(traversal: TypedTraversal, signalId: string): DiscoveryRoute {
@@ -159,15 +113,29 @@ export function expandTypedRelationships(
     readonly seedKeys?: ReadonlySet<string>;
     readonly stageName?: string;
     readonly conditional?: boolean;
-  } = {},
+    readonly relationshipManifest: RecordRelationshipManifest | undefined;
+  },
 ): ExpansionTrace {
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
   );
   const losses: ExpansionTrace['losses'][number][] = [];
+  const relationshipResolutions: RelationshipResolution[] = [];
+  const manifest = options.relationshipManifest;
   const reverse = new Map<string, TypedTraversal[]>();
   for (const entry of stack.recordsByKey.values()) {
-    for (const traversal of directLinks(entry, stack)) {
+    const resolutions =
+      manifest === undefined ? [] : manifestLinks(entry, stack, manifest);
+    relationshipResolutions.push(...resolutions);
+    for (const resolution of resolutions) {
+      if (resolution.outcome !== 'resolved') {
+        losses.push({
+          reason: 'unresolved-typed-target',
+          detail: { ...resolution },
+        });
+        continue;
+      }
+      const traversal = traversalOf(resolution);
       const inbound = reverse.get(traversal.targetRecordKey) ?? [];
       inbound.push(traversal);
       reverse.set(traversal.targetRecordKey, inbound);
@@ -205,9 +173,29 @@ export function expandTypedRelationships(
   const traversals: TypedTraversal[] = [];
   for (const candidate of expandable) {
     if (candidate.entry === undefined) continue;
-    const outgoing = directLinks(candidate.entry, stack);
+    const outgoing =
+      manifest === undefined
+        ? []
+        : manifestLinks(candidate.entry, stack, manifest);
+    relationshipResolutions.push(...outgoing);
+    for (const resolution of outgoing)
+      if (resolution.outcome === 'unresolved-target')
+        losses.push({
+          reason: 'unresolved-typed-target',
+          detail: { ...resolution },
+        });
+    const outgoingTraversals = outgoing
+      .filter(
+        (
+          resolution,
+        ): resolution is Extract<
+          RelationshipResolution,
+          { outcome: 'resolved' }
+        > => resolution.outcome === 'resolved',
+      )
+      .map(traversalOf);
     const incoming = reverse.get(candidate.candidateKey) ?? [];
-    for (const traversal of [...outgoing, ...incoming]) {
+    for (const traversal of [...outgoingTraversals, ...incoming]) {
       const source = stack.recordsByKey.get(traversal.sourceRecordKey);
       const target = stack.recordsByKey.get(traversal.targetRecordKey);
       if (source === undefined || target === undefined) {
@@ -264,5 +252,7 @@ export function expandTypedRelationships(
     outputsProduced: [...result.values()],
     losses,
     traversals,
+    relationshipResolutions,
+    relationshipManifestAbsent: manifest === undefined,
   };
 }

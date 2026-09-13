@@ -20,7 +20,15 @@ import {
   buildFieldProvenanceManifest,
   type FieldProvenanceManifest,
 } from '../../../src/rules/fieldProvenance.js';
-import { PACK_FIELD_PROVENANCE_FILE } from '../../../src/rules/packLoader.js';
+import {
+  PACK_FIELD_PROVENANCE_FILE,
+  PACK_RECORD_RELATIONSHIPS_FILE,
+} from '../../../src/rules/packLoader.js';
+import {
+  assertRecordRelationshipDeclarationsAreLive,
+  buildRecordRelationshipManifest,
+  type RecordRelationshipManifest,
+} from '../../../src/rules/recordRelationships.js';
 import type {
   RecordProvenance,
   RulesPack,
@@ -66,6 +74,7 @@ import {
   deriveSpellMechanics,
   type SpellGrantResolver,
 } from './mechanicsProjections.js';
+import { DND5E_RECORD_RELATIONSHIP_DECLARATIONS } from './recordRelationshipDeclarations.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
 import type { SourceRegionLedger } from './sourceRegionLedger.js';
@@ -126,6 +135,8 @@ const PROVENANCE_POLICY =
  */
 const FIELD_PROVENANCE_MANIFEST: FieldProvenanceManifest =
   buildFieldProvenanceManifest(DND5E_FIELD_PROVENANCE_DECLARATIONS);
+const RECORD_RELATIONSHIP_MANIFEST: RecordRelationshipManifest =
+  buildRecordRelationshipManifest(DND5E_RECORD_RELATIONSHIP_DECLARATIONS);
 
 export const SRD_5_1_LICENSE: RulesPackLicense = {
   licenseClass: 'open',
@@ -1795,12 +1806,21 @@ function stringify(value: unknown): string {
 
 export interface WritePackOptions {
   readonly outDir: string;
+  readonly assertRelationshipDeclarations?: boolean;
 }
 
 export function writePackToDirectory(
   pack: RulesPack,
   options: WritePackOptions,
 ): void {
+  // Run over the final validated records immediately before any artifact is
+  // written. Fixture callers may use buildPack without pretending to be a
+  // complete importer output; the actual emitter remains fail-closed.
+  if (options.assertRelationshipDeclarations === true)
+    assertRecordRelationshipDeclarationsAreLive(
+      pack.records,
+      RECORD_RELATIONSHIP_MANIFEST,
+    );
   mkdirSync(options.outDir, { recursive: true });
   writeFileSync(
     join(options.outDir, 'manifest.json'),
@@ -1822,6 +1842,11 @@ export function writePackToDirectory(
   writeFileSync(
     join(options.outDir, PACK_FIELD_PROVENANCE_FILE),
     stringify(FIELD_PROVENANCE_MANIFEST),
+    'utf8',
+  );
+  writeFileSync(
+    join(options.outDir, PACK_RECORD_RELATIONSHIPS_FILE),
+    stringify(RECORD_RELATIONSHIP_MANIFEST),
     'utf8',
   );
 }

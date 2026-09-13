@@ -1,6 +1,7 @@
 import {
   getBundledDnd5eSrdFieldProvenanceManifest,
   getBundledDnd5eSrdPack,
+  getBundledDnd5eSrdRecordRelationshipManifest,
 } from '../rules/bundledSrdPack.js';
 import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
 import { candidateBand } from './bands.js';
@@ -25,7 +26,13 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
     resolveStrictCampaignRulesStack(input.db, input.rulesPackResolver);
   const signals = extractDiscoverySignals(input.scenario, stack);
   const candidates = resolveDiscoveryCandidates(signals, stack, input.scenario);
-  const expansion = expandTypedRelationships(candidates.outputsProduced, stack);
+  const expansion = expandTypedRelationships(
+    candidates.outputsProduced,
+    stack,
+    {
+      relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest(),
+    },
+  );
   const ruleJoin = joinCampaignRules(
     expansion.outputsProduced,
     input.campaignRuleSeam,
@@ -65,6 +72,7 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
       seedKeys: promoted,
       stageName: 'campaign-rule-expansion',
       conditional: true,
+      relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest(),
     },
   );
   // Design section 12.1: the second expansion can reach records carrying

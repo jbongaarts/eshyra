@@ -131,6 +131,7 @@ async function main(): Promise<void> {
   const result = await runImporter({
     pdfPath: args.pdf,
     outDir: args.out,
+    assertRelationshipDeclarations: true,
     expectedCreatureNames: EXPECTED_SRD_5_1_CREATURE_NAMES,
     expectedNpcNames: EXPECTED_SRD_5_1_NPC_NAMES,
     expectedTrapNames: EXPECTED_SRD_5_1_TRAP_NAMES,
