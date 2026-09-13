@@ -1379,6 +1379,11 @@ describe('equipmentExtractionsToRecords — armorClass (eshyra-rtgi)', () => {
   });
 });
 
+// These fixtures build two-record packs to compare byte output. They do NOT
+// opt out of the bounded relationship coverage gate (eshyra-o9bd.19.1.4) —
+// that direction holds over any corpus and must not be switchable — and they
+// do not enable the dead-declaration gate, which is a complete-corpus claim a
+// two-record pack cannot support.
 describe('writePackToDirectory — determinism', () => {
   it('produces byte-identical files across two runs over the same input', () => {
     const dirA = makeTmpDir();

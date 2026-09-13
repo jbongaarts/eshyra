@@ -178,10 +178,17 @@ async function main(): Promise<void> {
     }
 
     // Source-coverage artifacts (eshyra-4a7.1) + the field-provenance
-    // declaration table (eshyra-o9bd.19.1.3.1): the regenerated
-    // source-inventory.json + source-coverage.json + source-region-ledger.json
-    // + field-provenance.json must match the committed copies byte-for-byte —
-    // the same exact-match contract records.json has.
+    // declaration table (eshyra-o9bd.19.1.3.1) + the record-relationship
+    // manifest (eshyra-o9bd.19.1.4): every regenerated sibling artifact must
+    // match the committed copy byte-for-byte — the same exact-match contract
+    // records.json has.
+    //
+    // record-relationships.json was omitted when it was introduced, which let
+    // five stale `reason` strings drift out of sync with the declarations that
+    // produced them until they were caught by hand (eshyra-z7am). A generated
+    // artifact outside this loop has no reproducibility guarantee at all,
+    // which is exactly what docs/importer-fix-protocol.md requires of it, so
+    // adding an artifact here is part of adding the artifact.
     // Drift means an importer/extractor/rule/declaration change altered the
     // source accounting or field-provenance classification without a
     // matching artifact regeneration.
@@ -191,6 +198,7 @@ async function main(): Promise<void> {
       'source-coverage.json',
       'source-region-ledger.json',
       'field-provenance.json',
+      'record-relationships.json',
     ]) {
       let committedText: string;
       try {

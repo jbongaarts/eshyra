@@ -1893,7 +1893,7 @@ export interface RunImporterInput {
   /** Output directory; receives manifest.json + records.json. */
   readonly outDir: string;
   /** The production CLI enables the full curated relationship live gate. */
-  readonly assertRelationshipDeclarations?: true;
+  readonly assertDeclarationsAreLive?: boolean;
   /** Explicitly permits reduced synthetic-PDF fixtures to use local pages. */
   readonly allowSyntheticSpellSourceBindings?: true;
   /**
@@ -3637,8 +3637,7 @@ export async function runImporter(
     // The production CLI supplies the reviewed exact creature baseline; small
     // synthetic PDFs intentionally exercise parser subsets and cannot satisfy
     // the full curated relationship denominator.
-    assertRelationshipDeclarations:
-      input.assertRelationshipDeclarations === true,
+    assertDeclarationsAreLive: input.assertDeclarationsAreLive === true,
   });
   if (sourceCoverageArtifacts !== undefined) {
     writeSourceCoverageArtifacts(

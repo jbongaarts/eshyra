@@ -1807,37 +1807,52 @@ function stringify(value: unknown): string {
 
 export interface WritePackOptions {
   readonly outDir: string;
-  readonly assertRelationshipDeclarations?: boolean;
+  /**
+   * Run the DEAD-DECLARATION gate, which is a claim about the COMPLETE SRD
+   * corpus: every declaration matches at least one emitted leaf. Only the full
+   * importer build can support it — a fixture PDF covering a few kinds leaves
+   * declarations for absent kinds unmatched, and that is a smaller corpus, not
+   * a defect. Off by default for that reason; the real CLI turns it on.
+   *
+   * This does NOT gate `assertRecordRelationshipDeclarationsCoverBoundedShapes`,
+   * which runs unconditionally below. The two directions have different scopes
+   * and must not share a switch: "every declaration is live" is only true over
+   * the whole corpus, while "every emitted bounded-shape occurrence is
+   * declared" holds over ANY corpus and is the fail-open direction that
+   * matters. Giving each gate exactly the scope its claim supports is the same
+   * bounded-population discipline this bead is about.
+   */
+  readonly assertDeclarationsAreLive?: boolean;
 }
 
 export function writePackToDirectory(
   pack: RulesPack,
   options: WritePackOptions,
 ): void {
-  // Run over the final validated records immediately before any artifact is
-  // written. Fixture callers may use buildPack without pretending to be a
-  // complete importer output; the actual emitter remains fail-closed.
+  // Both directions of the coverage gate run here (eshyra-jgxl F3), at the
+  // scope each one's claim actually supports.
   //
-  // Both directions of the coverage gate run here (eshyra-jgxl F3): the first
-  // catches a declaration that matches nothing this build emits (dead
-  // declaration); the second catches the reverse — an emitted occurrence of
-  // one of the bounded legacy relationship-bearing shapes for a `(kind,
-  // pointer)` pair nobody declared. Either direction alone leaves a real gap:
-  // without the second, a future importer change could start emitting
-  // `/source` (say) under a new kind with no declaration, every existing
-  // declaration would stay live, and this gate would pass while
-  // `resolveRecordRelationships` silently classified the new occurrence as
-  // nothing.
-  if (options.assertRelationshipDeclarations === true) {
+  // The dead-declaration direction is a COMPLETE-CORPUS claim and is opt-in
+  // (see WritePackOptions): over a fixture corpus a declaration for an absent
+  // kind is unmatched for an innocent reason.
+  if (options.assertDeclarationsAreLive === true) {
     assertRecordRelationshipDeclarationsAreLive(
       pack.records,
       RECORD_RELATIONSHIP_MANIFEST,
     );
-    assertRecordRelationshipDeclarationsCoverBoundedShapes(
-      pack.records,
-      RECORD_RELATIONSHIP_MANIFEST,
-    );
   }
+  // The coverage direction is UNCONDITIONAL. It catches an emitted occurrence
+  // of one of the bounded legacy relationship-bearing shapes for a
+  // `(kind, pointer)` pair nobody declared — the fail-open case, where
+  // `resolveRecordRelationships` would silently classify the occurrence as
+  // nothing. That claim is true over any corpus, including a two-record
+  // fixture, so no caller may lose it by omitting an argument: a gate that can
+  // silently not fire is indistinguishable from a gate that passed, which is
+  // the exact shape of failure this bead exists to remove.
+  assertRecordRelationshipDeclarationsCoverBoundedShapes(
+    pack.records,
+    RECORD_RELATIONSHIP_MANIFEST,
+  );
   mkdirSync(options.outDir, { recursive: true });
   writeFileSync(
     join(options.outDir, 'manifest.json'),
