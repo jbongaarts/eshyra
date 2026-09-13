@@ -102,6 +102,7 @@ const VALID: Row = (() => {
         }),
         {
           capabilityInvocations: [invocation],
+          stateEffects: [],
           audit: {
             auditor: 'present',
             retries: [
@@ -113,6 +114,7 @@ const VALID: Row = (() => {
             outcome: { disposition: 'accepted' },
           },
         },
+        { mode: 'observed', injected: false },
       ),
     ) as Row;
   } finally {
@@ -248,7 +250,13 @@ describe('the canonical durable record', () => {
         'the valid fixture has no Cube of Force packet candidate',
       );
     expect((cube.ambiguities as unknown[]).length).toBeGreaterThan(0);
-    expect(cube.capability).toMatchObject({ status: 'blocked' });
+    // The cube declares several operations (F1 repair,
+    // `eshyra-o9bd.19.12.9`), all of them engine-pending, so the bounded set
+    // holds several contracts and every one of them is blocked.
+    const capabilities = cube.capabilities as Row[];
+    expect(capabilities.length).toBeGreaterThan(1);
+    for (const capability of capabilities)
+      expect(capability).toMatchObject({ status: 'blocked' });
     for (const join of ['ruleJoin', 'lateRuleJoin'])
       expect(
         (stage(VALID, join).consideredAmbiguityIds as unknown[]).length,
@@ -294,14 +302,14 @@ describe('the canonical durable record', () => {
 
   it('accepts the value it writes, and reads absence as absence', () => {
     expect(readDiscoveryShadowEvidence(VALID as TraceJsonValue)?.schema).toBe(
-      'discovery-shadow-v1',
+      'discovery-shadow-v2',
     );
     expect(readDiscoveryShadowEvidence(undefined)).toBeUndefined();
     expect(readDiscoveryShadowEvidence(null)).toBeUndefined();
   });
 
   it('rejects a non-object and an unknown schema tag', () => {
-    for (const bad of ['nonsense', { ...VALID, schema: 'discovery-shadow-v2' }])
+    for (const bad of ['nonsense', { ...VALID, schema: 'discovery-shadow-v1' }])
       expect(() =>
         readDiscoveryShadowEvidence(bad as TraceJsonValue),
       ).toThrowError(DiscoveryShadowSchemaError);
@@ -313,6 +321,141 @@ describe('the canonical durable record', () => {
       { ...VALID, failure: { stage: 'discovery', message: 'x' } },
       'trace/failure',
     );
+  });
+});
+
+/**
+ * `ShadowDelivery` (W10, design section 12.3): the field a reader consults to
+ * learn whether the DM actually received the packet. `VALID` is an `observed`
+ * capture, so the intervened arms are built explicitly here rather than by
+ * cloning it, and the `injected: false` arm needs a FAILED capture beside it
+ * — `injected: true` claims a trace was rendered, `injected: false` under
+ * `intervened` claims the capture failed, and the reader checks both claims
+ * against the same row's trace/failure rather than trusting the arm alone.
+ */
+describe('delivery', () => {
+  const OBSERVED = { mode: 'observed', injected: false };
+  const INTERVENED_OK = {
+    mode: 'intervened',
+    injected: true,
+    renderedBytes: 42,
+    renderedSha256: 'a'.repeat(64),
+  };
+
+  function interveneFailed(): Row {
+    const row = withoutField('trace');
+    row.failure = { stage: 'discovery', message: 'seam refused' };
+    return row;
+  }
+
+  it('admits the observed arm, and rejects it claiming an injection', () => {
+    expect(clone().delivery).toEqual(OBSERVED);
+    const injected = clone();
+    injected.delivery = { ...OBSERVED, injected: true };
+    rejects(injected, "is true while mode is 'observed'");
+  });
+
+  it('admits an injected intervened arm over a real trace', () => {
+    const row = clone();
+    row.delivery = { ...INTERVENED_OK };
+    expect(
+      readDiscoveryShadowEvidence(row as TraceJsonValue)?.delivery,
+    ).toEqual(INTERVENED_OK);
+  });
+
+  /**
+   * The injected arm states facts about the DELIVERED TEXT and nothing else.
+   * `candidateCount` and `mustConsiderOverflow` were removed from it
+   * (`eshyra-o9bd.19.12.5`) because the trace already owns them, so a row
+   * carrying either is a stale shape and is rejected as an unknown key rather
+   * than quietly admitted and read as authority.
+   */
+  it('rejects a retained-candidate summary smuggled onto the delivery arm', () => {
+    for (const stale of [{ candidateCount: 1 }, { mustConsiderOverflow: [] }]) {
+      const row = clone();
+      row.delivery = { ...INTERVENED_OK, ...stale };
+      rejects(row, `delivery.${Object.keys(stale)[0]}`);
+    }
+  });
+
+  it('rejects an injected arm missing the rendered identity, or carrying a malformed one', () => {
+    for (const field of ['renderedBytes', 'renderedSha256']) {
+      const row = clone();
+      row.delivery = { ...INTERVENED_OK };
+      delete (row.delivery as Row)[field];
+      rejects(row, `delivery.${field}`);
+    }
+
+    const negativeBytes = clone();
+    negativeBytes.delivery = { ...INTERVENED_OK, renderedBytes: -1 };
+    rejects(negativeBytes, 'delivery.renderedBytes');
+
+    const shortHash = clone();
+    shortHash.delivery = { ...INTERVENED_OK, renderedSha256: 'deadbeef' };
+    rejects(shortHash, 'delivery.renderedSha256');
+
+    const upperHash = clone();
+    upperHash.delivery = {
+      ...INTERVENED_OK,
+      renderedSha256: INTERVENED_OK.renderedSha256.toUpperCase(),
+    };
+    rejects(upperHash, 'delivery.renderedSha256');
+
+    const unknownKey = clone();
+    unknownKey.delivery = { ...INTERVENED_OK, extra: 'field' };
+    rejects(unknownKey, 'delivery.extra');
+  });
+
+  it('admits an un-injected intervened arm beside a real failure, and rejects one with no reason', () => {
+    const row = interveneFailed();
+    row.delivery = {
+      mode: 'intervened',
+      injected: false,
+      reason: 'render failed: seam refused',
+    };
+    expect(
+      readDiscoveryShadowEvidence(row as TraceJsonValue)?.delivery,
+    ).toEqual(row.delivery);
+
+    const noReason = interveneFailed();
+    noReason.delivery = { mode: 'intervened', injected: false };
+    rejects(noReason, 'delivery.reason');
+
+    const emptyReason = interveneFailed();
+    emptyReason.delivery = { mode: 'intervened', injected: false, reason: '' };
+    rejects(emptyReason, 'delivery.reason');
+
+    const extraField = interveneFailed();
+    extraField.delivery = {
+      mode: 'intervened',
+      injected: false,
+      reason: 'x',
+      renderedBytes: 1,
+    };
+    rejects(extraField, 'delivery.renderedBytes');
+  });
+
+  it('rejects an unknown mode', () => {
+    const row = clone();
+    row.delivery = { mode: 'shadowed', injected: false };
+    rejects(row, 'delivery.mode');
+  });
+
+  it('rejects delivery claiming a fact about trace/failure the row does not carry', () => {
+    // `injected: true` claims a trace was rendered from; this row has none.
+    const injectedWithoutTrace = interveneFailed();
+    injectedWithoutTrace.delivery = INTERVENED_OK;
+    rejects(injectedWithoutTrace, 'delivery.injected');
+
+    // `injected: false` under `intervened` claims the capture failed; this
+    // row's capture succeeded.
+    const notInjectedWithTrace = clone();
+    notInjectedWithTrace.delivery = {
+      mode: 'intervened',
+      injected: false,
+      reason: 'x',
+    };
+    rejects(notInjectedWithTrace, 'delivery.injected');
   });
 });
 
@@ -426,10 +569,15 @@ describe('measurements follow the canonical record', () => {
       const row = JSON.parse(
         JSON.stringify(
           encodeDiscoveryShadowEvidence(
-            completeDiscoveryShadowEvidence(capture, {
-              capabilityInvocations: [],
-              audit: { auditor: 'absent' },
-            }),
+            completeDiscoveryShadowEvidence(
+              capture,
+              {
+                capabilityInvocations: [],
+                stateEffects: [],
+                audit: { auditor: 'absent' },
+              },
+              { mode: 'observed', injected: false },
+            ),
           ),
         ),
       ) as Row;
@@ -475,6 +623,7 @@ describe('measurements follow the canonical record', () => {
     const row = clone();
     const observations = (record: Row) => ({
       capabilityInvocations: [],
+      stateEffects: [],
       audit: (record.runtime as Row).audit as never,
     });
     const withAuditor = measureRuntimeDiscovery(
@@ -732,13 +881,18 @@ describe('canonical admissibility', () => {
 
     for (const key of ['capabilityId', 'revision', 'operationId'])
       it(`rejects an evaluated capability missing ${key}`, () => {
+        // The cube declares several operations (F1 repair,
+        // `eshyra-o9bd.19.12.9`), so its candidate carries a bounded SET of
+        // preflights; this breaks the first entry in that set.
         const index = packetContent(VALID).findIndex(
-          (item) => item.capability !== undefined,
+          (item) => (item.capabilities as unknown[])?.length > 0,
         );
         expect(index).toBeGreaterThanOrEqual(0);
         rejects(
-          withoutField(`trace.packet.candidates.${index}.capability.${key}`),
-          `capability.${key}`,
+          withoutField(
+            `trace.packet.candidates.${index}.capabilities.0.${key}`,
+          ),
+          `capabilities[0].${key}`,
         );
       });
 
@@ -813,6 +967,301 @@ describe('canonical admissibility', () => {
           attempt;
         rejects(row, 'a candidate attempt is an integer from 1');
       });
+  });
+
+  /**
+   * W10 (`eshyra-o9bd.19.12`): the accepted deterministic state effect is a
+   * canonical event, so the durable boundary admits it or rejects it — it is
+   * never softened into a value M12 declines to compare.
+   *
+   * The valid row above carries an EMPTY effect set, which is a real
+   * observation but would let every rejection below pass vacuously. Each case
+   * therefore installs a well-formed effect first and then breaks exactly one
+   * field of it.
+   */
+  describe('accepted state effects', () => {
+    // Attempt 2 is the ACCEPTED candidate on the valid fixture (one retry
+    // plus its acceptance). Only the accepted candidate contributes state
+    // effects, so a well-formed single effect carries that attempt.
+    const EFFECT = {
+      attempt: 2,
+      ordinal: 0,
+      tool: 'use_item',
+      args: { instanceId: 'cube-1', operationId: 'press-face-1' },
+    };
+
+    function withEffect(mutate: (effect: Row) => void = () => {}): Row {
+      const row = clone();
+      const effect = JSON.parse(JSON.stringify(EFFECT)) as Row;
+      mutate(effect);
+      (row.runtime as Row).stateEffects = [effect];
+      return row;
+    }
+
+    it('admits a well-formed effect', () => {
+      expect(() =>
+        readDiscoveryShadowEvidence(withEffect() as TraceJsonValue),
+      ).not.toThrow();
+    });
+
+    it('rejects a stateEffects field that is not an array', () => {
+      const row = clone();
+      (row.runtime as Row).stateEffects = { tool: 'use_item' };
+      rejects(row, 'runtime.stateEffects');
+    });
+
+    it('rejects an absent stateEffects field', () => {
+      rejects(withoutField('runtime.stateEffects'), 'runtime.stateEffects');
+    });
+
+    it('rejects an effect that is not an object', () => {
+      const row = clone();
+      (row.runtime as Row).stateEffects = ['use_item'];
+      rejects(row, 'runtime.stateEffects[0]');
+    });
+
+    for (const key of ['tool', 'attempt', 'ordinal', 'args'])
+      it(`rejects an effect missing ${key}`, () => {
+        rejects(
+          withEffect((effect) => {
+            delete effect[key];
+          }),
+          `runtime.stateEffects[0].${key}`,
+        );
+      });
+
+    it('rejects an empty tool name', () => {
+      rejects(
+        withEffect((effect) => {
+          effect.tool = '';
+        }),
+        'runtime.stateEffects[0].tool',
+      );
+    });
+
+    for (const attempt of [-1, 1.5])
+      it(`rejects an effect with attempt ${attempt}`, () => {
+        rejects(
+          withEffect((effect) => {
+            effect.attempt = attempt;
+          }),
+          'runtime.stateEffects[0].attempt',
+        );
+      });
+
+    for (const ordinal of [-1, 0.5])
+      it(`rejects an effect with ordinal ${ordinal}`, () => {
+        rejects(
+          withEffect((effect) => {
+            effect.ordinal = ordinal;
+          }),
+          'runtime.stateEffects[0].ordinal',
+        );
+      });
+
+    it('rejects non-object args', () => {
+      rejects(
+        withEffect((effect) => {
+          effect.args = 'instanceId=cube-1';
+        }),
+        'runtime.stateEffects[0].args',
+      );
+    });
+
+    it('rejects an unknown key on an effect', () => {
+      rejects(
+        withEffect((effect) => {
+          effect.narration = 'the arrow strikes home';
+        }),
+        'runtime.stateEffects[0].narration',
+      );
+    });
+
+    it('rejects attempt 0', () => {
+      rejects(
+        withEffect((effect) => {
+          effect.attempt = 0;
+        }),
+        'runtime.stateEffects[0].attempt',
+      );
+    });
+
+    /**
+     * F4 (eshyra-o9bd.19.12.7, PR #543 review): `runtime.stateEffects` is by
+     * contract ONE accepted candidate's executed-tool stream (see
+     * `RuntimeStateEffect` in types.ts) — a rejected attempt's writes roll
+     * back with its savepoint and contribute no event. That forces three
+     * constraints beyond "each effect looks well-formed in isolation", none
+     * of which a single-effect fixture can even express: the shared attempt
+     * must be a real candidate attempt (reusing the same `attemptCount` the
+     * audit lifecycle already yields — the VALID fixture's one retry plus
+     * its acceptance means attempts 1 and 2 are real and 3 is not), every
+     * effect in the stream must agree on that one attempt, and `ordinal`
+     * must be the stream's own canonical position (0-based, strictly
+     * increasing, no gaps, no duplicates). Each case below installs a
+     * genuinely well-formed THREE-effect stream first and breaks exactly one
+     * thing, so no rejection here could also be explained by an unrelated
+     * defect.
+     */
+    describe('lifecycle constraints on the accepted effect stream', () => {
+      // The VALID fixture ran ONE retry plus its acceptance, so attempt 2 is
+      // the ACCEPTED candidate and attempt 1 is the rejected one. A stream is
+      // well-formed only on the accepted attempt: attempt 1's writes rolled
+      // back with its savepoint, so it has no accepted state effect to
+      // contribute. An earlier revision of this fixture used attempt 1 and
+      // asserted the reader ADMITTED it, which enshrined the very
+      // rejected-attempt stream the reader exists to refuse.
+      const ACCEPTED_ATTEMPT = 2;
+      const STREAM: readonly Row[] = [
+        {
+          attempt: ACCEPTED_ATTEMPT,
+          ordinal: 0,
+          tool: 'use_item',
+          args: { step: 'a' },
+        },
+        {
+          attempt: ACCEPTED_ATTEMPT,
+          ordinal: 1,
+          tool: 'adjust_hp',
+          args: { step: 'b' },
+        },
+        {
+          attempt: ACCEPTED_ATTEMPT,
+          ordinal: 2,
+          tool: 'use_item',
+          args: { step: 'c' },
+        },
+      ];
+
+      function withStream(mutate: (effects: Row[]) => void): Row {
+        const row = clone();
+        const effects = JSON.parse(JSON.stringify(STREAM)) as Row[];
+        mutate(effects);
+        (row.runtime as Row).stateEffects = effects;
+        return row;
+      }
+
+      it('admits the well-formed multi-effect stream', () => {
+        expect(() =>
+          readDiscoveryShadowEvidence(withStream(() => {}) as TraceJsonValue),
+        ).not.toThrow();
+      });
+
+      it('rejects an attempt above the accepted candidate', () => {
+        // All three effects move together so this isolates the accepted-
+        // attempt check from the shared-attempt check below.
+        rejects(
+          withStream((effects) => {
+            for (const effect of effects) effect.attempt = 3;
+          }),
+          'runtime.stateEffects[0].attempt',
+        );
+      });
+
+      /**
+       * The load-bearing case, and the one a `1..attemptCount` range check
+       * admitted: attempt 1 REALLY RAN on this row, so "is it a real
+       * candidate attempt" says yes. It was rejected, though, and a rejected
+       * candidate's canonical writes roll back — so it contributes no
+       * accepted state effect, and evidence claiming otherwise is malformed
+       * rather than merely surprising.
+       */
+      it('rejects the rejected attempt, even though that attempt really ran', () => {
+        rejects(
+          withStream((effects) => {
+            for (const effect of effects) effect.attempt = 1;
+          }),
+          'runtime.stateEffects[0].attempt',
+        );
+      });
+
+      /**
+       * The same rule across three different lifecycles, so it cannot
+       * collapse back into "any attempt that really ran". With N retries the
+       * accepted candidate is attempt N+1, and every earlier attempt is
+       * rejected.
+       */
+      describe('across retry lifecycles', () => {
+        function rowWithRetries(retryCount: number, attempt: number): Row {
+          const row = clone();
+          (((row.runtime as Row).audit as Row).retries as Row[]) = Array.from(
+            { length: retryCount },
+            () => ({
+              retryCause: 'missing_world_evidence',
+              missingTools: ['lookup_rules'],
+            }),
+          );
+          (row.runtime as Row).stateEffects = [
+            { attempt, ordinal: 0, tool: 'use_item', args: {} },
+          ];
+          // Capability invocations keep the RANGE rule, so the fixture's own
+          // invocation must stay inside the new attempt count.
+          for (const invocation of (row.runtime as Row)
+            .capabilityInvocations as Row[])
+            invocation.attempt = 1;
+          return row;
+        }
+
+        for (const retryCount of [0, 1, 2]) {
+          const accepted = retryCount + 1;
+          it(`admits attempt ${accepted} with ${retryCount} retr${retryCount === 1 ? 'y' : 'ies'}`, () => {
+            expect(() =>
+              readDiscoveryShadowEvidence(
+                rowWithRetries(retryCount, accepted) as TraceJsonValue,
+              ),
+            ).not.toThrow();
+          });
+          for (let earlier = 1; earlier < accepted; earlier += 1)
+            it(`rejects attempt ${earlier} with ${retryCount} retr${retryCount === 1 ? 'y' : 'ies'}`, () => {
+              rejects(
+                rowWithRetries(retryCount, earlier),
+                'runtime.stateEffects[0].attempt',
+              );
+            });
+        }
+      });
+
+      it('rejects two effects in one stream recording different attempts', () => {
+        // Every effect starts on the accepted attempt, so changing ONE of
+        // them trips the accepted-attempt check at that entry — the stream
+        // cannot be stitched together from two candidates.
+        rejects(
+          withStream((effects) => {
+            effects[1].attempt = 1;
+          }),
+          'runtime.stateEffects[1].attempt',
+        );
+      });
+
+      it('rejects duplicate ordinals', () => {
+        rejects(
+          withStream((effects) => {
+            effects[1].ordinal = 0;
+          }),
+          'runtime.stateEffects[1].ordinal',
+        );
+      });
+
+      it('rejects a gap in ordinals', () => {
+        rejects(
+          withStream((effects) => {
+            effects[1].ordinal = 2;
+            effects[2].ordinal = 3;
+          }),
+          'runtime.stateEffects[1].ordinal',
+        );
+      });
+
+      it('rejects descending ordinals', () => {
+        rejects(
+          withStream((effects) => {
+            effects[1].ordinal = 2;
+            effects[2].ordinal = 1;
+          }),
+          'runtime.stateEffects[1].ordinal',
+        );
+      });
+    });
   });
 
   describe('scenario and non-claim', () => {
@@ -1088,7 +1537,12 @@ describe('traversal events against the state they produced', () => {
             campaignRuleSeam: campaign.seam,
             tools: createDefaultToolRegistry(),
           }),
-          { capabilityInvocations: [], audit: { auditor: 'absent' } },
+          {
+            capabilityInvocations: [],
+            stateEffects: [],
+            audit: { auditor: 'absent' },
+          },
+          { mode: 'observed', injected: false },
         ),
       ) as Row;
       const admittedTrace = admitted(row);
@@ -1367,8 +1821,28 @@ describe('one capture, one rules-pack source', () => {
       );
       expect(candidate).toBeDefined();
       // The add-on's overriding content reached the packet: the trace was
-      // built from the same resolution B3 qualified, not a later one.
-      expect(JSON.stringify(candidate?.sourceProse)).toContain(
+      // built from the same resolution B3 qualified, not a later one. The
+      // curse is injected under `data.mechanics.curse` (see
+      // `cursedAttunementAddon.ts`).
+      //
+      // It lands in `unattested`, NOT in any classified bucket. The bundled
+      // SRD manifest attests what the SRD importer emitted; this record was
+      // produced by a hand-authored add-on pack, so no manifest speaks for it
+      // (PR #543 re-review finding 1). An earlier revision passed one manifest
+      // for the whole stack and classified this field `compiler-projection`
+      // purely because its pointer resembled an SRD one — which is the
+      // laundering the producer binding removes.
+      //
+      // The content is still PRESENT, which is the regression this case has
+      // always guarded: a producer binding that silently dropped foreign
+      // content would pass a "not laundered" check while being worse.
+      expect(JSON.stringify(candidate?.unattested)).toContain(
+        'test-addon-curse',
+      );
+      expect(JSON.stringify(candidate?.projection)).not.toContain(
+        'test-addon-curse',
+      );
+      expect(JSON.stringify(candidate?.sourceProse)).not.toContain(
         'test-addon-curse',
       );
     } finally {

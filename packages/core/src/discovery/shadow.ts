@@ -14,12 +14,17 @@ import type {
 import { observeBlockerRepairs } from './blockerRepairs.js';
 import { runDiscoveryStages } from './harness.js';
 import type { RuntimeDiscoveryObservations } from './measurements.js';
+import type { RenderedContextPacket } from './packetMessage.js';
+import { renderContextPacketMessage } from './packetMessage.js';
+import { canonicalKey } from './structuralEquality.js';
 import type { ProjectedDiscoveryTrace } from './traceProjection.js';
 import { projectDiscoveryTrace } from './traceProjection.js';
 import type {
   CampaignRuleReadSeam,
   DiscoveryScenario,
+  DiscoveryTrace,
   RuntimeCapabilityInvocation,
+  RuntimeStateEffect,
 } from './types.js';
 
 /**
@@ -37,7 +42,7 @@ import type {
  * capture, and never rethrown into the turn.
  */
 
-export const DISCOVERY_SHADOW_SCHEMA = 'discovery-shadow-v1';
+export const DISCOVERY_SHADOW_SCHEMA = 'discovery-shadow-v2';
 
 export interface ShadowItemInstanceBinding {
   readonly instanceId: string;
@@ -69,8 +74,16 @@ export interface ShadowScenarioRecord {
 }
 
 export interface ShadowFailure {
-  /** Which part of the capture was running when it failed. */
-  readonly stage: 'scenario' | 'stack' | 'blockers' | 'discovery';
+  /**
+   * Which part of the capture was running when it failed. `render` exists
+   * only for {@link captureDiscoveryIntervention}: a capture that reached a
+   * live trace but could not turn it into DM-visible text is a capture
+   * failure, not a successful capture with nothing to show for it — the same
+   * "an observation point that can abort a turn is worse than none" reasoning
+   * that governs the other four stages applies to rendering too, once the
+   * packet is load-bearing.
+   */
+  readonly stage: 'scenario' | 'stack' | 'blockers' | 'discovery' | 'render';
   readonly message: string;
 }
 
@@ -92,15 +105,74 @@ export type DiscoveryShadowCapture = DiscoveryShadowCaptureBase &
     | { readonly trace?: undefined; readonly failure: ShadowFailure }
   );
 
+/**
+ * What actually reached the DM for this turn's discovery output, as one
+ * canonical lifecycle rather than a boolean plus optional fields.
+ *
+ * `mode` alone cannot answer "did the DM get this?": an `intervene`-mode
+ * request whose capture or render failed injects nothing, exactly like
+ * `shadow` mode's request never tries to. A `{injected: boolean}` field beside
+ * an independent `renderedSha256?` would let the two disagree — `injected:
+ * true` with no identity, or `injected: false` with one left over from a
+ * prior write path — so the identity fields live inside the `injected: true`
+ * arm itself, where an impossible pairing cannot be constructed.
+ *
+ * - `observed` — shadow mode. Never injects; this is W9's contract, unchanged.
+ * - `intervened` + `injected: true` — the rendered packet was appended to the
+ *   DM's user message. `renderedSha256` binds this record to the exact text
+ *   `turn_trace.retrieved_context` recorded for the turn, so a reader never
+ *   has to trust that two independently written copies agree — there is only
+ *   one copy, and this is its fingerprint.
+ * - `intervened` + `injected: false` — intervention was requested but the
+ *   capture or the render failed, so nothing reached the DM. `reason` carries
+ *   the capture's own failure message. This arm, not an optional field a
+ *   reader could forget to check, is why `ShadowDelivery` is a union: a reader
+ *   asking "was this injected?" is answered by `mode`+`injected` together, and
+ *   every other field it might want is only ever present on the arm where it
+ *   means something.
+ *
+ * The injected arm carries ONLY facts about the delivered text — its size and
+ * its fingerprint — and deliberately no summary of what discovery retained.
+ * An earlier revision also stored `candidateCount` and `mustConsiderOverflow`
+ * here. Both are already derivable from `capture.trace`'s canonical
+ * dispositions, which is where M6 and M7 read them, so storing them again was
+ * a second copy of a fact the trace owns: the same "derive one from the
+ * other, never store both" rule this module applies to every stage summary
+ * (`eshyra-o9bd.19.12.5`). A reader wanting the retained-candidate picture
+ * measures the trace; `delivery` answers only whether the DM received the
+ * packet, and exactly which bytes.
+ */
+export type ShadowDelivery =
+  | { readonly mode: 'observed'; readonly injected: false }
+  | {
+      readonly mode: 'intervened';
+      readonly injected: true;
+      readonly renderedBytes: number;
+      /**
+       * SHA-256 of the rendered packet text, binding this evidence to the
+       * message recorded in `turn_trace.retrieved_context`.
+       */
+      readonly renderedSha256: string;
+    }
+  | {
+      readonly mode: 'intervened';
+      readonly injected: false;
+      readonly reason: string;
+    };
+
 export type DiscoveryShadowEvidence = DiscoveryShadowCapture & {
   readonly schema: typeof DISCOVERY_SHADOW_SCHEMA;
   readonly runtime: RuntimeDiscoveryObservations;
   /**
-   * Design section 12.3: presence in a packet is never evidence that the model
-   * used the material. Shadow mode injects nothing at all, so the non-claim is
-   * recorded explicitly rather than left to a reader's restraint.
+   * Design section 12.3: presence in a packet is never evidence that the
+   * model used the material — true in `shadow` mode, which injects nothing,
+   * and equally true in `intervene` mode, which may have injected something.
+   * `delivery` says whether the DM received the packet; this field never
+   * answers whether the DM attended to it.
    */
   readonly modelUsageClaim: null;
+  /** What actually reached the DM for this turn. See {@link ShadowDelivery}. */
+  readonly delivery: ShadowDelivery;
 };
 
 export interface ShadowDiscoveryInput {
@@ -142,9 +214,27 @@ function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export function captureDiscoveryShadow(
+/**
+ * The base fields every capture carries, paired with either the LIVE
+ * discovery trace or the failure that stopped it before one existed.
+ *
+ * Kept apart from {@link DiscoveryShadowCapture}: `captureDiscoveryIntervention`
+ * must render from the live trace (§7's source prose is dropped by
+ * `projectDiscoveryTrace`, so a render from the projection would either fail
+ * or quote nothing), while every durable and shadow-mode consumer wants the
+ * projected form. This is the one place the live shape is allowed to exist
+ * after discovery has run, so both entry points can build it once, from one
+ * discovery execution, rather than each re-running `runDiscoveryStages`.
+ */
+type RawDiscoveryShadowCapture = DiscoveryShadowCaptureBase &
+  (
+    | { readonly trace: DiscoveryTrace; readonly failure?: undefined }
+    | { readonly trace?: undefined; readonly failure: ShadowFailure }
+  );
+
+function captureRawShadow(
   input: ShadowDiscoveryInput,
-): DiscoveryShadowCapture {
+): RawDiscoveryShadowCapture {
   const base = {
     capturedAt: input.capturedAt,
     campaignPosition: input.campaignPosition,
@@ -152,10 +242,10 @@ export function captureDiscoveryShadow(
   // EVERY shadow-only operation is inside this one guard, tracking which part
   // was running — the adventure-source read included, because the resolver is
   // caller-supplied and nothing contracts it to succeed. That makes this
-  // function TOTAL: it always returns a capture, so the orchestrator's
-  // observation point needs no guard of its own and cannot destabilize a turn.
-  // A failure is still reported; an empty capture that reads as a green
-  // nothing would be the worse outcome.
+  // function TOTAL: it always returns a capture, so both callers' observation
+  // points need no guard of their own and cannot destabilize a turn. A
+  // failure is still reported; an empty capture that reads as a green nothing
+  // would be the worse outcome.
   let stage: ShadowFailure['stage'] = 'scenario';
   let blockerRepairs: readonly BlockerRepairObservation[] = [];
   let scenarioRecord: ShadowScenarioRecord = {
@@ -243,7 +333,7 @@ export function captureDiscoveryShadow(
       ...base,
       blockerRepairs,
       scenario: scenarioRecord,
-      trace: projectDiscoveryTrace(trace),
+      trace,
     };
   } catch (error) {
     return {
@@ -251,6 +341,120 @@ export function captureDiscoveryShadow(
       blockerRepairs,
       scenario: scenarioRecord,
       failure: { stage, message: message(error) },
+    };
+  }
+}
+
+/** Project a raw capture's live trace away, once, for every durable and
+ * shadow-mode consumer. */
+function projectCapture(
+  raw: RawDiscoveryShadowCapture,
+): DiscoveryShadowCapture {
+  if (raw.trace === undefined)
+    return {
+      capturedAt: raw.capturedAt,
+      campaignPosition: raw.campaignPosition,
+      blockerRepairs: raw.blockerRepairs,
+      scenario: raw.scenario,
+      failure: raw.failure,
+    };
+  return {
+    capturedAt: raw.capturedAt,
+    campaignPosition: raw.campaignPosition,
+    blockerRepairs: raw.blockerRepairs,
+    scenario: raw.scenario,
+    trace: projectDiscoveryTrace(raw.trace),
+  };
+}
+
+export function captureDiscoveryShadow(
+  input: ShadowDiscoveryInput,
+): DiscoveryShadowCapture {
+  return projectCapture(captureRawShadow(input));
+}
+
+/**
+ * The intervention capture's result: the same durable capture
+ * `captureDiscoveryShadow` would have recorded, plus what rendering it
+ * produced.
+ *
+ * A union, not a capture beside an optional `rendered`, because the two
+ * fields are not independent and the durable reader already refuses rows that
+ * pretend they are. `assertV2` rejects `delivery.injected: false` under
+ * `intervened` unless the capture carries a failure explaining it — so a
+ * shape that let `rendered` be absent beside a trace-bearing capture would
+ * oblige the orchestrator to invent a reason, and the row it then wrote would
+ * fail its own admission. Pairing each arm with the capture shape that
+ * belongs to it makes both halves unrepresentable instead: there is no
+ * un-rendered success to explain, and no rendered failure to inject from.
+ */
+export type DiscoveryInterventionCapture =
+  | {
+      readonly capture: DiscoveryShadowCapture & {
+        readonly trace: ProjectedDiscoveryTrace;
+      };
+      readonly rendered: RenderedContextPacket;
+    }
+  | {
+      readonly capture: DiscoveryShadowCapture & {
+        readonly failure: ShadowFailure;
+      };
+      /** Absent when the capture failed, so nothing can be injected. */
+      readonly rendered?: undefined;
+    };
+
+/**
+ * Design section 12.3 (Phase 3, `eshyra-o9bd.19.12`): run the SAME capture
+ * path `captureDiscoveryShadow` runs, from the same discovery execution, and
+ * additionally render the packet the orchestrator may inject.
+ *
+ * As total and failure-tolerant as the shadow capture: rendering runs inside
+ * the same guarantee that a capture failure is RECORDED, never thrown into
+ * the turn, so a render defect can make an experimental turn's context
+ * plainer, never abort it. A render failure downgrades the whole capture to
+ * a failure — never a trace-bearing capture with `rendered` left absent for
+ * an unexplained reason — because {@link DiscoveryInterventionCapture}'s
+ * contract is that `rendered`'s absence always has a `capture.failure`
+ * beside it to explain it.
+ */
+export function captureDiscoveryIntervention(
+  input: ShadowDiscoveryInput,
+): DiscoveryInterventionCapture {
+  const raw = captureRawShadow(input);
+  if (raw.trace === undefined)
+    return {
+      capture: {
+        capturedAt: raw.capturedAt,
+        campaignPosition: raw.campaignPosition,
+        blockerRepairs: raw.blockerRepairs,
+        scenario: raw.scenario,
+        failure: raw.failure,
+      },
+    };
+  try {
+    // Rendered from the LIVE trace before projection, and paired with the
+    // projected capture in one expression, so the text the orchestrator may
+    // inject and the evidence describing it come from one discovery run.
+    const rendered = renderContextPacketMessage(raw.trace);
+    return {
+      capture: {
+        capturedAt: raw.capturedAt,
+        campaignPosition: raw.campaignPosition,
+        blockerRepairs: raw.blockerRepairs,
+        scenario: raw.scenario,
+        trace: projectDiscoveryTrace(raw.trace),
+      },
+      rendered,
+    };
+  } catch (error) {
+    return {
+      capture: {
+        capturedAt: raw.capturedAt,
+        campaignPosition: raw.campaignPosition,
+        blockerRepairs: raw.blockerRepairs,
+        scenario: raw.scenario,
+        failure: { stage: 'render', message: message(error) },
+      },
     };
   }
 }
@@ -304,24 +508,50 @@ export function runtimeCapabilityInvocation(
   };
 }
 
+export interface ObservedStateMutation {
+  readonly tool: string;
+  readonly args?: unknown;
+}
+
+/** Project already-filtered accepted mutations into discovery's event shape. */
+export function acceptedStateEffects(
+  calls: readonly ObservedStateMutation[],
+  attempt: number,
+): readonly RuntimeStateEffect[] {
+  return calls.map((call, ordinal) => ({
+    tool: call.tool,
+    attempt,
+    ordinal,
+    args: isObject(call.args) ? call.args : {},
+  }));
+}
+
 /**
- * Attach the turn's recorded runtime observations to a capture.
+ * Attach the turn's recorded runtime observations and delivery outcome to a
+ * capture.
  *
  * The observations are handed in already recorded. Nothing here infers a
  * capability invocation from a tool result, an inventory snapshot, or the
  * accepted candidate's tool calls: a capability invocation and the terminal
  * result of the tool containing it are different events, and only the first is
  * M10's subject. This module serializes observations; it does not observe.
+ *
+ * `delivery` is likewise handed in rather than inferred from `capture`: the
+ * orchestrator is the only party that knows whether it actually injected the
+ * rendered text (design section 12.3), so it is the only party that can state
+ * {@link ShadowDelivery} truthfully.
  */
 export function completeDiscoveryShadowEvidence(
   capture: DiscoveryShadowCapture,
   runtime: RuntimeDiscoveryObservations,
+  delivery: ShadowDelivery,
 ): DiscoveryShadowEvidence {
   return {
     ...capture,
     schema: DISCOVERY_SHADOW_SCHEMA,
     runtime,
     modelUsageClaim: null,
+    delivery,
   };
 }
 
@@ -355,7 +585,7 @@ export class DiscoveryShadowSchemaError extends Error {
 }
 
 /**
- * Fail-closed admission of a stored v1 row.
+ * Fail-closed admission of a stored v2 row.
  *
  * The TypeScript shapes live only in memory; the SQLite JSON boundary erases
  * them, so without this a row of `{"schema":"discovery-shadow-v1"}` would be
@@ -397,6 +627,15 @@ function asString(value: unknown, path: string): string {
 function asNumber(value: unknown, path: string): void {
   if (typeof value !== 'number' || !Number.isFinite(value))
     failAt(path, 'expected a finite number');
+}
+
+function exactKeys(
+  value: Record<string, unknown>,
+  allowed: readonly string[],
+  path: string,
+): void {
+  for (const key of Object.keys(value))
+    if (!allowed.includes(key)) failAt(`${path}.${key}`, 'is an unknown key');
 }
 
 function asBoolean(value: unknown, path: string): boolean {
@@ -538,6 +777,16 @@ const V1_PROJECTION_LIMIT_KINDS = [
 ] as const;
 
 /**
+ * Why a candidate's `residue` entry could not be attributed to any of the
+ * three declared field-provenance classes (`RecordDataResidue`,
+ * `discovery/types.ts`; `eshyra-o9bd.19.12.11`'s F1-rr repair).
+ */
+const V1_RESIDUE_REASONS = [
+  'unrepresentable-shape',
+  'no-provenance-declaration',
+] as const;
+
+/**
  * Pack roles. A stack has exactly one base and any number of add-ons, and
  * comparability of two captures depends on that identity, so a base recorded as
  * an add-on (or the reverse) is malformed rather than merely odd.
@@ -556,7 +805,14 @@ const BLOCKER_STATUSES = [
   'not-discriminable',
 ] as const;
 const CAPABILITY_OUTCOMES = ['available', 'blocked'] as const;
-const FAILURE_STAGES = ['scenario', 'stack', 'blockers', 'discovery'] as const;
+const FAILURE_STAGES = [
+  'scenario',
+  'stack',
+  'blockers',
+  'discovery',
+  'render',
+] as const;
+const DELIVERY_MODES = ['observed', 'intervened'] as const;
 
 /** The identity and lifecycle every stage record carries. */
 function checkStageHeader(
@@ -670,7 +926,7 @@ function traversalStateOf(
     const traversals = raw.traversals as readonly unknown[];
     state.set(
       raw.candidateKey as string,
-      new Set(traversals.map((item) => JSON.stringify(item))),
+      new Set(traversals.map((item) => canonicalKey(item))),
     );
   }
   return state;
@@ -708,7 +964,12 @@ function checkTraversalEvents(
   const seen = new Set<string>();
   events.forEach((event, index) => {
     const where = `${at}[${index}]`;
-    const key = JSON.stringify({
+    // Keyed through the SAME canonical form `traversalStateOf` uses, so the
+    // event key and the state key cannot disagree about a traversal that is
+    // structurally the same. Hand-writing a second fixed-order key here was
+    // safe only while the other side also serialized raw; it is exactly the
+    // "two competing definitions" hazard the shared module removes.
+    const key = canonicalKey({
       sourceRecordKey: event.sourceRecordKey,
       linkField: event.linkField,
       relation: event.relation,
@@ -1032,7 +1293,37 @@ function checkTrace(value: unknown, path: string): void {
     asString(provenance.source, `${at}.provenance.source`);
     if (!('license' in provenance))
       failAt(`${at}.provenance.license`, 'is absent');
+    // F2 (PR #543 review): `sourceProse` was one field split by leaf TYPE at
+    // render time. `packetCandidate` then performed a two-way split at build
+    // time along a declared projection-container boundary; the second
+    // re-review (F1-rr, `eshyra-o9bd.19.12.11`) found that container-name
+    // heuristic was itself not a provenance boundary, and replaced it with a
+    // THREE-way split read from the pack's own field-provenance manifest —
+    // `sourceProse`, `sourceDerived`, `projection` — so the durable shape
+    // carries all three plus whatever it could not place on any of them. The
+    // admission check follows the producer's shape rather than re-deriving
+    // it.
     asObject(item_.sourceProse, `${at}.sourceProse`);
+    asObject(item_.sourceDerived, `${at}.sourceDerived`);
+    asObject(item_.projection, `${at}.projection`);
+    // Plus `unattested`, the fourth bucket the producer binding added: a
+    // record whose producing pack attested nothing keeps its content there
+    // rather than having it dropped. Required, not optional — an absent
+    // field and an empty one must not look the same at the durable boundary.
+    asObject(item_.unattested, `${at}.unattested`);
+    // Which of the three attestation states this record was in, admitted as a
+    // closed enum so a corrupted row cannot report an unrecognized one and be
+    // read as either.
+    asEnum(item_.provenanceArtifact, `${at}.provenanceArtifact`, [
+      'present',
+      'absent',
+    ]);
+    each(item_.residue, `${at}.residue`, (entry, where) => {
+      const residueEntry = asObject(entry, where);
+      asString(residueEntry.pointer, `${where}.pointer`);
+      asString(residueEntry.shape, `${where}.shape`);
+      asEnum(residueEntry.reason, `${where}.reason`, V1_RESIDUE_REASONS);
+    });
     checkRoutes(item_.routes, `${at}.routes`);
     checkTraversals(item_.traversals, `${at}.traversals`);
     each(item_.ambiguities, `${at}.ambiguities`, checkAmbiguityIdentity);
@@ -1045,7 +1336,12 @@ function checkTrace(value: unknown, path: string): void {
         V1_PROJECTION_LIMIT_KINDS,
       );
     });
-    optional(item_.capability, `${at}.capability`, checkCapability);
+    // A candidate now carries a BOUNDED SET of preflights (W10 F1 repair,
+    // `eshyra-o9bd.19.12.9`), never a single optional one: `each` requires the
+    // field to be an array, so a malformed writer that reverted to the old
+    // single-object shape fails closed here rather than being silently
+    // admitted as zero preflights.
+    each(item_.capabilities, `${at}.capabilities`, checkCapability);
   });
   // The included content is the packet. It is one list, not a second copy of
   // the decisions: every included decision must have its content and nothing
@@ -1142,11 +1438,55 @@ function checkAudit(value: unknown, path: string): number {
   return (audit.retries as unknown[]).length + 1;
 }
 
-function assertV1(stored: Record<string, unknown>): void {
+/**
+ * `ShadowDelivery`, admitted narrowly. This is the field a reader consults to
+ * learn whether the DM actually received the packet (design section 12.3), so
+ * every arm's identity fields are mandatory rather than softened into
+ * optionals a reader could forget to check, and `exactKeys` keeps a field from
+ * one arm leaking onto another (an `injected: false` row still carrying a
+ * `renderedSha256` from a previous shape, say).
+ */
+function checkDelivery(value: unknown, path: string): void {
+  const delivery = asObject(value, path);
+  const mode = asEnum(delivery.mode, `${path}.mode`, DELIVERY_MODES);
+  const injected = asBoolean(delivery.injected, `${path}.injected`);
+  if (mode === 'observed') {
+    if (injected)
+      failAt(
+        `${path}.injected`,
+        "is true while mode is 'observed', which never injects",
+      );
+    exactKeys(delivery, ['mode', 'injected'], path);
+    return;
+  }
+  if (injected) {
+    exactKeys(
+      delivery,
+      ['mode', 'injected', 'renderedBytes', 'renderedSha256'],
+      path,
+    );
+    asNumber(delivery.renderedBytes, `${path}.renderedBytes`);
+    if ((delivery.renderedBytes as number) < 0)
+      failAt(`${path}.renderedBytes`, 'must be non-negative');
+    const sha256 = asString(delivery.renderedSha256, `${path}.renderedSha256`);
+    if (!/^[0-9a-f]{64}$/u.test(sha256))
+      failAt(
+        `${path}.renderedSha256`,
+        'is not a 64-character lowercase hex sha-256 digest',
+      );
+    return;
+  }
+  exactKeys(delivery, ['mode', 'injected', 'reason'], path);
+  const reason = asString(delivery.reason, `${path}.reason`);
+  if (reason.length === 0) failAt(`${path}.reason`, 'must not be empty');
+}
+
+function assertV2(stored: Record<string, unknown>): void {
   asString(stored.campaignPosition, 'campaignPosition');
   asString(stored.capturedAt, 'capturedAt');
   if (stored.modelUsageClaim !== null)
     failAt('modelUsageClaim', 'expected the recorded non-claim `null`');
+  checkDelivery(stored.delivery, 'delivery');
 
   const scenario = asObject(stored.scenario, 'scenario');
   asString(scenario.playerInput, 'scenario.playerInput');
@@ -1216,6 +1556,63 @@ function assertV1(stored: Record<string, unknown>): void {
         );
     },
   );
+  // `runtime.stateEffects` is, by contract (see `RuntimeStateEffect` in
+  // types.ts), ONE accepted candidate's executed-tool stream: a rejected
+  // attempt's writes roll back with its savepoint and contribute no event
+  // here. That single fact forces three checks beyond "each item looks like
+  // an effect", which a per-item-only check (as `each` alone would give)
+  // cannot express because it never compares one item against another:
+  //
+  //   1. `attempt` is the ACCEPTED candidate's attempt, which on an accepted
+  //      trace is the FINAL one — `attemptCount` from `checkAudit` above,
+  //      reused rather than recomputed a second way that could disagree. An
+  //      earlier attempt is not merely unusual here, it is impossible: it was
+  //      rejected, its savepoint rolled its writes back, and a rolled-back
+  //      write is not an accepted state effect. A `1..attemptCount` range
+  //      check was the earlier, weaker rule, and it admitted exactly that
+  //      rejected-attempt stream (PR #543 re-review, finding 2). Capability
+  //      invocations keep the range check on purpose: a preflight that ran is
+  //      not a canonical write and survives its candidate's rejection.
+  //   2. Every recorded effect shares that SAME attempt: two different
+  //      attempt numbers in one stream is not "two effects", it is evidence
+  //      stitched together from two different candidates, which no real
+  //      producer can emit for an accepted turn.
+  //   3. `ordinal` is this one stream's own canonical position: the i-th
+  //      effect in stored order must carry ordinal `i`. That single equality
+  //      is exactly "0-based, strictly increasing, no gaps, no duplicates" —
+  //      any permutation, gap, repeat, or descending order fails it.
+  const stateEffects = asArray(runtime.stateEffects, 'runtime.stateEffects');
+  let stateEffectAttempt: number | undefined;
+  stateEffects.forEach((item, index) => {
+    const at = `runtime.stateEffects[${index}]`;
+    const effect = asObject(item, at);
+    exactKeys(effect, ['attempt', 'ordinal', 'tool', 'args'], at);
+    const tool = asString(effect.tool, `${at}.tool`);
+    if (tool.length === 0) failAt(`${at}.tool`, 'must not be empty');
+    asNumber(effect.attempt, `${at}.attempt`);
+    const attempt = effect.attempt as number;
+    if (!Number.isInteger(attempt) || attempt !== attemptCount)
+      failAt(
+        `${at}.attempt`,
+        `is ${String(attempt)}; this turn accepted candidate attempt ${attemptCount}, and only the accepted candidate contributes state effects (an earlier attempt was rejected and its writes rolled back)`,
+      );
+    if (stateEffectAttempt === undefined) {
+      stateEffectAttempt = attempt;
+    } else if (attempt !== stateEffectAttempt) {
+      failAt(
+        `${at}.attempt`,
+        `is ${String(attempt)}, but an earlier effect in this same stream recorded attempt ${String(stateEffectAttempt)}; stateEffects is one accepted candidate's stream and cannot mix attempts`,
+      );
+    }
+    asNumber(effect.ordinal, `${at}.ordinal`);
+    const ordinal = effect.ordinal as number;
+    if (!Number.isInteger(ordinal) || ordinal !== index)
+      failAt(
+        `${at}.ordinal`,
+        `is ${String(ordinal)}; the canonical position of this stream's effect ${String(index)} is ${String(index)}`,
+      );
+    asObject(effect.args, `${at}.args`);
+  });
 
   const hasTrace = stored.trace !== undefined && stored.trace !== null;
   const hasFailure = stored.failure !== undefined && stored.failure !== null;
@@ -1226,15 +1623,39 @@ function assertV1(stored: Record<string, unknown>): void {
         ? 'it carries both a trace and a failure'
         : 'it carries neither a trace nor a failure',
     );
+  // `delivery` and `trace`/`failure` are recorded by different parties — the
+  // orchestrator states delivery, discovery states the capture — so a
+  // corrupted row could set them independently. Only `intervened` has
+  // anything to cross-check: `observed` never injects regardless of whether
+  // the capture succeeded, but `intervened`'s two arms each claim a fact
+  // about the capture beside it (§7's "an impossible state" reasoning applies
+  // across the two fields the same way it applies within one).
+  const delivery = stored.delivery as Record<string, unknown>;
+  if (delivery.mode === 'intervened') {
+    if (delivery.injected === true && !hasTrace)
+      failAt(
+        'delivery.injected',
+        'is true while the capture recorded no trace to have rendered from',
+      );
+    if (delivery.injected === false && !hasFailure)
+      failAt(
+        'delivery.injected',
+        "is false under mode 'intervened' while the capture recorded no failure to explain it",
+      );
+  }
   if (hasFailure) {
     const failure = asObject(stored.failure, 'failure');
     const stage = asEnum(failure.stage, 'failure.stage', FAILURE_STAGES);
     asString(failure.message, 'failure.message');
-    // A capture that failed IN discovery had already completed its blocker
-    // observations, so the same complete set is required. One that failed
-    // earlier could not have observed them, and inventing observations it never
-    // made would be worse than recording none.
-    checkBlockerMembership(blockers, stage === 'discovery');
+    // A capture that failed IN discovery, or after discovery while rendering,
+    // had already completed its blocker observations, so the same complete
+    // set is required. One that failed earlier could not have observed them,
+    // and inventing observations it never made would be worse than recording
+    // none.
+    checkBlockerMembership(
+      blockers,
+      stage === 'discovery' || stage === 'render',
+    );
     return;
   }
   checkBlockerMembership(blockers, true);
@@ -1247,7 +1668,7 @@ function assertV1(stored: Record<string, unknown>): void {
  * A stored value carrying a schema tag this build does not know is an error,
  * not an absence: measuring it as if it were absent would report a green
  * nothing for a capture that exists. Same-version corruption fails closed the
- * same way, through {@link assertV1}.
+ * same way, through {@link assertV2}.
  */
 export function readDiscoveryShadowEvidence(
   stored: TraceJsonValue | undefined,
@@ -1262,6 +1683,6 @@ export function readDiscoveryShadowEvidence(
     throw new DiscoveryShadowSchemaError(
       `recorded discovery shadow evidence has schema '${String(schema)}', not '${DISCOVERY_SHADOW_SCHEMA}'`,
     );
-  assertV1(stored);
+  assertV2(stored);
   return stored as unknown as DiscoveryShadowEvidence;
 }

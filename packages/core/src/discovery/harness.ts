@@ -1,3 +1,7 @@
+import {
+  getBundledDnd5eSrdFieldProvenanceManifest,
+  getBundledDnd5eSrdPack,
+} from '../rules/bundledSrdPack.js';
 import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
 import { candidateBand } from './bands.js';
 import { joinCampaignRules } from './campaignRuleSeam.js';
@@ -7,7 +11,11 @@ import { expandTypedRelationships } from './expansion.js';
 import { buildContextPacket } from './packet.js';
 import { retainCandidates } from './retention.js';
 import { extractDiscoverySignals } from './signals.js';
-import type { DiscoveryRunInput, DiscoveryTrace } from './types.js';
+import type {
+  DiscoveryRunInput,
+  DiscoveryTrace,
+  FieldProvenanceSource,
+} from './types.js';
 
 /** Execute the seven offline stages. The database is used only to resolve the
  * active rules stack; the returned trace is the sole evidence surface. */
@@ -108,6 +116,13 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
     retention,
     input.scenario.declaredCapabilities ?? [],
     input.budget?.maxPacketBytes,
+    // Every stack the offline harness resolves today is D&D 5e SRD-compatible
+    // (`resolveStrictCampaignRulesStack`'s base pack, plus any add-on that
+    // declares `compatibleBaseSystems` against it), and field-provenance
+    // classification is declared per `RulesRecordKind`, not per pack identity
+    // (`fieldProvenance.ts`), so the one bundled manifest applies to every
+    // candidate this harness can produce.
+    bundledDnd5eSrdFieldProvenanceSource(),
   );
   return {
     signals,
@@ -133,4 +148,34 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
     ],
     stack,
   };
+}
+
+/**
+ * A {@link FieldProvenanceSource} that answers for the canonical bundled D&D
+ * 5e SRD pack and for nothing else (PR #543 re-review finding 1).
+ *
+ * The association is by OBJECT IDENTITY against the cached bundled pack. That
+ * is the point, not an optimization: `field-provenance.json` is emitted by the
+ * SRD importer and attests the values THAT artifact contains, so the question
+ * "may this manifest speak for this record?" is really "did this record come
+ * out of that artifact?". Identity answers it exactly.
+ *
+ * Comparing `packId`, `version`, `systemId` or `compatibleBaseSystems`
+ * instead would answer a weaker question — "does this pack resemble the one I
+ * know?" — which a custom resolver, a fixture, or a fork can satisfy while
+ * returning entirely different content under identical metadata. Provenance
+ * obtainable by resembling the real producer is not provenance.
+ * `getBundledDnd5eSrdPack()` caches one instance per process, so any pack that
+ * is not that instance is not the artifact the manifest describes.
+ *
+ * Lives on the CONSUMER side on purpose. `eshyra-o9bd.19.1.3.1` owns the
+ * manifest and its representation; deciding which pack a manifest may speak
+ * for when building model-facing context is W10's, and putting it here keeps
+ * `rules/` from importing `discovery/`.
+ */
+export function bundledDnd5eSrdFieldProvenanceSource(): FieldProvenanceSource {
+  return (pack) =>
+    pack === getBundledDnd5eSrdPack()
+      ? getBundledDnd5eSrdFieldProvenanceManifest()
+      : undefined;
 }

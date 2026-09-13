@@ -1,6 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { RouteClass as HarnessRouteClass } from '../../src/internal.js';
+import type {
+  RouteClass as HarnessRouteClass,
+  ExpectedStateEffectOperation as HarnessStateEffectOperation,
+} from '../../src/internal.js';
+import type { ExpectedStateEffectOperation as FixtureStateEffectOperation } from '../diagnostics/fixtureContract.js';
 import type { RouteClass as FixtureRouteClass } from '../diagnostics/index.js';
 
 /**
@@ -12,6 +16,10 @@ import type { RouteClass as FixtureRouteClass } from '../diagnostics/index.js';
 type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const ROUTE_VOCABULARIES_AGREE: Exact<HarnessRouteClass, FixtureRouteClass> =
   true;
+const STATE_EFFECT_SHAPES_AGREE: Exact<
+  HarnessStateEffectOperation,
+  FixtureStateEffectOperation
+> = true;
 
 const RUNTIME_ROOTS = [
   'packages/core/src/orchestrator',
@@ -76,6 +84,7 @@ function runtimeModules(): SourceModule[] {
 describe('discovery runtime boundary', () => {
   it('shares one route vocabulary with the fixture contract', () => {
     expect(ROUTE_VOCABULARIES_AGREE).toBe(true);
+    expect(STATE_EFFECT_SHAPES_AGREE).toBe(true);
   });
 
   it('reports a runtime discovery import that no seam authorizes', () => {

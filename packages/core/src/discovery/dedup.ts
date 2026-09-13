@@ -1,4 +1,5 @@
 import { accountCandidates } from './accounting.js';
+import { deepEqual } from './structuralEquality.js';
 import type { DedupTrace, DiscoveryCandidate } from './types.js';
 
 function routeKey(route: DiscoveryCandidate['routes'][number]): string {
@@ -24,11 +25,7 @@ export function deduplicateCandidates(
       if (!keys.has(routeKey(route))) routes.push(route);
     const traversals = [...current.traversals];
     for (const traversal of candidate.traversals)
-      if (
-        !traversals.some(
-          (item) => JSON.stringify(item) === JSON.stringify(traversal),
-        )
-      )
+      if (!traversals.some((item) => deepEqual(item, traversal)))
         traversals.push(traversal);
     merged.set(candidate.candidateKey, {
       ...current,

@@ -3,6 +3,7 @@ import { normalizeRulesRecordName } from '../rules/stack.js';
 import type { RulesRecordKind } from '../rules/types.js';
 import { accountCandidates } from './accounting.js';
 import { candidateBand } from './bands.js';
+import { deepEqual } from './structuralEquality.js';
 import type {
   DiscoveryCandidate,
   DiscoveryRoute,
@@ -216,11 +217,7 @@ export function expandTypedRelationships(
         });
         continue;
       }
-      if (
-        !traversals.some(
-          (item) => JSON.stringify(item) === JSON.stringify(traversal),
-        )
-      )
+      if (!traversals.some((item) => deepEqual(item, traversal)))
         traversals.push(traversal);
       const sourceSignal = candidate.routes[0]?.signalId ?? 'typed-expansion';
       result.set(

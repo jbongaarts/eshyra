@@ -1,3 +1,4 @@
+import { deepEqual, partitionEqual } from './structuralEquality.js';
 import { deriveDiscoveryTrace } from './traceDerivation.js';
 import type {
   ProjectedCandidate,
@@ -7,6 +8,7 @@ import type {
   CapabilityPreflight,
   RuntimeAudit,
   RuntimeCapabilityInvocation,
+  RuntimeStateEffect,
   TypedTraversal,
 } from './types.js';
 
@@ -142,9 +144,7 @@ export interface DiscoveryMeasurements {
     >
   >;
 }
-function equal(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
+
 /**
  * Stage outputs carry a target identity under three different shapes: signals
  * name it in `proposes`, candidate-bearing stages in `candidateKey`, and the
@@ -282,9 +282,9 @@ export function measureDiscovery(
     const fired = [
       ...trace.expansion.traversals,
       ...trace.ruleExpansion.traversals,
-    ].some((item) => equal(item, traversal));
+    ].some((item) => deepEqual(item, traversal));
     const retained = trace.packet.packet.candidates.some((candidate) =>
-      candidate.traversals.some((item) => equal(item, traversal)),
+      candidate.traversals.some((item) => deepEqual(item, traversal)),
     );
     return {
       traversal,
@@ -309,17 +309,61 @@ export function measureDiscovery(
         : trace.packet.packet.candidates.find(
             (item) => item.identity.key === fact.targetRef,
           );
+    // F2 (PR #543 review), then F1-rr (`eshyra-o9bd.19.12.11`): a field-9
+    // fact no longer names ONE packet field to search. `packetCandidate` now
+    // splits a record body into THREE manifest-classified buckets —
+    // `sourceProse`, `sourceDerived`, `projection` — reading the pack's own
+    // field-provenance manifest (`rules/fieldProvenance.ts`) rather than a
+    // consumer-side container-name heuristic, and a fixture fact's own
+    // pointer or substring can land in any of the three: P8's
+    // `/data/mechanics/economies/use` is projection, `creature:goblin`'s
+    // `/data/armorClass/value` is source-DERIVED — a parser product, never a
+    // verbatim quotation, which is the exact fact this repair exists to
+    // establish — and most description prose is source-prose. M9 asks "did
+    // the packet retain this," not "which bucket did it land in," so it
+    // checks all three; a fact present in none of them is genuinely missing.
+    // `unattested` joins them (PR #543 re-review finding 1): a record from a
+    // pack with no associated provenance manifest carries its whole body
+    // there, and M9 asks whether the packet RETAINED a fact, not which
+    // heading it landed under. Omitting it would report every fixture fact
+    // about an add-on record as missing.
+    //
+    // A `typedPath` resolves through a partitioned array's INDEX MAP exactly
+    // as it resolved through the array (`packet.ts`), and a path whose value
+    // belongs to another class now resolves to `undefined` rather than to the
+    // padding `null` the previous revision inserted to hold the position —
+    // so an `expectedValue: null` fact matches a real `null` in the record
+    // and can no longer be satisfied by class-absence (PR #543 re-review
+    // round 5, finding 2).
+    const buckets = [
+      candidate?.sourceProse,
+      candidate?.sourceDerived,
+      candidate?.projection,
+      candidate?.unattested,
+    ];
     const present =
       fact.exactSubstring === undefined
         ? fact.typedPath !== undefined &&
           (fact.expectedValue === undefined
-            ? valueAt(candidate?.sourceProse, fact.typedPath) !== undefined
-            : equal(
-                valueAt(candidate?.sourceProse, fact.typedPath),
-                fact.expectedValue,
+            ? buckets.some(
+                (bucket) =>
+                  valueAt(bucket, fact.typedPath as string) !== undefined,
+              )
+            : buckets.some((bucket) =>
+                // `partitionEqual`, not `deepEqual`: the fact is stated in the
+                // RECORD's container shape (the fixture corpus validates it
+                // against the record itself) while a bucket carries the
+                // partition's index-map shape. Index identity is still what is
+                // compared — see `structuralEquality.ts`.
+                partitionEqual(
+                  valueAt(bucket, fact.typedPath as string),
+                  fact.expectedValue,
+                ),
               ))
-        : proseStrings(candidate?.sourceProse).some((text) =>
-            text.includes(fact.exactSubstring as string),
+        : buckets.some((bucket) =>
+            proseStrings(bucket).some((text) =>
+              text.includes(fact.exactSubstring as string),
+            ),
           );
     if (!present) missing.push(fact);
   }
@@ -508,6 +552,7 @@ function incomparableReason(
 
 export interface RuntimeDiscoveryObservations {
   readonly capabilityInvocations: readonly RuntimeCapabilityInvocation[];
+  readonly stateEffects: readonly RuntimeStateEffect[];
   /**
    * The turn's audit lifecycle. Auditor presence, retry and repair counts, and
    * the cause breakdown are all derived from this one canonical shape — "no
@@ -515,6 +560,166 @@ export interface RuntimeDiscoveryObservations {
    * discriminated union states which without a second flag to disagree with.
    */
   readonly audit: RuntimeAudit;
+}
+
+export interface ExpectedStateEffectOperation {
+  readonly tool: string;
+  readonly args?: Readonly<Record<string, unknown>>;
+}
+export type ExpectedStateEffect =
+  | { readonly expectation: 'none' }
+  | {
+      readonly expectation: 'effect';
+      readonly operations: readonly ExpectedStateEffectOperation[];
+    };
+export type StateEffectDisagreement =
+  | {
+      readonly kind: 'unexpected-effect';
+      readonly tool: string;
+      readonly attempt: number;
+      readonly ordinal: number;
+    }
+  | {
+      readonly kind: 'missing-expected-operation';
+      readonly tool: string;
+      /** Position in the fixture's ordered operation list, from 0. */
+      readonly position: number;
+    }
+  | {
+      /**
+       * The accepted stream ran a DIFFERENT operation at this position of the
+       * fixture's ordered list. Reported as its own kind rather than as a
+       * missing/unexpected pair, because the pair states two absences where
+       * the real finding is one ordering disagreement.
+       */
+      readonly kind: 'operation-order-mismatch';
+      readonly position: number;
+      readonly expectedTool: string;
+      readonly observedTool: string;
+      readonly attempt: number;
+      readonly ordinal: number;
+    }
+  | {
+      readonly kind: 'argument-mismatch';
+      readonly tool: string;
+      readonly attempt: number;
+      readonly ordinal: number;
+      readonly field: string;
+      readonly expected: unknown;
+      readonly observed: unknown;
+    };
+export interface StateEffectMeasurement {
+  readonly expectation: 'none' | 'effect';
+  readonly expectedOperations: readonly ExpectedStateEffectOperation[];
+  readonly acceptedEffects: readonly RuntimeStateEffect[];
+  readonly agreement: 'agreed' | 'disagreed';
+  readonly disagreements: readonly StateEffectDisagreement[];
+}
+
+/**
+ * M12's argument comparison is EXACT at every level once a value is being
+ * compared. The subset rule `measureAcceptedStateEffect` applies is only at
+ * its OWN top level: it iterates the fixture's declared `operation.args`
+ * fields and never requires the executed args to declare nothing else. That
+ * rule deliberately does not recurse — a fixture asserting `{a: 1}` must not
+ * admit an executed `{a: 1, b: <unchecked state>}`, which is exactly the
+ * unverified-mechanical-claim gap M12 exists to close. `deepEqual` itself
+ * lives in `structuralEquality.ts`, shared with M4 and M9.
+ *
+ * The comparison is POSITIONAL, because amendment 11.2 (Amendment D) defines
+ * the fixture expectation as a non-empty ORDERED LIST of mutating tool
+ * operations and the accepted stream carries canonical ordinals. The previous
+ * revision searched the unmatched effects for ANY effect with the same tool
+ * name, so `[adjust_hp, remove_item]` agreed with an executed
+ * `[remove_item, adjust_hp]` — set-like matching nothing in the fixture
+ * contract or the design authorizes, and a real difference in what the turn
+ * did (PR #543 re-review round 5, finding 3). Canonicalization by `ordinal`
+ * still happens FIRST, so physically out-of-order persisted rows are ordered
+ * before anything is compared; position is then position in that canonical
+ * stream.
+ */
+
+/** M12 compares always-present fixture and accepted event sets (§13.2). */
+export function measureAcceptedStateEffect(
+  runtime: RuntimeDiscoveryObservations,
+  expected: ExpectedStateEffect,
+): StateEffectMeasurement {
+  const acceptedEffects = [...runtime.stateEffects].sort(
+    (a, b) => a.ordinal - b.ordinal,
+  );
+  const expectedOperations =
+    expected.expectation === 'none' ? [] : expected.operations;
+  const disagreements: StateEffectDisagreement[] = [];
+  if (expected.expectation === 'none') {
+    for (const effect of acceptedEffects)
+      disagreements.push({
+        kind: 'unexpected-effect',
+        tool: effect.tool,
+        attempt: effect.attempt,
+        ordinal: effect.ordinal,
+      });
+  } else {
+    // One pass over the longer of the two ordered streams, comparing position
+    // to position. A shorter accepted stream leaves expected operations
+    // missing; a longer one leaves effects unexpected; the same tool repeated
+    // keeps its own arguments at its own position.
+    const length = Math.max(expected.operations.length, acceptedEffects.length);
+    for (let position = 0; position < length; position += 1) {
+      const operation = expected.operations[position];
+      const effect = acceptedEffects[position];
+      if (operation === undefined) {
+        // `effect` is defined here: `position` is below the max of the two
+        // lengths and the expected side has run out.
+        disagreements.push({
+          kind: 'unexpected-effect',
+          tool: effect.tool,
+          attempt: effect.attempt,
+          ordinal: effect.ordinal,
+        });
+        continue;
+      }
+      if (effect === undefined) {
+        disagreements.push({
+          kind: 'missing-expected-operation',
+          tool: operation.tool,
+          position,
+        });
+        continue;
+      }
+      if (effect.tool !== operation.tool) {
+        disagreements.push({
+          kind: 'operation-order-mismatch',
+          position,
+          expectedTool: operation.tool,
+          observedTool: effect.tool,
+          attempt: effect.attempt,
+          ordinal: effect.ordinal,
+        });
+        // The arguments belong to a DIFFERENT operation, so comparing them
+        // against this expectation's fields would report a second, derived
+        // disagreement about a comparison that was never meaningful.
+        continue;
+      }
+      for (const [field, value] of Object.entries(operation.args ?? {}))
+        if (!deepEqual(value, effect.args[field]))
+          disagreements.push({
+            kind: 'argument-mismatch',
+            tool: effect.tool,
+            attempt: effect.attempt,
+            ordinal: effect.ordinal,
+            field,
+            expected: value,
+            observed: effect.args[field],
+          });
+    }
+  }
+  return {
+    expectation: expected.expectation,
+    expectedOperations,
+    acceptedEffects,
+    agreement: disagreements.length === 0 ? 'agreed' : 'disagreed',
+    disagreements,
+  };
 }
 
 export interface RuntimeDiscoveryMeasurements {
@@ -577,10 +782,13 @@ export function measureRuntimeDiscovery(
   // Every recorded invocation is a real event, so none is filtered out here.
   const capabilityOutcomes = runtime.capabilityInvocations;
   const consumed = new Set<RuntimeCapabilityInvocation>();
-  const comparisons = trace.packet.candidates
-    .filter((item) => item.capability !== undefined)
-    .map((item) => {
-      const preflight = item.capability as CapabilityPreflight;
+  // A candidate now carries a BOUNDED SET of preflights (W10 F1 repair,
+  // `eshyra-o9bd.19.12.9`), one per `(record, variant, operation)` triple it
+  // preflighted, so this extends naturally from one comparison per candidate
+  // to one comparison per preflight ENTRY -- the pairing rule itself (subject
+  // first, capability identity second) is unchanged.
+  const comparisons = trace.packet.candidates.flatMap((item) =>
+    item.capabilities.map((preflight) => {
       // Pairing is by SUBJECT — the exact `(record, variant, operation)` triple
       // the readiness contract is derived from — and the capability identity is
       // then required to match before anything is compared. Pairing on identity
@@ -615,7 +823,8 @@ export function measureRuntimeDiscovery(
               incomparableBecause: reason,
             }),
       };
-    });
+    }),
+  );
   const audit = runtime.audit;
   const retries = audit.auditor === 'present' ? audit.retries : [];
   const repaired =

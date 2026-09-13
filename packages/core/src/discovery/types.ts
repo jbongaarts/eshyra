@@ -5,11 +5,12 @@ import type {
   CampaignRulingProjection,
 } from '../campaign/campaignRules.js';
 import type { Db } from '../persistence/db.js';
+import type { FieldProvenanceManifest } from '../rules/fieldProvenance.js';
 import type {
   ResolvedRulesStack,
   RulesStackRecordEntry,
 } from '../rules/stack.js';
-import type { RulesAmbiguity } from '../rules/types.js';
+import type { RulesAmbiguity, RulesPack } from '../rules/types.js';
 import type { ItemOperationReadinessInput } from '../state/itemExecutionReadiness.js';
 
 export type {
@@ -339,8 +340,83 @@ export interface ProjectionLimitNote {
   readonly kind: 'success-branch' | 'area' | 'execution-readiness';
   readonly note: string;
   readonly evidence: Record<string, unknown>;
-  readonly preservedProse: string;
+  /**
+   * The prose that actually backed this note: text drawn ONLY from the
+   * candidate's `sourceProse` partition — leaves the producing pack's own
+   * field-provenance manifest classified `source-prose` — scoped to the
+   * container the note is about.
+   *
+   * Renamed from `preservedProse` and narrowed to attested material (PR #543
+   * re-review round 5, finding 1). That field held every string anywhere in
+   * the RAW record body, so a note could quote `source-derived` or
+   * `compiler-projection` strings, or an unattested add-on's strings, while
+   * probe evidence read the field as source prose — a second, independent
+   * route to the source authority the manifest never granted.
+   *
+   * Empty only where the note makes no claim about the source at all
+   * (`execution-readiness`); the two notes that DO make one are emitted only
+   * when attested prose backs them, so theirs is never empty.
+   */
+  readonly attestedProse: string;
 }
+
+/**
+ * One place in a candidate's record body the field-provenance walk
+ * (`discovery/packet.ts`) could not attribute to any of the three declared
+ * classes (`source-prose`, `source-derived`, `compiler-projection`;
+ * `rules/fieldProvenance.ts`).
+ *
+ * Two distinct reasons put a leaf here, and `reason` says which — conflating
+ * them would hide WHY a reader is looking at an unattested value instead of a
+ * classified one:
+ *
+ * - `'unrepresentable-shape'` — the leaf's own JS type (function, symbol,
+ *   bigint, or a non-plain object such as a `Date` or `Map`) is one the pack's
+ *   JSON cannot express. `RulesRecord.data` is typed `unknown`, so the walk
+ *   is written defensively against this even though every JSON-shaped record
+ *   the real pack contains today produces none.
+ * - `'no-provenance-declaration'` — a PRESENT field-provenance artifact failed
+ *   to classify one of its own producer's pointers: `classifyFieldPointer`
+ *   (`fieldProvenance.ts`) matched no declaration for this record's kind, on
+ *   purpose (that function never substitutes a default). That is a stale or
+ *   incomplete attestation — a producer defect — and naming the pointer is how
+ *   a reader tells it apart from a producer that supplied no artifact at all.
+ *   A record with NO artifact records no residue of this reason; its leaves
+ *   become `unattested` and `PacketCandidate.provenanceArtifact` says
+ *   `absent` (`eshyra-o9bd.19.12.11`, items 4 and 5, deliberately not
+ *   collapsed). Either way nothing is silently defaulted into the
+ *   verbatim-authoritative bucket.
+ *
+ * `shape` names the leaf's own JS type either way (`residueShape` in
+ * `packet.ts`), even for the second reason where the JS shape itself is not
+ * the problem — it still helps a reader who is looking at the disclosure.
+ */
+export interface RecordDataResidue {
+  readonly pointer: string;
+  readonly shape: string;
+  readonly reason: 'unrepresentable-shape' | 'no-provenance-declaration';
+}
+
+/**
+ * Which field-provenance manifest, if any, attests the values a given pack
+ * produced (PR #543 re-review finding 1).
+ *
+ * A function of the PRODUCING PACK rather than one manifest for the resolved
+ * stack. A manifest may attest only what its own producer emitted, so the
+ * association has to be made positively, per pack, by whoever knows which
+ * artifact a manifest describes. Returning `undefined` is the safe answer and
+ * the default one: the record's body then becomes disclosed residue instead of
+ * being labelled prose, derived, or projection on someone else's authority.
+ *
+ * Deliberately NOT inferable from `RulesRecordKind`, system id, compatible
+ * base system, pack id or version, field names, container names, or data
+ * shape. Every one of those is metadata a non-canonical pack can reproduce
+ * exactly while carrying different content, and provenance that can be
+ * obtained by resembling the real producer is not provenance.
+ */
+export type FieldProvenanceSource = (
+  pack: RulesPack,
+) => FieldProvenanceManifest | undefined;
 
 export interface PacketCandidate {
   readonly identity: {
@@ -354,13 +430,113 @@ export interface PacketCandidate {
     readonly source: string;
     readonly license: unknown;
   };
+  /**
+   * Literal, verbatim-quoted record content: every leaf the pack's
+   * field-provenance manifest (`rules/fieldProvenance.ts`) classifies
+   * `source-prose` for this record's kind, at the pointer that classified it.
+   * This is the ONLY material the renderer may present as "verbatim;
+   * authoritative" (design section 7.2), and the only material a
+   * `ProjectionLimitNote` may make a claim about the source from.
+   *
+   * Shaped like the record body it was sliced from with ONE deliberate
+   * difference: an array becomes an INDEX MAP — an object keyed by the
+   * decimal indices that contributed to this class — because a JSON array
+   * cannot express a hole and every filler value is a legal rules value
+   * (PR #543 re-review round 5, finding 2). A JSON pointer therefore still
+   * addresses the same value it always did, `/data/actions/5/text` included,
+   * while class-absence is expressed as the only thing that cannot be
+   * mistaken for a value: a key that is not there. `Array.isArray` is what is
+   * given up; the record itself remains the place to ask what shape it has.
+   *
+   * W10's second re-review (F1-rr) found the PREVIOUS boundary — a
+   * consumer-side container-name heuristic, `PROJECTION_CONTAINER_KEYS` — put
+   * `creature:adult-black-dragon`'s `armorClass.value: 19` here too: a
+   * deterministic PARSER PRODUCT, not a quotation of the printed "19 (natural
+   * armor)" statline. That is why classification now reads a fact the
+   * importer itself declared (per `(kind, pointerPrefix)`) instead of
+   * guessing from a container's name — see `sourceDerived` for exactly the
+   * class that case belongs to.
+   */
   readonly sourceProse: Readonly<Record<string, unknown>>;
+  /**
+   * Deterministically parsed or computed record content, sliced from the SAME
+   * record body along the SAME manifest boundary: every leaf classified
+   * `source-derived` — truthful and attributable to the cited source, but NOT
+   * a literal quotation of it (an armor class's numeric `value`, a creature's
+   * `hitPoints.formula`, a printed Speed line's `walk` entry). This is a
+   * THIRD bucket, not a subdivision of `sourceProse` or `projection`:
+   * collapsing it into either recreates the exact defect this split exists to
+   * fix, just moved to a new field. The renderer must disclose these plainly
+   * as parser products, never under the verbatim-authoritative heading.
+   */
+  readonly sourceDerived: Readonly<Record<string, unknown>>;
+  /**
+   * Interpretive or curated typed material, sliced from the SAME record body
+   * along the SAME manifest boundary: every leaf classified
+   * `compiler-projection` — material the compiler's curation stage
+   * authored or computed by interpreting the source, not merely transcribing
+   * or parsing it (`mechanics`, `upcast`, `executionReadiness`, a table's
+   * `projection`, an item's `useProfile`). A container's own quoted source
+   * text (e.g. `mechanics.scaling.sourceText`) stays here rather than being
+   * pulled back out into `sourceProse`: it is the projection's own record of
+   * what it derived from, not a second, independent source citation.
+   */
+  readonly projection: Readonly<Record<string, unknown>>;
+  /** See `RecordDataResidue`. Empty for every real-pack leaf the bundled SRD
+   * field-provenance manifest covers today; present so an uncovered pointer
+   * or an unclassifiable shape is disclosed rather than silently folded into
+   * `sourceProse`, `sourceDerived`, or `projection`. */
+  /**
+   * Record content that NO producing pack attested (PR #543 re-review
+   * finding 1). A record whose producer has no associated field-provenance
+   * manifest — an add-on, a custom resolver result, a foreign-system pack
+   * reusing familiar kinds — lands here whole.
+   *
+   * Its VALUES are kept, not dropped. Discarding them would delete that
+   * pack's actual rules content from the DM's context, which is a worse and
+   * quieter failure than the laundering the producer binding exists to stop.
+   * The renderer gives this its own heading stating plainly that nothing
+   * attested it, so it is visible to the DM and never confusable with
+   * `sourceProse`, the only bucket that may carry verbatim source authority.
+   */
+  readonly unattested: Readonly<Record<string, unknown>>;
+  /**
+   * Whether this record's PRODUCING pack supplied a field-provenance artifact
+   * at all (`eshyra-o9bd.19.12.11` items 4 and 5, kept distinct).
+   *
+   * Three reader-visible states, not two:
+   * - `absent` — the producer attests nothing. Every leaf is `unattested`.
+   *   An intentional state, not a defect.
+   * - `present` with `no-provenance-declaration` residue — the artifact
+   *   exists and failed to classify one of its own producer's pointers. That
+   *   is a stale or incomplete attestation, and naming the pointer is how a
+   *   reader tells it apart from the case above.
+   * - `present` with no such residue — the field was positively classified.
+   *
+   * Collapsing the first two would let a producer defect read as a deliberate
+   * "nothing attested", which is exactly the distinction the owning bead
+   * declares.
+   */
+  readonly provenanceArtifact: 'present' | 'absent';
+  readonly residue: readonly RecordDataResidue[];
   readonly routes: readonly DiscoveryRoute[];
   readonly traversals: readonly TypedTraversal[];
   readonly ambiguities: readonly RulesAmbiguity[];
   readonly campaignRules: readonly CampaignRuleProjection[];
   readonly campaignRulings: readonly CampaignRulingProjection[];
-  readonly capability?: CapabilityPreflight;
+  /**
+   * The candidate's BOUNDED SET of positively selected or blocked capability
+   * contracts (W10 F1 repair, `eshyra-o9bd.19.12.9`). A candidate can declare
+   * several operations (`magic-item:cube-of-force`'s six faces plus its
+   * spell-contact operation), and each genuinely available one gets its own
+   * entry — a single optional field could not represent "two operations, one
+   * available and one blocked" without picking a winner. The negative form
+   * ("no capability was positively selected", design section 7.3) is this set
+   * being EMPTY, never a `blocked` entry standing in for it: a record whose
+   * every declared operation is blocked still has real contracts to show, each
+   * stating that a blocked contract is not an executable capability.
+   */
+  readonly capabilities: readonly CapabilityPreflight[];
   readonly projectionLimits: readonly ProjectionLimitNote[];
 }
 
@@ -428,6 +604,24 @@ export interface RuntimeCapabilityInvocation {
   readonly capabilityId: string;
   readonly capabilityRevision: string;
   readonly outcome: 'available' | 'blocked';
+}
+
+/**
+ * One deterministic state effect accepted by the primary-DM candidate.
+ * `tool`, `args`, `attempt`, and `ordinal` are all required so the event can
+ * be compared with a fixture operation and located in the executed stream.
+ * This is recorded at the ACCEPT boundary, not reconstructed from
+ * `accepted_state_delta`; a rejected attempt rolls back its mutations and
+ * therefore contributes no event here.
+ */
+export interface RuntimeStateEffect {
+  /** Primary-DM candidate attempt this effect was accepted on, counting from 1. */
+  readonly attempt: number;
+  /** Position in the accepted candidate's executed tool stream, from 0. */
+  readonly ordinal: number;
+  readonly tool: string;
+  /** The tool's arguments, as executed. */
+  readonly args: Readonly<Record<string, unknown>>;
 }
 
 /**

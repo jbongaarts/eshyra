@@ -547,31 +547,49 @@ export {
 export { resolveDiscoveryCandidates } from './discovery/candidates.js';
 export { deduplicateCandidates } from './discovery/dedup.js';
 export { expandTypedRelationships } from './discovery/expansion.js';
-export { runDiscoveryStages } from './discovery/harness.js';
+export {
+  bundledDnd5eSrdFieldProvenanceSource,
+  runDiscoveryStages,
+} from './discovery/harness.js';
 export type {
   DiscoveryMeasurementInput,
   DiscoveryMeasurements,
+  ExpectedStateEffect,
+  ExpectedStateEffectOperation,
   RequiredPacketFact,
   RuntimeDiscoveryMeasurements,
   RuntimeDiscoveryObservations,
+  StateEffectDisagreement,
+  StateEffectMeasurement,
 } from './discovery/measurements.js';
 export {
+  measureAcceptedStateEffect,
   measureDiscovery,
   measureRuntimeDiscovery,
 } from './discovery/measurements.js';
 export { buildContextPacket } from './discovery/packet.js';
+export type {
+  RenderablePacketTrace,
+  RenderedContextPacket,
+} from './discovery/packetMessage.js';
+export { renderContextPacketMessage } from './discovery/packetMessage.js';
 export { DEFAULT_BUDGET, retainCandidates } from './discovery/retention.js';
 export type {
+  DiscoveryInterventionCapture,
   DiscoveryShadowCapture,
   DiscoveryShadowEvidence,
   ObservedCapabilityInvocation,
+  ObservedStateMutation,
   ShadowAdventureSeat,
+  ShadowDelivery,
   ShadowDiscoveryInput,
   ShadowFailure,
   ShadowItemInstanceBinding,
   ShadowScenarioRecord,
 } from './discovery/shadow.js';
 export {
+  acceptedStateEffects,
+  captureDiscoveryIntervention,
   captureDiscoveryShadow,
   completeDiscoveryShadowEvidence,
   DISCOVERY_SHADOW_SCHEMA,
@@ -581,6 +599,10 @@ export {
   runtimeCapabilityInvocation,
 } from './discovery/shadow.js';
 export { extractDiscoverySignals } from './discovery/signals.js';
+export {
+  canonicalKey,
+  deepEqual,
+} from './discovery/structuralEquality.js';
 export type {
   DerivedDiscoveryTrace,
   DerivedPacket,
@@ -611,16 +633,20 @@ export type {
   DiscoverySignal,
   DiscoverySignalKind,
   DiscoveryTrace,
+  FieldProvenanceSource,
   InjectedSignal,
   OfflineCapabilityDeclaration,
   PacketCandidate,
   ProjectionLimitNote,
+  RecordDataResidue,
   RetentionBudget,
+  RetentionOverflow,
   RouteClass,
   RuntimeAudit,
   RuntimeAuditOutcome,
   RuntimeAuditRetry,
   RuntimeCapabilityInvocation,
+  RuntimeStateEffect,
   StageLoss,
   StageTrace,
   TypedTraversal,
@@ -951,6 +977,7 @@ export {
   campaignRulesEvidenceFrom,
   deriveTraceFields,
   extractClosedSceneIds,
+  isAcceptedStateMutation,
 } from './orchestrator/turnTraceProjection.js';
 export type { ResolveDoltOptions } from './persistence/checkpoint/doltBinary.js';
 export {
@@ -1075,6 +1102,7 @@ export {
   DND5E_SRD_PACK_ID,
   DND5E_SRD_SYSTEM_ID,
   DND5E_SRD_VERSION,
+  getBundledDnd5eSrdFieldProvenanceManifest,
   getBundledDnd5eSrdPack,
   RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
 } from './rules/bundledSrdPack.js';
@@ -1087,6 +1115,22 @@ export {
   FEATURE_CHOICE_CATEGORIES,
   isFeatureChoiceCategory,
 } from './rules/featureChoices.js';
+export type {
+  FieldProvenanceClass,
+  FieldProvenanceCoverageSummary,
+  FieldProvenanceDeclaration,
+  FieldProvenanceLeaf,
+  FieldProvenanceManifest,
+} from './rules/fieldProvenance.js';
+export {
+  assertFieldProvenanceCoverage,
+  buildFieldProvenanceManifest,
+  classifyFieldPointer,
+  FIELD_PROVENANCE_CLASSES,
+  FIELD_PROVENANCE_SCHEMA,
+  FieldProvenanceError,
+  walkFieldPointers,
+} from './rules/fieldProvenance.js';
 export type {
   EvidenceBasis,
   FindingProvenance,
@@ -1176,7 +1220,9 @@ export {
   resolveMagicItemVariant,
 } from './rules/magicItemVariants.js';
 export {
+  loadFieldProvenanceManifest,
   loadRulesPackFromDirectory,
+  PACK_FIELD_PROVENANCE_FILE,
   PACK_MANIFEST_FILE,
   PACK_RECORDS_FILE,
 } from './rules/packLoader.js';
@@ -1597,6 +1643,7 @@ export type {
 } from './state/itemState.js';
 export {
   createInitialItemState,
+  declaredItemOperationIds,
   deriveItemOperationReadinessInput,
   ItemStateAmbiguityError,
   ItemStateError,

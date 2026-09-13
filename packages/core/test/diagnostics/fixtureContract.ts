@@ -176,6 +176,12 @@ export interface DeterministicStateEffect {
   readonly kind: 'effect';
   readonly statement: string;
   readonly evidence: string;
+  readonly operations: readonly ExpectedStateEffectOperation[];
+}
+
+export interface ExpectedStateEffectOperation {
+  readonly tool: string;
+  readonly args?: Readonly<Record<string, unknown>>;
 }
 
 /**
@@ -940,6 +946,29 @@ function checkExecution(value: Record<string, unknown>, index: number): void {
       value.expectedDeterministicStateEffect.evidence,
       `fixture ${index}.expectedDeterministicStateEffect.evidence`,
     );
+    const operations = value.expectedDeterministicStateEffect.operations;
+    if (!Array.isArray(operations) || operations.length === 0)
+      throw new Error(
+        `fixture ${index}.expectedDeterministicStateEffect.operations must be non-empty`,
+      );
+    operations.forEach((operation, operationIndex) => {
+      const path = `fixture ${index}.expectedDeterministicStateEffect.operations[${operationIndex}]`;
+      if (!isRecord(operation)) throw new Error(`${path} must be an object`);
+      // `args` is an OPTIONAL argument subset (design section 11.2): a fixture
+      // pins the arguments that make the effect the effect it claims to be,
+      // not every argument the tool happens to take. `checkExactKeys` requires
+      // every declared key to be present, which silently made `args`
+      // mandatory and contradicted the declared type.
+      checkKeysAndRequired(
+        operation,
+        new Set(['tool', 'args']),
+        new Set(['tool']),
+        path,
+      );
+      nonEmptyString(operation.tool, `${path}.tool`);
+      if (operation.args !== undefined && !isRecord(operation.args))
+        throw new Error(`${path}.args must be an object`);
+    });
   }
   if (!/^P(?:[1-9]|1[0-2])$/.test(String(value.probeId)))
     throw new Error(`fixture ${index}.probeId is invalid`);

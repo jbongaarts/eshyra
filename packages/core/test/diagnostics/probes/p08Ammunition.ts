@@ -105,24 +105,38 @@ export const P08_AMMUNITION: DiagnosticFixture = {
       ),
       expectedCapabilityStatus: {
         status: 'available',
-        capabilityId: 'magic-item-single-use-spend',
+        // The contract the runtime ACTUALLY commits under, quoted from
+        // `MAGIC_ITEM_OPERATION_READINESS_CAPABILITY` rather than restated.
+        //
+        // This fixture previously named `magic-item-single-use-spend` with
+        // execution-shaped inputs and exclusions. No such contract exists:
+        // the only capability positively selected here is the readiness
+        // PREFLIGHT, which explicitly does not execute the item operation.
+        // `packet.ts` already warned against relabelling the readiness
+        // contract that way, and W10's E8 makes the fixture-to-packet match
+        // part of this bead's acceptance evidence, so a fixture naming a
+        // capability nothing implements could not be left as descriptive
+        // metadata (PR #543 re-review, finding 3; eshyra-o9bd.19.12.10).
+        capabilityId: 'assertMagicItemOperationReady',
         revision: 'derived-magic-item-clauses-v1',
         statement:
-          'The generated query selected hit-target because its parent C1 use economy is green and positively owned with no engine hooks.',
+          'The readiness preflight positively selects hit-target because its parent C1 use economy is green and positively owned with no engine hooks. The preflight commits to readiness only; executing the spend is not part of this contract.',
         inputs: [
-          'use_item { instanceId, operationId: hit-target, character? }',
-          'cost economy use amount 1',
+          'A magic-item RulesRecord carrying the trusted derived execution-readiness contract.',
+          'The selected parent or canonical variant identity.',
+          'A validated operation id and its bound economies, effects, state-machine, and spell-store inputs.',
         ],
         exclusions: [
-          'C2 attack and damage modifiers are not executed.',
-          'The free-text rarity does not determine which bonus applies.',
-          'Green operations with no cost/effects are not positive capability evidence.',
+          'Campaign rulings are contextual inputs and never discharge engine-pending readiness clauses.',
+          'Does not execute the item operation or supply missing item semantics.',
+          'Does not claim that every clause of the item record is implemented.',
+          'Does not infer a capability from typed mechanics fields or an absent readiness binding.',
         ],
         residualInterpretation:
-          'The DM interprets any attack result and bonus choice; F8 remains outside this capability.',
+          'Whether the player may attempt the operation and how source prose applies remain DM rulings. Any item semantics outside the positively bound operation remain with the DM or another explicit capability.',
         evidence: [
+          'packages/core/src/state/itemExecutionReadiness.ts:60-81',
           'packages/core/src/state/itemState.ts:1888-1911',
-          'packages/core/src/state/itemState.ts:1710',
           'packages/core/src/state/itemState.ts:2127',
         ],
       },
@@ -132,6 +146,15 @@ export const P08_AMMUNITION: DiagnosticFixture = {
           'A stateless single-use spend consumes one unit, splits the consumed unit out of the stack, and creates nonmagical inventory.',
         evidence:
           'splitNonmagicalSingleUseInventory preserves the physical row while nulling the magic binding for the transformed unit.',
+        operations: [
+          {
+            tool: 'use_item',
+            args: {
+              instanceId: 'ammunition-stack-1',
+              operationId: 'hit-target',
+            },
+          },
+        ],
       },
       oracleSignals: [],
     },

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import type {
   AuditVerdict,
@@ -13,6 +14,8 @@ import {
   captureDiscoveryShadow,
   createDefaultToolRegistry,
   getTurnTrace,
+  isAcceptedStateMutation,
+  measureAcceptedStateEffect,
   measureDiscovery,
   measureRuntimeDiscovery,
   NULL_CAMPAIGN_RULE_SEAM,
@@ -30,6 +33,7 @@ import {
 } from '../support/db.js';
 import { installJhptCampaignRules } from './support/jhptCampaignRules.js';
 import { installProbeCampaignState } from './support/runtimeCampaignState.js';
+import { CONDITIONAL_STAGES, RUNTIME_REACH } from './support/runtimeReach.js';
 import { installScenarioBinding } from './support/scenario.js';
 
 /**
@@ -159,63 +163,26 @@ function requireTrace(
   return evidence.trace;
 }
 
-/**
- * Which offline must-include targets each probe's REAL turn actually reaches,
- * and, for a miss, the stage that lost it.
- *
- * This is the substantive Phase 2 result and is asserted exactly, in both
- * directions: a probe that starts reaching a target it did not reach, or stops
- * reaching one it did, fails here. Every miss is a named finding about runtime
- * discovery, never a tolerance:
- *
- * - P1 and P2 lose their targets at `signals`. Both cues read fixture state
- *   fields (`combat.geometry`, `movementIntent`) that the live `StateSnapshot`
- *   does not carry, so shadow mode extracts nothing for them.
- * - P5 reaches the condition from the player's words but not
- *   `rule:concentration`, which the offline fixture supplied as scenario state.
- * - P9's authored entities are reached because the campaign has a real
- *   adventure run and the turn is given a module resolver (B2's repair); the
- *   probe would report them lost at `signals` without it.
- */
-const RUNTIME_REACH: Readonly<
-  Record<string, Readonly<Record<string, string | null>>>
-> = {
-  'P1/default': { 'rule:cover': 'signals' },
-  'P2/default': {
-    'rule:opportunity-attacks': 'signals',
-    'creature:goblin': null,
-  },
-  'P3/default': { 'creature:adult-black-dragon': null },
-  'P4/default': { 'spell:fireball': null },
-  'P5/default': {
-    'condition:incapacitated': null,
-    'rule:concentration': 'signals',
-  },
-  'P6/default': { 'feature:fighter:action-surge': null },
-  'P7/without-active-ruling': { 'magic-item:cube-of-force': null },
-  'P7/with-active-ruling': { 'magic-item:cube-of-force': null },
-  'P8/default': { 'magic-item:ammunition-1-2-or-3': null },
-  'P9/default': {
-    'creature:goblin': null,
-    'eshyra:hollow-beneath-emberfall#encounter:enc-mouth-ambush': null,
-    'eshyra:hollow-beneath-emberfall#location:loc-watchtower-mouth': null,
-  },
-  'P10/default': { 'spell:fireball': null },
-  'P11/default': { 'magic-item:ring-of-protection': null },
-  'P12/default': { 'class:fighter': null },
-};
-
-/** Design section 12.1 declares exactly these two stages conditional. */
-const CONDITIONAL_STAGES = new Set([
-  'campaign-rule-expansion',
-  'late-ruling-join',
-]);
+// RUNTIME_REACH and CONDITIONAL_STAGES moved to ./support/runtimeReach.js
+// (eshyra-o9bd.19.12.4) so this suite and packetIntervention.test.ts import
+// one shared table rather than pinning two copies that could silently
+// diverge. See that module's header for the table's own rationale.
 
 describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
-  it('leaves the DM message byte-identical with shadow mode on and off', async () => {
+  /**
+   * The W9 parity guarantee, ported to the mode union (W10, design section
+   * 12.3), plus its complement: a parity test that passed under every mode
+   * would prove nothing about the one mode that matters. `intervene` is the
+   * first mode whose DM input differs from `off` AT ALL, so the second half
+   * of this test is the one comparison that must fail to be meaningful.
+   */
+  it("leaves the DM message byte-identical under 'shadow' and does not under 'intervene'", async () => {
     const run = async (
-      recordDiscoveryShadow: boolean,
-    ): Promise<{ seen: ModelCompleteInput[]; shadow: boolean }> => {
+      discoveryMode: 'off' | 'shadow' | 'intervene',
+    ): Promise<{
+      seen: ModelCompleteInput[];
+      evidence: DiscoveryShadowEvidence | undefined;
+    }> => {
       const db = seedCampaign();
       try {
         const model = new ScriptedModel();
@@ -223,27 +190,291 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           db,
           model,
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow,
+          discoveryMode,
         };
         const result = await runTurn(
           deps,
           turnInput('I cast fireball at the goblin sentries.'),
         );
         expect(result.ok).toBe(true);
-        return { seen: model.seen, shadow: recordedEvidence(db) !== undefined };
+        return { seen: model.seen, evidence: recordedEvidence(db) };
       } finally {
         db.close();
       }
     };
-    const off = await run(false);
-    const on = await run(true);
+    const off = await run('off');
+    const shadow = await run('shadow');
+    const intervene = await run('intervene');
 
     // Byte-for-byte over the whole model input: system prompt, tool
     // definitions and every message, not just the rendered context.
-    expect(JSON.stringify(on.seen)).toBe(JSON.stringify(off.seen));
-    // ... and the comparison is not vacuous: the shadow run really did record.
-    expect(on.shadow).toBe(true);
-    expect(off.shadow).toBe(false);
+    expect(JSON.stringify(shadow.seen)).toBe(JSON.stringify(off.seen));
+    expect(JSON.stringify(intervene.seen)).not.toBe(JSON.stringify(off.seen));
+    // ... and the comparisons are not vacuous: 'shadow' and 'intervene' both
+    // really recorded, 'off' really did not, and the delivery each recorded
+    // is the honest arm for its own mode.
+    expect(off.evidence).toBeUndefined();
+    expect(shadow.evidence?.delivery).toEqual({
+      mode: 'observed',
+      injected: false,
+    });
+    expect(intervene.evidence?.delivery).toMatchObject({
+      mode: 'intervened',
+      injected: true,
+    });
+  });
+
+  it('appends the rendered packet as an exact suffix, and the base message survives as an exact prefix', async () => {
+    const run = async (discoveryMode: 'off' | 'intervene') => {
+      const db = seedCampaign();
+      try {
+        const model = new ScriptedModel();
+        const result = await runTurn(
+          {
+            db,
+            model,
+            registry: createDefaultToolRegistry(),
+            discoveryMode,
+          },
+          turnInput('I cast fireball at the goblin sentries.'),
+        );
+        expect(result.ok).toBe(true);
+        const sent = model.seen[0]?.messages[0];
+        if (sent === undefined) throw new Error('the model saw no messages');
+        return { message: sent.content, evidence: recordedEvidence(db) };
+      } finally {
+        db.close();
+      }
+    };
+    const off = await run('off');
+    const intervene = await run('intervene');
+
+    // Additive, never rewriting (design section 12.3): the base message the
+    // context assembler produced is an exact PREFIX of what the model under
+    // `intervene` actually received.
+    expect(intervene.message.startsWith(off.message)).toBe(true);
+    const remainder = intervene.message.slice(off.message.length);
+    // Joined exactly the way `renderContextMessage` joins its own sections.
+    expect(remainder.startsWith('\n\n')).toBe(true);
+    const packetText = remainder.slice(2);
+    expect(packetText.length).toBeGreaterThan(0);
+
+    const delivery = intervene.evidence?.delivery;
+    if (delivery?.mode !== 'intervened' || !delivery.injected)
+      throw new Error(
+        `expected an injected intervention delivery, got ${JSON.stringify(delivery)}`,
+      );
+    // The remainder IS the rendered packet: bound through the identity
+    // `delivery` recorded, not re-rendered independently by this test (design
+    // section 12.3's requirement that the injected text is durably recorded
+    // exactly once).
+    expect(Buffer.byteLength(packetText, 'utf8')).toBe(delivery.renderedBytes);
+    expect(createHash('sha256').update(packetText, 'utf8').digest('hex')).toBe(
+      delivery.renderedSha256,
+    );
+  });
+
+  it('records turn_trace.retrieved_context as the message the model actually received, not the base message', async () => {
+    const db = seedCampaign();
+    try {
+      const model = new ScriptedModel();
+      const result = await runTurn(
+        {
+          db,
+          model,
+          registry: createDefaultToolRegistry(),
+          discoveryMode: 'intervene',
+        },
+        turnInput('I cast fireball at the goblin sentries.'),
+      );
+      expect(result.ok).toBe(true);
+      const sent = model.seen[0]?.messages[0];
+      if (sent === undefined) throw new Error('the model saw no messages');
+      const trace = getTurnTrace(db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: TURN,
+      });
+      // Recording a fresh re-render of the base context here — rather than
+      // this exact string — would make the trace lie about an intervention
+      // turn: the DM received the injected message, not the base one.
+      expect(trace?.retrievedContext).toEqual([sent.content]);
+    } finally {
+      db.close();
+    }
+  });
+
+  /**
+   * F3 (PR #543 review): `retrieved_context` on an AUDIT-RETRY turn.
+   *
+   * `baseUserMessage` is only every attempt's common prefix. A rejection
+   * appends a corrective note, so the accepted attempt's real input is the
+   * base message plus that note. Persisting the base message would leave the
+   * accepted narration and tool calls describing attempt 2 while the recorded
+   * input describes the pre-correction context — a trace that lies about the
+   * turn, and one this PR's own comment claimed could not happen.
+   *
+   * The assertion binds to the string the model was ACTUALLY handed for the
+   * accepted attempt (`model.seen`), never to a re-concatenation this test
+   * performs, because a reconstruction here would pass even if the production
+   * code reconstructed it differently.
+   */
+  it('records the ACCEPTED attempt input on an intervene turn that retried', async () => {
+    const db = seedCampaign();
+    try {
+      const model = new ScriptedModel([
+        'A first answer the auditor rejects.',
+        'A second answer the auditor accepts.',
+      ]);
+      const result = await runTurn(
+        {
+          db,
+          model,
+          registry: createDefaultToolRegistry(),
+          discoveryMode: 'intervene',
+          auditor: new ScriptedAuditor([
+            {
+              verdict: 'reject',
+              missingRequiredTools: ['lookup_rules'],
+              missingRequiredCalls: [
+                { tool: 'lookup_rules', target: 'spell:fireball' },
+              ],
+              disallowedToolCalls: [],
+              reason: 'ruled on the spell without looking it up',
+              repairInstruction: 'look the spell up first',
+            },
+          ]),
+        },
+        turnInput('I cast fireball at the goblin sentries.'),
+      );
+      expect(result.ok).toBe(true);
+
+      // Two primary-DM candidates ran, and their inputs are NOT the same
+      // string — otherwise this test would pass without exercising anything.
+      expect(model.seen.length).toBeGreaterThanOrEqual(2);
+      const first = model.seen[0]?.messages[0]?.content;
+      const accepted = model.seen[1]?.messages[0]?.content;
+      if (first === undefined || accepted === undefined)
+        throw new Error('the model saw fewer than two candidate inputs');
+      expect(accepted).not.toBe(first);
+      // The retry input is the first attempt's input plus the corrective
+      // note, so the first attempt's message is a strict prefix of it.
+      expect(accepted.startsWith(first)).toBe(true);
+
+      const trace = getTurnTrace(db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: TURN,
+      });
+      expect(trace?.retrievedContext).toEqual([accepted]);
+
+      // ... and the packet binding still holds on the retry path: the
+      // injected packet sits between the assembled context and the corrective
+      // note, and `delivery` still fingerprints exactly it. The packet region
+      // is located against a real `off`-mode render of the same turn rather
+      // than by re-rendering the packet here, so this checks the production
+      // text rather than restating it.
+      const evidence = recordedEvidence(db);
+      const delivery = evidence?.delivery;
+      if (delivery?.mode !== 'intervened' || !delivery.injected)
+        throw new Error(
+          `expected an injected intervention delivery, got ${JSON.stringify(delivery)}`,
+        );
+      const bare = seedCampaign();
+      let assembled: string;
+      try {
+        const offModel = new ScriptedModel();
+        const offResult = await runTurn(
+          {
+            db: bare,
+            model: offModel,
+            registry: createDefaultToolRegistry(),
+            discoveryMode: 'off',
+          },
+          turnInput('I cast fireball at the goblin sentries.'),
+        );
+        expect(offResult.ok).toBe(true);
+        const seen = offModel.seen[0]?.messages[0]?.content;
+        if (seen === undefined)
+          throw new Error('the off-mode model saw nothing');
+        assembled = seen;
+      } finally {
+        bare.close();
+      }
+      expect(first.startsWith(`${assembled}\n\n`)).toBe(true);
+      const packetText = first.slice(assembled.length + 2);
+      expect(Buffer.byteLength(packetText, 'utf8')).toBe(
+        delivery.renderedBytes,
+      );
+      expect(
+        createHash('sha256').update(packetText, 'utf8').digest('hex'),
+      ).toBe(delivery.renderedSha256);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("under 'intervene', a capture failure injects nothing, records the honest delivery arm, and does not fail the turn", async () => {
+    const db = seedCampaign();
+    try {
+      // A registry whose `.get` throws on its FIRST call and behaves normally
+      // afterward. Discovery's B1 blocker probe (`blockerRepairs.ts`) is the
+      // only caller of `tools.get('lookup_rules')` before `buildSystemPrompt`
+      // walks every registered name through the same method, so this fails
+      // exactly one thing: the capture's own blockers stage. Everything the
+      // rest of the turn needs from the registry — `definitions()`, `list()`,
+      // `invoke()` for a ScriptedModel that calls no tools at all — is
+      // untouched, so a real turn can reach this failure without the turn
+      // itself failing for an unrelated reason.
+      const registry = createDefaultToolRegistry();
+      const realGet = registry.get.bind(registry);
+      let calls = 0;
+      registry.get = ((name: string) => {
+        calls += 1;
+        if (calls === 1) throw new Error('tool registry unavailable');
+        return realGet(name);
+      }) as typeof realGet;
+
+      const model = new ScriptedModel();
+      const result = await runTurn(
+        {
+          db,
+          model,
+          registry,
+          discoveryMode: 'intervene',
+        },
+        turnInput('I press on into the dark.'),
+      );
+      // An observation point that can abort a player's turn is worse than no
+      // observation point (shadow.ts's header, applying with more force once
+      // the packet is load-bearing): the turn still succeeds.
+      expect(result.ok).toBe(true);
+      expect(calls).toBeGreaterThan(1);
+      const sent = model.seen[0]?.messages[0];
+      if (sent === undefined) throw new Error('the model saw no messages');
+      // Nothing was injected: the model saw exactly the base message, ending
+      // in the player-input section with no appended packet section after it.
+      expect(
+        sent.content.endsWith('## Player Input\nI press on into the dark.'),
+      ).toBe(true);
+      const evidence = recordedEvidence(db);
+      expect(evidence?.trace).toBeUndefined();
+      expect(evidence?.failure).toEqual({
+        stage: 'blockers',
+        message: 'tool registry unavailable',
+      });
+      expect(evidence?.delivery).toMatchObject({
+        mode: 'intervened',
+        injected: false,
+      });
+      expect(
+        evidence?.delivery.mode === 'intervened' && !evidence.delivery.injected
+          ? evidence.delivery.reason
+          : undefined,
+      ).toBe('tool registry unavailable');
+    } finally {
+      db.close();
+    }
   });
 
   /**
@@ -317,7 +548,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     for (const round of ROUNDS)
       for (const toolProtocol of ['fenced', 'native'] as const)
         it(`${round.label} (${toolProtocol})`, async () => {
-          const run = async (recordDiscoveryShadow: boolean) => {
+          const run = async (discoveryMode: 'off' | 'shadow') => {
             const db = seedCampaign();
             try {
               round.seed(db);
@@ -346,7 +577,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
                   db,
                   model,
                   registry: createDefaultToolRegistry(),
-                  recordDiscoveryShadow,
+                  discoveryMode,
                 },
                 { ...turnInput('I use it.'), toolProtocol },
               );
@@ -362,8 +593,8 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               db.close();
             }
           };
-          const off = await run(false);
-          const on = await run(true);
+          const off = await run('off');
+          const on = await run('shadow');
 
           // The DM's whole view: system prompt, tool definitions, and every
           // message including the rendered fenced results and the attached
@@ -413,7 +644,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           db,
           model: mcpModel,
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
         },
         turnInput('I loose the arrow.'),
       );
@@ -434,7 +665,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
   });
 
   it('adds no table to the live store', async () => {
-    const tables = async (recordDiscoveryShadow: boolean) => {
+    const tables = async (discoveryMode: 'off' | 'shadow' | 'intervene') => {
       const db = seedCampaign();
       try {
         await runTurn(
@@ -442,7 +673,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
             db,
             model: new ScriptedModel(),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow,
+            discoveryMode,
           },
           turnInput('I look for cover behind the low wall.'),
         );
@@ -457,7 +688,9 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
         db.close();
       }
     };
-    expect(await tables(true)).toEqual(await tables(false));
+    const off = await tables('off');
+    expect(await tables('shadow')).toEqual(off);
+    expect(await tables('intervene')).toEqual(off);
   });
 
   it('runs every authored fixture execution, not one per probe', () => {
@@ -505,7 +738,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               db,
               model: new ScriptedModel(),
               registry: createDefaultToolRegistry(),
-              recordDiscoveryShadow: true,
+              discoveryMode: 'shadow',
               ...(rulesPackResolver === undefined
                 ? {}
                 : { resolveRulesPack: rulesPackResolver }),
@@ -516,7 +749,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           expect(result.ok).toBe(true);
 
           const evidence = recordedEvidence(db);
-          expect(evidence?.schema).toBe('discovery-shadow-v1');
+          expect(evidence?.schema).toBe('discovery-shadow-v2');
           expect(evidence?.failure).toBeUndefined();
           expect(evidence?.modelUsageClaim).toBeNull();
           // The seam is bound to the canonical anchor the turn allocated, not to
@@ -685,7 +918,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           db,
           model: new ScriptedModel(),
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
         },
         turnInput(fixture.playerInput),
       );
@@ -706,7 +939,17 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     }
   });
 
-  it('records a runtime capability outcome the shadow packet never preflighted', async () => {
+  // F1 repair (`eshyra-o9bd.19.12.9`, PR #543 review): this used to be titled
+  // "records a runtime capability outcome the shadow packet never
+  // preflighted" and asserted `m10.comparisons` empty on the theory that
+  // shadow discovery runs before the model chooses a tool and so can never
+  // anticipate the operation. That theory conflated "which operation the
+  // model will invoke" (a real future choice, correctly never predicted) with
+  // "which operations the character's held item declares" (a fact about
+  // state the campaign already holds). The character's ammunition is a real
+  // inventory row before the model runs, so its declared `hit-target`
+  // operation is preflighted, and the real invocation now pairs with it.
+  it('pairs a runtime capability invocation with the preflight the held item declares', async () => {
     const fixture = DIAGNOSTIC_FIXTURES.find((item) => item.probeId === 'P8');
     if (fixture === undefined) throw new Error('P8 fixture is missing');
     const db = seedCampaign();
@@ -722,7 +965,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
             })}`,
           ]),
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
         },
         { ...turnInput(fixture.playerInput), toolProtocol: 'fenced' as const },
       );
@@ -731,22 +974,16 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
         requireTrace(evidence),
         requireRuntime(evidence),
       );
-      // Shadow discovery runs before the model chooses a tool, so it cannot
-      // anticipate the operation; M10 reports the gap rather than agreement.
-      expect(runtime.m10.comparisons).toEqual([]);
-      expect(
-        runtime.m10.runtimeInvocationsAbsentFromPacket.map((item) => ({
-          tool: item.tool,
-          recordKey: item.recordKey,
-          operationId: item.operationId,
-        })),
-      ).toEqual([
+      expect(runtime.m10.comparisons).toEqual([
         {
-          tool: 'use_item',
-          recordKey: 'magic-item:ammunition-1-2-or-3',
-          operationId: 'hit-target',
+          candidateKey: 'magic-item:ammunition-1-2-or-3',
+          capabilityId: 'assertMagicItemOperationReady',
+          packetStatus: 'available',
+          runtimeOutcome: 'available',
+          agreement: 'agreed',
         },
       ]);
+      expect(runtime.m10.runtimeInvocationsAbsentFromPacket).toEqual([]);
       // The record key was resolved through the binding the capture recorded,
       // not re-derived after the fact.
       expect(evidence?.scenario.itemInstances).toEqual([
@@ -771,7 +1008,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
             'You check the rule first, then touch the ward.',
           ]),
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
           auditor: new ScriptedAuditor([
             {
               verdict: 'reject',
@@ -872,7 +1109,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               'You steady yourself and take stock instead.',
             ]),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
             auditor: new ScriptedAuditor([REJECT]),
           },
           {
@@ -914,17 +1151,27 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           runtime.audit.auditor === 'present' ? runtime.audit.retries : [],
         ).toHaveLength(1);
 
-        // M10 sees the event. The real runtime packet does not anticipate the
-        // operation (shadow runs before the model chooses one), so it is
-        // reported as absent from the packet — never as `not-invoked`.
+        // M10 sees the event. F1 repair (`eshyra-o9bd.19.12.9`): the held
+        // ammunition is genuine pre-model state, so the packet preflights its
+        // declared `hit-target` operation regardless of which attempt later
+        // invokes it, and attempt 1's invocation pairs with that preflight in
+        // agreement even though its own canonical writes rolled back — the
+        // capability event is not a canonical mutation and does not roll back
+        // with it (the comment above this `describe` block).
         const m10 = measureRuntimeDiscovery(
           requireTrace(evidence),
           runtime,
         ).m10;
-        expect(m10.comparisons).toEqual([]);
-        expect(
-          m10.runtimeInvocationsAbsentFromPacket.map((item) => item.attempt),
-        ).toEqual([1]);
+        expect(m10.comparisons).toEqual([
+          {
+            candidateKey: AMMO,
+            capabilityId: 'assertMagicItemOperationReady',
+            packetStatus: 'available',
+            runtimeOutcome: 'available',
+            agreement: 'agreed',
+          },
+        ]);
+        expect(m10.runtimeInvocationsAbsentFromPacket).toEqual([]);
       } finally {
         db.close();
       }
@@ -944,7 +1191,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
               'I rolled first: the arrow strikes home.',
             ]),
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow: true,
+            discoveryMode: 'shadow',
             auditor: new ScriptedAuditor([REJECT]),
           },
           {
@@ -1076,7 +1323,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     // the shadow capture called it a SECOND time — so enabling the observation
     // could abort a turn that succeeds with it off, or persist evidence about
     // a different module than the DM context was built from.
-    const run = async (recordDiscoveryShadow: boolean) => {
+    const run = async (discoveryMode: 'off' | 'shadow') => {
       const db = seedCampaign();
       try {
         const seated = installProbeCampaignState(fixture, db);
@@ -1095,7 +1342,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
             db,
             model,
             registry: createDefaultToolRegistry(),
-            recordDiscoveryShadow,
+            discoveryMode,
             resolveAdventureModule,
           },
           turnInput(fixture.playerInput),
@@ -1107,8 +1354,8 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
       }
     };
 
-    const off = await run(false);
-    const on = await run(true);
+    const off = await run('off');
+    const on = await run('shadow');
 
     expect(on.calls).toBe(1);
     expect(on.calls).toBe(off.calls);
@@ -1141,7 +1388,7 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
           db,
           model: new ScriptedModel(),
           registry: createDefaultToolRegistry(),
-          recordDiscoveryShadow: true,
+          discoveryMode: 'shadow',
         },
         turnInput('I turn the relic over in my hands.'),
       );
@@ -1156,5 +1403,326 @@ describe('runtime shadow-mode discovery (ADR 0020 Phase 2)', () => {
     } finally {
       db.close();
     }
+  });
+
+  /**
+   * W10 (`eshyra-o9bd.19.12`) evidence for the accepted deterministic state
+   * effect — the canonical event **M12** compares against a fixture
+   * expectation (design section 13.1, Erratum 1 in section 9.6).
+   *
+   * The subject is what the turn ACCEPTED, which is a different fact from what
+   * it attempted. A rejected attempt's canonical writes roll back with its
+   * savepoint, and the effect record must roll back with them — the exact
+   * opposite of the capability invocation above, which survives because a
+   * preflight that ran is not a canonical mutation. Both facts live in the same
+   * evidence and are asserted against the same turn so the distinction cannot
+   * quietly collapse.
+   */
+  describe('accepted deterministic state effects reach M12', () => {
+    const AMMO = 'magic-item:ammunition-1-2-or-3';
+
+    function seedAmmunition(db: ReturnType<typeof freshDbWithSession>): void {
+      db.prepare(
+        "UPDATE clock SET current_location_id='camp' WHERE id=1",
+      ).run();
+      db.prepare(
+        `INSERT INTO inventory(
+           id, character_id, name, quantity, location, properties_json,
+           pack_ref, provenance, session_id, updated_at
+         ) VALUES ('ammo-1', 'pc-1', 'Magic Ammunition', 20, NULL, '{}', ?, 'test:w10', ?, ?)`,
+      ).run(AMMO, DEFAULT_TEST_SESSION_ID, AT);
+    }
+
+    const useAmmunition = `I loose the arrow.\n${toolCall('use_item', {
+      instanceId: 'ammo-1',
+      operationId: 'hit-target',
+    })}`;
+
+    const REJECT: AuditVerdict = {
+      verdict: 'reject',
+      missingRequiredTools: ['roll'],
+      missingRequiredCalls: [{ tool: 'roll', target: 'attack' }],
+      disallowedToolCalls: [],
+      reason: 'asserted a hit without rolling',
+      repairInstruction: 'roll the attack first',
+    };
+
+    // E1 — a turn that mutates nothing records an EMPTY set, not an absent one.
+    it('records an empty accepted set for a turn that mutates nothing', async () => {
+      const db = seedCampaign();
+      try {
+        const result = await runTurn(
+          {
+            db,
+            model: new ScriptedModel(),
+            registry: createDefaultToolRegistry(),
+            discoveryMode: 'shadow',
+          },
+          turnInput('I look around the camp.'),
+        );
+        expect(result.ok).toBe(true);
+        const runtime = requireRuntime(recordedEvidence(db));
+        // The empty array is a real observation. An absent field would make
+        // "the turn changed nothing" and "nobody recorded anything" the same
+        // value, which is the green-looking nothing section 13.3 forbids.
+        expect(runtime.stateEffects).toEqual([]);
+        expect(
+          measureAcceptedStateEffect(runtime, { expectation: 'none' })
+            .agreement,
+        ).toBe('agreed');
+      } finally {
+        db.close();
+      }
+    });
+
+    // E1 — a real accepted mutation is recorded with tool, attempt and ordinal.
+    it('records the accepted mutation with its tool, attempt and ordinal', async () => {
+      const db = seedCampaign();
+      try {
+        seedAmmunition(db);
+        const result = await runTurn(
+          {
+            db,
+            model: new ScriptedModel([
+              useAmmunition,
+              'The arrow strikes home.',
+            ]),
+            registry: createDefaultToolRegistry(),
+            discoveryMode: 'shadow',
+          },
+          {
+            ...turnInput('I loose the arrow.'),
+            toolProtocol: 'fenced' as const,
+          },
+        );
+        expect(result.ok).toBe(true);
+        const runtime = requireRuntime(recordedEvidence(db));
+        expect(runtime.stateEffects).toEqual([
+          {
+            attempt: 1,
+            ordinal: 0,
+            tool: 'use_item',
+            args: { instanceId: 'ammo-1', operationId: 'hit-target' },
+          },
+        ]);
+      } finally {
+        db.close();
+      }
+    });
+
+    // E2 — the load-bearing case: a rolled-back attempt contributes nothing.
+    it("drops the rejected attempt's mutation and keeps the accepted attempt's", async () => {
+      const db = seedCampaign();
+      try {
+        seedAmmunition(db);
+        const result = await runTurn(
+          {
+            db,
+            model: new ScriptedModel([
+              // Attempt 1 spends the ammunition and is rejected...
+              useAmmunition,
+              'The arrow strikes home.',
+              // ... attempt 2 spends it again and is accepted.
+              useAmmunition,
+              'I rolled first: the arrow strikes home.',
+            ]),
+            registry: createDefaultToolRegistry(),
+            discoveryMode: 'shadow',
+            auditor: new ScriptedAuditor([REJECT]),
+          },
+          {
+            ...turnInput('I loose the arrow.'),
+            toolProtocol: 'fenced' as const,
+          },
+        );
+        expect(result.ok).toBe(true);
+        const runtime = requireRuntime(recordedEvidence(db));
+        // ONE effect, attributed to the attempt that was accepted. The
+        // capability invocations on the same turn show TWO, because a preflight
+        // that executed is not a canonical write and does not roll back.
+        expect(runtime.stateEffects).toEqual([
+          {
+            attempt: 2,
+            ordinal: 0,
+            tool: 'use_item',
+            args: { instanceId: 'ammo-1', operationId: 'hit-target' },
+          },
+        ]);
+        expect(
+          runtime.capabilityInvocations.map((item) => item.attempt),
+        ).toEqual([1, 2]);
+      } finally {
+        db.close();
+      }
+    });
+
+    // E2 — a rejected attempt whose replacement mutates nothing records none.
+    it('records no effect when the accepted attempt mutates nothing', async () => {
+      const db = seedCampaign();
+      try {
+        seedAmmunition(db);
+        const result = await runTurn(
+          {
+            db,
+            model: new ScriptedModel([
+              useAmmunition,
+              'The arrow strikes home.',
+              'You steady yourself and take stock instead.',
+            ]),
+            registry: createDefaultToolRegistry(),
+            discoveryMode: 'shadow',
+            auditor: new ScriptedAuditor([REJECT]),
+          },
+          {
+            ...turnInput('I loose the arrow.'),
+            toolProtocol: 'fenced' as const,
+          },
+        );
+        expect(result.ok).toBe(true);
+        const runtime = requireRuntime(recordedEvidence(db));
+        expect(runtime.stateEffects).toEqual([]);
+        // ... while the rejected attempt's preflight is still on the record.
+        expect(
+          runtime.capabilityInvocations.map((item) => item.attempt),
+        ).toEqual([1]);
+      } finally {
+        db.close();
+      }
+    });
+
+    /**
+     * E3 — ONE predicate governs both the turn trace and M12.
+     *
+     * `spend_spell_slot` succeeds while changing nothing when it reports
+     * `spent: false`, and the turn trace has always excluded that case. Two
+     * copies of that rule would be two things that can drift, and a drift means
+     * M12 and `accepted_state_delta` would describe the same turn differently.
+     */
+    it('shares the accepted-mutation predicate with the turn trace', () => {
+      const call = (
+        tool: string,
+        mutates: boolean,
+        result: { ok: boolean; data?: unknown },
+      ) =>
+        ({
+          tool,
+          args: {},
+          mutates,
+          result: result.ok
+            ? { ok: true, data: result.data ?? {} }
+            : { ok: false, code: 'x', message: 'x' },
+        }) as unknown as Parameters<typeof isAcceptedStateMutation>[0];
+
+      expect(
+        isAcceptedStateMutation(call('adjust_hp', true, { ok: true })),
+      ).toBe(true);
+      expect(
+        isAcceptedStateMutation(call('adjust_hp', false, { ok: true })),
+      ).toBe(false);
+      expect(
+        isAcceptedStateMutation(call('adjust_hp', true, { ok: false })),
+      ).toBe(false);
+      expect(
+        isAcceptedStateMutation(
+          call('spend_spell_slot', true, { ok: true, data: { spent: false } }),
+        ),
+      ).toBe(false);
+      expect(
+        isAcceptedStateMutation(
+          call('spend_spell_slot', true, { ok: true, data: { spent: true } }),
+        ),
+      ).toBe(true);
+    });
+
+    // E3 — and the two consumers agree over a REAL turn, not only in the unit.
+    it('records one effect per accepted-state-delta entry on a real turn', async () => {
+      const db = seedCampaign();
+      try {
+        seedAmmunition(db);
+        const result = await runTurn(
+          {
+            db,
+            model: new ScriptedModel([
+              useAmmunition,
+              'The arrow strikes home.',
+            ]),
+            registry: createDefaultToolRegistry(),
+            discoveryMode: 'shadow',
+          },
+          {
+            ...turnInput('I loose the arrow.'),
+            toolProtocol: 'fenced' as const,
+          },
+        );
+        expect(result.ok).toBe(true);
+        const trace = getTurnTrace(db, {
+          campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+          sessionId: DEFAULT_TEST_SESSION_ID,
+          turnId: TURN,
+        });
+        const runtime = requireRuntime(recordedEvidence(db));
+        expect(runtime.stateEffects).toHaveLength(
+          trace?.acceptedStateDelta.length ?? -1,
+        );
+      } finally {
+        db.close();
+      }
+    });
+
+    /**
+     * E6 — P8's M12, end to end, against the fixture's OWN declared
+     * operations (design section 11.2, Amendment D).
+     *
+     * The expectation is read from the corpus rather than restated here: a
+     * measurement proven against a locally written expectation would prove
+     * agreement with this test, not with the fixture.
+     */
+    it('agrees with the P8 fixture expectation over a real turn', async () => {
+      const fixture = DIAGNOSTIC_FIXTURES.find((item) => item.probeId === 'P8');
+      if (fixture === undefined) throw new Error('P8 fixture is missing');
+      const expected = fixture.executions[0].expectedDeterministicStateEffect;
+      if (!('operations' in expected))
+        throw new Error('P8 declares no deterministic state effect');
+
+      const db = seedCampaign();
+      try {
+        seedAmmunition(db);
+        const result = await runTurn(
+          {
+            db,
+            model: new ScriptedModel([
+              `I loose the arrow.\n${toolCall('use_item', {
+                instanceId: 'ammo-1',
+                operationId: 'hit-target',
+              })}`,
+              'The arrow strikes home.',
+            ]),
+            registry: createDefaultToolRegistry(),
+            discoveryMode: 'shadow',
+          },
+          {
+            ...turnInput(fixture.playerInput),
+            toolProtocol: 'fenced' as const,
+          },
+        );
+        expect(result.ok).toBe(true);
+        const runtime = requireRuntime(recordedEvidence(db));
+        // The fixture pins `instanceId: ammunition-stack-1`, which is the
+        // instance identity the OFFLINE scenario declares; this runtime turn
+        // seeds its own row. Only the operation identity is comparable across
+        // both, so the probe is measured on the operation the fixture names.
+        const measured = measureAcceptedStateEffect(runtime, {
+          expectation: 'effect',
+          operations: expected.operations.map((operation) => ({
+            tool: operation.tool,
+            args: { operationId: operation.args?.operationId },
+          })),
+        });
+        expect(measured.agreement).toBe('agreed');
+        expect(measured.disagreements).toEqual([]);
+      } finally {
+        db.close();
+      }
+    });
   });
 });

@@ -25,8 +25,20 @@ function routeClasses(candidate: PacketCandidate | undefined): string[] {
   return (candidate?.routes ?? []).map((route) => route.routeClass);
 }
 
+/**
+ * All three buckets of a candidate's record body, combined into one
+ * searchable string. These ASSERTIONS check that authored/retrieved CONTENT
+ * reached the packet (an encounter name, an NPC id) — not which bucket of the
+ * field-provenance split it landed in, which `packetMessage.test.ts` and M9
+ * already cover directly. Searching all three keeps this helper answering the
+ * question it was written for.
+ */
 function proseOf(candidate: PacketCandidate | undefined): string {
-  return JSON.stringify(candidate?.sourceProse ?? {});
+  return JSON.stringify({
+    sourceProse: candidate?.sourceProse ?? {},
+    sourceDerived: candidate?.sourceDerived ?? {},
+    projection: candidate?.projection ?? {},
+  });
 }
 
 /** Typed assertions naming each packet-semantic and substrate-fact claim. */
@@ -41,24 +53,33 @@ export const ASSERTIONS: Readonly<
     );
   },
   'dragon-success-branch-disclosed': ({ candidate }) => {
-    const note = candidate(
-      'creature:adult-black-dragon',
-    )?.projectionLimits.find(
+    const dragon = candidate('creature:adult-black-dragon');
+    const note = dragon?.projectionLimits.find(
       (item) =>
         item.kind === 'success-branch' &&
         item.evidence.path === '/data/actions/5/mechanics/saves',
     );
     expect(note).toBeDefined();
-    expect(note?.preservedProse).toContain(
+    expect(note?.attestedProse).toContain(
+      'or half as much damage on a successful one',
+    );
+    // The note's prose is ATTESTED prose, not merely record text: every line
+    // of it is a `source-prose` leaf of this candidate (PR #543 re-review
+    // round 5, finding 1).
+    expect(JSON.stringify(dragon?.sourceProse)).toContain(
       'or half as much damage on a successful one',
     );
   },
   'fireball-area-disclosed': ({ candidate }) => {
-    const note = candidate('spell:fireball')?.projectionLimits.find(
+    const fireball = candidate('spell:fireball');
+    const note = fireball?.projectionLimits.find(
       (item) => item.kind === 'area',
     );
     expect(note).toBeDefined();
-    expect(note?.preservedProse).toContain('20-foot-radius sphere');
+    expect(note?.attestedProse).toContain('20-foot-radius sphere');
+    expect(JSON.stringify(fireball?.sourceProse)).toContain(
+      '20-foot-radius sphere',
+    );
   },
   'concentration-reached-by-cue-not-edge': ({ candidate, trace }) => {
     expect(routeClasses(candidate('rule:concentration'))).toContain(
@@ -78,7 +99,12 @@ export const ASSERTIONS: Readonly<
   },
   'cube-blocked-by-readiness': ({ candidate }) => {
     const item = candidate('magic-item:cube-of-force');
-    expect(item?.capability?.status).toBe('blocked');
+    // The cube declares several operations (F1 repair,
+    // `eshyra-o9bd.19.12.9`); this note is specifically about press-face-1.
+    const capability = item?.capabilities.find(
+      (entry) => entry.operationId === 'press-face-1',
+    );
+    expect(capability?.status).toBe('blocked');
     const note = item?.projectionLimits.find(
       (limit) => limit.kind === 'execution-readiness',
     );
@@ -137,7 +163,11 @@ export const ASSERTIONS: Readonly<
     // ...beside an SRD source that it neither replaced nor hid.
     const prose = proseOf(fireball);
     expect(prose).toContain('A target takes 8d6 fire damage on a failed save');
-    expect(prose).toContain('"V","S","M"');
+    // Each component value, not the array's serialization: a partitioned array
+    // is carried as an index map, and pinning `"V","S","M"` tested the
+    // container's encoding rather than the claim that the components survived.
+    for (const component of ['"V"', '"S"', '"M"'])
+      expect(prose).toContain(component);
     expect(fireball?.provenance.sourceRef).toContain('wizards.com');
   },
   'house-rule-is-not-an-ambiguity-choice': ({ candidate }) => {

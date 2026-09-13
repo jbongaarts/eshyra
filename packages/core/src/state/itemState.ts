@@ -673,6 +673,59 @@ export function deriveItemOperationReadinessInput(
   };
 }
 
+/**
+ * Enumerate every operation id a record declares FOR A GIVEN VARIANT, as the
+ * union of `mechanics.operations[].id` and the non-null
+ * `mechanics.stateMachine.transitions[].via` ids.
+ *
+ * `deriveItemOperationReadinessInput` above accepts `activate`/`deactivate`
+ * sourced purely from a state-machine transition even when `operations` does
+ * not list them (see its own `operation === undefined` fallback), so a caller
+ * that must know WHICH operations a record supports before any operation has
+ * been chosen — offline discovery's capability preflight (`signals.ts`,
+ * W10's F1 repair, `eshyra-o9bd.19.12.9`) — has to walk both sets or
+ * under-enumerate a record whose activation lives only in its state machine.
+ * `magic-item:cube-of-force` happens to have the two sets coincide; that is a
+ * fact about this one record, not a license to enumerate only one set.
+ *
+ * Reuses `validateRecordReferences`, the same validation
+ * `deriveItemOperationReadinessInput` runs, so a record this function accepts
+ * is guaranteed to accept every one of its own operation ids back into that
+ * function. Errors propagate as `ItemStateError`/`MagicItemVariantError`,
+ * exactly as they would from `deriveItemOperationReadinessInput`; a caller
+ * enumerating operations for an item bound in state it cannot fully validate
+ * (offline discovery, which cannot rule out an invalid variant on a live
+ * campaign row) must catch and treat that as "no declared operations" rather
+ * than a preflight per operation — this function does not soften that itself,
+ * so the decision stays visible at the one call site that actually needs it.
+ */
+export function declaredItemOperationIds(
+  record: RulesRecord,
+  variantId: string | undefined,
+): readonly string[] {
+  const mechanics = mechanicsFor(record, variantId);
+  const refs = validateRecordReferences(mechanics, record.key);
+  const operationIds = refs.operations.map((operation) => String(operation.id));
+  const machine =
+    mechanics.stateMachine === undefined
+      ? undefined
+      : obj(mechanics.stateMachine, `${record.key}.mechanics.stateMachine`);
+  const transitionVias = Array.isArray(machine?.transitions)
+    ? machine.transitions
+        .map(
+          (raw, index) =>
+            obj(
+              raw,
+              `${record.key}.mechanics.stateMachine.transitions[${index}]`,
+            ).via,
+        )
+        .filter(
+          (via): via is string => typeof via === 'string' && via.length > 0,
+        )
+    : [];
+  return [...new Set([...operationIds, ...transitionVias])];
+}
+
 function licensesStoredSpells(mechanics: Obj): boolean {
   if (mechanics.spellStore === undefined) return false;
   const spellStore = obj(mechanics.spellStore, 'mechanics.spellStore');
