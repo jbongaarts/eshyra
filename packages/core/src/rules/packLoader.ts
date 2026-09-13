@@ -24,6 +24,10 @@
  *                       existing pack constructor (hand-built test packs,
  *                       the Pathfinder remaster stub, addon packs) keeps
  *                       working unchanged.
+ *     record-relationships.json — OPTIONAL. Pack-owned declarations of
+ *                       traversable relationships and explicit negative
+ *                       dispositions, loaded separately by
+ *                       `loadRecordRelationshipManifest`.
  *
  * `<packId-safe>` is the pack identifier with every `:` replaced by `__`
  * (double underscore) so the directory name is valid on all platforms
@@ -52,7 +56,7 @@
  *      runs.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   buildFieldProvenanceManifest,
@@ -61,6 +65,12 @@ import {
   type FieldProvenanceDeclaration,
   type FieldProvenanceManifest,
 } from './fieldProvenance.js';
+import {
+  buildRecordRelationshipManifest,
+  RECORD_RELATIONSHIP_SCHEMA,
+  type RecordRelationshipDeclaration,
+  type RecordRelationshipManifest,
+} from './recordRelationships.js';
 import type { RulesPack, RulesRecordKind } from './types.js';
 import { RULES_RECORD_KINDS, RulesPackError } from './types.js';
 import { validateRulesPack } from './validate.js';
@@ -70,6 +80,7 @@ export const PACK_MANIFEST_FILE = 'manifest.json';
 export const PACK_RECORDS_FILE = 'records.json';
 /** See the `field-provenance.json` note in the module doc comment above. */
 export const PACK_FIELD_PROVENANCE_FILE = 'field-provenance.json';
+export const PACK_RECORD_RELATIONSHIPS_FILE = 'record-relationships.json';
 
 /**
  * Load a generated rules pack from `dir`.
@@ -240,4 +251,42 @@ export function loadFieldProvenanceManifest(
     parseFieldProvenanceDeclaration(item, `${path}.declarations[${i}]`),
   );
   return buildFieldProvenanceManifest(declarations);
+}
+
+/** Load the optional pack-owned relationship manifest. */
+export function loadRecordRelationshipManifest(
+  dir: string,
+): RecordRelationshipManifest | undefined {
+  const path = join(dir, PACK_RECORD_RELATIONSHIPS_FILE);
+  if (!existsSync(path)) return undefined;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(path, 'utf8'));
+  } catch (cause) {
+    throw new RulesPackError(
+      `record relationship manifest at ${path} is not valid JSON: ${(cause as Error).message}`,
+    );
+  }
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
+    throw new RulesPackError(
+      `record relationship manifest at ${path} must be an object`,
+    );
+  const object = raw as Record<string, unknown>;
+  if (object.schema !== RECORD_RELATIONSHIP_SCHEMA)
+    throw new RulesPackError(
+      `record relationship manifest at ${path} has an unexpected schema`,
+    );
+  if (!Array.isArray(object.declarations))
+    throw new RulesPackError(
+      `record relationship manifest at ${path}.declarations must be an array`,
+    );
+  const declarations = object.declarations.map((item, i) => {
+    if (typeof item !== 'object' || item === null || Array.isArray(item))
+      throw new RulesPackError(
+        `record relationship manifest at ${path}.declarations[${i}] must be an object`,
+      );
+    const value = item as Record<string, unknown>;
+    return value as unknown as RecordRelationshipDeclaration;
+  });
+  return buildRecordRelationshipManifest(declarations);
 }

@@ -1,0 +1,171 @@
+import type { RecordRelationshipDeclaration } from '../../../src/rules/recordRelationships.js';
+
+/** Curated relationship meaning for the fields formerly guessed by discovery. */
+export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationshipDeclaration[] =
+  [
+    {
+      kind: 'ancestry',
+      pointerPrefix: '/source',
+      linkField: 'data.source',
+      disposition: 'not-a-reference',
+      reason:
+        'A structural field describing where this ancestry sits in the source (page/section), not narrative prose.',
+    },
+    {
+      kind: 'feature',
+      pointerPrefix: '/source',
+      linkField: 'data.source',
+      disposition: 'reference',
+      relation: 'granted-by',
+      targetResolution: 'record-key',
+      reason: 'The granting class/subclass record-key, not source text.',
+    },
+    {
+      kind: 'subclass',
+      pointerPrefix: '/parentClass',
+      linkField: 'data.parentClass',
+      disposition: 'reference',
+      relation: 'parent-class',
+      targetResolution: 'record-key',
+      reason: 'The parser emits the canonical parent class record key.',
+    },
+    {
+      kind: 'class',
+      pointerPrefix: '/progressionTableRef',
+      linkField: 'data.progressionTableRef',
+      disposition: 'reference',
+      relation: 'progression-table',
+      targetResolution: 'record-key',
+      reason: 'The parser emits the class progression table record key.',
+    },
+    {
+      kind: 'rule',
+      pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
+      disposition: 'reference',
+      relation: 'table-reference',
+      targetResolution: 'record-key',
+      reason:
+        'The parser emits canonical table record keys referenced by this rule.',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
+      disposition: 'reference',
+      relation: 'table-reference',
+      targetResolution: 'record-key',
+      reason:
+        'The parser emits canonical table record keys referenced by this magic item.',
+    },
+    {
+      kind: 'magic-item',
+      pointerPrefix: '/statBlockRefs/*',
+      linkField: 'data.statBlockRefs',
+      disposition: 'reference',
+      relation: 'stat-block-reference',
+      targetResolution: 'record-key',
+      reason:
+        'The parser emits canonical stat-block record keys referenced by this magic item.',
+    },
+    {
+      kind: 'spell',
+      pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
+      disposition: 'reference',
+      relation: 'table-reference',
+      targetResolution: 'record-key',
+      reason:
+        'The parser emits canonical table record keys referenced by this spell.',
+    },
+    {
+      kind: 'feature',
+      pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
+      disposition: 'reference',
+      relation: 'table-reference',
+      targetResolution: 'record-key',
+      reason:
+        'The parser emits canonical table record keys referenced by this feature.',
+    },
+    {
+      kind: 'background',
+      pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
+      disposition: 'reference',
+      relation: 'table-reference',
+      targetResolution: 'record-key',
+      reason:
+        'The parser emits canonical table record keys referenced by this background.',
+    },
+    {
+      kind: 'subclass',
+      pointerPrefix: '/spellTableRefs/*',
+      linkField: 'data.spellTableRefs',
+      disposition: 'reference',
+      relation: 'table-reference',
+      targetResolution: 'record-key',
+      reason:
+        'The parser emits canonical spell-table record keys referenced by this subclass.',
+    },
+    {
+      kind: 'action',
+      pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
+      disposition: 'reference',
+      relation: 'condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: 'relation',
+      reason:
+        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+    },
+    {
+      kind: 'feat',
+      pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
+      disposition: 'reference',
+      relation: 'condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: 'relation',
+      reason:
+        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+    },
+    {
+      kind: 'feature',
+      pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
+      disposition: 'reference',
+      relation: 'condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: 'relation',
+      reason:
+        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+    },
+    {
+      kind: 'hazard',
+      pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
+      disposition: 'reference',
+      relation: 'condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: 'relation',
+      reason:
+        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+    },
+    {
+      kind: 'spell',
+      pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
+      disposition: 'reference',
+      relation: 'condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: 'relation',
+      reason:
+        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+    },
+  ];

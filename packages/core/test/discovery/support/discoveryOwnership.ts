@@ -71,6 +71,7 @@ export const REVIEWED_FOREIGN_DEPENDENCIES: readonly string[] = [
   // table, not a rule/ruling owner — same review basis as the other `rules/`
   // entries already on this list.
   '../rules/fieldProvenance.js',
+  '../rules/recordRelationships.js',
   '../rules/lookup.js',
   '../rules/stack.js',
   '../rules/types.js',
