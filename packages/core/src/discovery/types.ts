@@ -6,6 +6,7 @@ import type {
 } from '../campaign/campaignRules.js';
 import type { Db } from '../persistence/db.js';
 import type { FieldProvenanceManifest } from '../rules/fieldProvenance.js';
+import type { RelationshipResolution } from '../rules/recordRelationships.js';
 import type {
   ResolvedRulesStack,
   RulesStackRecordEntry,
@@ -195,6 +196,7 @@ export interface TypedTraversal {
 
 export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
   readonly traversals: readonly TypedTraversal[];
+  readonly relationshipResolutions: readonly RelationshipResolution[];
 }
 
 export { NULL_CAMPAIGN_RULE_SEAM } from '../campaign/campaignRules.js';

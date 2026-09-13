@@ -1104,6 +1104,7 @@ export {
   DND5E_SRD_VERSION,
   getBundledDnd5eSrdFieldProvenanceManifest,
   getBundledDnd5eSrdPack,
+  getBundledDnd5eSrdRecordRelationshipManifest,
   RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
 } from './rules/bundledSrdPack.js';
 export type {
@@ -1221,9 +1222,11 @@ export {
 } from './rules/magicItemVariants.js';
 export {
   loadFieldProvenanceManifest,
+  loadRecordRelationshipManifest,
   loadRulesPackFromDirectory,
   PACK_FIELD_PROVENANCE_FILE,
   PACK_MANIFEST_FILE,
+  PACK_RECORD_RELATIONSHIPS_FILE,
   PACK_RECORDS_FILE,
 } from './rules/packLoader.js';
 export { PATHFINDER2E_REMASTER_RULES_PACK } from './rules/pathfinder2eRemaster.js';
@@ -1232,6 +1235,21 @@ export type {
   RulesRecordCardParent,
 } from './rules/recordCard.js';
 export { buildRulesRecordCard } from './rules/recordCard.js';
+export type {
+  RecordRelationshipDeclaration,
+  RecordRelationshipManifest,
+  RelationshipDisposition,
+  RelationshipResolution,
+  RelationshipTargetResolution,
+} from './rules/recordRelationships.js';
+export {
+  assertRecordRelationshipDeclarationsAreLive,
+  buildRecordRelationshipManifest,
+  RECORD_RELATIONSHIP_SCHEMA,
+  RecordRelationshipError,
+  relationshipDeclarationForPointer,
+  resolveRecordRelationships,
+} from './rules/recordRelationships.js';
 export type { FeatureChoiceInstance } from './rules/repeatedFeatureChoices.js';
 export {
   deriveFeatureChoiceInstances,
