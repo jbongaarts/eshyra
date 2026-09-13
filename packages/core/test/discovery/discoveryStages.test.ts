@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { DiscoveryCandidate } from '../../src/internal.js';
 import {
   accountCandidates,
+  bundledDnd5eSrdRecordRelationshipManifestSource,
   deduplicateCandidates,
   expandTypedRelationships,
   getBundledDnd5eSrdPack,
-  getBundledDnd5eSrdRecordRelationshipManifest,
   joinCampaignRules,
   MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
   measureDiscovery,
@@ -69,7 +69,10 @@ describe('offline discovery stage boundaries', () => {
     const expanded = expandTypedRelationships(
       candidates.outputsProduced,
       stack,
-      { relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest() },
+      {
+        relationshipManifestSource:
+          bundledDnd5eSrdRecordRelationshipManifestSource(),
+      },
     );
     const condition = expanded.outputsProduced.find(
       (item) => item.candidateKey === 'condition:incapacitated',
@@ -662,7 +665,8 @@ describe('offline discovery stage boundaries', () => {
     });
     const dodgeReached = (candidates: readonly DiscoveryCandidate[]) =>
       expandTypedRelationships(candidates, stack, {
-        relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest(),
+        relationshipManifestSource:
+          bundledDnd5eSrdRecordRelationshipManifestSource(),
       }).outputsProduced.some((item) => item.candidateKey === 'action:dodge');
 
     // Identical typed link, two different origin bands.
@@ -670,7 +674,8 @@ describe('offline discovery stage boundaries', () => {
     expect(dodgeReached([seed('situation-cue')])).toBe(false);
 
     const skipped = expandTypedRelationships([seed('situation-cue')], stack, {
-      relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest(),
+      relationshipManifestSource:
+        bundledDnd5eSrdRecordRelationshipManifestSource(),
     });
     expect(skipped.losses.map((loss) => loss.reason)).toContain(
       'expansion-origin-not-must-consider',
@@ -823,14 +828,13 @@ describe('offline discovery stage boundaries', () => {
   it('requests a ruling for an ambiguity discovered only in the second expansion pass', () => {
     const db = freshDbWithSession();
     try {
-      const resolver = installLateAmbiguityAddon(
-        db,
-        '2026-09-02T00:00:00.000Z',
-      );
+      const { resolver, relationshipManifestSource } =
+        installLateAmbiguityAddon(db, '2026-09-02T00:00:00.000Z');
       const requested: string[][] = [];
       const trace = runDiscoveryStages({
         db,
         rulesPackResolver: resolver,
+        relationshipManifestSource,
         scenario: {
           playerInput: 'the party proceeds',
           stateFields: { campaignPosition: 'turn-3', actor: 'pc-1' },
@@ -991,13 +995,12 @@ describe('offline discovery stage boundaries', () => {
   it('reports a ruling query that returned nothing as ran, not skipped', () => {
     const db = freshDbWithSession();
     try {
-      const resolver = installLateAmbiguityAddon(
-        db,
-        '2026-09-02T00:00:00.000Z',
-      );
+      const { resolver, relationshipManifestSource } =
+        installLateAmbiguityAddon(db, '2026-09-02T00:00:00.000Z');
       const trace = runDiscoveryStages({
         db,
         rulesPackResolver: resolver,
+        relationshipManifestSource,
         scenario: {
           playerInput: 'the party proceeds',
           stateFields: { campaignPosition: 'turn-3' },
@@ -1166,14 +1169,13 @@ describe('offline discovery stage boundaries', () => {
   it('reports only the rule and ruling queries that actually executed', () => {
     const db = freshDbWithSession();
     try {
-      const resolver = installLateAmbiguityAddon(
-        db,
-        '2026-09-02T00:00:00.000Z',
-      );
+      const { resolver, relationshipManifestSource } =
+        installLateAmbiguityAddon(db, '2026-09-02T00:00:00.000Z');
       let ruleCalls = 0;
       const trace = runDiscoveryStages({
         db,
         rulesPackResolver: resolver,
+        relationshipManifestSource,
         scenario: {
           playerInput: 'the party proceeds',
           stateFields: { campaignPosition: 'turn-3' },

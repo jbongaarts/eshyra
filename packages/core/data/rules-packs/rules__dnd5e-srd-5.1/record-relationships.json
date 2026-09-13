@@ -107,7 +107,7 @@
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
+      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     },
     {
       "kind": "feat",
@@ -118,7 +118,7 @@
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
+      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     },
     {
       "kind": "feature",
@@ -129,7 +129,7 @@
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
+      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     },
     {
       "kind": "hazard",
@@ -140,7 +140,7 @@
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
+      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     },
     {
       "kind": "spell",
@@ -151,7 +151,7 @@
       "targetResolution": "record-name",
       "targetKind": "condition",
       "relationField": "relation",
-      "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
+      "reason": "Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence."
     }
   ]
 }

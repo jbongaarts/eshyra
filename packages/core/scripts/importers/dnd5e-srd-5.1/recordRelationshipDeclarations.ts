@@ -118,7 +118,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       targetKind: 'condition',
       relationField: 'relation',
       reason:
-        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
     },
     {
       kind: 'feat',
@@ -130,7 +130,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       targetKind: 'condition',
       relationField: 'relation',
       reason:
-        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
     },
     {
       kind: 'feature',
@@ -142,7 +142,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       targetKind: 'condition',
       relationField: 'relation',
       reason:
-        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
     },
     {
       kind: 'hazard',
@@ -154,7 +154,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       targetKind: 'condition',
       relationField: 'relation',
       reason:
-        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
     },
     {
       kind: 'spell',
@@ -166,6 +166,6 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       targetKind: 'condition',
       relationField: 'relation',
       reason:
-        'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
+        'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
     },
   ];

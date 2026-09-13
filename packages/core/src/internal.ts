@@ -549,6 +549,7 @@ export { deduplicateCandidates } from './discovery/dedup.js';
 export { expandTypedRelationships } from './discovery/expansion.js';
 export {
   bundledDnd5eSrdFieldProvenanceSource,
+  bundledDnd5eSrdRecordRelationshipManifestSource,
   runDiscoveryStages,
 } from './discovery/harness.js';
 export type {
@@ -639,6 +640,8 @@ export type {
   PacketCandidate,
   ProjectionLimitNote,
   RecordDataResidue,
+  RecordRelationshipManifestSource,
+  RelationshipArtifactState,
   RetentionBudget,
   RetentionOverflow,
   RouteClass,
@@ -1260,7 +1263,9 @@ export type {
 } from './rules/recordRelationships.js';
 export {
   assertRecordRelationshipDeclarationsAreLive,
+  assertRecordRelationshipDeclarationsCoverBoundedShapes,
   buildRecordRelationshipManifest,
+  LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES,
   RECORD_RELATIONSHIP_SCHEMA,
   RecordRelationshipError,
   relationshipDeclarationForPointer,

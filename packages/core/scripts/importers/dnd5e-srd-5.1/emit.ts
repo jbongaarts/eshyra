@@ -26,6 +26,7 @@ import {
 } from '../../../src/rules/packLoader.js';
 import {
   assertRecordRelationshipDeclarationsAreLive,
+  assertRecordRelationshipDeclarationsCoverBoundedShapes,
   buildRecordRelationshipManifest,
   type RecordRelationshipManifest,
 } from '../../../src/rules/recordRelationships.js';
@@ -1816,11 +1817,27 @@ export function writePackToDirectory(
   // Run over the final validated records immediately before any artifact is
   // written. Fixture callers may use buildPack without pretending to be a
   // complete importer output; the actual emitter remains fail-closed.
-  if (options.assertRelationshipDeclarations === true)
+  //
+  // Both directions of the coverage gate run here (eshyra-jgxl F3): the first
+  // catches a declaration that matches nothing this build emits (dead
+  // declaration); the second catches the reverse — an emitted occurrence of
+  // one of the bounded legacy relationship-bearing shapes for a `(kind,
+  // pointer)` pair nobody declared. Either direction alone leaves a real gap:
+  // without the second, a future importer change could start emitting
+  // `/source` (say) under a new kind with no declaration, every existing
+  // declaration would stay live, and this gate would pass while
+  // `resolveRecordRelationships` silently classified the new occurrence as
+  // nothing.
+  if (options.assertRelationshipDeclarations === true) {
     assertRecordRelationshipDeclarationsAreLive(
       pack.records,
       RECORD_RELATIONSHIP_MANIFEST,
     );
+    assertRecordRelationshipDeclarationsCoverBoundedShapes(
+      pack.records,
+      RECORD_RELATIONSHIP_MANIFEST,
+    );
+  }
   mkdirSync(options.outDir, { recursive: true });
   writeFileSync(
     join(options.outDir, 'manifest.json'),

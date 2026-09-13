@@ -3,7 +3,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
-import { loadRulesPackFromDirectory, RulesPackError } from '../src/internal.js';
+import {
+  loadRecordRelationshipManifest,
+  loadRulesPackFromDirectory,
+  RECORD_RELATIONSHIP_SCHEMA,
+  RulesPackError,
+} from '../src/internal.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -248,6 +253,86 @@ describe('loadRulesPackFromDirectory — negative paths', () => {
     expect(() => loadRulesPackFromDirectory(dir)).toThrow(RulesPackError);
     expect(() => loadRulesPackFromDirectory(dir)).toThrow(
       /provenance\.sourceRef must match/,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// loadRecordRelationshipManifest — negative paths (eshyra-jgxl F2).
+//
+// buildRecordRelationshipManifest's own cross-field validation runs on
+// whatever loadRecordRelationshipManifest hands it, so a malformed on-disk
+// manifest must fail HERE, at the loader, before that validation ever sees
+// it — a blind cast would let a wrong-typed field reach a check written
+// assuming the interface's own types, either throwing an unrelated native
+// error or (for `targetKind` specifically) degrading into a `Map` lookup
+// miss indistinguishable from a legitimate "no record with this name" result.
+// ---------------------------------------------------------------------------
+
+describe('loadRecordRelationshipManifest — negative paths', () => {
+  it('returns undefined when the pack ships no record-relationships.json', () => {
+    const dir = makeTmpDir();
+    expect(loadRecordRelationshipManifest(dir)).toBeUndefined();
+  });
+
+  it('fails closed on a malformed on-disk targetKind, never a silent lookup miss', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'record-relationships.json'),
+      JSON.stringify({
+        schema: RECORD_RELATIONSHIP_SCHEMA,
+        declarations: [
+          {
+            kind: 'action',
+            pointerPrefix: '/mechanics/conditions/*/condition',
+            linkField: 'data.mechanics.conditions',
+            disposition: 'reference',
+            relation: 'condition',
+            targetResolution: 'record-name',
+            targetKind: 'not-a-real-kind',
+            relationField: 'relation',
+            reason: 'malformed fixture',
+          },
+        ],
+      }),
+      'utf8',
+    );
+    expect(() => loadRecordRelationshipManifest(dir)).toThrow(RulesPackError);
+    expect(() => loadRecordRelationshipManifest(dir)).toThrow(/targetKind/);
+  });
+
+  it('fails closed on a non-string pointerPrefix instead of an unrelated native error', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'record-relationships.json'),
+      JSON.stringify({
+        schema: RECORD_RELATIONSHIP_SCHEMA,
+        declarations: [
+          {
+            kind: 'ancestry',
+            pointerPrefix: 42,
+            linkField: 'data.source',
+            disposition: 'not-a-reference',
+            reason: 'malformed fixture',
+          },
+        ],
+      }),
+      'utf8',
+    );
+    expect(() => loadRecordRelationshipManifest(dir)).toThrow(RulesPackError);
+    expect(() => loadRecordRelationshipManifest(dir)).toThrow(/pointerPrefix/);
+  });
+
+  it('fails closed when declarations is missing entirely', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'record-relationships.json'),
+      JSON.stringify({ schema: RECORD_RELATIONSHIP_SCHEMA }),
+      'utf8',
+    );
+    expect(() => loadRecordRelationshipManifest(dir)).toThrow(RulesPackError);
+    expect(() => loadRecordRelationshipManifest(dir)).toThrow(
+      /declarations must be an array/,
     );
   });
 });
