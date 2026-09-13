@@ -1,3 +1,4 @@
+import { DETERMINISTIC_CAPABILITY_LEDGER } from '../rules/deterministicCapabilityLedger.js';
 import {
   classifyFieldPointer,
   type FieldProvenanceManifest,
@@ -573,10 +574,36 @@ function capabilities(
   candidate: DiscoveryCandidate,
   declarations: readonly OfflineCapabilityDeclaration[],
 ): readonly CapabilityPreflight[] {
+  const recordKey = candidate.entry?.record.key;
+  const ledgerResult =
+    recordKey === undefined
+      ? undefined
+      : DETERMINISTIC_CAPABILITY_LEDGER.lookup(recordKey);
   const routes = candidate.routes.filter(
     (item) => item.routeClass === 'capability-preflight',
   );
-  if (candidate.entry?.record.kind !== 'magic-item' || routes.length === 0) {
+  // A real preflight outranks a ledger declaration, never the other way round.
+  // `available`/`blocked` is the capability owner's own subject-specific
+  // observation; a binding only declares identity, inputs, exclusions and
+  // residual interpretation, and the evidence model is explicit that a
+  // declaration "does NOT qualify availability for a candidate, operation, or
+  // input". No magic-item key is bound today, so preempting the preflight
+  // would be wrong only latently — which is exactly the kind of
+  // accidentally-correct behaviour this bead exists to stop shipping.
+  const hasOwnerPreflight =
+    candidate.entry?.record.kind === 'magic-item' && routes.length > 0;
+  if (ledgerResult?.outcome === 'bound' && !hasOwnerPreflight) {
+    // Runtime-owned bindings take precedence over harness declarations.
+    return ledgerResult.bindings.map((contract) => ({
+      status: 'not-evaluated-offline' as const,
+      capabilityId: contract.operationId,
+      revision: contract.revision,
+      inputs: contract.requiredInputs,
+      exclusions: contract.exclusions,
+      residualInterpretation: contract.residualDmInterpretation.join(' '),
+    }));
+  }
+  if (!hasOwnerPreflight) {
     const declaration = declarations.find(
       (item) => item.candidateKey === candidate.candidateKey,
     );
@@ -639,6 +666,21 @@ function splitRecordData(
     provenanceArtifact: manifest === undefined ? 'absent' : 'present',
     residue,
   };
+}
+
+/**
+ * The ledger's explicit `not-positively-selected` row for this candidate, as a
+ * spreadable field. One lookup, narrowed by its own discriminant: the
+ * discriminated union is what makes the cast unnecessary, so using one would
+ * discard the guarantee the union exists to provide.
+ */
+function dispositionField(candidate: DiscoveryCandidate) {
+  const recordKey = candidate.entry?.record.key;
+  if (recordKey === undefined) return {};
+  const result = DETERMINISTIC_CAPABILITY_LEDGER.lookup(recordKey);
+  return result.outcome === 'not-positively-selected'
+    ? { deterministicCapabilityDisposition: result.disposition }
+    : {};
 }
 
 function packetCandidate(
@@ -752,6 +794,7 @@ function packetCandidate(
     campaignRules: candidate.campaignRules,
     campaignRulings: candidate.campaignRulings,
     capabilities: capabilities(candidate, declarations),
+    ...dispositionField(candidate),
     // Built from the CLASSIFIED partitions this candidate carries, never from
     // the raw record body: a projection-limit note is model-facing text, and
     // the source-authority half of it may come only from attested prose

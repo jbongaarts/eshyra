@@ -1108,6 +1108,22 @@ export {
   RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
 } from './rules/bundledSrdPack.js';
 export type {
+  CapabilityLedgerLookup,
+  DeterministicCapabilityLedger,
+  RuleDeterministicCapabilityContract,
+  RuleDeterministicCapabilityDisposition,
+} from './rules/deterministicCapabilityLedger.js';
+export {
+  createDeterministicCapabilityLedger,
+  DETERMINISTIC_CAPABILITY_LEDGER,
+  DeterministicCapabilityLedgerError,
+  RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
+  RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+  RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
+  requireRuleDeterministicCapabilityContract,
+  validateRuleDeterministicCapabilityContracts,
+} from './rules/deterministicCapabilityLedger.js';
+export type {
   FeatureChoice,
   FeatureChoiceCategory,
   FeatureChoiceUnsupported,
