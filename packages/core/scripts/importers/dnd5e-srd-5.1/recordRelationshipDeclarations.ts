@@ -6,6 +6,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'ancestry',
       pointerPrefix: '/source',
+      linkField: 'data.source',
       disposition: 'not-a-reference',
       reason:
         'A structural field describing where this ancestry sits in the source (page/section), not narrative prose.',
@@ -13,6 +14,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'feature',
       pointerPrefix: '/source',
+      linkField: 'data.source',
       disposition: 'reference',
       relation: 'granted-by',
       targetResolution: 'record-key',
@@ -21,6 +23,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'subclass',
       pointerPrefix: '/parentClass',
+      linkField: 'data.parentClass',
       disposition: 'reference',
       relation: 'parent-class',
       targetResolution: 'record-key',
@@ -29,6 +32,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'class',
       pointerPrefix: '/progressionTableRef',
+      linkField: 'data.progressionTableRef',
       disposition: 'reference',
       relation: 'progression-table',
       targetResolution: 'record-key',
@@ -37,6 +41,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'rule',
       pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
       disposition: 'reference',
       relation: 'table-reference',
       targetResolution: 'record-key',
@@ -46,6 +51,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'magic-item',
       pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
       disposition: 'reference',
       relation: 'table-reference',
       targetResolution: 'record-key',
@@ -55,6 +61,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'magic-item',
       pointerPrefix: '/statBlockRefs/*',
+      linkField: 'data.statBlockRefs',
       disposition: 'reference',
       relation: 'stat-block-reference',
       targetResolution: 'record-key',
@@ -64,6 +71,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'spell',
       pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
       disposition: 'reference',
       relation: 'table-reference',
       targetResolution: 'record-key',
@@ -73,6 +81,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'feature',
       pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
       disposition: 'reference',
       relation: 'table-reference',
       targetResolution: 'record-key',
@@ -82,6 +91,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'background',
       pointerPrefix: '/tableRefs/*',
+      linkField: 'data.tableRefs',
       disposition: 'reference',
       relation: 'table-reference',
       targetResolution: 'record-key',
@@ -91,6 +101,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'subclass',
       pointerPrefix: '/spellTableRefs/*',
+      linkField: 'data.spellTableRefs',
       disposition: 'reference',
       relation: 'table-reference',
       targetResolution: 'record-key',
@@ -100,6 +111,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'action',
       pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
       disposition: 'reference',
       relation: 'condition',
       targetResolution: 'record-name',
@@ -110,6 +122,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'feat',
       pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
       disposition: 'reference',
       relation: 'condition',
       targetResolution: 'record-name',
@@ -120,6 +133,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'feature',
       pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
       disposition: 'reference',
       relation: 'condition',
       targetResolution: 'record-name',
@@ -130,6 +144,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'hazard',
       pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
       disposition: 'reference',
       relation: 'condition',
       targetResolution: 'record-name',
@@ -140,6 +155,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
     {
       kind: 'spell',
       pointerPrefix: '/mechanics/conditions/*/condition',
+      linkField: 'data.mechanics.conditions',
       disposition: 'reference',
       relation: 'condition',
       targetResolution: 'record-name',

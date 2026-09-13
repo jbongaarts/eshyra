@@ -21,6 +21,7 @@ export type RelationshipTargetResolution = 'record-key' | 'record-name';
 export interface RecordRelationshipDeclaration {
   readonly kind: RulesRecordKind;
   readonly pointerPrefix: string;
+  readonly linkField: string;
   readonly disposition: RelationshipDisposition;
   readonly relation?: string;
   readonly targetResolution?: RelationshipTargetResolution;
@@ -70,7 +71,7 @@ export function buildRecordRelationshipManifest(
     )
       throw new RecordRelationshipError(`${where}.targetResolution is invalid`);
     assertPointer(decl.pointerPrefix, where);
-    if (decl.reason.trim() === '')
+    if (decl.reason.trim() === '' || decl.linkField.trim() === '')
       throw new RecordRelationshipError(`${where}.reason must not be empty`);
     if (
       decl.disposition === 'not-a-reference' &&
@@ -169,20 +170,13 @@ export interface RelationshipIndex {
   >;
 }
 
-function conditionRelation(
-  data: unknown,
-  conditionName: string,
-): string | undefined {
-  const root = data as Record<string, unknown>;
-  const mechanics = root.mechanics as Record<string, unknown> | undefined;
-  const conditions = mechanics?.conditions;
-  if (!Array.isArray(conditions)) return undefined;
-  for (const item of conditions) {
-    const entry = item as Record<string, unknown>;
-    if (entry.condition === conditionName && typeof entry.relation === 'string')
-      return entry.relation;
+function valueAtActualPointer(data: unknown, pointer: string): unknown {
+  let current = data;
+  for (const segment of pointer.split('/').slice(1)) {
+    if (current === null || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[segment];
   }
-  return undefined;
+  return current;
 }
 
 export function resolveRecordRelationships(
@@ -191,7 +185,7 @@ export function resolveRecordRelationships(
   index: RelationshipIndex,
 ): readonly RelationshipResolution[] {
   const resolutions: RelationshipResolution[] = [];
-  walkFieldPointers(record.data, (pointer, value) => {
+  walkFieldPointers(record.data, (pointer, value, actualPointer) => {
     const declaration = relationshipDeclarationForPointer(
       manifest,
       record.kind,
@@ -201,9 +195,12 @@ export function resolveRecordRelationships(
       return;
     let relation = declaration.relation as string;
     if (declaration.targetResolution === 'record-name') {
-      const entry = conditionRelation(record.data, value);
+      const entry = valueAtActualPointer(
+        record.data,
+        actualPointer.replace(/\/condition$/, '/relation'),
+      );
       if (
-        entry === undefined ||
+        typeof entry !== 'string' ||
         !CONDITION_RELATION_VALUES.includes(entry as never)
       )
         return;

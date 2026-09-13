@@ -4,12 +4,14 @@
     {
       "kind": "ancestry",
       "pointerPrefix": "/source",
+      "linkField": "data.source",
       "disposition": "not-a-reference",
       "reason": "A structural field describing where this ancestry sits in the source (page/section), not narrative prose."
     },
     {
       "kind": "feature",
       "pointerPrefix": "/source",
+      "linkField": "data.source",
       "disposition": "reference",
       "relation": "granted-by",
       "targetResolution": "record-key",
@@ -18,6 +20,7 @@
     {
       "kind": "subclass",
       "pointerPrefix": "/parentClass",
+      "linkField": "data.parentClass",
       "disposition": "reference",
       "relation": "parent-class",
       "targetResolution": "record-key",
@@ -26,6 +29,7 @@
     {
       "kind": "class",
       "pointerPrefix": "/progressionTableRef",
+      "linkField": "data.progressionTableRef",
       "disposition": "reference",
       "relation": "progression-table",
       "targetResolution": "record-key",
@@ -34,6 +38,7 @@
     {
       "kind": "rule",
       "pointerPrefix": "/tableRefs/*",
+      "linkField": "data.tableRefs",
       "disposition": "reference",
       "relation": "table-reference",
       "targetResolution": "record-key",
@@ -42,6 +47,7 @@
     {
       "kind": "magic-item",
       "pointerPrefix": "/tableRefs/*",
+      "linkField": "data.tableRefs",
       "disposition": "reference",
       "relation": "table-reference",
       "targetResolution": "record-key",
@@ -50,6 +56,7 @@
     {
       "kind": "magic-item",
       "pointerPrefix": "/statBlockRefs/*",
+      "linkField": "data.statBlockRefs",
       "disposition": "reference",
       "relation": "stat-block-reference",
       "targetResolution": "record-key",
@@ -58,6 +65,7 @@
     {
       "kind": "spell",
       "pointerPrefix": "/tableRefs/*",
+      "linkField": "data.tableRefs",
       "disposition": "reference",
       "relation": "table-reference",
       "targetResolution": "record-key",
@@ -66,6 +74,7 @@
     {
       "kind": "feature",
       "pointerPrefix": "/tableRefs/*",
+      "linkField": "data.tableRefs",
       "disposition": "reference",
       "relation": "table-reference",
       "targetResolution": "record-key",
@@ -74,6 +83,7 @@
     {
       "kind": "background",
       "pointerPrefix": "/tableRefs/*",
+      "linkField": "data.tableRefs",
       "disposition": "reference",
       "relation": "table-reference",
       "targetResolution": "record-key",
@@ -82,6 +92,7 @@
     {
       "kind": "subclass",
       "pointerPrefix": "/spellTableRefs/*",
+      "linkField": "data.spellTableRefs",
       "disposition": "reference",
       "relation": "table-reference",
       "targetResolution": "record-key",
@@ -90,6 +101,7 @@
     {
       "kind": "action",
       "pointerPrefix": "/mechanics/conditions/*/condition",
+      "linkField": "data.mechanics.conditions",
       "disposition": "reference",
       "relation": "condition",
       "targetResolution": "record-name",
@@ -99,6 +111,7 @@
     {
       "kind": "feat",
       "pointerPrefix": "/mechanics/conditions/*/condition",
+      "linkField": "data.mechanics.conditions",
       "disposition": "reference",
       "relation": "condition",
       "targetResolution": "record-name",
@@ -108,6 +121,7 @@
     {
       "kind": "feature",
       "pointerPrefix": "/mechanics/conditions/*/condition",
+      "linkField": "data.mechanics.conditions",
       "disposition": "reference",
       "relation": "condition",
       "targetResolution": "record-name",
@@ -117,6 +131,7 @@
     {
       "kind": "hazard",
       "pointerPrefix": "/mechanics/conditions/*/condition",
+      "linkField": "data.mechanics.conditions",
       "disposition": "reference",
       "relation": "condition",
       "targetResolution": "record-name",
@@ -126,6 +141,7 @@
     {
       "kind": "spell",
       "pointerPrefix": "/mechanics/conditions/*/condition",
+      "linkField": "data.mechanics.conditions",
       "disposition": "reference",
       "relation": "condition",
       "targetResolution": "record-name",

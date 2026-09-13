@@ -33,13 +33,9 @@ function manifestLinks(
 function traversalOf(
   resolution: Extract<RelationshipResolution, { outcome: 'resolved' }>,
 ): TypedTraversal {
-  const linkField =
-    resolution.pointer === '/mechanics/conditions/*/condition'
-      ? 'data.mechanics.conditions'
-      : `data${resolution.pointer.replace(/\/\*$/, '').replaceAll('/', '.')}`;
   return {
     sourceRecordKey: resolution.sourceRecordKey,
-    linkField,
+    linkField: resolution.declaration.linkField,
     relation: resolution.relation,
     targetRecordKey: resolution.targetRecordKey,
   };
@@ -117,8 +113,8 @@ export function expandTypedRelationships(
     readonly seedKeys?: ReadonlySet<string>;
     readonly stageName?: string;
     readonly conditional?: boolean;
-    readonly relationshipManifest?: RecordRelationshipManifest;
-  } = {},
+    readonly relationshipManifest: RecordRelationshipManifest | undefined;
+  },
 ): ExpansionTrace {
   const result = new Map(
     candidates.map((candidate) => [candidate.candidateKey, candidate]),
@@ -126,11 +122,6 @@ export function expandTypedRelationships(
   const losses: ExpansionTrace['losses'][number][] = [];
   const relationshipResolutions: RelationshipResolution[] = [];
   const manifest = options.relationshipManifest;
-  if (manifest === undefined)
-    losses.push({
-      reason: 'relationship-manifest-absent',
-      detail: { note: 'This pack declares no traversable relationships.' },
-    });
   const reverse = new Map<string, TypedTraversal[]>();
   for (const entry of stack.recordsByKey.values()) {
     const resolutions =
@@ -140,7 +131,7 @@ export function expandTypedRelationships(
       if (resolution.outcome !== 'resolved') {
         losses.push({
           reason: 'unresolved-typed-target',
-          detail: resolution as unknown as Record<string, unknown>,
+          detail: { ...resolution },
         });
         continue;
       }
@@ -185,18 +176,26 @@ export function expandTypedRelationships(
     const outgoing =
       manifest === undefined
         ? []
-        : manifestLinks(candidate.entry, stack, manifest)
-            .filter(
-              (
-                resolution,
-              ): resolution is Extract<
-                RelationshipResolution,
-                { outcome: 'resolved' }
-              > => resolution.outcome === 'resolved',
-            )
-            .map(traversalOf);
+        : manifestLinks(candidate.entry, stack, manifest);
+    relationshipResolutions.push(...outgoing);
+    for (const resolution of outgoing)
+      if (resolution.outcome === 'unresolved-target')
+        losses.push({
+          reason: 'unresolved-typed-target',
+          detail: { ...resolution },
+        });
+    const outgoingTraversals = outgoing
+      .filter(
+        (
+          resolution,
+        ): resolution is Extract<
+          RelationshipResolution,
+          { outcome: 'resolved' }
+        > => resolution.outcome === 'resolved',
+      )
+      .map(traversalOf);
     const incoming = reverse.get(candidate.candidateKey) ?? [];
-    for (const traversal of [...outgoing, ...incoming]) {
+    for (const traversal of [...outgoingTraversals, ...incoming]) {
       const source = stack.recordsByKey.get(traversal.sourceRecordKey);
       const target = stack.recordsByKey.get(traversal.targetRecordKey);
       if (source === undefined || target === undefined) {
@@ -254,5 +253,6 @@ export function expandTypedRelationships(
     losses,
     traversals,
     relationshipResolutions,
+    relationshipManifestAbsent: manifest === undefined,
   };
 }

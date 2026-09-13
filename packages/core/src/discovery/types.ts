@@ -197,6 +197,7 @@ export interface TypedTraversal {
 export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
   readonly traversals: readonly TypedTraversal[];
   readonly relationshipResolutions: readonly RelationshipResolution[];
+  readonly relationshipManifestAbsent: boolean;
 }
 
 export { NULL_CAMPAIGN_RULE_SEAM } from '../campaign/campaignRules.js';
