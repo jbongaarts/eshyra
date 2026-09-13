@@ -1115,12 +1115,12 @@ export type {
 export {
   createDeterministicCapabilityLedger,
   DETERMINISTIC_CAPABILITY_LEDGER,
+  DeterministicCapabilityLedgerError,
   RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
   RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
   RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
   requireRuleDeterministicCapabilityContract,
   validateRuleDeterministicCapabilityContracts,
-  validateRuleDeterministicCapabilityInput,
 } from './rules/deterministicCapabilityLedger.js';
 export type {
   FeatureChoice,

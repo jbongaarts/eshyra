@@ -1,7 +1,6 @@
-import { validateToolInput } from '../model/toolSchemaValidation.js';
-import { DEFAULT_TOOLS } from '../orchestrator/tools.js';
-import { MAGIC_ITEM_OPERATION_READINESS_CAPABILITY } from '../state/itemExecutionReadiness.js';
 import type { DeterministicCapabilityContract } from './deterministicCapabilityContract.js';
+import { MAGIC_ITEM_OPERATION_READINESS_CAPABILITY } from './deterministicCapabilityContract.js';
+import { RulesPackError } from './types.js';
 
 /**
  * Runtime-owned statements about Eshyra's positively selected deterministic
@@ -11,6 +10,8 @@ import type { DeterministicCapabilityContract } from './deterministicCapabilityC
  * contract's identity, revision, inputs, exclusions, and residual DM
  * interpretation; they do not restate those facts in different words.
  */
+export class DeterministicCapabilityLedgerError extends RulesPackError {}
+
 export type RuleDeterministicCapabilityContract =
   DeterministicCapabilityContract & {
     readonly inputSchemaOperation: string;
@@ -171,7 +172,7 @@ export function requireRuleDeterministicCapabilityContract(
 ): RuleDeterministicCapabilityContract {
   const contract = contracts[capability];
   if (contract === undefined)
-    throw new Error(
+    throw new DeterministicCapabilityLedgerError(
       `${capability}: no deterministic capability has been positively selected`,
     );
   return contract;
@@ -197,13 +198,6 @@ export function validateRuleDeterministicCapabilityContracts(
       .map(([key]) => key),
   );
   for (const [capability, contract] of Object.entries(contracts)) {
-    const tool = DEFAULT_TOOLS.find(
-      ({ name }) => name === contract.inputSchemaOperation,
-    );
-    if (tool === undefined || tool.name !== contract.operationId)
-      errors.push(
-        `${capability}: capability operation is not a registered tool`,
-      );
     if (
       !contract.revision ||
       !contract.operation ||
@@ -214,20 +208,6 @@ export function validateRuleDeterministicCapabilityContracts(
       errors.push(
         `${capability}: capability contract is missing an ADR 0020 §3 field`,
       );
-    if (tool !== undefined) {
-      const declared = new Set(contract.requiredInputs);
-      const schema = new Set(tool.inputSchema.required ?? []);
-      for (const input of contract.requiredInputs)
-        if (!schema.has(input))
-          errors.push(
-            `${capability}: '${input}' is not required by ${tool.name}`,
-          );
-      for (const input of schema)
-        if (!declared.has(input))
-          errors.push(
-            `${capability}: required schema input '${input}' is missing from the contract`,
-          );
-    }
   }
   const boundRules = new Set(bindings.map(({ ruleKey }) => ruleKey));
   for (const binding of bindings) {
@@ -265,18 +245,6 @@ export function validateRuleDeterministicCapabilityContracts(
   return errors;
 }
 
-export function validateRuleDeterministicCapabilityInput(
-  capability: string,
-  input: unknown,
-): string | undefined {
-  const contract = requireRuleDeterministicCapabilityContract(capability);
-  const tool = DEFAULT_TOOLS.find(
-    ({ name }) => name === contract.inputSchemaOperation,
-  );
-  if (tool === undefined) throw new Error(`${capability}: missing tool schema`);
-  return validateToolInput(tool.inputSchema, input);
-}
-
 export type CapabilityLedgerLookup =
   | {
       readonly outcome: 'bound';
@@ -312,14 +280,14 @@ export function createDeterministicCapabilityLedger(
   const seen = new Set<string>();
   for (const binding of bindings) {
     if (contracts[binding.capability] === undefined)
-      throw new Error(
+      throw new DeterministicCapabilityLedgerError(
         `${binding.ruleKey}: binds unknown capability ${binding.capability}`,
       );
     seen.add(binding.ruleKey);
   }
   for (const key of Object.keys(dispositions))
     if (seen.has(key))
-      throw new Error(
+      throw new DeterministicCapabilityLedgerError(
         `${key}: has both a capability binding and a disposition`,
       );
   return Object.freeze({
