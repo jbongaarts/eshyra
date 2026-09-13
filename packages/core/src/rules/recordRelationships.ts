@@ -26,6 +26,16 @@ export interface RecordRelationshipDeclaration {
   readonly relation?: string;
   readonly targetResolution?: RelationshipTargetResolution;
   readonly targetKind?: RulesRecordKind;
+  /**
+   * For `record-name` resolution only: the sibling key, beside the matched
+   * leaf, that carries this occurrence's own relation. Declared rather than
+   * assumed, because the alternative is re-deriving it from the pointer
+   * string (`/condition` -> `/relation`), which is the same undeclared
+   * consumer-side coupling this module exists to delete — and it fails
+   * SILENTLY, since an unreadable relation is skipped as a data-validity
+   * case. Required exactly when `targetResolution` is `record-name`.
+   */
+  readonly relationField?: string;
   readonly reason: string;
 }
 
@@ -71,13 +81,16 @@ export function buildRecordRelationshipManifest(
     )
       throw new RecordRelationshipError(`${where}.targetResolution is invalid`);
     assertPointer(decl.pointerPrefix, where);
-    if (decl.reason.trim() === '' || decl.linkField.trim() === '')
+    if (decl.reason.trim() === '')
       throw new RecordRelationshipError(`${where}.reason must not be empty`);
+    if (decl.linkField.trim() === '')
+      throw new RecordRelationshipError(`${where}.linkField must not be empty`);
     if (
       decl.disposition === 'not-a-reference' &&
       (decl.relation !== undefined ||
         decl.targetResolution !== undefined ||
-        decl.targetKind !== undefined)
+        decl.targetKind !== undefined ||
+        decl.relationField !== undefined)
     )
       throw new RecordRelationshipError(
         `${where}: not-a-reference cannot carry relationship fields`,
@@ -97,6 +110,23 @@ export function buildRecordRelationshipManifest(
     )
       throw new RecordRelationshipError(
         `${where}: record-name requires targetKind`,
+      );
+    if (
+      decl.targetResolution === 'record-name' &&
+      (decl.relationField === undefined ||
+        decl.relationField.trim() === '' ||
+        decl.relationField.includes('/'))
+    )
+      throw new RecordRelationshipError(
+        `${where}: record-name requires a non-empty relationField naming a ` +
+          'single sibling key',
+      );
+    if (
+      decl.targetResolution === 'record-key' &&
+      decl.relationField !== undefined
+    )
+      throw new RecordRelationshipError(
+        `${where}: record-key cannot carry relationField`,
       );
     if (decl.targetResolution === 'record-key' && decl.targetKind !== undefined)
       throw new RecordRelationshipError(
@@ -195,9 +225,10 @@ export function resolveRecordRelationships(
       return;
     let relation = declaration.relation as string;
     if (declaration.targetResolution === 'record-name') {
+      // The sibling the DECLARATION names, not a pointer-string rewrite.
       const entry = valueAtActualPointer(
         record.data,
-        actualPointer.replace(/\/condition$/, '/relation'),
+        `${actualPointer.slice(0, actualPointer.lastIndexOf('/'))}/${declaration.relationField as string}`,
       );
       if (
         typeof entry !== 'string' ||

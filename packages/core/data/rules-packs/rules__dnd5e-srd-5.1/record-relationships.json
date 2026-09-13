@@ -106,6 +106,7 @@
       "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
+      "relationField": "relation",
       "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
     },
     {
@@ -116,6 +117,7 @@
       "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
+      "relationField": "relation",
       "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
     },
     {
@@ -126,6 +128,7 @@
       "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
+      "relationField": "relation",
       "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
     },
     {
@@ -136,6 +139,7 @@
       "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
+      "relationField": "relation",
       "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
     },
     {
@@ -146,6 +150,7 @@
       "relation": "condition",
       "targetResolution": "record-name",
       "targetKind": "condition",
+      "relationField": "relation",
       "reason": "Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship."
     }
   ]

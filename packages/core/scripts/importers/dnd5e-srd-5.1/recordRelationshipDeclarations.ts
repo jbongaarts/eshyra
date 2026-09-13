@@ -116,6 +116,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       relation: 'condition',
       targetResolution: 'record-name',
       targetKind: 'condition',
+      relationField: 'relation',
       reason:
         'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
     },
@@ -127,6 +128,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       relation: 'condition',
       targetResolution: 'record-name',
       targetKind: 'condition',
+      relationField: 'relation',
       reason:
         'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
     },
@@ -138,6 +140,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       relation: 'condition',
       targetResolution: 'record-name',
       targetKind: 'condition',
+      relationField: 'relation',
       reason:
         'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
     },
@@ -149,6 +152,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       relation: 'condition',
       targetResolution: 'record-name',
       targetKind: 'condition',
+      relationField: 'relation',
       reason:
         'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
     },
@@ -160,6 +164,7 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       relation: 'condition',
       targetResolution: 'record-name',
       targetKind: 'condition',
+      relationField: 'relation',
       reason:
         'Condition names are resolved against the condition kind; an invalid relation is a data-validity skip, not a fail-open relationship.',
     },

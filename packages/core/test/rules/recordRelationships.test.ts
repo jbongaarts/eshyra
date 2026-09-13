@@ -136,6 +136,7 @@ describe('pack-owned record relationships', () => {
         relation: 'condition',
         targetResolution: 'record-name',
         targetKind: 'condition',
+        relationField: 'relation',
         reason: 'test',
       },
     ]);
@@ -275,6 +276,47 @@ describe('pack-owned record relationships', () => {
     expect(trace.losses).toEqual([]);
   });
 
+  it('reads the per-occurrence relation from the DECLARED sibling key', () => {
+    // The pack's condition entries keep their relation in `relation`. A pack
+    // whose parser named that sibling something else must still resolve, and
+    // must do so because the declaration SAYS so — not because a pointer
+    // string happened to end in `/condition`.
+    const action = record('action:dodge');
+    const renamed = {
+      ...action,
+      data: {
+        mechanics: {
+          conditions: [{ condition: 'incapacitated', how: 'exclusion' }],
+        },
+      },
+    };
+    const renamedManifest = buildRecordRelationshipManifest([
+      {
+        kind: 'action',
+        pointerPrefix: '/mechanics/conditions/*/condition',
+        linkField: 'data.mechanics.conditions',
+        disposition: 'reference',
+        relation: 'condition',
+        targetResolution: 'record-name',
+        targetKind: 'condition',
+        relationField: 'how',
+        reason: 'test: the relation sibling is named `how` in this pack.',
+      },
+    ]);
+    expect(
+      resolveRecordRelationships(renamedManifest, renamed, stack),
+    ).toContainEqual(
+      expect.objectContaining({
+        outcome: 'resolved',
+        relation: 'exclusion',
+        targetRecordKey: 'condition:incapacitated',
+      }),
+    );
+    // The same record under the shipped manifest, which declares `relation`,
+    // finds no readable relation and skips as a data-validity case.
+    expect(resolveRecordRelationships(manifest, renamed, stack)).toEqual([]);
+  });
+
   it('rejects every malformed declaration shape', () => {
     const valid: RecordRelationshipDeclaration = {
       kind: 'feature',
@@ -292,6 +334,30 @@ describe('pack-owned record relationships', () => {
       { ...valid, disposition: 'not-a-reference', relation: 'wrong' },
       { ...valid, targetResolution: undefined },
       { ...valid, targetResolution: 'record-name', targetKind: undefined },
+      { ...valid, linkField: '' },
+      // record-name must DECLARE the sibling carrying each occurrence's own
+      // relation; leaving it undeclared is what forced the pointer-string
+      // rewrite this field replaced.
+      {
+        ...valid,
+        targetResolution: 'record-name',
+        targetKind: 'condition',
+        relationField: undefined,
+      },
+      {
+        ...valid,
+        targetResolution: 'record-name',
+        targetKind: 'condition',
+        relationField: 'mechanics/relation',
+      },
+      { ...valid, relationField: 'relation' },
+      {
+        ...valid,
+        disposition: 'not-a-reference',
+        relation: undefined,
+        targetResolution: undefined,
+        relationField: 'relation',
+      },
       [valid, valid],
     ])
       expect(() =>
