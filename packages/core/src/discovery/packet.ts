@@ -1,3 +1,4 @@
+import { DETERMINISTIC_CAPABILITY_LEDGER } from '../rules/deterministicCapabilityLedger.js';
 import {
   classifyFieldPointer,
   type FieldProvenanceManifest,
@@ -573,6 +574,22 @@ function capabilities(
   candidate: DiscoveryCandidate,
   declarations: readonly OfflineCapabilityDeclaration[],
 ): readonly CapabilityPreflight[] {
+  const recordKey = candidate.entry?.record.key;
+  const ledgerResult =
+    recordKey === undefined
+      ? undefined
+      : DETERMINISTIC_CAPABILITY_LEDGER.lookup(recordKey);
+  if (ledgerResult?.outcome === 'bound') {
+    // Runtime-owned bindings take precedence over harness declarations.
+    return ledgerResult.bindings.map((contract) => ({
+      status: 'not-evaluated-offline' as const,
+      capabilityId: contract.operationId,
+      revision: contract.revision,
+      inputs: contract.requiredInputs,
+      exclusions: contract.exclusions,
+      residualInterpretation: contract.residualDmInterpretation.join(' '),
+    }));
+  }
   const routes = candidate.routes.filter(
     (item) => item.routeClass === 'capability-preflight',
   );
@@ -752,6 +769,20 @@ function packetCandidate(
     campaignRules: candidate.campaignRules,
     campaignRulings: candidate.campaignRulings,
     capabilities: capabilities(candidate, declarations),
+    ...(candidate.entry?.record.key !== undefined &&
+    DETERMINISTIC_CAPABILITY_LEDGER.lookup(candidate.entry.record.key)
+      .outcome === 'not-positively-selected'
+      ? {
+          deterministicCapabilityDisposition: (
+            DETERMINISTIC_CAPABILITY_LEDGER.lookup(
+              candidate.entry.record.key,
+            ) as Extract<
+              ReturnType<typeof DETERMINISTIC_CAPABILITY_LEDGER.lookup>,
+              { outcome: 'not-positively-selected' }
+            >
+          ).disposition,
+        }
+      : {}),
     // Built from the CLASSIFIED partitions this candidate carries, never from
     // the raw record body: a projection-limit note is model-facing text, and
     // the source-authority half of it may come only from attested prose

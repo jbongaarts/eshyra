@@ -5,6 +5,7 @@ import type {
   CampaignRulingProjection,
 } from '../campaign/campaignRules.js';
 import type { Db } from '../persistence/db.js';
+import type { RuleDeterministicCapabilityDisposition } from '../rules/deterministicCapabilityLedger.js';
 import type { FieldProvenanceManifest } from '../rules/fieldProvenance.js';
 import type {
   ResolvedRulesStack,
@@ -537,6 +538,7 @@ export interface PacketCandidate {
    * stating that a blocked contract is not an executable capability.
    */
   readonly capabilities: readonly CapabilityPreflight[];
+  readonly deterministicCapabilityDisposition?: RuleDeterministicCapabilityDisposition;
   readonly projectionLimits: readonly ProjectionLimitNote[];
 }
 

@@ -32,6 +32,7 @@ import { createHash } from 'node:crypto';
 import { validateToolInput } from '../../src/model/toolSchemaValidation.js';
 import { DEFAULT_TOOLS } from '../../src/orchestrator/tools.js';
 import type { DeterministicCapabilityContract } from '../../src/rules/deterministicCapabilityContract.js';
+import type { RuleDeterministicCapabilityContract as RuntimeRuleDeterministicCapabilityContract } from '../../src/rules/deterministicCapabilityLedger.js';
 import { findingByCanonicalId } from '../../src/rules/findingRegistry.js';
 import type { RulesPack } from '../../src/rules/types.js';
 
@@ -3660,7 +3661,7 @@ export interface RuleDispositionReport {
     readonly contextRequirement: string;
   }[];
   /** Positive, bounded ADR 0020 §3 contracts, not a capability inventory. */
-  readonly deterministicCapabilities: readonly RuleDeterministicCapabilityContract[];
+  readonly deterministicCapabilities: readonly RuntimeRuleDeterministicCapabilityContract[];
   /** Identity-complete W13 outcome for each historical implemented row. */
   readonly deterministicCapabilitySourceOutcomes: readonly (
     | {
