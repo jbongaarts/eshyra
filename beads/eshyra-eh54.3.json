@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54.3",
+  "title": "Add adventure module pack loading and validation",
+  "description": "Add loading and validation support for immutable adventure module source packs.\n\nAdventure modules should be loadable as authored content alongside rules packs and campaign templates, but they should not be merged into the SRD rules pack or treated as mutable campaign instance state. This bead validates authored module source structure and references only; it does not load, validate, or model campaign progress (that is campaign instance state - eshyra-eh54.4).\n",
+  "design": "Keep the four layers logically separate (ADR 0012):\n\n- rules pack: mechanical reference material (immutable)\n- campaign template pack: setting/world reference material (immutable)\n- adventure module pack: authored scenario source material (immutable)\n- campaign instance: mutable actual-play state, including the campaign-owned adventure run / module binding that records progress (eshyra-eh54.4)\n\nLoading and validation here applies only to the immutable module source pack. If the existing loader architecture already has a generic content-pack path, extend it in the smallest clean way. If it is rules-pack-specific, avoid forcing module content through SRD importer concepts.\n",
+  "acceptance_criteria": "- The content loading path can load an adventure module source pack or fixture.\n- Module-pack validation fails closed on broken references.\n- Validation catches at least: missing scene/location ids, missing scene exits, missing referenced NPCs, missing referenced objectives, missing encounter creature refs, missing treasure item refs, and incompatible or unknown setting/template refs where applicable.\n- Module records can resolve references to existing rules-pack records without duplicating those records.\n- Validation covers authored module structure and references only; it does not validate or require campaign progress state.\n- Module loading is covered by focused tests and at least one small fixture.\n- Existing rules-pack importer behavior remains unchanged.",
+  "notes": "Loader + cross-pack reference validation implemented: adventure/loadModule.ts, adventure/references.ts, exported via internal.ts; 15 tests in test/adventureModuleLoad.test.ts. Establishes the rulesRef '<kind>:<key>' resolution convention. PR #263 open: https://github.com/jbongaarts/eshyra/pull/263 . Branch feat/eh54.3-adventure-module-loader, worktree .worktrees/eh54.3. Left in_progress so dependents eshyra-eh54.4 and eshyra-eh54.7.2 stay blocked until merge. Close on merge.\nReview fix (commit 1d03cfa): enforce rulesRequirements.baseVersions against base meta.version; check requiredAddonPackIds against rules.addons only (base pack id no longer satisfies an add-on requirement). +4 tests (now 19), both bug tests verified to fail pre-fix. Full suite 2225 pass / 0 fail.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:11:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-21T01:19:31Z",
+  "closed_at": "2026-06-21T01:46:05Z",
+  "close_reason": "Loader + cross-pack reference validation merged to main via PR #263 (squash, incl. baseVersions + add-on-only requiredAddonPackIds review fixes). Unblocks eshyra-eh54.4 and eshyra-eh54.7.2.",
+  "labels": [
+    "adventure-module",
+    "campaign-runtime",
+    "domain-model",
+    "loader",
+    "validation"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54.3",
+      "depends_on_id": "eshyra-eh54.2",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:12:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.3",
+      "depends_on_id": "eshyra-eh54",
+      "type": "parent-child",
+      "created_at": "2026-06-18T01:11:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

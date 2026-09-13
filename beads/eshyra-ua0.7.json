@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ua0.7",
+  "title": "RED: graceful session close pipeline",
+  "description": "Write failing tests for an idempotent core close pipeline that closes open scenes, records final scene summary, rolls session recap, optionally checkpoints, and marks the session closed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T00:31:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-21T00:31:59Z",
+  "closed_at": "2026-05-21T00:33:13Z",
+  "close_reason": "RED test added and failed for missing closeSessionGracefully API as expected.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ua0.7",
+      "depends_on_id": "eshyra-ua0",
+      "type": "parent-child",
+      "created_at": "2026-05-20T19:31:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "bd171826-c9a2-5a05-85e5-83cb3f23113e",
+      "issue_id": "eshyra-ua0.7",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/sessionClose.test.ts -> initially failed on test syntax, fixed test only, then failed for expected reason: closeSessionGracefully is not implemented/exported yet.",
+      "created_at": "2026-05-21T00:33:13Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

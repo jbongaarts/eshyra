@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ua0.1",
+  "title": "Design hosted web/PWA BYOK deployment path",
+  "description": "Capture the medium-term public deployment shape: hosted mobile-friendly web/PWA over the same core, with local BYOK preserved and hosted BYOK secret handling designed before launch. Native mobile and hosted credits are deferred.",
+  "acceptance_criteria": "Design describes CLI/local, hosted web/PWA, local BYOK, hosted BYOK secret handling, and future hosted credits; explicitly defers native mobile; stored provider keys are never exposed back to the browser after storage.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-18T03:00:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:20Z",
+  "started_at": "2026-05-21T00:51:25Z",
+  "closed_at": "2026-05-21T00:52:36Z",
+  "close_reason": "Documented in docs/adr/0002-hosted-web-pwa-byok-deployment-path.md: CLI/local, hosted web/PWA, local + hosted BYOK secret handling, future hosted credits, native mobile deferred; stored provider keys never exposed back to the browser.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ua0.1",
+      "depends_on_id": "eshyra-ua0",
+      "type": "parent-child",
+      "created_at": "2026-05-17T22:00:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

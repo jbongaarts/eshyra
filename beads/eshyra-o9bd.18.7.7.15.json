@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.15",
+  "title": "Close PR #455 lifecycle and compatibility re-review gaps",
+  "description": "Address the five merge-blocking findings from the holistic review at 41018aa: semantic curse gating by exact lifecycle contract; eliminate give_item cross-custody adoption; enforce world co-location and separate held storage from unheld placement; implement deterministic legacy magic-item adoption/first-touch including stateful stack handling; and validate variant clauses against their selected effective scope. Perform a broader lifecycle/importer adversarial review.",
+  "acceptance_criteria": "All five findings are fixed at shared invariant boundaries with corpus/negative tests; legacy recognized items have a safe deterministic adoption path; custody/location transitions cannot be bypassed; variant integrity cannot borrow from siblings; importer regeneration/audits, full worktree verification, push, and PR CI pass.",
+  "notes": "Completed PR #455 lifecycle/compatibility review closure. Fixed exact curse attunement/possession/doff gates; give/claim/transfer custody invariants; separate indexed world placement with co-location and nonblank guards; bounded nearby discovery; deterministic legacy adopt_item with validated lifting, split cap, corruption/counter review flags; canonical item single spend owner; selected-variant compiler integrity; trigger-visible schema snapshot and semi-structured consumer evidence. Independent Sol adversarial review found and verified closure of all P1/P2 blockers. Final local gates: verify:worktree green; 260 test files passed / 4 skipped, 4625 tests passed / 19 documented skips; canonical SRD regeneration exact; all 13 freeze hashes pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T01:45:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T02:44:36Z",
+  "started_at": "2026-07-19T01:45:40Z",
+  "closed_at": "2026-07-19T02:44:36Z",
+  "close_reason": "PR #455 review findings and Sol adversarial blockers are closed; full worktree, test, importer reproducibility, and freeze verification pass.",
+  "external_ref": "gh-455",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.15",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-18T20:45:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4ik",
+  "title": "Add SQLite schema migration and compatibility checks",
+  "description": "Review finding from loreweaver-den. SCHEMA_VERSION is stamped after CREATE TABLE IF NOT EXISTS with no explicit migration path or compatibility check for existing campaign DBs. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Fresh DBs initialize correctly; current DBs are recognized; at least one old-version fixture migrates or fails clearly; newer unsupported DB versions are refused without partial mutation.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:45:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:44Z",
+  "started_at": "2026-05-22T03:34:49Z",
+  "closed_at": "2026-05-22T03:42:36Z",
+  "close_reason": "Added pre-mutation schema compatibility checks, clear SchemaCompatibilityError failures for newer/older/unversioned DBs, and regression coverage for fresh/current/legacy cases; verification: npm run typecheck and npm run test passed; TDD evidence recorded.",
+  "comments": [
+    {
+      "id": "19825ef0-a26a-5720-9721-ec7791db3f63",
+      "issue_id": "eshyra-4ik",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded with expected Node 24 EBADENGINE warnings for Node 22 package policy; npm run typecheck passed; npm run test passed with 36 files passed / 1 skipped and 240 tests passed / 2 skipped.",
+      "created_at": "2026-05-22T03:36:21Z"
+    },
+    {
+      "id": "cf75b5e6-8532-5ecb-8778-f99cfbbd3d43",
+      "issue_id": "eshyra-4ik",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: focused persistence tests failed as expected. Newer schema_version was accepted instead of throwing; legacy unversioned DB was partially mutated by initSchema creating all tables before failing/deciding compatibility.",
+      "created_at": "2026-05-22T03:39:50Z"
+    },
+    {
+      "id": "1c411ccf-350c-526d-bfb0-69eac8a7e1d9",
+      "issue_id": "eshyra-4ik",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN/REFACTOR: added pre-mutation schema compatibility checks and SchemaCompatibilityError; npx vitest run packages/core/test/persistence.test.ts passed with 8 tests; npm run typecheck passed.",
+      "created_at": "2026-05-22T03:42:05Z"
+    },
+    {
+      "id": "bf6b059c-ded4-5536-a576-a68a8e05bc95",
+      "issue_id": "eshyra-4ik",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0; npm run test -> exit 0 with 36 files passed / 1 skipped and 244 tests passed / 2 skipped. TDD evidence recorded: RED showed newer and legacy schemas were mishandled; GREEN/REFACTOR passed persistence suite.",
+      "created_at": "2026-05-22T03:42:29Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

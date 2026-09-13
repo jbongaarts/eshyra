@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-umyb",
+  "title": "Campaign-rule and ambiguity context grows monotonically with campaign age",
+  "description": "DEFERRED BY DESIGN, recorded so it is not lost.\n\nassembleCampaignRulesContext supplies every active campaign rule and every ambiguity in the resolved rules stack on every DM turn, and renderContextMessage emits all of them. Raised by a /code-review sweep of PR #524 (finding 4) as monotonic prompt growth.\n\nThis is NOT a defect today and was NOT changed, because it is the deliberate contract: eshyra-jhpt.3 says \"at initial scale, supply all active campaign-rule prose on every applicable DM turn; correctness takes priority over selective retrieval\", and \"prompt retrieval optimization\" is an explicit non-goal on that bead. The supervisor measured the per-turn full-stack ambiguity scan at ~0.13 ms over 1812 records, so cost is not currently a concern either.\n\nIt becomes real when either side grows: the rules-pack compiler's stated direction is to add more ambiguity metadata (only 3 exist in the shipped SRD pack today), and campaign_rule accumulates for the life of a campaign with no upper bound. At that point the context needs relevance selection or a budget, which is a design decision requiring its own bead and probably an ADR note, not an incidental change.\n\nRevisit when either the ambiguity count in a shipped pack or the active-rule count in a long-running campaign makes the per-turn slice materially large. Do not fix by silently truncating; that would reintroduce the \"silent canonical certainty\" failure eshyra-jhpt.3 exists to prevent.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-03T05:32:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-03T05:32:12Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-r5j",
+  "title": "Brainstorm: migrate new bead prefix to eshyra",
+  "description": "Determine whether new beads can safely use the eshyra prefix while preserving all existing loreweaver-prefixed issue IDs, then document and configure the migration.",
+  "notes": "Evidence: bd 1.0.4 reports database issue_prefix=loreweaver and dolt_database=loreweaver as separate settings. Source for v1.0.4 shows generated top-level IDs use database config issue_prefix; existing IDs are not rewritten by changing that value. Explicit IDs and generated child IDs are validated against issue_prefix plus allowed_prefixes. Therefore safe migration requires issue_prefix=eshyra and allowed_prefixes including loreweaver. Keep dolt_database=loreweaver and never run bd rename-prefix, because that command rewrites existing IDs and text references. Also set config.yaml issue-prefix: eshyra so YAML precedence stays consistent in shared-server/explicit-ID paths.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T16:33:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T18:07:09Z",
+  "started_at": "2026-06-07T16:33:26Z",
+  "closed_at": "2026-06-07T18:07:09Z",
+  "close_reason": "Migration completed via PR #168: ran bd rename-prefix eshyra to migrate all 381 issues to eshyra-* prefix (full migration, not dual-prefix approach). Database issue_prefix now eshyra, allowed_prefixes eshyra only. All repo docs updated.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

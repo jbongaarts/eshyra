@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.24.1",
+  "title": "RED: failed-turn diagnostics",
+  "description": "Write failing tests proving failed turns persist a non-canon diagnostic while rollback still removes canon, transcript, and turn-trace side effects.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T23:56:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T23:57:19Z",
+  "closed_at": "2026-05-28T23:58:18Z",
+  "close_reason": "RED tests added and failed for expected missing diagnostic table/write path.",
+  "labels": [
+    "architecture",
+    "diagnostics",
+    "orchestrator",
+    "parallel-caution",
+    "persistence",
+    "refactor",
+    "tech-debt",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.24.1",
+      "depends_on_id": "eshyra-0jq.24",
+      "type": "parent-child",
+      "created_at": "2026-05-28T18:56:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "2a9429d0-87c1-529d-aa5a-219aa9ef636c",
+      "issue_id": "eshyra-0jq.24.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run packages/core/test/orchestrator.test.ts -> failed for expected reason: new failed-turn diagnostic tests hit SqliteError no such table: turn_failure_diagnostic.",
+      "created_at": "2026-05-28T23:58:17Z"
+    },
+    {
+      "id": "9114fb55-da4e-5b80-98f6-f8245dcc6c0a",
+      "issue_id": "eshyra-0jq.24.1",
+      "author": "Joseph Bongaarts",
+      "text": "Additional RED verification: npx vitest run packages/core/test/migrations.test.ts -t v10-v11 failed for expected reason: no migration defined for version 11.",
+      "created_at": "2026-05-28T23:59:27Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 2
+}

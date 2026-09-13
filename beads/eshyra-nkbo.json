@@ -1,0 +1,26 @@
+{
+  "_type": "issue",
+  "id": "eshyra-nkbo",
+  "title": "Fix the npm warning: npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T05:44:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T01:23:50Z",
+  "closed_at": "2026-07-01T01:23:50Z",
+  "close_reason": "wont_fix",
+  "comments": [
+    {
+      "id": "690fc402-c67a-564a-84c6-47fdc651b9ea",
+      "issue_id": "eshyra-nkbo",
+      "author": "Joseph Bongaarts",
+      "text": "Investigated: this warning comes from prebuild-install@7.1.3, a transitive dependency of better-sqlite3 (the only compiled dependency, pinned per ADR 0008/ADR 0016). better-sqlite3's latest published version (12.11.1, already what we're on) still requires prebuild-install@^7.1.1, and prebuild-install itself has been deprecated by its own maintainers with no maintained successor -- there is no version bump that removes the warning today. It does not fail installs or CI; it's dev-time noise, not a functional break.\n\nADR 0016 (docs/adr/0016-native-dependency-install-policy-by-environment.md), written while investigating this bead, formally accepts this as tracked cosmetic noise under the dev/workspace install layer, and explicitly says not to \"fix\" it with a risky overrides entry that could jeopardize the prebuilt-binary install path CI depends on (npm_config_build_from_source=false). Revisit only if a future better-sqlite3 release migrates off prebuild-install, or it stops producing a working binary.\n\nClosed as won't-fix.",
+      "created_at": "2026-07-01T01:23:59Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

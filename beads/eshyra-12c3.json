@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-12c3",
+  "title": "Improve equipment lookup aliases and plural matching for starting kits",
+  "description": "Secondary usability finding from the eshyra-eh54 adventure-module/equipment playtest. While assembling a 1st-level fighter starting kit, lookup_rules found the Fighter class but many equipment lookups reportedly failed.\n\nEquipment name matching looks weak. lookupRulesRecord() (packages/core/src/rules/lookup.ts ~36-69) resolves by an exact normalized name via normalizeRulesRecordName() (packages/core/src/rules/stack.ts ~287), which only trims/collapses whitespace/lowercases — there is no alias or plural handling. So 'crossbow bolts' vs 'crossbow-bolt'/'Crossbow bolt', 'rations' vs 'Days of rations', 'torches' vs 'Torch', and parenthetical/capitalization variants will miss.\n\nIMPORTANT — RULES-PACK CONTEXT (blocked by eshyra-t2ra / ADR 0013): A separate discovery found that runtime rule lookup currently binds to the 3-record in-code placeholder DND5E_SRD_RULES_PACK (packages/core/src/rules/dnd5eSrd.ts, built from SRD_CATALOG in rules/srd/data.ts) rather than the complete generated SRD pack on disk (packages/core/data/rules-packs/rules__dnd5e-srd-5.1/, ~1811 records). eshyra-t2ra adopts the generated pack at runtime and retires the placeholder. The exact lookup failures observed during the playtest were very likely AMPLIFIED by runtime using the tiny placeholder (e.g. it contains no magic-items, no torches/rations/bolts at all), so the true scope of remaining alias/plural gaps cannot be measured until eshyra-t2ra lands. This bead is therefore blocked by eshyra-t2ra and should be revisited after generated-SRD runtime adoption.\n\nScope when unblocked: improve DETERMINISTIC lookup normalization (alias index + plural handling) for common equipment / starting-kit terms, implemented AGAINST THE GENERATED SRD PACK — NOT by expanding the in-code placeholder. Do NOT add potion-of-healing, torches, rations, crossbow bolts, or any other one-off content to DND5E_SRD_RULES_PACK; that placeholder is expected to be retired by eshyra-t2ra. Do NOT introduce model-generated equipment facts and do NOT weaken deterministic importer rules (see docs/importer-fix-protocol.md).",
+  "design": "Investigate the failed lookup_rules / equipment lookups for common equipment names and add normalization/aliases for plural forms and SRD wording variants, e.g.: rations / days of rations, torch / torches, crossbow bolt / crossbow bolts, backpack, chain mail, leather armor, shield, martial weapon, simple weapon, explorer's pack, dungeoneer's pack. Implement at the lookup/normalization layer (rules/lookup.ts, rules/stack.ts) — an alias index keyed off the canonical record ids/names of the GENERATED SRD pack, plus plural normalization — rather than weakening the deterministic importer or inventing non-SRD equipment. Because runtime currently uses the placeholder, do this work after eshyra-t2ra makes the generated pack the runtime truth, and verify aliases resolve to real generated records. Do NOT add content to DND5E_SRD_RULES_PACK to satisfy lookups. Do NOT add model-only equipment facts.",
+  "acceptance_criteria": "- Lookup/alias work runs against the GENERATED SRD rules pack (packages/core/data/rules-packs/rules__dnd5e-srd-5.1/), not the in-code DND5E_SRD_RULES_PACK placeholder.\n- Common starting-equipment names resolve deterministically via lookup_rules.\n- Plurals and common SRD aliases resolve to the canonical GENERATED equipment records where those records exist (e.g. crossbow bolts -> crossbow bolt; rations -> days of rations; torches -> torch).\n- Tests cover examples such as torch/torches, crossbow bolt/crossbow bolts, rations/days of rations, and common starting-equipment phrases for a fighter starting kit.\n- After generated SRD runtime adoption and mechanics-audit quantity evidence are available, add an end-to-end play/regression test for the original playtest flow: Bob has empty inventory; player asks for a sensible 1st-level fighter starting kit; runtime resolves real SRD equipment/start-kit terms; DM executes quantity-bearing give_item calls; mechanics audit accepts; committed inventory contains the full kit with correct quantities.\n- No new content is added to DND5E_SRD_RULES_PACK and the placeholder pack is NOT expanded to satisfy adventure-module or starting-kit lookups.\n- No model-generated equipment facts are introduced and no deterministic importer rules are weakened.",
+  "notes": "Likely files: packages/core/src/rules/lookup.ts (lookupRulesRecord ~36-69), packages/core/src/rules/stack.ts (normalizeName / normalizeRulesRecordName ~287, recordsByKind.byName index), packages/core/src/orchestrator/toolLookupRules.ts (lookup_rules tool). Generated equipment records under packages/core/data/rules-packs. Tests: packages/core/test/tools.test.ts (lookup_rules execution). Discovered-from: eshyra-eh54 equipment playtest.\nRULES-PACK RECONCILIATION (re: eshyra-t2ra / ADR 0013): Hard dependency added — this bead is BLOCKED BY eshyra-t2ra (generated SRD runtime adoption + placeholder retirement). Rationale: alias/plural normalization must target the generated SRD records, and the playtest lookup failures were likely amplified by runtime binding to the 3-record placeholder (which has no magic-items and none of torch/rations/bolt). Revisit and re-measure the remaining alias/plural gap after eshyra-t2ra lands. Related: eshyra-8bit (rulesRef<->record-key addressing convention, e.g. creature:goblin vs bare goblin) is also downstream of eshyra-t2ra and may overlap normalization concerns.\nINTEGRATION COVERAGE COORDINATION (2026-06-21): This bead owns the full real-SRD sensible fighter starting-kit play/regression flow after eshyra-t2ra and eshyra-hlte land. The existing hard dependency on eshyra-t2ra remains. Mechanics-audit verification of quantity-bearing give_item evidence requires eshyra-hlte; recorded as a soft related dependency, not a blocker for hlte.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-21T06:47:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-22T02:53:34Z",
+  "started_at": "2026-06-22T02:47:16Z",
+  "closed_at": "2026-06-22T02:53:34Z",
+  "close_reason": "Implemented deterministic generated-SRD equipment aliases, plural/punctuation matching, and fighter starting-kit regression coverage in PR.",
+  "labels": [
+    "equipment",
+    "rules-lookup"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-12c3",
+      "depends_on_id": "eshyra-t2ra",
+      "type": "blocks",
+      "created_at": "2026-06-21T01:56:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-12c3",
+      "depends_on_id": "eshyra-hlte",
+      "type": "related",
+      "created_at": "2026-06-21T21:01:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

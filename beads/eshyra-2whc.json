@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2whc",
+  "title": "Migrate biome.json to the installed Biome version",
+  "description": "npx biome check . reports 'Run the command biome migrate to migrate the configuration file.' as an info diagnostic on main. Info-level diagnostics do not fail the build (Biome has no exit-on-info flag), so this accumulates silently.\n\nIntroduced by the Biome bump in the dev-tooling dependabot group (PR #501, merged as 0a44cde). Observed 2026-08-28 while working eshyra-o9bd.19.2.1.1.\n\nFix: npx biome migrate --write, then confirm npm run check is clean including frozen paths.\n\nAGENTS.md 'Formatting & Linting' requires keeping biome.json migrated to the installed Biome precisely so info noise does not accumulate. Kept out of the eshyra-o9bd.19.2.1.1 PR because AGENTS.md requires dependency/toolchain work to stay separate from feature and importer changes.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-08-29T01:42:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-08T00:47:06Z",
+  "closed_at": "2026-09-08T00:47:06Z",
+  "close_reason": "Stale: resolved by PR #530 (eshyra-ldtn, merged bc190dc), which ran npx biome migrate --write as part of landing Biome 2.5.12. Verified on main at 84e8e79: biome.json $schema is 2.5.12 and matches the installed CLI; 'biome check --diagnostic-level=info .' reports zero diagnostics and 'biome migrate' reports 'no migration needed'. Duplicate of eshyra-wyga (P2, filed 2026-08-30) - same info diagnostic, both now moot.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

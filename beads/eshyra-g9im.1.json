@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-g9im.1",
+  "title": "Reconstruct apostrophes mis-mapped to space in PDF extraction",
+  "description": "The SRD PDF font's ToUnicode maps certain apostrophe glyphs to a near-zero-width U+0020 space emitted as a standalone text item, so joinRowText produces 'monster s attack' instead of 'monster’s attack'. Found by PR #227 review (rule:conditions p358). Scope: exactly 7 cases across the PDF, all possessive/contraction at a word boundary — Land's Stride (p35), can't (p232), monster's (p358), Mare's/Lion's/cow's head (p361), Woman's face (p362). Distinguished from 1990 legitimate word-separator zero-width spaces (italic run boundaries like 'System Reference') by the next item beginning with an enclitic (s|t|d|m|re|ve|ll) at a word boundary. Fix in extract.ts joinRowText: when a near-zero-width ' ' item sits between a letter and an enclitic, emit U+2019. Count-neutral (text fidelity only). Add extract.test.ts coverage + rule:conditions sentinel 'a monster’s attack'.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-16T01:48:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-16T02:03:39Z",
+  "started_at": "2026-06-16T01:48:39Z",
+  "closed_at": "2026-06-16T02:03:39Z",
+  "close_reason": "Fixed in PR #227 commit 6b2fd4f. extract.ts joinRowText reconstructs U+2019 between a letter and a possessive/contraction enclitic across an apostrophe-sized gap. 7 source-confirmed possessives recovered (monster's, can't, Land's Stride x2, Mare's/Lion's/cow's head, Woman's face); Ranger table cell now refs feature:ranger:lands-stride. joinRowText unit tests + rule:conditions sentinel added. verify:dnd5e-srd-pack + verify:worktree green.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-g9im.1",
+      "depends_on_id": "eshyra-g9im",
+      "type": "parent-child",
+      "created_at": "2026-06-15T20:48:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

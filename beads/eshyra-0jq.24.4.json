@@ -1,0 +1,77 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.24.4",
+  "title": "Address PR #105 review: sanitize failed-turn result errors",
+  "description": "Review source: PR #105 non-blocking feedback. Requirement: runTurn failed results must redact secret-bearing error substrings using the same sanitizer as persisted turn_failure_diagnostic records, so CLI output via result.error is sanitized without duplicating regex logic.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-29T00:13:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:52Z",
+  "started_at": "2026-05-29T00:14:08Z",
+  "closed_at": "2026-05-29T00:16:18Z",
+  "close_reason": "PR #105 review feedback addressed: runTurn failed result.error now uses shared diagnostic sanitizer; verification passed.",
+  "labels": [
+    "architecture",
+    "diagnostics",
+    "orchestrator",
+    "parallel-caution",
+    "persistence",
+    "refactor",
+    "tech-debt",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.24.4",
+      "depends_on_id": "eshyra-0jq.24",
+      "type": "parent-child",
+      "created_at": "2026-05-28T19:13:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "c6df199f-0e7e-5042-9eb1-29d002d16b9c",
+      "issue_id": "eshyra-0jq.24.4",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 1: sanitize user-visible failed-turn result.error using the existing diagnostic sanitizer. Evaluation: accepted. Evidence: packages/core/src/orchestrator/orchestrator.ts currently persists diagnostics via recordTurnFailureDiagnostic but returns raw e.message/String(e); packages/cli/src/playTurnLoop.ts prints result.error. Existing sanitizer is packages/core/src/memory/turnFailureDiagnostic.ts sanitizeDiagnosticMessage, already exported internally.",
+      "created_at": "2026-05-29T00:14:14Z"
+    },
+    {
+      "id": "de822662-b5a0-5b49-a9c1-9f21c78c10c9",
+      "issue_id": "eshyra-0jq.24.4",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: focused orchestrator regression failed as expected: result.error was raw 'model unavailable api_key=sk-provider-secret' and did not contain [redacted].",
+      "created_at": "2026-05-29T00:14:45Z"
+    },
+    {
+      "id": "d01e6ddf-9a95-5c02-abc8-12e2d4aaf35b",
+      "issue_id": "eshyra-0jq.24.4",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: focused orchestrator regression passed after reusing sanitizeDiagnosticMessage for runTurn failure result.error.",
+      "created_at": "2026-05-29T00:15:20Z"
+    },
+    {
+      "id": "04021578-6f41-5cf8-aead-7b85b006c4e6",
+      "issue_id": "eshyra-0jq.24.4",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: focused RED/GREEN recorded; npx vitest run packages/core/test/orchestrator.test.ts -> exit 0 (16 passed); npm run typecheck -> exit 0; npm run check -> exit 0; npm run test -> exit 0 (74 files passed, 2 skipped; 815 tests passed, 3 skipped).",
+      "created_at": "2026-05-29T00:16:18Z"
+    },
+    {
+      "id": "6cea1de9-0727-5981-9449-54f1dd831f2b",
+      "issue_id": "eshyra-0jq.24.4",
+      "author": "Joseph Bongaarts",
+      "text": "Post-push verification at branch tip: PR #105 checks passed; final local npm run test -> exit 0 (75 files passed, 2 skipped; 849 tests passed, 3 skipped). Earlier post-merge npm run typecheck and npm run check also passed.",
+      "created_at": "2026-05-29T00:20:52Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 5
+}

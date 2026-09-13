@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c07.6",
+  "title": "REFACTOR: mutate_state character set",
+  "description": "Clean up mutate_state character set code while keeping focused and project tests green.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T04:29:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:08Z",
+  "started_at": "2026-05-19T04:30:57Z",
+  "closed_at": "2026-05-19T04:31:13Z",
+  "close_reason": "First mutateState slice refactor gate complete; focused tests and typecheck remain green.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-c07.6",
+      "depends_on_id": "eshyra-c07",
+      "type": "parent-child",
+      "created_at": "2026-05-18T23:29:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-c07.6",
+      "depends_on_id": "eshyra-c07.5",
+      "type": "blocks",
+      "created_at": "2026-05-18T23:29:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "138ff195-ceb4-5542-905f-b6f329026276",
+      "issue_id": "eshyra-c07.6",
+      "author": "Joseph Bongaarts",
+      "text": "REFACTOR verification: no refactor needed after first mutateState GREEN; npm run test -- packages/core/test/gameState.test.ts packages/core/test/persistence.test.ts -> passed (5 tests); npm run typecheck -> passed.",
+      "created_at": "2026-05-19T04:31:12Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

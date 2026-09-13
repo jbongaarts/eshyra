@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2",
+  "title": "Repair SRD source authority, provenance, segmentation, and retrieval metadata",
+  "description": "Own source-authority and structural source-fidelity repairs for the SRD pack, plus\npack-side identities and relationships needed by runtime discovery. Strong exhaustive\nchecks remain appropriate where the licensed source independently supplies the\nstructural denominator. Pack aliases, relationships, and indexes are discovery inputs,\nnot proof of universal runtime discovery completeness.",
+  "acceptance_criteria": "- No generated content is presented as SRD-sourced without authoritative source/license support and correct provenance.\n- Known segmentation, continuation, locator, and synthesized-label defects are repaired with source-side evidence.\n- Stable identities/aliases/relationships needed by discovery are source-faithful and non-exclusive.\n- Exhaustive coverage claims identify the source-derived structural population they cover.\n- Pack-side indexes/relationships do not claim universal runtime discovery completeness.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:52:03Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

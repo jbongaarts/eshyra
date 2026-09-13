@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.5",
+  "title": "Add explicit XP values for CR-0 creatures",
+  "description": "Finding source:\n- Fable P2 found CR-0 experience points are underdetermined.\n- Some SRD creatures print \"0 (10 XP)\" while harmless CR-0 creatures are 0 XP.\n- Examples noted: baboon, cat, commoner, homunculus, lemure, shrieker, etc.\n- The creature kind stores only challengeRating: \"0\" and no experiencePoints field.\n- The field exists on stat-block records, and CR-to-XP table alone cannot reconstruct the 19 CR-0-with-10-XP cases.\n\nWhy it matters:\n- Encounter XP/advancement tools cannot determine XP for CR-0 creatures from the pack alone.\n\nAcceptance criteria:\n- Add source-backed experiencePoints to creature records.\n- Correctly distinguish CR 0 creatures worth 10 XP from harmless CR 0 creatures worth 0 XP.\n- Reuse/align with the existing stat-block experiencePoints shape if practical.\n- Add tests for representative CR 0 (10 XP) and CR 0 (0 XP) creatures.\n- Add a gate that round-trips printed creature CR/XP values from source to pack.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-02T03:45:27Z",
+  "closed_at": "2026-07-02T12:47:21Z",
+  "close_reason": "Fixed in PR #383: printed XP captured fail-closed from every Challenge line; all 317 creatures emit experiencePoints (27 CR-0 at 10 XP, Frog/Sea Horse at 0, source-verified); schema requires the field; creature-cr-xp gate round-trips XP vs the SRD table.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.5",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

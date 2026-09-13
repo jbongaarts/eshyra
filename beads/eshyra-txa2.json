@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-txa2",
+  "title": "Restore the raw-Db guard the discovery ownership analyzer dropped",
+  "description": "Narrow follow-up from the PR #538 review (eshyra-o9bd.19.13, merged as a9196de). NOT a known defect: the reviewer inspected the production surface, found no prohibited ownership, and explicitly withdrew the generalized version of this as disproportionate. This bead captures only the cheap subset, so it is not silently lost.\n\nBACKGROUND\nThe W11 ownership analyzer (packages/core/test/discovery/support/discoveryOwnership.ts) proves discovery owns no campaign-rule/ruling schema, store, cache, resolver, or lifecycle. Its second review pass named three residual bypasses; the third pass withdrew them, on the correct reasoning that no finite checker of this sort IS the ownership invariant -- a fresh shadow resolver would satisfy the behavioural adversary too.\n\nTHE ONE PIECE WORTH RESTORING\n'../persistence/db.js' is on REVIEWED_FOREIGN_DEPENDENCIES because discovery legitimately takes a Db to resolve the rules stack. The analyzer does not inspect call sites, so a discovery helper doing db.prepare('SELECT * FROM campaign_rule').all() is structurally green while being exactly the discovery-owned active-rule resolver section 8.4 forbids.\n\nNote the regression: the SUPERSEDED spelling-based guard on the same PR did ban both '.prepare(' and 'campaign_rule'. Moving to the AST analyzer was a clear net improvement but dropped that pair. Restoring it costs almost nothing.\n\nPROPOSAL\nAdd to findOwnershipViolations: no discovery module may call .prepare() on anything, and no discovery module may contain a campaign-rule table name. Both are narrow and complete for what they cover -- there is exactly one way to run SQL through better-sqlite3 here. Add rejection fixtures for each, as every other rule in that analyzer has.\n\nEXPLICIT NON-GOALS (the withdrawn generalization)\nDo NOT attempt closure over every TypeScript encoding of prohibited ownership: alternate mutable-state encodings (plain array/object accumulators, custom cache instances, class static fields, IIFE closures), or type-level reshaping (inline object types, Pick<CampaignRulingProjection, ...>). The reviewer's withdrawal reasoning applies -- that is a static-analysis subsystem neither the bead nor the design asks for, and it would turn a proportionate architectural guard into proof machinery for its own sake.\n\nEVIDENCE\nA rejection fixture per new rule, plus the existing control that legitimate Db use (resolveStrictCampaignRulesStack via ../state/campaignRecordLookup.js) still passes.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-08T06:05:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-08T06:05:49Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

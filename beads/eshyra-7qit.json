@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7qit",
+  "title": "Capture missing SRD equipment and diseases/poisons prose",
+  "description": "Follow-up to PR #221. Import gameplay-relevant Equipment chapter prose and item mechanics from SRD pages 62-74, import general Diseases and Poisons guidance from pages 199 and 204, and add fail-closed sentinel/source coverage for inline bold lead-in prose blocks. Regenerate the D&D 5e SRD pack and preserve existing importer invariants.",
+  "acceptance_criteria": "Equipment item mechanics attach to owning equipment records; section guidance emits source-bounded rules; diseases and poison-type guidance is represented; required source sentinels are found in generated records; importer and worktree verification pass; generated count changes are documented.",
+  "notes": "Implemented equipment prose/item mechanics, Diseases/Poisons guidance, and generated-record sentinel coverage. Generated delta: +15 rules, 0 removed records, 101 equipment records enriched; total 1790 records, 314 rules, 218 equipment. Source coverage remains unaccounted=0 with 188 ambiguous inventory entries. Validation passed: focused/full importer tests (999 tests), verify:dnd5e-srd-pack, and verify:worktree (1740 passed, 19 skipped).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T14:46:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-15T15:07:23Z",
+  "started_at": "2026-06-15T14:47:10Z",
+  "closed_at": "2026-06-15T15:07:23Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

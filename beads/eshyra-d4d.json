@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4d",
+  "title": "Support multiple player characters",
+  "description": "Design and implement support for campaigns with multiple player characters instead of assuming a single protagonist. Scope includes character identity, turn/input attribution, party state, scene context, memory summaries, CLI/player UX, and persistence/query changes needed for solo multi-PC or small-group play.",
+  "design": "Initial epic only. Design work should establish: (1) whether multiple PCs are controlled by one local user, multiple human players, or both; (2) how player input is attributed to a PC or party; (3) how existing character/state tables and mutations represent multiple PCs; (4) how context assembly and memory summaries preserve individual character perspective and party canon; (5) CLI affordances for creating/selecting/switching active PC; (6) migration/backward compatibility for existing single-PC campaign DBs.",
+  "acceptance_criteria": "A reviewed design exists before implementation tasks are created; implementation supports at least two player characters in one campaign; deterministic state mutations can target each PC independently; context assembly includes relevant party and active-PC state; session summaries preserve per-PC important facts; existing single-PC flows keep working or have a documented migration path; tests cover persistence, state mutation, context assembly, and CLI flow for multi-PC campaigns.",
+  "notes": "Design drafted at docs/multi-pc-design.md (branch work/loreweaver-d4d). Foundation (v9) needs no further migration; remaining work is a read/orchestration/UX layer. Proposed 7-issue breakdown awaits review before child issues are created.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:33:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T17:41:26Z",
+  "closed_at": "2026-05-28T21:38:09Z",
+  "close_reason": "All 7 child issues complete. Multi-PC support delivered: party roster reads, party-aware context assembly + owner-scoped inventory, per-tool character targeting, acting-character attribution, CLI party UX (/party,/switch,/addpc), per-PC scene salient refs (schema v9->v10), and docs. Design at docs/multi-pc-design.md. PR #100.",
+  "comments": [
+    {
+      "id": "df19b6a8-d8ed-591c-90f0-274def8d9d8f",
+      "issue_id": "eshyra-d4d",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline at .worktrees/loreweaver-d4d (branch work/loreweaver-d4d): npm run typecheck OK; npm run test => 739 passed, 3 skipped (66 files passed, 2 skipped). Clean.",
+      "created_at": "2026-05-28T17:42:56Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

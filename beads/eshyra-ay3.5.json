@@ -1,0 +1,53 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ay3.5",
+  "title": "Implement guided character creation flow wrapper",
+  "description": "Add the agent-facing guided character creation flow that collects/proposes choices, invokes deterministic validation, and persists the accepted SRD-legal character through mutate_state into canonical state.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-20T22:49:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:06Z",
+  "started_at": "2026-05-20T22:54:09Z",
+  "closed_at": "2026-05-20T22:56:22Z",
+  "close_reason": "Implemented guided character creation completion wrapper with validation, correction guidance, and canonical mutate_state persistence; TDD RED/GREEN/REFACTOR evidence recorded; verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ay3.5",
+      "depends_on_id": "eshyra-ay3",
+      "type": "parent-child",
+      "created_at": "2026-05-20T17:49:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "21ec051e-6eae-551e-a0a0-0d80ce598303",
+      "issue_id": "eshyra-ay3.5",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/characterCreation.test.ts -> failed for expected reason: completeCharacterCreation is not exported/implemented; existing validator tests still passed.",
+      "created_at": "2026-05-20T22:54:42Z"
+    },
+    {
+      "id": "42acdfd9-8f1a-5469-8018-580624381e6e",
+      "issue_id": "eshyra-ay3.5",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: completeCharacterCreation implemented. Verification: npx vitest run packages/core/test/characterCreation.test.ts passed 5/5; npm run typecheck passed; npm run test passed with 21 files passed / 1 skipped (100 passed / 1 skipped).",
+      "created_at": "2026-05-20T22:55:30Z"
+    },
+    {
+      "id": "a8199398-26a3-57e6-99f7-ab86743fca18",
+      "issue_id": "eshyra-ay3.5",
+      "author": "Joseph Bongaarts",
+      "text": "TDD REFACTOR: extracted characterMutations so completeCharacterCreation reuses already validated character data instead of validating twice. Verification: npx vitest run packages/core/test/characterCreation.test.ts passed 5/5; npm run typecheck passed; npm run test passed with 21 files passed / 1 skipped (100 passed / 1 skipped).",
+      "created_at": "2026-05-20T22:56:15Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 3
+}

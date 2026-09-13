@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-gacz",
+  "title": "Demon Armor stays permanently undoffable after its curse ends (blocksDoff ignores live curse state)",
+  "description": "Post-merge review of PR #457 (verified against current main, 2026-07-19).\n\n## Defect\n\nDemon Armor (and any future `blocksDoff` cursed item) remains permanently impossible to doff after its curse is removed, contradicting the SRD (\"you can't doff it unless you are targeted by the remove curse spell or similar magic\").\n\nCode facts (all verified):\n\n- `donItem` (`packages/core/src/state/inventoryWear.ts:104-125`) attaches the source-defined curse condition on don (`m7-demon-armor-curse` via `findDonCurseState` + `addCondition`).\n- The committed pack record `magic-item:demon-armor` encodes the release path: `curse.endedBy: [\"spell:remove-curse\", \"similar magic\"]` and the state definition carries `endsOn: [{trigger: \"targeted-by-spell:remove-curse-or-similar-magic\"}]`.\n- `removeCondition` (`domainMutations.ts:154`) can remove the live condition freely.\n- But `assertInventoryCurseCustodyReady` (`packages/core/src/state/attunement.ts:205-214`) treats `curse.blocksDoff === true` as permanently active whenever the item is worn (or wear state ambiguous). It never reads the wearer's `conditions_json` / live curse state.\n\nSo after Remove Curse: condition gone, `doff_item` still fails forever. Worse, the same gate throws for every custody mutation while worn (`doff`, `dropped`, `sold`, `transfer` — `lost`/`transfer` return only *after* the blocksDoff check), so the item is wholly stuck on the character.\n\n## Required fix (per review)\n\nMake the doff restriction depend on the applicable live curse state (e.g. the wearer still has the don-onset curse condition id), or persist an explicit active/resolved curse-instance state. Add a test covering: don Demon Armor → doff fails → remove/resolve the curse condition → doff succeeds → item remains held, `not_worn`.\n\nDesign note: keying off `conditions_json` means a plain `remove_condition` tool call (a DM adjudication) lifts the block — that is the existing condition-authority boundary and matches the pack's `endsOn` trigger being adjudication-mediated anyway. If a stricter evidence trail is wanted, persist a curse-instance row instead; either way the current permanent block is wrong.\n\nRelated (same PR #457 review): migration-0020 stranded stable characters, advanceWorldTime recovery atomicity, rest benefits evidence gap.\n",
+  "notes": "Sibling beads from PR #457 post-merge review: eshyra-q93i (migration-0020 stranding), eshyra-r2ps (clock/recovery atomicity), eshyra-cc3c (rest evidence gap). Reviewer recommends one follow-up PR; the first three are re-freeze blockers.\nFix merged to branch eshyra-geny; PR #459 open (https://github.com/jbongaarts/eshyra/pull/459). Close after PR merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:09:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-20T01:12:04Z",
+  "started_at": "2026-07-20T00:14:51Z",
+  "closed_at": "2026-07-20T01:12:04Z",
+  "close_reason": "Fixed in PR #459 (merge commit 846a52f5), including review-round hardening: migration partial-schedule guard and canonical conditions validation.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

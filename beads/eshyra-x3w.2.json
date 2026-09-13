@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.2",
+  "title": "Brainstorm x3w: Ask clarifying questions",
+  "description": "Ask focused questions one at a time to clarify scope, constraints, and success criteria for multiple rules-pack support.",
+  "notes": "Clarification: support both concepts: (1) mutually distinct base RPG systems such as D&D vs Pathfinder, and (2) additive/expansion rules packs that layer onto a compatible base system. Campaign binding should distinguish base system identity from ordered compatible add-ons rather than treating all active packs as equivalent.\nClarification: additive rules packs must have explicit load order/precedence. The campaign binding should persist an ordered add-on list, not an unordered set, so lookup and validation can make deterministic conflict decisions.\nClarification: same-key conflicts across ordered rules packs must be explicit. A later add-on may override a base/add-on record only when the record or pack declares an explicit override relationship; accidental duplicate keys fail validation.\nClarification: module/adventure packs must declare rules requirements: required base rules system plus any required/compatible add-on packs. Campaign creation should reject a module paired with an incompatible rules binding before forking campaign content.\nClarification: the first non-D&D sample/fixture should be based on a real open-licensed RPG system, not an invented toy-only rules model. Candidate selection must be verified against primary license/source materials before bundling or test fixture inclusion.\nClarification: the first real non-D&D fixture should be Pathfinder, preferably Pathfinder 2e Remaster/ORC-licensed material unless later requirements select a different Pathfinder edition/source.\nClarification: include rules-system-aware character generation in the first implementation plan. Pathfinder coverage should extend beyond pack loading/lookup into character creation validation, while preserving existing D&D SRD character creation behavior.\nClarification: Pathfinder character generation should be broad/playable rather than a narrow level-1 test-only subset. The implementation plan should still stage this carefully because Pathfinder character creation spans ancestry, background, class, ability boosts, proficiencies, feats, equipment, spells, and validation interactions.\nClarification: favor level-1 Pathfinder character generation for the first deliverable, but design data structures and validation seams to allow future level advancement without replacing the rules-pack model.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:36:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T04:38:27Z",
+  "closed_at": "2026-05-23T04:50:30Z",
+  "close_reason": "Clarified base vs add-on packs, explicit order and overrides, module compatibility, Pathfinder fixture, and broad level-1 character generation scope.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.2",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:36:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.2",
+      "depends_on_id": "eshyra-x3w.1",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:36:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,42 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.9.1.1",
+  "title": "Complete W7 P11 after-state evidence after B3 repair lands",
+  "description": "Follow-up discovered while authoring W7. The P11 fixture records the verified before-state divergence between strict lookup_rules and base-only deterministic consumers. Re-run the P11 after-half once the B3 repair branch eshyra-6vpw-deterministic-pack-stack has landed on the integration base. Prove that strict discovery and deterministic execution resolve the same active record, system, version, and complete overrideChain, with no silent bundled-D&D fallback. Keep the existing bounded fixture evidence and do not add a discovery-local stack or schema.",
+  "acceptance_criteria": "P11 after-state assertions pass on the integrated B3 repair; active record, system/version, and full overrideChain agree across discovery and deterministic execution; no bundled fallback is possible; no duplicate stack model is introduced.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-01T23:56:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-02T00:12:06Z",
+  "closed_at": "2026-09-02T00:12:06Z",
+  "close_reason": "Superseded: B3 (eshyra-6vpw) merged to main as PR #508 before this PR landed. P11's after-state evidence is now recorded directly in the fixture and verified at dd96529, so no separate follow-up is needed.",
+  "labels": [
+    "architecture",
+    "dm-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.9.1.1",
+      "depends_on_id": "eshyra-o9bd.19.9.1",
+      "type": "parent-child",
+      "created_at": "2026-09-01T18:56:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.9.1.1",
+      "depends_on_id": "eshyra-6vpw",
+      "type": "blocks",
+      "created_at": "2026-09-01T18:56:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

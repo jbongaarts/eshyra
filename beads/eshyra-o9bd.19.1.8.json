@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.8",
+  "title": "Make known-finding regressions test the actual generalized defect",
+  "description": "For durable known findings, make regression evidence evaluate the violated invariant\nrather than merely select a registry row or prove baseline existence. Scope each\npredicate to the known defect class and a justified affected population; do not invent\na universal mechanic census.",
+  "acceptance_criteria": "- Each supported known finding has regression evidence that distinguishes repaired from defective state.\n- Sibling cases within the known defect class are covered where independently identifiable.\n- Unevaluable/unresolvable findings remain unresolved and cannot pass through an empty result.\n- Corpus-wide claims are used only when the exact bounded population is independently established.\n- The finding registry remains audit-fact authority, not executable-universe authority.",
+  "notes": "ADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T15:08:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:51:45Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-26T10:08:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.8",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

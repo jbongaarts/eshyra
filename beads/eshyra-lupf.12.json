@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.12",
+  "title": "Cross-class progression integration tests",
+  "description": "End-to-end progression tests spanning award -> eligibility -> guided level-up -> deterministic apply for representative classes (a martial class with no spellcasting and a full caster), in both XP and milestone modes, asserting auditable ledger state and exact mechanical deltas. Validates the epic as a whole.",
+  "acceptance_criteria": "Integration tests cover XP and milestone modes for at least one martial and one caster class end-to-end, asserting ledger auditability and exact HP/feature/spell-slot outcomes.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:21:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-28T02:56:49Z",
+  "started_at": "2026-06-28T02:47:40Z",
+  "closed_at": "2026-06-28T02:56:49Z",
+  "close_reason": "Added cross-class XP/milestone progression integration tests for Fighter and Cleric; fixed surfaced subclass/progression resolver gaps so full-caster apply audits exact deltas.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.12",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:21:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.12",
+      "depends_on_id": "eshyra-lupf.8",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.12",
+      "depends_on_id": "eshyra-lupf.11",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

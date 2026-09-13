@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-76b7",
+  "title": "Fix creature/NPC lore bleeding into action/reaction text",
+  "description": "Creature/NPC post-stat-block flavor prose and Appendix MM-A intro prose are appended to the last action/reaction text (e.g. acolyte Club, knight Parry, ogre-zombie Morningstar). Add an optional data.description field, split trailing flavor into it using source paragraph-gap structure, stop appendix intro bleeding into ogre-zombie, add schema validation, parser+generated-pack regression tests, and an audit guard against lore/document prose in mechanical text.",
+  "notes": "Implemented; PR #220 open (https://github.com/jbongaarts/eshyra/pull/220). Follow-up filed for emitting MM-A intro as a rule.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T04:42:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-15T15:03:24Z",
+  "started_at": "2026-06-15T04:43:12Z",
+  "closed_at": "2026-06-15T15:03:24Z",
+  "close_reason": "Merged with PR #220",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

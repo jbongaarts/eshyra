@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-v5r6",
+  "title": "Make turn-auditor missing tool requirements target-specific",
+  "description": "Problem\nThe turn auditor can currently report a missing required tool by tool name only. In session-mqkis411-rlsh20, debug output effectively said lookup_rules was missing even though lookup_rules had been called. The real issue was that additional lookup_rules calls were needed for specific equipment records such as chain mail, shield, and longsword.\n\nTool-name-only diagnostics are too coarse for debugging and can look contradictory:\n- executedToolNames includes lookup_rules\n- missingRequiredTools also includes lookup_rules\n- the missing target/record is only recoverable from prose repair instructions\n\nGoal\nMake auditor rejection diagnostics target-specific enough to explain what call or lookup was missing.\n\nAcceptance Criteria\n- Auditor output can distinguish missing tool calls by both tool name and target/intent, for example:\n  - tool: lookup_rules, target: chain mail\n  - tool: lookup_rules, target: shield\n  - tool: lookup_rules, target: longsword\n- Existing simple missingRequiredTools behavior may be retained for compatibility, but debug/session traces should expose the richer structure when available.\n- Repair prompts should use the richer missing-call data instead of relying only on prose.\n- Add tests showing that:\n  1. a tool may have been executed and still be missing a specific required target\n  2. auditor debug output does not misleadingly imply the tool was never called\n  3. retry instruction includes the target-specific missing requirement\n- Do not require perfect semantic parsing of every possible tool call target; cover the common structured cases first, especially lookup_rules and equipment/rules lookups.\n\nNon-goals\n- Do not make the auditor deterministic.\n- Do not replace the current audit/retry mechanism.\n- Do not block gameplay on perfect target extraction when the auditor can only provide coarse data.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-20T21:15:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-21T05:06:46Z",
+  "closed_at": "2026-06-21T05:06:46Z",
+  "close_reason": "Already completed by eshyra-znzn in commit d59abfe (#250): target-specific missingRequiredCalls, compatibility projection to missingRequiredTools, rich debug traces, target-aware retry/failure messages, and all requested regression cases. Focused tests pass on 2026-06-21.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

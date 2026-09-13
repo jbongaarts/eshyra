@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.24.2",
+  "title": "GREEN: failed-turn diagnostics",
+  "description": "Implement the smallest schema, recorder, and orchestrator changes needed for the RED diagnostics tests to pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T23:56:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T23:58:23Z",
+  "closed_at": "2026-05-29T00:01:05Z",
+  "close_reason": "Implemented schema, migration, recorder, and post-rollback diagnostic write; focused tests and typecheck pass.",
+  "labels": [
+    "architecture",
+    "diagnostics",
+    "orchestrator",
+    "parallel-caution",
+    "persistence",
+    "refactor",
+    "tech-debt",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.24.2",
+      "depends_on_id": "eshyra-0jq.24",
+      "type": "parent-child",
+      "created_at": "2026-05-28T18:56:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.24.2",
+      "depends_on_id": "eshyra-0jq.24.1",
+      "type": "blocks",
+      "created_at": "2026-05-28T18:57:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "61f54592-811d-59a4-86df-ef1ebb698ad0",
+      "issue_id": "eshyra-0jq.24.2",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: npx vitest run packages/core/test/orchestrator.test.ts packages/core/test/migrations.test.ts -> passed (28 tests); npm run typecheck -> passed.",
+      "created_at": "2026-05-29T00:01:05Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

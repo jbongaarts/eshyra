@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-40w",
+  "title": "Identify confirmed openly-licensed adventure for E2 conversion",
+  "description": "RISK/BLOCKER for E2 conversion step (not schema work). D&D 5e SRD contains NO adventures. Must find a SPECIFIC adventure under CC-BY / ORC / OGL (community/indie, not a Wizards starter set). Output: named adventure + license + source. E2 schema/overlay/world_query can proceed in parallel; only the one-time conversion is gated on this.",
+  "acceptance_criteria": "A specific adventure is named with source URL/location, license name/version, license text or authoritative reference, attribution requirements, commercial/hosted/redistribution allowances, and confirmation it is not fair-use-dependent or merely ownership-gated closed IP; E2 conversion can proceed only after these facts are recorded.",
+  "notes": "CONFIRMED SOURCE 2026-05-18: Recommended adventure for E2 conversion: The Old Sewer by Logen_Nein. Source/catalog page: https://logen-nein.itch.io/ lists The Old Sewer as 'A system neutral one page dungeon' and states 'All my works are licensed under Creative Commons Attribution 3.0 United States License unless otherwise stated' with license link https://creativecommons.org/licenses/by/3.0/us/. Direct adventure URL appears to be https://logen-nein.itch.io/the-old-sewer (web fetch was unreliable, but itch catalog/search results confirm title and creator). License: Creative Commons Attribution 3.0 United States (CC BY 3.0 US). License allowances from Creative Commons: share/copy/redistribute in any medium or format for any purpose, even commercially; adapt/remix/transform/build upon for any purpose, even commercially; irrevocable if terms are followed. Attribution requirements: credit Logen_Nein as creator, retain/supply title The Old Sewer, link source/material when practical, link CC BY 3.0 US license, and indicate if the E2/5e conversion modifies/adapts the original. Additional restrictions: do not impose legal/technical restrictions that prevent downstream CC BY uses. Assessment: not fair-use-dependent and not closed-IP/ownership-gated; creator expressly applies an open Creative Commons Attribution license to their works. Caveat: before bundling exact PDF text/art, download the direct itch file and re-check the artifact itself for any contrary per-file license notice; absent a contrary page/file notice, the creator-level CC BY 3.0 US statement covers the work.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:34:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:46Z",
+  "started_at": "2026-05-18T03:38:05Z",
+  "closed_at": "2026-05-18T03:40:21Z",
+  "close_reason": "Recorded confirmed open-licensed adventure candidate The Old Sewer by Logen_Nein with source, CC BY 3.0 US license reference, attribution and commercial redistribution/adaptation allowances, and non-fair-use/non-closed-IP assessment; verification: bd show loreweaver-40w exit 0 confirmed acceptance coverage.",
+  "comments": [
+    {
+      "id": "d6709655-7148-5bfa-a739-30ac07316048",
+      "issue_id": "eshyra-40w",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: bd show loreweaver-40w -> exit 0; notes cover required named adventure, source URL/location, license name/version, authoritative license reference, attribution requirements, commercial redistribution/adaptation allowances, and non-fair-use/non-closed-IP assessment.",
+      "created_at": "2026-05-18T03:40:13Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

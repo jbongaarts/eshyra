@@ -1,0 +1,101 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.20",
+  "title": "Align CLI config docs with managed campaign registry",
+  "description": "Update CLI/storage documentation so it matches the current managed campaign registry behavior.\r\n\r\nThe current docs appear to have drift between older LOREWEAVER_DB_PATH guidance and the newer managed campaign flow. This bead is intentionally docs/config-comment focused and should not change importer parser behavior.\n\n## Context\nObserved gap:\r\n- README still appears to describe LOREWEAVER_DB_PATH as required / central.\r\n- Current storage behavior supports a per-user data root, managed campaign registry, loreweaver new, loreweaver campaigns, and loreweaver play.\r\n- LOREWEAVER_DB_PATH should be treated as optional / advanced / unmanaged override, not the normal happy path.\r\n\r\nParallel-safety:\r\n- Avoid touching SRD importer parser files.\r\n- Avoid broad source-layout moves covered by loreweaver-0jq.16.\r\n- This can run in parallel with loreweaver-0m9.5.x importer beads.",
+  "design": "Suggested files to inspect/update:\r\n- README.md\r\n- .env.example\r\n- docs/storage.md\r\n- any CLI usage docs that mention campaign creation or LOREWEAVER_DB_PATH\r\n\r\nImplementation guidance:\r\n1. Make the default documented flow:\r\n   - loreweaver new\r\n   - loreweaver campaigns\r\n   - loreweaver play\r\n2. Reframe LOREWEAVER_DB_PATH as optional advanced override for unmanaged/special DB location use.\r\n3. Ensure README, storage docs, and env comments do not contradict each other.\r\n4. Do not introduce behavioral code changes unless tests reveal a small typo-level issue in command help.",
+  "acceptance_criteria": "- README no longer says LOREWEAVER_DB_PATH is required for normal local use.\r\n- .env.example clearly marks LOREWEAVER_DB_PATH as optional / advanced.\r\n- README includes the managed campaign flow: loreweaver new, loreweaver campaigns, loreweaver play.\r\n- Storage docs and README agree on where campaign DBs live and how they are selected.\r\n- No SRD importer parser files are modified.\r\n- Existing tests/checks pass.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 90,
+  "created_at": "2026-05-28T23:17:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:15Z",
+  "started_at": "2026-05-28T23:21:00Z",
+  "closed_at": "2026-05-28T23:32:44Z",
+  "close_reason": "Aligned README, .env.example, storage, CLI distribution docs, and CLI comment with managed campaign registry behavior; verification passed: npm run check, npm run typecheck, npm run test; PR #103 checks passed.",
+  "labels": [
+    "architecture",
+    "cli",
+    "docs",
+    "parallel-safe",
+    "refactor",
+    "storage",
+    "tech-debt",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.20",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-28T18:17:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "c5c6e4fd-41f7-5cdc-b252-e62acf126c87",
+      "issue_id": "eshyra-0jq.20",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded with expected Node 24 engine warnings; npm run check passed (Biome checked 201 files).",
+      "created_at": "2026-05-28T23:22:47Z"
+    },
+    {
+      "id": "94426e1f-77b2-52c0-bdfa-30ae670b577d",
+      "issue_id": "eshyra-0jq.20",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run check -> exit 0 (Biome checked 201 files); npm run typecheck -> exit 0; npm run test -> exit 0 (73 passed, 2 skipped files; 793 passed, 3 skipped tests).",
+      "created_at": "2026-05-28T23:29:12Z"
+    },
+    {
+      "id": "fdb6c1c6-a53f-590c-960a-860143d18279",
+      "issue_id": "eshyra-0jq.20",
+      "author": "Joseph Bongaarts",
+      "text": "Beads hygiene: bd preflight printed its default Go/Nix checklist, which is non-applicable to this npm/TypeScript repo; applicable gates were npm run check, npm run typecheck, and npm run test. bd stale found none. bd orphans reported unrelated importer epic loreweaver-0m9.5; bd list --status=in_progress showed loreweaver-0m9.5 and this issue.",
+      "created_at": "2026-05-28T23:30:00Z"
+    },
+    {
+      "id": "e03cb123-b91a-5b3b-b756-41728732893c",
+      "issue_id": "eshyra-0jq.20",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for cc2bf81436c0e3c6ee9eb1307149608f682494d8..c2c8a740f17c02e27f24219370cfb82b2846ea38: Assessment: Ready for PR. Critical: none. Important: none. Minor: none. Follow-up: none. Review basis: touched files limited to README.md, .env.example, docs/storage.md, docs/cli-distribution.md, and a CLI comment; no SRD importer parser files modified; active user-facing docs no longer contain required-path LOREWEAVER_DB_PATH wording.",
+      "created_at": "2026-05-28T23:30:36Z"
+    },
+    {
+      "id": "a9b8af29-8d22-5d20-bab2-0fcc8d733b45",
+      "issue_id": "eshyra-0jq.20",
+      "author": "Joseph Bongaarts",
+      "text": "PR opened: https://github.com/jbongaarts/loreweaver/pull/103. PR checks: Analyze (actions), Analyze (javascript-typescript), CodeQL, and both build-test jobs passed via gh pr checks 103 --watch.",
+      "created_at": "2026-05-28T23:32:37Z"
+    },
+    {
+      "id": "79189a17-f843-50e0-bb0d-d758388ecc2c",
+      "issue_id": "eshyra-0jq.20",
+      "author": "Joseph Bongaarts",
+      "text": "Review follow-up evaluation: requested configured smoke docs must not imply ANTHROPIC_API_KEY=\" \\ is valid. Current PR branch no longer contains that exact empty-key smoke line, but accepted tightening docs/cli-distribution.md to say the configured smoke requires a real credential and empty strings are treated as unset.",
+      "created_at": "2026-05-28T23:42:54Z"
+    },
+    {
+      "id": "4640e8a6-ff9e-58fd-8fe2-89e247def2d5",
+      "issue_id": "eshyra-0jq.20",
+      "author": "Joseph Bongaarts",
+      "text": "Review follow-up verification: npm run check -> exit 0 (Biome checked 201 files). Exact scan for export ANTHROPIC_API_KEY=\" \\ in docs smoke guidance returned no matches. Changed only docs/cli-distribution.md.",
+      "created_at": "2026-05-28T23:43:25Z"
+    },
+    {
+      "id": "457ff017-4d47-59c2-b18c-6429ad1f91ef",
+      "issue_id": "eshyra-0jq.20",
+      "author": "Joseph Bongaarts",
+      "text": "Review follow-up PR checks after commit 196596a: gh pr checks 103 --watch reported Analyze (actions), Analyze (javascript-typescript), CodeQL, and both build-test jobs passed.",
+      "created_at": "2026-05-28T23:45:05Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 8
+}

@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-g9im",
+  "title": "SRD importer: capture chapter/appendix intro prose hidden by ignored:document-structure",
+  "description": "Follow-up to PR #222 audit. Chapter/appendix/subclass-category intro prose is being dropped as ignored:document-structure even when it carries gameplay rules or source context. Import/attach the remaining gameplay-relevant intro prose and harden coverage so ignored:document-structure cannot silently hide rules text. Findings: (1) Feats optional-rule prose; (2) Conditions general rules; (3) Using Ability Scores chapter intro; (4) subclass category overviews; (5) Appendix MM-B intro; (6) harden ignored:document-structure guard. Ground truth confirmed from SRD PDF: Feats intro p75 lines1-17 ('Using the optional feats rule'); Conditions intro p358 lines1-15 ('A condition lasts either until it is countered', 'the condition's effects don't get worse'); UAS intro p76 ('Six abilities provide a quick description'); MM-B preamble p395 lines1-6 ('This appendix contains statistics for various humanoid nonplayer characters'); 8 subclass-category h=18 headings (Martial Archetypes p25, Monastic Traditions p28, Sacred Oaths p32, Ranger Archetypes p37, Roguish Archetypes p40, Sorcerous Origins p44, Otherworldly Patrons p50, Arcane Traditions p54). Follow docs/importer-fix-protocol.md. Do not weaken tests/audit.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T15:33:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-15T15:54:55Z",
+  "close_reason": "All children implemented and handed off in PR #227.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

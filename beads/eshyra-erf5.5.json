@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.5",
+  "title": "Account for Adventuring Gear / deity-table continuation pages in SRD source-region ledger",
+  "description": "Follow-up from eshyra-5c7f. After fixing the sidebar-body-prose gap (17 sidebar records + 2 incidental creature-variant sidebars now have source-region-ledger entries via the isSidebarBodyOwner fix in sourceRegionLedger.ts), three pages still have zero source-region-ledger entries and no per-caption source-coverage.json accounting:\n\n- p69: the Adventuring Gear price/weight table's embedded sub-group captions (\"Ammunition\", \"Arcane focus\", \"Druidic focus\", \"Holy symbol\") never appear as their own source-inventory items at all (unlike the neighboring \"Container Capacity\" caption on the same page, which does). They are apparently being consumed by the \"Adventuring Gear\" table-caption's row-swallowing loop in sourceInventory.ts (buildSourceInventory's `while (isTableCell...) i += 1` after a table-caption) without being independently detected.\n- p361: \"Greek Deities\" / \"Egyptian Deities\" / \"Norse Deities\" table captions are correctly inventoried and resolve to their table: records, but own no ledger entries because they have (almost) no non-table-cell prose before their rows start.\n- p362: pure continuation of the Norse Deities table rows (Frigga through Uller); no heading at all on this page, so nothing anchors it to an owner for ledger purposes.\n\nVerified this is an audit-evidence gap only, NOT content loss: every equipment item on p69 (abacus, hourglass, sprig-of-mistletoe, totem, wooden-staff, etc.) is present with correct cost/weight in the generated pack, and table:norse-deities already contains all 20 rows including the p362 continuation (Frigga through Uller).\n\nClosing this requires either (a) a real extractor-level fix so embedded sub-group captions within a mega price-list table are detected as their own source-inventory items instead of being silently swallowed by the row-consuming loop, or (b) a deliberate, documented design decision that a source-region-ledger entry is not the right accounting mechanism for table-row-only pages/continuations and that source-coverage.json's table: record ownership is the intended proof instead — in which case the audit tooling should say so explicitly (e.g. a new intentionally-ignored reason or an explicit per-page allowlist) rather than silently reporting zero entries.\n\nLikely files: packages/core/scripts/importers/dnd5e-srd-5.1/sourceInventory.ts (embedded-caption detection inside the table-row-consuming loop), sourceRegionLedger.ts (continuation-page-with-no-owner accounting), and packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts if a new page-completeness proof is added.\n\nSuggested tests: a source-inventory unit test with a synthetic multi-caption price table proving each caption becomes its own item; a source-region-ledger regression pinning p69/p361/p362 to explicit accounting once the strategy is decided.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T06:45:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T22:08:15Z",
+  "started_at": "2026-07-01T21:44:12Z",
+  "closed_at": "2026-07-01T22:08:15Z",
+  "close_reason": "Option (b) implemented as a documented design decision: ledger emits explicit table-rows entries for cell runs on otherwise unaccounted pages (p69 x2, p360-361, p361 x2 incl. p362 span) and asserts summary.unaccountedPages empty at import time. table:norse-deities locator now pp. 361, 362 (source-confirmed). Thaw note 2026-07-01-erf5-remaining-followups.md. PR #381.",
+  "labels": [
+    "audit",
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.5",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T01:45:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

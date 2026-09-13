@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-bjm",
+  "title": "Wire exit-time Dolt checkpoint into the CLI graceful close",
+  "description": "The CLI 'loreweaver play' graceful close calls closeSessionGracefully without a SessionCheckpointRunner, so session exit runs scene-summary/recap/arc-rollup but no Dolt checkpoint. closeSessionGracefully already accepts an optional checkpoint runner; this issue wires one (Dolt provisioning + CheckpointStore) into runPlay's close path so exit-time checkpoints happen.",
+  "acceptance_criteria": "loreweaver play graceful exit passes a SessionCheckpointRunner to closeSessionGracefully; a Dolt checkpoint is created on clean exit; absence of Dolt degrades gracefully (clear message, session still closes); the CLI reports the checkpoint id.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T01:55:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:20Z",
+  "started_at": "2026-05-21T01:58:46Z",
+  "closed_at": "2026-05-24T03:38:57Z",
+  "close_reason": "Work merged to main via PR #13 (3bf32b2) and PR #14 (efdf91c); issues left in_progress.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

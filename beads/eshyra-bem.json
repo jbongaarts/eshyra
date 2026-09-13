@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-bem",
+  "title": "Refresh README for current MVP state",
+  "description": "Update README.md from its stale pre-MVP language to the current CLI/local MVP surface. Cover what works now, setup, configuration, loreweaver play, dolt install/checkpoints, test expectations, and key limitations without overstating product readiness. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "README accurately reflects the current package scripts, CLI commands, campaign loop status, Dolt checkpoint behavior, Node/native dependency caveats, and links to current ADR/docs; npm run typecheck and npm run test pass after the doc update.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:10:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:45Z",
+  "started_at": "2026-05-21T04:11:40Z",
+  "closed_at": "2026-05-21T04:13:01Z",
+  "close_reason": "README refreshed for current local CLI MVP status, source-run commands, env configuration, Dolt checkpoints, and storage model. Verified with npm run typecheck and npm run test.",
+  "comments": [
+    {
+      "id": "43e9772f-9cd6-5737-ba1b-5080f60d1be3",
+      "issue_id": "eshyra-bem",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0 (tsc --build --force). npm run test -> exit 0; 35 test files passed, 195 tests passed, 1 skipped.",
+      "created_at": "2026-05-21T04:13:24Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

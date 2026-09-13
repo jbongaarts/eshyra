@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7wc.2",
+  "title": "Task 2: deterministic SQLite snapshot serializer",
+  "description": "Objective:\nDeterministic SQLite -> canonical snapshot. `serializeCampaign(db)` returns ordered\n`SnapshotRecord[]` (schema records then row records); `canonicalize(records)`\nrenders a byte-stable string. Same SQLite content => identical bytes.\n\nFiles:\n- Create: `packages/core/src/persistence/checkpoint/serialize.ts`\n- Modify: `packages/core/src/index.ts`\n- Test:   `packages/core/test/checkpoint.serialize.test.ts`\n\nSteps:\n\n1. Write the failing test `packages/core/test/checkpoint.serialize.test.ts`:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport { openDatabase } from '../src/persistence/db.js';\nimport {\n  serializeCampaign,\n  canonicalize,\n} from '../src/persistence/checkpoint/serialize.js';\n\nfunction seed(rowsReversed: boolean) {\n  const db = openDatabase(':memory:');\n  db.exec('CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);');\n  db.exec('CREATE TABLE notes (id INTEGER PRIMARY KEY, body TEXT);');\n  const pairs = [\n    ['b', '2'],\n    ['a', '1'],\n  ];\n  for (const [k, v] of rowsReversed ? [...pairs].reverse() : pairs) {\n    db.prepare('INSERT INTO meta(key, value) VALUES (?, ?)').run(k, v);\n  }\n  db.prepare('INSERT INTO notes(id, body) VALUES (?, ?)').run(1, null);\n  return db;\n}\n\ndescribe('deterministic serialization', () => {\n  it('is identical regardless of physical insert order', () => {\n    const s1 = canonicalize(serializeCampaign(seed(false)));\n    const s2 = canonicalize(serializeCampaign(seed(true)));\n    expect(s1).toBe(s2);\n  });\n\n  it('orders tables by name and is stable across runs', () => {\n    const s1 = canonicalize(serializeCampaign(seed(false)));\n    const s2 = canonicalize(serializeCampaign(seed(false)));\n    expect(s1).toBe(s2);\n    expect(s1.indexOf('\"table\":\"meta\"')).toBeLessThan(\n      s1.indexOf('\"table\":\"notes\"'),\n    );\n  });\n\n  it('excludes sqlite internal tables', () => {\n    const s = canonicalize(serializeCampaign(seed(false)));\n    expect(s).not.toContain('sqlite_');\n  });\n});\n```\n\n2. Run it to verify FAIL.\n   Command: `npx vitest run packages/core/test/checkpoint.serialize.test.ts`\n   Expected: FAIL — module not found.\n\n3. Create `packages/core/src/persistence/checkpoint/serialize.ts`:\n```ts\nimport type { Db } from '../db.js';\n\nexport interface SnapshotRecord {\n  table: string;\n  kind: 'schema' | 'row';\n  ordinal: number;\n  payload: string;\n}\n\ninterface MasterRow {\n  name: string;\n  sql: string | null;\n}\n\nexport function serializeCampaign(db: Db): SnapshotRecord[] {\n  const tables = (\n    db\n      .prepare(\n        \"SELECT name, sql FROM sqlite_master WHERE type='table' \" +\n          \"AND name NOT LIKE 'sqlite_%' ORDER BY name\",\n      )\n      .all() as MasterRow[]\n  ).filter((t) => t.sql !== null);\n\n  const records: SnapshotRecord[] = [];\n\n  for (const t of tables) {\n    records.push({\n      table: t.name,\n      kind: 'schema',\n      ordinal: 0,\n      payload: JSON.stringify({ create: t.sql }),\n    });\n  }\n  for (const t of tables) {\n    const rows = db.prepare(`SELECT * FROM \"${t.name}\"`).all() as Record<\n      string,\n      unknown\n    >[];\n    const encoded = rows\n      .map((r) => canonicalRow(r))\n      .sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));\n    encoded.forEach((payload, i) => {\n      records.push({ table: t.name, kind: 'row', ordinal: i, payload });\n    });\n  }\n  return records;\n}\n\nfunction canonicalRow(row: Record<string, unknown>): string {\n  const keys = Object.keys(row).sort();\n  const obj: Record<string, unknown> = {};\n  for (const k of keys) {\n    const v = row[k];\n    obj[k] = Buffer.isBuffer(v) ? { __blob: v.toString('base64') } : v;\n  }\n  return JSON.stringify(obj);\n}\n\nexport function canonicalize(records: SnapshotRecord[]): string {\n  return records\n    .map(\n      (r) =>\n        `{\"table\":${JSON.stringify(r.table)},\"kind\":${JSON.stringify(\n          r.kind,\n        )},\"ordinal\":${r.ordinal},\"payload\":${JSON.stringify(r.payload)}}`,\n    )\n    .join('\\n');\n}\n```\n\n4. Add to `packages/core/src/index.ts` (append):\n```ts\nexport { serializeCampaign, canonicalize } from './persistence/checkpoint/serialize.js';\nexport type { SnapshotRecord } from './persistence/checkpoint/serialize.js';\n```\n\n5. Run the test to verify PASS.\n   Command: `npx vitest run packages/core/test/checkpoint.serialize.test.ts`\n   Expected: 3 passed.\n\n6. Typecheck.\n   Command: `npm run build`\n   Expected: exit 0.\n\n7. Commit.\n   Command: `git add -A && git commit -m \"feat(e8): deterministic SQLite snapshot serializer\"`\n",
+  "design": "Determinism strategy avoids SQLite->MySQL DDL translation: rows are stored as\ncanonical JSON keyed by sorted column names; schema is captured verbatim as the\nSQLite `CREATE` text (used on restore to rebuild the SQLite working copy, not fed\nto Dolt). Row order is made physical-insert-independent by sorting the encoded JSON\nstrings; table order is `ORDER BY name`. Blobs are base64-wrapped so JSON is total.\n`canonicalize` is a fixed field-order renderer so the determinism tests assert on\nexact bytes. `SnapshotRecord[]` is the interchange type consumed by E8.T3\n(`DoltRepo.applySnapshot`) and E8.T5 (restore). Pure + offline: runs in CI with no\ndolt binary.\n",
+  "acceptance_criteria": "npx vitest run packages/core/test/checkpoint.serialize.test.ts shows 3 passed (byte-identical regardless of insert order); npm run build exits 0. Pure/offline.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T05:41:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T02:49:30Z",
+  "closed_at": "2026-05-19T02:50:17Z",
+  "close_reason": "serializer implemented; 3 tests pass (byte-identical regardless of insert order), build exit 0",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7wc.2",
+      "depends_on_id": "eshyra-7wc",
+      "type": "parent-child",
+      "created_at": "2026-05-17T00:41:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

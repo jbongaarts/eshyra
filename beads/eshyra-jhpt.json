@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt",
+  "title": "Campaign rules: durable rulings, house rules, and disputed-turn replay",
+  "description": "Objective\nAdd a campaign-owned rule layer for durable table rulings and intentional house rules. Rulings resolve published-source ambiguity or stable recurring interpretation questions; house rules override or supplement otherwise clear canonical behavior. Semantic content remains player-provided or player-approved prose.\n\nArchitecture\nPreserve ADR 0017 separation: immutable rules packs contain canonical semantics plus source ambiguity metadata; canonical campaign history contains prose rulings/house rules and effective timing; the DM model interprets pack semantics, ambiguity metadata, and active campaign prose; the audit model evaluates against the exact same active prose. Deterministic code owns identity, campaign association, kind, status, provenance, effective position, ordering, supersession/revocation, context delivery, and rollback/replay timing.\n\nScope\nCover domain/precedence, durable storage, shared DM/auditor context, explicit and implicit known-ambiguity resolution, management workflows, immediate disputed-turn rollback/replay, and end-to-end proof. Initial context delivery supplies all active campaign-rule prose to both models for correctness.\n\nNon-goals\nDo not compile arbitrary rule prose into deterministic mechanics. Do not store campaign choices in immutable rules packs. Do not let the DM silently select a canonical winner for source ambiguity. Do not auto-create house rules from attempts that conflict with clear canonical rules. Do not persist one-off contextual judgments such as line of sight, cover from rubble, terrain suitability, or similar fictional adjudication. Do not support arbitrary historical retroactivity.\n\nReferences\nADR 0017; docs/rules-pack-compiler.md; PR #419 / eshyra-o9bd.18.7.9 RulesAmbiguity metadata, including Create Undead and Find Familiar; existing campaign binding eshyra-x3w.12; auditor eshyra-oobh; audited-turn staging eshyra-67qo; rollback/checkpoint foundations eshyra-c07.8 and eshyra-7wc.5.",
+  "acceptance_criteria": "All child beads are complete. Campaign rules are durable prose with deterministic identity/timing/precedence; DM and auditor receive equivalent active sets; unresolved pack ambiguities can become explicit or accepted implicit rulings; immediate objections can replay the disputed turn; canonical-rule conflicts never become inferred house rules; no ordinary contextual adjudication creates a campaign rule.",
+  "notes": "All children closed. Epic deliverables landed on main across PR #524 (children .1-.3), #526 (.4-.6), #536 (.7-.9), and #537 (.2.5, the deferred campaign_rule index audit; merge commit e127bd0). Closing the epic.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T06:09:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-08T04:39:53Z",
+  "started_at": "2026-09-03T01:01:53Z",
+  "closed_at": "2026-09-08T04:39:53Z",
+  "close_reason": "Closed",
+  "labels": [
+    "audit",
+    "campaign-runtime",
+    "model-context",
+    "rules"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

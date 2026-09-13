@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-746f",
+  "title": "Fix CodeQL ReDoS alert in encounter combatants",
+  "description": "GitHub code scanning alert #12 reports CodeQL js/polynomial-redos in packages/core/src/state/encounterCombatants.ts around combatant id parsing. Investigate the regex, replace it with a linear-time implementation if confirmed, and verify with focused tests plus relevant quality gates.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T19:17:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-27T19:19:28Z",
+  "started_at": "2026-06-27T19:17:39Z",
+  "closed_at": "2026-06-27T19:19:28Z",
+  "close_reason": "Fixed CodeQL polynomial ReDoS alert by replacing regex slug normalization with a linear scan and adding repeated-separator regression coverage.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

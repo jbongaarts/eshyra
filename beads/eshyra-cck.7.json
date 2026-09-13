@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cck.7",
+  "title": "CI: ensure better-sqlite3 installs without local C++ build tools",
+  "description": "Risk surfaced in cck.3 code review: better-sqlite3 compiled from source on the dev machine (prebuild-install deprecated; no prebuilt matched Node 24 ABI). Any CI/clean environment without an MSVC/node-gyp toolchain will fail npm install. Resolve by pinning/using a better-sqlite3 version that ships NAPI prebuilds for the target Node ABI, or provisioning build tools in CI. Not blocking E0 dev; required before reproducible CI.",
+  "acceptance_criteria": "CI installs and tests better-sqlite3 without requiring local C++ build tools on the supported runner; failure mode and fallback/prebuild strategy are documented; npm test/build remains green in CI.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T06:23:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:11Z",
+  "started_at": "2026-05-18T21:41:09Z",
+  "closed_at": "2026-05-18T21:56:12Z",
+  "close_reason": "CI workflow with prebuilt-binary better-sqlite3 strategy (Node 22 LTS pin) + documented failure mode & fallback; spec+quality reviewed (2 stages), claims network-verified, both gates pass",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cck.7",
+      "depends_on_id": "eshyra-cck",
+      "type": "parent-child",
+      "created_at": "2026-05-17T01:23:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "2a90fc30-31fc-5d99-b73c-76f85e2524dc",
+      "issue_id": "eshyra-cck.7",
+      "author": "Joseph Bongaarts",
+      "text": "Spec review: ✅ compliant — all 3 AC met; network claims independently verified (11.10.0: Node22/ABI v127 prebuilt = HTTP 200, Node24/ABI v137 = HTTP 404, reproducing the cck.3 failure mode). Code quality (d202292..e47f841): Ready to merge — no Critical/Important. Lockfile tracked at root so npm ci + setup-node cache safe; actions checkout@v4/setup-node@v4 current; build-from-source=false makes missing prebuilt fail loudly; persistence test genuinely exercises better-sqlite3. Minor/optional only: scope push to main, add job timeout-minutes, soften 'silently' wording — not blocking.",
+      "created_at": "2026-05-18T21:56:11Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

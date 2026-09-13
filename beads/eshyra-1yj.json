@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1yj",
+  "title": "Harden Dependabot policy for PDF tooling updates",
+  "description": "﻿Update `.github/dependabot.yml` so Dependabot no longer creates unsafe grouped PRs that combine routine PDF tooling updates with major `pdfjs-dist` migrations.\r\n\r\nContext:\r\n- Dependabot PR #118 attempted to update `pdfjs-dist` from 5.x to 6.x alongside `@types/pdfkit`.\r\n- `pdfjs-dist` 6.x is a semver-major release with API removals, including lifecycle APIs relevant to the SRD importer.\r\n- The D&D SRD importer currently depends directly on PDF.js extraction behavior, so `pdfjs-dist` major updates must be handled as intentional migration work, not as routine dependency-only PRs.\r\n- `pdfkit` and `@types/pdfkit` are related PDF tooling dependencies, but they should not be grouped in a way that hides or blocks risky extraction-runtime updates.\r\n\r\nScope:\r\n- Update Dependabot npm config only.\r\n- Split PDF tooling groups so `pdfjs-dist` is not grouped with `pdfkit` / `@types/pdfkit`.\r\n- Allow patch/minor updates for PDF tooling.\r\n- Ignore semver-major updates for `pdfjs-dist`.\r\n- Strongly consider also ignoring semver-major updates for `pdfkit`.\r\n- Keep `@types/pdfkit` patch/minor updates allowed.\r\n- Fix the missing configured `npm` label issue by either removing the label from Dependabot config or ensuring the repo label exists; prefer config cleanup unless there is a repo-wide reason to keep the label.\r\n\r\nSuggested shape:\r\n- Group `pdfjs-dist` separately as PDF extraction tooling with patch/minor only.\r\n- Group `pdfkit` and `@types/pdfkit` separately as PDF generation tooling with patch/minor only.\r\n- Add explicit `ignore` entries for:\r\n  - `pdfjs-dist` semver-major\r\n  - `pdfkit` semver-major, unless there is a clear reason not to\r\n\r\nAcceptance criteria:\r\n- `.github/dependabot.yml` validates according to GitHub Dependabot syntax.\r\n- Dependabot will not open another routine PR for `pdfjs-dist` 5.x -> 6.x.\r\n- Dependabot can still open patch/minor PRs for `pdfjs-dist`.\r\n- Dependabot can still open patch/minor PRs for `pdfkit` and `@types/pdfkit`.\r\n- The current risky PR #118 is either closed/ignored or documented as intentionally superseded by this policy.\r\n- No dependency versions are changed in this bead.\r\n- No generated files, lockfiles, Biome config, or unrelated repo config are changed.\r\n- Final response explains the resulting Dependabot policy and why PDF.js major updates require a dedicated migration bead.\r\n",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-31T04:40:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:51Z",
+  "started_at": "2026-05-31T17:26:15Z",
+  "closed_at": "2026-05-31T17:33:42Z",
+  "close_reason": "Implemented in PR #121 (branch kk7-1yj-harden-config): split Dependabot PDF tooling groups + ignore pdfjs-dist/pdfkit majors, removed unconfigured npm label, documented PR #118 as superseded; locked Biome generated-data exclusion and documented ignore-boundary policy. npm run check exit 0, full suite 958 passed/3 skipped.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

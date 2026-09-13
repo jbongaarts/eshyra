@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.17",
+  "title": "Add SRD background representation and import Acolyte",
+  "description": "Problem\r\nThe SRD contains background content, including Acolyte, but the current record model does not appear to represent backgrounds as first-class records.\r\n\r\nEvidence from the 2026-06-07 audit\r\nUnrepresented source content includes:\r\n- Backgrounds\r\n- Acolyte background\r\n- Background characteristics/proficiencies/equipment/features as applicable\r\n\r\nRequired behavior\r\n- Add a background record kind or otherwise explicit representation for SRD backgrounds.\r\n- Import Acolyte with complete source-derived fields and provenance.\r\n- Preserve background feature/proficiency/equipment text in structured form where feasible.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-10T23:03:35Z",
+  "started_at": "2026-06-10T22:25:39Z",
+  "closed_at": "2026-06-10T23:03:35Z",
+  "close_reason": "Merged in PR #191 (squash): background:acolyte record, 4 Acolyte characteristics roll tables, 6 Backgrounds chapter-intro rules; pack 1637->1648.",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.17",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "57891e36-72fb-5c2c-9ea8-05238cd5695f",
+      "issue_id": "eshyra-0m9.17",
+      "author": "Joseph Bongaarts",
+      "text": "Implementation complete; PR open for review: https://github.com/jbongaarts/eshyra/pull/191. background:acolyte (structured grants + nested Shelter of the Faithful feature), 4 Acolyte characteristics roll tables, 6 Backgrounds chapter-intro rules; pack 1637->1648 (+11 added, 0 removed, 0 changed); verify:dnd5e-srd-pack and verify:worktree pass. Bead left in_progress pending merge.",
+      "created_at": "2026-06-10T22:57:46Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

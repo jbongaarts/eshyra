@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.4",
+  "title": "Extract and account for SRD stat blocks document-wide",
+  "description": "Problem\r\n\r\nThe importer appears to find monster appendix creatures but misses stat-block-shaped content elsewhere in the SRD. The latest audit identified at least:\r\n\r\n- Avatar of Death, embedded in Deck of Many Things on p. 218.\r\n- Giant Fly, embedded in Figurine of Wondrous Power on p. 222.\r\n\r\nThese are source stat blocks and should not be silently flattened into magic-item descriptions without structured representation.\r\n\r\nTask\r\n\r\nMake stat-block extraction document-wide and account for embedded stat blocks.\r\n\r\nImplementation guidance\r\n\r\n- Detect stat-block-shaped content across the full SRD, not only the monster/NPC appendix.\r\n- Decide and document whether embedded stat blocks are emitted as normal creature records, emitted as a distinct embedded-stat-block kind, or stored as structured child data on the containing record.\r\n- Whatever model is chosen, the coverage gate must account for the source stat block.\r\n- Preserve source provenance linking embedded stat blocks to both their own source span and containing source item when applicable.\r\n- Do not duplicate content in uncontrolled prose and structured records without clear ownership.\r\n\r\nRegression cases\r\n\r\nAdd tests proving that the source inventory detects and accounts for:\r\n\r\n- Avatar of Death,\r\n- Giant Fly,\r\n- at least one ordinary monster appendix creature,\r\n- at least one NPC stat block if NPCs remain a separate kind.\r\n\r\nAcceptance criteria\r\n\r\n- Stat-block detection runs over the whole SRD.\r\n- Embedded stat blocks are represented or intentionally accounted for.\r\n- Avatar of Death and Giant Fly no longer disappear as unstructured magic-item prose.\r\n- Existing creature and NPC record ids remain stable unless a documented schema decision requires otherwise.",
+  "notes": "Review fix pushed (6772233): stat-block records now preserve full keyed fields (damage/condition immunities, senses, languages, challenge+XP incl '—'). Wrapped values (Avatar Condition Immunities/Senses) recovered from containing item's reflowed description via cleanTextByName; Giant Fly via single-line raw. Traits/actions (Avatar Reaping Scythe) still in prose — 4a7.8 must not strip inline prose until those are structured.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T04:30:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-13T05:29:34Z",
+  "closed_at": "2026-06-13T06:31:43Z",
+  "close_reason": "Merged to main via PR #199 (squash 7ec61cd). New stat-block kind emits Avatar of Death + Giant Fly with full keyed fields, container statBlockRefs, and inline-source provenance; source-coverage flips to record:stat-block:*. Figurine->Giant Fly ref + Avatar traits/actions capture tracked on eshyra-4a7.8.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.4",
+      "depends_on_id": "eshyra-4a7",
+      "type": "parent-child",
+      "created_at": "2026-06-10T23:30:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.4",
+      "depends_on_id": "eshyra-4a7.1",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 0
+}

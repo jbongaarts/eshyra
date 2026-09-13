@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vmp",
+  "title": "Update AGENTS test-count expectation",
+  "description": "Review finding from loreweaver-1ek and loreweaver-den. AGENTS.md still says expected tests are 20 passed / 1 skipped, but the current suite reports 195 passed / 1 skipped across 35 files. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "AGENTS.md Build & Test section reflects the current expected test count or uses wording that avoids becoming stale while still identifying the skipped live API test.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:45:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:03Z",
+  "started_at": "2026-05-22T02:58:14Z",
+  "closed_at": "2026-05-22T03:15:40Z",
+  "close_reason": "P2 review-findings batch (parent loreweaver-d4r); see PR.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

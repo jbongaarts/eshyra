@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eznk",
+  "title": "Fix released gameplay tool-protocol mismatch",
+  "description": "Native Windows v0.1.1 smoke proved the packaged CLI can invoke the model, but the first gameplay turn responded that DM tools described in the instructions ('roll', 'world_query', 'mark_scene', etc.) are not present in the available toolset. This means the released gameplay loop is not exposing or describing tools consistently. Fix the model/tool protocol so live gameplay turns either receive the intended callable tools via the Claude Agent SDK or are prompted to use the current fenced-text tool protocol without claiming native tools are unavailable. Add a live/fake-model regression that fails if the assistant responds with unavailable-tool disclaimers on the first normal turn. Acceptance: a deferred-character smoke turn produces in-world narration or an appropriate deterministic tool request, not a meta-tooling complaint.",
+  "notes": "Reworked on PR #241 (branch fix/eznk-native-tools) to the SUPPORTED Agent SDK in-process MCP path. New AgentSdkMcpModelClient: ModelToolDefinition[] -> tool()+createSdkMcpServer({name:'eshyra'}); handlers delegate to deterministic executor via new ModelCompleteInput.executeTool bridge; complete() returns executedToolCalls recorded as source=native-mcp under Eshyra names. query() gets mcpServers + allowedTools(mcp__eshyra__*) + tools:[] + ENABLE_TOOL_SEARCH=false. Subscription OAuth path needs no API key. Debug toolProtocolMode=agent-sdk-mcp with provided=Eshyra/forwarded=MCP names + server status. AnthropicNativeModelClient kept as API-key-native alt; fenced retained legacy/test only (broad removal=eshyra-qa9d). jsonSchemaToZod.ts converts schema subset to Zod for tool(). zod added as core dep. 1927 tests pass; manual PowerShell live smoke in PR body for user to run. Awaiting review/merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T03:32:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-18T05:50:55Z",
+  "closed_at": "2026-06-19T03:52:46Z",
+  "close_reason": "Merged to main via PR #241 (squash 36670d9): Agent SDK in-process MCP tool exposure, mechanics-audit gate, and explicit subscription-safe provider auth. Live smoke passed.",
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

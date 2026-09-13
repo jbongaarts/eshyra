@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4kdt",
+  "title": "Document GitHub Release CLI install and update workflow",
+  "description": "Document user-facing install and update instructions for the GitHub Release CLI artifacts. Documentation should target early non-commercial users and should avoid npm-first language.",
+  "acceptance_criteria": "README or dedicated docs explain how to download and install the CLI from GitHub Releases. Instructions cover supported platforms identified by the artifact-format decision. Documentation states that Eshyra is source-available/free for non-commercial use under PolyForm Noncommercial License 1.0.0. Documentation links to LICENSE and COMMERCIAL-LICENSE.md. Documentation notes that bundled rules/content may carry separate licenses and attribution requirements. Documentation does not describe Eshyra as open source. Documentation does not suggest npm publication as the primary install path.",
+  "notes": "Four blocking installer correctness issues fixed (bb08422): asset discovery from GitHub API (not tag-derived filenames), version-pinned docs corrected (ESHYRA_VERSION to sh not curl; no iex -Version), docs path wording fixed (eshyra-<version>-<target> not just <version>), tests extended. All 1829 tests pass.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-17T04:21:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-18T03:49:14Z",
+  "started_at": "2026-06-17T21:17:29Z",
+  "closed_at": "2026-06-18T03:49:14Z",
+  "close_reason": "Implemented and merged in PR #236 (feat: one-line installer, checksums, and release workflow validation) and PR #239 (Fix installer smoke test). Install/update docs added; asset discovery, version-pinned docs, and smoke test all corrected.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4kdt",
+      "depends_on_id": "eshyra-upef",
+      "type": "blocks",
+      "created_at": "2026-06-16T23:21:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

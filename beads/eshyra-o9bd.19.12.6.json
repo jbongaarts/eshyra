@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.12.6",
+  "title": "Runtime capability-preflight cannot anticipate P8's operationId (packet-intervention finding)",
+  "description": "Finding recorded while building the packet-intervention evidence suite (eshyra-o9bd.19.12.4). packages/core/src/discovery/signals.ts requires a live-state leaf whose JSON path ends in /operationId to fire the capability-preflight signal for a magic-item candidate (see signals.ts around line 230, and packet.ts:190-200 which reads that route's evidence.operationId). Real campaign state (assembleContext's live StateSnapshot) never carries such a literal operationId field for an item instance -- it is not a real persisted campaign fact, only something the model's eventual tool choice would supply. packages/core/test/discovery/support/runtimeCampaignState.ts already documents this deliberately for P1/P2 ('Writing it into plot_flags to make a probe reach its target would hand the signals stage the record key it is supposed to discover'), and explicitly names P8's operationId as one of the fields NOT synthesized for exactly that reason.\n\nConsequence: at a REAL runtime turn (shadow or intervene mode), P8's (magic-item:ammunition-1-2-or-3) capability preflight never fires, so the delivered/observed packet carries the NEGATIVE capability form ('no capability was positively selected'), never the POSITIVE bounded contract the OFFLINE Phase-1 harness produces for the same fixture (packetMessage.test.ts's own E4 case, and shadowRuntime.test.ts's pre-existing 'records a runtime capability outcome the shadow packet never preflighted' test, which already show m10.comparisons === [] for P8 at runtime). packetIntervention.test.ts pins this exactly: the offline positive-contract proof and the live negative-form proof are two separate, both-checked cases (see its 'E8 (positive half)' and the 'P8/default' E8 negative-half block).\n\nThis is a genuine, pre-existing Phase 2/3 boundary in the discovery pipeline (which record/operation a capability preflight can evaluate before the model has chosen a tool), not a defect in the .12.4 evidence suite or the .12.3 intervention seam. Recorded per .12.4's dispatch instruction ('if the seam looks wrong, record it and file a follow-up -- do not fix it here'). No fix is prescribed here; the parent bead's owner should decide whether this boundary is accepted permanently (documented, like P1/P2's RUNTIME_REACH losses) or whether a future workstream should give discovery an earlier, real signal for an about-to-be-invoked operationId.",
+  "notes": "Evidence: packages/core/test/discovery/packetIntervention.test.ts (E8 positive/negative halves), packages/core/test/discovery/support/runtimeCampaignState.ts header comment, packages/core/src/discovery/signals.ts:~230, packages/core/src/discovery/packet.ts:180-200.\nSuperseded and resolved by eshyra-o9bd.19.12.9, commit 9d37624 on branch eshyra-o9bd.19.12.9. signals.ts no longer requires a literal /operationId state leaf: capability-preflight signals derive from each bound item instance and each state-referenced record, enumerating the operations declaredItemOperationIds() (itemState.ts) reports for that record/variant. P8's real intervene turn now reaches the positive bounded contract for hit-target, and M10 reports agreement (packetIntervention.test.ts P8/default case; shadowRuntime.test.ts 'pairs a runtime capability invocation with the preflight the held item declares'). Closing.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-11T05:14:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-12T00:09:55Z",
+  "closed_at": "2026-09-12T00:09:55Z",
+  "close_reason": "Closed",
+  "labels": [
+    "architecture",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.12.6",
+      "depends_on_id": "eshyra-o9bd.19.12",
+      "type": "parent-child",
+      "created_at": "2026-09-11T00:14:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

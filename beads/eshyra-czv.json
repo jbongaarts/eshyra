@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-czv",
+  "title": "Bound current-scene prompt transcript",
+  "description": "Review finding from loreweaver-den. Context assembly loads and renders the current scene transcript in full, which contradicts bounded-context goals and can grow prompt size/cost over long scenes. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Context assembly has deterministic limits for live scene transcript inclusion; tests prove long scenes stay under budget; omitted content remains discoverable through summaries or memory drilldown.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:45:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:44Z",
+  "started_at": "2026-05-22T03:17:05Z",
+  "closed_at": "2026-05-22T03:24:59Z",
+  "close_reason": "Bound current-scene transcript context to a deterministic tail, added omitted-count prompt guidance, and made omitted scene-log windows retrievable through memory_drilldown; verification: npm run typecheck and npm run test passed; TDD evidence recorded.",
+  "comments": [
+    {
+      "id": "23477fe1-a5c4-5293-bc50-e0be773dfe50",
+      "issue_id": "eshyra-czv",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded with expected Node 24 EBADENGINE warnings for Node 22 package policy; npm run typecheck passed; npm run test passed with 36 files passed / 1 skipped and 229 tests passed / 2 skipped.",
+      "created_at": "2026-05-22T03:18:27Z"
+    },
+    {
+      "id": "617c4656-8ba5-5436-aa7a-a1e2eadbb47f",
+      "issue_id": "eshyra-czv",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: focused contextAssembler vitest failed as expected because assembleContext returned all 10 current-scene log entries instead of the requested 4-entry tail.",
+      "created_at": "2026-05-22T03:20:11Z"
+    },
+    {
+      "id": "6f45313b-7f38-57d1-8f08-3f8bd1c0ec59",
+      "issue_id": "eshyra-czv",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN/REFACTOR: focused contextAssembler regression passed; npm run typecheck passed; npx vitest run packages/core/test/contextAssembler.test.ts packages/core/test/tools.test.ts passed with 29 tests.",
+      "created_at": "2026-05-22T03:23:57Z"
+    },
+    {
+      "id": "8bb3d94f-0894-5319-8a7b-7745a1ab2778",
+      "issue_id": "eshyra-czv",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0; npm run test -> exit 0 with 36 files passed / 1 skipped and 231 tests passed / 2 skipped. TDD evidence recorded: RED failed on unbounded 10-entry transcript; GREEN/REFACTOR passed focused context/tools tests.",
+      "created_at": "2026-05-22T03:24:18Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

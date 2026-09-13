@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-dunv",
+  "title": "Enforce byte bounds for inventory identity in model context",
+  "description": "Sol review of PR #455 confirmed nearby properties/state payloads are removed, but inventory id/name strings remain unbounded in storage and tool writes. Twenty adversarially large identities can still exceed bounded-context or tool-output budgets, while truncating exact ids would make claim_item unusable. Establish write/storage limits and migration/repair behavior, then enforce a deterministic serialized byte budget without losing exact actionable identity.",
+  "design": "Preserve exact IDs or fail closed with actionable repair evidence. Do not truncate an ID that a mutation tool must consume. Treat this as a general inventory boundary, not a nearby-list-only patch.",
+  "acceptance_criteria": "New writes have reviewed id/name limits; legacy oversized rows are surfaced through controlled repair behavior; nearby context and pagination have a deterministic byte bound; exact claimable ids are never silently truncated; tests cover multibyte strings and over-budget pages.",
+  "notes": "Dispatch plan (attempt 1, 2026-07-19, supervisor eshyra-fe3t): Codex gpt-5.6-luna in .worktrees/eshyra-dunv branch eshyra-dunv off eshyra-fe3t. Note: schema changes need a new numbered migration in packages/core/data/migrations + schema.snapshot.sql regen + migrationRunner tests; use the next free migration number and note it in the bead so the parallel mq4n wave (which follows) can sequence after it.\nCompletion report (2026-07-19): Implemented migration 0019_inventory_identity_bounds with 256-byte UTF-8 id/name write guards, legacy inventory_identity_repair evidence, repair-safe shortening via ON UPDATE CASCADE, and schema snapshot regeneration. Added identity validation at mutate/domain boundaries, fail-closed repair evidence in context assembly, deterministic 4096-byte whole-item nearby context/tool pagination, and multibyte/legacy-repair tests. Focused tests passed: 51 migration/schema/context tests; earlier focused engine suite 172/172. Biome CI, typecheck, and build passed. npm run verify:worktree was rerun but is blocked by sandbox EPERM in check-hidden-unicode spawnSync git; full suite reached 4611 passing with 31 unrelated sandbox EPERM failures in subprocess/loopback tests. Follow-up eshyra-iszg filed. Commit object ddc48076d483ec23149e94a1a2dbcb6f53ba0ab3 was created with the requested message, but branch update/normal git commit is blocked because .git/worktrees/eshyra-dunv/HEAD.lock and COMMIT_EDITMSG are read-only; bead intentionally left open.\nSupervisor: implementation reviewed (256-byte UTF-8 id/name bounds via migration 0019 triggers + code validation; legacy oversized rows quarantined in inventory_identity_repair, never truncated; 4096-byte nearby-context budget with exact ids preserved). Full verify:worktree run by supervisor: green. Committed by supervisor (child sandbox blocked git).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T02:43:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-19T07:52:33Z",
+  "closed_at": "2026-07-19T08:03:24Z",
+  "close_reason": "Implemented, reviewed, fully verified, merged into eshyra-fe3t",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

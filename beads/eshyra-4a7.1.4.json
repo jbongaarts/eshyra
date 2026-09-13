@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.1.4",
+  "title": "Task 4: wire verify script + audit bundle + docs",
+  "description": "Objective: make the inventory/coverage artifacts first-class in verification and audit tooling.\n\nFiles:\n- Modify: packages/core/scripts/verify-dnd5e-srd-pack/cli.ts — regenerate inventory+coverage and diff against committed artifacts (same exact-match contract as records.json)\n- Modify: packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts — copy artifacts into bundle reports/ and surface unaccounted count + known-gap count in metadata.json and final summary\n- Modify: packages/core/scripts/importers/dnd5e-srd-5.1/README.md — document tier map, artifact shapes, rule curation lifecycle (when an epic child lands, its known-gap rule is REMOVED so the gate enforces the new coverage)\n- Check: hidden-unicode script extensions list covers the new .json artifacts (it scans .json already)\n\nSteps:\n1. Failing check: run npm run verify:dnd5e-srd-pack after hand-corrupting a committed artifact copy in a temp dir (or unit-test the comparison function). Implement diff. Restore. Commit.\n2. Audit bundle: add artifact copy + metadata fields. Run npm run audit-bundle:dnd5e-srd locally to confirm. Commit.\n3. README update. Commit.\n4. npm run verify:worktree (full gate) then push branch + open PR per AGENTS.md. PR summary must follow docs/importer-fix-protocol.md required reporting (affected IDs: none in records.json; new artifacts explained; commands run).",
+  "acceptance_criteria": "verify script fails on artifact drift and passes on clean regeneration; audit bundle includes artifacts and counts; npm run verify:worktree green; PR open",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T05:40:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-11T18:32:38Z",
+  "started_at": "2026-06-11T18:19:32Z",
+  "closed_at": "2026-06-11T18:32:38Z",
+  "close_reason": "verify:dnd5e-srd-pack now enforces the gate and byte-diffs both artifacts (fails exit 1 on hand-corrupted artifact, exit 0 clean); audit bundle copies artifacts into reports/ with sourceCoverage roll-up in metadata.json; importer README documents tier map, artifact shapes, and rule-curation lifecycle. PR: https://github.com/jbongaarts/eshyra/pull/193",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.1.4",
+      "depends_on_id": "eshyra-4a7.1.3",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:40:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.1.4",
+      "depends_on_id": "eshyra-4a7.1",
+      "type": "parent-child",
+      "created_at": "2026-06-11T00:40:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

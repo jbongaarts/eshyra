@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-da8d",
+  "title": "Foundation-1 procedure-proof test times out its 10s hook under full-suite load",
+  "description": "`packages/core/test/importers/dnd5e-srd-5.1/foundation1ProcedureProof.test.ts`\nfails with `Error: Hook timed out in 10000ms` when run as part of the full\nVitest suite, and passes (43/43) when its file is run alone.\n\nINDEPENDENTLY ESTABLISHED AS PRE-EXISTING, 2026-09-12: reproduced on a clean\ndetached checkout of `origin/main` at `67e0653` with no other changes —\n`npm run test` there reports `1 failed | 296 passed | 2 skipped`, the same\nfile, the same hook timeout. It arrived with PR #545 / the Foundation-1\nimporter stage, not with PR #543.\n\nWHY IT MATTERS\nIt is a false red on the pre-commit gate and on `main` itself. An agent that\ntakes it at face value either chases an unrelated change or learns to ignore a\nfailing gate.\n\nLIKELY CAUSE (unverified)\nA `beforeAll`/`beforeEach` hook that builds or loads importer output. Under\nfull-suite load (one worker per file) that work exceeds the default 10s hook\ntimeout; alone it does not.\n\nCANDIDATE FIXES, in preference order\n1. Raise the hook timeout for that file to reflect the real cost of the setup\n   it performs. The assertions are about procedure projections, not speed.\n2. Hoist the shared setup so it is paid once per suite rather than per hook.\n3. Only if neither holds: give the file a dedicated pool.\n\nDo NOT fix it by skipping the file or weakening its assertions — it is the\npermanent evidence for the Foundation-1 procedure-projection work.\n\nRELATED\nA sibling pre-existing flake is filed for\n`packages/cli/test/cli.test.ts > packs publishable tarballs` (same shape: a\n10s timeout under full-suite load, green standalone).\n",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-12T06:15:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-12T06:15:01Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cck.2",
+  "title": "Task 2: Core config loader with validation",
+  "description": "Objective:\nAdd the core configuration loader: typed `LoreweaverConfig`, `loadConfig(env)`\nwith validation, and `ConfigError`. Export from the core barrel.\n\nFiles:\n- Create: `packages/core/src/config.ts`\n- Modify: `packages/core/src/index.ts`\n- Test:   `packages/core/test/config.test.ts`\n\nSteps:\n\n1. Write the failing test `packages/core/test/config.test.ts`:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport { ConfigError, loadConfig } from '../src/config.js';\n\ndescribe('loadConfig', () => {\n  it('returns a valid config from a complete env', () => {\n    const cfg = loadConfig({\n      LOREWEAVER_DB_PATH: './campaigns/x.db',\n      LOREWEAVER_MODEL: 'claude-opus-4-7',\n      ANTHROPIC_API_KEY: 'sk-test',\n    });\n    expect(cfg).toEqual({\n      campaignDbPath: './campaigns/x.db',\n      model: 'claude-opus-4-7',\n      anthropicApiKey: 'sk-test',\n    });\n  });\n\n  it('defaults the model when unset', () => {\n    const cfg = loadConfig({\n      LOREWEAVER_DB_PATH: './x.db',\n      ANTHROPIC_API_KEY: 'sk-test',\n    });\n    expect(cfg.model).toBe('claude-opus-4-7');\n  });\n\n  it('throws ConfigError when LOREWEAVER_DB_PATH is missing', () => {\n    expect(() => loadConfig({ ANTHROPIC_API_KEY: 'sk-test' })).toThrow(ConfigError);\n  });\n\n  it('throws ConfigError when ANTHROPIC_API_KEY is missing', () => {\n    expect(() => loadConfig({ LOREWEAVER_DB_PATH: './x.db' })).toThrow(ConfigError);\n  });\n});\n```\n\n2. Run the test to verify it FAILS.\n   Command: `npx vitest run packages/core/test/config.test.ts`\n   Expected: FAIL — cannot resolve `../src/config.js` (module does not exist).\n\n3. Create `packages/core/src/config.ts`:\n```ts\nexport interface LoreweaverConfig {\n  campaignDbPath: string;\n  model: string;\n  anthropicApiKey: string;\n}\n\nexport class ConfigError extends Error {\n  constructor(message: string) {\n    super(message);\n    this.name = 'ConfigError';\n  }\n}\n\nconst DEFAULT_MODEL = 'claude-opus-4-7';\n\nexport function loadConfig(\n  env: Record<string, string | undefined> = process.env,\n): LoreweaverConfig {\n  const campaignDbPath = env.LOREWEAVER_DB_PATH?.trim();\n  const anthropicApiKey = env.ANTHROPIC_API_KEY?.trim();\n  const model = env.LOREWEAVER_MODEL?.trim() || DEFAULT_MODEL;\n\n  if (!campaignDbPath) {\n    throw new ConfigError('LOREWEAVER_DB_PATH is required');\n  }\n  if (!anthropicApiKey) {\n    throw new ConfigError('ANTHROPIC_API_KEY is required');\n  }\n  return { campaignDbPath, model, anthropicApiKey };\n}\n```\n\n4. Add to `packages/core/src/index.ts` (append):\n```ts\nexport { loadConfig, ConfigError } from './config.js';\nexport type { LoreweaverConfig } from './config.js';\n```\n\n5. Run the test to verify it PASSES.\n   Command: `npx vitest run packages/core/test/config.test.ts`\n   Expected: 4 passed.\n\n6. Typecheck.\n   Command: `npm run build`\n   Expected: exit 0.\n\n7. Commit.\n   Command: `git add -A && git commit -m \"feat(e0): config loader with validation\"`\n",
+  "design": "Signature: `loadConfig(env?: Record<string, string | undefined>): LoreweaverConfig`.\nDefaulting `env` to `process.env` keeps callers simple while tests inject a fake env\n(no global mutation). Empty/whitespace-only values are treated as missing via\n`?.trim()` then falsy check. Model default is `claude-opus-4-7`; override via\n`LOREWEAVER_MODEL`. `ConfigError` sets `.name` so callers/tests can branch on it.\nThis is the only config surface for E0; later epics extend `LoreweaverConfig` if needed.\n",
+  "acceptance_criteria": "npx vitest run packages/core/test/config.test.ts shows 4 passed; npm run build exits 0.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:43:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-17T06:01:12Z",
+  "closed_at": "2026-05-17T06:07:39Z",
+  "close_reason": "Config loader complete; spec-compliant and code-quality approved. Commit 6f2f3ff.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cck.2",
+      "depends_on_id": "eshyra-cck.1",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:43:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-cck.2",
+      "depends_on_id": "eshyra-cck",
+      "type": "parent-child",
+      "created_at": "2026-05-16T23:43:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "f6f62ee8-44a6-5b4f-82ea-32c8cea9dce2",
+      "issue_id": "eshyra-cck.2",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for \\`a997ea0..6f2f3ff\\`:\nAssessment: Ready to merge\n\nCritical:\n- none\n\nImportant:\n- none\n\nMinor:\n- \\`config.ts\\` has no JSDoc on \\`loadConfig\\` or \\`LoreweaverConfig\\`; not a problem now, but this IS the only config surface for E0 and will be extended — one-line doc comments would pay forward.\n- Test suite does not assert the error *message* string, only the class. Fine for now; if the message text is ever user-visible, add a \\`.toThrow(/LOREWEAVER_DB_PATH is required/)\\` assertion.\n- \\`DEFAULT_MODEL\\` constant is module-private; if a future task needs the default (e.g., a CLI \\`--help\\` flag), it will re-invent it. Low risk at E0, worth noting.\n\nFollow-up:\n- none; whitespace-only env-var handling verified correct at runtime (trim + falsy collapse). \\`instanceof ConfigError\\` chain holds across module boundary. Build and 4/4 tests green.",
+      "created_at": "2026-05-17T06:07:03Z"
+    },
+    {
+      "id": "1a8b145f-28c6-59a9-867b-4e1c406d0080",
+      "issue_id": "eshyra-cck.2",
+      "author": "Joseph Bongaarts",
+      "text": "Code review a997ea0..6f2f3ff: Ready to merge. Critical: none. Important: none. Minor (deferred, optional): no JSDoc on loadConfig/LoreweaverConfig; tests assert ConfigError class not message; DEFAULT_MODEL module-private. Whitespace-only handling verified correct; ConfigError prototype chain holds; build + 4/4 tests green. Both review gates passed.",
+      "created_at": "2026-05-17T06:07:38Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 2
+}

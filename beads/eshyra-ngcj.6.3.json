@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.6.3",
+  "title": "Project feature resources, grants, and condition effects where explicit",
+  "description": "Problem:\nClass, subclass, ancestry, and feat features often contain deterministic grants or resource rules in prose. Some are already modeled through advancement, but feature-level effects are not consistently queryable by tools.\n\nImplement:\n- Add optional projection fields for clear feature mechanics:\n  - resource use counts.\n  - reset cadence such as short rest or long rest.\n  - proficiency, language, tool, armor, weapon, and skill grants where explicit.\n  - condition immunities/resistances/advantages where explicit.\n  - spell grants where explicit.\n- Do not attempt to model ambiguous narrative effects.\n- Preserve source text.\n\nAcceptance criteria:\n- Character sheet/tooling can query common feature grants without parsing prose.\n- Projection diagnostics identify records still prose-only.\n- Tests cover representative class, subclass, ancestry, and feat features.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T00:12:07Z",
+  "started_at": "2026-06-30T00:11:54Z",
+  "closed_at": "2026-06-30T00:12:07Z",
+  "close_reason": "Implemented first-pass source-backed mechanics projections for spells, creature/action entries, features/ancestry/feats, and hazards; regenerated SRD pack; added schema validation, report, thaw note, and tests.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.6.3",
+      "depends_on_id": "eshyra-ngcj.6",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

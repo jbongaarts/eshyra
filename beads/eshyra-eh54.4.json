@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54.4",
+  "title": "Add campaign binding and module progress state",
+  "description": "Add the campaign-owned adventure run / module binding and mutable module progress to campaign instance state.\n\nA campaign should be able to say which module or modules are active without copying or mutating the authored module source. This is done with a campaign-owned structured object - acceptable names include AdventureRun, CampaignModuleBinding, ActiveAdventureModule, or ModuleProgressState - that references the immutable module by id and records module-specific progress. This object is part of campaign instance state (the fourth layer in ADR 0012); it is NOT a fifth content/state layer and must not be modeled as a separate top-level \"adventure instance\" peer.\n\nThe campaign should persist progress such as visited locations, completed or bypassed scenes, revealed secrets, completed/failed objectives, encounter outcomes, claimed treasure, active clocks/threats, started/completed session ids, status, and explicit deviations from authored assumptions.\n",
+  "design": "The implementation may introduce a structured campaign-owned object (AdventureRun / CampaignModuleBinding / ActiveAdventureModule / ModuleProgressState). It must live inside campaign instance state and reference the immutable module; it must never be written back to the adventure module source pack. It is part of the existing campaign-instance layer, not a new fifth layer.\n\nSuggested shape (campaign-owned, one per active module):\n- activeModuleId (reference to the immutable module)\n- status\n- startedAtSessionId\n- completedAtSessionId\n- visitedLocations\n- completedOrBypassedScenes\n- revealedSecrets\n- completedOrFailedObjectives\n- encounterOutcomes\n- claimedTreasure\n- activeClocksOrThreats\n- moduleDeviations\n- notes\n\nA campaign may hold more than one such adventure run / module binding.\n\nDo not require a strictly linear module state machine. A module should support nonlinear exploration, skipped scenes, alternate routes, and emergent deviations. Progress is the only mutable side; the referenced module source remains immutable and re-forkable.\n",
+  "acceptance_criteria": "- Campaign instance state can record one or more campaign-owned adventure runs / module bindings.\n- The campaign-owned object references the immutable module id and holds the mutable progress for that campaign; the module source is never mutated.\n- The object is explicitly part of campaign instance state, not a separate top-level content/state layer (no \"adventure instance\" peer layer).\n- Module progress can represent active module id, status, started/completed session ids, visited locations, completed or bypassed scenes, revealed secrets, completed/failed objectives, defeated/bypassed encounter outcomes, claimed treasure, active clocks/threats, and module-specific notes.\n- Module deviations can be recorded explicitly when play invalidates or alters authored assumptions, as campaign facts rather than edits to the module source.\n- Campaign save/resume preserves active adventure runs / module bindings and their progress.\n- Tests cover starting a module, updating progress, saving, loading, and verifying the source module remains unchanged.",
+  "notes": "Campaign-owned adventure run / module binding + progress implemented: campaign/adventureRun.ts (start/get/list/recordProgress), new adventure_run table (SCHEMA_VERSION 12 + v11_to_v12 migration), exported via internal.ts; 11 tests in test/adventureRun.test.ts + v11->v12 migration test. Save/resume verified via file reopen; module-source-unchanged guard included. PR #264 open: https://github.com/jbongaarts/eshyra/pull/264 . Branch feat/eh54.4-adventure-run-state, worktree .worktrees/eh54.4. Left in_progress so dependents eshyra-eh54.5 and eshyra-eh54.6 stay blocked until merge. Close on merge.\nReview fix (commit 56be370): added nested progress-delta validation at the write boundary (empty ids, encounter outcome enum + non-empty encounterId, non-negative integer clock fills, non-empty deviation id/description, non-empty optional session ids). Validation runs before the transaction so rejected deltas write nothing. +3 tests (now 16). Full suite 2239 pass / 0 fail.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:11:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-21T01:50:14Z",
+  "closed_at": "2026-06-21T02:12:21Z",
+  "close_reason": "Campaign-owned adventure run / module binding + progress merged to main via PR #264 (squash, incl. nested progress-delta write-boundary validation review fix). Unblocks eshyra-eh54.5 and eshyra-eh54.6.",
+  "labels": [
+    "adventure-module",
+    "campaign-runtime",
+    "campaign-state",
+    "domain-model",
+    "persistence"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54.4",
+      "depends_on_id": "eshyra-eh54.3",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:12:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.4",
+      "depends_on_id": "eshyra-eh54",
+      "type": "parent-child",
+      "created_at": "2026-06-18T01:11:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23.2",
+  "title": "Model deterministic SRD class spell workflows",
+  "description": "Model deterministic class spell workflows that remain unresolved after the ngcj SRD audit.\n\nProblem:\nreports/srd-choice-prose-audit.txt reports 10 high-impact unresolved spell-selection records across:\n- Bard Spellcasting\n- Cleric Spellcasting\n- Druid Spellcasting\n- Paladin Spellcasting\n- Ranger Spellcasting\n- Sorcerer Spellcasting\n- Warlock Pact Magic\n- Warlock Mystic Arcanum\n- Wizard Spellbook\n- Wizard Spellcasting\n\nStarting choices are partly present, but daily preparation, level-up additions, replacements, spellbook growth, and Mystic Arcanum choices remain DM-readable prose rather than deterministic gameplay data.\n\nScope:\n- Add typed modeling for class spell lists and spell filters.\n- Represent prepared spell formulas, including ability modifier and class-level formulas.\n- Represent known-spell progression and replacement choices.\n- Represent Wizard spellbook starting contents and level-up additions.\n- Represent Wizard prepared-spell formula.\n- Represent Warlock Pact Magic spell choices/replacements.\n- Represent Warlock Mystic Arcanum choices at all applicable levels.\n- Replace free-text filters like \"the wizard spell list\" with stable structured filters.\n- Keep original prose/source citations for DM context.\n\nAcceptance criteria:\n- reports/srd-choice-prose-audit.txt no longer reports unresolved high-impact spell-selection findings for the listed class features, or remaining findings are explicitly justified known gaps.\n- Deterministic character creation can derive level-1 spell choices for all SRD spellcasting classes.\n- Deterministic advancement can derive level-up spell additions/replacements where SRD rules allow them.\n- Prepared casters expose machine-readable preparation formulas.\n- Wizard spellbook contents and growth are represented without prose interpretation.\n- Mystic Arcanum choices are represented at 11th, 13th, 15th, and 17th level as applicable.\n- npm run typecheck passes.\n- npm test passes.\n- npm run check passes.\n- npm run verify:dnd5e-srd-pack passes and regenerated pack output is intentional.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T03:18:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T04:09:59Z",
+  "closed_at": "2026-06-30T04:09:59Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-vk23.2",
+      "depends_on_id": "eshyra-vk23",
+      "type": "parent-child",
+      "created_at": "2026-06-29T22:18:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

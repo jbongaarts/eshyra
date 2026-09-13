@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0p8u",
+  "title": "Add GitHub Release artifact build and validation checks",
+  "description": "Implement the build/check workflow for the chosen GitHub Release CLI artifact format. The release artifact must be buildable from CI or a documented local release command and must be validated before publication. This task should not publish npm packages and should not remove package private: true guards.",
+  "acceptance_criteria": "Release artifact build command or CI job exists. Validation checks confirm the artifact runs from a clean unpacked directory. Validation checks confirm expected license/commercial notice files are included. Validation checks confirm applicable third-party content notices are included if bundled content is present. Validation checks guard against audit bundles, temp files, local secrets, vendored accidental artifacts, and unintended content. Root/internal package private guards remain unchanged. No npm publish metadata is added unless narrowly required for local packaging and explicitly justified.",
+  "notes": "Per eshyra-upef: artifact = per-platform self-contained archive bundling pinned Node 24 + ABI-matched better_sqlite3.node prebuild + cli/core dist + SRD data + LICENSE/COMMERCIAL-LICENSE.md/NOTICE/README. Targets: darwin-x64, darwin-arm64, linux-x64, linux-arm64, win32-x64 (.tar.gz Unix / .zip Windows). Validation must run the launcher from a clean unpacked dir using ONLY the bundled Node (no system Node). Dolt is NOT bundled (stays lazy). Guard against shipping audit bundles, .tsbuildinfo, temp files, secrets, and non-prebuild .node files.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-17T04:21:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-17T04:41:29Z",
+  "closed_at": "2026-06-17T05:02:15Z",
+  "close_reason": "Implemented in PR #235 (branch eshyra-0p8u-release-artifact). Added scripts/release/build-release-artifact.mjs (host-targeted packager: bundles pinned Node 24 + ABI-matched better-sqlite3 prebuild + production app tree + SRD data + LICENSE/COMMERCIAL-LICENSE.md/NOTICE/README; .tar.gz POSIX / .zip Windows) and scripts/release/validate-release-artifact.mjs (unpacks clean, runs on bundled Node only, asserts license/notice/readme + bundled rules attribution, fails on forbidden content; guards negative-tested). Added .github/workflows/release.yml (per-OS matrix build+validate+upload, attaches to GitHub Release on v* tag, no npm publish) and release:build/release:validate npm scripts. Verified end-to-end on linux-x64; npm run check + npm test green. Private guards unchanged, no publish metadata added. Artifact-size follow-up filed as eshyra-5cd6.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0p8u",
+      "depends_on_id": "eshyra-upef",
+      "type": "blocks",
+      "created_at": "2026-06-16T23:21:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

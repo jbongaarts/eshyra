@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3hp",
+  "title": "Import SRD Spellcasting-rules chapter as rule records",
+  "description": "The general Spellcasting rules chapter (What Is a Spell, Spell Level, Known/Prepared, Spell Slots, Casting at a Higher Level, Rituals, Casting Time, Components, Range, Areas of Effect, Duration, Targets, Combining Magical Effects) is never sliced: the coreRules anchor ends at 'Spellcasting' and the spell slices start at 'Spell Lists'/'Spell Descriptions', so only the single 'spellcasting-ability' leaf is captured. These rules govern all 319 spells already in the pack. Add a new 'spellcastingRules' section anchor (Spellcasting -> Spell Lists) and emit rule records for it. See docs/audits/srd-5.1-rules-section-coverage.md (loreweaver-ars), section #15 and root cause 2.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T04:45:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:41Z",
+  "started_at": "2026-06-05T16:40:38Z",
+  "closed_at": "2026-06-05T16:54:00Z",
+  "close_reason": "Added spellcastingRules section anchor (Spellcasting->Spell Lists) and parsed it via the nesting-aware parseRules with a new reservedKeySlugs param to disambiguate the 4 cross-slice title collisions. Pack 127->161 rules; gated by EXPECTED_SRD_5_1_RULE_KEYS. Full suite green.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

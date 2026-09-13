@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.8.3",
+  "title": "Classify deliberately-standalone reference tables + add de-flatten / completeness re-freeze gates",
+  "description": "Final eshyra-o9bd.8 slice. Classify the genuinely owner-less reference tables (celtic/egyptian/greek/norse deities, standard/exotic languages, standard-exchange-rates, difficulty-classes, experience-points/proficiency-bonus by CR, hit-dice-by-size, size-categories, damage-severity-by-level, trap-save-dcs, travel-pace, donning-and-doffing-armor) as deliberately standalone with a documented allowlist. Add the two o9bd.8 re-freeze gates: (1) table-link completeness — every non-allowlisted table is reachable from an owner; (2) no duplicate table linearization in primary prose unless under a deliberate sourceText field. Close out eshyra-o9bd.8.",
+  "design": "Follow docs/importer-fix-protocol.md. The completeness gate consumes the owner map (8.1/8.2) + standalone allowlist. De-flatten appears already satisfied; gate guards against regression. Add per-child thaw note + refresh freeze-manifest hashes.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T20:41:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-28T21:31:05Z",
+  "started_at": "2026-06-28T21:18:29Z",
+  "closed_at": "2026-06-28T21:31:05Z",
+  "close_reason": "Implemented in PR #360",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.8.3",
+      "depends_on_id": "eshyra-o9bd.8",
+      "type": "parent-child",
+      "created_at": "2026-06-28T15:41:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

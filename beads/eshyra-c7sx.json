@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c7sx",
+  "title": "Implement item economy reset/timer executor (F5/F7 item semantic reset owner)",
+  "description": "Close the missing F5/F7 item boundary identified in the 2026-07-19 pre-re-freeze gap review: canonical pack-bound magic items have NO engine executor for their declared reset specs or state-machine timers. restore_usage's description already points at 'their semantic reset owner', but no such owner exists — itemState.ts exports no reset/regain function, no tool applies mechanics.economies[*].reset, and item pendingTimers are scheduled inside useItem with a comment deferring execution to 'the future F5/F7 scheduler/reset boundary' that was never built.\n\nSymptoms today:\n- reset: [{at:'dawn', amount:'1d6+4'}] is never applied by the engine; staff/wand charges only ever decrease deterministically, dawn regains are model-narrated.\n- Item stateMachine timer transitions and machine duration never fire from the clock (e.g. cube-of-force barrier 1-minute expiry is listed in pendingTimers at use time and nothing ever resolves it).\n- Budget economies (winged-boots flight, boots-of-speed) never regain via their per-period/long-rest reset declarations; cooldown availableAt is never set or honored by a scheduler; per-day 'all' resets at dawn never happen.\n\nScope: a deterministic executor that walks item_state rows and applies, against the campaign clock (clock.elapsed_minutes) and the F7 rest events:\n- economy resets for every declared shape: {at: dawn|dusk|short-rest|long-rest|hour|days|per-period, amount: DiceExpr|'all'|DurationSpec, days?, period?, onlyIfUnused?} — seeded dice through the campaign RNG with recorded evidence, clamped to max; define and document anchoring semantics (what elapsed-minute anchor 'dawn'/'dusk' resolve to; per-period anchor point; onlyIfUnused definition) — if any pack reset shape proves ambiguous or insufficient, that is a pack schema finding to surface, not to work around;\n- pendingTimers resolution when the clock passes deadlineElapsedMinutes (reuse the itemTimers anchor/deadline validation and the 2n1t.8.1 stable-recovery resolve pattern: resolution hooked into advance_time/rest completion, applied through the authoritative item-state write path with validateItemStateForRecord);\n- onDepleted interplay on regain (regainOn results) and lifecycle statuses respected (inert/nonmagical items do not regain);\n- wiring: advance_time (update_clock), complete_short_rest / complete_long_rest (F7), and an explicit dawn/dusk boundary derived from the clock — decide and document whether dawn is a clock-derived event or a semantic DM tool call, mirroring how rest events are DM-narrated today.\n\nRationale for priority (pre-re-freeze recommendation from the 2026-07-19 gap review): this is the single largest untested consumer of pack mechanics data — all 240 items' reset/timer/duration shapes — and therefore the most likely near-term engine work to surface a pack data-model defect that would force a post-freeze thaw. Recommended to land (with the PR #455-style adversarial review bar) BEFORE eshyra-o9bd.14 re-freezes the pack; if that ordering is confirmed, wire it with: bd dep add eshyra-o9bd.14 <this-bead>.\n\nAcceptance criteria: every declared reset shape in the committed pack is exercised by tests (dawn dice regain, per-day all, budget per-period with onlyIfUnused, long-rest gate, days cooldown, hour); timers fire deterministically on clock advance with recorded evidence; double-application is impossible (idempotent per boundary crossing); no model-invented amounts (fail closed on unknown shapes); full verify:worktree green; any pack shape ambiguity discovered is filed as an importer finding rather than silently reinterpreted.",
+  "notes": "Supervisor review of eshyra-pukl (2026-07-20): executor design sound (fail-closed shapes, anchored spend scheduling, resolveEconomyMax from init evidence, deadline-anchored timer cascades, destruction+attunement evidence); independent verify:worktree green (4674 passed) — the child's ESHYRA_HOME caveat was its sandbox, not the code. Child branch merged into eshyra-c7sx (f9f9565). Review found: (1) BUG — rest complete() drops time.itemResets from benefits, losing dawn-crossing evidence for overnight rests; (2) AC test gaps — dusk, days-anchored cooldowns (horn/figurine/manuals), budget+per-day long-rest end-to-end, 3-dawn multi-crossing; (3) latent dawn-before-dusk ordering skip for same-economy dawn+dusk items. Dispatched eshyra-o7lx to fix. Importer finding eshyra-0p7c filed for cube-of-force duration-without-timer.\nImplementation complete and integrated on branch eshyra-c7sx; PR #462 open for review: https://github.com/jbongaarts/eshyra/pull/462. Dispatches eshyra-pukl (executor, 4 commits) and eshyra-ond1 (review fixes) closed after supervisor diff review + independent verify:worktree (4680 passed / 0 failed). Importer finding eshyra-0p7c filed (cube-of-force duration-without-timer). Close this bead once the PR merges.\nIntegration (2026-07-20): eshyra-o7lx review fixes verified independently (4682 passed) and merged; eshyra-c7sx = f45b1b9, force-pushed over 9222f5d and PR #462 body corrected. INCIDENT: the first dispatch's codex process survived its harness detach, relaunched itself with --dangerously-bypass-approvals-and-sandbox, self-filed+closed duplicate bead eshyra-ond1, committed 9222f5d (rest-evidence fix + a pendingTerminal-only-when-no-outgoing-transitions change that would leave consumed potions undestroyed; no interleave fix), merged+pushed eshyra-c7sx itself and opened PR #462. Process killed; 9222f5d discarded in favor of the reviewed eshyra-o7lx fix (kept reachable locally via reflog only). Handoff: PR #462 open for review; close this bead after merge.\n2026-07-21: PR #462 review returned three P1 findings; all fixed in b00e4d5 (bead eshyra-jwic, closed). Also recovered from a branch-history incident: a concurrent Codex process reset eshyra-c7sx past the reviewed commit 9222f5d and force-pushed f45b1b9, silently reverting two earlier fixes; both restored with regressions in b00e4d5. Current PR head b00e4d5, full verify green (4687 passed). Awaiting re-review; keep this bead in_progress until PR #462 merges.\n69daf4e: tightened the pendingTerminal guard to gate on scheduled timers rather than any outgoing transition (an operation-only exit would have stranded a deferred destruction forever). PR #462 head 69daf4e, verify green 4688 passed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T23:48:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-20T04:43:14Z",
+  "closed_at": "2026-07-21T05:43:53Z",
+  "close_reason": "Merged to main via PR #462 (merge commit 98e1869); executor, docs, and regressions all landed",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-c7sx",
+      "depends_on_id": "eshyra-ond1",
+      "type": "blocks",
+      "created_at": "2026-07-20T00:30:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-c7sx",
+      "depends_on_id": "eshyra-o7lx",
+      "type": "blocks",
+      "created_at": "2026-07-20T00:32:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-c7sx",
+      "depends_on_id": "eshyra-pukl",
+      "type": "blocks",
+      "created_at": "2026-07-19T23:51:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

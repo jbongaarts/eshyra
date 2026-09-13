@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ksk",
+  "title": "Wire model profile registry into CLI runtime config",
+  "description": "Review finding from loreweaver-1ek. README documents LOREWEAVER_PROFILE_* overrides and resolveProfileRegistry exists, but the CLI runtime still uses only flat LOREWEAVER_MODEL for the DM model. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "CLI runtime resolves the premium_dm profile from the profile registry or docs are revised to mark profile overrides as not yet runtime-wired; tests cover profile env overrides selecting the runtime DM model/provider entry.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:44:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:03Z",
+  "started_at": "2026-05-22T02:58:14Z",
+  "closed_at": "2026-05-22T03:15:41Z",
+  "close_reason": "P2 review-findings batch (parent loreweaver-d4r); see PR.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

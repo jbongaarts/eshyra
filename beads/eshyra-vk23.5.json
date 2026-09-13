@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23.5",
+  "title": "Add ordered SRD subclass progression",
+  "description": "Add or normalize ordered subclass progression for gameplay consumers.\n\nProblem:\nSubclass records include feature refs and the feature records have levels, but the subclass feature arrays are not consistently ordered by level. For example, Champion can list Additional Fighting Style before lower-level features. A deterministic resolver can sort indirectly, but simple consumers and the primary DM model benefit from direct ordered progression.\n\nScope:\n- Inspect subclass records and feature refs.\n- Either sort subclass features by level, or add an explicit progression/featuresByLevel projection.\n- Ensure repeated-level subclass features remain grouped correctly.\n- Preserve existing refs and source citations.\n- Add tests or audit checks for deterministic ordering/projection.\n\nAcceptance criteria:\n- Each subclass exposes level-ordered feature progression directly or through an explicit projection.\n- Champion progression presents level 3, 7, 10, 15, and 18 features in order.\n- Consumers do not need to infer subclass progression order by joining feature refs manually unless that is explicitly documented.\n- npm run typecheck passes.\n- npm test passes.\n- npm run check passes.\n- npm run verify:dnd5e-srd-pack passes and regenerated pack output is intentional.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T03:18:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T05:04:36Z",
+  "started_at": "2026-06-30T04:51:08Z",
+  "closed_at": "2026-06-30T05:04:36Z",
+  "close_reason": "Subclass features now level-ordered on data.features plus an explicit data.featuresByLevel projection (grouped by grant level); importer enrichment, schema validation, and committed-pack regression tests added. verify:dnd5e-srd-pack clean; only the 12 subclass records changed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-vk23.5",
+      "depends_on_id": "eshyra-vk23",
+      "type": "parent-child",
+      "created_at": "2026-06-29T22:18:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

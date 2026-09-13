@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d8ap.1",
+  "title": "Surface player-visible roll results for player-affecting mechanics",
+  "description": "The Claude combat playtest showed initiative and the death save to the player, but hid most other player-affecting rolls. Debug evidence showed attack rolls, damage rolls, ambush/perception-style checks, enemy attacks, and enemy damage were being rolled, but the visible transcript only narrated outcomes. This makes combat feel opaque and makes it hard for a player to trust the mechanics.\n\nAcceptance criteria:\n\n- Define a player-visible roll ledger policy.\n- Always surface player attack rolls, player damage rolls, saving throws, death saves, ability checks when the player is aware they are attempting something uncertain, initiative, enemy attack rolls against a PC, and enemy damage rolls against a PC.\n- Permit hidden or summarized handling for secret checks where showing the roll would reveal hidden information, monster-vs-monster mechanics not directly affecting the player, and hidden enemy stealth/perception when revealing it would spoil the encounter.\n- Update DM prompt guidance so the primary DM knows to include the roll ledger in final narration.\n- Update audit guidance so a candidate can be rejected when it narrates a player-affecting hit, miss, damage, save, death save, or ability-check result without surfacing the relevant player-visible roll summary.\n- Regression tests cover: Bob attacks a goblin and misses and the attack roll is visible; Bob attacks a goblin, hits, and deals damage and attack and damage are visible; a goblin attacks Bob and misses and the enemy attack roll is visible; a goblin critically hits Bob and drops him to 0 HP in a deterministic roll fixture and enemy attack and damage are visible; a death save remains visible; a hidden ambush/stealth check does not leak hidden information unnecessarily.\n",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-25T05:21:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T05:36:56Z",
+  "closed_at": "2026-06-25T05:44:00Z",
+  "close_reason": "Implemented player-visible roll ledger policy, DM/audit prompt guidance, and regression coverage for visible vs hidden roll handling.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d8ap.1",
+      "depends_on_id": "eshyra-d8ap",
+      "type": "parent-child",
+      "created_at": "2026-06-25T00:21:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

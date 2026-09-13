@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-z7am",
+  "title": "verify-dnd5e-srd-pack does not diff record-relationships.json",
+  "description": "packages/core/scripts/verify-dnd5e-srd-pack/cli.ts (discovered while doing eshyra-jgxl F2/F3 work) diffs manifest.json/records.json, source-inventory.json, source-coverage.json, source-region-ledger.json, and field-provenance.json against a fresh importer run, but never touches record-relationships.json (packages/core/src/rules/packLoader.ts PACK_RECORD_RELATIONSHIPS_FILE). A content change to the curated recordRelationshipDeclarations.ts (e.g. a reason string, or a future declaration edit) can silently drift the committed record-relationships.json from what the importer would actually emit, with 'verify:dnd5e-srd-pack: committed pack matches importer output exactly' printed anyway. eshyra-jgxl hit this directly: updating five reason strings in recordRelationshipDeclarations.ts changed record-relationships.json but the verify script reported a clean match until the file was diffed by hand. Add a byte-diff of record-relationships.json to verify-dnd5e-srd-pack/cli.ts, mirroring how field-provenance.json is already compared, and add regression coverage.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-13T02:57:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-13T02:57:45Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

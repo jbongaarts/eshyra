@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-q0d",
+  "title": "Gated live-API faithfulness test: NPC persistence over 10 iterations (06b.1-C)",
+  "description": "The deterministic tests in 06b.1-A prove the *input shape* is right; this gated test proves the model actually honors the no-omit instruction with a live frontier model.\n\nParent: loreweaver-06b.1. Depends on 06b.1-A (uses the new `priorBible` input).\n\nScope:\n- Add a new gated test file under `packages/core/test/` (suggested: `campaignBibleFaithfulness.integration.test.ts`), following the `describe.skipIf(!hasKey)` pattern used by `model.integration.test.ts`.\n- Build a synthetic campaign of 10 fake `SessionRecapRecord` fixtures. Recap 1 introduces 'Mira the runesmith'. Recaps 2-10 cover unrelated events and never mention Mira again.\n- Run `extractCampaignBible` iteratively: pass 1 = recap[0] with no priorBible; pass N = recaps[0..N-1] with priorBible = the bible output of pass N-1. (This mirrors how the CLI will call it once 06b.1-B lands — once-per-arc-rollover with the previous bible fed back in.)\n- Assert the final bible's `majorNpcs` contains a case-insensitive 'mira' substring match (the model may paraphrase to 'Mira', 'Mira (runesmith)', etc. — accept any entry mentioning Mira).\n- Use the default provider — `AgentSdkModelClient` with `process.env.LOREWEAVER_MODEL ?? 'claude-opus-4-7'`, same as the existing integration test.\n- Set a generous timeout (10 iterations of live calls; allow ~60s per call worst case).",
+  "design": "- Live-API tests are the contract proof; deterministic tests can only check that we *asked*. Putting this in its own file keeps it cleanly separable from the prompt-shape tests and from the existing round-trip smoke test in `model.integration.test.ts`.\n- Iteration N=1 has no prior bible (legacy shape exercised); iterations 2-10 exercise the new shape. This is also the closest analog to what 06b.1-B will do in production.\n- A single canonical character + a substring-match assertion keeps the test resistant to paraphrase drift; if frontier models start hallucinating a different name it's worth knowing.",
+  "acceptance_criteria": "- New file exists and is skipped without `ANTHROPIC_API_KEY` (verified by running `npm run test` without the key — the file shows as skipped, not failed).\n- With `ANTHROPIC_API_KEY` set, the test runs to completion and passes on the default model: 'mira' (case-insensitive) appears in some entry of the final `majorNpcs`.\n- Test file is excluded from the standard non-skip pass criterion (it joins the documented set of gated tests in `AGENTS.md`).",
+  "notes": "PR #65 opened against main. Test file gated on ANTHROPIC_API_KEY; standard CI runs show it skipped. AGENTS.md updated to list it alongside model.integration.test.ts in the documented gated set. Reviewer should verify the live test passes locally with a provider key before merge.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T04:40:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:16Z",
+  "started_at": "2026-05-25T05:04:38Z",
+  "closed_at": "2026-05-25T05:14:11Z",
+  "close_reason": "Merged via PR #64 and PR #65",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-q0d",
+      "depends_on_id": "eshyra-5l8",
+      "type": "blocks",
+      "created_at": "2026-05-24T23:40:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

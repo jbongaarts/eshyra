@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2g7",
+  "title": "Define public core API versus internal modules",
+  "description": "Review finding from loreweaver-den. @loreweaver/core exports persistence, checkpoint internals, world loaders, model adapters, orchestration, sample content, and state mutation through one broad public index, making future consumers likely to depend on movable internals. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "A documented stable public core surface exists; internals move behind explicit internal paths or stop exporting where practical; CLI imports remain supported; future hosted/server consumers know which APIs are stable.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:45:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:20Z",
+  "started_at": "2026-05-24T04:06:10Z",
+  "closed_at": "2026-05-24T04:17:25Z",
+  "close_reason": "Public/internal split shipped on branch loreweaver-2g7-public-core-api (PR #59). Stable surface lives in packages/core/src/index.ts with header docstring; movable internals re-exported from packages/core/src/internal.ts behind the @loreweaver/core/internal subpath; CLI production code only touches the stable root, with one CLI test and core's own tests using /internal; AGENTS.md Conventions records the default-to-internal policy. npm run typecheck clean, npm test 404 passed / 2 skipped / 0 failed.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

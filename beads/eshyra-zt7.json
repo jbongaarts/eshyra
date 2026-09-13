@@ -1,0 +1,81 @@
+{
+  "_type": "issue",
+  "id": "eshyra-zt7",
+  "title": "Canonicalize halfling subrace records for Lightfoot and Stout lookups",
+  "description": "## Problem\r\n\r\nThe SRD source headings use bare subrace names Lightfoot and Stout, and the parser currently preserves those names directly. The emitter then derives canonical record keys and display names from ancestry.name, producing records like:\r\n\r\n- ancestry:lightfoot\r\n- ancestry:stout\r\n\r\nThat is source-faithful, but weak for canonical lookup. A user/player request for Lightfoot",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-29T00:38:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:52Z",
+  "started_at": "2026-05-31T04:09:06Z",
+  "closed_at": "2026-05-31T04:26:19Z",
+  "close_reason": "Canonicalized bare SRD halfling subrace headings to Lightfoot Halfling and Stout Halfling record names/keys while preserving Halfling parent linkage; verification passed: npm run typecheck, touched-file Biome CI, npm run test.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-zt7",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-28T19:38:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "d8d10eff-fd54-5e3e-8c25-db69da0263d4",
+      "issue_id": "eshyra-zt7",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install -> succeeded; npm run typecheck -> passed; npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseAncestries.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> passed (47 tests).",
+      "created_at": "2026-05-31T04:11:24Z"
+    },
+    {
+      "id": "c921d72e-db3e-5263-940f-fdb2ac40288a",
+      "issue_id": "eshyra-zt7",
+      "author": "Joseph Bongaarts",
+      "text": "Debugging evidence: parseAncestries maps SRD halfling subrace headings Lightfoot and Stout into AncestryExtraction.name unchanged; emit.ts keys records via ancestryKey(ancestry.name), so the emitted records become ancestry:lightfoot and ancestry:stout. Root cause hypothesis: source heading text and canonical record display/key text are sharing one field; halfling subraces need a deterministic canonicalization step while retaining parent linkage to Halfling.",
+      "created_at": "2026-05-31T04:12:51Z"
+    },
+    {
+      "id": "5360ce39-2960-5017-af2a-25bcaed0e75b",
+      "issue_id": "eshyra-zt7",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseAncestries.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> failed as expected. Halfling test received Lightfoot/Stout instead of Lightfoot Halfling/Stout Halfling, and pipeline emitted no ancestry:lightfoot-halfling key.",
+      "created_at": "2026-05-31T04:20:34Z"
+    },
+    {
+      "id": "29a02769-ac5a-5f34-8861-5ebd8bba1667",
+      "issue_id": "eshyra-zt7",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseAncestries.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> passed (50 tests). Bare Lightfoot/Stout SRD headings now emit canonical Lightfoot Halfling/Stout Halfling names and keys.",
+      "created_at": "2026-05-31T04:22:27Z"
+    },
+    {
+      "id": "16779b78-2d44-546b-8689-785a036cab9d",
+      "issue_id": "eshyra-zt7",
+      "author": "Joseph Bongaarts",
+      "text": "TDD REFACTOR: npx biome format --write --vcs-enabled=false <4 touched files> -> formatted 4 files, fixed 1; npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseAncestries.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> passed (50 tests).",
+      "created_at": "2026-05-31T04:23:48Z"
+    },
+    {
+      "id": "c88c45e2-94ac-5696-a16d-54307851765a",
+      "issue_id": "eshyra-zt7",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> passed; npx biome ci --vcs-enabled=false <4 touched files> -> passed (4 files checked); npm run test -> passed (960 passed, 3 skipped across 82 files). Note: npm run check -- --vcs-enabled=false cannot process '.' inside .worktrees because biome.json excludes **/.worktrees; touched-file Biome CI was used for local worktree validation.",
+      "created_at": "2026-05-31T04:25:05Z"
+    },
+    {
+      "id": "f9af1df6-00aa-51c4-ac03-a0420ed892ac",
+      "issue_id": "eshyra-zt7",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 77013dd..working-tree: Assessment: Ready to merge. Critical: none. Important: none. Minor: none. Follow-up: none. Reviewed diff against zt7 scope: parser still matches source headings Lightfoot/Stout but emits canonical Lightfoot Halfling/Stout Halfling names, so record keys and subrace links become ancestry:lightfoot-halfling / ancestry:stout-halfling while parent linkage remains ancestry:halfling.",
+      "created_at": "2026-05-31T04:26:03Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 7
+}

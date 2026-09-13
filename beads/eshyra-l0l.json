@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l0l",
+  "title": "loreweaver play: EOF/Ctrl-D on stdin skips graceful close (session left open)",
+  "description": "Found during ve6 MVP acceptance verification. In packages/cli/src/play.ts, nodeIO().prompt assumes rl.question() throws on a closed/EOF stdin and catches it to return undefined (which turnLoop treats as a graceful quit). On Node 24, rl.question() on an EOF'd stdin neither resolves nor rejects -- it hangs. The turn loop never breaks, gracefulClose never runs, and the process drains its event loop and exits 0 with the session still status=open, no session_recap, and no Dolt checkpoint. Verified: a real 'loreweaver play' run with stdin redirected from /dev/null creates the campaign and session but leaves the session open; the documented '/quit' path works correctly. The code comments in play.ts (nodeIO.prompt, turnLoop, and the CliIO.prompt contract) all explicitly promise EOF/Ctrl-D triggers a graceful quit, so this is a contract violation. Impact: Ctrl-D degrades to the crash path (session stays open, relaunch offers Resume/Close-and-recap), so there is no canon loss, but graceful close + recap + checkpoint are silently skipped.",
+  "design": "Fix is localized to nodeIO() in packages/cli/src/play.ts: make prompt() resolve undefined when the readline interface emits 'close'. E.g. race rl.question() against a promise that resolves on the rl 'close' event, or set a closed flag in an rl.on('close') handler and short-circuit prompt(). Add a play.test.ts case feeding an exhausted/EOF io that asserts the close pipeline runs.",
+  "acceptance_criteria": "A 'loreweaver play' turn loop that hits EOF on stdin runs the full graceful close pipeline (session marked closed, recap written, checkpoint attempted) just like the /quit path. Covered by an automated test.",
+  "notes": "TDD: RED — added subprocess test 'play graceful close on stdin EOF' in packages/cli/test/cli.test.ts (spawns built CLI with empty/EOF stdin); failed against buggy dist (no 'closed and recapped', session left open). GREEN — fixed nodeIO() in packages/cli/src/play.ts to race rl.question() against the readline 'close' event so EOF resolves as undefined. REFACTOR — npm run typecheck + npm run test all green (195 pass/1 skipped). Verified with the real binary: 'loreweaver play < /dev/null' now prints 'closed and recapped (checkpoint ...)' and the session ends status=closed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T03:50:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:04Z",
+  "started_at": "2026-05-21T03:53:55Z",
+  "closed_at": "2026-05-24T03:38:57Z",
+  "close_reason": "Work merged to main via PR #13 (3bf32b2) and PR #14 (efdf91c); issues left in_progress.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

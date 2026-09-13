@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3",
+  "title": "Repair character-option and core-rule source semantics needed by real consumers",
+  "description": "Own known character-option/core-rule projection defects. Repair source-fidelity problems\nsuch as option-local alternatives, resource/reset/scaling data, structured grants, and\nrule/action/condition relationships. Add structured semantics where they preserve source\nstructure, improve discovery, or feed a positively selected deterministic capability.\nDo not require universal deterministic execution.",
+  "acceptance_criteria": "- Known findings in this domain receive explicit source-fidelity/discovery/capability/state dispositions and repairs.\n- Structured alternatives remain option-local and cannot be flattened into cumulative effects.\n- Source-derived resource/reset/scaling/grant data is accurate wherever projected or consumed deterministically.\n- Positive capability inputs are sufficient for the operations that consume them and expose their limits.\n- No criterion requires exhaustive semantic classification or deterministic execution of all domain clauses.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:52:14Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

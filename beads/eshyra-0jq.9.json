@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.9",
+  "title": "Make world-query visibility and DM-only fields explicit",
+  "description": "World records include DM-only information such as secrets. Make public vs DM-only fields explicit in world-query results and downstream context/trace handling so hidden information is not accidentally surfaced to a future player-facing UI or export.",
+  "acceptance_criteria": "- World-query result shape distinguishes public and DM-only data.\r\n- Prompt assembly intentionally handles DM-only data.\r\n- Player-visible exports or UI-facing paths do not accidentally include DM-only fields.\r\n- Tests cover at least one record with hidden/secret data.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:58Z",
+  "started_at": "2026-05-27T03:45:37Z",
+  "closed_at": "2026-05-27T03:53:23Z",
+  "close_reason": "PR #86 adds visibility/dmOnlyFields to WorldQueryResult + toPlayerSafeView projection",
+  "labels": [
+    "architecture",
+    "refactor",
+    "safety",
+    "technical-debt",
+    "visibility",
+    "world"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.9",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.9",
+      "depends_on_id": "eshyra-0jq.7",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.11",
+  "title": "Model magic item spell storage, slot interop and roll manipulation (M9+M10)",
+  "description": "Implement families M9 (7 rows) + M10 (7 rows) from docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md §4. M9: ring-of-spell-storing and rod-of-absorption (flagships: stored-level budgets, caster-of-record DC/ability, absorb-to-charges/slots), ioun Reserve/Absorption, pearl-of-power (slot recovery), spell-scroll casting procedure (shared with the M1 bead), candle-of-invocation free casting, staff-of-the-magi absorption with >50 overflow explosion. MUST be designed together with the Phase 1 F4 spell-slot engine (PR #406 artifact §4) — slot recovery/creation/substitution are F4 operations, not item-local state. M10: luck-blade reroll, ring-of-evasion and scarab-of-protection fail->success replacement, staff-of-charming save-flip/reflect, ring-of-spell-turning nat-20 reflect, rod-of-absorption reaction cancel, talisman-of-the-sphere PB doubling — couples to the F1 dice/roll tool surface. Recommended agent: Opus 4.8.",
+  "notes": "2026-07-08 ADR 0017 adjustment: Spell storage, slot interop, and roll manipulation should close by representing source-derived item clauses plus F1/F4/F5/F9 hook bindings. Slot counters, roll replacement execution, and overflow/absorption state are shared runtime concerns unless explicitly implemented under the engine owner.\nImplemented the source-grounded family projector, strict schema validation, clause registry bindings, generated pack projection, and representative/exhaustive tests. The exact 240-row owner-tag conservation census passes; all magic items now carry reviewed executable mechanics.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-06T23:32:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:28Z",
+  "started_at": "2026-07-18T16:34:38Z",
+  "closed_at": "2026-07-18T20:23:28Z",
+  "close_reason": "Source-faithful executable magic-item family complete; canonical regeneration, conservation gates, deep audit, and full worktree verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.11",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-06T18:32:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fxrs",
+  "title": "Classify frozen SRD class-progression rows that cannot resolve under strict level-up parsing",
+  "description": "The SRD pack is frozen; do not modify generated pack data, change importer output, or regenerate pack data for this bead. PR #324 introduced strict resolveClassLevel parsing for level-up use. Strict all-class/all-level coverage exposed existing frozen class progression rows whose feature entries are not directly usable as feature refs, including Barbarian levels 6/10/14 Path feature; Bard levels 6/14 Bard College feature; Cleric domain/improvement rows; Druid circle/wild-shape improvement rows; Fighter martial archetype feature rows; Monk tradition/unarmored movement improvement rows; Paladin oath/aura rows; Ranger favored/natural/archetype rows; Rogue Thieves Cant and archetype rows; Sorcerer origin rows; Warlock patron rows; and Wizard tradition/signature spell rows. Classify the affected class/level rows and decide, per row, whether a deterministic compatibility interpretation layer can map the frozen row using existing frozen records, or whether level-up support for that row must remain unsupported and fail closed with a clear diagnostic.",
+  "notes": "Observed while addressing PR #324 review on eshyra-lupf.3. Representative failing assertion: resolver.resolveClassLevel('Barbarian', 6) returns malformed because the frozen records.json row has { name: 'Path feature' } without ref. Acceptance criteria: enumerate every frozen SRD class/level row that fails strict resolveClassLevel parsing; do not modify generated pack data; do not change importer output; do not regenerate pack data; for each affected row, record whether an existing frozen feature/rule/table record can provide a deterministic mapping; add tests for supported mappings, if any; add tests or documentation for rows that must remain unsupported and fail closed; add targeted coverage so future changes do not silently expand or shrink the unsupported set.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T01:12:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-27T21:56:44Z",
+  "started_at": "2026-06-27T21:54:26Z",
+  "closed_at": "2026-06-27T21:56:44Z",
+  "close_reason": "Classified all strict SRD class-level failures in docs/design/srd-level-up-row-classification.md, including subclass-context candidates, improvement-semantics rows, alias candidate, missing record, and Ranger level-1 null spellcasting placeholder. Added resolver coverage that walks the frozen pack and locks the 48-row malformed set. No generated pack/importer/parser behavior changed. Verification: npm run verify:worktree passed after rebase onto origin/main.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

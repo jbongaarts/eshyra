@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ssmf",
+  "title": "Import Appendix MM-B intro prose",
+  "description": "SRD p395. npcPages starts after 'Appendix MM-B: Nonplayer Characters' h25.9 title at preamble lines1-6 ('This appendix contains statistics for various humanoid nonplayer characters (NPCs)...These stat blocks can be used to represent both human and nonhuman NPCs.'), then 'Customizing NPCs' h13.9. Currently rule:customizing-npcs exists but preamble dropped (was 'intentionally not emitted'). Inconsistent with MM-A intro. Add rule:appendix-mm-b-nonplayer-characters via parseSectionIntro(npcPages, stop at first heading h>=11.5). Keep rule:customizing-npcs intact. Do not let intro bleed into first NPC stat block. Add key to EXPECTED + coverage. Sentinel: 'This appendix contains statistics for various humanoid nonplayer characters'. Group with finding 6 (commit 3).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T15:34:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-15T15:39:55Z",
+  "closed_at": "2026-06-15T15:54:53Z",
+  "close_reason": "Implemented in PR #227 (branch eshyra-g9im-intro-prose). 12 new rule records (rule:feats, rule:conditions, rule:using-ability-scores, rule:appendix-mm-b-nonplayer-characters, 8 subclass overviews); all 12 headings reclassified from ignored:document-structure to record. Sentinels + coverage assertions added. verify:dnd5e-srd-pack + verify:worktree green.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ssmf",
+      "depends_on_id": "eshyra-g9im",
+      "type": "parent-child",
+      "created_at": "2026-06-15T10:35:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

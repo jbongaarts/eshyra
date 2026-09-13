@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lue",
+  "title": "Brainstorm: Multi-session arc boundaries (x63)",
+  "description": "Explore the design space for multi-arc support in a campaign: arc data model, arc boundaries (declared vs inferred), how the active arc is surfaced to orchestrator/contextAssembler, and CLI plumbing for arc transitions. Produces an approved feature epic by updating loreweaver-x63 in place.",
+  "notes": "User clarified purpose (2026-05-24): arc tier exists for DM-agent memory management, not narrative bookkeeping. Goal is to reliably surface relevant info inside a bounded context window. Module/quest framing is intuitive but not load-bearing — what matters is when prior session history is safe to compress into a single arc summary so the DM can drop detailed recaps. Reframe arc-boundary question around the compression trigger.\nBible faithfulness audit (2026-05-24): (1) extractCampaignBible rebuilds bible from scratch each close; prior bible isn't shown to the model, no append-and-dedupe contract. (2) Prompt has no completeness/no-omit instruction. (3) No thread-resolution state machine; threads are 'open' or 'missing'. (4) Existing tests cover parsing only; no faithfulness golden test as recap volume grows. (5) Multi-arc would strictly reduce input signal (arc summaries are lossy summaries-of-summaries). Conclusion: bible is not engineered to be the active-narrative safety net today. Either strengthen it before relying on it, or pick a multi-arc design that doesn't depend on it solely.\nDecomposition decided (2026-05-24): two sibling epics, no dep. New epic for bible strengthening; x63 stays scoped to arc machinery + K-recap overlap window as the independent no-forget guarantee. Player not involved in arc decisions (user constraint).\nBrainstorm complete (2026-05-24). Produced: loreweaver-x63 (multi-arc lifecycle, populated with description/design/acceptance) and loreweaver-06b.1 (sibling 'Strengthen campaign bible faithfulness' epic). Both pass bd lint. Two epics are independent (no bd dep).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-24T17:21:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:59Z",
+  "started_at": "2026-05-24T17:21:07Z",
+  "closed_at": "2026-05-24T21:03:31Z",
+  "close_reason": "Brainstorm complete. Produced loreweaver-x63 (populated with description/design/acceptance) and sibling loreweaver-06b.1 (Strengthen campaign bible faithfulness). User approved x63 design and elected to proceed directly to writing-plans for x63.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

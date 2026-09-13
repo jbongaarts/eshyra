@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4d.4",
+  "title": "Turn acting-character attribution",
+  "description": "Record and honor which PC is acting on a turn. RunTurnInput.playerInput has no notion of the acting PC and the turn trace does not record one. Add RunTurnInput.actingCharacterId (defaults to meta.active_character_id), thread it into ToolContext so mutation tools default to the acting PC, and persist it on the turn trace for replay/audit. Acceptance: a turn can name an acting PC distinct from the active PC; tools default to it; trace records the acting PC; defaults to active when omitted; tests cover default and explicit cases.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:54:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T17:58:29Z",
+  "closed_at": "2026-05-28T18:06:54Z",
+  "close_reason": "ToolContext + RunTurnInput actingCharacterId; tools default to acting PC, assembler renders acting PC sheet, both fall back to active. 3 unit tests. biome+typecheck clean; only pre-existing dolt-subprocess timeouts flake under parallel load (see memory dolt-checkpoint-tests-flaky-under-parallel-load). Committed 7ca546c.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4d.4",
+      "depends_on_id": "eshyra-d4d",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:54:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

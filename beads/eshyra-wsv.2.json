@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wsv.2",
+  "title": "Implement session recap roll-up",
+  "description": "Produce session_recap records from scene summaries plus state deltas at session close.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T05:12:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:07Z",
+  "started_at": "2026-05-19T05:16:10Z",
+  "closed_at": "2026-05-19T05:17:32Z",
+  "close_reason": "Implemented session recap roll-up from scene summaries plus state delta; focused test and typecheck pass with RED evidence recorded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-wsv.2",
+      "depends_on_id": "eshyra-wsv",
+      "type": "parent-child",
+      "created_at": "2026-05-19T00:12:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "c9646569-c894-5e8b-8153-0e5eef7d60db",
+      "issue_id": "eshyra-wsv.2",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/memorySummary.test.ts -> failed as expected; rollupSessionRecap/getSessionRecap API is missing while scene summary test passes.",
+      "created_at": "2026-05-19T05:16:41Z"
+    },
+    {
+      "id": "19c457e2-4800-5e13-b47c-f7b032d39a20",
+      "issue_id": "eshyra-wsv.2",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN/REFACTOR verification: npm run test -- packages/core/test/memorySummary.test.ts -> passed (2 tests); npm run typecheck -> passed. Added session_recap schema plus rollupSessionRecap/getSessionRecap with idempotent upsert from scene summaries and state deltas.",
+      "created_at": "2026-05-19T05:17:31Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

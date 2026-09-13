@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ecr.2.1",
+  "title": "Prevent magic item table rows from contaminating names",
+  "description": "Observed during SRD 5.1 import validation: magic item records such as Armor of Vulnerability and Bead of Force were generated with preceding table rows prefixed into the name/key. Expected parser to keep embedded tables in the previous item description and use only the actual next item name.",
+  "notes": "Evidence: scratch import produced 218 magic-item records, but generated keys/names included table-row prefixes such as '1 Acid 6 Necrotic ... Armor of Vulnerability', 'Type Strength Rarity ... Berserker Axe', and '97-00 Portable Ram Rod of Absorption'. The bad values originate before emission: parseMagicItems scans backward from an item category line and treats numeric/table-header description rows as candidate name lines.\nPattern: valid wrapped item names in the focused fixtures use an actual title continuation, e.g. 'Amulet of Proof against Detection and' + 'Location'. Broken rows are body table rows immediately before a new item title; some start with digits ('1 Acid 6 Necrotic') and others are word-led table rows ('Type Strength Rarity', 'Hill giant 21 Rare'), so digit-prefix rejection alone would not address the observed artifacts.\nFailing check: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseMagicItems.test.ts fails before the fix. The parsed names include '1 Acid 6 Necrotic ... Armor of Vulnerability' and 'Type Strength Rarity ... Berserker Axe', and Armor of Resistance's description loses '1 Acid 6 Necrotic' because those body rows became the next entry name.\nHypothesis: body/table rows are entering names because looksLikeNameLine permits lines with ordinary numeric cells or dice/count text. Real SRD magic-item title lines that contain numbers use enhancement notation like '+1', '+2', '+3'. Rejecting title candidates with non-plus-prefixed digits should stop table-row backtracking while preserving '+N' item names and wrapped names.\nResult: numeric-row filter removed the contaminated names, but the focused test still fails because 'Belt of Giant Strength' is not parsed. New evidence: category detection requires one of common/uncommon/rare/very rare/legendary/artifact and misses SRD lines that say 'rarity varies'. Additional hypothesis: include 'rarity varies'/'varies' in category detection and continuation without changing emitted rarity text.\nVerified focused fix: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseMagicItems.test.ts now passes, 9 tests. The regression confirms numeric and word-led table rows remain in the previous item description, following item names are clean, and 'rarity varies' category lines are recognized.\nOriginal import verified: npm run import:dnd5e-srd now reports 222 magic items. Generated records inspection found no suspicious magic-item names matching the previous row-prefix patterns; first/last names are clean, e.g. Adamantine Armor through Wings of Flying.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-04T06:23:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:49Z",
+  "started_at": "2026-06-04T06:23:40Z",
+  "closed_at": "2026-06-04T06:29:25Z",
+  "close_reason": "Fixed magic item name contamination by rejecting non-enhancement numeric body/table lines as title candidates and recognizing 'rarity varies' category lines; verified with focused parser regression, importer suite, and scratch SRD import/name inspection.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ecr.2.1",
+      "depends_on_id": "eshyra-ecr.2",
+      "type": "parent-child",
+      "created_at": "2026-06-04T01:23:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

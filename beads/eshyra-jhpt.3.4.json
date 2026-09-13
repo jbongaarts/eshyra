@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.3.4",
+  "title": "Dispatch: Replace invalid position sentinels in CLI tests (attempt 4)",
+  "description": "Dispatch of eshyra-jhpt.3 (attempt 4) — final fix before this work goes to PR.\n\nAttempt 3 (74f28bd) is ACCEPTED: every position-taking store entry point now parses and canonicalizes via parseCampaignPosition and rejects a malformed value with CampaignRuleError, with a negative test covering all three entry points. Keep it.\n\nWORKTREE / BRANCH\n.worktrees/eshyra-jhpt.3.4 on branch eshyra-jhpt.3.4, cut from 74f28bd on eshyra-jhpt.3.3. Work only inside that worktree.\n\n*** FIRST, BEFORE ANYTHING ELSE: run `npm ci` in this worktree. ***\nThis is required by AGENTS.md (Build & Test: \"npm ci # CI or worktree install\") and it is NOT optional here. A fresh linked worktree has no node_modules, so `@eshyra/core` resolves UP to the parent checkout's copy - which is on main and contains none of this branch's work. Without the install, every packages/cli test silently runs against main's core and reports a false green. That is exactly what hid the defect below through three attempts. After `npm ci`, confirm node_modules/@eshyra/core is a symlink into THIS worktree before you trust any test result. Tracked repo-wide as eshyra-3dmq.\n\nFINDING — three invalid position sentinels remain in the CLI package, and they are real failures.\nAttempt 2 introduced `campaignPosition: 'test-position'` across the assembleContext call sites. Attempt 3 replaced them with DEFAULT_TEST_CAMPAIGN_POSITION in packages/core/test/** but MISSED packages/cli/test/play.test.ts, which still has three at lines ~391, ~1297 and ~1310.\nThese are not cosmetic. Supervisor ran `npm ci` in the attempt-3 worktree, rebuilt, and re-ran that file:\n    FAIL packages/cli/test/play.test.ts\n    CampaignRuleError: invalid campaign position \"test-position\"\n    Tests  2 failed | 43 passed | 1 skipped (46)\nThey \"passed\" only because of the stale-resolution problem above.\n\nFIX\nReplace all three with a real canonical position. packages/core/test/support/db.ts already exports DEFAULT_TEST_CAMPAIGN_POSITION built via formatCampaignPosition; if that helper is not importable from the CLI test package, build an equivalent canonical position in play.test.ts using formatCampaignPosition from '@eshyra/core/internal' rather than inventing another placeholder string. Do not weaken the store validation to accept these values, and do not delete the assertions in those tests.\n\nVERIFICATION\n`npm ci` first (see above), then `npm run verify:worktree` from the worktree root, BEFORE committing (it rewrites files). In your completion notes, state explicitly that you ran npm ci first and that node_modules/@eshyra/core resolves into this worktree, plus the final pass/skip counts.\n\nSCOPE\nOnly the three sentinel replacements. Do not change the store, the projection, the rendering, the migration, or the orchestrator.",
+  "notes": "Dispatched 2026-09-02: codex gpt-5.6-luna medium, YOLO, pgid 748448, worktree .worktrees/eshyra-jhpt.3.4 (cut from 74f28bd).\nCompleted in commit 77c015e. Ran npm ci first in this worktree; node_modules/@eshyra/core resolves to /home/jhbongaarts/src/eshyra/.worktrees/eshyra-jhpt.3.4/packages/core. Replaced all three CLI test campaignPosition sentinels with a canonical formatCampaignPosition value. npm run verify:worktree passed: 276 test files passed, 3 skipped; 4,844 tests passed, 20 skipped. No follow-up issues discovered.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-03T02:39:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-03T02:42:51Z",
+  "closed_at": "2026-09-03T02:42:51Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

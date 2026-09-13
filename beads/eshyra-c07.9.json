@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c07.9",
+  "title": "Document canonical game-state schema",
+  "description": "Document character, inventory, plot_flags, clock, and overlay_facts as the single canonical game-state source and convergence target.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T04:32:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:08Z",
+  "started_at": "2026-05-19T04:54:19Z",
+  "closed_at": "2026-05-19T04:55:02Z",
+  "close_reason": "Documented canonical game-state schema and linked it from architecture report; focused tests/typecheck and doc grep verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-c07.9",
+      "depends_on_id": "eshyra-c07",
+      "type": "parent-child",
+      "created_at": "2026-05-18T23:32:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "512f1ab9-b875-5b5e-9c98-12025386457b",
+      "issue_id": "eshyra-c07.9",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run test -- packages/core/test/gameState.test.ts packages/core/test/persistence.test.ts -> passed (9 tests); npm run typecheck -> passed; rg docs/game-state.md/getStateProvenance/mutateStateBatch -> confirms new schema doc is linked and public API names are present.",
+      "created_at": "2026-05-19T04:55:01Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

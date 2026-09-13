@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-j1zq",
+  "title": "Dispatch: fix four magic-item mechanics modeling defects (attempt 1)",
+  "description": "PR #455 review finding batch A. Fix in the SRD importer (docs/importer-fix-protocol.md applies; regenerate pack; never weaken tests):\n1. staff-of-frost (magicItem spell-cast family): castSpell effects for cone-of-cold/ice-storm/wall-of-ice carry fixed saveDc:17 but source says 'using your spell save DC' — change to 'owner-spell-save-dc' exactly like staff-of-fire.\n2. rod-of-lordly-might (magicItemComplexStateMachines.ts): pressing the SAME button must revert to mace ('until you push the same button again, which causes the rod to revert to its normal form'). Current transitions self-loop (e.g. flame-tongue via press-button-1 -> flame-tongue). Fix all five same-button transitions to target 'mace' (mace via press-button-6 -> mace stays correct).\n3. cube-of-force (magicItemComplexStateMachines.ts): table:cube-of-force-faces row 6 = 'The barrier deactivates' (0 charges). Remove the 'face-6' barrier state; press-face-6 from any active face must transition to 'inactive'; 'inactive' must not offer press-face-6 as an activation into a barrier state (model as no-op or omit). Keep the doesNotExpend/no-cost semantics of face 6.\n4. staff-of-thunder-and-lightning (magicItemChargeEconomies.ts): the combined 'thunder-and-lightning' operation lacks activation {cost:'action'} ('You can use an action to use the Lightning Strike and Thunderclap properties at the same time') and lacks effect bindings to c2-lightning-strike-payload and c2-thunderclap-payload. Add both.\nUpdate any membership/frequency/clause-expectation allowlists explicitly; npm run import:dnd5e-srd + verify:dnd5e-srd-pack + full npm run verify:worktree must pass.",
+  "notes": "Completion report (2026-07-19):\n- Fixed Staff of Frost cone-of-cold, ice-storm, and wall-of-ice save DCs to owner-spell-save-dc; fixed Rod of Lordly Might same-button form transitions to mace; removed Cube of Force face-6 barrier state and routed active press-face-6 to inactive while retaining no-charge semantics; added action activation and c2-lightning-strike-payload/c2-thunderclap-payload bindings to Staff of Thunder and Lightning combined operation.\n- Regenerated canonical pack via importer; generated diff was limited to those four intended mechanic changes. Updated semi-structured boundary inventory populations from its generator for the reviewed artifact.\n- Verification: focused importer/generated-pack suites 70 files/1574 tests passed; npx biome ci --error-on-warnings . passed; npm run typecheck passed; verify:dnd5e-srd-pack passed with 0 added/removed/changed records and matching source artifacts. npm run verify:worktree reached check but sandbox denied child git/loopback subprocesses (EPERM); direct Biome passed and full npm test had 4604 passing, 32 sandbox-only subprocess/network failures, 4 skipped.\n- Commit: 0646f7e.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T07:11:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-19T07:21:18Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wsv.1",
+  "title": "Capture structured turn traces for future eval and helper models",
+  "description": "Persist structured, consent-aware gameplay traces beyond raw transcripts so future evaluation, distillation, or helper-model training has accepted/rejected state deltas, provenance, corrections, and outcome labels.",
+  "acceptance_criteria": "Trace records include campaignId, sessionId, turnId, playerInput, retrievedContext, prompt profile, model output, tool calls, rules resolution, accepted state delta, rejected candidates, final narration, memory updates, human corrections, and quality flags; storage keeps traces separate from public pack content.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-18T03:00:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:10Z",
+  "started_at": "2026-05-19T05:10:10Z",
+  "closed_at": "2026-05-19T05:12:10Z",
+  "close_reason": "Structured turn trace capture implemented with consent scope and required eval/helper-model fields; focused test and typecheck pass; RED evidence recorded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-wsv.1",
+      "depends_on_id": "eshyra-wsv",
+      "type": "parent-child",
+      "created_at": "2026-05-17T22:00:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "000aa46b-70a2-54a1-b0b4-3d54d0b104d8",
+      "issue_id": "eshyra-wsv.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/memoryTrace.test.ts -> failed as expected; recordTurnTrace/getTurnTrace API is missing.",
+      "created_at": "2026-05-19T05:10:51Z"
+    },
+    {
+      "id": "eb898ce0-387f-5166-a569-98c5af4e36fc",
+      "issue_id": "eshyra-wsv.1",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: npm run test -- packages/core/test/memoryTrace.test.ts -> passed (1 test); npm run typecheck -> passed. Added turn_trace schema plus recordTurnTrace/getTurnTrace for consent-scoped structured traces separate from public pack content.",
+      "created_at": "2026-05-19T05:12:10Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

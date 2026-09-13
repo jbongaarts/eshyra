@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.9.4",
+  "title": "o9bd.9.4 Model ASI-vs-feat choices",
+  "description": "Structured Ability Score Improvement vs feat choice on the ability-score-improvement feature at levels 4/6/8/12/14/16/19 as applicable per class. category 'asiOrFeat'. SRD 5.1 has a thin feat list; mark feat side unsupported with a named marker if the feat options aren't modeled. Depends on eshyra-o9bd.9.1.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T21:47:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-29T04:23:16Z",
+  "started_at": "2026-06-29T03:46:22Z",
+  "closed_at": "2026-06-29T04:23:16Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.9.4",
+      "depends_on_id": "eshyra-o9bd.9.1",
+      "type": "blocks",
+      "created_at": "2026-06-28T16:47:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.9.4",
+      "depends_on_id": "eshyra-o9bd.9",
+      "type": "parent-child",
+      "created_at": "2026-06-28T16:47:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

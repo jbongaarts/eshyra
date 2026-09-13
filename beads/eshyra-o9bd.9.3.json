@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.9.3",
+  "title": "o9bd.9.3 Model spell/cantrip selection choices",
+  "description": "Structured cantrip/spell-known/spell-prepared choices for casters (Bard/Sorcerer/Warlock known + cantrips, Wizard spellbook, Cleric/Druid/Paladin prepared). category 'cantrip'/'spell', counts from the class spellcasting progression table; from = the legal spell list restriction. Drives choice-coverage gate. Depends on eshyra-o9bd.9.1.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T21:47:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-29T04:23:13Z",
+  "started_at": "2026-06-29T03:46:20Z",
+  "closed_at": "2026-06-29T04:23:13Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.9.3",
+      "depends_on_id": "eshyra-o9bd.9.1",
+      "type": "blocks",
+      "created_at": "2026-06-28T16:47:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.9.3",
+      "depends_on_id": "eshyra-o9bd.9",
+      "type": "parent-child",
+      "created_at": "2026-06-28T16:47:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

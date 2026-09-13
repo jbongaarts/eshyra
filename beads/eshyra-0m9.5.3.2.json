@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.3.2",
+  "title": "Make conditions section fail-closed in default importer",
+  "description": "runImporter catches SectionNotFoundError for conditions and silently falls back to empty. Remove the try/catch — let it throw like spells do. Add pipeline test: fails closed when conditions heading is missing. Remove now-unused PageText import. Files: index.ts, pipeline.test.ts",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T03:16:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:56Z",
+  "started_at": "2026-05-28T03:17:51Z",
+  "closed_at": "2026-05-28T03:18:47Z",
+  "close_reason": "Closed",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.3.2",
+      "depends_on_id": "eshyra-0m9.5.3",
+      "type": "parent-child",
+      "created_at": "2026-05-27T22:16:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

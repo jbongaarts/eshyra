@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-dl0",
+  "title": "Configure beads Dolt remote (refs/dolt/data) on origin for cross-account sync",
+  "description": "Repo has no Dolt remote configured: git ls-remote shows no refs/dolt/*, dolt.remote unset. Per beads SYNC_CONCEPTS, .beads/issues.jsonl is a correct git-tracked passive export, but real cross-account sync requires bd dolt push/pull against a Dolt remote storing data in refs/dolt/data on the same git origin. Configure it so cross-account/session sync works (flagged in cck epic handoff as open question).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-18T23:19:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:10Z",
+  "started_at": "2026-05-18T23:20:16Z",
+  "closed_at": "2026-05-18T23:33:09Z",
+  "close_reason": "Configured Dolt remote (git+https origin) + pushed refs/dolt/data; then set export.git-add=false and untracked/gitignored .beads/issues.jsonl + interactions.jsonl. Canonical issue data now syncs via refs/dolt/data (bd dolt push/pull); JSONL no longer churns source branches/PRs. Verified: beads' own .beads/.gitignore ignores the Dolt DB but the consumer policy choice here is the dolt-ref model matching standard multi-repo practice.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

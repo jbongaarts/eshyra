@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cuu",
+  "title": "Use responseFormat: 'json' hint at JSON-only ModelClient call sites",
+  "description": "The 0jq.11 ModelClient contract introduced a provider-neutral responseFormat hint, but no call site uses it yet. The campaign-bible extractor is the one JSON-only site in core today (system prompt explicitly demands a fenced JSON block). Pass responseFormat: 'json' there so future adapters with a native JSON-mode can opt in, and harden the parser to also accept raw JSON (no fence) so a JSON-mode adapter that strips wrappers does not break the call site.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-26T21:45:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:16Z",
+  "started_at": "2026-05-26T21:45:48Z",
+  "closed_at": "2026-05-26T21:53:01Z",
+  "close_reason": "Merged to main (PRs #81, #83)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

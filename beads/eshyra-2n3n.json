@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n3n",
+  "title": "Numeric-conservation gate: require exact dice tokens (family-match hides modifier drift)",
+  "description": "Post-merge review of PR #455 (verified against current main, 2026-07-19). Guard-quality hardening — no known wrong record in the committed pack.\n\n## Weakness\n\nThe magic-item numeric-conservation gate (`packages/core/test/srdGeneratedPack.test.ts`, \"magic-item numeric conservation gate\") treats dice tokens as equivalent whenever their base family matches: `diceFamily` (line ~956) strips everything from the first `+`/`-`, so `1d6+5 ≈ 1d6` and `2d10-3 ≈ 2d10` in both the forward (prose→mechanics) and reverse (mechanics→prose) directions (lines ~1094-1121). A future importer regression that silently drops or invents a flat modifier stays green.\n\nAdditionally, tokens are pooled item-wide: `mechanicsTokens` merges the parent record's mechanics with every variant's mechanics into one set, so one sibling variant or unrelated effect can satisfy another occurrence's token.\n\n## Measured blast radius (2026-07-19, committed pack)\n\nRe-running the gate with exact-token matching produces exactly 3 family-only survivors:\n\n- `magic-item:robe-of-useful-items` — prose `4d4` vs mechanics `4d4+12` (both directions)\n- `magic-item:staff-of-striking` — prose `1d6` vs mechanics `1d6+4` (forward)\n\nSo exact-by-default is cheap: only these two records need adjudication.\n\n## Fix direction (per review recommendation)\n\n- Require exact normalized dice tokens by default in both directions.\n- Represent intentional equivalences as narrow record+token exceptions with a rationale (mirroring the existing `FORWARD/REVERSE_NUMERIC_CONSERVATION_ACCEPTS` pattern, but scoped to the specific token, not the whole record), ideally scoped to the exact clause/variant.\n- Adjudicate the two current records first: verify against the SRD source whether the `+12`/`+4` mechanics representations are correct synthesized totals (then add scoped exceptions with source-backed rationale) or importer artifacts (then fix per docs/importer-fix-protocol.md — do not weaken the expectation to match output).\n- Consider scoping token pooling per-variant/per-clause so a sibling cannot satisfy another occurrence; if that is a larger change, capture what exact-token matching alone still misses.\n\nImporter-fix-protocol applies (touches SRD audit/gate test files).\n\nRelated: sold-item `returned` payment bypass and migration-0018 oversized-stack unresolvable edge, filed from the same review.\n",
+  "notes": "Related beads from same PR #455 post-merge review: eshyra-4ygd (sold+returned payment bypass), eshyra-eks3 (migration-0018 oversized-stack).\nFix merged to branch eshyra-f0nz; PR #458 open (https://github.com/jbongaarts/eshyra/pull/458). Close after PR merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "chore",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:03:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-20T04:40:26Z",
+  "started_at": "2026-07-20T00:21:27Z",
+  "closed_at": "2026-07-20T04:40:26Z",
+  "close_reason": "Fixed in PR #458 (merge commit 958d6d0b), including both review rounds: value-scoped conservation exceptions, zero-quantity review resolution with atomic attunement reconciliation, restored stateful repurchase regression.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

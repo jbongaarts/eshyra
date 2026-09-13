@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.10.4",
+  "title": "Import sentient magic-item creation guidance",
+  "description": "Import Magic Items p251-252 guidance under Creating Sentient Magic Items: Abilities, Communication, Special Purpose, and Conflict. Reuse the sentient-item roll tables already emitted by eshyra-4a7.3 rather than duplicating them, and make the prose/table ownership explicit in source coverage. Follow docs/importer-fix-protocol.md. If the failure map reveals a new root cause, requires a new parser or extractor strategy, or creates generated churn outside the direct consequences of the current minimal fix, stop and report instead of broadening the implementation.",
+  "acceptance_criteria": "Focused tests prove the slice starts after Magic Items A-Z and ends before Artifacts while retaining all guidance; stable importer-generated rule records reference or coexist cleanly with existing tables; owned known gaps become real coverage; regeneration and repository quality gates pass with explained generated churn.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-14T05:28:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-14T15:38:57Z",
+  "started_at": "2026-06-14T15:21:55Z",
+  "closed_at": "2026-06-14T15:38:57Z",
+  "close_reason": "Imported Sentient Magic Items pp251-252 construction guidance as 8 rule records; tables reused from eshyra-4a7.3, colliding Senses/Alignment headings pinned via explicit coverage rules. PR https://github.com/jbongaarts/eshyra/pull/213",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.10.4",
+      "depends_on_id": "eshyra-4a7.10",
+      "type": "parent-child",
+      "created_at": "2026-06-14T00:28:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x63.9",
+  "title": "x63 follow-up (minor): MemoryConfig validation + retry-after-failure integration test",
+  "description": "Two non-blocking minor items from the final whole-epic review of loreweaver-x63 (post commit c760cd4):\n\n1. No MemoryConfig validation (arcRolloverThreshold <= 0, non-integer, recapWindowSize <= 0). N=0 would attempt rollover with zero recaps on every close. Add a small validator that runs when memoryConfig is set on PlayDeps (or at first use) and throws on out-of-range values.\n\n2. Missing integration test for the documented graceful-degradation path: rollover model call fails at session N, then succeeds at session N+1 with N+1 recaps. The unhappy-path single-failure case is covered; the across-failures-then-recovers case is not.\n\nPlus: see x63.8 for the closeOpenArcAndOpenNext follow-ups already filed.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-24T23:17:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:21Z",
+  "started_at": "2026-05-25T04:18:45Z",
+  "closed_at": "2026-05-25T04:24:37Z",
+  "close_reason": "Shipped in PR #61 (branch loreweaver-x63-followups)",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x63.9",
+      "depends_on_id": "eshyra-x63",
+      "type": "parent-child",
+      "created_at": "2026-05-24T18:17:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

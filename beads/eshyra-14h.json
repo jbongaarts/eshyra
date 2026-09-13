@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-14h",
+  "title": "Decide commercialization model: open source / open core / source-available / proprietary / hosted-first",
+  "description": "Decide the commercialization and source-licensing model for Loreweaver. Options: fully open source, open core (open base + proprietary extensions), source-available, proprietary/closed, or hosted-first (service-only). This decision determines the final source-code license to apply and unblocks publishing decisions (see loreweaver-0jq.26).",
+  "acceptance_criteria": "A commercialization model is chosen and recorded (ADR or bead note), with rationale. The decision identifies the resulting source-code license direction and any constraints on contributions and distribution.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T03:18:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-17T01:45:47Z",
+  "close_reason": "Accepted source-available community/commercial licensing model. Initial source-code license direction is PolyForm Noncommercial License 1.0.0. CLI may be free for non-commercial use; Eshyra should be described as source-available/free for non-commercial use, not open source. Commercial rights are reserved; commercial embedding, hosted-service operation, resale, paid integration, commercial redistribution, and paid content/rules/campaign-pack redistribution require separate written permission or a separate commercial license. Rules/content artifacts may carry separate licenses and third-party rules content remains governed by its own license and attribution requirements.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-14h",
+      "depends_on_id": "eshyra-0jq.26",
+      "type": "blocks",
+      "created_at": "2026-06-06T22:18:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-14h",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-06-06T22:18:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

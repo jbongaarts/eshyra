@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.16",
+  "title": "Import missing Orb of Dragonkind magic item",
+  "description": "Problem\r\nThe SRD source contains Orb of Dragonkind, but the canonical imported pack does not contain a corresponding magic-item record.\r\n\r\nEvidence from the 2026-06-07 audit\r\n- Orb of Dragonkind appears in the SRD source PDF on pages 252-253.\r\n- No magic-item record was emitted for it.\r\n\r\nRequired behavior\r\n- Orb of Dragonkind must be emitted as a magic-item record with complete source text and metadata.\r\n- Magic item heading coverage should detect this class of omission.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "notes": "Fixed via PR #184 (branch fix/srd-orb-of-dragonkind-eshyra-0m9-16). Root cause: Magic Items A-Z slice ends at 'Sentient Magic Items'; Orb of Dragonkind sits under the following 'Artifacts' heading and was never sliced. Fix: new 'artifacts' section anchor parsed by parseMagicItems and concatenated. 1 record added (magic-item:orb-of-dragonkind), verify:dnd5e-srd-pack 0 diff, full suite green. Awaiting PR review/merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-09T03:45:18Z",
+  "started_at": "2026-06-09T03:21:14Z",
+  "closed_at": "2026-06-09T03:45:18Z",
+  "close_reason": "Imported Orb of Dragonkind via new artifacts section anchor; merged in PR #184.",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.16",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

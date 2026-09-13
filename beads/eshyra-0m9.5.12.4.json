@@ -1,0 +1,61 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.12.4",
+  "title": "Address PR 99 table parser review feedback",
+  "description": "Review source: PR #99 blocking feedback. Fix stale duplicate importer docs/comments and strengthen generic table record validation. Done means review items are evaluated, validation tests fail then pass, docs are cleaned, normal repo verification passes, and the PR branch is pushed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T18:00:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T18:00:18Z",
+  "closed_at": "2026-05-28T18:04:48Z",
+  "close_reason": "PR #99 review feedback addressed; validation strengthened; docs audit complete; npm run check/typecheck/test passed.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.12.4",
+      "depends_on_id": "eshyra-0m9.5.12",
+      "type": "parent-child",
+      "created_at": "2026-05-28T13:00:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "af9e2640-cd17-5624-9699-4e823bab07f5",
+      "issue_id": "eshyra-0m9.5.12.4",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 2: table record validation is too weak. Evaluation: accepted. Evidence: packages/core/src/rules/kindSchemas.ts currently checks columns is a string array and rows is an array of arrays, but does not enforce non-empty columns, row length parity, or scalar-only cells.",
+      "created_at": "2026-05-28T18:00:43Z"
+    },
+    {
+      "id": "c12e99fb-3411-5805-aec8-5e7946431941",
+      "issue_id": "eshyra-0m9.5.12.4",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 1: duplicate stale docs/comments after merge cleanup. Evaluation: accepted. Evidence: current branch already has only one index scope line and one README table row, but README/index still need a final targeted audit before push to guarantee stale variants are absent.",
+      "created_at": "2026-05-28T18:00:43Z"
+    },
+    {
+      "id": "7b38b763-407a-5712-8d51-e715c5f1320d",
+      "issue_id": "eshyra-0m9.5.12.4",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run check -> passed; npm run typecheck -> passed; npm run test -> passed (67 files passed, 2 skipped; 750 tests passed, 3 skipped). TDD evidence: rulesPack test RED failed for empty columns, row length mismatch, and object/array cells; GREEN passed after baseline table validator change. Docs audit evidence recorded on loreweaver-0m9.5.12.4.2.",
+      "created_at": "2026-05-28T18:04:41Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 3
+}

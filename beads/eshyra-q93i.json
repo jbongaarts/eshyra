@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-q93i",
+  "title": "Migration 0020 strands pre-existing stable-at-zero characters: recovery silently never fires",
+  "description": "Post-merge review of PR #457 (verified against current main, 2026-07-19).\n\n## Defect\n\nCharacters already `stable` at 0 HP when migration 0020 runs are silently excluded from automatic stable recovery forever, violating the durable-deadline contract (eshyra-2n1t.8.1) for migrated campaigns.\n\nCode facts (all verified):\n\n- `packages/core/data/migrations/0020_stable_recovery_deadline.sql` only adds three nullable columns (`stable_recovery_roll`, `stable_recovery_anchor_elapsed_minutes`, `stable_recovery_deadline_elapsed_minutes`); no backfill for existing stable-at-zero rows.\n- `resolveStableRecoveries` (`packages/core/src/state/hpLifecycle.ts:604-613`) requires all three fields `IS NOT NULL` in its WHERE clause, so legacy rows are silently skipped — no error, no evidence.\n- There is no repair path: `stabilizeCharacter` (`hpLifecycle.ts:564-568`) throws unless `life_state === 'dying'`, so an already-stable character cannot be re-scheduled.\n\nThe only workaround is out-of-band (GM heals the character), which defeats the automatic-recovery feature the migration claims to complete.\n\n## Required fix (per review)\n\nProvide an explicit migration/adoption policy for legacy stable-at-zero rows. Options:\n\n1. Quarantine legacy stable-at-zero rows with repair evidence and fail closed; or\n2. Schedule them deterministically in a migration-aware domain step with recorded provenance (note: scheduling needs an RNG roll — if done in a SQL migration it must be deterministic and recorded; a code-level adoption step with provenance is likely cleaner than pure SQL).\n\nRegardless of the option chosen, `resolveStableRecoveries` should throw (fail closed, consistent with the codebase's philosophy) on a stable-at-zero character with missing or *partially* populated schedule fields rather than silently ignoring it. Add tests for: legacy NULL-field stable row surfaced/adopted rather than skipped, and partial-field corruption raising an error.\n\nMigration checksums are immutable — do not edit 0020; use a new migration.\n\nRelated (same PR #457 review): Demon Armor permanent doff block, advanceWorldTime recovery atomicity, rest benefits evidence gap.\n",
+  "notes": "Sibling beads from PR #457 post-merge review: eshyra-gacz (Demon Armor doff), eshyra-r2ps (clock/recovery atomicity), eshyra-cc3c (rest evidence gap). Reviewer recommends one follow-up PR; the first three are re-freeze blockers.\nFix merged to branch eshyra-geny; PR #459 open (https://github.com/jbongaarts/eshyra/pull/459). Close after PR merge.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:09:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-20T01:12:08Z",
+  "started_at": "2026-07-20T00:14:54Z",
+  "closed_at": "2026-07-20T01:12:08Z",
+  "close_reason": "Fixed in PR #459 (merge commit 846a52f5), including review-round hardening: migration partial-schedule guard and canonical conditions validation.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

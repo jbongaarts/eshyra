@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-952",
+  "title": "Address PR #95 review: feats fail-closed fix",
+  "description": "Review feedback on PR #95 (loreweaver-0m9.5.5). Blocking: feats section anchor missing requireEndHeading:true. Tests needed: fail-closed regression, exact-keys assertion. Optional: Unicode cleanup. Review source: user message in session.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T03:55:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:56Z",
+  "started_at": "2026-05-28T03:55:05Z",
+  "closed_at": "2026-05-28T04:09:04Z",
+  "close_reason": "All review items evaluated and implemented. requireEndHeading:true added to feats anchor, regression test added, exact-keys assertion added, decorative Unicode cleaned up in comments.",
+  "comments": [
+    {
+      "id": "d4c2fc55-2f52-5324-8149-3ed0b56de7c1",
+      "issue_id": "eshyra-952",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 1 (blocking): requireEndHeading:true missing from feats anchor. ACCEPTED — verified sections.ts lines 183-187: feats anchor has endHeading but no requireEndHeading:true. The endHeading already covers 'Appendix A: Conditions' via ^Appendix\\b, so adding requireEndHeading:true is safe with the current happy-path fixture order (FEATS_PAGE -> CONDITIONS_PAGE).",
+      "created_at": "2026-05-28T03:56:42Z"
+    },
+    {
+      "id": "f4494055-3827-5376-b13e-6e7816aa92c3",
+      "issue_id": "eshyra-952",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 2: fail-closed regression test. ACCEPTED — will add pipeline test using fixture [SPELL_LISTS, SPELLS, MONSTERS, CONDITIONS, FEATS_WITH_NO_END]. Slice order in index.ts is: spellDescriptions -> spellLists -> conditions -> feats. conditions slices successfully (requireEndHeading:false), then feats throws SectionNotFoundError('end',...). Test expects /end heading not found/.",
+      "created_at": "2026-05-28T04:06:54Z"
+    },
+    {
+      "id": "6e29c8f4-2ee2-5926-8954-59c03e6d99f4",
+      "issue_id": "eshyra-952",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 3: exact feat keys assertion. ACCEPTED — current test uses toContain('feat:grappler') + toHaveLength(5) which is unambiguous but implicit. Will add explicit featKeys filter + toEqual(['feat:grappler']) for clarity.",
+      "created_at": "2026-05-28T04:06:55Z"
+    },
+    {
+      "id": "f74ef55c-9f52-5198-b3d2-682d63de4488",
+      "issue_id": "eshyra-952",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 4 (optional): Unicode cleanup. PARTIAL — U+2022 bullet/U+2014 em-dash/U+2264/U+2192 found in parseFeats.ts comments and test files. Not bidirectional control characters so no security warning. Will replace decorative chars in parseFeats.ts comments (U+2264 -> <=, U+2014 -> -). Bullet U+2022 in regexes kept as •. Bullets in test fixture strings kept as-is (functional, test bullet-stripping logic; consistent with parseConditions.test.ts). Em-dashes in describe() strings kept (consistent existing test style).",
+      "created_at": "2026-05-28T04:06:56Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.14",
+  "title": "Correct SRD feature level metadata and repeated-use naming",
+  "description": "Problem\r\nSome emitted feature records have incorrect or misleading level metadata and names.\r\n\r\nEvidence from the 2026-06-07 audit\r\nExamples:\r\n- feature:fighter:indomitable-three-uses has level 9 even though the name says three\r\n\r\nLABELS: ingestion, rules, rules-pack\r\n\r\nPARENT\r\n  Γåæ Γùï eshyra-0m9: (EPIC) Build deterministic rules-pack ingestion pipeline ΓùÅ P1\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "notes": "Fix implemented and PR opened: https://github.com/jbongaarts/eshyra/pull/179 (branch fix/srd-feature-levels-naming-eshyra-0m9.14). Root cause: unstitched wrapped progression-table cells. Fixed Fighter Indomitable naming, Druid ASI L12->4, Bard Magical Secrets L14->10; incidentally completed Sorcerer Sorcerous Origin + Warlock Pact Magic (resolves eshyra-tzl #3 split). Pack regenerated, verify clean. Barbarian base-class gap filed as eshyra-7tc. Awaiting review/merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-08T22:36:00Z",
+  "started_at": "2026-06-08T21:11:41Z",
+  "closed_at": "2026-06-08T22:36:00Z",
+  "close_reason": "Merged in PR #179 (merge commit 77f5e29). Stitched wrapped SRD progression-table cells: fixed Fighter Indomitable naming, Druid ASI L12->4, Bard Magical Secrets L14->10; incidentally completed Sorcerer Sorcerous Origin + Warlock Pact Magic. Follow-ups: eshyra-7tc (Barbarian base-class gap), eshyra-tzl updated.",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.14",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

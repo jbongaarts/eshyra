@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.21",
+  "title": "parseFeats promotes Feats-section intro prose as a feat on real SRD 5.1 PDF",
+  "description": "During the loreweaver-1pw canonical-regen review, the importer's only feat record on the real vendored SRD 5.1 PDF was 'feat:a-feat-represents-a-talent-or-an-area-of-expertise-that' — the Feats-section intro paragraph promoted as a feat, with the real Grappler feat buried inside its description.\n\nRoot cause: parseFeats detects feat-name boundaries via blank lines / section-start. The real SRD 5.1 Feats section (p75) has NO blank lines: 17 lines of intro prose flow directly into the 'Grappler' name line. So (1) the intro's first line 'A feat represents a talent or an area of expertise that' is promoted at section-start, and (2) 'Grappler' (line 17) is never promoted because no blank line precedes it. The pdfkit fixture passes because Grappler sits at the slice start with no intro.\n\nFix (landed under loreweaver-1pw because clean feat output is a prerequisite for committing the canonical pack): reject multi-word prose lines in isFeatName (word-count guard) and additionally promote a name line whose next non-blank line is a 'Prerequisite:' line; normalize the soft-hyphen cluster in feat bodies. Add a real-PDF regression test pinning the feat set to exactly Grappler.\n\nReproduce (pre-fix): npm run import:dnd5e-srd -- --out /tmp/x then inspect feat records.",
+  "notes": "Fixed in PR #140 (with loreweaver-1pw): parseFeats word-count guard + Prerequisite-lookahead + soft-hyphen normalization; real-PDF regression test pins feat set to {Grappler}. Close on merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-03T00:49:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-03T04:07:23Z",
+  "closed_at": "2026-06-03T05:28:51Z",
+  "close_reason": "Fixed and merged in PR #140 (merge commit 86df579, with loreweaver-1pw): parseFeats word-count guard + Prerequisite-lookahead + soft-hyphen normalization; real-PDF regression test pins the feat set to {Grappler}.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.21",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-06-02T19:49:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

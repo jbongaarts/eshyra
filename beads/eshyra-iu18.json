@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-iu18",
+  "title": "Add opt-in session debug logging for prompt and turn diagnostics",
+  "description": "Add an opt-in session debug logging mode to make live gameplay failures diagnosable without exposing secrets by default. The v0.1.1 native Windows smoke proved the packaged CLI can call the model, but the first turn produced a meta response claiming DM tools such as roll/world_query/mark_scene were unavailable. Debug logging should capture enough sanitized information to diagnose prompt/tool-protocol mismatches, context growth, character-creation state, and session recap behavior. Include per-session debug artifacts under the data root when enabled by an explicit flag/env var, such as ESHYRA_DEBUG_SESSION=1 or a CLI option. Log model call purpose, selected model/profile, prompt section names and approximate sizes, transcript/message counts, tool-protocol mode, available tool names or fenced-tool instructions, campaign/session ids, turn ids, checkpoint ids, and sanitized error/diagnostic events. Prefer redacted/structural logs by default; full prompt capture must be separately gated and clearly marked as sensitive if implemented. Add commands or documentation for locating and packaging debug logs for a bug report. Acceptance: a developer can reproduce a live turn issue and inspect what prompt/tool context was supplied, how large the session context was, and which model calls happened, without leaking API keys or OAuth tokens. Add tests for debug logging enabled/disabled, redaction, and log creation on both successful and failed turns.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T03:42:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-18T04:11:29Z",
+  "started_at": "2026-06-18T03:51:07Z",
+  "closed_at": "2026-06-18T04:11:29Z",
+  "close_reason": "Implemented opt-in session debug logging (ESHYRA_DEBUG_SESSION). Adapter emits structural per-model-call records (ids, model/profile/auth label, tool protocol, provided-vs-forwarded tools, prompt section sizes, message structure, outcome) on success+failure; full mode adds sanitized content. File sink under <data-root>/debug. Docs + tests added. PR #240.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

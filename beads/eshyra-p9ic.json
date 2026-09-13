@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p9ic",
+  "title": "Convert PowerShell worktree helpers to cross-platform Node scripts",
+  "description": "Dev env migrated from native Windows+PowerShell to WSL Ubuntu+bash. scripts/agent-preflight-main.ps1 and scripts/verify-current-worktree.ps1 plus their package.json wrappers invoke 'powershell', which does not exist on WSL, breaking 'npm run agent:preflight' and 'npm run verify:worktree'. Rewrite both as Node .mjs (cross-platform), update package.json, nodeRuntimePolicy.test.ts assertions, and AGENTS.md worktree docs. Leave intentional Windows-runtime support (ci.yml pwsh install-smoke, process.platform guards) untouched.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-14T04:17:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-14T04:21:10Z",
+  "started_at": "2026-06-14T04:17:58Z",
+  "closed_at": "2026-06-14T04:21:10Z",
+  "close_reason": "Converted PowerShell worktree helpers to cross-platform Node .mjs; PR #209 opened",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

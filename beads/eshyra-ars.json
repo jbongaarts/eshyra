@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ars",
+  "title": "Audit SRD rules-section coverage gaps",
+  "description": "﻿Audit D&D SRD 5.1 rules-section coverage gaps and recommend parser expansion or intentional omissions.\r\n\r\nProblem:\r\nThe current pack contains a small number of rule records, but the SRD 5.1 core rules include many sections covering ability checks, adventuring, environment, combat, spellcasting, traps, diseases, madness, objects, poisons, and other adjudication rules. The final pack accuracy audit found that the current rule parser is selective and may omit rules content that Loreweaver should be able to query or use for DM adjudication.\r\n\r\nScope:\r\n- Review the vendored SRD 5.1 PDF table of contents and major rules chapters.\r\n- Compare source sections against current rule records and parser coverage.\r\n- Identify rules sections that should become rule records, structured records, or remain intentionally unimported prose.\r\n- Do not implement broad parser changes in this bead unless explicitly authorized after the audit.\r\n\r\nAcceptance criteria:\r\n- Produce a written rules-section coverage audit under docs/audits or an equivalent location.\r\n- Include a table of SRD sections, current import status, recommended action, priority, and rationale.\r\n- Identify sections that should be parsed as rule records.\r\n- Identify sections that should become structured records instead of generic rules, such as poisons, diseases, madness, objects, or environmental hazards if applicable.\r\n- Identify sections intentionally out of scope for the current milestone.\r\n- Create follow-up beads for confirmed high-value parser expansions.\r\n- npm run check passes if docs/tests are touched.\r\n",
+  "notes": "Audit complete: docs/audits/srd-5.1-rules-section-coverage.md. Filed follow-ups loreweaver-yli, loreweaver-3hp, loreweaver-6ra, loreweaver-uuk.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-03T05:21:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:14Z",
+  "started_at": "2026-06-05T04:39:23Z",
+  "closed_at": "2026-06-05T04:47:04Z",
+  "close_reason": "Audit delivered: docs/audits/srd-5.1-rules-section-coverage.md; follow-ups filed (yli, 3hp, 6ra, uuk); PR #151.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

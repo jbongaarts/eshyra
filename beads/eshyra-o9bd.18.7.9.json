@@ -1,0 +1,60 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9",
+  "title": "Correct deterministic creature entries and spells misclassified as accepted prose",
+  "description": "Close deterministic creature-entry and spell mechanics that were incorrectly classified as accepted prose or metadata-only.\n\nThe semantic audit is complete. Do not repeat it.\n\nAuthoritative classification:\ndocs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-9-membership-classification.md\n\nAuthoritative contract designs:\n\n* C1 changeShape design\n* S1 summoning design\n* small-contracts design for C2/C3/S2/S3\n\nImplementation is owned by child beads. Close this parent only after all child implementation work is complete and final exact-membership, readiness, pack-regeneration, freeze, and audit reconciliation are green.\n\nShared per-slice completion protocol:\n\n* project source-grounded typed mechanics;\n* schema-validate the contract;\n* add source-drift/fail-closed tests where applicable;\n* add committed-pack assertions;\n* remove exactly the completed slice's stale membership findings;\n* reconcile exact counts;\n* regenerate through the importer rather than hand-editing generated output;\n* update thaw evidence and freeze hash;\n* verify pack reproducibility and audit readiness.",
+  "notes": "Structural repair performed after C1/C2/C3/S1/S2 were implemented as separate PR-scale slices under one task.\n\nCompleted:\n\n* C1 changeShape — PR #421\n* C2 False Appearance — PR #412\n* C3 telepathy/communication/knowledge/state — PR #413\n* S1 summoning/control — PR #419\n* S2 small deterministic spell clauses — PR #416\n\nRemaining:\n\n* S3 ward/trigger/spatial spell semantics — 8 spells\n* C4 Reckless — 2 refs\n* C5 Split — 2 refs\n* C6 damage absorption — 4 refs\n* C7 Berserk — 2 refs\n* C8 Rampage — 2 refs\n* C9 residual single-record creature families — 4 refs / 3 contracts\n\nCurrent creature reviewed-disposition residual:\n18 total = 2 permanent accepted-prose refs + 16 C4-C9 findings.\n\nCurrent residual spell classification for this artifact:\n20 metadata-only membership entries = S3 8 + accepted 11 + accepted* 1.\n\nDo not use older chronological notes as current routing instructions. Use the classification artifact and child bead states.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-05T20:48:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-05T20:48:46Z",
+  "closed_at": "2026-07-13T01:34:05Z",
+  "close_reason": "Final C4 reconciliation complete: 72 reviewed creature refs, 70 modeled, 2 permanent prose-only acceptances, zero pending creature findings; 12 permanently accepted metadata-only spell entries; all C1-C9 and S1-S3 slices complete. Pack regeneration, freeze verification, audit-bundle generation, and full worktree verification are green.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9",
+      "depends_on_id": "eshyra-jhpt.6",
+      "type": "relates-to",
+      "created_at": "2026-07-10T16:32:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.18.7.9",
+      "depends_on_id": "eshyra-jhpt.9",
+      "type": "relates-to",
+      "created_at": "2026-07-10T16:32:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.18.7.9",
+      "depends_on_id": "eshyra-jhpt.3",
+      "type": "relates-to",
+      "created_at": "2026-07-10T16:32:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.18.7.9",
+      "depends_on_id": "eshyra-o9bd.18.7",
+      "type": "parent-child",
+      "created_at": "2026-07-05T15:48:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

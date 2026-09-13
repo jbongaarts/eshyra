@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-yahn",
+  "title": "CI-inject release version from git tag (artifact label + CORE_VERSION)",
+  "description": "The release build labels artifacts and the CLI banner with version 0.0.0 because the root package.json has no version and CORE_VERSION is a hardcoded constant. Make the release build resolve the version from the pushed git tag (precedence: --version flag > ESHYRA_RELEASE_VERSION env > GITHUB_REF_NAME on tag, strip leading v > 0.0.0-dev), use it for the artifact name/README/metadata, and stamp it into the built core dist (placeholder replacement of the 0.0.0-dev sentinel, asserting exactly one occurrence) so the running CLI reports the true version. Enables tagging v0.1.0 to produce a correctly-versioned GitHub Release.",
+  "notes": "Implemented in PR #238 (branch eshyra-yahn-release-version-injection). Version now resolves from git tag; verified release:build --version 0.1.0 -> eshyra-0.1.0 artifact + 'Eshyra — core v0.1.0' banner; check clean, 1850 tests pass. REMAINING: after PR merges to main, cut the release with 'git tag v0.1.0 && git push origin v0.1.0' on the merged commit (the injection code must be on main before the tag build runs). Keep open until v0.1.0 is tagged.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T00:04:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-18T03:49:12Z",
+  "started_at": "2026-06-18T00:05:05Z",
+  "closed_at": "2026-06-18T03:49:12Z",
+  "close_reason": "Implemented and merged in PR #238 (feat: derive release version from git tag). Version resolves from git tag via ESHYRA_RELEASE_VERSION/GITHUB_REF_NAME; CLI banner and artifact naming stamp the true version at release build time.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

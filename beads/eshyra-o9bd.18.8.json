@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.8",
+  "title": "Close residual SRD source, coverage, provenance, and discoverability findings",
+  "description": "Scope:\n- Every smaller or observational finding from Fable/Codex/ChatGPT that is not covered by the concrete P1/P2 bugs above.\n- Closed older beads such as erf5.2/lpk9/txxa must not be treated as covering residual findings; this epic tracks what remained in the latest bundle.",
+  "notes": "Completion verification: canonical SRD pack regenerates byte-exactly; rules-pack audit reports 0 suspicious records; independent deep audit reports 0 findings; verify:worktree passes Biome, forced typecheck, and 4,533 passing tests (19 documented skips).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:33Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-18T20:23:58Z",
+  "close_reason": "All residual source, coverage, provenance, discoverability, and semi-structured boundary findings are closed.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.8",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

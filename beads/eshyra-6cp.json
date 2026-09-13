@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6cp",
+  "title": "Enforce open-session invariant for scene writes",
+  "description": "Review finding from loreweaver-niw. Scene APIs and schema allow scenes and scene logs for nonexistent or closed sessions, which can break session close and resume invariants. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "openScene and appendSceneLog reject missing or closed sessions; schema or tests enforce scene/log ownership by campaign_session; existing tests are updated to create valid sessions.",
+  "notes": "Fix: requireOpenSession() guard in openScene + appendSceneLog. RED proven by 18 cross-file failures when guard added (scene tests lacked sessions). GREEN: updated 5 test files to start valid sessions + 3 new rejection tests; 203 pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:43:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:44Z",
+  "closed_at": "2026-05-21T05:27:54Z",
+  "close_reason": "Fixed in PR #20 (merged) — requireOpenSession guard on scene writes",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

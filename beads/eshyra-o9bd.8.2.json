@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.8.2",
+  "title": "Link rule/background/subclass-owned tables (multiclassing, objects, madness, sentient items, acolyte, draconic-bloodline)",
+  "description": "Second eshyra-o9bd.8 slice. Resolve and wire owners that need source judgment: multiclassing (prerequisites, proficiencies, multiclass-spellcaster-spell-slots), beyond-1st-level/character-advancement, creating-spell-slots, objects (object-armor-class, object-hit-points -> rule:objects/interacting-with-objects), madness (short/long/indefinite -> rule:madness*), sentient magic items (alignment/communication/senses/special-purpose -> rule:sentient-magic-items*), apparatus-of-the-crab-levers -> magic-item:apparatus-of-the-crab, acolyte bonds/flaws/ideals/personality-traits -> background:acolyte, draconic-bloodline-draconic-ancestry -> subclass:draconic-bloodline. Extend the table-link owner map + audit gate.",
+  "design": "Follow docs/importer-fix-protocol.md. Pick the exact owning rule record per table from source text (several rule:* variants exist). Add per-child thaw note + refresh freeze-manifest hashes.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T20:41:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-28T21:12:34Z",
+  "started_at": "2026-06-28T21:02:27Z",
+  "closed_at": "2026-06-28T21:12:34Z",
+  "close_reason": "Implemented in PR #359",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.8.2",
+      "depends_on_id": "eshyra-o9bd.8",
+      "type": "parent-child",
+      "created_at": "2026-06-28T15:41:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.1.8.1",
+  "title": "Generate authoritative projection-shape registry",
+  "description": "Follow-up from eshyra-o9bd.19.5.1.8: when eshyra-o9bd.19.5.12 builds the clause-complete authoritative ledger, derive the closed projection-shape predicates and allowed schema/path registry from the authoritative corpus so bootstrap and authoritative absence proofs cannot drift. Preserve pack-wide scanning and fail-closed unknown-shape behavior.",
+  "acceptance_criteria": "The authoritative ledger and bootstrap resolver share a generated or parity-checked closed schema/path registry, with cross-record and split-sibling regressions.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T01:31:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T01:31:39Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.1.8.1",
+      "depends_on_id": "eshyra-o9bd.19.5.1.8",
+      "type": "parent-child",
+      "created_at": "2026-07-27T20:31:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

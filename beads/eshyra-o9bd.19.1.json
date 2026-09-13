@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1",
+  "title": "Build source-faithful semantic projections and scoped evidence foundations",
+  "description": "Own reusable pack-side foundations that improve source fidelity and support bounded\ndiscovery/capability consumers without creating a universal clause ontology.\nStructured semantics are required where they faithfully represent source structure,\nsupport discovery relationships, or feed a positively selected deterministic\ncapability. Model adjudication remains the default semantic authority outside\npositive deterministic commitments.",
+  "acceptance_criteria": "- Foundations preserve source fidelity/provenance and fail closed when a declared bounded claim cannot be evaluated.\n- Bounded source-obligation proofs identify their independently justified population; registry membership is never corpus completeness.\n- Shared semantic/parser infrastructure is introduced only for demonstrated recurring source structure or real consumers.\n- Evidence categories state exactly what they prove and do not prove.\n- Unknown/unrecognized/unbound/unclassified/empty results never become satisfaction or absence.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:51:31Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

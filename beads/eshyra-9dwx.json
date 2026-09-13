@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9dwx",
+  "title": "Generate current D&D SRD audit bundle",
+  "description": "Generate a fresh audit bundle from current main, validate the output, and copy the resulting artifact into ~/src for the user.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T01:32:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T01:34:32Z",
+  "started_at": "2026-07-25T01:32:22Z",
+  "closed_at": "2026-07-25T01:34:32Z",
+  "close_reason": "Generated and validated a fresh audit bundle from commit 4384f259 and copied the ZIP to /home/jhbongaarts/src/dnd5e-srd-audit-bundle.zip.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

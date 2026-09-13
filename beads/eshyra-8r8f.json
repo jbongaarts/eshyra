@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-8r8f",
+  "title": "Add deterministic catalogs for SRD language and tool choices",
+  "description": "Combined vk23 audit follow-up.\n\nThe vk23 bundle is strong for class progression and structured choices, but some open-ended language/tool choices remain more prose-like than deterministic tooling would prefer.\n\nExamples to inspect:\n- Half-Elf / Human / High Elf language choices\n- Acolyte language choices\n- Bard musical instrument choices\n- Monk artisan tool or musical instrument choices\n- Other features/backgrounds that choose from \"any language\", \"any tool\", \"musical instrument\", or similar categories\n\nThis is not a source-coverage failure, but deterministic character creation needs stable choice domains and filters instead of bespoke prose interpretation.\n\nAcceptance criteria:\n- Add or expose canonical SRD choice domains for languages and tool categories where the SRD provides enough structure.\n- Ensure relevant ancestry, background, and class feature choices reference those domains instead of relying only on prose.\n- Preserve source text and source fidelity; do not invent options outside the SRD.\n- Add tests for Half-Elf languages, Acolyte languages, Bard instrument choices, and Monk tool/instrument choices.\n- Update choice coverage/audit output so these choices are visible as deterministic domains.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T22:57:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T00:17:16Z",
+  "started_at": "2026-06-30T23:58:22Z",
+  "closed_at": "2026-07-01T00:17:16Z",
+  "close_reason": "Wired the already-existing standard-languages table and tool-category description grouping into languages[].from and toolProficiencyChoices[].from for Half-Elf/Human/High-Elf/Acolyte/Bard/Monk. Plumbed through rulesPackResolver/requiredChoices, replacing a duplicate hardcoded list. Regression tests for all named examples against the real pack",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-8r8f",
+      "depends_on_id": "eshyra-ajpc",
+      "type": "parent-child",
+      "created_at": "2026-06-30T18:06:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

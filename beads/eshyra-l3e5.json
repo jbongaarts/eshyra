@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l3e5",
+  "title": "lookup_rules rejects the addressable stat-block kind",
+  "description": "Verified at main f4b3461. packages/core/src/orchestrator/toolLookupRules.ts inputSchema.properties.kind.enum lists sixteen kinds and omits 'stat-block', so ToolRegistry.invoke rejects the call with invalid_args before the tool body runs. The pack contains stat-block:avatar-of-death and stat-block:giant-fly, RulesRecordKind declares stat-block addressable, and packages/core/src/adventure/references.ts:134-141 permits encounter creature refs to resolve to 'creature' OR 'stat-block'. An authored module may therefore reference a stat-block the DM cannot look up.\n\nDiscovered by eshyra-jued (docs/audits/rules-awareness-transition/2026-07-29-existing-discovery-substrate-map.md defect 1), reproduced there through a real ToolRegistry.invoke. Blocker B1 of docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md: no stat-block discovery evidence is valid until this is repaired.",
+  "acceptance_criteria": "lookup_rules accepts kind 'stat-block' and resolves stat-block:avatar-of-death / stat-block:giant-fly through the campaign stack; a test invokes the registry (not the tool body) for a stat-block ref; a test pins the schema enum against RulesRecordKind so a future kind cannot be silently unaddressable.",
+  "notes": "Implemented canonical RULES_RECORD_KINDS shared by pack validation and lookup_rules schema; added ToolRegistry.invoke coverage for both committed stat-block refs and schema parity coverage. Verification: VITEST_MAX_FORKS=6 npm run verify:worktree (262 files passed, 4 skipped; 4711 tests passed, 19 skipped).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-30T23:28:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-08-01T01:04:27Z",
+  "started_at": "2026-08-01T00:32:56Z",
+  "closed_at": "2026-08-01T01:04:27Z",
+  "close_reason": "Implemented and fully verified",
+  "labels": [
+    "dm-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-l3e5",
+      "depends_on_id": "eshyra-o9bd.19.8",
+      "type": "related",
+      "created_at": "2026-07-30T18:29:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

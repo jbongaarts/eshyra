@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.8.1",
+  "title": "Normalize 67 SRD hyphen-space artifacts in generated record strings",
+  "description": "Finding source:\n- Fable P3 found 67 mid-word hyphen-space artifacts across record strings using /[A-Za-z0-9]+- [a-z]/.\n- Examples: \"1st- level\" in wizard/paladin spellcasting features and candle of invocation, \"15- foot cone\" in three mephit breath weapons, \"20-foot- radius\", \"two- handed\", \"self- expression\", \"10-foot- cube\".\n- Root cause: line-break dehyphenation inserts a stray space when a compound hyphen falls at a source line break.\n\nWhy it matters:\n- Visible text quality defect.\n- Defeats exact phrase search on gameplay-meaningful compounds.\n\nAcceptance criteria:\n- Enumerate all 67 current matches.\n- Normalize true extraction artifacts while preserving legitimate source hyphenation.\n- Add a regression guard with a small explicit allowlist if needed.\n- Confirm no license/provenance/source text is corrupted.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-03T00:50:20Z",
+  "closed_at": "2026-07-03T01:03:22Z",
+  "close_reason": "Normalized generated SRD hyphen-space artifacts via importer/emitter regeneration; guard added with numeric suspended-range exception.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.8.1",
+      "depends_on_id": "eshyra-o9bd.18.8",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7wc.6",
+  "title": "Task 6: fork campaign from checkpoint into new branch",
+  "description": "Objective:\nFork a campaign from a checkpoint into a NEW Dolt branch plus an isolated SQLite\nworking copy. Add `DoltRepo.branch` and `CheckpointStore.forkFromCheckpoint`;\nprove branch isolation (post-fork commits on main do not change the fork).\n\nFiles:\n- Modify: `packages/core/src/persistence/checkpoint/doltRepo.ts`\n- Modify: `packages/core/src/persistence/checkpoint/store.ts`\n- Test:   `packages/core/test/checkpoint.fork.test.ts`\n\nSteps:\n\n1. Write the failing test `packages/core/test/checkpoint.fork.test.ts`:\n```ts\nimport { mkdtempSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport { join } from 'node:path';\nimport { describe, expect, it } from 'vitest';\nimport { openDatabase } from '../src/persistence/db.js';\nimport { DoltRepo } from '../src/persistence/checkpoint/doltRepo.js';\nimport { CheckpointStore } from '../src/persistence/checkpoint/store.js';\nimport {\n  serializeCampaign,\n  canonicalize,\n} from '../src/persistence/checkpoint/serialize.js';\n\nconst doltOk = DoltRepo.available();\n\ndescribe.skipIf(!doltOk)('CheckpointStore.forkFromCheckpoint', () => {\n  it('forks a checkpoint into an isolated branch + working copy', () => {\n    const root = mkdtempSync(join(tmpdir(), 'lw-fk-'));\n    const src = join(root, 'live.db');\n    const db = openDatabase(src);\n    db.exec('CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);');\n    db.prepare('INSERT INTO meta(key, value) VALUES (?, ?)').run('hp', '5');\n    db.close();\n\n    const store = new CheckpointStore(join(root, 'dolt'), join(root, '.beads'));\n    const c1 = store.checkpoint(src, 'cp1');\n\n    const forkDb = join(root, 'fork.db');\n    store.forkFromCheckpoint(c1, 'what-if', forkDb);\n    const forkState = canonicalize(serializeCampaign(openDatabase(forkDb)));\n\n    // Mutate the live db and checkpoint again on the main line.\n    const db2 = openDatabase(src);\n    db2.prepare('UPDATE meta SET value = ? WHERE key = ?').run('999', 'hp');\n    db2.close();\n    store.checkpoint(src, 'cp2-mainline');\n\n    // Re-restore the fork branch tip: it must still equal the c1 state.\n    const forkDb2 = join(root, 'fork2.db');\n    store.forkFromCheckpoint(c1, 'what-if-2', forkDb2);\n    const forkState2 = canonicalize(serializeCampaign(openDatabase(forkDb2)));\n\n    expect(forkState).toContain('\"hp\"');\n    expect(forkState).toContain('5');\n    expect(forkState2).toBe(forkState);\n    expect(forkState2).not.toContain('999');\n  });\n});\n```\n\n2. Run it to verify FAIL.\n   Command: `npx vitest run packages/core/test/checkpoint.fork.test.ts`\n   Expected: with dolt → FAIL (`forkFromCheckpoint` undefined); without dolt → skipped.\n\n3. Add to `packages/core/src/persistence/checkpoint/doltRepo.ts` — a new method\n   on `DoltRepo` (place after `readSnapshotAt`):\n```ts\n  branch(name: string, fromId: string): void {\n    this.run(['branch', name, fromId]);\n  }\n```\n\n4. Add to `CheckpointStore` in `packages/core/src/persistence/checkpoint/store.ts`:\n```ts\n  forkFromCheckpoint(\n    checkpointId: string,\n    branchName: string,\n    destDbPath: string,\n  ): string {\n    this.repo.branch(branchName, checkpointId);\n    return this.restoreToNewWorkingCopy(checkpointId, destDbPath);\n  }\n```\n\n5. Run the test to verify PASS.\n   Command: `npx vitest run packages/core/test/checkpoint.fork.test.ts`\n   Expected: with dolt → 1 passed; without dolt → 1 skipped.\n\n6. Run the full checkpoint suite to confirm no regression.\n   Command: `npx vitest run packages/core/test/checkpoint.separation.test.ts packages/core/test/checkpoint.serialize.test.ts packages/core/test/checkpoint.doltRepo.test.ts packages/core/test/checkpoint.store.test.ts packages/core/test/checkpoint.restore.test.ts packages/core/test/checkpoint.fork.test.ts`\n   Expected: separation + serialize always pass; dolt-gated suites pass with\n   dolt, skip without.\n\n7. Typecheck.\n   Command: `npm run build`\n   Expected: exit 0.\n\n8. Commit.\n   Command: `git add -A && git commit -m \"feat(e8): fork campaign from checkpoint into new branch\"`\n",
+  "design": "Fork = `dolt branch <name> <checkpointId>` (a new named line rooted at the chosen\ncommit) + materialize a fresh SQLite working copy from that checkpoint via the\nexisting restore path. Isolation is structural: `readSnapshotAt` time-travels with\n`AS OF '<commit-hash>'`, so the fork's working copy is bound to the exact commit,\nnot to any branch tip — later main-line checkpoints (cp2) cannot retroactively\nchange what the fork materializes. The test proves this by checkpointing a mutated\nmainline AFTER forking and showing a re-materialized fork is byte-identical to the\noriginal fork and free of the mainline change. `forkFromCheckpoint` reuses\n`restoreToNewWorkingCopy` (DRY) so fork and restore share one materialize path.\n",
+  "acceptance_criteria": "npx vitest run packages/core/test/checkpoint.fork.test.ts shows 1 passed with dolt or 1 skipped without; full checkpoint suite green/skip; npm run build exits 0.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T05:41:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:11Z",
+  "started_at": "2026-05-19T02:53:45Z",
+  "closed_at": "2026-05-19T02:55:12Z",
+  "close_reason": "fork implemented & committed; fork test skipped (no dolt), full checkpoint suite 10 passed/4 skipped, build exit 0",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7wc.6",
+      "depends_on_id": "eshyra-7wc",
+      "type": "parent-child",
+      "created_at": "2026-05-17T00:41:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7wc.6",
+      "depends_on_id": "eshyra-7wc.5",
+      "type": "blocks",
+      "created_at": "2026-05-17T00:41:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

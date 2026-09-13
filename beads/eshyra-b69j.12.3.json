@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.12.3",
+  "title": "Structure class starting-equipment options",
+  "description": "class.data.startingEquipment.entries are prose option lines, e.g. Fighter '(a) chain mail or (b) leather armor, longbow, and 20 arrows' and Wizard '(a) a quarterstaff or (b) a dagger'. They are not parsed into selectable (a)/(b) option groups, so the CLI cannot present a deterministic equipment choice without prose parsing. Fixed grants (e.g. 'A spellbook') are mixed into the same entries list.",
+  "acceptance_criteria": "Parse startingEquipment into structured option groups (choose-one among labeled options, each option a list of item refs/quantities) plus fixed grants, in the importer; keep verbatim text. Regenerate via importer (docs/importer-fix-protocol.md) with audit coverage. Feeds the equipment/proficiency flow (b69j.13). Likely files: importers, kindSchemas.ts optStartingEquipment, rulesPackResolver.ts.",
+  "notes": "PR #306 open for review: https://github.com/jbongaarts/eshyra/pull/306. Source-cited starting-equipment overlay (srdClassStartingEquipment.ts) keyed to frozen class keys; choose-one groups + fixed grants, each entry sourceText deep-equals pack startingEquipment.entries. requiredChoices emits structured equipment choices (choose:1, options in from); fixed grants auto-applied; non-overlay classes fall back to tracked prose. Rogue stray-(a) line modelled as fixed. No importer/frozen-pack files. verify:worktree green (2534 passed/19 skipped). Unblocks b69j.13.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T21:51:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T22:56:37Z",
+  "closed_at": "2026-06-25T23:24:42Z",
+  "close_reason": "Merged via PR #306. Source-cited starting-equipment overlay (srdClassStartingEquipment.ts) keyed to frozen class keys: choose-one groups + fixed grants, each entry sourceText deep-equals pack startingEquipment.entries. requiredChoices emits structured equipment choices (choose:1, options in from); fixed grants auto-applied; non-overlay classes fall back to tracked prose. No importer/frozen-pack files. Unblocks b69j.13.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.12.3",
+      "depends_on_id": "eshyra-b69j.12",
+      "type": "parent-child",
+      "created_at": "2026-06-24T16:51:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

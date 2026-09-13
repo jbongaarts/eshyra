@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.10.1",
+  "title": "Import racial-traits and equipment guidance prose",
+  "description": "Import the bounded SRD prose currently tracked under eshyra-4a7.10 for Races p3 (Racial Traits and its trait-category explanations), Equipment p64-65 (armor don/doff guidance, weapon proficiency/properties, improvised/silvered/special weapons), and the Self-Sufficiency downtime sidebar p73. Decide and document whether each region is emitted as rule records or structured child data, using existing public schema and importer patterns. Follow docs/importer-fix-protocol.md. If the failure map reveals a new root cause, requires a new parser or extractor strategy, or creates generated churn outside the direct consequences of the current minimal fix, stop and report instead of broadening the implementation.",
+  "acceptance_criteria": "Focused tests/audit expectations cover representative boundaries and keys; importer-generated records preserve the complete source text; owned known-gap predicates are replaced with record/child coverage; regeneration verification, typecheck, repo check, and relevant tests pass; generated diff is fully accounted for.",
+  "notes": "Completed implementation on feat/eshyra-4a7.10.1. Added 16 importer-generated rule records: 8 Races p3 trait-category rules, Getting Into and Out of Armor, Weapons Guidance plus 5 child weapon rules, and Self-Sufficiency. Added exact bounded anchors, opt-in removal of h<9.3 table-cell lines for the equipment prose slices, inline Weapons-table prose resumption, and a dedicated parser for the table-cell-height Self-Sufficiency sidebar. Coverage changes: record 1923 -> 1934; known-gap:eshyra-4a7.10 70 -> 59; corrected Races Alignment/Size/Speed/Languages from false same-name matches to parent-qualified records. Generated diff: 16 records added, 0 removed, 0 changed; source inventory unchanged; source coverage regenerated. Verification: focused 254 tests passed; audit reports 0 suspicious records; verify:dnd5e-srd-pack exact match; npm run verify:worktree passed (1666 passed, 19 documented skips). PDF SHA-256 2504d2a0abb0a4d491a939be4f17910a2dde0312570ab8d208080225ccf0a1f0.\nPR #211 reviewer fix: added explicit source-coverage mapping for the Monsters p254 Size heading to rule:size, preserving the Races p3 Size mapping to rule:racial-traits-size. Regenerated source-coverage.json; record/known-gap totals unchanged, collapsed source diagnostics 58 -> 57 because Size no longer collapses across chapters. Added artifact sentinels for both mappings. verify:dnd5e-srd-pack exact and verify:worktree passed (1667 passed, 19 documented skips).\nPR #211 merged to main on 2026-06-14 as squash commit e14468eb9f0d16bbd4424a9b7bfbf07cbe3920a6. Feature worktree and local/remote branch cleaned up.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-14T05:27:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-14T14:56:58Z",
+  "started_at": "2026-06-14T05:29:24Z",
+  "closed_at": "2026-06-14T05:48:56Z",
+  "close_reason": "Imported and source-accounted all Races p3 and Equipment p64-65/p73 prose in this child; deterministic regeneration and full worktree verification pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.10.1",
+      "depends_on_id": "eshyra-4a7.10",
+      "type": "parent-child",
+      "created_at": "2026-06-14T00:27:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

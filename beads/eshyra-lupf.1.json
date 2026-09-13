@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.1",
+  "title": "Progression model design note (XP/milestone, ledger, supported-vs-blocked)",
+  "description": "Decide the durable progression model before implementation: XP-vs-milestone advancement modes and how each binds to a campaign/rules pack; the shape of the auditable progression-event ledger; which level-up effects are deterministically supported from pack data (HP, class level, proficiency bonus, features, spell slots/cantrips) vs which require explicit player choices; and the explicit-block policy for unsupported choices. Grounds all sibling issues.",
+  "acceptance_criteria": "A short decision/ADR-style note records: advancement modes and binding, ledger schema, supported effect list, required-choice list, and the block policy for unsupported cases.",
+  "notes": "PR #323 (https://github.com/jbongaarts/eshyra/pull/323) — docs/design/character-progression.md. Open for review; close on merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:20:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T00:49:40Z",
+  "closed_at": "2026-06-27T01:03:40Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.1",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:20:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 3,
+  "comment_count": 0
+}

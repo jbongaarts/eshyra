@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.11",
+  "title": "Task 3: Add D&D SRD rules adapter and Pathfinder ORC fixture",
+  "description": "Objective:\nRepresent both existing D&D SRD content and a real Pathfinder 2e Remaster ORC fixture as rules packs.\n\nFiles:\n- Create: `packages/core/src/rules/dnd5eSrd.ts`\n- Create: `packages/core/src/rules/pathfinder2eRemaster.ts`\n- Modify: `packages/core/src/srd/data.ts` only if adapter needs shared constants\n- Modify: `packages/core/src/index.ts`\n- Test: `packages/core/test/rulesFixtures.test.ts`\n\nSteps:\n1. Write failing tests that `DND5E_SRD_RULES_PACK` validates, `PATHFINDER2E_REMASTER_RULES_PACK` validates, both have distinct `systemId` values, and Pathfinder fixture license metadata identifies ORC-licensed source material.\n2. Run `npx vitest run packages/core/test/rulesFixtures.test.ts`; expected: FAIL because fixture exports do not exist.\n3. Implement the D&D adapter by mapping current SRD monsters/spells/classes to provider-neutral rules records without deleting existing SRD exports.\n4. Implement a small but real Pathfinder fixture from ORC-licensed Remaster rules content with records needed by later character generation tests: at least one ancestry, one background, one class, one feat, one trained skill/proficiency concept, one equipment item, and one spell or cantrip when applicable.\n5. Include explicit source and license metadata on every pack and record.\n6. Export fixture packs from `packages/core/src/index.ts`.\n7. Run `npx vitest run packages/core/test/rulesFixtures.test.ts`; expected: PASS.\n8. Commit with `git add packages/core/src/rules packages/core/src/index.ts packages/core/test/rulesFixtures.test.ts` and `git commit -m feat-add-rules-system-fixtures`.",
+  "design": "Keep Pathfinder fixture intentionally compact but real. Do not include Paizo reserved setting names, trade dress, compatibility branding, or large copied text blocks. Use mechanical facts needed by tests and carry source/license metadata so later expansion is straightforward. Existing `SRD_CATALOG` and `lookupSrdRecord` remain available.\n\nInitial test sketch:\n```ts\nexpect(validateRulesPack(DND5E_SRD_RULES_PACK).meta.systemId).toBe('dnd5e-srd');\nexpect(validateRulesPack(PATHFINDER2E_REMASTER_RULES_PACK).meta.systemId).toBe('pathfinder2e-remaster');\nexpect(PATHFINDER2E_REMASTER_RULES_PACK.meta.license.licenseName).toContain('ORC');\n```",
+  "acceptance_criteria": "`npx vitest run packages/core/test/rulesFixtures.test.ts` passes. D&D and Pathfinder packs both validate, have distinct identities, and include source/license metadata.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:10:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T16:03:40Z",
+  "closed_at": "2026-05-23T16:14:18Z",
+  "close_reason": "Added DND5E_SRD_RULES_PACK adapter over SRD_CATALOG and a compact ORC-licensed PATHFINDER2E_REMASTER_RULES_PACK fixture (ancestry/background/class/feat/equipment/spell). Verified: focused rulesFixtures.test.ts passes (9/9 RED→GREEN), full npm run typecheck and npm run test pass (362 passed, 2 documented skips).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.11",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:10:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.11",
+      "depends_on_id": "eshyra-x3w.9",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 0
+}

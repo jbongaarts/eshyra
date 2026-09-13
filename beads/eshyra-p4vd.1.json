@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd.1",
+  "title": "Define canon tiers for module, campaign, overlay, scene, and color",
+  "description": "Define the canon-tier model for Eshyra adventure play.\n\nThe goal is to let adventure modules remain authoritative without forcing the DM to railroad or making every useful improvisation disappear after the turn.\n\nDocument the tiers:\n- Module canon: adventure-module authored content; read-only during play.\n- Campaign state: deterministic state changes such as inventory, flags, clocks, quest progress, location, and relationship state.\n- Campaign overlay lore: consequential improvised facts introduced during play and intentionally persisted.\n- Scene facts: short-lived facts established in the current scene/session, usable for local continuity but not necessarily long-term canon.\n- Decorative color: ordinary descriptive prose that should not be stored or relied on later.\n- Rumor/belief: attributed information that is canonically known to have been said/believed, without asserting it is true.\n\nAcceptance criteria:\n- A design note or ADR records the canon tiers.\n- The document explains what each tier is allowed to support during mechanics/world audit.\n- The document gives examples from the Hearthmere playtest:\n  - module canon vs improvised hook\n  - Old Renn / mule / axe-cuts / drag marks as campaign overlay lore\n  - chipped cup / damp wool / rough wool clothing as decorative color\n- The design explicitly says not every DM sentence becomes canon.\n- The design explicitly says module canon remains authoritative and campaign overlay should not silently rewrite module facts.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:23:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:45:01Z",
+  "started_at": "2026-06-24T03:34:18Z",
+  "closed_at": "2026-06-24T03:45:01Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-p4vd.1",
+      "depends_on_id": "eshyra-p4vd",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:23:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

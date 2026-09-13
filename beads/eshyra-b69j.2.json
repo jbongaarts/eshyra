@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.2",
+  "title": "Decide whether character creation recipe architecture needs an ADR",
+  "description": "Decide whether the character creation architecture should be recorded as a formal ADR after the design doc lands.\n\nCandidate durable decisions\n- Eshyra uses one shared character creation CLI shell with rule-pack-specific creation recipes.\n- D&D 5e SRD is the first recipe.\n- Recipe implementations use generated runtime rules packs as truth.\n- Legacy SRD_CATALOG is retired.\n- The D&D recipe supports both Concept-first and Ability-first creation modes.\n\nAcceptance criteria\n- Either add an ADR recording these decisions, or update the design doc with a clear note explaining why an ADR is deferred.\n- Do not block initial implementation work if the design doc already gives agents enough direction.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T01:23:42Z",
+  "closed_at": "2026-06-26T01:23:42Z",
+  "close_reason": "Completed remaining guided character creation transcript coverage and documented ADR deferral.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.2",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

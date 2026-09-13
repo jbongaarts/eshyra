@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.11",
+  "title": "Correct readiness dimension assignment and capability ownership checking",
+  "description": "Decomposed out of eshyra-o9bd.19.1.1 (PR #475) 2026-07-26 under the churn stop\nrule. These are bounded, mechanical defects that do not belong in the design\nreopening and can be fixed independently.\n\nFrom the fresh full review of 8c027f1:\n * Capability failures are assigned to PROJECTED rather than SUPPORTED. A clause\n   whose engine capability is unresolved is reported as a projection defect,\n   which is precisely the CAPTURED/PROJECTED/SUPPORTED/DISCOVERABLE conflation\n   ADR 0020 exists to prevent.\n * Capability ownership is checked with an INCORRECT bead-ID prefix, so\n   wrong-owner references pass.\n * Evidence and provenance consistency remain under-validated.\n * Branch and alternative bindings can target shells but cannot target several\n   valid scalar mechanics.\n * ADR 0020 contradicts the updated bead contract about the #475/#477\n   integration boundary — the ADR must state the actual position, which is that\n   #475 and #477 share obl:::<sourceRef>:::<locator>:::<facet> while #476 does\n   not participate.\n\nKeep this bead narrow. If a fix here starts requiring exact source values, it\nbelongs to the sibling source-value bead instead.",
+  "acceptance_criteria": "\n• Capability resolution failures are reported against SUPPORTED, never PROJECTED, with a test per dimension.\n• Capability ownership uses the correct bead-ID form; wrong-owner references fail.\n• Evidence and provenance consistency are validated.\n• Branch and alternative bindings can target scalar mechanics, not only shells.\n• ADR 0020 states the real cross-PR integration position and does not contradict the bead contract.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T15:08:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:28:34Z",
+  "started_at": "2026-07-28T00:07:21Z",
+  "closed_at": "2026-07-28T00:28:34Z",
+  "close_reason": "Implemented in efde702 on PR #475 branch; supervisor-verified 4743 passed, 19 skipped.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.11",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-26T10:08:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.11",
+      "depends_on_id": "eshyra-o9bd.19.1.11.1",
+      "type": "blocks",
+      "created_at": "2026-07-27T19:07:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

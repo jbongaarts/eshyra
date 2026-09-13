@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lbda",
+  "title": "Dispatch: restrict returned basis to lost custody (attempt 1)",
+  "description": "Works defect bead eshyra-4ygd (read it first: full analysis with file/line refs). Parent spec: eshyra-f0nz (acceptance criterion 1 and the supervisor design decision — follow it, not the bead's original 'sale-reversed' sketch).\n\nBranch/worktree: this bead's id, cut from eshyra-f0nz.\n\n## Code survey (verified 2026-07-19)\n\n- `packages/core/src/state/domainMutations.ts` `reacquireItem` (~line 613): compatibility gate at ~667-673 rejects only sold+found and lost+repurchased; payment required for repurchased, forbidden otherwise (~628-635).\n- `listRecoverableItems` (~line 440-465): maps basis → eligible dispositions; today 'returned' includes sold rows. \n- `packages/core/src/orchestrator/toolReacquireItem.ts`: tool schema (basis enum, payment description) and tool description text mention returned as valid generally.\n- Selling records NO wallet linkage (`removeItem` performs no currency mutation), so a refund cannot be computed deterministically — this is why the fix below restricts basis rather than adding a sale-reversed transition.\n- The `inventory_custody_event` CHECK `(basis='repurchased') = (payment_event_id IS NOT NULL)` is untouched; historical sold+returned events remain valid append-only history. NO migration in this dispatch.\n\n## Required behavior change\n\n- `reacquireItem`: 'returned' becomes valid only for `unheld_disposition='lost'`. Extend the compatibility gate so sold+returned throws with a message that names 'repurchased' (with atomic payment) as the only sold-row recovery path.\n- `listRecoverableItems`: basis 'returned' discovers only lost rows.\n- `toolReacquireItem.ts`: update the basis/payment descriptions and tool description so the model is told sold rows require repurchased+payment and returned applies to lost property only.\n- Grep for existing tests pinning the payment-free sold-item return (evidence text like \"rescinded the sale\") — rewrite them to assert the new rejection, and keep/extend coverage that lost+returned still succeeds and sold+repurchased still debits atomically. This is a deliberate spec change, not test weakening; reference eshyra-4ygd in the updated test names/comments where the old behavior was pinned.\n\n## Tests\n\n- sold + returned → MutateStateError (both domain-level and via the tool if a tool-level test exists).\n- lost + returned → succeeds, no wallet change.\n- sold + repurchased with payment → succeeds, wallet debited, payment event recorded (existing coverage; keep).\n- list_recoverable_items with basis 'returned' excludes sold rows; 'repurchased' still finds them.\n\n## Verification\n\n`npm ci` first, then `npm run verify:worktree` from this worktree. Commit on this branch only.\n",
+  "notes": "Completed eshyra-lbda. Implemented the supervisor-directed custody rule: listRecoverableItems now exposes returned only for lost rows; reacquireItem rejects sold+returned with explicit repurchased/atomic-payment guidance; sold+repurchased behavior remains unchanged. Updated reacquire/list tool schemas and descriptions plus the system protocol. Reworked regression coverage for sold+returned rejection, lost+returned success, returned discovery filtering, and preserved atomic repurchase coverage. Verification: npm ci; targeted 134 tests passed; npm run verify:worktree passed (Biome, hidden-Unicode, typecheck, full suite 4650 passed / 19 skipped). Commit: c4cb671 Fix sold-item returned custody recovery. No follow-up beads discovered.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:20:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-20T00:22:51Z",
+  "closed_at": "2026-07-20T00:29:21Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14.3",
+  "title": "Cross-campaign character custody lifecycle (revisions, sync-back, fork)",
+  "description": "Build the custody/transfer lifecycle on the registry foundation (ADR 0012, eshyra-lupf.14.2): a linear per-character revision history in the registry; attach = check-out (marks custody, records source revision on the campaign sheet); on campaign exit, commit a new revision back to the registry from the campaign character_sheet; prevent silent double-attach of one character to multiple active campaigns; explicit, rare alternate-timeline fork as a deliberate operation. Ensures exactly one writer at a time (no cross-DB write races).",
+  "acceptance_criteria": "- Registry tracks a linear revision history per globalCharacterId.\n- Attach records source revision + custody on the campaign sheet; exit commits a new registry revision from the campaign sheet.\n- Double-attach to multiple active campaigns is prevented unless an explicit fork is chosen.\n- Explicit alternate-timeline fork is supported and clearly labeled as breaking continuity.\n- Tests cover checkout->play->sync-back->re-checkout and the double-attach guard.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T04:32:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T06:10:15Z",
+  "closed_at": "2026-06-27T06:26:08Z",
+  "close_reason": "Implemented custody lifecycle (revisions, checkout/sync-back/release, double-attach guard, fork) in core + CLI wiring; PR #331. Follow-up eshyra-lupf.14.4 for CLI fork/non-head-checkout UX.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14.3",
+      "depends_on_id": "eshyra-lupf.14",
+      "type": "parent-child",
+      "created_at": "2026-06-26T23:32:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.14.3",
+      "depends_on_id": "eshyra-lupf.14.2",
+      "type": "blocks",
+      "created_at": "2026-06-26T23:32:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5g3d",
+  "title": "Flaky CLI packaging test times out under full-suite load",
+  "description": "`packages/cli/test/cli.test.ts > package smoke > packs publishable tarballs with\ndist output and no source/test files` intermittently fails with\n`Test timed out in 10000ms` when run as part of the full Vitest suite, and\npasses reliably when its file is run alone.\n\nOBSERVED\n2026-09-10/11, on `eshyra-o9bd.19.12` and on `eshyra-o9bd.19.12.2` (a branch\ntouching only `packages/core/src/discovery` and its tests). Three of five\n`npm run verify:worktree` runs failed on it; a plain `npm run test` on the same\ntree passed at 5295 passed / 20 skipped, and `npx vitest run\npackages/cli/test/cli.test.ts` passed 15/15.\n\nWHY IT MATTERS\nIt is a false red on the pre-commit gate. An agent that takes it at face value\neither burns a cycle chasing an unrelated change or, worse, learns to ignore a\nfailing gate.\n\nLIKELY CAUSE (unverified)\nThe test shells out to `npm pack` for both workspaces. Vitest spawns one worker\nper file (296 workers observed), so under that load a real `npm pack` can\nexceed the declared `timeout: 10_000`. The timeout was presumably sized against\nan unloaded run.\n\nCANDIDATE FIXES, in preference order\n1. Raise the declared timeout to something that reflects packing two workspaces\n   on a loaded machine. Cheapest, and the assertion is about tarball CONTENT,\n   not speed — the timeout was never the thing under test.\n2. Pack once per suite rather than once per test, if more than one case needs\n   the tarball.\n3. Only if neither holds: mark the file as needing a dedicated pool.\n\nDo NOT fix it by deleting the assertion or by skipping the test: it guards the\npublished tarball against shipping source and test files, which is a real\nrelease property.\n",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-11T04:02:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-11T04:02:48Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

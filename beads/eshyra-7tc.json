@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7tc",
+  "title": "SRD: Barbarian base-class features entirely missing from generated pack",
+  "description": "Discovered during eshyra-0m9.14. The committed dnd5e-srd-5.1 pack contains ZERO feature:barbarian:* records — every Barbarian base-class feature (Rage, Unarmored Defense, Reckless Attack, Danger Sense, Primal Path, Ability Score Improvement, Extra Attack, Fast Movement, Feral Instinct, Brutal Critical, Relentless Rage, Persistent Rage, Indomitable Might, Primal Champion) is absent. This is pre-existing (present on origin/main before 0m9.14) and was NOT changed by 0m9.14.\n\nRoot cause (separate failure class from 0m9.14, which covered repeated-use naming + earliest-level metadata): the Classes-chapter slice begins AFTER the 'Barbarian' chapter heading, so parseFeatures never opens Barbarian class context (currentClass stays null) for the Barbarian body. The implicit-parent logic in collectFeatureAnchors/parseFeatures only restores 'Barbarian' as currentClass when its first SUBCLASS heading ('Path of the Berserker') arrives — by which point all Barbarian base-feature body headings have already been passed over and dropped. (Path of the Berserker subclass features ARE present.)\n\nThis is an extraction/slice-boundary problem, closer in kind to eshyra-0m9.13 than to 0m9.14, and was explicitly held out of 0m9.14 per that bead's hard-stop (scope = repeated-use naming + earliest-level only).\n\nSuggested work:\n- Make the classes slice include the Barbarian chapter heading, OR open implicit Barbarian class context at the start of the slice (mirroring the existing implicit-Barbarian-parent handling) so base-class features before the first subclass heading are attributed to Barbarian.\n- Add focused parseFeatures tests for Barbarian base features (e.g. Rage L1, ASI L4, Brutal Critical L9) failing first.\n- Regenerate + verify:dnd5e-srd-pack; update srdGeneratedPack feature-count baseline (currently 167) with per-record justification.\n\nFiles: packages/core/scripts/importers/dnd5e-srd-5.1/parseFeatures.ts, sections.ts (classes slice anchor), test/importers/dnd5e-srd-5.1/parseFeatures.test.ts, test/srdGeneratedPack.test.ts.\nImporter safety: follow docs/importer-fix-protocol.md.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-08T21:39:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-08T23:31:00Z",
+  "started_at": "2026-06-08T23:17:24Z",
+  "closed_at": "2026-06-08T23:31:00Z",
+  "close_reason": "Implicit Barbarian class context in parseFeatures recovers 13/14 Barbarian base features (169->182). Unarmored Defense deferred to eshyra-ai9 (interleaved-column table wrap).",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

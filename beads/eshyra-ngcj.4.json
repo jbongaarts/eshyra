@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.4",
+  "title": "Expand equipment packs into deterministic contents",
+  "description": "Problem:\nEquipment packs are currently represented as prose. For example, equipment:explorers-pack describes its backpack, bedroll, mess kit, tinderbox, torches, rations, waterskin, and rope in text, but inventory tools cannot expand the pack into item grants.\n\nImplement:\n- Add typed contents for SRD equipment packs.\n- Represent item refs and quantities.\n- Preserve source prose for auditability.\n- Add tests for at least the common class-granted packs:\n  - explorer's pack\n  - dungeoneer's pack\n  - priest's pack\n  - scholar's pack\n  - burglar's pack\n  - diplomat's pack\n  - entertainer's pack\n\nAcceptance criteria:\n- Inventory tooling can expand a granted pack into deterministic item grants.\n- Quantities are explicit.\n- Rope length or similar quantity-bearing details are represented where needed.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:41:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-29T21:45:09Z",
+  "started_at": "2026-06-29T21:36:49Z",
+  "closed_at": "2026-06-29T21:45:09Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.4",
+      "depends_on_id": "eshyra-ngcj",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:41:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

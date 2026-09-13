@@ -1,0 +1,70 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ij1.1",
+  "title": "Implement agent worktree verification helpers",
+  "description": "Objective: update AGENTS.md, add PowerShell helper scripts, and add npm wrappers for the approved agent worktree verification workflow. Files: AGENTS.md, scripts/agent-preflight-main.ps1, scripts/verify-current-worktree.ps1, package.json, and focused policy tests if needed. TDD: add/update policy tests first to assert package script wiring and AGENTS.md/Biome invariants, then implement scripts/docs/package updates, then run focused and full verification.",
+  "design": "Use existing root package scripts rather than inventing alternate checks. agent-preflight-main.ps1 only git fetches origin main and reports FETCH_HEAD/base information. verify-current-worktree.ps1 resolves git root, Set-Location to it, prints root, then runs npm run format, npm run check, npm run typecheck, npm run test with fail-fast PowerShell behavior. Do not change biome.json .worktrees exclusion.",
+  "acceptance_criteria": "Focused policy tests cover package scripts and AGENTS.md workflow text; scripts exist and fail fast; npm wrappers work; Biome .worktrees exclusion remains; parent preflight script succeeds from parent; verify script succeeds from linked worktree root; full repo verification passes.",
+  "notes": "Debug evidence: scripts/verify-current-worktree.ps1 correctly resolved git root to D:/src/loreweaver/.worktrees/loreweaver-ij1-1, but npm run format failed because Biome processed 0 files: the explicit biome.json files.includes entry !**/.worktrees excludes the linked worktree path even when run from that worktree root. Temporary config test removing only !**/.worktrees caused Biome to scan 235 files, confirming the exclusion is the root cause; temp config must be excluded from its own scan.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T23:56:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:48Z",
+  "started_at": "2026-06-05T23:57:02Z",
+  "closed_at": "2026-06-06T00:12:15Z",
+  "close_reason": "Implemented AGENTS.md workflow guidance, PowerShell helper scripts, npm wrappers, and policy tests; verification recorded on bead, including linked-worktree full helper verification passing with Dolt absent skip path.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ij1.1",
+      "depends_on_id": "eshyra-ij1",
+      "type": "parent-child",
+      "created_at": "2026-06-05T18:56:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "40342f2f-f83e-5335-83c6-545b349751ea",
+      "issue_id": "eshyra-ij1.1",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 1 as expected; new policy tests fail because AGENTS.md lacks the linked-worktree workflow text and package.json lacks agent:preflight / verify:worktree helper scripts.",
+      "created_at": "2026-06-05T23:59:08Z"
+    },
+    {
+      "id": "85ddacb6-c314-5f3b-805c-0a6d0c176892",
+      "issue_id": "eshyra-ij1.1",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 0; 9 tests passed after adding AGENTS workflow docs, PowerShell helpers, and npm script wiring.",
+      "created_at": "2026-06-06T00:02:41Z"
+    },
+    {
+      "id": "bc2a5660-3997-5b8c-930d-44ef40166e51",
+      "issue_id": "eshyra-ij1.1",
+      "author": "Joseph Bongaarts",
+      "text": "TDD/debug GREEN: after reproducing the linked-worktree Biome zero-files failure, added RED assertions for BIOME_CONFIG_PATH temporary worktree config handling; npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 0 with 9 tests passed after implementing the worktree-only Biome config override and cleanup.",
+      "created_at": "2026-06-06T00:06:21Z"
+    },
+    {
+      "id": "d169a11e-8a34-5dc1-b3fc-e35df2a102c2",
+      "issue_id": "eshyra-ij1.1",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: parent checkout direct script .worktrees/loreweaver-ij1-1/scripts/agent-preflight-main.ps1 -> exit 0; fetched origin/main only and reported FETCH_HEAD/origin/main 580d738bd41fcb6b0ceeda03f8ae102a7c27eb6d. Focused policy test \npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 0; 9 tests passed. Worktree verification helper from linked root with Dolt made absent via empty LOREWEAVER_DOLT_HOME -> exit 0; npm run format formatted 234 files with no fixes, npm run check scanned 268 hidden-Unicode files and Biome checked 234 files, npm run typecheck passed, npm run test passed with 87 files passed / 4 skipped and 1179 tests passed / 18 skipped. git diff --check -> exit 0. Direct local managed Dolt v2.0.3 remains broken and is tracked separately as loreweaver-cjs.",
+      "created_at": "2026-06-06T00:12:03Z"
+    },
+    {
+      "id": "2157ad81-7f5a-5484-b932-e9bd65720fd5",
+      "issue_id": "eshyra-ij1.1",
+      "author": "Joseph Bongaarts",
+      "text": "Post-close verification update: added .ps1 coverage to scripts/check-hidden-unicode.mjs because this work adds tracked PowerShell helpers. Focused hidden-Unicode test \npx vitest run packages/core/test/hiddenUnicodeCheck.test.ts -> exit 0; 8 tests passed. Full worktree verification helper with Dolt absent skip path -> exit 0; npm run check now scanned 270 tracked text files, Biome checked 234 files, typecheck passed, and vitest reported 87 files passed / 4 skipped, 1179 tests passed / 18 skipped.",
+      "created_at": "2026-06-06T00:14:52Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 5
+}

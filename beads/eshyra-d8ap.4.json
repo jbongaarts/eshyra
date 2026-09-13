@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d8ap.4",
+  "title": "Add deterministic combat regression fixture for first combat playtest",
+  "description": "Create a regression-style scripted or semi-scripted test based on the first combat playtest. Do not depend on the natural RNG stream causing Bob to drop to 0 HP. Instead, use a deterministic roll fixture / fake roll tool / roll-plan mode for exact mechanical-path tests, and keep live RNG playtest recipes branch-tolerant.\n\nAcceptance criteria:\n\n- Provide a deterministic combat fixture that can force Bob wins initiative; Bob's first attack misses; goblin attacks miss; Bob's second attack hits; Bob's damage kills `goblin-1`; `goblin-2` critically hits Bob; damage drops Bob to 0 HP; Bob makes a death save and succeeds.\n- Assert mechanical invariants rather than exact prose: rolls are executed by tools; player-visible rolls are surfaced according to policy; HP changes are state-backed; combatant ids are stable once combatant state exists; rejected candidates do not persist state; successful retries do not duplicate state writes.\n- Include a live playtest recipe using real RNG, but make it branch-tolerant: if Bob attacks, player attack roll is visible; if Bob hits, damage roll is visible; if a goblin attacks Bob, attack roll is visible; if Bob takes damage, damage and HP/state change are visible; if Bob reaches 0 HP, unconscious/dying state and death-save flow are visible; if Bob kills both goblins, combat ends cleanly and state reflects both enemies defeated.\n- Mark any parts blocked on the combatant-state bead.\n",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-25T05:21:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T22:47:26Z",
+  "closed_at": "2026-06-25T22:55:21Z",
+  "close_reason": "Implemented deterministic first-combat regression fixture, rollback/retry invariants, and branch-tolerant live RNG playtest recipe. PR #305.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d8ap.4",
+      "depends_on_id": "eshyra-d8ap",
+      "type": "parent-child",
+      "created_at": "2026-06-25T00:21:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d8ap.4",
+      "depends_on_id": "eshyra-d8ap.1",
+      "type": "blocks",
+      "created_at": "2026-06-25T00:22:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d8ap.4",
+      "depends_on_id": "eshyra-d8ap.2",
+      "type": "blocks",
+      "created_at": "2026-06-25T00:22:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

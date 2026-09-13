@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-3m1",
+  "title": "parseAncestries missing 5 subraces on real SRD 5.1 PDF",
+  "description": "With loreweaver-w8h's creature-coverage fix landing, verify:dnd5e-srd-pack now passes the creature check but hits an ancestry coverage failure:\n\n> SRD 5.1 ancestry coverage check failed: parsed 13 ancestry record(s), expected 18. Missing expected ancestry record(s): Mountain Dwarf, Wood Elf, Dark Elf (Drow), Stout Halfling, Forest Gnome.\n\nFound subraces: Hill Dwarf, High Elf, Lightfoot Halfling, Rock Gnome (only the FIRST subrace of each parent race parses; the others are silently dropped). All 9 base races parse correctly.\n\nReproduce: npm run verify:dnd5e-srd-pack on a tree that has the loreweaver-w8h creature fix applied (or any state where creature coverage passes).\n\nInvestigation pointers:\n- This failure is pre-existing — it's not caused by w8h. It was masked by the creature coverage check failing first.\n- The pattern (only the first subrace per parent parses) suggests parseAncestries.ts may not advance past the first subrace heading per race block, or column-aware extraction interleaves subrace headings with body prose in a way the parser doesn't tolerate.\n- KNOWN_SUBRACES in parseAncestries.ts maps source headings to record names; the regex / heading match logic is in the same file.\n\nSee packages/core/scripts/importers/dnd5e-srd-5.1/parseAncestries.ts.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-02T18:08:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:50Z",
+  "started_at": "2026-06-02T21:29:34Z",
+  "closed_at": "2026-06-02T21:51:29Z",
+  "close_reason": "Fixed in PR #135: trimmed EXPECTED_SRD_5_1_ANCESTRY_NAMES from the PHB 18-name list to the SRD 5.1's actual 13-name set (9 races + Hill Dwarf, High Elf, Lightfoot Halfling, Rock Gnome only). Added real-PDF regression test pinning the parser output against the vendored SRD. Next pipeline failure (feature:cleric:destroy-undead duplicate) tracked as loreweaver-8gp.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-3m1",
+      "depends_on_id": "eshyra-w8h",
+      "type": "blocks",
+      "created_at": "2026-06-02T13:08:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

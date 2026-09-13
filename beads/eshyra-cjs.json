@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cjs",
+  "title": "Investigate managed Dolt init crash on Windows",
+  "description": "Local verification found C:\\\\Users\\\\tjfox\\\\.loreweaver\\\\dolt\\\\dolt.exe version 2.0.3 runs dolt version but crashes with Windows exception 0xc0000005 on dolt init --name loreweaver --email loreweaver@local in a fresh temp directory. When that managed binary is present, Dolt-gated checkpoint tests fail; when Dolt is made absent via an empty LOREWEAVER_DOLT_HOME, the documented skip path passes. Determine whether this is local cache corruption, a pinned Dolt v2.0.3 Windows issue, or a repo policy/tooling issue.",
+  "notes": "INVESTIGATION (2026-06-05, Windows 11, Node 24):\n\nCould NOT reproduce. Managed binary C:\\Users\\tjfox\\.loreweaver\\dolt\\dolt.exe (v2.0.3, the pinned DOLT_PINNED_VERSION):\n- 'dolt version' OK; 'dolt init --name loreweaver --email loreweaver@local' in fresh temp dirs succeeded 18/18 across runs (exit 0).\n- Full Dolt-gated checkpoint suite green: 'npx vitest run checkpoint' = 65/65 (10 files), twice.\n- Binary not blocked by Mark-of-the-Web (no Zone.Identifier ADS); single clean :$DATA stream; not quarantined.\n- No Application Error / WER 0xc0000005 records for dolt in the last 30 days (WER not disabled). The 0xc0000005 was almost certainly a Go access-violation surfaced as the process EXIT CODE, not a WER-logged hard crash.\n\nVERDICT on the three hypotheses:\n- Repo policy/tooling issue: NO. resolveDoltBinary precedence, ensureDoltAvailable consent gate, and the skip-when-absent path all behave correctly.\n- Systematic pinned-v2.0.3 Windows issue: NO. Deterministically clean; not reproducible.\n- Local cache corruption / transient local cause: MOST CONSISTENT. A one-off transient (e.g. AV interference or a metrics-flush hiccup) that has since cleared.\n\nANOMALY FOUND (hygiene, prime suspect for the original transient): the user's global ~/.dolt/eventsData held ~3000 stale queued telemetry files (5/18-6/05). dolt's event-flush goroutine opens a network connection on commands like 'init'; a flush over a large backlog is the most plausible trigger for a transient access violation. Cleared the backlog (queued telemetry only; global config_global.json left untouched per the doltCli.ts:60-62 'must NOT mutate the user's global dolt config' principle). init + 65/65 tests remained green after clearing.\n\nROOT-CAUSE NOTE: tests/CLI do NOT isolate dolt's root path, so dolt uses the real ~/.dolt and both depends on and pollutes global telemetry state. Durable hardening filed as a follow-up bead.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T00:11:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-06T03:39:16Z",
+  "closed_at": "2026-06-06T03:44:58Z",
+  "close_reason": "Investigated: not reproducible on Windows 11 / Node 24 with pinned dolt v2.0.3. init 18/18 clean + checkpoint suite 65/65 green. Not a repo tooling bug and not a systematic v2.0.3 failure; most consistent with a transient local cause. Prime suspect (~3000-file global ~/.dolt/eventsData telemetry backlog + event-flush network call) cleared as hygiene; durable root-path isolation tracked in loreweaver-l6n.",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ecr.3",
+  "title": "GREEN: Implement magic item importer",
+  "description": "Objective: Implement the smallest code changes that satisfy the RED tests. Files: create packages/core/scripts/importers/dnd5e-srd-5.1/parseMagicItems.ts; modify types.ts, sections.ts, index.ts, emit.ts, cli.ts, verify-dnd5e-srd-pack/cli.ts, rules/types.ts, rules/validate.ts, rules/kindSchemas.ts, orchestrator/toolLookupRules.ts. Steps: add magic-item kind/schema; add MagicItemExtraction; parse Magic Items A-Z slice; validate coverage; emit magic-item records with itemType, rarity, requiresAttunement, optional attunementRequirement, description, provenance/license; include counts and manifest kind. Run focused tests and nearby importer suites until green.",
+  "acceptance_criteria": "Focused parser/emitter/section/generated-pack tests pass before regeneration; no Pathfinder changes.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-04T05:57:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-04T06:05:02Z",
+  "closed_at": "2026-06-04T06:20:46Z",
+  "close_reason": "Implemented magic-item parser/kind/schema/emitter/orchestrator/count wiring; focused importer tests and typecheck pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ecr.3",
+      "depends_on_id": "eshyra-ecr",
+      "type": "parent-child",
+      "created_at": "2026-06-04T00:57:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ecr.3",
+      "depends_on_id": "eshyra-ecr.1",
+      "type": "blocks",
+      "created_at": "2026-06-04T00:57:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "48f4316f-7986-5517-9f0e-8e9487efdbde",
+      "issue_id": "eshyra-ecr.3",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: focused tests passed (npx vitest run parseMagicItems.test.ts emit.test.ts sections.test.ts tools.test.ts); importer suite passed (20 files, 434 tests); npm run typecheck passed. Committed-pack spot checks remain intentionally stale until regeneration in loreweaver-ecr.2.",
+      "created_at": "2026-06-04T06:20:46Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

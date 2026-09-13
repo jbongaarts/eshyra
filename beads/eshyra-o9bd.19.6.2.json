@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.2",
+  "title": "Add permanent regression evidence for the known audit finding corpus",
+  "description": "Attach durable regression evidence to each enumerated known audit finding/disposition.\nEvidence tests the generalized violated invariant over the bounded affected population\nthat can actually be established. Where exhaustive membership cannot be independently\nestablished, use permanent adversarial/representative evidence plus explicit scope limits\ninstead of inventing a true population.",
+  "acceptance_criteria": "- Every enumerated known finding has a durable current disposition, owner, violated invariant, and regression evidence or explicit unresolved blocker.\n- Regression evidence detects recurrence of the generalized defect class within its justified scope.\n- Unsupported source claims have negative provenance regressions.\n- Intentional adjudication/ambiguity cases have positive boundary regressions.\n- No finding requires a fabricated exhaustive membership query; unknown/unbounded scope is recorded as such, never treated as zero.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCANONICAL ALIAS PREFIXES — never a bare \"F1\" or \"CAP-001\":\n  engine:F1 .. engine:F10     pack executionReadiness engineHooks[].engine families\n  fable:F1 .. fable:F8        Fable 5 audit findings\n  opus:F-01 .. opus:F-35      Opus 5 original + amended audit findings\n  sol:CAP-001 .. sol:CAP-014  GPT-5.6-Sol agent audit findings\n  indep:001 .. indep:012      independent review (formerly \"SOL-001..012\"; renamed\n                              so it stops colliding with the sol: model-name prefix)\n\nSCOPE: 19.6.2 ADDS CLOSURE EVIDENCE to the registry created by eshyra-o9bd.19.1.6. It does not\ncreate the registry.\n\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:23:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:53:17Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.1.9",
+      "type": "blocks",
+      "created_at": "2026-07-26T10:08:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.6",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:23:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.6.1",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.2",
+      "depends_on_id": "eshyra-o9bd.19.1.8",
+      "type": "blocks",
+      "created_at": "2026-07-26T10:08:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

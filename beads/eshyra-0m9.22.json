@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.22",
+  "title": "Represent SRD monster and stat-block interpretation rules",
+  "description": "Problem\r\nThe importer emits creature stat blocks, but the SRD rules that explain how to interpret monster/stat-block fields are not adequately represented.\r\n\r\nEvidence from the 2026-06-07 audit\r\nUnrepresented or underrepresented content around pages 254-260 includes:\r\n- Monster size, type, and tags\r\n- Alignment, armor class, hit points, speed\r\n- Ability scores, saving throws, skills, vulnerabilities, resistances, immunities\r\n- Senses, languages, challenge, and XP by CR\r\n- Special traits, actions, reactions, limited usage\r\n- Legendary creatures, lairs, and regional effects\r\n- Tables such as XP by challenge rating\r\n\r\nRequired behavior\r\n- Import stat-block interpretation rules as rule and/or table records.\r\n- Do not rely on creature records alone to explain the meaning of creature fields.\r\n- Preserve table structure for XP by CR and related monster rules tables.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-10T03:18:18Z",
+  "closed_at": "2026-06-10T03:43:33Z",
+  "close_reason": "PR #190 open — 44 monster stat-block interpretation rules + 4 monster reference tables added (rule 206→250, table 19→23); caption-exclusion now keeps resuming section prose (recovers ability-checks/ability-scores-and-modifiers/speed); follow-up eshyra-10t filed for Travel Pace + Ability Scores and Modifiers tables; all tests passing",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.22",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

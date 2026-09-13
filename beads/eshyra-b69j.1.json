@@ -1,0 +1,27 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.1",
+  "title": "Add character creation CLI design doc",
+  "description": "Add docs/design/character-creation-cli.md capturing the agreed character creation UX and architecture.\n\nThe document must preserve the full design rather than summarize it away. It should cover:\n- one shared CLI shell with rule-pack-specific character creation recipes;\n- D&D 5e SRD as the first recipe;\n- future Pathfinder compatibility without speculative Pathfinder implementation;\n- canonical mode labels: Concept-first — I know what I want to play, and Ability-first — let the dice inspire me;\n- why both modes matter: modern concept-first play plus 80s-era RPG nostalgia/discovery play;\n- concept-first and ability-first step orders;\n- shared commands: ?, list, search <term>, back, review, set <field>, save, quit;\n- forgiving display-name/common-alias input;\n- stateful draft preservation and save/resume behavior;\n- dependency-aware validation with actionable diagnostics and no cascades;\n- automatic derived values, especially level-1 HP;\n- runtime generated rules-pack resolver replacing SRD_CATALOG;\n- likely need for structured choice metadata beyond prose records;\n- proposed components: RulesPackCharacterResolver, CharacterCreationRecipe, CharacterCreationDraft, CharacterCreationEngine, CharacterCreationCli;\n- implementation slices, acceptance criteria, non-goals, and ADR candidate decisions.\n\nAcceptance criteria\n- Design doc exists in the repo.\n- Open beads eshyra-4jiu and eshyra-x50w are referenced as inputs/overlaps.\n- The doc is explicit that this PR is design/planning only and does not implement runtime behavior.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T02:29:29Z",
+  "closed_at": "2026-06-24T02:29:29Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.1",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

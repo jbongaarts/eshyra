@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-r8r3",
+  "title": "Replace finding-registry temporary identity types after clause IR lands",
+  "description": "After PR #475 lands, replace the local obligation and EvidenceKind declarations in the finding registry with the shared clause-IR types. Preserve the serialized obligationId format and all six evidence-kind spellings; keep this cleanup separate from prose-scoped membership derivation.",
+  "acceptance_criteria": "The registry imports the shared clause-IR identity/evidence types without changing serialized data or validator behavior.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:41:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T03:41:58Z",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,52 @@
+{
+  "_type": "issue",
+  "id": "eshyra-uuk",
+  "title": "Import SRD Objects and Madness reference tables + rules",
+  "description": "Import the SRD 5.1 Madness and Objects gamemastering sections as five reference tables and five lookupable rule records, preserving source fidelity and fail-closed importer behavior.",
+  "design": "Architecture: Add two fail-closed, heading-scoped slices, Madness -> Objects and Objects -> Poisons. Repair the extractor's justified-fragment island handling by treating up to five items as a suspicious outlier when a better-supported structural gutter exists; do not special-case a page number. Extend parseTables with deterministic row reconstruction for Short-Term Madness, Long-Term Madness, Indefinite Madness, Object Armor Class, and Object Hit Points. Add a focused gamemastering-rules parser that emits exactly Madness, Going Mad, Madness Effects, Curing Madness, and Objects while excluding table captions/rows. Wire both slices into runImporter, reserve new rule keys against existing rule keys, and enforce exact expected gamemastering rule/table coverage for the pinned PDF. Regenerate and review the canonical pack and update importer documentation/baselines.\n\nFile map: packages/core/scripts/importers/dnd5e-srd-5.1/extract.ts (column partition fix); sections.ts (anchors); parseTables.ts (five table families); new parseGamemasteringRules.ts (five rule records and exclusions); index.ts/cli.ts/verify CLI (orchestration and exact coverage inputs as needed); importer unit/pipeline tests; srdGeneratedPack.test.ts (canonical baselines and body fidelity); README.md and docs/audits/srd-5.1-rules-section-coverage.md (coverage status); canonical manifest/records generated from vendored PDF.\n\nTradeoffs: Keep generic parseRules unchanged because the Objects section needs cross-column prose reconstruction and table filtering beyond its heading parser contract. Keep the new parser source-driven and narrow rather than authoring records manually. Any incidental pack changes from the extractor fix must be reviewed explicitly and covered by regressions; unrelated churn is not accepted.",
+  "acceptance_criteria": "- Default anchors locate Madness and Objects only at heading positions and fail closed when their following boundary is absent.\n- Extracted page 203 preserves left-column then right-column reading order; Objects prose is no longer row-interleaved.\n- The importer emits exactly five new table records with reviewed columns, row counts, values, and source pages.\n- The importer emits exactly five new rule records: Madness, Going Mad, Madness Effects, Curing Madness, and Objects; rule text excludes table headers/rows and does not bleed into neighboring sections.\n- Existing rule keys remain stable; the real importer fails closed on missing/spurious new rule or table coverage.\n- The canonical pack is regenerated from the pinned PDF, audit checks pass, and verify:dnd5e-srd-pack reports an exact match.\n- npm run verify:worktree passes.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T04:45:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-06T01:55:34Z",
+  "closed_at": "2026-06-06T05:21:42Z",
+  "close_reason": "Imported five Madness/Objects tables and five rules with fail-closed anchors and exact coverage; canonical pack and all repository gates verified.",
+  "comments": [
+    {
+      "id": "dc032c3d-fc98-5093-9ac6-cf5174eca2de",
+      "issue_id": "eshyra-uuk",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install completed; npm run verify:worktree passed (Biome format/check, hidden-Unicode scan, typecheck, 1194 tests passed and 3 documented skips).",
+      "created_at": "2026-06-06T01:57:18Z"
+    },
+    {
+      "id": "aa937d86-26ed-5b21-93e7-51da53102bf9",
+      "issue_id": "eshyra-uuk",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: all five child tasks completed. npm run verify:worktree passed with 1211 tests and 3 documented skips; pack audit reports 1481 records and 0 suspicious; verify:dnd5e-srd-pack reports exact byte equality with fresh importer output.",
+      "created_at": "2026-06-06T05:21:27Z"
+    },
+    {
+      "id": "5ecf8dfb-3a1e-5131-9e2c-7b2438fd9fdb",
+      "issue_id": "eshyra-uuk",
+      "author": "Joseph Bongaarts",
+      "text": "Post-rebase verification against origin/main 9ca5ab3: npm run verify:worktree -> exit 0; 1250 tests passed, 3 documented skips, Biome/check/typecheck clean. npm run verify:dnd5e-srd-pack -> manifest changes 0 and records added/removed/changed 0. Integrated canonical import includes 8 traps, 3 diseases, 14 poisons, 166 rules, and 8 tables.",
+      "created_at": "2026-06-06T05:30:20Z"
+    },
+    {
+      "id": "095a46fa-fc9a-55e0-9991-8c5ffef509da",
+      "issue_id": "eshyra-uuk",
+      "author": "Joseph Bongaarts",
+      "text": "Handoff: PR https://github.com/jbongaarts/loreweaver/pull/161 is open from work/loreweaver-uuk to main. Branch commit e5e9bcc is pushed and synchronized. All GitHub checks passed; mergeStateStatus=CLEAN. Routine handoff stops at review per AGENTS.md.",
+      "created_at": "2026-06-06T05:33:39Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

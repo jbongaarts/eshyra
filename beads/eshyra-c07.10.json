@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c07.10",
+  "title": "Expand mutate_state target and op coverage",
+  "description": "Add TDD coverage and implementation for inventory, plot_flags, clock, overlay_facts, invalid op rejection, and any supported non-character operations needed by E3.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T04:32:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:08Z",
+  "started_at": "2026-05-19T04:49:40Z",
+  "closed_at": "2026-05-19T04:51:42Z",
+  "close_reason": "Expanded mutate_state target/op coverage; focused tests and typecheck pass with RED/GREEN evidence recorded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-c07.10",
+      "depends_on_id": "eshyra-c07",
+      "type": "parent-child",
+      "created_at": "2026-05-18T23:32:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "65b8fa01-d34e-5e67-b4f0-01443bc8ddd2",
+      "issue_id": "eshyra-c07.10",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/gameState.test.ts -> failed as expected; non-character target test stops at unsupported target: inventory while existing character/invalid-op tests pass.",
+      "created_at": "2026-05-19T04:50:25Z"
+    },
+    {
+      "id": "8342f265-f8af-526e-b340-de2d01d9c2af",
+      "issue_id": "eshyra-c07.10",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN/REFACTOR verification: npm run test -- packages/core/test/gameState.test.ts packages/core/test/persistence.test.ts -> passed (7 tests); npm run typecheck -> passed. Added inventory, plot_flags, clock, overlay_facts writes and invalid-op rejection coverage.",
+      "created_at": "2026-05-19T04:51:41Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-f0hj",
+  "title": "Add explicit usage trace metadata for maintenance model calls",
+  "description": "Problem\nPR #243 added model usage tracking for gameplay and maintenance calls, but some non-turn model calls still lack explicit trace metadata. In review, recap/arc-maintenance calls could be recorded generically when trace metadata is absent, making usage filters and diagnostics less useful.\n\nThis is not a blocker for usage tracking, but it weakens attribution for:\n- session recap calls\n- arc rollup / arc maintenance calls\n- any future maintenance model calls outside the main turn loop\n\nGoal\nEnsure every model call made by gameplay/maintenance paths carries explicit usage trace metadata so `eshyra usage` can accurately group and filter calls by purpose, campaign, session, arc, provider/auth mode, and model.\n\nScope\n1. Identify all model calls outside the primary player turn and audit loop, especially:\n   - session recap\n   - arc close/open or arc rollup\n   - campaign/session maintenance calls\n2. Add explicit `trace` / usage metadata at each call site:\n   - purpose: `session_recap`, `arc_rollup`, `arc_maintenance`, or another stable enum value\n   - campaign id when available\n   - session id when available\n   - arc id when available\n   - provider/auth/model metadata already available from the adapter wrapper\n3. Ensure the usage tracker persists this metadata consistently.\n4. Update `eshyra usage` output/tests if needed so these calls are distinguishable from generic maintenance calls.\n5. Keep sensitive prompt/response content out of the usage DB. Usage metadata should remain structural and non-secret.\n\nAcceptance Criteria\n- Session recap model calls are recorded with purpose `session_recap` and include campaign/session ids when available.\n- Arc maintenance model calls are recorded with a stable arc-related purpose and include campaign/session/arc ids when available.\n- `eshyra usage` can distinguish turn, audit, recap, and arc-maintenance calls.\n- Existing model usage tests cover at least one recap call and one arc-maintenance call with explicit trace metadata.\n- Missing optional ids are handled gracefully, but call purpose is never omitted for known maintenance call sites.\n- No sensitive prompt/response text is written to the usage diagnostics DB.\n\nNon-goals\n- Do not change model-call behavior or prompts.\n- Do not add token estimation if provider usage metadata is unavailable.\n- Do not make usage diagnostics required for gameplay startup; diagnostics must remain best-effort.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-19T05:52:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-19T23:03:31Z",
+  "started_at": "2026-06-19T22:54:43Z",
+  "closed_at": "2026-06-19T23:03:31Z",
+  "close_reason": "Added explicit usage trace metadata to campaign_bible and arc_rollup maintenance model calls; added arcId through trace/record/store + --arc filter. PR #248.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

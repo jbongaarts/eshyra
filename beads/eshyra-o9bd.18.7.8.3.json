@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.8.3",
+  "title": "Inventory engine coverage of the 12 deterministic rule families",
+  "description": "Map the 12 PROC families from the 18.7.8 classification artifact (core-d20, combat-core, movement/environment, spellcasting procedures, rest/death/HP, build/advancement, downtime/economy, objects/hazards, monster conventions, magic-item procedures, templates, gear-payload) against what the Eshyra deterministic engine/tools actually implement today. Output: per-family implemented / partial / missing matrix, feeding the disposition layer's engine-procedure claims. Weapon-property/special-weapon/improvised-weapon payloads route to eshyra-o9bd.18.7.6, not here. Recommended agent: Opus 4.8.",
+  "notes": "Corrected inputs (2026-07-06): PROC corpus is now 175 rows across 13 families (incl. 23 newly promoted REF/DEF rows and new perception-senses family). Inventory must map EVERY PROC rule to exactly one of implemented (code path + test evidence) / partial (missing semantics named) / unimplemented / design-blocked — no family-level blanket claims. Generic weapon/armor property semantics are in scope here; per-record gear payloads are 18.7.6.\n\nINVENTORY COMPLETE + GPT-5.5 CORRECTED (2026-07-06): docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-3-engine-coverage-inventory.md on PR #402 (docs-only). All 175 PROC rules are mapped per-rule with corrected census: implemented 0 / partial 19 / unimplemented 148 / design-blocked 8 = 175. A focused recheck of the four former implemented rows against full rule text, #400 summaries, runtime ownership, and tests found each is only partial: ability-scores-and-modifiers lacks generic full SRD 1-30 creature/table-range runtime enforcement despite owning the formula and PC bounds; casting-a-spell-saving-throws lacks special-modifier ownership; experience-points owns table thresholds but not multiclass total-character-level semantics; healing owns HP addition/clamp but not dead-creature regain eligibility/restoration-to-life semantics.\n\nImplemented/partial owner and evidence cells now use exact repo-relative path: labels separated from symbol/detail: text; path existence was mechanically checked. Named concrete gaps: dice grammar NdM+K only (no adv/dis, no keep/drop); no death-save counters, temp-HP, or rest-state owners. Remaining work after PR #402 review/merge: (a) Codex transcribes inventory into ENGINE_PROCEDURE_COVERAGE per 18.7.8.1 design after #401 is updated from the final execution-boundary classification, (b) bead the 3 recommended engine slices (dice grammar, death/dying state, rest engine) under an engine epic — NOT under 18.7.8.\nREINTERPRETED by the execution-boundary classification (PR #406 corrected revision, 2026-07-06): this inventory's statuses are factual code-ownership, not implementation demands. Corrected join: 148 unimplemented -> 101 model-adjudicated-supported + 25 partial + 20 implementation-required + 2 design-blocked; 19 partial -> 6 model-adjudicated-supported + 12 partial + 1 implementation-required. The 3 recommended slices here are superseded by families F1-F10 in the #406 artifact §4 (F1 dice grammar and F9 derived-math land together).\nCLOSED OUT (2026-07-07): both remaining follow-ups from the 2026-07-06 note are done. (a) The inventory (as refined by the execution-boundary artifact) is transcribed into ENGINE_PROCEDURE_COVERAGE by eshyra-o9bd.18.7.8.1's implementation. (b) The 3 recommended engine slices (now F1-F10 in the execution-boundary artifact) are beaded under the new engine epic eshyra-2n1t, NOT under 18.7.8, per this bead's and the artifact's explicit routing.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-06T06:12:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-07T05:55:29Z",
+  "closed_at": "2026-07-07T05:55:29Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.8.3",
+      "depends_on_id": "eshyra-o9bd.18.7.8",
+      "type": "parent-child",
+      "created_at": "2026-07-06T01:12:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

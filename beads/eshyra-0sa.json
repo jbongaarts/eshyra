@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0sa",
+  "title": "CI hardening: block hidden/bidirectional Unicode controls repo-wide",
+  "description": "Add scripts/check-hidden-unicode.mjs to scan tracked text files for dangerous invisible/bidi control characters (bidi embed/override/isolate, zero-width chars, directional marks, ALM, BOM, soft hyphen, CGJ). Wire check:hidden-unicode into the root check script so CI blocks them, while allowing benign visible Unicode punctuation (em/en dash, arrows, curly quotes, degree). Set Biome suspicious.noIrregularWhitespace to error as supplemental protection. Add a unit test and docs.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T21:55:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:48Z",
+  "started_at": "2026-06-05T21:56:03Z",
+  "closed_at": "2026-06-05T22:03:49Z",
+  "close_reason": "Implemented scripts/check-hidden-unicode.mjs, wired into check, Biome noIrregularWhitespace=error, tests + docs. PR #155 to main.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.8",
+  "title": "Brainstorm x3w: Transition to implementation planning",
+  "description": "After epic approval, use the writing-plans workflow to create implementation child issues.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:36:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:00Z",
+  "started_at": "2026-05-23T05:02:03Z",
+  "closed_at": "2026-05-23T05:12:53Z",
+  "close_reason": "Created and self-reviewed implementation plan issues loreweaver-x3w.9 through loreweaver-x3w.18; bd lint passed for epic and all implementation children; first ready task is loreweaver-x3w.9.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.8",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:36:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.8",
+      "depends_on_id": "eshyra-x3w.7",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:37:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "4c37a0a7-0cf6-564b-bf44-ea9d52dc46bf",
+      "issue_id": "eshyra-x3w.8",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: bd lint loreweaver-x3w and bd lint loreweaver-x3w.9 through loreweaver-x3w.18 -> all reported 'No template warnings found'; bd ready --parent loreweaver-x3w --explain showed loreweaver-x3w.9 ready and later implementation tasks blocked by intended dependencies.",
+      "created_at": "2026-05-23T05:13:11Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

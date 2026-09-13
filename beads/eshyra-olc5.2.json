@@ -1,0 +1,119 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.2",
+  "title": "Certify implemented capabilities in the bounded legacy engine backlog",
+  "description": "Aggregate certification for positive capabilities implemented from the bounded legacy\nengine:F1-F10 backlog. Certification proves selected operations against source-faithful\ninputs, provider-neutral execution, and state effects. It is a backlog milestone, not a\nprerequisite for SRD re-freeze merely because other backlog entries remain unselected.",
+  "acceptance_criteria": "- Every capability counted as certified has a stable contract, real binding, provider-neutral execution, and correct state/replay behavior where applicable.\n- Certification is scoped to selected/implemented operations; missing backlog capabilities remain backlog, not source absence.\n- Family completion may summarize only the bounded legacy backlog.\n- This bead does not gate re-freeze on zero engine-pending or universal deterministic support.",
+  "notes": "ADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T17:37:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:53:51Z",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-07-25T12:37:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.6.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.12",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:38:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.2.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.8.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.10.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.9.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.3.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.5.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.7.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.11.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.2",
+      "depends_on_id": "eshyra-o9bd.19.5.4.2",
+      "type": "blocks",
+      "created_at": "2026-07-25T12:37:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 11,
+  "dependent_count": 0,
+  "comment_count": 0
+}

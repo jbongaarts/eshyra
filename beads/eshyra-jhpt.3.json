@@ -1,0 +1,151 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.3",
+  "title": "Supply active campaign rules and source ambiguities to DM context",
+  "description": "Objective\nMake the primary DM receive the complete active campaign-rule prose set and relevant immutable rules-pack ambiguity metadata at the adjudicated campaign position.\n\nRequired behavior\nAt initial scale, supply all active campaign-rule prose on every applicable DM turn; correctness takes priority over selective retrieval. Include stable rule identity, kind, effective provenance, and linked ambiguity/interpretation provenance without asking the model to execute deterministic state logic. When a relevant RulesAmbiguity has no active campaign ruling, the context must preserve uncertainty and prohibit silent canonical certainty. Context assembly must use the same active-at-position query that the auditor will use.\n\nArchitecture and references\nFollow ADR 0017 and docs/rules-pack-compiler.md. Consume PR #419 mechanics.ambiguities / RulesAmbiguity output from eshyra-o9bd.18.7.9. Reuse existing rules-stack lookup and campaign binding rather than copying pack data into campaign state.\n\nNon-goals\nNo persistence workflow, player dialogue policy, implicit precedent creation, prompt retrieval optimization, arbitrary house-rule inference, or prose-to-mechanics compilation. Ordinary contextual DM judgments do not become campaign rules.",
+  "acceptance_criteria": "DM context contains all and only rules active at the current campaign position in deterministic order; relevant unresolved RulesAmbiguity metadata is available without a preferred/default winner; tests prove prospective/effective-turn filtering and no silent canonical certainty; no campaign prose is written to the pack.\n\nADR 0020 TRANSITION AMENDMENT A1 (integrated transition design section 8.3, R4;\naccepted as the deliverable of eshyra-o9bd.19.8, PR #485, merge commit\n042ce119aa699f04f60a1885d471335f07745282): the active-rule projection must\nexpose, per rule, enough association data to place an active campaign rule or\nruling beside its governing pack record or source ambiguity - the linked\nambiguity ID and, where one exists, the governing pack record key - so a\nconsumer can pair rule and source material without re-deriving the association.\nThis extends the projection only; the eshyra-jhpt.1 domain model, which already\nrequires a ruling to record the ambiguity ID and selected interpretation ID as\nprovenance, is unchanged.\n\nThe discovery-side consumer is eshyra-o9bd.19.13 (transition W11), which depends\non this output and may not substitute a discovery-local campaign-rule or ruling\nstore, cache of record, or shadow resolver. Campaign-rule persistence, ruling\nschema, active-rule resolution, supersession, revocation, and house-rule\nlifecycle remain owned here. If the projection proves insufficient for the\nconsumer, the correct response is an amendment or a new child under eshyra-jhpt.",
+  "notes": "Supervisor review of attempt 1 (935d7d9): migration 0026, resolveCampaignPosition idempotency, and critically the position-before-SAVEPOINT placement in runTurn (which preserves a replayed turn's position for .8) are ACCEPTED, as is assembleCampaignRulesContext as the shared DM/auditor projection. Per-turn pack scan measured at ~0.13ms/1812 records - not a concern. Four findings: (1) PRIMARY - only the position idempotency test was added; assembleCampaignRulesContext and the rendered section have no tests at all, leaving prospective/effective filtering, supersession/revocation, ordering, A1 association data, all three ambiguities unresolved, ruling-beside-source, and pack immutability unproven; (2) assembleContext silently returns an empty rules context when campaignPosition is omitted, reintroducing at the context layer the trap .2 removed at the store layer - latent today since runTurn always passes it, but it makes .4 DM/auditor divergence silent; (3) localeCompare in ambiguity ordering - verified NOT currently mis-ordering the three shipped ids, but locale/ICU-dependent and the same construct removed in .1; (4) plain Error instead of CampaignRuleError. Attempt 2 dispatched as eshyra-jhpt.3.2.\nAttempt 2 (c3db41c) reviewed and ACCEPTED: consolidated projection test covers all eight required cases, campaignPosition required on ContextAssemblyInput, codepoint ambiguity ordering, CampaignRuleError. One further finding: the position is still an unvalidated raw string passed to SQL, and canonical positions start with 'cp1~', so any later-sorting string satisfies effective_position <= ? for every row - reproduced with the 'test-position' sentinel attempt 2 introduced in ~10 assembleContext call sites (cp1~000000000999~s~t <= 'test-position' is true). That resurrects the .2 future-rule leak through a different door; it is inert only because those tests hold no rules. Attempt 3 dispatched as eshyra-jhpt.3.3 to parse/validate at the store boundary and replace the sentinels.\nAttempt 3 (74f28bd) ACCEPTED: all position-taking store entry points parse/canonicalize and reject malformed values with CampaignRuleError. However supervisor found attempt 3 missed packages/cli/test/play.test.ts, which still holds three 'test-position' sentinels. Those did not fail because of a VERIFICATION-INTEGRITY problem, now filed as eshyra-3dmq: a linked worktree has no node_modules, so packages/cli tests resolve @eshyra/core UP to the parent checkout (main) and never saw any jhpt change. After npm ci in the worktree plus a rebuild, play.test.ts fails 2 tests with CampaignRuleError: invalid campaign position 'test-position'. Every verify:worktree run on this epic so far was green for CLI tests against main's core; core tests are unaffected because they import via relative ../src paths, and typecheck is unaffected because tsc --build compiles from source. Attempt 4 dispatched as eshyra-jhpt.3.4, with npm ci mandated before verification. PR for .1-.3 is held until this is green under correct resolution.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T21:23:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-05T06:35:06Z",
+  "started_at": "2026-09-03T02:08:32Z",
+  "closed_at": "2026-09-05T06:35:06Z",
+  "close_reason": "Merged to main via PR #524 (merge of 286c329)",
+  "labels": [
+    "audit",
+    "campaign-runtime",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.3.3",
+      "type": "blocks",
+      "created_at": "2026-09-02T21:29:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.2",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:23:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-o9bd.18.7.9",
+      "type": "relates-to",
+      "created_at": "2026-07-10T16:32:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.rev7",
+      "type": "blocks",
+      "created_at": "2026-09-03T02:31:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.rev2",
+      "type": "blocks",
+      "created_at": "2026-09-02T23:15:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.rev4",
+      "type": "blocks",
+      "created_at": "2026-09-03T00:33:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.3.1",
+      "type": "blocks",
+      "created_at": "2026-09-02T21:08:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.3.2",
+      "type": "blocks",
+      "created_at": "2026-09-02T21:19:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.rev8",
+      "type": "blocks",
+      "created_at": "2026-09-03T07:44:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.rev6",
+      "type": "blocks",
+      "created_at": "2026-09-03T01:49:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.rev9",
+      "type": "blocks",
+      "created_at": "2026-09-03T08:19:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.3.4",
+      "type": "blocks",
+      "created_at": "2026-09-02T21:39:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.rev5",
+      "type": "blocks",
+      "created_at": "2026-09-03T01:12:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt.1",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:23:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.3",
+      "depends_on_id": "eshyra-jhpt",
+      "type": "parent-child",
+      "created_at": "2026-07-10T16:23:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 13,
+  "dependent_count": 5,
+  "comment_count": 0
+}

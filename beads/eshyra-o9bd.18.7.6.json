@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.6",
+  "title": "Add deterministic mechanics for SRD adventuring gear and consumables",
+  "description": "Finding sources:\n- ChatGPT and Codex identified many equipment records with gameplay effects but no typed mechanics.\n- Codex readiness reported 101 equipment records prose-only or likely mechanically incomplete.\n- Examples: acid, alchemist's fire, antitoxin, ball bearings, caltrops, healer's kit, holy water, hunting trap, net, oil, basic poison, potion of healing, rope, torch.\n\nAcceptance criteria:\n- Inventory all adventuring gear/equipment records with gameplay effects.\n- Add typed mechanics for damage, saves/DCs, areas, durations, conditions, healing, light, restraints, traps, poison, consumable/application behavior, and tool interactions where present.\n- Preserve existing equipment grouping/filter semantics.\n- Tests cover representative damage, healing, area-control, light, trap, poison, restraint, and consumable cases.",
+  "notes": "Scope clarification (2026-07-06, from 18.7.8 rule classification, artifact §3 family 12): this bead explicitly owns the PER-RECORD deterministic payloads from the weapon/armor rule records — net (restrained, DC 10 Str escape, AC 10 / 5 slashing destroys, one-attack limit), lance (disadv within 5 ft, two-handed unmounted), improvised-weapon defaults (1d4, range 20/60), and per-armor Str-threshold/stealth/AC data alignment. Generic weapon-property semantics (finesse/heavy/loading/reach/thrown/versatile meaning, non-proficiency penalties, ammunition recovery) are NOT this bead — they are engine procedures tracked under eshyra-o9bd.18.7.8.3.\n2026-07-08 ADR 0017 adjustment: Scope is pack-side equipment semantics and explicit runtime ownership hooks, not a private equipment engine. For each equipment clause, decide whether it is structural parsing, shared semantic grammar, curated spec, model-adjudicated-supported, or engine-pending. Arithmetic, dice, HP/temp-HP, conditions, action economy, and state transitions should bind to shared F-family owners where applicable.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-15T00:45:15Z",
+  "started_at": "2026-07-14T23:21:51Z",
+  "closed_at": "2026-07-15T00:45:15Z",
+  "close_reason": "Corrected external-row required representation by reviewed owner category and pinned representative audit rows.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.6",
+      "depends_on_id": "eshyra-o9bd.18.7",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

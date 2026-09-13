@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-geny",
+  "title": "Integrate PR #457 review follow-ups (curse doff gate + stable-recovery correctness)",
+  "description": "Integration parent for the four PR #457 post-merge review follow-ups:\n\n- eshyra-gacz (P1): Demon Armor stays permanently undoffable after its curse ends\n- eshyra-q93i (P1): Migration 0020 strands pre-existing stable-at-zero characters\n- eshyra-r2ps (P1): advanceWorldTime clock commit and stable-recovery resolution not atomic\n- eshyra-cc3c (P2): Rest completion omits stableRecoveries from benefits/persisted evidence\n\nSee those beads for full defect analysis with file/line references. The review recommends one follow-up PR covering all four, with the first three treated as re-freeze blockers.\n\n## Acceptance criteria\n\n1. Doff of a blocksDoff cursed item is gated on the applicable *live* curse state, not the static flag: don Demon Armor → doff fails → remove curse condition → doff succeeds → item still held, not_worn. No don-onset state definition ⇒ keep failing closed. Ambiguous wear state ⇒ keep failing closed.\n2. Legacy stable-at-zero characters (schedule columns NULL) get a deterministic, documented adoption via a NEW migration (0020 is immutable), and resolveStableRecoveries throws on a stable-at-zero row with missing or partially populated schedule fields instead of silently skipping.\n3. All due stable recoveries resolve inside the same withTransaction callback as the clock transition in advanceWorldTime; an injected failure during recovery rolls back the clock advance.\n4. complete() includes stableRecoveries in the benefits object (tool response AND persisted benefits_json), with tests for both.\n5. npm run verify:worktree passes on the integration branch; no weakened existing tests.\n\n## Integration plan\n\nWork lands via child dispatch branches merged into branch eshyra-<this-bead>; single PR to main from this branch. Close the four defect beads when the PR merges.\n",
+  "notes": "PR #459 open: https://github.com/jbongaarts/eshyra/pull/459 — all three children merged (eshyra-rgai d536d8a, eshyra-uesn dd239b3, eshyra-6dp7 1b5e60c), branch verify green (4656 passed). Parent stays in_progress until PR merges; then close eshyra-gacz/q93i/r2ps/cc3c and this bead. Migration renumber needed if PR #458 merges first.\nPR #459 review fixes merged (eshyra-ueq3, 2f13dbb): migration 0022 adopts only all-NULL schedules and aborts on partial ones; doff gate uses canonical validateConditionsJson. Branch re-verified green (4658 passed) and pushed. Stray child PR #460 closed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:13:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-20T01:12:20Z",
+  "started_at": "2026-07-20T00:14:49Z",
+  "closed_at": "2026-07-20T01:12:20Z",
+  "close_reason": "Integration complete: PR #459 merged to main as 846a52f5. Children eshyra-rgai/uesn/6dp7/ueq3 all closed; review findings fixed and re-reviewed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-geny",
+      "depends_on_id": "eshyra-ueq3",
+      "type": "blocks",
+      "created_at": "2026-07-19T19:56:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-geny",
+      "depends_on_id": "eshyra-uesn",
+      "type": "blocks",
+      "created_at": "2026-07-19T19:14:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-geny",
+      "depends_on_id": "eshyra-rgai",
+      "type": "blocks",
+      "created_at": "2026-07-19T19:14:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-geny",
+      "depends_on_id": "eshyra-6dp7",
+      "type": "blocks",
+      "created_at": "2026-07-19T19:14:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 4,
+  "dependent_count": 0,
+  "comment_count": 0
+}

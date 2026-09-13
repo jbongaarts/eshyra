@@ -1,0 +1,70 @@
+{
+  "_type": "issue",
+  "id": "eshyra-uuk.5",
+  "title": "Task 4: Regenerate and verify canonical SRD pack",
+  "description": "Objective:\nRegenerate and review the canonical SRD pack, pin the new coverage, update documentation, and run all repository gates.\n\nFiles:\n- Modify: packages/core/test/srdGeneratedPack.test.ts\n- Modify: packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json\n- Modify: packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json\n- Modify: packages/core/scripts/importers/dnd5e-srd-5.1/README.md\n- Modify: docs/audits/srd-5.1-rules-section-coverage.md\n\nSteps:\n1. RED: Update canonical regression expectations to rule=166 and table=8; pin exact five new rule keys and five new table keys/names, representative row data, source pages, Objects body landmarks, and absence of table-row/neighbor-section contamination. Run npx vitest run packages/core/test/srdGeneratedPack.test.ts and observe failure against the old committed pack.\n2. GREEN: Run npm run import:dnd5e-srd -- --out packages/core/data/rules-packs/rules__dnd5e-srd-5.1 to regenerate from the pinned PDF.\n3. Review git diff for every canonical change. Confirm the intended ten new records and explicitly inspect any incidental existing-record text changes caused by the generic extractor fix; add a regression assertion or adjust the extraction fix if unrelated churn is not demonstrably corrective.\n4. Update README table/rule counts, section-anchor/reference-table coverage, tests, and regeneration notes. Mark Madness/Objects coverage imported in the audit document.\n5. Run npm run audit:rules-pack -- packages/core/data/rules-packs/rules__dnd5e-srd-5.1 and npm run verify:dnd5e-srd-pack; expect no suspicious records and exact importer/pack equality.\n6. Run npm run verify:worktree; expect all formatting, checks, typecheck, and tests to pass.",
+  "design": "The generated pack remains derived output. Baselines are updated only after reviewing the importer result. The canonical regression block owns exact table/rule keys and body fidelity, while verify:dnd5e-srd-pack proves byte equality with a fresh import.",
+  "acceptance_criteria": "- Canonical pack contains 166 rules and 8 tables, including exactly the ten new reviewed records.\n- Pack audit and verify:dnd5e-srd-pack pass.\n- Importer README and coverage audit describe the implemented behavior and counts.\n- Any extractor-caused changes to existing records are explicitly reviewed and regression-covered.\n- npm run verify:worktree passes.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T04:36:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:47Z",
+  "started_at": "2026-06-06T04:58:50Z",
+  "closed_at": "2026-06-06T05:21:40Z",
+  "close_reason": "Canonical pack regenerated and reviewed; exact 166-rule/8-table coverage, audit, fresh-import verification, and full worktree verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-uuk.5",
+      "depends_on_id": "eshyra-uuk.4",
+      "type": "blocks",
+      "created_at": "2026-06-05T23:36:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-uuk.5",
+      "depends_on_id": "eshyra-uuk",
+      "type": "parent-child",
+      "created_at": "2026-06-05T23:36:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "9a34249d-c139-5b0b-952b-7ccd577f71e7",
+      "issue_id": "eshyra-uuk.5",
+      "author": "Joseph Bongaarts",
+      "text": "RED evidence: npx vitest run packages/core/test/srdGeneratedPack.test.ts failed as expected against the old canonical pack (57 tests, 11 failed, 46 passed). Failures pin the old rule=161/table=3 counts and absence of the five new rule/table families.",
+      "created_at": "2026-06-06T05:03:43Z"
+    },
+    {
+      "id": "5989db4a-255b-5dc8-bf8c-422f67a19771",
+      "issue_id": "eshyra-uuk.5",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run verify:worktree -> exit 0; Biome format/check and hidden-Unicode scan passed, typecheck passed, 1211 tests passed with 3 documented skips. npm run audit:rules-pack -> 1481 records, rule=166, table=8, suspicious=0. npm run verify:dnd5e-srd-pack -> manifest changes 0, records added/removed/changed 0 against fresh import. Canonical diff review: exactly ten intended records added, none removed; seven existing page-226 magic-item records changed and are corrective, regression-covered source-order repairs.",
+      "created_at": "2026-06-06T05:21:23Z"
+    },
+    {
+      "id": "c854c4da-6a7b-5f85-9480-77d535bc0945",
+      "issue_id": "eshyra-uuk.5",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for origin/main..worktree: Assessment: Ready to merge. Critical: none. Important: none. Minor: none. Extractor fallback, exact table/rule coverage, section boundaries, canonical fidelity, and documentation were reviewed against the acceptance criteria. Follow-up: none.",
+      "created_at": "2026-06-06T05:21:26Z"
+    },
+    {
+      "id": "de66096b-e59c-5ed1-ac39-4ac8d4fc3349",
+      "issue_id": "eshyra-uuk.5",
+      "author": "Joseph Bongaarts",
+      "text": "Post-rebase verification: npm run verify:worktree passed with 1250 tests and 3 documented skips; verify:dnd5e-srd-pack reports exact fresh-import equality after integrating loreweaver-6ra from main.",
+      "created_at": "2026-06-06T05:30:23Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 4
+}

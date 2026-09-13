@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.7.3",
+  "title": "Add semantic projections for subclass spell tables",
+  "description": "Deferred slice from eshyra-o9bd.7. Add typed semantic projections for Life Domain, Circle of the Land, Oath of Devotion, and Fiend expanded spell tables so subclass spell grants are machine-readable rather than generic table cells only.",
+  "design": "Follow docs/importer-fix-protocol.md. Preserve subclass.data.spellTableRefs and source table rows; add projection validator/tests. Add per-child thaw note and refresh freeze-manifest hashes.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T20:00:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-28T20:26:36Z",
+  "started_at": "2026-06-28T20:14:43Z",
+  "closed_at": "2026-06-28T20:26:36Z",
+  "close_reason": "Implemented in PR #357 (eshyra-o9bd.7-children)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.7.3",
+      "depends_on_id": "eshyra-o9bd.7",
+      "type": "parent-child",
+      "created_at": "2026-06-28T15:00:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

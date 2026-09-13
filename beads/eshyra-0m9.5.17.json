@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.17",
+  "title": "SRD 5.1 importer: subclass parser",
+  "description": "Per ADR 0009, parse SRD 5.1 subclasses into `subclass` records (kind added by loreweaver-0m9.5.16). Mirror the parser/emit/index/test structure of the spell + class parsers under packages/core/scripts/importers/dnd5e-srd-5.1/.\n\nEach subclass record links to its parent base class via data.parentClass (the parent class record's key, produced by loreweaver-0m9.5.2). Provenance-tagged per ADR 0007 (extract from the vendored PDF, do not author from model knowledge). Manifest description must include 'subclass' in Included record kinds.\n\nDepends on: 0m9.5.16 (subclass kind) and 0m9.5.2 (base class records + parser scaffolding/section detection).",
+  "acceptance_criteria": "- Parser extracts every SRD 5.1 subclass and links it to its parent class key.\n- Records satisfy the subclass kindSchema.\n- Manifest 'Included record kinds' lists 'subclass'.\n- Unit tests cover at least one martial (Champion) and one caster (a cleric domain or wizard school) subclass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-30T02:24:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:52Z",
+  "started_at": "2026-05-30T04:22:10Z",
+  "closed_at": "2026-05-30T04:34:14Z",
+  "close_reason": "Implemented SRD 5.1 subclass parser (parseSubclasses.ts) + emit/index/cli wiring + tests + README. PR #116 (https://github.com/jbongaarts/loreweaver/pull/116) open for review. Granted-feature references deferred to 0m9.5.18.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.17",
+      "depends_on_id": "eshyra-0m9.5.2",
+      "type": "blocks",
+      "created_at": "2026-05-29T21:24:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.17",
+      "depends_on_id": "eshyra-0m9.5.16",
+      "type": "blocks",
+      "created_at": "2026-05-29T21:24:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.17",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-29T21:24:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-neus",
+  "title": "Handle recurring-question ruling projections in discovery seam",
+  "description": "projectCampaignRule now correctly emits recurring-question rulings as plain CampaignRuleProjection without ambiguityId or selectedInterpretationId. packages/core/src/discovery/campaignRuleSeam.ts still casts every ruleKind=ruling projection to CampaignRulingProjection when appending campaignRulings, so recurring-question rulings can enter the campaignRulings collection with an invalid shape. Update discovery behavior to distinguish ambiguity-linked rulings from recurring-question rulings while preserving the domain model.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-03T01:16:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-03T04:29:05Z",
+  "closed_at": "2026-09-03T04:29:05Z",
+  "close_reason": "Fixed as part of defect 3 in commit 6759ccc: the DB seam now returns recurring-question rulings through activeRulesAtPosition, and discovery classifies only ambiguity-provenance projections as CampaignRulingProjection without fabricated ambiguity fields. Regression coverage persists a recurring ruling through the real seam and join.",
+  "labels": [
+    "campaign-runtime",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-neus",
+      "depends_on_id": "eshyra-jhpt.1.2",
+      "type": "discovered-from",
+      "created_at": "2026-09-02T20:16:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

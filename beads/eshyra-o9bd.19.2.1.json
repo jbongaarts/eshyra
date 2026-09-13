@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.1",
+  "title": "Correct unsupported and compiler-authored source claims",
+  "description": "Repair the source-authority defects and define the standing policy for editorial\ncorrection and supplemental material.\n\nRoot cause: the compiler may author a value and attach SRD provenance to it, and\nthe coverage gates (source->output only) cannot see it.\n\n*** STARTING WEALTH — DECIDED, NOT OPEN ***\nRemove table:starting-wealth-by-class from the SRD pack. It is hardcoded PHB\ncontent produced by emit.ts startingWealthTable() (its comment claims\n\"Source-backed p. 38\"); no starting-wealth text exists anywhere in SRD 5.1, yet\nit carries source \"SRD 5.1 p. 38\" and the full CC-BY-4.0 SRD attribution block.\nRequired behavior:\n  * remove the table from the SRD pack;\n  * disable the starting-wealth character-creation path when only the SRD pack is\n    active (reconcile srdStartingWealth.ts and finalizeCharacter.ts in the same\n    change);\n  * continue supporting the source-backed class STARTING-EQUIPMENT choices, which\n    are genuinely in the SRD;\n  * permit starting wealth only when a separately identified, appropriately\n    licensed campaign supplement provides it.\nREJECTED: \"re-homing\" the existing PHB table by relabeling it supplemental. The\nlabel is not the problem — its source and redistribution rights are. An original\nEshyra house-rule table may eventually be supplied through the campaign-rule\nsystem (eshyra-jhpt), but it must not reproduce the unsupported PHB table under a\nnew name.\n\nRemaining required membership:\n2. Correct Animal Friendship handling WITHOUT claiming a text-layer-only\n   omission. spell:animal-friendship carries upcast.sourceCorrection with id\n   \"dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission\" over the\n   corrupted phrase \"...you can affect one additional beast t level above 1st.\"\n   The correction must rest on a pinned authoritative source or be represented as\n   an explicit unresolved source defect.\n3. Correct the Bag of Beans successful-save outcome, coordinated with 19.4.5.\n4. Remove the stale loreweaver-* manifest claim: exactly one occurrence,\n   \"loreweaver-0m9.5\", in\n   packages/core/data/rules-packs/rules__dnd5e-srd-5.1/manifest.json.\n5. Distinguish composed sourceText, synthesized choice labels, and synthesized\n   table headers from source quotations (spellPreparation sourceText; acolyte\n   choices[].sourceText; table:scrying \"Basis\"/\"Circumstance\" headers).\n\nCloses findings: fable:F1, fable:F5, fable:F7, sol:CAP-008, sol:CAP-009,\nopus:F-19, opus:F-20.",
+  "design": "Independent confirmation (2026-07-24 audit): the animal-friendship\nsourceCorrection hash was verified to MATCH the extracted text — the correction is\ninternally consistent. The defect is the CLAIM about why the text differs (a\n\"text-layer omission\"), not a hash mismatch. Do NOT \"fix\" this by re-running the\nextractor.",
+  "acceptance_criteria": "- table:starting-wealth-by-class no longer exists in the SRD pack, and no relabeled copy of it exists anywhere in the repo.\n- SRD-only character creation completes with the starting-wealth path disabled; source-backed starting-equipment choices still work.\n- No output carries SRD provenance or CC attribution for unsupported content.\n- Any source correction rests on a pinned authoritative source, or remains an explicit unresolved source defect — never a silent editorial repair.\n- Negative regression test: a compiler-authored value cannot acquire the SRD license/provenance block by default.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\n\n--- 2026-07-31: SCOPE ACCOUNTING FOR THE B4 SLICE (child eshyra-o9bd.19.2.1.1) ---\n\nChild eshyra-o9bd.19.2.1.1 was created to carry ONLY the dependency-free slice of\nthis bead, per the integrated transition design (docs/audits/rules-awareness-\ntransition/2026-07-30-integrated-transition-design.md, merged in PR #485), which\nlists work item W4 / blocker B4 as owned by this bead with \"Depends on: --\" and\nparallel-safe.\n\nWhat the child closes:\n- ADR 0020 blocker B4 / design work item W4 ONLY: the Starting Wealth false-SRD-\n  authority repair (this bead's item 1), plus the directly affected stale\n  loreweaver-0m9.5 manifest claim (item 4), fixed at the importer source.\n\nWhat the child does NOT close, and what remains owned by THIS bead:\n- Item 2 - Animal Friendship upcast.sourceCorrection presented as a text-layer-only\n  omission; must rest on a pinned authoritative source or be represented as an\n  explicit unresolved source defect.\n- Item 3 - Bag of Beans successful-save outcome, coordinated with eshyra-o9bd.19.4.5.\n- Item 5 - distinguishing composed sourceText, synthesized choice labels, and\n  synthesized table headers from source quotation (spellPreparation sourceText;\n  acolyte choices[].sourceText; table:scrying \"Basis\"/\"Circumstance\" headers).\n\nExplicit statements required for this split to be honest:\n- This bead's five-item semantic-class contract is NOT narrowed, NOT satisfied, and\n  NOT reclassified by the child. The bead-writing contract in NOTES still governs\n  the whole class.\n- This bead stays OPEN after the child merges.\n- Items 2 and 5 are blocked on eshyra-o9bd.19.1.3 for a real reason, verified\n  2026-07-31 against main @042ce11: RulesRecord.provenance is record-level only;\n  there is no field-level derivation or source-support marker in\n  packages/core/src/rules/types.ts or kindSchemas.ts. There is nothing to write\n  those distinctions into until 19.1.3 builds the representation. The child is\n  instructed NOT to invent one.\n- Item 3 is not representation-blocked but is co-owned with eshyra-o9bd.19.4.5 and\n  is sequenced with it, not with the B4 slice.\n- The remaining representation-dependent work (items 2 and 5) resumes after\n  eshyra-o9bd.19.1.3 lands. Item 3 resumes with eshyra-o9bd.19.4.5.\n\nThe child ships as its own bounded PR. eshyra-o9bd.19.1.3 and any other source-\nprovenance infrastructure are deliberately NOT bundled into it.\n2026-08-28: child eshyra-o9bd.19.2.1.1 (ADR 0020 B4 / work item W4 - Starting Wealth false SRD authority, plus item 4's stale loreweaver-0m9.5 manifest claim) is complete and merged into integration branch eshyra-o9bd.19.2.1. PR https://github.com/jbongaarts/eshyra/pull/504, open and unmerged.\n\nTHIS BEAD STAYS OPEN. Items 2 (animal-friendship upcast.sourceCorrection presented as a text-layer-only omission), 3 (Bag of Beans successful-save outcome, co-owned with eshyra-o9bd.19.4.5), and 5 (composed sourceText / synthesized choice labels / synthesized table headers) are NOT closed, NOT narrowed, and NOT reclassified. Items 2 and 5 remain blocked on eshyra-o9bd.19.1.3 building the field-level provenance representation; item 3 sequences with eshyra-o9bd.19.4.5.\n\nClose this bead only after PR #504 merges AND items 2, 3, 5 are separately discharged.\n--- 2026-08-30: B4 SLICE LANDED ON MAIN ---\n\nPR #504 merged 2026-08-30 as merge commit 6015db05e3aba3cd74feddd7e0362c5efdb0b427\n(reviewed head 6679a4893fbcddfa9e1bd3f54d9b2f5bbb8b060d, all 35 checks green).\nChild eshyra-o9bd.19.2.1.1 is closed. Items 1 (Starting Wealth removal) and 4\n(stale loreweaver-0m9.5 manifest claim) of this bead are DONE on main:\ntable:starting-wealth-by-class is absent from\npackages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json, and\nemit.ts startingWealthTable() is deleted at the importer source.\n\nTHIS BEAD STAYS OPEN for items 2 (Animal Friendship upcast.sourceCorrection),\n3 (Bag of Beans successful save, with eshyra-o9bd.19.4.5), and 5 (composed\nsourceText / synthesized choice labels / synthesized table headers). Items 2\nand 5 remain blocked on eshyra-o9bd.19.1.3.\n\nEvidence for eshyra-o9bd.14 (re-freeze): removing the record moved NONE of\nsource-inventory.json, source-coverage.json, or source-region-ledger.json by a\nsingle byte — independent corroboration, beyond the absent 'Starting Wealth'\nstring in the SRD text, that the table was never source-derived.\n\nBranch eshyra-o9bd.19.2.1 and its worktree were deleted after the merge; recut\nfrom origin/main when items 2/3/5 unblock.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-08-30T01:51:20Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.1",
+      "depends_on_id": "eshyra-o9bd.19.2.1.1",
+      "type": "blocks",
+      "created_at": "2026-07-31T19:35:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.1",
+      "depends_on_id": "eshyra-o9bd.19.2",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.1",
+      "depends_on_id": "eshyra-o9bd.19.1.3",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 3,
+  "comment_count": 0
+}
