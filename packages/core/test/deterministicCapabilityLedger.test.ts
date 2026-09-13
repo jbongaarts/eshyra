@@ -195,13 +195,94 @@ describe('runtime-owned deterministic capability ledger', () => {
     }
   });
 
-  it('R7 keeps audit capability row identities identical after the move', () => {
-    expect(Object.keys(AUDIT_CONTRACTS).sort()).toEqual(
-      Object.keys(RULE_DETERMINISTIC_CAPABILITY_CONTRACTS).sort(),
+  it('keeps the owner preflight authoritative over a ledger declaration', () => {
+    // `capabilities()` in packet.ts returns the ledger declaration only when
+    // the candidate has no capability-preflight routes of its own, because an
+    // `available`/`blocked` preflight is the capability owner's subject-
+    // specific observation and a binding declares identity and limits only.
+    //
+    // That branch is latent TODAY, and this pins exactly why: no magic-item
+    // key is bound, so no candidate can currently reach the packet with both.
+    // If a magic-item binding is ever added this fails, and whoever adds it
+    // has to look at the precedence branch rather than discover later that a
+    // real preflight was silently replaced by a weaker declaration. The guard
+    // is the honest claim available here: the interaction itself has no
+    // executable case until such a binding exists.
+    const boundKeys = RULE_DETERMINISTIC_CAPABILITY_BINDINGS.map(
+      ({ ruleKey }) => ruleKey,
     );
-    expect(AUDIT_BINDINGS).toEqual(RULE_DETERMINISTIC_CAPABILITY_BINDINGS);
-    expect(Object.keys(AUDIT_DISPOSITIONS).sort()).toEqual(
-      Object.keys(RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS).sort(),
+    expect(boundKeys.filter((key) => key.startsWith('magic-item:'))).toEqual(
+      [],
     );
+    // And the record kind that DOES carry preflights keeps them (R6 asserts
+    // the statuses); this states the membership fact R6 depends on.
+    expect(boundKeys.every((key) => key.startsWith('rule:'))).toBe(true);
+  });
+
+  it('R7 pins the exact ledger membership the audit bundle now re-exports', () => {
+    // After the move the audit bundle re-exports these very objects, so
+    // comparing the two names asserts a tautology and can never fail. The
+    // checkable claim is the MEMBERSHIP ITSELF, pinned as literals: if a row
+    // is added, dropped or re-keyed, this fails and a reviewer has to say so
+    // deliberately. The audit bundle is still exercised, through the aliased
+    // import proving the re-export resolves to the one definition.
+    expect(Object.keys(AUDIT_CONTRACTS).sort()).toEqual([
+      'derived-magic-item-clauses-v1',
+      'resolve-check-v1',
+      'resolve-concentration-v1',
+      'resolve-spell-upcast-v1',
+    ]);
+    expect(
+      [...AUDIT_BINDINGS].map(({ ruleKey, capability }) => [
+        ruleKey,
+        capability,
+      ]),
+    ).toEqual([
+      ['rule:ability-checks', 'resolve-check-v1'],
+      ['rule:advantage-and-disadvantage', 'resolve-check-v1'],
+      ['rule:attack-rolls', 'resolve-check-v1'],
+      ['rule:modifiers-to-the-roll', 'resolve-check-v1'],
+      ['rule:proficiency-bonus', 'resolve-check-v1'],
+      ['rule:saving-throws', 'resolve-check-v1'],
+      ['rule:concentration', 'resolve-concentration-v1'],
+      ['rule:casting-a-spell-at-a-higher-level', 'resolve-spell-upcast-v1'],
+    ]);
+    expect(Object.keys(AUDIT_DISPOSITIONS).sort()).toEqual([
+      'rule:abilities',
+      'rule:ability-scores-and-modifiers',
+      'rule:attunement',
+      'rule:backgrounds-equipment',
+      'rule:backgrounds-proficiencies',
+      'rule:beyond-1st-level',
+      'rule:bonus-action',
+      'rule:bonus-actions',
+      'rule:constitution-hit-points',
+      'rule:contests',
+      'rule:critical-hits',
+      'rule:damage-resistance-and-vulnerability',
+      'rule:damage-rolls',
+      'rule:death-saving-throws',
+      'rule:falling-unconscious',
+      'rule:gaining-inspiration',
+      'rule:grapple-rules-for-monsters',
+      'rule:group-checks',
+      'rule:healing',
+      'rule:instant-death',
+      'rule:legendary-actions',
+      'rule:limited-usage',
+      'rule:other-activity-on-your-turn',
+      'rule:passive-checks',
+      'rule:reactions',
+      'rule:spell-slots',
+      'rule:stabilizing-a-creature',
+      'rule:surprise',
+      'rule:temporary-hit-points',
+      'rule:using-inspiration',
+      'rule:your-turn',
+    ]);
+    // Every audit name resolves to the single runtime definition.
+    expect(AUDIT_CONTRACTS).toBe(RULE_DETERMINISTIC_CAPABILITY_CONTRACTS);
+    expect(AUDIT_BINDINGS).toBe(RULE_DETERMINISTIC_CAPABILITY_BINDINGS);
+    expect(AUDIT_DISPOSITIONS).toBe(RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS);
   });
 });
