@@ -247,22 +247,32 @@ Before publishing a defect, establish:
 6. the proportionate closure condition; and
 7. the proportionate permanent evidence.
 
-**An observation that cannot name an operative authority and a real producer or
-consumer is dispositioned as "no requirement", in one line, and is not a
-finding.** That disposition is complete at one line and requires no further
-justification. Recording it costs no more than accepting the observation would
-have, and this symmetry is deliberate: where rejecting an observation costs more
-than accepting it, acceptance becomes the default, and every acceptance
-enlarges the implementation, the permanent evidence, and the surface the next
-review must examine.
+**An observation that cannot name an operative invariant and the authority for
+it is dispositioned as "no requirement", in one line, and is not a finding.**
+That disposition is complete at one line and requires no further justification.
+Recording it costs no more than accepting the observation would have, and this
+symmetry is deliberate: where rejecting an observation costs more than accepting
+it, acceptance becomes the default, and every acceptance enlarges the
+implementation, the permanent evidence, and the surface the next review must
+examine.
 
 "We could make this more defensive" is not "the system requires this defense."
 Theoretical robustness is not required correctness.
 
-**Reachability is a first-class disposition axis.** A defect on a path no
-producer or consumer reaches is dispositioned at its real severity, not at the
-severity it would carry on a live path. Note that an unreached path is not
-thereby safe or absent — it is lower-consequence, which is a different claim.
+**The admission test is authority, not present reachability.** Producers,
+consumers, and reachability are weighed at steps 3 to 5 above — where material —
+and they shape severity, closure condition, and proof burden. They are not a
+precondition for a requirement existing. An accepted ADR, design document, or
+owning Bead can require an implementation before the consumer that will use it
+is integrated, and staged work of that kind is normal here; such a requirement
+does not lapse for want of a current caller.
+
+**Reachability is therefore a severity axis, not an admission gate.** A defect
+on a path no producer or consumer currently reaches is dispositioned at its real
+severity, not at the severity it would carry on a live path. An unreached path
+is not thereby safe, absent, or exempt — it is lower-consequence, which is a
+different claim, and `AGENTS.md` continues to govern when unexercised
+scaffolding must be retained, demoted, or retired.
 
 A published finding must state whether its permanent evidence is a
 **generalized invariant** or an **exact reproducer**, and why that choice is

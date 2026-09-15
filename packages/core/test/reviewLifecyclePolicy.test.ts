@@ -172,17 +172,29 @@ describe('PR review authority and lifecycle policy', () => {
     );
     // The symmetry is the load-bearing part: an asymmetric gate, where
     // rejecting costs more than accepting, is what makes acceptance the default.
+    // The admission test is authority, never present reachability: an accepted
+    // ADR or Bead can require an implementation before its consumer exists, so
+    // a missing current caller must not erase the requirement (eshyra-9l5s.4).
     expect(policy).toMatch(
-      /dispositioned as "no requirement", in one line, and is not a\s+finding/,
+      /An observation that cannot name an operative invariant and the authority for\s+it is dispositioned as "no requirement", in one line, and is not a finding/,
+    );
+    expect(policy).toContain(
+      '**The admission test is authority, not present reachability.**',
     );
     expect(policy).toMatch(
-      /Recording it costs no more than accepting the observation would\s+have, and this symmetry is deliberate/,
+      /They are not a\s+precondition for a requirement existing/,
+    );
+    // Matched across a soft line break: the policy is hard-wrapped, so wrapping
+    // shifts whenever surrounding prose changes. Assert the claim, not the
+    // layout.
+    expect(policy).toMatch(
+      /Recording it costs no more than accepting the observation would\s+have,\s+and\s+this\s+symmetry\s+is\s+deliberate/,
     );
     expect(policy).toContain(
       '"We could make this more defensive" is not "the system requires this defense."',
     );
     expect(policy).toContain(
-      '**Reachability is a first-class disposition axis.**',
+      '**Reachability is therefore a severity axis, not an admission gate.**',
     );
   });
 
