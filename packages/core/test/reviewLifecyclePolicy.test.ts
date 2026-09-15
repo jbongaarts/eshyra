@@ -132,8 +132,12 @@ describe('PR review authority and lifecycle policy', () => {
     expect(policy).toMatch(
       /Bounded fix verification is reserved for a known defect class whose repair is\s+demonstrably non-material\. A material repair requires a fresh full review/,
     );
+    // Strengthened by eshyra-9l5s.4 from "perform a fresh full review" to a
+    // hard stop: a third narrow dispatch on a twice-surviving defect class is
+    // not permitted. The guard asserts the prohibition, not just the remedy,
+    // so the rule cannot be softened back to advice without failing here.
     expect(policy).toMatch(
-      /If it survives two repair cycles, perform a fresh full review of\s+the affected subsystem/,
+      /If it survives two repair cycles, a third narrow dispatch on that\s+class is not permitted: perform a fresh full review of the affected\s+subsystem/,
     );
   });
 
@@ -152,6 +156,64 @@ describe('PR review authority and lifecycle policy', () => {
     expect(policy).toMatch(/Permanent rejection\s+is not deferred work\./);
     expect(policy).toMatch(
       /Do not avoid this rule by declining to publish a valid\s+defect/,
+    );
+  });
+
+  // eshyra-9l5s.4. "Findings discipline" above is deliberately unchanged: every
+  // valid finding still blocks approval. The gate added here runs BEFORE it and
+  // governs what becomes a finding at all, because the accretion failure was
+  // upstream of findings discipline, not in it.
+  it('gates observations on disposition before they become findings', () => {
+    const policy = readText(POLICY_PATH);
+
+    expect(policy).toContain('## From observation to finding');
+    expect(policy).toMatch(
+      /A defect exists only where\s+an observation materially violates an applicable requirement/,
+    );
+    // The symmetry is the load-bearing part: an asymmetric gate, where
+    // rejecting costs more than accepting, is what makes acceptance the default.
+    expect(policy).toMatch(
+      /dispositioned as "no requirement", in one line, and is not a\s+finding/,
+    );
+    expect(policy).toMatch(
+      /Recording it costs no more than accepting the observation would\s+have, and this symmetry is deliberate/,
+    );
+    expect(policy).toContain(
+      '"We could make this more defensive" is not "the system requires this defense."',
+    );
+    expect(policy).toContain(
+      '**Reachability is a first-class disposition axis.**',
+    );
+  });
+
+  it('keeps the defect-finding search undiminished by the disposition gate', () => {
+    const policy = readText(POLICY_PATH);
+
+    // The gate must never be read as licence to search less. If this assertion
+    // is ever removed, the gate has become a way to avoid finding defects.
+    expect(policy).toMatch(
+      /None of this narrows the search that finds defects\. Sibling search, state-\s+dimension variation, and proof-mechanism review are unchanged and remain\s+required/,
+    );
+  });
+
+  it('places permanent-evidence policy in AGENTS.md, not the review policy', () => {
+    const agents = readText('AGENTS.md');
+
+    expect(agents).toContain('## Permanent Test Evidence');
+    expect(agents).toMatch(
+      /Tests are evidence of requirements, never authority for requirements/,
+    );
+    expect(agents).toMatch(
+      /a\s+proof mechanism's own cost is part of that proportionality/,
+    );
+    // The experiment-scaffolding disposition, whose absence let the discovery
+    // subsystem accrue permanent-contract status by default.
+    expect(agents).toMatch(
+      /Infrastructure authorized for a bounded experiment or transition must carry an\s+explicit disposition at that boundary/,
+    );
+    // Source-fidelity regressions keep their absolute carve-out.
+    expect(agents).toMatch(
+      /exact source-fidelity regressions against a vendored source\s+artifact always have independent semantic significance/,
     );
   });
 
