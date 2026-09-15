@@ -448,25 +448,50 @@ requiring the most care.
 > concludes**. Absent a stated disposition, permanent-regression status accrues
 > by default.
 >
-> **Measured reachability:** `discoveryMode` defaults to `'off'`
-> (`orchestrator.ts:718`). **No production caller sets it** — not the CLI, not
-> anything in `src` outside discovery itself. Only two test files
+> **Measured reachability:** there *is* a real production call chain —
+> `orchestrator.ts:883` calls `captureDiscoveryShadow`, and `shadow.ts` in turn
+> calls `observeBlockerRepairs` (`blockerRepairs.ts`) and `runDiscoveryStages`
+> (`harness.ts`) and consumes `measurements.ts` types. **The chain is
+> unconditionally gated off:** `discoveryMode` defaults to `'off'`
+> (`orchestrator.ts:718`), **no production caller sets it** — not the CLI, not
+> anything in `src` outside discovery itself — and only two test files
 > (`shadowRuntime.test.ts`, `packetIntervention.test.ts`) ever activate it.
-> **Nothing from `discovery/` is exported from the core root export**
-> (`src/index.ts`); every symbol reaches only `internal.ts`, which `AGENTS.md`
-> defines as carrying *"no compatibility promise"* and being *"for co-developed
-> callers inside this repo (e.g. tests)"*. For `measurements.ts`,
-> `blockerRepairs.ts`, `traceDerivation.ts`, and `harness.ts`, **the test suite
-> is the entire consumer set.**
+>
+> So the accurate statement is **not** that these modules have no consumer; it
+> is that **their only production entry point is never activated in shipped
+> behavior.** The internal call graph is healthy and the modules are ordinary
+> private core implementation.
+>
+> *(Corrected after review. An earlier revision of this finding claimed "the
+> test suite is the entire consumer set" for `measurements.ts`,
+> `blockerRepairs.ts`, `traceDerivation.ts`, and `harness.ts`, and treated
+> absence from the core root export as evidence of that. Both were wrong. The
+> root export is, per `AGENTS.md`, the stable surface for **external**
+> consumers; new core symbols **default to internal** and are promoted only
+> when a real consumer needs the API. Private core implementation neither has
+> nor needs a root export, so root-export status carries no signal here.)*
 >
 > **Disposition: legitimize with an explicit sunset — do not retire now.** The
 > experiment is authorized and unfinished; deleting staged infrastructure would
 > destroy authorized work. What is missing is the disposition clause the design
 > applied to everything else. The owning bead (`eshyra-o9bd.19.15`) should be
 > amended to require, as a Phase 4 exit condition, that each module be
-> classified: *promoted* to product (with a real non-test consumer and a root
-> export), *demoted* to development-only tooling outside the default gate, or
-> *retired*.
+> classified against **retained responsibility and real runtime use**:
+>
+> - ***retained*** — it carries a responsibility the running product needs, and
+>   some shipped configuration actually exercises it. It stays as ordinary core
+>   implementation, public or private as `AGENTS.md`'s default dictates, and
+>   keeps permanent regression evidence proportionate to that responsibility.
+> - ***demoted*** — it is development or diagnostic tooling. It stays in the
+>   tree, moves off the default gate (§9 R3), and its proof burden drops to
+>   what the tooling's own decisions warrant.
+> - ***retired*** — the experiment consumed it and no responsibility survives.
+>   Retirement must name the replacing responsibility, per
+>   `docs/design-and-pr-review-policy.md`.
+>
+> The question that decides the classification is *"what responsibility
+> survives Phase 4, and does shipped behavior exercise it?"* — **not** whether
+> a symbol appears in `index.ts`.
 >
 > **Replacement responsibility:** Phase 4 exit criteria in
 > `eshyra-o9bd.19.15`. Until then the code stays; §9 moves its ~3,700 MB and
@@ -509,29 +534,52 @@ something retires it.
 > **Replacement evidence:** one whole-pack `auditSrdStructure(pack)` clean-gate
 > assertion sited once, in `srdStructureAudit.test.ts`.
 
-### F5 — Duplicate ADR numbers weaken the authority chain
+### F5 — A few bare ADR citations are ambiguous
 
 > **Existing:** `docs/adr/` contains two ADR 0011s
 > (`0011-core-owned-rules-pack-bound-character-sheet.md`,
 > `0011-multi-provider-installer-editions.md`) and two ADR 0012s
 > (`0012-character-continuity-and-custody.md`,
 > `0012-rules-pack-campaign-template-adventure-module-campaign-instance.md`).
+> That much is factual.
 >
-> **Claimed invariant:** ADR numbers identify decisions.
+> **Claimed invariant:** a reader following a citation must be able to reach
+> the decision it names.
 >
 > **Actual authority:** `AGENTS.md` and `docs/design-and-pr-review-policy.md`
-> both require reviewers to read "applicable accepted ADRs", and ADRs are cited
-> bare by number throughout — `docs/install.md:32` ("ADR 0011"),
-> `docs/game-state.md:21` ("ADR 0011"), ADR 0020 lines 92/145/337 ("ADR 0012"),
-> ADR 0016 ("ADR 0011"). Each is ambiguous on its face.
+> require reviewers to read "applicable accepted ADRs". **No authority requires
+> ADR numbers to be globally unique**, and the repository already resolves the
+> collision correctly nearly everywhere by linking the specific file — ADR 0018
+> cites `[ADR 0011](0011-core-owned-rules-pack-bound-character-sheet.md)`,
+> ADR 0016 cites `[ADR 0011](0011-multi-provider-installer-editions.md)`,
+> `docs/game-state.md:21` names the full path inline, and ADR 0020 establishes
+> the link at line 19 before using the bare short form within the same document.
 >
-> **Disposition: repair.** Not a test finding, but it is a defect in the
-> authority chain this audit was instructed to treat as primary, found while
-> reading it. Renumber one of each pair (or add explicit disambiguating slugs at
-> every bare citation).
+> **The actual defect is three bare cross-document citations** with no link and
+> no disambiguating context: `docs/install.md:32` ("ADR 0011"), and
+> `docs/the-hollow-beneath-emberfall-outline.md` lines 20 and 32 ("ADR 0012").
 >
-> **Replacement evidence:** a cheap repo check asserting ADR number uniqueness,
-> alongside the existing `nodeRuntimePolicy` / hidden-Unicode policy tests.
+> **Disposition: fix those citations.** Add the explicit link, as the rest of
+> the repository already does. Nothing else.
+>
+> **Replacement responsibility:** the existing repository-wide convention of
+> linking ADRs by file. No new checker.
+>
+> *(Corrected after review. An earlier revision of this finding proposed
+> renumbering one ADR of each pair and adding a permanent repo-wide
+> number-uniqueness check. That generalized a local, three-site ambiguity into
+> a global invariant plus standing proof machinery the repository never
+> required — and renumbering accepted ADRs would stale existing Bead, PR, and
+> document references, creating a larger problem than the one being solved.*
+>
+> *This is worth recording rather than quietly editing away: it is a clean
+> instance of the F6 loop occurring **inside the audit that describes it**. A
+> true observation — "two ADRs share a number" — was promoted straight to a
+> universal requirement with permanent evidence, without first asking what
+> authority demanded uniqueness or how many citations were actually ambiguous.
+> The answers were "none" and "three". Section 10.2's proposed disposition
+> step is what would have caught it, and it did not catch it here because the
+> step did not yet exist when this finding was written.)*
 
 ### F6 — Structural pressure in the review policy itself
 
@@ -768,11 +816,46 @@ rediscovered by audit.
 
 ### R7 — Cheap standing instrumentation
 
-Record wall time and peak RSS per verification run (e.g. `/usr/bin/time -v`
-around the test step in CI). The two open flake beads exist because this data
-was unavailable; every number in §2 had to be generated from scratch. This is
-one line in CI, and it is the difference between the next regression being
-noticed and being absorbed into a raised budget.
+Record wall time and peak memory per verification run. The two open flake beads
+exist because this data was unavailable; every number in §2 had to be generated
+from scratch. This is the difference between the next regression being noticed
+and being absorbed into a raised budget.
+
+**Measure memory with a process-tree sampler, not `/usr/bin/time -v`.** This
+distinction is load-bearing, because the property that causes the OOM is
+*aggregate concurrent* RSS across many workers, and `time -v` cannot report it.
+Its "Maximum resident set size" comes from `getrusage(RUSAGE_CHILDREN)`
+`ru_maxrss`, which is the peak RSS of **the single largest child**, never the
+sum across concurrently live children.
+
+Verified on this host with three concurrent children each holding ~448 MB
+(~1.34 GB aggregate):
+
+```
+child rss MB 448
+child rss MB 448
+child rss MB 448
+        Maximum resident set size (kbytes): 458656     # 448 MB — one child
+```
+
+Applied to this suite, `time -v` would report roughly the largest single worker
+(~2.5 GB) while the process tree is at 4.9 GB, and would have shown **no change
+at all** between the 4-worker and 6-worker configurations whose aggregate peaks
+differ by ~780 MB. It would therefore report reassuring numbers in exactly the
+scenario §2.3 identifies as fatal.
+
+Use instead the same class of measurement this audit used successfully:
+
+- **CI and local:** sample the run's process group at ~1 Hz
+  (`ps -e -o pgid=,rss=` with the run launched under `setsid`), and record the
+  peak sum. This is the sampler described in the appendix, and it is a few
+  lines.
+- **Better where available:** read `memory.peak` (cgroup v2) for the run's
+  cgroup, which is exact, needs no sampling, and cannot miss a spike between
+  samples. GitHub-hosted runners expose cgroup v2.
+
+`/usr/bin/time -v` remains fine for **wall clock**, and for the single-process
+steps (`typecheck`, `format`) where largest-child and tree totals coincide.
 
 ### R8 — On Vitest 4 vs 5
 
@@ -815,10 +898,17 @@ repository evidence actually supports.
 > gates.
 >
 > **Infrastructure authorized for a bounded experiment or transition must
-> carry an explicit disposition at that boundary** — promoted to product with a
-> real non-test consumer, demoted to development-only tooling, or retired.
-> Absent a stated disposition, scaffolding acquires permanent-contract status
-> by default.
+> carry an explicit disposition at that boundary** — *retained* as product
+> implementation carrying a responsibility shipped behavior exercises,
+> *demoted* to development-only tooling, or *retired* naming the responsibility
+> that replaces it. Absent a stated disposition, scaffolding acquires
+> permanent-contract status by default.
+>
+> Judge this by **retained responsibility and real runtime use**, never by
+> whether a symbol is exported from a package's public surface. Per
+> `AGENTS.md`, core symbols default to internal and are promoted only when a
+> real consumer needs the API, so private implementation is the normal, correct
+> state for most product code.
 
 The fourth and sixth clauses are the ones this audit's measurements uniquely
 motivate: F1 exists because nobody costed an assertion, and F3 exists because
@@ -880,7 +970,7 @@ Proposed epic: **`Verification system: cost, topology, and evidence policy`**
 | ID | Title | P | Depends on | Notes |
 | --- | --- | --- | --- | --- |
 | **T1** | Replace the 7.4 MB Buffer deep-equality pack-immutability assertion (F1/C1) | P1 | — | ~14.4 s, ~2.4 GB. One line. |
-| **T2** | Cap Vitest `maxWorkers` and record per-run time/peak RSS (R1, R7) | P1 | — | Makes the flakes deterministic. |
+| **T2** | Cap Vitest `maxWorkers`; record per-run wall clock and **process-tree** peak RSS (R1, R7) | P1 | — | Makes the flakes deterministic. Memory must come from a process-group/cgroup sampler, not `time -v`. |
 | **T3** | Split the 17-claim context-assembler mega-test (F2/C2) | P2 | T1 | Same file as T1. |
 | **T4** | Partition the suite into Vitest projects and add focused commands (R3, R4) | P2 | T2 | Gate unchanged. |
 | **T5** | Adopt the permanent-evidence policy in `AGENTS.md` (§10.1) | P1 | — | Independent; do early. |
@@ -889,7 +979,7 @@ Proposed epic: **`Verification system: cost, topology, and evidence policy`**
 | **T8** | Remove the 9 inline generalized-audit re-runs (F4/C3) | P2 | T7 | |
 | **T9** | Amend `eshyra-o9bd.19.15` with Phase 4 exit dispositions for discovery scaffolding (F3) | P1 | T6 | **Amend the existing bead; do not create a parallel lifecycle.** |
 | **T10** | Decompose `activeEffects.test.ts` for isolation (C6) | P3 | T4 | No case removal. |
-| **T11** | Resolve duplicate ADR numbers 0011 / 0012 and guard uniqueness (F5) | P2 | — | Independent. |
+| **T11** | Add explicit links to the three ambiguous bare ADR citations (F5) | P3 | — | Independent. No renumbering, no new checker. |
 | **T12** | Audit deterministic mechanics tests for ADR 0020 supersession (§8) | P3 | T6 | Unresolved question, not a known defect. |
 | **T13** | Shard CI across the R3 projects (R6) | P3 | T4 | |
 
@@ -985,9 +1075,15 @@ become a source of accidental requirements. Guards applied: it adds **no new
 proof machinery**; all instrumentation was temporary and removed (the working
 tree is clean); it proposes **no test-count target**; and every proposed
 retirement carries an explicit authority chain a reviewer can reject on its
-merits. The one new permanent check proposed anywhere is the ADR-uniqueness
-guard in F5, which is a handful of lines and guards the authority chain the
-whole review process depends on.
+merits. **No new permanent proof machinery is proposed anywhere in this
+document** — including in F5, whose earlier revision did propose a standing
+checker and was corrected in review for exactly that reason.
+
+That correction is the honest measure of how strong the F6 pressure is: this
+audit reproduced the loop it exists to describe, in the one finding where the
+observation was easiest to generalize and cheapest to "harden". The mechanism
+does not require a careless reviewer. It only requires that accepting an
+obligation stay cheaper than dispositioning it.
 
 ---
 
