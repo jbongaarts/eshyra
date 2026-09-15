@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -139,6 +140,29 @@ describe('loadRulesPackFromDirectory — committed pack (rules:dnd5e-srd-5.1)', 
     expect(pack.meta.source.sourceUrl).toBe(
       'https://dnd.wizards.com/resources/systems-reference-document',
     );
+  });
+
+  // On-disk immutability is a property of THIS boundary — the loader is the
+  // only code that opens the committed pack — so the guard belongs here rather
+  // than inside whichever consumer happened to assert it (bead eshyra-9l5s.1).
+  //
+  // It previously lived in contextAssembler.test.ts as
+  // `expect(before).toEqual(after)` over two 7.4 MB Buffers, which drove
+  // structural deep-equality across ~7.4M elements: 14,354 ms and 2,414 MB,
+  // roughly 12% of the whole suite's summed duration and its largest single
+  // allocation. Comparing digests is ~1 ms with the same detection power.
+  // See docs/audits/test-suite-and-verification/
+  // 2026-09-14-test-suite-and-verification-audit.md (finding F1).
+  it('does not modify the committed pack on disk when loading it', () => {
+    const recordsPath = join(COMMITTED_PACK_DIR, 'records.json');
+    const digest = () =>
+      createHash('sha256').update(readFileSync(recordsPath)).digest('hex');
+
+    const before = digest();
+    loadRulesPackFromDirectory(COMMITTED_PACK_DIR);
+    loadRulesPackFromDirectory(COMMITTED_PACK_DIR);
+
+    expect(digest()).toBe(before);
   });
 });
 

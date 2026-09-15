@@ -27,17 +27,37 @@ const MEASURE_RUN = fileURLToPath(
   new URL('../../../scripts/measure-run.mjs', import.meta.url),
 );
 
-/** Holds `mb` megabytes resident, then exits. */
-function holdMemoryScript(mb: number, children: number): string {
+/**
+ * Workload holding ~`(attached + detached) * mb` MB across concurrent
+ * processes, where `detached` of them are spawned with `detached: true`.
+ *
+ * The detached share is the point. Node makes such a child the leader of a NEW
+ * process group and session, so it escapes any sampler that sums a single
+ * process group — which is what an earlier revision of measure-run did. The
+ * suite's own verification run contains exactly this shape, so the escape was
+ * live, not theoretical.
+ */
+function holdMemoryScript(
+  mb: number,
+  attached: number,
+  detached: number,
+): string {
   return `
-import { fork } from 'node:child_process';
+import { fork, spawn } from 'node:child_process';
 if (process.argv[2] === 'child') {
   const buf = Buffer.alloc(${mb} * 1024 * 1024, 1);
-  setTimeout(() => { if (buf[0] !== 1) throw new Error('unreachable'); }, 2000);
+  setTimeout(() => { if (buf[0] !== 1) throw new Error('unreachable'); }, 2500);
 } else {
-  for (let i = 0; i < ${children}; i += 1) {
-    fork(new URL(import.meta.url).pathname, ['child']);
+  const self = new URL(import.meta.url).pathname;
+  for (let i = 0; i < ${attached}; i += 1) fork(self, ['child']);
+  for (let i = 0; i < ${detached}; i += 1) {
+    const c = spawn(process.execPath, [self, 'child'], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    c.unref();
   }
+  setTimeout(() => {}, 3000);
 }
 `;
 }
@@ -69,21 +89,33 @@ function runMeasured(scriptBody: string): {
 }
 
 describe('measure-run', () => {
-  // The load-bearing test. Four concurrent processes each holding ~200 MB must
-  // report ~800 MB, NOT ~200 MB. A largest-child metric — the failure mode this
-  // tool exists to avoid — reports the latter and would pass no assertion here.
+  // The load-bearing test, distinguishing BOTH known bad states at once:
+  //
+  //   two attached + two detached children, ~150 MB each (~600 MB total)
+  //     a largest-child metric (/usr/bin/time -v)  => ~150 MB   FAILS
+  //     a process-group-only sampler               => ~350 MB   FAILS
+  //     a descendant-tree sampler                  => ~650 MB   passes
+  //
+  // Sized to the smallest footprint that still separates the three cases
+  // cleanly: this probe runs inside a memory-constrained gate, and AGENTS.md
+  // "Permanent Test Evidence" makes a proof mechanism's own cost part of its
+  // proportionality.
+  //
+  // The detached half is what the group-only sampler cannot see, so this single
+  // test covers the escape without a second reproducer.
   it.skipIf(restrictedSandbox || isWindows)(
-    'reports aggregate process-tree memory, not the largest single process',
+    'reports whole-tree memory, including detached descendants',
     () => {
-      const { record } = runMeasured(holdMemoryScript(200, 4));
+      const { record } = runMeasured(holdMemoryScript(150, 2, 2));
 
       expect(record.exitCode).toBe(0);
       const peak = record.peakTreeRssMb as number;
 
-      // Well above any single child (~200 MB), so a largest-child metric fails.
-      expect(peak).toBeGreaterThan(600);
+      // Above the ~350 MB a group-only sampler would see, and far above the
+      // ~150 MB a largest-child metric would report.
+      expect(peak).toBeGreaterThan(500);
       // And bounded, so a runaway sampler that double-counts also fails.
-      expect(peak).toBeLessThan(1600);
+      expect(peak).toBeLessThan(1200);
       expect(record.peakProcesses as number).toBeGreaterThanOrEqual(4);
     },
     30000,

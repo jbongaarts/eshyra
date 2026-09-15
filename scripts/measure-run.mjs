@@ -24,10 +24,30 @@ import { appendFileSync } from 'node:fs';
 //   2026-09-14-test-suite-and-verification-audit.md, section 2 and R7.
 //
 // HOW IT MEASURES:
-//   The command is spawned detached, so it leads its own process group. We then
-//   sample the aggregate RSS of every process in that group. Sampling can miss a
-//   spike between samples, so this reports a LOWER BOUND on the true peak — it
-//   can under-report, never over-report.
+//   Each sample builds the DESCENDANT CLOSURE of the measured command from
+//   parent/child links, then unions in every process sharing a process group
+//   with a discovered descendant, iterating to a fixpoint.
+//
+//   Both halves are load-bearing. An earlier revision sampled only the process
+//   GROUP of a `detached: true` child, which a nested detached descendant
+//   escapes entirely: Node makes such a child the leader of a NEW group and
+//   session, so it falls outside the group being summed. Measured against a
+//   workload holding a detached 600 MB grandchild, the group-only sampler
+//   reported 47 MB across 1 process. This is not hypothetical — the suite's own
+//   measureRun.test.ts spawns exactly that shape, so a group-only sampler
+//   under-reports the very verification run it claims to measure.
+//
+//   Parent links alone are also insufficient: a descendant re-parented to init
+//   after its intermediate parent exits loses its link to us. Recording the
+//   process groups of descendants we have already seen keeps those visible.
+//
+//   Sampling can miss a spike between samples, so this reports a LOWER BOUND on
+//   the true peak — it can under-report, never over-report.
+//
+// PROCESS LIFETIME:
+//   The command is deliberately NOT detached: it stays in this process's group
+//   so terminal signals reach it, and SIGINT/SIGTERM are forwarded explicitly so
+//   an interrupted measurement cannot strand a running test suite.
 //
 // PORTABILITY:
 //   Memory sampling needs POSIX `ps`. Where that is unavailable (Windows, or a
@@ -62,19 +82,69 @@ function parseArgs(argv) {
   return { options, command: argv.slice(separator + 1) };
 }
 
-/** Aggregate RSS (KB) and process count for one process group, or null. */
-function sampleProcessGroup(pgid) {
-  const result = spawnSync('ps', ['-e', '-o', 'pgid=,rss='], {
+/**
+ * Aggregate RSS (KB) and process count for the measured command's whole tree,
+ * or null where POSIX `ps` is unavailable.
+ *
+ * Membership is the fixpoint of: the root, anything descended from a member,
+ * and anything sharing a process group with a member. See HOW IT MEASURES.
+ */
+function sampleProcessTree(rootPid) {
+  const result = spawnSync('ps', ['-e', '-o', 'pid=,ppid=,pgid=,rss='], {
     encoding: 'utf8',
   });
   if (result.status !== 0 || typeof result.stdout !== 'string') return null;
-  let rssKb = 0;
-  let processes = 0;
+
+  const rows = [];
   for (const line of result.stdout.split('\n')) {
     const fields = line.trim().split(/\s+/);
-    if (fields.length < 2) continue;
-    if (Number(fields[0]) !== pgid) continue;
-    rssKb += Number(fields[1]) || 0;
+    if (fields.length < 4) continue;
+    const row = {
+      pid: Number(fields[0]),
+      ppid: Number(fields[1]),
+      pgid: Number(fields[2]),
+      rssKb: Number(fields[3]) || 0,
+    };
+    if (Number.isNaN(row.pid)) continue;
+    rows.push(row);
+  }
+
+  const members = new Set([rootPid]);
+  const groups = new Set();
+  // This wrapper's own group is never a membership signal: without `detached`
+  // the measured command shares it, so admitting it would sweep in unrelated
+  // siblings (the shell, the agent). Descendants are found by parent link, and
+  // only the NEW groups they create are added below.
+  const ownGroup = process.pid === undefined ? -1 : Number(process.pid);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const row of rows) {
+      if (members.has(row.pid)) {
+        if (
+          row.pgid !== ownGroup &&
+          row.pid === row.pgid &&
+          !groups.has(row.pgid)
+        ) {
+          // A descendant that leads its own group (detached/setsid). Record the
+          // group so its children stay visible even if it is re-parented.
+          groups.add(row.pgid);
+          changed = true;
+        }
+        continue;
+      }
+      if (members.has(row.ppid) || groups.has(row.pgid)) {
+        members.add(row.pid);
+        changed = true;
+      }
+    }
+  }
+
+  let rssKb = 0;
+  let processes = 0;
+  for (const row of rows) {
+    if (!members.has(row.pid)) continue;
+    rssKb += row.rssKb;
     processes += 1;
   }
   return { rssKb, processes };
@@ -87,10 +157,8 @@ function megabytes(kb) {
 const { options, command } = parseArgs(process.argv.slice(2));
 
 const startedAt = Date.now();
-const child = spawn(command[0], command.slice(1), {
-  stdio: 'inherit',
-  detached: true,
-});
+// Not detached: see PROCESS LIFETIME above.
+const child = spawn(command[0], command.slice(1), { stdio: 'inherit' });
 
 let peakRssKb = 0;
 let peakProcesses = 0;
@@ -98,8 +166,7 @@ let samples = 0;
 let memoryAvailable = true;
 
 const timer = setInterval(() => {
-  // On POSIX a detached child leads a group whose pgid equals its pid.
-  const sample = sampleProcessGroup(child.pid);
+  const sample = sampleProcessTree(child.pid);
   if (sample === null) {
     memoryAvailable = false;
     clearInterval(timer);
@@ -110,6 +177,22 @@ const timer = setInterval(() => {
   if (sample.processes > peakProcesses) peakProcesses = sample.processes;
 }, SAMPLE_INTERVAL_MS);
 timer.unref();
+
+// Forward interruption so an abandoned measurement cannot strand a running
+// suite. The child shares this process group, so a terminal Ctrl+C already
+// reaches it; this covers programmatic callers (verify:worktree spawns this
+// wrapper directly) where no terminal signal is delivered.
+let forwardedSignal;
+for (const signalName of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(signalName, () => {
+    forwardedSignal = signalName;
+    try {
+      child.kill(signalName);
+    } catch {
+      // Child already gone; nothing to forward to.
+    }
+  });
+}
 
 child.on('error', (error) => {
   clearInterval(timer);
@@ -145,6 +228,10 @@ child.on('exit', (code, signal) => {
     appendFileSync(options.out, `${JSON.stringify(record)}\n`);
   }
 
-  if (signal) process.kill(process.pid, signal);
-  else process.exit(code ?? 0);
+  const exitSignal = signal ?? forwardedSignal;
+  if (exitSignal) {
+    process.kill(process.pid, exitSignal);
+    return;
+  }
+  process.exit(code ?? 0);
 });
