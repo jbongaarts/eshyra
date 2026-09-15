@@ -37,12 +37,31 @@ const records = JSON.parse(
 
 let obligations: readonly Foundation1Obligation[];
 
+/**
+ * Budget for this hook, not a test expectation: it reads the multi-megabyte
+ * SRD PDF and runs full text extraction over every page before any assertion
+ * can run.
+ *
+ * Measured on this machine, this file in isolation takes ~3.5s end to end
+ * (3.63s / 3.49s over two runs, 94% of it in tests+hook), so vitest's default
+ * 10s left under 3x headroom — and PDF extraction competing with the rest of
+ * the suite's parallel workers loses that much routinely. It began failing
+ * deterministically once `eshyra-o9bd.19.1.4` added ~23 pack-loading and
+ * discovery tests to the same run, which is exactly the "times out its 10s
+ * hook under full-suite load" failure already filed as `eshyra-da8d`.
+ *
+ * 60s is ~17x the measured isolated cost. Nothing this file asserts changes:
+ * a timeout governs how long an expensive I/O fixture may take, never what
+ * counts as a correct result, and a genuine hang still fails here.
+ */
+const PDF_EXTRACTION_HOOK_TIMEOUT_MS = 60_000;
+
 beforeAll(async () => {
   const pdf = readFileSync(PDF_PATH);
   const pages = await extractPdfText(new Uint8Array(pdf));
   const sourceHash = createHash('sha256').update(pdf).digest('hex');
   obligations = buildFoundation1SourceObligations(pages, sourceHash);
-});
+}, PDF_EXTRACTION_HOOK_TIMEOUT_MS);
 
 const EXPECTED_DISCHARGE_ATOM_IDS = [
   'atom/equipment:longsword/procedure/longsword-damage/mode/one-handed',
