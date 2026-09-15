@@ -272,24 +272,64 @@ export interface DeterministicCapabilityLedger {
   lookup(recordKey: string): CapabilityLedgerLookup;
 }
 
+/**
+ * Builds the runtime-owned deterministic capability ledger, enforcing the
+ * identity and uniqueness invariants every caller (lookup, packet
+ * presentation, the audit-bundle report) relies on but that
+ * `validateRuleDeterministicCapabilityContracts` above cannot guarantee — that
+ * function is a separate, audit-only caller, and a runtime consumer must not
+ * depend on an audit-only path happening to run before it reads the ledger.
+ * Fails closed, before any lookup or packet presentation is possible, on:
+ *
+ * - a `contracts` registry key whose own `contract.revision` names a
+ *   different identity — otherwise a binding would select one lookup key
+ *   while the packet advertises another revision entirely;
+ * - a duplicate `(ruleKey, capability)` pair in `bindings` — otherwise one
+ *   candidate would present the same declared capability twice in one
+ *   context packet;
+ * - a `dispositions` map key whose own `disposition.ruleKey` names a
+ *   different record — otherwise a lookup by that key would return a
+ *   disposition identifying a different rule than the one asked about.
+ *
+ * An unvalidated caller-supplied registry is never trusted silently: a
+ * mismatch throws rather than producing a ledger that would answer a lookup
+ * with the wrong identity.
+ */
 export function createDeterministicCapabilityLedger(
   contracts = RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
   bindings: readonly CapabilityBinding[] = RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
   dispositions = RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
 ): DeterministicCapabilityLedger {
+  for (const [key, contract] of Object.entries(contracts))
+    if (contract.revision !== key)
+      throw new DeterministicCapabilityLedgerError(
+        `${key}: capability contract registry key does not match its own revision '${contract.revision}'`,
+      );
   const seen = new Set<string>();
+  const seenBindingPairs = new Set<string>();
   for (const binding of bindings) {
     if (contracts[binding.capability] === undefined)
       throw new DeterministicCapabilityLedgerError(
         `${binding.ruleKey}: binds unknown capability ${binding.capability}`,
       );
+    const pairKey = JSON.stringify([binding.ruleKey, binding.capability]);
+    if (seenBindingPairs.has(pairKey))
+      throw new DeterministicCapabilityLedgerError(
+        `${binding.ruleKey}: duplicate binding to ${binding.capability}`,
+      );
+    seenBindingPairs.add(pairKey);
     seen.add(binding.ruleKey);
   }
-  for (const key of Object.keys(dispositions))
+  for (const [key, disposition] of Object.entries(dispositions)) {
+    if (disposition.ruleKey !== key)
+      throw new DeterministicCapabilityLedgerError(
+        `${key}: capability disposition registry key does not match its own ruleKey '${disposition.ruleKey}'`,
+      );
     if (seen.has(key))
       throw new DeterministicCapabilityLedgerError(
         `${key}: has both a capability binding and a disposition`,
       );
+  }
   return Object.freeze({
     contracts,
     bindings,

@@ -3009,6 +3009,56 @@ export const ENGINE_PROCEDURE_COVERAGE = materializeEngineProcedureCoverage(
 type RuntimeRuleDeterministicCapabilityContract =
   RuleDeterministicCapabilityContract;
 
+/**
+ * Contract revisions this rule-disposition REPORT has been reviewed against.
+ * `src/rules/deterministicCapabilityLedger.ts` is the one runtime owner of
+ * `RULE_DETERMINISTIC_CAPABILITY_CONTRACTS`, and it is free to register
+ * additional contracts for ledger lookup and context-packet presentation —
+ * most recently the magic-item readiness contract
+ * (`derived-magic-item-clauses-v1`, eshyra-o9bd.19.1.4 W13) — without that
+ * growth silently becoming a new claim THIS report makes. Deciding the
+ * report's membership belongs to eshyra-o9bd.19.5.12, not this file
+ * (eshyra-o9bd.19.1.4 F5); until that bead acts, the report keeps emitting
+ * exactly the three contracts it was last reviewed against. Absence here is
+ * a statement about this report's reviewed scope, never a claim that the
+ * runtime ledger doesn't know the capability — see
+ * `RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['derived-magic-item-clauses-v1']`.
+ *
+ * Each entry names a key already present in
+ * `RULE_DETERMINISTIC_CAPABILITY_CONTRACTS`, so the report reuses the
+ * runtime's own row objects rather than a second copy of them — a second
+ * copy is the exact defect eshyra-o9bd.19.1.4 review round 1 (finding X1)
+ * found and fixed.
+ */
+const RULE_DISPOSITION_REPORT_CONTRACT_REVISIONS: readonly string[] =
+  Object.freeze([
+    'resolve-check-v1',
+    'resolve-concentration-v1',
+    'resolve-spell-upcast-v1',
+  ]);
+
+/**
+ * Filters the runtime capability-contract registry down to this report's
+ * reviewed scope, failing closed rather than silently reporting fewer
+ * contracts than the report claims to cover: a scope entry with no runtime
+ * counterpart is a bug in this file, not a member the report can quietly
+ * drop.
+ */
+function ruleDispositionReportCapabilityContracts(
+  contracts: Readonly<Record<string, RuleDeterministicCapabilityContract>>,
+): Readonly<Record<string, RuleDeterministicCapabilityContract>> {
+  const scoped: Record<string, RuleDeterministicCapabilityContract> = {};
+  for (const revision of RULE_DISPOSITION_REPORT_CONTRACT_REVISIONS) {
+    const contract = contracts[revision];
+    if (contract === undefined)
+      throw new Error(
+        `${revision}: rule-disposition report scope names a capability the runtime ledger no longer defines`,
+      );
+    scoped[revision] = contract;
+  }
+  return scoped;
+}
+
 export function validateRuleDeterministicCapabilityInput(
   capability: string,
   input: unknown,
@@ -3039,8 +3089,6 @@ export function validateRuleDeterministicCapabilityContracts(
     const tool = DEFAULT_TOOLS.find(
       ({ name }) => name === contract.inputSchemaOperation,
     );
-    if (tool === undefined && capability === 'derived-magic-item-clauses-v1')
-      continue;
     if (tool === undefined || tool.name !== contract.operationId)
       errors.push(
         `${capability}: capability operation is not a registered tool`,
@@ -3399,7 +3447,9 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
     ...validateRuleRegistries(RULE_DISPOSITIONS, ENGINE_PROCEDURE_COVERAGE),
     ...validateRuleDeterministicCapabilityContracts(
       ENGINE_PROCEDURE_COVERAGE,
-      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+      ruleDispositionReportCapabilityContracts(
+        RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+      ),
     ),
     ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
   );
@@ -3447,7 +3497,13 @@ export interface RuleDispositionReport {
     readonly key: string;
     readonly contextRequirement: string;
   }[];
-  /** Positive, bounded ADR 0020 §3 contracts, not a capability inventory. */
+  /**
+   * Positive, bounded ADR 0020 §3 contracts, not a capability inventory.
+   * Scoped to `RULE_DISPOSITION_REPORT_CONTRACT_REVISIONS` — the runtime
+   * ledger may hold additional contracts (e.g. the magic-item readiness
+   * contract) that are real but outside this report's reviewed scope; see
+   * that constant's doc comment.
+   */
   readonly deterministicCapabilities: readonly RuntimeRuleDeterministicCapabilityContract[];
   /** Identity-complete W13 outcome for each historical implemented row. */
   readonly deterministicCapabilitySourceOutcomes: readonly (
@@ -3610,7 +3666,9 @@ export function buildRuleDispositionReport(
     },
     adjudicationContextInventory: adjudicationContextInventory.sort(byKey),
     deterministicCapabilities: Object.values(
-      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+      ruleDispositionReportCapabilityContracts(
+        RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+      ),
     ).sort((a, b) => a.revision.localeCompare(b.revision)),
     deterministicCapabilitySourceOutcomes:
       deterministicCapabilitySourceOutcomes.sort((a, b) =>
