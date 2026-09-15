@@ -54,3 +54,6 @@ x.sh
 uselm.sh
 
 *~
+
+# Local verification timing/memory records (scripts/measure-run.mjs)
+verification-metrics.jsonl

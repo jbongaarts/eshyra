@@ -776,7 +776,14 @@ describe('Context Assembler', () => {
       parityContexts[2].campaignRules.rules.map((rule) => rule.ruleIdentity),
     ).toContain('disputed-turn-rule');
     const packAfter = readFileSync(packPath);
-    expect(packBefore).toEqual(packAfter);
+    // Buffer.equals, not toEqual. `expect(a).toEqual(b)` on two 7.4 MB
+    // Buffers drives structural deep-equality over ~7.4M elements and builds
+    // diff state for them: measured at 14,354 ms and 2,414 MB peak RSS, which
+    // was ~12% of the whole suite's summed file duration and its single
+    // largest allocation. `Buffer.equals` is 1 ms with identical detection
+    // power. See docs/audits/test-suite-and-verification/
+    // 2026-09-14-test-suite-and-verification-audit.md (finding F1).
+    expect(packAfter.equals(packBefore)).toBe(true);
     db.close();
   }, 120000);
 
