@@ -5,7 +5,9 @@ import type {
   CampaignRulingProjection,
 } from '../campaign/campaignRules.js';
 import type { Db } from '../persistence/db.js';
+import type { RuleDeterministicCapabilityDisposition } from '../rules/deterministicCapabilityLedger.js';
 import type { FieldProvenanceManifest } from '../rules/fieldProvenance.js';
+import type { RelationshipResolution } from '../rules/recordRelationships.js';
 import type {
   ResolvedRulesStack,
   RulesStackRecordEntry,
@@ -193,8 +195,60 @@ export interface TypedTraversal {
   readonly targetRecordKey: string;
 }
 
+/**
+ * Which record-relationship manifest, if any, governs a given PRODUCING
+ * PACK (eshyra-jgxl F1, mirroring `FieldProvenanceSource` immediately below).
+ *
+ * A function of the pack rather than one manifest for the whole resolved
+ * stack: a relationship manifest attests only the meaning its own producer
+ * declared for ITS fields, so applying one pack's manifest to another pack's
+ * records interprets add-on, override, or foreign-system content under
+ * semantics its author never wrote (the defect `expandTypedRelationships`
+ * used to have, threading one bundled manifest across every
+ * `RulesStackRecordEntry` regardless of `entry.pack`). Returning `undefined`
+ * is the safe, explicit answer: that producer's occurrences resolve to no
+ * declaration at all, which is the true, reportable state — never a fallback
+ * to another pack's manifest, and never an inference from base/system
+ * compatibility, pack id, or version.
+ *
+ * Production discovery (`discovery/harness.ts`'s
+ * `bundledDnd5eSrdRecordRelationshipManifestSource`) answers only for the
+ * canonical bundled SRD pack OBJECT, by identity, exactly as
+ * `bundledDnd5eSrdFieldProvenanceSource` does for field provenance.
+ */
+export type RecordRelationshipManifestSource = (
+  pack: RulesPack,
+) =>
+  | import('../rules/recordRelationships.js').RecordRelationshipManifest
+  | undefined;
+
+/**
+ * Whether a relationship manifest was present or absent for one producing
+ * pack, keyed by `RulesPackMeta.packId` (the stable identity `stack.base` /
+ * `stack.addons` already report — see `ProjectedPackIdentity`).
+ */
+export interface RelationshipArtifactState {
+  readonly packId: string;
+  readonly state: 'present' | 'absent';
+}
+
 export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
   readonly traversals: readonly TypedTraversal[];
+  readonly relationshipResolutions: readonly RelationshipResolution[];
+  /**
+   * One entry per DISTINCT pack that produced a winning record in the
+   * resolved stack this pass ran over, replacing the single
+   * `relationshipManifestAbsent: boolean` this shape used to carry.
+   *
+   * A single stack-wide boolean cannot describe a mixed stack once
+   * relationship resolution is producer-scoped (F1): the base SRD pack may
+   * carry a manifest while an add-on carries none, and a boolean can only
+   * report one of those two facts, silently losing the other. This array
+   * reports the real, per-producer state instead — see
+   * `RecordRelationshipManifestSource`'s doc comment for why absence is
+   * never inferred or defaulted.
+   */
+  readonly relationshipArtifactByProducer: readonly RelationshipArtifactState[];
 }
 
 export { NULL_CAMPAIGN_RULE_SEAM } from '../campaign/campaignRules.js';
@@ -537,6 +591,7 @@ export interface PacketCandidate {
    * stating that a blocked contract is not an executable capability.
    */
   readonly capabilities: readonly CapabilityPreflight[];
+  readonly deterministicCapabilityDisposition?: RuleDeterministicCapabilityDisposition;
   readonly projectionLimits: readonly ProjectionLimitNote[];
 }
 
@@ -682,6 +737,18 @@ export interface DiscoveryRunInput {
   readonly campaignPosition?: string;
   readonly budget?: Partial<RetentionBudget>;
   readonly rulesPackResolver?: import('../state/campaignRecordLookup.js').CampaignRulesPackResolver;
+  /**
+   * Which relationship manifest, if any, governs a given producing pack in
+   * the resolved stack (`RecordRelationshipManifestSource`). Absent, the run
+   * uses `bundledDnd5eSrdRecordRelationshipManifestSource()` — the same
+   * fail-safe default every production caller gets, recognizing only the
+   * canonical bundled SRD pack object. A caller whose stack includes a pack
+   * carrying its OWN relationship manifest (a fixture add-on proving F1's
+   * per-producer resolution, or a future real one) supplies a source that
+   * also answers for that pack's identity; nothing here infers a manifest
+   * for a pack the caller did not positively associate one with.
+   */
+  readonly relationshipManifestSource?: RecordRelationshipManifestSource;
 }
 
 export interface DiscoveryTrace {

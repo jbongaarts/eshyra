@@ -22,8 +22,10 @@ import { fileURLToPath } from 'node:url';
 import type { FieldProvenanceManifest } from './fieldProvenance.js';
 import {
   loadFieldProvenanceManifest,
+  loadRecordRelationshipManifest,
   loadRulesPackFromDirectory,
 } from './packLoader.js';
+import type { RecordRelationshipManifest } from './recordRelationships.js';
 import type { RulesPack } from './types.js';
 
 /** Canonical pack id for the runtime D&D 5e SRD 5.1 rules pack (ADR 0013). */
@@ -49,6 +51,7 @@ const PACK_DIR = fileURLToPath(
 
 let cachedPack: RulesPack | undefined;
 let cachedFieldProvenanceManifest: FieldProvenanceManifest | undefined;
+let cachedRecordRelationshipManifest: RecordRelationshipManifest | undefined;
 
 /**
  * Load the bundled, importer-generated D&D 5e SRD 5.1 rules pack from the
@@ -129,4 +132,14 @@ export function getBundledDnd5eSrdFieldProvenanceManifest(): FieldProvenanceMani
     loadFieldProvenanceManifest(PACK_DIR),
   );
   return cachedFieldProvenanceManifest;
+}
+
+/** Load the bundled pack's optional, pack-owned relationship declarations. */
+export function getBundledDnd5eSrdRecordRelationshipManifest():
+  | RecordRelationshipManifest
+  | undefined {
+  cachedRecordRelationshipManifest ??= deepFreeze(
+    loadRecordRelationshipManifest(PACK_DIR),
+  );
+  return cachedRecordRelationshipManifest;
 }

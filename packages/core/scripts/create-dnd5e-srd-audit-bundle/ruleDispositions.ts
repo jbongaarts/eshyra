@@ -31,7 +31,25 @@
 import { createHash } from 'node:crypto';
 import { validateToolInput } from '../../src/model/toolSchemaValidation.js';
 import { DEFAULT_TOOLS } from '../../src/orchestrator/tools.js';
-import type { DeterministicCapabilityContract } from '../../src/rules/deterministicCapabilityContract.js';
+import type {
+  RuleDeterministicCapabilityContract,
+  RuleDeterministicCapabilityDisposition,
+} from '../../src/rules/deterministicCapabilityLedger.js';
+import {
+  RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
+  RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+  RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
+  requireRuleDeterministicCapabilityContract,
+  validateRuleDeterministicCapabilityContracts as validateLedgerCapabilityContracts,
+} from '../../src/rules/deterministicCapabilityLedger.js';
+
+export {
+  RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
+  RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+  RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
+  requireRuleDeterministicCapabilityContract,
+} from '../../src/rules/deterministicCapabilityLedger.js';
+
 import { findingByCanonicalId } from '../../src/rules/findingRegistry.js';
 import type { RulesPack } from '../../src/rules/types.js';
 
@@ -2988,280 +3006,59 @@ export const ENGINE_PROCEDURE_COVERAGE = materializeEngineProcedureCoverage(
   UNBOUND_ENGINE_PROCEDURE_COVERAGE,
 );
 
-/**
- * W13's positive bindings for the implemented portion of the rule-procedure
- * registry. These contracts deliberately bind a rule key to its verified
- * runtime owners and evidence; they do not turn the 175-row coverage registry
- * into a corpus-wide capability inventory.
- */
-export type RuleDeterministicCapabilityContract =
-  DeterministicCapabilityContract & {
-    /** The provider-neutral tool whose schema is the input boundary. */
-    readonly inputSchemaOperation: string;
-    readonly runtimeOwner: readonly string[];
-    readonly evidence: readonly string[];
-  };
+type RuntimeRuleDeterministicCapabilityContract =
+  RuleDeterministicCapabilityContract;
 
 /**
- * Positive W13 capabilities are actual provider-neutral operations. Coverage
- * rows are evidence and may bind many-to-many; they never manufacture an
- * operation merely because a rule has an implemented status.
+ * Contract revisions this rule-disposition REPORT has been reviewed against.
+ * `src/rules/deterministicCapabilityLedger.ts` is the one runtime owner of
+ * `RULE_DETERMINISTIC_CAPABILITY_CONTRACTS`, and it is free to register
+ * additional contracts for ledger lookup and context-packet presentation —
+ * most recently the magic-item readiness contract
+ * (`derived-magic-item-clauses-v1`, eshyra-o9bd.19.1.4 W13) — without that
+ * growth silently becoming a new claim THIS report makes. Deciding the
+ * report's membership belongs to eshyra-o9bd.19.5.12, not this file
+ * (eshyra-o9bd.19.1.4 F5); until that bead acts, the report keeps emitting
+ * exactly the three contracts it was last reviewed against. Absence here is
+ * a statement about this report's reviewed scope, never a claim that the
+ * runtime ledger doesn't know the capability — see
+ * `RULE_DETERMINISTIC_CAPABILITY_CONTRACTS['derived-magic-item-clauses-v1']`.
+ *
+ * Each entry names a key already present in
+ * `RULE_DETERMINISTIC_CAPABILITY_CONTRACTS`, so the report reuses the
+ * runtime's own row objects rather than a second copy of them — a second
+ * copy is the exact defect eshyra-o9bd.19.1.4 review round 1 (finding X1)
+ * found and fixed.
  */
-export const RULE_DETERMINISTIC_CAPABILITY_CONTRACTS: Readonly<
-  Record<string, RuleDeterministicCapabilityContract>
-> = Object.freeze({
-  'resolve-check-v1': {
-    revision: 'resolve-check-v1',
-    operationId: 'resolve_check',
-    inputSchemaOperation: 'resolve_check',
-    operation:
-      'Resolve one declared ability check, saving throw, or attack roll using seeded d20 arithmetic.',
-    requiredInputs: ['kind', 'reason'],
-    exclusions: [
-      'Does not decide which modifiers apply or set the DC/AC.',
-      'Does not adjudicate source semantics outside the declared d20 roll.',
-    ],
-    residualDmInterpretation: [
-      'The DM selects applicable modifiers, advantage, and the target DC or AC.',
-    ],
-    runtimeOwner: ['packages/core/src/orchestrator/toolResolveCheck.ts'],
-    evidence: ['packages/core/test/resolutionTools.test.ts'],
-  },
-  'resolve-concentration-v1': {
-    revision: 'resolve-concentration-v1',
-    operationId: 'resolve_concentration',
-    inputSchemaOperation: 'resolve_concentration',
-    operation:
-      'Resolve a damage-triggered concentration saving throw and atomically end the effect on failure.',
-    requiredInputs: ['owner', 'damage'],
-    exclusions: [
-      'Does not handle voluntary, incapacitation, death, or other direct concentration breaks.',
-      'Does not decide whether a damage event occurred or which modifiers apply.',
-    ],
-    residualDmInterpretation: [
-      'The DM determines whether a save is owed and selects applicable modifiers or advantage.',
-    ],
-    runtimeOwner: [
-      'packages/core/src/state/activeEffects.ts',
-      'packages/core/src/orchestrator/toolResolveConcentration.ts',
-    ],
-    evidence: [
-      'packages/core/test/activeEffects.test.ts',
-      'packages/core/test/tools.test.ts',
-    ],
-  },
-  'resolve-spell-upcast-v1': {
-    revision: 'resolve-spell-upcast-v1',
-    operationId: 'resolve_spell_upcast',
-    inputSchemaOperation: 'resolve_spell_upcast',
-    operation:
-      'Resolve the typed source-bound higher-level spell transform for a selected spell slot.',
-    requiredInputs: ['spellRef', 'slotLevel'],
-    exclusions: [
-      'Does not decide whether the spell may be cast or spend the slot.',
-      'Does not adjudicate untyped higher-level prose.',
-    ],
-    residualDmInterpretation: [
-      'The DM determines applicability and adjudicates source text outside the typed transform.',
-    ],
-    runtimeOwner: ['packages/core/src/orchestrator/toolResolveSpellUpcast.ts'],
-    evidence: ['packages/core/test/spellSlots.test.ts'],
-  },
-});
-
-/** Source-rule evidence may bind to a capability many-to-many. */
-export const RULE_DETERMINISTIC_CAPABILITY_BINDINGS = Object.freeze([
-  { ruleKey: 'rule:ability-checks', capability: 'resolve-check-v1' },
-  {
-    ruleKey: 'rule:advantage-and-disadvantage',
-    capability: 'resolve-check-v1',
-  },
-  { ruleKey: 'rule:attack-rolls', capability: 'resolve-check-v1' },
-  { ruleKey: 'rule:modifiers-to-the-roll', capability: 'resolve-check-v1' },
-  { ruleKey: 'rule:proficiency-bonus', capability: 'resolve-check-v1' },
-  { ruleKey: 'rule:saving-throws', capability: 'resolve-check-v1' },
-  { ruleKey: 'rule:concentration', capability: 'resolve-concentration-v1' },
-  {
-    ruleKey: 'rule:casting-a-spell-at-a-higher-level',
-    capability: 'resolve-spell-upcast-v1',
-  },
-] as const);
-
-export interface RuleDeterministicCapabilityDisposition {
-  readonly ruleKey: string;
-  readonly outcome: 'not-positively-selected';
-  readonly reason: string;
-  readonly replacingResponsibility: string;
-  readonly nextState: string;
-}
-
-const IMPLEMENTED_ROWS_WITHOUT_SELECTED_CAPABILITY = [
-  'rule:abilities',
-  'rule:ability-scores-and-modifiers',
-  'rule:attunement',
-  'rule:backgrounds-equipment',
-  'rule:backgrounds-proficiencies',
-  'rule:beyond-1st-level',
-  'rule:bonus-action',
-  'rule:bonus-actions',
-  'rule:constitution-hit-points',
-  'rule:contests',
-  'rule:critical-hits',
-  'rule:damage-resistance-and-vulnerability',
-  'rule:damage-rolls',
-  'rule:death-saving-throws',
-  'rule:falling-unconscious',
-  'rule:gaining-inspiration',
-  'rule:grapple-rules-for-monsters',
-  'rule:group-checks',
-  'rule:healing',
-  'rule:instant-death',
-  'rule:legendary-actions',
-  'rule:limited-usage',
-  'rule:other-activity-on-your-turn',
-  'rule:passive-checks',
-  'rule:reactions',
-  'rule:spell-slots',
-  'rule:stabilizing-a-creature',
-  'rule:surprise',
-  'rule:temporary-hit-points',
-  'rule:using-inspiration',
-  'rule:your-turn',
-] as const;
+const RULE_DISPOSITION_REPORT_CONTRACT_REVISIONS: readonly string[] =
+  Object.freeze([
+    'resolve-check-v1',
+    'resolve-concentration-v1',
+    'resolve-spell-upcast-v1',
+  ]);
 
 /**
- * Explicit W13 outcomes for historical implemented rows that are not a
- * positively selected capability. The implementation evidence remains real,
- * but it is broader than a reviewed provider-neutral operation contract.
+ * Filters the runtime capability-contract registry down to this report's
+ * reviewed scope, failing closed rather than silently reporting fewer
+ * contracts than the report claims to cover: a scope entry with no runtime
+ * counterpart is a bug in this file, not a member the report can quietly
+ * drop.
  */
-export const RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS: Readonly<
-  Record<string, RuleDeterministicCapabilityDisposition>
-> = Object.freeze(
-  Object.fromEntries(
-    IMPLEMENTED_ROWS_WITHOUT_SELECTED_CAPABILITY.map((ruleKey) => [
-      ruleKey,
-      Object.freeze({
-        ruleKey,
-        outcome: 'not-positively-selected' as const,
-        reason:
-          'The historical implemented row records code and test evidence, but does not by itself identify one reviewed provider-neutral operation boundary.',
-        replacingResponsibility:
-          'ENGINE_PROCEDURE_COVERAGE retains the implementation evidence without advertising deterministic capability availability.',
-        nextState:
-          'Define and review a real validated operation or bounded composite before capability presentation; absence makes no claim about the rule semantics.',
-      }),
-    ]),
-  ),
-);
-
-/** Looks up a positive rule capability binding and fails closed on unknown input. */
-export function requireRuleDeterministicCapabilityContract(
-  capability: string,
-  contracts: Readonly<
-    Record<string, RuleDeterministicCapabilityContract>
-  > = RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
-): RuleDeterministicCapabilityContract {
-  const contract = contracts[capability];
-  if (contract === undefined) {
-    throw new Error(
-      `${capability}: no deterministic capability has been positively selected`,
-    );
-  }
-  return contract;
-}
-
-export function validateRuleDeterministicCapabilityContracts(
-  coverage: Readonly<Record<string, RuleProcedureCoverage>>,
+function ruleDispositionReportCapabilityContracts(
   contracts: Readonly<Record<string, RuleDeterministicCapabilityContract>>,
-  bindings: readonly {
-    readonly ruleKey: string;
-    readonly capability: string;
-  }[] = RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
-  dispositions: Readonly<
-    Record<string, RuleDeterministicCapabilityDisposition>
-  > = RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
-): readonly string[] {
-  const errors: string[] = [];
-  const implemented = new Set(
-    Object.entries(coverage)
-      .filter(([, row]) => row.status === 'implemented')
-      .map(([key]) => key),
-  );
-  for (const [capability, contract] of Object.entries(contracts)) {
-    const tool = DEFAULT_TOOLS.find(
-      ({ name }) => name === contract.inputSchemaOperation,
-    );
-    if (tool === undefined || tool.name !== contract.operationId) {
-      errors.push(
-        `${capability}: capability operation is not a registered tool`,
+): Readonly<Record<string, RuleDeterministicCapabilityContract>> {
+  const scoped: Record<string, RuleDeterministicCapabilityContract> = {};
+  for (const revision of RULE_DISPOSITION_REPORT_CONTRACT_REVISIONS) {
+    const contract = contracts[revision];
+    if (contract === undefined)
+      throw new Error(
+        `${revision}: rule-disposition report scope names a capability the runtime ledger no longer defines`,
       );
-    }
-    if (
-      !contract.revision ||
-      !contract.operation ||
-      contract.requiredInputs.length === 0 ||
-      contract.exclusions.length === 0 ||
-      contract.residualDmInterpretation.length === 0
-    ) {
-      errors.push(
-        `${capability}: capability contract is missing an ADR 0020 §3 field`,
-      );
-    }
-    if (tool !== undefined) {
-      const declaredInputs = new Set(contract.requiredInputs);
-      const schemaInputs = new Set(tool.inputSchema.required ?? []);
-      for (const input of contract.requiredInputs) {
-        if (!schemaInputs.has(input))
-          errors.push(
-            `${capability}: '${input}' is not required by ${tool.name}`,
-          );
-      }
-      for (const input of schemaInputs) {
-        if (!declaredInputs.has(input))
-          errors.push(
-            `${capability}: required schema input '${input}' is missing from the contract`,
-          );
-      }
-    }
+    scoped[revision] = contract;
   }
-  const boundRules = new Set(bindings.map(({ ruleKey }) => ruleKey));
-  for (const binding of bindings) {
-    if (!implemented.has(binding.ruleKey))
-      errors.push(
-        `${binding.ruleKey}: capability binding is not backed by an implemented row`,
-      );
-    if (contracts[binding.capability] === undefined)
-      errors.push(
-        `${binding.ruleKey}: binds unknown capability ${binding.capability}`,
-      );
-  }
-  for (const [ruleKey, disposition] of Object.entries(dispositions)) {
-    if (!implemented.has(ruleKey))
-      errors.push(
-        `${ruleKey}: capability disposition is not backed by an implemented row`,
-      );
-    if (boundRules.has(ruleKey))
-      errors.push(
-        `${ruleKey}: has both a capability binding and a disposition`,
-      );
-    if (
-      disposition.ruleKey !== ruleKey ||
-      !disposition.reason ||
-      !disposition.replacingResponsibility ||
-      !disposition.nextState
-    )
-      errors.push(`${ruleKey}: capability disposition is incomplete`);
-  }
-  for (const ruleKey of implemented) {
-    if (!boundRules.has(ruleKey) && dispositions[ruleKey] === undefined)
-      errors.push(
-        `${ruleKey}: implemented row has no W13 capability binding or disposition`,
-      );
-  }
-  return errors;
+  return scoped;
 }
 
-/** Validates selected capability input against the exact registered tool schema. */
 export function validateRuleDeterministicCapabilityInput(
   capability: string,
   input: unknown,
@@ -3272,6 +3069,45 @@ export function validateRuleDeterministicCapabilityInput(
   );
   if (tool === undefined) throw new Error(`${capability}: missing tool schema`);
   return validateToolInput(tool.inputSchema, input);
+}
+
+export function validateRuleDeterministicCapabilityContracts(
+  coverage: Readonly<Record<string, { readonly status: string }>>,
+  contracts: Readonly<Record<string, RuleDeterministicCapabilityContract>>,
+  bindings = RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
+  dispositions = RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
+): readonly string[] {
+  const errors = [
+    ...validateLedgerCapabilityContracts(
+      coverage,
+      contracts,
+      bindings,
+      dispositions,
+    ),
+  ];
+  for (const [capability, contract] of Object.entries(contracts)) {
+    const tool = DEFAULT_TOOLS.find(
+      ({ name }) => name === contract.inputSchemaOperation,
+    );
+    if (tool === undefined || tool.name !== contract.operationId)
+      errors.push(
+        `${capability}: capability operation is not a registered tool`,
+      );
+    if (tool !== undefined) {
+      const declared = new Set(contract.requiredInputs);
+      for (const input of tool.inputSchema.required ?? [])
+        if (!declared.has(input))
+          errors.push(
+            `${capability}: required schema input '${input}' is missing from the contract`,
+          );
+      for (const input of contract.requiredInputs)
+        if (!(tool.inputSchema.required ?? []).includes(input))
+          errors.push(
+            `${capability}: '${input}' is not required by ${tool.name}`,
+          );
+    }
+  }
+  return errors;
 }
 
 function requireFindingReference(id: string, context: string): string {
@@ -3611,7 +3447,9 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
     ...validateRuleRegistries(RULE_DISPOSITIONS, ENGINE_PROCEDURE_COVERAGE),
     ...validateRuleDeterministicCapabilityContracts(
       ENGINE_PROCEDURE_COVERAGE,
-      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+      ruleDispositionReportCapabilityContracts(
+        RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+      ),
     ),
     ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
   );
@@ -3659,8 +3497,14 @@ export interface RuleDispositionReport {
     readonly key: string;
     readonly contextRequirement: string;
   }[];
-  /** Positive, bounded ADR 0020 §3 contracts, not a capability inventory. */
-  readonly deterministicCapabilities: readonly RuleDeterministicCapabilityContract[];
+  /**
+   * Positive, bounded ADR 0020 §3 contracts, not a capability inventory.
+   * Scoped to `RULE_DISPOSITION_REPORT_CONTRACT_REVISIONS` — the runtime
+   * ledger may hold additional contracts (e.g. the magic-item readiness
+   * contract) that are real but outside this report's reviewed scope; see
+   * that constant's doc comment.
+   */
+  readonly deterministicCapabilities: readonly RuntimeRuleDeterministicCapabilityContract[];
   /** Identity-complete W13 outcome for each historical implemented row. */
   readonly deterministicCapabilitySourceOutcomes: readonly (
     | {
@@ -3822,7 +3666,9 @@ export function buildRuleDispositionReport(
     },
     adjudicationContextInventory: adjudicationContextInventory.sort(byKey),
     deterministicCapabilities: Object.values(
-      RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+      ruleDispositionReportCapabilityContracts(
+        RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+      ),
     ).sort((a, b) => a.revision.localeCompare(b.revision)),
     deterministicCapabilitySourceOutcomes:
       deterministicCapabilitySourceOutcomes.sort((a, b) =>

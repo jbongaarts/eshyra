@@ -549,6 +549,7 @@ export { deduplicateCandidates } from './discovery/dedup.js';
 export { expandTypedRelationships } from './discovery/expansion.js';
 export {
   bundledDnd5eSrdFieldProvenanceSource,
+  bundledDnd5eSrdRecordRelationshipManifestSource,
   runDiscoveryStages,
 } from './discovery/harness.js';
 export type {
@@ -639,6 +640,8 @@ export type {
   PacketCandidate,
   ProjectionLimitNote,
   RecordDataResidue,
+  RecordRelationshipManifestSource,
+  RelationshipArtifactState,
   RetentionBudget,
   RetentionOverflow,
   RouteClass,
@@ -1104,8 +1107,25 @@ export {
   DND5E_SRD_VERSION,
   getBundledDnd5eSrdFieldProvenanceManifest,
   getBundledDnd5eSrdPack,
+  getBundledDnd5eSrdRecordRelationshipManifest,
   RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
 } from './rules/bundledSrdPack.js';
+export type {
+  CapabilityLedgerLookup,
+  DeterministicCapabilityLedger,
+  RuleDeterministicCapabilityContract,
+  RuleDeterministicCapabilityDisposition,
+} from './rules/deterministicCapabilityLedger.js';
+export {
+  createDeterministicCapabilityLedger,
+  DETERMINISTIC_CAPABILITY_LEDGER,
+  DeterministicCapabilityLedgerError,
+  RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
+  RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,
+  RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
+  requireRuleDeterministicCapabilityContract,
+  validateRuleDeterministicCapabilityContracts,
+} from './rules/deterministicCapabilityLedger.js';
 export type {
   FeatureChoice,
   FeatureChoiceCategory,
@@ -1221,9 +1241,11 @@ export {
 } from './rules/magicItemVariants.js';
 export {
   loadFieldProvenanceManifest,
+  loadRecordRelationshipManifest,
   loadRulesPackFromDirectory,
   PACK_FIELD_PROVENANCE_FILE,
   PACK_MANIFEST_FILE,
+  PACK_RECORD_RELATIONSHIPS_FILE,
   PACK_RECORDS_FILE,
 } from './rules/packLoader.js';
 export { PATHFINDER2E_REMASTER_RULES_PACK } from './rules/pathfinder2eRemaster.js';
@@ -1232,6 +1254,23 @@ export type {
   RulesRecordCardParent,
 } from './rules/recordCard.js';
 export { buildRulesRecordCard } from './rules/recordCard.js';
+export type {
+  RecordRelationshipDeclaration,
+  RecordRelationshipManifest,
+  RelationshipDisposition,
+  RelationshipResolution,
+  RelationshipTargetResolution,
+} from './rules/recordRelationships.js';
+export {
+  assertRecordRelationshipDeclarationsAreLive,
+  assertRecordRelationshipDeclarationsCoverBoundedShapes,
+  buildRecordRelationshipManifest,
+  LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES,
+  RECORD_RELATIONSHIP_SCHEMA,
+  RecordRelationshipError,
+  relationshipDeclarationForPointer,
+  resolveRecordRelationships,
+} from './rules/recordRelationships.js';
 export type { FeatureChoiceInstance } from './rules/repeatedFeatureChoices.js';
 export {
   deriveFeatureChoiceInstances,

@@ -243,6 +243,15 @@ function candidateBlock(candidate: PacketCandidate): string {
       '- no capability was positively selected.',
       '- This is not a claim that the record has no mechanics, is irrelevant, or is safe to ignore.',
     );
+  if (candidate.deterministicCapabilityDisposition !== undefined) {
+    const disposition = candidate.deterministicCapabilityDisposition;
+    lines.push(
+      `- Eshyra has not positively selected a deterministic capability for this record: ${disposition.reason}`,
+      `- replacing responsibility: ${disposition.replacingResponsibility}`,
+      `- next state: ${disposition.nextState}`,
+      '- This is a statement about Eshyra, not about the rules; it does not mean the record has no mechanics, is irrelevant, or is safe to ignore.',
+    );
+  }
   // Three states per entry, and only ONE of them is a positive selection.
   //
   // `available` and `blocked` are both real commitments a capability contract
