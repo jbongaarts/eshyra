@@ -253,7 +253,98 @@ export function loadFieldProvenanceManifest(
   return buildFieldProvenanceManifest(declarations);
 }
 
-/** Load the optional pack-owned relationship manifest. */
+/**
+ * Parse and field-validate one on-disk relationship declaration.
+ *
+ * Mirrors `parseFieldProvenanceDeclaration` above: every field is checked by
+ * TYPE here, not merely cast. A blind `as unknown as RecordRelationshipDeclaration`
+ * would let a malformed on-disk file (a `pointerPrefix` that is a number, a
+ * `targetKind` that is not a real `RulesRecordKind`, ...) reach
+ * `buildRecordRelationshipManifest`'s cross-field checks wearing the TYPE the
+ * interface promises but not the shape — which either throws an unrelated
+ * native `TypeError` well past the point of a clear diagnostic, or, worse,
+ * degrades into a Map lookup miss that reads exactly like a legitimate
+ * "no record with this name" result (see `RelationshipResolution`'s
+ * `indeterminate` outcome doc comment for the same class of failure one layer
+ * up). A malformed on-disk manifest must fail closed HERE, at the loader,
+ * before it ever reaches a consumer.
+ */
+function parseRecordRelationshipDeclaration(
+  value: unknown,
+  path: string,
+): RecordRelationshipDeclaration {
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    throw new RulesPackError(`${path} must be an object`);
+  const o = value as Record<string, unknown>;
+  const kind = o.kind;
+  if (
+    typeof kind !== 'string' ||
+    !RULES_RECORD_KINDS.includes(kind as RulesRecordKind)
+  )
+    throw new RulesPackError(`${path}.kind must be a known RulesRecordKind`);
+  const pointerPrefix = o.pointerPrefix;
+  if (typeof pointerPrefix !== 'string' || pointerPrefix.length === 0)
+    throw new RulesPackError(
+      `${path}.pointerPrefix must be a non-empty string`,
+    );
+  const linkField = o.linkField;
+  if (typeof linkField !== 'string' || linkField.length === 0)
+    throw new RulesPackError(`${path}.linkField must be a non-empty string`);
+  const disposition = o.disposition;
+  if (disposition !== 'reference' && disposition !== 'not-a-reference')
+    throw new RulesPackError(
+      `${path}.disposition must be 'reference' or 'not-a-reference'`,
+    );
+  const relation = o.relation;
+  if (relation !== undefined && typeof relation !== 'string')
+    throw new RulesPackError(`${path}.relation must be a string when present`);
+  const targetResolution = o.targetResolution;
+  if (
+    targetResolution !== undefined &&
+    targetResolution !== 'record-key' &&
+    targetResolution !== 'record-name'
+  )
+    throw new RulesPackError(
+      `${path}.targetResolution must be 'record-key' or 'record-name' when present`,
+    );
+  const targetKind = o.targetKind;
+  if (
+    targetKind !== undefined &&
+    (typeof targetKind !== 'string' ||
+      !RULES_RECORD_KINDS.includes(targetKind as RulesRecordKind))
+  )
+    throw new RulesPackError(
+      `${path}.targetKind must be a known RulesRecordKind when present`,
+    );
+  const relationField = o.relationField;
+  if (relationField !== undefined && typeof relationField !== 'string')
+    throw new RulesPackError(
+      `${path}.relationField must be a string when present`,
+    );
+  const reason = o.reason;
+  if (typeof reason !== 'string' || reason.trim().length === 0)
+    throw new RulesPackError(`${path}.reason must be a non-empty string`);
+  return {
+    kind: kind as RulesRecordKind,
+    pointerPrefix,
+    linkField,
+    disposition,
+    ...(relation === undefined ? {} : { relation }),
+    ...(targetResolution === undefined ? {} : { targetResolution }),
+    ...(targetKind === undefined
+      ? {}
+      : { targetKind: targetKind as RulesRecordKind }),
+    ...(relationField === undefined ? {} : { relationField }),
+    reason,
+  };
+}
+
+/**
+ * Load the optional pack-owned relationship manifest, when the pack ships
+ * one. Throws `RulesPackError` if the file exists but is unparseable, has an
+ * unexpected schema, or fails shape/cross-field validation
+ * (`parseRecordRelationshipDeclaration` and `buildRecordRelationshipManifest`).
+ */
 export function loadRecordRelationshipManifest(
   dir: string,
 ): RecordRelationshipManifest | undefined {
@@ -280,13 +371,8 @@ export function loadRecordRelationshipManifest(
     throw new RulesPackError(
       `record relationship manifest at ${path}.declarations must be an array`,
     );
-  const declarations = object.declarations.map((item, i) => {
-    if (typeof item !== 'object' || item === null || Array.isArray(item))
-      throw new RulesPackError(
-        `record relationship manifest at ${path}.declarations[${i}] must be an object`,
-      );
-    const value = item as Record<string, unknown>;
-    return value as unknown as RecordRelationshipDeclaration;
-  });
+  const declarations = object.declarations.map((item, i) =>
+    parseRecordRelationshipDeclaration(item, `${path}.declarations[${i}]`),
+  );
   return buildRecordRelationshipManifest(declarations);
 }

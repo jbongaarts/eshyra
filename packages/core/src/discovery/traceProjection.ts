@@ -5,6 +5,7 @@ import type {
   DiscoverySignalKind,
   DiscoveryTrace,
   PacketCandidate,
+  RelationshipArtifactState,
   ReturnedRuleProjection,
   SeamQuery,
   StageLoss,
@@ -133,6 +134,22 @@ export interface ProjectedExpansionStage
   /** Relationships this stage traversed, exactly as the producer recorded
    * them. Not deduplicated against earlier stages: a repeat is a real event. */
   readonly traversalEvents: readonly TypedTraversal[];
+  /**
+   * Which relationship manifest, present or absent, governed each producing
+   * pack this pass consulted (eshyra-jgxl F4), copied from
+   * `ExpansionTrace.relationshipArtifactByProducer` exactly as the producer
+   * recorded it.
+   *
+   * This replaces a single `relationshipManifestAbsent: boolean` that this
+   * shape never actually carried — `ExpansionTrace` recorded it, but nothing
+   * here copied it forward, so the fact vanished before the durable trace
+   * runtime shadow evidence persists (`shadow.ts` stores THIS projection, not
+   * the live `DiscoveryTrace`). A boolean could not have replaced it correctly
+   * anyway: once relationship resolution is producer-scoped (F1), a single
+   * mixed stack can have one producer with a manifest and another without,
+   * and a boolean can report only one of those two facts.
+   */
+  readonly relationshipArtifactByProducer: readonly RelationshipArtifactState[];
 }
 
 export interface ProjectedRuleJoinStage
@@ -265,6 +282,7 @@ function projectExpansion(
     // Copied, not recomputed. `expandTypedRelationships()` recorded these as it
     // executed; that IS the event history for this pass.
     traversalEvents: stage.traversals,
+    relationshipArtifactByProducer: stage.relationshipArtifactByProducer,
   };
 }
 

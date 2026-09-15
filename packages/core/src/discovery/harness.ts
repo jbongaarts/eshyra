@@ -16,6 +16,7 @@ import type {
   DiscoveryRunInput,
   DiscoveryTrace,
   FieldProvenanceSource,
+  RecordRelationshipManifestSource,
 } from './types.js';
 
 /** Execute the seven offline stages. The database is used only to resolve the
@@ -24,14 +25,15 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
   const stack =
     input.stack ??
     resolveStrictCampaignRulesStack(input.db, input.rulesPackResolver);
+  const relationshipManifestSource =
+    input.relationshipManifestSource ??
+    bundledDnd5eSrdRecordRelationshipManifestSource();
   const signals = extractDiscoverySignals(input.scenario, stack);
   const candidates = resolveDiscoveryCandidates(signals, stack, input.scenario);
   const expansion = expandTypedRelationships(
     candidates.outputsProduced,
     stack,
-    {
-      relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest(),
-    },
+    { relationshipManifestSource },
   );
   const ruleJoin = joinCampaignRules(
     expansion.outputsProduced,
@@ -72,7 +74,7 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
       seedKeys: promoted,
       stageName: 'campaign-rule-expansion',
       conditional: true,
-      relationshipManifest: getBundledDnd5eSrdRecordRelationshipManifest(),
+      relationshipManifestSource,
     },
   );
   // Design section 12.1: the second expansion can reach records carrying
@@ -185,5 +187,34 @@ export function bundledDnd5eSrdFieldProvenanceSource(): FieldProvenanceSource {
   return (pack) =>
     pack === getBundledDnd5eSrdPack()
       ? getBundledDnd5eSrdFieldProvenanceManifest()
+      : undefined;
+}
+
+/**
+ * A {@link RecordRelationshipManifestSource} that answers for the canonical
+ * bundled D&D 5e SRD pack and for nothing else (eshyra-jgxl, F1).
+ *
+ * Same identity proof as {@link bundledDnd5eSrdFieldProvenanceSource} and the
+ * same reason: `record-relationships.json` is emitted by the SRD importer and
+ * declares the meaning of THAT artifact's own fields, so "may this manifest
+ * govern this record?" is really "did this record come out of that
+ * artifact?" — a question object identity against the cached bundled pack
+ * answers exactly, and that resembling metadata (`packId`, `version`,
+ * `compatibleBaseSystems`) cannot.
+ *
+ * Every add-on, custom resolver result, or foreign-system pack resolves to
+ * `undefined` here — explicit absence, never a fallback to this manifest and
+ * never an inference from base/system compatibility (design decision D1,
+ * `discovery/expansion.ts`'s module doc comment). Before this function
+ * existed, `runDiscoveryStages` threaded ONE manifest across every resolved
+ * record regardless of which pack produced it, interpreting add-on and
+ * override content under the SRD's declared semantics — the exact
+ * cross-producer laundering `RecordRelationshipManifestSource`'s doc comment
+ * warns against.
+ */
+export function bundledDnd5eSrdRecordRelationshipManifestSource(): RecordRelationshipManifestSource {
+  return (pack) =>
+    pack === getBundledDnd5eSrdPack()
+      ? getBundledDnd5eSrdRecordRelationshipManifest()
       : undefined;
 }

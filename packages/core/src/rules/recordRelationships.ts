@@ -14,6 +14,23 @@ import {
  * There is intentionally no default disposition; an unmatched lookup makes
  * no claim, while a declared `not-a-reference` is an explicit, reviewable
  * negative disposition.
+ *
+ * Declarations resolve per PRODUCING PACK, never for a whole resolved stack:
+ * a manifest attests only the semantics its own producer authored, so an
+ * add-on, override, or foreign pack that merely reuses a field name a
+ * declaration matches is never interpreted under someone else's meaning (see
+ * `discovery/types.ts`'s `RecordRelationshipManifestSource`). A resolved
+ * record's producer is `RulesStackRecordEntry.pack` — the WINNING entry for
+ * an override; `overrideChain` holds the losers and carries no semantics of
+ * its own.
+ *
+ * `resolveRecordRelationships` resolves every DECLARED `reference` occurrence
+ * to exactly one typed outcome: `resolved`, `unresolved-target` (a well-formed
+ * value naming an absent or ambiguous target), or `indeterminate` (the
+ * declared occurrence's own emitted data could not be read at all — see that
+ * outcome's doc comment). None of the three is ever a silent empty result:
+ * an occurrence this module cannot resolve is retained and typed, never
+ * dropped.
  */
 export type RelationshipDisposition = 'reference' | 'not-a-reference';
 export type RelationshipTargetResolution = 'record-key' | 'record-name';
@@ -111,6 +128,22 @@ export function buildRecordRelationshipManifest(
       throw new RecordRelationshipError(
         `${where}: record-name requires targetKind`,
       );
+    // `targetKind` is used at resolution time as `as RulesRecordKind`
+    // (`resolveRecordRelationships`'s `record-name` branch) to index into
+    // `RelationshipIndex.recordsByKind`, a `Map` keyed by the real
+    // `RulesRecordKind` union. An unvalidated `targetKind` is not a type
+    // error there — a `Map.get` on an unknown key just returns `undefined`,
+    // which is EXACTLY the shape of a legitimate "no record with this name"
+    // miss. So a typo'd `targetKind` would not fail the build; it would
+    // silently masquerade as every occurrence's target being absent, forever.
+    // Validating it here, alongside `kind`, is what makes that impossible.
+    if (
+      decl.targetKind !== undefined &&
+      !RULES_RECORD_KINDS.includes(decl.targetKind)
+    )
+      throw new RecordRelationshipError(
+        `${where}.targetKind ${JSON.stringify(decl.targetKind)} is not a known RulesRecordKind`,
+      );
     if (
       decl.targetResolution === 'record-name' &&
       (decl.relationField === undefined ||
@@ -185,6 +218,32 @@ export type RelationshipResolution =
         | 'no-record-with-name'
         | 'ambiguous-name';
       readonly declaration: RecordRelationshipDeclaration;
+    }
+  | {
+      /**
+       * A declared `reference` occurrence whose own emitted DATA is malformed
+       * — not a claim about the target. This replaces two silent `return`s
+       * that used to make the occurrence vanish from the result entirely: a
+       * non-string value at the declared pointer, and — for `record-name`
+       * resolution — a relation sibling that is missing, not a string, or not
+       * a recognized `CONDITION_RELATION_VALUES` member. Every one of those
+       * was previously indistinguishable from "this pointer was never
+       * declared", which is the exact fail-open this module exists to close
+       * (see the module doc comment). `indeterminate` says the declaration
+       * fired and the DATA, not the manifest, is what could not be read.
+       */
+      readonly outcome: 'indeterminate';
+      readonly sourceRecordKey: string;
+      readonly pointer: string;
+      readonly reason:
+        | 'value-not-a-string'
+        | 'relation-sibling-missing'
+        | 'relation-sibling-not-a-string'
+        | 'relation-not-recognized';
+      /** The offending raw value, when one exists to show — absent for
+       * `relation-sibling-missing`, where there is no value to name. */
+      readonly rawValue?: unknown;
+      readonly declaration: RecordRelationshipDeclaration;
     };
 
 export interface RelationshipIndex {
@@ -221,8 +280,25 @@ export function resolveRecordRelationships(
       record.kind,
       pointer,
     );
-    if (declaration?.disposition !== 'reference' || typeof value !== 'string')
+    if (declaration?.disposition !== 'reference') return;
+    // A DECLARED reference whose emitted value is not a string used to
+    // return here silently — the occurrence vanished from the result exactly
+    // as if nothing had been declared for this pointer at all. That is the
+    // fail-open this module exists to close (see the module doc comment and
+    // the `indeterminate` outcome's doc comment): every declared occurrence
+    // now yields a typed outcome, positive, negative, or indeterminate, never
+    // nothing.
+    if (typeof value !== 'string') {
+      resolutions.push({
+        outcome: 'indeterminate',
+        sourceRecordKey: record.key,
+        pointer,
+        reason: 'value-not-a-string',
+        rawValue: value,
+        declaration,
+      });
       return;
+    }
     let relation = declaration.relation as string;
     if (declaration.targetResolution === 'record-name') {
       // The sibling the DECLARATION names, not a pointer-string rewrite.
@@ -230,11 +306,38 @@ export function resolveRecordRelationships(
         record.data,
         `${actualPointer.slice(0, actualPointer.lastIndexOf('/'))}/${declaration.relationField as string}`,
       );
-      if (
-        typeof entry !== 'string' ||
-        !CONDITION_RELATION_VALUES.includes(entry as never)
-      )
+      if (entry === undefined) {
+        resolutions.push({
+          outcome: 'indeterminate',
+          sourceRecordKey: record.key,
+          pointer,
+          reason: 'relation-sibling-missing',
+          declaration,
+        });
         return;
+      }
+      if (typeof entry !== 'string') {
+        resolutions.push({
+          outcome: 'indeterminate',
+          sourceRecordKey: record.key,
+          pointer,
+          reason: 'relation-sibling-not-a-string',
+          rawValue: entry,
+          declaration,
+        });
+        return;
+      }
+      if (!CONDITION_RELATION_VALUES.includes(entry as never)) {
+        resolutions.push({
+          outcome: 'indeterminate',
+          sourceRecordKey: record.key,
+          pointer,
+          reason: 'relation-not-recognized',
+          rawValue: entry,
+          declaration,
+        });
+        return;
+      }
       relation = entry;
     }
     if (declaration.targetResolution === 'record-key') {
@@ -311,5 +414,73 @@ export function assertRecordRelationshipDeclarationsAreLive(
   if (dead.length > 0)
     throw new RecordRelationshipError(
       `record relationship declaration(s) never match an emitted leaf: ${dead.map((d) => `(${d.kind}, ${d.pointerPrefix})`).join(', ')}`,
+    );
+}
+
+/**
+ * The bounded pointer SHAPES `discovery/expansion.ts`'s deleted `directLinks`
+ * consumer allowlist used to hardcode as traversable, independent of
+ * `RulesRecordKind` — `/source` was traversed identically whether the record
+ * was a `feature` or an `ancestry`, which is exactly the confusion this
+ * manifest was built to end (see the module doc comment). Fixed, and
+ * deliberately NOT derived from any `RecordRelationshipManifest` under test:
+ * the whole point of {@link assertRecordRelationshipDeclarationsCoverBoundedShapes}
+ * is to catch a manifest that silently stopped declaring one of these for a
+ * kind that now emits it, which a contract read back out of that same
+ * manifest could never detect.
+ *
+ * Bounded on purpose. This is a claim about these seven historical shapes
+ * only, never about `RulesRecord.data` as a whole — ADR 0020 forbids that
+ * corpus-wide coverage claim.
+ */
+export const LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES: readonly string[] = [
+  '/source',
+  '/parentClass',
+  '/progressionTableRef',
+  '/tableRefs/*',
+  '/spellTableRefs/*',
+  '/statBlockRefs/*',
+  '/mechanics/conditions/*/condition',
+];
+
+/**
+ * The coverage gate's OTHER direction.
+ * {@link assertRecordRelationshipDeclarationsAreLive} catches a declaration
+ * that matches nothing emitted; this catches the reverse — an EMITTED leaf,
+ * at one of the bounded {@link LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES},
+ * for a `(kind, pointer)` pair the manifest never declares.
+ *
+ * Without this direction, a future importer change emitting one of these
+ * shapes under a kind nobody declared would pass every existing check — no
+ * declaration goes dead, because none was ever added for that kind — and
+ * `resolveRecordRelationships` would classify the new occurrence as nothing:
+ * not `reference`, not `not-a-reference`, just absent from every declaration
+ * lookup. That is the identical fail-open this manifest exists to replace,
+ * reopened at a boundary the first direction cannot see. A silent default
+ * here (treating an undeclared bounded shape as `not-a-reference`, say) would
+ * recreate it under a different name, so this throws instead.
+ *
+ * Deliberately narrow: this asserts coverage of the seven shapes above only.
+ * It is not, and must never become, a coverage claim over `RulesRecord.data`
+ * as a whole (ADR 0020 rejects that global negative).
+ */
+export function assertRecordRelationshipDeclarationsCoverBoundedShapes(
+  records: readonly RulesRecord[],
+  manifest: RecordRelationshipManifest,
+): void {
+  const undeclared = new Set<string>();
+  for (const record of records)
+    walkFieldPointers(record.data, (pointer) => {
+      if (!LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES.includes(pointer)) return;
+      if (
+        relationshipDeclarationForPointer(manifest, record.kind, pointer) ===
+        undefined
+      )
+        undeclared.add(`${record.kind}${pointer}`);
+    });
+  if (undeclared.size > 0)
+    throw new RecordRelationshipError(
+      'record relationship declaration(s) missing for bounded legacy ' +
+        `pointer shape(s): ${[...undeclared].sort().join(', ')}`,
     );
 }

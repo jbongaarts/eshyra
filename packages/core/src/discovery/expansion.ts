@@ -3,7 +3,7 @@ import {
   type RelationshipResolution,
   resolveRecordRelationships,
 } from '../rules/recordRelationships.js';
-import type { RulesRecordKind } from '../rules/types.js';
+import type { RulesPack, RulesRecordKind } from '../rules/types.js';
 import { accountCandidates } from './accounting.js';
 import { candidateBand } from './bands.js';
 import { deepEqual } from './structuralEquality.js';
@@ -11,6 +11,8 @@ import type {
   DiscoveryCandidate,
   DiscoveryRoute,
   ExpansionTrace,
+  RecordRelationshipManifestSource,
+  RelationshipArtifactState,
   TypedTraversal,
 } from './types.js';
 
@@ -113,7 +115,9 @@ export function expandTypedRelationships(
     readonly seedKeys?: ReadonlySet<string>;
     readonly stageName?: string;
     readonly conditional?: boolean;
-    readonly relationshipManifest: RecordRelationshipManifest | undefined;
+    readonly relationshipManifestSource:
+      | RecordRelationshipManifestSource
+      | undefined;
   },
 ): ExpansionTrace {
   const result = new Map(
@@ -121,20 +125,68 @@ export function expandTypedRelationships(
   );
   const losses: ExpansionTrace['losses'][number][] = [];
   const relationshipResolutions: RelationshipResolution[] = [];
-  const manifest = options.relationshipManifest;
-  const reverse = new Map<string, TypedTraversal[]>();
-  for (const entry of stack.recordsByKey.values()) {
+  const manifestSource = options.relationshipManifestSource;
+  // Resolved ONCE per PRODUCING PACK (F1), never per record: a relationship
+  // manifest is a fact about the pack that emitted a record
+  // (`RulesStackRecordEntry.pack`, the WINNING entry for an override), not
+  // about the resolved stack as a whole. The map doubles as this pass's
+  // producer-qualified evidence (F4): every distinct pack this loop actually
+  // asked about ends up here, present or absent, and that is exactly the set
+  // `relationshipArtifactByProducer` below reports.
+  const manifestByPack = new Map<
+    RulesPack,
+    RecordRelationshipManifest | undefined
+  >();
+  function manifestFor(
+    pack: RulesPack,
+  ): RecordRelationshipManifest | undefined {
+    if (!manifestByPack.has(pack))
+      manifestByPack.set(pack, manifestSource?.(pack));
+    return manifestByPack.get(pack);
+  }
+  // F6: resolved ONCE per stack entry, by OBJECT IDENTITY, and reused for
+  // both the reverse-index pass below and the outbound half of the
+  // `expandable` loop further down — never recomputed by calling
+  // `resolveRecordRelationships` a second time for the SAME entry. The old
+  // code called `manifestLinks` once per stack entry to build the reverse
+  // index, then called it AGAIN for every expandable candidate's own entry,
+  // pushing the identical unresolved resolution and loss twice for any
+  // candidate whose entry is a normal stack entry. `measureDiscovery` counts
+  // `stage.losses.length` directly, so that duplication corrupted measured
+  // loss counts, not just an internal list.
+  //
+  // Keyed by object identity rather than record key on purpose: a candidate
+  // whose `.entry` is genuinely a DIFFERENT object from the stack's own entry
+  // for that key (a test fixture that deliberately mutates a copy, say) is a
+  // different fact and must still be resolved fresh — this cache only
+  // short-circuits recomputing the SAME entry object, never a distinct one
+  // that merely shares a record key.
+  const resolutionCache = new Map<Entry, readonly RelationshipResolution[]>();
+  function resolveEntry(entry: Entry): readonly RelationshipResolution[] {
+    const cached = resolutionCache.get(entry);
+    if (cached !== undefined) return cached;
+    const manifest = manifestFor(entry.pack);
     const resolutions =
       manifest === undefined ? [] : manifestLinks(entry, stack, manifest);
+    resolutionCache.set(entry, resolutions);
     relationshipResolutions.push(...resolutions);
     for (const resolution of resolutions) {
-      if (resolution.outcome !== 'resolved') {
-        losses.push({
-          reason: 'unresolved-typed-target',
-          detail: { ...resolution },
-        });
-        continue;
-      }
+      if (resolution.outcome === 'resolved') continue;
+      losses.push({
+        reason:
+          resolution.outcome === 'indeterminate'
+            ? 'indeterminate-typed-occurrence'
+            : 'unresolved-typed-target',
+        detail: { ...resolution },
+      });
+    }
+    return resolutions;
+  }
+  const reverse = new Map<string, TypedTraversal[]>();
+  for (const entry of stack.recordsByKey.values()) {
+    const resolutions = resolveEntry(entry);
+    for (const resolution of resolutions) {
+      if (resolution.outcome !== 'resolved') continue;
       const traversal = traversalOf(resolution);
       const inbound = reverse.get(traversal.targetRecordKey) ?? [];
       inbound.push(traversal);
@@ -173,17 +225,10 @@ export function expandTypedRelationships(
   const traversals: TypedTraversal[] = [];
   for (const candidate of expandable) {
     if (candidate.entry === undefined) continue;
-    const outgoing =
-      manifest === undefined
-        ? []
-        : manifestLinks(candidate.entry, stack, manifest);
-    relationshipResolutions.push(...outgoing);
-    for (const resolution of outgoing)
-      if (resolution.outcome === 'unresolved-target')
-        losses.push({
-          reason: 'unresolved-typed-target',
-          detail: { ...resolution },
-        });
+    // Reuses the resolution `resolveEntry` already computed above for this
+    // exact entry object when it is the same one the stack carries (the
+    // normal case); recomputes fresh only when it genuinely is not (F6).
+    const outgoing = resolveEntry(candidate.entry);
     const outgoingTraversals = outgoing
       .filter(
         (
@@ -235,6 +280,21 @@ export function expandTypedRelationships(
   // never counted as work.
   const didWork =
     expandable.length > 0 || traversals.length > 0 || losses.length > 0;
+  // F4: one entry per distinct producing pack this pass actually consulted,
+  // sorted by packId for a deterministic, diff-friendly order. Every pack
+  // among `stack.recordsByKey`'s winning entries was consulted at least once
+  // above (the reverse-index pass iterates every one of them), so this is
+  // complete for the stack this call ran over, never a subset.
+  const relationshipArtifactByProducer: RelationshipArtifactState[] = [
+    ...manifestByPack.entries(),
+  ]
+    .map(([pack, manifest]) => ({
+      packId: pack.meta.packId,
+      state: (manifest === undefined ? 'absent' : 'present') as
+        | 'present'
+        | 'absent',
+    }))
+    .sort((a, b) => a.packId.localeCompare(b.packId));
   return {
     stage: options.stageName ?? 'expansion',
     inputsConsumed: expandable.map((candidate) => ({
@@ -253,6 +313,6 @@ export function expandTypedRelationships(
     losses,
     traversals,
     relationshipResolutions,
-    relationshipManifestAbsent: manifest === undefined,
+    relationshipArtifactByProducer,
   };
 }
