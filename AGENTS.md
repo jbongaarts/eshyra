@@ -95,23 +95,38 @@ burden of the product.** Test it in proportion to the decisions it gates.
 **Infrastructure authorized for a bounded experiment or transition must carry an
 explicit disposition at that boundary**, one of:
 
-- **retained** — it carries a responsibility the running product needs, and some
-  shipped configuration exercises it. It stays as ordinary implementation,
-  public or private per the `@eshyra/core` import-path rules under
-  **Conventions**, with evidence proportionate to that responsibility.
-- **demoted** — it is development or diagnostic tooling. It stays in the tree,
-  moves off the default gate, and its proof burden drops to what the tooling's
-  own decisions warrant.
+- **retained** — a responsibility survives the boundary under current
+  authority. It stays as ordinary implementation, public or private per the
+  `@eshyra/core` import-path rules under **Conventions**, with evidence
+  proportionate to that responsibility. If the responsibility is **staged**
+  rather than live — accepted authority requires it, but the consumer that will
+  exercise it is not yet integrated — say so and name the successor owner and
+  the next integration state.
+- **demoted** — the responsibility is genuinely tooling or diagnostic. It stays
+  in the tree, moves off the default gate, and its proof burden drops to what
+  the tooling's own decisions warrant.
 - **retired** — no responsibility survives. Retirement must name the
-  responsibility that replaces the old claim and must not hide a
-  source-fidelity, discovery, capability, adjudication, or state-integrity
-  defect.
+  responsibility that replaces the old claim where applicable, and must not
+  hide a source-fidelity, discovery, capability, adjudication, or
+  state-integrity defect.
 
-Absent a stated disposition, scaffolding acquires permanent-contract status by
-default. Judge the classification by **retained responsibility and real runtime
-use** — never by whether a symbol appears in a package's public export. New core
-symbols default to internal (see **Conventions**), so private implementation is
-the normal, correct state for most product code.
+**Current runtime use is not a condition of retention.** It informs consequence
+and proof burden, exactly as reachability does under "From observation to
+finding" in `docs/design-and-pr-review-policy.md`. An accepted ADR, design
+document, or owning Bead can require an implementation before its consumer
+exists, and staged work of that kind is normal here; such infrastructure is
+`retained` with its staged status named, not forced into `demoted` or
+`retired`. Judge the classification by **the responsibility that survives the
+boundary** — never by whether a symbol appears in a package's public export.
+New core symbols default to internal (see **Conventions**), so private
+implementation is the normal, correct state for most product code.
+
+**A missing disposition leaves the transition's exit unresolved; it does not
+confer permanent-contract status.** Omitting the required decision cannot
+create authority — that is the same error as treating existing code and tests
+as proof that behavior is required. Until the disposition is made, the
+scaffolding is undecided work, and the bounded transition it belongs to is not
+validly closed.
 
 Evidence and rationale: the merged audit at
 `docs/audits/test-suite-and-verification/2026-09-14-test-suite-and-verification-audit.md`.

@@ -223,6 +223,15 @@ describe('PR review authority and lifecycle policy', () => {
     expect(agents).toMatch(
       /Infrastructure authorized for a bounded experiment or transition must carry an\s+explicit disposition at that boundary/,
     );
+    // One generalized assertion over the disposition invariant, covering both
+    // states the first draft got wrong (eshyra-9l5s.3): staged-but-authorized
+    // work must be retainable, and omission must not manufacture authority.
+    expect(agents).toContain(
+      '**Current runtime use is not a condition of retention.**',
+    );
+    expect(agents).toContain(
+      "**A missing disposition leaves the transition's exit unresolved; it does not\nconfer permanent-contract status.**",
+    );
     // Source-fidelity regressions keep their absolute carve-out.
     expect(agents).toMatch(
       /exact source-fidelity regressions against a vendored source\s+artifact always have independent semantic significance/,
