@@ -53,6 +53,37 @@ if (!existsSync(join(repoRoot, 'package.json'))) {
 verifyWorkspaceResolution(repoRoot);
 
 const npm = npmCommand();
-for (const script of ['format', 'check', 'typecheck', 'test']) {
+for (const script of ['format', 'check', 'typecheck']) {
   checkedNative(npm, ['run', script], { cwd: repoRoot, env: childEnv });
+}
+
+// On POSIX the test step is wrapped so each local gate run also records wall
+// clock and peak AGGREGATE process-tree RSS — the figures that justify the
+// worker cap in vitest.config.ts, and the ones that were unavailable when the
+// two known load-dependent flakes were filed. measure-run propagates the
+// suite's exit code, so the gate's pass/fail semantics are unchanged.
+//
+// Windows runs the suite unwrapped and unmeasured, deliberately. There `npm` is
+// `npm.cmd`, and Node refuses to spawn a `.cmd` without `shell: true`, whose
+// argument quoting is a hazard this telemetry does not justify. Memory sampling
+// needs POSIX `ps` anyway, so the wrap would yield wall clock alone. Optional
+// telemetry must not put a cross-platform gate at risk.
+if (process.platform === 'win32') {
+  checkedNative(npm, ['run', 'test'], { cwd: repoRoot, env: childEnv });
+} else {
+  checkedNative(
+    process.execPath,
+    [
+      join(repoRoot, 'scripts', 'measure-run.mjs'),
+      '--label',
+      'verify-worktree-test',
+      '--out',
+      join(repoRoot, 'verification-metrics.jsonl'),
+      '--',
+      npm,
+      'run',
+      'test',
+    ],
+    { cwd: repoRoot, env: childEnv },
+  );
 }

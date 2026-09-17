@@ -73,8 +73,23 @@ jobs:
       - name: Build / typecheck
         run: npm run typecheck
 
+      # Wrapped in measure-run so every CI run records wall clock and PEAK
+      # AGGREGATE process-tree RSS. Not `/usr/bin/time -v`: its "Maximum
+      # resident set size" is getrusage(RUSAGE_CHILDREN) ru_maxrss, the peak of
+      # the largest single child, which cannot see the concurrent multi-worker
+      # memory that actually causes OOM kills. See scripts/measure-run.mjs and
+      # docs/audits/test-suite-and-verification/
+      # 2026-09-14-test-suite-and-verification-audit.md (R7).
       - name: Test
-        run: npm run test
+        run: node scripts/measure-run.mjs --label test --out verification-metrics.jsonl -- npm run test
+
+      - name: Upload verification metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-metrics
+          path: verification-metrics.jsonl
+          if-no-files-found: warn
 
       - name: CLI install smoke
         run: npm run smoke:cli-install
