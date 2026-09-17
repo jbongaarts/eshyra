@@ -1,5 +1,5 @@
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawn } from 'node:child_process';
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,27 +28,46 @@ const MEASURE_RUN = fileURLToPath(
 );
 
 /**
- * Workload holding ~`(attached + detached) * mb` MB across concurrent
- * processes, where `detached` of them are spawned with `detached: true`.
+ * Workload exercising the two lifecycle shapes the sampler must survive.
  *
- * The detached share is the point. Node makes such a child the leader of a NEW
- * process group and session, so it escapes any sampler that sums a single
- * process group — which is what an earlier revision of measure-run did. The
- * suite's own verification run contains exactly this shape, so the escape was
- * live, not theoretical.
+ * `attached` children are ordinary forks. `detached` children lead their own
+ * process group and session, so they escape any sampler summing one group.
+ * When `orphan` is set, one detached child is launched by an intermediary that
+ * EXITS while the run continues, re-parenting it away from the measured root —
+ * and it allocates only afterwards, so a sampler that rebuilds membership from
+ * each snapshot never attributes that memory to the run.
+ *
+ * Both shapes were live defects, not hypotheticals: the first escaped a
+ * group-only sampler, the second escaped its snapshot-local replacement.
  */
 function holdMemoryScript(
   mb: number,
   attached: number,
   detached: number,
+  orphanMb = 0,
 ): string {
   return `
 import { fork, spawn } from 'node:child_process';
-if (process.argv[2] === 'child') {
-  const buf = Buffer.alloc(${mb} * 1024 * 1024, 1);
+const self = new URL(import.meta.url).pathname;
+const hold = (megabytes, delay) => setTimeout(() => {
+  const buf = Buffer.alloc(megabytes * 1024 * 1024, 1);
   setTimeout(() => { if (buf[0] !== 1) throw new Error('unreachable'); }, 2500);
+}, delay);
+
+if (process.argv[2] === 'child') {
+  hold(${mb}, 0);
+} else if (process.argv[2] === 'late') {
+  // Allocates only AFTER the intermediary that launched it has exited, so its
+  // memory is attributable solely through durable ownership.
+  hold(${orphanMb}, 1500);
+} else if (process.argv[2] === 'mid') {
+  const c = spawn(process.execPath, [self, 'late'], {
+    detached: true,
+    stdio: 'ignore',
+  });
+  c.unref();
+  setTimeout(() => process.exit(0), 700);
 } else {
-  const self = new URL(import.meta.url).pathname;
   for (let i = 0; i < ${attached}; i += 1) fork(self, ['child']);
   for (let i = 0; i < ${detached}; i += 1) {
     const c = spawn(process.execPath, [self, 'child'], {
@@ -57,7 +76,8 @@ if (process.argv[2] === 'child') {
     });
     c.unref();
   }
-  setTimeout(() => {}, 3000);
+  ${orphanMb > 0 ? "fork(self, ['mid']);" : ''}
+  setTimeout(() => {}, 5000);
 }
 `;
 }
@@ -104,19 +124,41 @@ describe('measure-run', () => {
   // The detached half is what the group-only sampler cannot see, so this single
   // test covers the escape without a second reproducer.
   it.skipIf(restrictedSandbox || isWindows)(
-    'reports whole-tree memory, including detached descendants',
+    'reports whole-tree memory, including detached and orphaned descendants',
     () => {
-      const { record } = runMeasured(holdMemoryScript(150, 2, 2));
+      // Three small children (~60 MB each) plus one detached-then-orphaned
+      // child holding ~400 MB, whose allocation overlaps the others. The small
+      // children are sized NOT to reach the threshold on their own, so the
+      // orphan decides the assertion and each weaker sampler fails on its own
+      // merits (measured, not estimated):
+      //
+      //   largest-child metric (/usr/bin/time -v)  ~400 MB   FAILS
+      //   process-group-only sampler                ~48 MB   FAILS
+      //   snapshot-local descendant sampler        ~400 MB   FAILS (loses orphan)
+      //   durable-ownership sampler                ~820 MB   passes
+      const { record } = runMeasured(holdMemoryScript(60, 2, 1, 400));
 
       expect(record.exitCode).toBe(0);
       const peak = record.peakTreeRssMb as number;
 
-      // Above the ~350 MB a group-only sampler would see, and far above the
-      // ~150 MB a largest-child metric would report.
-      expect(peak).toBeGreaterThan(500);
+      expect(peak).toBeGreaterThan(600);
       // And bounded, so a runaway sampler that double-counts also fails.
-      expect(peak).toBeLessThan(1200);
+      expect(peak).toBeLessThan(1400);
       expect(record.peakProcesses as number).toBeGreaterThanOrEqual(4);
+    },
+    30000,
+  );
+
+  // The record must say what it covers. An unqualified number invites being
+  // read as a guarantee the mechanism cannot make — see KNOWN LIMIT in
+  // scripts/measure-run.mjs.
+  it.skipIf(restrictedSandbox || isWindows)(
+    'states the boundary of what it measured',
+    () => {
+      const { record } = runMeasured(holdMemoryScript(20, 1, 0));
+
+      expect(record.boundary).toBe('process-tree-sampling');
+      expect(String(record.unmeasured)).toContain('orphaned');
     },
     30000,
   );
@@ -142,6 +184,57 @@ describe('measure-run', () => {
       // A measurement wrapper that swallowed a non-zero exit would silently
       // turn a red gate green.
       expect(status).toBe(3);
+    },
+    30000,
+  );
+
+  // Distinguishes "the root died" from "the owned workload died". Signalling
+  // only the immediate child leaves grandchildren running: POSIX delivers a
+  // signal to its target alone, and a parent's death does not kill its
+  // children. Before the repair, a grandchild kept writing after the wrapper
+  // took SIGTERM.
+  it.skipIf(restrictedSandbox || isWindows)(
+    'terminates the whole owned workload on interruption, not just its root',
+    async () => {
+      const dir = mkdtempSync(join(tmpdir(), 'measure-run-'));
+      const script = join(dir, 'heartbeat.mjs');
+      const beat = join(dir, 'beat.txt');
+      writeFileSync(
+        script,
+        `
+import { spawn } from 'node:child_process';
+import { appendFileSync } from 'node:fs';
+const self = new URL(import.meta.url).pathname;
+if (process.argv[2] === 'grandchild') {
+  setInterval(() => appendFileSync(${JSON.stringify(beat)}, 'x'), 100);
+  setTimeout(() => process.exit(0), 20000);
+} else {
+  spawn(process.execPath, [self, 'grandchild'], { stdio: 'ignore' });
+  setTimeout(() => {}, 20000);
+}
+`,
+      );
+      writeFileSync(beat, '');
+
+      const wrapper = spawn(
+        process.execPath,
+        [MEASURE_RUN, '--', process.execPath, script],
+        { stdio: 'ignore' },
+      );
+      const wait = (ms: number) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
+
+      await wait(1500);
+      expect(statSync(beat).size).toBeGreaterThan(0);
+
+      wrapper.kill('SIGTERM');
+      await wait(1500);
+      const afterSignal = statSync(beat).size;
+      await wait(1000);
+
+      // The grandchild is silent because it was terminated, not because the
+      // root exited: the root's death alone would leave it beating.
+      expect(statSync(beat).size).toBe(afterSignal);
     },
     30000,
   );

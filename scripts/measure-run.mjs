@@ -24,30 +24,56 @@ import { appendFileSync } from 'node:fs';
 //   2026-09-14-test-suite-and-verification-audit.md, section 2 and R7.
 //
 // HOW IT MEASURES:
-//   Each sample builds the DESCENDANT CLOSURE of the measured command from
-//   parent/child links, then unions in every process sharing a process group
-//   with a discovered descendant, iterating to a fixpoint.
+//   Membership is DURABLE, not recomputed from scratch each sample. Once a
+//   process has been observed as part of the measured workload it stays owned
+//   until it exits. Each sample re-admits still-live owned processes, adds
+//   anything descended from a member, adds anything sharing a process group
+//   with a member (never this wrapper's own group, which the measured command
+//   shares), iterates to a fixpoint, and records the result.
 //
-//   Both halves are load-bearing. An earlier revision sampled only the process
-//   GROUP of a `detached: true` child, which a nested detached descendant
-//   escapes entirely: Node makes such a child the leader of a NEW group and
-//   session, so it falls outside the group being summed. Measured against a
-//   workload holding a detached 600 MB grandchild, the group-only sampler
-//   reported 47 MB across 1 process. This is not hypothetical — the suite's own
-//   measureRun.test.ts spawns exactly that shape, so a group-only sampler
-//   under-reports the very verification run it claims to measure.
+//   Durability is the load-bearing part, and two earlier revisions got it
+//   wrong. Revision 1 summed a single process GROUP, which any nested detached
+//   descendant escapes: Node makes such a child the leader of a new group and
+//   session. Revision 2 added parent-link closure but rebuilt membership from
+//   each snapshot, so it still lost this shape:
 //
-//   Parent links alone are also insufficient: a descendant re-parented to init
-//   after its intermediate parent exits loses its link to us. Recording the
-//   process groups of descendants we have already seen keeps those visible.
+//     measured root -> short-lived intermediary -> detached memory holder
+//
+//   Once the intermediary exits, the holder is re-parented to init with no link
+//   back to the root, so a snapshot-local sampler never sees it again. Measured
+//   against a re-parented detached 400 MB holder, revision 2 reported 47 MB
+//   across 1 process on every sample.
+//
+//   PID reuse is guarded by elapsed time: a recycled PID presents a smaller
+//   `etimes` than when it was admitted, and is dropped rather than counted.
 //
 //   Sampling can miss a spike between samples, so this reports a LOWER BOUND on
 //   the true peak — it can under-report, never over-report.
 //
+// KNOWN LIMIT (stated, not silently tolerated):
+//   A descendant that BOTH detaches AND is orphaned before its first
+//   observation is unreachable by any /proc walk: it has no link back to the
+//   root and shares no group with a known member. Concretely
+//
+//     root -> intermediary that exits immediately -> detached holder
+//
+//   is counted at 0. Closing that needs kernel-level containment — a cgroup
+//   the workload is confined to, or PR_SET_CHILD_SUBREAPER so orphans re-parent
+//   to this wrapper. Neither is available to an unprivileged process here:
+//   creating a sub-cgroup with the memory controller requires writing the
+//   parent's `cgroup.subtree_control`, which is denied, and Node exposes no
+//   prctl. The measured workload (`npm run test` -> vitest -> workers) contains
+//   no such double-fork, so the gap is currently unreached — but "unreached
+//   today" is not "closed", so every record carries `boundary` naming what was
+//   measured and `unmeasured` naming this gap. A future workload that does
+//   double-fork needs the containment approach, not a bigger ps walk.
+//
 // PROCESS LIFETIME:
 //   The command is deliberately NOT detached: it stays in this process's group
-//   so terminal signals reach it, and SIGINT/SIGTERM are forwarded explicitly so
-//   an interrupted measurement cannot strand a running test suite.
+//   so terminal signals reach it. On SIGINT/SIGTERM/SIGHUP the wrapper signals
+//   THE WHOLE OWNED WORKLOAD, not just the immediate child, because POSIX does
+//   not propagate a signal to descendants and a parent's death does not kill
+//   its children.
 //
 // PORTABILITY:
 //   Memory sampling needs POSIX `ps`. Where that is unavailable (Windows, or a
@@ -55,7 +81,10 @@ import { appendFileSync } from 'node:fs';
 //   reported; memory is reported as null rather than as a wrong number. This
 //   must never fail the gate it is wrapping.
 
-const SAMPLE_INTERVAL_MS = 500;
+// 250 ms rather than 500: the shorter the gap before the first sample, the
+// smaller the window in which a descendant can be orphaned before it is ever
+// observed (see KNOWN LIMIT).
+const SAMPLE_INTERVAL_MS = 250;
 
 function parseArgs(argv) {
   const separator = argv.indexOf('--');
@@ -83,51 +112,79 @@ function parseArgs(argv) {
 }
 
 /**
- * Aggregate RSS (KB) and process count for the measured command's whole tree,
- * or null where POSIX `ps` is unavailable.
- *
- * Membership is the fixpoint of: the root, anything descended from a member,
- * and anything sharing a process group with a member. See HOW IT MEASURES.
+ * Durable ownership of the measured workload: pid -> elapsed seconds at the
+ * moment the process was admitted. This map SURVIVES BETWEEN SAMPLES so a
+ * descendant re-parented away from us is not forgotten. See HOW IT MEASURES.
  */
-function sampleProcessTree(rootPid) {
-  const result = spawnSync('ps', ['-e', '-o', 'pid=,ppid=,pgid=,rss='], {
-    encoding: 'utf8',
-  });
-  if (result.status !== 0 || typeof result.stdout !== 'string') return null;
+const owned = new Map();
 
+/**
+ * This process's own group, which the measured command shares because it is
+ * not detached. Never a membership signal on its own — admitting it would
+ * sweep in the shell and everything beside us.
+ */
+const ownGroup = Number(process.pid);
+
+function readProcessTable() {
+  const result = spawnSync(
+    'ps',
+    ['-e', '-o', 'pid=,ppid=,pgid=,rss=,etimes='],
+    { encoding: 'utf8' },
+  );
+  if (result.status !== 0 || typeof result.stdout !== 'string') return null;
   const rows = [];
   for (const line of result.stdout.split('\n')) {
     const fields = line.trim().split(/\s+/);
-    if (fields.length < 4) continue;
+    if (fields.length < 5) continue;
     const row = {
       pid: Number(fields[0]),
       ppid: Number(fields[1]),
       pgid: Number(fields[2]),
       rssKb: Number(fields[3]) || 0,
+      etimes: Number(fields[4]) || 0,
     };
     if (Number.isNaN(row.pid)) continue;
     rows.push(row);
   }
+  return rows;
+}
 
+/**
+ * Aggregate RSS (KB) and process count for the measured command's whole
+ * workload, or null where POSIX `ps` is unavailable.
+ */
+function sampleProcessTree(rootPid) {
+  const rows = readProcessTable();
+  if (rows === null) return null;
+
+  const byPid = new Map(rows.map((row) => [row.pid, row]));
+
+  // Re-admit still-live owned processes first. A PID whose elapsed time has
+  // gone BACKWARDS is a different process reusing the number, so drop it
+  // rather than counting a stranger's memory.
   const members = new Set([rootPid]);
+  for (const [pid, admittedEtimes] of [...owned]) {
+    const row = byPid.get(pid);
+    if (row === undefined || row.etimes < admittedEtimes) {
+      owned.delete(pid);
+      continue;
+    }
+    members.add(pid);
+  }
+
   const groups = new Set();
-  // This wrapper's own group is never a membership signal: without `detached`
-  // the measured command shares it, so admitting it would sweep in unrelated
-  // siblings (the shell, the agent). Descendants are found by parent link, and
-  // only the NEW groups they create are added below.
-  const ownGroup = process.pid === undefined ? -1 : Number(process.pid);
   let changed = true;
   while (changed) {
     changed = false;
     for (const row of rows) {
       if (members.has(row.pid)) {
+        // A member leading its own group (detached/setsid) contributes that
+        // group, so its children are admitted even before their links are seen.
         if (
-          row.pgid !== ownGroup &&
           row.pid === row.pgid &&
+          row.pgid !== ownGroup &&
           !groups.has(row.pgid)
         ) {
-          // A descendant that leads its own group (detached/setsid). Record the
-          // group so its children stay visible even if it is re-parented.
           groups.add(row.pgid);
           changed = true;
         }
@@ -142,12 +199,31 @@ function sampleProcessTree(rootPid) {
 
   let rssKb = 0;
   let processes = 0;
-  for (const row of rows) {
-    if (!members.has(row.pid)) continue;
+  for (const pid of members) {
+    const row = byPid.get(pid);
+    if (row === undefined) continue;
+    if (!owned.has(pid)) owned.set(pid, row.etimes);
     rssKb += row.rssKb;
     processes += 1;
   }
   return { rssKb, processes };
+}
+
+/**
+ * Signal the whole owned workload, not just its root. POSIX does not propagate
+ * a signal to descendants and a parent's death does not kill its children, so
+ * signalling only the root strands grandchildren.
+ */
+function signalOwnedWorkload(rootPid, signalName) {
+  sampleProcessTree(rootPid);
+  for (const pid of owned.keys()) {
+    if (pid === rootPid || pid === ownGroup) continue;
+    try {
+      process.kill(pid, signalName);
+    } catch {
+      // Already gone.
+    }
+  }
 }
 
 function megabytes(kb) {
@@ -178,14 +254,21 @@ const timer = setInterval(() => {
 }, SAMPLE_INTERVAL_MS);
 timer.unref();
 
-// Forward interruption so an abandoned measurement cannot strand a running
-// suite. The child shares this process group, so a terminal Ctrl+C already
-// reaches it; this covers programmatic callers (verify:worktree spawns this
-// wrapper directly) where no terminal signal is delivered.
+// Forward interruption to the WHOLE owned workload so an abandoned measurement
+// cannot strand a running suite. The child shares this process group, so a
+// terminal Ctrl+C already reaches it; this covers programmatic callers
+// (verify:worktree spawns this wrapper directly) where no terminal signal is
+// delivered, and covers descendants in either case.
+//
+// Signalling only `child` is not enough: POSIX delivers a signal to the target
+// alone, and a parent's death does not kill its children, so a grandchild
+// outlives both. Measured before this repair, a grandchild kept running after
+// the wrapper took SIGTERM.
 let forwardedSignal;
 for (const signalName of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
   process.on(signalName, () => {
     forwardedSignal = signalName;
+    signalOwnedWorkload(child.pid, signalName);
     try {
       child.kill(signalName);
     } catch {
@@ -211,6 +294,12 @@ child.on('exit', (code, signal) => {
     // Lower bound: sampled, so a spike between samples can be missed.
     peakTreeRssMb: usable ? megabytes(peakRssKb) : null,
     peakProcesses: usable ? peakProcesses : null,
+    // What the number actually covers, so a reader never takes it for a
+    // guarantee the mechanism cannot make. See KNOWN LIMIT.
+    boundary: usable ? 'process-tree-sampling' : 'wall-clock-only',
+    unmeasured: usable
+      ? 'descendants that detach and are orphaned before first observation'
+      : 'memory (POSIX ps unavailable)',
     samples,
     exitCode: code,
     signal,
