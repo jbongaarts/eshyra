@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-bw95",
+  "title": "Import SRD variant rules and harden ambiguous source coverage",
+  "description": "Follow up the latest D&D SRD 5.1 importer audit. Emit Variant: Skills with Different Abilities and Variant: Encumbrance as rule records; require all Variant headings to resolve to standalone or parent records; prevent repeated stat-block headings and cross-kind name collisions from falsely proving source coverage; regenerate canonical artifacts and verify no prior content regresses. If the failure map reveals a new root cause, requires a new parser or extractor strategy, or creates generated churn outside the direct consequences of the current minimal fix, stop and report instead of broadening the implementation. Do not add complexity solely to suppress source-confirmed incidental improvements caused by the correct fix.",
+  "acceptance_criteria": "Canonical pack contains rule:variant-skills-with-different-abilities and rule:variant-encumbrance with accurate source prose/provenance; every Variant heading is record- or child-accounted; ambiguous name matches are visible and do not count as successful coverage; stat-block Actions/Reactions/Legendary Actions map to relevant creature regions; importer tests, full tests, typecheck, check, regeneration, and pack verification pass.",
+  "notes": "Documentation follow-up: correct README table count from 102 to 108 and mention Half-Dragon Template and Appendix PH-B deity tables; no generated artifact changes.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-15T14:01:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-15T14:20:08Z",
+  "started_at": "2026-06-15T14:01:40Z",
+  "closed_at": "2026-06-15T14:20:08Z",
+  "close_reason": "Updated importer README table coverage to 108 records, including Half-Dragon Template and Appendix PH-B deity tables; generated artifacts were unchanged.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

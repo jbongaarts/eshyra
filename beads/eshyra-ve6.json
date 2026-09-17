@@ -1,0 +1,97 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ve6",
+  "title": "Loreweaver: Agentic DM (solo persistent campaign MVP)",
+  "description": "Goal: a text-based agentic Dungeon Master that runs a single-player, persistent D&D campaign across many sessions, where the world changes over time and continuity is preserved within a bounded model-context budget.\n\nUser-visible outcome: from a local CLI, the player creates a character, starts/resumes/auto-closes play sessions, and converses with a DM agent that narrates, voices NPCs, adjudicates rulings, and advances an authored adventure while remembering the campaign across sessions.\n\nScope: MVP = solo persistent campaign on D&D 5e SRD content via the Claude Agent SDK (Pro plan), TypeScript. Non-goals (deferred): prose-rules RAG, semantic/RAG memory retrieval, general module importer, model-generated modules, web/multiplayer/long-running service, party/turn-taking, external character import.\n\nThis is an overarching epic decomposed into sub-epics E0-E7 (see Design).",
+  "design": "LOCKED DECISIONS:\n- Rules: refined Hybrid. Model-trusted for narrative rulings; ALL math/dice/state via deterministic tools; structured SRD stat-block lookup (not fuzzy RAG); prose-rules RAG deferred.\n- Memory: hierarchical pyramid (scene->session->arc->campaign_bible) as CORE; bounded always-on context independent of campaign length; anchored by exact provenance-annotated structured state re-asserted every turn; raw scene_log persisted from day one; semantic RAG deferred as future drill-down accelerator; never RAG-only.\n- World: immutable authored module template (schema files) + per-campaign overlay-fact diff (latest-wins, git-like, provenance built in); module schema is the real deliverable; MVP seeds via ONE-TIME model-assisted conversion of ONE openly-licensed adventure; general importer deferred.\n- Architecture: UI-agnostic TypeScript CORE library (Orchestrator, Context Assembler, Tool layer, Memory subsystem, World subsystem, Persistence) + THIN CLI front-end. Future web/multiplayer = new front-end on same core, deferred.\n- Lifecycle: Campaign (long-lived) > Session (explicit start; AUTO-CLOSE on graceful exit runs recap + scene->session roll-up + state reconciliation + arc roll-up if milestone) > Scene (roll-up granularity, summaries written incrementally). Crash/hard-kill leaves session open; relaunch offers Resume vs Close&recap; canon crash-safe via transactional mutate_state + incremental scene summaries; close pipeline idempotent.\n- Storage: HYBRID persistence (DECIDED, NOT deferred). SQLite is the AUTHORITATIVE LIVE operational store for active gameplay (embedded, per-turn ACID writes, one .db working copy per active campaign). Dolt is the AUTHORITATIVE checkpoint/history/branching store. At meaningful checkpoints (session close; arc roll-up) a DETERMINISTIC SQLite->Dolt export serializes all campaign tables and dolt-commits. Capabilities required in MVP: list checkpoints; restore a checkpoint into a NEW SQLite working copy; fork a campaign from a checkpoint into a NEW Dolt branch (+ materialized SQLite working copy). HARD CONSTRAINTS: Dolt is NEVER in the per-turn hot path; there are NOT two independent live truths (SQLite is the single live truth, Dolt trails to last checkpoint like a git working-tree vs last commit); Loreweaver Dolt storage/remotes/ref-namespace are EXPLICITLY separated from the beads Dolt repo (own dir, no piggybacking on refs/dolt/data). Authored module content remains version-controlled schema files imported at campaign creation.\n- Language: TypeScript + official Claude Agent SDK (SDK is Python/TS only; TS chosen for schema typing, review legibility vs C#/Kotlin, shared types with future web front-end).\n\nDECOMPOSITION (sub-epics, build order E0 -> E8 ; E1 || E3 ; -> E7 -> E4 -> E2 -> E5 -> E6):\n- E0 Foundation: TS scaffold, core/CLI boundary, SQLite LIVE persistence, Agent SDK wiring, config. (Unchanged by Hybrid: SQLite remains the live store; persistence seam swappable.)\n- E8 Dolt checkpoint/history/branching subsystem: deterministic SQLite->Dolt export, checkpoint commit, list checkpoints, restore-into-new-SQLite-working-copy, fork-from-checkpoint-into-new-branch, explicit beads-Dolt separation guard. NOT in per-turn path. (NEW, MVP, depends on E0.)\n- E1 SRD reference store: structured monsters + spells + character-build options (races/classes/subclasses/backgrounds/feats/equipment/spell lists per SRD) + lookup_srd tool.\n- E2 World subsystem: module schema, one-time model-assisted conversion of one open-licensed adventure, template + overlay-fact resolution, world_query tool. Conversion step gated on the legal-source blocker task; schema work not gated.\n- E3 Game-state subsystem: canonical structured state tables (character/inventory/plot_flags/clock) with provenance, mutate_state tool as SOLE canon+overlay writer, transactional crash-safe writes.\n- E4 Memory pyramid: scene_log (append-only), incremental scene_summary, session_recap + arc_summary roll-up steps, campaign_bible reconciliation, structural memory_drilldown tool.\n- E5 Orchestrator + tools: turn loop, Context Assembler (bounded prompt = bible + arc + last recap + state snapshot + live scene transcript), roll, mark_scene, DM system prompt encoding the Hybrid rules contract.\n- E6 Session lifecycle + CLI: campaign create/fork, start/resume/auto-close, idempotent close pipeline, thin CLI front-end. Session-close and arc roll-up INVOKE the E8 checkpoint export.\n- E7 Character creation & import: MVP agent-guided conversational SRD-compliant creation with deterministic validation tools, output = canonical character record via mutate_state. Import (D&D Beyond/OCR/VTT) DEFERRED; all importers are mappers onto the single canonical character schema (E3-owned).\n\nData model summary in sub-epic E0/E2/E3/E4 designs; checkpoint serialization format in E8 design. Tradeoffs: hierarchy may smooth small details (mitigated by structured-state anchor + structural drill-down + persisted raw log); one-time conversion not reusable (accepted, importer deferred); Hybrid adds a deterministic export-mapping component (accepted in exchange for embedded zero-ops per-turn path + session-grain version graph; Dolt-only rejected because per-turn version resolution is undesirable so it would commit at session boundaries anyway, paying hot-path/server cost for no extra versioning benefit).\n",
+  "acceptance_criteria": "MVP is complete when, from the local CLI on D&D 5e SRD/open-licensed content:\n1. Player can create an SRD-legal character via guided flow; sheet persists as canonical state.\n2. Player can start a campaign forked from an authored module template; the converted open-licensed adventure loads.\n3. Player can play multiple sessions; DM narrates, voices NPCs, adjudicates, runs creatures using looked-up stat blocks; all dice/math/state changes go through tools.\n4. World changes (killed NPC, flipped plot flag, spent gold) persist as overlay/state and are reflected on later turns and sessions.\n5. Graceful exit auto-closes the session (recap + roll-up); crash leaves session resumable with zero canon loss.\n6. After many sessions, the DM demonstrates campaign continuity while assembled prompt size stays bounded and roughly constant with campaign length.\n7. memory_drilldown retrieves a specific older session/scene on demand without it being permanently in context.\n8. Session close and arc roll-up produce deterministic Dolt checkpoint commits; Dolt is never written in a per-turn path.\n9. Player can list checkpoints, restore a checkpoint into a new SQLite working copy, and fork a campaign from a checkpoint into a new Dolt branch with an isolated working copy.\n10. Loreweaver Dolt storage/remote/ref-namespace is verifiably disjoint from the beads Dolt repo.\n11. Core model integration exposes provider-neutral adapters and model profiles; Claude/Anthropic remains an initial adapter, not a core assumption.\n12. The primary DM path is configured for a premium_dm quality floor; economy models are not the default public demo or canonical DM unless explicitly marked experimental/validated.\n13. Rules/mechanics, campaign content, live state, user-private packs, and generated memory remain separated with provenance.\n14. Pack metadata can enforce license, attribution, hosted-use, sharing, redistribution, and monetization policy.\n15. The demo path is premium-model, bounded-turn, and preloaded rather than economy-model-first.\n16. Remaining deferred items are recorded explicitly: native VTT, native mobile, hosted billing/credits, general importers, and custom/local primary DM replacement.\nAll sub-epics E0-E8 closed; deferred items explicitly recorded, not silently dropped.",
+  "notes": "DB ARCHITECTURE DECIDED (user + second-model concurrence): HYBRID, not deferred. SQLite = authoritative live operational store (per-turn ACID, never replaced). Dolt = authoritative checkpoint/history/branching store. MVP must include: deterministic SQLite->Dolt checkpoint export; dolt commit per checkpoint; list checkpoints; restore checkpoint into NEW SQLite working copy; fork campaign from checkpoint into NEW Dolt branch; explicit separation from beads Dolt storage/remotes. Prohibitions: Dolt NOT in per-turn hot path; Dolt NOT deferred; NOT two independent live truths. New sub-epic E8 created for the Dolt checkpoint subsystem. E0 SQLite tasks UNCHANGED (SQLite stays the live store).\nSTRATEGY SYNTHESIS 2026-05-17: Product direction is text-first long-campaign AI DM for tabletop-seeking solo players and living text-world nostalgists. MVP/medium-term remains text-first; native VTT and native mobile are non-goals. CLI/local remains the near-term development and power-user surface; hosted mobile-friendly web/PWA is the likely medium-term public surface. Model strategy is provider adapters + model profiles, not Claude-only. premium_dm targets Opus 4.6+ / GPT-5.5-class or future equivalent; economy models are auxiliary/experimental unless validated. Billing starts BYOK-first; hosted credits are future optional. Public demo should be premium-model, short, bounded, and preloaded rather than economy-model-first. Content strategy separates rules, campaign content, live state, user-private content, and generated memory; public/bundled packs must be open, public-domain, original, or licensed; no fair-use-dependent public pack strategy or ownership-gated closed-IP derived packs. See docs/architecture-report.md and ADR 0001.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:29:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:46Z",
+  "started_at": "2026-05-21T03:44:41Z",
+  "closed_at": "2026-05-21T04:04:58Z",
+  "close_reason": "MVP complete. All 9 sub-epics E0-E8 closed; 16 acceptance criteria verified via manual end-to-end CLI runs (campaign create/fork, session start/resume/close, graceful auto-close, Dolt checkpoint/restore/fork, provider-neutral model adapter). Sole defect found in verification (loreweaver-l0l: EOF graceful-close gap) fixed and merged in PR #14. Deferred items recorded in ADR 0001/0002. Gates green: typecheck + 195 tests pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ve6",
+      "depends_on_id": "eshyra-hlu",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ve6",
+      "depends_on_id": "eshyra-ay3",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ve6",
+      "depends_on_id": "eshyra-zzy",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ve6",
+      "depends_on_id": "eshyra-cck",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ve6",
+      "depends_on_id": "eshyra-wsv",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ve6",
+      "depends_on_id": "eshyra-ua0",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ve6",
+      "depends_on_id": "eshyra-7wc",
+      "type": "blocks",
+      "created_at": "2026-05-17T00:41:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ve6",
+      "depends_on_id": "eshyra-ws9",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ve6",
+      "depends_on_id": "eshyra-c07",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 9,
+  "dependent_count": 0,
+  "comment_count": 0
+}

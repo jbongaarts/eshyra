@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.4",
+  "title": "Resolve dangling Pact Boon prerequisite refs in Eldritch Invocation choices",
+  "description": "Finding source:\n- Fable P2 found five dangling prerequisite refs.\n- feature:warlock:eldritch-invocations choice options reference pact-boon:pact-of-the-blade, pact-boon:pact-of-the-chain, and pact-boon:pact-of-the-tome.\n- Those keys do not exist as standalone records; pact boons live inside feature:warlock:pact-boon.\n- Affects deterministic prerequisite validation for invocations such as Thirsting Blade, Voice of the Chain Master, and Book of Ancient Secrets.\n- Fable reported these were the only dangling refs in the full pass.\n\nWhy it matters:\n- Character builder/level-up tooling cannot reliably validate invocation prerequisites.\n- Existing ref-integrity gates evidently do not traverse choices[].options[].prerequisites[].ref.\n\nAcceptance criteria:\n- Remodel pact-boon prerequisites as resolvable refs or structured predicates against feature:warlock:pact-boon choices.\n- Fix all five dangling refs.\n- Add nested ref-integrity traversal for choices[].options[].prerequisites[].ref and adjacent nested ref-bearing fields.\n- Gate output should report the full JSON path to any future dangling nested ref.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-02T03:45:26Z",
+  "closed_at": "2026-07-02T12:47:19Z",
+  "close_reason": "Fixed in PR #383: pactBoon clauses gain featureRef (schema-required); ldqb gate verifies option ownership; reference-integrity traverses nested prerequisites with full JSON paths.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.4",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

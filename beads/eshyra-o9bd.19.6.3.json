@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.3",
+  "title": "Generate the ADR-0020 candidate audit bundle and run bounded automated gates",
+  "description": "Generate the candidate audit bundle and run bounded automated gates for re-freeze\nevidence. Each gate must state what it observes and what it does not. Passing automated\ngates is entry evidence for independent audit, not proof that no defect or mechanic remains.",
+  "acceptance_criteria": "- Candidate bundle is reproducible and identifies exact candidate inputs/artifacts.\n- Every automated gate states its bounded denominator and fails rather than false-greens unrecognized required input.\n- Known finding regressions and source-authority checks pass.\n- Capabilities in force have current binding/execution/state evidence.\n- No bundle field claims universal clause/mechanic/deterministic/discovery completeness.\n- Passing authorizes independent audit, not re-freeze by itself.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:23:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:53:21Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.3",
+      "depends_on_id": "eshyra-o9bd.19.6.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.3",
+      "depends_on_id": "eshyra-o9bd.19.6.1",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.3",
+      "depends_on_id": "eshyra-o9bd.19.6",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:23:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.3",
+      "depends_on_id": "eshyra-o9bd.19.5.12",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:29:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

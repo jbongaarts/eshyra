@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ewi7",
+  "title": "Dispatch: PR #455 adversarial review R2 — engine mechanical playability (attempt 1)",
+  "description": "Read-only Codex review dispatch (gpt-5.6-luna, reasoning=high, sandbox read-only) in .worktrees/complete-epics. Scope: item state machines, use_item operations, attunement/custody lifecycle, usage counters, migrations, orchestrator tools, domainMutations, turnAuditor. Hunt state divergence, double-spend, fail-open paths, migration data loss, SRD runtime semantics errors. Output: structured findings report to stdout.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T06:55:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-19T06:58:07Z",
+  "close_reason": "Cancelled: reviews are performed by the supervisor directly (user direction 2026-07-19); Codex dispatches are for code-writing only",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

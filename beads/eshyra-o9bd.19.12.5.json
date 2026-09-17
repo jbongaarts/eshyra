@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.12.5",
+  "title": "Review ShadowDelivery candidateCount/mustConsiderOverflow for redundancy with M6/M7",
+  "description": "eshyra-o9bd.19.12.3 implemented ShadowDelivery's injected-true arm exactly as the parent bead specified: {mode:'intervened', injected:true, renderedBytes, renderedSha256, candidateCount, mustConsiderOverflow}. candidateCount and mustConsiderOverflow are copied verbatim from the RenderedContextPacket produced at capture time (never independently recomputed), so they cannot disagree with what was actually rendered. But they ARE, in principle, also derivable from capture.trace's canonical dispositions via measureDiscovery/deriveDiscoveryTrace (M6/M7) whenever the capture succeeded -- the same 'derive one from the other, never store both' principle that traceProjection.ts and measurements.ts apply rigorously elsewhere in this file. This is a minor, low-risk redundancy (both sides are ultimately sourced from the same render pass, not two independent computations), and the bead's spec gave the exact shape verbatim, so I implemented it as written rather than redesigning. Worth a design review: either confirm the duplication is intentional (e.g. so a reader of ONLY the delivery field, without re-deriving from trace, gets M6/M7-equivalent facts for free) or drop the two fields and have readers derive them from capture.trace instead.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-11T04:44:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-11T05:19:23Z",
+  "closed_at": "2026-09-11T05:19:23Z",
+  "close_reason": "Resolved by the parent bead owner at 9754102: candidateCount and mustConsiderOverflow dropped from ShadowDelivery's injected arm. The finding was correct and the shape was the parent bead's own spec. delivery now carries only facts about the delivered text (renderedBytes, renderedSha256); M6/M7 are derived from capture.trace as everywhere else. The reader rejects either removed field as an unknown key so a stale row cannot be admitted.",
+  "labels": [
+    "architecture",
+    "design-question",
+    "discovery",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.12.5",
+      "depends_on_id": "eshyra-o9bd.19.12",
+      "type": "parent-child",
+      "created_at": "2026-09-10T23:44:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

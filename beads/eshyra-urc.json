@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-urc",
+  "title": "docs: clarify when full worktree verification is required",
+  "description": "A recent Codex session treated full npm run verify:worktree as a mandatory start-of-session baseline before touching source. That is allowed but more expensive than intended. Clarify in AGENTS.md that full verification is required before commit/push, optional early for a clean baseline, and that cheap preflight + CI-clean origin/main is sufficient to start work.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T02:25:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:14Z",
+  "started_at": "2026-06-06T02:25:56Z",
+  "closed_at": "2026-06-06T02:51:27Z",
+  "close_reason": "PR #158 merged",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

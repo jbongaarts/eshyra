@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ua0.8",
+  "title": "GREEN: graceful session close pipeline",
+  "description": "Implement the minimal closeSessionGracefully core pipeline needed to satisfy the RED tests.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T00:31:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-21T00:33:12Z",
+  "closed_at": "2026-05-21T00:34:18Z",
+  "close_reason": "Implemented core graceful session close pipeline; focused and nearby verification passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ua0.8",
+      "depends_on_id": "eshyra-ua0",
+      "type": "parent-child",
+      "created_at": "2026-05-20T19:31:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ua0.8",
+      "depends_on_id": "eshyra-ua0.7",
+      "type": "blocks",
+      "created_at": "2026-05-20T19:31:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "a53ba33d-7728-50f6-b6dd-23678305b063",
+      "issue_id": "eshyra-ua0.8",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: npm run test -- packages/core/test/sessionClose.test.ts passed; nearby npm run test -- packages/core/test/sessionClose.test.ts packages/core/test/session.test.ts packages/core/test/scene.test.ts packages/core/test/memorySummary.test.ts packages/core/test/checkpoint.serialize.test.ts passed; npm run typecheck passed.",
+      "created_at": "2026-05-21T00:34:17Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

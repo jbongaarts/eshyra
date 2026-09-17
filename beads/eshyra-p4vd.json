@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd",
+  "title": "Add campaign overlay canon for consequential improvised lore",
+  "description": "Problem\n\nThe playtest surfaced an important adventure-module design seam: the DM must be able to improvise enough to handle unexpected player choices and flesh out scenes, but that improvisation cannot become untracked, unauditable lore that later causes continuity drift or mechanics-audit failures.\n\nAdventure modules should provide the authoritative story spine, but long-running play needs a campaign overlay where consequential facts introduced during play become queryable, inspectable campaign state. At the same time, ordinary descriptive color should not be promoted into permanent canon.\n\nThis bead defines and implements the model for improvised lore promotion.\n\nContext from playtest\n\nIn the Hearthmere / waystation sequence, the DM improvised useful adventure-driving facts:\n- Old Renn exists.\n- Old Renn's charcoal cart is missing.\n- His mule returned alone.\n- Fresh axe-cuts were found on the north palisade.\n- Drag marks led toward the pines.\n- Villagers may pay someone to investigate.\n\nThose are good DM improvisations. They create hooks, NPC knowledge, evidence, and decision points. But once introduced, they need to become campaign overlay lore so later turns can query and rely on them. They should not remain only in prose.\n\nNon-goal\n\nDo not address the stale-campaign/baseSystemId mismatch from the same playtest. That was caused by resuming an old campaign after an intentional backwards-incompatible rules/module change. It does not need compatibility work under this bead.\n\nDesign direction\n\nUse layered canon:\n- Module canon: read-only adventure-module facts and prepared content.\n- Campaign state: deterministic state mutations, flags, inventory, quest state, clocks.\n- Campaign overlay lore: consequential improvised facts recorded during play.\n- Scene facts: short-lived current-scene continuity.\n- Decorative color: prose-only description that should not be persisted.\n- Rumor/belief: persistent attribution that records what an NPC/group believes or reports without asserting it is true.\n\nThe system should support truth status:\n- true / confirmed\n- false / disproven\n- unknown\n- rumored\n- reported\n- observed\n- believed\n- lie\n- exaggeration\n\nAcceptance criteria\n\n- Defines canon tiers and their audit semantics.\n- Defines truth-status semantics, especially the difference between a fact being true and a rumor/belief being recorded.\n- Adds a constrained way for the DM to promote consequential improvised lore into campaign overlay state.\n- Updates world querying so campaign overlay lore is retrievable alongside module canon.\n- Updates audit behavior so current-turn lore-recording can support assertions, while failed tool calls cannot.\n- Adds prompt/runtime guidance distinguishing consequential lore from decorative scene color.\n- Adds regression coverage based on the Hearthmere / Old Renn playtest pattern.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:23:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-24T03:33:47Z",
+  "closed_at": "2026-06-24T03:45:04Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

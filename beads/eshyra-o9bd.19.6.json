@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6",
+  "title": "Build, independently audit, and re-freeze an ADR-0020-truthful SRD candidate",
+  "description": "Own the final candidate/regression/audit/re-freeze sequence under ADR 0020. The candidate\nmust preserve deterministic regeneration and source fidelity, disposition every known\nfinding, truthfully describe audit/readiness scope, verify capabilities actually in force,\nand expose unresolved discovery/adjudication limits. Universal clause migration,\nzero engine-pending, and universal discovery proof are not required.",
+  "acceptance_criteria": "- Candidate pack regenerates deterministically and satisfies source/license/provenance invariants.\n- Every known finding is explicitly dispositioned with permanent evidence appropriate to its current invariant.\n- Automated artifacts state bounded denominators/non-claims and cannot false-green unknown/unclassified results.\n- Capabilities in force are source-faithful, bound, provider-neutral, fail closed, and state-correct.\n- Independent audit finds no unresolved blocker against the ADR-0020 truthfulness bar.\n- Re-freeze makes no global deterministic-closure or universal-discovery claim.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:23:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:53:10Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:23:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

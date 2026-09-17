@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p8d6",
+  "title": "Add explicit provider rate-limit handling for model turns",
+  "description": "Problem\nEshyra currently has generic model/provider failure handling: model turn failures roll back the turn savepoint and surface a generic \"turn could not be completed\" CLI message. That protects state, but rate-limit failures are not classified or explained distinctly. A rate-limited Claude/Anthropic token currently exercises only the generic failed-turn path.\n\nGoal\nAdd explicit rate-limit classification and user-facing handling for model/provider calls, especially gameplay turns, without weakening rollback behavior or adding retry loops that burn quota.\n\nScope\n- Classify provider/model rate-limit failures in the model adapter/error layer.\n- Preserve the existing failed-turn rollback behavior: the player's last input must not be applied if the model call fails.\n- Surface a clearer CLI message for rate limits, e.g. \"Model provider rate limit reached. Try again later. Your last input was not applied.\"\n- Keep provider details sanitized; do not print secrets or raw credential-bearing process/environment details.\n- If the Claude Agent SDK exposes retry-after or structured status metadata, capture it in a safe internal diagnostic and optionally include a human-friendly wait hint.\n- Do not implement automatic retries for normal gameplay turns unless bounded and explicitly justified. Avoid retry loops that consume more quota.\n- Ensure the generic provider-failure path remains for non-rate-limit errors.\n\nImplementation notes\nLikely areas:\n- packages/core/src/model/AgentSdkModelClient.ts or adjacent model error types\n- packages/core/src/engine/turn.ts / runTurn failure handling\n- packages/cli command path that prints failed-turn messages\n- tests around fake model clients and CLI output\n\nAcceptance criteria\n- A fake/rate-limit-shaped model failure is classified as a rate-limit error.\n- Gameplay turn failure due to rate limit rolls back the turn savepoint exactly like other model failures.\n- CLI output clearly identifies rate limiting and states that the last input was not applied.\n- Non-rate-limit provider failures still use the existing generic failed-turn behavior.\n- Tests cover:\n  - rate-limit classification from a representative Claude/Agent SDK failure shape;\n  - failed-turn rollback with rate-limit error;\n  - CLI user-facing message for rate limit;\n  - secret sanitization / no credential leakage.\n- Existing tests continue to pass.\n\nManual validation\nWith a known rate-limited Claude/OAuth/API token, run a fresh campaign and enter a simple player action. Confirm:\n- Eshyra does not crash.\n- The message says the provider is rate limited or equivalent.\n- The failed player input is not persisted/applied.\n- The user can quit cleanly.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T00:49:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-19T16:21:51Z",
+  "started_at": "2026-06-19T15:55:08Z",
+  "closed_at": "2026-06-19T16:21:51Z",
+  "close_reason": "Rate-limit classification, CLI messaging, and session/usage exhaustion coverage all complete. PR #245 open.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

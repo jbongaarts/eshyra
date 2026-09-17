@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.8.2",
+  "title": "Fix missing rule tableRefs and annotate duplicate canonical owners",
+  "description": "From the 18.7.8 classification artifact (§3 anomalies): (1) verify and add missing tableRefs for rule:beyond-1st-level (character-advancement), rule:creature-size (size-categories), rule:expenses-lifestyle-expenses (lifestyle/expenses), rule:mounts-and-vehicles (mounts table, if the table record exists — verify first); follow docs/importer-fix-protocol.md, fix the importer not the pack. (2) Record canonical owners for the 12 DUP rows listed in the artifact so dedup explanations are machine-readable. Recommended agent: Codex GPT-5.5.",
+  "notes": "Verified 2026-07-06: 3 confirmed missing tableRefs (beyond-1st-level→table:character-advancement, creature-size→table:size-categories, expenses-lifestyle-expenses→table:lifestyle-expenses; all three table records exist). rule:mounts-and-vehicles is NOT a gap — mounts data is structured as equipment records (category: mount); drop it from scope. See artifact §3 (updated).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-06T06:12:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-07T04:14:55Z",
+  "started_at": "2026-07-07T04:08:19Z",
+  "closed_at": "2026-07-07T04:14:55Z",
+  "close_reason": "Fixed in importer/linker: added reviewed secondary tableRefs for rule:beyond-1st-level, rule:creature-size, and rule:expenses-lifestyle-expenses; exported reviewed canonical-owner map for the 12 DUP rule rows; regenerated committed SRD pack; verified with focused SRD tests, tsc package check, verify:dnd5e-srd-pack, and npm run verify:worktree.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.8.2",
+      "depends_on_id": "eshyra-o9bd.18.7.8",
+      "type": "parent-child",
+      "created_at": "2026-07-06T01:12:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

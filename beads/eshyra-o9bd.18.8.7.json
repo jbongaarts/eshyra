@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.8.7",
+  "title": "Clarify constructed sourceText/name fields versus verbatim SRD text",
+  "description": "Finding source:\n- Fable P4 observation: synthesized labels such as \"Coinage\", \"Armor guidance\", \"Saddle, Military\", \"Acolyte Bonds\", and choices[].sourceText like \"Acolyte Personality Traits (d8)\" are constructed rather than verbatim source text.\n- Fable considered this not harmful for discoverability, but sourceText can be misleading as a field name.\n\nAcceptance criteria:\n- Inventory fields named sourceText/name/title that may contain generated labels.\n- Rename, mark, or document constructed labels so audit/retrieval does not imply they are verbatim SRD strings.\n- Record explicit non-issue rationale for any fields intentionally left unchanged.",
+  "notes": "PR #391 opened: fixes incorrect verbatim doc-comment claims on CreationChoice.sourceText / optCreationChoices, adds RulesRecord.name caveat, and records non-issue rationale in a new audit note. Awaiting review/merge.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-03T00:24:46Z",
+  "started_at": "2026-07-03T00:19:19Z",
+  "closed_at": "2026-07-03T00:24:46Z",
+  "close_reason": "Merged PR #391 on main (96442f4): corrected CreationChoice.sourceText / optCreationChoices doc comments that falsely claimed unconditional verbatim-ness, added RulesRecord.name importer-retitling caveat, and recorded full field inventory + non-issue rationale in docs/audits/dnd5e-srd-5.1-final/2026-07-02-o9bd-18-8-7-constructed-label-fields.md.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.8.7",
+      "depends_on_id": "eshyra-o9bd.18.8",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

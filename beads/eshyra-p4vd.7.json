@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd.7",
+  "title": "Update audit rules for recorded lore and failed tool calls",
+  "description": "Update mechanics/world audit semantics for improvised lore promotion.\n\nThe auditor should accept factual assertions when supported by successful canonical evidence, including current-turn campaign-overlay recording. It must not treat failed tool calls as evidence.\n\nAcceptance criteria:\n- Failed tool calls with ok:false never support factual assertions.\n- A successful record_world_fact/record_lore call in the same turn can support use of that newly introduced consequential fact.\n- A successful world_query result can support assertions from module canon, campaign state, or campaign overlay lore.\n- A recorded rumor supports \"NPCs say/believe/report X\" but does not support \"X is true\" unless truthStatus supports truth.\n- The audit distinguishes:\n  - established fact\n  - attributed rumor/belief\n  - scene-local continuity\n  - unsupported invention\n- Retry guidance tells the DM:\n  - do not rely on failed world_query results\n  - if introducing a consequential new detail, record it before treating it as established\n  - if not recording it, phrase it as tentative/color or keep it non-consequential\n- Regression tests cover the Hearthmere / Old Renn pattern:\n  - first turn records missing-cart rumors/evidence\n  - later turn can discuss them via world_query without rejection",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:23:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:45:03Z",
+  "started_at": "2026-06-24T03:34:29Z",
+  "closed_at": "2026-06-24T03:45:03Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-p4vd.7",
+      "depends_on_id": "eshyra-p4vd",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:23:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

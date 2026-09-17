@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ngcj.8",
+  "title": "Fix SRD audit count mismatch and minor sourceText artifact",
+  "description": "Problem:\nThe 2026-06-29 audit bundle has minor audit cleanliness issues.\n\nFindings:\n- Authoritative pack/report count is 1,812 records, including feature:184 and hazard:25.\n- command-output/verify-dnd5e-srd-pack.txt printed a stale/misleading line with 183 features, 0 hazards, and 8 traps.\n- class:rogue has clean fixed equipment text, but sourceText includes a likely PDF/list-marker artifact: '(a) Leather armor, two daggers, and thieves' tools'.\n\nImplement:\n- Make verify/importer human-readable counts align with final record kinds and authoritative reports.\n- Remove or normalize the rogue starting-equipment sourceText artifact if it is produced by importer extraction rather than intentionally preserved source text.\n- Add regression coverage so count summaries do not drift from pack summaries.\n\nAcceptance criteria:\n- verify:dnd5e-srd-pack output agrees with pack record counts by kind.\n- No stale '0 hazards, 8 traps' style count remains if hazards are now the canonical kind.\n- Rogue starting equipment sourceText is either clean or explicitly justified by a test.\n- Existing tests and pack verification pass.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-29T20:42:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T01:13:26Z",
+  "started_at": "2026-06-29T20:53:37Z",
+  "closed_at": "2026-06-30T01:13:26Z",
+  "close_reason": "Completed together in PR: traps now expose category trap with schema/tests/generated pack updates; verifier/importer summaries report final record-kind and hazard-category counts; rogue fixed equipment sourceText normalized; audit bundle emits gameplay-readiness report.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ngcj.8",
+      "depends_on_id": "eshyra-ngcj",
+      "type": "parent-child",
+      "created_at": "2026-06-29T15:42:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

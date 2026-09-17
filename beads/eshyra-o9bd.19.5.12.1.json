@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.12.1",
+  "title": "Promote bootstrap roster and finding registry into authoritative ledger",
+  "description": "Carry the versioned primitive roster, canonical audit-finding subject table, and real source-anchor/projection-absence evidence model from the bootstrap ledger into the clause-complete authoritative ledger. Preserve exact membership diffs and fail-closed evidence resolution rather than copying snapshot counts.",
+  "acceptance_criteria": "Authoritative ledger imports or formally supersedes bootstrap-capability-roster-v1; every authoritative primitive has source-backed membership and no synthetic absence proof; bootstrap-to-authoritative diff is executable and reviewed.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:52:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T03:52:19Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.12.1",
+      "depends_on_id": "eshyra-o9bd.19.5.12",
+      "type": "parent-child",
+      "created_at": "2026-07-25T22:52:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

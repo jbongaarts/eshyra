@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23.3",
+  "title": "Fix Warlock invocation prerequisite parsing",
+  "description": "Fix Warlock Eldritch Invocation prerequisite parsing from the ngcj SRD audit.\n\nProblem:\nSeveral invocation option prerequisites are clipped when the source wraps \"Pact of the X feature\" across lines/pages. The imported option data has prerequisite: \"Pact of\" and leaks the rest into the body text, e.g. \"the Tome feature You can now inscribe...\".\n\nAffected examples:\n- Book of Ancient Secrets\n- Chains of Carceri\n- Lifedrinker\n- Thirsting Blade\n- Voice of the Chain Master\n\nWhy this matters:\nDeterministic tools cannot safely gate invocations if prerequisites are incomplete. A resolver needs to know whether an invocation requires Pact of the Tome, Pact of the Blade, Pact of the Chain, a minimum Warlock level, or both.\n\nScope:\n- Fix extraction/parsing of wrapped invocation prerequisites.\n- Add structured prerequisite fields for invocation options where possible.\n- Preserve original prerequisite prose for DM context.\n- Correct source attribution for invocation options spanning SRD pages 48-50, instead of collapsing them all to page 47.\n- Add regression tests for wrapped prerequisite lines.\n\nAcceptance criteria:\n- No invocation option has prerequisite exactly \"Pact of\" or similarly dangling prerequisite fragments.\n- Book of Ancient Secrets requires Pact of the Tome.\n- Lifedrinker and Thirsting Blade require Pact of the Blade and the correct minimum Warlock level where present in the SRD.\n- Chains of Carceri and Voice of the Chain Master expose their correct prerequisites.\n- Option body text no longer begins with leaked prerequisite continuations such as \"the Tome feature\".\n- Source pages/citations are accurate for invocation options spanning pages 48-50.\n- npm run typecheck passes.\n- npm test passes.\n- npm run check passes.\n- npm run verify:dnd5e-srd-pack passes and regenerated pack output is intentional.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T03:18:29Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T03:45:05Z",
+  "closed_at": "2026-06-30T03:45:05Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-vk23.3",
+      "depends_on_id": "eshyra-vk23",
+      "type": "parent-child",
+      "created_at": "2026-06-29T22:18:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

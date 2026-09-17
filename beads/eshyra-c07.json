@@ -1,0 +1,54 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c07",
+  "title": "E3 Game-state subsystem + mutate_state tool",
+  "description": "Canonical, exact, provenance-annotated game state - the trust anchor for the whole system. Owns the single canonical character schema (also the convergence target for future character import). mutate_state is the SOLE writer of canon and overlay facts.",
+  "design": "Tables: character (single-row sheet), inventory (item rows), plot_flags, clock (in-game time + current location_id); every mutable row carries provenance + session_id + ts. mutate_state(target, field, op, value, provenance) validates, applies transactionally (turn atomic), records provenance; also the writer for overlay_facts (used by E2). No free model text ever writes canon. Crash-safety from per-turn transaction commit.",
+  "acceptance_criteria": "1. Canonical character/inventory/plot_flags/clock schema defined and documented as the single source. 2. mutate_state applies a change transactionally with provenance and rejects invalid ops. 3. Simulated crash mid-turn leaves last committed state intact and in-flight turn rolled back. 4. Provenance is queryable for narrative callbacks.",
+  "notes": "SYNTHESIS UPDATE 2026-05-17: Canon-changing state mutations remain deterministic, transactional, provenance-backed, and tool-mediated. Cheaper/helper models may propose state deltas, but accepted canon changes require premium-model or deterministic validation before commit.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:30:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-19T04:55:30Z",
+  "close_reason": "E3 complete: canonical schema, transactional mutate_state writes, crash rollback proof, and provenance query surface implemented; build/test/typecheck pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-c07",
+      "depends_on_id": "eshyra-cck",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "f20455f8-4e7d-527e-adab-6de84fcc0d02",
+      "issue_id": "eshyra-c07",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install exit 0; npm run typecheck exit 0; initial npm run test failed because fresh worktree lacked built @loreweaver/core dist entrypoint; npm run build exit 0; npm run test exit 0 (25 passed / 1 skipped).",
+      "created_at": "2026-05-19T03:59:05Z"
+    },
+    {
+      "id": "8f36f161-b5b2-53f2-83a9-b7ef83827775",
+      "issue_id": "eshyra-c07",
+      "author": "Joseph Bongaarts",
+      "text": "Progress verification: npm run build -> exit 0; npm run test -> exit 0 (27 passed / 1 skipped). Implemented initial E3 schema and mutateState character set slices with TDD evidence in loreweaver-c07.1 through loreweaver-c07.6. Epic remains open for remaining mutate_state targets/ops, invalid-op coverage, rollback/crash simulation, docs, and provenance query helper.",
+      "created_at": "2026-05-19T04:31:41Z"
+    },
+    {
+      "id": "1d80c68b-8785-5906-bf7a-7f5eb8b7caf5",
+      "issue_id": "eshyra-c07",
+      "author": "Joseph Bongaarts",
+      "text": "Final verification: npm run build -> exit 0; npm run test -> exit 0 (31 passed / 1 skipped); npm run typecheck -> exit 0. Acceptance: schema documented in docs/game-state.md; mutateState validates targets/fields/ops and writes provenance; mutateStateBatch rollback test simulates crash and preserves last committed state; getStateProvenance returns row provenance for callbacks. TDD RED/GREEN evidence recorded on child issues c07.1-c07.10.",
+      "created_at": "2026-05-19T04:55:29Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 5,
+  "comment_count": 3
+}

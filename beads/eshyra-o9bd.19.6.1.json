@@ -1,0 +1,153 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.6.1",
+  "title": "Build the candidate SRD pack under the ADR-0020 truthfulness bar",
+  "description": "Regenerate the candidate SRD pack after known source/projection finding owners complete\nrequired repairs. Preserve existing source-faithful representations; add or repair\nstructured semantics where required by known findings, discovery relationships, or\npositively selected capabilities. Do not migrate every record into a universal clause model.",
+  "acceptance_criteria": "- Candidate pack regenerates byte-exactly from approved inputs.\n- Known source-fidelity/provenance/segmentation/domain findings owned by prerequisites are reflected in the candidate.\n- Positive capability bindings present in the candidate are truthful and expose limits; absence of a binding is not a completeness result.\n- No report claims full-mechanics semantic review/classification unless an exact bounded denominator is independently established.\n- Required unresolved source/discovery/adjudication/capability limitations remain explicit.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nThe residual semantic check on free-form effects (reference integrity is NOT\nsemantic appropriateness) is shared with 19.4.5 and must be completed here for\nthe full corpus.\n\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** GREEN DEFINITION REVISED (2026-07-25) — SUPERSEDES the 8-point version ***\nDECISION: where structured pack data is a DIRECT INPUT to deterministic\nexecution, the pack contract and the reference engine are ONE co-designed\nsystem. The pack defines what the engine must execute; the reference engine\nproves the representation is sufficient and unambiguous. Freezing the pack\nfirst would preserve a separation that does not exist in practice.\n\nA deterministic clause that feeds engine execution is GREEN only when all nine\nhold:\n  1. Complete source-clause identification.\n  2. Clause-complete structured representation.\n  3. Complete field provenance.\n  4. Explicit capability requirements.\n  5. A provider-neutral engine implementation exists.\n  6. Reference-engine conformance tests exercise the PACK representation.\n  7. Correct tool exposure and state mutation.\n  8. Fail-closed behavior for unsupported input.\n  9. Successful replay / deterministic equivalence where applicable.\n\nA clause is NOT green merely because the pack appears to contain enough data;\nthe reference implementation must demonstrate that it actually does. A\nrepresentation reference that merely RESOLVES to an existing object is not\ngreen — the Opus amended magic-item pass proved reference integrity but\nexplicitly did NOT prove semantic appropriateness of free-form effects.\n\nAT RE-FREEZE THERE MUST BE ZERO ENGINE-PENDING DETERMINISTIC CLAUSES. The only\npermissible non-green clauses are four approved categories:\n  * genuine source ambiguity routed to campaign rulings;\n  * intentionally model-adjudicated material;\n  * external content unavailable in the SRD;\n  * explicitly deferred non-deterministic house-rule behavior.\nEach must be explicitly represented in-band, carry its alternatives and\ncampaign-ruling requirement, and fail CLOSED.\n\nWHY (audit evidence): the 2026-07-24 findings were structures that looked\nplausible in isolation but failed as executable inputs — alternative damage\nmodes stored as parallel damage, recharge triggers read as reset periods,\npartial saves treated as complete, legendary actions with no budget or cost,\noption mechanics hoisted onto parent features, typed records missing\nbranching/timing/termination. A completed reference implementation forces these\nto surface: a dragon-breath scenario cannot pass without half-damage handling;\na legendary-creature scenario cannot pass without a budget; a versatile attack\ncannot execute without a discriminated alternative.\n\nCONSEQUENCE FOR SEQUENCING: eshyra-olc5 is no longer a downstream project that\nmay stay open after eshyra-o9bd closes. Its reference-implementation\ncertification gates eshyra-o9bd.19.6.1 and therefore the formal re-freeze in\neshyra-o9bd.14.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:23:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:53:13Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.6",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:23:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.4.1",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.3.1",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.3.3",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.4.3",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.3.4",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.1.11",
+      "type": "blocks",
+      "created_at": "2026-07-26T10:08:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.2.1",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:26:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.4.5",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.6.5",
+      "type": "blocks",
+      "created_at": "2026-09-02T00:52:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.3.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.2.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:26:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.4.4",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.2.4",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:26:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.2.3",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:26:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.6.1",
+      "depends_on_id": "eshyra-o9bd.19.4.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:28:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 15,
+  "dependent_count": 2,
+  "comment_count": 0
+}

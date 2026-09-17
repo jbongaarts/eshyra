@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5681",
+  "title": "Resolve Dependabot PR 444 lockfile conflict",
+  "description": "Resolve the mechanical package-lock conflict after earlier dependency PRs merged, preserve the Anthropic SDK updates, run repository verification, and return PR 444 to green for merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T00:46:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T00:57:10Z",
+  "started_at": "2026-07-25T00:46:29Z",
+  "closed_at": "2026-07-25T00:57:10Z",
+  "close_reason": "Dependabot completed a clean rebase; fresh CI passed and PR #444 merged.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

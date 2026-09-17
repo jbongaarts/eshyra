@@ -1,0 +1,54 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.12.4.1",
+  "title": "Review item 2: strengthen table validation",
+  "description": "Add failing validation tests and then strengthen the baseline table kindSchema so columns are non-empty, row lengths match columns, and row cells are scalar string/number/boolean/null only.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T18:00:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:54Z",
+  "started_at": "2026-05-28T18:01:04Z",
+  "closed_at": "2026-05-28T18:02:30Z",
+  "close_reason": "Strengthened baseline table validation; RED failed as expected and focused GREEN tests passed.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.12.4.1",
+      "depends_on_id": "eshyra-0m9.5.12.4",
+      "type": "parent-child",
+      "created_at": "2026-05-28T13:00:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "751660f7-384c-5242-a091-fc52bb42a1d0",
+      "issue_id": "eshyra-0m9.5.12.4.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run packages/core/test/rulesPack.test.ts -> failed for expected reason: empty columns, mismatched row lengths, and object/array cells did not throw under current table validator.",
+      "created_at": "2026-05-28T18:01:39Z"
+    },
+    {
+      "id": "f49581cd-143e-511f-9293-a8d7ef72674b",
+      "issue_id": "eshyra-0m9.5.12.4.1",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: npx vitest run packages/core/test/rulesPack.test.ts -> passed (25 tests); npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseTables.test.ts packages/core/test/importers/dnd5e-srd-5.1/emit.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> passed (33 tests).",
+      "created_at": "2026-05-28T18:02:29Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

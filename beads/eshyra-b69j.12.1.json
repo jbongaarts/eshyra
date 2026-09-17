@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.12.1",
+  "title": "Structure ancestry ability score increases",
+  "description": "Ancestry ability-score bonuses are prose-only. Each ancestry record carries an 'Ability Score Increase' trait whose bonus lives only in text, e.g. ancestry:elf trait 'Your Dexterity score increases by 2.' and ancestry:half-elf 'Your Charisma score increases by 2, and two other ability scores of your choice increase by 1.' The character creation engine must apply final ability scores without parsing this prose (b69j.6 deferred finalAbilityScores == base scores for exactly this reason; derivedValues.ts ABILITY bonus application is blocked on this).",
+  "acceptance_criteria": "Add structured ability-score-increase metadata to the ancestry schema/importer (e.g. data.abilityScoreIncreases: [{ability, bonus}] plus a choice form for half-elf-style 'two of your choice +1'). Regenerate the pack through the importer (follow docs/importer-fix-protocol.md). Add importer/audit coverage. deriveLevel1Values applies ancestry bonuses to finalAbilityScores. Likely files: packages/core/scripts/importers/*, packages/core/src/rules/kindSchemas.ts (validateDnd5eAncestry), packages/core/src/character/rulesPackResolver.ts, derivedValues.ts.",
+  "notes": "Implemented via consumer-side overlay (srdAncestryAbilityScoreIncreases.ts). PR #296 open for review: https://github.com/jbongaarts/eshyra/pull/296. deriveLevel1Values now applies ancestry increases to final scores/mods/saves/HP, closing the b69j.6 deferral. Half-Elf choice surfaced structured; fixed increases auto-applied.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T21:50:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-25T00:11:00Z",
+  "started_at": "2026-06-24T23:53:14Z",
+  "closed_at": "2026-06-25T00:11:00Z",
+  "close_reason": "Merged via PR #296 (merge commit bbbf36f). Ancestry ability-score increases structured as a source-cited consumer-side overlay; deriveLevel1Values applies them to final scores/mods/saves/HP.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.12.1",
+      "depends_on_id": "eshyra-b69j.12",
+      "type": "parent-child",
+      "created_at": "2026-06-24T16:50:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

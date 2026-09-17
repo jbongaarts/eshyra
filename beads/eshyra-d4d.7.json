@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4d.7",
+  "title": "Docs refresh for party model",
+  "description": "docs/game-state.md and docs/character-creation.md still describe character as a singleton (id=1). Update them to the party-oriented model (multi-row character with role, active_character_id, per-PC inventory) and cross-reference docs/multi-pc-design.md. Acceptance: no stale singleton framing remains; docs match schema v9 and the implemented party behavior.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:54:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:15Z",
+  "started_at": "2026-05-28T18:22:35Z",
+  "closed_at": "2026-05-28T18:23:51Z",
+  "close_reason": "Updated docs/game-state.md and docs/character-creation.md to the party model (multi-row character, role, character_id ownership, active_character_id, characterId param); cross-referenced multi-pc-design.md. biome clean. Committed d640689.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4d.7",
+      "depends_on_id": "eshyra-d4d",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:54:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-oro",
+  "title": "SRD 5.1 hazards importer: fail closed on missing end heading",
+  "description": "The hazards section anchor currently allows slice-to-EOF when the expected end heading is absent. That can let trailing Traps/legal/appendix text bleed into the final hazard description while the schema still passes. Require the hazards end heading and add regression coverage so runImporter throws SectionNotFoundError instead of emitting a partial or over-sliced pack.",
+  "notes": "Hypothesis: SRD_5_1_DEFAULT_SECTION_ANCHORS.hazards currently has requireEndHeading:false, so sliceSection allows hazards to run to EOF when the end heading is missing. Because parseHazards only promotes exact hazard names, the bad boundary was hidden until later prose was inspected.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T04:32:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:55Z",
+  "started_at": "2026-05-28T04:32:55Z",
+  "closed_at": "2026-05-28T04:40:26Z",
+  "close_reason": "Hazards section now fails closed by requiring the end heading; regression tests cover missing hazards end anchor and exact hazard output; verified with npm run check and npm run test.",
+  "comments": [
+    {
+      "id": "eecbe624-98ef-58ab-9f69-7960d2079cab",
+      "issue_id": "eshyra-oro",
+      "author": "Joseph Bongaarts",
+      "text": "Fix verification: hazards anchor now requires an end heading, runImporter throws SectionNotFoundError when the Dungeon Hazards end anchor is missing, and the Brown Mold fixture no longer absorbs Traps prose. Repo gates passed: npm run check, npm run test.",
+      "created_at": "2026-05-28T04:40:26Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.4",
+  "title": "SRD 5.1 importer: equipment / weapon / armor parser",
+  "description": "**Prerequisites (apply to all SRD 5.1 importer child issues):**\n- Vendored SRD 5.1 PDF must be in place at `packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf` — see that directory's README.md.\n- Reference implementation: mirror the structure of `packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts` (parser), `emit.ts` (record builder + manifest description), `index.ts` (pipeline wiring), and the test layout under `packages/core/test/importers/dnd5e-srd-5.1/`.\n- Depends on `loreweaver-0m9.5.9` (section detection + orchestrator) — run parsers over narrowed page slices, not the full PDF.\n\n---\n\nAdd a parser for SRD 5.1 equipment, weapons, and armor (kind=equipment). Handles weapon tables (damage dice, properties, weight, cost), armor tables (AC, type, strength requirement, stealth disadvantage), and adventuring gear.\n\nNote: SRD 5.1 presents weapons/armor as tabular data, not stat-block prose. The parser will likely need to detect the weapon/armor tables specifically and project rows into per-item records — different shape from the spell parser. Re-use the kindSchema baseline; weapon-specific fields (damageDie, damageType, properties[], weight, cost) and armor-specific fields (ac, armorType, stealthDisadvantage, strengthRequirement) go in data.",
+  "acceptance_criteria": "- Parser extracts every equipment entry from the SRD equipment section (weapons table, armor table, adventuring gear table).\n- Records satisfy dnd5e-srd equipment baseline kindSchema.\n- Weapon table rows are normalized into per-weapon equipment records with structured weapon fields in data.\n- Armor table rows are normalized into per-armor equipment records with structured armor fields in data.\n- Manifest description includes 'equipment' in Included record kinds.\n- Unit tests cover a simple weapon (dagger), a martial weapon (longsword), light/medium/heavy armor (leather, scale mail, plate), and a piece of adventuring gear (rope).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:07:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:57Z",
+  "started_at": "2026-05-28T22:46:42Z",
+  "closed_at": "2026-05-28T23:02:59Z",
+  "close_reason": "Implemented SRD 5.1 equipment/weapon/armor/gear parser; PR #102 open for review (https://github.com/jbongaarts/loreweaver/pull/102). All quality gates green.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.4",
+      "depends_on_id": "eshyra-0m9.5.9",
+      "type": "blocks",
+      "created_at": "2026-05-27T18:16:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.4",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:07:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

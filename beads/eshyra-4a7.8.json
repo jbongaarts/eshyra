@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.8",
+  "title": "Repair SRD magic-item boundaries and embedded content",
+  "description": "Problem\r\n\r\nMagic-item coverage improved substantially, but the latest audit found boundary and embedded-content failures.\r\n\r\nKnown high-confidence failures\r\n\r\n- Figurine of Wondrous Power is present in the SRD but missing as magic-item:figurine-of-wondrous-power.\r\n- magic-item:feather-token swallows the Figurine of Wondrous Power heading, rarity line, figurine variants, and Giant Fly stat block.\r\n- Several magic-item tables are likely flattened into descriptions rather than emitted or structured.\r\n- Magic items may contain embedded stat blocks, option tables, dice-result tables, command words, variants, and child entities that need explicit accounting.\r\n\r\nTask\r\n\r\nRepair magic-item boundary parsing and structured child content.\r\n\r\nImplementation guidance\r\n\r\n- Build on the bounded source span bead.\r\n- Build on the document-wide table and stat-block inventory beads where available.\r\n- Every magic item heading in the source should map to exactly one magic-item record unless intentionally ignored with reason.\r\n- Magic-item descriptions should not swallow following magic-item headings.\r\n- Embedded tables should be emitted as table records or structured child data.\r\n- Embedded stat blocks should be linked to the stat-block representation chosen by the stat-block bead.\r\n- Preserve source text and provenance for variants and subentries.\r\n\r\nRegression cases\r\n\r\nAdd tests for:\r\n\r\n- magic-item:feather-token does not include Figurine of Wondrous Power.\r\n- magic-item:figurine-of-wondrous-power exists and has correct source span.\r\n- Giant Fly is accounted for structurally.\r\n- At least one magic-item option table is accounted for.\r\n- At least one magic-item dice-result table is accounted for.\r\n- Deck of Many Things accounts for Avatar of Death according to the stat-block modeling decision.\r\n\r\nAcceptance criteria\r\n\r\n- All source magic item headings are accounted for.\r\n- Known boundary bleed is fixed.\r\n- Magic-item tables and embedded stat blocks are not silently flattened without coverage mappings.\r\n- Existing valid magic-item ids remain stable where possible.",
+  "notes": "Implemented in worktree branch agent/eshyra-4a7.8-magic-item-boundaries. Added Figurine of Wondrous Power with 9 structured variants and Giant Fly link; bounded Feather Token; captured Avatar of Death traits/actions; emitted all 27 remaining Magic Items table structures with reviewed deterministic reconstruction. Source coverage known-gap eshyra-4a7.8: 27 -> 0. Generated semantic diff: 28 records added, 0 removed, only existing record changed is stat-block:avatar-of-death. Verification: npm run format/check/typecheck/test (1587 passed, 19 documented skips) and npm run verify:dnd5e-srd-pack pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T04:30:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-13T17:38:27Z",
+  "closed_at": "2026-06-13T18:00:30Z",
+  "close_reason": "Magic-item boundaries, embedded stat blocks, variants, and all source table structures are now deterministically emitted and verified.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.8",
+      "depends_on_id": "eshyra-4a7.2",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.8",
+      "depends_on_id": "eshyra-4a7.3",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.8",
+      "depends_on_id": "eshyra-4a7",
+      "type": "parent-child",
+      "created_at": "2026-06-10T23:30:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.8",
+      "depends_on_id": "eshyra-4a7.4",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:22:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

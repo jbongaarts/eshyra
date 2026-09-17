@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.1.6.1",
+  "title": "Certify semantic absence for partial bootstrap projections",
+  "description": "Complete clause-level, source-grounded absence proofs for the five bootstrap primitives that the corrected resolver marks evidence-underived: spellbook-copy-cost-and-asset-ledger, containment-portal-and-card-pool-instance-state, planar-return-and-declared-window-clocks, downtime-study-expense-and-training-ledger, and retained-inventory-property-xp-asset-creation. Anchor each to the specific source clause, search the clause-complete projection for equivalent or partial representation, and replace evidence-underived with a closure-grade result only when the negative proof is positive. Do not use proposed hook-name or sentinel absence as proof.",
+  "acceptance_criteria": "Each affected row has a real source anchor, source presence evidence, a semantic projection query, and a positive absence result; partial representations remain fail-closed.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T15:22:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T15:22:28Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.1.6.1",
+      "depends_on_id": "eshyra-o9bd.19.5.1.6",
+      "type": "parent-child",
+      "created_at": "2026-07-26T10:22:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

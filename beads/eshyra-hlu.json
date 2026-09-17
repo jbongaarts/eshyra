@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-hlu",
+  "title": "E2 World subsystem: module schema, conversion, overlay, world_query",
+  "description": "Module schema (the real deliverable), one-time model-assisted conversion of ONE openly-licensed adventure, immutable template plus per-campaign overlay-fact resolution, world_query tool. General importer deferred.",
+  "design": "Module schema files: meta, locations[], encounters[] (creatures via srd_ref to E1), npcs[], triggers[] (plot advancement), lore[]. Imported into campaign DB at creation; authored files stay pristine for re-forking. overlay_facts (written by E3 mutate_state): target_type/target_id/field/value/provenance/session/ts; current world = template plus latest-wins overlay. world_query(target) resolves template+overlay so the model never narrates a stale template. Conversion step is a one-time model-assisted content task, NOT a reusable parser; it is gated on the confirmed-legal-source blocker task. Schema + overlay + world_query work is NOT gated and proceeds first.",
+  "acceptance_criteria": "1. Module schema defined and documented. 2. One openly-licensed adventure converted into schema-conforming files (after legal source confirmed). 3. Campaign creation forks template into a campaign DB leaving authored files unchanged. 4. world_query returns template+overlay-resolved truth; an overlay fact (e.g., NPC killed) overrides the template on later queries.",
+  "notes": "SYNTHESIS UPDATE 2026-05-17: E2 also owns pack license/allowed-use metadata and user-private pack posture. Shipped/public packs must be open, public-domain, original, or publisher-licensed; unsupported closed-IP derived packs must not be shipped or merely ownership-gated. Module schema should preserve rules/campaign/live-state/user-private/generated-memory separation and expose metadata that can enforce hosting/sharing/monetization policy.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:31:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T05:07:06Z",
+  "closed_at": "2026-05-19T05:14:42Z",
+  "close_reason": "Non-gated E2 complete (schema, license metadata, fork, overlay-resolved world_query) in PR #5. Third-party adventure conversion (acceptance #2) is legal-source gated and tracked by loreweaver-9s6.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-hlu",
+      "depends_on_id": "eshyra-zzy",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-hlu",
+      "depends_on_id": "eshyra-c07",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

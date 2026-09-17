@@ -1,0 +1,52 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.10",
+  "title": "Strengthen cross-record reachability graph",
+  "description": "Deficiency #9. 'Complete' must include runtime relationship reachability, not just source ownership. Ensure every major entity is reachable by both source AND runtime relationship: class -> progression table -> level rows -> feature refs/subclass slots/improvement refs; subclass -> parent class -> grant levels -> feature refs; spell -> class-list membership -> level -> selection eligibility; feature -> owned table refs -> resource/choice effects; starting equipment -> equipment refs/typed item grants; ancestry/background -> granted choices + derived mechanics; monster/NPC -> actions/spellcasting/recharge/save-DC/damage metadata; magic item -> activation/charges/attunement/spell refs/table refs/stat-block refs. Add reachability assertions to the audit.",
+  "notes": "REACHABILITY GAP TO ADDRESS (found during o9bd.8.3, 2026-06-28): the table-reachability audit gate added in o9bd.8.3 (srdAudit.ts checkTableReachability) collects singular class.data.progressionTableRef but NOT the plural subclass.data.progressionTableRefs. No subclass populates progressionTableRefs in the committed pack today, so the gate is green and cannot false-positive yet; but if a future importer change links a table solely via a subclass progressionTableRefs, the gate would wrongly flag it as an orphan. Fix: collect progressionTableRefs (plural) alongside the singular field in checkTableReachability. This belongs to this bead's reachability-graph hardening.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-29T04:38:05Z",
+  "closed_at": "2026-06-29T04:49:11Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.10",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.10",
+      "depends_on_id": "eshyra-o9bd.1",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.10",
+      "depends_on_id": "eshyra-o9bd.11",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1ek",
+  "title": "Review MVP implementation for completeness gaps",
+  "description": "Compare the completed MVP behavior against architecture docs, ADRs, tests, and CLI expectations. Surface missing user workflows, under-documented behavior, unimplemented acceptance assumptions, and places where MVP scope is ambiguous. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Completeness gaps are captured as follow-up beads or explicitly marked as acceptable post-MVP deferrals; review notes identify the source of each expected behavior and whether code, docs, or tests need follow-up.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:11:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:04Z",
+  "started_at": "2026-05-21T04:37:09Z",
+  "closed_at": "2026-05-21T04:47:10Z",
+  "close_reason": "Completeness review completed by parallel subagent; gaps, acceptable deferrals, verification evidence, and follow-up beads loreweaver-xeu loreweaver-32m loreweaver-v3k loreweaver-ksk loreweaver-abt loreweaver-buu loreweaver-jqk loreweaver-vmp recorded.",
+  "comments": [
+    {
+      "id": "71bd67c2-963a-51dd-8069-2250dcef7974",
+      "issue_id": "eshyra-1ek",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for MVP completeness review:\n\nAssessment: With gaps.\n\nCritical gaps:\n- Character creation exists in core but is not reachable from CLI campaign flow.\n- CLI graceful close writes a stub recap instead of a real campaign-memory summary.\n- Checkpoint restore/fork/list exist in core but have no user-facing CLI workflow.\n\nImportant gaps:\n- Profile override docs are ahead of runtime wiring.\n- Structured turn traces store placeholder fields for real turns.\n- First-turn scene persistence depends on the model choosing mark_scene.\n\nMinor gaps:\n- ADR 0002 says Stage 1 CLI includes streaming, but current model/CLI path is whole-response output.\n- AGENTS.md test-count expectation is stale.\n\nAcceptable post-MVP deferrals noted by reviewer: packaging/release/default user data locations, character import, structured panels/VTT/native mobile/hosted credits, third-party adventure conversion.\n\nFollow-up beads created:\n- loreweaver-xeu, loreweaver-32m, loreweaver-v3k, loreweaver-ksk, loreweaver-abt, loreweaver-buu, loreweaver-jqk, loreweaver-vmp.\n\nScope/verification: reviewer inspected README, architecture report, ADRs 0001/0002, character/world/game-state docs, CLI/core source and tests. Reviewer ran npm run test: 35 test files passed, 195 tests passed, 1 skipped. Worktree remained clean.\r",
+      "created_at": "2026-05-21T04:46:36Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

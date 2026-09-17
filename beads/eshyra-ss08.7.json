@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ss08.7",
+  "title": "A Save Game Is Not a History",
+  "description": "Tell the story of campaign checkpoints and history.\n\nNarrative hook and core question: What changes when a campaign must answer not only “can I restore?” but also “what changed, when, and why?”\n\nResearch local SQLite campaign/session state, checkpoint snapshots, restore authority, Dolt's role in canonical history, semantic projections or useful diffs, rewind, timeline branching and forking, zero-ops CLI constraints, why a database in the hot gameplay path and a history system are different concerns, and how checkpointing interacts with long campaigns and auditability.\n\nExpected architectural conclusion: a save file restores state. Campaign history also needs explainable change, chronology, and eventually branching.\n\nBoundaries: do not claim unimplemented history UX is shipped. Distinguish current behavior, committed architecture, and future direction. Do not turn this into a generic database article.\n\nUse repository history, PRs, design docs, ADRs, audits, and playtest transcripts as evidence. Verify factual claims against artifacts rather than model memory. Keep the story static, search-indexable, and readable without prior repository knowledge. Follow Joseph's voice rules: analytical and curious, concrete before abstraction, dry humor when earned, deliberate we/I attribution, reflect praise, absorb blame, no em dashes, and no generic LLM prose.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T04:27:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-10T04:29:48Z",
+  "labels": [
+    "docs",
+    "site",
+    "storytelling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ss08.7",
+      "depends_on_id": "eshyra-ss08",
+      "type": "parent-child",
+      "created_at": "2026-07-09T23:27:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

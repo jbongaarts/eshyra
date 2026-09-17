@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-kf8",
+  "title": "Make checkpoint restore atomic and destination-safe",
+  "description": "Review finding from loreweaver-niw. Checkpoint restore materialization is not transactional and assumes a new/empty destination DB, so a failure can leave a partial destination file. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Restore rejects unsafe existing destinations or restores into a temp DB then atomically renames; injected restore failures leave no partial usable destination; tests cover failure cleanup.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:43:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:03Z",
+  "closed_at": "2026-05-21T05:48:33Z",
+  "close_reason": "Fixed in PR #23 (merged)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

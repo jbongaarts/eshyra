@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ws9.4",
+  "title": "E5 Task 3: bounded Context Assembler",
+  "description": "Assemble the bounded per-turn prompt (E5 acceptance #2). Build context from only: campaign_bible + current arc_summary + last session_recap + full structured-state snapshot (character/inventory/plot_flags/clock) + current scene live transcript. Exclude older turn history unless drilled down. Fills the ContextAssembler seam.",
+  "acceptance_criteria": "assembled prompt contains only the bounded set; older scene_log / prior sessions excluded unless drilled down; compact slices leave room for prompt caching; build + test pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-20T22:45:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-20T22:53:08Z",
+  "closed_at": "2026-05-20T22:54:58Z",
+  "close_reason": "bounded Context Assembler implemented and verified",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ws9.4",
+      "depends_on_id": "eshyra-ws9",
+      "type": "parent-child",
+      "created_at": "2026-05-20T17:45:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ws9.4",
+      "depends_on_id": "eshyra-ws9.2",
+      "type": "blocks",
+      "created_at": "2026-05-20T17:45:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "b271006e-f851-554d-8402-8d3975421713",
+      "issue_id": "eshyra-ws9.4",
+      "author": "Joseph Bongaarts",
+      "text": "TDD: RED — test/contextAssembler.test.ts 6/6 failing. GREEN — implemented orchestrator/contextAssembler.ts (assembleContext + renderContextMessage + readStateSnapshot); 6/6 pass. Bounded set verified: older closed scenes excluded (acceptance #2). Full suite 130 passed / 1 skipped.",
+      "created_at": "2026-05-20T22:54:57Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

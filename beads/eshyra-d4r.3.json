@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4r.3",
+  "title": "Implement per-user data root resolution (LOREWEAVER_HOME + per-platform defaults)",
+  "description": "Per ADR 0004. Resolve a single per-user Loreweaver data root: LOREWEAVER_HOME override, else the platform per-user default — Windows %LOCALAPPDATA%\\Loreweaver, macOS/Linux ~/.loreweaver. Create root + subdirs (config.json, registry.json, campaigns/, rules-packs/, dolt/) lazily. rules-packs/ is reserved for epic loreweaver-x3w and stays empty for now. The managed Dolt cache is <root>/dolt; LOREWEAVER_DOLT_HOME still overrides it.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-22T21:20:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-22T21:58:59Z",
+  "closed_at": "2026-05-22T22:20:43Z",
+  "close_reason": "Implemented and merged in PR #40 (ADR 0004 managed storage model).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4r.3",
+      "depends_on_id": "eshyra-d4r",
+      "type": "parent-child",
+      "created_at": "2026-05-22T16:20:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d4r.3",
+      "depends_on_id": "eshyra-d4r.2",
+      "type": "blocks",
+      "created_at": "2026-05-22T16:20:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "9ba7a4ab-638b-5e33-b6a6-d605b8a06e73",
+      "issue_id": "eshyra-d4r.3",
+      "author": "Joseph Bongaarts",
+      "text": "Implemented in PR #40 (branch work/loreweaver-d4r) — packages/cli/src/dataRoot.ts + tests. Pending review.",
+      "created_at": "2026-05-22T22:17:24Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 1
+}

@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.2",
+  "title": "Repair source segmentation, record boundaries, and complete locators",
+  "description": "Repair known heading/ownership/continuation/locator defects and strengthen source-side\nstructural checks so those defect classes cannot silently recur. The denominator for\nan exhaustive assertion must come from independently observed source structure, not\nthe generated records being checked. Historical counts are evidence, not acceptance\nconstants.",
+  "acceptance_criteria": "- Known boundary and continuation defects are repaired and generalized against independently observed source structure.\n- A source continuation cannot be silently represented with a partial locator.\n- Ambiguous/unresolved ownership remains explicit and cannot count as clean source coverage.\n- Historical hand-copied counts are not authoritative membership.\n- Corpus-wide structural predicates are allowed only when their denominator is independently source-derived.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:52:07Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.2",
+      "depends_on_id": "eshyra-o9bd.19.2",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.2",
+      "depends_on_id": "eshyra-o9bd.19.1.3",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

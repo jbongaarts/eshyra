@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-oobh",
+  "title": "Mechanics-audit gate: second-model turn auditor before display/persist (eznk follow-up)",
+  "description": "Tool exposure (PR #241) works but canonical tool-use is not enforced: a 'roll 2d8' prompt produced improvised dice with no executed roll tool call. Add a second lightweight subscription-backed model call (mechanics referee) that audits each candidate DM response before display/persist: if it asserts dice/random/state/rules facts without the required executed tool, reject, retry once with a repair instruction, else fail the turn. Strict-JSON verdict. Must NOT use API-billed calls on the subscription path; sanitize child SDK env so ANTHROPIC_API_KEY cannot shadow CLAUDE_CODE_OAUTH_TOKEN. Auditor model configurable, defaults to cheapest/fastest subscription model. Tests mock the auditor; no live calls.",
+  "notes": "Auth-selection follow-up (3rd commit on PR #241): removed API-key-first precedence for gameplay. New ESHYRA_AUTH_MODE (oauth-token|api-key|auto, default auto): single cred used; BOTH present + no mode => ConfigError (no silent API billing); explicit mode forces cred, errors if missing. Primary DM + auditor share one cfg.auth (test asserts both inject same token, no API key). buildChildSdkEnv sanitization retained. Docs updated (config.ts, agent-sdk-auth.md, formatConfigError); AGENTS.md notes API-key-first now lives ONLY in live-test gate (liveModelAuth, unchanged). 1956 tests pass. Live smoke previously passed (native-mcp roll + auditor accept).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-19T01:39:16Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-19T01:39:32Z",
+  "closed_at": "2026-06-19T03:52:46Z",
+  "close_reason": "Merged to main via PR #241 (squash 36670d9): Agent SDK in-process MCP tool exposure, mechanics-audit gate, and explicit subscription-safe provider auth. Live smoke passed.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-oobh",
+      "depends_on_id": "eshyra-eznk",
+      "type": "blocks",
+      "created_at": "2026-06-18T20:39:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

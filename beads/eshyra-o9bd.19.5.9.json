@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.9",
+  "title": "Engine F8 — Checks, saves, attacks, DCs, and derived modifiers",
+  "description": "Own provider-neutral deterministic capability operations in engine:F8\nfor checks, saves, attacks, dcs, and derived modifiers.\n\nScope is limited to (a) legacy magic-item executionReadiness backlog entries\nassigned to engine:F8, and (b) operations explicitly positively\nselected into this family under the accepted ADR-0020 capability contract.\nHistorical class, spell, creature, hazard, rule, feature, equipment, or other\ncross-domain references are candidate/salvage evidence only; they do not enter\nthis family merely because an earlier audit, clause reclassification, hook,\ntyped field, or source passage mentioned them.\n\nAn operation outside the bounded legacy backlog enters this family only by an\nexplicit positive capability selection that declares operation, required inputs,\nexclusions, identity/revision, residual DM interpretation, real runtime binding,\nprovider-neutral execution, and deterministic state/resource effects where\napplicable. Family completion proves only those named operations/facets. It is\nnot a claim about the complete mechanics of a record, clause, source family, or\ncorpus, and it is not a prerequisite for SRD re-freeze merely because legacy\nbacklog remains unselected.",
+  "acceptance_criteria": "- Every engine:F8 capability positively selected and in force has source-faithful inputs, stable capability identity/revision, explicit exclusions and residual DM interpretation, a real runtime binding, provider-neutral execution, and correct deterministic state/resource effects and replay behavior where applicable.\n- Legacy executionReadiness entries assigned to engine:F8 but not positively selected may remain backlog; they are not treated as satisfied, absent, safe, or re-freeze blockers merely because they are unselected.\n- Membership outside the bounded legacy magic-item backlog requires explicit positive capability selection. Audit findings, typed fields, hook inference, source prose, old clause classification, or domain-bead membership do not automatically create a capability obligation.\n- Conformance evidence proves the named operation/facets and declared limits, not whole-record, whole-clause, family-wide source, or corpus completeness.\n- Unknown, malformed, or unsupported input to a capability in force fails closed; unbound/unclassified/unknown results never prove absence of mechanics.\n- Completion of this family is not required for SRD re-freeze except insofar as a capability actually in force must satisfy its positive contract.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 post-migration repair 2026-09-10: independent audit of the published\nBeads projection found this family parent still carried the pre-ADR automatic\ncross-domain membership / every-member-green contract after its children were\nnarrowed. The operative description and acceptance criteria now make the\nfamily a bounded legacy-backlog and explicit-positive-selection owner. Older\ncross-domain examples remain historical/salvage evidence only.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-11T00:23:00Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.9",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:49:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

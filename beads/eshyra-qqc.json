@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-qqc",
+  "title": "parseSpells: Fire Bolt description absorbs every subsequent F-* spell body (real SRD PDF)",
+  "description": "With loreweaver-9bu landing (parseSubclasses Champion column-wrap rejection), verify:dnd5e-srd-pack now runs end-to-end and surfaces a parseSpells body-boundary regression on the real SRD 5.1 PDF:\n\n  spell:fire-bolt:\n    data.description: <correct Fire Bolt body only> →\n      \"...level (4d10). Fire Shield 4th-­‐‑level evocation Casting Time: ... Fire Storm ... Flame Blade ... Flame Strike ... Flaming Sphere ... Flesh to Stone ... Floating Disk ... Fly ... Fog Cloud ... Forbiddance ... Forcecage ... Foresight ... Freedom of Movement ... Freezing Sphere ... Gaseous Form ... Gate ... Geas ... Gentle Repose ... Giant Insect ... Glibness ... Globe of Invulnerability ... Glyph of Warding ... Goodberry ... Grease ... Greater Invisibility ... Greater Restoration ... Guardian of Faith ... Guards and Wards ...\"\n    data.higherLevels: <missing> → <bloated with another chain of spell descriptions>\n    data.classes: [\"Sorcerer\",\"Wizard\"] → [\"Wizard\"]   (Sorcerer dropped; possibly same root cause or a parseSpellClassLists miss)\n    provenance.locator: \"p. 242\" → \"p. 144\"            (the new page is correct per PDF inspection — Fire Bolt heading is on p. 144)\n\nReproduce: npm run verify:dnd5e-srd-pack on a tree with loreweaver-9bu merged.\n\nInvestigation pointers:\n- The PDF extraction is clean at the Fire Bolt → Fire Shield boundary (verified manually):\n    Fire Bolt\n    Evocation cantrip\n    ...\n    level (4d10).\n    Fire Shield                <-- new spell heading on its own line\n    4th-­‐‑level evocation\n- parseSpells must not be recognizing \"Fire Shield\" (and the subsequent F-* / G-* / ... headings) as new spell headings while scanning Fire Bolt's body. Likely a heading-detection / body-boundary mismatch against the real-PDF spell layout (h=18 spell headings?). Compare with how parseSpells works on its existing fixtures.\n- See packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts and packages/core/test/importers/dnd5e-srd-5.1/parseSpells*.test.ts.\n- The Sorcerer-class drop from data.classes is likely a separate parseSpellClassLists real-PDF mismatch (or could be downstream of the same heading-detection issue if the spell-list scan also keys off spell headings).\n- Other F-* spells presumably still emit as their own records (they're not in the \"Records removed\" set), so the bug is one-sided: Fire Bolt absorbs them AND they also stand alone.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-02T23:26:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:50Z",
+  "started_at": "2026-06-02T23:28:10Z",
+  "closed_at": "2026-06-02T23:46:39Z",
+  "close_reason": "Fixed in PR #138 (branch loreweaver-qqc-fix-fire-bolt). LEVELED_MARKER regex now tolerates the SRD 5.1 PDF font's four-glyph hyphen cluster (U+002D U+00AD U+2010 U+2011) via a normalize-at-flatten step. Also tolerates Contagion's 'Component:' singular typo (added KEYED_FIELD_ALIASES map). Real-PDF verify: 24 spells -> 319 spells, Fire Bolt body no longer absorbs Fire Shield/Storm/etc. Sorcerer-cantrip drop in fire-bolt.data.classes is a separate parseSpellClassLists column-wrap issue filed as loreweaver-xbh.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

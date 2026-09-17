@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9l5s",
+  "title": "Verification system: cost, topology, and evidence policy",
+  "description": "Maintenance program derived from the merged audit at\ndocs/audits/test-suite-and-verification/2026-09-14-test-suite-and-verification-audit.md\n(PR #551, merge commit add173fa; owning audit bead eshyra-3xun, closed).\n\nThe audit is repository evidence. Its recommendations are proposals, not\nauthority by themselves.\n\nTWO OBJECTIVES, deliberately separate:\n\n1. Fix the concrete verification-topology problem (execution path).\n2. Stop review/disposition failures from regenerating unnecessary\n   implementation and proof surface (policy path).\n\nThis is explicitly NOT a generic \"test cleanup\" and carries no test-count\ntarget.\n\nWAVE 1 ONLY. Four children are materialized now:\n\n  Execution path: T1 (Buffer assertion), T2 (worker cap + correct\n                  process-tree memory measurement)\n  Policy path:    T5 (permanent-evidence policy), T6 (observation ->\n                  disposition -> finding gate)\n\nThe two paths are genuinely parallel and have very different blast radii, so\nthey ship as separate PRs.\n\nThe remaining audit tasks (T3, T4, T7-T13) are deliberately NOT materialized\nyet. Several depend on what wave-1 measurement and policy changes reveal, and\nT7 overlaps the already-open eshyra-o9bd.19.1.8. Remeasure the suite after\nwave 1 lands, then reassess.\n\nEXISTING BEADS TO AMEND, NOT DUPLICATE:\n- eshyra-da8d, eshyra-5g3d: audit supplies the verified cause both lack;\n  re-examine after T2 makes them deterministic.\n- eshyra-o9bd.19.15: Phase 4 exit dispositions for discovery scaffolding\n  (audit T9, not yet materialized).\n- eshyra-o9bd.19.1.8: overlaps audit T7; reconcile scope before either starts.\n- eshyra-tba9: proposes new proof machinery; re-disposition against T5 before\n  building it.\n",
+  "notes": "Wave 1 dispatched as two independent PRs: #552 execution path (T1/T2), #553 policy path (T5/T6). Remeasure the suite after both land before materializing any further audit tasks.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-15T05:30:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-15T05:43:24Z",
+  "started_at": "2026-09-15T05:43:24Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

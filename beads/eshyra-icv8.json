@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-icv8",
+  "title": "Reconcile source-only half-damage obligations with clause IR",
+  "description": "The finding registry now snapshots every matching half-damage branch in the committed pack and keeps durable expected identities separate from current readiness. The source audit title describes omitted creature and hazard branches that cannot be enumerated from the defective projection alone. Once clause/source IR is available, reconcile the source obligation ledger to the committed pack and add any source-only identities with exact expected-pack joins; preserve the current generated snapshot and no-count hygiene.",
+  "acceptance_criteria": "Source-side half-damage obligations are independently enumerated from authoritative source/clause IR, joined to exact pack paths, and the registry regression fails on omitted or partial membership.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:06:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T03:06:00Z",
+  "labels": [
+    "follow-up",
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-icv8",
+      "depends_on_id": "eshyra-o9bd.19.1.6.5",
+      "type": "discovered-from",
+      "created_at": "2026-07-25T22:06:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

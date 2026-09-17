@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.1.12",
+  "title": "Generalize bounded source-obligation/discharge authority from Foundation 1",
+  "description": "Generalize Foundation 1's independently source-anchored positive-obligation mechanism\nfor explicitly bounded populations. Obligation authority comes from an independent\nsource anchor, not the projection output or caller assertion it is meant to test.\nThis bead does not establish a global obligation registry, source census, clause\nuniverse, discovery completeness, deterministic completeness, finding membership,\nor evidence taxonomy.",
+  "acceptance_criteria": "- Authoritative obligations are independently source-anchored and not mutable through consumer references.\n- Obligation identity is independent of generated record/atom identity and cannot collide with it.\n- Discharge is injective and preserves required multiplicity, alternatives, branches, and conjunctive parts.\n- Missing, duplicated, malformed, aliased, or unrecognized evidence cannot false-green a declared obligation.\n- Known-missing projection is representable without treating unknown clauses as satisfied.\n- Any bounded completeness claim identifies its independent source-derived population.\n- Passing this mechanism proves only the declared bounded obligations, never corpus/source/discovery/deterministic completeness.",
+  "notes": "ADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T01:41:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:51:52Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.1.12",
+      "depends_on_id": "eshyra-o9bd.19.1",
+      "type": "parent-child",
+      "created_at": "2026-07-27T20:41:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.1.12",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:09:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

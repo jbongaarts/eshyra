@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14.4.1",
+  "title": "Define character resume conflict policies",
+  "description": "Record the product semantics for resume conflicts before more code lands. Design-only: capture the policy in ADR 0012 (or a small follow-up design doc), no implementation. Parent: eshyra-lupf.14.4.",
+  "acceptance_criteria": "- Define what happens when a campaign resumes with a registry-linked character whose registry head is ahead of the campaign copy.\n- Distinguish at least: fail closed; catch-up-to-head; explicit alternate-timeline fork; future-detour/out-of-order continuity.\n- State that automatic mechanical merge/rejoin is NOT supported.\n- Define who narrates catch-up continuity: player, DM, or selectable.\n- Define special handling/warnings for mid-scene and combat resumes.\n- Update ADR 0012 or add a small follow-up design doc.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T18:05:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T18:26:24Z",
+  "closed_at": "2026-06-27T18:51:07Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14.4.1",
+      "depends_on_id": "eshyra-lupf.14.3",
+      "type": "blocks",
+      "created_at": "2026-06-27T13:06:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.14.4.1",
+      "depends_on_id": "eshyra-lupf.14.4",
+      "type": "parent-child",
+      "created_at": "2026-06-27T13:05:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 0
+}

@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.6",
+  "title": "Preserve complete SRD creature statline semantics",
+  "description": "Finding source:\n- Fable P1/P2 systemic modeling loss.\n- All 317 creatures store armorClass and hitPoints as bare ints.\n- Quantified losses:\n  - 206 AC parentheticals dropped, such as \"natural armor\" or \"leather armor, shield\".\n  - 316 HP dice formulas dropped, such as \"19d12 + 133\".\n  - 7 hover speed annotations dropped, e.g. \"fly 40 ft. (hover)\".\n  - 4 form-conditional speed lines dropped (Werewolf/Wereboar/Weretiger/Werebear), e.g. \"30 ft. (40 ft., climb 30 ft. in bear or hybrid form)\".\n  - 6 conditional/alternate AC lines flattened: 3 lycanthrope dual-form ACs, Mage \"(15 with mage armor)\", Druid \"(16 with barkskin)\", Ankheg \"14 (natural armor), 11 while prone\".\n- Examples:\n  - Werewolf/Wereboar/Werebear lose beast-form AC; four lycanthropes lose form speeds.\n  - Werebear currently has climb: 30 as a base speed, but source grants climb 30 only in bear/hybrid form, where walk is also 40 rather than 30. This is actively wrong data, not just loss.\n  - Mage loses \"(15 with mage armor)\".\n  - Druid loses \"(16 with barkskin)\".\n  - Ankheg loses \"11 while prone\".\n  - Hover/fly conditional data is invisible to deterministic behavior.\n- Fable notes stat-block records already model hitPoints as { value, formula } (see stat-block:giant-fly), so there is a precedent; creature parser discards what another parser keeps.\n\nGameplay impact:\n- No HP rolling/max-HP variants.\n- Wrong AC for transformed/form-variant creatures.\n- AC explanations lose armor/natural armor/spell context.\n- Hover/prone/falling semantics unavailable to combat tools.\n\nAcceptance criteria:\n- Creature statline data preserves the full printed semantics rather than flattening to ints.\n- Compatibility for existing consumers is maintained or migrated deliberately.\n- Gates fail when printed AC parentheticals, HP formulas, XP, conditional AC/speeds, or hover semantics are dropped.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-03T02:38:51Z",
+  "closed_at": "2026-07-03T03:02:42Z",
+  "close_reason": "Epic complete in PR #394: full printed creature statline semantics preserved (structured AC/HP/speed + hover + form variants + verbatim source texts), compatibility migrated deliberately (encounterCombatants accepts both shapes; schema/tests updated), gates fail on any dropped statline semantics. 317 creature records regenerated; verify:dnd5e-srd-pack exit 0; full suite green.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.6",
+      "depends_on_id": "eshyra-o9bd.18",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

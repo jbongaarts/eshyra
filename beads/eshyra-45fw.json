@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-45fw",
+  "title": "Import SRD prose-bearing Magic Items A-Z and Sample Traps intros",
+  "description": "Follow-up from the D&D 5e SRD importer audit: the Magic Items A-Z and Sample Traps source headings currently resolve only to structural ignored coverage even though each carries short prose. Add importer support, generated-pack/source-coverage regressions, regenerate the pack, and verify no existing SRD importer behavior regresses.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-16T03:10:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-16T03:16:31Z",
+  "started_at": "2026-06-16T03:10:30Z",
+  "closed_at": "2026-06-16T03:16:31Z",
+  "close_reason": "Imported Magic Items A-Z and Sample Traps intro prose as source-bounded rule records, regenerated SRD pack/source coverage, and added committed-pack/source-coverage regressions.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

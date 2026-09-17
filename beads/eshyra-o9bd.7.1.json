@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.7.1",
+  "title": "Add semantic projections for price/service/lodging/trade-goods tables",
+  "description": "Deferred slice from eshyra-o9bd.7. Add typed semantic projections for SRD money/service tables such as trade goods, lifestyle expenses, food/drink/lodging, services, and related purchasable/service price rows. Preserve source columns/rows; add validated projection metadata and generated-pack tests.",
+  "design": "Follow docs/importer-fix-protocol.md. Keep generated churn limited to reviewed table records. Add per-child thaw note and refresh freeze-manifest hashes.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T20:00:00Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-28T20:26:30Z",
+  "started_at": "2026-06-28T20:14:40Z",
+  "closed_at": "2026-06-28T20:26:30Z",
+  "close_reason": "Implemented in PR #357 (eshyra-o9bd.7-children)",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.7.1",
+      "depends_on_id": "eshyra-o9bd.7",
+      "type": "parent-child",
+      "created_at": "2026-06-28T14:59:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,16 @@
+{
+  "_type": "issue",
+  "id": "eshyra-241i",
+  "title": "Integrate finding registry with shared bootstrap capability identity",
+  "description": "After the bootstrap capability-ledger contract lands, replace the temporary local CapabilityIdentity, hook selector, canonical primitive roster, and capability-catalog serialization boundary in findingRegistry.ts with the shared stable types. Preserve engine:F1..F10 spellings, exact clause-hook membership, historical family-epic ownership validation, and the registry compatibility tests; do not import across an unfinished branch.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T00:25:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:25:01Z",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

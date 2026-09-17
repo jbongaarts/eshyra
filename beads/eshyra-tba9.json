@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-tba9",
+  "title": "Add generated cross-family fail-closed clause regression matrix",
+  "description": "Extend the generic clause-completeness regression evidence with generated fixtures spanning all mechanics-bearing record families. Preserve the reduced boundary: exercise missing and unknown obligation references, choice/variant partition failures, and capturable evidence matching through each family-facing contract without reintroducing obligation authority, scope, aggregate closure, production census, or resolver implementation.",
+  "acceptance_criteria": "Generated or table-driven coverage demonstrates the four readiness dimensions remain independent across every mechanics-bearing family; no authority or aggregate-closure surface is added.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T02:53:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T02:53:52Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-tba9",
+      "depends_on_id": "eshyra-o9bd.19.1.1.6",
+      "type": "discovered-from",
+      "created_at": "2026-07-27T21:53:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

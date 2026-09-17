@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-94g",
+  "title": "Correct AGENTS PR workflow guidance",
+  "description": "Address review feedback on PR #15: restore the Beads-generated section to generated content and move project-specific merge policy outside the generated block. Clarify that agents push a branch and open a PR for review handoff; merging to main happens after review, not as part of routine handoff.",
+  "acceptance_criteria": "AGENTS.md no longer places custom PR policy inside the Beads integration generated block; project-owned guidance says work goes through PRs and agents stop at PR handoff unless explicitly asked to merge after review; verification confirms no direct-main-push instruction remains outside generated text.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:27:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:45Z",
+  "closed_at": "2026-05-21T04:28:01Z",
+  "close_reason": "Restored the Beads-generated session-completion block and moved project PR policy to a normal AGENTS.md section. Handoff now stops at an open PR unless the user explicitly asks to merge after review/checks. Verification: git diff --check passed and rg confirmed placement/wording.",
+  "comments": [
+    {
+      "id": "e203e6c2-771c-5ee2-b07c-f0459ecf5799",
+      "issue_id": "eshyra-94g",
+      "author": "Joseph Bongaarts",
+      "text": "Review item 1 accepted: custom PR policy should not be inside the Beads-generated block. Evaluation: AGENTS.md has BEGIN/END BEADS markers, so project-specific merge policy belongs outside them. Review item 2 accepted: routine handoff should stop at an open PR; merging is only on explicit user request after review/checks. Verification: git diff --check -> exit 0; rg confirms Git & PR Workflow outside Beads markers and 'Routine agent handoff stops at an open PR. Do not merge...' wording.",
+      "created_at": "2026-05-21T04:27:55Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

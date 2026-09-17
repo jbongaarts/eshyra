@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.4",
+  "title": "Fix class spellcasting feature segmentation (Cleric/Wizard/etc.)",
+  "description": "Deficiency #3. Spellcasting facts are fragmented/misplaced: Cleric full mechanics sit under feature:cleric:cantrips while feature:cleric:spellcasting is a one-sentence stub; Wizard Cantrips/Spellbook/Spellcasting are split so feature:wizard:spellcasting is just an intro while actionable spellbook/preparation mechanics live elsewhere. Pick ONE canonical model and apply consistently: either (a) feature:<class>:spellcasting owns all spellcasting prose+structured metadata with child subsections, or (b) distinct cantrips/spellbook/spellcasting records each complete, linked, and progression-granted. Pack must encode facts like 'Wizard starts with six spellbook spells', 'Cleric prepares Wisdom modifier + level', 'Bard is a Charisma known-caster' WITHOUT consumer overlays. Coordinates with the spellcasting half of the overlay-absorption bead.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T17:46:28Z",
+  "closed_at": "2026-06-28T17:55:41Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.4",
+      "depends_on_id": "eshyra-o9bd.1",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.4",
+      "depends_on_id": "eshyra-o9bd.11",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:17:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.4",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 2,
+  "comment_count": 0
+}

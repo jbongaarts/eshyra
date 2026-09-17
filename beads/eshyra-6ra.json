@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6ra",
+  "title": "Import SRD Poisons and Diseases as structured hazard records",
+  "description": "The Poisons (14 named poisons: type/price/save DC/damage/effect) and Diseases (Cackle Fever, Sewer Plague, Sight Rot) gamemastering sections are not in any importer slice and are entirely absent from the pack. They are description-only dangers with save DCs and effects -- the same shape as traps, which were folded into the 'hazard' kind (loreweaver-hvp). Add anchors for the Poisons and Diseases sections (they sit after Spell Descriptions, near Traps), parse each entry, and emit under 'hazard' with data.category 'poison'/'disease'. Do NOT mint new record kinds (would force edits across exhaustive Record<RulesRecordKind> validators). See docs/audits/srd-5.1-rules-section-coverage.md (loreweaver-ars), sections #17/#20 and Note B.",
+  "notes": "Implementation complete; PR #159 open for review (https://github.com/jbongaarts/loreweaver/pull/159). Pack regenerated (8->25 hazards: +3 diseases, +14 poisons), purely additive; includes an extractor column-split fix for the p205 inline-lead-in layout. Close on merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T04:45:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:48Z",
+  "started_at": "2026-06-06T02:52:42Z",
+  "closed_at": "2026-06-06T04:24:30Z",
+  "close_reason": "Merged to main via PR #159 (feat(srd): import Poisons and Diseases as structured hazard records).",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

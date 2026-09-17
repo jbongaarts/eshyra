@@ -1,0 +1,34 @@
+{
+  "_type": "issue",
+  "id": "eshyra-e0a",
+  "title": "Produce arc rollups and campaign bible during play",
+  "description": "Completeness review finding. The CLI close pipeline never sets arcRollup and runTurn never receives an arcId, so rollupArcSummary and campaign_bible reconciliation never run; the top two memory tiers are inert and assembleContext never emits Arc or Bible sections. Wire arc rollup generation into the close pipeline. Parent context: loreweaver-d4r.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T21:25:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:02Z",
+  "closed_at": "2026-05-21T22:39:03Z",
+  "close_reason": "Fixed in PR #26 (merged)",
+  "comments": [
+    {
+      "id": "02236727-7d87-5cc5-a853-bd2af9b09373",
+      "issue_id": "eshyra-e0a",
+      "author": "Joseph Bongaarts",
+      "text": "Investigation (P2 worktree session): producing real arc rollups is a design-laden feature, not a mechanical fix. Three decisions block a non-stub implementation: (1) ARC MODEL - there is no arc-management anywhere; rollups need either a single-campaign-arc assumption or real multi-session arc boundaries. (2) SUMMARY COMPOSITION - closeSessionGracefully takes a pre-built arcRollup as input, but the closing session recap is written inside its transaction, so the caller cannot compose an up-to-date arc summary; closeSessionGracefully would need to compose the rollup itself. (3) BIBLE CONTENT - worldFacts/majorNpcs/factions/openThreads need extraction (model-authored, same machinery as loreweaver-32m) or a module-derived heuristic (design choice). A purely mechanical rollup just writes an empty campaign_bible row - cosmetically 'not inert' but contentless. Recommendation: sequence e0a after loreweaver-32m (model-backed summarization) and treat the single-arc-vs-multi-arc question as an explicit product decision. Other 5 P2 findings (c03, ah7, 5g2, m6f, iff) are done on branch work/p2-review-findings.",
+      "created_at": "2026-05-21T21:56:46Z"
+    },
+    {
+      "id": "6fbde4f0-957d-59aa-90e7-b2fdfff9aa64",
+      "issue_id": "eshyra-e0a",
+      "author": "Joseph Bongaarts",
+      "text": "Resolved on branch work/p2-review-findings: implemented the mechanical arc-rollup approach (user-directed). gracefulClose rolls a single campaign arc (arc-1) up after every session close, arc summary composed mechanically from session recaps. Campaign bible row is created/reconciled but with no entries pending an extraction source. Multi-arc boundaries and model-authored summaries remain future work (couples with loreweaver-32m).",
+      "created_at": "2026-05-21T22:00:35Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

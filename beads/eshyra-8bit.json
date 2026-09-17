@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-8bit",
+  "title": "Reconcile adventure rulesRef resolution against the shipped SRD rules pack",
+  "description": "The adventure module rulesRef convention is <kind>:<bareKey> (e.g. creature:goblin -> looks up key 'goblin'), per references.ts examples and the loader tests. But the SHIPPED generated SRD pack (packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json) uses kind-prefixed record keys (e.g. 'creature:goblin', 'magic-item:potion-of-healing'), and the in-code DND5E_SRD_RULES_PACK stub uses yet another form ('monster:goblin'). As a result, validateAdventureModuleReferences for The Hollow Beneath Emberfall (eshyra-eh54.7.2) does NOT resolve against the real SRD stack today (verified empirically). The eh54.7.3 smoke path proves content/state/runtime/persistence connect (rulesRefs are carried as strings into the bounded slice and do not require resolution), but real mechanical resolution of encounter creatures and treasure items needs the key formats reconciled. Decide the canonical rulesRef<->record-key mapping (normalize on lookup, or fix the importer/convention) and add a test resolving The Hollow Beneath Emberfall's rulesRefs against the real resolved SRD stack.",
+  "design": "Canonical mapping: a module rulesRef IS the canonical rules-pack record key, both of the form <kind>:<bareKey> (e.g. creature:goblin). This already matches the generated SRD pack keys AND every other in-system cross-reference (recordsByKey, srdAudit data.tableRefs / SRD_5_1_SPELL_TABLE_OWNERS, lookup ambiguous candidateKeys all use full kind-prefixed keys). The bug was solely in adventure/references.ts assertRulesRef, which split off the <kind> prefix and looked up the BARE key (goblin) -> missed the real pack's creature:goblin. Fix: extract the kind prefix only to validate it against expectedKinds, then look up by the FULL ref (= record key). No importer change, no pack regeneration, no generated-data edit. Tests: the two fake bare-key test packs (adventureModuleLoad.test.ts, hollowBeneathEmberfall.test.ts) misrepresented the convention; fixed. Added genuine resolution of The Hollow Beneath Emberfall against the REAL bundled SRD stack (resolveRulesStack({base: getBundledDnd5eSrdPack()})).",
+  "notes": "Implemented and pushed on branch eshyra-8bit; PR #275 (https://github.com/jbongaarts/eshyra/pull/275) open for review. Fix: assertRulesRef looks up by the full kind-prefixed ref (= canonical record key) instead of the bare key. Verified the new real-SRD-stack test fails against the pre-fix lookup (regression guard). Full verify:worktree green (2278 passed). Handoff stops at open PR per AGENTS.md; close on merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-21T06:32:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-22T02:45:36Z",
+  "started_at": "2026-06-21T06:40:31Z",
+  "closed_at": "2026-06-22T02:45:36Z",
+  "close_reason": "Merged via PR #275 (squash). assertRulesRef now resolves rulesRefs by the full kind-prefixed key against the real bundled SRD stack; regression test added.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-8bit",
+      "depends_on_id": "eshyra-t2ra",
+      "type": "blocks",
+      "created_at": "2026-06-21T01:54:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-8bit",
+      "depends_on_id": "eshyra-eh54.7.2",
+      "type": "blocks",
+      "created_at": "2026-06-21T01:33:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

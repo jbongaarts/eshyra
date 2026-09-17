@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.12.2",
+  "title": "Reconcile bootstrap obligation identities at the cross-PR ledger boundary",
+  "description": "Join bootstrap evidence identities with the source-clause and readiness identities emitted by the adjacent ledger work. Verify the four non-empty obl::: segments and preserve sourceRef, locator, and semantic-facet identity across the authoritative reconciliation.",
+  "acceptance_criteria": "Cross-PR reconciliation consumes the four-segment obligation identity structurally; empty segments, duplicate bindings, and mismatched source anchors fail; no local bootstrap-only identity format remains at the join.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T03:52:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T03:52:26Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.12.2",
+      "depends_on_id": "eshyra-o9bd.19.5.12",
+      "type": "parent-child",
+      "created_at": "2026-07-25T22:52:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

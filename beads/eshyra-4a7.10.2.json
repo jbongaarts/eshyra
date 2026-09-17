@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.10.2",
+  "title": "Import monster-family lore prose",
+  "description": "Import the Monsters chapter family lore currently tracked under eshyra-4a7.10: Angels, Animated Objects, Demons, Devils, Dinosaurs, chromatic/metallic Dragons and the ten per-color dragon group introductions, Elementals, Fungi, Genies, Ghouls, Giants, Golems, Hags, Lycanthropes, Mephits, Mummies, Nagas, Oozes, Skeletons, Sphinxes, Vampires, and Zombies. Exclude the Half-Dragon Template region, which has its own child because it combines prose and structured tables. Follow docs/importer-fix-protocol.md. If the failure map reveals a new root cause, requires a new parser or extractor strategy, or creates generated churn outside the direct consequences of the current minimal fix, stop and report instead of broadening the implementation.",
+  "acceptance_criteria": "A source-backed record model and stable keys are tested across ordinary, dragon-group, and boundary cases; all listed lore regions are importer-generated with complete bounded text; owned known-gap predicates become real record/child coverage; regeneration and repository quality gates pass with explained generated churn.",
+  "notes": "Implemented heading-only Monsters taxonomy as optional creature data.familyPath metadata. The importer uses the exact 33 reviewed source headings plus explicit last-member boundaries; 116 existing creature records gain source-backed paths, including nested chromatic/metallic/color dragon paths. Source coverage now emits 33 taxonomy:creature.familyPath statuses, knownGap is empty, and no rule records were added. Generated churn: 0 records added, 0 removed, 116 creature records changed only by familyPath; source-coverage reclassified 33 entries. Verification: focused suite 396 passed; verify:dnd5e-srd-pack exact match; verify:worktree passed (104 files passed/4 skipped, 1698 tests passed/19 skipped).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-14T05:27:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-15T02:11:42Z",
+  "started_at": "2026-06-15T01:37:48Z",
+  "closed_at": "2026-06-15T02:11:42Z",
+  "close_reason": "Represented all 33 heading-only Monsters taxonomy labels on 116 creature records and replaced the known-gap coverage with validated taxonomy statuses.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.10.2",
+      "depends_on_id": "eshyra-4a7.10",
+      "type": "parent-child",
+      "created_at": "2026-06-14T00:27:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

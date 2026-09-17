@@ -1,0 +1,145 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.23",
+  "title": "Decide Node 24 support path for native SQLite dependency",
+  "description": "Make the Node 22 vs Node 24 support decision explicit, especially around the native SQLite dependency.\r\n\r\nThis bead should produce a clear decision and align docs, engines, and CI comments. It should not opportunistically upgrade the whole dependency tree.\n\n## Context\nObserved gap:\r\n- Node 22 appears to be the supported baseline.\r\n- Existing engine ranges / CI comments imply Node 24 support is blocked on or coupled to better-sqlite3 version/support decisions.\r\n- Without an explicit bead, agents may repeatedly rediscover this and make inconsistent changes.\r\n\r\nParallel-safety:\r\n- Mostly docs/package/CI decision work.\r\n- Avoid importer parser files.\r\n- Avoid broad source-layout changes covered by loreweaver-0jq.16.",
+  "design": "Suggested files to inspect/update:\r\n- README.md\r\n- package.json\r\n- packages/*/package.json\r\n- .github/workflows/ci.yml\r\n- AGENTS.md\r\n- package-lock.json only if a deliberate dependency update is chosen\r\n\r\nDecision options:\r\n1. Stay on Node 22 for now:\r\n   - Keep engines pinned to Node 22-compatible range.\r\n   - Document why Node 24 is deferred.\r\n   - Ensure CI comments match.\r\n2. Move to Node 24 support:\r\n   - Update better-sqlite3 if needed.\r\n   - Update engines and CI matrix.\r\n   - Verify native install/build expectations in CI.\r\n   - Keep lockfile churn focused and justified.\r\n\r\nImplementation guidance:\r\n- Prefer documenting the decision in a small ADR or README/AGENTS note if no ADR pattern exists.\r\n- Do not mix this with unrelated dependency upgrades.",
+  "acceptance_criteria": "- There is a clear recorded decision: Node 22 remains the baseline, or Node 24 is supported.\r\n- README, engines, CI, and AGENTS guidance agree.\r\n- Any better-sqlite3 change is intentional and explained.\r\n- CI passes.\r\n- No importer parser files are modified.",
+  "notes": "Reopened after review decision: upgrade to better-sqlite3 12 and make Node 24 the supported runtime on this PR.\nReopened for PR review fix: add Node 24 better-sqlite3 install/smoke CI coverage across Linux, Windows, and macOS.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 150,
+  "created_at": "2026-05-28T23:17:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:15Z",
+  "started_at": "2026-05-29T21:25:12Z",
+  "closed_at": "2026-05-30T03:17:27Z",
+  "close_reason": "Added cross-OS Node 24 install/smoke CI coverage for better-sqlite3 12: ubuntu-latest, windows-latest, and macos-latest now run npm ci with foreground install scripts, check logs for source-build fallback evidence, and run npm run smoke:cli-install. Verification recorded.",
+  "labels": [
+    "architecture",
+    "ci",
+    "decision",
+    "node",
+    "parallel-safe",
+    "refactor",
+    "sqlite",
+    "tech-debt",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.23",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-28T18:17:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "14ff068d-9edd-5b41-9458-8fd65dd368a4",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded under Node v24.14.1 with expected EBADENGINE warnings for current >=22 <23 engines; npm run typecheck passed; npm run test hit known Dolt-gated checkpoint timeout in packages/cli/test/checkpoints.test.ts; npx vitest run checkpoint passed 65/65; npm run check passed.",
+      "created_at": "2026-05-29T21:28:24Z"
+    },
+    {
+      "id": "fc014999-64db-5976-9d0e-7313737e0f98",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0; npm run test with local Dolt present -> exit 1 due known baseline timeout in packages/cli/test/checkpoints.test.ts; npx vitest run checkpoint -> exit 0, 65 passed; npm run check -> exit 0; npm run smoke:cli-install -> exit 0; full npm run test with LOREWEAVER_DOLT_BIN pointing at a nonexistent binary -> exit 0, 834 passed / 18 skipped.",
+      "created_at": "2026-05-29T21:34:59Z"
+    },
+    {
+      "id": "97999d84-1dc4-5e2c-a686-7c6c2ffbffd8",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Beads preflight: bd preflight printed non-applicable Go/Nix checklist for this npm/TypeScript repo; applicable gates run separately. bd orphans reports unrelated in-progress loreweaver-0m9.5 and loreweaver-0m9.5.1; bd stale reports none. bd list --status=in_progress shows those two unrelated beads plus this bead.",
+      "created_at": "2026-05-29T21:35:39Z"
+    },
+    {
+      "id": "072cfbfa-a362-5dd2-82bd-3cd71a9fe2bd",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "PR opened: https://github.com/jbongaarts/loreweaver/pull/107. Remote checks: CodeQL passed; Analyze (actions) passed; Analyze (javascript-typescript) passed; build-test passed.",
+      "created_at": "2026-05-29T21:40:05Z"
+    },
+    {
+      "id": "590c1a27-ffa8-5825-9631-178ce826e1a7",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Review question: Is there any reason not to move to better-sqlite3 12 besides scope? Evaluation: mostly accepted. Current upstream facts indicate 12.x added Node 24 build support and current releases are newer than the 11.x line; remaining reasons are standard major native dependency upgrade risk, not a known hard blocker. Recommended follow-up: either amend this PR to state that clearly, or create a focused upgrade bead for better-sqlite3 12 + Node 24 engines with npm_config_build_from_source=false verification on Node 22 and Node 24.",
+      "created_at": "2026-05-29T21:55:39Z"
+    },
+    {
+      "id": "8d0987d3-f2bc-5523-b7d5-8230681d9b8d",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 1 as expected; runtime policy still reports root engines.node >=22 <23 instead of >=24 <25 before the upgrade.",
+      "created_at": "2026-05-29T22:00:30Z"
+    },
+    {
+      "id": "e61204f1-857c-57e8-a828-7214729e7590",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: after package/docs/CI updates and lockfile refresh, npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 0; clean Node 24 npm ci with npm_config_build_from_source=false -> exit 0 with no EBADENGINE warnings.",
+      "created_at": "2026-05-29T22:04:06Z"
+    },
+    {
+      "id": "9a43e05b-b9a6-5f23-821c-b74d5c8a38f9",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Verification for Node 24 upgrade: cmd /c set npm_config_build_from_source=false&&npm ci -> exit 0, no EBADENGINE warnings; npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 0; npm run typecheck -> exit 0; npm run test -> exit 0, 850 passed / 3 skipped across 78 files; npm run check -> exit 0; npm run smoke:cli-install -> exit 0.",
+      "created_at": "2026-05-29T22:06:56Z"
+    },
+    {
+      "id": "83e97897-509a-55ad-ba59-b8e8c0e9e9bc",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Beads preflight after Node 24 upgrade: bd preflight still prints non-applicable Go/Nix checklist for this npm/TypeScript repo; applicable npm gates are recorded. bd orphans reports unrelated in-progress loreweaver-0m9.5; bd stale reports none. bd list --status=in_progress shows loreweaver-0m9.5 plus this bead before close.",
+      "created_at": "2026-05-29T22:07:17Z"
+    },
+    {
+      "id": "70fce9be-9f4d-5e2d-b89e-91f53f20710f",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "PR updated for Node 24 upgrade: https://github.com/jbongaarts/loreweaver/pull/107. Remote checks after commit 609c79f: CodeQL passed; Analyze (actions) passed; Analyze (javascript-typescript) passed; build-test passed.",
+      "created_at": "2026-05-30T02:36:39Z"
+    },
+    {
+      "id": "098771ef-5e0c-575d-8369-efd9c4dab3b2",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Review item: add Node 24 better-sqlite3 install/smoke CI coverage on ubuntu-latest, windows-latest, and macos-latest, preferably checking npm install logs for source-build fallback. Evaluation: accepted. Current PR only proves full install/test path on ubuntu-latest, while the CLI is not Linux-only and better-sqlite3 is native.",
+      "created_at": "2026-05-30T03:13:06Z"
+    },
+    {
+      "id": "f101d138-16be-5814-bdae-9a2a3ffdccb3",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Review fix verification: local install-log guard script with npm ci --foreground-scripts and npm_config_build_from_source=false -> exit 0, tolerated the install script declaration but found no gyp/source-build fallback output; npx vitest run packages/core/test/nodeRuntimePolicy.test.ts -> exit 0; npm run check -> exit 0. Workflow change adds install-smoke matrix for ubuntu-latest, windows-latest, macos-latest on Node 24 running npm ci and npm run smoke:cli-install.",
+      "created_at": "2026-05-30T03:17:19Z"
+    },
+    {
+      "id": "cebe428c-5b14-5623-9ca7-4fae20f5df82",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Remote verification after workflow fix commit 5d7063d: Install smoke passed on ubuntu-latest, windows-latest, and macos-latest; build-test passed; CodeQL passed; Analyze (actions) passed; Analyze (javascript-typescript) passed.",
+      "created_at": "2026-05-30T03:20:31Z"
+    },
+    {
+      "id": "72fef38d-8e5a-5885-8291-61476a7b4b9b",
+      "issue_id": "eshyra-0jq.23",
+      "author": "Joseph Bongaarts",
+      "text": "Merged PR #107: https://github.com/jbongaarts/loreweaver/pull/107 merged at 2026-05-30T03:24:27Z with merge commit 0b697afaf75c8192720f78918609315a8cad1e7b. Cleaned up bd worktree loreweaver-0jq-23 and deleted remote branch work/loreweaver-0jq-23.",
+      "created_at": "2026-05-30T03:28:09Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 14
+}

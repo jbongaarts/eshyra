@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-olc5.1",
+  "title": "Decompose the bounded legacy engine:F1-F10 backlog into positive capability work",
+  "description": "Decompose the legacy magic-item executionReadiness engine:F1-F10 backlog into implementable\npositive capability operations. The legacy artifact defines only the backlog being migrated,\nnot all mechanics required by the source. Each child capability states operation/inputs/\nexclusions/revision/residual interpretation and does not inherit whole-clause/record completeness.",
+  "acceptance_criteria": "- Each engine:F family has an explicit bounded backlog membership query over the legacy executionReadiness population.\n- Decomposition produces positive capability operations rather than implement-every-mechanic obligations.\n- Shared primitives are justified by concrete selected operations.\n- Empty/unclassified results cannot be interpreted as source absence.\n- Decomposition does not gate SRD re-freeze on completing the entire backlog.",
+  "notes": "ADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T17:33:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:53:47Z",
+  "labels": [
+    "engine-capability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-olc5.1",
+      "depends_on_id": "eshyra-olc5",
+      "type": "parent-child",
+      "created_at": "2026-07-25T12:33:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-olc5.1",
+      "depends_on_id": "eshyra-olc5.5",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 10,
+  "comment_count": 0
+}

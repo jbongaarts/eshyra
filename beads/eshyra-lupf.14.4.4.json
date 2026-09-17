@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14.4.4",
+  "title": "Expose explicit fork / alternate timeline CLI UX",
+  "description": "The normal fork case (not the future-detour case): a CLI surface over the core forkCharacterTimeline from eshyra-lupf.14.3, plus choosing a non-head revision to fork/check out. Folds in the earlier 14.3 follow-up scope. Parent: eshyra-lupf.14.4; depends on eshyra-lupf.14.4.1.",
+  "acceptance_criteria": "- User can fork a character from head or a selected revision into a new globalCharacterId.\n- CLI explains that this breaks continuity.\n- Forked character starts with revision 1 and parent provenance.\n- Existing registry identity remains unchanged.\n- Tests cover refusing overwrite and selecting a non-head revision.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T18:05:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-27T18:51:11Z",
+  "started_at": "2026-06-27T18:51:04Z",
+  "closed_at": "2026-06-27T18:51:11Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14.4.4",
+      "depends_on_id": "eshyra-lupf.14.4.1",
+      "type": "blocks",
+      "created_at": "2026-06-27T13:06:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.14.4.4",
+      "depends_on_id": "eshyra-lupf.14.4",
+      "type": "parent-child",
+      "created_at": "2026-06-27T13:05:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,41 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.4",
+  "title": "Provide canonical identities, aliases, and relationships for runtime discovery",
+  "description": "Provide pack-side stable identities, aliases, topics, and many-to-many relationships\nthat help runtime discovery find potentially governing material without exact kind/title\nlookup. Do not make this a universal search-completeness requirement. Relationships are\ndiscovery reasons, not exclusive ownership.",
+  "acceptance_criteria": "- Known duplicate names and represented option identities resolve to stable unambiguous identities.\n- Runtime discovery can consume aliases/topics/relationships without exact normalized kind/title.\n- Relationship metadata preserves multiple meaningful retrieval reasons rather than exclusive neighborhoods.\n- A demonstrated missing alias/index entry can be a discovery defect; absence from an index never proves irrelevance or source absence.\n- This bead makes no universal retrieval-completeness claim.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-10T23:52:10Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.2",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:47Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.4",
+      "depends_on_id": "eshyra-o9bd.19.1.4",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

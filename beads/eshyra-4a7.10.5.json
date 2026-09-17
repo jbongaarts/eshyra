@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.10.5",
+  "title": "Import pantheon and planes appendices",
+  "description": "Import Appendix PH-B pantheon prose for the Celtic, Greek, Egyptian, and Norse pantheons and Appendix PH-C Planes of Existence prose (Planar Travel, Transitive Planes, Inner Planes, Outer Planes, Demiplanes). Account for the PH-B deity table captions and caption-less column run currently assigned to this bead, including cross-page interleaved column-block stitching, without duplicating table work already represented elsewhere. Follow docs/importer-fix-protocol.md. If the failure map reveals a new root cause, requires a new parser or extractor strategy, or creates generated churn outside the direct consequences of the current minimal fix, stop and report instead of broadening the implementation.",
+  "acceptance_criteria": "Focused tests cover all appendix section boundaries, cross-page deity-table reconstruction/ownership, and representative prose keys; complete appendix content is importer-generated; owned known gaps become real record/child/table coverage; regeneration and repository quality gates pass with explained generated churn.",
+  "notes": "Plan: (1) PH-C planes prose via parseRules over new planesOfExistence slice + chapterIntro 'The Planes of Existence' -> 9 rules incl two same-named 'Outer Planes' (tier2 -> beyond-the-material-outer-planes, tier3 leaf -> outer-planes-outer-planes). (2) PH-B pantheon prose via parseRules over new fantasyHistoricalPantheons slice with removeTableCellLines (deity-table cells h=8.9 pollute prose rules) + chapterIntro 'Fantasy-Historical Pantheons' -> 5 rules. (3) 4 deity tables via new parseDeityTables.ts: flat-zip name-stream (', god/goddess') vs right-row-stream (alignment-code start, merge continuations) — validated 67 deities (Celtic14/Greek19/Egyptian14/Norse20) pair correctly. Apostrophes dropped in 4 symbol cells (Mare s head) is a pdfjs extraction artifact emitted verbatim (no global extractor change). (4) Add 4 captions to TABLE_CAPTION_LEAF_TITLES. (5) sourceInventoryCoverage: drop PH-B/PH-C suppression, add ignore for 'Suggested Domains Symbol' table-shape. Expected churn: +14 rules, +4 tables, knownGap 50->33.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-14T05:28:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-14T17:56:12Z",
+  "started_at": "2026-06-14T17:26:33Z",
+  "closed_at": "2026-06-14T17:56:12Z",
+  "close_reason": "Imported Appendix PH-B pantheon prose (5 rules) + 4 deity tables (parseDeityTables, cross-page interleaved-column stitching) and Appendix PH-C planes prose (9 rules). +18 records, 0 removed/changed. knownGap eshyra-4a7.10 50->33. All gates pass. PR #215.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.10.5",
+      "depends_on_id": "eshyra-4a7.10",
+      "type": "parent-child",
+      "created_at": "2026-06-14T00:28:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

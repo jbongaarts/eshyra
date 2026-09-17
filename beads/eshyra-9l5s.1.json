@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9l5s.1",
+  "title": "T1: Replace the 7.4 MB Buffer deep-equality pack-immutability assertion",
+  "description": "AUDIT REFERENCE: finding F1 / consolidation C1, section 5 and 7 of\ndocs/audits/test-suite-and-verification/2026-09-14-test-suite-and-verification-audit.md\n\nEXISTING\npackages/core/test/contextAssembler.test.ts reads\ndata/rules-packs/rules__dnd5e-srd-5.1/records.json (7.4 MB) at line 518 and\nagain at 778, then asserts expect(packBefore).toEqual(packAfter) at 779.\n\nMEASURED COST\ntoEqual on two 7.4 MB Buffers: 14,354 ms and 2,414 MB peak RSS.\nexpect(a.equals(b)).toBe(true): 1 ms.\nThat single assertion is ~12% of the suite's summed file duration, the whole\ncritical path at any worker count >= 4, and the largest single allocation in\nthe verification run. It makes contextAssembler.test.ts (3,009 MB, 18 s) the\nmost expensive file in the repository.\n\nCLAIMED INVARIANT\nAssembling campaign-rules context does not mutate the bundled rules pack on\ndisk.\n\nACTUAL AUTHORITY\nNone located. ADR 0013 makes the generated pack the runtime pack; nothing\nrequires a runtime READ path to prove non-mutation of its source file. The\nloader (rules/packLoader.ts via bundledSrdPack.ts) opens the pack read-only\nand exposes no write path; assembleCampaignRulesContext never touches the\nfilesystem. The property is guaranteed by the module boundary.\n\nREQUIRED WORK\nRetire the assertion. If the team judges a non-mutation guard still worth\nkeeping as defence-in-depth against a future write path, do NOT keep the\ncurrent form: re-implement narrowly as Buffer.equals, a content hash, or an\nmtime check, and site it once in a pack-loader test rather than inside the\nheaviest context-assembly test.\n\nACCEPTANCE\n- The 7.4 MB toEqual comparison is gone from contextAssembler.test.ts.\n- Any retained guard is O(1)-ish and documents what it guards and why.\n- Every other assertion in that test is preserved unchanged.\n- Re-measure and record the file's new wall time and peak RSS.\n\nEXCLUSIONS\nDo not split the surrounding mega-test here; that is audit T3, not\nmaterialized yet. Change only the pack-comparison assertion.\n\nRISK\nLow. If a future path can write the pack, a hash or mtime check preserves the\nguard at ~0 cost and documents intent, which the current form does not.\n",
+  "notes": "PR #552 (branch eshyra-9l5s-exec-path). Stays in_progress until that PR merges.\nPR #552 review at head 9319deb9: CHANGES REQUESTED, 2 blockers, both verified and repaired at head 79003074. F1: guard moved from contextAssembler.test.ts to packLoader.test.ts as a SHA-256 digest, per this bead's own siting requirement. F2: sampler rewritten from process-group to descendant-tree closure after demonstrating a detached 600 MB grandchild reported as 47 MB; detached:true removed and SIGINT/SIGTERM/SIGHUP forwarded. Corrected peak is HIGHER (2,923 MB vs 2,532 MB at the 6-worker cap) because the old figure under-reported.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-15T05:30:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-15T06:05:03Z",
+  "started_at": "2026-09-15T05:43:19Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-9l5s.1",
+      "depends_on_id": "eshyra-9l5s",
+      "type": "parent-child",
+      "created_at": "2026-09-15T00:30:42Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

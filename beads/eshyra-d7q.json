@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d7q",
+  "title": "Update AGENTS merge workflow to require PRs",
+  "description": "Revise AGENTS.md session-completion guidance so completed work is pushed to a feature branch and merged to main through a pull request, rather than direct pushes to main. Preserve the requirement that work is not stranded locally and that tracker state is synced.",
+  "acceptance_criteria": "AGENTS.md clearly states that main is updated via PR, gives the branch/push/PR workflow, retains quality gates and beads sync expectations, and removes/directly qualifies the old direct-main push wording.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:17:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:45Z",
+  "closed_at": "2026-05-21T04:19:53Z",
+  "close_reason": "AGENTS.md session-completion workflow now requires feature branch push and PR targeting main, and explicitly forbids direct pushes to main. Verification: git diff --check passed and rg confirmed PR workflow wording.",
+  "comments": [
+    {
+      "id": "e845ed71-a26d-56a9-b275-74fd1d10b06b",
+      "issue_id": "eshyra-d7q",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: git diff --check -> exit 0. rg confirmed AGENTS.md now states branch push + pull request required, main updated only by PR merge, gh pr create target main, and no direct pushes to main.",
+      "created_at": "2026-05-21T04:19:47Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

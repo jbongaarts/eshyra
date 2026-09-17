@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7wc.5",
+  "title": "Task 5: restore checkpoint into new SQLite working copy",
+  "description": "Objective:\nRestore a checkpoint into a NEW SQLite working copy (never the live db). Add\n`DoltRepo.readSnapshotAt` and `CheckpointStore.restoreToNewWorkingCopy`; prove\nround-trip fidelity (restored db serializes identically to the source).\n\nFiles:\n- Modify: `packages/core/src/persistence/checkpoint/doltRepo.ts`\n- Modify: `packages/core/src/persistence/checkpoint/store.ts`\n- Test:   `packages/core/test/checkpoint.restore.test.ts`\n\nSteps:\n\n1. Write the failing test `packages/core/test/checkpoint.restore.test.ts`:\n```ts\nimport { mkdtempSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport { join } from 'node:path';\nimport { describe, expect, it } from 'vitest';\nimport { openDatabase } from '../src/persistence/db.js';\nimport { DoltRepo } from '../src/persistence/checkpoint/doltRepo.js';\nimport { CheckpointStore } from '../src/persistence/checkpoint/store.js';\nimport {\n  serializeCampaign,\n  canonicalize,\n} from '../src/persistence/checkpoint/serialize.js';\n\nconst doltOk = DoltRepo.available();\n\ndescribe.skipIf(!doltOk)('CheckpointStore.restoreToNewWorkingCopy', () => {\n  it('restores a checkpoint into a new db identical to the source', () => {\n    const root = mkdtempSync(join(tmpdir(), 'lw-rs-'));\n    const src = join(root, 'live.db');\n    const db = openDatabase(src);\n    db.exec('CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);');\n    db.prepare('INSERT INTO meta(key, value) VALUES (?, ?)').run('hp', '7');\n    db.prepare('INSERT INTO meta(key, value) VALUES (?, ?)').run('gp', '42');\n    const before = canonicalize(serializeCampaign(db));\n    db.close();\n\n    const store = new CheckpointStore(join(root, 'dolt'), join(root, '.beads'));\n    const id = store.checkpoint(src, 'cp1');\n\n    const dest = join(root, 'restored.db');\n    store.restoreToNewWorkingCopy(id, dest);\n\n    const rdb = openDatabase(dest);\n    const after = canonicalize(serializeCampaign(rdb));\n    rdb.close();\n    expect(after).toBe(before);\n  });\n});\n```\n\n2. Run it to verify FAIL.\n   Command: `npx vitest run packages/core/test/checkpoint.restore.test.ts`\n   Expected: with dolt → FAIL (`restoreToNewWorkingCopy` undefined); without\n   dolt → skipped.\n\n3. Add to `packages/core/src/persistence/checkpoint/doltRepo.ts` — a new method\n   on `DoltRepo` (place after `log()`):\n```ts\n  readSnapshotAt(id: string): SnapshotRecord[] {\n    const out = this.run([\n      'sql',\n      '-r',\n      'json',\n      '-q',\n      `SELECT tbl, kind, ordinal, payload FROM campaign_snapshot ` +\n        `AS OF '${id.replace(/'/g, \"''\")}' ORDER BY tbl, kind, ordinal`,\n    ]);\n    const parsed = JSON.parse(out) as {\n      rows: { tbl: string; kind: string; ordinal: number; payload: string }[];\n    };\n    return parsed.rows.map((r) => ({\n      table: r.tbl,\n      kind: r.kind === 'schema' ? 'schema' : 'row',\n      ordinal: Number(r.ordinal),\n      payload: r.payload,\n    }));\n  }\n```\n\n4. Add to `packages/core/src/persistence/checkpoint/store.ts`:\n   a) `openDatabase` is already imported (added in E8.T4). Add ONE new import\n      line beneath the existing imports:\n```ts\nimport type { SnapshotRecord } from './serialize.js';\n```\n   b) add these methods to `CheckpointStore`:\n```ts\n  restoreToNewWorkingCopy(checkpointId: string, destDbPath: string): string {\n    const records = this.repo.readSnapshotAt(checkpointId);\n    materialize(records, destDbPath);\n    return destDbPath;\n  }\n```\n   c) add this module-level helper at the bottom of the file:\n```ts\nfunction materialize(records: SnapshotRecord[], destDbPath: string): void {\n  const db = openDatabase(destDbPath);\n  try {\n    for (const r of records.filter((x) => x.kind === 'schema')) {\n      const { create } = JSON.parse(r.payload) as { create: string };\n      db.exec(`${create};`);\n    }\n    for (const r of records.filter((x) => x.kind === 'row')) {\n      const row = JSON.parse(r.payload) as Record<string, unknown>;\n      const cols = Object.keys(row);\n      const ph = cols.map(() => '?').join(', ');\n      const vals = cols.map((c) => {\n        const v = row[c] as unknown;\n        if (v && typeof v === 'object' && '__blob' in (v as object)) {\n          return Buffer.from((v as { __blob: string }).__blob, 'base64');\n        }\n        return v as string | number | null;\n      });\n      db.prepare(\n        `INSERT INTO \"${r.table}\" (${cols\n          .map((c) => `\"${c}\"`)\n          .join(', ')}) VALUES (${ph})`,\n      ).run(...vals);\n    }\n  } finally {\n    db.close();\n  }\n}\n```\n\n5. Run the test to verify PASS.\n   Command: `npx vitest run packages/core/test/checkpoint.restore.test.ts`\n   Expected: with dolt → 1 passed; without dolt → 1 skipped.\n\n6. Re-run the prior checkpoint suites to confirm no regression.\n   Command: `npx vitest run packages/core/test/checkpoint.doltRepo.test.ts packages/core/test/checkpoint.store.test.ts`\n   Expected: unchanged (pass/skip as before).\n\n7. Typecheck.\n   Command: `npm run build`\n   Expected: exit 0.\n\n8. Commit.\n   Command: `git add -A && git commit -m \"feat(e8): restore checkpoint into new SQLite working copy\"`\n",
+  "design": "Restore reads the snapshot at a commit via Dolt `AS OF '<id>'` (time-travel),\nparses the generic `campaign_snapshot` rows, and rebuilds a BRAND-NEW SQLite file\nat `destDbPath` — the live campaign db is never touched (single live truth\npreserved). Schema records are replayed first (original SQLite `CREATE` text, so\nno MySQL/SQLite DDL mismatch), then rows are inserted from canonical JSON, with\n`__blob` markers decoded back to Buffers. Round-trip fidelity is asserted by\ncomparing `canonicalize(serializeCampaign(...))` of source vs. restored — the same\ndeterministic function used for the history, so equality is exact. `id` is\nsingle-quote-escaped into the `AS OF` literal (ids are dolt hashes/refs, but the\nescape keeps it injection-safe by construction).\n",
+  "acceptance_criteria": "npx vitest run packages/core/test/checkpoint.restore.test.ts shows 1 passed with dolt or 1 skipped without; prior checkpoint suites unchanged; npm run build exits 0.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T05:41:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T02:52:33Z",
+  "closed_at": "2026-05-19T02:55:11Z",
+  "close_reason": "restore implemented & committed; restore test skipped (no dolt host), prior suites unchanged, build exit 0",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7wc.5",
+      "depends_on_id": "eshyra-7wc",
+      "type": "parent-child",
+      "created_at": "2026-05-17T00:41:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7wc.5",
+      "depends_on_id": "eshyra-7wc.4",
+      "type": "blocks",
+      "created_at": "2026-05-17T00:41:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-a15",
+  "title": "E8: dolt CLI is an unsatisfied external runtime dependency — embed or minimize deployment cost",
+  "description": "E8 DoltRepo drives checkpoint/history/branching by shelling to a standalone 'dolt' CLI (execFileSync). That binary is NOT present on dev/CI hosts and is NOT provided by the fact that bd/beads uses Dolt internally (beads is Go and statically links the Dolt engine as a library; Loreweaver core is Node/TS and cannot consume a Go library in-process). So campaign checkpointing currently cannot run anywhere without a manual, undocumented 'install dolt' step — a real deployment-ease regression for a text-first product whose differentiator is checkpoint/restore/fork. GOAL: (1) determine whether Dolt can be embedded for a Node/TS consumer; (2) if not, deliver a design that minimizes the deployment cost of the dolt dependency (resolver + lazy/managed provisioning) so end users get zero-touch checkpointing. Relates to epic loreweaver-7wc, gates with loreweaver-d7y, and the deployment-ease principle in ADR-0001.",
+  "design": "FINDING: Dolt cannot be embedded in-process from Node/TS. Dolt's 'embedded' mode = embeddable into a Go process (beads' path) or run as a MySQL server; no official npm pkg, no WASM, no N-API binding. Beads' static-link trick is unavailable to a Node consumer.\n\nPROPOSAL — minimize the dependency cost via a resolver + lazy managed provisioning, never a hard npm dep:\n\n1. Resolver seam (THIS issue, implemented now, pure/offline): resolveDoltBinary() precedence = (a) explicit override env LOREWEAVER_DOLT_BIN / opt; (b) Loreweaver-managed cache dir (LOREWEAVER_DOLT_HOME or OS default); (c) PATH (dolt/dolt.exe); (d) else throw DoltUnavailableError with an actionable message (set LOREWEAVER_DOLT_BIN, brew install dolt, install.sh URL, Windows .msi, future 'loreweaver dolt install'). DoltRepo uses the resolved path instead of literal 'dolt'. Net: operators/CI can point at ANY dolt with one env var; missing-dolt still degrades to skip, never a hard failure.\n\n2. Managed provisioner (SEPARATE approval-gated sub-issue, NOT auto-built here): opt-in 'loreweaver dolt install' that downloads the pinned dolt release for the current platform/arch from github.com/dolthub/dolt/releases, verifies checksum (and signature if available), unpacks into the managed cache. Security-sensitive (fetch+exec third-party binary) => explicit user action, pinned+verified, NOT an npm postinstall, offline/air-gap fallback via LOREWEAVER_DOLT_BIN. Hosted web/PWA future is unaffected (server image bakes dolt in).\n\n3. CI: keep dolt-gated tests skipIf; add one dolt-equipped job (ties to loreweaver-d7y) so acceptance #1-#4 are actually exercised.\n\nRationale vs ADR-0001: MVP is CLI/local for dev/power users + BYOK; hosted later. This keeps zero-touch local UX, no compiled/native hard dep, dolt cost paid only by users who actually checkpoint.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T03:09:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:09Z",
+  "started_at": "2026-05-19T03:10:42Z",
+  "closed_at": "2026-05-19T03:12:55Z",
+  "close_reason": "Embedding infeasible from Node (Dolt = Go-embeddable/MySQL-server only; no npm/WASM/N-API). Delivered the dependency-minimizing design: resolveDoltBinary() seam (explicit-override > managed-cache > PATH > actionable DoltUnavailableError), DoltRepo refactored off the hardcoded 'dolt', 6 offline tests, full suite 36 passed/5 skipped, typecheck 0. Operators/CI can now point at any dolt via LOREWEAVER_DOLT_BIN; missing dolt still degrades to skip. Auto-provisioner deliberately NOT built here (security-sensitive) — spun out as loreweaver-8kt (approval-gated). Proposal recorded in this issue's design field.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}
