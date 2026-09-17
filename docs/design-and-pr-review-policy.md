@@ -209,8 +209,11 @@ demonstrably non-material. A material repair requires a fresh full review. A
 newly discovered defect class requires review of its affected blast radius
 under the applicable lifecycle. If a defect class survives one repair because
 only its example was fixed, the next review must explicitly attack that class's
-state space. If it survives two repair cycles, perform a fresh full review of
-the affected subsystem instead of continuing another narrow patch/review loop.
+state space. **If it survives two repair cycles, a third narrow dispatch on that
+class is not permitted: perform a fresh full review of the affected subsystem
+instead.** This is a hard stop, not a judgment call — a class that has outlived
+two repairs is evidence that the repairs are addressing examples rather than the
+class, and further narrow patches compound that error.
 
 Approval binds to an exact head SHA. Any substantive commit after approval
 invalidates that approval and requires review of the new head.
@@ -227,6 +230,62 @@ bad state from the good state. Inspect the producer of the evidence, its real
 input and admission path, the identity to which an observation binds, and the
 conditions that invalidate it. Static text, a digest, a schema-valid record, or
 an observed execution proves only the property it actually measures.
+
+## From observation to finding
+
+A technically correct observation is not a finding. **A defect exists only where
+an observation materially violates an applicable requirement.** This section
+runs before **Findings discipline**, which governs findings once they exist.
+
+Before publishing a defect, establish:
+
+1. the governing invariant or contract;
+2. the authority for that invariant;
+3. the relevant ownership and consumer boundary;
+4. applicability or reachability where material;
+5. the actual consequence of violation;
+6. the proportionate closure condition; and
+7. the proportionate permanent evidence.
+
+**An observation that cannot name an operative invariant and the authority for
+it is dispositioned as "no requirement", in one line, and is not a finding.**
+That disposition is complete at one line and requires no further justification.
+Recording it costs no more than accepting the observation would have, and this
+symmetry is deliberate: where rejecting an observation costs more than accepting
+it, acceptance becomes the default, and every acceptance enlarges the
+implementation, the permanent evidence, and the surface the next review must
+examine.
+
+"We could make this more defensive" is not "the system requires this defense."
+Theoretical robustness is not required correctness.
+
+**The admission test is authority, not present reachability.** Producers,
+consumers, and reachability are weighed at steps 3 to 5 above — where material —
+and they shape severity, closure condition, and proof burden. They are not a
+precondition for a requirement existing. An accepted ADR, design document, or
+owning Bead can require an implementation before the consumer that will use it
+is integrated, and staged work of that kind is normal here; such a requirement
+does not lapse for want of a current caller.
+
+**Reachability is therefore a severity axis, not an admission gate.** A defect
+on a path no producer or consumer currently reaches is dispositioned at its real
+severity, not at the severity it would carry on a live path. An unreached path
+is not thereby safe, absent, or exempt — it is lower-consequence, which is a
+different claim, and `AGENTS.md` continues to govern when unexercised
+scaffolding must be retained, demoted, or retired.
+
+A published finding must state whether its permanent evidence is a
+**generalized invariant** or an **exact reproducer**, and why that choice is
+proportionate to the consequence of failure. Prefer one generalized invariant
+over many near-identical reproducers, except where the exact case has
+independent semantic significance — as exact source-fidelity regressions
+against a vendored source artifact always do. The permanent-evidence rules in
+`AGENTS.md` ("Permanent Test Evidence") govern what survives the PR.
+
+None of this narrows the search that finds defects. Sibling search, state-
+dimension variation, and proof-mechanism review are unchanged and remain
+required. This section governs only what happens between an observation and its
+publication as a finding.
 
 ## Findings discipline
 

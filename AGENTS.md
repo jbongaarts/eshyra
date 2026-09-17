@@ -57,6 +57,81 @@ C++ toolchain and `npm rebuild better-sqlite3`. Rationale:
 [ADR 0016](docs/adr/0016-native-dependency-install-policy-by-environment.md),
 and the header comment in `.github/workflows/ci.yml`.
 
+## Permanent Test Evidence
+
+What the suite *contains* is a separate decision from how it *executes*. This
+section owns the former; `vitest.config.ts` and `verify:worktree` own the
+latter. Neither sets a test-count target — count is not the metric.
+
+**A permanent regression test protects a durable invariant, contract,
+independently meaningful boundary, or justified known defect class that
+stronger evidence does not already protect.**
+
+**A reproducer or adversarial example created during development or review is
+not automatically permanent.** After disposition and repair it normally becomes
+generalized regression evidence, or is retired. The exception is narrow and
+absolute: **exact source-fidelity regressions against a vendored source
+artifact always have independent semantic significance** and are never retired
+under this rule. `docs/importer-fix-protocol.md` governs them and continues to
+forbid weakening a regression or an audit expectation to match current
+generated output.
+
+**Tests are evidence of requirements, never authority for requirements.** A
+test's existence does not establish that the behavior it protects is required.
+Do not let `code exists -> tests protect code -> therefore behavior is required`
+stand in for authority. Equally, do not delete a test because its requirement is
+not immediately obvious — establish the authority and the boundary first.
+
+**Permanent proof burden is proportionate to the governing invariant, and a
+proof mechanism's own cost is part of that proportionality.** An assertion
+costing seconds of wall clock or hundreds of megabytes must be justified against
+a correspondingly serious consequence of failure. Measure before making an
+expensive check permanent.
+
+**Proof machinery — checkers, probes, ledgers, baselines, audits, measurements —
+is implementation and needs its own tests, but it does not inherit the proof
+burden of the product.** Test it in proportion to the decisions it gates.
+
+**Infrastructure authorized for a bounded experiment or transition must carry an
+explicit disposition at that boundary**, one of:
+
+- **retained** — a responsibility survives the boundary under current
+  authority. It stays as ordinary implementation, public or private per the
+  `@eshyra/core` import-path rules under **Conventions**, with evidence
+  proportionate to that responsibility. If the responsibility is **staged**
+  rather than live — accepted authority requires it, but the consumer that will
+  exercise it is not yet integrated — say so and name the successor owner and
+  the next integration state.
+- **demoted** — the responsibility is genuinely tooling or diagnostic. It stays
+  in the tree, moves off the default gate, and its proof burden drops to what
+  the tooling's own decisions warrant.
+- **retired** — no responsibility survives. Retirement must name the
+  responsibility that replaces the old claim where applicable, and must not
+  hide a source-fidelity, discovery, capability, adjudication, or
+  state-integrity defect.
+
+**Current runtime use is not a condition of retention.** It informs consequence
+and proof burden, exactly as reachability does under "From observation to
+finding" in `docs/design-and-pr-review-policy.md`. An accepted ADR, design
+document, or owning Bead can require an implementation before its consumer
+exists, and staged work of that kind is normal here; such infrastructure is
+`retained` with its staged status named, not forced into `demoted` or
+`retired`. Judge the classification by **the responsibility that survives the
+boundary** — never by whether a symbol appears in a package's public export.
+New core symbols default to internal (see **Conventions**), so private
+implementation is the normal, correct state for most product code.
+
+**A missing disposition leaves the transition's exit unresolved; it does not
+confer permanent-contract status.** Omitting the required decision cannot
+create authority — that is the same error as treating existing code and tests
+as proof that behavior is required. Until the disposition is made, the
+scaffolding is undecided work, and the bounded transition it belongs to is not
+validly closed.
+
+Evidence and rationale: the merged audit at
+`docs/audits/test-suite-and-verification/2026-09-14-test-suite-and-verification-audit.md`.
+That document is evidence, not authority; this section is the authority.
+
 ## Dependency Updates
 
 Follow `docs/dependencies.md`. Keep dependency PRs separate from feature work
