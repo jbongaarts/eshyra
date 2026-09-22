@@ -167,6 +167,13 @@ describe('PR review authority and lifecycle policy', () => {
     const policy = readText(POLICY_PATH);
 
     expect(policy).toContain('## From observation to finding');
+    // The ordering is the claim, not decoration: the section's own text says it
+    // runs before "Findings discipline", and the gate only works upstream of
+    // it. Relocating the section would make that sentence false while every
+    // text assertion here still passed, so pin the order too.
+    expect(policy.indexOf('## From observation to finding')).toBeLessThan(
+      policy.indexOf('## Findings discipline'),
+    );
     expect(policy).toMatch(
       /A defect exists only where\s+an observation materially violates an applicable requirement/,
     );
@@ -229,8 +236,13 @@ describe('PR review authority and lifecycle policy', () => {
     expect(agents).toContain(
       '**Current runtime use is not a condition of retention.**',
     );
-    expect(agents).toContain(
-      "**A missing disposition leaves the transition's exit unresolved; it does not\nconfer permanent-contract status.**",
+    // This clause is longer than the hard wrap, so it always spans a line
+    // break. Match it with `\s+` like the rest of this file rather than
+    // pinning where the break currently falls: a literal newline would fail on
+    // a rewrap that leaves the claim intact, which is a green-to-red on a good
+    // state, not a defect the guard exists to catch.
+    expect(agents).toMatch(
+      /\*\*A\s+missing\s+disposition\s+leaves\s+the\s+transition's\s+exit\s+unresolved;\s+it\s+does\s+not\s+confer\s+permanent-contract\s+status\.\*\*/,
     );
     // Source-fidelity regressions keep their absolute carve-out.
     expect(agents).toMatch(
