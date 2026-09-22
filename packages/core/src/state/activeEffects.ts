@@ -1137,7 +1137,7 @@ export function listActiveEffects(
       `SELECT ${EFFECT_COLUMNS} FROM active_effect
        WHERE campaign_id = ?${
          options.includeEnded === true ? '' : " AND status != 'ended'"
-}
+       }
        ORDER BY status = 'ended', created_at, effect_id`,
     )
     .all(campaignId) as ActiveEffectRow[];
