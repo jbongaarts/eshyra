@@ -244,9 +244,23 @@ describe('PR review authority and lifecycle policy', () => {
     expect(agents).toMatch(
       /\*\*A\s+missing\s+disposition\s+leaves\s+the\s+transition's\s+exit\s+unresolved;\s+it\s+does\s+not\s+confer\s+permanent-contract\s+status\.\*\*/,
     );
-    // Source-fidelity regressions keep their absolute carve-out.
+    // The source-fidelity carve-out is CONDITIONAL, and both halves are
+    // load-bearing. An absolute carve-out contradicted
+    // docs/importer-fix-protocol.md, which permits a narrow assertion to be
+    // replaced by a stronger invariant and a local example by broader audit
+    // coverage "without losing the original regression intent" — and it would
+    // have made every exact source case permanent forever, which is the
+    // evidence accretion this section exists to stop.
     expect(agents).toMatch(
-      /exact source-fidelity regressions against a vendored source\s+artifact always have independent semantic significance/,
+      /an\s+exact\s+source-fidelity\s+regression\s+against\s+a\s+vendored\s+source\s+artifact\s+carries\s+a\s+source-backed\s+claim\s+that\s+no\s+consolidation\s+may\s+lose/,
+    );
+    expect(agents).toMatch(
+      /only\s+where\s+the\s+replacement\s+demonstrably\s+preserves\s+or\s+strengthens\s+that\s+same\s+source-backed\s+protection/,
+    );
+    // The permitted substitution must never collapse into "a broad test
+    // already covers it", which is the invalid deletion the protocol forbids.
+    expect(agents).toMatch(
+      /never\s+because\s+a\s+broad\s+test\s+already\s+exists\s+nearby/,
     );
   });
 

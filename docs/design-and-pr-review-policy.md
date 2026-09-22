@@ -277,10 +277,13 @@ scaffolding must be retained, demoted, or retired.
 A published finding must state whether its permanent evidence is a
 **generalized invariant** or an **exact reproducer**, and why that choice is
 proportionate to the consequence of failure. Prefer one generalized invariant
-over many near-identical reproducers, except where the exact case has
-independent semantic significance — as exact source-fidelity regressions
-against a vendored source artifact always do. The permanent-evidence rules in
-`AGENTS.md` ("Permanent Test Evidence") govern what survives the PR.
+over many near-identical reproducers, except where the exact case carries a
+claim the invariant would not preserve — as a source-fidelity regression
+against a vendored source artifact does until the replacement demonstrably
+preserves or strengthens that same source-backed protection. Consolidating such
+a case is a change to source-fidelity evidence and belongs to
+`docs/importer-fix-protocol.md`. The permanent-evidence rules in `AGENTS.md`
+("Permanent Test Evidence") govern what survives the PR.
 
 None of this narrows the search that finds defects. Sibling search, state-
 dimension variation, and proof-mechanism review are unchanged and remain

@@ -69,12 +69,18 @@ stronger evidence does not already protect.**
 
 **A reproducer or adversarial example created during development or review is
 not automatically permanent.** After disposition and repair it normally becomes
-generalized regression evidence, or is retired. The exception is narrow and
-absolute: **exact source-fidelity regressions against a vendored source
-artifact always have independent semantic significance** and are never retired
-under this rule. `docs/importer-fix-protocol.md` governs them and continues to
-forbid weakening a regression or an audit expectation to match current
-generated output.
+generalized regression evidence, or is retired. The exception is narrow:
+**an exact source-fidelity regression against a vendored source artifact
+carries a source-backed claim that no consolidation may lose.** That claim is
+non-negotiable. The reproducer proving it is not thereby immortal: it may be
+consolidated into a stronger invariant or broader audit coverage **only where
+the replacement demonstrably preserves or strengthens that same source-backed
+protection**, never because a broad test already exists nearby.
+`docs/importer-fix-protocol.md` governs that substitution — it is the owner of
+the "narrow assertion replaced by a stronger invariant" and "local example
+replaced by broader audit coverage without losing the original regression
+intent" rules — and continues to forbid weakening a regression or an audit
+expectation to match current generated output.
 
 **Tests are evidence of requirements, never authority for requirements.** A
 test's existence does not establish that the behavior it protects is required.
