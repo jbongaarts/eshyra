@@ -209,10 +209,82 @@ function handoffWriteGuidance(seatId) {
 
 const SESSION_LEDGER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-// The seat may not remind an occupant before it plausibly has anything to hand
-// over. Stop fires at every turn end, so without this a fresh session would be
-// nudged about its first reply.
+// Fallback only. The seat may not remind an occupant before it plausibly has
+// anything to hand over, and Stop fires at every turn end, so a session that
+// has changed nothing observable is not nudged about its first reply. Elapsed
+// time alone is a poor proxy for that: it misses the short session that merges
+// a pull request, which is exactly the session whose merge invalidated the
+// handoff it declined to rewrite (eshyra-qqrr). The primary signal is repository
+// movement below; this bound only catches the long session that has not
+// committed anything yet.
 export const EXIT_REMINDER_MIN_SESSION_MS = 45 * 60 * 1000;
+
+// The trigger asks whether this session moved the repository, and it asks at
+// every turn end, so this stays one rev-parse with a hard timeout. Every
+// failure — no repository at `cwd`, no commit yet, git absent, a timeout —
+// reads as "unknown" rather than as movement, so an unobservable checkout
+// leaves the trigger on its elapsed-time fallback instead of nudging blindly.
+export function readHeadCommit(cwd) {
+  if (typeof cwd !== 'string' || cwd.trim() === '') return null;
+  try {
+    const head = execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      timeout: 2000,
+    }).trim();
+    return /^[0-9a-f]{40}$/.test(head) ? head : null;
+  } catch {
+    return null;
+  }
+}
+
+// A merge reaches `main` on the remote, so the local checkout need not move
+// when a session integrates a pull request: `gh pr merge` changes nothing
+// `rev-parse` can see, and nothing requires the session to pull afterwards.
+// Neither does a commit made in a linked worktree move the checkout at `cwd`.
+// What those sessions do reliably leave is the command itself, in their own
+// transcript. Only the session's Bash tool calls count — prose that merely
+// mentions a merge is not one. A command that was attempted and failed still
+// counts: the cost of that is one extra nudge, which the reminder tolerates.
+const INTEGRATING_COMMAND =
+  /\bgh\s+pr\s+merge\b|\bgit\s+(?:-[Cc]\s+\S+\s+)*(?:commit|push)\b/;
+
+// Every failure — no path, an unreadable file, a malformed line — reads as
+// "nothing observed", like an unreadable HEAD.
+export function transcriptShowsIntegration(transcriptPath) {
+  if (typeof transcriptPath !== 'string' || transcriptPath.trim() === '')
+    return false;
+  let text;
+  try {
+    text = readFileSync(transcriptPath, 'utf8');
+  } catch {
+    return false;
+  }
+  for (const line of text.split('\n')) {
+    // Cheap prefilter: only a tool call can carry the evidence.
+    if (!line.includes('"tool_use"')) continue;
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (entry?.type !== 'assistant') continue;
+    const content = entry.message?.content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (
+        block?.type === 'tool_use' &&
+        block.name === 'Bash' &&
+        typeof block.input?.command === 'string' &&
+        INTEGRATING_COMMAND.test(block.input.command)
+      )
+        return true;
+    }
+  }
+  return false;
+}
 
 function sessionLedgerDir(seatId, cwd, env) {
   if (!VALID_SEATS.has(seatId)) return null;
@@ -285,6 +357,13 @@ export function recordOccupantSession(seatId, cwd, env, session) {
           : new Date().toISOString(),
       remindedAt:
         typeof existing?.remindedAt === 'string' ? existing.remindedAt : null,
+      // Baseline for the exit trigger, preserved across compact and clear for
+      // the same reason startedAt is: re-reading HEAD on a re-fire would erase
+      // the very movement the trigger exists to notice.
+      headAt:
+        typeof existing?.headAt === 'string'
+          ? existing.headAt
+          : readHeadCommit(cwd),
     };
     writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
     return record;
@@ -328,26 +407,52 @@ export function clearOccupantSession(seatId, cwd, env, sessionId) {
   }
 }
 
+// Did this session move the checkout it is standing in? A commit, a merge, a
+// pull, a branch switch — anything that makes the recorded handoff describe a
+// repository that no longer exists. Absence of evidence is not movement: no
+// recorded baseline (a ledger record written before this field existed) and an
+// unreadable HEAD both read as "nothing observed", leaving the other signals to
+// decide.
+function sessionMovedHead(session, cwd, readHead) {
+  const baseline = session.headAt;
+  if (typeof baseline !== 'string') return false;
+  const current = readHead(cwd);
+  if (typeof current !== 'string') return false;
+  return current !== baseline;
+}
+
 // Returns the text an exit hook should deliver, or null for "say nothing".
-// Every condition is a reason to stay quiet; the seat nudges once, late, and
-// only when this occupant has left nothing behind.
+// Every condition is a reason to stay quiet; the seat nudges once and only
+// when this occupant has produced something it has left nothing behind about.
 export function handoffExitReminder({
   seatId,
   handoff,
   session,
+  cwd,
+  transcriptPath,
   now = Date.now(),
+  readHead = readHeadCommit,
+  readTranscript = transcriptShowsIntegration,
 }) {
   if (session === null || session === undefined) return null;
   if (typeof session.remindedAt === 'string') return null;
   const startedAt = Date.parse(session.startedAt ?? '');
   if (!Number.isFinite(startedAt)) return null;
-  if (now - startedAt < EXIT_REMINDER_MIN_SESSION_MS) return null;
   // A handoff written during this session discharges the obligation.
   if (
     handoff !== null &&
     handoff !== undefined &&
     Number.isFinite(handoff.recordedAtMs) &&
     handoff.recordedAtMs >= startedAt
+  )
+    return null;
+  // Ordered so the transcript read and the git call are reached only by a
+  // session that is otherwise owed a reminder and has not yet run long enough
+  // to be owed one anyway; the file read comes first because it spawns nothing.
+  if (
+    now - startedAt < EXIT_REMINDER_MIN_SESSION_MS &&
+    !readTranscript(transcriptPath) &&
+    !sessionMovedHead(session, cwd, readHead)
   )
     return null;
   const guidance = handoffWriteGuidance(seatId);
