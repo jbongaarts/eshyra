@@ -189,6 +189,16 @@ npm run seat:handoff -- show claude-captain
 npm run seat:handoff -- clear claude-captain
 ```
 
+The rendered seat context names these commands for the seat it injects, and
+marks a handoff older than 48h as stale. That duplication is deliberate: the
+obligation to record a handoff falls due when a session *ends*, while every
+gated delivery channel the seats have fires at SessionStart, and the
+instruction cannot be moved to a surface that is still in context at the end of
+a session — `AGENTS.md`, `CLAUDE.md`, bd memories and bead descriptions are all
+injected into subagent and dispatched-worker contexts, which must receive no
+seat instructions at all. Write the handoff from a scratch file outside the
+tree so nothing lands untracked in the working tree at session end.
+
 Seat state is never repository authority. Missing, stale, or unreadable seat
 state degrades to ordinary repository behaviour. Handoff claims must be
 reconciled with current repository state before acting. Dispatched Codex

@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -256,6 +257,79 @@ describe('agent captain seats', () => {
     );
     rmSync(join(tmp, 'charters', 'claude-captain.md'));
     expect(run(claudeScript, { model: 'Fable 5.1' })).toBe('');
+  });
+
+  it('names the seat-specific handoff write command in both handoff branches', () => {
+    mkdirSync(join(tmp, 'state', 'claude-captain'));
+    mkdirSync(join(tmp, 'state', 'codex-captain'));
+    const absent = run(claudeScript, { model: 'Fable 5.1' });
+    expect(absent).toContain('No handoff recorded for this seat.');
+    expect(absent).toContain('npm run seat:handoff -- write claude-captain');
+
+    writeFileSync(
+      join(tmp, 'state', 'claude-captain', 'handoff.md'),
+      'Claude handoff',
+    );
+    writeFileSync(
+      join(tmp, 'state', 'codex-captain', 'handoff.md'),
+      'Codex handoff',
+    );
+    const claude = run(claudeScript, { model: 'Fable 5.1' });
+    expect(claude).toContain('npm run seat:handoff -- write claude-captain');
+    expect(claude).not.toContain('write codex-captain');
+    const codex = run(codexScript, { hook_event_name: 'SessionStart' });
+    expect(codex).toContain('npm run seat:handoff -- write codex-captain');
+    expect(codex).not.toContain('write claude-captain');
+  });
+
+  it('flags a stale handoff without discarding it', () => {
+    const handoffPath = join(tmp, 'state', 'claude-captain', 'handoff.md');
+    mkdirSync(join(tmp, 'state', 'claude-captain'));
+    writeFileSync(handoffPath, 'Claude handoff');
+    expect(run(claudeScript, { model: 'Fable 5.1' })).not.toContain(
+      'more than 48h old',
+    );
+
+    const staleSeconds = Date.now() / 1000 - 72 * 3600;
+    utimesSync(handoffPath, staleSeconds, staleSeconds);
+    const stale = run(claudeScript, { model: 'Fable 5.1' });
+    expect(stale).toContain('more than 48h old');
+    expect(stale).toContain('Claude handoff');
+  });
+
+  // The write mechanism is a seat instruction, so it may only ever reach an
+  // eligible occupant. These routes emit nothing today; the assertion exists so
+  // that a future degraded notice on any of them cannot carry it out.
+  it('keeps the handoff write mechanism out of every ineligible route', () => {
+    mkdirSync(join(tmp, 'state', 'claude-captain'));
+    mkdirSync(join(tmp, 'state', 'codex-captain'));
+    writeFileSync(
+      join(tmp, 'state', 'claude-captain', 'handoff.md'),
+      'Claude handoff',
+    );
+    writeFileSync(
+      join(tmp, 'state', 'codex-captain', 'handoff.md'),
+      'Codex handoff',
+    );
+    const outputs = [
+      run(claudeScript, { agent_id: 'agent-1', model: 'claude-opus-5' }),
+      run(claudeScript, { model: 'claude-sonnet-5' }),
+      run(claudeScript, {}),
+      run(claudeScript, '{'),
+      run(
+        claudeScript,
+        { model: 'Fable 5.1' },
+        { ESHYRA_SEAT_ROLE: 'dispatched-worker' },
+      ),
+      run(codexScript, { hook_event_name: 'SubagentStart' }),
+      run(codexScript, { agent_type: 'reviewer' }),
+      run(
+        codexScript,
+        { hook_event_name: 'SessionStart' },
+        { ESHYRA_DISPATCH_CHILD: 'eshyra-kusc.1' },
+      ),
+    ];
+    for (const output of outputs) expect(output).not.toContain('seat:handoff');
   });
 
   it('includes the complete reconciliation block for both seats', () => {

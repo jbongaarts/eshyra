@@ -151,6 +151,37 @@ export const RECONCILIATION_BLOCK = `### Reconcile before acting
 
 Everything in the handoff is a lead and not a fact. The occupant must re-derive current work from live state before acting, checking beads, branch, worktree, Git ancestry, commits, pull request, dispatch registry, recorded PGID, and process identity. A handoff is never permission to kill a process, reset a branch, force-push, merge, or discard a commit without live verification.`;
 
+// The handoff is the only seat obligation that falls due at EXIT, and every
+// gated delivery channel the seat has is SessionStart-shaped. The instruction
+// cannot simply be moved to a surface that is still in context at the end of a
+// session: AGENTS.md, CLAUDE.md, bd memories and bead descriptions are all
+// injected into subagent and dispatched-worker contexts, which must not receive
+// seat instructions at all. So the mechanism ships here, beside the staleness
+// signal that already prints, in the one payload that reaches an eligible
+// occupant and nothing else.
+function handoffWriteGuidance(seatId) {
+  if (!VALID_SEATS.has(seatId)) return null;
+  return [
+    '### Leaving one for your successor',
+    '',
+    'Record a handoff before this session ends, and again at any boundary worth resuming from:',
+    '',
+    '```sh',
+    `npm run seat:handoff -- write ${seatId}   # reads the handoff text from stdin`,
+    `npm run seat:handoff -- show ${seatId}`,
+    `npm run seat:handoff -- clear ${seatId}`,
+    '```',
+    '',
+    'Every checkout of this clone resolves the same seat state, so a linked worktree works. Pipe from a scratch file outside the tree: the working tree should still be clean when the session ends.',
+  ].join('\n');
+}
+
+// A nudge threshold, not a correctness boundary — nothing downstream reads it.
+// Past roughly two days a handoff in this repository has usually been overtaken
+// by merges on main, which is the point at which its leads stop being useful
+// acceleration and start being misdirection.
+const HANDOFF_STALE_HOURS = 48;
+
 function occupantValue(value) {
   return value === undefined || value === null || value === ''
     ? 'unknown'
@@ -187,8 +218,15 @@ export function renderSeatContext({
       handoff.text,
       `Recorded ${handoff.ageHours}h ago at ${handoff.path}.`,
     );
+    if (handoff.ageHours >= HANDOFF_STALE_HOURS) {
+      lines.push(
+        `That is more than ${HANDOFF_STALE_HOURS}h old, so main has almost certainly moved past it. Treat every lead in it as spent until live state says otherwise.`,
+      );
+    }
   }
   lines.push(RECONCILIATION_BLOCK);
+  const writeGuidance = handoffWriteGuidance(seatId);
+  if (writeGuidance !== null) lines.push(writeGuidance);
   return `${lines.join('\n')}\n`;
 }
 
