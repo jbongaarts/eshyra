@@ -95,8 +95,11 @@ a correspondingly serious consequence of failure. Measure before making an
 expensive check permanent.
 
 **Proof machinery — checkers, probes, ledgers, baselines, audits, measurements —
-is implementation and needs its own tests, but it does not inherit the proof
-burden of the product.** Test it in proportion to the decisions it gates.
+is implementation and does not inherit the proof burden of the product.** Give
+it evidence proportionate to the decisions it gates. That is often a test; it is
+not automatically one. Requiring a dedicated test for every proof mechanism only
+moves the same burden one level outward, since those tests are proof machinery
+too.
 
 **Infrastructure authorized for a bounded experiment or transition must carry an
 explicit disposition at that boundary**, one of:
