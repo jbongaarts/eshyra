@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import {
+  appendFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -506,12 +507,17 @@ describe('agent captain seats', () => {
         });
       }
 
-      function stopIn(dir: string, sessionId: string) {
+      function stopIn(dir: string, sessionId: string, transcript?: string) {
         return run(exitScript, {
           hook_event_name: 'Stop',
           session_id: sessionId,
           cwd: dir,
+          ...(transcript === undefined ? {} : { transcript_path: transcript }),
         });
+      }
+
+      function transcriptLine(entry: unknown): string {
+        return `${JSON.stringify(entry)}\n`;
       }
 
       it('reminds a short session that moved the checkout', () => {
@@ -554,6 +560,50 @@ describe('agent captain seats', () => {
         expect(stopIn(repo, 'compact-mover')).not.toBe('');
       });
 
+      // The reviewed miss in the fix itself: a merge lands on the remote, so a
+      // compliant integration session can merge a PR and end without its own
+      // checkout ever moving. Its transcript still records the merge.
+      it('reminds a short integration session whose checkout never moved', () => {
+        const repo = initRepo();
+        const transcript = join(repo, 'transcript.jsonl');
+        startIn(repo, 'integrator');
+        // Talking about a merge is not one.
+        writeFileSync(
+          transcript,
+          transcriptLine({
+            type: 'user',
+            message: { role: 'user', content: 'Please gh pr merge 561.' },
+          }),
+        );
+        expect(stopIn(repo, 'integrator', transcript)).toBe('');
+
+        appendFileSync(
+          transcript,
+          transcriptLine({
+            type: 'assistant',
+            message: {
+              role: 'assistant',
+              content: [
+                {
+                  type: 'tool_use',
+                  id: 'toolu_1',
+                  name: 'Bash',
+                  input: { command: 'gh pr merge 561 --merge' },
+                },
+              ],
+            },
+          }),
+        );
+        expect(
+          JSON.parse(stopIn(repo, 'integrator', transcript)).hookSpecificOutput,
+        ).toMatchObject({
+          hookEventName: 'Stop',
+          additionalContext: expect.stringContaining(
+            'npm run seat:handoff -- write claude-captain',
+          ),
+        });
+      });
+
       // A session that produced nothing is still not worth interrupting, and
       // an unobservable checkout must not be read as movement.
       it('stays silent for a short session in an unreadable checkout', () => {
@@ -577,6 +627,7 @@ describe('agent captain seats', () => {
       const reminder = (
         session: Record<string, unknown>,
         readHead: (cwd: string) => string | null,
+        readTranscript: (path: unknown) => boolean = () => false,
       ) =>
         handoffExitReminder({
           seatId: 'claude-captain',
@@ -584,12 +635,23 @@ describe('agent captain seats', () => {
           session,
           cwd: '/somewhere',
           readHead,
+          readTranscript,
         });
 
       it('fires below the time floor once HEAD has moved', () => {
         expect(reminder(young('aaa'), () => 'bbb')).toContain(
           'npm run seat:handoff -- write claude-captain',
         );
+      });
+
+      it('fires below the time floor on a transcript-recorded integration', () => {
+        expect(
+          reminder(
+            young('aaa'),
+            () => 'aaa',
+            () => true,
+          ),
+        ).toContain('npm run seat:handoff -- write claude-captain');
       });
 
       it('stays silent below the floor when HEAD has not moved', () => {
@@ -615,19 +677,27 @@ describe('agent captain seats', () => {
         expect(reminder(old, () => 'aaa')).toContain('claude-captain');
       });
 
-      // Stop runs at every turn end, so the cost of the git call is part of
-      // the design: it is reached only by a session that is otherwise owed a
-      // reminder and is not already past the fallback.
-      it('never reads HEAD when a cheaper condition already decides', () => {
+      // Stop runs at every turn end, so the cost of the transcript read and
+      // the git call is part of the design: they are reached only by a session
+      // that is otherwise owed a reminder and is not already past the fallback.
+      it('reads neither HEAD nor the transcript when a cheaper condition decides', () => {
         let reads = 0;
         const counted = () => {
           reads += 1;
           return 'bbb';
         };
+        const countedTranscript = () => {
+          reads += 1;
+          return true;
+        };
         // Already reminded, already past the floor, and already discharged by
         // a handoff recorded during this session.
         expect(
-          reminder({ ...young('aaa'), remindedAt: minutesAgo(0) }, counted),
+          reminder(
+            { ...young('aaa'), remindedAt: minutesAgo(0) },
+            counted,
+            countedTranscript,
+          ),
         ).toBeNull();
         expect(
           reminder(
@@ -638,6 +708,7 @@ describe('agent captain seats', () => {
               ).toISOString(),
             },
             counted,
+            countedTranscript,
           ),
         ).not.toBeNull();
         expect(
@@ -647,6 +718,7 @@ describe('agent captain seats', () => {
             session: young('aaa'),
             cwd: '/somewhere',
             readHead: counted,
+            readTranscript: countedTranscript,
           }),
         ).toBeNull();
         expect(reads).toBe(0);

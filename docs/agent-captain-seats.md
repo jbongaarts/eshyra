@@ -208,10 +208,23 @@ session, and only when the occupant has not recorded a handoff since the
 session began, it asks for one.
 
 **What makes a handoff owed is that the session produced something**, not that
-it lasted a while. The trigger fires when the session has moved the checkout it
-is standing in — `HEAD` differs from the commit recorded when `SessionStart`
-admitted the session — with elapsed time (45 minutes) kept only as the fallback
-for a long session that has not committed anything yet.
+it lasted a while. The trigger fires on either of two observations, with
+elapsed time (45 minutes) kept only as the fallback for a long session that
+has shown neither:
+
+- **the session integrated or published work** — its own transcript (the
+  `transcript_path` on the `Stop` payload) records a Bash tool call running
+  `gh pr merge`, `git commit`, or `git push`;
+- **the session moved the checkout it is standing in** — `HEAD` differs from
+  the commit recorded when `SessionStart` admitted the session.
+
+The transcript signal exists because the checkout signal alone misses the case
+this trigger was rebuilt for. A merge lands on the remote: a compliant session
+can `gh pr merge`, never pull, and end with its local `HEAD` exactly where it
+started. A commit made in a linked worktree likewise leaves the checkout at the
+hook's `cwd` untouched. Both still leave the command in the transcript. Only
+tool calls count — prose mentioning a merge does not — and a command that was
+attempted but failed still counts, at the cost of one extra nudge.
 
 That ordering is the fix for `eshyra-qqrr`. Duration alone was the original
 trigger, and it missed the case it most needed to catch: the session that
@@ -221,15 +234,18 @@ past it. Short and consequential is the normal shape of an integration session
 here, not an edge case.
 
 Absence of evidence is never movement. A ledger record written before the
-baseline field existed, and a `HEAD` git cannot resolve, both leave the trigger
-on its elapsed-time fallback rather than nudging blindly. The baseline survives
+baseline field existed, a `HEAD` git cannot resolve, and a missing or
+unreadable transcript all read as "nothing observed" rather than nudging
+blindly. The baseline survives
 compaction and `/clear` for the same reason `startedAt` does: `SessionStart`
 re-fires with the same session id, and re-reading `HEAD` there would erase the
 movement the trigger exists to notice.
 
-`Stop` runs at every turn end, so the git call is ordered last: it is reached
-only by a session that is otherwise owed a reminder and has not already passed
-the fallback.
+`Stop` runs at every turn end, so the transcript read and the git call are
+ordered last — the read first, because it spawns nothing. Both are reached only
+by a session that is otherwise owed a reminder and has not already passed the
+fallback, which also bounds the transcript to the size a sub-45-minute session
+produces.
 
 Three properties of the harness shape that design, and each was checked
 against the installed CLI rather than assumed:

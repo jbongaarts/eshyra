@@ -239,6 +239,53 @@ export function readHeadCommit(cwd) {
   }
 }
 
+// A merge reaches `main` on the remote, so the local checkout need not move
+// when a session integrates a pull request: `gh pr merge` changes nothing
+// `rev-parse` can see, and nothing requires the session to pull afterwards.
+// Neither does a commit made in a linked worktree move the checkout at `cwd`.
+// What those sessions do reliably leave is the command itself, in their own
+// transcript. Only the session's Bash tool calls count — prose that merely
+// mentions a merge is not one. A command that was attempted and failed still
+// counts: the cost of that is one extra nudge, which the reminder tolerates.
+const INTEGRATING_COMMAND =
+  /\bgh\s+pr\s+merge\b|\bgit\s+(?:-[Cc]\s+\S+\s+)*(?:commit|push)\b/;
+
+// Every failure — no path, an unreadable file, a malformed line — reads as
+// "nothing observed", like an unreadable HEAD.
+export function transcriptShowsIntegration(transcriptPath) {
+  if (typeof transcriptPath !== 'string' || transcriptPath.trim() === '')
+    return false;
+  let text;
+  try {
+    text = readFileSync(transcriptPath, 'utf8');
+  } catch {
+    return false;
+  }
+  for (const line of text.split('\n')) {
+    // Cheap prefilter: only a tool call can carry the evidence.
+    if (!line.includes('"tool_use"')) continue;
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (entry?.type !== 'assistant') continue;
+    const content = entry.message?.content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (
+        block?.type === 'tool_use' &&
+        block.name === 'Bash' &&
+        typeof block.input?.command === 'string' &&
+        INTEGRATING_COMMAND.test(block.input.command)
+      )
+        return true;
+    }
+  }
+  return false;
+}
+
 function sessionLedgerDir(seatId, cwd, env) {
   if (!VALID_SEATS.has(seatId)) return null;
   const roots = resolveSeatRoots(cwd, env);
@@ -364,8 +411,8 @@ export function clearOccupantSession(seatId, cwd, env, sessionId) {
 // pull, a branch switch — anything that makes the recorded handoff describe a
 // repository that no longer exists. Absence of evidence is not movement: no
 // recorded baseline (a ledger record written before this field existed) and an
-// unreadable HEAD both read as "nothing observed", leaving the elapsed-time
-// fallback to decide.
+// unreadable HEAD both read as "nothing observed", leaving the other signals to
+// decide.
 function sessionMovedHead(session, cwd, readHead) {
   const baseline = session.headAt;
   if (typeof baseline !== 'string') return false;
@@ -382,8 +429,10 @@ export function handoffExitReminder({
   handoff,
   session,
   cwd,
+  transcriptPath,
   now = Date.now(),
   readHead = readHeadCommit,
+  readTranscript = transcriptShowsIntegration,
 }) {
   if (session === null || session === undefined) return null;
   if (typeof session.remindedAt === 'string') return null;
@@ -397,10 +446,12 @@ export function handoffExitReminder({
     handoff.recordedAtMs >= startedAt
   )
     return null;
-  // Ordered so the git call is reached only by a session that is otherwise
-  // owed a reminder and has not yet run long enough to be owed one anyway.
+  // Ordered so the transcript read and the git call are reached only by a
+  // session that is otherwise owed a reminder and has not yet run long enough
+  // to be owed one anyway; the file read comes first because it spawns nothing.
   if (
     now - startedAt < EXIT_REMINDER_MIN_SESSION_MS &&
+    !readTranscript(transcriptPath) &&
     !sessionMovedHead(session, cwd, readHead)
   )
     return null;
