@@ -1,6 +1,14 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import {
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir } from 'node:os';
 import { delimiter, isAbsolute, join, resolve } from 'node:path';
 
@@ -24,10 +32,13 @@ export function readHookInput(raw) {
   }
 }
 
-export function classifyClaudeSession(input) {
+// Occupancy and injection are different questions. A resumed session occupies
+// the seat — its transcript already carries the charter, which is why nothing
+// is re-injected — so it must still be recognised as an occupant by anything
+// that acts later in the session. Injection layers the resume rule on top.
+export function classifyClaudeOccupant(input) {
   if (input === null) return { eligible: false, reason: 'malformed-input' };
   if (input.agent_id) return { eligible: false, reason: 'subagent' };
-  if (input.source === 'resume') return { eligible: false, reason: 'resume' };
   if (typeof input.model !== 'string' || input.model.trim() === '') {
     return { eligible: false, reason: 'no-model-identity' };
   }
@@ -35,6 +46,13 @@ export function classifyClaudeSession(input) {
     return { eligible: false, reason: 'unauthorized-model' };
   }
   return { eligible: true, reason: 'authorized-main-session' };
+}
+
+export function classifyClaudeSession(input) {
+  const occupant = classifyClaudeOccupant(input);
+  if (!occupant.eligible) return occupant;
+  if (input.source === 'resume') return { eligible: false, reason: 'resume' };
+  return occupant;
 }
 
 export function classifyCodexSession(input, env) {
@@ -139,9 +157,10 @@ export function readHandoff(seatId, cwd, env = process.env) {
   try {
     const text = readFileSync(path, 'utf8');
     if (text.trim() === '') return null;
+    const recordedAtMs = statSync(path).mtimeMs;
     const ageHours =
-      Math.round(((Date.now() - statSync(path).mtimeMs) / 3600000) * 10) / 10;
-    return { text, path, ageHours };
+      Math.round(((Date.now() - recordedAtMs) / 3600000) * 10) / 10;
+    return { text, path, ageHours, recordedAtMs };
   } catch {
     return null;
   }
@@ -173,6 +192,174 @@ function handoffWriteGuidance(seatId) {
     '```',
     '',
     'Every checkout of this clone resolves the same seat state, so a linked worktree works. Pipe from a scratch file outside the tree: the working tree should still be clean when the session ends.',
+  ].join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Occupant session ledger
+//
+// No exit-side hook event carries `model`: the common payload builder supplies
+// session/transcript/cwd/permission_mode/agent identity, and SessionStart is
+// the event that adds `model` on top. So the exit channel cannot re-run the
+// model gate that authorizes the seat. It does not have to: SessionStart
+// already ran that gate, and records the session id it admitted here. An exit
+// hook then recognises its own session or emits nothing. Absent, unreadable,
+// or unparsable state reads as "not an occupant", so the boundary fails closed
+// exactly like the model gate it stands in for.
+
+const SESSION_LEDGER_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// The seat may not remind an occupant before it plausibly has anything to hand
+// over. Stop fires at every turn end, so without this a fresh session would be
+// nudged about its first reply.
+export const EXIT_REMINDER_MIN_SESSION_MS = 45 * 60 * 1000;
+
+function sessionLedgerDir(seatId, cwd, env) {
+  if (!VALID_SEATS.has(seatId)) return null;
+  const roots = resolveSeatRoots(cwd, env);
+  if (roots === null) return null;
+  return join(roots.stateDir, seatId, 'sessions');
+}
+
+// A session id reaches this from a hook payload, and it is about to become a
+// path segment. Accept only the shape a session id actually has.
+function sessionLedgerFile(dir, sessionId) {
+  if (dir === null) return null;
+  if (
+    typeof sessionId !== 'string' ||
+    !/^[A-Za-z0-9._-]{1,128}$/.test(sessionId)
+  )
+    return null;
+  if (sessionId === '.' || sessionId === '..') return null;
+  return join(dir, `${sessionId}.json`);
+}
+
+function readLedgerRecord(file) {
+  try {
+    const parsed = JSON.parse(readFileSync(file, 'utf8'));
+    return parsed !== null &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function pruneSessionLedger(dir) {
+  try {
+    const cutoff = Date.now() - SESSION_LEDGER_TTL_MS;
+    for (const entry of readdirSync(dir)) {
+      const file = join(dir, entry);
+      try {
+        if (statSync(file).mtimeMs < cutoff) rmSync(file, { force: true });
+      } catch {
+        // A ledger entry that cannot be stat'd or removed is not worth failing
+        // a session start over.
+      }
+    }
+  } catch {
+    // No directory yet, or it is unreadable: nothing to prune.
+  }
+}
+
+export function recordOccupantSession(seatId, cwd, env, session) {
+  const dir = sessionLedgerDir(seatId, cwd, env);
+  const file = sessionLedgerFile(dir, session?.sessionId);
+  if (file === null) return null;
+  try {
+    mkdirSync(dir, { recursive: true });
+    pruneSessionLedger(dir);
+    // SessionStart fires again on clear and compact within one session. Keep
+    // the original start and any reminder already delivered, or a compacting
+    // session would be nudged once per compaction.
+    const existing = readLedgerRecord(file);
+    const record = {
+      seat: seatId,
+      session: session.sessionId,
+      model: typeof session.model === 'string' ? session.model : null,
+      startedAt:
+        typeof existing?.startedAt === 'string'
+          ? existing.startedAt
+          : new Date().toISOString(),
+      remindedAt:
+        typeof existing?.remindedAt === 'string' ? existing.remindedAt : null,
+    };
+    writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
+    return record;
+  } catch {
+    return null;
+  }
+}
+
+export function readOccupantSession(seatId, cwd, env, sessionId) {
+  const file = sessionLedgerFile(sessionLedgerDir(seatId, cwd, env), sessionId);
+  if (file === null) return null;
+  const record = readLedgerRecord(file);
+  if (record === null || record.seat !== seatId) return null;
+  return record;
+}
+
+export function markOccupantReminded(seatId, cwd, env, sessionId) {
+  const file = sessionLedgerFile(sessionLedgerDir(seatId, cwd, env), sessionId);
+  if (file === null) return false;
+  const record = readLedgerRecord(file);
+  if (record === null || record.seat !== seatId) return false;
+  try {
+    writeFileSync(
+      file,
+      `${JSON.stringify({ ...record, remindedAt: new Date().toISOString() }, null, 2)}\n`,
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function clearOccupantSession(seatId, cwd, env, sessionId) {
+  const file = sessionLedgerFile(sessionLedgerDir(seatId, cwd, env), sessionId);
+  if (file === null) return false;
+  try {
+    rmSync(file, { force: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Returns the text an exit hook should deliver, or null for "say nothing".
+// Every condition is a reason to stay quiet; the seat nudges once, late, and
+// only when this occupant has left nothing behind.
+export function handoffExitReminder({
+  seatId,
+  handoff,
+  session,
+  now = Date.now(),
+}) {
+  if (session === null || session === undefined) return null;
+  if (typeof session.remindedAt === 'string') return null;
+  const startedAt = Date.parse(session.startedAt ?? '');
+  if (!Number.isFinite(startedAt)) return null;
+  if (now - startedAt < EXIT_REMINDER_MIN_SESSION_MS) return null;
+  // A handoff written during this session discharges the obligation.
+  if (
+    handoff !== null &&
+    handoff !== undefined &&
+    Number.isFinite(handoff.recordedAtMs) &&
+    handoff.recordedAtMs >= startedAt
+  )
+    return null;
+  const guidance = handoffWriteGuidance(seatId);
+  if (guidance === null) return null;
+  return [
+    `You occupy the ${seatId} seat and have not recorded a handoff this session.`,
+    '',
+    'Context here ends without warning — compaction, a rate limit, a crash — so record one now if there is unfinished *cognitive* state worth resuming from: what you were pursuing, why, what you suspect, what you would check next. Durable facts belong in the repository or in beads instead, where every agent can see them. If you are mid-step, finish the step first; if nothing is unfinished, say so and carry on.',
+    '',
+    guidance,
+    '',
+    'This fires once per session.',
   ].join('\n');
 }
 

@@ -199,6 +199,41 @@ injected into subagent and dispatched-worker contexts, which must receive no
 seat instructions at all. Write the handoff from a scratch file outside the
 tree so nothing lands untracked in the working tree at session end.
 
+## The exit channel
+
+Recording a handoff falls due when a session *ends*, but every other seat
+mechanism fires at the start of one. Claude Captain therefore also registers
+`scripts/seats/claude-captain-exit.mjs` on `Stop` and `SessionEnd`. Once per
+session, no earlier than 45 minutes in, and only when the occupant has not
+recorded a handoff since the session began, it asks for one.
+
+Three properties of the harness shape that design, and each was checked
+against the installed CLI rather than assumed:
+
+- **No exit-side event carries `model`.** The common hook payload supplies
+  session, transcript, cwd, permission mode and agent identity; `SessionStart`
+  is the event that adds `model` on top. The seat's authorization *is* the
+  model gate, so the exit hook cannot re-run it. It does not have to:
+  `SessionStart` already ran it and records each admitted session id under
+  `<git common dir>/eshyra-seats/claude-captain/sessions/`. The exit hook
+  recognises its own session there or says nothing, so an unauthorized model, a
+  `claude -p` run with no model identity, and any session predating the hook
+  all stay silent. Absent or unparsable state reads as "not an occupant": the
+  bridge fails closed exactly like the gate it stands in for. `SessionEnd`
+  removes the record, and stale entries are pruned after seven days.
+- **`Stop` output is read only as JSON.** Plain stdout on exit 0 is discarded
+  for this event; `hookSpecificOutput.additionalContext` is the field that
+  reaches the model, and the conversation continues so it can act. The hook
+  therefore emits an explicit JSON payload, unlike the SessionStart hooks,
+  whose raw stdout is injected as-is. A `Stop` already inside a stop-hook
+  continuation (`stop_hook_active`) is refused, and Claude subagents raise
+  `SubagentStop` rather than `Stop` and carry `agent_id` besides.
+- **Neither `SessionEnd` nor `PreCompact` can carry a reminder.** `SessionEnd`
+  runs after the model has finished; its output goes nowhere. A `PreCompact`
+  hook's stdout becomes the *custom instructions for the compaction
+  summarizer*, not a message the model can act on. Both are the obvious
+  candidates and neither works, which is why the channel is `Stop`.
+
 Seat state is never repository authority. Missing, stale, or unreadable seat
 state degrades to ordinary repository behaviour. Handoff claims must be
 reconciled with current repository state before acting. Dispatched Codex
