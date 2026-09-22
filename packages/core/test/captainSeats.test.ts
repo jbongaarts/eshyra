@@ -49,6 +49,10 @@ describe('agent captain seats', () => {
     'scripts/seats/install-captain-seats.mjs',
   );
   const handoffScript = join(process.cwd(), 'scripts/seats/seat-handoff.mjs');
+  const exitScript = join(
+    process.cwd(),
+    'scripts/seats/claude-captain-exit.mjs',
+  );
   let tmp: string;
   let baseEnv: NodeJS.ProcessEnv;
 
@@ -295,6 +299,166 @@ describe('agent captain seats', () => {
     const stale = run(claudeScript, { model: 'Fable 5.1' });
     expect(stale).toContain('more than 48h old');
     expect(stale).toContain('Claude handoff');
+  });
+
+  describe('exit channel', () => {
+    const sessionsDir = () => join(tmp, 'state', 'claude-captain', 'sessions');
+    const ledgerFile = (sessionId: string) =>
+      join(sessionsDir(), `${sessionId}.json`);
+
+    function startSession(
+      sessionId: string,
+      model = 'claude-opus-5',
+      overrides: NodeJS.ProcessEnv = {},
+      source = 'startup',
+    ): string {
+      return run(
+        claudeScript,
+        { model, source, session_id: sessionId },
+        overrides,
+      );
+    }
+
+    function ageSession(sessionId: string, hours: number): void {
+      const record = JSON.parse(readFileSync(ledgerFile(sessionId), 'utf8'));
+      record.startedAt = new Date(Date.now() - hours * 3600000).toISOString();
+      writeFileSync(ledgerFile(sessionId), JSON.stringify(record));
+    }
+
+    function stop(
+      sessionId: string,
+      extra: Record<string, unknown> = {},
+      overrides: NodeJS.ProcessEnv = {},
+    ): string {
+      return run(
+        exitScript,
+        { hook_event_name: 'Stop', session_id: sessionId, ...extra },
+        overrides,
+      );
+    }
+
+    it('records an admitted session only for an authorized occupant', () => {
+      startSession('opus-session');
+      startSession('fable-session', 'Fable 5.1');
+      // A resumed session occupies the seat even though nothing is injected.
+      expect(
+        startSession('resumed-session', 'claude-opus-5', {}, 'resume'),
+      ).toBe('');
+      startSession('sonnet-session', 'claude-sonnet-5');
+      startSession('dispatched-session', 'claude-opus-5', {
+        ESHYRA_SEAT_ROLE: 'dispatched-worker',
+      });
+      run(claudeScript, {
+        model: 'claude-opus-5',
+        agent_id: 'agent-1',
+        session_id: 'subagent-session',
+      });
+
+      expect(existsSync(ledgerFile('opus-session'))).toBe(true);
+      expect(existsSync(ledgerFile('fable-session'))).toBe(true);
+      expect(existsSync(ledgerFile('resumed-session'))).toBe(true);
+      expect(existsSync(ledgerFile('sonnet-session'))).toBe(false);
+      expect(existsSync(ledgerFile('dispatched-session'))).toBe(false);
+      expect(existsSync(ledgerFile('subagent-session'))).toBe(false);
+    });
+
+    it('stays silent until the session is old enough to owe a handoff', () => {
+      startSession('young');
+      expect(stop('young')).toBe('');
+
+      ageSession('young', 2);
+      const output = stop('young');
+      expect(JSON.parse(output).hookSpecificOutput).toMatchObject({
+        hookEventName: 'Stop',
+        additionalContext: expect.stringContaining(
+          'npm run seat:handoff -- write claude-captain',
+        ),
+      });
+    });
+
+    it('reminds an occupant at most once per session', () => {
+      startSession('once');
+      ageSession('once', 2);
+      expect(stop('once')).not.toBe('');
+      expect(stop('once')).toBe('');
+    });
+
+    it('stays silent once this session has recorded a handoff', () => {
+      mkdirSync(join(tmp, 'state', 'claude-captain'), { recursive: true });
+      const handoffPath = join(tmp, 'state', 'claude-captain', 'handoff.md');
+      writeFileSync(handoffPath, 'Recorded before this session started');
+      const stale = Date.now() / 1000 - 96 * 3600;
+      utimesSync(handoffPath, stale, stale);
+
+      startSession('discharged');
+      ageSession('discharged', 2);
+      // A handoff predating the session does not discharge it.
+      expect(stop('discharged')).not.toBe('');
+
+      startSession('second');
+      ageSession('second', 2);
+      writeFileSync(handoffPath, 'Recorded during this session');
+      expect(stop('second')).toBe('');
+    });
+
+    it('refuses every route that did not pass the SessionStart model gate', () => {
+      startSession('gated');
+      ageSession('gated', 2);
+      // Sanity: the seat would speak for this session on an ordinary Stop.
+      expect(stop('gated')).not.toBe('');
+
+      startSession('other');
+      ageSession('other', 2);
+      const refused = [
+        // No ledger record: an unauthorized model, a `claude -p` run, or a
+        // session that predates this hook.
+        stop('never-admitted'),
+        // A subagent, and a Stop already inside a stop-hook continuation.
+        stop('other', { agent_id: 'agent-1' }),
+        stop('other', { stop_hook_active: true }),
+        // A dispatched worker, and events this hook must not answer.
+        stop('other', {}, { ESHYRA_SEAT_ROLE: 'dispatched-worker' }),
+        stop('other', {}, { ESHYRA_DISPATCH_CHILD: 'eshyra-kusc.1' }),
+        run(exitScript, {
+          hook_event_name: 'SubagentStop',
+          session_id: 'other',
+        }),
+        run(exitScript, { hook_event_name: 'PreCompact', session_id: 'other' }),
+        run(exitScript, '{'),
+        run(exitScript, ''),
+      ];
+      for (const output of refused) expect(output).toBe('');
+      // None of them consumed the reminder the real occupant is still owed.
+      expect(stop('other')).not.toBe('');
+    });
+
+    it('clears the ledger record at SessionEnd', () => {
+      startSession('ending');
+      expect(existsSync(ledgerFile('ending'))).toBe(true);
+      run(exitScript, {
+        hook_event_name: 'SessionEnd',
+        session_id: 'ending',
+        reason: 'exit',
+      });
+      expect(existsSync(ledgerFile('ending'))).toBe(false);
+    });
+
+    it('refuses a session id that would escape the ledger directory', () => {
+      startSession('../escaped');
+      expect(
+        existsSync(join(tmp, 'state', 'claude-captain', '../escaped.json')),
+      ).toBe(false);
+      expect(stop('../escaped')).toBe('');
+    });
+
+    it('keeps a compacting session from being reminded once per compaction', () => {
+      startSession('compacting');
+      ageSession('compacting', 2);
+      expect(stop('compacting')).not.toBe('');
+      // SessionStart fires again on compact and clear with the same id.
+      startSession('compacting', 'claude-opus-5', {}, 'compact');
+      expect(stop('compacting')).toBe('');
+    });
   });
 
   // The write mechanism is a seat instruction, so it may only ever reach an

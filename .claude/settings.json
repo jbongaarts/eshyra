@@ -29,6 +29,28 @@
         ],
         "matcher": ""
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/seats/claude-captain-exit.mjs\"",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/seats/claude-captain-exit.mjs\"",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
     ]
   }
 }
