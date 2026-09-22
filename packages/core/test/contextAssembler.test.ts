@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type {
   AbilityScoreName,
@@ -510,12 +509,10 @@ describe('Context Assembler', () => {
   });
 
   it('projects position-active rules, source associations, and immutable ambiguities', () => {
+    // The bundled pack's on-disk immutability is NOT asserted here. It is a
+    // loader-boundary property, not a context-assembly one, and it lives in
+    // packLoader.test.ts (bead eshyra-9l5s.1).
     const db = freshDbWithSession({ sessionId: SESSION });
-    const packPath = new URL(
-      '../data/rules-packs/rules__dnd5e-srd-5.1/records.json',
-      import.meta.url,
-    );
-    const packBefore = readFileSync(packPath);
     createCampaignRule(db, campaignRule('future-rule', 4));
     createCampaignRule(db, campaignRule('ordered-z', 1));
     createCampaignRule(db, campaignRule('ordered-a', 1));
@@ -775,8 +772,6 @@ describe('Context Assembler', () => {
     expect(
       parityContexts[2].campaignRules.rules.map((rule) => rule.ruleIdentity),
     ).toContain('disputed-turn-rule');
-    const packAfter = readFileSync(packPath);
-    expect(packBefore).toEqual(packAfter);
     db.close();
   }, 120000);
 
