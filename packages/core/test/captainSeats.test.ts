@@ -23,7 +23,9 @@ import {
 } from '../../../scripts/seats/probe-dispatch-markers.mjs';
 import {
   codexRuntimeIdentity,
+  EXIT_REMINDER_MIN_SESSION_MS,
   extractHookDeclarationRegion,
+  handoffExitReminder,
   hookAdmission,
   hookDeclarationIdentity,
   resolveSeatRoots,
@@ -458,6 +460,197 @@ describe('agent captain seats', () => {
       // SessionStart fires again on compact and clear with the same id.
       startSession('compacting', 'claude-opus-5', {}, 'compact');
       expect(stop('compacting')).toBe('');
+    });
+
+    // eshyra-qqrr. Elapsed time was the only trigger, so the session that
+    // merged PR #561 in 17m42s was never reminded and left a 12-day-old
+    // handoff describing a main that had moved 21 merges past it. Repository
+    // movement, not duration, is the evidence that a handoff is owed.
+    describe('repository movement', () => {
+      let repos: string[];
+
+      beforeEach(() => {
+        repos = [];
+      });
+
+      afterEach(() => {
+        for (const dir of repos) rmSync(dir, { recursive: true, force: true });
+      });
+
+      function initRepo(): string {
+        const dir = mkdtempSync(join(tmpdir(), 'eshyra-captain-repo-'));
+        repos.push(dir);
+        for (const args of [
+          ['init', '-q'],
+          ['config', 'user.email', 'seat@example.invalid'],
+          ['config', 'user.name', 'Seat Test'],
+          ['commit', '-q', '--allow-empty', '-m', 'base'],
+        ])
+          execFileSync('git', args, { cwd: dir, stdio: 'pipe' });
+        return dir;
+      }
+
+      function commit(dir: string, message: string): void {
+        execFileSync('git', ['commit', '-q', '--allow-empty', '-m', message], {
+          cwd: dir,
+          stdio: 'pipe',
+        });
+      }
+
+      function startIn(dir: string, sessionId: string, source = 'startup') {
+        return run(claudeScript, {
+          model: 'claude-opus-5',
+          source,
+          session_id: sessionId,
+          cwd: dir,
+        });
+      }
+
+      function stopIn(dir: string, sessionId: string) {
+        return run(exitScript, {
+          hook_event_name: 'Stop',
+          session_id: sessionId,
+          cwd: dir,
+        });
+      }
+
+      it('reminds a short session that moved the checkout', () => {
+        const repo = initRepo();
+        startIn(repo, 'mover');
+        // Minutes old and nothing has landed: the seat stays quiet.
+        expect(stopIn(repo, 'mover')).toBe('');
+
+        commit(repo, 'landed');
+        expect(
+          JSON.parse(stopIn(repo, 'mover')).hookSpecificOutput,
+        ).toMatchObject({
+          hookEventName: 'Stop',
+          additionalContext: expect.stringContaining(
+            'npm run seat:handoff -- write claude-captain',
+          ),
+        });
+      });
+
+      it('records the baseline HEAD when it admits the session', () => {
+        const repo = initRepo();
+        startIn(repo, 'baselined');
+        const head = execFileSync('git', ['rev-parse', 'HEAD'], {
+          cwd: repo,
+          encoding: 'utf8',
+        }).trim();
+        expect(
+          JSON.parse(readFileSync(ledgerFile('baselined'), 'utf8')).headAt,
+        ).toBe(head);
+      });
+
+      // The subtle one: SessionStart re-fires on compact and clear with the
+      // same session id. Re-reading HEAD there would move the baseline to the
+      // commit that was just made and erase the movement it proves.
+      it('keeps a compaction from erasing the movement baseline', () => {
+        const repo = initRepo();
+        startIn(repo, 'compact-mover');
+        commit(repo, 'landed');
+        startIn(repo, 'compact-mover', 'compact');
+        expect(stopIn(repo, 'compact-mover')).not.toBe('');
+      });
+
+      // A session that produced nothing is still not worth interrupting, and
+      // an unobservable checkout must not be read as movement.
+      it('stays silent for a short session in an unreadable checkout', () => {
+        const bare = mkdtempSync(join(tmpdir(), 'eshyra-captain-norepo-'));
+        repos.push(bare);
+        startIn(bare, 'no-repo');
+        expect(stopIn(bare, 'no-repo')).toBe('');
+      });
+    });
+
+    describe('exit trigger predicate', () => {
+      const minutesAgo = (minutes: number) =>
+        new Date(Date.now() - minutes * 60000).toISOString();
+      const young = (headAt: unknown) => ({
+        seat: 'claude-captain',
+        session: 's',
+        startedAt: minutesAgo(1),
+        remindedAt: null,
+        ...(headAt === undefined ? {} : { headAt }),
+      });
+      const reminder = (
+        session: Record<string, unknown>,
+        readHead: (cwd: string) => string | null,
+      ) =>
+        handoffExitReminder({
+          seatId: 'claude-captain',
+          handoff: null,
+          session,
+          cwd: '/somewhere',
+          readHead,
+        });
+
+      it('fires below the time floor once HEAD has moved', () => {
+        expect(reminder(young('aaa'), () => 'bbb')).toContain(
+          'npm run seat:handoff -- write claude-captain',
+        );
+      });
+
+      it('stays silent below the floor when HEAD has not moved', () => {
+        expect(reminder(young('aaa'), () => 'aaa')).toBeNull();
+      });
+
+      // Both are absence of evidence, and neither may read as movement: a
+      // ledger record written before headAt existed, and a HEAD git cannot
+      // resolve.
+      it('stays silent below the floor without observable movement', () => {
+        expect(reminder(young(undefined), () => 'bbb')).toBeNull();
+        expect(reminder(young(null), () => 'bbb')).toBeNull();
+        expect(reminder(young('aaa'), () => null)).toBeNull();
+      });
+
+      it('keeps elapsed time as the fallback for a session that moved nothing', () => {
+        const old = {
+          ...young('aaa'),
+          startedAt: new Date(
+            Date.now() - EXIT_REMINDER_MIN_SESSION_MS - 60000,
+          ).toISOString(),
+        };
+        expect(reminder(old, () => 'aaa')).toContain('claude-captain');
+      });
+
+      // Stop runs at every turn end, so the cost of the git call is part of
+      // the design: it is reached only by a session that is otherwise owed a
+      // reminder and is not already past the fallback.
+      it('never reads HEAD when a cheaper condition already decides', () => {
+        let reads = 0;
+        const counted = () => {
+          reads += 1;
+          return 'bbb';
+        };
+        // Already reminded, already past the floor, and already discharged by
+        // a handoff recorded during this session.
+        expect(
+          reminder({ ...young('aaa'), remindedAt: minutesAgo(0) }, counted),
+        ).toBeNull();
+        expect(
+          reminder(
+            {
+              ...young('aaa'),
+              startedAt: new Date(
+                Date.now() - EXIT_REMINDER_MIN_SESSION_MS - 60000,
+              ).toISOString(),
+            },
+            counted,
+          ),
+        ).not.toBeNull();
+        expect(
+          handoffExitReminder({
+            seatId: 'claude-captain',
+            handoff: { recordedAtMs: Date.now() },
+            session: young('aaa'),
+            cwd: '/somewhere',
+            readHead: counted,
+          }),
+        ).toBeNull();
+        expect(reads).toBe(0);
+      });
     });
   });
 

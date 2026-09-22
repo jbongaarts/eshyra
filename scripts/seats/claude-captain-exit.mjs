@@ -74,6 +74,7 @@ const session = readOccupantSession(
 const reminder = handoffExitReminder({
   seatId: SEATS.claudeCaptain,
   handoff: readHandoff(SEATS.claudeCaptain, cwd, process.env),
+  cwd,
   session,
 });
 if (reminder === null) process.exit(0);

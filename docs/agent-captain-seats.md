@@ -204,8 +204,32 @@ tree so nothing lands untracked in the working tree at session end.
 Recording a handoff falls due when a session *ends*, but every other seat
 mechanism fires at the start of one. Claude Captain therefore also registers
 `scripts/seats/claude-captain-exit.mjs` on `Stop` and `SessionEnd`. Once per
-session, no earlier than 45 minutes in, and only when the occupant has not
-recorded a handoff since the session began, it asks for one.
+session, and only when the occupant has not recorded a handoff since the
+session began, it asks for one.
+
+**What makes a handoff owed is that the session produced something**, not that
+it lasted a while. The trigger fires when the session has moved the checkout it
+is standing in — `HEAD` differs from the commit recorded when `SessionStart`
+admitted the session — with elapsed time (45 minutes) kept only as the fallback
+for a long session that has not committed anything yet.
+
+That ordering is the fix for `eshyra-qqrr`. Duration alone was the original
+trigger, and it missed the case it most needed to catch: the session that
+merged PR #561 ran 17m42s, landed a merge on `main`, and was never asked for a
+handoff, leaving a 12-day-old one describing a `main` that had moved 21 merges
+past it. Short and consequential is the normal shape of an integration session
+here, not an edge case.
+
+Absence of evidence is never movement. A ledger record written before the
+baseline field existed, and a `HEAD` git cannot resolve, both leave the trigger
+on its elapsed-time fallback rather than nudging blindly. The baseline survives
+compaction and `/clear` for the same reason `startedAt` does: `SessionStart`
+re-fires with the same session id, and re-reading `HEAD` there would erase the
+movement the trigger exists to notice.
+
+`Stop` runs at every turn end, so the git call is ordered last: it is reached
+only by a session that is otherwise owed a reminder and has not already passed
+the fallback.
 
 Three properties of the harness shape that design, and each was checked
 against the installed CLI rather than assumed:
