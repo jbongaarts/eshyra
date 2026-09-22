@@ -5,12 +5,11 @@ authorization and pull request review. `AGENTS.md` establishes the obligation
 to follow it. Accepted architecture and design decisions, the owning Bead, and
 the exact implementation remain the authority for the work itself.
 
-This policy adds no separate review framework. In particular, it does not
-require review contracts, hashes, authorization comments, checkpoints,
-certifications, mirrored GitHub comments, or `review:*` commands. Such an
-artifact is required only when current accepted authority specifically requires
-it for the work at hand. The `eshyra-review-v2` machinery proposed on PR #481
-closed unmerged and is not repository authority.
+This policy adds no separate review framework. A review contract, hash,
+authorization comment, checkpoint, certification, mirrored comment, command, or
+other review artifact is required only where current accepted authority
+explicitly requires it for the work at hand. Only current accepted authority
+creates requirements; a proposal that was never adopted creates none.
 
 ## Authority and required context
 
