@@ -29,7 +29,7 @@ can switch later by re-running the installer with a different edition.
 
 The **default edition is `claude`**. The one-line installer takes a flag/env var
 to select another, and (in an interactive terminal) prompts when you do not.
-See [CLI Distribution](cli-distribution.md) for the full rationale (ADR 0011).
+See [CLI Distribution](cli-distribution.md) for the full rationale ([ADR 0011](adr/0011-multi-provider-installer-editions.md)).
 
 ## Supported platforms
 

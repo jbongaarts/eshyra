@@ -17,7 +17,7 @@ recorded as campaign progress without mutating the module source.
 Keep it intentionally small. It is one delve, not a campaign arc. If a beat does
 not demonstrate an engine capability, cut it.
 
-### Naming (ADR 0012)
+### Naming ([ADR 0012](adr/0012-rules-pack-campaign-template-adventure-module-campaign-instance.md))
 
 - **Emberfall** — the setting-scale village/region. A *campaign template*. This
   module does **not** author Emberfall; it only seats a scenario in it.
@@ -29,7 +29,7 @@ not demonstrate an engine capability, cut it.
   `AdventureModule`; the legacy sample is reused only as a lore source until the
   Emberfall setting is split out by later eh54 work.
 
-### Relationship to the four layers (ADR 0012)
+### Relationship to the four layers ([ADR 0012](adr/0012-rules-pack-campaign-template-adventure-module-campaign-instance.md))
 
 | Layer | Owns | This module |
 | --- | --- | --- |
