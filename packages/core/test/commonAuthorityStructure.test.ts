@@ -19,8 +19,14 @@ import { describe, expect, it } from 'vitest';
 
 const AUTHORITY_DOCUMENTS = ['AGENTS.md', 'CLAUDE.md'];
 
-// Inline Markdown links, e.g. [label](target) or [label](target "title").
-const MARKDOWN_LINK = /\[[^\]]*\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/g;
+// Both ways Markdown names a link target: inline — [label](target "title") —
+// and a reference definition — [label]: target "title". Reading only the inline
+// form would let the guard pass while checking nothing, because rewriting the
+// links in the other form renders identically.
+const LINK_TARGET = [
+  /\[[^\]]*\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/g,
+  /^\[[^\]]+\]:\s*(\S+)/gm,
+];
 
 function readText(path: string): string {
   return readFileSync(join(process.cwd(), path), 'utf8');
@@ -32,17 +38,20 @@ function readText(path: string): string {
  * URLs and bare fragments are not repository structure and are left alone.
  */
 function repositoryLinkTargets(document: string): string[] {
+  const text = readText(document);
   const targets: string[] = [];
 
-  for (const [, target] of readText(document).matchAll(MARKDOWN_LINK)) {
-    if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('#')) {
-      continue;
-    }
+  for (const pattern of LINK_TARGET) {
+    for (const [, target] of text.matchAll(pattern)) {
+      if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('#')) {
+        continue;
+      }
 
-    const [path] = target.split('#');
+      const [path] = target.split('#');
 
-    if (path !== '') {
-      targets.push(normalize(join(dirname(document), path)));
+      if (path !== '') {
+        targets.push(normalize(join(dirname(document), path)));
+      }
     }
   }
 
@@ -59,14 +68,22 @@ describe('common authority structure', () => {
 
   it('resolves every repository document common authority points to', () => {
     const missing: string[] = [];
+    const checked: string[] = [];
 
     for (const document of AUTHORITY_DOCUMENTS) {
       for (const target of repositoryLinkTargets(document)) {
+        checked.push(`${document} -> ${target}`);
+
         if (!existsSync(join(process.cwd(), target))) {
           missing.push(`${document} -> ${target}`);
         }
       }
     }
+
+    // An empty result would otherwise be indistinguishable from a clean one, so
+    // a link syntax this file cannot read has to fail rather than quietly check
+    // nothing. Common authority always points somewhere.
+    expect(checked.length).toBeGreaterThan(0);
 
     // An obligation nobody can follow is not an obligation. This holds whatever
     // the links are called and wherever their targets move to, so renaming a
