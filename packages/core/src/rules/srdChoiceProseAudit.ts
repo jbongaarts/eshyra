@@ -237,6 +237,11 @@ function scanProse(record: RulesRecord): string {
   if (data === null) return '';
   const blocks: string[] = [];
   pushText(blocks, data.description);
+  // The end-of-chapter option-list section a feature body points to
+  // (eshyra-o9bd.19.2.1.3.1: Warlock's Eldritch Invocations) is kept apart
+  // from `description` but still carries choice-announcing prose, so it must
+  // stay visible to this gate.
+  pushText(blocks, data.optionCatalog);
   pushText(blocks, data.text);
   if (record.kind === 'ancestry' && Array.isArray(data.traits)) {
     for (const trait of data.traits) {

@@ -186,16 +186,25 @@ const DWARF_ANCESTRY: AncestryExtraction = {
   sourcePage: 18,
 };
 
+// parseAncestries flattens a subrace's traits after the parent's, keeping a
+// repeated label (like "Ability Score Increase") as two separate verbatim
+// entries rather than joining their text — the SRD prints the parent's and
+// the subrace's ability-score-increase sentences in two different sections,
+// so a single joined sentence is never actually printed (eshyra-o9bd.19.2.1.3.1).
 const HILL_DWARF_ANCESTRY: AncestryExtraction = {
   name: 'Hill Dwarf',
   description: 'As a hill dwarf, you have keen senses.',
   traits: [
     {
       name: 'Ability Score Increase',
-      text: 'Your Constitution score increases by 2. Your Wisdom score increases by 1.',
+      text: 'Your Constitution score increases by 2.',
     },
     { name: 'Size', text: 'Your size is Medium.' },
     { name: 'Speed', text: 'Your base walking speed is 25 feet.' },
+    {
+      name: 'Ability Score Increase',
+      text: 'Your Wisdom score increases by 1.',
+    },
     {
       name: 'Dwarven Toughness',
       text: 'Your hit point maximum increases by 1.',

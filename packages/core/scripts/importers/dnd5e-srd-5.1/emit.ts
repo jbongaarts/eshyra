@@ -802,7 +802,11 @@ export function subclassExtractionsToRecords(
  * granting class (`class:<slug>`) or subclass (`subclass:<slug>`) record (ADR
  * 0009 data-side linkage, never `overrides`). Field insertion order is fixed
  * for byte-stable output and matches the `dnd5e-srd` feature kindSchema
- * (`validateDnd5eFeature`: source, level, description, optional choices).
+ * (`validateDnd5eFeature`: source, level, description, optional optionCatalog,
+ * optional mechanics, optional choices). `optionCatalog` — present only when
+ * the feature's heading repeats at a separately printed end-of-chapter
+ * option-list section (eshyra-o9bd.19.2.1.3.1) — is placed right after
+ * `description` since it is the same kind of source-prose field.
  */
 function buildFeatureData(
   feature: FeatureExtraction,
@@ -820,6 +824,9 @@ function buildFeatureData(
     source,
     level: feature.level,
     description: feature.description,
+    ...(feature.optionCatalog !== undefined
+      ? { optionCatalog: feature.optionCatalog }
+      : {}),
     ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
     // Structured player choices (eshyra-o9bd.9). Absent until a derivation pass
     // populates `feature.choices`; only emitted when present so the committed

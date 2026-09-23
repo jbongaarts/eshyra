@@ -166,91 +166,128 @@ function fixed(
   };
 }
 
+// One entry per printed ability-score-increase sentence. Parent races (and
+// subraces the SRD 5.1 does not publish) print exactly one such sentence, so
+// they keep a single-entry array. The four SRD 5.1 subraces (High Elf, Hill
+// Dwarf, Lightfoot Halfling, Rock Gnome) print theirs across two separately
+// printed sections — the parent race's shared trait block and the subrace's
+// own block — so each carries two entries, parent then subrace, in the order
+// the source prints them (eshyra-o9bd.19.2.1.3.1). Composing those two
+// sentences into one joined sourceText would fabricate a span the source never
+// prints as a single verbatim block; consumers already sum every entry's
+// `fixed` bonuses (dnd5eRecipe.ts / characterDraft.ts flatMap), so splitting
+// the array does not change a character's net level-1 ability bonuses.
 const ANCESTRY_ABILITY_SCORE_INCREASES: Readonly<
-  Record<string, AncestryAbilityScoreIncrease>
+  Record<string, readonly AncestryAbilityScoreIncrease[]>
 > = {
-  'ancestry:dragonborn': {
-    fixed: [
-      { ability: 'strength', bonus: 2 },
-      { ability: 'charisma', bonus: 1 },
-    ],
-    sourceText:
-      'Your Strength score increases by 2, and your Charisma score increases by 1.',
-  },
-  'ancestry:dwarf': {
-    fixed: [{ ability: 'constitution', bonus: 2 }],
-    sourceText: 'Your Constitution score increases by 2.',
-  },
-  'ancestry:elf': {
-    fixed: [{ ability: 'dexterity', bonus: 2 }],
-    sourceText: 'Your Dexterity score increases by 2.',
-  },
-  'ancestry:gnome': {
-    fixed: [{ ability: 'intelligence', bonus: 2 }],
-    sourceText: 'Your Intelligence score increases by 2.',
-  },
-  'ancestry:half-elf': {
-    fixed: [{ ability: 'charisma', bonus: 2 }],
-    choice: { choose: 2, bonus: 1, from: abilitiesExcept('charisma') },
-    sourceText:
-      'Your Charisma score increases by 2, and two other ability scores of your choice increase by 1.',
-  },
-  'ancestry:half-orc': {
-    fixed: [
-      { ability: 'strength', bonus: 2 },
-      { ability: 'constitution', bonus: 1 },
-    ],
-    sourceText:
-      'Your Strength score increases by 2, and your Constitution score increases by 1.',
-  },
-  'ancestry:halfling': {
-    fixed: [{ ability: 'dexterity', bonus: 2 }],
-    sourceText: 'Your Dexterity score increases by 2.',
-  },
-  'ancestry:high-elf': {
-    fixed: [
-      { ability: 'dexterity', bonus: 2 },
-      { ability: 'intelligence', bonus: 1 },
-    ],
-    sourceText:
-      'Your Dexterity score increases by 2. Your Intelligence score increases by 1.',
-  },
-  'ancestry:hill-dwarf': {
-    fixed: [
-      { ability: 'constitution', bonus: 2 },
-      { ability: 'wisdom', bonus: 1 },
-    ],
-    sourceText:
-      'Your Constitution score increases by 2. Your Wisdom score increases by 1.',
-  },
-  'ancestry:human': {
-    fixed: ABILITY_SCORE_NAMES.map((ability) => ({ ability, bonus: 1 })),
-    sourceText: 'Your ability scores each increase by 1.',
-  },
-  'ancestry:lightfoot-halfling': {
-    fixed: [
-      { ability: 'dexterity', bonus: 2 },
-      { ability: 'charisma', bonus: 1 },
-    ],
-    sourceText:
-      'Your Dexterity score increases by 2. Your Charisma score increases by 1.',
-  },
-  'ancestry:rock-gnome': {
-    fixed: [
-      { ability: 'intelligence', bonus: 2 },
-      { ability: 'constitution', bonus: 1 },
-    ],
-    sourceText:
-      'Your Intelligence score increases by 2. Your Constitution score increases by 1.',
-  },
-  'ancestry:tiefling': {
-    fixed: [
-      { ability: 'intelligence', bonus: 1 },
-      { ability: 'charisma', bonus: 2 },
-    ],
-    sourceText:
-      'Your Intelligence score increases by 1, and your Charisma score increases by 2.',
-  },
+  'ancestry:dragonborn': [
+    {
+      fixed: [
+        { ability: 'strength', bonus: 2 },
+        { ability: 'charisma', bonus: 1 },
+      ],
+      sourceText:
+        'Your Strength score increases by 2, and your Charisma score increases by 1.',
+    },
+  ],
+  'ancestry:dwarf': [
+    {
+      fixed: [{ ability: 'constitution', bonus: 2 }],
+      sourceText: 'Your Constitution score increases by 2.',
+    },
+  ],
+  'ancestry:elf': [
+    {
+      fixed: [{ ability: 'dexterity', bonus: 2 }],
+      sourceText: 'Your Dexterity score increases by 2.',
+    },
+  ],
+  'ancestry:gnome': [
+    {
+      fixed: [{ ability: 'intelligence', bonus: 2 }],
+      sourceText: 'Your Intelligence score increases by 2.',
+    },
+  ],
+  'ancestry:half-elf': [
+    {
+      fixed: [{ ability: 'charisma', bonus: 2 }],
+      choice: { choose: 2, bonus: 1, from: abilitiesExcept('charisma') },
+      sourceText:
+        'Your Charisma score increases by 2, and two other ability scores of your choice increase by 1.',
+    },
+  ],
+  'ancestry:half-orc': [
+    {
+      fixed: [
+        { ability: 'strength', bonus: 2 },
+        { ability: 'constitution', bonus: 1 },
+      ],
+      sourceText:
+        'Your Strength score increases by 2, and your Constitution score increases by 1.',
+    },
+  ],
+  'ancestry:halfling': [
+    {
+      fixed: [{ ability: 'dexterity', bonus: 2 }],
+      sourceText: 'Your Dexterity score increases by 2.',
+    },
+  ],
+  'ancestry:high-elf': [
+    {
+      fixed: [{ ability: 'dexterity', bonus: 2 }],
+      sourceText: 'Your Dexterity score increases by 2.',
+    },
+    {
+      fixed: [{ ability: 'intelligence', bonus: 1 }],
+      sourceText: 'Your Intelligence score increases by 1.',
+    },
+  ],
+  'ancestry:hill-dwarf': [
+    {
+      fixed: [{ ability: 'constitution', bonus: 2 }],
+      sourceText: 'Your Constitution score increases by 2.',
+    },
+    {
+      fixed: [{ ability: 'wisdom', bonus: 1 }],
+      sourceText: 'Your Wisdom score increases by 1.',
+    },
+  ],
+  'ancestry:human': [
+    {
+      fixed: ABILITY_SCORE_NAMES.map((ability) => ({ ability, bonus: 1 })),
+      sourceText: 'Your ability scores each increase by 1.',
+    },
+  ],
+  'ancestry:lightfoot-halfling': [
+    {
+      fixed: [{ ability: 'dexterity', bonus: 2 }],
+      sourceText: 'Your Dexterity score increases by 2.',
+    },
+    {
+      fixed: [{ ability: 'charisma', bonus: 1 }],
+      sourceText: 'Your Charisma score increases by 1.',
+    },
+  ],
+  'ancestry:rock-gnome': [
+    {
+      fixed: [{ ability: 'intelligence', bonus: 2 }],
+      sourceText: 'Your Intelligence score increases by 2.',
+    },
+    {
+      fixed: [{ ability: 'constitution', bonus: 1 }],
+      sourceText: 'Your Constitution score increases by 1.',
+    },
+  ],
+  'ancestry:tiefling': [
+    {
+      fixed: [
+        { ability: 'intelligence', bonus: 1 },
+        { ability: 'charisma', bonus: 2 },
+      ],
+      sourceText:
+        'Your Intelligence score increases by 1, and your Charisma score increases by 2.',
+    },
+  ],
 };
 
 const ANCESTRY_LANGUAGES: Readonly<Record<string, LanguageGrant>> = {
@@ -727,9 +764,9 @@ export function enrichAncestryCreationFacts(
       ...record,
       data: {
         ...dataObject(record),
-        abilityScoreIncreases: [
-          cloneAbilityScoreIncreases(abilityScoreIncreases),
-        ],
+        abilityScoreIncreases: abilityScoreIncreases.map(
+          cloneAbilityScoreIncreases,
+        ),
         languages: [cloneLanguageGrant(languages)],
         ...(choices !== undefined
           ? { choices: choices.map(cloneCreationChoice) }

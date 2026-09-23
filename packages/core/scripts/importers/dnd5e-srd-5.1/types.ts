@@ -939,6 +939,19 @@ export interface FeatureExtraction {
    */
   readonly optionSourcePages?: Readonly<Record<string, number>>;
   /**
+   * An end-of-chapter option-list section the feature body points to, printed
+   * apart from the body — one verbatim span, never joined into `description`
+   * (eshyra-o9bd.19.2.1.3.1). Populated when the feature's heading repeats a
+   * second time at a source location that is not a contiguous continuation of
+   * the first body (e.g. the Warlock's "Eldritch Invocations" heading opens
+   * both the level-2 feature body on p47 and, ~3,000 characters later, the
+   * end-of-chapter list of invocation options on p48). A repeat that IS a
+   * contiguous continuation of the body (an in-body reference-table caption
+   * restating the feature name, e.g. Cleric's Destroy Undead) still merges
+   * into `description` as before and never populates this field.
+   */
+  readonly optionCatalog?: string;
+  /**
    * Structured player choices this feature requires (eshyra-o9bd.9). Absent
    * until a choice-derivation pass populates it; emitted to `data.choices`.
    */
