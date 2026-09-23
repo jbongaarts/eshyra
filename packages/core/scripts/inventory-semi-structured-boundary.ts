@@ -819,7 +819,9 @@ const rules: readonly ClassificationRule[] = [
             : 'complete',
         'shared spell upcast contract, canonical compiler, and resolveSpellUpcast',
         'one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift',
-        '92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence',
+        fieldPath === 'data.upcast.qualifier.text'
+          ? 'retained verbatim source phrase returned by the resolver as a model qualifier at or above its minimum slot level'
+          : '92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence',
         'SpellUpcastSpec / SpellUpcastOperation',
         'parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts',
         false,

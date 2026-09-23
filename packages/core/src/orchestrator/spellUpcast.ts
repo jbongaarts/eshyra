@@ -2,7 +2,7 @@ import type { RulesLookupHit } from '../rules/lookup.js';
 import {
   parseSpellUpcastSpec,
   SpellUpcastContractError,
-  type SpellUpcastSourceCorrection,
+  type SpellUpcastSourceDefect,
   spellUpcastOperationId,
   spellUpcastThresholdAxisKey,
   type UpcastChoice,
@@ -61,9 +61,10 @@ export interface SpellUpcastSourceBinding {
   readonly sourceRef: string;
   readonly locator: string;
   readonly sourcePage: number;
-  /** Reviewed text actually used to derive the returned operations. */
+  /** Verbatim source text the returned operations were derived from. */
   readonly sourcePhrase: string;
-  readonly sourceCorrection?: SpellUpcastSourceCorrection;
+  /** Present when that text carries an unresolved printed-source defect. */
+  readonly sourceDefect?: SpellUpcastSourceDefect;
   readonly operationIds: readonly string[];
   readonly overrideChain: readonly SpellUpcastOverrideSourceBinding[];
 }
@@ -455,11 +456,10 @@ export function resolveSpellUpcast(
         sourceRef,
         locator,
         sourcePage: upcast.sourcePage,
-        sourcePhrase:
-          upcast.sourceCorrection?.reviewedSourcePhrase ?? upcast.sourcePhrase,
-        ...(upcast.sourceCorrection === undefined
+        sourcePhrase: upcast.sourcePhrase,
+        ...(upcast.sourceDefect === undefined
           ? {}
-          : { sourceCorrection: upcast.sourceCorrection }),
+          : { sourceDefect: upcast.sourceDefect }),
         operationIds: resolvedAdjustments.map(
           (adjustment) => adjustment.sourceOperationId,
         ),

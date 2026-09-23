@@ -11,10 +11,10 @@
   },
   "rowCount": 1846,
   "dispositionCounts": {
-    "complete": 428,
+    "complete": 427,
     "model-adjudicated": 1217,
     "not-mechanical": 193,
-    "typed-core-with-prose-qualifier": 2,
+    "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
   },
   "rows": [
@@ -33832,6 +33832,7 @@
       "fieldPath": "data.upcast.disposition",
       "representativeValues": [
         "complete-typed-upcast",
+        "typed-core-with-model-qualifier",
         "existing-s1-typed-scaling"
       ],
       "population": 92,
@@ -33852,7 +33853,7 @@
       ],
       "fieldPath": "data.upcast.operations[]",
       "representativeValues": [],
-      "population": 9,
+      "population": 10,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
       "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
@@ -33944,7 +33945,7 @@
         "threshold",
         "selected-slot-value"
       ],
-      "population": 107,
+      "population": 106,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
       "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
@@ -34002,10 +34003,9 @@
       ],
       "fieldPath": "data.upcast.operations[].subject.creatureType",
       "representativeValues": [
-        "beast",
         "humanoid"
       ],
-      "population": 2,
+      "population": 1,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
       "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
@@ -34076,7 +34076,7 @@
         "affected-hit-points",
         "healing"
       ],
-      "population": 107,
+      "population": 106,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
       "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
@@ -34136,11 +34136,11 @@
       "representativeValues": [
         "damage-dice",
         "current-and-maximum-hit-points",
-        "creature-count",
         "duration-hours",
+        "creature-count",
         "duration"
       ],
-      "population": 107,
+      "population": 106,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
       "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
@@ -34182,10 +34182,10 @@
         "acid arrow:initial-damage",
         "acid arrow:later-damage",
         "aid:current-and-maximum-hit-points",
-        "animal friendship:additional-beast",
-        "animal messenger:duration"
+        "animal messenger:duration",
+        "arcane hand:clenched-fist"
       ],
-      "population": 107,
+      "population": 106,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
       "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
@@ -34287,16 +34287,16 @@
       "recordKinds": [
         "spell"
       ],
-      "fieldPath": "data.upcast.sourceCorrection.extractedSourcePhrase",
+      "fieldPath": "data.upcast.qualifier.text",
       "representativeValues": [
         "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st."
       ],
       "population": 1,
-      "valueClass": "scalar-like",
+      "valueClass": "source prose",
       "currentSchemaValidation": "one closed parser shared by kind-schema validation and runtime rejects source, shape, compatibility, and arithmetic drift",
       "deterministicConsumers": "shared spell upcast contract, canonical compiler, and resolveSpellUpcast",
-      "currentAuditReadiness": "92-clause deep semantic oracle and resolver retain exact phrase/page/clause/operation evidence",
-      "disposition": "complete",
+      "currentAuditReadiness": "retained verbatim source phrase returned by the resolver as a model qualifier at or above its minimum slot level",
+      "disposition": "typed-core-with-prose-qualifier",
       "typedSchemaOrConsumer": "SpellUpcastSpec / SpellUpcastOperation",
       "retainedProseBoundary": "data.higherLevels",
       "owner": "parseSpells.ts, upcast.ts, spellUpcastContract.ts, spellUpcast.ts, and kindSchemas.ts",
@@ -34307,9 +34307,9 @@
       "recordKinds": [
         "spell"
       ],
-      "fieldPath": "data.upcast.sourceCorrection.extractedSourceSha256",
+      "fieldPath": "data.upcast.sourceDefect.defectivePhrase",
       "representativeValues": [
-        "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde"
+        "beast t level above 1st"
       ],
       "population": 1,
       "valueClass": "scalar-like",
@@ -34327,9 +34327,9 @@
       "recordKinds": [
         "spell"
       ],
-      "fieldPath": "data.upcast.sourceCorrection.id",
+      "fieldPath": "data.upcast.sourceDefect.id",
       "representativeValues": [
-        "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission"
+        "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission"
       ],
       "population": 1,
       "valueClass": "scalar-like",
@@ -34347,9 +34347,9 @@
       "recordKinds": [
         "spell"
       ],
-      "fieldPath": "data.upcast.sourceCorrection.note",
+      "fieldPath": "data.upcast.sourceDefect.note",
       "representativeValues": [
-        "The PDF text layer omitted \"for each slot\"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation."
+        "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads \"one additional beast t level above 1st\"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived."
       ],
       "population": 1,
       "valueClass": "scalar-like",
@@ -34367,9 +34367,9 @@
       "recordKinds": [
         "spell"
       ],
-      "fieldPath": "data.upcast.sourceCorrection.reviewedSourcePhrase",
+      "fieldPath": "data.upcast.sourceDefect.status",
       "representativeValues": [
-        "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st."
+        "unresolved"
       ],
       "population": 1,
       "valueClass": "scalar-like",

@@ -32,7 +32,7 @@ import {
  *   by the compiler's curation stage (`mechanics`, `upcast`,
  *   `executionReadiness`, a table's `projection`, an item's `useProfile`). A
  *   literal-looking audit string embedded INSIDE one of these subtrees (e.g.
- *   `upcast.sourceCorrection.extractedSourcePhrase`) stays
+ *   `upcast.sourceDefect.defectivePhrase`) stays
  *   `compiler-projection`: it is lineage evidence attached to a compiler
  *   artifact, not a standalone quotable field, and splitting it out per-leaf
  *   would reintroduce the shape-based heuristics this module replaces.

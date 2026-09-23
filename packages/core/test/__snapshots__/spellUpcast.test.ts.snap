@@ -740,22 +740,12 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
   },
   {
     "projection": {
-      "disposition": "complete-typed-upcast",
-      "operations": [
-        {
-          "count": 1,
-          "everySlotLevels": 1,
-          "kind": "count-per-slot",
-          "startSlotLevel": 1,
-          "subject": {
-            "creatureType": "beast",
-            "kind": "effect",
-            "property": "creature-count",
-            "semanticId": "animal friendship:additional-beast",
-          },
-        },
-      ],
-      "qualifier": null,
+      "disposition": "typed-core-with-model-qualifier",
+      "operations": [],
+      "qualifier": {
+        "minSlotLevel": 2,
+        "text": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
+      },
     },
     "resolutions": [
       {
@@ -775,15 +765,14 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
             "overrideChain": [],
             "packId": "rules:dnd5e-srd-5.1",
             "packVersion": "5.1",
-            "sourceCorrection": {
-              "extractedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
-              "extractedSourceSha256": "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde",
-              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission",
-              "note": "The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.",
-              "reviewedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourceDefect": {
+              "defectivePhrase": "beast t level above 1st",
+              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission",
+              "note": "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.",
+              "status": "unresolved",
             },
             "sourcePage": 115,
-            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
             "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
           },
         ],
@@ -791,45 +780,31 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
         "spellRef": "spell:animal-friendship",
       },
       {
-        "adjustments": [
-          {
-            "amount": 1,
-            "kind": "count",
-            "sourceOperationId": "animal friendship:additional-beast:count-per-slot",
-            "subject": {
-              "creatureType": "beast",
-              "kind": "effect",
-              "property": "creature-count",
-              "semanticId": "animal friendship:additional-beast",
-            },
-          },
-        ],
+        "adjustments": [],
         "baseSpellLevel": 1,
         "clauseIds": [
           "animal-friendship:higher-slot",
         ],
         "hasHigherSlotBenefit": true,
         "levelsAboveBase": 1,
+        "qualifier": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
         "selectedSlotLevel": 2,
         "sourceBindings": [
           {
             "clauseId": "animal-friendship:higher-slot",
             "locator": "p. 115",
-            "operationIds": [
-              "animal friendship:additional-beast:count-per-slot",
-            ],
+            "operationIds": [],
             "overrideChain": [],
             "packId": "rules:dnd5e-srd-5.1",
             "packVersion": "5.1",
-            "sourceCorrection": {
-              "extractedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
-              "extractedSourceSha256": "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde",
-              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission",
-              "note": "The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.",
-              "reviewedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourceDefect": {
+              "defectivePhrase": "beast t level above 1st",
+              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission",
+              "note": "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.",
+              "status": "unresolved",
             },
             "sourcePage": 115,
-            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
             "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
           },
         ],
@@ -837,45 +812,31 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
         "spellRef": "spell:animal-friendship",
       },
       {
-        "adjustments": [
-          {
-            "amount": 2,
-            "kind": "count",
-            "sourceOperationId": "animal friendship:additional-beast:count-per-slot",
-            "subject": {
-              "creatureType": "beast",
-              "kind": "effect",
-              "property": "creature-count",
-              "semanticId": "animal friendship:additional-beast",
-            },
-          },
-        ],
+        "adjustments": [],
         "baseSpellLevel": 1,
         "clauseIds": [
           "animal-friendship:higher-slot",
         ],
         "hasHigherSlotBenefit": true,
         "levelsAboveBase": 2,
+        "qualifier": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
         "selectedSlotLevel": 3,
         "sourceBindings": [
           {
             "clauseId": "animal-friendship:higher-slot",
             "locator": "p. 115",
-            "operationIds": [
-              "animal friendship:additional-beast:count-per-slot",
-            ],
+            "operationIds": [],
             "overrideChain": [],
             "packId": "rules:dnd5e-srd-5.1",
             "packVersion": "5.1",
-            "sourceCorrection": {
-              "extractedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
-              "extractedSourceSha256": "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde",
-              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission",
-              "note": "The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.",
-              "reviewedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourceDefect": {
+              "defectivePhrase": "beast t level above 1st",
+              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission",
+              "note": "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.",
+              "status": "unresolved",
             },
             "sourcePage": 115,
-            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
             "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
           },
         ],
@@ -883,45 +844,31 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
         "spellRef": "spell:animal-friendship",
       },
       {
-        "adjustments": [
-          {
-            "amount": 3,
-            "kind": "count",
-            "sourceOperationId": "animal friendship:additional-beast:count-per-slot",
-            "subject": {
-              "creatureType": "beast",
-              "kind": "effect",
-              "property": "creature-count",
-              "semanticId": "animal friendship:additional-beast",
-            },
-          },
-        ],
+        "adjustments": [],
         "baseSpellLevel": 1,
         "clauseIds": [
           "animal-friendship:higher-slot",
         ],
         "hasHigherSlotBenefit": true,
         "levelsAboveBase": 3,
+        "qualifier": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
         "selectedSlotLevel": 4,
         "sourceBindings": [
           {
             "clauseId": "animal-friendship:higher-slot",
             "locator": "p. 115",
-            "operationIds": [
-              "animal friendship:additional-beast:count-per-slot",
-            ],
+            "operationIds": [],
             "overrideChain": [],
             "packId": "rules:dnd5e-srd-5.1",
             "packVersion": "5.1",
-            "sourceCorrection": {
-              "extractedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
-              "extractedSourceSha256": "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde",
-              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission",
-              "note": "The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.",
-              "reviewedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourceDefect": {
+              "defectivePhrase": "beast t level above 1st",
+              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission",
+              "note": "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.",
+              "status": "unresolved",
             },
             "sourcePage": 115,
-            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
             "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
           },
         ],
@@ -929,45 +876,31 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
         "spellRef": "spell:animal-friendship",
       },
       {
-        "adjustments": [
-          {
-            "amount": 4,
-            "kind": "count",
-            "sourceOperationId": "animal friendship:additional-beast:count-per-slot",
-            "subject": {
-              "creatureType": "beast",
-              "kind": "effect",
-              "property": "creature-count",
-              "semanticId": "animal friendship:additional-beast",
-            },
-          },
-        ],
+        "adjustments": [],
         "baseSpellLevel": 1,
         "clauseIds": [
           "animal-friendship:higher-slot",
         ],
         "hasHigherSlotBenefit": true,
         "levelsAboveBase": 4,
+        "qualifier": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
         "selectedSlotLevel": 5,
         "sourceBindings": [
           {
             "clauseId": "animal-friendship:higher-slot",
             "locator": "p. 115",
-            "operationIds": [
-              "animal friendship:additional-beast:count-per-slot",
-            ],
+            "operationIds": [],
             "overrideChain": [],
             "packId": "rules:dnd5e-srd-5.1",
             "packVersion": "5.1",
-            "sourceCorrection": {
-              "extractedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
-              "extractedSourceSha256": "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde",
-              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission",
-              "note": "The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.",
-              "reviewedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourceDefect": {
+              "defectivePhrase": "beast t level above 1st",
+              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission",
+              "note": "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.",
+              "status": "unresolved",
             },
             "sourcePage": 115,
-            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
             "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
           },
         ],
@@ -975,45 +908,31 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
         "spellRef": "spell:animal-friendship",
       },
       {
-        "adjustments": [
-          {
-            "amount": 5,
-            "kind": "count",
-            "sourceOperationId": "animal friendship:additional-beast:count-per-slot",
-            "subject": {
-              "creatureType": "beast",
-              "kind": "effect",
-              "property": "creature-count",
-              "semanticId": "animal friendship:additional-beast",
-            },
-          },
-        ],
+        "adjustments": [],
         "baseSpellLevel": 1,
         "clauseIds": [
           "animal-friendship:higher-slot",
         ],
         "hasHigherSlotBenefit": true,
         "levelsAboveBase": 5,
+        "qualifier": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
         "selectedSlotLevel": 6,
         "sourceBindings": [
           {
             "clauseId": "animal-friendship:higher-slot",
             "locator": "p. 115",
-            "operationIds": [
-              "animal friendship:additional-beast:count-per-slot",
-            ],
+            "operationIds": [],
             "overrideChain": [],
             "packId": "rules:dnd5e-srd-5.1",
             "packVersion": "5.1",
-            "sourceCorrection": {
-              "extractedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
-              "extractedSourceSha256": "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde",
-              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission",
-              "note": "The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.",
-              "reviewedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourceDefect": {
+              "defectivePhrase": "beast t level above 1st",
+              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission",
+              "note": "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.",
+              "status": "unresolved",
             },
             "sourcePage": 115,
-            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
             "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
           },
         ],
@@ -1021,45 +940,31 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
         "spellRef": "spell:animal-friendship",
       },
       {
-        "adjustments": [
-          {
-            "amount": 6,
-            "kind": "count",
-            "sourceOperationId": "animal friendship:additional-beast:count-per-slot",
-            "subject": {
-              "creatureType": "beast",
-              "kind": "effect",
-              "property": "creature-count",
-              "semanticId": "animal friendship:additional-beast",
-            },
-          },
-        ],
+        "adjustments": [],
         "baseSpellLevel": 1,
         "clauseIds": [
           "animal-friendship:higher-slot",
         ],
         "hasHigherSlotBenefit": true,
         "levelsAboveBase": 6,
+        "qualifier": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
         "selectedSlotLevel": 7,
         "sourceBindings": [
           {
             "clauseId": "animal-friendship:higher-slot",
             "locator": "p. 115",
-            "operationIds": [
-              "animal friendship:additional-beast:count-per-slot",
-            ],
+            "operationIds": [],
             "overrideChain": [],
             "packId": "rules:dnd5e-srd-5.1",
             "packVersion": "5.1",
-            "sourceCorrection": {
-              "extractedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
-              "extractedSourceSha256": "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde",
-              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission",
-              "note": "The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.",
-              "reviewedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourceDefect": {
+              "defectivePhrase": "beast t level above 1st",
+              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission",
+              "note": "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.",
+              "status": "unresolved",
             },
             "sourcePage": 115,
-            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
             "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
           },
         ],
@@ -1067,45 +972,31 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
         "spellRef": "spell:animal-friendship",
       },
       {
-        "adjustments": [
-          {
-            "amount": 7,
-            "kind": "count",
-            "sourceOperationId": "animal friendship:additional-beast:count-per-slot",
-            "subject": {
-              "creatureType": "beast",
-              "kind": "effect",
-              "property": "creature-count",
-              "semanticId": "animal friendship:additional-beast",
-            },
-          },
-        ],
+        "adjustments": [],
         "baseSpellLevel": 1,
         "clauseIds": [
           "animal-friendship:higher-slot",
         ],
         "hasHigherSlotBenefit": true,
         "levelsAboveBase": 7,
+        "qualifier": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
         "selectedSlotLevel": 8,
         "sourceBindings": [
           {
             "clauseId": "animal-friendship:higher-slot",
             "locator": "p. 115",
-            "operationIds": [
-              "animal friendship:additional-beast:count-per-slot",
-            ],
+            "operationIds": [],
             "overrideChain": [],
             "packId": "rules:dnd5e-srd-5.1",
             "packVersion": "5.1",
-            "sourceCorrection": {
-              "extractedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
-              "extractedSourceSha256": "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde",
-              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission",
-              "note": "The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.",
-              "reviewedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourceDefect": {
+              "defectivePhrase": "beast t level above 1st",
+              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission",
+              "note": "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.",
+              "status": "unresolved",
             },
             "sourcePage": 115,
-            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
             "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
           },
         ],
@@ -1113,45 +1004,31 @@ exports[`source-bound spell upcast resolver > pins independent source-marker mem
         "spellRef": "spell:animal-friendship",
       },
       {
-        "adjustments": [
-          {
-            "amount": 8,
-            "kind": "count",
-            "sourceOperationId": "animal friendship:additional-beast:count-per-slot",
-            "subject": {
-              "creatureType": "beast",
-              "kind": "effect",
-              "property": "creature-count",
-              "semanticId": "animal friendship:additional-beast",
-            },
-          },
-        ],
+        "adjustments": [],
         "baseSpellLevel": 1,
         "clauseIds": [
           "animal-friendship:higher-slot",
         ],
         "hasHigherSlotBenefit": true,
         "levelsAboveBase": 8,
+        "qualifier": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
         "selectedSlotLevel": 9,
         "sourceBindings": [
           {
             "clauseId": "animal-friendship:higher-slot",
             "locator": "p. 115",
-            "operationIds": [
-              "animal friendship:additional-beast:count-per-slot",
-            ],
+            "operationIds": [],
             "overrideChain": [],
             "packId": "rules:dnd5e-srd-5.1",
             "packVersion": "5.1",
-            "sourceCorrection": {
-              "extractedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
-              "extractedSourceSha256": "763c0d3cc1b446babf436fdeca9697a320923ca890a580df1c5d0095c5e32dde",
-              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission",
-              "note": "The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.",
-              "reviewedSourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourceDefect": {
+              "defectivePhrase": "beast t level above 1st",
+              "id": "dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission",
+              "note": "The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.",
+              "status": "unresolved",
             },
             "sourcePage": 115,
-            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.",
+            "sourcePhrase": "When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.",
             "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
           },
         ],

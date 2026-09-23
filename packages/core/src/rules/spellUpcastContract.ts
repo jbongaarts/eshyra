@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-
 /** Closed, system-specific contract shared by pack validation and runtime. */
 
 export const SRD_DAMAGE_TYPES = [
@@ -162,15 +160,16 @@ export interface SpellUpcastQualifier {
 }
 
 /**
- * Explicit reviewed repair of a malformed source extraction. The extracted
- * phrase remains authoritative provenance; `reviewedSourcePhrase` is the text
- * the compiler actually used to derive the typed operation.
+ * A defect printed in the pinned source clause itself that no pinned
+ * authoritative source resolves. `sourcePhrase` stays the verbatim printed
+ * text; no typed operation may be derived from the clause, which reaches the
+ * DM only as a model qualifier.
  */
-export interface SpellUpcastSourceCorrection {
+export interface SpellUpcastSourceDefect {
   readonly id: string;
-  readonly extractedSourcePhrase: string;
-  readonly extractedSourceSha256: string;
-  readonly reviewedSourcePhrase: string;
+  readonly status: 'unresolved';
+  /** The printed fragment that is defective; must occur in `sourcePhrase`. */
+  readonly defectivePhrase: string;
   readonly note: string;
 }
 
@@ -178,7 +177,7 @@ export interface ParsedSpellUpcastSpec {
   readonly sourceKind: 'higher-slot';
   readonly clauseId: string;
   readonly sourcePhrase: string;
-  readonly sourceCorrection?: SpellUpcastSourceCorrection;
+  readonly sourceDefect?: SpellUpcastSourceDefect;
   readonly sourcePage: number;
   readonly operations: readonly UpcastOperation[];
   readonly qualifier?: SpellUpcastQualifier;
@@ -568,65 +567,31 @@ export interface ParseSpellUpcastInput {
   readonly provenanceLocator?: string;
 }
 
-function parseSourceCorrection(
+function parseSourceDefect(
   value: unknown,
   path: string,
   sourcePhrase: string,
-): SpellUpcastSourceCorrection | undefined {
+): SpellUpcastSourceDefect | undefined {
   if (value === undefined) return undefined;
-  const correction = object(value, path);
-  onlyKeys(
-    correction,
-    [
-      'id',
-      'extractedSourcePhrase',
-      'extractedSourceSha256',
-      'reviewedSourcePhrase',
-      'note',
-    ],
-    path,
-  );
-  const extractedSourcePhrase = string(
-    correction.extractedSourcePhrase,
-    `${path}.extractedSourcePhrase`,
-  );
-  if (extractedSourcePhrase !== sourcePhrase) {
-    throw new SpellUpcastContractError(
-      `${path}.extractedSourcePhrase must equal the retained source phrase`,
-    );
+  const defect = object(value, path);
+  onlyKeys(defect, ['id', 'status', 'defectivePhrase', 'note'], path);
+  if (defect.status !== 'unresolved') {
+    throw new SpellUpcastContractError(`${path}.status must be unresolved`);
   }
-  const extractedSourceSha256 = string(
-    correction.extractedSourceSha256,
-    `${path}.extractedSourceSha256`,
+  const defectivePhrase = string(
+    defect.defectivePhrase,
+    `${path}.defectivePhrase`,
   );
-  if (!/^[a-f0-9]{64}$/.test(extractedSourceSha256)) {
+  if (!sourcePhrase.includes(defectivePhrase)) {
     throw new SpellUpcastContractError(
-      `${path}.extractedSourceSha256 must be a lowercase SHA-256 digest`,
-    );
-  }
-  const actualHash = createHash('sha256')
-    .update(extractedSourcePhrase)
-    .digest('hex');
-  if (extractedSourceSha256 !== actualHash) {
-    throw new SpellUpcastContractError(
-      `${path}.extractedSourceSha256 does not match extractedSourcePhrase`,
-    );
-  }
-  const reviewedSourcePhrase = string(
-    correction.reviewedSourcePhrase,
-    `${path}.reviewedSourcePhrase`,
-  );
-  if (reviewedSourcePhrase === extractedSourcePhrase) {
-    throw new SpellUpcastContractError(
-      `${path}.reviewedSourcePhrase must differ from extractedSourcePhrase`,
+      `${path}.defectivePhrase must occur in the retained source phrase`,
     );
   }
   return {
-    id: string(correction.id, `${path}.id`),
-    extractedSourcePhrase,
-    extractedSourceSha256,
-    reviewedSourcePhrase,
-    note: string(correction.note, `${path}.note`),
+    id: string(defect.id, `${path}.id`),
+    status: 'unresolved',
+    defectivePhrase,
+    note: string(defect.note, `${path}.note`),
   };
 }
 
@@ -651,7 +616,7 @@ export function parseSpellUpcastSpec(
       'sourceKind',
       'clauseId',
       'sourcePhrase',
-      'sourceCorrection',
+      'sourceDefect',
       'sourcePage',
       'operations',
       'qualifier',
@@ -679,9 +644,9 @@ export function parseSpellUpcastSpec(
       `${path} source phrase must equal higherLevels and scalingSourceText`,
     );
   }
-  const sourceCorrection = parseSourceCorrection(
-    upcast.sourceCorrection,
-    `${path}.sourceCorrection`,
+  const sourceDefect = parseSourceDefect(
+    upcast.sourceDefect,
+    `${path}.sourceDefect`,
     sourcePhrase,
   );
   if (upcast.sourceKind !== 'higher-slot') {
@@ -932,11 +897,21 @@ export function parseSpellUpcastSpec(
   } else {
     throw new SpellUpcastContractError(`${path}.disposition is not closed`);
   }
+  if (
+    sourceDefect !== undefined &&
+    (operations.length !== 0 ||
+      qualifier === undefined ||
+      qualifier.text !== sourcePhrase)
+  ) {
+    throw new SpellUpcastContractError(
+      `${path} with an unresolved source defect must carry no operations and qualify with the verbatim source phrase`,
+    );
+  }
   return {
     sourceKind: 'higher-slot',
     clauseId,
     sourcePhrase,
-    ...(sourceCorrection === undefined ? {} : { sourceCorrection }),
+    ...(sourceDefect === undefined ? {} : { sourceDefect }),
     sourcePage,
     operations,
     ...(qualifier === undefined ? {} : { qualifier }),

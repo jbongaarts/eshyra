@@ -21,6 +21,10 @@ extraction, which can interleave two-column layouts.
   1st**." — the source itself drops "for each slo" from "for each slot level",
   printing "beast t level above 1st". This is a **source** garble, not an
   importer truncation: the rendered PDF shows exactly this text. Faithful.
+  Because no pinned source supplies the missing words, the pack carries this
+  as `upcast.sourceDefect` (status `unresolved`) and derives no typed per-slot
+  operation from it; the printed clause reaches the DM as a model qualifier
+  (eshyra-o9bd.19.2.1.4).
 
 ### `spell:animal-messenger`
 

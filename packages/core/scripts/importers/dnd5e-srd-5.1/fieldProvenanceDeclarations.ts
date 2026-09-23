@@ -35,7 +35,7 @@
  *   ALWAYS `compiler-projection`, whole subtree, wherever they occur
  *   (top-level on a record, or nested under an entry array such as
  *   `actions/*\/mechanics`). This includes any literal-looking audit string
- *   nested inside one (`upcast.sourceCorrection.extractedSourcePhrase`): it
+ *   nested inside one (`upcast.sourceDefect.defectivePhrase`): it
  *   is lineage evidence on a compiler artifact, not a standalone quotable
  *   field — see the "three classes" doc comment in `fieldProvenance.ts` for
  *   why splitting it out per-leaf would just reintroduce the container-shape

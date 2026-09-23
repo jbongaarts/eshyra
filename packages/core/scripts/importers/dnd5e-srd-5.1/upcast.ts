@@ -22,11 +22,16 @@ interface ReviewedProjection {
 
 interface ReviewedSourceBinding {
   readonly page: number;
-  /** Reviewed text used to derive the typed projection. */
+  /** Reviewed verbatim source text used to derive the typed projection. */
   readonly text: string;
-  readonly correction?: {
+  /**
+   * A defect printed in the pinned source itself, with no pinned
+   * authoritative source that resolves it. Nothing deterministic is derived
+   * from such a clause: it is carried verbatim as a model qualifier.
+   */
+  readonly sourceDefect?: {
     readonly id: string;
-    readonly extractedText: string;
+    readonly defectivePhrase: string;
     readonly note: string;
   };
 }
@@ -40,12 +45,11 @@ const REVIEWED_SOURCE_BINDINGS: Readonly<
   },
   'animal-friendship': {
     page: 115,
-    text: 'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.',
-    correction: {
-      id: 'dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission',
-      extractedText:
-        'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.',
-      note: 'The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.',
+    text: 'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.',
+    sourceDefect: {
+      id: 'dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission',
+      defectivePhrase: 'beast t level above 1st',
+      note: 'The printed SRD 5.1 page (p. 115, verified by rendering the PDF) reads "one additional beast t level above 1st"; words are missing from the printed text itself, not only from its text layer. No pinned authoritative source supplies them, so the per-slot count is left to DM adjudication rather than derived.',
     },
   },
   'chain-lightning': {
@@ -587,24 +591,6 @@ function reviewedProjection(
       ],
     };
   }
-  if (spellSlug === 'animal-friendship') {
-    return {
-      operations: [
-        {
-          kind: 'count-per-slot',
-          subject: {
-            kind: 'effect',
-            semanticId: 'animal friendship:additional-beast',
-            property: 'creature-count',
-            creatureType: 'beast',
-          },
-          count: 1,
-          startSlotLevel: 1,
-          everySlotLevels: 1,
-        },
-      ],
-    };
-  }
   if (spellSlug === 'chain-lightning') {
     return {
       operations: [
@@ -740,7 +726,7 @@ const REVIEWED_CLAUSE_COVERAGE: Readonly<
     ]),
   ),
   aid: { operationCount: 1, qualifier: false },
-  'animal-friendship': { operationCount: 1, qualifier: false },
+  'animal-friendship': { operationCount: 0, qualifier: true },
   'chain-lightning': { operationCount: 1, qualifier: false },
   'charm-person': { operationCount: 1, qualifier: false },
   command: { operationCount: 1, qualifier: false },
@@ -1202,35 +1188,38 @@ export function compileSpellUpcast(
   const isS1 = S1_SUMMONS.has(spellSlug(spell.name));
   const reviewedSourceBinding =
     REVIEWED_SOURCE_BINDINGS[spellKey.slice('spell:'.length)];
-  const sourceCorrection = reviewedSourceBinding?.correction;
+  const sourceDefect = reviewedSourceBinding?.sourceDefect;
   if (
-    sourceCorrection !== undefined &&
-    spell.higherLevels !== sourceCorrection.extractedText
+    sourceDefect !== undefined &&
+    (spell.higherLevels !== reviewedSourceBinding?.text ||
+      !spell.higherLevels.includes(sourceDefect.defectivePhrase))
   ) {
     throw new Error(
-      `reviewed source correction drift for ${spellKey}: expected ${JSON.stringify(sourceCorrection.extractedText)}, got ${JSON.stringify(spell.higherLevels)}`,
+      `reviewed source defect drift for ${spellKey}: expected ${JSON.stringify(reviewedSourceBinding?.text)} containing ${JSON.stringify(sourceDefect.defectivePhrase)}, got ${JSON.stringify(spell.higherLevels)}`,
     );
   }
-  const operationText =
-    sourceCorrection === undefined
-      ? spell.higherLevels
-      : reviewedSourceBinding.text;
-  if (/\bbeast t level above\b/i.test(operationText)) {
+  if (
+    sourceDefect === undefined &&
+    /\bbeast t level above\b/i.test(spell.higherLevels)
+  ) {
     throw new Error(
-      `malformed Animal Friendship higher-level source in ${spell.name}`,
+      `unrecorded Animal Friendship higher-level source defect in ${spell.name}`,
     );
   }
-  const reviewed = isS1
-    ? undefined
-    : reviewedProjection(
-        spell,
-        spellKey.slice('spell:'.length),
-        operationText,
-        options.allowSyntheticSourceBinding === true,
-      );
-  const operations = isS1
-    ? []
-    : (reviewed?.operations ?? addPerSlotOperations(spell, operationText));
+  const reviewed =
+    isS1 || sourceDefect !== undefined
+      ? undefined
+      : reviewedProjection(
+          spell,
+          spellKey.slice('spell:'.length),
+          spell.higherLevels,
+          options.allowSyntheticSourceBinding === true,
+        );
+  const operations =
+    isS1 || sourceDefect !== undefined
+      ? []
+      : (reviewed?.operations ??
+        addPerSlotOperations(spell, spell.higherLevels));
   const firstHigherSlot =
     Number(
       /(?:slot(?: of)? |a )(\d+)(?:st|nd|rd|th)[- ]level/i.exec(
@@ -1254,15 +1243,14 @@ export function compileSpellUpcast(
     sourceKind: 'higher-slot',
     clauseId,
     sourcePhrase: spell.scalingSourceText ?? spell.higherLevels,
-    ...(sourceCorrection === undefined
+    ...(sourceDefect === undefined
       ? {}
       : {
-          sourceCorrection: {
-            id: sourceCorrection.id,
-            extractedSourcePhrase: spell.higherLevels,
-            extractedSourceSha256: sourceHash,
-            reviewedSourcePhrase: operationText,
-            note: sourceCorrection.note,
+          sourceDefect: {
+            id: sourceDefect.id,
+            status: 'unresolved',
+            defectivePhrase: sourceDefect.defectivePhrase,
+            note: sourceDefect.note,
           },
         }),
     sourcePage: spell.sourcePage,

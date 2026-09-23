@@ -223,60 +223,41 @@ describe('source-bound spell upcast resolver', () => {
     ]);
   });
 
-  it('corrects and resolves Animal Friendship per-slot cardinality exactly', () => {
+  it('carries the printed Animal Friendship garble as an unresolved defect, deriving nothing from it', () => {
     const animalFriendship = spell('spell:animal-friendship');
-    const extractedSourcePhrase =
+    const printedSourcePhrase =
       'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast t level above 1st.';
-    const reviewedSourcePhrase =
-      'When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.';
-    const sourceCorrection = {
-      id: 'dnd5e-srd-5.1:animal-friendship:higher-slot:text-layer-omission',
-      extractedSourcePhrase,
-      extractedSourceSha256:
-        EXPECTED_HIGHER_SLOT_SOURCE_SHA256['spell:animal-friendship'],
-      reviewedSourcePhrase,
-      note: 'The PDF text layer omitted "for each slot"; the reviewed text restores the source-backed phrase used to derive the count-per-slot operation.',
-    };
-    expect(
-      (animalFriendship.data as Record<string, unknown>).higherLevels,
-    ).toBe(extractedSourcePhrase);
-    expect(
-      (
-        (animalFriendship.data as Record<string, unknown>).upcast as Record<
-          string,
-          unknown
-        >
-      ).sourceCorrection,
-    ).toEqual(sourceCorrection);
-    expect(resolveSpellUpcast(animalFriendship, 1).adjustments).toEqual([]);
-    for (const [slotLevel, amount] of [
-      [2, 1],
-      [3, 2],
-      [9, 8],
-    ] as const) {
-      expect(
-        resolveSpellUpcast(animalFriendship, slotLevel).adjustments,
-      ).toEqual([
-        {
-          kind: 'count',
-          subject: {
-            kind: 'effect',
-            semanticId: 'animal friendship:additional-beast',
-            property: 'creature-count',
-            creatureType: 'beast',
-          },
-          amount,
-          sourceOperationId:
-            'animal friendship:additional-beast:count-per-slot',
-        },
-      ]);
-    }
-    expect(
-      resolveSpellUpcast(animalFriendship, 2).sourceBindings[0],
-    ).toMatchObject({
-      sourcePhrase: reviewedSourcePhrase,
-      sourceCorrection,
+    const data = animalFriendship.data as Record<string, unknown>;
+    const upcast = data.upcast as Record<string, unknown>;
+    expect(data.higherLevels).toBe(printedSourcePhrase);
+    expect(upcast.sourcePhrase).toBe(printedSourcePhrase);
+    expect(upcast.sourceDefect).toMatchObject({
+      id: 'dnd5e-srd-5.1:animal-friendship:higher-slot:printed-omission',
+      status: 'unresolved',
+      defectivePhrase: 'beast t level above 1st',
     });
+    expect(upcast.operations).toEqual([]);
+    expect(upcast.disposition).toBe('typed-core-with-model-qualifier');
+    // No reconstructed wording may reach the pack or the runtime binding.
+    expect(JSON.stringify(animalFriendship)).not.toMatch(/for each slot/);
+
+    expect(resolveSpellUpcast(animalFriendship, 1)).toMatchObject({
+      hasHigherSlotBenefit: false,
+      adjustments: [],
+    });
+    for (const slotLevel of [2, 3, 9]) {
+      const resolution = resolveSpellUpcast(animalFriendship, slotLevel);
+      expect(resolution).toMatchObject({
+        hasHigherSlotBenefit: true,
+        adjustments: [],
+        qualifier: printedSourcePhrase,
+      });
+      expect(resolution.sourceBindings[0]).toMatchObject({
+        sourcePhrase: printedSourcePhrase,
+        sourceDefect: upcast.sourceDefect,
+        operationIds: [],
+      });
+    }
     expect(() =>
       compileSpellUpcast({
         name: 'Animal Friendships',
@@ -960,18 +941,34 @@ describe('source-bound spell upcast resolver', () => {
     expect(() => resolveSpellUpcast(mismatchedSource, 4)).toThrow(
       /provenance does not match owning pack/,
     );
-    const correctionHashDrift = structuredClone(
+    const defectWithOperation = structuredClone(
       spell('spell:animal-friendship'),
     );
-    const correction = (
-      (correctionHashDrift.data as Record<string, unknown>).upcast as Record<
+    (
+      (defectWithOperation.data as Record<string, unknown>).upcast as Record<
         string,
         unknown
       >
-    ).sourceCorrection as Record<string, unknown>;
-    correction.extractedSourceSha256 = '0'.repeat(64);
-    expect(() => resolveSpellUpcast(correctionHashDrift, 2)).toThrow(
-      /does not match extractedSourcePhrase/,
+    ).operations = structuredClone(
+      (
+        (spell('spell:charm-person').data as Record<string, unknown>)
+          .upcast as Record<string, unknown>
+      ).operations,
+    );
+    expect(() => resolveSpellUpcast(defectWithOperation, 2)).toThrow(
+      /unresolved source defect must carry no operations/,
+    );
+    const defectPhraseDrift = structuredClone(spell('spell:animal-friendship'));
+    (
+      (
+        (defectPhraseDrift.data as Record<string, unknown>).upcast as Record<
+          string,
+          unknown
+        >
+      ).sourceDefect as Record<string, unknown>
+    ).defectivePhrase = 'beast for each slot level above 1st';
+    expect(() => resolveSpellUpcast(defectPhraseDrift, 2)).toThrow(
+      /defectivePhrase must occur in the retained source phrase/,
     );
   });
 
