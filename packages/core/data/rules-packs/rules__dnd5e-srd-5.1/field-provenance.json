@@ -777,6 +777,12 @@
     },
     {
       "kind": "feature",
+      "pointerPrefix": "/optionCatalog",
+      "class": "source-prose",
+      "reason": "the printed end-of-chapter option-list section the feature body points to — a separately printed source span, kept as one verbatim span apart from /description rather than joined into it (eshyra-o9bd.19.2.1.3.1)."
+    },
+    {
+      "kind": "feature",
       "pointerPrefix": "/source",
       "class": "source-derived",
       "reason": "the granting class/subclass record-key, not source text."

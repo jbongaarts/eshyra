@@ -11,10 +11,17 @@
  *
  * Subrace decision (recorded on loreweaver-0m9.5.6): parent races and subraces
  * are emitted as **separate** records, and each subrace record is
- * **self-contained / flattened** — its trait list already merges the parent's
- * shared traits with the subrace's own additions, so a name lookup of e.g.
- * "Hill Dwarf" resolves to a fully usable record without resolving the parent.
- * `subraceOf` names the parent; the parent lists its children in `subraces`.
+ * **self-contained / flattened** — its trait list already combines the
+ * parent's shared traits with the subrace's own additions, so a name lookup of
+ * e.g. "Hill Dwarf" resolves to a fully usable record without resolving the
+ * parent. `subraceOf` names the parent; the parent lists its children in
+ * `subraces`. "Flattened" means parent traits followed by subrace traits, each
+ * kept as its own verbatim entry — never text-joined, even when a subrace
+ * trait repeats a parent trait's label (eshyra-o9bd.19.2.1.3.1: the source
+ * prints e.g. "Ability Score Increase" once in the parent race block and again
+ * in the subrace block, as two separately printed sentences, so the flattened
+ * list keeps both as distinct entries rather than composing one joined
+ * sentence that was never printed as a single span).
  *
  * Boundary detection mirrors the conservative known-name approach used by the
  * condition / hazard / action parsers: a line is a race or subrace heading only
@@ -110,9 +117,13 @@ const SUBRACE_BY_RECORD_NAME = new Map(
 
 // "Label. body" trait line: a short Title-Case noun-phrase label, then a
 // period, a space, and body text. Labels are letters with single internal
-// separators (space, apostrophe, slash, parens, hyphen); commas and digits in
-// the label position break the match (so body sentences are not mis-promoted).
-const TRAIT_LABEL_RE = /^([A-Z][A-Za-z]+(?:[ '/()-][A-Za-z]+)*)\.\s+(\S.*)$/;
+// separators (space, ASCII or typographic apostrophe U+2019, slash, parens,
+// hyphen); commas and digits in the label position break the match (so body
+// sentences are not mis-promoted). The typographic apostrophe is required for
+// the Rock Gnome's "Artificer’s Lore." label (eshyra-o9bd.19.2.1.3.1): the PDF
+// extraction uses U+2019, not ASCII "'", so without it the label line falls
+// through to plain body text and bleeds into the preceding trait.
+const TRAIT_LABEL_RE = /^([A-Z][A-Za-z]+(?:[ '’/()-][A-Za-z]+)*)\.\s+(\S.*)$/;
 
 // Sentence-starter words that begin benefit prose, never a trait label. Mirrors
 // the body-prose guard in parseFeats so a wrapped body sentence ending mid-line
@@ -317,9 +328,14 @@ function parseSpeed(traits: readonly AncestryTrait[]): number | undefined {
 
 /**
  * Flatten parent + subrace traits into a self-contained list. Parent traits
- * come first (minus the parent's "Subrace" pointer trait); a subrace trait that
- * shares a parent trait's label appends to it (e.g. an additive Ability Score
- * Increase) rather than duplicating the label.
+ * come first (minus the parent's "Subrace" pointer trait); every subrace trait
+ * is appended after them, in subrace document order, as its own entry —
+ * including when a subrace trait's label repeats a parent trait's label (e.g.
+ * both print an "Ability Score Increase" trait). The SRD prints each of those
+ * two sentences in a different, separately printed section (the shared race
+ * block and the subrace block), so composing them into one joined sentence
+ * would fabricate a span the source never prints; the duplicate label is
+ * intended (eshyra-o9bd.19.2.1.3.1).
  */
 function mergeTraits(
   parent: readonly AncestryTrait[],
@@ -329,15 +345,7 @@ function mergeTraits(
     .filter((t) => t.name !== 'Subrace')
     .map((t) => ({ ...t }));
   for (const trait of child) {
-    const existingIdx = merged.findIndex((t) => t.name === trait.name);
-    if (existingIdx >= 0) {
-      merged[existingIdx] = {
-        name: trait.name,
-        text: `${merged[existingIdx].text} ${trait.text}`.trim(),
-      };
-    } else {
-      merged.push({ ...trait });
-    }
+    merged.push({ ...trait });
   }
   return merged;
 }

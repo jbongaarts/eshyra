@@ -514,6 +514,15 @@ describe('parseFeatures — same-name in-body reference table (Destroy Undead)',
     expect(destroyUndead.description).toMatch(/challenge rating/);
     expect(destroyUndead.description).toMatch(/Cleric Level/);
   });
+
+  // A contiguous repeat (the repeat heading is the very line that bounded the
+  // first body — see the module's bodyEndByKey doc comment) still merges into
+  // `description` exactly as before B1; it must never populate `optionCatalog`
+  // (eshyra-o9bd.19.2.1.3.1).
+  it('never sets optionCatalog for a contiguous in-body repeat', () => {
+    const [destroyUndead] = features.filter((f) => f.name === 'Destroy Undead');
+    expect(destroyUndead.optionCatalog).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -567,17 +576,86 @@ describe('parseFeatures — end-of-chapter option list re-uses the feature headi
     expect(eldritch.level).toBe(2);
   });
 
-  it('merges the option-list body into the feature description', () => {
+  // The end-of-chapter option-list heading is a DISTANT repeat (other features
+  // intervene between it and the first body's end — see B1's bodyEndByKey
+  // contiguity check), never a contiguous in-body continuation, so it must be
+  // kept apart as `optionCatalog` rather than joined into `description`
+  // (eshyra-o9bd.19.2.1.3.1). This replaces the prior "merges into
+  // description" expectation, which the source's own section layout — the
+  // option list is printed ~3,000 characters after the level-2 body, at the
+  // end of the class chapter — proves wrong.
+  it('keeps description as the first (level-2) body only', () => {
     const [eldritch] = features.filter(
       (f) => f.name === 'Eldritch Invocations',
     );
-    expect(eldritch.description).toMatch(/study of occult lore/);
-    expect(eldritch.description).toMatch(/prerequisites/);
-    expect(eldritch.description).toMatch(/Agonizing Blast/);
+    expect(eldritch.description).toBe(
+      'In your study of occult lore, you have unearthed eldritch invocations, ' +
+        'fragments of forbidden knowledge.',
+    );
+    expect(eldritch.description).not.toMatch(/prerequisites/);
+    expect(eldritch.description).not.toMatch(/Agonizing Blast/);
+  });
+
+  it('keeps the option-list body as a separate optionCatalog, not joined into description', () => {
+    const [eldritch] = features.filter(
+      (f) => f.name === 'Eldritch Invocations',
+    );
+    expect(eldritch.optionCatalog).toBe(
+      'If an eldritch invocation has prerequisites, you must meet them to ' +
+        'learn it. Agonizing Blast When you cast eldritch blast, add your ' +
+        'Charisma modifier to the damage.',
+    );
+  });
+
+  it('still merges optionSourcePages collected from the catalog body', () => {
+    const [eldritch] = features.filter(
+      (f) => f.name === 'Eldritch Invocations',
+    );
+    expect(eldritch.optionSourcePages).toEqual({ 'Agonizing Blast': 46 });
   });
 
   it('still emits the intervening feature between the two heading occurrences', () => {
     expect(features.map((f) => f.name)).toContain('Eldritch Master');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fail-closed: a feature whose heading repeats at TWO separate distant
+// (non-contiguous) source locations is a shape the SRD 5.1 Classes chapter
+// never actually has (Eldritch Invocations repeats exactly once). Rather than
+// silently keep only the first or last catalog, the parser must throw so a
+// parser regression that mistakes an unrelated repeat for a second option list
+// never silently drops the earlier one (eshyra-o9bd.19.2.1.3.1 B1).
+// ---------------------------------------------------------------------------
+
+const WARLOCK_ELDRITCH_INVOCATIONS_TWO_DISTANT_REPEATS = page(46, [
+  'Warlock',
+  'The Warlock',
+  'Level Proficiency Bonus Features',
+  '1st +2 Otherworldly Patron, Pact Magic',
+  '2nd +2 Eldritch Invocations',
+  '3rd +2 Pact Boon',
+  'Class Features',
+  'Hit Dice: 1d8 per warlock level',
+  'Armor: Light armor',
+  'Weapons: Simple weapons',
+  'Saving Throws: Wisdom, Charisma',
+  'Eldritch Invocations',
+  'In your study of occult lore, you have unearthed eldritch invocations,',
+  'fragments of forbidden knowledge.',
+  'Class Features',
+  'Eldritch Invocations',
+  'If an eldritch invocation has prerequisites, you must meet them to learn it.',
+  'Class Features',
+  'Eldritch Invocations',
+  'A second distant repeat that must be rejected.',
+]);
+
+describe('parseFeatures — a second distant repeat of the same feature heading throws', () => {
+  it('fails closed instead of silently dropping the earlier option-list repeat', () => {
+    expect(() =>
+      parseFeatures([WARLOCK_ELDRITCH_INVOCATIONS_TWO_DISTANT_REPEATS]),
+    ).toThrow(/more than one distant end-of-chapter option-list repeat/);
   });
 });
 

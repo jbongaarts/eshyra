@@ -53,7 +53,7 @@ import {
   formatSrdAuditReport,
   formatSrdChoiceProseReport,
   formatSrdPlayabilityReport,
-  getAncestryAbilityScoreIncrease,
+  getAncestryAbilityScoreIncreases,
   getAncestryLanguages,
   getBackgroundLanguages,
   getClassSpellcasting,
@@ -765,9 +765,7 @@ export function buildOverlayParityReport(pack: RulesPack): {
       push(
         record,
         'abilityScoreIncreases',
-        [getAncestryAbilityScoreIncrease(record.key)].filter(
-          (entry) => entry !== undefined,
-        ),
+        getAncestryAbilityScoreIncreases(record.key) ?? [],
         data?.abilityScoreIncreases,
       );
       push(

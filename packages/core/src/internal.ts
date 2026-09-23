@@ -446,7 +446,7 @@ export type {
   AbilityScoreIncreaseChoice,
   AncestryAbilityScoreIncrease,
 } from './character/srdAncestryAbilityScoreIncreases.js';
-export { getAncestryAbilityScoreIncrease } from './character/srdAncestryAbilityScoreIncreases.js';
+export { getAncestryAbilityScoreIncreases } from './character/srdAncestryAbilityScoreIncreases.js';
 export type {
   ClassSpellcasting,
   SpellPreparation,

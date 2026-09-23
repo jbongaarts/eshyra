@@ -4953,6 +4953,12 @@ function validateDnd5eFeature(record: RulesRecord, path: string): void {
   reqStr(data, 'description', `${path}.data`);
   reqStr(data, 'source', `${path}.data`);
   reqInt(data, 'level', `${path}.data`, 1);
+  // Optional end-of-chapter option-list section the feature body points to,
+  // printed apart from `description` (eshyra-o9bd.19.2.1.3.1): a second
+  // repeat of the feature's heading at a source location that is not a
+  // contiguous continuation of the body — e.g. Warlock's Eldritch
+  // Invocations list, ~3,000 characters after the level-2 body.
+  optStr(data, 'optionCatalog', `${path}.data`);
   // Optional references to `table` records this feature owns (eshyra-4a7.6) —
   // e.g. feature:cleric:destroy-undead -> table:destroy-undead,
   // feature:druid:wild-shape -> table:beast-shapes — so the table rows live in

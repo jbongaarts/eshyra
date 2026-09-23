@@ -768,6 +768,11 @@ prose(
   '/description',
   'the feature description prose, quoted verbatim.',
 );
+prose(
+  'feature',
+  '/optionCatalog',
+  'the printed end-of-chapter option-list section the feature body points to — a separately printed source span, kept as one verbatim span apart from /description rather than joined into it (eshyra-o9bd.19.2.1.3.1).',
+);
 derived(
   'feature',
   '/source',

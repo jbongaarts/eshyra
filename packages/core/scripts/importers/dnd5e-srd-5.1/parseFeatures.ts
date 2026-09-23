@@ -536,6 +536,13 @@ export function parseFeatures(pages: readonly PageText[]): FeatureExtraction[] {
   const anchors = collectFeatureAnchors(flat, tiersPresent);
   const out: FeatureExtraction[] = [];
   const emittedIndexByKey = new Map<string, number>();
+  // The `flat` index at which each key's body most recently ended (the loop
+  // boundary `j`, i.e. one past the last body line consumed). A repeat whose
+  // heading sits exactly at that index is the very line that bounded the
+  // prior body — a contiguous continuation (an in-body reference-table
+  // caption restating the feature name). A repeat anywhere else is a
+  // distant, separately printed section (eshyra-o9bd.19.2.1.3.1 B1).
+  const bodyEndByKey = new Map<string, number>();
   // Implicit Barbarian context: the slice starts after the "Barbarian" chapter
   // heading, so Barbarian's base-class features (Rage … Primal Champion) precede
   // any base-class heading. Mirror collectFeatureAnchors / parseSubclasses so
@@ -615,30 +622,55 @@ export function parseFeatures(pages: readonly PageText[]): FeatureExtraction[] {
 
     // A given (grantor, name) pair may legitimately have its heading repeated
     // in the source: an in-body reference table caption that re-states the
-    // feature name (e.g. Cleric's "Destroy Undead" CR-threshold table), or an
-    // end-of-chapter section heading that introduces a list of options (e.g.
-    // Warlock's "Eldritch Invocations" with all invocation choices listed at
-    // the end of the class chapter). Both legitimately belong to the original
-    // feature, so when the same anchor matches twice, merge the additional
-    // body into the existing record rather than emitting a duplicate that the
-    // pack writer would reject as a duplicate `feature:<class>:<name>` key.
+    // feature name (e.g. Cleric's "Destroy Undead" CR-threshold table), or a
+    // separately printed end-of-chapter section heading that introduces a list
+    // of options (e.g. Warlock's "Eldritch Invocations" with all invocation
+    // choices listed ~3,000 characters later, at the end of the class
+    // chapter). The two are not the same shape: the in-body caption is the
+    // very line that bounded the first body (this repeat's `i` equals that
+    // body's recorded end), so it merges into `description` as before. The
+    // distant section is not contiguous with the first body, so joining it
+    // into `description` would compose two separately printed spans into one
+    // fabricated block; it is instead kept apart as `optionCatalog`
+    // (eshyra-o9bd.19.2.1.3.1 B1). Either way `optionSourcePages` still merges
+    // in, and the pack writer never sees a duplicate `feature:<class>:<name>`
+    // key.
     const key = anchorKey(grantorKind, grantorName, line);
     const existingIdx = emittedIndexByKey.get(key);
     if (existingIdx !== undefined) {
       const existing = out[existingIdx];
-      out[existingIdx] = {
-        ...existing,
-        description: `${existing.description}\n\n${description}`.trim(),
-        optionSourcePages: {
-          ...(existing.optionSourcePages ?? {}),
-          ...(optionSourcePages ?? {}),
-        },
-      };
+      const isContiguous = bodyEndByKey.get(key) === i;
+      if (isContiguous) {
+        out[existingIdx] = {
+          ...existing,
+          description: `${existing.description}\n\n${description}`.trim(),
+          optionSourcePages: {
+            ...(existing.optionSourcePages ?? {}),
+            ...(optionSourcePages ?? {}),
+          },
+        };
+      } else {
+        if (existing.optionCatalog !== undefined) {
+          throw new Error(
+            `feature "${line}" (${grantorKind} ${grantorName}) has more than one distant end-of-chapter option-list repeat`,
+          );
+        }
+        out[existingIdx] = {
+          ...existing,
+          optionCatalog: description,
+          optionSourcePages: {
+            ...(existing.optionSourcePages ?? {}),
+            ...(optionSourcePages ?? {}),
+          },
+        };
+      }
+      bodyEndByKey.set(key, j);
       i = j - 1;
       continue;
     }
 
     emittedIndexByKey.set(key, out.length);
+    bodyEndByKey.set(key, j);
     out.push({
       name: line,
       grantorKind,

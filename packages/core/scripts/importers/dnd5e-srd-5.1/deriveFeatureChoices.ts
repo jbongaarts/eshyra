@@ -754,6 +754,20 @@ function featureDescription(record: RulesRecord): string {
   return typeof description === 'string' ? description : '';
 }
 
+/**
+ * The feature's separately printed end-of-chapter option-list section, when
+ * one exists (eshyra-o9bd.19.2.1.3.1) — e.g. Warlock's Eldritch Invocations.
+ * Option-heading and prerequisite parsing must read this instead of
+ * `description` when present: joining the two would search across a span the
+ * source never prints contiguously. The choose-count word ("two eldritch
+ * invocations") is unaffected and still comes from `description`, since the
+ * SRD prints that sentence in the feature's own body, not the option list.
+ */
+function featureOptionCatalog(record: RulesRecord): string | undefined {
+  const optionCatalog = dataOf(record).optionCatalog;
+  return typeof optionCatalog === 'string' ? optionCatalog : undefined;
+}
+
 function optionSlug(value: string): string {
   return value
     .trim()
@@ -1193,7 +1207,7 @@ function deriveOptionListChoices(
       const options = parseOptionCatalog(
         input,
         fighterStyle,
-        featureDescription(fighterStyle),
+        featureOptionCatalog(fighterStyle) ?? featureDescription(fighterStyle),
         fightingStyleSpec,
       );
       out.set(feature.key, [
@@ -1225,7 +1239,7 @@ function deriveOptionListChoices(
       const options = parseOptionCatalog(
         input,
         feature,
-        description,
+        featureOptionCatalog(feature) ?? description,
         catalogSpec,
       );
       out.set(feature.key, [

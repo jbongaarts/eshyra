@@ -731,8 +731,30 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // numeric re-audit (bonus actions, reactions, substitutions, resource
   // regains, save-outcome semantics) dropped it 67 -> 49. Foundation 1 adds
   // the previously prose-only Fighting Style option procedure, reducing the
-  // missing count to 48; Font of Magic already carried a mechanics block.
-  { kind: 'feature', field: 'mechanics', missingCount: 48, totalInKind: 184 },
+  // missing count to 48. eshyra-o9bd.19.2.1.3.1 splits
+  // feature:warlock:eldritch-invocations' end-of-chapter option-list section
+  // out of `description` into the new `optionCatalog` field (below); mechanics
+  // projection only ever scans `description`, and the resource/condition/
+  // proficiency phrases that previously matched (a rest-reset resource,
+  // blinded/deafened/invisible condition mentions, a Deception/Persuasion
+  // proficiency grant) all lived inside individual invocation option bodies —
+  // now in `optionCatalog`, never scoped to any one option — so the missing
+  // count rises 48 -> 49. Nothing consumes that top-level block for this
+  // feature (its per-option prerequisites/text are already structured via
+  // `choices`, unaffected — see srdGeneratedPack.test.ts's "eldritch
+  // invocations option list stays a separate optionCatalog" describe).
+  { kind: 'feature', field: 'mechanics', missingCount: 49, totalInKind: 184 },
+  // eshyra-o9bd.19.2.1.3.1: the end-of-chapter option-list section a feature
+  // body points to, kept apart from `description` as one verbatim span. Only
+  // feature:warlock:eldritch-invocations has one in SRD 5.1 (Cleric's Destroy
+  // Undead in-body table caption is a CONTIGUOUS repeat and still merges into
+  // `description` as before).
+  {
+    kind: 'feature',
+    field: 'optionCatalog',
+    missingCount: 183,
+    totalInKind: 184,
+  },
   // Feature-owned tables (eshyra-4a7.6): feature:cleric:destroy-undead ->
   // table:destroy-undead and feature:druid:wild-shape -> table:beast-shapes.
   // eshyra-o9bd.8.2 adds two more feature owners (feature:sorcerer:font-of-magic
@@ -7030,6 +7052,66 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (g) => g.recordKey === 'feature:warlock:pact-boon',
       );
       expect(pactBoon?.value).toEqual([{ spell: 'spell:find-familiar' }]);
+    });
+  });
+
+  // eshyra-o9bd.19.2.1.3.1: the Eldritch Invocations option list is printed
+  // ~3,000 characters after the feature's level-2 body, at the end of the
+  // Warlock chapter, under a second "Eldritch Invocations" heading — a
+  // separately printed source span, not a continuation of the body. The
+  // description and the option-list body must therefore never be joined into
+  // one field.
+  // Registry row rock-gnome-boundary (indep:010, sol:CAP-012): the printed
+  // "Artificer’s Lore." label bounds its own trait, so neither its text nor its
+  // expertise projection is attributed to the Ability Score Increase trait.
+  it('assigns Rock Gnome Artificer’s Lore to its own trait (rock-gnome-boundary)', () => {
+    const rockGnome = pack.records.find((r) => r.key === 'ancestry:rock-gnome');
+    if (rockGnome === undefined) throw new Error('ancestry:rock-gnome missing');
+    const traits = (
+      rockGnome.data as {
+        traits?: readonly {
+          name: string;
+          text: string;
+          mechanics?: { effects?: readonly { kind: string }[] };
+        }[];
+      }
+    ).traits;
+    const lore = traits?.find((t) => t.name === 'Artificer’s Lore');
+    expect(lore?.text).toMatch(
+      /^Whenever you make an Intelligence \(History\)/,
+    );
+    expect(lore?.mechanics?.effects?.map((e) => e.kind)).toEqual(['expertise']);
+    for (const asi of traits?.filter(
+      (t) => t.name === 'Ability Score Increase',
+    ) ?? []) {
+      expect(asi.text).not.toContain('Artificer');
+      expect(asi.mechanics).toBeUndefined();
+    }
+  });
+
+  describe('eldritch invocations option list stays a separate optionCatalog (eshyra-o9bd.19.2.1.3.1)', () => {
+    const eldritchInvocations = pack.records.find(
+      (r) => r.key === 'feature:warlock:eldritch-invocations',
+    );
+    const data = eldritchInvocations?.data as {
+      description?: string;
+      optionCatalog?: string;
+    };
+
+    it('excludes the option-list body from description', () => {
+      expect(data.description).toBeDefined();
+      expect(data.description).not.toContain(
+        'If an eldritch invocation has prerequisites',
+      );
+    });
+
+    it('carries the option-list body verbatim in optionCatalog', () => {
+      expect(data.optionCatalog).toBeDefined();
+      expect(
+        data.optionCatalog?.startsWith(
+          'If an eldritch invocation has prerequisites',
+        ),
+      ).toBe(true);
     });
   });
 

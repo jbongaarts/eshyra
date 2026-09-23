@@ -158,13 +158,21 @@ describe('parseAncestries — Dwarf with subraces + Human without', () => {
       expect(toughness?.text).toMatch(/hit point maximum increases by 1/);
     });
 
-    it('merges the additive ability score increase into one trait', () => {
+    // The SRD prints Hill Dwarf's ability-score-increase sentence in two
+    // separate sections: the shared Dwarf block ("...Constitution...") and
+    // the Hill Dwarf subrace block ("...Wisdom..."). Flattening keeps both as
+    // distinct verbatim entries — parent first, then subrace, in document
+    // order — rather than composing one joined sentence the source never
+    // prints as a single span (eshyra-o9bd.19.2.1.3.1; this replaces the
+    // prior "merges into one trait" expectation, which the source prose
+    // proves wrong).
+    it('keeps the parent and subrace ability score increase as two separate verbatim traits, in document order', () => {
       const asi = hill?.traits.filter(
         (t) => t.name === 'Ability Score Increase',
       );
-      expect(asi).toHaveLength(1);
-      expect(asi?.[0].text).toMatch(/Constitution score increases by 2/);
-      expect(asi?.[0].text).toMatch(/Wisdom score increases by 1/);
+      expect(asi).toHaveLength(2);
+      expect(asi?.[0].text).toBe('Your Constitution score increases by 2.');
+      expect(asi?.[1].text).toBe('Your Wisdom score increases by 1.');
     });
 
     it('drops the parent-only "Subrace" pointer trait from the flattened set', () => {
@@ -185,12 +193,13 @@ describe('parseAncestries — Dwarf with subraces + Human without', () => {
   describe('Mountain Dwarf (subrace, flattened)', () => {
     const mountain = results.find((r) => r.name === 'Mountain Dwarf');
 
-    it('merges its +2 Strength into the inherited +2 Constitution', () => {
-      const asi = mountain?.traits.find(
+    it('keeps its own +2 Strength as a separate trait from the inherited +2 Constitution', () => {
+      const asi = mountain?.traits.filter(
         (t) => t.name === 'Ability Score Increase',
       );
-      expect(asi?.text).toMatch(/Constitution score increases by 2/);
-      expect(asi?.text).toMatch(/Strength score increases by 2/);
+      expect(asi).toHaveLength(2);
+      expect(asi?.[0].text).toBe('Your Constitution score increases by 2.');
+      expect(asi?.[1].text).toBe('Your Strength score increases by 2.');
     });
 
     it('includes its own Dwarven Armor Training trait', () => {
@@ -353,6 +362,43 @@ describe('parseAncestries — Dragonborn breath-weapon table does not bleed', ()
 });
 
 // ---------------------------------------------------------------------------
+// A trait label printed with a typographic apostrophe (Rock Gnome's
+// "Artificer’s Lore.") opens its own trait instead of bleeding into the
+// preceding Ability Score Increase body (registry row rock-gnome-boundary).
+// ---------------------------------------------------------------------------
+
+describe('parseAncestries — typographic-apostrophe trait label is a boundary', () => {
+  const results = parseAncestries([
+    page(35, [
+      'Gnome',
+      'A gnome’s energy and enthusiasm for living shines through every inch of his or her tiny body.',
+      'Ability Score Increase. Your Intelligence score increases by 2.',
+      'Subrace. Choose a subrace.',
+      'Rock Gnome',
+      'As a rock gnome, you have a natural inventiveness and hardiness beyond that of other gnomes.',
+      'Ability Score Increase. Your Constitution score increases by 1.',
+      'Artificer’s Lore. Whenever you make an Intelligence (History) check related to magic items, alchemical objects, or technological devices, you can add twice your proficiency bonus, instead of any proficiency bonus you normally apply.',
+    ]),
+  ]);
+  const rock = results.find((r) => r.name === 'Rock Gnome');
+
+  it('emits Artificer’s Lore as its own trait', () => {
+    const lore = rock?.traits.find((t) => t.name === 'Artificer’s Lore');
+    expect(lore?.text).toMatch(
+      /^Whenever you make an Intelligence \(History\)/,
+    );
+  });
+
+  it('keeps the subrace Ability Score Increase to its own printed sentence', () => {
+    const asi = rock?.traits.filter((t) => t.name === 'Ability Score Increase');
+    expect(asi?.map((t) => t.text)).toEqual([
+      'Your Intelligence score increases by 2.',
+      'Your Constitution score increases by 1.',
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Empty / no-match input.
 // ---------------------------------------------------------------------------
 
@@ -482,5 +528,65 @@ describe('parseAncestries — real SRD 5.1 PDF coverage (loreweaver-3m1)', () =>
     const ancestries = parseAncestries(racePages);
     const parsedNames = ancestries.map((a) => a.name).sort();
     expect(parsedNames).toEqual([...EXPECTED_SRD_5_1_ANCESTRY_NAMES].sort());
+  }, 20000);
+
+  // Durable invariant (eshyra-o9bd.19.2.1.3.1): every emitted trait text must
+  // be one contiguous verbatim span of the races-section source text — never
+  // composed by joining text from two separately printed sections (as the
+  // flattened subrace Ability Score Increase traits did pre-fix: the parent
+  // race's sentence and the subrace's own sentence are printed sections apart,
+  // so joining them with a space fabricated a span the SRD never prints).
+  // Confirmed to fail on pre-fix `main` for exactly the four SRD 5.1 subraces
+  // (High Elf, Hill Dwarf, Lightfoot Halfling, Rock Gnome) — see the bead's
+  // completion notes for the captured failing-record list.
+  it('never composes a trait text by joining two non-contiguous source spans', async () => {
+    const pdfBytes = readFileSync(SRD_PDF_PATH);
+    const pages = await extractPdfText(new Uint8Array(pdfBytes), {
+      pageRange: { start: 3, end: 8 },
+    });
+    const racePages = sliceSection(
+      pages,
+      SRD_5_1_DEFAULT_SECTION_ANCHORS.races,
+    );
+    const ancestries = parseAncestries(racePages);
+
+    // Collapse all whitespace runs (spaces, newlines, paragraph breaks) to one
+    // space, so a trait text can be compared against the source regardless of
+    // line-wrap position.
+    const normalize = (value: string): string =>
+      value.replace(/\s+/g, ' ').trim();
+
+    // Mirror parseAncestries' own joinParagraphs: join consecutive non-blank
+    // lines with a single space; a blank line starts a new paragraph. This is
+    // the same reflow every trait text already goes through, applied here to
+    // the full races-section source instead of one trait's body lines.
+    const paragraphs: string[] = [];
+    let current: string[] = [];
+    for (const raw of racePages.flatMap((p) => p.lines)) {
+      const line = raw.trim();
+      if (line.length === 0) {
+        if (current.length > 0) {
+          paragraphs.push(current.join(' '));
+          current = [];
+        }
+        continue;
+      }
+      current.push(line);
+    }
+    if (current.length > 0) {
+      paragraphs.push(current.join(' '));
+    }
+    const sourceText = normalize(paragraphs.join('\n\n'));
+
+    const failures: string[] = [];
+    for (const ancestry of ancestries) {
+      for (const trait of ancestry.traits) {
+        const traitText = normalize(trait.text);
+        if (traitText.length > 0 && !sourceText.includes(traitText)) {
+          failures.push(`${ancestry.name} / ${trait.name}`);
+        }
+      }
+    }
+    expect(failures).toEqual([]);
   }, 20000);
 });
