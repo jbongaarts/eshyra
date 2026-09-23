@@ -280,8 +280,8 @@
     {
       "kind": "class",
       "pointerPrefix": "/spellPreparation/sourceText",
-      "class": "source-prose",
-      "reason": "the verbatim printed spell-preparation clause the formula was derived from."
+      "class": "source-derived",
+      "reason": "a curated composition of the class's printed spell-preparation and spellcasting-ability sentences (creationFacts.ts). Each sentence is SRD text, but they are joined across separate subsections, so the whole is not one verbatim quotation."
     },
     {
       "kind": "class",

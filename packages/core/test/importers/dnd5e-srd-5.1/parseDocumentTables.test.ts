@@ -610,7 +610,7 @@ describe('parseDocumentTables — spell-embedded tables (eshyra-o4j7)', () => {
   it('reconstructs Animated Object Statistics wrapped attack cells', () => {
     expect(tables.get('Animated Object Statistics')).toMatchObject({
       sourcePage: 116,
-      columns: ['Size', 'HP', 'AC', 'Attack', 'Strength', 'Dexterity'],
+      columns: ['Size', 'HP', 'AC', 'Attack', 'Str', 'Dex'],
       rows: [
         ['Tiny', 20, 18, '+8 to hit, 1d4 + 4 damage', 4, 18],
         ['Small', 25, 16, '+6 to hit, 1d8 + 2 damage', 6, 14],
@@ -685,18 +685,24 @@ describe('parseDocumentTables — spell-embedded tables (eshyra-o4j7)', () => {
       ['77–96', 'Human'],
       ['97–00', 'Tiefling'],
     ]);
-    expect(tables.get('Scrying Save Modifiers')?.rows).toEqual([
-      ['Knowledge', 'Secondhand (you have heard of the target)', '+5'],
-      ['Knowledge', 'Firsthand (you have met the target)', '+0'],
-      ['Knowledge', 'Familiar (you know the target well)', '−5'],
-      ['Connection', 'Likeness or picture', '−2'],
-      ['Connection', 'Possession or garment', '−4'],
-      [
-        'Connection',
-        'Body part, lock of hair, bit of nail, or the like',
-        '−10',
+    // The SRD prints two separate tables under their own headers; neither
+    // may acquire a column header the source never prints.
+    expect(tables.get('Scrying Knowledge')).toMatchObject({
+      columns: ['Knowledge', 'Save Modifier'],
+      rows: [
+        ['Secondhand (you have heard of the target)', '+5'],
+        ['Firsthand (you have met the target)', '+0'],
+        ['Familiar (you know the target well)', '−5'],
       ],
-    ]);
+    });
+    expect(tables.get('Scrying Connection')).toMatchObject({
+      columns: ['Connection', 'Save Modifier'],
+      rows: [
+        ['Likeness or picture', '−2'],
+        ['Possession or garment', '−4'],
+        ['Body part, lock of hair, bit of nail, or the like', '−10'],
+      ],
+    });
     expect(tables.get('Teleport Familiarity')).toMatchObject({
       sourcePage: 186,
       rows: [
@@ -971,6 +977,30 @@ describe('parseDocumentTables — magic-item embedded content', () => {
 // ---------------------------------------------------------------------------
 
 describe('SRD_5_1_DOCUMENT_TABLE_SPECS hygiene', () => {
+  // Emitted `table` columns are declared verbatim source prose
+  // (field-provenance.json), so a spec may not emit a header word its own
+  // pinned header lines do not print — neither an invented header (the merged
+  // Scrying table's "Basis"/"Circumstance") nor an expanded abbreviation
+  // (Animated Object Statistics' printed "Str"/"Dex"). Class-progression
+  // specs pin source blocks instead of header lines and are out of scope here.
+  it('emits only column headers the source header lines print', () => {
+    const words = (text: string) =>
+      text
+        .normalize('NFKC')
+        .toLowerCase()
+        .split(/[^\p{L}\p{N}]+/u)
+        .filter(Boolean);
+    const invented: string[] = [];
+    for (const spec of SRD_5_1_DOCUMENT_TABLE_SPECS) {
+      if (spec.rows.kind === 'class-progression-reconstruction') continue;
+      const printed = new Set(spec.headerLines.flatMap(words));
+      for (const column of spec.columns)
+        if (!words(column).every((word) => printed.has(word)))
+          invented.push(`${spec.name}: ${column}`);
+    }
+    expect(invented).toEqual([]);
+  });
+
   it('spec names are unique (stable table identities)', () => {
     const names = SRD_5_1_DOCUMENT_TABLE_SPECS.map((spec) => spec.name);
     expect(new Set(names).size).toBe(names.length);

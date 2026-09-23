@@ -288,7 +288,7 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // 104 -> 108 (eshyra-4a7.10.5): the four Appendix PH-B deity tables
   // (Celtic/Greek/Egyptian/Norse Deities), reconstructed by parseDeityTables
   // from the page-interleaved column blocks.
-  table: 108,
+  table: 109,
 };
 
 /**
@@ -911,8 +911,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'table',
     field: 'legend',
-    missingCount: 107,
-    totalInKind: 108,
+    missingCount: 108,
+    totalInKind: 109,
   },
   // Semantic table projections. The first slice (eshyra-o9bd.7) projected the
   // feature-owned Destroy Undead / Beast Shapes tables and the Races Draconic
@@ -923,8 +923,8 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'table',
     field: 'projection',
-    missingCount: 86,
-    totalInKind: 108,
+    missingCount: 87,
+    totalInKind: 109,
   },
 ];
 
@@ -4180,7 +4180,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       ],
       'spell:creation': ['table:creation-material-duration'],
       'spell:reincarnate': ['table:reincarnate-race'],
-      'spell:scrying': ['table:scrying-save-modifiers'],
+      'spell:scrying': ['table:scrying-connection', 'table:scrying-knowledge'],
       'spell:teleport': ['table:teleport-familiarity'],
     };
 
@@ -4842,7 +4842,8 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         'table:ring-of-shooting-stars',
         'table:robe-of-useful-items',
         'table:rust-bag-of-tricks',
-        'table:scrying-save-modifiers',
+        'table:scrying-connection',
+        'table:scrying-knowledge',
         'table:sentient-magic-item-alignment',
         'table:sentient-magic-item-communication',
         'table:sentient-magic-item-senses',
@@ -4922,7 +4923,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       expect(table('table:animated-object-statistics')).toMatchObject({
         source: 'SRD 5.1 p. 116',
         data: {
-          columns: ['Size', 'HP', 'AC', 'Attack', 'Strength', 'Dexterity'],
+          columns: ['Size', 'HP', 'AC', 'Attack', 'Str', 'Dex'],
           rows: [
             ['Tiny', 20, 18, '+8 to hit, 1d4 + 4 damage', 4, 18],
             ['Small', 25, 16, '+6 to hit, 1d8 + 2 damage', 6, 14],
@@ -4995,18 +4996,29 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         ['77–96', 'Human'],
         ['97–00', 'Tiefling'],
       ]);
-      expect(table('table:scrying-save-modifiers')?.data.rows).toEqual([
-        ['Knowledge', 'Secondhand (you have heard of the target)', '+5'],
-        ['Knowledge', 'Firsthand (you have met the target)', '+0'],
-        ['Knowledge', 'Familiar (you know the target well)', '−5'],
-        ['Connection', 'Likeness or picture', '−2'],
-        ['Connection', 'Possession or garment', '−4'],
-        [
-          'Connection',
-          'Body part, lock of hair, bit of nail, or the like',
-          '−10',
-        ],
-      ]);
+      // Two printed tables, each under its own printed header (p176).
+      expect(table('table:scrying-knowledge')).toMatchObject({
+        source: 'SRD 5.1 p. 176',
+        data: {
+          columns: ['Knowledge', 'Save Modifier'],
+          rows: [
+            ['Secondhand (you have heard of the target)', '+5'],
+            ['Firsthand (you have met the target)', '+0'],
+            ['Familiar (you know the target well)', '−5'],
+          ],
+        },
+      });
+      expect(table('table:scrying-connection')).toMatchObject({
+        source: 'SRD 5.1 p. 176',
+        data: {
+          columns: ['Connection', 'Save Modifier'],
+          rows: [
+            ['Likeness or picture', '−2'],
+            ['Possession or garment', '−4'],
+            ['Body part, lock of hair, bit of nail, or the like', '−10'],
+          ],
+        },
+      });
       expect(table('table:teleport-familiarity')).toMatchObject({
         source: 'SRD 5.1 p. 186',
         data: {

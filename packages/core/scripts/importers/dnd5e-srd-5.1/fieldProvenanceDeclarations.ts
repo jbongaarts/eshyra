@@ -419,10 +419,10 @@ derived(
   '/spellPreparation',
   "the class's machine-readable spell-preparation formula, deterministically derived from the class's own spellcasting rules text.",
 );
-prose(
+derived(
   'class',
   '/spellPreparation/sourceText',
-  'the verbatim printed spell-preparation clause the formula was derived from.',
+  "a curated composition of the class's printed spell-preparation and spellcasting-ability sentences (creationFacts.ts). Each sentence is SRD text, but they are joined across separate subsections, so the whole is not one verbatim quotation.",
 );
 derived(
   'class',
