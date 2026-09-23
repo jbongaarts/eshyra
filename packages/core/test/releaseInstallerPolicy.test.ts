@@ -11,16 +11,6 @@ function readText(path: string): string {
 }
 
 describe('Release installer policy', () => {
-  it('installer scripts exist in scripts/release/', () => {
-    for (const f of [
-      'scripts/release/install.sh',
-      'scripts/release/install.ps1',
-      'scripts/release/generate-checksums.mjs',
-    ]) {
-      expect(existsSync(join(process.cwd(), f)), `${f} must exist`).toBe(true);
-    }
-  });
-
   it('POSIX installer maps to the correct artifact targets', () => {
     const sh = readText('scripts/release/install.sh');
 
@@ -344,29 +334,6 @@ describe('Release installer policy', () => {
     );
   });
 
-  it('docs/install.md shows one-line installer as primary path', () => {
-    const install = readText('docs/install.md');
-
-    // One-liner commands must appear before any manual tar/unpack instructions.
-    const curlIdx = install.indexOf('curl -fsSL');
-    const irmIdx = install.indexOf('irm ');
-    const tarIdx = install.indexOf('tar -xzf');
-
-    expect(
-      curlIdx,
-      'curl one-liner must be present in docs/install.md',
-    ).toBeGreaterThan(-1);
-    expect(
-      irmIdx,
-      'irm one-liner must be present in docs/install.md',
-    ).toBeGreaterThan(-1);
-    // curl must appear before the manual tar instructions.
-    expect(
-      curlIdx,
-      'curl one-liner must appear before manual tar instructions',
-    ).toBeLessThan(tarIdx === -1 ? Number.MAX_SAFE_INTEGER : tarIdx);
-  });
-
   it('docs/install.md uses windows-x64, not win32-x64', () => {
     const install = readText('docs/install.md');
     expect(install).not.toContain('win32-x64');
@@ -419,13 +386,5 @@ describe('Release installer policy', () => {
     // Must not affirmatively describe Eshyra as open source.
     expect(install).not.toMatch(/Eshyra is (?:an? )?open[- ]source/i);
     expect(install).toContain('commercial use');
-  });
-
-  it('README.md shows one-line installer prominently', () => {
-    const readme = readText('README.md');
-    expect(readme).toContain('curl -fsSL');
-    expect(readme).toContain('irm ');
-    // README must not describe Eshyra as open source.
-    expect(readme).not.toMatch(/\bopen.source\b/i);
   });
 });

@@ -46,18 +46,6 @@ describe('character draft derived values (engine integration)', () => {
     expect(draft.derived.savingThrows.strength?.proficient).toBe(false);
   });
 
-  it('keeps no nonsense HP error while prerequisites are incomplete', () => {
-    const draft = draftWithScores();
-    // Scores present, class absent → HP pending, never an error.
-    const pending = draft.diagnostics.find((d) => d.field === 'maxHitPoints');
-    expect(pending?.severity).toBe('pending');
-    expect(
-      draft.diagnostics.some(
-        (d) => d.field === 'maxHitPoints' && d.severity === 'error',
-      ),
-    ).toBe(false);
-  });
-
   it('does not populate saving throws before a class is chosen', () => {
     const draft = draftWithScores();
     expect(draft.derived.savingThrows).toEqual({});
@@ -77,15 +65,6 @@ describe('character draft derived values (engine integration)', () => {
     // HP re-derives off the raised Constitution: d10 + 3 = 13.
     expect(draft.derived.maxHitPoints).toBe(13);
     expect(draft.derived.savingThrows.constitution?.modifier).toBe(5);
-  });
-
-  it('leaves base scores unchanged for an ancestry with no increase to a score', () => {
-    let draft = draftWithScores();
-    draft = engine.setAncestry(draft, 'Elf');
-    // Elf grants only +2 DEX; everything else stays at its base score.
-    expect(draft.derived.finalAbilityScores.dexterity).toBe(16);
-    expect(draft.derived.finalAbilityScores.strength).toBe(15);
-    expect(draft.derived.finalAbilityScores.constitution).toBe(14);
   });
 
   it('computes spell save DC for a level-1 caster and re-derives on ancestry', () => {

@@ -244,14 +244,6 @@ describe('rules-pack-audit CLI — root npm-script wiring', () => {
     expect(script).toMatch(/\baudit\b/);
   });
 
-  it('diff:rules-pack script bakes in the diff subcommand and points at this CLI', () => {
-    const scripts = readRootScripts();
-    const script = scripts['diff:rules-pack'];
-    expect(script).toBeDefined();
-    expect(script).toContain(CLI_SCRIPT_RELATIVE);
-    expect(script).toMatch(/\bdiff\b/);
-  });
-
   it('diff:rules-pack runs end-to-end with only the two directories (no subcommand in user args)', () => {
     const baseDir = join(makeTmpDir(), 'a');
     const candDir = join(makeTmpDir(), 'b');

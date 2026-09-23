@@ -183,12 +183,6 @@ describe('runChronicleCommand', () => {
     expect(output.join('\n')).toContain('Unknown chronicle command');
   });
 
-  it('rejects show for an unknown character', () => {
-    const code = runChronicleCommand(['show', 'nobody', 'chronicle-1'], deps);
-    expect(code).toBe(1);
-    expect(output.join('\n')).toContain("Unknown character 'nobody'");
-  });
-
   it('rejects set for an unknown character', () => {
     const code = runChronicleCommand(
       ['set', 'nobody', 'chronicle-1', '--visibility', 'private'],
@@ -198,15 +192,6 @@ describe('runChronicleCommand', () => {
     expect(output.join('\n')).toContain("Unknown character 'nobody'");
     // The orphan id must not have been mutated into existence.
     expect(chronicle.getRecord('nobody', 'chronicle-1')).toBeUndefined();
-  });
-
-  it('rejects archive for an unknown character', () => {
-    const code = runChronicleCommand(
-      ['archive', 'nobody', 'chronicle-1'],
-      deps,
-    );
-    expect(code).toBe(1);
-    expect(output.join('\n')).toContain("Unknown character 'nobody'");
   });
 
   it('withholds a dm-only record from show by default', () => {

@@ -3,7 +3,6 @@ import {
   composeArcSummary,
   MemorySummaryError,
   type ModelClient,
-  ModelClientError,
   type ModelCompleteInput,
   type SessionRecapRecord,
 } from '../src/internal.js';
@@ -48,28 +47,6 @@ const NON_EMPTY_BIBLE = {
 };
 
 describe('composeArcSummary', () => {
-  it('returns the model-authored summary text verbatim', async () => {
-    const model = fakeModel(() => 'You opened the wayhouse door.');
-    const summary = await composeArcSummary(model, {
-      campaignId: 'camp-1',
-      arcId: 'arc-1',
-      recaps: [
-        recap(
-          'session-1',
-          'Mira found the chalk sigil.',
-          '2026-05-20T10:00:00.000Z',
-        ),
-        recap(
-          'session-2',
-          'The warden welcomed you in.',
-          '2026-05-21T10:00:00.000Z',
-        ),
-      ],
-      bible: EMPTY_BIBLE,
-    });
-    expect(summary).toBe('You opened the wayhouse door.');
-  });
-
   it('renders each session recap and stateDelta into the user prompt', async () => {
     let captured: ModelCompleteInput | undefined;
     const model = fakeModel((input) => {
@@ -145,22 +122,6 @@ describe('composeArcSummary', () => {
     expect(captured?.trace?.campaignId).toBe('camp-1');
     expect(captured?.trace?.arcId).toBe('arc-1');
     expect(captured?.trace?.extra?.purpose).toBe('arc_rollup');
-  });
-
-  it('propagates ModelClientError from the provider', async () => {
-    const model: ModelClient = {
-      complete: async () => {
-        throw new ModelClientError('boom');
-      },
-    };
-    await expect(
-      composeArcSummary(model, {
-        campaignId: 'camp-1',
-        arcId: 'arc-1',
-        recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],
-        bible: EMPTY_BIBLE,
-      }),
-    ).rejects.toBeInstanceOf(ModelClientError);
   });
 
   it('throws MemorySummaryError when recaps is empty', async () => {

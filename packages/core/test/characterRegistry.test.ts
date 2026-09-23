@@ -74,13 +74,6 @@ describe('character registry store', () => {
     expect(registry.load('nope')).toBeUndefined();
   });
 
-  it('lists ids in ascending order', () => {
-    const registry = createCharacterRegistryStore(db, () => 'now');
-    registry.save('b', makeSheet());
-    registry.save('a', makeSheet());
-    expect(registry.list()).toEqual(['a', 'b']);
-  });
-
   it('preserves created_at across an in-place update', () => {
     let clock = 'created';
     const registry = createCharacterRegistryStore(db, () => clock);

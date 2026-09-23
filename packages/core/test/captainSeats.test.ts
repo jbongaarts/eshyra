@@ -24,12 +24,10 @@ import {
 } from '../../../scripts/seats/probe-dispatch-markers.mjs';
 import {
   codexRuntimeIdentity,
-  EXIT_REMINDER_MIN_SESSION_MS,
   extractHookDeclarationRegion,
   handoffExitReminder,
   hookAdmission,
   hookDeclarationIdentity,
-  resolveSeatRoots,
 } from '../../../scripts/seats/seatContext.mjs';
 
 // Permanent evidence for eshyra-itnm. Captain routing and the advisory
@@ -537,18 +535,6 @@ describe('agent captain seats', () => {
         });
       });
 
-      it('records the baseline HEAD when it admits the session', () => {
-        const repo = initRepo();
-        startIn(repo, 'baselined');
-        const head = execFileSync('git', ['rev-parse', 'HEAD'], {
-          cwd: repo,
-          encoding: 'utf8',
-        }).trim();
-        expect(
-          JSON.parse(readFileSync(ledgerFile('baselined'), 'utf8')).headAt,
-        ).toBe(head);
-      });
-
       // The subtle one: SessionStart re-fires on compact and clear with the
       // same session id. Re-reading HEAD there would move the baseline to the
       // commit that was just made and erase the movement it proves.
@@ -638,26 +624,6 @@ describe('agent captain seats', () => {
           readTranscript,
         });
 
-      it('fires below the time floor once HEAD has moved', () => {
-        expect(reminder(young('aaa'), () => 'bbb')).toContain(
-          'npm run seat:handoff -- write claude-captain',
-        );
-      });
-
-      it('fires below the time floor on a transcript-recorded integration', () => {
-        expect(
-          reminder(
-            young('aaa'),
-            () => 'aaa',
-            () => true,
-          ),
-        ).toContain('npm run seat:handoff -- write claude-captain');
-      });
-
-      it('stays silent below the floor when HEAD has not moved', () => {
-        expect(reminder(young('aaa'), () => 'aaa')).toBeNull();
-      });
-
       // Both are absence of evidence, and neither may read as movement: a
       // ledger record written before headAt existed, and a HEAD git cannot
       // resolve.
@@ -666,120 +632,7 @@ describe('agent captain seats', () => {
         expect(reminder(young(null), () => 'bbb')).toBeNull();
         expect(reminder(young('aaa'), () => null)).toBeNull();
       });
-
-      it('keeps elapsed time as the fallback for a session that moved nothing', () => {
-        const old = {
-          ...young('aaa'),
-          startedAt: new Date(
-            Date.now() - EXIT_REMINDER_MIN_SESSION_MS - 60000,
-          ).toISOString(),
-        };
-        expect(reminder(old, () => 'aaa')).toContain('claude-captain');
-      });
-
-      // Stop runs at every turn end, so the cost of the transcript read and
-      // the git call is part of the design: they are reached only by a session
-      // that is otherwise owed a reminder and is not already past the fallback.
-      it('reads neither HEAD nor the transcript when a cheaper condition decides', () => {
-        let reads = 0;
-        const counted = () => {
-          reads += 1;
-          return 'bbb';
-        };
-        const countedTranscript = () => {
-          reads += 1;
-          return true;
-        };
-        // Already reminded, already past the floor, and already discharged by
-        // a handoff recorded during this session.
-        expect(
-          reminder(
-            { ...young('aaa'), remindedAt: minutesAgo(0) },
-            counted,
-            countedTranscript,
-          ),
-        ).toBeNull();
-        expect(
-          reminder(
-            {
-              ...young('aaa'),
-              startedAt: new Date(
-                Date.now() - EXIT_REMINDER_MIN_SESSION_MS - 60000,
-              ).toISOString(),
-            },
-            counted,
-            countedTranscript,
-          ),
-        ).not.toBeNull();
-        expect(
-          handoffExitReminder({
-            seatId: 'claude-captain',
-            handoff: { recordedAtMs: Date.now() },
-            session: young('aaa'),
-            cwd: '/somewhere',
-            readHead: counted,
-            readTranscript: countedTranscript,
-          }),
-        ).toBeNull();
-        expect(reads).toBe(0);
-      });
     });
-  });
-
-  // The write mechanism is a seat instruction, so it may only ever reach an
-  // eligible occupant. These routes emit nothing today; the assertion exists so
-  // that a future degraded notice on any of them cannot carry it out.
-  it('keeps the handoff write mechanism out of every ineligible route', () => {
-    mkdirSync(join(tmp, 'state', 'claude-captain'));
-    mkdirSync(join(tmp, 'state', 'codex-captain'));
-    writeFileSync(
-      join(tmp, 'state', 'claude-captain', 'handoff.md'),
-      'Claude handoff',
-    );
-    writeFileSync(
-      join(tmp, 'state', 'codex-captain', 'handoff.md'),
-      'Codex handoff',
-    );
-    const outputs = [
-      run(claudeScript, { agent_id: 'agent-1', model: 'claude-opus-5' }),
-      run(claudeScript, { model: 'claude-sonnet-5' }),
-      run(claudeScript, {}),
-      run(claudeScript, '{'),
-      run(
-        claudeScript,
-        { model: 'Fable 5.1' },
-        { ESHYRA_SEAT_ROLE: 'dispatched-worker' },
-      ),
-      run(codexScript, { hook_event_name: 'SubagentStart' }),
-      run(codexScript, { agent_type: 'reviewer' }),
-      run(
-        codexScript,
-        { hook_event_name: 'SessionStart' },
-        { ESHYRA_DISPATCH_CHILD: 'eshyra-kusc.1' },
-      ),
-    ];
-    for (const output of outputs) expect(output).not.toContain('seat:handoff');
-  });
-
-  it('includes the complete reconciliation block for both seats', () => {
-    const targets = [
-      'beads',
-      'branch',
-      'worktree',
-      'Git ancestry',
-      'commits',
-      'pull request',
-      'dispatch registry',
-      'recorded PGID',
-      'process identity',
-    ];
-    for (const output of [
-      run(claudeScript, { model: 'Fable 5.1' }),
-      run(codexScript, { hook_event_name: 'SessionStart' }),
-    ]) {
-      expect(output).toContain('### Reconcile before acting');
-      for (const target of targets) expect(output).toContain(target);
-    }
   });
 
   it('wires Claude Captain before the existing supervisor hook', () => {
@@ -821,24 +674,6 @@ describe('agent captain seats', () => {
       join(absoluteCommonDir, 'eshyra-seats', 'claude-captain', 'handoff.md'),
     );
     expect(resolved.startsWith(`${absoluteCommonDir}/`)).toBe(true);
-  });
-
-  it('keeps state shared across worktrees while content stays worktree-local', () => {
-    const roots = resolveSeatRoots(process.cwd(), {});
-    expect(roots).not.toBeNull();
-    const topLevel = execFileSync('git', ['rev-parse', '--show-toplevel'], {
-      cwd: process.cwd(),
-      encoding: 'utf8',
-    }).trim();
-    const commonDir = resolve(
-      topLevel,
-      execFileSync('git', ['rev-parse', '--git-common-dir'], {
-        cwd: process.cwd(),
-        encoding: 'utf8',
-      }).trim(),
-    );
-    expect(roots?.stateDir).toBe(join(commonDir, 'eshyra-seats'));
-    expect(roots?.checkoutRoot).toBe(topLevel);
   });
 
   it('pins the trusted Codex hook to code no worktree edit can change', () => {

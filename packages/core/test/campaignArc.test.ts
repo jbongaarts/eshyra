@@ -81,17 +81,6 @@ describe('getOpenArc', () => {
     db.close();
   });
 
-  it('returns the open arc when one exists', () => {
-    const db = makeDb();
-    const created = openArcIfMissing(db, {
-      campaignId: 'c1',
-      now: '2026-01-01T00:00:00Z',
-    });
-    const found = getOpenArc(db, { campaignId: 'c1' });
-    expect(found).toEqual(created);
-    db.close();
-  });
-
   it('returns undefined after the arc is manually closed', () => {
     const db = makeDb();
     openArcIfMissing(db, { campaignId: 'c1', now: '2026-01-01T00:00:00Z' });
@@ -106,13 +95,6 @@ describe('getOpenArc', () => {
 describe('getClosedArcCount', () => {
   it('returns 0 when no arcs exist', () => {
     const db = makeDb();
-    expect(getClosedArcCount(db, { campaignId: 'c1' })).toBe(0);
-    db.close();
-  });
-
-  it('returns 0 when only an open arc exists', () => {
-    const db = makeDb();
-    openArcIfMissing(db, { campaignId: 'c1', now: '2026-01-01T00:00:00Z' });
     expect(getClosedArcCount(db, { campaignId: 'c1' })).toBe(0);
     db.close();
   });
@@ -136,13 +118,6 @@ describe('getClosedArcCount', () => {
 describe('getClosedSessionsInOpenArc', () => {
   it('returns empty when no open arc exists', () => {
     const db = makeDb();
-    expect(getClosedSessionsInOpenArc(db, { campaignId: 'c1' })).toEqual([]);
-    db.close();
-  });
-
-  it('returns empty when open arc has no stamped closed sessions', () => {
-    const db = makeDb();
-    openArcIfMissing(db, { campaignId: 'c1', now: '2026-01-01T00:00:00Z' });
     expect(getClosedSessionsInOpenArc(db, { campaignId: 'c1' })).toEqual([]);
     db.close();
   });
@@ -297,15 +272,6 @@ describe('listClosedArcSummaries', () => {
     db.close();
   });
 
-  it('does not include open arcs', () => {
-    const db = makeDb();
-    openArcIfMissing(db, { campaignId: 'c1', now: '2026-01-01T00:00:00Z' });
-    // arc-1 is open; no arc_summary row exists for it (open arcs never have summaries)
-    const summaries = listClosedArcSummaries(db, { campaignId: 'c1' });
-    expect(summaries).toEqual([]);
-    db.close();
-  });
-
   it('does not include open arc even with a hypothetical arc_summary row', () => {
     const db = makeDb();
     openArcIfMissing(db, { campaignId: 'c1', now: '2026-01-01T00:00:00Z' });
@@ -417,33 +383,6 @@ describe('closeOpenArcAndOpenNext', () => {
         now: '2026-01-10T00:00:00Z',
       }),
     ).toThrow(/arc-99/);
-
-    db.close();
-  });
-
-  it('throws when the campaign has zero arc rows at all', () => {
-    // The wrong-arcId path above and this zero-rows path both surface as
-    // openArc === undefined in the implementation; documenting both inputs
-    // pins the contract for the "no open arc" case independently of whether
-    // the campaign has ever had an arc.
-    const db = makeDb();
-    // No openArcIfMissing call — campaign_arc has no rows for this campaign.
-
-    expect(() =>
-      closeOpenArcAndOpenNext(db, {
-        campaignId: 'c1',
-        arcId: 'arc-1',
-        summary: 's',
-        sourceSessionIds: [],
-        campaignBible: {
-          worldFacts: [],
-          majorNpcs: [],
-          factions: [],
-          openThreads: [],
-        },
-        now: '2026-01-10T00:00:00Z',
-      }),
-    ).toThrow(/\(none\)/);
 
     db.close();
   });

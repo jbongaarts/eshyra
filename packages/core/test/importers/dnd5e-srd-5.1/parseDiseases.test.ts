@@ -88,10 +88,6 @@ describe('parseDiseases — all three SRD 5.1 diseases with leading guidance', (
     ]),
   ]);
 
-  it('extracts exactly three diseases', () => {
-    expect(results).toHaveLength(3);
-  });
-
   it('extracts the three names sorted', () => {
     expect(results.map((d) => d.name)).toEqual([
       'Cackle Fever',

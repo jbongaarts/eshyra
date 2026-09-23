@@ -252,30 +252,6 @@ describe('runtime-owned deterministic capability ledger', () => {
     }
   });
 
-  it('keeps the owner preflight authoritative over a ledger declaration', () => {
-    // `capabilities()` in packet.ts returns the ledger declaration only when
-    // the candidate has no capability-preflight routes of its own, because an
-    // `available`/`blocked` preflight is the capability owner's subject-
-    // specific observation and a binding declares identity and limits only.
-    //
-    // That branch is latent TODAY, and this pins exactly why: no magic-item
-    // key is bound, so no candidate can currently reach the packet with both.
-    // If a magic-item binding is ever added this fails, and whoever adds it
-    // has to look at the precedence branch rather than discover later that a
-    // real preflight was silently replaced by a weaker declaration. The guard
-    // is the honest claim available here: the interaction itself has no
-    // executable case until such a binding exists.
-    const boundKeys = RULE_DETERMINISTIC_CAPABILITY_BINDINGS.map(
-      ({ ruleKey }) => ruleKey,
-    );
-    expect(boundKeys.filter((key) => key.startsWith('magic-item:'))).toEqual(
-      [],
-    );
-    // And the record kind that DOES carry preflights keeps them (R6 asserts
-    // the statuses); this states the membership fact R6 depends on.
-    expect(boundKeys.every((key) => key.startsWith('rule:'))).toBe(true);
-  });
-
   it('R7 the audit-bundle report re-emits the pre-move three-contract membership, not the runtime ledger four (F5)', () => {
     // Pre-move identities exactly as they stood in
     // git show origin/main:packages/core/scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.ts

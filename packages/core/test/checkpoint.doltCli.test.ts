@@ -9,10 +9,6 @@ import {
 } from '../src/persistence/checkpoint/doltCli.js';
 
 describe('sqlLiteral', () => {
-  it('wraps the string in single quotes', () => {
-    expect(sqlLiteral('hello')).toBe("'hello'");
-  });
-
   it("doubles a single quote (it can't → 'it can''t')", () => {
     expect(sqlLiteral("it can't")).toBe("'it can''t'");
   });

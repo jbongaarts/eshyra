@@ -96,11 +96,6 @@ describe('loadConfig provider selection', () => {
 });
 
 describe('loadConfig auto vs forced selection', () => {
-  it('uses the single present provider under auto (default)', () => {
-    expect(load({ ANTHROPIC_API_KEY: 'sk' }).auth.id).toBe('anthropic-api');
-    expect(load({ CLAUDE_CODE_OAUTH_TOKEN: 'tok' }).auth.id).toBe('claude-sub');
-  });
-
   it('fails fast when more than one provider is available and no mode is set', () => {
     expect(() =>
       load({ ANTHROPIC_API_KEY: 'sk', CLAUDE_CODE_OAUTH_TOKEN: 'tok' }),

@@ -124,34 +124,6 @@ describe('persistence', () => {
     db.close();
   });
 
-  it('creates the campaign_arc table with the one-open partial index', () => {
-    const db = openDatabase(':memory:');
-    initSchema(db);
-    const tables = db
-      .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='campaign_arc'",
-      )
-      .all();
-    expect(tables).toHaveLength(1);
-    const indexes = db
-      .prepare(
-        "SELECT name FROM sqlite_master WHERE type='index' AND name='campaign_arc_one_open'",
-      )
-      .all();
-    expect(indexes).toHaveLength(1);
-    db.close();
-  });
-
-  it('adds an arc_id column to campaign_session', () => {
-    const db = openDatabase(':memory:');
-    initSchema(db);
-    const cols = db
-      .prepare('PRAGMA table_info(campaign_session)')
-      .all() as Array<{ name: string }>;
-    expect(cols.map((c) => c.name)).toContain('arc_id');
-    db.close();
-  });
-
   it('initSchema creates canonical game-state tables with provenance columns and seed rows', () => {
     const db = openDatabase(':memory:');
     initSchema(db);

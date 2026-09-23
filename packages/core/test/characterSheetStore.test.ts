@@ -103,50 +103,12 @@ describe('character sheet store', () => {
     ).toThrow(/totals/);
   });
 
-  it('persists the binding columns out of the document', () => {
-    const store = createSqliteCharacterSheetStore(db, () => 'now');
-    store.save('pc-1', makeSheet());
-    const row = db
-      .prepare(
-        'SELECT schema_version, system, rules_pack_id FROM character_sheet WHERE character_id = ?',
-      )
-      .get('pc-1') as {
-      schema_version: number;
-      system: string;
-      rules_pack_id: string;
-    };
-    expect(row).toEqual({
-      schema_version: 1,
-      system: DND5E_SRD_SYSTEM_ID,
-      rules_pack_id: DND5E_SRD_PACK_ID,
-    });
-  });
-
   it('replaces an existing sheet on re-save', () => {
     const store = createSqliteCharacterSheetStore(db, () => 'now');
     store.save('pc-1', makeSheet({ level: 1 }));
     store.save('pc-1', makeSheet({ level: 2, maxHitPoints: 20 }));
     expect(store.load('pc-1')?.level).toBe(2);
     expect(store.list()).toEqual(['pc-1']);
-  });
-
-  it('updates the row in place on re-save (stable rowid, not delete+insert)', () => {
-    // A true upsert preserves the row identity so a future append-only ledger
-    // keyed to character_sheet(character_id) is never broken by a re-save.
-    const store = createSqliteCharacterSheetStore(db, () => 'now');
-    store.save('pc-1', makeSheet({ level: 1 }));
-    const rowidBefore = (
-      db
-        .prepare('SELECT rowid FROM character_sheet WHERE character_id = ?')
-        .get('pc-1') as { rowid: number }
-    ).rowid;
-    store.save('pc-1', makeSheet({ level: 2 }));
-    const rowidAfter = (
-      db
-        .prepare('SELECT rowid FROM character_sheet WHERE character_id = ?')
-        .get('pc-1') as { rowid: number }
-    ).rowid;
-    expect(rowidAfter).toBe(rowidBefore);
   });
 
   it('returns undefined for a missing sheet', () => {

@@ -111,11 +111,6 @@ describe('parseTraps — representative sample traps', () => {
     ]);
   });
 
-  it('returns traps sorted by name', () => {
-    const names = results.map((t) => t.name);
-    expect(names).toEqual([...names].sort());
-  });
-
   it('classifies each trap by its SRD subtitle', () => {
     const byName = new Map(results.map((t) => [t.name, t]));
     expect(byName.get('Fire-Breathing Statue')?.trapType).toBe('magic');

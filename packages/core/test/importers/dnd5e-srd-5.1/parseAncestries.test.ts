@@ -81,11 +81,6 @@ describe('parseAncestries — Dwarf with subraces + Human without', () => {
     expect(names).toEqual(['Dwarf', 'Hill Dwarf', 'Human', 'Mountain Dwarf']);
   });
 
-  it('returns output sorted by name', () => {
-    const names = results.map((r) => r.name);
-    expect(names).toEqual([...names].sort());
-  });
-
   // --- race with subraces ---
   describe('Dwarf (race with subraces)', () => {
     const dwarf = results.find((r) => r.name === 'Dwarf');

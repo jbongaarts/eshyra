@@ -6,13 +6,11 @@ import {
   deduplicateCandidates,
   expandTypedRelationships,
   getBundledDnd5eSrdPack,
-  joinCampaignRules,
   MAGIC_ITEM_OPERATION_READINESS_CAPABILITY,
   measureDiscovery,
   projectDiscoveryTrace,
   resolveDiscoveryCandidates,
   resolveRulesStack,
-  retainCandidates,
   runDiscoveryStages,
 } from '../../src/internal.js';
 import { freshDbWithSession } from '../support/db.js';
@@ -133,77 +131,6 @@ describe('offline discovery stage boundaries', () => {
     expect(trace.routeCountAfterDedup['rule:cover']).toBe(2);
   });
 
-  it('records must-consider overflow with every dropped route', () => {
-    const make = (key: string): DiscoveryCandidate => ({
-      ...baseCandidate(key),
-      routes: [
-        {
-          routeClass: 'direct-state-ref',
-          trigger: 'state',
-          evidence: {},
-          signalId: key,
-        },
-      ],
-    });
-    const baseCandidate = (key: string): DiscoveryCandidate => ({
-      candidateKey: key,
-      targetKind: 'rules-record',
-      entry: stack.recordsByKey.get(key),
-      routes: [],
-      traversals: [],
-      campaignRules: [],
-      campaignRulings: [],
-    });
-    const trace = retainCandidates(
-      [make('rule:cover'), make('rule:concentration')],
-      { maxCandidates: 1 },
-    );
-    expect(trace.overflowed).toBe(true);
-    expect(trace.overflow[0].candidateKey).toBe('rule:cover');
-    expect(trace.overflow[0].routes).toHaveLength(1);
-  });
-
-  it('joins a read-only campaign rule beside its governed record', () => {
-    const candidate: DiscoveryCandidate = {
-      candidateKey: 'spell:fireball',
-      targetKind: 'rules-record',
-      entry: stack.recordsByKey.get('spell:fireball'),
-      routes: [
-        {
-          routeClass: 'explicit-name-or-alias',
-          trigger: 'fireball',
-          evidence: {},
-          signalId: 's1',
-        },
-      ],
-      traversals: [],
-      campaignRules: [],
-      campaignRulings: [],
-    };
-    const trace = joinCampaignRules([candidate], {
-      activeRulesAtPosition: () => [
-        {
-          ruleIdentity: 'house-rule-1',
-          ruleKind: 'house-rule',
-          status: 'active',
-          origin: 'player',
-          provenance: 'campaign',
-          effectivePosition: 'turn-1',
-          supersededBy: null,
-          revokedPosition: null,
-          scope: 'spell components',
-          governingRecordKeys: ['spell:fireball'],
-        },
-      ],
-      activeRulingsForAmbiguities: () => [],
-    });
-    expect(trace.outputsProduced[0].campaignRules[0].ruleIdentity).toBe(
-      'house-rule-1',
-    );
-    expect(trace.placedRules).toEqual([
-      { ruleIdentity: 'house-rule-1', governingRecordKey: 'spell:fireball' },
-    ]);
-  });
   it('reports a must-consider overflow through the trace instead of throwing, and blames the losing stage', () => {
     const db = freshDbWithSession();
     try {

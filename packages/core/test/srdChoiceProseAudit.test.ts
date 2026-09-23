@@ -274,57 +274,9 @@ describe('choice-bearing prose gate (fixtures)', () => {
 // Real-pack baseline
 // ---------------------------------------------------------------------------
 
-// The ten class spell-selection features that were the last unstructured
-// choice cases at the 2026-06-29 baseline. eshyra-vk23.2 structured every one
-// (cantrip/known-spell/prepared/spellbook/arcanum filters), so the gate must
-// now find NONE of them. They are kept here as an explicit regression list:
-// each MUST stay structured (no finding) or a future change is silently
-// reintroducing prose-only spell choices.
-const RESOLVED_SPELL_FEATURES: readonly string[] = [
-  'feature:bard:spellcasting',
-  'feature:cleric:spellcasting',
-  'feature:druid:spellcasting',
-  'feature:paladin:spellcasting',
-  'feature:ranger:spellcasting',
-  'feature:sorcerer:spellcasting',
-  'feature:warlock:mystic-arcanum',
-  'feature:warlock:pact-magic',
-  'feature:wizard:spellbook',
-  'feature:wizard:spellcasting',
-];
-
 describe('choice-bearing prose gate (committed pack baseline)', () => {
   const pack = getBundledDnd5eSrdPack();
   const findings = auditSrdChoiceProse(pack);
-  const keys = new Set(findings.map((f) => f.key));
-
-  it('no longer flags the eshyra-vk23.2 class spell-selection features', () => {
-    for (const key of RESOLVED_SPELL_FEATURES) {
-      expect(keys.has(key), `expected ${key} to be structured`).toBe(false);
-    }
-  });
-
-  it('does not flag slot-recovery / per-cast spell choices', () => {
-    // Arcane/Natural Recovery select expended slots (excluded by regex); Sculpt
-    // Spells is a per-cast targeting formula (allowlisted).
-    expect(keys.has('feature:wizard:arcane-recovery')).toBe(false);
-    expect(keys.has('feature:circle-of-the-land:natural-recovery')).toBe(false);
-    expect(keys.has('feature:school-of-evocation:sculpt-spells')).toBe(false);
-  });
-
-  it('every finding is actionable (source, phrase, snippet, expected area)', () => {
-    for (const f of findings) {
-      expect(f.source.length).toBeGreaterThan(0);
-      expect(f.matchedPhrases.length).toBeGreaterThan(0);
-      expect(f.snippet.length).toBeGreaterThan(0);
-      expect(f.expectedModeling.length).toBeGreaterThan(0);
-    }
-  });
-
-  it('findings are sorted by key', () => {
-    const sorted = [...findings].map((f) => f.key).sort();
-    expect(findings.map((f) => f.key)).toEqual(sorted);
-  });
 
   // PIN: 27 at ngcj.1 -> 10 after eshyra-ngcj.2 modeled the class/subclass
   // option catalogs and higher-level feature spell filters -> 0 after

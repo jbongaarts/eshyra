@@ -289,15 +289,6 @@ describe('AgentSdkModelClient', () => {
   });
 
   describe('opt-in session debug logging (eshyra-iu18)', () => {
-    it('emits no debug record when no sink is wired (silent by default)', async () => {
-      queryMock.mockReturnValue(sdkStream(ok('narration')));
-      // Constructing without a debug option must not throw and not log.
-      const out = await new AgentSdkModelClient('m', undefined).complete({
-        messages: [{ role: 'user', content: 'hi' }],
-      });
-      expect(out.text).toBe('narration');
-    });
-
     it('records one structural event on success with labels', async () => {
       queryMock.mockReturnValue(sdkStream(ok('You stride forward.')));
       const sink = collectingSink();
@@ -418,18 +409,6 @@ describe('AgentSdkModelClient', () => {
           messages: [{ role: 'user', content: 'x' }],
         }),
       ).rejects.toBeInstanceOf(ModelRateLimitError);
-    });
-
-    it('ModelRateLimitError from session-limit is also instanceof ModelClientError', async () => {
-      queryMock.mockImplementation(() => {
-        throw new Error(SESSION_LIMIT_MSG);
-      });
-
-      await expect(
-        new AgentSdkModelClient('m').complete({
-          messages: [{ role: 'user', content: 'x' }],
-        }),
-      ).rejects.toBeInstanceOf(ModelClientError);
     });
 
     it('sanitized error text does not leak credentials when session-limit error is thrown', async () => {

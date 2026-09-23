@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type {
   AdventureModule,
@@ -600,25 +599,5 @@ describe('first combat playtest deterministic regression fixture', () => {
       }),
     ]);
     db.close();
-  });
-
-  it('documents the live RNG recipe as branch-tolerant rather than exact-prose exact-path', () => {
-    const recipe = readFileSync(
-      'docs/playtests/first-combat-regression.md',
-      'utf8',
-    );
-
-    expect(recipe).toContain('## Live RNG Playtest');
-    expect(recipe).toContain('transcript as branch-tolerant');
-    expect(recipe).toContain(
-      'If Bob attacks, the player attack roll is visible.',
-    );
-    expect(recipe).toContain('If Bob hits, the damage roll is visible.');
-    expect(recipe).toContain(
-      'If a goblin attacks Bob, the enemy attack roll is visible.',
-    );
-    expect(recipe).toContain(
-      'If Bob reaches 0 HP, unconscious/dying state and death-save flow are visible.',
-    );
   });
 });

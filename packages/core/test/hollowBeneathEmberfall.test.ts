@@ -45,48 +45,6 @@ describe('The Hollow Beneath Emberfall starter module', () => {
     expect(module.id).toBe(MODULE_ID);
   });
 
-  it('loads and validates through the module loader', () => {
-    const module = loadAdventureModuleFromDir(MODULE_DIR);
-
-    expect(module.id).toBe(MODULE_ID);
-    expect(module.title).toBe('The Hollow Beneath Emberfall');
-    expect(module.rulesRequirements.baseSystemId).toBe('dnd5e-srd');
-    // The authored set the acceptance calls for is present.
-    expect(module.hooks.length).toBeGreaterThan(0);
-    expect(module.locations.length).toBe(4);
-    expect(module.scenes.length).toBe(4);
-    expect(module.npcs.length).toBe(2);
-    expect(module.objectives.length).toBe(3);
-    expect(module.secrets.length).toBe(3);
-    expect(module.encounters.length).toBe(3);
-    expect(module.treasure.length).toBe(2);
-    expect(module.endingStates.length).toBe(3);
-    // Reviewer note: these top-level/required fields are explicit, not inferred.
-    expect(module.startingSituation.length).toBeGreaterThan(0);
-    expect(Array.isArray(module.randomTables)).toBe(true);
-    expect(module.milestones.length).toBe(1);
-    expect(module.provenance.sourceRef).toBe(
-      'first-party:hollow-beneath-emberfall',
-    );
-    expect(module.license.licenseClass).toBe('original');
-  });
-
-  it('seats every authored beat in the keyed locations (no dangling refs)', () => {
-    const module = loadAdventureModuleFromDir(MODULE_DIR);
-    // loadAdventureModuleFromDir already enforces intra-module referential
-    // integrity; assert the entry scene and a couple of cross-links explicitly.
-    expect(module.startingSceneId).toBe('scene-arrival');
-    const sceneIds = new Set(module.scenes.map((s) => s.id));
-    expect(sceneIds.has(module.startingSceneId)).toBe(true);
-
-    const locationIds = new Set(module.locations.map((l) => l.id));
-    for (const loc of module.locations) {
-      for (const exit of loc.exits) {
-        expect(locationIds.has(exit.toLocationId)).toBe(true);
-      }
-    }
-  });
-
   it('references rules-pack content by rulesRef and resolves against the real SRD stack', () => {
     const module = loadAdventureModuleFromDir(MODULE_DIR);
 

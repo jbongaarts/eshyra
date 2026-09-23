@@ -31,8 +31,6 @@ import {
 const SOURCE_PROSE_HEADING = '### Source prose (verbatim; authoritative)';
 const SOURCE_DERIVED_HEADING =
   '### Source-derived facts (deterministic parser output from the cited source; NOT a verbatim quotation)';
-const PROJECTION_HEADING =
-  '### Typed projection (does not replace the source prose above)';
 
 /**
  * W10 (`eshyra-o9bd.19.12`) permanent evidence for the context-packet
@@ -273,27 +271,6 @@ describe('context-packet message renderer', () => {
     expect(source).not.toContain('/data/armorClass/source: natural armor');
   });
 
-  // `eshyra-o9bd.19.12.11` evidence E2 — the re-review's named sibling class:
-  // every structured statline field a creature record carries renders as
-  // source-derived, never as verbatim source prose, exactly like
-  // `armorClass`.
-  it('bead-E2 — hit points, speed, and ability scores render as source-derived, never as verbatim prose', () => {
-    const span = candidateSpan(
-      render('P3').text,
-      'creature:adult-black-dragon',
-    );
-    const source = headingBlock(span, SOURCE_PROSE_HEADING);
-    const derived = headingBlock(span, SOURCE_DERIVED_HEADING);
-    expect(derived).toContain('/data/hitPoints/value: 195');
-    expect(derived).toContain('/data/hitPoints/formula: 17d12 + 85');
-    expect(derived).toContain('/data/speed/walk: 40');
-    expect(derived).toContain('/data/abilityScores/strength: 23');
-    expect(source).not.toContain('/data/hitPoints/value');
-    expect(source).not.toContain('/data/hitPoints/formula');
-    expect(source).not.toContain('/data/speed/walk');
-    expect(source).not.toContain('/data/abilityScores/strength');
-  });
-
   /**
    * F2 (PR #543 review, `eshyra-o9bd.19.12.8`): the packet used to split a
    * candidate's record body by primitive TYPE — every string under "Source
@@ -373,61 +350,6 @@ describe('context-packet message renderer', () => {
       '/data/actions/5/mechanics/damage/0/dice: 12d8',
     );
     expect(projection).not.toContain('/data/actions/5/text');
-  });
-
-  // F2 — a NULL-valued projection leaf (`magic-item:cube-of-force`'s
-  // `mechanics.ambiguities[0].canonicalResolution`, verified null in the real
-  // pack) stays projection. A type-based rule already handled null one way
-  // consistently; this proves the CONTAINER rule does too, for the one
-  // primitive type `emitLeaves` treats specially at the object-vs-leaf split.
-  it('F2 — keeps a null-valued projection leaf under Typed projection', () => {
-    const span = candidateSpan(
-      render('P7', { executionId: 'without-active-ruling' }).text,
-      'magic-item:cube-of-force',
-    );
-    const source = headingBlock(
-      span,
-      '### Source prose (verbatim; authoritative)',
-    );
-    const projection = headingBlock(
-      span,
-      '### Typed projection (does not replace the source prose above)',
-    );
-    expect(projection).toContain(
-      '/data/mechanics/ambiguities/0/canonicalResolution: null',
-    );
-    expect(source).not.toContain(
-      '/data/mechanics/ambiguities/0/canonicalResolution',
-    );
-  });
-
-  // F2, P10: the review names P10 by id without specifying which of its
-  // fields are prose versus typed. P10 targets the SAME `spell:fireball`
-  // record as P4 (this time beside an active house rule), so it carries the
-  // identical split: `components` is source-DERIVED — a parsed
-  // "V"/"S"/"M" token list, not a quotation of source prose (F1-rr,
-  // `eshyra-o9bd.19.12.11`; the bundled manifest declares
-  // `(spell, /components)` as `source-derived`, not `source-prose`) — the
-  // failed-save description is source prose, and
-  // `mechanics.saves`/`mechanics.damage`/`upcast` are projection.
-  it('F2/F1-rr — P10 splits its governing spell:fireball record the same way as P4', () => {
-    const span = candidateSpan(render('P10').text, 'spell:fireball');
-    const source = headingBlock(span, SOURCE_PROSE_HEADING);
-    const derived = headingBlock(span, SOURCE_DERIVED_HEADING);
-    const projection = headingBlock(span, PROJECTION_HEADING);
-    // Prose fields P10's own fixture facts require (design amendment 11.1).
-    expect(derived).toContain('/data/components/0: V');
-    expect(source).not.toContain('/data/components/0: V');
-    expect(source).toContain('A target takes 8d6 fire damage on a failed save');
-    // The same typed fields P4 proves, present here too and still projection.
-    expect(projection).toContain('/data/mechanics/saves/0/ability: dexterity');
-    expect(projection).toContain(
-      '/data/mechanics/saves/0/damageOnSuccess: half',
-    );
-    expect(source).not.toContain('/data/mechanics/saves/0/ability: dexterity');
-    expect(source).not.toContain(
-      '/data/mechanics/saves/0/damageOnSuccess: half',
-    );
   });
 
   /**

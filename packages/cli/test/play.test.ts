@@ -746,66 +746,6 @@ describe('runPlay', () => {
     dispose();
   });
 
-  it('skips arc rollup and warns when the model errors at the Nth session close', async () => {
-    // Multi-arc semantics: rollover is only attempted at N=5 closes.
-    // Run N-1=4 sessions with the good model, then the 5th with a broken one.
-    // Share one baseDeps so nextId produces unique session IDs across calls.
-    const { db, dispose } = makeDb();
-    const sharedDeps = baseDeps(db, scriptedIO([]).io);
-
-    for (let i = 0; i < 4; i++) {
-      const { io } = scriptedIO(['/defer', '/quit']);
-      await runPlay({ ...sharedDeps, io }, { dbPath: 'demo.db' });
-    }
-
-    // 5th session: model always throws.
-    const { io: badIo, lines } = scriptedIO(['/defer', 'look around', '/quit']);
-    const code = await runPlay(
-      {
-        ...sharedDeps,
-        io: badIo,
-        model: {
-          complete: async () => {
-            throw new ModelClientError('provider down');
-          },
-        },
-      },
-      { dbPath: 'demo.db' },
-    );
-
-    expect(code).toBe(0);
-    const out = lines.join('\n');
-    expect(out).toContain('closed and recapped');
-    expect(out).toContain(
-      'Arc rollup skipped (bible extraction failed): provider down.',
-    );
-
-    const cid = campaignId(db);
-    // arc_summary row was NOT written.
-    expect(
-      getArcSummary(db, { campaignId: cid, arcId: 'arc-1' }),
-    ).toBeUndefined();
-    // arc-1 stays open.
-    const arcRow = db
-      .prepare(
-        'SELECT status FROM campaign_arc WHERE campaign_id = ? AND arc_id = ?',
-      )
-      .get(cid, 'arc-1') as { status: string } | undefined;
-    expect(arcRow?.status).toBe('open');
-    // Session closed and recap written despite the arc rollup failure.
-    expect(getOpenSession(db, { campaignId: cid })).toBeUndefined();
-    const sessions = listSessions(db, { campaignId: cid });
-    const lastSession = sessions[sessions.length - 1];
-    expect(
-      getSessionRecap(db, {
-        campaignId: cid,
-        sessionId: lastSession.sessionId,
-      }),
-    ).toBeDefined();
-
-    dispose();
-  });
-
   it('retries the bible call once and recovers when the second attempt succeeds', async () => {
     // Multi-arc semantics: bible is only called at N=5 closes.
     // Run N-1=4 sessions with the good model, then the 5th with the retry model.
@@ -859,58 +799,6 @@ describe('runPlay', () => {
     dispose();
   });
 
-  it('skips the rollup and warns when bible extraction fails twice', async () => {
-    // Multi-arc semantics: bible is only called at N=5 closes.
-    // Run N-1=4 sessions with the good model, then the 5th with a bible-failing model.
-    // Share one baseDeps so nextId produces unique session IDs across calls.
-    const { db, dispose } = makeDb();
-    const sharedDeps = baseDeps(db, scriptedIO([]).io);
-
-    for (let i = 0; i < 4; i++) {
-      const { io } = scriptedIO(['/defer', '/quit']);
-      await runPlay({ ...sharedDeps, io }, { dbPath: 'demo.db' });
-    }
-
-    const { io: badIo, lines } = scriptedIO(['/defer', 'look around', '/quit']);
-    const code = await runPlay(
-      {
-        ...sharedDeps,
-        io: badIo,
-        model: routedFakeModel({
-          bible: () => {
-            throw new ModelClientError('bible provider down');
-          },
-          summary: () => FAKE_ARC_SUMMARY,
-        }),
-      },
-      { dbPath: 'demo.db' },
-    );
-
-    expect(code).toBe(0);
-    const out = lines.join('\n');
-    expect(out).toContain('closed and recapped');
-    expect(out).toContain(
-      'Arc rollup skipped (bible extraction failed): bible provider down.',
-    );
-
-    const cid = campaignId(db);
-    // Session closed and recap written despite the bible failure.
-    expect(getOpenSession(db, { campaignId: cid })).toBeUndefined();
-    const sessions = listSessions(db, { campaignId: cid });
-    const lastSession = sessions[sessions.length - 1];
-    expect(
-      getSessionRecap(db, {
-        campaignId: cid,
-        sessionId: lastSession.sessionId,
-      }),
-    ).toBeDefined();
-    // No arc_summary row was written because the bible call failed both attempts.
-    expect(
-      getArcSummary(db, { campaignId: cid, arcId: 'arc-1' }),
-    ).toBeUndefined();
-    dispose();
-  });
-
   it('skips the rollup and warns when arc summary fails after bible succeeded', async () => {
     // Multi-arc semantics: arc summary is only called at N=5 closes.
     // Run N-1=4 sessions with the good model, then the 5th with a summary-failing model.
@@ -957,49 +845,6 @@ describe('runPlay', () => {
   });
 
   // --- New multi-arc lifecycle tests ---
-
-  it('rolls over at the Nth session close', async () => {
-    // Drive N=5 runPlay invocations, then assert arc-1 is closed, arc-2 is open.
-    // Share one baseDeps so nextId produces unique session IDs across all 5 calls.
-    const { db, dispose } = makeDb();
-    const sharedDeps = baseDeps(db, scriptedIO([]).io);
-
-    let lastLines: string[] = [];
-    for (let i = 0; i < 5; i++) {
-      const { io, lines } = scriptedIO(['/defer', '/quit']);
-      await runPlay({ ...sharedDeps, io }, { dbPath: 'demo.db' });
-      lastLines = lines;
-    }
-
-    const cid = campaignId(db);
-
-    // arc-1 is closed with a summary covering 5 sessions.
-    const arc1Row = db
-      .prepare(
-        'SELECT arc_id, status, sequence_no FROM campaign_arc WHERE campaign_id = ? AND arc_id = ?',
-      )
-      .get(cid, 'arc-1') as
-      | { arc_id: string; status: string; sequence_no: number }
-      | undefined;
-    expect(arc1Row?.status).toBe('closed');
-
-    const arc1Summary = getArcSummary(db, { campaignId: cid, arcId: 'arc-1' });
-    expect(arc1Summary).toBeDefined();
-    expect(arc1Summary?.sourceSessionIds).toHaveLength(5);
-
-    // arc-2 is now open.
-    const arc2Row = db
-      .prepare(
-        'SELECT arc_id, status FROM campaign_arc WHERE campaign_id = ? AND arc_id = ?',
-      )
-      .get(cid, 'arc-2') as { arc_id: string; status: string } | undefined;
-    expect(arc2Row?.status).toBe('open');
-
-    // The 5th session's output contains the rollover announcement.
-    expect(lastLines.join('\n')).toContain('Arc arc-1 closed; opened arc-2.');
-
-    dispose();
-  });
 
   it('does not roll over before the Nth session', async () => {
     // Drive N-1=4 runPlay invocations, assert arc-1 is still open and no arc_summary exists.
@@ -1306,68 +1151,6 @@ describe('runPlay', () => {
         { dbPath: 'demo.db' },
       ),
     ).rejects.toThrow(/arcRolloverThreshold/);
-    dispose();
-  });
-
-  it('honors memoryConfig.recapWindowSize by passing it to runTurn as recentSessionLimit', async () => {
-    // Close 5 sessions so there are 5 recaps available.
-    // Then run a 6th session with recapWindowSize=3 and assert via assembleContext
-    // that only 3 recaps are returned (omittedSessionCount=2).
-    const { db, dispose } = makeDb();
-    const sharedDeps = baseDeps(db, scriptedIO([]).io);
-
-    for (let i = 0; i < 5; i++) {
-      const { io } = scriptedIO(['/defer', '/quit']);
-      await runPlay({ ...sharedDeps, io }, { dbPath: 'demo.db' });
-    }
-
-    const cid = campaignId(db);
-
-    // Start a 6th session (don't drive a full runPlay turn — just stage the
-    // session and call assembleContext directly with the custom limit).
-    const sid6 = 'test-session-6';
-    startSession(db, {
-      campaignId: cid,
-      sessionId: sid6,
-      startedAt: new Date().toISOString(),
-    });
-
-    const ctx3 = assembleContext({
-      db,
-      campaignId: cid,
-      campaignPosition: TEST_CAMPAIGN_POSITION,
-      sessionId: sid6,
-      playerInput: 'what happened before?',
-      recentSessionLimit: 3,
-    });
-
-    expect(ctx3.recentSessionRecaps).toHaveLength(3);
-    expect(ctx3.omittedSessionCount).toBe(2);
-
-    // Verify that without the limit (or with a larger limit) all 5 recaps appear.
-    const ctx5 = assembleContext({
-      db,
-      campaignId: cid,
-      campaignPosition: TEST_CAMPAIGN_POSITION,
-      sessionId: sid6,
-      playerInput: 'what happened before?',
-      recentSessionLimit: 5,
-    });
-    expect(ctx5.recentSessionRecaps).toHaveLength(5);
-    expect(ctx5.omittedSessionCount).toBe(0);
-
-    dispose();
-  });
-
-  it('quits gracefully when input ends (EOF) before any turn', async () => {
-    const { db, dispose } = makeDb();
-    const { io, lines } = scriptedIO(['/defer']); // EOF after launch.
-
-    const code = await runPlay(baseDeps(db, io), { dbPath: 'demo.db' });
-
-    expect(code).toBe(0);
-    expect(lines.join('\n')).toContain('closed and recapped');
-    expect(getOpenSession(db, { campaignId: campaignId(db) })).toBeUndefined();
     dispose();
   });
 

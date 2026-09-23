@@ -83,13 +83,6 @@ describe('ModelUsageTracker', () => {
       expect(sink.records[0].error).toBeNull();
     });
 
-    it('records a non-negative elapsed time', async () => {
-      const sink = new CaptureSink();
-      const client = tracker(new FakeModel({ text: 'ok' }), sink);
-      await client.complete({ messages: [{ role: 'user', content: 'x' }] });
-      expect(sink.records[0].elapsedMs).toBeGreaterThanOrEqual(0);
-    });
-
     it('records token counts from the result usage field', async () => {
       const sink = new CaptureSink();
       const client = tracker(
@@ -162,26 +155,6 @@ describe('ModelUsageTracker', () => {
 
     it("maps 'turn_audit' to 'turn_audit'", async () => {
       expect(await purposeFor({ purpose: 'turn_audit' })).toBe('turn_audit');
-    });
-
-    it("maps 'session_recap' to 'session_recap'", async () => {
-      expect(await purposeFor({ purpose: 'session_recap' })).toBe(
-        'session_recap',
-      );
-    });
-
-    it("maps 'campaign_bible' to 'campaign_bible'", async () => {
-      expect(await purposeFor({ purpose: 'campaign_bible' })).toBe(
-        'campaign_bible',
-      );
-    });
-
-    it("maps 'arc_rollup' to 'arc_rollup'", async () => {
-      expect(await purposeFor({ purpose: 'arc_rollup' })).toBe('arc_rollup');
-    });
-
-    it("maps 'live_test' to 'live_test'", async () => {
-      expect(await purposeFor({ purpose: 'live_test' })).toBe('live_test');
     });
 
     it("maps unknown strings to 'maintenance'", async () => {

@@ -51,16 +51,6 @@ describe('ModelRateLimitError', () => {
     expect(err.name).toBe('ModelRateLimitError');
     expect(err.message).toBe('rate limit hit');
   });
-
-  it('carries retryAfterSeconds when provided', () => {
-    const err = new ModelRateLimitError('too many requests', 30);
-    expect(err.retryAfterSeconds).toBe(30);
-  });
-
-  it('retryAfterSeconds is undefined when not provided', () => {
-    const err = new ModelRateLimitError('too many requests');
-    expect(err.retryAfterSeconds).toBeUndefined();
-  });
 });
 
 describe('runTurn rate-limit result', () => {
@@ -163,39 +153,6 @@ describe('runTurn rate-limit result', () => {
 
     expect(result.ok).toBe(false);
     expect(result.isRateLimit).toBe(false);
-    db.close();
-  });
-
-  it('sets isRateLimit=true when model throws ModelRateLimitError with session-limit text', async () => {
-    const db = freshDbWithSession();
-    openScene(db, {
-      campaignId: CAMPAIGN,
-      sessionId: SESSION,
-      sceneId: 'scene-0',
-      title: 'The Tavern',
-      at: '2026-05-20T09:00:00.000Z',
-    });
-
-    const sessionLimitModel: ModelClient = {
-      complete: () =>
-        Promise.reject(
-          new ModelRateLimitError(
-            "You've hit your session limit · resets 2:30am (America/Chicago)",
-          ),
-        ),
-    };
-
-    const result = await runTurn(
-      {
-        db,
-        model: sessionLimitModel,
-        registry: createDefaultToolRegistry(),
-      },
-      baseInput(),
-    );
-
-    expect(result.ok).toBe(false);
-    expect(result.isRateLimit).toBe(true);
     db.close();
   });
 

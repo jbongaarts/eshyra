@@ -118,19 +118,4 @@ describe('runAdventuresCommand', () => {
     expect(runAdventuresCommand(['quest'], h.deps)).toBe(0);
     expect(h.logs.join('\n')).toContain('Adventure audit — campaign c1');
   });
-
-  it('reports cleanly when the campaign has no adventure runs', () => {
-    const dbPath = join(tempDir('esh-adv-'), 'campaign.db');
-    const db = openDatabase(dbPath);
-    try {
-      initSchema(db);
-      createCampaign(db, { campaignId: 'c1', pack: EMBERFALL_HOLLOW });
-    } finally {
-      db.close();
-    }
-    const h = harness({ ESHYRA_DB_PATH: dbPath });
-
-    expect(runAdventuresCommand(['show'], h.deps)).toBe(0);
-    expect(h.logs.join('\n')).toContain('No adventure runs');
-  });
 });

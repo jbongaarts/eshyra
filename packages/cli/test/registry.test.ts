@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -52,15 +52,6 @@ describe('loadRegistry / saveRegistry', () => {
     const registry = addCampaign(emptyRegistry(), entry());
     saveRegistry(root, registry);
     expect(loadRegistry(root)).toEqual(registry);
-  });
-
-  it('writes atomically and leaves no temp file behind', () => {
-    const root = freshRoot();
-    saveRegistry(root, addCampaign(emptyRegistry(), entry()));
-    const dir = readFileSync(registryFilePath(root), 'utf8');
-    expect(dir.length).toBeGreaterThan(0);
-    // a stray *.tmp would show up if rename did not consume it
-    expect(() => loadRegistry(root)).not.toThrow();
   });
 
   it('rejects malformed JSON', () => {

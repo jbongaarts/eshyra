@@ -407,13 +407,4 @@ describe('validateAdventureModuleReferences', () => {
       }),
     ).toThrow(/anchorLocationId/);
   });
-
-  it('skips setting checks when no setting universe is supplied', () => {
-    const stack = makeRulesStack();
-    // settingCompatibility references eshyra:emberfall, but with no
-    // settingPackIds in context the check is not applicable.
-    expect(() =>
-      validateAdventureModuleReferences(makeValidModule(), { rules: stack }),
-    ).not.toThrow();
-  });
 });

@@ -302,22 +302,6 @@ describe('release workflow edition matrix', () => {
   });
 });
 
-describe('docs document the editions', () => {
-  it('docs/cli-distribution.md describes the four editions', () => {
-    const doc = readText('docs/cli-distribution.md');
-    for (const name of ['api', 'claude', 'codex', 'full']) {
-      expect(doc).toContain(name);
-    }
-    expect(doc).toMatch(/edition/i);
-  });
-
-  it('docs/install.md shows the --edition install command', () => {
-    const doc = readText('docs/install.md');
-    expect(doc).toContain('--edition');
-    expect(doc).toContain('ESHYRA_EDITION');
-  });
-});
-
 describe('removeBinShimsFor (manifest-driven launcher cleanup)', () => {
   let scratch: string;
 

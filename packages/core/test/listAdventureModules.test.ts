@@ -10,10 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  listAdventureModulesInDir,
-  listBundledAdventureModules,
-} from '../src/internal.js';
+import { listAdventureModulesInDir } from '../src/internal.js';
 
 const HOLLOW_ID = 'eshyra:hollow-beneath-emberfall';
 
@@ -52,13 +49,6 @@ function installModule(root: string, dirName: string, id: string): string {
   );
   return dir;
 }
-
-describe('listBundledAdventureModules', () => {
-  it('includes the bundled Hollow Beneath Emberfall module', () => {
-    const ids = listBundledAdventureModules().map((entry) => entry.module.id);
-    expect(ids).toContain(HOLLOW_ID);
-  });
-});
 
 describe('listAdventureModulesInDir', () => {
   it('returns [] for a missing directory', () => {

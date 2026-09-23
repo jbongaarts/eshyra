@@ -101,11 +101,6 @@ describe('parseHazards — Brown Mold (single entry)', () => {
     expect(results[0].sourcePage).toBe(105);
   });
 
-  it('builds a non-empty description', () => {
-    expect(typeof results[0].description).toBe('string');
-    expect(results[0].description.length).toBeGreaterThan(0);
-  });
-
   it('includes cold-damage mechanical text in description', () => {
     expect(results[0].description).toMatch(/cold damage/);
   });

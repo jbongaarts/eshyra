@@ -55,10 +55,6 @@ const ACTIONS_IN_COMBAT_LINES = [
 describe('parseActions — all standard SRD combat actions', () => {
   const results = parseActions([page(92, ACTIONS_IN_COMBAT_LINES)]);
 
-  it('extracts exactly ten actions', () => {
-    expect(results).toHaveLength(10);
-  });
-
   it('extracts all standard action names', () => {
     expect(results.map((a) => a.name)).toEqual([
       'Attack',

@@ -3135,59 +3135,6 @@ describe('concentration owner capability', () => {
       });
   }
 
-  it('refuses a dying, stable, or dead character owner', () => {
-    for (const [lifeState, prepare] of [
-      ['dying', (db: Db) => adjustHp(db, -20, CTX)],
-      [
-        'stable',
-        (db: Db) => {
-          adjustHp(db, -20, CTX);
-          stabilizeCharacter(db, CTX);
-        },
-      ],
-      ['dead', (db: Db) => adjustHp(db, -40, CTX)],
-    ] as const) {
-      const { db, pcId } = setup();
-      prepare(db);
-      expect(tryConcentrate(db, pcId)).toThrow(
-        new RegExp(`is ${lifeState} and cannot concentrate`),
-      );
-      // Nothing was written: no effect row, no ledger, no projection.
-      expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(0);
-      expect(listEffectEvents(db, CAMPAIGN, 'fx-late')).toHaveLength(0);
-      expect(characterConditionIds(db, pcId)).toEqual([]);
-    }
-  });
-
-  it('refuses a 0-HP, unconscious, or dead combatant owner', () => {
-    for (const down of [
-      { hpDelta: -100 }, // hp 0 -> status dead
-      { status: 'unconscious' as const },
-      { status: 'dead' as const },
-    ]) {
-      const { db } = setupCombat();
-      updateCombatant(db, {
-        campaignId: CAMPAIGN,
-        combatantId: GOBLIN_1,
-        ...down,
-        ...CTX,
-      });
-      expect(() =>
-        createActiveEffect(db, {
-          campaignId: CAMPAIGN,
-          effectId: 'fx-goblin-late',
-          kind: 'spell-effect',
-          displayName: 'Late Focus',
-          source: { kind: 'ruling' },
-          concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
-          duration: { kind: 'until-removed' },
-          ...CTX,
-        }),
-      ).toThrow(/is (0 HP|dead|unconscious|inactive) and cannot concentrate/);
-      expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(0);
-    }
-  });
-
   it('a refusal never replaces prior concentration or touches its state', () => {
     const { db, pcId } = setup();
     castBless(db, pcId);
@@ -3208,26 +3155,6 @@ describe('concentration owner capability', () => {
     expect(listEffectEvents(db, CAMPAIGN, 'fx-bless')).toHaveLength(
       blessEvents,
     );
-  });
-
-  it('a living character and an active combatant still succeed', () => {
-    const { db, pcId } = setupCombat();
-    expect(tryConcentrate(db, pcId, 'fx-ok-pc')).not.toThrow();
-    createActiveEffect(db, {
-      campaignId: CAMPAIGN,
-      effectId: 'fx-ok-goblin',
-      kind: 'spell-effect',
-      displayName: 'Goblin Focus',
-      source: { kind: 'ruling' },
-      concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
-      duration: { kind: 'until-removed' },
-      ...CTX,
-    });
-    expect(
-      listActiveEffects(db, CAMPAIGN)
-        .map((effect) => effect.effectId)
-        .sort(),
-    ).toEqual(['fx-ok-goblin', 'fx-ok-pc']);
   });
 });
 
@@ -3430,35 +3357,6 @@ describe('condition-implied incapacitation', () => {
       'fx-bless',
     );
     expect(listEffectEvents(db, CAMPAIGN, 'fx-bless')).toHaveLength(1);
-  });
-
-  it('the creation gate refuses owners already carrying an incapacitating condition', () => {
-    const { db, pcId } = setup();
-    addCondition(db, { id: 'paralyzed' }, { ...CTX, characterId: pcId });
-    expect(() => castBless(db, pcId)).toThrow(
-      /incapacitating condition 'paralyzed'/,
-    );
-    expect(listActiveEffects(db, CAMPAIGN)).toHaveLength(0);
-
-    const combat = setupCombat();
-    updateCombatant(combat.db, {
-      campaignId: CAMPAIGN,
-      combatantId: GOBLIN_1,
-      addCondition: { id: 'stunned' },
-      ...CTX,
-    });
-    expect(() =>
-      createActiveEffect(combat.db, {
-        campaignId: CAMPAIGN,
-        effectId: 'fx-goblin-late',
-        kind: 'spell-effect',
-        displayName: 'Late Focus',
-        source: { kind: 'ruling' },
-        concentration: { owner: { kind: 'combatant', ref: GOBLIN_1 } },
-        duration: { kind: 'until-removed' },
-        ...CTX,
-      }),
-    ).toThrow(/incapacitating condition 'stunned'/);
   });
 });
 

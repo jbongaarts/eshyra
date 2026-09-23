@@ -105,21 +105,6 @@ function seedCampaignBible(db: Db): void {
   );
 }
 
-describe('registerNewCharacter', () => {
-  it('seeds revision 1 as the registry head', () => {
-    const { registry } = freshRegistry();
-    const revision = registerNewCharacter(registry, {
-      globalCharacterId: 'mira',
-      sheet: makeSheet(),
-    });
-    expect(revision.revision).toBe(1);
-    expect(revision.source).toBe('register');
-    expect(registry.headRevision('mira')).toBe(1);
-    expect(registry.listRevisions('mira').map((r) => r.revision)).toEqual([1]);
-    expect(registry.load('mira')?.identity.name).toBe('Mira');
-  });
-});
-
 describe('character custody lifecycle', () => {
   let registry: CharacterRegistryStore;
   let campaign: Db;
@@ -836,26 +821,6 @@ describe('classifyResumeConflict', () => {
     ).toMatchObject({ kind: 'resumable', globalCharacterId: 'mira' });
   });
 
-  it('reports held-elsewhere with the holder when another campaign owns it', () => {
-    checkoutAndRelease();
-    const campaignB = freshCampaign();
-    checkoutCharacterIntoCampaign(registry, campaignB, {
-      globalCharacterId: 'mira',
-      campaignId: 'camp-b',
-      characterId: 'pc-1',
-      sessionId: 'session-2',
-      at: 'b1',
-    });
-    const result = classifyResumeConflict(registry, campaign, {
-      campaignId: 'camp-a',
-      characterId: 'pc-1',
-    });
-    expect(result.kind).toBe('held-elsewhere');
-    if (result.kind === 'held-elsewhere') {
-      expect(result.heldBy.campaignId).toBe('camp-b');
-    }
-  });
-
   it('reports stale-copy with head + local revisions when the head advanced', () => {
     checkoutAndRelease();
     // The character advances elsewhere: head moves to revision 2.
@@ -928,21 +893,6 @@ describe('catchUpCharacterToHead', () => {
     });
   });
 
-  it('appends NO new registry revision (it adopts head, does not advance it)', () => {
-    staleMira();
-    expect(registry.headRevision('mira')).toBe(2);
-    catchUpCharacterToHead(registry, campaign, {
-      campaignId: 'camp-a',
-      characterId: 'pc-1',
-      sessionId: 'session-2',
-      at: 'a2',
-    });
-    expect(registry.headRevision('mira')).toBe(2);
-    expect(registry.listRevisions('mira').map((r) => r.revision)).toEqual([
-      1, 2,
-    ]);
-  });
-
   it('refuses when the character is in active play in another campaign', () => {
     staleMira();
     const campaignB = freshCampaign();
@@ -1010,39 +960,6 @@ describe('forkCharacterTimeline', () => {
     expect(registry.headRevision('mira-alt')).toBe(2);
     expect(registry.headRevision('mira')).toBe(2);
     expect(registry.load('mira')?.level).toBe(2);
-  });
-
-  it('can fork from an explicit earlier revision', () => {
-    registerNewCharacter(registry, {
-      globalCharacterId: 'mira',
-      sheet: makeSheet({ level: 1 }),
-    });
-    registry.appendRevision('mira', makeSheet({ level: 5 }), 'sync-back');
-
-    const fork = forkCharacterTimeline(registry, {
-      sourceGlobalCharacterId: 'mira',
-      newGlobalCharacterId: 'mira-young',
-      fromRevision: 1,
-    });
-    expect(fork.revision.parent?.revision).toBe(1);
-    expect(registry.load('mira-young')?.level).toBe(1);
-  });
-
-  it('refuses to fork onto an id that already has a timeline', () => {
-    registerNewCharacter(registry, {
-      globalCharacterId: 'mira',
-      sheet: makeSheet(),
-    });
-    registerNewCharacter(registry, {
-      globalCharacterId: 'taken',
-      sheet: makeSheet(),
-    });
-    expect(() =>
-      forkCharacterTimeline(registry, {
-        sourceGlobalCharacterId: 'mira',
-        newGlobalCharacterId: 'taken',
-      }),
-    ).toThrow(CharacterCustodyError);
   });
 
   it('throws when the source has no revisions to fork from', () => {

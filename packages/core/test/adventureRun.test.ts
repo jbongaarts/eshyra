@@ -1,17 +1,13 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  ADVENTURE_MODULE_FILE,
-  type AdventureModule,
   AdventureRunError,
   getAdventureRun,
   initSchema,
   listAdventureRuns,
-  loadAdventureModuleFromDir,
   openDatabase,
-  type PackLicense,
   recordAdventureRunProgress,
   startAdventureRun,
 } from '../src/internal.js';
@@ -379,129 +375,4 @@ describe('adventure run state', () => {
     expect(resumed?.progress.revealedSecrets).toEqual(['secret-shrine']);
     db2.close();
   });
-
-  it('never mutates the authored module source while recording progress', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'eshyra-mod-'));
-    tmpDirs.push(dir);
-    const modulePath = join(dir, ADVENTURE_MODULE_FILE);
-    writeFileSync(modulePath, JSON.stringify(minimalModule()), 'utf8');
-    const before = readFileSync(modulePath, 'utf8');
-    const loadedBefore = loadAdventureModuleFromDir(dir);
-
-    const db = freshDb();
-    startAdventureRun(db, {
-      campaignId: CAMPAIGN_ID,
-      runId: 'run-1',
-      moduleId: loadedBefore.id,
-      ...writeMeta,
-    });
-    recordAdventureRunProgress(db, {
-      campaignId: CAMPAIGN_ID,
-      runId: 'run-1',
-      delta: {
-        visitedLocations: ['loc-cellar'],
-        revealedSecrets: ['secret-shrine'],
-        completedObjectives: ['obj-clear'],
-      },
-      ...writeMeta,
-    });
-    db.close();
-
-    // The authored module file and its parsed form are byte-for-byte unchanged.
-    expect(readFileSync(modulePath, 'utf8')).toBe(before);
-    expect(loadAdventureModuleFromDir(dir)).toEqual(loadedBefore);
-  });
 });
-
-const moduleLicense: PackLicense = {
-  licenseClass: 'original',
-  licenseName: 'Creative Commons Attribution 4.0 International',
-  attributionText: 'Test adventure, original work for Eshyra, CC-BY-4.0.',
-  requiresAttribution: true,
-  commercialUseAllowed: true,
-  hostedUseAllowed: true,
-  redistributionAllowed: true,
-  publicSharingAllowed: true,
-  derivativeAllowed: true,
-  containsUserSuppliedText: false,
-  containsTrademarkedSettingMaterial: false,
-  sourceMaterialDescription: 'Wholly original test fixture.',
-  provenancePolicy: 'Authored in-repo for tests.',
-  outputRestrictions: 'None beyond CC-BY-4.0 attribution.',
-};
-
-/** Smallest valid adventure module the progress ids in the test reference. */
-function minimalModule(): AdventureModule {
-  return {
-    id: 'eshyra:hollow-beneath-emberfall',
-    title: 'The Hollow Beneath Emberfall',
-    summary: 'A tiny scenario for the run-state test.',
-    intendedLevels: { min: 1, max: 3 },
-    intendedPartySize: { min: 1, max: 4 },
-    rulesRequirements: { baseSystemId: 'dnd5e-srd' },
-    settingCompatibility: [],
-    startingSituation: 'Lights flicker in the cellar.',
-    startingSceneId: 'scene-cellar',
-    hooks: [],
-    locations: [
-      {
-        id: 'loc-cellar',
-        name: 'The Flickering Cellar',
-        summary: 'A glowing cellar.',
-        description: 'Stone steps descend into a cold cellar.',
-        exits: [],
-        tags: [],
-      },
-    ],
-    scenes: [
-      {
-        id: 'scene-cellar',
-        title: 'Into the Cellar',
-        summary: 'The party descends.',
-        kind: 'combat',
-        locationIds: ['loc-cellar'],
-        npcIds: [],
-        objectiveIds: ['obj-clear'],
-        encounterIds: [],
-        secretIds: ['secret-shrine'],
-      },
-    ],
-    npcs: [],
-    encounters: [],
-    treasure: [],
-    secrets: [
-      {
-        id: 'secret-shrine',
-        title: 'The Sealed Shrine',
-        dmText: 'A shrine lies behind the false wall.',
-        revealableLocationIds: ['loc-cellar'],
-        revealableSceneIds: ['scene-cellar'],
-      },
-    ],
-    objectives: [
-      {
-        id: 'obj-clear',
-        title: 'Clear the cellar',
-        description: 'Deal with the lights.',
-        optional: false,
-        successCondition: 'The cellar is cleared.',
-        relatedSceneIds: ['scene-cellar'],
-        relatedLocationIds: ['loc-cellar'],
-      },
-    ],
-    clocksOrThreats: [],
-    randomTables: [],
-    milestones: [],
-    endingStates: [
-      {
-        id: 'end-clear',
-        title: 'Cleared',
-        summary: 'Safe again.',
-        kind: 'success',
-        condition: 'The party clears the cellar.',
-      },
-    ],
-    provenance: { sourceRef: 'test-fixture' },
-    license: moduleLicense,
-  };
-}

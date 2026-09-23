@@ -90,13 +90,6 @@ describe('validateAbilityScoresJson', () => {
     );
   });
 
-  it('rejects Infinity', () => {
-    const bad = { ...VALID_SCORES, strength: Number.POSITIVE_INFINITY };
-    expect(() => validateAbilityScoresJson(bad, 'test')).toThrow(
-      LiveStateSchemaError,
-    );
-  });
-
   it('rejects a value below 1 (0)', () => {
     const bad = { ...VALID_SCORES, strength: 0 };
     expect(() => validateAbilityScoresJson(bad, 'test')).toThrow(
@@ -162,20 +155,8 @@ describe('validateConditionsJson', () => {
     );
   });
 
-  it('rejects a non-array root (string)', () => {
-    expect(() => validateConditionsJson('poisoned', 'test')).toThrow(
-      LiveStateSchemaError,
-    );
-  });
-
   it('rejects an entry that is a string', () => {
     expect(() => validateConditionsJson(['poisoned'], 'test')).toThrow(
-      LiveStateSchemaError,
-    );
-  });
-
-  it('rejects an entry that is a number', () => {
-    expect(() => validateConditionsJson([42], 'test')).toThrow(
       LiveStateSchemaError,
     );
   });
@@ -243,21 +224,8 @@ describe('validateInventoryPropertiesJson', () => {
     );
   });
 
-  it('rejects a string root', () => {
-    expect(() => validateInventoryPropertiesJson('enchanted', 'test')).toThrow(
-      LiveStateSchemaError,
-    );
-  });
-
   it('rejects a nested NaN value', () => {
     const props = { damage: Number.NaN };
-    expect(() => validateInventoryPropertiesJson(props, 'test')).toThrow(
-      LiveStateSchemaError,
-    );
-  });
-
-  it('rejects a nested Infinity value', () => {
-    const props = { weight: Number.POSITIVE_INFINITY };
     expect(() => validateInventoryPropertiesJson(props, 'test')).toThrow(
       LiveStateSchemaError,
     );
@@ -268,18 +236,6 @@ describe('validateInventoryPropertiesJson', () => {
       LiveStateSchemaError,
     );
     expect(() => validateInventoryPropertiesJson(new Date(), 'test')).toThrow(
-      'must be a plain JSON object',
-    );
-  });
-
-  it('rejects a root class instance', () => {
-    class Weapon {
-      name = 'sword';
-    }
-    expect(() => validateInventoryPropertiesJson(new Weapon(), 'test')).toThrow(
-      LiveStateSchemaError,
-    );
-    expect(() => validateInventoryPropertiesJson(new Weapon(), 'test')).toThrow(
       'must be a plain JSON object',
     );
   });

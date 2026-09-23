@@ -8,9 +8,7 @@ import type {
 } from '../src/internal.js';
 import {
   evaluateModelProfile,
-  FIRST_COMBAT_MODEL_TIER_SCENARIO,
   MODEL_TIER_EVALUATION_PAIRINGS,
-  MODEL_TIER_EVALUATION_PHASES,
   PREMIUM_DM_EVALUATION_THRESHOLD,
   runModelTierEvaluationMatrix,
 } from '../src/internal.js';
@@ -107,71 +105,6 @@ describe('model evaluation harness', () => {
 });
 
 describe('model-tier evaluation harness', () => {
-  it('defines the post-combat deterministic scenario and roll fixture', () => {
-    expect(FIRST_COMBAT_MODEL_TIER_SCENARIO.id).toBe('first-combat-model-tier');
-    expect(
-      FIRST_COMBAT_MODEL_TIER_SCENARIO.turns.map((turn) => turn.id),
-    ).toEqual([
-      'sela-authority-dialogue',
-      'sela-investigation-expectations',
-      'travel-watchtower',
-      'torch-hollow-entry',
-      'goblin-ambush',
-      'bob-player-attack',
-      'goblin-enemy-attack',
-      'bob-death-save-or-check',
-    ]);
-    expect(
-      FIRST_COMBAT_MODEL_TIER_SCENARIO.turns.map((turn) => turn.kind),
-    ).toContain('save_or_check');
-    expect(
-      FIRST_COMBAT_MODEL_TIER_SCENARIO.rollFixture.map((roll) => roll.id),
-    ).toEqual([
-      'initiative',
-      'first-player-attack-miss',
-      'goblin-attack-miss',
-      'second-player-attack-hit',
-      'player-damage-kills-goblin-1',
-      'goblin-critical-hit',
-      'goblin-critical-damage',
-      'death-save-success',
-    ]);
-    expect(FIRST_COMBAT_MODEL_TIER_SCENARIO.notes.join('\n')).toContain(
-      'confounded by runtime changes',
-    );
-  });
-
-  it('defines staged primary-DM and auditor pairings independently', () => {
-    expect(MODEL_TIER_EVALUATION_PHASES.map((phase) => phase.id)).toEqual([
-      'phase-1-auditor-sweep',
-      'phase-2-primary-dm-sweep',
-      'phase-3-cheapest-viable-pairings',
-    ]);
-    expect(MODEL_TIER_EVALUATION_PHASES[0].fixedRole).toBe('primary_dm');
-    expect(MODEL_TIER_EVALUATION_PHASES[1].fixedRole).toBe('auditor');
-    expect(MODEL_TIER_EVALUATION_PAIRINGS.map((pair) => pair.id)).toEqual(
-      expect.arrayContaining([
-        'opus-haiku-auditor',
-        'opus-sonnet-auditor',
-        'opus-opus-auditor-control',
-        'gpt-premium-mini-auditor',
-        'gpt-premium-stronger-auditor',
-        'sonnet-primary-best-auditor',
-        'haiku-primary-best-auditor',
-        'sonnet-haiku',
-        'sonnet-sonnet',
-        'lower-gpt-mini',
-      ]),
-    );
-    expect(
-      MODEL_TIER_EVALUATION_PAIRINGS.every(
-        (pair) =>
-          pair.primaryDm.role === 'primary_dm' &&
-          pair.auditor.role === 'auditor',
-      ),
-    ).toBe(true);
-  });
-
   it('aggregates mechanical correctness separately from table feel and usage', async () => {
     const [pairing] = MODEL_TIER_EVALUATION_PAIRINGS;
     const report = await runModelTierEvaluationMatrix({

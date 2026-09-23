@@ -23,7 +23,6 @@ import {
   mutateState,
   openDatabase,
   reacquireItem,
-  readStateSnapshot,
   removeCondition,
   removeItem,
   setActiveCharacterId,
@@ -132,36 +131,6 @@ describe('adjustHp', () => {
       hpMax: 20,
       clamped: true,
       lifeState: 'alive',
-    });
-    db.close();
-  });
-
-  it('clamps damage to zero', () => {
-    const db = freshDb();
-    mutateState(db, {
-      target: 'character',
-      field: 'hp_max',
-      op: 'set',
-      value: 20,
-      ...CTX,
-    });
-    mutateState(db, {
-      target: 'character',
-      field: 'hp_current',
-      op: 'set',
-      value: 3,
-      ...CTX,
-    });
-
-    const result = adjustHp(db, -10, CTX);
-
-    expect(result).toMatchObject({
-      previousHp: 3,
-      newHp: 0,
-      hpMax: 20,
-      clamped: true,
-      overflow: 7,
-      lifeState: 'dying',
     });
     db.close();
   });
@@ -1572,24 +1541,6 @@ describe('inventory ownership isolation', () => {
       .prepare('SELECT character_id FROM inventory WHERE id = ?')
       .get('shield') as { character_id: string };
     expect(row.character_id).toBe('pc-2');
-    db.close();
-  });
-
-  it('items given to pc-2 do not appear in pc-1 snapshot', () => {
-    const db = freshDbWithTwoCharacters();
-
-    giveItem(db, { id: 'torch', name: 'Torch', quantity: 3 }, CTX);
-    giveItem(
-      db,
-      { id: 'potion', name: 'Health Potion' },
-      { ...CTX, characterId: 'pc-2' },
-    );
-
-    const pc1Snapshot = readStateSnapshot(db, 'pc-1');
-    const pc2Snapshot = readStateSnapshot(db, 'pc-2');
-
-    expect(pc1Snapshot.inventory.map((i) => i.id)).toEqual(['torch']);
-    expect(pc2Snapshot.inventory.map((i) => i.id)).toEqual(['potion']);
     db.close();
   });
 

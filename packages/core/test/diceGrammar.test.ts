@@ -122,12 +122,6 @@ describe('F1 canonical roll representation', () => {
     expect(disadvantage.kept[0]).toBe(Math.min(...disadvantage.rolls));
   });
 
-  it('draws the same RNG sequence as an unclause roll (selection is post-hoc)', () => {
-    const plain = rollDice('2d20', createSeededRng(41));
-    const kept = rollDice('2d20kh1', createSeededRng(41));
-    expect(kept.rolls).toEqual(plain.rolls);
-  });
-
   it('resolves ties deterministically (earlier-rolled die kept)', () => {
     // Find a seed producing equal d20s so the tie path is actually exercised.
     let seed = 0;

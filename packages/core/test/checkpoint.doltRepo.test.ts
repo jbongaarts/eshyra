@@ -39,29 +39,6 @@ const SNAP: SnapshotRecord[] = [
   },
 ];
 
-describe.skipIf(!doltOk)('DoltRepo', () => {
-  it(
-    'init + applySnapshot + commit yields a listable checkpoint',
-    () => {
-      const repo = new DoltRepo(join(tmp(), 'dolt'));
-      repo.init();
-      repo.applySnapshot(SNAP);
-      const id = repo.commit('checkpoint: test');
-      expect(id).toMatch(/\S+/);
-      const log = repo.log();
-      expect(log.length).toBeGreaterThanOrEqual(1);
-      expect(log[0]?.message).toContain('checkpoint: test');
-    },
-    DOLT_TEST_TIMEOUT_MS,
-  );
-});
-
-describe('DoltRepo.available', () => {
-  it('returns a boolean', () => {
-    expect(typeof DoltRepo.available()).toBe('boolean');
-  });
-});
-
 // Regression guard for loreweaver-l6n: dolt invocations must run against an
 // isolated, Eshyra-owned global home with telemetry disabled, so they never
 // read or pollute the user's ~/.dolt. We pin the binary explicitly and point

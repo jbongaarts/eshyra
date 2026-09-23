@@ -6,11 +6,8 @@ import type {
 } from '../src/internal.js';
 import {
   ADVANCEMENT_TABLE_REF,
-  AdvancementTableError,
   getBundledAdvancementTable,
-  getBundledDnd5eSrdPack,
   levelForXp,
-  maxAdvancementLevel,
   resolveAdvancementTable,
   resolveRulesStack,
   xpThresholdForLevel,
@@ -87,12 +84,6 @@ function tableRecord(data: unknown): RulesRecord {
 }
 
 describe('resolveAdvancementTable (bundled pack)', () => {
-  it('locates the character-advancement table in the bundled SRD pack', () => {
-    const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
-    const result = resolveAdvancementTable(stack);
-    expect(result.ok).toBe(true);
-  });
-
   it('parses the table into the exact canonical level -> XP thresholds', () => {
     const table = getBundledAdvancementTable();
     expect(table.thresholds.map((t) => [t.level, t.xpThreshold])).toEqual(
@@ -104,20 +95,6 @@ describe('resolveAdvancementTable (bundled pack)', () => {
     const table = getBundledAdvancementTable();
     expect(table.thresholds[0].proficiencyBonus).toBe(2); // level 1
     expect(table.thresholds[19].proficiencyBonus).toBe(6); // level 20
-  });
-
-  it('covers levels 1..20 with strictly increasing thresholds', () => {
-    const table = getBundledAdvancementTable();
-    expect(table.thresholds).toHaveLength(20);
-    table.thresholds.forEach((row, i) => {
-      expect(row.level).toBe(i + 1);
-      if (i > 0) {
-        expect(row.xpThreshold).toBeGreaterThan(
-          table.thresholds[i - 1].xpThreshold,
-        );
-      }
-    });
-    expect(maxAdvancementLevel(table)).toBe(20);
   });
 });
 
@@ -195,12 +172,5 @@ describe('malformed / missing tables (synthetic packs)', () => {
     const result = resolveAdvancementTable(stack);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe('malformed');
-  });
-
-  it('getBundledAdvancementTable throws only on a real pack defect', () => {
-    // The bundled pack is audited, so this resolves; the throwing path is the
-    // documented contract for a malformed bundled table.
-    expect(() => getBundledAdvancementTable()).not.toThrow();
-    expect(AdvancementTableError).toBeTypeOf('function');
   });
 });

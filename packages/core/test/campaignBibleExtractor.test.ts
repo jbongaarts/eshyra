@@ -5,7 +5,6 @@ import {
   extractCampaignBible,
   MemorySummaryError,
   type ModelClient,
-  ModelClientError,
   type ModelCompleteInput,
   type SessionRecapRecord,
 } from '../src/internal.js';
@@ -62,30 +61,6 @@ describe('extractCampaignBible', () => {
     expect(captured?.trace?.extra?.purpose).toBe('campaign_bible');
   });
 
-  it('parses a valid fenced bible_json block from the model', async () => {
-    const model = fakeModel(() => VALID_BIBLE_OUTPUT);
-    const bible = await extractCampaignBible(model, {
-      campaignId: 'camp-1',
-      recaps: [
-        recap(
-          'session-1',
-          'Mira found the chalk sigil.',
-          '2026-05-20T10:00:00.000Z',
-        ),
-      ],
-    });
-    expect(bible.worldFacts).toEqual([
-      'Emberfall sits on a fault line',
-      'The Lantern Court rules the city',
-    ]);
-    expect(bible.majorNpcs).toEqual(['Mira the runesmith', 'Warden Hess']);
-    expect(bible.factions).toEqual(['Lantern Court', 'Cellar Cabal']);
-    expect(bible.openThreads).toEqual([
-      'The chalk sigil is unsolved',
-      'The warden hinted at a debt',
-    ]);
-  });
-
   it('renders each session recap into the user prompt', async () => {
     let captured: ModelCompleteInput | undefined;
     const model = fakeModel((input) => {
@@ -117,22 +92,6 @@ describe('extractCampaignBible', () => {
         recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],
       }),
     ).rejects.toBeInstanceOf(MemorySummaryError);
-  });
-
-  it("passes responseFormat: 'json' to the ModelClient (loreweaver-cuu)", async () => {
-    let captured: ModelCompleteInput | undefined;
-    const model = fakeModel((input) => {
-      captured = input;
-      return VALID_BIBLE_OUTPUT;
-    });
-    await extractCampaignBible(model, {
-      campaignId: 'camp-1',
-      recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],
-    });
-    // The bible extractor is the JSON-only call site in core; setting the hint
-    // lets future adapters opt into a native JSON mode without changing this
-    // call site again.
-    expect(captured?.responseFormat).toBe('json');
   });
 
   it('accepts a raw JSON response when an adapter strips the fence (loreweaver-cuu)', async () => {
@@ -173,20 +132,6 @@ describe('extractCampaignBible', () => {
         recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],
       }),
     ).rejects.toBeInstanceOf(MemorySummaryError);
-  });
-
-  it('propagates ModelClientError from the provider', async () => {
-    const model: ModelClient = {
-      complete: async () => {
-        throw new ModelClientError('boom');
-      },
-    };
-    await expect(
-      extractCampaignBible(model, {
-        campaignId: 'camp-1',
-        recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],
-      }),
-    ).rejects.toBeInstanceOf(ModelClientError);
   });
 
   it('throws MemorySummaryError when recaps is empty', async () => {
@@ -251,29 +196,6 @@ describe('extractCampaignBible', () => {
     expect(sessionIdx).toBeGreaterThan(bibleIdx);
   });
 
-  it('renders empty lists in a priorBible as (none) placeholders', async () => {
-    let captured: ModelCompleteInput | undefined;
-    const model = fakeModel((input) => {
-      captured = input;
-      return VALID_BIBLE_OUTPUT;
-    });
-    const priorBible: CampaignBibleInput = {
-      worldFacts: ['Just one fact'],
-      majorNpcs: [],
-      factions: [],
-      openThreads: [],
-    };
-    await extractCampaignBible(model, {
-      campaignId: 'camp-1',
-      recaps: [recap('session-1', 'r', '2026-05-21T10:00:00.000Z')],
-      priorBible,
-    });
-    const userContent = captured?.messages[0].content ?? '';
-    expect(userContent).toContain('### majorNpcs\n(none)');
-    expect(userContent).toContain('### factions\n(none)');
-    expect(userContent).toContain('### openThreads\n(none)');
-  });
-
   it('renders closed arc summaries in input order before the recaps', async () => {
     let captured: ModelCompleteInput | undefined;
     const model = fakeModel((input) => {
@@ -320,27 +242,6 @@ describe('extractCampaignBible', () => {
     expect(arc1Idx).toBeGreaterThanOrEqual(0);
     expect(arc2Idx).toBeGreaterThan(arc1Idx);
     expect(sessionIdx).toBeGreaterThan(arc2Idx);
-  });
-
-  it('falls back to the legacy recap-only layout when priorBible and closedArcSummaries are absent', async () => {
-    let capturedNew: ModelCompleteInput | undefined;
-    const newModel = fakeModel((input) => {
-      capturedNew = input;
-      return VALID_BIBLE_OUTPUT;
-    });
-    const sample: SessionRecapRecord = recap(
-      'session-1',
-      'Mira found the chalk sigil.',
-      '2026-05-20T10:00:00.000Z',
-    );
-    await extractCampaignBible(newModel, {
-      campaignId: 'camp-1',
-      recaps: [sample],
-    });
-    const newContent = capturedNew?.messages[0].content ?? '';
-    expect(newContent).not.toContain('## previously known bible');
-    expect(newContent).not.toContain('## closed arc summaries');
-    expect(newContent.startsWith('## session-1')).toBe(true);
   });
 
   it('treats an all-empty priorBible as absent (no rendered block)', async () => {

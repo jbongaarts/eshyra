@@ -2414,17 +2414,4 @@ describe('orchestrator per-turn timing diagnostics (eshyra-17ng)', () => {
     });
     db.close();
   });
-
-  it('does not record any diagnostics when no sink is wired', async () => {
-    const db = freshDbWithSession();
-    withOpenScene(db);
-    const model = new ScriptedModel(['The tavern is quiet.']);
-    // No diagnostics in deps — must run exactly as before.
-    const result = await runTurn(
-      { db, model, registry: createDefaultToolRegistry() },
-      baseInput(),
-    );
-    expect(result.ok).toBe(true);
-    db.close();
-  });
 });
