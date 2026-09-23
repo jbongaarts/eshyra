@@ -345,7 +345,7 @@ export const SRD_5_1_DOCUMENT_TABLE_SPECS: readonly DocumentTableSpec[] = [
   },
   {
     name: 'Half-Dragon Breath Weapon',
-    columns: ['Size', 'Breath Weapon', 'Prerequisite'],
+    columns: ['Size', 'Breath Weapon', 'Optional Prerequisite'],
     anchorHeading: 'Half-Dragon Template',
     anchor: 'item',
     anchorTier: 'subsection',
@@ -452,7 +452,7 @@ export const SRD_5_1_DOCUMENT_TABLE_SPECS: readonly DocumentTableSpec[] = [
   {
     name: 'Animated Object Statistics',
     ownerRecordKey: 'spell:animate-objects',
-    columns: ['Size', 'HP', 'AC', 'Attack', 'Strength', 'Dexterity'],
+    columns: ['Size', 'HP', 'AC', 'Attack', 'Str', 'Dex'],
     anchorHeading: 'Animated Object Statistics',
     anchor: 'caption',
     headerLines: ['Size HP AC Attack Str Dex'],
@@ -528,10 +528,14 @@ export const SRD_5_1_DOCUMENT_TABLE_SPECS: readonly DocumentTableSpec[] = [
     },
     expectedRows: 14,
   },
+  // The SRD prints two caption-less tables here, each under its own column
+  // header ("Knowledge | Save Modifier" and "Connection | Save Modifier").
+  // They are emitted separately with their printed headers; a single merged
+  // table would need column headers the source never prints.
   {
-    name: 'Scrying Save Modifiers',
+    name: 'Scrying Knowledge',
     ownerRecordKey: 'spell:scrying',
-    columns: ['Basis', 'Circumstance', 'Save Modifier'],
+    columns: ['Knowledge', 'Save Modifier'],
     anchorHeading: 'Scrying',
     anchor: 'item',
     headerLines: ['Knowledge Save Modifier'],
@@ -541,25 +545,37 @@ export const SRD_5_1_DOCUMENT_TABLE_SPECS: readonly DocumentTableSpec[] = [
         'Secondhand (you have heard of the target) +5',
         'Firsthand (you have met the target) +0',
         'Familiar (you know the target well) −5',
-        'Connection Save Modifier',
+      ],
+      rows: [
+        ['Secondhand (you have heard of the target)', '+5'],
+        ['Firsthand (you have met the target)', '+0'],
+        ['Familiar (you know the target well)', '−5'],
+      ],
+    },
+    expectedRows: 3,
+  },
+  {
+    name: 'Scrying Connection',
+    ownerRecordKey: 'spell:scrying',
+    columns: ['Connection', 'Save Modifier'],
+    anchorHeading: 'Scrying',
+    anchor: 'item',
+    headerLines: ['Connection Save Modifier'],
+    searchPastCellRuns: true,
+    rows: {
+      kind: 'reviewed-reconstruction',
+      sourceLines: [
         'Likeness or picture −2',
         'Possession or garment −4',
         'Body part, lock of hair, bit of nail, or the like −10',
       ],
       rows: [
-        ['Knowledge', 'Secondhand (you have heard of the target)', '+5'],
-        ['Knowledge', 'Firsthand (you have met the target)', '+0'],
-        ['Knowledge', 'Familiar (you know the target well)', '−5'],
-        ['Connection', 'Likeness or picture', '−2'],
-        ['Connection', 'Possession or garment', '−4'],
-        [
-          'Connection',
-          'Body part, lock of hair, bit of nail, or the like',
-          '−10',
-        ],
+        ['Likeness or picture', '−2'],
+        ['Possession or garment', '−4'],
+        ['Body part, lock of hair, bit of nail, or the like', '−10'],
       ],
     },
-    expectedRows: 6,
+    expectedRows: 3,
   },
   {
     name: 'Teleport Familiarity',

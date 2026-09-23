@@ -382,6 +382,15 @@ describe('creation-choice sourceText is classified by what the schema permits', 
     expect(cls).not.toBe('source-prose');
   });
 
+  it('never classifies the curated class spell-preparation composition as verbatim', () => {
+    // creationFacts.ts joins the class's printed preparation sentence and its
+    // "Spellcasting Ability" sentence across separate subsections (e.g.
+    // class:cleric), so the string is SRD text but not one verbatim quote.
+    expect(
+      classifyFieldPointer(manifest, 'class', '/spellPreparation/sourceText'),
+    ).toBe('source-derived');
+  });
+
   it('keeps genuinely verbatim ancestry choice text present, as source-derived', () => {
     // The truthful-either-way property that makes `source-derived` the right
     // conservative class: a value that IS verbatim is still deterministically

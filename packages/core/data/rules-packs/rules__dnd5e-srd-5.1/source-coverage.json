@@ -54772,10 +54772,10 @@
       "structure": "table-shape",
       "text": "Knowledge Save Modifier",
       "section": "Spellcasting",
-      "status": "record:table:scrying-save-modifiers",
+      "status": "record:table:scrying-knowledge",
       "resolution": {
         "kind": "curated-record",
-        "ownerKey": "table:scrying-save-modifiers"
+        "ownerKey": "table:scrying-knowledge"
       }
     },
     {

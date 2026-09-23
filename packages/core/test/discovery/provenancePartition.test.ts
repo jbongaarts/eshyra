@@ -151,7 +151,7 @@ describe('a provenance partition never invents a leaf', () => {
    * record above: every leaf in every bucket is a leaf the record really
    * carries, at the same pointer, with the same value.
    */
-  it('classifies all 1812 bundled records without inventing or losing a leaf', () => {
+  it('classifies all 1813 bundled records without inventing or losing a leaf', () => {
     const pack = getBundledDnd5eSrdPack();
     const stack = resolveRulesStack({ base: pack });
     const entries = [...stack.recordsByKey.values()];
@@ -236,7 +236,7 @@ describe('a provenance partition never invents a leaf', () => {
       }
     }
 
-    expect(entries.length).toBe(1812);
+    expect(entries.length).toBe(1813);
     expect(bucketLeaves).toBeGreaterThan(60_000);
     expect(invented).toBe(0);
     expect(lost).toBe(0);

@@ -46,7 +46,7 @@ describe('semi-structured boundary inventory', () => {
     expect(committedJson).toBe(renderInventoryJson(artifact));
     expect(committedMarkdown).toBe(renderInventoryMarkdown(artifact));
     expect(artifact.recordCounts).toEqual({
-      dnd5eSrd: 1812,
+      dnd5eSrd: 1813,
       pathfinderFixture: 7,
     });
   });

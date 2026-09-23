@@ -1184,7 +1184,7 @@ const SPELL_TABLE_INVENTORY_RECORDS: ReadonlyArray<
   [127, 'd10 Behavior', 'table:confusion-behavior'],
   [132, 'Material Duration', 'table:creation-material-duration'],
   [174, 'd100 Race', 'table:reincarnate-race'],
-  [176, 'Knowledge Save Modifier', 'table:scrying-save-modifiers'],
+  [176, 'Knowledge Save Modifier', 'table:scrying-knowledge'],
   [186, 'Similar Off On', 'table:teleport-familiarity'],
 ];
 
