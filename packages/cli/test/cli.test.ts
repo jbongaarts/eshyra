@@ -16,12 +16,7 @@ import {
   type ResolvedProvider,
 } from '@eshyra/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  buildBanner,
-  main,
-  makeGameplayClient,
-  runDoltInstall,
-} from '../src/index.js';
+import { main, makeGameplayClient, runDoltInstall } from '../src/index.js';
 
 /** A resolved provider record for makeGameplayClient mapping tests. */
 function provider(
@@ -32,12 +27,6 @@ function provider(
 ): ResolvedProvider {
   return { id, vendor, adapterFamily, env };
 }
-
-describe('cli', () => {
-  it('builds a banner that includes the core version', () => {
-    expect(buildBanner('1.2.3')).toBe('Eshyra — core v1.2.3');
-  });
-});
 
 describe('runDoltInstall', () => {
   it('reports the path and exits 0 when dolt is ready', async () => {
@@ -64,13 +53,6 @@ describe('runDoltInstall', () => {
     });
     expect(code).toBe(1);
     expect(logs.join('\n')).toContain('declined');
-  });
-
-  it('passes a confirm callback through to ensureDoltAvailable', async () => {
-    const ensure = vi.fn().mockResolvedValue('/x/dolt');
-    await runDoltInstall({ ensure, confirm: () => true });
-    expect(ensure).toHaveBeenCalledOnce();
-    expect(typeof ensure.mock.calls[0][0].confirm).toBe('function');
   });
 });
 

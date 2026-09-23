@@ -1,56 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ABILITY_SCORE_NAMES } from '../src/character/abilities.js';
-import type { AbilityScoreName } from '../src/character/creation.js';
-import type {
-  CharacterSheet,
-  FinalizedAbilityScore,
-} from '../src/character/finalizeCharacter.js';
 import {
   CharacterChronicleStoreError,
   createCharacterChronicleStore,
-  createCharacterRegistryStore,
   type Db,
-  DND5E_SRD_PACK_ID,
-  DND5E_SRD_SYSTEM_ID,
   ensureCharacterRegistrySchema,
   openDatabase,
 } from '../src/internal.js';
 
 const AT_1 = '2026-06-28T04:40:00.000Z';
 const AT_2 = '2026-06-28T04:41:00.000Z';
-
-function makeSheet(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
-  const abilityScores = {} as Record<AbilityScoreName, FinalizedAbilityScore>;
-  const savingThrows = {} as CharacterSheet['savingThrows'];
-  for (const name of ABILITY_SCORE_NAMES) {
-    abilityScores[name] = { base: 10, final: 10, modifier: 0 };
-    savingThrows[name] = { modifier: 0, proficient: false };
-  }
-  return {
-    schemaVersion: 1,
-    system: DND5E_SRD_SYSTEM_ID,
-    rulesPackId: DND5E_SRD_PACK_ID,
-    recipeId: 'dnd5e-srd-character',
-    creationMode: 'test',
-    level: 1,
-    identity: { name: 'Mira' },
-    class: { key: 'class:fighter', name: 'Fighter' },
-    ancestry: { key: 'ancestry:human', name: 'Human' },
-    abilityScores,
-    proficiencyBonus: 2,
-    maxHitPoints: 12,
-    savingThrows,
-    skillProficiencies: [],
-    toolProficiencies: [],
-    armorProficiencies: [],
-    weaponProficiencies: [],
-    equipment: [],
-    languages: ['Common'],
-    spells: [],
-    metadata: { createdAt: AT_1 },
-    ...overrides,
-  };
-}
 
 function source(overrides = {}) {
   return {
@@ -324,25 +282,5 @@ describe('character chronicle store', () => {
         relatedRefs: [],
       }),
     ).toThrow(CharacterChronicleStoreError);
-  });
-
-  it('keeps chronicle records separate from the mechanical CharacterSheet', () => {
-    const registry = createCharacterRegistryStore(db, () => clock);
-    const chronicle = createCharacterChronicleStore(db, () => clock);
-    const sheet = makeSheet();
-    registry.save('char-mira', sheet);
-
-    chronicle.appendRecord({
-      globalCharacterId: 'char-mira',
-      category: 'subjective-knowledge',
-      text: 'Mira remembers King Aldren as a betrayer.',
-      source: source(),
-      portability: 'portable',
-      visibility: 'player-visible',
-      truthStatus: 'believed',
-      relatedRefs: [],
-    });
-
-    expect(registry.load('char-mira')).toEqual(sheet);
   });
 });

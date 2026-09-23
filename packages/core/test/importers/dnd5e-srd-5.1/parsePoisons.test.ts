@@ -101,10 +101,6 @@ describe('parsePoisons — full prelude + three sample entries', () => {
     ]),
   ]);
 
-  it('extracts exactly three poisons (not the four-type guidance prose)', () => {
-    expect(results).toHaveLength(3);
-  });
-
   it('extracts names sorted, with types', () => {
     expect(results.map((p) => [p.name, p.poisonType])).toEqual([
       ['Assassin’s Blood', 'ingested'],

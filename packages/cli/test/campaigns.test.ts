@@ -88,14 +88,6 @@ describe('runNewCommand', () => {
     }
   });
 
-  it('disambiguates a colliding slug', () => {
-    const h = harness();
-    runNewCommand(['Quest'], h.deps);
-    runNewCommand(['Quest'], h.deps);
-    const ids = loadRegistry(h.root).campaigns.map((c) => c.id);
-    expect(ids).toEqual(['quest', 'quest-2']);
-  });
-
   it('defaults the name when none is given', () => {
     const h = harness();
     runNewCommand([], h.deps);

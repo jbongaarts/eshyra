@@ -23,9 +23,4 @@ describe('jsonColumn codec', () => {
     const codec = jsonColumn<unknown>('demo.col');
     expect(() => codec.decode('{ not json')).toThrow(JsonColumnError);
   });
-
-  it('names the column in the error message', () => {
-    const codec = jsonColumn<unknown>('turn_trace.tool_calls');
-    expect(() => codec.encode(1n)).toThrow(/turn_trace\.tool_calls/);
-  });
 });

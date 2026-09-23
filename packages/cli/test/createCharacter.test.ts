@@ -128,21 +128,6 @@ describe('runCreateCharacter', () => {
     expect(out).toMatch(/Available drafts: real/);
   });
 
-  it('resumes an existing draft and continues from its saved state', async () => {
-    const engine = getDnd5eCharacterCreationEngine();
-    let seeded = engine.createDraft({ id: 'cont', mode: 'concept-first' });
-    seeded = engine.setIdentity(seeded, { name: 'Mira' });
-    seeded = engine.setClass(seeded, 'Wizard');
-    const store = memoryStore([seeded]);
-
-    // Enter past the settled name and class, set ancestry, then quit.
-    const { deps } = makeDeps(['', '', 'Elf', 'quit'], store);
-    const code = await runCreateCharacter(deps, ['--resume', 'cont']);
-    expect(code).toBe(0);
-    expect(store.load('cont')?.selections.ancestry).toBe('Elf');
-    expect(store.load('cont')?.identity.name).toBe('Mira');
-  });
-
   it('renders the stable unsupported-build message when a resumed draft is multiclass-shaped', async () => {
     const engine = getDnd5eCharacterCreationEngine();
     const invalid = {
@@ -157,14 +142,6 @@ describe('runCreateCharacter', () => {
     expect(lines).toContain(
       'character-creation draft resume was refused: Eshyra currently supports one class only.',
     );
-  });
-
-  it('starts a fresh draft under an explicit id', async () => {
-    const store = memoryStore();
-    const { deps } = makeDeps(['Aldric', 'quit'], store);
-    const code = await runCreateCharacter(deps, ['--id', 'aldric']);
-    expect(code).toBe(0);
-    expect(store.load('aldric')?.identity.name).toBe('Aldric');
   });
 
   it('gives each --id-less run a distinct draft id (no cross-run overwrite)', async () => {

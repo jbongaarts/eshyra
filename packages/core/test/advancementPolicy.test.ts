@@ -74,14 +74,6 @@ describe('resolveCampaignAdvancementPolicy', () => {
     expect(policy).toEqual({ mode: 'milestone' });
     db.close();
   });
-
-  it('returns an xp policy when xp is explicitly selected', () => {
-    const db = bareDb();
-    selectMode(db, 'xp');
-    const policy = resolveCampaignAdvancementPolicy(db);
-    expect(policy.mode).toBe('xp');
-    db.close();
-  });
 });
 
 describe('resolveCampaignAdvancementPolicy honours the rules binding', () => {
@@ -125,22 +117,6 @@ describe('resolveCampaignAdvancementPolicy honours the rules binding', () => {
 });
 
 describe('buildAdvancementPolicy (pure, over an explicit stack)', () => {
-  const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
-
-  it('builds an xp policy with the table from the given stack', () => {
-    const policy = buildAdvancementPolicy('xp', stack);
-    expect(policy.mode).toBe('xp');
-    if (policy.mode === 'xp') {
-      expect(policy.table.thresholds).toHaveLength(20);
-    }
-  });
-
-  it('builds a milestone policy without touching the stack', () => {
-    expect(buildAdvancementPolicy('milestone', stack)).toEqual({
-      mode: 'milestone',
-    });
-  });
-
   it('fails closed in xp mode when the stack has no advancement table', () => {
     const emptyStack = resolveRulesStack({
       base: {

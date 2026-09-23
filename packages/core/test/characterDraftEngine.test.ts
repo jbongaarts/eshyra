@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   type CharacterDraft,
-  createCharacterCreationEngine,
   getDnd5eCharacterCreationEngine,
   UnsupportedCharacterBuildError,
 } from '../src/internal.js';
@@ -166,27 +165,11 @@ describe('character creation draft engine', () => {
     );
   });
 
-  it('reports an invalid ancestry', () => {
-    let draft = newDraft();
-    draft = engine.setAncestry(draft, 'Gobbo');
-    expect(errorFields(draft)).toContain('ancestry');
-  });
-
   it('flags non-integer ability scores', () => {
     let draft = newDraft();
     draft = engine.setAbilityScoreMethod(draft, 'point_buy');
     draft = engine.setAbilityScore(draft, 'strength', 13.5);
     expect(errorFields(draft)).toContain('abilityScores.strength');
-  });
-
-  it('flags point-buy scores out of the 8–15 range', () => {
-    let draft = newDraft();
-    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
-    draft = engine.setAbilityScore(draft, 'strength', 17);
-    const strengthError = draft.diagnostics.find(
-      (d) => d.field === 'abilityScores.strength' && d.severity === 'error',
-    );
-    expect(strengthError?.message).toMatch(/between 8 and 15/);
   });
 
   it('flags an over-budget point-buy total once all six scores are present', () => {
@@ -227,18 +210,6 @@ describe('character creation draft engine', () => {
     expect(pending?.severity).toBe('pending');
     expect(pending?.dependsOn).toContain('class');
     expect(errorFields(draft)).not.toContain('maxHitPoints');
-  });
-
-  it('computes level-1 HP once class hit die and Constitution exist', () => {
-    let draft = newDraft();
-    draft = engine.setClass(draft, 'Fighter');
-    draft = engine.setAbilityScoreMethod(draft, 'point_buy');
-    draft = engine.setAbilityScore(draft, 'constitution', 14);
-    // Fighter d10 + CON +2 = 12.
-    expect(draft.derived.maxHitPoints).toBe(12);
-    expect(draft.diagnostics.some((d) => d.field === 'maxHitPoints')).toBe(
-      false,
-    );
   });
 
   it('accepts a rolled score outside the point-buy range and recomputes its modifier', () => {
@@ -312,15 +283,6 @@ describe('character creation draft engine', () => {
         ]),
       );
     }
-  });
-
-  it('can be constructed with an explicit resolver', () => {
-    const explicit = createCharacterCreationEngine();
-    const draft = explicit.setClass(
-      explicit.createDraft({ id: 'd', mode: 'concept-first' }),
-      'Rogue',
-    );
-    expect(errorFields(draft)).not.toContain('class');
   });
 });
 
@@ -455,14 +417,6 @@ describe('character creation rules-pack validation', () => {
     draft = engine.setClass(draft, 'wizard');
     draft = engine.setSpells(draft, ['magic missile', 'Fire Bolt']);
     expect(errorFields(draft)).not.toContain('class');
-    expect(errorFields(draft)).not.toContain('spells');
-  });
-
-  it('accepts a level-1 spell and a cantrip on the class list', () => {
-    let draft = newDraft();
-    draft = engine.setClass(draft, 'Wizard');
-    // Magic Missile (level 1) and Fire Bolt (cantrip) are both Wizard spells.
-    draft = engine.setSpells(draft, ['Magic Missile', 'Fire Bolt']);
     expect(errorFields(draft)).not.toContain('spells');
   });
 

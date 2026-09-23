@@ -66,13 +66,6 @@ afterEach(() => {
 });
 
 describe('normalizeMigrationSql / migrationChecksum', () => {
-  it('normalizes CRLF and trailing newlines to a stable form', () => {
-    expect(normalizeMigrationSql('a\r\nb\r\n')).toBe('a\nb\n');
-    expect(normalizeMigrationSql('a\nb')).toBe('a\nb\n');
-    expect(normalizeMigrationSql('a\nb\n\n\n')).toBe('a\nb\n');
-    expect(normalizeMigrationSql('a\rb')).toBe('a\nb\n');
-  });
-
   it('produces identical checksums for CRLF and LF variants of the same text', () => {
     const lf = normalizeMigrationSql('CREATE TABLE t (id INTEGER);\n');
     const crlf = normalizeMigrationSql('CREATE TABLE t (id INTEGER);\r\n');

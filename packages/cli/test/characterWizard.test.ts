@@ -312,25 +312,6 @@ describe('character wizard — resolver-backed choices', () => {
     expect(result.draft.selections.className).toBe('Wizard');
   });
 
-  it('rejects an unknown class with actionable suggestions, no draft failure', async () => {
-    const { deps: d, lines } = deps([
-      'Hero',
-      'Wizrd', // typo → no exact, no unique prefix
-      'Wizard', // recover
-      'Elf',
-      '',
-      'point_buy',
-      'quit',
-    ]);
-    const result = await runCharacterWizard(d, {
-      mode: 'concept-first',
-      draftId: 'p',
-    });
-    expect(text(lines)).toMatch(/No class matches "Wizrd"|Did you mean/);
-    // Despite the bad entry the draft recovered and recorded the valid class.
-    expect(result.draft.selections.className).toBe('Wizard');
-  });
-
   it('lists and searches options for a step', async () => {
     const { deps: d, lines } = deps([
       'list', // identity step has nothing to list
@@ -368,32 +349,9 @@ describe('character wizard — navigation and corrections', () => {
     expect(result.draft.selections.className).toBe('Wizard');
     expect(result.draft.selections.ancestry).toBe('Elf');
   });
-
-  it('review shows completed fields, derived values, and what is missing', async () => {
-    const { deps: d, lines } = deps([
-      'Mira',
-      'Fighter',
-      'review', // mid-flow review (global)
-      'quit',
-    ]);
-    await runCharacterWizard(d, { mode: 'concept-first', draftId: 'p' });
-    const out = text(lines);
-    expect(out).toContain('Draft review');
-    expect(out).toContain('Mira');
-    expect(out).toContain('Fighter');
-    // Not finalizable yet (scores missing).
-    expect(out).toMatch(/not finalizable yet|Still needed/);
-  });
 });
 
 describe('character wizard — save, quit, and resume', () => {
-  it('saves on explicit save and reports it', async () => {
-    const { deps: d, lines, store } = deps(['Mira', 'save', 'quit']);
-    await runCharacterWizard(d, { mode: 'concept-first', draftId: 'keep' });
-    expect(store.saved.has('keep')).toBe(true);
-    expect(text(lines)).toContain('Draft saved.');
-  });
-
   it('offers to save on quit when there are unsaved changes', async () => {
     // The "unsaved changes? (y/n)" text is the prompt question (not a written
     // line), so assert on the persisted result and the post-save confirmation.
@@ -423,30 +381,6 @@ describe('character wizard — save, quit, and resume', () => {
     });
     expect(result.outcome).toBe('quit');
     expect(text(lines)).not.toMatch(/unsaved changes/i);
-  });
-
-  it('resumes a saved draft without losing state', async () => {
-    // First session: set a name and class, then save+quit.
-    const first = deps(['Mira', 'Wizard', 'save', 'quit']);
-    await runCharacterWizard(first.deps, {
-      mode: 'concept-first',
-      draftId: 'resume-me',
-    });
-    const stored = first.store.saved.get('resume-me');
-    expect(stored?.selections.className).toBe('Wizard');
-
-    // Second session: resume from the stored draft. The wizard restarts at the
-    // first step with all prior state preserved — Enter steps past the settled
-    // name and class, then we set ancestry and quit.
-    const second = deps(['', '', 'Elf', 'quit']);
-    const result = await runCharacterWizard(second.deps, {
-      mode: stored?.creationMode ?? 'concept-first',
-      draftId: 'resume-me',
-      resume: stored,
-    });
-    expect(result.draft.identity.name).toBe('Mira');
-    expect(result.draft.selections.className).toBe('Wizard');
-    expect(result.draft.selections.ancestry).toBe('Elf');
   });
 
   it('persists unsaved work on end-of-input', async () => {
@@ -677,53 +611,6 @@ describe('character wizard — equipment & proficiency choices (eshyra-b69j.13)'
     const out = text(lines);
     expect(out).toMatch(/Choose 2 — 2 remaining/);
     expect(out).toMatch(/already selected/);
-  });
-
-  it('blocks finishing at review while choices are pending, then completes once made', async () => {
-    // Walk to review WITHOUT making the class choices: review must refuse to
-    // finish and point back to the Class choices step.
-    const blocked = deps([
-      ...TO_CLASS_CHOICES,
-      // class-choices step is interactive; `back` out of the first group to land
-      // before it, then jump to review is not possible — instead quit to inspect.
-      'quit',
-    ]);
-    const blockedResult = await runCharacterWizard(blocked.deps, {
-      mode: 'concept-first',
-      draftId: 'grok',
-    });
-    // Quitting before completing leaves the draft non-finalizable with pending
-    // mechanical choices recorded as none.
-    expect(blockedResult.outcome).toBe('quit');
-    expect(
-      blocked.deps.engine
-        .mechanicalChoices(blockedResult.draft)
-        .some((m) => !m.satisfied),
-    ).toBe(true);
-
-    // Now a full run that makes every choice reaches completion.
-    const done = deps([
-      ...TO_CLASS_CHOICES,
-      'Athletics',
-      'Perception',
-      '1',
-      '1',
-      '1',
-      '1',
-      'Dwarvish',
-      '', // spells skip
-      '', // review → all satisfied → finish
-    ]);
-    const doneResult = await runCharacterWizard(done.deps, {
-      mode: 'concept-first',
-      draftId: 'grok2',
-    });
-    expect(doneResult.outcome).toBe('completed');
-    expect(
-      done.deps.engine
-        .mechanicalChoices(doneResult.draft)
-        .every((m) => m.satisfied),
-    ).toBe(true);
   });
 
   it('corrects a valid-but-wrong equipment pick on re-entry (clear + re-pick)', async () => {

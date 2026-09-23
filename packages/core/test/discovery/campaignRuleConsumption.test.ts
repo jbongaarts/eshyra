@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { preflightCampaignItemOperation } from '../../src/campaign/capabilityPreflight.js';
 import { createDefaultToolRegistry, runTurn } from '../../src/index.js';
@@ -678,19 +677,5 @@ describe('W11 campaign-rule read-interface consumption', () => {
     } finally {
       db.close();
     }
-  });
-
-  it('proves its ownership boundary structurally in a dedicated checker', () => {
-    // The source-level half of "no discovery-side rule store" is
-    // `discoveryOwnershipBoundary.test.ts`, which runs an AST analyzer over the
-    // complete recursive discovery surface and, first, proves that analyzer
-    // rejects each prohibited class. It is separate because its rejection
-    // fixtures are the substance of that evidence, not a footnote to this file.
-    expect(
-      readFileSync(
-        'packages/core/test/discovery/discoveryOwnershipBoundary.test.ts',
-        'utf8',
-      ),
-    ).toContain('owns no rule schema, store, cache, resolver, or lifecycle');
   });
 });

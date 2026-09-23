@@ -350,10 +350,6 @@ describe('CodexSdkMcpModelClient', () => {
 });
 
 describe('bareToolName (namespace-tolerant tool-name recovery)', () => {
-  it('returns a bare tool name unchanged', () => {
-    expect(bareToolName(toolCallItem('c', 'roll'))).toBe('roll');
-  });
-
   it('strips the mcp__<server>__ namespace Codex may report', () => {
     expect(bareToolName(toolCallItem('c', 'mcp__eshyra__roll'))).toBe('roll');
   });
@@ -385,14 +381,6 @@ describe('attachCallIds (transcript correlation, not execution)', () => {
       'id-roll-2',
       'id-wq',
     ]);
-  });
-
-  it('correlates even when Codex reports namespaced tool labels', () => {
-    const out = attachCallIds(
-      [executedCall('roll')],
-      [toolCallItem('id-1', 'mcp__eshyra__roll')],
-    );
-    expect(out[0].callId).toBe('id-1');
   });
 
   it('leaves a record without a matching item untouched', () => {

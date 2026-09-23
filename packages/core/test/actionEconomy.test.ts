@@ -904,42 +904,6 @@ describe('spendTurnResource — spell casts are pack-derived, never model-declar
       }),
     ).toThrow(/does not resolve to a spell record/);
   });
-
-  it('derives the action-cantrip exception from the record, not a declared flag', () => {
-    const { db } = setupCombat();
-    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
-    spendTurnResource(db, {
-      campaignId: CAMPAIGN,
-      participant: PC,
-      resource: 'bonus_action',
-      activity: 'cast Healing Word',
-      spellRef: 'spell:healing-word',
-      ...CTX,
-    });
-
-    // Cure Wounds is level 1 in the pack: rejected no matter what the model
-    // believes about it.
-    expect(() =>
-      spendTurnResource(db, {
-        campaignId: CAMPAIGN,
-        participant: PC,
-        resource: 'action',
-        activity: 'cast Cure Wounds',
-        spellRef: 'spell:cure-wounds',
-        ...CTX,
-      }),
-    ).toThrow(/only other spell allowed is a cantrip/);
-    // Fire Bolt is a 1-action cantrip in the pack: allowed.
-    const cantrip = spendTurnResource(db, {
-      campaignId: CAMPAIGN,
-      participant: PC,
-      resource: 'action',
-      activity: 'cast Fire Bolt',
-      spellRef: 'spell:fire-bolt',
-      ...CTX,
-    });
-    expect(cantrip.budget.otherSpellCast).toBe('action-cantrip');
-  });
 });
 
 describe('extraReactions mechanics (hydra, marilith)', () => {

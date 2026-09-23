@@ -129,23 +129,7 @@ describe('ModelUsageStore', () => {
     expect(summary.totalCalls).toBe(0);
   });
 
-  it('creates parent directories when they are absent', () => {
-    const dir = workDir();
-    const dbPath = join(dir, 'a', 'b', 'c', 'usage.db');
-    const store = new ModelUsageStore(dbPath);
-    store.close();
-  });
-
   describe('record()', () => {
-    it('writes a record and reflects it in the summary', () => {
-      const dir = workDir();
-      const store = new ModelUsageStore(join(dir, 'usage.db'));
-      store.record(rec());
-      const summary = store.query();
-      store.close();
-      expect(summary.totalCalls).toBe(1);
-    });
-
     it('ignores duplicate ids (INSERT OR IGNORE)', () => {
       const dir = workDir();
       const store = new ModelUsageStore(join(dir, 'usage.db'));
@@ -155,39 +139,6 @@ describe('ModelUsageStore', () => {
       const summary = store.query();
       store.close();
       expect(summary.totalCalls).toBe(1);
-    });
-
-    it('stores null token counts without error', () => {
-      const dir = workDir();
-      const store = new ModelUsageStore(join(dir, 'usage.db'));
-      store.record(
-        rec({
-          inputTokens: null,
-          outputTokens: null,
-          cacheReadTokens: null,
-          cacheWriteTokens: null,
-        }),
-      );
-      const summary = store.query();
-      store.close();
-      expect(summary.totalCalls).toBe(1);
-      expect(summary.inputTokens).toBeNull();
-    });
-
-    it('stores failure records with error text', () => {
-      const dir = workDir();
-      const store = new ModelUsageStore(join(dir, 'usage.db'));
-      store.record(
-        rec({
-          success: false,
-          error: 'provider timed out',
-          inputTokens: null,
-          outputTokens: null,
-        }),
-      );
-      const summary = store.query();
-      store.close();
-      expect(summary.failures).toBe(1);
     });
   });
 

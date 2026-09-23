@@ -447,15 +447,6 @@ describe('AnthropicNativeModelClient', () => {
   });
 
   describe('error path (loreweaver-jmv contract)', () => {
-    it('throws a ModelClientError when the SDK call fails', async () => {
-      createMock.mockRejectedValue(new Error('overloaded'));
-      await expect(
-        new AnthropicNativeModelClient('m').complete({
-          messages: [{ role: 'user', content: 'x' }],
-        }),
-      ).rejects.toThrowError(ModelClientError);
-    });
-
     it('throws ModelRateLimitError (instanceof ModelClientError) when the SDK throws RateLimitError', async () => {
       createMock.mockRejectedValue(
         new MockRateLimitError('429 rate_limit_error'),

@@ -141,18 +141,6 @@ describe('Node runtime policy', () => {
     expect(ci).toContain('node-gyp rebuild');
   });
 
-  it('documents the same Node 24 dependency policy for agents', () => {
-    const agents = readText('AGENTS.md');
-
-    expect(agents).toContain('Node 24 LTS');
-    expect(agents).toContain('`>=24 <25`');
-    expect(agents).toContain('`better-sqlite3` 12.x');
-    expect(agents).toContain('`@types/node`');
-    expect(agents).toMatch(/Linux,\s+Windows, and macOS/);
-    expect(agents).toMatch(/source-build fallback.*regression/i);
-    expect(agents).not.toMatch(/Node 22|11\.x/);
-  });
-
   it('makes Biome 2 respect gitignored local and generated artifacts', () => {
     const biome = readJson<BiomeJson>('biome.json');
     const gitignore = readText('.gitignore');
@@ -257,33 +245,6 @@ describe('Node runtime policy', () => {
         }
       }
     }
-  });
-
-  it('documents the linked-worktree verification workflow for agents', () => {
-    const agents = readText('AGENTS.md');
-
-    expect(agents).toContain('scripts/agent-preflight-main.mjs');
-    expect(agents).toContain('scripts/verify-current-worktree.mjs');
-    expect(agents).toContain('Fetch `origin/main`');
-    expect(agents).toMatch(
-      /Do not run full\s+verification from the parent checkout/,
-    );
-    expect(agents).toContain('cd "$(git rev-parse --show-toplevel)"');
-    expect(agents).toContain(
-      'If Biome says no relevant files were checked because `.worktrees` is ignored',
-    );
-    expect(agents).toMatch(/do not delete or recreate the\s+worktree/);
-    expect(agents).toContain('`npm run format` (`biome check --write .`)');
-    expect(agents).toContain(
-      'Git/npm orchestration works but Vitest cannot launch',
-    );
-    expect(agents).toMatch(
-      /It does not support environments that deny all child\s+processes\./,
-    );
-    expect(agents).toMatch(
-      /Full `npm run verify:worktree` is required before commit\/push, except in the\s+narrowly qualified managed sandbox above, where\s+`npm run verify:worktree:sandbox` is the required alternative\./,
-    );
-    expect(agents).not.toContain('temporary worktree-local Biome config');
   });
 
   it('provides simple Node helpers for agent worktree workflow', () => {

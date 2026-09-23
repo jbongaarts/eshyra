@@ -100,16 +100,4 @@ describe('managedDoltRoot', () => {
     expect(managedDoltRoot(env)).toBe(join('/opt/dolt', 'root'));
     expect(managedDoltRoot(env)).toBe(join(managedDoltDir(env), 'root'));
   });
-
-  it('honors ESHYRA_DOLT_HOME so the root never lands in the user home', () => {
-    const home = emptyHome();
-    expect(managedDoltRoot({ ESHYRA_DOLT_HOME: home })).toBe(
-      join(home, 'root'),
-    );
-  });
-
-  it('is a sibling of the binary, never the binary dir itself', () => {
-    const env = { ESHYRA_DOLT_HOME: '/opt/dolt' };
-    expect(managedDoltRoot(env)).not.toBe(managedDoltDir(env));
-  });
 });

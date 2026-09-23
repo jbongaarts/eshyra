@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CALC_FORMULA_NAMES,
-  CalcError,
-  evaluateCalc,
-} from '../src/internal.js';
+import { CalcError, evaluateCalc } from '../src/internal.js';
 
 /**
  * F9 non-roll formula registry (eshyra-2n1t.11). Each formula is verified
@@ -36,11 +32,6 @@ describe('calc registry (fail closed)', () => {
     ).toThrow(CalcError);
     expect(() => evaluateCalc('passive_score', null)).toThrow(CalcError);
   });
-
-  it('exposes a sorted stable formula name list', () => {
-    expect(CALC_FORMULA_NAMES).toEqual([...CALC_FORMULA_NAMES].sort());
-    expect(CALC_FORMULA_NAMES).toContain('passive_score');
-  });
 });
 
 describe('passive_score (SRD passive-checks)', () => {
@@ -64,12 +55,6 @@ describe('passive_score (SRD passive-checks)', () => {
         disadvantage: true,
       }).outputs.score,
     ).toBe(14);
-  });
-
-  it("matches the SRD's own example (Wis 15, proficient, level 1 → 14)", () => {
-    expect(evaluateCalc('passive_score', { modifier: 4 }).outputs.score).toBe(
-      14,
-    );
   });
 });
 

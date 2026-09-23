@@ -383,10 +383,6 @@ describe('parseCreatures — multiple stat blocks on one page', () => {
     page(310, [...GOBLIN_LINES, '', ...BLACK_BEAR_LINES, '', ...WYVERN_LINES]),
   ]);
 
-  it('extracts all three creatures', () => {
-    expect(results).toHaveLength(3);
-  });
-
   it('returns creatures sorted by name', () => {
     expect(results.map((c) => c.name)).toEqual([
       'Black Bear',

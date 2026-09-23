@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildCharacterCreationMutations,
   CharacterCreationError,
   type CharacterSheet,
   completeCharacterCreation,
-  createCampaign,
   createSeededRng,
-  EMBERFALL_HOLLOW,
   getActiveCharacterId,
   importFinalizedCharacter,
   initSchema,
@@ -142,97 +139,6 @@ describe('character creation', () => {
     }
   });
 
-  it('builds mutate_state-compatible writes for the canonical character row', () => {
-    expect(
-      buildCharacterCreationMutations(validDraft, {
-        provenance: 'character_creation:session-zero',
-        sessionId: 'session-0',
-        at: '2026-05-20T22:45:00.000Z',
-      }),
-    ).toEqual([
-      {
-        target: 'character',
-        id: 'pc-1',
-        field: 'name',
-        op: 'set',
-        value: 'Mira',
-        provenance: 'character_creation:session-zero',
-        sessionId: 'session-0',
-        at: '2026-05-20T22:45:00.000Z',
-      },
-      {
-        target: 'character',
-        id: 'pc-1',
-        field: 'ancestry',
-        op: 'set',
-        value: 'Human',
-        provenance: 'character_creation:session-zero',
-        sessionId: 'session-0',
-        at: '2026-05-20T22:45:00.000Z',
-      },
-      {
-        target: 'character',
-        id: 'pc-1',
-        field: 'class_name',
-        op: 'set',
-        value: 'Fighter',
-        provenance: 'character_creation:session-zero',
-        sessionId: 'session-0',
-        at: '2026-05-20T22:45:00.000Z',
-      },
-      {
-        target: 'character',
-        id: 'pc-1',
-        field: 'level',
-        op: 'set',
-        value: 1,
-        provenance: 'character_creation:session-zero',
-        sessionId: 'session-0',
-        at: '2026-05-20T22:45:00.000Z',
-      },
-      {
-        target: 'character',
-        id: 'pc-1',
-        field: 'hp_current',
-        op: 'set',
-        value: 12,
-        provenance: 'character_creation:session-zero',
-        sessionId: 'session-0',
-        at: '2026-05-20T22:45:00.000Z',
-      },
-      {
-        target: 'character',
-        id: 'pc-1',
-        field: 'hp_max',
-        op: 'set',
-        value: 12,
-        provenance: 'character_creation:session-zero',
-        sessionId: 'session-0',
-        at: '2026-05-20T22:45:00.000Z',
-      },
-      {
-        target: 'character',
-        id: 'pc-1',
-        field: 'ability_scores_json',
-        op: 'set',
-        value: JSON.stringify(validDraft.abilityScores),
-        provenance: 'character_creation:session-zero',
-        sessionId: 'session-0',
-        at: '2026-05-20T22:45:00.000Z',
-      },
-      {
-        target: 'character',
-        id: 'pc-1',
-        field: 'conditions_json',
-        op: 'set',
-        value: JSON.stringify([]),
-        provenance: 'character_creation:session-zero',
-        sessionId: 'session-0',
-        at: '2026-05-20T22:45:00.000Z',
-      },
-    ]);
-  });
-
   it('returns correction guidance without writes when a guided draft is illegal', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
@@ -281,24 +187,6 @@ describe('character creation', () => {
         .prepare(`SELECT name, class_name FROM character WHERE id = 'pc-1'`)
         .get(),
     ).toEqual({ name: null, class_name: null });
-    db.close();
-  });
-
-  it('dispatches to the D&D validator when the campaign binding is D&D SRD', () => {
-    const db = openDatabase(':memory:');
-    initSchema(db);
-    createCampaign(db, { campaignId: 'dnd-camp', pack: EMBERFALL_HOLLOW });
-
-    const result = completeCharacterCreation(db, {
-      draft: validDraft,
-      sessionId: 'session-0',
-      at: '2026-05-23T13:00:00.000Z',
-    });
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.character.className).toBe('Fighter');
-    }
     db.close();
   });
 

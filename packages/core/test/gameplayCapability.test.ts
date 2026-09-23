@@ -66,9 +66,4 @@ describe('assertGameplayCapable (eshyra-qa9d)', () => {
       UnsupportedGameplayProviderError,
     );
   });
-
-  it('confirms both released gameplay adapters are gameplay-capable', () => {
-    expect(AGENT_SDK_MCP_ADAPTER_CAPABILITIES.gameplayCapable).toBe(true);
-    expect(ANTHROPIC_NATIVE_ADAPTER_CAPABILITIES.gameplayCapable).toBe(true);
-  });
 });

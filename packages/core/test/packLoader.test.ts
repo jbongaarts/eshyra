@@ -117,13 +117,6 @@ describe('loadRulesPackFromDirectory — committed pack (rules:dnd5e-srd-5.1)', 
     expect(pack.meta.packId).toBe('rules:dnd5e-srd-5.1');
   });
 
-  it('returns the full record set sorted by key', () => {
-    const pack = loadRulesPackFromDirectory(COMMITTED_PACK_DIR);
-    expect(pack.records.length).toBeGreaterThan(1);
-    const keys = pack.records.map((r) => r.key);
-    expect(keys).toEqual([...keys].sort());
-  });
-
   it('contains known landmark records carrying SRD provenance', () => {
     const pack = loadRulesPackFromDirectory(COMMITTED_PACK_DIR);
     const goblin = pack.records.find((r) => r.key === 'creature:goblin');
@@ -171,12 +164,6 @@ describe('loadRulesPackFromDirectory — committed pack (rules:dnd5e-srd-5.1)', 
 // ---------------------------------------------------------------------------
 
 describe('loadRulesPackFromDirectory — determinism', () => {
-  it('produces deeply equal packs on two independent loads of the committed pack', () => {
-    const packA = loadRulesPackFromDirectory(COMMITTED_PACK_DIR);
-    const packB = loadRulesPackFromDirectory(COMMITTED_PACK_DIR);
-    expect(packA).toEqual(packB);
-  });
-
   it('stable JSON serialization: two loads produce the same JSON string', () => {
     const jsonA = JSON.stringify(
       loadRulesPackFromDirectory(COMMITTED_PACK_DIR),

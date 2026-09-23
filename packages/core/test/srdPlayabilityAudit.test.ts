@@ -21,7 +21,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   auditSrdPlayability,
-  countSrdPlayabilityByCategory,
   formatSrdPlayabilityReport,
   getBundledDnd5eSrdPack,
   type RulesPack,
@@ -29,7 +28,6 @@ import {
   type RulesRecord,
   type SrdPlayabilityCategory,
   type SrdPlayabilityFinding,
-  srdPlayabilityHasFindings,
 } from '../src/internal.js';
 
 const LICENSE: RulesPackLicense = {
@@ -840,49 +838,6 @@ describe('unresolvable-inline-option-ref gate (eshyra-ldqb)', () => {
 
 describe('committed SRD pack playable-model baseline', () => {
   const findings = auditSrdPlayability(getBundledDnd5eSrdPack());
-  const counts = countSrdPlayabilityByCategory(findings);
-
-  it('GREEN (eshyra-o9bd.2 landed): every progression row is typed', () => {
-    // eshyra-o9bd.2 replaced the untyped feature markers with a typed
-    // advancement[] union; the gate now passes against the committed pack.
-    expect(counts['untyped-progression-marker']).toBe(0);
-  });
-
-  it('GREEN (eshyra-o9bd.2 landed): no null spellcasting placeholders', () => {
-    // eshyra-o9bd.2 omits non-applicable spellcasting instead of emitting null.
-    expect(counts['null-spellcasting-value']).toBe(0);
-  });
-
-  it('GREEN (eshyra-o9bd.3 landed): every granted feature record exists', () => {
-    // eshyra-o9bd.3 (folded into .2) added feature:rogue:thieves-cant, so no
-    // progression grant/improvement ref dangles.
-    expect(counts['missing-class-feature-record']).toBe(0);
-  });
-
-  it('GREEN (eshyra-o9bd.5 landed): no overlay-dependence findings remain', () => {
-    // Creation facts now live in generated pack data; overlay retirement is .15.
-    expect(counts['overlay-dependence']).toBe(0);
-  });
-
-  it('GREEN (regression guard, eshyra-o9bd.6): no proficiency-note bleed', () => {
-    // The committed pack already lifts the Druid metal restriction to
-    // proficiencyNotes; this guards against regressing it.
-    expect(counts['proficiency-note-bleed']).toBe(0);
-  });
-
-  it('GREEN (eshyra-o9bd.9 landed): every level-1/level-up player choice is structured', () => {
-    // All five modeling slices (eshyra-o9bd.9.2–.9.6) have landed: every granted
-    // class-feature build choice now carries a structured choices[] entry or a
-    // named out-of-scope marker, so the choice-coverage gate is clean.
-    expect(counts['choice-coverage']).toBe(0);
-  });
-
-  it('GREEN (eshyra-ldqb): every inline-option reference resolves (Warlock invocation prerequisites included)', () => {
-    // Eldritch Invocation pactBoon prerequisites and the Pact of the Tome
-    // cantrip choice's requiresFeatureOption filter all address real options
-    // offered by feature:warlock:pact-boon's choices.
-    expect(counts['unresolvable-inline-option-ref']).toBe(0);
-  });
 
   it('no finding remains to name an owning modeling bead', () => {
     expect(findings).toHaveLength(0);
@@ -892,11 +847,5 @@ describe('committed SRD pack playable-model baseline', () => {
     const report = formatSrdPlayabilityReport('rules:dnd5e-srd-5.1', findings);
     expect(report).toContain('SRD playable-model audit');
     expect(report).toContain('(no findings');
-  });
-
-  it('re-freeze readiness: the pack has zero playable-model findings', () => {
-    // Every implemented playable-model gate — including choice-coverage
-    // (eshyra-o9bd.9) — is green. The pack clears epic bar #9.
-    expect(srdPlayabilityHasFindings(findings)).toBe(false);
   });
 });

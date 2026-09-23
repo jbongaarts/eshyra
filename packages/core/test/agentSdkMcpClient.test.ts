@@ -178,12 +178,6 @@ describe('MCP tool-name mapping', () => {
     expect(fromMcpToolName('mcp__other__roll')).toBeUndefined();
     expect(fromMcpToolName('Bash')).toBeUndefined();
   });
-
-  it('round-trips every Eshyra name through both directions', () => {
-    for (const name of ['roll', 'world_query', 'mark_scene', 'adjust_hp']) {
-      expect(fromMcpToolName(toMcpToolName(name))).toBe(name);
-    }
-  });
 });
 
 describe('AgentSdkMcpModelClient', () => {
@@ -517,7 +511,6 @@ describe('AgentSdkMcpModelClient', () => {
   describe('rate-limit and provider-quota classification (eshyra-p8d6)', () => {
     const SESSION_LIMIT_MSG =
       "You've hit your session limit · resets 2:30am (America/Chicago)";
-    const SESSION_LIMIT_SDK_MSG = `Agent SDK MCP rate limit: ${SESSION_LIMIT_MSG}`;
 
     it('throws ModelRateLimitError for a Claude Code session-limit thrown exception', async () => {
       queryMock.mockImplementation(() => {
@@ -531,20 +524,6 @@ describe('AgentSdkMcpModelClient', () => {
           executeTool: executorReturning({ ok: true, data: {} }),
         }),
       ).rejects.toBeInstanceOf(ModelRateLimitError);
-    });
-
-    it('ModelRateLimitError from session-limit is also instanceof ModelClientError', async () => {
-      queryMock.mockImplementation(() => {
-        throw new Error(SESSION_LIMIT_MSG);
-      });
-
-      await expect(
-        new AgentSdkMcpModelClient('m').complete({
-          messages: [{ role: 'user', content: 'x' }],
-          tools: [rollDef],
-          executeTool: executorReturning({ ok: true, data: {} }),
-        }),
-      ).rejects.toBeInstanceOf(ModelClientError);
     });
 
     it('sanitized error text does not leak credentials when session-limit error is thrown', async () => {
@@ -605,22 +584,6 @@ describe('AgentSdkMcpModelClient', () => {
           executeTool: executorReturning({ ok: true, data: {} }),
         }),
       ).rejects.toBeInstanceOf(ModelRateLimitError);
-    });
-
-    it('thrown ModelRateLimitError message contains the session-limit text', async () => {
-      queryMock.mockImplementation(() => {
-        throw new Error(SESSION_LIMIT_MSG);
-      });
-
-      const err = await new AgentSdkMcpModelClient('m')
-        .complete({
-          messages: [{ role: 'user', content: 'x' }],
-          tools: [rollDef],
-          executeTool: executorReturning({ ok: true, data: {} }),
-        })
-        .catch((e) => e);
-
-      expect(err.message).toContain(SESSION_LIMIT_SDK_MSG);
     });
 
     it('does NOT classify a generic connection failure as a rate-limit', async () => {

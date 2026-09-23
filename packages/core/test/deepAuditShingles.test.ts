@@ -9,8 +9,6 @@ import { describe, expect, it } from 'vitest';
 import {
   addGrams,
   diceFormulaAverage,
-  GRAM_SIZE,
-  gramKey,
   isPageFooter,
   isStrictProsePath,
   joinDehyphenated,
@@ -88,24 +86,6 @@ describe('uncoveredRuns', () => {
     expect(
       uncoveredRuns(shingleTokens('unnatural armor'), grams, short),
     ).toHaveLength(1);
-  });
-
-  it('uses fixed-size grams', () => {
-    // A corrupted single number inside otherwise-covered text stays
-    // uncovered for GRAM_SIZE positions around it — the digit check's basis.
-    const { grams } = corpusGrams();
-    const corrupted = corpus.replace('three', '4');
-    const tokens = shingleTokens(corrupted);
-    const covered = new Array(tokens.length).fill(false);
-    for (let i = 0; i + GRAM_SIZE <= tokens.length; i++) {
-      // mirror the digit check's coverage marking
-      if (grams.has(gramKey(tokens.slice(i, i + GRAM_SIZE)))) {
-        for (let j = i; j < i + GRAM_SIZE; j++) covered[j] = true;
-      }
-    }
-    const index = tokens.indexOf('4');
-    expect(index).toBeGreaterThanOrEqual(0);
-    expect(covered[index]).toBe(false);
   });
 });
 

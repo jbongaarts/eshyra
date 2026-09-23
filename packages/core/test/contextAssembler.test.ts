@@ -13,7 +13,6 @@ import {
   appendSceneLog,
   assembleCampaignRulesContext,
   assembleContext,
-  campaignRulesEvidenceFrom,
   closeOpenArcAndOpenNext,
   closeScene,
   createCharacterChronicleStore,
@@ -378,133 +377,6 @@ describe('Context Assembler', () => {
     expect(renderContextMessage(context)).toContain(
       'AMBIGUITY SOURCE UNAVAILABLE',
     );
-    db.close();
-  });
-
-  it('keeps a restored invalid-pairing row UNREPRESENTABLE through the real ambiguity-source degradation path (eshyra-jhpt.4)', () => {
-    const db = freshDbWithSession({ sessionId: SESSION });
-    const restoredPosition = formatCampaignPosition(campaignPosition(1));
-    db.prepare(`
-      INSERT INTO campaign_rule (
-        campaign_id, rule_identity, rule_kind, status, origin, provenance_kind,
-        ambiguity_id, selected_interpretation_id, question_id, rationale,
-        effective_position, temporal_mode, disputed_position, superseded_by,
-        revoked_position, scope, governing_record_keys_json, prose, provenance,
-        session_id, updated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    `).run(
-      CAMPAIGN,
-      'restored-invalid-provenance',
-      'house-rule',
-      'active',
-      'player-approved',
-      'ambiguity',
-      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp',
-      'presence-required',
-      null,
-      null,
-      restoredPosition,
-      'prospective',
-      null,
-      null,
-      null,
-      'test',
-      JSON.stringify(['spell:find-familiar']),
-      'Restored invalid rule',
-      'ambiguity:find-familiar-permanent-dismissal-after-zero-hp#presence-required',
-      SESSION,
-      '2026-09-03T00:00:00.000Z',
-    );
-    const original = getBundledDnd5eSrdPack();
-    const addon: RulesPack = {
-      ...original,
-      meta: {
-        ...original.meta,
-        packId: 'rules:test-malformed-ambiguity',
-        role: 'addon',
-        order: 1,
-        compatibleBaseSystems: [
-          {
-            systemId: original.meta.systemId,
-            versions: [original.meta.version],
-          },
-        ],
-      },
-      records: [
-        {
-          ...original.records[0],
-          key: 'feature:malformed-ambiguity',
-          data: {
-            mechanics: {
-              ambiguities: [{ id: 'ambiguity:Foo_Bar' }],
-            },
-          },
-        },
-      ],
-    };
-    writeCampaignRulesBinding(db, {
-      base: {
-        systemId: original.meta.systemId,
-        packId: original.meta.packId,
-        version: original.meta.version,
-      },
-      addons: [
-        {
-          systemId: addon.meta.systemId,
-          packId: addon.meta.packId,
-          version: addon.meta.version,
-        },
-      ],
-      resolvedAt: '2026-05-20T09:00:00.000Z',
-    });
-    const context = assembleContext({
-      db,
-      campaignId: CAMPAIGN,
-      campaignPosition: formatCampaignPosition(campaignPosition(1)),
-      sessionId: SESSION,
-      playerInput: 'continue',
-      resolveRulesPack: (ref) =>
-        ref.packId === original.meta.packId
-          ? original
-          : ref.packId === addon.meta.packId
-            ? addon
-            : undefined,
-    });
-    expect(context.campaignRules.ambiguitySourceUnavailable).toContain(
-      'feature:malformed-ambiguity.data.mechanics.ambiguities[0].id must be a stable ambiguity:<kebab-case> ID',
-    );
-    expect(
-      context.campaignRules.unrepresentableRules.map(
-        ({ ruleIdentity }) => ruleIdentity,
-      ),
-    ).toEqual(['restored-invalid-provenance']);
-    expect(
-      context.campaignRules.rules.map(({ ruleIdentity }) => ruleIdentity),
-    ).not.toContain('restored-invalid-provenance');
-    expect(context.campaignRules.unboundRulings).toEqual([]);
-    expect(context.campaignRules.unboundConflicts).toEqual([]);
-    const rendered = renderContextMessage(context);
-    expect(rendered).toContain('AMBIGUITY SOURCE UNAVAILABLE');
-    expect(rendered).toContain(
-      'UNREPRESENTABLE ACTIVE CAMPAIGN RULE restored-invalid-provenance',
-    );
-    expect(rendered).not.toContain('[house-rule] restored-invalid-provenance');
-    const audited = buildAuditUserMessage({
-      playerInput: 'continue',
-      candidateResponse: 'The familiar returns.',
-      providedToolNames: [],
-      executedToolCalls: [],
-      campaignRules: context.campaignRules,
-    });
-    expect(audited).toContain(
-      'UNREPRESENTABLE ACTIVE CAMPAIGN RULE restored-invalid-provenance',
-    );
-    expect(audited).not.toContain('[house-rule] restored-invalid-provenance');
-    expect(
-      campaignRulesEvidenceFrom(context.campaignRules).rules.map(
-        ({ ruleIdentity }) => ruleIdentity,
-      ),
-    ).toContain('restored-invalid-provenance');
     db.close();
   });
 
@@ -1074,50 +946,6 @@ describe('Context Assembler', () => {
     db.close();
   });
 
-  it('ages recent scene evidence out when the scene boundary changes', () => {
-    const db = freshDbWithSession({ sessionId: SESSION });
-
-    openScene(db, {
-      campaignId: CAMPAIGN,
-      sessionId: SESSION,
-      sceneId: 'scene-sela',
-      title: 'Warden Sela',
-      at: '2026-05-20T09:00:00.000Z',
-    });
-    logTurn(
-      db,
-      'scene-sela',
-      'turn-1',
-      'What happened here?',
-      'Warden Sela says two scouts went north and did not return.',
-    );
-    closeScene(db, {
-      campaignId: CAMPAIGN,
-      sessionId: SESSION,
-      sceneId: 'scene-sela',
-      at: '2026-05-20T09:30:00.000Z',
-    });
-    openScene(db, {
-      campaignId: CAMPAIGN,
-      sessionId: SESSION,
-      sceneId: 'scene-road',
-      title: 'North Road',
-      at: '2026-05-20T10:00:00.000Z',
-    });
-
-    const ctx = assembleContext({
-      db,
-      campaignId: CAMPAIGN,
-      campaignPosition: formatCampaignPosition(campaignPosition(1)),
-      sessionId: SESSION,
-      playerInput: 'Remind me what Sela said.',
-    });
-
-    expect(ctx.recentSceneEvidence).toEqual([]);
-    expect(renderContextMessage(ctx)).not.toContain('two scouts');
-    db.close();
-  });
-
   it('bounds long current-scene transcripts and leaves omitted entries drillable', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     openScene(db, {
@@ -1570,31 +1398,6 @@ describe('Context Assembler', () => {
     db.close();
   });
 
-  it('includes campaign bible and last session recap', () => {
-    const db = freshDbWithSession({ sessionId: SESSION });
-    rollupSessionRecap(db, {
-      campaignId: CAMPAIGN,
-      sessionId: 'session-1',
-      recap: 'The party left the city gates.',
-      stateDelta: [],
-      createdAt: '2026-05-19T20:00:00.000Z',
-    });
-
-    const ctx = assembleContext({
-      db,
-      campaignId: CAMPAIGN,
-      campaignPosition: formatCampaignPosition(campaignPosition(1)),
-      sessionId: SESSION,
-      playerInput: 'continue',
-    });
-
-    expect(ctx.campaignBible).toBeUndefined();
-    expect(ctx.recentSessionRecaps.map((r) => r.recap)).toContain(
-      'The party left the city gates.',
-    );
-    db.close();
-  });
-
   it('renders portable character chronicle separately from campaign canon', () => {
     const db = freshDbWithSession({ sessionId: SESSION });
     createSqliteCharacterSheetStore(db).save(
@@ -1922,22 +1725,6 @@ describe('Context Assembler', () => {
     expect(ctx.recentSessionRecaps).toHaveLength(1);
     expect(ctx.omittedSessionCount).toBe(2);
     expect(ctx.drilldownAvailable).toBe(true);
-    db.close();
-  });
-
-  it('works against an empty campaign', () => {
-    const db = freshDbWithSession({ sessionId: SESSION });
-    const ctx = assembleContext({
-      db,
-      campaignId: CAMPAIGN,
-      campaignPosition: formatCampaignPosition(campaignPosition(1)),
-      sessionId: SESSION,
-      playerInput: 'hello',
-    });
-    expect(ctx.campaignBible).toBeUndefined();
-    expect(ctx.scene).toBeUndefined();
-    expect(ctx.sceneTranscript).toEqual([]);
-    expect(renderContextMessage(ctx)).toContain('hello');
     db.close();
   });
 

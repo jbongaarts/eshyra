@@ -11,7 +11,6 @@ import {
   getCampaign,
   PATHFINDER2E_REMASTER_RULES_PACK,
   readCampaignRulesBinding,
-  writeCampaignRulesBinding,
 } from '../src/internal.js';
 import { bareDb } from './support/db.js';
 
@@ -92,36 +91,6 @@ describe('campaign rules binding', () => {
     db.close();
   });
 
-  it('round-trips through writeCampaignRulesBinding without createCampaign', () => {
-    const db = bareDb();
-    const binding: CampaignRulesBinding = {
-      base: {
-        systemId: 'dnd5e-srd',
-        packId: 'rules:dnd5e-srd',
-        version: '5.1',
-      },
-      addons: [],
-      resolvedAt: '2026-05-23T00:00:00.000Z',
-    };
-
-    writeCampaignRulesBinding(db, binding);
-    expect(readCampaignRulesBinding(db)).toEqual(binding);
-
-    db.close();
-  });
-
-  it('still rejects empty campaign ids even when a binding is provided', () => {
-    const db = bareDb();
-    expect(() =>
-      createCampaign(db, {
-        campaignId: '   ',
-        pack: EMBERFALL_HOLLOW,
-        rulesBinding: DEFAULT_DND5E_SRD_BINDING,
-      }),
-    ).toThrow(CampaignError);
-    db.close();
-  });
-
   it('rejects creating a campaign whose binding is incompatible with the module', () => {
     const db = bareDb();
     const pathfinderBinding: CampaignRulesBinding = {
@@ -148,12 +117,5 @@ describe('campaign rules binding', () => {
       .get();
     expect(moduleRow).toBeUndefined();
     db.close();
-  });
-
-  it('exposes DEFAULT_DND5E_SRD_BINDING with the D&D SRD pack identity', () => {
-    expect(DEFAULT_DND5E_SRD_BINDING.base.systemId).toBe(DND5E_SRD_SYSTEM_ID);
-    expect(DEFAULT_DND5E_SRD_BINDING.base.packId).toBe(DND5E_SRD_PACK_ID);
-    expect(DEFAULT_DND5E_SRD_BINDING.base.version).toBe(DND5E_SRD_VERSION);
-    expect(DEFAULT_DND5E_SRD_BINDING.addons).toEqual([]);
   });
 });

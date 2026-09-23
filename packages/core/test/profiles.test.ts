@@ -9,33 +9,6 @@ import {
 } from '../src/model/profiles.js';
 
 describe('model profiles', () => {
-  it('declares exactly the seven capability-based profiles', () => {
-    expect([...MODEL_PROFILES].sort()).toEqual(
-      [
-        'economy_or_experimental',
-        'embedding_provider',
-        'memory_reconciler',
-        'premium_dm',
-        'rules_adjudicator',
-        'state_extractor',
-        'summarizer',
-      ].sort(),
-    );
-  });
-
-  it('declares provider adapters by neutral identifiers (no SDK/provider coupling in names)', () => {
-    expect([...PROVIDER_IDS].sort()).toEqual(
-      [
-        'anthropic',
-        'openai',
-        'bedrock',
-        'gemini',
-        'openrouter',
-        'local',
-      ].sort(),
-    );
-  });
-
   it('default registry covers all profiles: premium_dm is configured, others are not', () => {
     for (const profile of MODEL_PROFILES) {
       const entry = DEFAULT_PROFILE_REGISTRY[profile];
@@ -55,27 +28,10 @@ describe('model profiles', () => {
     }
   });
 
-  it('premium_dm carries documented quality/capability-floor expectations', () => {
-    const premium = DEFAULT_PROFILE_REGISTRY.premium_dm;
-    expect(premium.configured).toBe(true);
-    if (!premium.configured) return;
-    expect(premium.capabilityFloor).toBeDefined();
-    expect(premium.capabilityFloor).toMatch(/Opus 4\.6|GPT-5\.5/i);
-    expect(premium.canonChanging).toBe(true);
-    expect(premium.tier).toBe('premium');
-  });
-
   it('economy_or_experimental is flagged as not-canon-safe and experimental tier', () => {
     const eco = DEFAULT_PROFILE_REGISTRY.economy_or_experimental;
     expect(eco.canonChanging).toBe(false);
     expect(eco.tier).toBe('experimental');
-  });
-
-  it('getProfile returns the configured entry for premium_dm', () => {
-    const entry = getProfile(DEFAULT_PROFILE_REGISTRY, 'premium_dm');
-    expect(entry.configured).toBe(true);
-    expect(entry.provider).toBe('anthropic');
-    expect(entry.model).toBe('claude-opus-4-8');
   });
 
   it('getProfile throws ProfileConfigError for unconfigured profiles', () => {

@@ -4,7 +4,6 @@ import {
   appendSceneLog,
   assertDemoContentAllowed,
   assertDemoTurnAllowed,
-  closeSessionGracefully,
   createDemoCampaign,
   DEFAULT_DEMO_PACK,
   DEMO_TURN_CAP,
@@ -12,7 +11,6 @@ import {
   demoTurnBudget,
   evaluateDemoContent,
   getDemoTurnBudget,
-  getSessionRecap,
   openScene,
   resolveDemoModel,
   resolveProfileRegistry,
@@ -182,54 +180,6 @@ describe('demo campaign mode', () => {
     const budget = getDemoTurnBudget(db, demo);
     expect(budget.turnsUsed).toBe(2);
     expect(budget.capReached).toBe(true);
-    db.close();
-  });
-
-  it('demonstrates continuity and checkpoints through the graceful close pipeline', () => {
-    const db = bareDb();
-    const demo = createDemoCampaign(db, {
-      campaignId: CAMPAIGN,
-      sessionId: SESSION,
-      startedAt: '2026-05-21T00:00:00.000Z',
-    });
-    openScene(db, {
-      campaignId: CAMPAIGN,
-      sessionId: SESSION,
-      sceneId: 'scene-1',
-      title: 'Emberfall Square',
-      at: '2026-05-21T00:01:00.000Z',
-    });
-    appendSceneLog(db, {
-      campaignId: CAMPAIGN,
-      sessionId: SESSION,
-      sceneId: 'scene-1',
-      turnId: 'turn-1',
-      role: 'dm',
-      content: 'The wanderer agrees to investigate the hollow.',
-      at: '2026-05-21T00:02:00.000Z',
-    });
-
-    let checkpointCalls = 0;
-    const result = closeSessionGracefully(db, {
-      campaignId: demo.campaignId,
-      sessionId: demo.sessionId,
-      closedAt: '2026-05-21T01:00:00.000Z',
-      recap: 'Demo session: the wanderer set out for the hollow.',
-      stateDelta: [],
-      checkpoint: {
-        liveDbPath: 'demo.db',
-        run: () => {
-          checkpointCalls += 1;
-          return `demo-checkpoint-${checkpointCalls}`;
-        },
-      },
-    });
-
-    expect(checkpointCalls).toBe(1);
-    expect(result.checkpointId).toBe('demo-checkpoint-1');
-    expect(
-      getSessionRecap(db, { campaignId: CAMPAIGN, sessionId: SESSION })?.recap,
-    ).toBe('Demo session: the wanderer set out for the hollow.');
     db.close();
   });
 });

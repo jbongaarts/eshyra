@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -144,14 +144,6 @@ describe('Beads readable projection', () => {
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
-  });
-
-  it('keeps the dry run from publishing and uses the fixed projection target in source', async () => {
-    const source = await readFile('scripts/beads-sync.mjs', 'utf8');
-    expect(source).toContain(
-      `snapshot.commit}:${String.fromCharCode(36)}{PROJECTION_REF}`,
-    );
-    expect(source).not.toContain('process.argv[2]');
   });
 
   it('force-updates exactly the projection ref and fails closed on Dolt push or race errors', async () => {

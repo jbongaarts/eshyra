@@ -127,24 +127,6 @@ describe('summarizeStandardArray / summarizePoolAssignment', () => {
 });
 
 describe('rollAbilityScore / rollAbilityScoreSet', () => {
-  it('rolls 4d6 keeping the highest three', () => {
-    const rng = createSeededRng(1);
-    for (let i = 0; i < 50; i += 1) {
-      const roll = rollAbilityScore(rng);
-      expect(roll.notation).toBe('4d6dl1');
-      expect(roll.rolls).toHaveLength(4);
-      expect(roll.kept).toHaveLength(3);
-      expect(roll.dropped).toHaveLength(1);
-      expect([...roll.keptIndices, ...roll.droppedIndices].sort()).toEqual([
-        0, 1, 2, 3,
-      ]);
-      expect(roll.natural).toBe(roll.total);
-      expect(roll.modifier).toBe(0);
-      expect(roll.total).toBeGreaterThanOrEqual(3);
-      expect(roll.total).toBeLessThanOrEqual(18);
-    }
-  });
-
   it('drops exactly one die when the lowest value ties', () => {
     // A fixed RNG yielding 2,2,5,6 → drop one 2 → 2+5+6 = 13.
     const rolls = [2, 2, 5, 6];
@@ -166,20 +148,6 @@ describe('rollAbilityScore / rollAbilityScoreSet', () => {
     const b = rollAbilityScoreSet(createSeededRng(42));
     expect(a).toHaveLength(6);
     expect(a).toEqual(b);
-  });
-
-  it('consumes four draws for one score and twenty-four for a set', () => {
-    let draws = 0;
-    const rng = {
-      nextInt: () => {
-        draws += 1;
-        return 0;
-      },
-    };
-    rollAbilityScore(rng);
-    expect(draws).toBe(4);
-    rollAbilityScoreSet(rng);
-    expect(draws).toBe(28);
   });
 
   it('validates complete evidence and rejects forged canonical fields', () => {

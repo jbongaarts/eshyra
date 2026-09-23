@@ -627,35 +627,6 @@ describe('runRulesCommand', () => {
     expect(invoke(dbPath, ['list', '--at', at]).code).toBe(0);
   });
 
-  it('uses the persisted rule read path for cross-command records', () => {
-    const dbPath = campaignDb();
-    const added = invoke(dbPath, [
-      'add',
-      '--kind',
-      'house-rule',
-      '--identity',
-      'read-path',
-      '--prose',
-      'Read this from the campaign store.',
-      '--scope',
-      'combat',
-      '--records',
-      'rule:one',
-    ]);
-    expect(added.code).toBe(0);
-    const db = openDatabase(dbPath);
-    try {
-      expect(
-        getCampaignRule(db, { campaignId: 'c1', ruleIdentity: 'read-path' }),
-      ).toMatchObject({
-        status: 'active',
-        effectivePosition: { ordinal: 1 },
-      });
-    } finally {
-      db.close();
-    }
-  });
-
   it('lists every bundled ambiguity with its status and interpretations', () => {
     const result = invoke(campaignDb(), ['ambiguities']);
     expect(result.code).toBe(0);

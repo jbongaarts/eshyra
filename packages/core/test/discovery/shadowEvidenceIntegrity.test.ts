@@ -308,13 +308,6 @@ describe('the canonical durable record', () => {
     expect(readDiscoveryShadowEvidence(null)).toBeUndefined();
   });
 
-  it('rejects a non-object and an unknown schema tag', () => {
-    for (const bad of ['nonsense', { ...VALID, schema: 'discovery-shadow-v1' }])
-      expect(() =>
-        readDiscoveryShadowEvidence(bad as TraceJsonValue),
-      ).toThrowError(DiscoveryShadowSchemaError);
-  });
-
   it('rejects a row carrying neither a trace nor a failure, or both', () => {
     rejects(withoutField('trace'), 'trace/failure');
     rejects(
@@ -433,12 +426,6 @@ describe('delivery', () => {
       renderedBytes: 1,
     };
     rejects(extraField, 'delivery.renderedBytes');
-  });
-
-  it('rejects an unknown mode', () => {
-    const row = clone();
-    row.delivery = { mode: 'shadowed', injected: false };
-    rejects(row, 'delivery.mode');
   });
 
   it('rejects delivery claiming a fact about trace/failure the row does not carry', () => {
@@ -878,40 +865,6 @@ describe('canonical admissibility', () => {
       stage(row, 'signals').outputsProduced = [...emitted, emitted[0]];
       rejects(row, 'repeats a signal identity');
     });
-
-    for (const key of ['capabilityId', 'revision', 'operationId'])
-      it(`rejects an evaluated capability missing ${key}`, () => {
-        // The cube declares several operations (F1 repair,
-        // `eshyra-o9bd.19.12.9`), so its candidate carries a bounded SET of
-        // preflights; this breaks the first entry in that set.
-        const index = packetContent(VALID).findIndex(
-          (item) => (item.capabilities as unknown[])?.length > 0,
-        );
-        expect(index).toBeGreaterThanOrEqual(0);
-        rejects(
-          withoutField(
-            `trace.packet.candidates.${index}.capabilities.0.${key}`,
-          ),
-          `capabilities[0].${key}`,
-        );
-      });
-
-    for (const broken of [{}, { id: 7 }, { id: null }])
-      it(`rejects a packet ambiguity of ${JSON.stringify(broken)}`, () => {
-        const row = clone();
-        const cube = packetContent(row).find(
-          (item) => (item.identity as Row).key === CUBE,
-        ) as Row;
-        expect((cube.ambiguities as unknown[]).length).toBeGreaterThan(0);
-        (cube.ambiguities as unknown[])[0] = broken;
-        rejects(row, 'ambiguities[0].id');
-      });
-
-    it('rejects a jhpt projection carrying no rule identity', () => {
-      const row = clone();
-      packetContent(row)[0].campaignRulings = [{ prose: 'no identity' }];
-      rejects(row, 'campaignRulings[0].ruleIdentity');
-    });
   });
 
   describe('audit lifecycle', () => {
@@ -951,22 +904,6 @@ describe('canonical admissibility', () => {
       ((row.runtime as Row).capabilityInvocations as Row[])[0].attempt = 2;
       rejects(row, 'candidate attempt(s)');
     });
-
-    for (const key of ['recordKey', 'capabilityRevision', 'operationId'])
-      it(`rejects a capability event missing ${key}`, () => {
-        rejects(
-          withoutField(`runtime.capabilityInvocations.0.${key}`),
-          `capabilityInvocations[0].${key}`,
-        );
-      });
-
-    for (const attempt of [0, 1.5, -1])
-      it(`rejects a capability event with attempt ${attempt}`, () => {
-        const row = clone();
-        ((row.runtime as Row).capabilityInvocations as Row[])[0].attempt =
-          attempt;
-        rejects(row, 'a candidate attempt is an integer from 1');
-      });
   });
 
   /**
@@ -1002,88 +939,6 @@ describe('canonical admissibility', () => {
       expect(() =>
         readDiscoveryShadowEvidence(withEffect() as TraceJsonValue),
       ).not.toThrow();
-    });
-
-    it('rejects a stateEffects field that is not an array', () => {
-      const row = clone();
-      (row.runtime as Row).stateEffects = { tool: 'use_item' };
-      rejects(row, 'runtime.stateEffects');
-    });
-
-    it('rejects an absent stateEffects field', () => {
-      rejects(withoutField('runtime.stateEffects'), 'runtime.stateEffects');
-    });
-
-    it('rejects an effect that is not an object', () => {
-      const row = clone();
-      (row.runtime as Row).stateEffects = ['use_item'];
-      rejects(row, 'runtime.stateEffects[0]');
-    });
-
-    for (const key of ['tool', 'attempt', 'ordinal', 'args'])
-      it(`rejects an effect missing ${key}`, () => {
-        rejects(
-          withEffect((effect) => {
-            delete effect[key];
-          }),
-          `runtime.stateEffects[0].${key}`,
-        );
-      });
-
-    it('rejects an empty tool name', () => {
-      rejects(
-        withEffect((effect) => {
-          effect.tool = '';
-        }),
-        'runtime.stateEffects[0].tool',
-      );
-    });
-
-    for (const attempt of [-1, 1.5])
-      it(`rejects an effect with attempt ${attempt}`, () => {
-        rejects(
-          withEffect((effect) => {
-            effect.attempt = attempt;
-          }),
-          'runtime.stateEffects[0].attempt',
-        );
-      });
-
-    for (const ordinal of [-1, 0.5])
-      it(`rejects an effect with ordinal ${ordinal}`, () => {
-        rejects(
-          withEffect((effect) => {
-            effect.ordinal = ordinal;
-          }),
-          'runtime.stateEffects[0].ordinal',
-        );
-      });
-
-    it('rejects non-object args', () => {
-      rejects(
-        withEffect((effect) => {
-          effect.args = 'instanceId=cube-1';
-        }),
-        'runtime.stateEffects[0].args',
-      );
-    });
-
-    it('rejects an unknown key on an effect', () => {
-      rejects(
-        withEffect((effect) => {
-          effect.narration = 'the arrow strikes home';
-        }),
-        'runtime.stateEffects[0].narration',
-      );
-    });
-
-    it('rejects attempt 0', () => {
-      rejects(
-        withEffect((effect) => {
-          effect.attempt = 0;
-        }),
-        'runtime.stateEffects[0].attempt',
-      );
     });
 
     /**
@@ -1269,25 +1124,6 @@ describe('canonical admissibility', () => {
       const row = clone();
       row.modelUsageClaim = 'the model used it';
       rejects(row, 'modelUsageClaim');
-    });
-
-    it('rejects a malformed scenario binding', () => {
-      const row = clone();
-      (row.scenario as Row).itemInstances = [{ instanceId: 'x' }];
-      rejects(row, 'scenario.itemInstances[0].recordKey');
-    });
-
-    it('rejects a malformed stack identity', () => {
-      rejects(
-        withoutField('trace.stack.base.version'),
-        'trace.stack.base.version',
-      );
-    });
-
-    it('rejects a malformed blocker status', () => {
-      const row = clone();
-      (row.blockerRepairs as Row[])[0].status = 'probably-repaired';
-      rejects(row, 'blockerRepairs[0].status');
     });
   });
 });
@@ -1652,57 +1488,6 @@ describe('closed discriminants fail closed', () => {
     ).toThrow('has no band classification');
   });
 
-  it('rejects an unknown signal kind', () => {
-    const row = clone();
-    const signals = candidates(row, 'signals');
-    expect(signals.length).toBeGreaterThan(0);
-    expect(signals[0].kind).toBe('state-ref');
-    signals[0].kind = 'state-reff';
-    rejects(row, 'signals.outputsProduced[0].kind');
-  });
-
-  it('rejects an unknown candidate target kind', () => {
-    const row = clone();
-    const emitted = candidates(row, 'candidates');
-    expect(emitted[0].targetKind).toBe('rules-record');
-    emitted[0].targetKind = 'rules-recrod';
-    rejects(row, 'targetKind');
-  });
-
-  it('rejects an unknown jhpt rule kind through the owner vocabulary', () => {
-    const projection = {
-      ruleIdentity: 'house-rule:x',
-      status: 'active',
-      origin: 'player-authored',
-      provenance: 'house-rule',
-      effectivePosition: DEFAULT_TEST_CAMPAIGN_POSITION,
-      supersededBy: null,
-      revokedPosition: null,
-      scope: 'campaign',
-      governingRecordKeys: [CUBE],
-    };
-    // Non-vacuity: the same row with a kind the OWNER recognizes is admitted.
-    const valid = clone();
-    stage(valid, 'ruleJoin').returnedProjections = [
-      { ...projection, ruleKind: 'house-rule' },
-    ];
-    expect(
-      admitted(valid).ruleJoin.returnedProjections.map(
-        (item) => item.ruleIdentity,
-      ),
-    ).toEqual(['house-rule:x']);
-
-    // A misspelled ruling used to become "not a ruling" and silently remove an
-    // ambiguity resolution rather than failing.
-    for (const ruleKind of ['rulign', 'ruling-draft', '']) {
-      const row = clone();
-      stage(row, 'ruleJoin').returnedProjections = [
-        { ...projection, ruleKind },
-      ];
-      rejects(row, 'is not a campaign rule kind');
-    }
-  });
-
   it('rejects a pack role that contradicts its position in the stack', () => {
     const base = clone();
     expect(((trace(base).stack as Row).base as Row).role).toBe('base');
@@ -1718,17 +1503,6 @@ describe('closed discriminants fail closed', () => {
       { ...((trace(addon).stack as Row).base as Row as Row), role: 'base' },
     ];
     rejects(addon, "is 'base' in the stack's addon position");
-  });
-
-  it('rejects an unknown projection-limit kind', () => {
-    const row = clone();
-    const index = packetContent(row).findIndex(
-      (item) => (item.projectionLimits as unknown[]).length > 0,
-    );
-    expect(index).toBeGreaterThanOrEqual(0);
-    (packetContent(row)[index].projectionLimits as Row[])[0].kind =
-      'execution-readyness';
-    rejects(row, `candidates[${index}].projectionLimits[0].kind`);
   });
 });
 

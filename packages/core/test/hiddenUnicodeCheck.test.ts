@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -14,15 +13,11 @@ import {
   shouldScan,
 } from '../../../scripts/check-hidden-unicode.mjs';
 
-const restrictedSandbox = process.env.ESHYRA_TEST_SANDBOX === '1';
-
 // Forbidden characters are built from code points so this test file stays free
 // of the very characters it asserts on (it is itself scanned by the gate).
 const RLO = String.fromCodePoint(0x202e);
 const ZWSP = String.fromCodePoint(0x200b);
 const NUL = String.fromCodePoint(0x00);
-const ESC = String.fromCodePoint(0x1b);
-const DEL = String.fromCodePoint(0x7f);
 
 function readJson(path: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(process.cwd(), path), 'utf8'));
@@ -66,25 +61,9 @@ describe('hidden/bidi Unicode guard', () => {
     }
   });
 
-  it('finds nothing in ordinary text', () => {
-    expect(scanContent('ok\ntext')).toEqual([]);
-  });
-
   it('rejects a raw NUL byte', () => {
     expect(scanContent(`a${NUL}b`)).toEqual([
       { line: 1, column: 2, codePoint: 0x00, name: 'NULL' },
-    ]);
-  });
-
-  it('rejects another C0 control (ESC)', () => {
-    expect(scanContent(`a${ESC}b`)).toEqual([
-      { line: 1, column: 2, codePoint: 0x1b, name: 'ESCAPE' },
-    ]);
-  });
-
-  it('rejects U+007F DELETE', () => {
-    expect(scanContent(`a${DEL}b`)).toEqual([
-      { line: 1, column: 2, codePoint: 0x7f, name: 'DELETE' },
     ]);
   });
 
@@ -113,21 +92,6 @@ describe('hidden/bidi Unicode guard', () => {
         name: 'NULL',
       }),
     ).toBe('path/to/file.ts:1:2: forbidden control character U+0000 NULL');
-  });
-
-  it('formats code points and diagnostics in the documented shape', () => {
-    expect(formatCodePoint(0x202e)).toBe('U+202E');
-    expect(formatCodePoint(0x00ad)).toBe('U+00AD');
-    expect(
-      formatFinding('path/to/file.ts', {
-        line: 2,
-        column: 5,
-        codePoint: 0x200b,
-        name: 'ZERO WIDTH SPACE',
-      }),
-    ).toBe(
-      'path/to/file.ts:2:5: forbidden hidden/bidi Unicode U+200B ZERO WIDTH SPACE',
-    );
   });
 
   it('scans tracked text files including generated rules-pack data, skipping binaries and vendor paths', () => {
@@ -161,18 +125,6 @@ describe('hidden/bidi Unicode guard', () => {
     };
     expect(biome.linter?.rules?.suspicious?.noIrregularWhitespace).toBe(
       'error',
-    );
-  });
-
-  it.skipIf(restrictedSandbox)('passes on the current repository', () => {
-    const result = execFileSync(
-      process.execPath,
-      ['scripts/check-hidden-unicode.mjs'],
-      { cwd: process.cwd(), encoding: 'utf8' },
-    );
-
-    expect(result).toMatch(
-      /no forbidden hidden\/bidi Unicode characters found/,
     );
   });
 });

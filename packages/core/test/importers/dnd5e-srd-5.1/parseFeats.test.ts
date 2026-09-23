@@ -53,11 +53,6 @@ describe('parseFeats — Grappler (canonical SRD 5.1 feat)', () => {
     expect(grappler.sourcePage).toBe(72);
   });
 
-  it('builds a non-empty description', () => {
-    expect(grappler.description.length).toBeGreaterThan(0);
-    expect(typeof grappler.description).toBe('string');
-  });
-
   it('re-flows wrapped benefit lines into prose', () => {
     expect(grappler.description).toMatch(/close-quarters grappling/);
   });

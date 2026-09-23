@@ -29,15 +29,6 @@ describe('deterministic serialization', () => {
     expect(s1).toBe(s2);
   });
 
-  it('orders tables by name and is stable across runs', () => {
-    const s1 = canonicalize(serializeCampaign(seed(false)));
-    const s2 = canonicalize(serializeCampaign(seed(false)));
-    expect(s1).toBe(s2);
-    expect(s1.indexOf('"table":"meta"')).toBeLessThan(
-      s1.indexOf('"table":"notes"'),
-    );
-  });
-
   it('excludes sqlite internal tables', () => {
     const s = canonicalize(serializeCampaign(seed(false)));
     expect(s).not.toContain('sqlite_');

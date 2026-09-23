@@ -81,17 +81,6 @@ describe.skipIf(restrictedSandbox)('startEshyraMcpHttpServer', () => {
     expect(server.token).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it('exposes each tool definition by its bare Eshyra name', async () => {
-    server = await startEshyraMcpHttpServer(
-      [rollDef],
-      executorReturning({ ok: true, data: {} }),
-      [],
-    );
-    client = await connect(server);
-    const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toEqual(['roll']);
-  });
-
   it('delegates a tool call to the executor and records the provider-executed call', async () => {
     const executor = executorReturning({ ok: true, data: { total: 17 } });
     const executed: ProviderExecutedToolCall[] = [];

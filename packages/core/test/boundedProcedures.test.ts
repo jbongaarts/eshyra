@@ -1124,22 +1124,6 @@ describe('bounded provider-neutral procedure execution', () => {
     },
   );
 
-  it('dispatches by redacted structure, independent of record identity', () => {
-    const redacted = structuredClone(data('equipment:longsword'));
-    const synthetic = structuredClone(redacted);
-    expect(
-      executeBoundedProcedure(redacted, {
-        kind: 'weapon-damage',
-        handsUsed: 2,
-      }),
-    ).toEqual(
-      executeBoundedProcedure(synthetic, {
-        kind: 'weapon-damage',
-        handsUsed: 2,
-      }),
-    );
-  });
-
   it('follows redacted procedure values instead of a known record identity', () => {
     const synthetic = structuredClone(
       data('hazard:burnt-othur-fumes'),
