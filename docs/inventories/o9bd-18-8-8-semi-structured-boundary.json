@@ -9,10 +9,10 @@
     "dnd5eSrd": 1813,
     "pathfinderFixture": 7
   },
-  "rowCount": 1842,
+  "rowCount": 1846,
   "dispositionCounts": {
     "complete": 428,
-    "model-adjudicated": 1213,
+    "model-adjudicated": 1217,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 2,
     "unsupported": 6
@@ -6027,6 +6027,26 @@
       "recordKinds": [
         "creature"
       ],
+      "fieldPath": "data.actions[].mechanics.saves[].damageOnSuccess",
+      "representativeValues": [
+        "half"
+      ],
+      "population": 76,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.actions[].mechanics.saves[].damageOnSuccess",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
       "fieldPath": "data.actions[].mechanics.usage.rechargeAfterRest",
       "representativeValues": [
         "short-or-long-rest"
@@ -6793,6 +6813,26 @@
       "typedSchemaOrConsumer": "domain-specific mechanics discriminator/scalar contract",
       "retainedProseBoundary": null,
       "owner": "mechanicsProjections.ts and rules/kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
+      "fieldPath": "data.legendaryActions.entries[].mechanics.saves[].damageOnSuccess",
+      "representativeValues": [
+        "half"
+      ],
+      "population": 3,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.legendaryActions.entries[].mechanics.saves[].damageOnSuccess",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
       "futureWork": false
     },
     {
@@ -9744,6 +9784,26 @@
       "typedSchemaOrConsumer": "domain-specific mechanics discriminator/scalar contract",
       "retainedProseBoundary": null,
       "owner": "mechanicsProjections.ts and rules/kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
+      "fieldPath": "data.traits[].mechanics.saves[].damageOnSuccess",
+      "representativeValues": [
+        "half"
+      ],
+      "population": 4,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.traits[].mechanics.saves[].damageOnSuccess",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
       "futureWork": false
     },
     {
@@ -15780,6 +15840,26 @@
       "typedSchemaOrConsumer": "domain-specific mechanics discriminator/scalar contract",
       "retainedProseBoundary": null,
       "owner": "mechanicsProjections.ts and rules/kindSchemas.ts",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "hazard"
+      ],
+      "fieldPath": "data.mechanics.saves[].damageOnSuccess",
+      "representativeValues": [
+        "half"
+      ],
+      "population": 9,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.saves[].damageOnSuccess",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
       "futureWork": false
     },
     {
@@ -33410,7 +33490,7 @@
       "representativeValues": [
         "half"
       ],
-      "population": 32,
+      "population": 40,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",

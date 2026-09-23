@@ -119,6 +119,34 @@ function parseWeaponDamageModifiers(text: string): readonly Mechanics[] {
   return out;
 }
 
+/**
+ * The save's success branch halves the damage: one printed sentence pairs a
+ * success with half damage — "…or half as much damage on a successful one",
+ * "On a successful save, it takes half damage and isn't poisoned", "half the
+ * bludgeoning damage and isn't stunned" (eshyra-o9bd.19.4.3.1). Sentence-scoped
+ * so a success and a halving in different sentences never combine.
+ */
+function hasHalfDamageOnSuccess(text: string): boolean {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .some(
+      (sentence) =>
+        /\bhalf (?:as much (?:extra )?|the (?:[a-z]+ )?)?damage\b/i.test(
+          sentence,
+        ) && /\bsuccess(?:ful)?\b/i.test(sentence),
+    );
+}
+
+/**
+ * The single save a text projects, carrying its source success branch when the
+ * same text prints one.
+ */
+function parseSaveWithSuccessBranch(text: string): Mechanics | undefined {
+  const save = parseSave(text);
+  if (save === undefined || !hasHalfDamageOnSuccess(text)) return save;
+  return { ...save, damageOnSuccess: 'half' };
+}
+
 function parseSave(text: string): Mechanics | undefined {
   const ability = ABILITIES.find((candidate) =>
     new RegExp(`\\b${candidate}\\s+saving throw\\b`, 'i').test(text),
@@ -2293,15 +2321,7 @@ export function deriveSpellMechanics(spell: SpellExtraction): Mechanics {
   const text = `${spell.description} ${spell.higherLevels ?? ''}`;
   const damage = parseDamage(text);
   const weaponDamageModifiers = parseWeaponDamageModifiers(text);
-  const save = parseSave(text);
-  if (
-    save !== undefined &&
-    /\bhalf as much damage on a successful (?:save|saving throw|one)\b/.test(
-      text,
-    )
-  ) {
-    save.damageOnSuccess = 'half';
-  }
+  const save = parseSaveWithSuccessBranch(text);
   const conditions = parseConditions(text);
   const s1Summoning = projectS1SummoningMechanics(spell);
   const effects = [
@@ -2353,7 +2373,7 @@ export function deriveActionMechanics(action: ActionExtraction): Mechanics {
     action.name.toLowerCase(),
   );
   const attack = parseAttack(action.description);
-  const save = parseSave(action.description);
+  const save = parseSaveWithSuccessBranch(action.description);
   const damage = parseDamage(action.description);
   return compact({
     ...standardAction,
@@ -4424,7 +4444,7 @@ export function deriveCreatureEntryMechanics(
   resolveSpellRef?: SpellRefResolver,
 ): Mechanics {
   const attack = parseAttack(text);
-  const save = parseSave(text);
+  const save = parseSaveWithSuccessBranch(text);
   const effects = parseCreatureEntryEffects(name, text);
   return compact({
     attacks: attack === undefined ? undefined : [attack],
@@ -5195,7 +5215,7 @@ export function deriveFeatureMechanics(
       effects.push({ kind: 'permanentSpellEffect', spell: ref });
     }
   }
-  const save = parseSave(text);
+  const save = parseSaveWithSuccessBranch(text);
   return compact({
     saves: save === undefined ? undefined : [save],
     resources: /\b(short or long rest|long rest|short rest)\b/i.test(text)
@@ -5233,7 +5253,7 @@ export function deriveFeatMechanics(
 }
 
 export function deriveHazardMechanics(hazard: HazardExtraction): Mechanics {
-  const save = parseSave(hazard.description);
+  const save = parseSaveWithSuccessBranch(hazard.description);
   return compact({
     saves: save === undefined ? undefined : [save],
     damage: parseDamage(hazard.description),

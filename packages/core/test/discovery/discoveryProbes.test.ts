@@ -30,9 +30,11 @@ function targetRef(target: DiagnosticTarget): string {
  * Packet semantics the accepted design requires by name, expressed as typed
  * expectations because they are NOT machine-checkable as `requiredRetainedFacts`
  * prose. Design section 7.2 names both worked examples: the Acid Breath
- * projection omits the success branch and the area, and Fireball has no typed
- * area despite its prose. Asserting only that `m9.missing` is empty let those
- * requirements pass while the packet never disclosed them.
+ * projection omits the area, and Fireball has no typed area despite its prose.
+ * (Its success branch was the section's other example; the typed save has
+ * carried it since eshyra-o9bd.19.4.3.1, and P3's own assertion now requires
+ * that no omission note is raised for it.) Asserting only that `m9.missing` is
+ * empty let those requirements pass while the packet never disclosed them.
  */
 const REQUIRED_PROJECTION_LIMITS: Readonly<
   Record<
@@ -40,14 +42,7 @@ const REQUIRED_PROJECTION_LIMITS: Readonly<
     readonly { candidateKey: string; kind: string; evidencePath?: string }[]
   >
 > = {
-  P3: [
-    {
-      candidateKey: 'creature:adult-black-dragon',
-      kind: 'success-branch',
-      evidencePath: '/data/actions/5/mechanics/saves',
-    },
-    { candidateKey: 'creature:adult-black-dragon', kind: 'area' },
-  ],
+  P3: [{ candidateKey: 'creature:adult-black-dragon', kind: 'area' }],
   P4: [{ candidateKey: 'spell:fireball', kind: 'area' }],
 };
 

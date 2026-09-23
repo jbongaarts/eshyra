@@ -52,20 +52,17 @@ export const ASSERTIONS: Readonly<
       'explicit-name-or-alias',
     );
   },
-  'dragon-success-branch-disclosed': ({ candidate }) => {
+  'dragon-success-branch-typed': ({ candidate }) => {
     const dragon = candidate('creature:adult-black-dragon');
-    const note = dragon?.projectionLimits.find(
-      (item) =>
-        item.kind === 'success-branch' &&
-        item.evidence.path === '/data/actions/5/mechanics/saves',
+    // The typed save carries the source success branch (eshyra-o9bd.19.4.3.1)...
+    expect(JSON.stringify(dragon?.projection)).toContain(
+      '"damageOnSuccess":"half"',
     );
-    expect(note).toBeDefined();
-    expect(note?.attestedProse).toContain(
-      'or half as much damage on a successful one',
-    );
-    // The note's prose is ATTESTED prose, not merely record text: every line
-    // of it is a `source-prose` leaf of this candidate (PR #543 re-review
-    // round 5, finding 1).
+    // ...so no note claims the projection omits it...
+    expect(
+      dragon?.projectionLimits.filter((item) => item.kind === 'success-branch'),
+    ).toEqual([]);
+    // ...and the attested source prose still says it.
     expect(JSON.stringify(dragon?.sourceProse)).toContain(
       'or half as much damage on a successful one',
     );

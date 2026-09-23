@@ -734,14 +734,14 @@ const SPECS: ReadonlyMap<string, readonly ClauseSpec[]> = new Map([
     [
       triggered(
         'dump-beans-explosion',
-        'must make a DC 15 Dexterity saving throw, taking 5d4 fire damage on a failed save',
+        'must make a DC 15 Dexterity saving throw, taking 5d4 fire damage on a failed save, or half as much damage on a successful one',
         'bag contents are dumped on ground',
         'resolve 10-foot-radius explosion',
         {
           radiusFeet: 10,
           save: { ability: 'dexterity', dc: 15 },
           failedSaveDamage: { dice: '5d4', type: 'fire' },
-          successfulSaveDamage: 'none',
+          successfulSaveDamage: 'half',
         },
       ),
     ],

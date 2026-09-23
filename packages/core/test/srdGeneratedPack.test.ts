@@ -6921,6 +6921,121 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  // Registry rows half-damage-branches (opus:F-25) and hazard-success-branches,
+  // plus the magic-item sibling Bag of Beans (eshyra-o9bd.19.4.3.1). The
+  // population is the source's own success-branch sentences as they appear in
+  // each record's verbatim prose; that prose carries every such clause in the
+  // pinned PDF, including those whose typed branch the projection had dropped.
+  // The grammar here is independent of the projector's.
+  describe('successful-save half-damage branches (opus:F-25)', () => {
+    const HALF_ON_SUCCESS = (sentence: string) =>
+      /\bhalf (?:as much (?:extra )?|the (?:[a-z]+ )?)?damage\b/i.test(
+        sentence,
+      ) && /\bsuccess(?:ful)?\b/i.test(sentence);
+    const sentences = (text: string) => text.split(/(?<=[.!?])\s+/);
+    type Obj = Record<string, unknown>;
+    const isObj = (value: unknown): value is Obj =>
+      value !== null && typeof value === 'object' && !Array.isArray(value);
+
+    /** Every object whose `mechanics` projects its own `text`/`description`. */
+    function containers(
+      value: unknown,
+      pointer: string,
+      out: { pointer: string; prose: string; mechanics: Obj }[],
+    ): void {
+      if (Array.isArray(value)) {
+        value.forEach((item, i) => {
+          containers(item, `${pointer}/${i}`, out);
+        });
+        return;
+      }
+      if (!isObj(value)) return;
+      if (isObj(value.mechanics)) {
+        const prose = ['text', 'description', 'higherLevels']
+          .map((key) => value[key])
+          .filter((item): item is string => typeof item === 'string')
+          .join(' ');
+        out.push({ pointer, prose, mechanics: value.mechanics });
+      }
+      for (const [key, child] of Object.entries(value))
+        if (key !== 'mechanics') containers(child, `${pointer}/${key}`, out);
+    }
+
+    const saveContainers = pack.records.flatMap((record) => {
+      const found: { pointer: string; prose: string; mechanics: Obj }[] = [];
+      containers(record.data, '/data', found);
+      return found
+        .filter((item) => Array.isArray(item.mechanics.saves))
+        .map((item) => ({ key: record.key, ...item }));
+    });
+
+    it('carries the branch on every typed save whose own prose prints it, and nowhere else', () => {
+      const dropped: string[] = [];
+      const invented: string[] = [];
+      const covered = new Set<string>();
+      for (const item of saveContainers) {
+        const printed = sentences(item.prose).some(HALF_ON_SUCCESS);
+        for (const save of item.mechanics.saves as Obj[]) {
+          const typed = save.damageOnSuccess === 'half';
+          if (printed && !typed) dropped.push(`${item.key}${item.pointer}`);
+          if (typed && !printed) invented.push(`${item.key}${item.pointer}`);
+          if (printed && typed) covered.add(item.key);
+        }
+      }
+      expect(dropped).toEqual([]);
+      expect(invented).toEqual([]);
+      // Named members across every repaired kind, so the check cannot pass
+      // over an empty population.
+      for (const key of [
+        'creature:adult-black-dragon',
+        'creature:ankheg',
+        'hazard:collapsing-roof',
+        'hazard:wyvern-poison',
+        'spell:fireball',
+      ])
+        expect(covered, key).toContain(key);
+    });
+
+    it('never contradicts a printed half branch in a magic-item save effect', () => {
+      const wrong: string[] = [];
+      let checked = 0;
+      for (const record of pack.records.filter(
+        (item) => item.kind === 'magic-item',
+      )) {
+        const description = (record.data as Obj).description;
+        if (typeof description !== 'string') continue;
+        const text = sentences(description);
+        const effects = ((record.data as Obj).mechanics as Obj | undefined)
+          ?.effects;
+        if (!Array.isArray(effects)) continue;
+        for (const effect of effects as Obj[]) {
+          const damage = effect.failedSaveDamage as Obj | undefined;
+          if (typeof damage?.dice !== 'string') continue;
+          // The branch governs this effect when it sits in the sentence that
+          // prints the effect's damage or the sentence right after it ("On a
+          // successful save, a creature takes half as much damage").
+          const printed = text.some(
+            (sentence, i) =>
+              sentence.includes(damage.dice as string) &&
+              [sentence, text[i + 1] ?? ''].some(HALF_ON_SUCCESS),
+          );
+          if (!printed) continue;
+          checked += 1;
+          if (effect.successfulSaveDamage !== 'half')
+            wrong.push(`${record.key}: ${String(effect.successfulSaveDamage)}`);
+        }
+      }
+      expect(wrong).toEqual([]);
+      expect(checked).toBeGreaterThan(0);
+      const beans = pack.records.find(
+        (record) => record.key === 'magic-item:bag-of-beans',
+      );
+      expect(JSON.stringify(beans?.data)).toContain(
+        '"successfulSaveDamage":"half"',
+      );
+    });
+  });
+
   describe('audit findings', () => {
     it('reports no suspicious records', () => {
       const audit = auditPack(pack);

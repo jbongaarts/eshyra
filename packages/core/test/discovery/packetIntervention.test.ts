@@ -832,18 +832,19 @@ describe('context-packet intervention (ADR 0020 Phase 3, W10, eshyra-o9bd.19.12.
               fact.exactSubstring as string,
             );
 
-          // E6 — both design section 7.2 worked cases, end to end in the
+          // E6 — design section 7.2's projection limits, end to end in the
           // delivered text, each note between its own candidate's heading and
-          // the next.
+          // the next. The Acid Breath success branch was the section's other
+          // worked case; the typed save has carried it since
+          // eshyra-o9bd.19.4.3.1, so no omission note may be delivered for it.
           if (label === 'P3/default') {
             const span = candidateSpan(
               intervention.message,
               'creature:adult-black-dragon',
             );
-            expect(span).toContain(
+            expect(span).not.toContain(
               'The typed save projection omits the source success branch',
             );
-            expect(span).toContain('/data/actions/5/mechanics/saves');
             expect(span).toContain(
               'The source describes an area, but no typed mechanics.area projection exists.',
             );

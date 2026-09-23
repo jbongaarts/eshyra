@@ -11470,7 +11470,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 18
+                "dc": 18,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -11771,7 +11772,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 19
+                "dc": 19,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -12068,7 +12070,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 18
+                "dc": 18,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -12398,7 +12401,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 19
+                "dc": 19,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -12754,7 +12758,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 18
+                "dc": 18,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -13078,7 +13083,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 21
+                "dc": 21,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -13454,7 +13460,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 18
+                "dc": 18,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -13755,7 +13762,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 21
+                "dc": 21,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -14051,7 +14059,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 20
+                "dc": 20,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -14437,7 +14446,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 19
+                "dc": 19,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -14642,7 +14652,8 @@
             "saves": [
               {
                 "ability": "strength",
-                "dc": 13
+                "dc": 13,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -14911,7 +14922,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 22
+                "dc": 22,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -15212,7 +15224,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 23
+                "dc": 23,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -15509,7 +15522,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 21
+                "dc": 21,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -15886,7 +15900,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 23
+                "dc": 23,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -16242,7 +16257,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 22
+                "dc": 22,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -16613,7 +16629,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 24
+                "dc": 24,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -16989,7 +17006,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 22
+                "dc": 22,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -17290,7 +17308,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 24
+                "dc": 24,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -17586,7 +17605,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 24
+                "dc": 24,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -17972,7 +17992,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 22
+                "dc": 22,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -18351,7 +18372,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 18
+                "dc": 18,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -18679,7 +18701,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 13
+                "dc": 13,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -19263,7 +19286,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -19310,7 +19334,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -20034,7 +20059,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 20
+                "dc": 20,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -21314,7 +21340,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 16
+                "dc": 16,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -21769,7 +21796,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -22321,7 +22349,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 12
+                "dc": 12,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -22777,7 +22806,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -22939,7 +22969,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 12
+                "dc": 12,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -23389,7 +23420,8 @@
           "mechanics": {
             "saves": [
               {
-                "ability": "dexterity"
+                "ability": "dexterity",
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -24152,7 +24184,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -25403,7 +25436,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -27715,7 +27749,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 18
+                "dc": 18,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -34625,7 +34660,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -34914,7 +34950,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 12
+                "dc": 12,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -35314,7 +35351,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -35799,7 +35837,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -36057,7 +36096,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -37444,7 +37484,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 13
+                "dc": 13,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -37919,7 +37960,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -38875,7 +38917,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -38917,7 +38960,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -39394,7 +39438,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -39814,7 +39859,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 12
+                "dc": 12,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -41414,7 +41460,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 17
+                "dc": 17,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -41510,7 +41557,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 10
+                "dc": 10,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -41618,7 +41666,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 10
+                "dc": 10,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -41800,7 +41849,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -42167,7 +42217,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 19
+                "dc": 19,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -43013,7 +43064,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 23
+                "dc": 23,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -43063,7 +43115,8 @@
               "saves": [
                 {
                   "ability": "constitution",
-                  "dc": 23
+                  "dc": 23,
+                  "damageOnSuccess": "half"
                 }
               ],
               "damage": [
@@ -43779,7 +43832,8 @@
               "saves": [
                 {
                   "ability": "constitution",
-                  "dc": 18
+                  "dc": 18,
+                  "damageOnSuccess": "half"
                 }
               ],
               "damage": [
@@ -44543,7 +44597,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -44652,7 +44707,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -44732,7 +44788,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -48962,7 +49019,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 14
+                "dc": 14,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -49630,7 +49688,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 11
+                "dc": 11,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -50405,7 +50464,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 10
+                "dc": 10,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -51199,7 +51259,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 19
+                "dc": 19,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -52044,7 +52105,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 13
+                "dc": 13,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -54010,7 +54072,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 9
+                "dc": 9,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -55079,7 +55142,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 13
+                "dc": 13,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -55558,7 +55622,8 @@
               "saves": [
                 {
                   "ability": "dexterity",
-                  "dc": 23
+                  "dc": 23,
+                  "damageOnSuccess": "half"
                 }
               ],
               "damage": [
@@ -56066,7 +56131,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 13
+                "dc": 13,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -56555,7 +56621,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 10
+                "dc": 10,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -57208,7 +57275,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 17
+                "dc": 17,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -57394,7 +57462,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -57797,7 +57866,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 10
+                "dc": 10,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -63110,7 +63180,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 12
+                "dc": 12,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -63661,7 +63732,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 12
+                "dc": 12,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -64245,7 +64317,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -64619,7 +64692,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 14
+                "dc": 14,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -64800,7 +64874,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 16
+                "dc": 16,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -64977,7 +65052,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 14
+                "dc": 14,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -65189,7 +65265,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -65378,7 +65455,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 14
+                "dc": 14,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -65584,7 +65662,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 17
+                "dc": 17,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -65795,7 +65874,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 14
+                "dc": 14,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -65976,7 +66056,8 @@
             "saves": [
               {
                 "ability": "dexterity",
-                "dc": 17
+                "dc": 17,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -66152,7 +66233,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 17
+                "dc": 17,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -66373,7 +66455,8 @@
             "saves": [
               {
                 "ability": "constitution",
-                "dc": 15
+                "dc": 15,
+                "damageOnSuccess": "half"
               }
             ],
             "damage": [
@@ -85478,7 +85561,8 @@
         "saves": [
           {
             "ability": "constitution",
-            "dc": 10
+            "dc": 10,
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -85657,7 +85741,8 @@
         "saves": [
           {
             "ability": "dexterity",
-            "dc": 15
+            "dc": 15,
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -85911,7 +85996,8 @@
         "saves": [
           {
             "ability": "dexterity",
-            "dc": 13
+            "dc": 13,
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -86010,7 +86096,8 @@
         "saves": [
           {
             "ability": "constitution",
-            "dc": 17
+            "dc": 17,
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -86167,7 +86254,8 @@
         "saves": [
           {
             "ability": "constitution",
-            "dc": 13
+            "dc": 13,
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -86219,7 +86307,8 @@
         "saves": [
           {
             "ability": "constitution",
-            "dc": 15
+            "dc": 15,
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -86325,7 +86414,8 @@
         "saves": [
           {
             "ability": "constitution",
-            "dc": 19
+            "dc": 19,
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -86432,7 +86522,8 @@
         "saves": [
           {
             "ability": "constitution",
-            "dc": 11
+            "dc": 11,
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -86706,7 +86797,8 @@
         "saves": [
           {
             "ability": "constitution",
-            "dc": 15
+            "dc": 15,
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -88687,7 +88779,7 @@
               "dice": "5d4",
               "type": "fire"
             },
-            "successfulSaveDamage": "none"
+            "successfulSaveDamage": "half"
           }
         ]
       },
@@ -155465,7 +155557,8 @@
         },
         "saves": [
           {
-            "ability": "dexterity"
+            "ability": "dexterity",
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -159125,7 +159218,8 @@
         },
         "saves": [
           {
-            "ability": "strength"
+            "ability": "strength",
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -161786,7 +161880,8 @@
         },
         "saves": [
           {
-            "ability": "dexterity"
+            "ability": "dexterity",
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -164904,7 +164999,8 @@
         },
         "saves": [
           {
-            "ability": "constitution"
+            "ability": "constitution",
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -176004,7 +176100,8 @@
         },
         "saves": [
           {
-            "ability": "wisdom"
+            "ability": "wisdom",
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -176560,7 +176657,8 @@
         },
         "saves": [
           {
-            "ability": "constitution"
+            "ability": "constitution",
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -176638,7 +176736,8 @@
         },
         "saves": [
           {
-            "ability": "constitution"
+            "ability": "constitution",
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
@@ -177123,7 +177222,8 @@
         },
         "saves": [
           {
-            "ability": "constitution"
+            "ability": "constitution",
+            "damageOnSuccess": "half"
           }
         ],
         "damage": [
