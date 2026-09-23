@@ -561,8 +561,33 @@ const FEATS_PAGE: FixturePage = {
 // exercised by their own fixtures in `parseEquipment.test.ts`. Here the
 // "Adventuring Gear" line is only the weapons-column anchor, and the trailing
 // "Mounts and Vehicles" line just closes the chapter (it matches the equipment
-// endHeading anchor; with no Mounts content and no "Trade Goods" after it, the
-// best-effort mountsAndVehicles slice yields no records).
+// endHeading anchor; with no mounts *table* content and no "Trade Goods" after
+// it, the best-effort mountsAndVehicles slice still yields no mount/tack/
+// waterborne records — none of the three trailing lines below match any of
+// `collectMounts`/`collectTack`/`collectWaterborne`'s header regexes).
+//
+// The three trailing lines exist for the record source anchor gate
+// (eshyra-o9bd.19.1.3.2), which requires every emitted record's name, or its
+// curated `DECLARED_RECORD_SOURCE_ANCHORS` anchor, to be printed on a page
+// its provenance cites:
+//   - "A good mount..." is real SRD 5.1 p71 Mounts and Vehicles intro prose,
+//     placed on the SAME fixture page as the "Mounts and Vehicles" heading
+//     (real SRD does too) so `rule:mounts-and-vehicles`'s sourcePage — the
+//     page of its first captured body line — lands on the page that prints
+//     its own name, instead of rolling onto whatever chapter fixture page
+//     happens to follow (previously Multiclassing/Backgrounds/Conditions
+//     prose, scooped in only because this reduced fixture supplies no
+//     "Mounts and Other Animals" stop heading — the same best-effort,
+//     unbounded-until-EOF behavior the section anchor's own doc comment
+//     describes, harmless for table parsing but previously left the rule's
+//     locator citing a page that never printed "Mounts and Vehicles").
+//   - "Armor Proficiency." and "Standard Exchange Rates" are real SRD 5.1
+//     printed anchors `DECLARED_RECORD_SOURCE_ANCHORS` declares for
+//     `rule:armor-guidance` / `rule:coinage` (both compiler-named rules with
+//     no printed heading of their own); they only need to appear somewhere
+//     on the cited page, not inside the rule's own captured prose, so their
+//     placement here does not change either rule's existing (reduced,
+//     unasserted) body text.
 const EQUIPMENT_PAGE: FixturePage = {
   lines: [
     'Equipment',
@@ -586,6 +611,9 @@ const EQUIPMENT_PAGE: FixturePage = {
     'Smith’s tools 20 gp 8 lb.',
     'Vehicles (land or water) * *',
     'Mounts and Vehicles',
+    'A good mount can help you move more quickly through the wilderness.',
+    'Armor Proficiency. Anyone can put on a suit of armor or strap a shield to an arm.',
+    'Standard Exchange Rates',
   ],
 };
 

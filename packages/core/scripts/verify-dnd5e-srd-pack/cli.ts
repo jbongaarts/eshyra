@@ -113,6 +113,10 @@ async function main(): Promise<void> {
       result = await runImporter({
         pdfPath: VENDORED_PDF,
         outDir: tmpDir,
+        // Same complete-corpus liveness checks the production import runs:
+        // stale curated relationship and record-source-anchor declarations
+        // fail here, not only on a local regeneration.
+        assertDeclarationsAreLive: true,
         expectedCreatureNames: EXPECTED_SRD_5_1_CREATURE_NAMES,
         expectedNpcNames: EXPECTED_SRD_5_1_NPC_NAMES,
         expectedTrapNames: EXPECTED_SRD_5_1_TRAP_NAMES,
