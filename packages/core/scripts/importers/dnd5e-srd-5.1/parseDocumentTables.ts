@@ -345,7 +345,7 @@ export const SRD_5_1_DOCUMENT_TABLE_SPECS: readonly DocumentTableSpec[] = [
   },
   {
     name: 'Half-Dragon Breath Weapon',
-    columns: ['Size', 'Breath Weapon', 'Prerequisite'],
+    columns: ['Size', 'Breath Weapon', 'Optional Prerequisite'],
     anchorHeading: 'Half-Dragon Template',
     anchor: 'item',
     anchorTier: 'subsection',

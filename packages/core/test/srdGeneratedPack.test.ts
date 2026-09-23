@@ -4411,7 +4411,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         (record) => record.key === 'table:half-dragon-breath-weapon',
       );
       expect(breathWeapon?.data).toEqual({
-        columns: ['Size', 'Breath Weapon', 'Prerequisite'],
+        columns: ['Size', 'Breath Weapon', 'Optional Prerequisite'],
         rows: [
           ['Large or smaller', 'As a wyrmling', 'Challenge 2 or higher'],
           ['Huge', 'As a young dragon', 'Challenge 7 or higher'],

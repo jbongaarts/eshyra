@@ -191,7 +191,7 @@ describe('parseDocumentTables — Half-Dragon Template tables', () => {
 
   it('reconstructs the wrapped Large-or-smaller breath-weapon row', () => {
     expect(byName(pages).get('Half-Dragon Breath Weapon')).toMatchObject({
-      columns: ['Size', 'Breath Weapon', 'Prerequisite'],
+      columns: ['Size', 'Breath Weapon', 'Optional Prerequisite'],
       rows: [
         ['Large or smaller', 'As a wyrmling', 'Challenge 2 or higher'],
         ['Huge', 'As a young dragon', 'Challenge 7 or higher'],
@@ -976,29 +976,121 @@ describe('parseDocumentTables — magic-item embedded content', () => {
 // spec hygiene
 // ---------------------------------------------------------------------------
 
+/**
+ * Whether `columns`, in order, partition every printed header line left to
+ * right into contiguous runs of literal words: each column's text is its
+ * per-line runs joined top to bottom, and every printed word lands in exactly
+ * one column. That is the literal-span form of a header the SRD may print on
+ * one line ("Knowledge Save Modifier") or stacked over two ("Similar Off On" /
+ * "Familiarity Mishap Area Target Target" -> "Similar Area", "Off Target").
+ * It rejects invented, expanded, reordered, or recomposed header text. It
+ * cannot tell which of two literal partitions matches the printed column
+ * positions; the per-table parser pins own that.
+ */
+function columnsPartitionHeaderLines(
+  headerLines: readonly string[],
+  columns: readonly string[],
+): boolean {
+  const split = (text: string) =>
+    text.normalize('NFKC').trim().split(/\s+/u).filter(Boolean);
+  const lines = headerLines.map(split);
+  const cols = columns.map(split);
+  const place = (column: number, positions: readonly number[]): boolean => {
+    if (column === cols.length)
+      return positions.every((at, line) => at === lines[line].length);
+    const words = cols[column];
+    if (words.length === 0) return false;
+    // Take a (possibly empty) contiguous run from each line, top to bottom,
+    // whose concatenation is exactly this column's words.
+    const take = (line: number, used: number, next: number[]): boolean => {
+      if (line === lines.length)
+        return used === words.length && place(column + 1, next);
+      for (let run = 0; ; run++) {
+        if (run > 0) {
+          const word = lines[line][positions[line] + run - 1];
+          if (word === undefined || word !== words[used + run - 1]) break;
+        }
+        const advanced = [...next];
+        advanced[line] = positions[line] + run;
+        if (take(line + 1, used + run, advanced)) return true;
+        if (used + run >= words.length) break;
+      }
+      return false;
+    };
+    return take(0, 0, [...positions]);
+  };
+  return place(
+    0,
+    lines.map(() => 0),
+  );
+}
+
 describe('SRD_5_1_DOCUMENT_TABLE_SPECS hygiene', () => {
   // Emitted `table` columns are declared verbatim source prose
-  // (field-provenance.json), so a spec may not emit a header word its own
-  // pinned header lines do not print — neither an invented header (the merged
-  // Scrying table's "Basis"/"Circumstance") nor an expanded abbreviation
-  // (Animated Object Statistics' printed "Str"/"Dex"). Class-progression
-  // specs pin source blocks instead of header lines and are out of scope here.
-  it('emits only column headers the source header lines print', () => {
-    const words = (text: string) =>
-      text
-        .normalize('NFKC')
-        .toLowerCase()
-        .split(/[^\p{L}\p{N}]+/u)
-        .filter(Boolean);
-    const invented: string[] = [];
-    for (const spec of SRD_5_1_DOCUMENT_TABLE_SPECS) {
-      if (spec.rows.kind === 'class-progression-reconstruction') continue;
-      const printed = new Set(spec.headerLines.flatMap(words));
-      for (const column of spec.columns)
-        if (!words(column).every((word) => printed.has(word)))
-          invented.push(`${spec.name}: ${column}`);
-    }
-    expect(invented).toEqual([]);
+  // (field-provenance.json), so every spec's columns must be literal spans of
+  // its own pinned header lines. The repaired defects were an invented header
+  // (the merged Scrying table's "Basis"/"Circumstance") and an expanded
+  // abbreviation (Animated Object Statistics' printed "Str"/"Dex"); the
+  // literal-span form also caught Half-Dragon Breath Weapon dropping the
+  // stacked "Optional" from its printed "Optional Prerequisite" header.
+  // A paired-line-per-row table is printed as two side-by-side halves, so its
+  // header prints the column sequence twice. Class-progression specs pin
+  // source blocks instead of header lines and are out of scope here.
+  it('emits only literal spans of the printed header lines as columns', () => {
+    const nonLiteral = SRD_5_1_DOCUMENT_TABLE_SPECS.filter(
+      (spec) =>
+        spec.rows.kind !== 'class-progression-reconstruction' &&
+        !columnsPartitionHeaderLines(
+          spec.headerLines,
+          spec.rows.kind === 'paired-line-per-row'
+            ? [...spec.columns, ...spec.columns]
+            : spec.columns,
+        ),
+    ).map((spec) => `${spec.name}: ${JSON.stringify(spec.columns)}`);
+    expect(nonLiteral).toEqual([]);
+  });
+
+  it('rejects header text built from genuine source words out of order', () => {
+    const scrying = ['Knowledge Save Modifier'];
+    expect(
+      columnsPartitionHeaderLines(scrying, ['Knowledge', 'Save Modifier']),
+    ).toBe(true);
+    expect(
+      columnsPartitionHeaderLines(scrying, ['Save Knowledge', 'Modifier']),
+    ).toBe(false);
+    expect(
+      columnsPartitionHeaderLines(scrying, [
+        'Basis',
+        'Knowledge',
+        'Save Modifier',
+      ]),
+    ).toBe(false);
+    expect(columnsPartitionHeaderLines(scrying, ['Knowledge', 'Save'])).toBe(
+      false,
+    );
+    const teleport = [
+      'Similar Off On',
+      'Familiarity Mishap Area Target Target',
+    ];
+    const printed = [
+      'Familiarity',
+      'Mishap',
+      'Similar Area',
+      'Off Target',
+      'On Target',
+    ];
+    expect(columnsPartitionHeaderLines(teleport, printed)).toBe(true);
+    // Every word is genuine, but "Target" and "Area" are swapped across the
+    // stacked header's columns.
+    expect(
+      columnsPartitionHeaderLines(teleport, [
+        'Familiarity',
+        'Mishap',
+        'Similar Target',
+        'Off Area',
+        'On Target',
+      ]),
+    ).toBe(false);
   });
 
   it('spec names are unique (stable table identities)', () => {
