@@ -42,6 +42,7 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { assertCreatureAttackLeadInsSegmented } from './creatureAttackLeadIns.js';
 import {
   buildPack,
   writePackToDirectory,
@@ -3644,6 +3645,12 @@ export async function runImporter(
   // complete corpus a stale-declaration claim can be evaluated against.
   assertRecordsAnchoredInSource(pack.records, pages, {
     requireDeclarationsLive: input.assertDeclarationsAreLive === true,
+  });
+  // Creature attack lead-in gate (eshyra-o9bd.19.2.2.1): every attack
+  // lead-in printed in a creature's source slice opens its own entry. The
+  // denominator is counted from the extracted source, not the parser output.
+  assertCreatureAttackLeadInsSegmented(pack.records, pages, {
+    requireComplete: input.assertDeclarationsAreLive === true,
   });
   writePackToDirectory(pack, {
     outDir: input.outDir,

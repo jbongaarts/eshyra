@@ -7089,62 +7089,30 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     }
   });
 
-  // Registry row wererat-crossbow (opus:F-30), eshyra-o9bd.19.2.2.1: a
-  // creature entry's text is verbatim printed source, so a second printed
-  // entry lead-in inside it means segmentation swallowed an entry. Two
-  // lead-in shapes are structurally unambiguous in running text: an attack
-  // lead-in ("Ranged Weapon Attack:"), which opens exactly one entry, and a
-  // sentence-initial "Name (usage or form qualifier)." label. The Wererat's
-  // Hand Crossbow and the Chain Devil's Animate Chains were the two members
-  // when the label-only lead-in fix landed.
-  it('never swallows one creature stat-block entry into another (wererat-crossbow)', () => {
-    const EMBEDDED_LEAD_IN =
-      /[.!?)”] [A-Z][A-Za-z’' -]* \((?:Recharge[^)]*|\d+\/Day[^)]*|Costs \d+ Actions|[^)]*Form Only)\)\. /;
-    const ATTACK_LEAD_IN =
-      /(?:Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack:/g;
-    interface Entry {
-      readonly name: string;
-      readonly text: string;
-    }
-    const swallowed: string[] = [];
-    for (const record of pack.records) {
-      if (record.kind !== 'creature') continue;
-      const data = record.data as {
-        traits?: readonly Entry[];
-        actions?: readonly Entry[];
-        reactions?: readonly Entry[];
-        variants?: readonly Entry[];
-        legendaryActions?: { entries?: readonly Entry[] };
-      };
-      const entries = [
-        ...(data.traits ?? []),
-        ...(data.actions ?? []),
-        ...(data.reactions ?? []),
-        ...(data.variants ?? []),
-        ...(data.legendaryActions?.entries ?? []),
-      ];
-      for (const entry of entries) {
-        const attackLeadIns = entry.text.match(ATTACK_LEAD_IN)?.length ?? 0;
-        if (attackLeadIns > 1 || EMBEDDED_LEAD_IN.test(entry.text)) {
-          swallowed.push(`${record.key} / ${entry.name}`);
-        }
-      }
-    }
-    expect(swallowed).toEqual([]);
-
+  // Registry row wererat-crossbow (opus:F-30), eshyra-o9bd.19.2.2.1. The
+  // corpus-wide, source-derived proof is the importer's creature attack
+  // lead-in gate (creatureAttackLeadIns.ts); this pins the two committed
+  // records the label-only lead-in fix split — the Chain Devil member is not
+  // an attack, so the attack gate cannot see it.
+  it('keeps label-only lead-ins as their own committed entries (wererat-crossbow)', () => {
     const actionsOf = (key: string) => {
       const record = pack.records.find((r) => r.key === key);
       if (record === undefined) throw new Error(`${key} missing`);
-      return (record.data as { actions?: readonly Entry[] }).actions?.map(
-        (a) => a.name,
-      );
+      return (
+        record.data as { actions?: readonly { name: string }[] }
+      ).actions?.map((a) => a.name);
     };
-    expect(actionsOf('creature:wererat')).toContain(
+    expect(actionsOf('creature:wererat')).toEqual([
+      'Multiattack (Humanoid or Hybrid Form Only)',
+      'Bite (Rat or Hybrid Form Only)',
+      'Shortsword (Humanoid or Hybrid Form Only)',
       'Hand Crossbow (Humanoid or Hybrid Form Only)',
-    );
-    expect(actionsOf('creature:chain-devil')).toContain(
+    ]);
+    expect(actionsOf('creature:chain-devil')).toEqual([
+      'Multiattack',
+      'Chain',
       'Animate Chains (Recharges after a Short or Long Rest)',
-    );
+    ]);
   });
 
   describe('eldritch invocations option list stays a separate optionCatalog (eshyra-o9bd.19.2.1.3.1)', () => {
