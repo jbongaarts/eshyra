@@ -1522,3 +1522,101 @@ describe('trait after a WRAPPED spell list (eshyra-o9bd.18.7.3)', () => {
     expect(creatures[0].traits?.[0].text).toMatch(/hits\.$/);
   });
 });
+
+describe('label-only entry lead-in (eshyra-o9bd.19.2.2.1, opus:F-30)', () => {
+  // The SRD sometimes prints an entry's bold "Name." lead-in alone on its
+  // line, with the whole body wrapped to the next line. Requiring body text on
+  // the label line merged such an entry into the one before it.
+  const statBlock = (name: string, entryLines: readonly string[]) =>
+    page(328, [
+      name,
+      'Medium humanoid (human, shapechanger), lawful evil',
+      'Armor Class 12',
+      'Hit Points 33 (6d8 + 6)',
+      'Speed 30 ft.',
+      'STR DEX CON INT WIS CHA',
+      '10 (+0) 15 (+2) 12 (+1) 11 (+0) 10 (+0) 8 (−1)',
+      'Challenge 2 (450 XP)',
+      'Actions',
+      ...entryLines,
+    ]);
+
+  it('opens the Wererat Hand Crossbow as its own action (p. 328)', () => {
+    const [wererat] = parseCreatures([
+      statBlock('Wererat', [
+        'Shortsword (Humanoid or Hybrid Form Only). Melee',
+        'Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5',
+        '(1d6 + 2) piercing damage.',
+        'Hand Crossbow (Humanoid or Hybrid Form Only).',
+        'Ranged Weapon Attack: +4 to hit, range 30/120 ft., one',
+        'target. Hit: 5 (1d6 + 2) piercing damage.',
+      ]),
+    ]);
+    expect(wererat.actions).toEqual([
+      {
+        name: 'Shortsword (Humanoid or Hybrid Form Only)',
+        text: 'Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5 (1d6 + 2) piercing damage.',
+      },
+      {
+        name: 'Hand Crossbow (Humanoid or Hybrid Form Only)',
+        text: 'Ranged Weapon Attack: +4 to hit, range 30/120 ft., one target. Hit: 5 (1d6 + 2) piercing damage.',
+      },
+    ]);
+  });
+
+  it('opens the Chain Devil Animate Chains as its own action (p. 275)', () => {
+    const [devil] = parseCreatures([
+      statBlock('Chain Devil', [
+        'Chain. Melee Weapon Attack: +8 to hit, reach 10 ft., one',
+        'target. Hit: 11 (2d6 + 4) slashing damage. Until this',
+        'grapple ends, the target takes 7 (2d6) piercing',
+        'damage at the start of each of its turns.',
+        'Animate Chains (Recharges after a Short or Long Rest).',
+        'Up to four chains the devil can see within 60 feet',
+        'of it magically sprout razor-edged barbs.',
+      ]),
+    ]);
+    expect(devil.actions?.map((a) => a.name)).toEqual([
+      'Chain',
+      'Animate Chains (Recharges after a Short or Long Rest)',
+    ]);
+    expect(devil.actions?.[0].text).toMatch(/each of its turns\.$/);
+    expect(devil.actions?.[1].text).toBe(
+      'Up to four chains the devil can see within 60 feet of it magically sprout razor-edged barbs.',
+    );
+  });
+
+  it('keeps a label-shaped wrapped sentence tail attached to its open entry', () => {
+    // Kraken p. 325: "…cast Lightning Storm." wraps so "Lightning Storm." sits
+    // alone on a line, but the open body had not ended a sentence.
+    const [kraken] = parseCreatures([
+      statBlock('Test Kraken', [
+        'Lightning Storm (Costs 2 Actions). The kraken uses',
+        'Lightning Storm.',
+        'Ink Cloud (Costs 3 Actions). While underwater, the',
+        'kraken expels an ink cloud.',
+      ]),
+    ]);
+    expect(kraken.actions).toEqual([
+      {
+        name: 'Lightning Storm (Costs 2 Actions)',
+        text: 'The kraken uses Lightning Storm.',
+      },
+      {
+        name: 'Ink Cloud (Costs 3 Actions)',
+        text: 'While underwater, the kraken expels an ink cloud.',
+      },
+    ]);
+  });
+
+  it('never closes an entry that has only its label', () => {
+    // A label-only lead-in whose body has not arrived is incomplete, so a
+    // following label-shaped line is its body, not a new entry.
+    const [creature] = parseCreatures([
+      statBlock('Test Creature', ['Bite (Rat Form Only).', 'Charisma.']),
+    ]);
+    expect(creature.actions).toEqual([
+      { name: 'Bite (Rat Form Only)', text: 'Charisma.' },
+    ]);
+  });
+});
