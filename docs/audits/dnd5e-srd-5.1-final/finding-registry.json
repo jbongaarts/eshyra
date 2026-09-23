@@ -140,7 +140,7 @@
         "evidenceBasis": "audit-finding"
       },
       "scopeKind": "record",
-      "owningBead": "eshyra-o9bd.19.2.2"
+      "owningBead": "eshyra-o9bd.19.3.3"
     },
     {
       "canonicalId": "spellcasting-granularity",
