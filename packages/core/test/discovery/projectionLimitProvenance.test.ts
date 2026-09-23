@@ -132,6 +132,33 @@ const FIREBALL = 'spell:fireball';
 const SUCCESS_PHRASE = 'or half as much damage on a successful one';
 const AREA_PHRASE = '20-foot-radius sphere';
 
+/**
+ * The bundled pack with Acid Breath's typed save stripped of its success
+ * branch. The real projection has carried it since eshyra-o9bd.19.4.3.1; the
+ * omission is reconstructed so the success-branch note still has a real
+ * record, with real attested prose, to disclose.
+ */
+function withoutDragonSuccessBranch(): RulesPack {
+  const base = getBundledDnd5eSrdPack();
+  return {
+    ...base,
+    records: base.records.map((record) => {
+      if (record.key !== DRAGON) return record;
+      const copy = structuredClone(record);
+      const actions = (copy.data as { actions: { mechanics: Mechanics }[] })
+        .actions;
+      const saves = actions[5].mechanics.saves as Record<string, unknown>[];
+      expect(saves[0].damageOnSuccess).toBe('half');
+      saves[0] = Object.fromEntries(
+        Object.entries(saves[0]).filter(([key]) => key !== 'damageOnSuccess'),
+      );
+      return copy;
+    }),
+  };
+}
+
+type Mechanics = Record<string, unknown>;
+
 describe('projection-limit notes are built from attested prose', () => {
   /**
    * The two worked cases design section 7.2 names still get their required
@@ -139,8 +166,24 @@ describe('projection-limit notes are built from attested prose', () => {
    * leaf of the same candidate, not merely a string found somewhere in the
    * record.
    */
+  it('raises no success-branch note once the typed save carries the branch', () => {
+    const dragon = candidate(
+      packetFor(getBundledDnd5eSrdPack(), [DRAGON]),
+      DRAGON,
+    );
+    expect(
+      dragon.projectionLimits.filter((note) => note.kind === 'success-branch'),
+    ).toEqual([]);
+  });
+
   it('still discloses the Dragon success branch and the Fireball area, from attested prose', () => {
-    const trace = packetFor(getBundledDnd5eSrdPack(), [DRAGON, FIREBALL]);
+    // The bundled provenance source attests only the bundled pack object, so
+    // the reconstructed pack is given the same manifest explicitly.
+    const trace = packetFor(
+      withoutDragonSuccessBranch(),
+      [DRAGON, FIREBALL],
+      getBundledDnd5eSrdFieldProvenanceManifest(),
+    );
     const dragon = candidate(trace, DRAGON);
     const fireball = candidate(trace, FIREBALL);
 
@@ -177,7 +220,7 @@ describe('projection-limit notes are built from attested prose', () => {
    * reading raw record strings.
    */
   it('makes no source claim when the matching phrase is classified compiler-projection', () => {
-    const base = getBundledDnd5eSrdPack();
+    const base = withoutDragonSuccessBranch();
     const dragonManifest = reclassified(
       'creature',
       '/actions/*/text',

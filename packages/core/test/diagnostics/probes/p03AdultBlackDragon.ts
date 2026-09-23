@@ -28,8 +28,9 @@ export const P03_ADULT_BLACK_DRAGON: DiagnosticFixture = {
     {
       targetRef: 'creature:adult-black-dragon',
       typedPath: '/data/actions/5/mechanics/saves/0',
-      expectedValue: { ability: 'dexterity', dc: 18 },
-      statement: 'The typed Dexterity save projection is retained.',
+      expectedValue: { ability: 'dexterity', dc: 18, damageOnSuccess: 'half' },
+      statement:
+        'The typed Dexterity save projection is retained with its source half-on-success branch.',
     },
     {
       targetRef: 'creature:adult-black-dragon',
@@ -43,8 +44,8 @@ export const P03_ADULT_BLACK_DRAGON: DiagnosticFixture = {
     {
       kind: 'packet-semantic',
       statement:
-        'The typed projection has no damageOnSuccess field and no success branch; 12d8 must not be presented as unconditional damage.',
-      assertionId: 'dragon-success-branch-disclosed',
+        'The typed save projection carries the source half-on-success branch (damageOnSuccess: half), so 12d8 is not presented as unconditional damage and no omission note is raised for it.',
+      assertionId: 'dragon-success-branch-typed',
       why: 'The claim is that the packet must not present 12d8 as unconditional.',
     },
   ],
@@ -74,7 +75,7 @@ export const P03_ADULT_BLACK_DRAGON: DiagnosticFixture = {
           'No capability is positively selected; damage arithmetic rides resolve_damage while save and success-branch adjudication remain with the DM.',
         inputs: ['Acid Breath action prose', 'Dexterity save result'],
         exclusions: [
-          'No capability turns the typed 12d8 projection into unconditional damage or supplies the missing success branch.',
+          'No capability applies the typed 12d8 projection or its half-on-success branch; the DM adjudicates the save.',
         ],
         residualInterpretation:
           'The DM interprets the save branch and invokes deterministic damage arithmetic when appropriate.',

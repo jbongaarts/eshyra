@@ -502,16 +502,19 @@ describe('context-packet message renderer', () => {
     }
   });
 
-  // E2 — both section 7.2 worked cases, disclosed INSIDE their own block.
+  // E2 — section 7.2 projection limits, disclosed INSIDE their own block. The
+  // Dragon's success branch was the other worked case; its typed save now
+  // carries the branch (eshyra-o9bd.19.4.3.1), so it must draw no omission
+  // note. The success-branch note itself is exercised on a reconstructed
+  // omission in projectionLimitProvenance.test.ts.
   it('discloses each projection limit in its own candidate block', () => {
     const dragonSpan = candidateSpan(
       render('P3').text,
       'creature:adult-black-dragon',
     );
-    expect(dragonSpan).toContain(
+    expect(dragonSpan).not.toContain(
       'The typed save projection omits the source success branch',
     );
-    expect(dragonSpan).toContain('/data/actions/5/mechanics/saves');
     expect(dragonSpan).toContain(
       'The source describes an area, but no typed mechanics.area projection exists.',
     );
