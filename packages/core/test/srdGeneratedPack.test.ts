@@ -7061,6 +7061,34 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
   // separately printed source span, not a continuation of the body. The
   // description and the option-list body must therefore never be joined into
   // one field.
+  // Registry row rock-gnome-boundary (indep:010, sol:CAP-012): the printed
+  // "Artificer’s Lore." label bounds its own trait, so neither its text nor its
+  // expertise projection is attributed to the Ability Score Increase trait.
+  it('assigns Rock Gnome Artificer’s Lore to its own trait (rock-gnome-boundary)', () => {
+    const rockGnome = pack.records.find((r) => r.key === 'ancestry:rock-gnome');
+    if (rockGnome === undefined) throw new Error('ancestry:rock-gnome missing');
+    const traits = (
+      rockGnome.data as {
+        traits?: readonly {
+          name: string;
+          text: string;
+          mechanics?: { effects?: readonly { kind: string }[] };
+        }[];
+      }
+    ).traits;
+    const lore = traits?.find((t) => t.name === 'Artificer’s Lore');
+    expect(lore?.text).toMatch(
+      /^Whenever you make an Intelligence \(History\)/,
+    );
+    expect(lore?.mechanics?.effects?.map((e) => e.kind)).toEqual(['expertise']);
+    for (const asi of traits?.filter(
+      (t) => t.name === 'Ability Score Increase',
+    ) ?? []) {
+      expect(asi.text).not.toContain('Artificer');
+      expect(asi.mechanics).toBeUndefined();
+    }
+  });
+
   describe('eldritch invocations option list stays a separate optionCatalog (eshyra-o9bd.19.2.1.3.1)', () => {
     const eldritchInvocations = pack.records.find(
       (r) => r.key === 'feature:warlock:eldritch-invocations',

@@ -362,6 +362,43 @@ describe('parseAncestries — Dragonborn breath-weapon table does not bleed', ()
 });
 
 // ---------------------------------------------------------------------------
+// A trait label printed with a typographic apostrophe (Rock Gnome's
+// "Artificer’s Lore.") opens its own trait instead of bleeding into the
+// preceding Ability Score Increase body (registry row rock-gnome-boundary).
+// ---------------------------------------------------------------------------
+
+describe('parseAncestries — typographic-apostrophe trait label is a boundary', () => {
+  const results = parseAncestries([
+    page(35, [
+      'Gnome',
+      'A gnome’s energy and enthusiasm for living shines through every inch of his or her tiny body.',
+      'Ability Score Increase. Your Intelligence score increases by 2.',
+      'Subrace. Choose a subrace.',
+      'Rock Gnome',
+      'As a rock gnome, you have a natural inventiveness and hardiness beyond that of other gnomes.',
+      'Ability Score Increase. Your Constitution score increases by 1.',
+      'Artificer’s Lore. Whenever you make an Intelligence (History) check related to magic items, alchemical objects, or technological devices, you can add twice your proficiency bonus, instead of any proficiency bonus you normally apply.',
+    ]),
+  ]);
+  const rock = results.find((r) => r.name === 'Rock Gnome');
+
+  it('emits Artificer’s Lore as its own trait', () => {
+    const lore = rock?.traits.find((t) => t.name === 'Artificer’s Lore');
+    expect(lore?.text).toMatch(
+      /^Whenever you make an Intelligence \(History\)/,
+    );
+  });
+
+  it('keeps the subrace Ability Score Increase to its own printed sentence', () => {
+    const asi = rock?.traits.filter((t) => t.name === 'Ability Score Increase');
+    expect(asi?.map((t) => t.text)).toEqual([
+      'Your Intelligence score increases by 2.',
+      'Your Constitution score increases by 1.',
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Empty / no-match input.
 // ---------------------------------------------------------------------------
 
