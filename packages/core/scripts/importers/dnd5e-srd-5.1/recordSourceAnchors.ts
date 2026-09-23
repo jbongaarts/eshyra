@@ -38,38 +38,44 @@ export class RecordSourceAnchorError extends Error {
   }
 }
 
-const CURLY_APOSTROPHES = /[‘’]/g;
-const CURLY_QUOTES = /[“”]/g;
+const APOSTROPHES = /['‘’]/g;
 // Hyphen-minus plus every dash/hyphen variant pdfjs can emit: non-breaking
 // hyphen, figure dash, en dash, em dash, minus sign.
 const DASH_VARIANTS = /[-‐‑‒–—−]/g;
-// A hyphen immediately followed by whitespace is a PDF line-wrap
-// hyphenation artifact ("guid-\nance"); collapse it away entirely rather
-// than leaving a `-` that the final filter would drop anyway but that would
-// otherwise coincide with the natural word boundary an editorial hyphen
-// leaves. Order matters: this runs AFTER dash normalization, so it only
-// needs to match the one canonical hyphen character.
+// A hyphen immediately followed by whitespace is where a printed line ended
+// on a hyphen. That is either line-wrap hyphenation ("Guid-\nance", one
+// word) or an editorial hyphen that happens to fall at a line end
+// ("Half-\nDragon", two words); the extraction cannot tell which. Runs AFTER
+// dash normalization, so it only needs the one canonical hyphen character.
 const HYPHEN_LINE_BREAK = /-\s+/g;
-const NON_ALPHANUMERIC = /[^a-z0-9]/g;
+const TOKEN_SEPARATOR = /[^a-z0-9]+/;
 
-/**
- * Normalize printed / declared anchor text into a bare lower-case
- * alphanumeric run, so PDF line-wrap hyphenation, curly punctuation, dash
- * variants, and incidental whitespace differences between the extraction
- * and a hand-written declared anchor never cause a false negative (or,
- * symmetrically, so stray punctuation never causes a false positive). This
- * is the normalization the eshyra-o9bd.19.1.3.2 supervisor's probe used to
- * compute the 39-record failing baseline on `main@ddc231be`; keep it stable
- * unless it provably causes a false pass/fail.
- */
-export function normalizeAnchorText(value: string): string {
+type LineEndHyphen = 'join' | 'split';
+
+function tokenize(value: string, lineEndHyphen: LineEndHyphen): string {
   return value
     .toLowerCase()
-    .replace(CURLY_APOSTROPHES, "'")
-    .replace(CURLY_QUOTES, '"')
+    .replace(APOSTROPHES, '')
     .replace(DASH_VARIANTS, '-')
-    .replace(HYPHEN_LINE_BREAK, '')
-    .replace(NON_ALPHANUMERIC, '');
+    .replace(HYPHEN_LINE_BREAK, lineEndHyphen === 'join' ? '' : ' ')
+    .split(TOKEN_SEPARATOR)
+    .filter((token) => token.length > 0)
+    .join(' ');
+}
+
+/**
+ * Normalize printed / declared anchor text into lower-case alphanumeric
+ * TOKENS joined by single spaces. Case, curly vs straight punctuation, dash
+ * variants, apostrophes (dropped inside a word: "Artificer’s" -> "artificers"),
+ * and whitespace differences never cause a false negative, and line-wrap
+ * hyphenation at a line end joins ("Guid-\nance" -> "guidance").
+ *
+ * Token boundaries are kept on purpose (PR #570 review F1): matching is
+ * whole-token, so an anchor can never be satisfied as a proper substring of a
+ * larger printed word ("Rage" must not match inside "Average").
+ */
+export function normalizeAnchorText(value: string): string {
+  return tokenize(value, 'join');
 }
 
 const SINGLE_PAGE_LOCATOR = /^p\.\s*(\d+)$/;
@@ -461,7 +467,10 @@ function assertDeclaredAnchorsWellFormed(
     if (declaration.reason.trim() === '') {
       malformed.push(`${key}: reason must not be empty`);
     }
-    const normalizedLength = normalizeAnchorText(declaration.anchor).length;
+    const normalizedLength = normalizeAnchorText(declaration.anchor).replace(
+      / /g,
+      '',
+    ).length;
     if (normalizedLength < MIN_DECLARED_ANCHOR_NORMALIZED_LENGTH) {
       malformed.push(
         `${key}: declared anchor ${JSON.stringify(declaration.anchor)} normalizes to ${normalizedLength} char(s), below the ${MIN_DECLARED_ANCHOR_NORMALIZED_LENGTH}-char floor`,
@@ -476,12 +485,21 @@ function assertDeclaredAnchorsWellFormed(
 }
 assertDeclaredAnchorsWellFormed(DECLARED_RECORD_SOURCE_ANCHORS);
 
+/**
+ * Each page's token text in both readings of a line-end hyphen (see
+ * HYPHEN_LINE_BREAK), padded with a boundary space on each side so a
+ * whole-token search is a plain `includes(' anchor ')`.
+ */
 function normalizedPageTextByNumber(
   pages: readonly PageText[],
-): ReadonlyMap<number, string> {
-  const map = new Map<number, string>();
+): ReadonlyMap<number, readonly string[]> {
+  const map = new Map<number, readonly string[]>();
   for (const page of pages) {
-    map.set(page.pageNumber, normalizeAnchorText(page.lines.join('\n')));
+    const text = page.lines.join('\n');
+    map.set(page.pageNumber, [
+      ` ${tokenize(text, 'join')} `,
+      ` ${tokenize(text, 'split')} `,
+    ]);
   }
   return map;
 }
@@ -489,14 +507,16 @@ function normalizedPageTextByNumber(
 function anchorFoundOnAnyPage(
   anchor: string,
   pageNumbers: readonly number[],
-  normalizedPages: ReadonlyMap<number, string>,
+  normalizedPages: ReadonlyMap<number, readonly string[]>,
 ): boolean {
   const normalizedAnchor = normalizeAnchorText(anchor);
   if (normalizedAnchor === '') return false;
-  return pageNumbers.some((pageNumber) => {
-    const pageText = normalizedPages.get(pageNumber);
-    return pageText?.includes(normalizedAnchor) ?? false;
-  });
+  const bounded = ` ${normalizedAnchor} `;
+  return pageNumbers.some((pageNumber) =>
+    (normalizedPages.get(pageNumber) ?? []).some((reading) =>
+      reading.includes(bounded),
+    ),
+  );
 }
 
 export interface AssertRecordsAnchoredInSourceOptions {

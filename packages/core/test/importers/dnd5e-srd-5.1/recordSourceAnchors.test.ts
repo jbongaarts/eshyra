@@ -92,8 +92,8 @@ describe('citedPages', () => {
 });
 
 describe('normalizeAnchorText', () => {
-  it('lower-cases and drops non-alphanumeric characters', () => {
-    expect(normalizeAnchorText('Saddle, Military')).toBe('saddlemilitary');
+  it('lower-cases into space-separated alphanumeric tokens', () => {
+    expect(normalizeAnchorText('Saddle, Military')).toBe('saddle military');
   });
 
   it('collapses PDF line-wrap hyphenation', () => {
@@ -149,6 +149,53 @@ describe('assertRecordsAnchoredInSource', () => {
       makeRecord({ key: 'rule:guidance', name: 'Guidance', locator: 'p. 9' }),
     ];
     const pages = [makePage(9, ['Some Guid-', 'ance section follows.'])];
+    expect(() =>
+      assertRecordsAnchoredInSource(records, pages, {
+        requireDeclarationsLive: false,
+      }),
+    ).not.toThrow();
+  });
+
+  // Matching is whole-token (PR #570 review F1): an anchor printed only as
+  // part of a larger word is not printed at all. Covers a suffix ("Rage" in
+  // "Average"), a prefix ("Fire" in "Fireball"), and an embedded multi-token
+  // anchor whose first and last tokens are word fragments.
+  it.each([
+    { name: 'Rage', line: 'Average damage is listed first.' },
+    { name: 'Fire', line: 'You cast Fireball.' },
+    { name: 'Bolt Arrow', line: 'Thunderbolt Arrowhead' },
+  ])(
+    'throws when "$name" appears only inside larger printed words',
+    ({ name, line }) => {
+      const records = [
+        makeRecord({ key: 'rule:probe', name, locator: 'p. 7' }),
+      ];
+      expect(() =>
+        assertRecordsAnchoredInSource(records, [makePage(7, [line])], {
+          requireDeclarationsLive: false,
+        }),
+      ).toThrow(/rule:probe/);
+    },
+  );
+
+  it('passes a whole-token match regardless of case, punctuation, and dash variant', () => {
+    const records = [
+      makeRecord({ key: 'rule:rage', name: 'Rage', locator: 'p. 7' }),
+      makeRecord({ key: 'rule:half', name: 'Half-Dragon', locator: 'p. 7' }),
+    ];
+    const pages = [makePage(7, ['you can enter a rage.', 'The half–dragon'])];
+    expect(() =>
+      assertRecordsAnchoredInSource(records, pages, {
+        requireDeclarationsLive: false,
+      }),
+    ).not.toThrow();
+  });
+
+  it('passes an editorial hyphen that falls at a printed line end', () => {
+    const records = [
+      makeRecord({ key: 'rule:half', name: 'Half-Dragon', locator: 'p. 7' }),
+    ];
+    const pages = [makePage(7, ['A Half-', 'Dragon template.'])];
     expect(() =>
       assertRecordsAnchoredInSource(records, pages, {
         requireDeclarationsLive: false,
