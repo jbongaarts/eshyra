@@ -85,6 +85,7 @@ import { parseSubclasses } from './parseSubclasses.js';
 import { parseSubclassOverviews } from './parseSubclassOverviews.js';
 import { parseTables } from './parseTables.js';
 import { parseTraps } from './parseTraps.js';
+import { assertRecordsAnchoredInSource } from './recordSourceAnchors.js';
 import {
   type SectionAnchorOptions,
   SectionNotFoundError,
@@ -3633,6 +3634,17 @@ export async function runImporter(
       ),
     );
   }
+  // Record source anchor gate (eshyra-o9bd.19.1.3.2): a compiler-authored
+  // record must not be able to acquire the SRD license/provenance block by
+  // default. Runs over the FINAL record list, after any multi-page
+  // provenance enrichment above, and before any output is written. See
+  // recordSourceAnchors.ts for the invariant and DECLARED_RECORD_SOURCE_
+  // ANCHORS for the curated exceptions. `requireDeclarationsLive` mirrors
+  // `assertDeclarationsAreLive` below: only the real CLI import supplies the
+  // complete corpus a stale-declaration claim can be evaluated against.
+  assertRecordsAnchoredInSource(pack.records, pages, {
+    requireDeclarationsLive: input.assertDeclarationsAreLive === true,
+  });
   writePackToDirectory(pack, {
     outDir: input.outDir,
     // The production CLI supplies the reviewed exact creature baseline; small
