@@ -1278,7 +1278,7 @@ export {
 } from './rules/repeatedFeatureChoices.js';
 export type {
   ParsedSpellUpcastSpec,
-  SpellUpcastSourceCorrection,
+  SpellUpcastSourceDefect,
   UpcastChoice,
   UpcastOperation,
   UpcastSubject,
