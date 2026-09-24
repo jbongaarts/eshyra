@@ -26,9 +26,9 @@ interface RecordRow {
 }
 const records = JSON.parse(readFileSync(RECORDS, 'utf8')) as RecordRow[];
 const equipment = records.filter((record) => record.kind === 'equipment');
-if (equipment.length !== 218)
+if (equipment.length !== 219)
   throw new Error(
-    `equipment membership drift: expected 218, got ${equipment.length}`,
+    `equipment membership drift: expected 219, got ${equipment.length}`,
   );
 const specs = new Map(
   EQUIPMENT_MECHANICS_SPECS.map((spec) => [spec.recordKey, spec]),

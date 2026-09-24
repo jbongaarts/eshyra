@@ -111,6 +111,7 @@ import {
   auditSpellListParity,
 } from './spellListParityAudit.js';
 import { addSemanticTableProjections } from './tableProjections.js';
+import { assertToolsTableRowParity } from './toolsTableRows.js';
 import type {
   AncestryExtraction,
   BackgroundExtraction,
@@ -3650,6 +3651,12 @@ export async function runImporter(
   // lead-in printed in a creature's source slice opens its own entry. The
   // denominator is counted from the extracted source, not the parser output.
   assertCreatureAttackLeadInsSegmented(pack.records, pages, {
+    requireComplete: input.assertDeclarationsAreLive === true,
+  });
+  // Tools table row parity gate (eshyra-o9bd.19.2.2.2): every row printed in
+  // the Tools table has one emitted tool record with the same cells, and no
+  // other tool record exists. Rows are read from the source, not collectTools.
+  assertToolsTableRowParity(pack.records, pages, {
     requireComplete: input.assertDeclarationsAreLive === true,
   });
   writePackToDirectory(pack, {

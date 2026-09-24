@@ -88,9 +88,9 @@ const EXPECTED_CURATED_KEYS = [
 
 describe('SRD equipment mechanics inventory', () => {
   it('pins exact corpus and curated membership', () => {
-    expect(equipment).toHaveLength(218);
-    expect(inventory.recordCount).toBe(218);
-    expect(inventory.mechanicallyActiveRecords).toBe(174);
+    expect(equipment).toHaveLength(219);
+    expect(inventory.recordCount).toBe(219);
+    expect(inventory.mechanicallyActiveRecords).toBe(175);
     expect(inventory.curatedProjectionRecords).toBe(35);
     expect(inventory.clauseCount).toBe(75);
     expect(

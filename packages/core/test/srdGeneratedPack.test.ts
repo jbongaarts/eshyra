@@ -110,7 +110,7 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // all under the `creature` kind; NPCs carry data.category='npc'
   // (loreweaver-bn0). The two coverage sets are validated independently below.
   creature: 317,
-  equipment: 218,
+  equipment: 219,
   feat: 1,
   // 148 -> 165 (eshyra-0m9.13): the feature-heading boundary fix recovered 17
   // class/subclass features previously swallowed into the preceding feature's
@@ -597,62 +597,65 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   },
   { kind: 'creature', field: 'traits', missingCount: 55, totalInKind: 317 },
   { kind: 'creature', field: 'variants', missingCount: 315, totalInKind: 317 },
-  { kind: 'equipment', field: 'ac', missingCount: 205, totalInKind: 218 },
+  { kind: 'equipment', field: 'ac', missingCount: 206, totalInKind: 219 },
   // eshyra-rtgi: structured armorClass alongside the verbatim ac string, only
   // on the 13 armor/shield records.
   {
     kind: 'equipment',
     field: 'armorClass',
-    missingCount: 205,
-    totalInKind: 218,
+    missingCount: 206,
+    totalInKind: 219,
   },
   {
     kind: 'equipment',
     field: 'armorType',
-    missingCount: 205,
-    totalInKind: 218,
+    missingCount: 206,
+    totalInKind: 219,
   },
-  { kind: 'equipment', field: 'capacity', missingCount: 205, totalInKind: 218 },
+  { kind: 'equipment', field: 'capacity', missingCount: 206, totalInKind: 219 },
   {
     kind: 'equipment',
     field: 'carryingCapacity',
-    missingCount: 210,
-    totalInKind: 218,
+    missingCount: 211,
+    totalInKind: 219,
   },
   // Typed pack contents (eshyra-ngcj.4): genuinely optional — only the 7
-  // equipment packs carry contents; the other 211 equipment records do not.
+  // equipment packs carry contents; the other 212 equipment records do not.
   {
     kind: 'equipment',
     field: 'contents',
-    missingCount: 211,
-    totalInKind: 218,
+    missingCount: 212,
+    totalInKind: 219,
   },
+  // eshyra-o9bd.19.2.2.2: the Tools table's Vehicles row prints "*" in its
+  // cost cell (a footnote pointer), so it is the one record without a cost.
+  { kind: 'equipment', field: 'cost', missingCount: 1, totalInKind: 219 },
   {
     kind: 'equipment',
     field: 'damageDie',
-    missingCount: 182,
-    totalInKind: 218,
+    missingCount: 183,
+    totalInKind: 219,
   },
   {
     kind: 'equipment',
     field: 'damageType',
-    missingCount: 182,
-    totalInKind: 218,
+    missingCount: 183,
+    totalInKind: 219,
   },
   {
     kind: 'equipment',
     field: 'description',
     missingCount: 109,
-    totalInKind: 218,
+    totalInKind: 219,
   },
   // eshyra-erf5.3.2: the 41 items in a named SRD equipment group (5 arcane
   // focus + 4 druidic focus + 3 holy symbol + 17 artisan's tools + 2 gaming
-  // set + 10 musical instruments) carry equipmentGroup; the other 177 do not.
+  // set + 10 musical instruments) carry equipmentGroup; the other 178 do not.
   {
     kind: 'equipment',
     field: 'equipmentGroup',
-    missingCount: 177,
-    totalInKind: 218,
+    missingCount: 178,
+    totalInKind: 219,
   },
   // Foundation 1 models Longsword's mutually exclusive one- and two-handed
   // damage modes as the first bounded equipment procedure. Other equipment
@@ -660,54 +663,54 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   {
     kind: 'equipment',
     field: 'mechanics',
-    missingCount: 217,
-    totalInKind: 218,
+    missingCount: 218,
+    totalInKind: 219,
   },
   {
     kind: 'equipment',
     field: 'properties',
-    missingCount: 181,
-    totalInKind: 218,
+    missingCount: 182,
+    totalInKind: 219,
   },
-  { kind: 'equipment', field: 'speed', missingCount: 204, totalInKind: 218 },
+  { kind: 'equipment', field: 'speed', missingCount: 205, totalInKind: 219 },
   {
     kind: 'equipment',
     field: 'stealthDisadvantage',
-    missingCount: 205,
-    totalInKind: 218,
+    missingCount: 206,
+    totalInKind: 219,
   },
   {
     kind: 'equipment',
     field: 'strengthRequirement',
-    missingCount: 215,
-    totalInKind: 218,
+    missingCount: 216,
+    totalInKind: 219,
   },
   {
     kind: 'equipment',
     field: 'useProfile',
-    missingCount: 183,
-    totalInKind: 218,
+    missingCount: 184,
+    totalInKind: 219,
   },
   // eshyra-erf5.3.1: only the 37 weapon records carry weaponCategory/Range.
   {
     kind: 'equipment',
     field: 'weaponCategory',
-    missingCount: 181,
-    totalInKind: 218,
+    missingCount: 182,
+    totalInKind: 219,
   },
   {
     kind: 'equipment',
     field: 'weaponProperties',
-    missingCount: 181,
-    totalInKind: 218,
+    missingCount: 182,
+    totalInKind: 219,
   },
   {
     kind: 'equipment',
     field: 'weaponRange',
-    missingCount: 181,
-    totalInKind: 218,
+    missingCount: 182,
+    totalInKind: 219,
   },
-  { kind: 'equipment', field: 'weight', missingCount: 44, totalInKind: 218 },
+  { kind: 'equipment', field: 'weight', missingCount: 45, totalInKind: 219 },
   // Playable choice modeling (eshyra-o9bd.9): granted class features that confer
   // a creation/level-up build choice carry structured `data.choices` (subclass
   // selection, spell/cantrip picks, ASI-vs-feat, Fighting Style, Metamagic,
@@ -3763,18 +3766,37 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         }
       }
       // The reviewed SRD 5.1 baseline (loreweaver-3n6 + loreweaver-4zu):
-      // 13 armor, 37 weapons, 35 tools, 112 gear (99 Adventuring Gear + 13
-      // Tack/Harness/Drawn Vehicles), 7 Equipment Packs, 8 mounts, 6 waterborne
-      // vehicles.
+      // 13 armor, 37 weapons, 112 gear (99 Adventuring Gear + 13
+      // Tack/Harness/Drawn Vehicles), 7 Equipment Packs, 8 mounts, 6
+      // waterborne vehicles. Tool membership is not pinned by count: the
+      // importer's source-derived Tools row parity gate (toolsTableRows.ts,
+      // eshyra-o9bd.19.2.2.2) proves it against the printed table.
+      counts.delete('tool');
       expect(Object.fromEntries(counts)).toEqual({
         armor: 13,
         weapon: 37,
-        tool: 35,
         gear: 112,
         pack: 7,
         mount: 8,
         vehicle: 6,
       });
+    });
+
+    // eshyra-o9bd.19.2.2.2: the Tools table (p. 70) prints "Vehicles (land or
+    // water) * *" as its last row, with "* See the “Mounts and Vehicles”
+    // section." beneath the table. The row is emitted without an invented
+    // cost or weight. Full row membership is the importer's source-derived
+    // Tools row parity gate; this pins the exact once-missing row.
+    it('emits the Tools table Vehicles row with its footnote, not a cost', () => {
+      const vehicles = pack.records.find(
+        (r) => r.key === 'equipment:vehicles-land-or-water',
+      );
+      expect(vehicles?.name).toBe('Vehicles (land or water)');
+      expect(vehicles?.data).toEqual({
+        category: 'tool',
+        description: 'See the “Mounts and Vehicles” section.',
+      });
+      expect(vehicles?.provenance.locator).toBe('p. 70');
     });
 
     it('Padded armor matches the SRD armor table (stealth disadvantage + weight)', () => {

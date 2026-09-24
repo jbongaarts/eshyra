@@ -6,7 +6,7 @@
     "packages/core/src/rules/pathfinder2eRemaster.ts"
   ],
   "recordCounts": {
-    "dnd5eSrd": 1813,
+    "dnd5eSrd": 1814,
     "pathfinderFixture": 7
   },
   "rowCount": 1847,
@@ -10524,7 +10524,7 @@
         "armor",
         "pack"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "D&D equipment validator checks the field shape and closed filter contract",
       "deterministicConsumers": "srdStartingEquipmentGrants equipment catalog filters and kind schema",
@@ -10688,7 +10688,7 @@
         "Holy Symbol. A holy symbol is a representation of a god or pantheon. It might be an amulet depicting a symbol representing a deity, the same symbol carefully engraved or inlaid as an emblem on a shield, or a tiny box holding a fragment of a sacred relic. Appendix PH-B \"Fantasy-Historical Pantheons\" lists the symbols commonly associated with many gods in the multiverse. A cleric or paladin can use a holy symbol as a spellcasting focus. To use the symbol in this way, the caster must hold it in hand, wear it visibly, or bear it on a shield.",
         "Antitoxin. A creature that drinks this vial of liquid gains advantage on saving throws against poison for 1 hour. It confers no benefit to undead or constructs."
       ],
-      "population": 109,
+      "population": 110,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; any deterministic core must be represented by a separate named projection",
@@ -12400,7 +12400,7 @@
         "equipment:alchemists-supplies",
         "equipment:amulet"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.key is required by the baseline record validator",
       "deterministicConsumers": "rules-stack `byKey` index and `lookupRulesRecord({ ref })`",
@@ -12420,7 +12420,7 @@
       "representativeValues": [
         "equipment"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.kind is checked against the closed RulesRecordKind union/validator",
       "deterministicConsumers": "RulesRecordKind discriminator and kind-specific schema dispatch",
@@ -12440,7 +12440,7 @@
       "representativeValues": [
         "This work includes material taken from the System Reference Document 5.1 (\"SRD 5.1\") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode."
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -12460,7 +12460,7 @@
       "representativeValues": [
         "open"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -12480,7 +12480,7 @@
       "representativeValues": [
         "Creative Commons Attribution 4.0 International"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -12500,7 +12500,7 @@
       "representativeValues": [
         "Preserve the SRD 5.1 attribution text on redistributed records and derivatives."
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -12520,7 +12520,7 @@
       "representativeValues": [
         "Every record names the SRD page it was extracted from."
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -12540,7 +12540,7 @@
       "representativeValues": [
         "System Reference Document 5.1 at https://dnd.wizards.com/resources/systems-reference-document"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -12564,7 +12564,7 @@
         "Alchemist’s supplies",
         "Amulet"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.name is required by the baseline record validator",
       "deterministicConsumers": "rules-stack `byName` index using `normalizeRulesRecordName`; display identity",
@@ -12588,7 +12588,7 @@
         "pp. 67, 69",
         "pp. 69, 70"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -12608,7 +12608,7 @@
       "representativeValues": [
         "https://dnd.wizards.com/resources/systems-reference-document"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RecordProvenance.sourceRef must match meta.source.sourceUrl or meta.source.sourceIdentity",
       "deterministicConsumers": "validateRulesPack `assertProvenanceMatchesPackSource` cross-field invariant",
@@ -12632,7 +12632,7 @@
         "SRD 5.1 pp. 67, 69",
         "SRD 5.1 pp. 69, 70"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -12652,7 +12652,7 @@
       "representativeValues": [
         "dnd5e-srd"
       ],
-      "population": 218,
+      "population": 219,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.systemId is required by the baseline pack model",
       "deterministicConsumers": "rules-stack system binding and `resolveRulesStack` compatibility",
