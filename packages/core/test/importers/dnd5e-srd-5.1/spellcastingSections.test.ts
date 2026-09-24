@@ -162,6 +162,28 @@ describe('Spellcasting/Pact Magic section parity gate', () => {
     );
   });
 
+  it('fails when a class-sourced feature is granted only by another class', () => {
+    const spellcasting = wizardSpellcasting(['Cantrips', 'Spellbook']);
+    const misowned = featureRecord(
+      'feature:wizard:arcane-recovery',
+      'Arcane Recovery',
+      'class:wizard',
+      [],
+    );
+    const fighter = classRecord('class:fighter', 'Fighter', [
+      'feature:wizard:arcane-recovery',
+    ]);
+    expect(() =>
+      assertSpellcastingSections(
+        [WIZARD, fighter, spellcasting, misowned],
+        SOURCE,
+        { requireComplete: false },
+      ),
+    ).toThrow(
+      /feature:wizard:arcane-recovery: class-sourced feature is not referenced/,
+    );
+  });
+
   it('passes a class-sourced feature reached only through featureImprovement', () => {
     const improved = classRecord('class:wizard', 'Wizard', []);
     const withImprovement: RulesRecord = {

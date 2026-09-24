@@ -761,24 +761,12 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // feature (its per-option prerequisites/text are already structured via
   // `choices`, unaffected — see srdGeneratedPack.test.ts's "eldritch
   // invocations option list stays a separate optionCatalog" describe).
-  // 49 -> 44, 184 -> 179 (eshyra-o9bd.19.2.2.4): removing the 5
-  // parser-artifact records drops the missing count by 1 (only
-  // feature:wizard:cantrips had no `mechanics`; the other 4 removed records
-  // DID have one). Separately — and this is the larger effect —
-  // feature:{cleric,druid,sorcerer,wizard}:spellcasting each go from no
-  // `mechanics` to a `resources: [{ reset: 'long-rest' }]` fact, a genuine
-  // fix: their OLD merged description (via the now-deleted
-  // canonicalizeSpellcastingFeatureDescriptions copy-back) was assembled
-  // AFTER mechanics derivation ran, so `deriveFeatureMechanics` only ever
-  // saw the un-merged, Cantrips-less intro text and silently missed the
-  // "You regain all expended spell slots when you finish a long rest."
-  // sentence living in the Preparing-and-Casting-Spells subsection.
-  // `buildFeatureData` now derives mechanics from the SAME reconstructed
-  // full body (`description` + `sections`) `bard`/`paladin`/`ranger`/
-  // `warlock`'s spellcasting always used — which already carried this exact
-  // `resources` fact — so those 4 now correctly carry it too: -4 more.
-  // Total: 49 - 1 - 4 = 44.
-  { kind: 'feature', field: 'mechanics', missingCount: 44, totalInKind: 179 },
+  // 49 -> 48, 184 -> 179 (eshyra-o9bd.19.2.2.4): the 5 retired
+  // parser-artifact records go; only feature:wizard:cantrips of them lacked
+  // `mechanics`. The 8 Spellcasting/Pact Magic records keep exactly the
+  // mechanics they had (see the mechanics-stability test in the "class
+  // Spellcasting/Pact Magic sections" describe).
+  { kind: 'feature', field: 'mechanics', missingCount: 48, totalInKind: 179 },
   // eshyra-o9bd.19.2.1.3.1: the end-of-chapter option-list section a feature
   // body points to, kept apart from `description` as one verbatim span. Only
   // feature:warlock:eldritch-invocations has one in SRD 5.1 (Cleric's Destroy
@@ -2756,6 +2744,34 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       'feature:wizard:cantrips',
       'feature:wizard:spellbook',
     ];
+
+    // Splitting the body into sections must not create or drop a typed
+    // mechanics claim. The long-rest `resources` projection the retired
+    // artifact records carried is not re-homed: whether a spell-slot rest
+    // clause is a resource reset is opus:F-05, owned by eshyra-o9bd.19.3.2.
+    it("keeps every Spellcasting/Pact Magic record's mechanics unchanged", () => {
+      const LONG_REST = { resources: [{ reset: 'long-rest' }] };
+      const expected: Readonly<Record<string, unknown>> = {
+        'feature:bard:spellcasting': LONG_REST,
+        'feature:cleric:spellcasting': undefined,
+        'feature:druid:spellcasting': undefined,
+        'feature:paladin:spellcasting': LONG_REST,
+        'feature:ranger:spellcasting': LONG_REST,
+        'feature:sorcerer:spellcasting': undefined,
+        'feature:warlock:pact-magic': {
+          resources: [{ reset: 'short-or-long-rest' }],
+        },
+        'feature:wizard:spellcasting': undefined,
+      };
+      for (const [key, mechanics] of Object.entries(expected)) {
+        expect(byKey.has(key), key).toBe(true);
+        expect(
+          (byKey.get(key)?.data as { mechanics?: unknown } | undefined)
+            ?.mechanics,
+          key,
+        ).toEqual(mechanics);
+      }
+    });
 
     it('the 5 retired parser-artifact keys are absent from the committed pack', () => {
       for (const key of RETIRED_KEYS) {

@@ -230,9 +230,12 @@ export function auditSpellcastingSections(
   }
 
   // Part (b): every class-sourced feature record must be named by a
-  // featureGrant or featureImprovement somewhere in its class's progression.
-  const referenced = new Set<string>();
+  // featureGrant or featureImprovement in ITS OWN class's progression — a
+  // reference from another class's table does not anchor it.
+  const referencedByClass = new Map<string, Set<string>>();
   for (const cls of classRecords) {
+    const referenced = new Set<string>();
+    referencedByClass.set(cls.key, referenced);
     const progression = (cls.data as { progression?: unknown } | null)
       ?.progression;
     if (!Array.isArray(progression)) continue;
@@ -260,9 +263,8 @@ export function auditSpellcastingSections(
     .filter((record) => {
       if (record.kind !== 'feature') return false;
       const source = featureSource(record);
-      return (
-        source?.startsWith('class:') === true && !referenced.has(record.key)
-      );
+      if (source?.startsWith('class:') !== true) return false;
+      return referencedByClass.get(source)?.has(record.key) !== true;
     })
     .map((record) => record.key)
     .sort();

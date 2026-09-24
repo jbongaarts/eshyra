@@ -5,7 +5,9 @@ import type {
   RulesRecord,
 } from '../src/internal.js';
 import {
+  getBundledDnd5eSrdPack,
   lookupRulesRecord,
+  RETIRED_RECORD_KEY_ALIASES,
   RulesPackError,
   resolveRulesStack,
 } from '../src/internal.js';
@@ -411,6 +413,62 @@ describe('rules stack resolution', () => {
       expect(
         lookupRulesRecord(stack, { kind: 'equipment', name }),
       ).toMatchObject({ ok: true, record: { key: `equipment:long-${index}` } });
+    }
+  });
+});
+
+// eshyra-o9bd.19.2.2.4: the SRD feature parser used to promote printed
+// Spellcasting subheadings to their own records. Those keys are retired, but
+// existing references must still resolve, and the subheading names must still
+// find their owning record.
+describe('retired feature keys and Spellcasting section names (bundled SRD)', () => {
+  const pack = getBundledDnd5eSrdPack();
+  const stack = resolveRulesStack({ base: pack, addons: [] });
+  const keys = new Set(pack.records.map((r) => r.key));
+
+  it('resolves every retired key by ref to its canonical record', () => {
+    expect([...RETIRED_RECORD_KEY_ALIASES.keys()].sort()).toEqual([
+      'feature:cleric:cantrips',
+      'feature:druid:cantrips',
+      'feature:sorcerer:cantrips',
+      'feature:wizard:cantrips',
+      'feature:wizard:spellbook',
+    ]);
+    for (const [retired, canonical] of RETIRED_RECORD_KEY_ALIASES) {
+      expect(keys.has(retired), retired).toBe(false);
+      expect(
+        lookupRulesRecord(stack, { kind: 'feature', ref: retired }),
+        retired,
+      ).toMatchObject({ ok: true, record: { key: canonical } });
+    }
+  });
+
+  it('finds every printed section name, ambiguous exactly when several records print it', () => {
+    const owners = new Map<string, string[]>();
+    for (const record of pack.records) {
+      if (record.kind !== 'feature') continue;
+      const sections = (record.data as { sections?: { name: string }[] })
+        .sections;
+      for (const { name } of sections ?? []) {
+        owners.set(name, [...(owners.get(name) ?? []), record.key]);
+      }
+    }
+    expect(owners.get('Cantrips')).toHaveLength(6);
+    expect(owners.get('Spellbook')).toEqual(['feature:wizard:spellcasting']);
+    for (const [name, sectionOwners] of owners) {
+      const result = lookupRulesRecord(stack, { kind: 'feature', name });
+      if (sectionOwners.length === 1) {
+        expect(result, name).toMatchObject({
+          ok: true,
+          record: { key: sectionOwners[0] },
+        });
+      } else {
+        expect(result, name).toMatchObject({
+          ok: false,
+          code: 'ambiguous',
+          candidateKeys: [...sectionOwners].sort(),
+        });
+      }
     }
   });
 });

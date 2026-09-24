@@ -15043,7 +15043,7 @@
         "short-or-long-rest",
         "short-rest"
       ],
-      "population": 39,
+      "population": 35,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",

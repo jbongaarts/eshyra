@@ -78174,13 +78174,6 @@
           "text": "You can use a holy symbol (see “Equipment”) as a spellcasting focus for your cleric spells."
         }
       ],
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "long-rest"
-          }
-        ]
-      },
       "choices": [
         {
           "id": "cantrips",
@@ -78860,13 +78853,6 @@
           "text": "You can use a druidic focus (see “Equipment”) as a spellcasting focus for your druid spells."
         }
       ],
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "long-rest"
-          }
-        ]
-      },
       "choices": [
         {
           "id": "cantrips",
@@ -83694,13 +83680,6 @@
           "text": "You can use an arcane focus as a spellcasting focus for your sorcerer spells."
         }
       ],
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "long-rest"
-          }
-        ]
-      },
       "choices": [
         {
           "id": "cantrips",
@@ -85533,13 +85512,6 @@
           "text": "Each time you gain a wizard level, you can add two wizard spells of your choice to your spellbook for free. Each of these spells must be of a level for which you have spell slots, as shown on the Wizard table. On your adventures, you might find other spells that you can add to your spellbook (see the “Your Spellbook” sidebar)."
         }
       ],
-      "mechanics": {
-        "resources": [
-          {
-            "reset": "long-rest"
-          }
-        ]
-      },
       "choices": [
         {
           "id": "cantrips",

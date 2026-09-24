@@ -1191,6 +1191,7 @@ export type {
 } from './rules/lookup.js';
 export {
   lookupRulesRecord,
+  RETIRED_RECORD_KEY_ALIASES,
   RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP,
 } from './rules/lookup.js';
 export type {
