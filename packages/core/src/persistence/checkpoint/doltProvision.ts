@@ -7,6 +7,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -183,34 +184,41 @@ export async function provisionDolt(
     opts.version ?? DOLT_PINNED_VERSION,
   );
 
+  // Scratch dir for the download + extraction. Never left behind: removed in
+  // `finally` below regardless of success or failure (eshyra-knh9 — this used
+  // to be an unconditional leak, on every call, success or not).
   const work = mkdtempSync(join(tmpdir(), 'lw-dolt-dl-'));
-  const archivePath = join(work, asset);
-  await (opts.download ?? defaultDownload)(url, archivePath);
-
-  verifyArchive(archivePath, sha256);
-
-  const exdir = join(work, 'x');
-  mkdirSync(exdir, { recursive: true });
-  (opts.extract ?? defaultExtract)(archivePath, exdir);
-
-  const binName = platform === 'win32' ? 'dolt.exe' : 'dolt';
-  const found = findBinary(exdir, binName);
-  if (!found) {
-    throw new DoltUnavailableError(
-      `extracted dolt archive did not contain ${binName}`,
-    );
-  }
-
-  const targetDir = managedDoltDir(env);
-  mkdirSync(targetDir, { recursive: true });
-  const finalPath = join(targetDir, binName);
-  copyFileSync(found, finalPath);
   try {
-    chmodSync(finalPath, 0o755);
-  } catch {
-    /* no-op on Windows / restricted FS */
+    const archivePath = join(work, asset);
+    await (opts.download ?? defaultDownload)(url, archivePath);
+
+    verifyArchive(archivePath, sha256);
+
+    const exdir = join(work, 'x');
+    mkdirSync(exdir, { recursive: true });
+    (opts.extract ?? defaultExtract)(archivePath, exdir);
+
+    const binName = platform === 'win32' ? 'dolt.exe' : 'dolt';
+    const found = findBinary(exdir, binName);
+    if (!found) {
+      throw new DoltUnavailableError(
+        `extracted dolt archive did not contain ${binName}`,
+      );
+    }
+
+    const targetDir = managedDoltDir(env);
+    mkdirSync(targetDir, { recursive: true });
+    const finalPath = join(targetDir, binName);
+    copyFileSync(found, finalPath);
+    try {
+      chmodSync(finalPath, 0o755);
+    } catch {
+      /* no-op on Windows / restricted FS */
+    }
+    return finalPath;
+  } finally {
+    rmSync(work, { recursive: true, force: true });
   }
-  return finalPath;
 }
 
 export type DoltInstallReason = 'not-found' | 'explicit-path-missing';

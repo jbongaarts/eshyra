@@ -100,7 +100,19 @@ function formatCounts(counts: Readonly<Record<string, number>>): string {
     .join(', ');
 }
 
-async function main(): Promise<void> {
+/**
+ * Returns the process exit code rather than calling `process.exit()`
+ * directly. `process.exit()` does not unwind the call stack — it terminates
+ * synchronously in place, so every `process.exit()` call that used to live
+ * inside this function's `try` skipped the `finally { rmSync(tmpDir, ...) }`
+ * below it entirely, on every single invocation including the success path.
+ * That was the actual root cause of the leaked `verify-dnd5e-srd-pack-*`
+ * directories (eshyra-knh9): the `finally` block was unreachable dead code.
+ * Returning a plain number lets `finally` run normally, and the module-level
+ * caller below calls `process.exit()` only after `main()` has fully resolved
+ * (and thus after cleanup has already happened).
+ */
+async function main(): Promise<number> {
   const tmpDir = mkdtempSync(join(tmpdir(), 'verify-dnd5e-srd-pack-'));
   try {
     console.log(`Vendored PDF: ${VENDORED_PDF}`);
@@ -135,7 +147,7 @@ async function main(): Promise<void> {
       });
     } catch (cause) {
       console.error(`importer failed: ${(cause as Error).message}`);
-      process.exit(2);
+      return 2;
     }
 
     console.log(`Source PDF SHA-256: ${result.sourceHash}`);
@@ -152,7 +164,7 @@ async function main(): Promise<void> {
       } else {
         console.error(`failed to load pack: ${(cause as Error).message}`);
       }
-      process.exit(2);
+      return 2;
     }
 
     const regeneratedKindCounts = countByField(
@@ -178,7 +190,7 @@ async function main(): Promise<void> {
       console.log(
         'verify:dnd5e-srd-pack: committed pack differs from importer output.',
       );
-      process.exit(1);
+      return 1;
     }
 
     // Source-coverage artifacts (eshyra-4a7.1) + the field-provenance
@@ -214,7 +226,7 @@ async function main(): Promise<void> {
         console.error(
           `committed ${artifact} could not be read: ${(cause as Error).message}`,
         );
-        process.exit(2);
+        return 2;
       }
       const regeneratedText = readFileSync(join(tmpDir, artifact), 'utf8');
       if (committedText === regeneratedText) {
@@ -231,20 +243,23 @@ async function main(): Promise<void> {
       console.log(
         'verify:dnd5e-srd-pack: committed source-coverage artifacts differ from importer output.',
       );
-      process.exit(1);
+      return 1;
     }
 
     console.log('');
     console.log(
       'verify:dnd5e-srd-pack: committed pack matches importer output exactly.',
     );
-    process.exit(0);
+    return 0;
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(2);
-});
+main().then(
+  (code) => process.exit(code),
+  (err) => {
+    console.error(err);
+    process.exit(2);
+  },
+);

@@ -42,7 +42,15 @@ const VENDORED_PDF = resolve(
   'packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf',
 );
 
-async function main(): Promise<void> {
+/**
+ * Returns the process exit code rather than calling `process.exit()`
+ * directly, so the surrounding `finally { rmSync(tmpDir, ...) }` actually
+ * runs: `process.exit()` terminates in place without unwinding the call
+ * stack, so every in-`try` `process.exit()` call here used to skip its own
+ * cleanup, on every invocation including the success path (eshyra-knh9 — the
+ * same root cause fixed in verify-dnd5e-srd-pack/cli.ts).
+ */
+async function main(): Promise<number> {
   const tmpDir = mkdtempSync(join(tmpdir(), 'gen-dnd5e-srd-creature-names-'));
   try {
     console.log(`Vendored PDF: ${VENDORED_PDF}`);
@@ -56,7 +64,7 @@ async function main(): Promise<void> {
       result = await runImporter({ pdfPath: VENDORED_PDF, outDir: tmpDir });
     } catch (cause) {
       console.error(`importer failed: ${(cause as Error).message}`);
-      process.exit(1);
+      return 1;
     }
 
     let pack: ReturnType<typeof loadRulesPackFromDirectory>;
@@ -66,7 +74,7 @@ async function main(): Promise<void> {
       console.error(
         `failed to load candidate pack: ${(cause as Error).message}`,
       );
-      process.exit(1);
+      return 1;
     }
 
     const names = pack.records
@@ -87,13 +95,16 @@ async function main(): Promise<void> {
       console.log(`  ${JSON.stringify(name)},`);
     }
     console.log('];');
-    process.exit(0);
+    return 0;
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().then(
+  (code) => process.exit(code),
+  (err) => {
+    console.error(err);
+    process.exit(1);
+  },
+);

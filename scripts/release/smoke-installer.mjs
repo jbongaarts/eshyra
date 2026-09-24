@@ -39,9 +39,15 @@ const installScript = join(root, 'scripts', 'release', 'install.sh');
 // with that same edition so the file:// asset name matches.
 const EDITION = DEFAULT_EDITION;
 
+// Throws rather than calling `process.exit()`: `fail()` is called from
+// inside the `try` block below whose `finally` removes `scratch`.
+// `process.exit()` does not unwind the call stack, so it used to skip that
+// cleanup on every failure (eshyra-knh9). A thrown error still unwinds
+// through `finally` normally, and an uncaught synchronous throw makes Node
+// exit 1 by default — the same exit code this used to set explicitly.
 function fail(msg) {
   console.error(`\nSMOKE FAILED: ${msg}\n`);
-  process.exit(1);
+  throw new Error(msg);
 }
 
 if (process.platform === 'win32') {

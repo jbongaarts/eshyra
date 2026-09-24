@@ -1,5 +1,21 @@
 import { availableParallelism } from 'node:os';
 import { defineConfig } from 'vitest/config';
+import { installPerRunTempRoot } from './scripts/vitestTempRoot.mjs';
+
+/**
+ * Per-run temp root (bead eshyra-knh9 / eshyra-knh9.1).
+ *
+ * Must run here, at config module-evaluation time, before `defineConfig()`
+ * is even called — not in a `globalSetup` hook. Vitest computes its own
+ * internal SSR module-cache directories as class-field initializers when it
+ * constructs its `Vitest`/`TestProject` objects, which happens before any
+ * `globalSetup` file gets a chance to run. Redirecting `process.env.TMPDIR`
+ * here, before that construction, is what actually lands vitest's own
+ * caches — and every worker's and spawned child's temp dirs — inside a
+ * single directory this process removes on exit. See the rationale and the
+ * empirical verification in scripts/vitestTempRoot.mjs.
+ */
+installPerRunTempRoot();
 
 /**
  * Worker cap (bead eshyra-9l5s.2).
