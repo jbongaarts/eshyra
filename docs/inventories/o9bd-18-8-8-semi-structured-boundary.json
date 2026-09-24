@@ -6,13 +6,13 @@
     "packages/core/src/rules/pathfinder2eRemaster.ts"
   ],
   "recordCounts": {
-    "dnd5eSrd": 1814,
+    "dnd5eSrd": 1809,
     "pathfinderFixture": 7
   },
-  "rowCount": 1847,
+  "rowCount": 1849,
   "dispositionCounts": {
     "complete": 427,
-    "model-adjudicated": 1218,
+    "model-adjudicated": 1220,
     "not-mechanical": 193,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -13613,7 +13613,7 @@
         "Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.",
         "Starting at 5th level, your speed increases by 10 feet while you aren’t wearing heavy armor."
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; any deterministic core must be represented by a separate named projection",
@@ -15043,7 +15043,7 @@
         "short-or-long-rest",
         "short-rest"
       ],
-      "population": 39,
+      "population": 35,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -15142,6 +15142,54 @@
       "recordKinds": [
         "feature"
       ],
+      "fieldPath": "data.sections[].name",
+      "representativeValues": [
+        "Cantrips",
+        "Spell Slots",
+        "Spells Known of 1st Level and Higher",
+        "Spellcasting Ability",
+        "Ritual Casting"
+      ],
+      "population": 39,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.sections[].name",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
+      "fieldPath": "data.sections[].text",
+      "representativeValues": [
+        "You know two cantrips of your choice from the bard spell list. You learn additional bard cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Bard table.",
+        "The Bard table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest. For example, if you know the 1st-level spell cure wounds and have a 1st-level and a 2nd-level spell slot available, you can cast cure wounds using either slot.",
+        "You know four 1st-level spells of your choice from the bard spell list. The Spells Known column of the Bard table shows when you learn more bard spells of your choice. Each of these spells must be of a level for which you have spell slots, as shown on the table. For instance, when you reach 3rd level in this class, you can learn one new spell of 1st or 2nd level. Additionally, when you gain a level in this class, you can choose one of the bard spells you know and replace it with another spell from the bard spell list, which also must be of a level for which you have spell slots.",
+        "Charisma is your spellcasting ability for your bard spells. Your magic comes from the heart and soul you pour into the performance of your music or oration. You use your Charisma whenever a spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for a bard spell you cast and when making an attack roll with one. Spell save DC = 8 + your proficiency bonus + your Charisma modifier Spell attack modifier = your proficiency bonus + your Charisma modifier",
+        "You can cast any bard spell you know as a ritual if that spell has the ritual tag."
+      ],
+      "population": 39,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "source coverage retains the clause; readiness does not count it as deterministic support",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "feature"
+      ],
       "fieldPath": "data.source",
       "representativeValues": [
         "class:barbarian",
@@ -15150,7 +15198,7 @@
         "subclass:circle-of-the-land",
         "class:cleric"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
@@ -15197,7 +15245,7 @@
         "feature:barbarian:extra-attack",
         "feature:barbarian:fast-movement"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.key is required by the baseline record validator",
       "deterministicConsumers": "rules-stack `byKey` index and `lookupRulesRecord({ ref })`",
@@ -15217,7 +15265,7 @@
       "representativeValues": [
         "feature"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.kind is checked against the closed RulesRecordKind union/validator",
       "deterministicConsumers": "RulesRecordKind discriminator and kind-specific schema dispatch",
@@ -15237,7 +15285,7 @@
       "representativeValues": [
         "This work includes material taken from the System Reference Document 5.1 (\"SRD 5.1\") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode."
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -15257,7 +15305,7 @@
       "representativeValues": [
         "open"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -15277,7 +15325,7 @@
       "representativeValues": [
         "Creative Commons Attribution 4.0 International"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -15297,7 +15345,7 @@
       "representativeValues": [
         "Preserve the SRD 5.1 attribution text on redistributed records and derivatives."
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -15317,7 +15365,7 @@
       "representativeValues": [
         "Every record names the SRD page it was extracted from."
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -15337,7 +15385,7 @@
       "representativeValues": [
         "System Reference Document 5.1 at https://dnd.wizards.com/resources/systems-reference-document"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -15361,7 +15409,7 @@
         "Extra Attack",
         "Fast Movement"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.name is required by the baseline record validator",
       "deterministicConsumers": "rules-stack `byName` index using `normalizeRulesRecordName`; display identity",
@@ -15385,7 +15433,7 @@
         "p. 12",
         "pp. 11, 12"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -15405,7 +15453,7 @@
       "representativeValues": [
         "https://dnd.wizards.com/resources/systems-reference-document"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RecordProvenance.sourceRef must match meta.source.sourceUrl or meta.source.sourceIdentity",
       "deterministicConsumers": "validateRulesPack `assertProvenanceMatchesPackSource` cross-field invariant",
@@ -15429,7 +15477,7 @@
         "SRD 5.1 p. 12",
         "SRD 5.1 pp. 11, 12"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -15449,7 +15497,7 @@
       "representativeValues": [
         "dnd5e-srd"
       ],
-      "population": 184,
+      "population": 179,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.systemId is required by the baseline pack model",
       "deterministicConsumers": "rules-stack system binding and `resolveRulesStack` compatibility",

@@ -139,6 +139,31 @@ export function isCalloutBoxHeading(height: number | undefined): boolean {
   );
 }
 
+// A class-grantor feature's own printed 12pt subheadings ("Cantrips", "Spell
+// Slots", "Spellcasting Ability", …, all measured at h≈12.0) sit in the same
+// band as a subclass-granted feature heading (FEATURE_LEAF_MIN_H) but below
+// the 13.9 sub-subsection/class-feature-heading tier a repeat of the owning
+// "Spellcasting"/"Pact Magic" heading (or the NEXT class feature, e.g. Divine
+// Domain) would render at. Capping below that tier is what lets
+// `parseFeatures` tell "one more subheading inside this body" apart from "the
+// body has ended" using height alone, with no heading-text allowlist
+// (eshyra-o9bd.19.2.2.4).
+const FEATURE_HEADING_MIN_H = 13.5;
+
+/**
+ * Is `height` a class-grantor feature's own printed subheading tier (h≈12.0),
+ * as opposed to body prose, a callout box, or a sub-subsection/feature
+ * heading? Only meaningful once `hasHeadingTiers` confirms the slice carries
+ * the SRD's real multi-tier font structure, like `isCalloutBoxHeading`.
+ */
+export function isFeatureSubheading(height: number | undefined): boolean {
+  return (
+    height !== undefined &&
+    height >= FEATURE_LEAF_MIN_H &&
+    height < FEATURE_HEADING_MIN_H
+  );
+}
+
 /**
  * Does this slice carry the SRD's genuine multi-tier font structure — more than
  * one distinct line height AND at least one real heading-tier line (a

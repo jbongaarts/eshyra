@@ -1266,7 +1266,10 @@ export const ACCEPTED_PROSE_RECORD_KEYS: Readonly<
     'feature:rogue:thieves-cant',
     'feature:school-of-evocation:evocation-savant',
     'feature:thief:use-magic-device',
-    'feature:wizard:cantrips',
+    // feature:wizard:cantrips removed (eshyra-o9bd.19.2.2.4): the record is
+    // retired — its text is now the "Cantrips" entry of
+    // feature:wizard:spellcasting's `data.sections`, not a standalone
+    // record this bundle needs to classify.
   ],
 });
 

@@ -273,8 +273,10 @@ describe('targeted creation/level-up choice cases (eshyra-o9bd.12)', () => {
     const wizard = resolver.resolveClass('class:wizard');
     expect(wizard.ok && wizard.record.spellcastingAbility).toBe('intelligence');
     // eshyra-vk23.2: cantrips + formula-driven daily preparation hang off the
-    // Spellcasting feature; the 6-spell starting spellbook (and its growth)
-    // moved to the Spellbook feature where the SRD prose lives.
+    // Spellcasting feature. eshyra-o9bd.19.2.2.4 D6: the 6-spell starting
+    // spellbook (and its growth) moved onto that SAME Spellcasting feature —
+    // "Spellbook" is now one of its printed `data.sections`, not a separate
+    // feature record.
     const castingChoices =
       (
         featureByKey.get('feature:wizard:spellcasting')?.data as {
@@ -285,16 +287,8 @@ describe('targeted creation/level-up choice cases (eshyra-o9bd.12)', () => {
     expect(castingById.get('cantrips')?.choose).toBe(3); // 3 starting cantrips
     expect(castingById.get('prepared-spells')?.category).toBe('spell');
     expect(castingById.get('prepared-spells')?.choose).toBeUndefined();
-
-    const spellbookChoices =
-      (
-        featureByKey.get('feature:wizard:spellbook')?.data as {
-          choices?: { id: string; choose?: number }[];
-        }
-      )?.choices ?? [];
-    const spellbookById = new Map(spellbookChoices.map((c) => [c.id, c]));
-    expect(spellbookById.get('spellbook-initial')?.choose).toBe(6); // 6-spell start
-    expect(spellbookById.get('spellbook-growth')?.choose).toBe(2); // +2 per level
+    expect(castingById.get('spellbook-initial')?.choose).toBe(6); // 6-spell start
+    expect(castingById.get('spellbook-growth')?.choose).toBe(2); // +2 per level
   });
 
   it('Cleric/Druid are prepared casters: cantrips known, no fixed spells-known', () => {

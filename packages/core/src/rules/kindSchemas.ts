@@ -4953,6 +4953,11 @@ function validateDnd5eFeature(record: RulesRecord, path: string): void {
   reqStr(data, 'description', `${path}.data`);
   reqStr(data, 'source', `${path}.data`);
   reqInt(data, 'level', `${path}.data`, 1);
+  // Optional printed subheadings inside a class-grantor Spellcasting/Pact
+  // Magic feature's body ("Cantrips", "Spellcasting Ability", …), each a
+  // verbatim `{ name, text }` span (eshyra-o9bd.19.2.2.4). Mirrors the
+  // subclass `data.sections` shape.
+  optNamedEntryArray(data, 'sections', `${path}.data`);
   // Optional end-of-chapter option-list section the feature body points to,
   // printed apart from `description` (eshyra-o9bd.19.2.1.3.1): a second
   // repeat of the feature's heading at a source location that is not a

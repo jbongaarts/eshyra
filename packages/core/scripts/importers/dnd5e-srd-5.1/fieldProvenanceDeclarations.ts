@@ -768,6 +768,7 @@ prose(
   '/description',
   'the feature description prose, quoted verbatim.',
 );
+namedEntry('feature', '/sections', { mechanics: false });
 prose(
   'feature',
   '/optionCatalog',

@@ -75,6 +75,7 @@ import {
   deriveSpellMechanics,
   type SpellGrantResolver,
 } from './mechanicsProjections.js';
+import { reconstructFeatureText } from './parseFeatures.js';
 import { DND5E_RECORD_RELATIONSHIP_DECLARATIONS } from './recordRelationshipDeclarations.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 import type { SourceCoverageReport } from './sourceInventoryCoverage.js';
@@ -802,12 +803,49 @@ export function subclassExtractionsToRecords(
  * granting class (`class:<slug>`) or subclass (`subclass:<slug>`) record (ADR
  * 0009 data-side linkage, never `overrides`). Field insertion order is fixed
  * for byte-stable output and matches the `dnd5e-srd` feature kindSchema
- * (`validateDnd5eFeature`: source, level, description, optional optionCatalog,
- * optional mechanics, optional choices). `optionCatalog` — present only when
- * the feature's heading repeats at a separately printed end-of-chapter
- * option-list section (eshyra-o9bd.19.2.1.3.1) — is placed right after
- * `description` since it is the same kind of source-prose field.
+ * (`validateDnd5eFeature`: source, level, description, optional sections,
+ * optional optionCatalog, optional mechanics, optional choices). `sections` —
+ * present only on a class-grantor Spellcasting/Pact Magic feature whose body
+ * prints its own subheadings (eshyra-o9bd.19.2.2.4) — sits right after
+ * `description` since together they hold the full source-prose body.
+ * `optionCatalog` — present only when the feature's heading repeats at a
+ * separately printed end-of-chapter option-list section
+ * (eshyra-o9bd.19.2.1.3.1) — follows for the same reason. `mechanics` is
+ * derived from the FULL reconstructed body (`description` + `sections`), not
+ * from `description` alone, so splitting a subsection out of `description`
+ * never drops or changes a mechanics fact that lived in its text (design
+ * decision D4).
  */
+/**
+ * Class Spellcasting features whose `mechanics.resources` rest-reset
+ * projection is withheld to keep their typed mechanics identical to what they
+ * carried before eshyra-o9bd.19.2.2.4. Their printed spell-slot text ("You
+ * regain all expended spell slots when you finish a long rest") used to be
+ * parsed into the retired `feature:<class>:cantrips` / `feature:wizard:
+ * spellbook` artifact records, which carried the keyword-derived
+ * `resources: [{ reset: 'long-rest' }]` projection; the owners never did. The
+ * owning design (decision 5) retires that projection with the artifact records
+ * rather than re-homing it: whether a spell-slot rest clause is a resource
+ * reset at all is opus:F-05, owned by eshyra-o9bd.19.3.2. Staged: that bead
+ * decides the projection for all 8 caster records uniformly and removes this
+ * list.
+ */
+const RESOURCE_PROJECTION_WITHHELD_PENDING_F05: ReadonlySet<string> = new Set([
+  'feature:cleric:spellcasting',
+  'feature:druid:spellcasting',
+  'feature:sorcerer:spellcasting',
+  'feature:wizard:spellcasting',
+]);
+
+function withheldResources(
+  key: string,
+  mechanics: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!RESOURCE_PROJECTION_WITHHELD_PENDING_F05.has(key)) return mechanics;
+  const { resources: _withheld, ...rest } = mechanics;
+  return rest;
+}
+
 function buildFeatureData(
   feature: FeatureExtraction,
   resolveSpellGrant?: SpellGrantResolver,
@@ -816,14 +854,20 @@ function buildFeatureData(
     feature.grantorKind === 'class'
       ? classKey(feature.grantorName)
       : subclassKey(feature.grantorName);
-  const mechanics = deriveFeatureMechanics(
-    feature.description,
-    resolveSpellGrant,
+  const mechanics = withheldResources(
+    `feature:${slug(feature.grantorName)}:${slug(feature.name)}`,
+    deriveFeatureMechanics(
+      reconstructFeatureText(feature.description, feature.sections),
+      resolveSpellGrant,
+    ),
   );
   return {
     source,
     level: feature.level,
     description: feature.description,
+    ...(feature.sections !== undefined
+      ? { sections: feature.sections.map((s) => ({ ...s })) }
+      : {}),
     ...(feature.optionCatalog !== undefined
       ? { optionCatalog: feature.optionCatalog }
       : {}),

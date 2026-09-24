@@ -349,7 +349,13 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
     expect(prepared.choose).toBeUndefined();
   });
 
-  it('models the Wizard spellbook as starting contents plus per-level growth', () => {
+  it('models the Wizard spellbook as starting contents plus per-level growth, appended on :spellcasting after cantrips/prepared-spells', () => {
+    // eshyra-o9bd.19.2.2.4 D6: the SRD prints "Spellbook" as a subheading of
+    // the Wizard's Spellcasting feature, not a separate class-table grant, so
+    // the retired `feature:wizard:spellbook` parser-artifact record no
+    // longer exists — the spellbook choices ride on `feature:wizard:
+    // spellcasting` itself, appended after its own cantrips/prepared-spells
+    // choices.
     const out = deriveFeatureChoices({
       classRecords: [
         casterClass('class:wizard', 'Wizard', {
@@ -367,26 +373,28 @@ describe('deriveFeatureChoices — spell/cantrip selection (eshyra-o9bd.9.3)', (
       ],
       subclassRecords: [],
       featureRecords: [
-        rec('feature', 'feature:wizard:spellbook', 'Spellbook', {
+        rec('feature', 'feature:wizard:spellcasting', 'Spellcasting', {
           source: 'class:wizard',
           level: 1,
-          description:
-            'a spellbook containing six 1st-level wizard spells of your choice',
+          description: 'As a student of arcane magic, you have a spellbook.',
         }),
       ],
     });
-    const choices = featureChoices(out, 'feature:wizard:spellbook');
+    const choices = featureChoices(out, 'feature:wizard:spellcasting');
     expect(choices.map((c) => c.id)).toEqual([
+      'cantrips',
+      'prepared-spells',
       'spellbook-initial',
       'spellbook-growth',
     ]);
-    expect(choices[0]).toMatchObject({ category: 'spell', choose: 6 });
-    expect((choices[0] as Record<string, unknown>).from).toMatchObject({
+    const spellbookInitial = choices[2];
+    expect(spellbookInitial).toMatchObject({ category: 'spell', choose: 6 });
+    expect((spellbookInitial as Record<string, unknown>).from).toMatchObject({
       kind: 'spellFilter',
       classLists: ['class:wizard'],
       spellLevels: [1],
     });
-    expect(choices[1]).toMatchObject({
+    expect(choices[3]).toMatchObject({
       category: 'spell',
       choose: 2,
       trigger: 'level-up',
