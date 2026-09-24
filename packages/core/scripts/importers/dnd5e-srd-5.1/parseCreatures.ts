@@ -485,8 +485,17 @@ export function parseAbilityScores(
 // and body text. The apostrophes (ASCII U+0027 and curly U+2019) let names like
 // "Devil's Sight" match; the parenthetical is captured loosely so its digits and
 // punctuation do not break the name.
+//
+// The body is optional: a lead-in whose ENTIRE body wraps to the next printed
+// line ("Hand Crossbow (Humanoid or Hybrid Form Only)." then "Ranged Weapon
+// Attack: …" — Wererat, p. 328; "Animate Chains (Recharges after a Short or
+// Long Rest)." — Chain Devil, p. 275) is still an entry lead-in. Requiring
+// same-line body text silently merged such an entry into the one before it
+// (eshyra-o9bd.19.2.2.1, audit opus:F-30). Only the entry segmenter accepts a
+// label-only match (see `matchEntryLabel`'s `allowLabelOnly`), and only once
+// the open entry's body is complete.
 const ENTRY_LABEL_RE =
-  /^([A-Z][A-Za-z]+(?:[ '’/-][A-Za-z]+)*(?:\s*\([^)]*\))?)\.\s+(\S.*)$/;
+  /^([A-Z][A-Za-z]+(?:[ '’/-][A-Za-z]+)*(?:\s*\([^)]*\))?)\.(?:\s+(\S.*))?$/;
 
 // Words that begin body prose, never an entry name — guards against a wrapped
 // sentence whose first word is capitalized being read as a label. Mirrors the
@@ -622,9 +631,13 @@ interface EntryLabelMatch {
   readonly body: string;
 }
 
-function matchEntryLabel(line: string): EntryLabelMatch | null {
+function matchEntryLabel(
+  line: string,
+  allowLabelOnly = false,
+): EntryLabelMatch | null {
   const m = ENTRY_LABEL_RE.exec(line.trim());
   if (m === null) return null;
+  if (m[2] === undefined && !allowLabelOnly) return null;
   const name = m[1].trim();
   // Guard on the name WITHOUT its parenthetical: a real entry name is a short
   // noun phrase, while the usage qualifier ("Recharges after a Short or Long
@@ -633,10 +646,13 @@ function matchEntryLabel(line: string): EntryLabelMatch | null {
   const words = bare.split(/\s+/);
   if (bare.length > 45 || words.length > 6) return null;
   if (ENTRY_PROSE_STARTERS.has(words[0])) return null;
-  return { name, body: m[2].trim() };
+  return { name, body: m[2]?.trim() ?? '' };
 }
 
-/** True when the open entry body's last non-blank line ends an entry. */
+/**
+ * True when the open entry body's last non-blank line ends an entry. An empty
+ * body (a label-only lead-in whose text has not arrived yet) is incomplete.
+ */
 function entryBodyComplete(body: readonly string[]): boolean {
   for (let i = body.length - 1; i >= 0; i--) {
     const trimmed = body[i].trim();
@@ -664,7 +680,7 @@ function entryBodyComplete(body: readonly string[]): boolean {
     }
     return false;
   }
-  return true;
+  return false;
 }
 
 interface MutableEntry {
@@ -924,13 +940,16 @@ export function parseNarrativeSections(
     }
     if (section === 'deferred') continue;
 
-    const match = matchEntryLabel(line);
+    const match = matchEntryLabel(line, true);
     if (
       match !== null &&
       (current === null || entryBodyComplete(current.body))
     ) {
       flush();
-      current = { name: match.name, body: [match.body] };
+      current = {
+        name: match.name,
+        body: match.body.length > 0 ? [match.body] : [],
+      };
     } else if (current !== null) {
       current.body.push(line);
     } else if (section === 'legendary') {

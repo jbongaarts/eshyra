@@ -7089,6 +7089,32 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     }
   });
 
+  // Registry row wererat-crossbow (opus:F-30), eshyra-o9bd.19.2.2.1. The
+  // corpus-wide, source-derived proof is the importer's creature attack
+  // lead-in gate (creatureAttackLeadIns.ts); this pins the two committed
+  // records the label-only lead-in fix split — the Chain Devil member is not
+  // an attack, so the attack gate cannot see it.
+  it('keeps label-only lead-ins as their own committed entries (wererat-crossbow)', () => {
+    const actionsOf = (key: string) => {
+      const record = pack.records.find((r) => r.key === key);
+      if (record === undefined) throw new Error(`${key} missing`);
+      return (
+        record.data as { actions?: readonly { name: string }[] }
+      ).actions?.map((a) => a.name);
+    };
+    expect(actionsOf('creature:wererat')).toEqual([
+      'Multiattack (Humanoid or Hybrid Form Only)',
+      'Bite (Rat or Hybrid Form Only)',
+      'Shortsword (Humanoid or Hybrid Form Only)',
+      'Hand Crossbow (Humanoid or Hybrid Form Only)',
+    ]);
+    expect(actionsOf('creature:chain-devil')).toEqual([
+      'Multiattack',
+      'Chain',
+      'Animate Chains (Recharges after a Short or Long Rest)',
+    ]);
+  });
+
   describe('eldritch invocations option list stays a separate optionCatalog (eshyra-o9bd.19.2.1.3.1)', () => {
     const eldritchInvocations = pack.records.find(
       (r) => r.key === 'feature:warlock:eldritch-invocations',
