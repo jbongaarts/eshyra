@@ -1096,10 +1096,23 @@ const SKILL_CAPTION_ABILITY_NAMES: ReadonlySet<string> = new Set([
   'Charisma',
 ]);
 
-/** Spellcasting-feature boilerplate subsections, shared across caster classes. */
+/**
+ * Spellcasting-feature boilerplate subsections, shared across caster classes.
+ * `Cantrips` and `Spellbook` joined this set under eshyra-o9bd.19.2.2.4: the
+ * feature parser used to promote each as its own top-level
+ * `feature:<class>:cantrips` / `feature:wizard:spellbook` record (a name
+ * auto-match then claimed the source heading), but they are now `data.sections`
+ * entries on the owning Spellcasting/Pact Magic feature like every other
+ * subheading here, so they are covered by the same curated rule rather than
+ * left to fall through to whatever record shares their bare name (e.g.
+ * `equipment:spellbook`, which would otherwise misclaim the Wizard's "Spellbook"
+ * heading once `feature:wizard:spellbook` no longer exists).
+ */
 const SPELLCASTING_BOILERPLATE: ReadonlySet<string> = new Set([
+  'Cantrips',
   'Preparing and Casting Spells',
   'Ritual Casting',
+  'Spellbook',
   'Spellcasting Focus',
   'Spells Known of 1st Level and Higher',
   'Learning Spells of 1st Level and Higher',
@@ -1107,9 +1120,10 @@ const SPELLCASTING_BOILERPLATE: ReadonlySet<string> = new Set([
 
 /**
  * The emitted feature whose body carries each class's spellcasting boilerplate
- * subsections (Preparing and Casting Spells, Ritual Casting, Spellcasting
- * Focus, …). `feature:<class>:spellcasting` is the canonical owner for
- * spellcasting classes; Warlock uses the SRD's `Pact Magic` feature name.
+ * subsections (Cantrips, Preparing and Casting Spells, Ritual Casting,
+ * Spellcasting Focus, …). `feature:<class>:spellcasting` is the canonical
+ * owner for spellcasting classes; Warlock uses the SRD's `Pact Magic` feature
+ * name.
  */
 const SPELLCASTING_BOILERPLATE_OWNER: ReadonlyMap<string, string> = new Map([
   ['Bard', 'feature:bard:spellcasting'],

@@ -933,6 +933,22 @@ export interface FeatureExtraction {
   /** Feature body prose, re-flowed into paragraphs. */
   readonly description: string;
   /**
+   * Printed 12pt subheadings inside a class-grantor Spellcasting/Pact Magic
+   * feature's body ("Cantrips", "Spell Slots", "Spellcasting Ability", …),
+   * each carrying its verbatim heading name and re-flowed body text, in print
+   * order (eshyra-o9bd.19.2.2.4). `description` holds only the intro prose
+   * before the first subheading; `description` + `sections` reconstructs the
+   * full printed body with no text lost or duplicated. Mirrors
+   * `SubclassExtraction.sections`. Populated only for the two named features
+   * this bead's design scopes (see `SPELLCASTING_SPLIT_FEATURE_NAMES` in
+   * `parseFeatures.ts`) on a genuinely multi-tier source slice; absent
+   * everywhere else, including on uniform-font fixtures.
+   */
+  readonly sections?: ReadonlyArray<{
+    readonly name: string;
+    readonly text: string;
+  }>;
+  /**
    * Source page by option heading found inside this feature's body. Used for
    * inline option catalogs whose entries span different SRD pages, notably the
    * Warlock Eldritch Invocation list (eshyra-vk23.8).

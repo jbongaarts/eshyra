@@ -1318,8 +1318,7 @@
       "classification": "record:feature:bard:spellcasting",
       "targetKey": "feature:bard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p12-l6-prose",
@@ -1899,8 +1898,8 @@
       "firstPhrase": "At 1st level, you know three cantrips of your choice from the cleric spell",
       "lastPhrase": "at higher levels, as shown in the Cantrips Known column of the Cleric table.",
       "normalizedCharCount": 209,
-      "classification": "record:feature:cleric:cantrips",
-      "targetKey": "feature:cleric:cantrips",
+      "classification": "record:feature:cleric:spellcasting",
+      "targetKey": "feature:cleric:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
     },
@@ -2548,8 +2547,8 @@
       "firstPhrase": "At 1st level, you know two cantrips of your choice from the druid spell",
       "lastPhrase": "at higher levels, as shown in the Cantrips Known column of the Druid table.",
       "normalizedCharCount": 204,
-      "classification": "record:feature:druid:cantrips",
-      "targetKey": "feature:druid:cantrips",
+      "classification": "record:feature:druid:spellcasting",
+      "targetKey": "feature:druid:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
     },
@@ -6701,8 +6700,8 @@
       "firstPhrase": "At 1st level, you know four cantrips of your choice from the sorcerer spell",
       "lastPhrase": "at higher levels, as shown in the Cantrips Known column of the Sorcerer table.",
       "normalizedCharCount": 214,
-      "classification": "record:feature:sorcerer:cantrips",
-      "targetKey": "feature:sorcerer:cantrips",
+      "classification": "record:feature:sorcerer:spellcasting",
+      "targetKey": "feature:sorcerer:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
     },
@@ -7557,8 +7556,7 @@
       "classification": "record:feature:warlock:pact-magic",
       "targetKey": "feature:warlock:pact-magic",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p47-l0-prose",
@@ -7580,8 +7578,7 @@
       "classification": "record:feature:warlock:pact-magic",
       "targetKey": "feature:warlock:pact-magic",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p47-l3-prose",
@@ -8975,8 +8972,8 @@
       "firstPhrase": "At 1st level, you know three cantrips of your choice from the wizard spell",
       "lastPhrase": "spell list. You learn additional wizard cantrips of your choice at higher levels, as",
       "normalizedCharCount": 153,
-      "classification": "record:feature:wizard:cantrips",
-      "targetKey": "feature:wizard:cantrips",
+      "classification": "record:feature:wizard:spellcasting",
+      "targetKey": "feature:wizard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
     },
@@ -8997,8 +8994,8 @@
       "firstPhrase": "shown in the Cantrips Known column of the Wizard table.",
       "lastPhrase": "shown in the Cantrips Known column of the Wizard table.",
       "normalizedCharCount": 55,
-      "classification": "record:feature:wizard:cantrips",
-      "targetKey": "feature:wizard:cantrips",
+      "classification": "record:feature:wizard:spellcasting",
+      "targetKey": "feature:wizard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
     },
@@ -9019,8 +9016,8 @@
       "firstPhrase": "At 1st level, you have a spellbook containing six 1st-level wizard spells of",
       "lastPhrase": "the wizard spells you know, except your cantrips, which are fixed in your mind.",
       "normalizedCharCount": 206,
-      "classification": "record:feature:wizard:spellbook",
-      "targetKey": "feature:wizard:spellbook",
+      "classification": "record:feature:wizard:spellcasting",
+      "targetKey": "feature:wizard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
       "emission": "contained"
     },

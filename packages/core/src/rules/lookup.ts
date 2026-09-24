@@ -53,6 +53,26 @@ export type RulesLookupHit = Extract<RulesLookupResult, { readonly ok: true }>;
 /** Cap on candidate keys surfaced in an ambiguous result (prompt safety). */
 export const RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP = 12;
 
+/**
+ * Retired `feature:` record keys, mapped to the canonical record that now
+ * carries their content (eshyra-o9bd.19.2.2.4). The dnd5e-srd-5.1 feature
+ * parser used to promote a class Spellcasting/Pact Magic feature's own
+ * printed subheading ("Cantrips", "Spellbook") to a separate top-level
+ * record; those 5 keys no longer exist in the generated pack, but a
+ * pre-existing reference to one (saved campaign content, a prior lookup, …)
+ * still resolves — to the class's canonical `feature:<class>:spellcasting`
+ * / `:pact-magic` record, whose `data.sections` now carries that same
+ * subheading verbatim. The canonical key is authoritative; this alias exists
+ * only so old references keep resolving, never as a second source of truth.
+ */
+export const RETIRED_RECORD_KEY_ALIASES: ReadonlyMap<string, string> = new Map([
+  ['feature:cleric:cantrips', 'feature:cleric:spellcasting'],
+  ['feature:druid:cantrips', 'feature:druid:spellcasting'],
+  ['feature:sorcerer:cantrips', 'feature:sorcerer:spellcasting'],
+  ['feature:wizard:cantrips', 'feature:wizard:spellcasting'],
+  ['feature:wizard:spellbook', 'feature:wizard:spellcasting'],
+]);
+
 export function lookupRulesRecord(
   stack: ResolvedRulesStack,
   input: RulesLookupInput,
@@ -61,7 +81,15 @@ export function lookupRulesRecord(
 
   if (input.ref !== undefined) {
     const entry = kindIndex?.byKey.get(input.ref);
-    return entry === undefined ? notFound(input) : found(entry);
+    if (entry !== undefined) return found(entry);
+    const canonicalRef = RETIRED_RECORD_KEY_ALIASES.get(input.ref);
+    const canonicalEntry =
+      canonicalRef === undefined
+        ? undefined
+        : kindIndex?.byKey.get(canonicalRef);
+    return canonicalEntry === undefined
+      ? notFound(input)
+      : found(canonicalEntry);
   }
 
   const matches = kindIndex?.byName.get(normalizeRulesRecordName(input.name));

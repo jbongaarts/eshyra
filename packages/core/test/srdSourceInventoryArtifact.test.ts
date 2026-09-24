@@ -325,7 +325,17 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // Blessing" / "Dark One's Own Luck" (The Fiend's own p50 features,
     // interleaved with the invocation list) so both keep resolving to their
     // real feature:the-fiend:* records via the auto-match.
-    expect(coverage.summary.record).toBe(1444);
+    // 1444 -> 1445 (eshyra-o9bd.19.2.2.4): once the 4 duplicate-named
+    // feature:{cleric,druid,sorcerer,wizard}:cantrips records (and
+    // feature:wizard:spellbook) are retired, the "Cantrips"/"Spellbook"
+    // leaf headings' name auto-match shrinks to a single candidate:
+    // "Cantrips" (6 occurrences across Bard/Cleric/Druid/Sorcerer/Warlock/
+    // Wizard, all now curated `child-of` their owning spellcasting feature —
+    // see `childOf` below) no longer reaches the auto-match at all, but the
+    // core-rules-chapter "Cantrips" subsection heading (p101, unrelated to
+    // any class) now uniquely auto-matches `rule:cantrips` instead of being
+    // `ambiguous` (+1 record).
+    expect(coverage.summary.record).toBe(1445);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // map child-of their owning feature/subclass records (the text rides in
@@ -338,8 +348,22 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // record-count decreases above (minus the two that landed in `ignored`)
     // into `childOf` instead: the five p78 ability captions (+5) and the two
     // Two-Weapon Fighting headings (+2).
-    expect(coverage.summary.childOf).toBe(462);
-    expect(coverage.summary.ambiguous).toBe(187);
+    // 462 -> 469 (eshyra-o9bd.19.2.2.4): "Cantrips" (Bard/Cleric/Druid/
+    // Sorcerer/Warlock/Wizard, 6) and "Spellbook" (Wizard, 1) join the
+    // SPELLCASTING_BOILERPLATE curated rule, mapping child-of their owning
+    // feature:<class>:spellcasting / :pact-magic record like every other
+    // printed subheading there ("Preparing and Casting Spells", "Ritual
+    // Casting", …) — they are now `data.sections` entries on that record,
+    // not separate top-level records a bare-name auto-match (or ambiguity)
+    // has to resolve.
+    expect(coverage.summary.childOf).toBe(469);
+    // 187 -> 179 (eshyra-o9bd.19.2.2.4): retiring the 5 duplicate-named
+    // feature:{cleric,druid,sorcerer,wizard}:cantrips / feature:wizard:
+    // spellbook records, and moving "Cantrips"/"Spellbook" to the curated
+    // `child-of` rule above, removes those two normalized-name groups from
+    // the ambiguous diagnostic (see the "ambiguous-match diagnostic" describe
+    // below, whose own baseline pins the full before/after group list).
+    expect(coverage.summary.ambiguous).toBe(179);
     expect(coverage.summary.taxonomy).toBe(33);
     expect(coverage.summary.structuredField).toBe(78);
     expect(coverage.summary.unaccounted).toBe(0);
@@ -969,10 +993,22 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
   });
 
   it('pins the canonical diagnostic baseline and duplicate category histogram', () => {
-    expect(coverage.diagnostics.recordNameCollisions).toHaveLength(88);
+    // 88 -> 86 (eshyra-o9bd.19.2.2.4): retiring the 4 identically-named
+    // feature:{cleric,druid,sorcerer,wizard}:cantrips records collapses the
+    // "cantrips" name-collision group to 0 candidates (no collision left), and
+    // retiring feature:wizard:spellbook collapses "spellbook" (which only
+    // collided with equipment:spellbook) the same way — 2 fewer collision
+    // groups.
+    expect(coverage.diagnostics.recordNameCollisions).toHaveLength(86);
     expect(coverage.diagnostics.duplicateSourceText).toHaveLength(92);
     expect(coverage.diagnostics.suspiciousOwnership).toHaveLength(55);
-    expect(coverage.diagnostics.unresolvedOwnership).toHaveLength(75);
+    // 75 -> 73 (eshyra-o9bd.19.2.2.4): the "cantrips" heading group (ambiguous
+    // across the retired feature:<class>:cantrips records) and the Wizard
+    // "Spellbook" heading (ambiguous between equipment:spellbook and the
+    // retired feature:wizard:spellbook) now resolve through the curated
+    // SPELLCASTING_BOILERPLATE child-of rule to each class's own
+    // spellcasting/pact-magic record.
+    expect(coverage.diagnostics.unresolvedOwnership).toHaveLength(73);
     const categoryCounts = Object.fromEntries(
       [
         ...new Set(
@@ -989,12 +1025,23 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
           ).length,
         ]),
     );
+    // unresolved-owner 40 -> 39, mixed-resolution 9 -> 10 (eshyra-o9bd.19.2.2.4):
+    // the "cantrips" duplicate-text group (6 occurrences across Bard/Cleric/
+    // Druid/Sorcerer/Warlock/Wizard) previously had no curated owner for any
+    // occurrence (every one only auto-matched, ambiguously, to a same-named
+    // record) — `unresolved-owner`. Now every occurrence resolves via the
+    // SPELLCASTING_BOILERPLATE curated `child-of` rule to its OWN class's
+    // spellcasting/pact-magic record, a genuine per-occurrence resolution —
+    // `mixed-resolution` (the group's total occurrence count and group count
+    // (92) are unchanged; only this one group's category reclassifies).
+    // "Spellbook" has only one printed occurrence, so it was never a
+    // "duplicate" text group and is unaffected here.
     expect(categoryCounts).toEqual({
       'auto-collapsed': 6,
       'explicitly-disambiguated': 19,
-      'mixed-resolution': 9,
+      'mixed-resolution': 10,
       'same-owner-explicit': 18,
-      'unresolved-owner': 40,
+      'unresolved-owner': 39,
     });
     expect(
       coverage.diagnostics.duplicateSourceText.filter(

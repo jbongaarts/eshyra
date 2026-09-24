@@ -23,6 +23,7 @@
 
 import type { FeatureChoiceCategory } from '../../../src/rules/featureChoices.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
+import { reconstructFeatureText } from './parseFeatures.js';
 
 /**
  * Thrown when a choice the deriver must model cannot be read from the source —
@@ -387,45 +388,6 @@ function deriveSpellChoices(
   const classByKey = new Map(input.classRecords.map((c) => [c.key, c]));
 
   for (const feature of input.featureRecords) {
-    // The Wizard Spellbook is a real build choice (six 1st-level spells at
-    // creation, +2 per level) but the SRD progression grants only the parent
-    // Spellcasting feature, so the Spellbook record is not in `granted`. Handle
-    // it explicitly, ahead of the build-feature guard (eshyra-vk23.2).
-    if (feature.key === 'feature:wizard:spellbook') {
-      const wizard = classByKey.get('class:wizard');
-      const startCount =
-        wizard === undefined
-          ? null
-          : ((
-              dataOf(wizard).spellPreparation as {
-                spellbookStartingSpells?: unknown;
-              }
-            )?.spellbookStartingSpells ?? null);
-      if (wizard !== undefined && typeof startCount === 'number') {
-        const spellbookLevel = featureLevel(feature);
-        out.set(feature.key, [
-          {
-            id: 'spellbook-initial',
-            category: 'spell',
-            prompt: `Choose the ${startCount} 1st-level wizard spells in your starting spellbook.`,
-            level: spellbookLevel,
-            choose: startCount,
-            from: classSpellFilter(wizard, { spellLevels: [1] }),
-          },
-          {
-            id: 'spellbook-growth',
-            category: 'spell',
-            prompt:
-              'Each time you gain a wizard level, add two wizard spells of your choice to your spellbook.',
-            level: spellbookLevel,
-            choose: 2,
-            trigger: 'level-up',
-            from: castableSpellFilter(wizard),
-          },
-        ]);
-      }
-      continue;
-    }
     if (!isBuildFeature(feature, granted)) continue;
     const level = featureLevel(feature);
 
@@ -664,6 +626,43 @@ function deriveSpellChoices(
       });
     }
 
+    // The Wizard Spellbook is a real build choice (six 1st-level spells at
+    // creation, +2 per level), but the SRD prints it as a subheading of the
+    // Spellcasting feature, not a separate class-table grant — the choice
+    // rides on this same feature record, appended after the cantrips /
+    // prepared-spells choices above (eshyra-vk23.2). Moved here from the
+    // retired `feature:wizard:spellbook` parser-artifact record; ids and
+    // content are unchanged (eshyra-o9bd.19.2.2.4 design decision D6).
+    if (feature.key === 'feature:wizard:spellcasting') {
+      const startCount = (
+        dataOf(cls).spellPreparation as {
+          spellbookStartingSpells?: unknown;
+        }
+      )?.spellbookStartingSpells;
+      if (typeof startCount === 'number') {
+        choices.push(
+          {
+            id: 'spellbook-initial',
+            category: 'spell',
+            prompt: `Choose the ${startCount} 1st-level wizard spells in your starting spellbook.`,
+            level,
+            choose: startCount,
+            from: classSpellFilter(cls, { spellLevels: [1] }),
+          },
+          {
+            id: 'spellbook-growth',
+            category: 'spell',
+            prompt:
+              'Each time you gain a wizard level, add two wizard spells of your choice to your spellbook.',
+            level,
+            choose: 2,
+            trigger: 'level-up',
+            from: castableSpellFilter(cls),
+          },
+        );
+      }
+    }
+
     if (choices.length > 0) out.set(feature.key, choices);
   }
 
@@ -749,9 +748,29 @@ const NUMBER_WORDS: Record<string, number> = {
 
 const COUNT_WORD_ALTERNATION = Object.keys(NUMBER_WORDS).join('|');
 
+/**
+ * A feature's printed subheading sections, when it has any (only the class
+ * Spellcasting/Pact Magic records do — eshyra-o9bd.19.2.2.4). Used by
+ * `featureDescription` to reconstruct the full body text so option/choice
+ * parsing keeps seeing the SAME span it did before `data.sections` split the
+ * subheadings out of `data.description`.
+ */
+function featureSections(
+  record: RulesRecord,
+): ReadonlyArray<{ readonly name: string; readonly text: string }> | undefined {
+  const sections = dataOf(record).sections;
+  return Array.isArray(sections)
+    ? (sections as ReadonlyArray<{
+        readonly name: string;
+        readonly text: string;
+      }>)
+    : undefined;
+}
+
 function featureDescription(record: RulesRecord): string {
   const description = dataOf(record).description;
-  return typeof description === 'string' ? description : '';
+  if (typeof description !== 'string') return '';
+  return reconstructFeatureText(description, featureSections(record));
 }
 
 /**

@@ -341,6 +341,26 @@ const RECORD_NAME_ALIASES: Readonly<Record<string, readonly string[]>> = {
   'equipment:leather': ['leather armor'],
 };
 
+/**
+ * A `feature` record's printed subheading names (`data.sections[].name` —
+ * "Cantrips", "Spellcasting Ability", …), when it has any. Only the class
+ * Spellcasting/Pact Magic records carry `sections` (eshyra-o9bd.19.2.2.4).
+ */
+function featureSectionNames(record: RulesRecord): readonly string[] {
+  if (record.kind !== 'feature') return [];
+  const data = record.data;
+  if (typeof data !== 'object' || data === null) return [];
+  const sections = (data as { sections?: unknown }).sections;
+  if (!Array.isArray(sections)) return [];
+  return sections
+    .map((section) =>
+      typeof section === 'object' && section !== null
+        ? (section as { name?: unknown }).name
+        : undefined,
+    )
+    .filter((name): name is string => typeof name === 'string');
+}
+
 function recordLookupNames(record: RulesRecord): readonly string[] {
   const names = new Set<string>();
   const add = (name: string): void => {
@@ -362,6 +382,13 @@ function recordLookupNames(record: RulesRecord): readonly string[] {
 
   if (record.kind === 'equipment') {
     add(pluralizeLastWord(withoutParenthetical));
+  }
+
+  // A section name lookup ("Cantrips", "Spellbook") returns the owning
+  // Spellcasting/Pact Magic record(s) — ambiguous, with every candidate key,
+  // when several classes print the same subheading (eshyra-o9bd.19.2.2.4).
+  for (const sectionName of featureSectionNames(record)) {
+    add(sectionName);
   }
 
   for (const alias of RECORD_NAME_ALIASES[record.key] ?? []) {

@@ -45,8 +45,14 @@ describe('semi-structured boundary inventory', () => {
     const artifact = buildInventoryArtifact();
     expect(committedJson).toBe(renderInventoryJson(artifact));
     expect(committedMarkdown).toBe(renderInventoryMarkdown(artifact));
+    // 1814 -> 1809 (eshyra-o9bd.19.2.2.4): the 5 class-grantor Spellcasting/
+    // Pact Magic subheading artifact records (feature:{cleric,druid,
+    // sorcerer,wizard}:cantrips, feature:wizard:spellbook) are retired; their
+    // printed text now lives as `data.sections` on the owning
+    // feature:<class>:spellcasting / :pact-magic record instead of as
+    // separate top-level records.
     expect(artifact.recordCounts).toEqual({
-      dnd5eSrd: 1814,
+      dnd5eSrd: 1809,
       pathfinderFixture: 7,
     });
   });

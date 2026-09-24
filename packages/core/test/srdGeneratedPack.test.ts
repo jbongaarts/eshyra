@@ -179,7 +179,15 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // 183 -> 184 (eshyra-o9bd.2/.3): Rogue's Thieves' Cant, previously swallowed
   // into feature:rogue:sneak-attack's description, is split into its own
   // feature:rogue:thieves-cant record so the level-1 progression grants both.
-  feature: 184,
+  // 184 -> 179 (eshyra-o9bd.19.2.2.4): the feature parser's class-grantor
+  // prose-lead-in fallback no longer promotes a class feature's own printed
+  // subheading to its own record. The 5 parser-artifact records
+  // feature:{cleric,druid,sorcerer,wizard}:cantrips and
+  // feature:wizard:spellbook are retired; their printed text now lives as
+  // `data.sections` on the owning feature:<class>:spellcasting / :pact-magic
+  // record (all 8 caster classes gain `data.sections` uniformly, whether or
+  // not they previously had an artifact record).
+  feature: 179,
   // 8 sample traps (loreweaver-hvp) + 3 sample diseases + 14 sample poisons
   // (loreweaver-6ra) all emit under the `hazard` kind; SRD 5.1 has no
   // environmental hazards. All three gamemastering sub-families carry
@@ -720,7 +728,14 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // to feature:paladin:spellcasting (formula-driven daily preparation) and
   // feature:wizard:spellbook (starting contents + growth), so the missing count
   // fell 130 -> 128.
-  { kind: 'feature', field: 'choices', missingCount: 128, totalInKind: 184 },
+  // 128 -> 124, 184 -> 179 (eshyra-o9bd.19.2.2.4): the 5 retired parser-artifact
+  // records drop the population by 5; 4 of them (the class-grantor Cantrips
+  // records) had no `choices` and were part of the missing count, so it falls
+  // by only 4. The 5th, feature:wizard:spellbook, DID carry `choices`
+  // (spellbook-initial/spellbook-growth); those choices move onto
+  // feature:wizard:spellcasting (already counted as non-missing), so this
+  // field's own missing/total delta is unaffected by that move.
+  { kind: 'feature', field: 'choices', missingCount: 124, totalInKind: 179 },
   // First-pass mechanics projections (eshyra-ngcj.6): 74 features with explicit
   // rest-reset resources, critical range, extra attack, advantage/resistance,
   // proficiency, or spell-grant patterns carry `mechanics`; the rest remain
@@ -746,25 +761,54 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // feature (its per-option prerequisites/text are already structured via
   // `choices`, unaffected — see srdGeneratedPack.test.ts's "eldritch
   // invocations option list stays a separate optionCatalog" describe).
-  { kind: 'feature', field: 'mechanics', missingCount: 49, totalInKind: 184 },
+  // 49 -> 44, 184 -> 179 (eshyra-o9bd.19.2.2.4): removing the 5
+  // parser-artifact records drops the missing count by 1 (only
+  // feature:wizard:cantrips had no `mechanics`; the other 4 removed records
+  // DID have one). Separately — and this is the larger effect —
+  // feature:{cleric,druid,sorcerer,wizard}:spellcasting each go from no
+  // `mechanics` to a `resources: [{ reset: 'long-rest' }]` fact, a genuine
+  // fix: their OLD merged description (via the now-deleted
+  // canonicalizeSpellcastingFeatureDescriptions copy-back) was assembled
+  // AFTER mechanics derivation ran, so `deriveFeatureMechanics` only ever
+  // saw the un-merged, Cantrips-less intro text and silently missed the
+  // "You regain all expended spell slots when you finish a long rest."
+  // sentence living in the Preparing-and-Casting-Spells subsection.
+  // `buildFeatureData` now derives mechanics from the SAME reconstructed
+  // full body (`description` + `sections`) `bard`/`paladin`/`ranger`/
+  // `warlock`'s spellcasting always used — which already carried this exact
+  // `resources` fact — so those 4 now correctly carry it too: -4 more.
+  // Total: 49 - 1 - 4 = 44.
+  { kind: 'feature', field: 'mechanics', missingCount: 44, totalInKind: 179 },
   // eshyra-o9bd.19.2.1.3.1: the end-of-chapter option-list section a feature
   // body points to, kept apart from `description` as one verbatim span. Only
   // feature:warlock:eldritch-invocations has one in SRD 5.1 (Cleric's Destroy
   // Undead in-body table caption is a CONTIGUOUS repeat and still merges into
   // `description` as before).
+  // 183 -> 178, 184 -> 179 (eshyra-o9bd.19.2.2.4): none of the 5 retired
+  // parser-artifact records had `optionCatalog`, so the missing count falls
+  // by exactly the same 5 the population does.
   {
     kind: 'feature',
     field: 'optionCatalog',
-    missingCount: 183,
-    totalInKind: 184,
+    missingCount: 178,
+    totalInKind: 179,
   },
+  // eshyra-o9bd.19.2.2.4: a class-grantor Spellcasting/Pact Magic feature's
+  // own printed 12pt subheadings ("Cantrips", "Spell Slots", "Spellcasting
+  // Ability", …) split into `data.sections` — one entry per subheading,
+  // verbatim, in print order — with `description` holding only the intro
+  // prose before the first one. All 8 SRD 5.1 caster classes carry
+  // `sections` uniformly; the other 171 features have none.
+  { kind: 'feature', field: 'sections', missingCount: 171, totalInKind: 179 },
   // Feature-owned tables (eshyra-4a7.6): feature:cleric:destroy-undead ->
   // table:destroy-undead and feature:druid:wild-shape -> table:beast-shapes.
   // eshyra-o9bd.8.2 adds two more feature owners (feature:sorcerer:font-of-magic
   // -> table:creating-spell-slots and feature:draconic-bloodline:dragon-ancestor
   // -> table:draconic-bloodline-draconic-ancestry): 182 -> 180 of 184 features
   // own no table.
-  { kind: 'feature', field: 'tableRefs', missingCount: 180, totalInKind: 184 },
+  // 180 -> 175, 184 -> 179 (eshyra-o9bd.19.2.2.4): none of the 5 retired
+  // parser-artifact records owned a table.
+  { kind: 'feature', field: 'tableRefs', missingCount: 175, totalInKind: 179 },
   // hazard sub-families (loreweaver-6ra / eshyra-ngcj.7): all 25 hazard records
   // carry `category`; the 8 traps carry `trapType`; the 14 poisons additionally
   // carry `poisonType` and `price`.
@@ -2447,13 +2491,27 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
   describe('feature boundary regression (eshyra-0m9.13)', () => {
     const features = pack.records.filter((record) => record.kind === 'feature');
     const byKey = new Map(features.map((record) => [record.key, record]));
+    // Reconstructs the full printed feature body: `description` plus, for a
+    // class Spellcasting/Pact Magic feature (eshyra-o9bd.19.2.2.4), each
+    // `data.sections[].name`/`text` in print order. These body-boundary
+    // regressions predate `sections` and must keep holding over the WHOLE
+    // body, not just the now-shorter intro `description`.
     const descOf = (key: string): string => {
       const record = byKey.get(key);
       expect(record, `expected ${key} in the committed pack`).toBeDefined();
-      const description = (record?.data as { description?: unknown })
-        ?.description;
-      expect(typeof description).toBe('string');
-      return description as string;
+      const data = record?.data as {
+        description?: unknown;
+        sections?: unknown;
+      };
+      expect(typeof data.description).toBe('string');
+      const description = data.description as string;
+      const sections = Array.isArray(data.sections)
+        ? (data.sections as ReadonlyArray<{ name: string; text: string }>)
+        : undefined;
+      if (sections === undefined || sections.length === 0) return description;
+      return [description, ...sections.flatMap((s) => [s.name, s.text])]
+        .join(' ')
+        .trim();
     };
     const levelOf = (key: string): unknown =>
       (byKey.get(key)?.data as { level?: unknown })?.level;
@@ -2462,6 +2520,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
 
     // The 8 class first features that previously absorbed the proficiency setup
     // block via the two-column-table reading-order bug.
+    // feature:wizard:cantrips -> feature:wizard:spellcasting
+    // (eshyra-o9bd.19.2.2.4): the parser-artifact Cantrips record is retired;
+    // Wizard's actual first-printed feature is (and was) Spellcasting itself.
     const FIRST_FEATURE_KEYS: readonly string[] = [
       'feature:bard:spellcasting',
       'feature:cleric:spellcasting',
@@ -2470,7 +2531,7 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       'feature:paladin:divine-sense',
       'feature:ranger:favored-enemy',
       'feature:warlock:otherworldly-patron',
-      'feature:wizard:cantrips',
+      'feature:wizard:spellcasting',
     ];
 
     it('no class first feature carries the proficiency setup block', () => {
@@ -2498,16 +2559,19 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
 
     it('keeps spellcasting mechanics on the canonical spellcasting feature', () => {
+      // eshyra-o9bd.19.2.2.4: the parser-artifact Cantrips/Spellbook records
+      // this test used to check are retired ("trimmed" keys that no longer
+      // exist at all — see the "5 retired keys" test below). The invariant
+      // those records' absence protected — the class-grantor Spellcasting
+      // feature is the SOLE owner of this text, nothing else on the pack
+      // duplicates or bleeds it — now reduces to: the canonical owner's full
+      // reconstructed body (description + sections) contains every expected
+      // phrase.
       const expected: ReadonlyArray<
-        readonly [
-          ownerKey: string,
-          trimmedKeys: readonly string[],
-          phrases: readonly string[],
-        ]
+        readonly [ownerKey: string, phrases: readonly string[]]
       > = [
         [
           'feature:cleric:spellcasting',
-          ['feature:cleric:cantrips'],
           [
             'Preparing and Casting Spells',
             'Wisdom is your spellcasting ability for your cleric spells',
@@ -2515,7 +2579,6 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         ],
         [
           'feature:druid:spellcasting',
-          ['feature:druid:cantrips'],
           [
             'Preparing and Casting Spells',
             'Wisdom is your spellcasting ability for your druid spells',
@@ -2523,7 +2586,6 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         ],
         [
           'feature:sorcerer:spellcasting',
-          ['feature:sorcerer:cantrips'],
           [
             'Spell Slots',
             'Charisma is your spellcasting ability for your sorcerer spells',
@@ -2531,7 +2593,6 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         ],
         [
           'feature:wizard:spellcasting',
-          ['feature:wizard:spellbook'],
           [
             'At 1st level, you know three cantrips',
             'At 1st level, you have a spellbook containing six',
@@ -2541,20 +2602,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         ],
       ];
 
-      for (const [ownerKey, trimmedKeys, phrases] of expected) {
+      for (const [ownerKey, phrases] of expected) {
         const owner = descOf(ownerKey);
         for (const phrase of phrases) {
           expect(owner, `${ownerKey} missing ${phrase}`).toContain(phrase);
-        }
-        for (const trimmedKey of trimmedKeys) {
-          expect(
-            descOf(trimmedKey),
-            `${trimmedKey} still owns prep text`,
-          ).not.toContain('Preparing and Casting Spells');
-          expect(
-            descOf(trimmedKey),
-            `${trimmedKey} still owns slot text`,
-          ).not.toContain('Spell Slots');
         }
       }
     });
@@ -2619,9 +2670,23 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     const byKey = new Map(features.map((record) => [record.key, record]));
     const levelOf = (key: string): unknown =>
       (byKey.get(key)?.data as { level?: unknown })?.level;
-    const descOf = (key: string): string =>
-      (byKey.get(key)?.data as { description?: unknown })
-        ?.description as string;
+    // Reconstructs the full printed feature body (description + sections, in
+    // print order — eshyra-o9bd.19.2.2.4) so this predates-`sections` body-
+    // boundary regression keeps holding over the whole body.
+    const descOf = (key: string): string => {
+      const data = byKey.get(key)?.data as
+        | { description?: unknown; sections?: unknown }
+        | undefined;
+      const description =
+        typeof data?.description === 'string' ? data.description : '';
+      const sections = Array.isArray(data?.sections)
+        ? (data?.sections as ReadonlyArray<{ name: string; text: string }>)
+        : undefined;
+      if (sections === undefined || sections.length === 0) return description;
+      return [description, ...sections.flatMap((s) => [s.name, s.text])]
+        .join(' ')
+        .trim();
+    };
 
     it('emits Fighter Indomitable under its canonical heading at its earliest grant', () => {
       expect(byKey.has('feature:fighter:indomitable')).toBe(true);
@@ -2660,12 +2725,151 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
 
     it('the preceding feature no longer absorbs the recovered base-class headings', () => {
-      expect(descOf('feature:sorcerer:cantrips')).not.toMatch(
+      // feature:sorcerer:cantrips -> feature:sorcerer:spellcasting
+      // (eshyra-o9bd.19.2.2.4): the parser-artifact Cantrips record is
+      // retired; its text is now the "Cantrips" entry of
+      // feature:sorcerer:spellcasting's own `data.sections`, checked here via
+      // the full reconstructed body.
+      expect(descOf('feature:sorcerer:spellcasting')).not.toMatch(
         /Sorcerous Origin/,
       );
       expect(descOf('feature:warlock:otherworldly-patron')).not.toMatch(
         /Pact Magic/,
       );
+    });
+  });
+
+  // eshyra-o9bd.19.2.2.4: class Spellcasting/Pact Magic subfeature granularity
+  // uniform from printed structure. The feature parser's class-grantor
+  // prose-lead-in fallback no longer promotes a class feature's own printed
+  // 12pt subheading to its own record; the 5 resulting parser-artifact
+  // records are retired, and every class Spellcasting/Pact Magic feature
+  // carries its printed subheadings as `data.sections` instead.
+  describe('class Spellcasting/Pact Magic sections (eshyra-o9bd.19.2.2.4)', () => {
+    const features = pack.records.filter((record) => record.kind === 'feature');
+    const byKey = new Map(features.map((record) => [record.key, record]));
+
+    const RETIRED_KEYS: readonly string[] = [
+      'feature:cleric:cantrips',
+      'feature:druid:cantrips',
+      'feature:sorcerer:cantrips',
+      'feature:wizard:cantrips',
+      'feature:wizard:spellbook',
+    ];
+
+    it('the 5 retired parser-artifact keys are absent from the committed pack', () => {
+      for (const key of RETIRED_KEYS) {
+        expect(byKey.has(key), `${key} should be retired`).toBe(false);
+      }
+    });
+
+    const SECTION_NAMES_BY_KEY: Readonly<Record<string, readonly string[]>> = {
+      'feature:bard:spellcasting': [
+        'Cantrips',
+        'Spell Slots',
+        'Spells Known of 1st Level and Higher',
+        'Spellcasting Ability',
+        'Ritual Casting',
+        'Spellcasting Focus',
+      ],
+      'feature:cleric:spellcasting': [
+        'Cantrips',
+        'Preparing and Casting Spells',
+        'Spellcasting Ability',
+        'Ritual Casting',
+        'Spellcasting Focus',
+      ],
+      'feature:druid:spellcasting': [
+        'Cantrips',
+        'Preparing and Casting Spells',
+        'Spellcasting Ability',
+        'Ritual Casting',
+        'Spellcasting Focus',
+      ],
+      'feature:paladin:spellcasting': [
+        'Preparing and Casting Spells',
+        'Spellcasting Ability',
+        'Spellcasting Focus',
+      ],
+      'feature:ranger:spellcasting': [
+        'Spell Slots',
+        'Spells Known of 1st Level and Higher',
+        'Spellcasting Ability',
+      ],
+      'feature:sorcerer:spellcasting': [
+        'Cantrips',
+        'Spell Slots',
+        'Spells Known of 1st Level and Higher',
+        'Spellcasting Ability',
+        'Spellcasting Focus',
+      ],
+      'feature:warlock:pact-magic': [
+        'Cantrips',
+        'Spell Slots',
+        'Spells Known of 1st Level and Higher',
+        'Spellcasting Ability',
+        'Spellcasting Focus',
+      ],
+      'feature:wizard:spellcasting': [
+        'Cantrips',
+        'Spellbook',
+        'Preparing and Casting Spells',
+        'Spellcasting Ability',
+        'Ritual Casting',
+        'Spellcasting Focus',
+        'Learning Spells of 1st Level and Higher',
+      ],
+    };
+
+    it('every caster carries its printed subheadings as data.sections, in print order', () => {
+      for (const [key, names] of Object.entries(SECTION_NAMES_BY_KEY)) {
+        const data = byKey.get(key)?.data as
+          | { sections?: ReadonlyArray<{ name: string }> }
+          | undefined;
+        expect(
+          data?.sections,
+          `expected ${key} in the committed pack`,
+        ).toBeDefined();
+        expect(
+          (data?.sections ?? []).map((s) => s.name),
+          key,
+        ).toEqual(names);
+      }
+    });
+
+    it('feature:warlock:pact-magic has 5 sections', () => {
+      const data = byKey.get('feature:warlock:pact-magic')?.data as
+        | { sections?: readonly unknown[] }
+        | undefined;
+      expect(data?.sections).toHaveLength(5);
+    });
+
+    it("feature:wizard:spellcasting's description is only the intro prose", () => {
+      const description = (
+        byKey.get('feature:wizard:spellcasting')?.data as {
+          description?: unknown;
+        }
+      )?.description;
+      expect(description).toBe(
+        'As a student of arcane magic, you have a spellbook containing spells that show the first glimmerings of your true power.',
+      );
+    });
+
+    it('no feature description contains any of its own section text', () => {
+      for (const key of Object.keys(SECTION_NAMES_BY_KEY)) {
+        const data = byKey.get(key)?.data as
+          | {
+              description?: unknown;
+              sections?: ReadonlyArray<{ name: string; text: string }>;
+            }
+          | undefined;
+        const description = data?.description;
+        expect(typeof description).toBe('string');
+        for (const section of data?.sections ?? []) {
+          expect(description, `${key} description`).not.toContain(section.name);
+          expect(description, `${key} description`).not.toContain(section.text);
+        }
+      }
     });
   });
 
@@ -7485,9 +7689,18 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
 
     it('models the Wizard spellbook as starting contents plus per-level growth', () => {
-      const ids = choicesOf('feature:wizard:spellbook').map((c) => c.id);
-      expect(ids).toEqual(['spellbook-initial', 'spellbook-growth']);
-      const initial = choicesOf('feature:wizard:spellbook').find(
+      // eshyra-o9bd.19.2.2.4 D6: the retired feature:wizard:spellbook
+      // parser-artifact record's choices move onto feature:wizard:
+      // spellcasting, appended after its own cantrips/prepared-spells
+      // choices (ids/content unchanged).
+      const ids = choicesOf('feature:wizard:spellcasting').map((c) => c.id);
+      expect(ids).toEqual([
+        'cantrips',
+        'prepared-spells',
+        'spellbook-initial',
+        'spellbook-growth',
+      ]);
+      const initial = choicesOf('feature:wizard:spellcasting').find(
         (c) => c.id === 'spellbook-initial',
       );
       expect(initial?.choose).toBe(6);

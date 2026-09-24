@@ -106,6 +106,7 @@ import {
   assertSourceRegionLedger,
   buildSourceRegionLedger,
 } from './sourceRegionLedger.js';
+import { assertSpellcastingSections } from './spellcastingSections.js';
 import {
   assertSpellListParity,
   auditSpellListParity,
@@ -3657,6 +3658,14 @@ export async function runImporter(
   // the Tools table has one emitted tool record with the same cells, and no
   // other tool record exists. Rows are read from the source, not collectTools.
   assertToolsTableRowParity(pack.records, pages, {
+    requireComplete: input.assertDeclarationsAreLive === true,
+  });
+  // Spellcasting/Pact Magic section parity gate (eshyra-o9bd.19.2.2.4): every
+  // class Spellcasting/Pact Magic feature's emitted data.sections matches the
+  // printed subheadings under it exactly, and every class-sourced feature
+  // record has a class-table anchor. Independent of parseFeatures.ts — reads
+  // the source by font-height tier directly.
+  assertSpellcastingSections(pack.records, pages, {
     requireComplete: input.assertDeclarationsAreLive === true,
   });
   writePackToDirectory(pack, {

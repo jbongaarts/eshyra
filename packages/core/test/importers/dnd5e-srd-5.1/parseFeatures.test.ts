@@ -1294,3 +1294,256 @@ describe('parseFeatures — Magical Secrets uses its earliest (wrapped) grant ro
     expect(secrets?.level).toBe(10);
   });
 });
+
+// ---------------------------------------------------------------------------
+// eshyra-o9bd.19.2.2.4 design decision D1 (as actually implemented — see
+// `featureStartAt`'s doc comment for the full investigation): on a real
+// multi-tier slice, an UNANCHORED class-context heading only loses the
+// prose-lead-in fallback when it is printed at the 12pt SUBHEADING tier —
+// i.e. it is a printed subsection of another class feature's body ("Cantrips"
+// under Cleric/Druid/Sorcerer/Wizard's Spellcasting, "Spellbook" under
+// Wizard's), not a feature of its own. Gating on grantor kind ALONE (as the
+// bead's D1 text first proposed) is too broad: several genuine standalone
+// class features (Monk's Ki/Evasion, Rogue's Cunning Action/Uncanny Dodge,
+// Sorcerer's Metamagic/Font of Magic, Wizard's Signature Spells, …) also have
+// no table anchor, because their classes print progression-table Features
+// cells in a two-column layout this file's row matcher cannot read — but
+// those headings render at the FEATURE tier (h≈13.9), not the subheading
+// tier, and disabling their fallback too would silently drop 36+ real
+// features from the generated pack. The `WIZARD_SPELLCASTING_SECTIONS_REAL_
+// PDF_SHAPE` case above already proves the SUBHEADING-tier rejection (no
+// separate Cantrips/Spellbook records); this section covers the two
+// remaining shapes: a uniform-font fixture (no tier signal at all) and a
+// FEATURE-tier unanchored class heading that must keep using the fallback.
+// ---------------------------------------------------------------------------
+
+const WIZARD_SPELLCASTING_WITH_CANTRIPS_SUBHEADING = page(114, [
+  'Wizard',
+  'The Wizard',
+  'Level Proficiency Bonus Features Cantrips Known Spells Known',
+  '1st +2 Spellcasting, Arcane Recovery 3 6',
+  'Class Features',
+  'Hit Dice: 1d6 per wizard level',
+  'Armor: None',
+  'Weapons: Daggers, darts, slings, quarterstaffs, light crossbows',
+  'Saving Throws: Intelligence, Wisdom',
+  'Spellcasting',
+  'As a student of arcane magic, you have a spellbook containing spells that',
+  'show the first glimmerings of your true power.',
+  'Cantrips',
+  'At 1st level, you know three cantrips of your choice from the wizard',
+  'spell list.',
+  'Arcane Recovery',
+  'You have learned to regain some of your magical energy.',
+]);
+
+describe('parseFeatures — uniform-font fixture keeps the historical fallback (no tier signal)', () => {
+  // Without `lineHeights`, `tiersPresent` is false and D1's subheading-tier
+  // gate cannot apply — the class-grantor fallback behaves exactly as it did
+  // before this bead, so "Cantrips" is still promoted on this shape. Real
+  // extraction always carries heights (see the tiered describe block above),
+  // so this only documents the uniform-fixture fallback, not production
+  // behavior.
+  const features = parseFeatures([
+    WIZARD_SPELLCASTING_WITH_CANTRIPS_SUBHEADING,
+  ]);
+
+  it('still promotes Cantrips via the "At 1st level" lead-in when no tier signal exists', () => {
+    expect(features.map((f) => f.name).sort()).toEqual([
+      'Arcane Recovery',
+      'Cantrips',
+      'Spellcasting',
+    ]);
+    const cantrips = features.find((f) => f.name === 'Cantrips');
+    expect(cantrips?.grantorKind).toBe('class');
+    expect(cantrips?.level).toBe(1);
+  });
+});
+
+const MONK_UNANCHORED_FEATURE_TIER_REAL_PDF_SHAPE = [
+  tieredPage(27, [
+    ['Monk', 25.92],
+    ['Level Proficiency Bonus Martial Arts Ki Points', 8.88],
+    ['1st +2 1d4 —', 8.88],
+    ['Class Features', 13.92],
+    ['Ki', 13.92],
+    [
+      'Starting at 2nd level, your training allows you to harness the mystic',
+      9.84,
+    ],
+    ['energy of ki.', 9.84],
+    ['Evasion', 13.92],
+    ['Beginning at 7th level, you can nimbly dodge out of the way.', 9.84],
+    ['Sorcerer', 25.92],
+  ]),
+];
+
+describe('parseFeatures — unanchored class feature at the FEATURE tier keeps the fallback', () => {
+  // Monk's "Ki" and "Evasion" have no progression-table anchor in this
+  // reduced fixture (mirrors the real SRD 5.1 Monk table's two-column
+  // layout, which this file's row matcher cannot read at all — eshyra-
+  // o9bd.19.2.2.4 investigation), but both render at the 13.9 FEATURE tier,
+  // not the 12pt subheading tier, so D1's gate must not reject their
+  // "Starting at .../Beginning at ..." lead-in.
+  const features = parseFeatures(MONK_UNANCHORED_FEATURE_TIER_REAL_PDF_SHAPE);
+
+  it('still promotes Ki and Evasion via their level lead-ins', () => {
+    const ki = features.find((f) => f.name === 'Ki');
+    const evasion = features.find((f) => f.name === 'Evasion');
+    expect(ki?.grantorKind).toBe('class');
+    expect(ki?.grantorName).toBe('Monk');
+    expect(ki?.level).toBe(2);
+    expect(evasion?.level).toBe(7);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// eshyra-o9bd.19.2.2.4 design decision D2: on a genuinely multi-tier source
+// slice, a class-grantor Spellcasting/Pact Magic feature's own printed 12pt
+// subheadings split into `sections`, with `description` holding only the
+// intro prose. Real-PDF-shaped heights: class chapter h=25.92, class/
+// sub-subsection feature heading h=13.92, printed subheading h=12,
+// body h=9.84 — mirrors BARBARIAN_BERSERKER_REAL_PDF_SHAPE above.
+// ---------------------------------------------------------------------------
+
+const WIZARD_SPELLCASTING_SECTIONS_REAL_PDF_SHAPE = [
+  tieredPage(52, [
+    ['Wizard', 25.92],
+    ['Level Proficiency Bonus Features Cantrips Known Spells Known', 8.88],
+    ['1st +2 Spellcasting, Arcane Recovery 3 6', 8.88],
+    ['Class Features', 13.92],
+    ['Spellcasting', 13.92],
+    [
+      'As a student of arcane magic, you have a spellbook containing spells that',
+      9.84,
+    ],
+    ['show the first glimmerings of your true power.', 9.84],
+    ['Cantrips', 12],
+    [
+      'At 1st level, you know three cantrips of your choice from the wizard',
+      9.84,
+    ],
+    ['spell list.', 9.84],
+    ['Spellbook', 12],
+    [
+      'At 1st level, you have a spellbook containing six 1st-level wizard',
+      9.84,
+    ],
+    ['spells of your choice.', 9.84],
+    ['Preparing and Casting Spells', 12],
+    ['The Wizard table shows how many spell slots you have.', 9.84],
+    ['Spellcasting Ability', 12],
+    ['Intelligence is your spellcasting ability for your wizard spells.', 9.84],
+    ['Arcane Recovery', 13.92],
+    ['You have learned to regain some of your magical energy.', 9.84],
+  ]),
+];
+
+describe('parseFeatures — class Spellcasting splits printed subheadings into sections (D2)', () => {
+  const features = parseFeatures(WIZARD_SPELLCASTING_SECTIONS_REAL_PDF_SHAPE);
+  const spellcasting = features.find((f) => f.name === 'Spellcasting');
+  const arcaneRecovery = features.find((f) => f.name === 'Arcane Recovery');
+
+  it('emits exactly one Spellcasting record and one Arcane Recovery record, no Cantrips/Spellbook records', () => {
+    expect(features.map((f) => f.name).sort()).toEqual([
+      'Arcane Recovery',
+      'Spellcasting',
+    ]);
+  });
+
+  it('keeps description as the intro prose only', () => {
+    expect(spellcasting?.description).toBe(
+      'As a student of arcane magic, you have a spellbook containing spells that show the first glimmerings of your true power.',
+    );
+  });
+
+  it('splits the printed subheadings into sections, in print order, verbatim', () => {
+    expect(spellcasting?.sections).toEqual([
+      {
+        name: 'Cantrips',
+        text: 'At 1st level, you know three cantrips of your choice from the wizard spell list.',
+      },
+      {
+        name: 'Spellbook',
+        text: 'At 1st level, you have a spellbook containing six 1st-level wizard spells of your choice.',
+      },
+      {
+        name: 'Preparing and Casting Spells',
+        text: 'The Wizard table shows how many spell slots you have.',
+      },
+      {
+        name: 'Spellcasting Ability',
+        text: 'Intelligence is your spellcasting ability for your wizard spells.',
+      },
+    ]);
+  });
+
+  it('bounds the Spellcasting body at the next class feature (Arcane Recovery), which is not split', () => {
+    expect(arcaneRecovery?.description).toBe(
+      'You have learned to regain some of your magical energy.',
+    );
+    expect(arcaneRecovery?.sections).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// D1 regression found during this bead's investigation: the Barbarian's
+// 20th-level "Primal Champion" is the class table's OWN LAST row, whose
+// wrapped Features cell ("Primal" + continuation "Champion") never stitches
+// — no later progression row confirms the wrap, and the Rages column's value
+// at 20th level is the word "Unlimited" rather than a number, which
+// `stripTrailingTableCells` cannot remove — so this feature has no table
+// anchor, exactly like Monk's Ki/Evasion above. Unlike those two-column-
+// layout cases, this one is a genuine wrap-stitching gap in THIS file, but
+// the fix is the same: "Primal Champion" renders at the 13.9 FEATURE tier,
+// not the 12pt subheading tier, so D1's tier gate leaves it on the fallback
+// path and it resolves correctly with no special-casing. This fixture
+// reproduces the real page 8-9 shape closely enough to exercise the same
+// stitching failure.
+// ---------------------------------------------------------------------------
+
+const BARBARIAN_PRIMAL_CHAMPION_REAL_PDF_SHAPE = [
+  tieredPage(8, [
+    ['Class Features', 13.92],
+    ['The Barbarian', 12],
+    ['Level Proficiency Bonus Features Rages Rage Damage', 8.88],
+    ['1st +2 Rage, Unarmored Defense 2 +2', 8.88],
+    ['19th +6 Ability Score 6 +4', 8.88],
+    ['Improvement', 8.88],
+    ['20th +6 Primal Unlimited +4', 8.88],
+    ['Champion', 8.88],
+    ['Rage', 13.92],
+    ['In battle, you fight with primal ferocity.', 9.84],
+  ]),
+  tieredPage(9, [
+    ['Unarmored Defense', 13.92],
+    ['While you are not wearing any armor, your Armor Class equals 10.', 9.84],
+    ['Primal Champion', 13.92],
+    [
+      'At 20th level, you embody the power of the wilds. Your Strength and',
+      9.84,
+    ],
+    ['Constitution scores increase by 4.', 9.84],
+    ['Bard', 25.92],
+  ]),
+];
+
+describe('parseFeatures — Barbarian Primal Champion (table’s last-row wrap gap, resolved by the feature-tier fallback)', () => {
+  const features = parseFeatures(BARBARIAN_PRIMAL_CHAMPION_REAL_PDF_SHAPE);
+  const primalChampion = features.find((f) => f.name === 'Primal Champion');
+
+  it('still emits Primal Champion as a Barbarian class feature at level 20', () => {
+    expect(primalChampion).toBeDefined();
+    expect(primalChampion?.grantorKind).toBe('class');
+    expect(primalChampion?.grantorName).toBe('Barbarian');
+    expect(primalChampion?.level).toBe(20);
+  });
+
+  it('keeps Unarmored Defense (a genuine 1st-level table anchor) unaffected', () => {
+    const unarmoredDefense = features.find(
+      (f) => f.name === 'Unarmored Defense',
+    );
+    expect(unarmoredDefense?.grantorName).toBe('Barbarian');
+    expect(unarmoredDefense?.level).toBe(1);
+  });
+});

@@ -236,7 +236,11 @@ describe('a provenance partition never invents a leaf', () => {
       }
     }
 
-    expect(entries.length).toBe(1814);
+    // 1814 -> 1809 (eshyra-o9bd.19.2.2.4): the 5 retired class-grantor
+    // Spellcasting/Pact Magic subheading artifact records
+    // (feature:{cleric,druid,sorcerer,wizard}:cantrips,
+    // feature:wizard:spellbook) shrink the bundled record count.
+    expect(entries.length).toBe(1809);
     expect(bucketLeaves).toBeGreaterThan(60_000);
     expect(invented).toBe(0);
     expect(lost).toBe(0);

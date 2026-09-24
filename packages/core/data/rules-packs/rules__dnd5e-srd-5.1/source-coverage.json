@@ -1,8 +1,8 @@
 {
   "summary": {
-    "record": 1444,
-    "childOf": 462,
-    "ambiguous": 187,
+    "record": 1445,
+    "childOf": 469,
+    "ambiguous": 179,
     "taxonomy": 33,
     "structuredField": 78,
     "ignored": {
@@ -1140,216 +1140,6 @@
             "candidateKeys": [
               "magic-item:candle-of-invocation",
               "table:candle-of-invocation"
-            ]
-          }
-        ],
-        "explicitlyClaimedKeys": [],
-        "unresolved": true
-      },
-      {
-        "normalizedName": "cantrips",
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
-          "rule:cantrips"
-        ],
-        "occurrences": [
-          {
-            "page": 12,
-            "lineIndex": 0,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Bard",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 15,
-            "lineIndex": 78,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Cleric",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 20,
-            "lineIndex": 0,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Druid",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 43,
-            "lineIndex": 5,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Sorcerer",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 46,
-            "lineIndex": 83,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Warlock",
-            "context": "Pact Magic",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 52,
-            "lineIndex": 73,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Wizard",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 101,
-            "lineIndex": 0,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Spellcasting",
-            "context": "Casting in Armor",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
             ]
           }
         ],
@@ -5325,39 +5115,6 @@
           "table:spell-scroll"
         ],
         "unresolved": false
-      },
-      {
-        "normalizedName": "spellbook",
-        "candidateKeys": [
-          "equipment:spellbook",
-          "feature:wizard:spellbook"
-        ],
-        "occurrences": [
-          {
-            "page": 52,
-            "lineIndex": 79,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Wizard",
-            "context": "Cantrips",
-            "text": "Spellbook",
-            "status": "ambiguous:equipment:spellbook|feature:wizard:spellbook",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "spellbook",
-              "candidateKeys": [
-                "equipment:spellbook",
-                "feature:wizard:spellbook"
-              ]
-            },
-            "candidateKeys": [
-              "equipment:spellbook",
-              "feature:wizard:spellbook"
-            ]
-          }
-        ],
-        "explicitlyClaimedKeys": [],
-        "unresolved": true
       },
       {
         "normalizedName": "spellcasting",
@@ -13633,7 +13390,7 @@
       },
       {
         "normalizedText": "cantrips",
-        "category": "unresolved-owner",
+        "category": "mixed-resolution",
         "occurrences": [
           {
             "page": 12,
@@ -13643,25 +13400,12 @@
             "section": "Bard",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:bard:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:bard:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:bard:spellcasting"
           },
           {
             "page": 15,
@@ -13671,25 +13415,12 @@
             "section": "Cleric",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:cleric:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:cleric:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:cleric:spellcasting"
           },
           {
             "page": 20,
@@ -13699,25 +13430,12 @@
             "section": "Druid",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:druid:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:druid:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:druid:spellcasting"
           },
           {
             "page": 43,
@@ -13727,25 +13445,12 @@
             "section": "Sorcerer",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:sorcerer:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:sorcerer:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:sorcerer:spellcasting"
           },
           {
             "page": 46,
@@ -13755,25 +13460,12 @@
             "section": "Warlock",
             "context": "Pact Magic",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:warlock:pact-magic",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:warlock:pact-magic"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:warlock:pact-magic"
           },
           {
             "page": 52,
@@ -13783,25 +13475,12 @@
             "section": "Wizard",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:wizard:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:wizard:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:wizard:spellcasting"
           },
           {
             "page": 101,
@@ -13811,37 +13490,27 @@
             "section": "Spellcasting",
             "context": "Casting in Armor",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "record:rule:cantrips",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
+              "kind": "unique-normalized-name",
               "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "ownerKey": "rule:cantrips"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "rule:cantrips"
           }
         ],
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
+        "candidateKeys": [],
+        "ownerKeys": [
+          "feature:bard:spellcasting",
+          "feature:cleric:spellcasting",
+          "feature:druid:spellcasting",
+          "feature:sorcerer:spellcasting",
+          "feature:warlock:pact-magic",
+          "feature:wizard:spellcasting",
           "rule:cantrips"
         ],
-        "ownerKeys": [],
         "reasonCodes": [
-          "unresolved-owner"
+          "mixed-explicit-and-automatic"
         ]
       },
       {
@@ -26383,7 +26052,7 @@
       },
       {
         "normalizedText": "cantrips",
-        "category": "unresolved-owner",
+        "category": "mixed-resolution",
         "occurrences": [
           {
             "page": 12,
@@ -26393,25 +26062,12 @@
             "section": "Bard",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:bard:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:bard:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:bard:spellcasting"
           },
           {
             "page": 15,
@@ -26421,25 +26077,12 @@
             "section": "Cleric",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:cleric:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:cleric:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:cleric:spellcasting"
           },
           {
             "page": 20,
@@ -26449,25 +26092,12 @@
             "section": "Druid",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:druid:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:druid:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:druid:spellcasting"
           },
           {
             "page": 43,
@@ -26477,25 +26107,12 @@
             "section": "Sorcerer",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:sorcerer:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:sorcerer:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:sorcerer:spellcasting"
           },
           {
             "page": 46,
@@ -26505,25 +26122,12 @@
             "section": "Warlock",
             "context": "Pact Magic",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:warlock:pact-magic",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:warlock:pact-magic"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:warlock:pact-magic"
           },
           {
             "page": 52,
@@ -26533,25 +26137,12 @@
             "section": "Wizard",
             "context": "Spellcasting",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "child-of:feature:wizard:spellcasting",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "kind": "curated-child-of",
+              "ownerKey": "feature:wizard:spellcasting"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "feature:wizard:spellcasting"
           },
           {
             "page": 101,
@@ -26561,37 +26152,27 @@
             "section": "Spellcasting",
             "context": "Casting in Armor",
             "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+            "status": "record:rule:cantrips",
             "resolution": {
-              "kind": "ambiguous-normalized-name",
+              "kind": "unique-normalized-name",
               "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
+              "ownerKey": "rule:cantrips"
             },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
+            "ownerKey": "rule:cantrips"
           }
         ],
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
+        "candidateKeys": [],
+        "ownerKeys": [
+          "feature:bard:spellcasting",
+          "feature:cleric:spellcasting",
+          "feature:druid:spellcasting",
+          "feature:sorcerer:spellcasting",
+          "feature:warlock:pact-magic",
+          "feature:wizard:spellcasting",
           "rule:cantrips"
         ],
-        "ownerKeys": [],
         "reasonCodes": [
-          "unresolved-owner"
+          "mixed-explicit-and-automatic"
         ]
       },
       {
@@ -32665,219 +32246,6 @@
         ]
       },
       {
-        "normalizedText": "cantrips",
-        "category": "unresolved-owner",
-        "occurrences": [
-          {
-            "page": 12,
-            "lineIndex": 0,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Bard",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 15,
-            "lineIndex": 78,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Cleric",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 20,
-            "lineIndex": 0,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Druid",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 43,
-            "lineIndex": 5,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Sorcerer",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 46,
-            "lineIndex": 83,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Warlock",
-            "context": "Pact Magic",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 52,
-            "lineIndex": 73,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Wizard",
-            "context": "Spellcasting",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          },
-          {
-            "page": 101,
-            "lineIndex": 0,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Spellcasting",
-            "context": "Casting in Armor",
-            "text": "Cantrips",
-            "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "cantrips",
-              "candidateKeys": [
-                "feature:cleric:cantrips",
-                "feature:druid:cantrips",
-                "feature:sorcerer:cantrips",
-                "feature:wizard:cantrips",
-                "rule:cantrips"
-              ]
-            },
-            "candidateKeys": [
-              "feature:cleric:cantrips",
-              "feature:druid:cantrips",
-              "feature:sorcerer:cantrips",
-              "feature:wizard:cantrips",
-              "rule:cantrips"
-            ]
-          }
-        ],
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
-          "rule:cantrips"
-        ],
-        "ownerKeys": [],
-        "reasonCodes": [
-          "unresolved-owner"
-        ]
-      },
-      {
         "normalizedText": "channel divinity",
         "category": "unresolved-owner",
         "occurrences": [
@@ -37527,42 +36895,6 @@
         ]
       },
       {
-        "normalizedText": "spellbook",
-        "category": "unresolved-owner",
-        "occurrences": [
-          {
-            "page": 52,
-            "lineIndex": 79,
-            "tier": "leaf",
-            "structure": "heading",
-            "section": "Wizard",
-            "context": "Cantrips",
-            "text": "Spellbook",
-            "status": "ambiguous:equipment:spellbook|feature:wizard:spellbook",
-            "resolution": {
-              "kind": "ambiguous-normalized-name",
-              "normalizedName": "spellbook",
-              "candidateKeys": [
-                "equipment:spellbook",
-                "feature:wizard:spellbook"
-              ]
-            },
-            "candidateKeys": [
-              "equipment:spellbook",
-              "feature:wizard:spellbook"
-            ]
-          }
-        ],
-        "candidateKeys": [
-          "equipment:spellbook",
-          "feature:wizard:spellbook"
-        ],
-        "ownerKeys": [],
-        "reasonCodes": [
-          "unresolved-owner"
-        ]
-      },
-      {
         "normalizedText": "staff of power",
         "category": "unresolved-owner",
         "occurrences": [
@@ -38686,17 +38018,10 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Bard",
-      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+      "status": "child-of:feature:bard:spellcasting",
       "resolution": {
-        "kind": "ambiguous-normalized-name",
-        "normalizedName": "cantrips",
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
-          "rule:cantrips"
-        ]
+        "kind": "curated-child-of",
+        "ownerKey": "feature:bard:spellcasting"
       }
     },
     {
@@ -39135,17 +38460,10 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Cleric",
-      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+      "status": "child-of:feature:cleric:spellcasting",
       "resolution": {
-        "kind": "ambiguous-normalized-name",
-        "normalizedName": "cantrips",
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
-          "rule:cantrips"
-        ]
+        "kind": "curated-child-of",
+        "ownerKey": "feature:cleric:spellcasting"
       }
     },
     {
@@ -39602,17 +38920,10 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Druid",
-      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+      "status": "child-of:feature:druid:spellcasting",
       "resolution": {
-        "kind": "ambiguous-normalized-name",
-        "normalizedName": "cantrips",
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
-          "rule:cantrips"
-        ]
+        "kind": "curated-child-of",
+        "ownerKey": "feature:druid:spellcasting"
       }
     },
     {
@@ -42560,17 +41871,10 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Sorcerer",
-      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+      "status": "child-of:feature:sorcerer:spellcasting",
       "resolution": {
-        "kind": "ambiguous-normalized-name",
-        "normalizedName": "cantrips",
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
-          "rule:cantrips"
-        ]
+        "kind": "curated-child-of",
+        "ownerKey": "feature:sorcerer:spellcasting"
       }
     },
     {
@@ -43111,17 +42415,10 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Warlock",
-      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+      "status": "child-of:feature:warlock:pact-magic",
       "resolution": {
-        "kind": "ambiguous-normalized-name",
-        "normalizedName": "cantrips",
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
-          "rule:cantrips"
-        ]
+        "kind": "curated-child-of",
+        "ownerKey": "feature:warlock:pact-magic"
       }
     },
     {
@@ -43998,17 +43295,10 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Wizard",
-      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+      "status": "child-of:feature:wizard:spellcasting",
       "resolution": {
-        "kind": "ambiguous-normalized-name",
-        "normalizedName": "cantrips",
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
-          "rule:cantrips"
-        ]
+        "kind": "curated-child-of",
+        "ownerKey": "feature:wizard:spellcasting"
       }
     },
     {
@@ -44018,14 +43308,10 @@
       "structure": "heading",
       "text": "Spellbook",
       "section": "Wizard",
-      "status": "ambiguous:equipment:spellbook|feature:wizard:spellbook",
+      "status": "child-of:feature:wizard:spellcasting",
       "resolution": {
-        "kind": "ambiguous-normalized-name",
-        "normalizedName": "spellbook",
-        "candidateKeys": [
-          "equipment:spellbook",
-          "feature:wizard:spellbook"
-        ]
+        "kind": "curated-child-of",
+        "ownerKey": "feature:wizard:spellcasting"
       }
     },
     {
@@ -47588,17 +46874,11 @@
       "structure": "heading",
       "text": "Cantrips",
       "section": "Spellcasting",
-      "status": "ambiguous:feature:cleric:cantrips|feature:druid:cantrips|feature:sorcerer:cantrips|feature:wizard:cantrips|rule:cantrips",
+      "status": "record:rule:cantrips",
       "resolution": {
-        "kind": "ambiguous-normalized-name",
+        "kind": "unique-normalized-name",
         "normalizedName": "cantrips",
-        "candidateKeys": [
-          "feature:cleric:cantrips",
-          "feature:druid:cantrips",
-          "feature:sorcerer:cantrips",
-          "feature:wizard:cantrips",
-          "rule:cantrips"
-        ]
+        "ownerKey": "rule:cantrips"
       }
     },
     {

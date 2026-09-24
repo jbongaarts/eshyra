@@ -29,9 +29,15 @@
  * class/subclass progression rows populate grant-level anchors, and only
  * headings matching those anchors become feature records. Prose lead-ins such
  * as "At 3rd level" are a secondary fallback for subclass features whose grant
- * level is encoded directly in the body. Unanchored title-case option headings
- * inside a feature body (for example Fighting Style options) remain part of the
- * parent feature description rather than becoming records.
+ * level is encoded directly in the body, and for CLASS features whenever no
+ * table anchor exists — EXCEPT a class-context heading printed at the 12pt
+ * subheading tier on a real multi-tier slice, which is a printed subsection of
+ * another class feature's body (Cleric/Druid/Sorcerer/Wizard's "Cantrips",
+ * Wizard's "Spellbook"), never a feature of its own, however level-clause-
+ * shaped its opening sentence looks (eshyra-o9bd.19.2.2.4 design decision D1;
+ * see `featureStartAt`). Unanchored title-case option headings inside a
+ * feature body (for example Fighting Style options) remain part of the parent
+ * feature description rather than becoming records.
  *
  * Level: table anchors are the primary source. A leading clause in the body
  * ("Starting at 2nd level, …", "Beginning when you choose this archetype at
@@ -48,6 +54,7 @@
 import {
   hasHeadingTiers,
   isCalloutBoxHeading,
+  isFeatureSubheading,
   isParentClassHeading,
   KNOWN_SUBCLASSES,
   PARENT_CLASS_NAMES,
@@ -75,6 +82,20 @@ const SUBCLASS_GROUP_HEADINGS = new Set([
   'Sorcerous Origins',
   'Otherworldly Patrons',
   'Arcane Traditions',
+]);
+
+// The two class-grantor feature names whose body prints its own 12pt
+// subheadings (Cantrips, Spell Slots, Preparing and Casting Spells,
+// Spellcasting Ability, Ritual Casting, Spellcasting Focus, Spellbook,
+// Learning/Spells Known of 1st Level and Higher — 39 subheadings total across
+// the 8 SRD 5.1 caster classes). Every OTHER class feature's 12pt lines
+// (Fighting Style options, Metamagic, Pact Boon, Ki, Font of Magic, Channel
+// Divinity, Divine Domain) are option catalogs or sub-features, not printed
+// subsections of one feature, and stay out of scope for splitting
+// (eshyra-o9bd.19.2.2.4 design decision D2).
+const SPELLCASTING_SPLIT_FEATURE_NAMES = new Set([
+  'Spellcasting',
+  'Pact Magic',
 ]);
 
 // Class-block structural headings (the stat block before the feature list).
@@ -283,6 +304,47 @@ function joinParagraphs(lines: readonly string[]): string {
     paragraphs.push(current.join(' '));
   }
   return paragraphs.join('\n\n').trim();
+}
+
+/**
+ * Split a class-grantor Spellcasting/Pact Magic feature's body at its own
+ * printed 12pt subheadings (eshyra-o9bd.19.2.2.4 design decision D2). Text
+ * before the first subheading becomes `description`; each subheading becomes
+ * `{ name, text }` in print order. Detection is height-only (`isFeatureSubheading`)
+ * — no heading-text allowlist — so `description` + `sections` always
+ * reconstructs the body with nothing lost or duplicated. Returns `sections:
+ * undefined` when the body carries no subheading-tier line (a fixture with
+ * `tiersPresent` true but no real subheadings), matching the plain no-split
+ * shape.
+ */
+function splitSpellcastingSections(body: readonly FlatLine[]): {
+  readonly description: string;
+  readonly sections?: ReadonlyArray<{
+    readonly name: string;
+    readonly text: string;
+  }>;
+} {
+  const headingIdxs: number[] = [];
+  for (let i = 0; i < body.length; i++) {
+    if (isFeatureSubheading(body[i].height)) headingIdxs.push(i);
+  }
+  if (headingIdxs.length === 0) {
+    return { description: joinParagraphs(body.map((entry) => entry.line)) };
+  }
+  const description = joinParagraphs(
+    body.slice(0, headingIdxs[0]).map((entry) => entry.line),
+  );
+  const sections = headingIdxs.map((headingIdx, k) => {
+    const bodyStart = headingIdx + 1;
+    const bodyEnd = headingIdxs[k + 1] ?? body.length;
+    return {
+      name: body[headingIdx].line,
+      text: joinParagraphs(
+        body.slice(bodyStart, bodyEnd).map((entry) => entry.line),
+      ),
+    };
+  });
+  return { description, sections };
 }
 
 function normalizeFeatureName(name: string): string {
@@ -508,6 +570,39 @@ function featureStartAt(
     return { level: anchor.level };
   }
 
+  // The prose lead-in fallback is withheld from an UNANCHORED CLASS-context
+  // heading only when the heading itself is printed at the 12pt subheading
+  // tier — i.e. it is not a feature at all, but a printed subsection INSIDE
+  // another class feature's body (the SRD prints "Cantrips" under Cleric/
+  // Druid/Sorcerer/Wizard's Spellcasting and "Spellbook" under Wizard's,
+  // each opening with an "At 1st level, …" clause that would otherwise
+  // satisfy LEVEL_LEAD_IN and wrongly promote it to its own record —
+  // eshyra-o9bd.19.2.2.4 design decision D1). This is NARROWER than "any
+  // unanchored class-context heading": on the real SRD 5.1 Classes chapter,
+  // several genuine standalone class features (e.g. Monk's Ki/Evasion,
+  // Rogue's Cunning Action/Uncanny Dodge, Sorcerer's Metamagic) also have no
+  // table anchor — their classes print progression-table Features cells in a
+  // two-column layout this file's naive row matcher cannot read — but those
+  // headings render at the FEATURE tier (h≈13.9, `isFeatureHeading` catches
+  // them the same way "Spellcasting"/"Rage" are caught), not the subheading
+  // tier (h≈12.0) "Cantrips"/"Spellbook" render at. Gating on tier rather
+  // than grantorKind alone keeps those genuine features on the fallback path
+  // they have always used, while still rejecting the two class-grantor
+  // artifact headings this bead retires. Gated on `tiersPresent`: a
+  // uniform-font fixture carries no height signal, so it keeps the
+  // historical fallback-for-any-unanchored-heading behavior. Subclass
+  // features are never gated at all: many subclasses (Divine Domain
+  // features, Circle of the Land, …) print their own feature list as prose
+  // rather than a second leveled table, at whatever tier their heading
+  // happens to render.
+  if (
+    grantorKind === 'class' &&
+    tiersPresent &&
+    isFeatureSubheading(flat[idx].height)
+  ) {
+    return null;
+  }
+
   const proseLevel = leadingLevelFromFollowingLines(
     flat,
     idx + 1,
@@ -518,6 +613,30 @@ function featureStartAt(
   }
 
   return null;
+}
+
+/**
+ * Reconstruct the full printed feature body from its stored `description` +
+ * `sections` (eshyra-o9bd.19.2.2.4 design decision D4). `sections` exists only
+ * to give the printed subheadings their own labeled span in the record; every
+ * consumer that derives mechanics, choices, or other facts from a feature's
+ * TEXT (not from its structured `sections` shape) must read the SAME full
+ * span the pre-split parser produced, so mechanics/choices stay
+ * byte-identical across this change. Joins with a single space between
+ * `description` and each subheading name/text — the same join `joinParagraphs`
+ * used when the heading line was just another body line, since the SRD prints
+ * every one of these subsections with no blank-line paragraph break before or
+ * after its heading. Returns `description` unchanged when there are no
+ * `sections`.
+ */
+export function reconstructFeatureText(
+  description: string,
+  sections?: ReadonlyArray<{ readonly name: string; readonly text: string }>,
+): string {
+  if (sections === undefined || sections.length === 0) return description;
+  return [description, ...sections.flatMap((s) => [s.name, s.text])]
+    .join(' ')
+    .trim();
 }
 
 /**
@@ -612,7 +731,19 @@ export function parseFeatures(pages: readonly PageText[]): FeatureExtraction[] {
       body.push(flat[j]);
     }
 
-    const description = joinParagraphs(body.map((entry) => entry.line));
+    // Only a CLASS-grantor "Spellcasting"/"Pact Magic" feature body is split
+    // into named subsections, and only on a genuinely multi-tier source slice
+    // (design decision D2). A uniform-font fixture keeps today's shape: no
+    // `sections`, the full body as `description`.
+    const spellcastingSplit =
+      tiersPresent &&
+      grantorKind === 'class' &&
+      SPELLCASTING_SPLIT_FEATURE_NAMES.has(line)
+        ? splitSpellcastingSections(body)
+        : undefined;
+    const description =
+      spellcastingSplit?.description ??
+      joinParagraphs(body.map((entry) => entry.line));
     if (description.length === 0) {
       throw new Error(
         `feature "${line}" at page ${page} has no description text`,
@@ -677,6 +808,9 @@ export function parseFeatures(pages: readonly PageText[]): FeatureExtraction[] {
       grantorName,
       level: start.level,
       description,
+      ...(spellcastingSplit?.sections !== undefined
+        ? { sections: spellcastingSplit.sections }
+        : {}),
       ...(optionSourcePages !== undefined ? { optionSourcePages } : {}),
       sourcePage: page,
     });
