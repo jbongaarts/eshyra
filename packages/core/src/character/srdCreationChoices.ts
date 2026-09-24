@@ -188,11 +188,21 @@ export const SRD_5_1_MUSICAL_INSTRUMENTS: readonly string[] = [
   'Viol',
 ];
 
-/** Source-audited proficiency categories without individual equipment rows. */
+/**
+ * Source-audited vehicle proficiencies. The Tools table prints one combined
+ * "Vehicles (land or water)" row (emitted as
+ * `SRD_5_1_VEHICLES_TOOL_ROW_KEY`, eshyra-o9bd.19.2.2.2), but proficiency is
+ * held with "a certain kind of vehicle (land or water)" (Vehicle Proficiency,
+ * p. 71), so these two names — not the combined row — are the proficiency
+ * options.
+ */
 export const SRD_5_1_VEHICLE_PROFICIENCIES: readonly string[] = [
   'Vehicles (land)',
   'Vehicles (water)',
 ];
+
+/** The Tools table's combined vehicles row; not itself a proficiency option. */
+export const SRD_5_1_VEHICLES_TOOL_ROW_KEY = 'equipment:vehicles-land-or-water';
 
 /** Context the importer supplies (pack-derived, enumerable option sets). */
 export interface CreationChoiceContext {

@@ -32,6 +32,7 @@ import {
   type BackgroundEquipmentGrant,
   getAncestryCreationChoices,
   SRD_5_1_VEHICLE_PROFICIENCIES,
+  SRD_5_1_VEHICLES_TOOL_ROW_KEY,
 } from './srdCreationChoices.js';
 import type {
   StartingEquipmentGrant as ResolvedEquipmentGrant,
@@ -1398,6 +1399,7 @@ function listToolProficiencies(stack: ResolvedRulesStack): readonly string[] {
     if (!values.has(key)) values.set(key, value);
   };
   for (const record of equipmentRecords(stack)) {
+    if (record.key === SRD_5_1_VEHICLES_TOOL_ROW_KEY) continue;
     add(record.name);
   }
   for (const value of SRD_5_1_VEHICLE_PROFICIENCIES) add(value);

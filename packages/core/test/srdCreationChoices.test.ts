@@ -166,9 +166,16 @@ describe('pack-derived tool proficiency domain', () => {
     expect(normalized.has('gaming set')).toBe(false);
     for (const value of ['Vehicles (land)', 'Vehicles (water)'])
       expect(domain).toContain(value);
+    // The Tools table's combined row is not a proficiency; land and water are
+    // granted separately (eshyra-o9bd.19.2.2.2).
+    expect(domain).not.toContain('Vehicles (land or water)');
     for (const record of pack.records) {
       const data = record.data as { category?: unknown };
-      if (record.kind === 'equipment' && data.category === 'tool') {
+      if (
+        record.kind === 'equipment' &&
+        data.category === 'tool' &&
+        record.key !== 'equipment:vehicles-land-or-water'
+      ) {
         expect(
           normalized.has(
             record.name

@@ -328,6 +328,20 @@ const entries: Array<readonly [string, EquipmentReview]> = [
         },
       ] as const,
   ),
+  // eshyra-o9bd.19.2.2.2: the Tools table's closing row prints "*" in its
+  // cost and weight cells, pointing at the Mounts and Vehicles section.
+  [
+    'equipment:vehicles-land-or-water',
+    {
+      disposition: 'externally owned runtime behavior',
+      rationale:
+        'The Tools table row is a cross-reference: its "*" cost/weight cells point at the Mounts and Vehicles section, which owns vehicle prices and the Vehicle Proficiency procedure.',
+      owners: ['rule:mounts-and-vehicles'],
+      requiredDeterministicRepresentation: [
+        'canonical rule:mounts-and-vehicles Vehicle Proficiency procedure',
+      ],
+    },
+  ],
   ...NONMECHANICAL.map(
     (key) =>
       [
@@ -347,7 +361,7 @@ export const EQUIPMENT_MECHANICS_REVIEW: ReadonlyMap<string, EquipmentReview> =
   new Map(entries);
 if (EQUIPMENT_MECHANICS_REVIEW.size !== entries.length)
   throw new Error('duplicate equipment review key');
-if (entries.length !== 218)
+if (entries.length !== 219)
   throw new Error(
-    `equipment review must contain 218 records, got ${entries.length}`,
+    `equipment review must contain 219 records, got ${entries.length}`,
   );

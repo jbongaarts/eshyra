@@ -1,14 +1,14 @@
 {
   "bead": "eshyra-o9bd.18.7.6",
   "generatedBy": "packages/core/scripts/inventory-equipment-mechanics.ts",
-  "recordCount": 218,
-  "recordsWithDescriptions": 109,
-  "mechanicallyActiveRecords": 174,
+  "recordCount": 219,
+  "recordsWithDescriptions": 110,
+  "mechanicallyActiveRecords": 175,
   "curatedProjectionRecords": 35,
   "clauseCount": 75,
   "dispositionCounts": {
     "already complete": 82,
-    "externally owned runtime behavior": 53,
+    "externally owned runtime behavior": 54,
     "model-adjudicated qualifier": 4,
     "not mechanical": 44,
     "requires projection in this bead": 35
@@ -5099,7 +5099,34 @@
         ],
         "weaponCategory": "martial",
         "weaponRange": "melee",
-        "weight": "3 lb."
+        "weight": "3 lb.",
+        "mechanics": {
+          "procedures": [
+            {
+              "id": "longsword-damage",
+              "kind": "weapon-damage-modes",
+              "selector": "hands-used",
+              "modes": [
+                {
+                  "id": "one-handed",
+                  "hands": 1,
+                  "damage": {
+                    "dice": "1d8",
+                    "type": "slashing"
+                  }
+                },
+                {
+                  "id": "two-handed",
+                  "hands": 2,
+                  "damage": {
+                    "dice": "1d10",
+                    "type": "slashing"
+                  }
+                }
+              ]
+            }
+          ]
+        }
       },
       "sourceDescriptionClauses": [],
       "mechanicallySignificantClauseIds": [],
@@ -5112,7 +5139,8 @@
         "weaponProperties",
         "weaponCategory",
         "weaponRange",
-        "weight"
+        "weight",
+        "mechanics"
       ],
       "requiredDeterministicRepresentation": ["table-derived fields"],
       "disposition": "already complete",
@@ -8846,6 +8874,30 @@
       "disposition": "already complete",
       "rationale": "Reviewed table-derived armor, weapon, pack, capacity, mount, or vehicle payload is complete for deterministic filtering and lookup.",
       "engineToolOwners": ["equipment-schema"],
+      "sourceBindings": []
+    },
+    {
+      "recordKey": "equipment:vehicles-land-or-water",
+      "name": "Vehicles (land or water)",
+      "category": "tool",
+      "grouping": {
+        "equipmentGroup": null,
+        "weaponCategory": null,
+        "weaponRange": null
+      },
+      "source": "SRD 5.1 p. 70",
+      "tableDerivedFacts": {
+        "category": "tool"
+      },
+      "sourceDescriptionClauses": ["See the “Mounts and Vehicles” section."],
+      "mechanicallySignificantClauseIds": [],
+      "currentTypedRepresentation": ["category"],
+      "requiredDeterministicRepresentation": [
+        "canonical rule:mounts-and-vehicles Vehicle Proficiency procedure"
+      ],
+      "disposition": "externally owned runtime behavior",
+      "rationale": "The Tools table row is a cross-reference: its \"*\" cost/weight cells point at the Mounts and Vehicles section, which owns vehicle prices and the Vehicle Proficiency procedure.",
+      "engineToolOwners": ["rule:mounts-and-vehicles"],
       "sourceBindings": []
     },
     {

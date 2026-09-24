@@ -610,6 +610,7 @@ const EQUIPMENT_PAGE: FixturePage = {
     'Item Cost Weight',
     'Smith’s tools 20 gp 8 lb.',
     'Vehicles (land or water) * *',
+    '* See the “Mounts and Vehicles” section.',
     'Mounts and Vehicles',
     'A good mount can help you move more quickly through the wilderness.',
     'Armor Proficiency. Anyone can put on a suit of armor or strap a shield to an arm.',
@@ -1059,7 +1060,9 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
     // 4 prior tables + 2 trap tables + 3 madness tables + 2 object tables
     // + 4 Acolyte suggested-characteristics roll tables (eshyra-0m9.17).
     expect(result.counts.tables).toBe(15);
-    expect(result.counts.equipment).toBe(4);
+    // Dagger, Leather, Sling, Smith's tools, and the Tools table's closing
+    // Vehicles (land or water) row (eshyra-o9bd.19.2.2.2).
+    expect(result.counts.equipment).toBe(5);
     expect(result.counts.magicItems).toBe(2);
     expect(result.counts.ancestries).toBe(18);
     expect(result.counts.backgrounds).toBe(1);
@@ -1067,8 +1070,8 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
 
     const pack = loadRulesPackFromDirectory(outDir);
     // 64 prior records + 1 background + 4 roll tables + 1 backgrounds-intro
-    // rule + 3 fixture Equipment guidance rules.
-    expect(pack.records).toHaveLength(73);
+    // rule + 3 fixture Equipment guidance rules + the Vehicles tool row.
+    expect(pack.records).toHaveLength(74);
     const keys = pack.records.map((r) => r.key).sort();
     expect(keys).toContain('class:fighter');
     expect(keys).toContain('subclass:champion');
@@ -1165,6 +1168,7 @@ describe('runImporter — end-to-end against a fixture PDF', () => {
       'equipment:leather',
       'equipment:sling',
       'equipment:smiths-tools',
+      'equipment:vehicles-land-or-water',
     ]);
     const magicItemKeys = keys.filter((k) => k.startsWith('magic-item:'));
     expect(magicItemKeys).toEqual([

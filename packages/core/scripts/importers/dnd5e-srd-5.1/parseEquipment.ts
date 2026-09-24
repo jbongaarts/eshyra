@@ -99,6 +99,23 @@ export class ContainerCapacityError extends Error {
   }
 }
 
+/**
+ * Thrown when a line inside the Tools table (between its "Item Cost Weight"
+ * header and the closing "Vehicles (land or water)" row) is neither a priced
+ * row nor a reviewed group header, or the table's closing row or footnote is
+ * missing. Every printed Tools row must have an emitted counterpart; per ADR
+ * 0007 the parser fails closed rather than skip a row it cannot read.
+ */
+export class ToolsTableRowError extends Error {
+  constructor(
+    public readonly line: string,
+    reason: string,
+  ) {
+    super(`Tools table line "${line}" rejected: ${reason}.`);
+    this.name = 'ToolsTableRowError';
+  }
+}
+
 interface FlatLine {
   readonly line: string;
   readonly page: number;
@@ -192,11 +209,21 @@ const WEAPON_DAMAGE_TOKEN =
 const WEAPON_DAMAGE_PARTS = /^(\d+d\d+|\d+) (bludgeoning|piercing|slashing)$/i;
 
 // Tools table column header and the row that closes it. The Tools table
-// extracts row-major; "Vehicles (land or water)" is the final table line (its
-// cost/weight are "*", pointing at the Mounts and Vehicles section) and marks
-// the end of the parseable rows.
+// extracts row-major; "Vehicles (land or water) * *" is the final printed row.
+// Its cost and weight cells are both the "*" footnote marker, and the footnote
+// printed directly beneath the table ("* See the “Mounts and Vehicles”
+// section.") is what those cells say (eshyra-o9bd.19.2.2.2).
 const TOOLS_COLUMN_HEADER = /^Item Cost Weight$/i;
-const VEHICLES_ROW = /^Vehicles \(land or water\)/i;
+const VEHICLES_ROW = /^(Vehicles \(land or water\)) \* \*$/;
+const VEHICLES_FOOTNOTE = /^\* (See the “Mounts and Vehicles” section\.)$/;
+// The Tools table's cell-less group header rows. Their members are tagged with
+// `equipmentGroup` (see `attachEquipmentGroups`); the headers themselves are
+// not items. Any other table line that is not a priced row fails closed.
+const TOOL_GROUP_HEADERS: ReadonlySet<string> = new Set([
+  'Artisan’s tools',
+  'Gaming set',
+  'Musical instrument',
+]);
 // Tools row tail: "<name> <cost> <weight-or-dash>" with nothing trailing.
 const TOOL_TAIL = new RegExp(`^(${WEIGHT_CELL.source}|[—–-])$`, 'i');
 
@@ -648,10 +675,13 @@ function collectWeapons(flat: readonly FlatLine[]): EquipmentExtraction[] {
 
 /**
  * Collect the Tools table. It extracts row-major, so each "<name> <cost>
- * <weight>" line is a record; the category sub-headers (Artisan's tools,
+ * <weight>" line is a record; the reviewed group headers (Artisan's tools,
  * Gaming set, Musical instrument) carry no cost cell and are skipped. The table
  * is bounded by its column header and the closing "Vehicles (land or water)"
- * row.
+ * row, which is emitted too: a cost-less tool record whose description is the
+ * footnote its "*" cells point at. Every line inside the table must be a
+ * priced row or a group header, so a printed row the row grammar does not
+ * recognize throws instead of silently vanishing (eshyra-o9bd.19.2.2.2).
  */
 function collectTools(flat: readonly FlatLine[]): EquipmentExtraction[] {
   const headerIdx = flat.findIndex((f) => TOOLS_COLUMN_HEADER.test(f.line));
@@ -661,12 +691,29 @@ function collectTools(flat: readonly FlatLine[]): EquipmentExtraction[] {
   const out: EquipmentExtraction[] = [];
   for (let i = headerIdx + 1; i < flat.length; i++) {
     const { line, page } = flat[i];
-    if (VEHICLES_ROW.test(line)) {
-      break;
+    const vehicles = VEHICLES_ROW.exec(line);
+    if (vehicles !== null) {
+      const footnote = VEHICLES_FOOTNOTE.exec(flat[i + 1]?.line ?? '');
+      if (footnote === null) {
+        throw new ToolsTableRowError(
+          line,
+          'its "*" cells have no "Mounts and Vehicles" footnote beneath the table',
+        );
+      }
+      out.push({
+        name: vehicles[1],
+        category: 'tool',
+        description: footnote[1],
+        sourcePage: page,
+      });
+      return out;
+    }
+    if (TOOL_GROUP_HEADERS.has(line)) {
+      continue;
     }
     const split = splitNameAndCost(line);
     if (split === undefined || !TOOL_TAIL.test(split.rest)) {
-      continue;
+      throw new ToolsTableRowError(line, 'it is not a priced row');
     }
     const weight = WEIGHT_CELL.test(split.rest)
       ? normalize(split.rest)
@@ -679,7 +726,10 @@ function collectTools(flat: readonly FlatLine[]): EquipmentExtraction[] {
       sourcePage: page,
     });
   }
-  return out;
+  throw new ToolsTableRowError(
+    flat[headerIdx].line,
+    'the table has no closing "Vehicles (land or water)" row',
+  );
 }
 
 // === Adventuring Gear =====================================================

@@ -28,6 +28,7 @@ import {
   EquipmentColumnMismatchError,
   parseEquipment,
   parseMountsAndVehicles,
+  ToolsTableRowError,
 } from '../../../scripts/importers/dnd5e-srd-5.1/parseEquipment.js';
 import type {
   EquipmentExtraction,
@@ -118,6 +119,7 @@ const EQUIPMENT_PAGE = page(63, [
   'Dice set 1 sp —',
   'Thieves’ tools 25 gp 1 lb.',
   'Vehicles (land or water) * *',
+  '* See the “Mounts and Vehicles” section.',
   'Artisan’s Tools. These special tools include the items needed to pursue a craft.',
 ]);
 
@@ -138,6 +140,7 @@ describe('parseEquipment — full multi-table excerpt', () => {
       'Shield',
       'Smith’s tools',
       'Thieves’ tools',
+      'Vehicles (land or water)',
     ]);
   });
 
@@ -152,7 +155,6 @@ describe('parseEquipment — full multi-table excerpt', () => {
       'Tools',
       'Artisan’s tools',
       'Gaming set',
-      'Vehicles (land or water)',
     ]) {
       expect(names.has(notAnItem)).toBe(false);
     }
@@ -433,8 +435,44 @@ describe('parseEquipment — tools', () => {
     expect(dice?.weight).toBeUndefined();
   });
 
-  it('stops the tool table at the Vehicles row', () => {
-    expect(byName(items, 'Vehicles (land or water)')).toBeUndefined();
+  // eshyra-o9bd.19.2.2.2: the Tools table's last printed row prints "*" in
+  // both cells; the row is emitted with no invented cost/weight and carries
+  // the footnote those markers point at.
+  it('emits the Vehicles row with its footnote and no cost or weight', () => {
+    const vehicles = byName(items, 'Vehicles (land or water)');
+    expect(vehicles).toEqual({
+      name: 'Vehicles (land or water)',
+      category: 'tool',
+      description: 'See the “Mounts and Vehicles” section.',
+      sourcePage: 63,
+    });
+  });
+
+  it('fails closed on a Tools table line that is neither a row nor a group header', () => {
+    const lines = EQUIPMENT_PAGE.lines.map((line) =>
+      line === 'Thieves’ tools 25 gp 1 lb.' ? 'Thieves’ tools 25 gp' : line,
+    );
+    expect(() => parseEquipment([{ ...EQUIPMENT_PAGE, lines }])).toThrow(
+      ToolsTableRowError,
+    );
+  });
+
+  it('fails closed when the Vehicles row has no footnote beneath the table', () => {
+    const lines = EQUIPMENT_PAGE.lines.filter(
+      (line) => line !== '* See the “Mounts and Vehicles” section.',
+    );
+    expect(() => parseEquipment([{ ...EQUIPMENT_PAGE, lines }])).toThrow(
+      /no "Mounts and Vehicles" footnote/,
+    );
+  });
+
+  it('fails closed when the table has no closing Vehicles row', () => {
+    const lines = EQUIPMENT_PAGE.lines.filter(
+      (line) => !line.startsWith('Vehicles (land or water)'),
+    );
+    expect(() => parseEquipment([{ ...EQUIPMENT_PAGE, lines }])).toThrow(
+      ToolsTableRowError,
+    );
   });
 
   // eshyra-erf5.3.2: at least one non-focus tool group (artisan's tools,
