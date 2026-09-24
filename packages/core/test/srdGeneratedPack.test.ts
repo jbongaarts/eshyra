@@ -3766,14 +3766,15 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         }
       }
       // The reviewed SRD 5.1 baseline (loreweaver-3n6 + loreweaver-4zu):
-      // 13 armor, 37 weapons, 36 tools (the Tools table's 35 priced rows +
-      // its "Vehicles (land or water)" row, eshyra-o9bd.19.2.2.2), 112 gear
-      // (99 Adventuring Gear + 13 Tack/Harness/Drawn Vehicles), 7 Equipment
-      // Packs, 8 mounts, 6 waterborne vehicles.
+      // 13 armor, 37 weapons, 112 gear (99 Adventuring Gear + 13
+      // Tack/Harness/Drawn Vehicles), 7 Equipment Packs, 8 mounts, 6
+      // waterborne vehicles. Tool membership is not pinned by count: the
+      // importer's source-derived Tools row parity gate (toolsTableRows.ts,
+      // eshyra-o9bd.19.2.2.2) proves it against the printed table.
+      counts.delete('tool');
       expect(Object.fromEntries(counts)).toEqual({
         armor: 13,
         weapon: 37,
-        tool: 36,
         gear: 112,
         pack: 7,
         mount: 8,
@@ -3784,7 +3785,8 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     // eshyra-o9bd.19.2.2.2: the Tools table (p. 70) prints "Vehicles (land or
     // water) * *" as its last row, with "* See the “Mounts and Vehicles”
     // section." beneath the table. The row is emitted without an invented
-    // cost or weight; the parser throws on any unrecognized table line.
+    // cost or weight. Full row membership is the importer's source-derived
+    // Tools row parity gate; this pins the exact once-missing row.
     it('emits the Tools table Vehicles row with its footnote, not a cost', () => {
       const vehicles = pack.records.find(
         (r) => r.key === 'equipment:vehicles-land-or-water',
