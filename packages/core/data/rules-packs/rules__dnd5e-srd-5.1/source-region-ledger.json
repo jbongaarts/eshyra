@@ -3,8 +3,8 @@
     "entries": 2685,
     "proseRegions": 2658,
     "pureStructure": 27,
-    "record": 2122,
-    "childOf": 448,
+    "record": 2110,
+    "childOf": 460,
     "structuredField": 83,
     "intentionallyIgnored": {
       "deity-table-column-header": 1,
@@ -672,8 +672,8 @@
       "firstPhrase": "As a barbarian, you gain the following class features.",
       "lastPhrase": "As a barbarian, you gain the following class features.",
       "normalizedCharCount": 54,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:barbarian",
+      "targetKey": "class:barbarian",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -1162,8 +1162,8 @@
       "firstPhrase": "As a bard, you gain the following class features.",
       "lastPhrase": "As a bard, you gain the following class features.",
       "normalizedCharCount": 49,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:bard",
+      "targetKey": "class:bard",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -1340,8 +1340,7 @@
       "classification": "record:feature:bard:spellcasting",
       "targetKey": "feature:bard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p12-l16-prose",
@@ -1385,8 +1384,7 @@
       "classification": "record:feature:bard:spellcasting",
       "targetKey": "feature:bard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p12-l43-prose",
@@ -1766,8 +1764,8 @@
       "firstPhrase": "As a cleric, you gain the following class features.",
       "lastPhrase": "As a cleric, you gain the following class features.",
       "normalizedCharCount": 51,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:cleric",
+      "targetKey": "class:cleric",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -1945,8 +1943,7 @@
       "classification": "record:feature:cleric:spellcasting",
       "targetKey": "feature:cleric:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p16-l38-prose",
@@ -2373,8 +2370,8 @@
       "firstPhrase": "As a druid, you gain the following class features.",
       "lastPhrase": "As a druid, you gain the following class features.",
       "normalizedCharCount": 50,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:druid",
+      "targetKey": "class:druid",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -2594,8 +2591,7 @@
       "classification": "record:feature:druid:spellcasting",
       "targetKey": "feature:druid:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p20-l43-prose",
@@ -2682,8 +2678,7 @@
       "classification": "record:feature:druid:wild-shape",
       "targetKey": "feature:druid:wild-shape",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p21-l0-prose",
@@ -2705,8 +2700,7 @@
       "classification": "record:feature:druid:wild-shape",
       "targetKey": "feature:druid:wild-shape",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p21-l28-prose",
@@ -3070,8 +3064,8 @@
       "firstPhrase": "As a fighter, you gain the following class features.",
       "lastPhrase": "As a fighter, you gain the following class features.",
       "normalizedCharCount": 52,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:fighter",
+      "targetKey": "class:fighter",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -3587,8 +3581,8 @@
       "firstPhrase": "As a monk, you gain the following class features.",
       "lastPhrase": "As a monk, you gain the following class features.",
       "normalizedCharCount": 49,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:monk",
+      "targetKey": "class:monk",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -4354,8 +4348,8 @@
       "firstPhrase": "As a paladin, you gain the following class features.",
       "lastPhrase": "As a paladin, you gain the following class features.",
       "normalizedCharCount": 52,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:paladin",
+      "targetKey": "class:paladin",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -4683,8 +4677,7 @@
       "classification": "record:feature:paladin:spellcasting",
       "targetKey": "feature:paladin:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p31-l85-prose",
@@ -4834,8 +4827,7 @@
       "classification": "record:feature:paladin:sacred-oath",
       "targetKey": "feature:paladin:sacred-oath",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p32-l35-prose",
@@ -5240,8 +5232,8 @@
       "firstPhrase": "As a ranger, you gain the following class features.",
       "lastPhrase": "As a ranger, you gain the following class features.",
       "normalizedCharCount": 51,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:ranger",
+      "targetKey": "class:ranger",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -5568,8 +5560,7 @@
       "classification": "record:feature:ranger:spellcasting",
       "targetKey": "feature:ranger:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p36-l63-prose",
@@ -5613,8 +5604,7 @@
       "classification": "record:feature:ranger:spellcasting",
       "targetKey": "feature:ranger:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p37-l1-prose",
@@ -6014,8 +6004,8 @@
       "firstPhrase": "As a rogue, you have the following class features.",
       "lastPhrase": "As a rogue, you have the following class features.",
       "normalizedCharCount": 50,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:rogue",
+      "targetKey": "class:rogue",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -6568,8 +6558,8 @@
       "firstPhrase": "As a sorcerer, you gain the following class features.",
       "lastPhrase": "As a sorcerer, you gain the following class features.",
       "normalizedCharCount": 53,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:sorcerer",
+      "targetKey": "class:sorcerer",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -6725,8 +6715,7 @@
       "classification": "record:feature:sorcerer:spellcasting",
       "targetKey": "feature:sorcerer:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p43-l22-prose",
@@ -6770,8 +6759,7 @@
       "classification": "record:feature:sorcerer:spellcasting",
       "targetKey": "feature:sorcerer:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p43-l46-prose",
@@ -6793,8 +6781,7 @@
       "classification": "record:feature:sorcerer:spellcasting",
       "targetKey": "feature:sorcerer:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p43-l49-prose",
@@ -6924,8 +6911,7 @@
       "classification": "record:feature:sorcerer:font-of-magic",
       "targetKey": "feature:sorcerer:font-of-magic",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p44-l0-prose",
@@ -6947,8 +6933,7 @@
       "classification": "record:feature:sorcerer:font-of-magic",
       "targetKey": "feature:sorcerer:font-of-magic",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p44-l3-prose",
@@ -7272,8 +7257,7 @@
       "classification": "record:feature:draconic-bloodline:dragon-ancestor",
       "targetKey": "feature:draconic-bloodline:dragon-ancestor",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p45-l14-prose",
@@ -7400,8 +7384,8 @@
       "firstPhrase": "As a warlock, you gain the following class features.",
       "lastPhrase": "As a warlock, you gain the following class features.",
       "normalizedCharCount": 52,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:warlock",
+      "targetKey": "class:warlock",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -7600,8 +7584,7 @@
       "classification": "record:feature:warlock:pact-magic",
       "targetKey": "feature:warlock:pact-magic",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p47-l15-prose",
@@ -7645,8 +7628,7 @@
       "classification": "record:feature:warlock:pact-magic",
       "targetKey": "feature:warlock:pact-magic",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p47-l41-prose",
@@ -8840,8 +8822,8 @@
       "firstPhrase": "As a wizard, you gain the following class features.",
       "lastPhrase": "As a wizard, you gain the following class features.",
       "normalizedCharCount": 51,
-      "classification": "record:rule:class-features",
-      "targetKey": "rule:class-features",
+      "classification": "child-of:class:wizard",
+      "targetKey": "class:wizard",
       "emission": "structured-equivalent",
       "emissionNotes": "The per-class lead-in sentence \"As a <class>, you gain the following class features.\" is boilerplate whose content — the class grants these features — is the class record's structured features[] and progression advancement data."
     },
@@ -9063,8 +9045,7 @@
       "classification": "record:feature:wizard:spellcasting",
       "targetKey": "feature:wizard:spellcasting",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p53-l41-prose",
@@ -10109,8 +10090,7 @@
       "classification": "record:background:acolyte",
       "targetKey": "background:acolyte",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p62-l1-prose",
@@ -10647,8 +10627,7 @@
       "classification": "record:rule:weapon-proficiency",
       "targetKey": "rule:weapon-proficiency",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p64-l75-prose",
@@ -10734,8 +10713,7 @@
       "classification": "record:rule:improvised-weapons",
       "targetKey": "rule:improvised-weapons",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p65-l68-prose",
@@ -12524,8 +12502,7 @@
       "classification": "record:rule:ability-checks",
       "targetKey": "rule:ability-checks",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p77-l67-prose",
@@ -13601,8 +13578,7 @@
       "classification": "record:rule:speed",
       "targetKey": "rule:speed",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p85-l1-prose",
@@ -27504,8 +27480,7 @@
       "classification": "record:spell:reincarnate",
       "targetKey": "spell:reincarnate",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p174-l85-prose",
@@ -27857,8 +27832,7 @@
       "classification": "record:spell:scrying",
       "targetKey": "spell:scrying",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p177-l14-prose",
@@ -29000,8 +28974,7 @@
       "classification": "record:spell:teleport",
       "targetKey": "spell:teleport",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p186-l52-prose",
@@ -29023,8 +28996,7 @@
       "classification": "record:spell:teleport",
       "targetKey": "spell:teleport",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p186-l73-prose",
@@ -30681,8 +30653,7 @@
       "classification": "record:rule:objects",
       "targetKey": "rule:objects",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p203-l48-prose",
@@ -30704,8 +30675,7 @@
       "classification": "record:rule:objects",
       "targetKey": "rule:objects",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p204-l1-prose",
@@ -31869,8 +31839,7 @@
       "classification": "record:magic-item:candle-of-invocation",
       "targetKey": "magic-item:candle-of-invocation",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p213-l48-prose",
@@ -31892,8 +31861,7 @@
       "classification": "record:magic-item:candle-of-invocation",
       "targetKey": "magic-item:candle-of-invocation",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p213-l52-prose",
@@ -31960,8 +31928,7 @@
       "classification": "record:magic-item:carpet-of-flying",
       "targetKey": "magic-item:carpet-of-flying",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p213-l80-prose",
@@ -32291,8 +32258,7 @@
       "classification": "record:magic-item:cube-of-force",
       "targetKey": "magic-item:cube-of-force",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p215-l56-prose",
@@ -32514,8 +32480,7 @@
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p217-l52-prose",
@@ -32537,8 +32502,7 @@
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p218-l0-prose",
@@ -32560,8 +32524,7 @@
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p218-l8-prose",
@@ -32583,8 +32546,7 @@
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p218-l28-prose",
@@ -32607,8 +32569,7 @@
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p218-l43-prose",
@@ -32631,8 +32592,7 @@
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p218-l62-prose",
@@ -33120,8 +33080,7 @@
       "classification": "record:magic-item:feather-token",
       "targetKey": "magic-item:feather-token",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p221-l47-prose",
@@ -33143,8 +33102,7 @@
       "classification": "record:magic-item:feather-token",
       "targetKey": "magic-item:feather-token",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p221-l85-prose",
@@ -33210,8 +33168,7 @@
       "classification": "record:magic-item:figurine-of-wondrous-power",
       "targetKey": "magic-item:figurine-of-wondrous-power",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p222-l46-prose",
@@ -33233,8 +33190,7 @@
       "classification": "record:magic-item:figurine-of-wondrous-power",
       "targetKey": "magic-item:figurine-of-wondrous-power",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p223-l0-prose",
@@ -33256,8 +33212,7 @@
       "classification": "record:magic-item:figurine-of-wondrous-power",
       "targetKey": "magic-item:figurine-of-wondrous-power",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p223-l4-prose",
@@ -33852,8 +33807,7 @@
       "classification": "record:magic-item:horn-of-valhalla",
       "targetKey": "magic-item:horn-of-valhalla",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p226-l49-prose",
@@ -34317,8 +34271,7 @@
       "classification": "record:magic-item:manual-of-golems",
       "targetKey": "magic-item:manual-of-golems",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p230-l11-prose",
@@ -35710,8 +35663,7 @@
       "classification": "record:magic-item:ring-of-shooting-stars",
       "targetKey": "magic-item:ring-of-shooting-stars",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p237-l70-prose",
@@ -38336,8 +38288,7 @@
       "classification": "record:rule:hit-points",
       "targetKey": "rule:hit-points",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p256-l16-prose",
@@ -47327,8 +47278,7 @@
       "classification": "record:rule:half-dragon-template",
       "targetKey": "rule:half-dragon-template",
       "guardNotes": "Region text is contained in generated record data; heading status alone was not used.",
-      "emission": "contained",
-      "contentMatch": true
+      "emission": "contained"
     },
     {
       "id": "p321-l15-prose",

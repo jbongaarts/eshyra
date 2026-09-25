@@ -79,6 +79,19 @@ export interface RecordProvenance {
   readonly sourceRef: string;
   readonly locator?: string;
   readonly note?: string;
+  /**
+   * Field-level provenance for a value sourced from a printed region OTHER
+   * than the record's own body (eshyra-o9bd.19.2.2.3.1) — e.g. a spell's
+   * `classes` membership (read from a separate class spell-list appendix) or
+   * an equipment item's `capacity` (read from the Container Capacity table,
+   * not the item's own description). Each key is a JSON Pointer
+   * (RFC 6901, e.g. `/classes`) into `RulesRecord.data`, which MUST resolve
+   * to an existing value there. Each value is a locator in the same page
+   * grammar as `locator`: `p. N` for a single page, or `pp. N, M, ...`
+   * (ascending, comma-separated, deduplicated) for more than one — no
+   * dash-range form, to keep exactly one multi-page shape per grammar.
+   */
+  readonly fieldLocators?: Readonly<Record<string, string>>;
 }
 
 /** A precise source location that gives rise to an unresolved rules question. */

@@ -287,6 +287,189 @@ describe('buildSourceRegionLedger', () => {
     expect(body?.contentMatch).toBeUndefined();
   });
 
+  describe('contentMatch — physical continuation vs. cross-reference (eshyra-o9bd.19.2.2.3.1 F1)', () => {
+    it("clears contentMatch when a content-search match repeats the IMMEDIATELY PRECEDING non-contentMatch region's key (physical continuation)", () => {
+      // "Wild Shape" owns its own body directly (heading status ==
+      // feature:druid:wild-shape). The NEXT region is interrupted by an
+      // unrelated "Beast Shapes" table caption becoming the new owner, but
+      // its body text is still wild-shape prose (a same-page-layout
+      // continuation): content search finds it ONLY in
+      // feature:druid:wild-shape's own data, matching the immediately
+      // preceding region's key, so it must NOT be flagged contentMatch.
+      const wildShapeHeading = item({ text: 'Wild Shape', lineIndex: 0 });
+      const beastShapesHeading = item({ text: 'Beast Shapes', lineIndex: 2 });
+      const ledger = buildSourceRegionLedger(
+        [
+          page(
+            [
+              'Wild Shape',
+              'Wild shape body sentence druid.',
+              'Beast Shapes',
+              'Wild shape continuation phrase druid two.',
+            ],
+            [12, 9.8, 12, 9.8],
+          ),
+        ],
+        [
+          coverage(wildShapeHeading, {
+            kind: 'record',
+            key: 'feature:druid:wild-shape',
+          }),
+          coverage(beastShapesHeading, {
+            kind: 'record',
+            key: 'table:beast-shapes',
+          }),
+        ],
+        [
+          record(
+            'feature:druid:wild-shape',
+            'Wild Shape',
+            'Wild shape body sentence druid. Wild shape continuation phrase druid two.',
+          ),
+          record(
+            'table:beast-shapes',
+            'Beast Shapes',
+            'Beast shapes table caption text unrelated.',
+          ),
+        ],
+      );
+
+      const bodies = ledger.entries.filter(
+        (entry) => entry.normalizedCharCount > 0,
+      );
+      expect(bodies).toHaveLength(2);
+      expect(bodies[0]).toMatchObject({
+        classification: 'record:feature:druid:wild-shape',
+        targetKey: 'feature:druid:wild-shape',
+      });
+      expect(bodies[0].contentMatch).toBeUndefined();
+      // The continuation: owned by the UNRELATED "Beast Shapes" heading, but
+      // still resolves (via content search) to wild-shape — the physical
+      // continuation this fix exists to recognize.
+      expect(bodies[1]).toMatchObject({
+        classification: 'record:feature:druid:wild-shape',
+        targetKey: 'feature:druid:wild-shape',
+      });
+      expect(bodies[1].contentMatch).toBeUndefined();
+    });
+
+    it('still flags contentMatch for a genuine cross-reference to an UNRELATED key', () => {
+      const coinageHeading = item({ text: 'Coinage', lineIndex: 0 });
+      const unrelatedHeading = item({
+        text: 'Unrelated Heading',
+        lineIndex: 2,
+      });
+      const ledger = buildSourceRegionLedger(
+        [
+          page(
+            [
+              'Coinage',
+              'Coinage body sentence about currency exchange.',
+              'Unrelated Heading',
+              'Cross reference target phrase unrelated record five.',
+            ],
+            [12, 9.8, 12, 9.8],
+          ),
+        ],
+        [
+          coverage(coinageHeading, { kind: 'record', key: 'rule:coinage' }),
+          coverage(unrelatedHeading, {
+            kind: 'ignored',
+            reason: 'test-unrelated-heading',
+          }),
+        ],
+        [
+          record(
+            'rule:coinage',
+            'Coinage',
+            'Coinage body sentence about currency exchange.',
+          ),
+          record(
+            'rule:far-away-reference',
+            'Far Away Reference',
+            'Cross reference target phrase unrelated record five.',
+          ),
+        ],
+      );
+
+      const bodies = ledger.entries.filter(
+        (entry) => entry.normalizedCharCount > 0,
+      );
+      expect(bodies).toHaveLength(2);
+      expect(bodies[0].contentMatch).toBeUndefined();
+      // Different key than the preceding region (rule:coinage vs.
+      // rule:far-away-reference): a genuine document-wide cross-reference,
+      // not a continuation, so contentMatch stays set.
+      expect(bodies[1]).toMatchObject({
+        classification: 'record:rule:far-away-reference',
+        targetKey: 'rule:far-away-reference',
+        contentMatch: true,
+      });
+    });
+
+    it('propagates a cleared contentMatch through a multi-region chain', () => {
+      // Two successive unrelated-owner interruptions, both of whose bodies
+      // are really font-of-magic continuation prose. The SECOND must clear
+      // by chaining off the FIRST's already-cleared state, not by directly
+      // matching the chain's original owning heading.
+      const fontHeading = item({ text: 'Sorcery Points', lineIndex: 0 });
+      const tableAHeading = item({ text: 'Random Table A', lineIndex: 2 });
+      const tableBHeading = item({ text: 'Random Table B', lineIndex: 4 });
+      const ledger = buildSourceRegionLedger(
+        [
+          page(
+            [
+              'Sorcery Points',
+              'Font of magic body sentence sorcerer.',
+              'Random Table A',
+              'Font of magic continuation phrase sorcerer two.',
+              'Random Table B',
+              'Font of magic third hop phrase sorcerer three.',
+            ],
+            [12, 9.8, 12, 9.8, 12, 9.8],
+          ),
+        ],
+        [
+          coverage(fontHeading, {
+            kind: 'record',
+            key: 'feature:sorcerer:font-of-magic',
+          }),
+          coverage(tableAHeading, { kind: 'record', key: 'table:random-a' }),
+          coverage(tableBHeading, { kind: 'record', key: 'table:random-b' }),
+        ],
+        [
+          record(
+            'feature:sorcerer:font-of-magic',
+            'Font of Magic',
+            'Font of magic body sentence sorcerer. Font of magic continuation phrase sorcerer two. Font of magic third hop phrase sorcerer three.',
+          ),
+          record(
+            'table:random-a',
+            'Random Table A',
+            'Random table a caption text unrelated.',
+          ),
+          record(
+            'table:random-b',
+            'Random Table B',
+            'Random table b caption text unrelated.',
+          ),
+        ],
+      );
+
+      const bodies = ledger.entries.filter(
+        (entry) => entry.normalizedCharCount > 0,
+      );
+      expect(bodies).toHaveLength(3);
+      for (const body of bodies) {
+        expect(body).toMatchObject({
+          classification: 'record:feature:sorcerer:font-of-magic',
+          targetKey: 'feature:sorcerer:font-of-magic',
+        });
+        expect(body.contentMatch).toBeUndefined();
+      }
+    });
+  });
+
   it('handles adjacent records without creating orphan prose', () => {
     const first = item({ text: 'First Rule', lineIndex: 0 });
     const second = item({ text: 'Second Rule', lineIndex: 2 });

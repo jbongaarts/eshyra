@@ -33,15 +33,14 @@
  * A ledger page more than `MAX_CONTINUATION_GAP` pages from the record's own
  * starting page is dropped rather than unioned in. Every genuine multi-page
  * continuation in the committed pack is exactly 2 sequential pages; a "same
- * record" ledger match dozens of pages away is a bare-heading-name collision
- * in source coverage, not a physical continuation — e.g. every class chapter
- * prints its own one-line "As a barbarian, you gain the following class
- * features" under a heading literally titled "Class Features", and since
- * `rule:class-features` (the general multiclassing rule on p57) is the only
- * record actually named that, the coverage auto-match collapses all 13
- * chapter-opening occurrences onto it. That is a pre-existing source-coverage
- * classification, not something eshyra-lpk9 introduces or fixes — but
- * provenance must not repeat it as thirteen unrelated pages.
+ * record" ledger match dozens of pages away would be a same-heading-name
+ * collision in source-region ownership, not a physical continuation, and
+ * provenance must not repeat it as an unrelated far-away page. A page dropped
+ * here for being out of gap range is not silently accepted: the
+ * `recordLocatorCompleteness.ts` gate (eshyra-o9bd.19.2.2.3) re-checks every
+ * `record:`/`child-of:` ledger entry against the record's FINAL locator and
+ * fails the import closed if a genuine continuation's page was ever dropped —
+ * the exact defect class this comment used to describe as unfixed.
  */
 
 import type { RulesRecord } from '../../../src/rules/types.js';
