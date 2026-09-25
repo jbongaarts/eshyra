@@ -464,6 +464,29 @@ describe('rules pack validation', () => {
       );
     });
 
+    it.each([
+      '/toString',
+      '/constructor',
+      '/__proto__',
+      '/armorClass/hasOwnProperty',
+    ])(
+      'rejects fieldLocators pointer %s that only resolves through Object.prototype',
+      (pointer) => {
+        const pack = validRulesPack({
+          records: [
+            record('creature:goblin', {
+              provenance: recordProvenance({
+                fieldLocators: { [pointer]: 'p. 2' },
+              }),
+            }),
+          ],
+        });
+        expect(() => validateRulesPack(pack)).toThrow(
+          /does not resolve to a value in records\[0\]\.data/,
+        );
+      },
+    );
+
     it('accepts a fieldLocators pointer into a nested object field', () => {
       const pack = validRulesPack({
         records: [

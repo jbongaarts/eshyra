@@ -1,3 +1,4 @@
+import { resolveJsonPointer } from './jsonPointer.js';
 import { validateRecordKindSchema } from './kindSchemas.js';
 import type {
   CompatibleBaseSystem,
@@ -205,41 +206,6 @@ function provenance(value: unknown, path: string): RecordProvenance {
           ),
         }),
   };
-}
-
-/**
- * Resolve a JSON Pointer (RFC 6901) into a value, without throwing on a
- * dangling path — the caller decides what a miss means. Supports object
- * property and array index segments; `~1`/`~0` escapes decode to `/`/`~`.
- */
-function resolveJsonPointer(
-  data: unknown,
-  pointer: string,
-): { readonly found: boolean; readonly value: unknown } {
-  if (!pointer.startsWith('/')) return { found: false, value: undefined };
-  const segments = pointer
-    .slice(1)
-    .split('/')
-    .map((segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
-  let current: unknown = data;
-  for (const segment of segments) {
-    if (typeof current !== 'object' || current === null) {
-      return { found: false, value: undefined };
-    }
-    if (Array.isArray(current)) {
-      const index = Number(segment);
-      if (!Number.isInteger(index) || index < 0 || index >= current.length) {
-        return { found: false, value: undefined };
-      }
-      current = current[index];
-      continue;
-    }
-    if (!(segment in current)) {
-      return { found: false, value: undefined };
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return { found: true, value: current };
 }
 
 function compatibleBaseSystem(value: unknown, i: number): CompatibleBaseSystem {

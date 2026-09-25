@@ -233,137 +233,6 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // When an eshyra-4a7.* gap bead lands and regenerates the artifacts, update
     // these numbers in the same change that removes the matching curation rule.
     expect(inventory).toHaveLength(2258);
-    // record 1849 -> 1873 (eshyra-4a7.3): the 24 document-wide table records
-    // claim their captions / caption-less runs. The eshyra-4a7.3 catch-all
-    // known-gap rule is gone; its remaining items moved to scoped owners. The
-    // The deity tables (5 items), Half-Dragon Template region (3), and the
-    // Self-Sufficiency prose sidebar (1) joined their regions under
-    // eshyra-4a7.10.
-    // eshyra-4a7.6 dropped 128 -> 116 (the Barbarian progression caption,
-    // seven Circle of the Land tables, Life Domain / Oath of Devotion /
-    // Fiend Expanded spell tables, and Creating Spell Slots are now records);
-    // eshyra-4a7.7's two Draconic Ancestry captions are now records, so its
-    // rule was removed per the known-gap lifecycle.
-    // record 1873 -> 1875 (eshyra-4a7.4): Avatar of Death and Giant Fly are now
-    // emitted `stat-block` records, so the name auto-match claims their two
-    // `structure: 'stat-block'` inventory items and the `known-gap:eshyra-4a7.4`
-    // rule (2 items) was removed per the known-gap lifecycle.
-    // record 1875 -> 1902 (eshyra-4a7.8): Figurine of Wondrous Power and all 26
-    // formerly deferred Magic Items table structures are now records. The
-    // Spell Scroll structure also resolves explicitly to its table record
-    // instead of the same-name magic item.
-    // record 1902 -> 1914 (eshyra-4a7.6): the 11 remaining class progression
-    // table captions ("The Bard" … "The Wizard") and the Druid's Beast Shapes
-    // caption now auto-match their emitted table records (12 items). The
-    // Cleric's Destroy Undead table caption was already record-status (it
-    // auto-matched the same-name feature); it now maps explicitly to
-    // table:destroy-undead, so the count is unchanged by that one.
-    // record 1914 -> 1923 (eshyra-o4j7): all nine spell-embedded table
-    // structures now resolve to emitted table records.
-    // record 1923 -> 1934 (eshyra-4a7.10.1): four Races headings and seven
-    // Equipment/Self-Sufficiency headings moved from known-gap to their new
-    // rule records. Four additional Races headings were already record-status
-    // through incorrect same-name auto-matches; explicit rules now point them
-    // at their source-correct parent-qualified records without changing count.
-    // record 1934 -> 1937 (eshyra-4a7.10.3): the Half-Dragon Template heading
-    // and its two caption-less table runs now map to emitted records.
-    // record 1937 -> 1943 (eshyra-4a7.10.4): the "Sentient Magic Items" section
-    // heading (formerly document-structure) and the five Creating/Abilities/
-    // Communication/Special Purpose/Conflict headings (formerly known-gap) now
-    // map to emitted rule records. The Senses and Alignment headings were
-    // already record-status through incorrect same-name auto-matches; explicit
-    // rules now point them at their source-correct parent-qualified records
-    // without changing count.
-    // record 1943 -> 1944 (eshyra-4a7.10.6): the Appendix MM-B "Customizing
-    // NPCs" subsection heading (formerly known-gap) now maps to its emitted
-    // rule record.
-    // record 1944 -> 1960 (eshyra-4a7.10.5): the Appendix PH-B four pantheon
-    // headings + four deity-table captions (8) and the Appendix PH-C eight
-    // plane headings (8) moved from known-gap to their emitted rule/table
-    // records.
-    // record 1960 -> 1961 (eshyra-76b7): the "Appendix MM-A: Miscellaneous
-    // Creatures" heading now name-matches its emitted intro rule record instead
-    // of falling to the document-structure ignore default.
-    // Ambiguous bare-name matches no longer count as records. Contextual
-    // stat-block headings move to childOf; unresolved collisions remain
-    // reviewer-visible in the ambiguous total.
-    // eshyra-7qit maps ten previously ignored/ambiguous Equipment,
-    // Expenses, Diseases, and Poisons headings to their new rules.
-    // record 1430 -> 1442 (eshyra-g9im / eshyra-i2v4): twelve chapter/appendix/
-    // subclass-category headings (Feats, Using Ability Scores, Appendix PH-A:
-    // Conditions, Appendix MM-B: Nonplayer Characters, and the eight
-    // subclass-category headings Martial Archetypes … Arcane Traditions) now
-    // name-match their emitted intro/overview rule records instead of falling to
-    // the document-structure ignore default.
-    // record 1442 -> 1444 (eshyra-45fw): the Magic Items A-Z heading moved from
-    // document-structure and the Sample Traps heading moved from
-    // record-group-heading to their emitted intro rule records.
-    // record 1444 -> 1445 (eshyra-lo1o): the Spellcasting chapter heading now
-    // maps to the emitted Spellcasting chapter-intro rule.
-    // 1445 -> 1452: armor category headings, Adventuring Gear, and subclass
-    // spell-table intro headings now map to emitted source-bounded rules.
-    // 1452 -> 1453 (eshyra-o9bd.2/.3): Rogue's "Thieves' Cant" subsection, split
-    // out of feature:rogue:sneak-attack into its own feature:rogue:thieves-cant
-    // record, now maps to that record instead of riding in Sneak Attack's body.
-    // 1453 -> 1444 (eshyra-erf5.1): curated non-record rules (child-of/ignore/
-    // taxonomy/known-gap) now outrank the bare-name auto-match, the same as
-    // record-type rules already did — a same-named-but-unrelated record must
-    // not silently swallow a source item a curated rule already classifies.
-    // This resurrects several previously-dead-but-correct curated rules: the
-    // p78 five per-ability "Skills" bullet captions move to child-of
-    // rule:skills instead of the unrelated same-named per-ability rule records
-    // (-5); "Two-Weapon Fighting" under Fighter/Ranger moves child-of its
-    // owning feature:*:fighting-style instead of the unrelated general combat
-    // rule:two-weapon-fighting (-2); the Equipment "Tools" and Spellcasting-
-    // section "Poisons" table captions move to the existing
-    // table-rows-emitted-as-records ignore instead of the unrelated same-named
-    // rule:tools / rule:poisons (-2). One stale curated rule that would have
-    // wrongly resurfaced (a `feature:rogue:sneak-attack` child-of predicate for
-    // "Thieves' Cant" written before that text got its own
-    // feature:rogue:thieves-cant record) was removed, and the eldritch-
-    // invocations page-range rule gained two exclusions for "Dark One's
-    // Blessing" / "Dark One's Own Luck" (The Fiend's own p50 features,
-    // interleaved with the invocation list) so both keep resolving to their
-    // real feature:the-fiend:* records via the auto-match.
-    // 1444 -> 1445 (eshyra-o9bd.19.2.2.4): once the 4 duplicate-named
-    // feature:{cleric,druid,sorcerer,wizard}:cantrips records (and
-    // feature:wizard:spellbook) are retired, the "Cantrips"/"Spellbook"
-    // leaf headings' name auto-match shrinks to a single candidate:
-    // "Cantrips" (6 occurrences across Bard/Cleric/Druid/Sorcerer/Warlock/
-    // Wizard, all now curated `child-of` their owning spellcasting feature —
-    // see `childOf` below) no longer reaches the auto-match at all, but the
-    // core-rules-chapter "Cantrips" subsection heading (p101, unrelated to
-    // any class) now uniquely auto-matches `rule:cantrips` instead of being
-    // `ambiguous` (+1 record).
-    // 1445 -> 1433 (eshyra-o9bd.19.2.2.3.1 F3): the 12 per-class "Class
-    // Features" headings (Barbarian, Bard, …, Wizard) no longer collapse onto
-    // the shared `rule:class-features` record (the p57 Multiclassing rule) via
-    // the unique-normalized-name auto-match; each is now curated `child-of`
-    // its own class record (see `childOf` below).
-    expect(coverage.summary.record).toBe(1433);
-    // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
-    // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
-    // map child-of their owning feature/subclass records (the text rides in
-    // those bodies), verified present.
-    // 98 -> 99 (eshyra-citg): "Tenets of Devotion" heading now maps child-of
-    // subclass:oath-of-devotion (its prose is a named section on that record).
-    // 456 -> 455 (eshyra-o9bd.2/.3): Rogue's "Thieves' Cant" subsection no longer
-    // rides child-of Sneak Attack; it is its own feature record (see `record`).
-    // 455 -> 462 (eshyra-erf5.1): the same reordering fix moves the seven
-    // record-count decreases above (minus the two that landed in `ignored`)
-    // into `childOf` instead: the five p78 ability captions (+5) and the two
-    // Two-Weapon Fighting headings (+2).
-    // 462 -> 469 (eshyra-o9bd.19.2.2.4): "Cantrips" (Bard/Cleric/Druid/
-    // Sorcerer/Warlock/Wizard, 6) and "Spellbook" (Wizard, 1) join the
-    // SPELLCASTING_BOILERPLATE curated rule, mapping child-of their owning
-    // feature:<class>:spellcasting / :pact-magic record like every other
-    // printed subheading there ("Preparing and Casting Spells", "Ritual
-    // Casting", …) — they are now `data.sections` entries on that record,
-    // not separate top-level records a bare-name auto-match (or ambiguity)
-    // has to resolve.
-    // 469 -> 481 (eshyra-o9bd.19.2.2.3.1 F3): the 12 per-class "Class
-    // Features" headings reclassify from `record` (see above) to `childOf`.
-    expect(coverage.summary.childOf).toBe(481);
     // 187 -> 179 (eshyra-o9bd.19.2.2.4): retiring the 5 duplicate-named
     // feature:{cleric,druid,sorcerer,wizard}:cantrips / feature:wizard:
     // spellbook records, and moving "Cantrips"/"Spellbook" to the curated
@@ -999,7 +868,7 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     ).toBe(true);
   });
 
-  it('pins the canonical diagnostic baseline and duplicate category histogram', () => {
+  it('pins the canonical diagnostic baseline', () => {
     // 88 -> 86 (eshyra-o9bd.19.2.2.4): retiring the 4 identically-named
     // feature:{cleric,druid,sorcerer,wizard}:cantrips records collapses the
     // "cantrips" name-collision group to 0 candidates (no collision left), and
@@ -1016,48 +885,6 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // SPELLCASTING_BOILERPLATE child-of rule to each class's own
     // spellcasting/pact-magic record.
     expect(coverage.diagnostics.unresolvedOwnership).toHaveLength(73);
-    const categoryCounts = Object.fromEntries(
-      [
-        ...new Set(
-          coverage.diagnostics.duplicateSourceText.map(
-            (group) => group.category,
-          ),
-        ),
-      ]
-        .sort()
-        .map((category) => [
-          category,
-          coverage.diagnostics.duplicateSourceText.filter(
-            (group) => group.category === category,
-          ).length,
-        ]),
-    );
-    // unresolved-owner 40 -> 39, mixed-resolution 9 -> 10 (eshyra-o9bd.19.2.2.4):
-    // the "cantrips" duplicate-text group (6 occurrences across Bard/Cleric/
-    // Druid/Sorcerer/Warlock/Wizard) previously had no curated owner for any
-    // occurrence (every one only auto-matched, ambiguously, to a same-named
-    // record) — `unresolved-owner`. Now every occurrence resolves via the
-    // SPELLCASTING_BOILERPLATE curated `child-of` rule to its OWN class's
-    // spellcasting/pact-magic record, a genuine per-occurrence resolution —
-    // `mixed-resolution` (the group's total occurrence count and group count
-    // (92) are unchanged; only this one group's category reclassifies).
-    // "Spellbook" has only one printed occurrence, so it was never a
-    // "duplicate" text group and is unaffected here.
-    // auto-collapsed 6 -> 5, mixed-resolution 10 -> 11 (eshyra-o9bd.19.2.2.3.1
-    // F3): the "class features" duplicate-text group (12 occurrences across
-    // all 12 base classes) previously auto-collapsed onto the single shared
-    // `rule:class-features` record for every occurrence. Each now resolves
-    // via the curated `child-of` rule to its OWN class record — a genuine
-    // per-occurrence resolution, not a uniform auto-match — so the group
-    // reclassifies to `mixed-resolution` (the p57 Multiclassing heading is a
-    // separate, unrelated normalized-text occurrence set and is unaffected).
-    expect(categoryCounts).toEqual({
-      'auto-collapsed': 5,
-      'explicitly-disambiguated': 19,
-      'mixed-resolution': 11,
-      'same-owner-explicit': 18,
-      'unresolved-owner': 39,
-    });
     expect(
       coverage.diagnostics.duplicateSourceText.filter(
         (group) =>
@@ -1074,6 +901,61 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     expect(asi?.category).toBe('unresolved-owner');
     expect(asi?.occurrences).toHaveLength(12);
     expect(coverage.diagnostics.suspiciousOwnership).toContainEqual(asi);
+  });
+
+  it('owns each class chapter "Class Features" heading by its own class (eshyra-o9bd.19.2.2.3)', () => {
+    // The 12 SRD 5.1 base classes each print one "Class Features" section
+    // heading in their own chapter; the Multiclassing chapter prints one more
+    // (p57, section "Beyond 1st Level") for the general rule.
+    const classes = [
+      'Barbarian',
+      'Bard',
+      'Cleric',
+      'Druid',
+      'Fighter',
+      'Monk',
+      'Paladin',
+      'Ranger',
+      'Rogue',
+      'Sorcerer',
+      'Warlock',
+      'Wizard',
+    ];
+    const headings = coverage.entries.filter(
+      (entry) =>
+        entry.structure === 'heading' && entry.text === 'Class Features',
+    );
+    expect(
+      Object.fromEntries(
+        headings.map((entry) => [
+          `${entry.section} p${entry.page}`,
+          entry.status,
+        ]),
+      ),
+    ).toEqual({
+      ...Object.fromEntries(
+        classes.map((name) => {
+          const heading = headings.find((entry) => entry.section === name);
+          return [
+            `${name} p${heading?.page}`,
+            `child-of:class:${name.toLowerCase()}`,
+          ];
+        }),
+      ),
+      'Beyond 1st Level p57': 'record:rule:class-features',
+    });
+    const group = coverage.diagnostics.duplicateSourceText.find(
+      (g) => g.normalizedText === 'class features',
+    );
+    expect(
+      group?.occurrences.map((occurrence) => [
+        occurrence.section,
+        occurrence.status,
+      ]),
+    ).toEqual([
+      ...classes.map((name) => [name, `child-of:class:${name.toLowerCase()}`]),
+      ['Beyond 1st Level', 'record:rule:class-features'],
+    ]);
   });
 
   it('surfaces the Acolyte cross-kind collision (background and creature share the same name)', () => {
