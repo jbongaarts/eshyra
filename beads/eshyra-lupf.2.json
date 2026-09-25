@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.2",
+  "title": "Add progression state + auditable progression-event ledger",
+  "description": "Extend the SQLite live-state store (state/party.ts, mutateState.ts, liveStateSchema.ts) with durable progression state: current XP, advancement mode, and a progression_events ledger of awards and level-up applications. Each ledger row is an append-only auditable record (kind, amount/milestone, source, resulting level/XP, timestamp). No mechanics yet — just durable, validated state.",
+  "acceptance_criteria": "Schema migration adds XP + advancement-mode to character state and a progression_events table; reads/writes go through validated state helpers; round-trip tests cover persistence and validation.",
+  "notes": "PR: https://github.com/jbongaarts/eshyra/pull/335 (open, ready for review). Bead stays in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:20:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T19:17:48Z",
+  "closed_at": "2026-06-27T21:52:37Z",
+  "close_reason": "Merged via PR #335. Durable progression state (character.current_xp), campaign_progression_policy singleton, and append-only progression_event ledger with fail-closed per-kind validation. Migration 0003.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.2",
+      "depends_on_id": "eshyra-lupf.1",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:22:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.2",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:20:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.2",
+      "depends_on_id": "eshyra-lupf.13",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:38:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.2",
+      "depends_on_id": "eshyra-lupf.14",
+      "type": "blocks",
+      "created_at": "2026-06-26T20:08:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 4,
+  "comment_count": 0
+}

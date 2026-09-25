@@ -1,0 +1,63 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.1",
+  "title": "SRD 5.1 importer: creature stat-block parser",
+  "description": "**Prerequisites (apply to all SRD 5.1 importer child issues):**\n- Vendored SRD 5.1 PDF must be in place at `packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf` — see that directory's README.md.\n- Reference implementation: mirror the structure of `packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts` (parser), `emit.ts` (record builder + manifest description), `index.ts` (pipeline wiring), and the test layout under `packages/core/test/importers/dnd5e-srd-5.1/`.\n- Depends on `loreweaver-0m9.5.9` (section detection + orchestrator) — run parsers over narrowed page slices, not the full PDF.\n\n---\n\nAdd a stat-block parser for SRD 5.1 creatures (kind=creature) to the deterministic importer at packages/core/scripts/importers/dnd5e-srd-5.1/. Must extract every monster from the SRD's **monsters** section into RulesRecord shape, satisfying the dnd5e-srd creature kindSchema (size, type, alignment, armorClass, hitPoints, speed map, challengeRating, abilityScores). Register the kind in the importer pipeline so it emits to records.json alongside spells. Update the manifest description's 'Included record kinds' list. Provenance: page-locator per creature.",
+  "acceptance_criteria": "- Parser extracts every creature stat block from the SRD monsters section.\n- Records satisfy dnd5e-srd creature kindSchema.\n- Importer pipeline emits both spell and creature records.\n- Manifest description lists 'spell, creature'.\n- Unit tests cover representative creature stat blocks (small humanoid, large dragon, medium beast at minimum).\n- Pipeline test covers extract -> parse -> emit for a fixture creature.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:07:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:57Z",
+  "started_at": "2026-05-29T00:17:16Z",
+  "closed_at": "2026-05-29T21:39:11Z",
+  "close_reason": "Implemented SRD 5.1 creature stat-block parser; merged to main via PR #106 (squash bd47160). Review fixes (coverage guard, monsters requireEndHeading, CLI summary) included.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.1",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:07:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.1",
+      "depends_on_id": "eshyra-0m9.5.9",
+      "type": "blocks",
+      "created_at": "2026-05-27T18:15:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "193d596e-c50c-5da5-b7a9-71de851b9743",
+      "issue_id": "eshyra-0m9.5.1",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline (.worktrees/loreweaver-0m9.5.1, branch work/loreweaver-0m9.5.1): npm install + npm run build + npm run test all pass. 846 passed / 3 skipped, build clean.",
+      "created_at": "2026-05-29T00:19:00Z"
+    },
+    {
+      "id": "19abf915-68a8-5912-b5ae-1bf9b5ace6dd",
+      "issue_id": "eshyra-0m9.5.1",
+      "author": "Joseph Bongaarts",
+      "text": "Implemented creature stat-block parser. New parseCreatures.ts + monsters section anchor + emit/orchestrator wiring + types. Unit tests (24, all sizes incl. small humanoid/medium beast/large dragon, multi-block, bleed, skip-non-creature, malformed-throws) and a pipeline fixture creature added. Gates: npm run typecheck (forced) clean, npm run check (Biome) clean, importer suite 239/239 pass. Full suite: 867 pass / 3 skip + the 3 known Dolt-checkpoint parallel-load flakes (pass 65/65 in isolation; see bd memory dolt-checkpoint-tests-flaky-under-parallel-load) — not related to this change. Committed on work/loreweaver-0m9.5.1.",
+      "created_at": "2026-05-29T00:32:11Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 2
+}

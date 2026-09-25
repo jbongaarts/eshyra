@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cck.4",
+  "title": "Task 4: Component seam interface stubs",
+  "description": "Objective:\nDeclare the component seam interfaces (Orchestrator, ContextAssembler, ToolLayer,\nMemorySubsystem, WorldSubsystem, Persistence) as typed stubs and export them from\nthe barrel. Satisfies epic acceptance #4 (stubs exist and typecheck).\n\nFiles:\n- Create: `packages/core/src/seams.ts`\n- Modify: `packages/core/src/index.ts`\n- Test:   `packages/core/test/seams.test.ts`\n\nSteps:\n\n1. Write the failing test `packages/core/test/seams.test.ts`:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport { SEAMS } from '../src/seams.js';\n\ndescribe('component seams', () => {\n  it('enumerates the six seams filled by sub-epics E1-E7', () => {\n    expect([...SEAMS].sort()).toEqual(\n      [\n        'ContextAssembler',\n        'MemorySubsystem',\n        'Orchestrator',\n        'Persistence',\n        'ToolLayer',\n        'WorldSubsystem',\n      ].sort(),\n    );\n  });\n});\n```\n\n2. Run the test to verify it FAILS.\n   Command: `npx vitest run packages/core/test/seams.test.ts`\n   Expected: FAIL — cannot resolve `../src/seams.js`.\n\n3. Create `packages/core/src/seams.ts`:\n```ts\n// Component seams. Interfaces are intentionally empty in E0; sub-epics fill them:\n//   Persistence       - E0/E3 data access\n//   WorldSubsystem    - E2 module template + overlay\n//   MemorySubsystem   - E4 pyramid + drill-down\n//   ToolLayer         - E5 deterministic tools\n//   ContextAssembler  - E5 bounded prompt assembly\n//   Orchestrator      - E5 turn loop\n\nexport interface Persistence {}\nexport interface WorldSubsystem {}\nexport interface MemorySubsystem {}\nexport interface ToolLayer {}\nexport interface ContextAssembler {}\nexport interface Orchestrator {}\n\n// Runtime witness so the seam set is testable and discoverable.\nexport const SEAMS = [\n  'Persistence',\n  'WorldSubsystem',\n  'MemorySubsystem',\n  'ToolLayer',\n  'ContextAssembler',\n  'Orchestrator',\n] as const;\n\nexport type SeamName = (typeof SEAMS)[number];\n```\n\n4. Add to `packages/core/src/index.ts` (append):\n```ts\nexport { SEAMS } from './seams.js';\nexport type {\n  SeamName,\n  Persistence,\n  WorldSubsystem,\n  MemorySubsystem,\n  ToolLayer,\n  ContextAssembler,\n  Orchestrator,\n} from './seams.js';\n```\n\n5. Run the test to verify it PASSES.\n   Command: `npx vitest run packages/core/test/seams.test.ts`\n   Expected: 1 passed.\n\n6. Typecheck (this is the actual \"stubs typecheck\" acceptance check).\n   Command: `npm run build`\n   Expected: exit 0.\n\n7. Commit.\n   Command: `git add -A && git commit -m \"feat(e0): component seam interface stubs\"`\n",
+  "design": "Empty interfaces alone are not runtime-observable, so a `SEAMS` const array is the\nruntime witness that makes acceptance #4 testable and lets later epics assert their\nseam exists. Each sub-epic replaces the matching empty interface body with real\nmembers (and keeps the name) so downstream imports never churn. `as const` + derived\n`SeamName` union keeps the list and the type in lockstep. The genuine \"typecheck\"\ngate is `npm run build` succeeding with these exported.\n",
+  "acceptance_criteria": "npx vitest run packages/core/test/seams.test.ts shows 1 passed; npm run build exits 0 (seam stubs typecheck).",
+  "notes": "RESUME POINTER: Before starting, read the SESSION HANDOFF notes on the parent epic (bd show loreweaver-cck). All E0 work happens in the existing bd worktree at .worktrees/loreweaver-cck on branch work/loreweaver-cck (HEAD 66362c4, clean) — NOT on main. main has no scaffold; cck.1-3 are closed with code only on the worktree branch, not merged. Do not re-scaffold on main.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:43:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:12Z",
+  "started_at": "2026-05-18T03:34:40Z",
+  "closed_at": "2026-05-18T03:55:06Z",
+  "close_reason": "Seam interface stubs implemented, spec+quality reviewed, both acceptance gates pass",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cck.4",
+      "depends_on_id": "eshyra-cck.1",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:43:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-cck.4",
+      "depends_on_id": "eshyra-cck",
+      "type": "parent-child",
+      "created_at": "2026-05-16T23:43:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "cea7a791-0b30-5604-a3b9-777480694e60",
+      "issue_id": "eshyra-cck.4",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 66362c4..8644e9b:\n\nAssessment: Ready to merge\n\nCritical: none\nImportant: none\nMinor: seams.test.ts:5 description says E1-E7 while seams.ts header maps fills to E2-E5 (cosmetic; test text is verbatim from spec so left unchanged for spec compliance).\nFollow-up: none\n\nSpec compliance: PASS (verbatim match, 3 files only). Quality: Approved. vitest 1 passed; npm run build exit 0.",
+      "created_at": "2026-05-18T03:55:04Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 1
+}

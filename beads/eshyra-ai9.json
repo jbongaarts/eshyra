@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ai9",
+  "title": "SRD: Barbarian Unarmored Defense feature swallowed — table row interleaves numeric columns into wrapped feature cell",
+  "description": "Discovered during eshyra-7tc. After eshyra-7tc recovered 13 of 14 Barbarian base-class features, the 14th — feature:barbarian:unarmored-defense (1st level) — is still missing from the generated pack. Its body heading 'Unarmored Defense' (h=13.92) is swallowed into feature:barbarian:rage's body instead of becoming its own record.\n\nRoot cause (separate from eshyra-7tc's slice-boundary fix): the SRD 5.1 Barbarian progression table's 1st-level row is extracted with the Rages/Rage Damage numeric columns interleaved BETWEEN the wrapped feature-cell words. Extracted lines:\n  '1st +2 Rage, 2 +2'   (PROGRESSION_ROW; '2 +2' are the Rages=2, Rage Damage=+2 columns)\n  'Unarmored'           (wrapped continuation of the Features cell)\n  'Defense'\nstitchProgressionRows() appends the continuation AFTER the numeric columns, yielding the row 'Rage, 2 +2 Unarmored Defense'. progressionFeaturesFromLine() strips only TRAILING numeric table cells (anchored at end), so the mid-cell '2 +2' survives and splitFeatureCell() returns ['Rage', '2 +2 Unarmored Defense']. The anchor key normalizes to '2 +2 unarmored defense', so the body 'Unarmored Defense' heading matches no anchor, has no level lead-in, and is swallowed into Rage.\n\nThis is a table-extraction/stitching root cause with broad blast radius (any class table whose feature cell wraps after interleaved numeric columns), held out of eshyra-7tc per docs/importer-fix-protocol.md hard-stop.\n\nExpected behavior: emit feature:barbarian:unarmored-defense at level 1, and stop Rage's body at the 'Unarmored Defense' heading (Rage body should end at '...you can rage again.').\n\nLikely files:\n- packages/core/scripts/importers/dnd5e-srd-5.1/parseFeatures.ts (stitchProgressionRows / progressionFeaturesFromLine / splitFeatureCell — strip interior numeric-column runs from a wrapped continuation segment without corrupting legitimate names).\n- test/importers/dnd5e-srd-5.1/parseFeatures.test.ts (add a fixture reproducing the interleaved-column wrap: '1st +2 Rage, 2 +2' / 'Unarmored' / 'Defense').\n- test/srdGeneratedPack.test.ts (bump feature 182 -> 183; add unarmored-defense to the class:barbarian projection; remove the 'Unarmored Defense intentionally absent' note).\n\nImporter safety: follow docs/importer-fix-protocol.md. Verify against SRD source; regenerate + verify:dnd5e-srd-pack.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-08T23:30:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-08T23:53:47Z",
+  "started_at": "2026-06-08T23:46:08Z",
+  "closed_at": "2026-06-08T23:53:47Z",
+  "close_reason": "Fixed in PR #182: stitchProgressionRows strips the Barbarian table's trailing Rages/Rage Damage numeric columns before joining wrapped continuations, so feature:barbarian:unarmored-defense (1) emits and Rage no longer swallows it. Full 14-feature SRD Barbarian set now generated.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

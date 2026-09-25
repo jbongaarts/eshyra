@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.10.3",
+  "title": "Model the Half-Dragon Template region",
+  "description": "Import the Monsters p320-321 Half-Dragon Template as a coherent bounded region, including its prose and the Color/Damage Resistance and size/breath-weapon Optional table runs. Decide whether the tables become table records, structured template child data, or both according to existing schema intent; handle the extraction-order/table-stitching behavior source-faithfully. Follow docs/importer-fix-protocol.md. If the failure map reveals a new root cause, requires a new parser or extractor strategy, or creates generated churn outside the direct consequences of the current minimal fix, stop and report instead of broadening the implementation.",
+  "acceptance_criteria": "Tests lock the region boundaries and both reconstructed tables; generated output contains complete template guidance and source-faithful structured values; all Half-Dragon known gaps become real coverage; regeneration verification and repository quality gates pass with all generated churn explained.",
+  "notes": "Addressing PR #212 review: validate optional rule.data.tableRefs and add schema regression coverage.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-14T05:28:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-14T15:18:26Z",
+  "started_at": "2026-06-14T14:59:36Z",
+  "closed_at": "2026-06-14T15:18:26Z",
+  "close_reason": "Addressed PR #212 review by schema-validating optional rule.data.tableRefs and adding pass/fail regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.10.3",
+      "depends_on_id": "eshyra-4a7.10",
+      "type": "parent-child",
+      "created_at": "2026-06-14T00:28:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

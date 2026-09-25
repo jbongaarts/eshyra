@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.1.3",
+  "title": "Task 3: wire gate into runImporter, curate rules to zero unaccounted, commit artifacts + sentinel test",
+  "description": "Objective: runImporter builds inventory + coverage on the real PDF, throws on unaccounted, writes deterministic artifacts; rule curation brings real-PDF run to zero unaccounted; committed artifacts get sentinel regression tests.\n\nFiles:\n- Modify: packages/core/scripts/importers/dnd5e-srd-5.1/index.ts (runImporter: build inventory post-parse, evaluate coverage vs emitted records, throw SourceInventoryCoverageError, write source-inventory.json + source-coverage.json to outDir)\n- Create: real-PDF curation rules in sourceInventoryCoverage.ts (SRD_5_1_COVERAGE_RULES const) — ignore rules (legal front matter p1-2, spell-list headers, TOC-like lines, document-structure tiers), known-gap rules (tables=>eshyra-4a7.3, embedded stat blocks=>eshyra-4a7.4, class progression captions=>eshyra-4a7.6, draconic ancestry=>eshyra-4a7.7, figurine=>eshyra-4a7.8)\n- Create: packages/core/test/srdSourceInventoryArtifact.test.ts (sentinels per parent design field)\n- Commit generated artifacts (location decision: pack dir if loadRulesPack tolerates extra files — verify by reading the loader — else packages/core/data/srd-source-inventory/)\n\nSteps:\n1. Failing pipeline-level test (fixture PDF in pipeline.test.ts style): runImporter writes source-inventory.json. Implement wiring with empty rules; fixture passes (fixture content all auto-matches or document-structure). Commit.\n2. Run real import: npm run import:dnd5e-srd -- (see cli.ts for args). EXPECTED: SourceInventoryCoverageError with large unaccounted list. Iterate rules in SRD_5_1_COVERAGE_RULES until zero unaccounted. Every rule needs a one-line comment citing what it covers. PROTOCOL: rules must be honest — known-gap for things that SHOULD become records, ignored only for genuine non-content. Commit after each coherent rule group.\n3. Write sentinel artifact tests (failing first against stale artifacts if any, then regenerate): Figurine=>known-gap:eshyra-4a7.8, Avatar of Death+Giant Fly=>stat-block+known-gap:eshyra-4a7.4, Draconic Ancestry p5=>table-caption+known-gap:eshyra-4a7.7, The Barbarian p8=>table-caption+known-gap:eshyra-4a7.6, Improved Critical=>record:feature, one embedded magic-item table-shape=>known-gap:eshyra-4a7.3. Commit artifacts + tests together.\n4. Full suite: npm run test. Expected green.\n\nHard-stop wording (importer-fix-protocol): if curation reveals a new root cause, requires a new parser strategy, or creates generated churn in records.json (this bead must NOT change records.json at all), stop and report instead of broadening.",
+  "acceptance_criteria": "Real import passes gate with zero unaccounted; records.json byte-identical to before (this bead adds accounting, not content); committed artifacts match regenerated output; sentinel tests green; npm run test green",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T05:40:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-11T05:47:38Z",
+  "closed_at": "2026-06-11T18:18:57Z",
+  "close_reason": "Gate wired into runImporter (opt-in sourceCoverageRules), SRD_5_1_COVERAGE_RULES curated to zero unaccounted (2248 items: 1849 record / 12 child-of / 106 ignored / 250 known-gap), artifacts committed in pack dir, 12 sentinel tests green, records.json byte-identical. Design deviation: fixtures do NOT yield an empty inventory (extract.ts always populates lineHeights; uniform 11pt fixture text lands in the leaf band), so the gate is opt-in via RunImporterInput like every other exact-set gate instead of always-on. New bead eshyra-4a7.10 tracks unimported prose regions surfaced by the curation.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.1.3",
+      "depends_on_id": "eshyra-4a7.1.2",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:40:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.1.3",
+      "depends_on_id": "eshyra-4a7.1",
+      "type": "parent-child",
+      "created_at": "2026-06-11T00:40:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

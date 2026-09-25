@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-uuk.2",
+  "title": "Task 1: Restore Objects extraction and add section anchors",
+  "description": "Objective:\nRestore correct column order for the Objects source page and add bounded Madness/Objects section anchors.\n\nFiles:\n- Modify: packages/core/scripts/importers/dnd5e-srd-5.1/extract.ts\n- Modify: packages/core/scripts/importers/dnd5e-srd-5.1/sections.ts\n- Test: packages/core/test/importers/dnd5e-srd-5.1/extract.test.ts\n- Test: packages/core/test/importers/dnd5e-srd-5.1/sections.test.ts\n\nSteps:\n1. RED: Add an extractor fixture with two supported page columns plus five justified far-right fragments. Assert the complete left column precedes the complete right column and the five fragments remain joined to their right-column lines. Add section tests asserting madness starts at /^Madness$/, ends at Objects, and objects starts at /^Objects$/, ends at Poisons; both require heading matches and required end boundaries.\n2. Run: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/extract.test.ts packages/core/test/importers/dnd5e-srd-5.1/sections.test.ts\nExpected: FAIL because the five-item island is selected as a phantom column and the anchors do not exist.\n3. GREEN: Raise the existing justified outlier-island ceiling from 3 to 5 with comments explaining the reviewed SRD pages. Add madness and objects to SRD_5_1_DEFAULT_SECTION_ANCHORS and Srd51SectionAnchors. Do not add page-number branches.\n4. Re-run the focused tests; expect PASS.\n5. REFACTOR: Keep the partition selection generic and comments accurate, then run npm run typecheck.",
+  "design": "The existing partitioner already compares the widest valid x-gap with the most supported split. Only expand TINY_OUTLIER_SIDE_MAX_ITEMS to five so the supported structural gutter wins for the reviewed five-fragment pattern. Anchors use matchHeadings: true and requireEndHeading: true: madness is bounded by Objects, objects by Poisons.",
+  "acceptance_criteria": "- Synthetic five-fragment extractor regression passes without page-specific logic.\n- madness and objects anchors match only exact headings, require their end headings, and are part of Srd51SectionAnchors.\n- Focused tests and npm run typecheck pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T04:35:04Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-06T04:37:33Z",
+  "closed_at": "2026-06-06T04:43:48Z",
+  "close_reason": "Restored vendored Objects page column order and added bounded Madness/Objects anchors; focused tests and typecheck pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-uuk.2",
+      "depends_on_id": "eshyra-uuk",
+      "type": "parent-child",
+      "created_at": "2026-06-05T23:35:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "12c662a9-50b3-5a7a-badc-d0dd16dc378a",
+      "issue_id": "eshyra-uuk.2",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/extract.test.ts packages/core/test/importers/dnd5e-srd-5.1/sections.test.ts -> failed as expected. Vendored page 203 placed Huge and Gargantuan Objects at index 0 before Object Hit Points at 76; madness/objects anchors were undefined.",
+      "created_at": "2026-06-06T04:41:18Z"
+    },
+    {
+      "id": "00bde0e9-86b9-550b-a400-9f994dab6b6a",
+      "issue_id": "eshyra-uuk.2",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN/REFACTOR verification: focused extract+sections suites passed 64/64 after generic five-item outlier handling and exact anchors; npm run typecheck passed.",
+      "created_at": "2026-06-06T04:43:45Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 2
+}

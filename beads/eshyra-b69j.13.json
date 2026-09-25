@@ -1,0 +1,55 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.13",
+  "title": "Add D&D level-1 equipment and proficiency choice flow",
+  "description": "Add guided handling for D&D level-1 equipment, armor/weapon proficiencies, tools, languages, and class/background proficiency choices once the required metadata exists.\n\nExpected UX\n- Present choice groups separately instead of one giant prompt.\n- Multi-select choices should show how many selections remain.\n- Invalid selections should not reset the group.\n- Review should show completed and missing mechanical choices.\n\nAcceptance criteria\n- Fighter-like class can choose required skills and starting equipment.\n- Background-derived proficiencies/equipment are represented.\n- Missing required choices block finalization with direct navigation to fix.\n- Tests cover at least one class skill choice group and one equipment choice group.",
+  "notes": "Review fix pushed to PR #311: satisfied mechanical choices are now editable. class-choices no longer skips satisfied groups; a satisfied group opens in edit mode (Enter keep / clear redo / single-pick replace); clear/reset available mid-group; review jumps back to class-choices (goto-choices nav) instead of misleading 'back' wording. Tests: resume correction (clear+re-pick, others preserved) + clear mid-group. verify:worktree green (2566 passed/19 skipped).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T00:34:18Z",
+  "started_at": "2026-06-25T23:54:55Z",
+  "closed_at": "2026-06-26T00:34:18Z",
+  "close_reason": "Merged via PR #311. Interactive class-choices step collects skills/tools/equipment/languages group-by-group (engine.setChoice + mechanicalChoices); invalid/duplicate rejected without reset; satisfied groups editable on re-entry (keep/clear/replace); review lists completed/pending and jumps back to class-choices when pending. isFinalizable/toFinalizableDraft unchanged (b69j.14 folds choices into record). No importer/frozen-pack files.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.13",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-b69j.13",
+      "depends_on_id": "eshyra-b69j.8",
+      "type": "blocks",
+      "created_at": "2026-06-24T18:16:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-b69j.13",
+      "depends_on_id": "eshyra-b69j.12.3",
+      "type": "blocks",
+      "created_at": "2026-06-24T18:16:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-b69j.13",
+      "depends_on_id": "eshyra-b69j.12.4",
+      "type": "blocks",
+      "created_at": "2026-06-24T18:16:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 0,
+  "comment_count": 0
+}

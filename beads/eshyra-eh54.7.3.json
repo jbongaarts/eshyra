@@ -1,0 +1,65 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54.7.3",
+  "title": "Add The Hollow Beneath Emberfall module smoke path",
+  "description": "Add a smoke path proving that Eshyra can create a campaign from a campaign template (the Emberfall setting), attach the starter module (The Hollow Beneath Emberfall) via a campaign-owned adventure run / module binding, run or simulate initial module progress, persist state, and resume with correct module progress.\n\nThis should be the adventure-module equivalent of a hello-world gameplay path.\n",
+  "design": "This does not need a full live model integration test if that would be brittle. A deterministic or semi-deterministic runtime/context-builder smoke path is enough for the first pass.\n\nThe important proof is that immutable module source content, campaign instance state (the campaign-owned adventure run / module binding and its progress), runtime context, and persistence all connect cleanly - and that progress updates never mutate the module source.\n",
+  "acceptance_criteria": "- A test, fixture, or scripted smoke path creates a campaign using the Emberfall campaign template and attaches The Hollow Beneath Emberfall starter module via a campaign-owned adventure run / module binding.\n- The smoke path starts the module and records initial progress.\n- The smoke path advances at least one location or scene.\n- The smoke path reveals or preserves at least one secret correctly.\n- The smoke path records an objective or encounter state change.\n- The smoke path saves and reloads the campaign.\n- After reload, the active adventure run / module binding and module progress are intact.\n- The authored source module remains unchanged after progress updates.",
+  "notes": "Smoke at packages/core/test/hollowBeneathEmberfallSmoke.test.ts; PR #270 open (https://github.com/jbongaarts/eshyra/pull/270). Proves create->bind->progress->runtime-context->persist->reload + source-unchanged. rulesRef/SRD-key reconciliation split out to eshyra-8bit.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:12:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-21T06:29:13Z",
+  "closed_at": "2026-06-21T06:40:12Z",
+  "close_reason": "Merged via PR #270. Deterministic smoke proves create->bind->progress->runtime-context->persist->reload with source unchanged. rulesRef/SRD reconciliation tracked as eshyra-8bit.",
+  "labels": [
+    "adventure-module",
+    "campaign-runtime",
+    "domain-model",
+    "ember-hollow",
+    "smoke-test",
+    "starter-content"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54.7.3",
+      "depends_on_id": "eshyra-eh54.6",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:15:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.7.3",
+      "depends_on_id": "eshyra-eh54.7.2",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:15:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.7.3",
+      "depends_on_id": "eshyra-eh54.7",
+      "type": "parent-child",
+      "created_at": "2026-06-18T01:12:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.7.3",
+      "depends_on_id": "eshyra-eh54.5",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:15:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 2,
+  "comment_count": 0
+}

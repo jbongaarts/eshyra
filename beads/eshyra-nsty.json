@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-nsty",
+  "title": "Expose manifest projection as a finding membership record",
+  "description": "Add the manifest projection to the rules-pack identity surface so opus:F-20 can enumerate a stable recordKey and source locator instead of relying on its explicit zeroMemberPolicy. Preserve the source-authority boundary and update the registry query and regression.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-26T01:04:59Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-26T01:04:59Z",
+  "labels": [
+    "importer",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

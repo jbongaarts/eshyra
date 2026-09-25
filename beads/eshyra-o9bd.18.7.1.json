@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.1",
+  "title": "Add typed mechanics for all SRD condition records",
+  "description": "Finding source:\n- ChatGPT found all 15 condition records exist and prose is accurate, but deterministic tools cannot apply them without parsing prose.\n- Codex example: condition:blinded is likely gameplay-mechanical but not typed enough.\n\nScope:\n- blinded, charmed, deafened, frightened, grappled, incapacitated, invisible, paralyzed, petrified, poisoned, prone, restrained, stunned, unconscious, exhaustion.\n\nAcceptance criteria:\n- Every condition record has typed mechanics sufficient for combat/check/save/movement/action tooling.\n- Represent attack-roll effects, ability-check/save effects, movement restrictions, action/reaction restrictions, incapacitation, awareness/vision effects, advantage/disadvantage, automatic failures, attack targeting effects, and exhaustion levels where applicable.\n- Tests demonstrate deterministic querying of representative effects without parsing prose.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-02T23:47:46Z",
+  "started_at": "2026-07-02T23:41:49Z",
+  "closed_at": "2026-07-02T23:47:46Z",
+  "close_reason": "Added generated typed mechanics for all SRD condition records, schema validation, committed-pack query tests, and regenerated pack output.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.1",
+      "depends_on_id": "eshyra-o9bd.18.7",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

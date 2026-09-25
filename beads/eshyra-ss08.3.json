@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ss08.3",
+  "title": "One Goblin, Three Different Things",
+  "description": "Tell the story of actor, encounter, and combatant identity.\n\nNarrative hook and core question: What is a goblin in a persistent AI Dungeon Master's world?\n\nResearch concrete playtest target/state thrash around goblins. Explain the difference between a source creature definition and one particular creature; persistent actor identity; encounter membership; tactical combatant projection; current HP, conditions, initiative, and other encounter-local state; recurring NPCs and creatures that survive or escape and return; and why a fresh stat-block copy is not the injured dragon or goblin already known to the campaign. Cover the lifecycle hierarchy across campaign, actor, encounter, combat, and session. Explain why a CLI session is provenance, not the lifetime of a fight, and why quitting and resuming must not implicitly end combat or create a second one.\n\nExpected architectural conclusion: convenient technical lifetimes are not necessarily domain lifetimes. Persistent identity, episodic participation, and tactical state are separate concepts.\n\nBoundaries: do not broaden into the full rollback and transactionality story. Include session-versus-combat lifetime only as needed to support the identity hierarchy.\n\nUse repository history, PRs, design docs, ADRs, audits, and playtest transcripts as evidence. Verify factual claims against artifacts rather than model memory, distinguish implemented from planned architecture, and preserve public readability and search indexing. Follow Joseph's voice rules: analytical and curious, concrete before abstraction, dry humor when earned, deliberate we/I attribution, reflect praise, absorb blame, no em dashes, and no generic LLM prose.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T04:27:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-10T04:29:31Z",
+  "labels": [
+    "docs",
+    "site",
+    "storytelling"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ss08.3",
+      "depends_on_id": "eshyra-ss08",
+      "type": "parent-child",
+      "created_at": "2026-07-09T23:27:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

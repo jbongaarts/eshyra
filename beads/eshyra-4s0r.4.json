@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.4",
+  "title": "Harden tool-span diagnostics against callback failures",
+  "description": "Harden turn-loop tool span diagnostics so telemetry callback failures cannot abort gameplay/model execution.\n\nProblem:\nThe turn loop documents onToolSpan as best-effort telemetry that must never throw, but the callback is invoked from the tool execution path without a local safety wrapper. A diagnostics sink failure should not fail an otherwise successful turn.\n\nAcceptance criteria:\n- Wrap onToolSpan invocation in a local try/catch.\n- Preserve turn/tool success behavior if telemetry storage/reporting fails.\n- Add a focused regression test where onToolSpan throws and the tool/model loop still returns the expected result.\n- Optionally surface the telemetry failure through a safe debug path that cannot recursively trigger the same failure.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T03:05:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T05:25:06Z",
+  "started_at": "2026-06-26T05:19:51Z",
+  "closed_at": "2026-06-26T05:25:06Z",
+  "close_reason": "Wrapped tool-span callback emission in the model loop, preserving successful tool/model execution when diagnostics callbacks throw; added regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.4",
+      "depends_on_id": "eshyra-4s0r",
+      "type": "parent-child",
+      "created_at": "2026-06-25T22:05:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

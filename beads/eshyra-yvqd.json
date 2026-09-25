@@ -1,0 +1,23 @@
+{
+  "_type": "issue",
+  "id": "eshyra-yvqd",
+  "title": "Structured-field spell-list evidence is per (class,level) group, not per printed page",
+  "description": "sourceInventoryCoverage.ts's spellListStructuredFieldRules attaches one shared structuredFieldEvidence.spellKeys list (naming every spell in a whole (class, level) group) to that group's owning heading. When the group's printed spell list spans a page break, buildSourceRegionLedger still splits it into one ledger entry per physical page, and every split entry carries the SAME whole-group evidence. Verified against the real SRD 5.1 corpus (eshyra-o9bd.19.2.2.3.1): 6 of the 70 (class, level) groups span a page break, affecting 93 spell records whose 'classes' field-locator pages (added in eshyra-o9bd.19.2.2.3.1 F4) therefore cite every page of the WHOLE group's list, not just the page the spell's own name is printed on. eshyra-o9bd.19.2.2.3.1 worked around this by deriving spell.data.classes' fieldLocators from the same ledger evidence the recordLocatorCompleteness.ts gate (b) checks against (enrichSpellClassFieldLocatorsFromRegionLedger in enrichProvenance.ts), so the two sides can never drift apart -- but this means the field locator is coarser than it could be (it does not pin down the exact line a spell's name prints on within a page-spanning group). A future improvement would make spellListStructuredFieldRules (or buildSourceRegionLedger's per-region evidence assignment) precise per physical page/region instead of per whole group, tightening both the field locator and the ledger's own diagnostic evidence. Not required for eshyra-o9bd.19.2.2.3.1's own invariant (the gate and the emitted locator are already mutually consistent and source-backed); this is a follow-on precision improvement, not a defect.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-25T02:34:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-25T02:45:41Z",
+  "closed_at": "2026-09-25T02:45:41Z",
+  "close_reason": "Resolved in PR #576 (review fix R1): spell /classes locators now come from each spell's own list-line page and gate (b) checks against the structured-field regions' printed lines.",
+  "labels": [
+    "follow-up",
+    "importer",
+    "srd"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

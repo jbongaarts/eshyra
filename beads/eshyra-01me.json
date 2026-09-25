@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-01me",
+  "title": "Resolve unexplained magic-item numeric conservation mismatches",
+  "description": "The eshyra-3kpz numeric-conservation gate was hard-stopped because the committed SRD magic-item pack has 52 forward description-vs-mechanics DC mismatches beyond the five documented accept-list seeds, plus one reverse typed-mechanics DC mismatch (ring-of-elemental-command DC 17). See eshyra-3kpz notes for the complete record-level inventory. Review whether these are missing executable mechanics, intentionally adjudicated values requiring source-backed dispositions, or a scan-boundary issue before implementing the gate. Do not add accept-list entries without reviewed reasons.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T07:35:06Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-19T07:36:58Z",
+  "closed_at": "2026-07-19T07:36:58Z",
+  "close_reason": "Invalid: supervisor re-verified 2026-07-19 — all 52 forward mismatches are scanner false-negatives (the attempt-1 matcher only inspected string leaves and ignored structured numeric save.dc/saveDc fields, e.g. dagger-of-venom save:{dc:15}); the reverse ring-of-elemental-command hit is a normalization false-positive (desc phrasing 'save DC of 17'). Independent supervisor scans covering numeric fields + 'DC of N' phrasing confirm only the five documented accept cases remain.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

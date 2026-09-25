@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-yevt",
+  "title": "Creature stat blocks: traits, actions, reactions, legendary actions",
+  "description": "Slice of eshyra-4a7.5. Parse the named-entry narrative sections in the creature stat-block body after the keyed fields: implicit Traits section (named paragraphs before any section header), and the Actions / Reactions / Legendary Actions header-delimited sections. Each entry preserves its name + body verbatim (name, recharge/usage text, attack bonuses, damage expressions, save DCs, usage limits) — do not discard. Spellcasting/Innate Spellcasting captured as a trait entry verbatim (full semantic decomposition not required). Regression: Aboleth (3 traits, 4 actions incl Multiattack/Tentacle/Tail/Enslave(3/Day), legendary actions intro + Detect/Tail Swipe/Psychic Drain), Deva (Innate Spellcasting trait), a creature with Reactions. Follow docs/importer-fix-protocol.md.",
+  "notes": "Implemented + PR open: https://github.com/jbongaarts/eshyra/pull/202 (branch feat/creature-narrative-sections-yevt). Parses traits/actions/reactions/legendaryActions as {name,text} entries for all 317 creatures (512 traits, 868 actions, 12 reactions, 93 legendary). Height-strip of group/running headers via FlatLine.height; sentence-complete + spell-list guards; curly-apostrophe names. All gates green; verify:dnd5e-srd-pack exit 0. Close on merge. Remaining 4a7.5 scope: eshyra-70xr (variant/template tables; SRD 5.1 has no in-body Lair Actions/Regional Effects headers).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-13T15:24:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-13T15:53:52Z",
+  "closed_at": "2026-06-13T17:09:15Z",
+  "close_reason": "Merged in PR #202 (commit 4fd3cb6). All 317 creature records now carry traits/actions/reactions/legendaryActions narrative sections.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-yevt",
+      "depends_on_id": "eshyra-ez6v",
+      "type": "blocks",
+      "created_at": "2026-06-13T10:25:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 2,
+  "comment_count": 0
+}

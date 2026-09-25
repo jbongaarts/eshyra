@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3",
+  "title": "Repair character-option and core-rule source semantics needed by real consumers",
+  "description": "Own known character-option/core-rule projection defects. Repair source-fidelity problems\nsuch as option-local alternatives, resource/reset/scaling data, structured grants, and\nrule/action/condition relationships. Add structured semantics where they preserve source\nstructure, improve discovery, or feed a positively selected deterministic capability.\nDo not require universal deterministic execution.",
+  "acceptance_criteria": "- Known findings in this domain receive explicit source-fidelity/discovery dispositions and repairs.\n- Structured alternatives remain option-local and cannot be flattened into cumulative effects.\n- Source-derived resource/reset/scaling/grant data is accurate wherever projected or consumed deterministically.\n- Pack data consumed by a capability in force is source-faithful; that capability's contract, execution, and state evidence belong to the capability lane (eshyra-o9bd.19.5 / eshyra-olc5).\n- No criterion requires exhaustive semantic classification or deterministic execution of all domain clauses.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): RESHAPED. This bead is now LANE A (importer/source-fidelity and projection repair) only. The '*** PACK/ENGINE PAIRING (2026-07-25) ***' note above is SUPERSEDED: the reference engine is not the validator of this bead's representation, and this bead does not coordinate decomposition with engine:F epics. Capability-execution acceptance items were moved to the capability lane (eshyra-o9bd.19.5 family epics / eshyra-olc5.1-.2). Order of work: source -> capture -> identity/provenance -> emitted pack; attach generalized evidence per repaired defect class and search meaningful siblings (no bulk regression program). Every finding-registry row owned here stays owned here.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-23T01:40:52Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

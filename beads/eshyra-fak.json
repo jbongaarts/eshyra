@@ -1,0 +1,81 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fak",
+  "title": "SRD class parser: Paladin/Barbarian subclass features dropped or mis-attributed to the base class",
+  "description": "Two of the 12 SRD 5.1 subclasses emit ZERO granted feature records, while the other 10 emit theirs correctly. Distinct from loreweaver-6fw (callout-box bleed); this is a grantor-context / feature-anchor detection bug in parseFeatures (and a related subclass-description boundary issue in parseSubclasses).\n\nSymptoms in the committed pack (packages/core/data/rules-packs/rules__dnd5e-srd-5.1):\n\n1) Paladin Oath of Devotion. The Oath of Devotion subclass features are mis-attributed to the base class: feature:paladin:aura-of-devotion (L7), feature:paladin:purity-of-spirit (L15), and feature:paladin:holy-nimbus (L20) all carry data.source=class:paladin instead of subclass:oath-of-devotion. Zero features are attributed to subclass:oath-of-devotion. Separately, subclass:oath-of-devotion.description is truncated at the Oath Spells table caption (ends at the literal text Oath of Devotion Spells, ~1438 chars), so the rest of the subclass body is cut.\n\n2) Barbarian Path of the Berserker. Its features (Frenzy L3, Mindless Rage L6, Intimidating Presence L10, Retaliation L14) are not emitted as feature records at all; the prose is folded into subclass:path-of-the-berserker.description instead.\n\nfeature-count-per-subclass audit: champion 5, circle-of-the-land 2, college-of-lore 2, draconic-bloodline 4, hunter 2, life-domain 4, oath-of-devotion 0, path-of-the-berserker 0, school-of-evocation 5, the-fiend 2, thief 3, way-of-the-open-hand 4.",
+  "design": "Investigate why parseFeatures opens no subclass grantor context (or finds no feature anchors) for Oath of Devotion and Path of the Berserker specifically. Likely causes to check: (a) the subclass feature headings do not match a progression-table anchor and the leading level-clause fallback misfires for these two layouts; (b) for Paladin, the base-class progression table lists levels that capture the subclass features under the class grantor before currentSubclass is opened, or the Oath of Devotion heading is not matched exactly (whitespace/column-wrap) so currentSubclass stays null; (c) for Oath of Devotion, a repeated/near-duplicate Oath of Devotion line (e.g. the Oath Spells table caption Oath of Devotion Spells, or a running header) trips the subclass boundary so the description body ends early. Fix the detection/attribution so subclass features are keyed to their subclass with correct levels, without regressing the 10 currently-correct subclasses. Keep anchors structural (ADR 0007); do not author feature records by hand. Regenerate the canonical pack and review the diff.",
+  "acceptance_criteria": "Every SRD 5.1 subclass emits its granted features as feature records keyed to subclass:<slug> with correct data.level. Oath of Devotion features (including Aura of Devotion L7, Purity of Spirit L15, Holy Nimbus L20) are attributed to subclass:oath-of-devotion, not class:paladin. Path of the Berserker features (Frenzy L3, Mindless Rage L6, Intimidating Presence L10, Retaliation L14) emit as feature records with correct levels. subclass:oath-of-devotion.description is no longer truncated at the Oath Spells table. The 10 currently-correct subclasses are unchanged. Regression assertions added; canonical pack regenerated; verify:dnd5e-srd-pack reports an exact match; full verify:worktree green.",
+  "notes": "Surfaced during loreweaver-6fw review. 6fw fixed only the trailing callout-box bleed; this attribution/boundary bug is independent and pre-existing.\nPhase 1 evidence: real PDF extraction reproduces Path of the Berserker with zero feature records and Oath of Devotion truncated at 'Oath of Devotion Spells'; Aura of Devotion/Purity of Spirit/Holy Nimbus are attributed to class:Paladin. The classes slice excludes the opening Barbarian chapter line, while parseFeatures initializes currentClass=null, so all Barbarian/Berserker feature candidates are skipped. On p33 the Oath Spells table emits an exact body-font line 'Paladin' at h=8.88; both parsers treat any exact parent-class name as a chapter boundary, clearing subclass context and truncating the description. Actual class chapter headings are consistently h=25.92; subclass headings are h=13.92. Working later classes retain context because their chapter heading is present. The p8 bare 'Champion' table artifact at h=8.88 also shows parseFeatures must validate subclass parent context before defaulting the omitted first class to Barbarian.\nPhase 2 comparison: parseSubclasses already defaults currentParent to Barbarian and guards subclass anchors by known parent, but parseFeatures does neither. All later real class chapter anchors are exact known names at h=25.92; the only false exact parent-name occurrence is Paladin at h=8.88 inside the oath-spells table. Hypothesis: initialize feature grantor context to Barbarian, accept subclass anchors only when their known parent equals currentClass, and on multi-tier input accept parent-class anchors only at the chapter-heading tier while retaining exact-text fallback for uniform/no-height fixtures.\nPhase 3 confirmation: real-PDF-shaped RED fixtures fail exactly on the proposed context transitions. This confirms the omitted opening Barbarian anchor and body-font Paladin false boundary are the causal conditions, not downstream emit logic.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T22:45:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-06T23:17:47Z",
+  "closed_at": "2026-06-06T23:34:08Z",
+  "close_reason": "Fixed subclass grantor context and Oath table boundary; regression tests and canonical pack updated; full verification passed.",
+  "comments": [
+    {
+      "id": "029c9caa-ae5a-5c22-919f-1d9b9dde6862",
+      "issue_id": "eshyra-fak",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded on Node v24.14.1; focused parser suites passed (2 files, 49 tests). Current tests do not reproduce the real-PDF failures.",
+      "created_at": "2026-06-06T23:22:18Z"
+    },
+    {
+      "id": "93173c94-ae29-5e26-bce8-d51f8ace2b14",
+      "issue_id": "eshyra-fak",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for origin/main..work/loreweaver-fak: Assessment: Ready for full verification. Critical: none. Important: none. Minor: none. Reviewed parent-class height gating, implicit Barbarian subclass context, fixture fallback, exact subclass counts, and canonical diff scope (7 added keys, 3 removed old keys, 1 changed subclass description). Follow-up: none.",
+      "created_at": "2026-06-06T23:32:42Z"
+    },
+    {
+      "id": "3d582310-efb0-58a6-a15e-2a241cbf6f57",
+      "issue_id": "eshyra-fak",
+      "author": "Joseph Bongaarts",
+      "text": "Verification complete: RED observed 3 expected parser failures; GREEN focused/importer tests passed; canonical diff is 7 added subclass keys, 3 removed mis-keyed Paladin records, and 1 changed Oath description. npm run verify:worktree passed (1265 passed, 3 skipped); npm run verify:dnd5e-srd-pack exact match.",
+      "created_at": "2026-06-06T23:34:07Z"
+    },
+    {
+      "id": "6e623d04-bd61-5322-affa-e2bea8a2e1f3",
+      "issue_id": "eshyra-fak",
+      "author": "Joseph Bongaarts",
+      "text": "Handoff: commit 2b45b28 pushed on work/loreweaver-fak; PR #163 opened at https://github.com/jbongaarts/loreweaver/pull/163. All GitHub checks passed (build-test, verify, install smoke on Linux/macOS/Windows, Analyze, CodeQL). Beads Dolt push completed.",
+      "created_at": "2026-06-06T23:37:37Z"
+    },
+    {
+      "id": "0412556b-6855-5513-8c66-b90573e46fd4",
+      "issue_id": "eshyra-fak",
+      "author": "Joseph Bongaarts",
+      "text": "Review feedback: top-level parseFeatures grantor-tracking comment still describes exact class-name matching. Evaluation: accepted. The implementation now requires real class chapter-heading geometry on tiered input to reject body-font table cells, with exact-text fallback only for uniform/no-height fixtures. Tracking as loreweaver-fak.4.",
+      "created_at": "2026-06-06T23:40:17Z"
+    },
+    {
+      "id": "b40da9ad-1a1f-5744-ac41-487a9dc6701c",
+      "issue_id": "eshyra-fak",
+      "author": "Joseph Bongaarts",
+      "text": "Review follow-up complete: module grantor-tracking comment now documents heading-tier parent anchors, body-font class-name rejection, uniform-fixture fallback, parent validation, and implicit Barbarian context. Commit cf8a6e6 pushed to PR #163; refreshed GitHub checks passed.",
+      "created_at": "2026-06-06T23:43:47Z"
+    },
+    {
+      "id": "3541d976-2d31-5550-a2f3-d6ba74e35c98",
+      "issue_id": "eshyra-fak",
+      "author": "Joseph Bongaarts",
+      "text": "Merge authorization received. Pre-merge verification on PR #163: state OPEN, mergeable MERGEABLE, mergeStateStatus CLEAN; all CI, SRD reproducibility, install-smoke, Analyze, and CodeQL checks concluded SUCCESS.",
+      "created_at": "2026-06-06T23:44:44Z"
+    },
+    {
+      "id": "1a4bdac8-5eb5-5e63-a98d-61214fdcb1c2",
+      "issue_id": "eshyra-fak",
+      "author": "Joseph Bongaarts",
+      "text": "PR #163 merged at 2026-06-06T23:44:45Z as squash commit 6925de85d949e7c5c088f5eeac04890c99bc13c8. Local main fast-forwarded to the merge commit; merged main tree matches work/loreweaver-fak exactly. Dolt pull/push completed.",
+      "created_at": "2026-06-06T23:46:03Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 8
+}

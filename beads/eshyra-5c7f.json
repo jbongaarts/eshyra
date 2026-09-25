@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5c7f",
+  "title": "Fix SRD audit coverage holes for sidebars and continuation-only pages",
+  "description": "The 2026-06-30 audit bundle `/home/jhbongaarts/src/dnd5e-srd-audit-bundle-0630-1.zip` does not prove full SRD source coverage even though `reports/source-coverage.json` and `reports/source-region-ledger.json` both report zero unaccounted/unrepresented regions.\n\nConfirmed gaps from exhaustive page/record review after extracting to `/tmp/eshyra-audit-bundle-0630-1`:\n\n- All 17 source-coverage sidebar records have no `source-region-ledger` entry keyed to the emitted record: `rule:druid-sacred-plants-and-wood`, `rule:druid-druids-and-the-gods`, `rule:paladin-breaking-your-oath`, `rule:warlock-your-pact-boon`, `rule:wizard-your-spellbook`, `rule:equipment-packs`, `rule:self-sufficiency`, `rule:hiding`, `rule:combat-step-by-step`, `rule:interacting-with-objects-around-you`, `rule:contests-in-combat`, `rule:casting-in-armor`, `rule:the-schools-of-magic`, `rule:modifying-creatures`, `rule:armor-weapon-and-tool-proficiencies`, `rule:grapple-rules-for-monsters`, and `condition:exhaustion`.\n- Three non-empty extracted source pages have no source-inventory, source-coverage, or source-region-ledger entries at all: p34 (continuation of `rule:paladin-breaking-your-oath`), p55 (continuation of `rule:wizard-your-spellbook`), and p362 (continuation rows for `table:norse-deities`).\n- Additional pages with text but no ledger entries include p23, p69, and p361; p23 is the sidebar case and p69/p361 are table-heavy pages that need explicit coverage evidence or an intentional table-row representation proof.\n\nThe pack records do contain the sampled text, so this is primarily an audit-evidence/completeness failure rather than demonstrated pack content loss. The failure mode is that page/region accounting can silently omit source prose/table continuations while still claiming `unrepresented: 0`.\n\nLikely code to inspect: `packages/core/scripts/importers/dnd5e-srd-5.1/sourceRegionLedger.ts`, `packages/core/scripts/importers/dnd5e-srd-5.1/sourceInventoryCoverage.ts`, and the audit bundle page-completeness checks.\n\nAcceptance criteria:\n- Every non-empty extracted SRD page has explicit inventory/coverage/ledger accounting or a narrow documented ignore that is valid for that page's content.\n- Sidebar prose that emits a record is represented in `source-region-ledger.json` with the correct `targetKey`.\n- Continuation-only prose/table pages such as p34, p55, and p362 are included in source evidence and cannot disappear behind a zero-unrepresented summary.\n- Add regression coverage for the examples above.\n",
+  "notes": "Partial fix landed on branch eshyra-erf5-srd-audit-round: 17 sidebar records (+2 incidental creature-variant sidebars) that had a correct source-coverage status but zero source-region-ledger entries now have entries, via a fix to sourceRegionLedger.ts (sidebar body prose renders in the table-cell font band, so it was being silently skipped as table-row noise). This also fixes p23/p34/p55 continuation pages as a side effect.\n\nRemaining gap (p69 Adventuring Gear sub-captions, p361 deity table captions, p362 Norse Deities continuation) is a DIFFERENT root cause (table-row/embedded-caption accounting, not sidebar misclassification) and requires either a new extractor strategy or a deliberate documented decision about what \"coverage\" means for table-only pages/continuations. Filed as follow-up eshyra-erf5.5 rather than broadening this fix per the importer-fix-protocol hard-stop guidance. Leaving eshyra-5c7f open pending that follow-up; not closing since not all acceptance criteria are met yet.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T04:34:40Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T22:08:30Z",
+  "started_at": "2026-07-01T06:35:58Z",
+  "closed_at": "2026-07-01T22:08:30Z",
+  "close_reason": "All acceptance criteria now met: sidebar records got ledger entries in PR #380; PR #381 adds explicit table-rows accounting for p69/p361/p362 and a fail-closed summary.unaccountedPages gate proving every non-empty page has inventory/coverage/ledger accounting, with regression coverage (sourceRegionLedger.test.ts + srdSourceInventoryArtifact.test.ts).",
+  "labels": [
+    "audit",
+    "importer",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-5c7f",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

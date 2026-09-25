@@ -1,0 +1,67 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.21",
+  "title": "Finalize project license and npm package metadata",
+  "description": "Finalize the repository/package-level licensing and npm metadata story separately from rules/adventure content-source legality.\r\n\r\nThis is about the Loreweaver source code/package metadata, not about approving any third-party adventure or rules corpus.\n\n## Context\nObserved gap:\r\n- README appears to say the project license is not finalized.\r\n- Package manifests should make the intended publish/private/license status explicit.\r\n- This is distinct from loreweaver-9s6, which tracks legal source confirmation for converting a third-party adventure into module schema.\r\n\r\nParallel-safety:\r\n- Docs/package metadata only.\r\n- Avoid changing importer code or content-policy decisions.",
+  "design": "Suggested files to inspect/update:\r\n- README.md\r\n- LICENSE or equivalent, if a license decision exists\r\n- package.json\r\n- packages/core/package.json\r\n- packages/cli/package.json\r\n- any package publication docs\r\n\r\nImplementation guidance:\r\n1. Determine the current intended state from existing repo docs:\r\n   - If license is chosen, add/update LICENSE and package license metadata.\r\n   - If license is not chosen, explicitly mark packages private/unpublished where appropriate and document the decision gate.\r\n2. Add package metadata that is safe and non-controversial:\r\n   - description\r\n   - repository\r\n   - license or private status\r\n3. Clarify distinction between:\r\n   - Loreweaver source code license\r\n   - generated/bundled rules pack content licenses\r\n   - adventure/module source legality\r\n4. Do not resolve the third-party adventure/legal-source bead here.",
+  "acceptance_criteria": "- Project source-code license state is explicit: either finalized with LICENSE/package metadata, or explicitly deferred with private/unpublished package settings.\r\n- package.json files have consistent description/repository/license-or-private metadata.\r\n- README distinguishes code license from rules/adventure content licensing.\r\n- loreweaver-9s6 remains the owner for third-party adventure source legality.\r\n- Existing tests/checks pass.",
+  "notes": "Baseline setup evidence: in-repo worktree D:/src/loreweaver/.worktrees/loreweaver-0jq-21 fails npm run check before edits because Biome processes 0 files; biome.json excludes !**/.worktrees and .gitignore ignores .worktrees/. Will recreate as a sibling bd worktree outside the repo directory so documented gates can run.\nWorktree baseline: D:/src/loreweaver-0jq-21 on branch work/loreweaver-0jq-21; npm install succeeded on Node v24.14.1; npm run check passed (232 files); npm run typecheck passed; npm run test passed (1179 passed, 3 skipped across 90 files).\nImplementation plan: no LICENSE file or chosen source-code license found; keep source license deferred, mark root/core/cli packages private-unpublished, add safe description/repository metadata, and clarify README License section so code licensing is separate from bundled rules/content licenses and third-party adventure legality (owned by loreweaver-9s6).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 90,
+  "created_at": "2026-05-28T23:17:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-05T16:43:46Z",
+  "closed_at": "2026-06-05T16:59:58Z",
+  "close_reason": "Documented deferred source-code license state with private/unpublished package guards; added package descriptions and repository metadata; clarified README/docs split between source license, bundled content licensing, and third-party adventure legality. Verification: npm run check, npm run typecheck, and npm run test passed.",
+  "labels": [
+    "architecture",
+    "docs",
+    "license",
+    "metadata",
+    "parallel-safe",
+    "refactor",
+    "tech-debt",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.21",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-28T18:17:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "10ba6777-ad03-5498-ae60-77f6ec42fe5e",
+      "issue_id": "eshyra-0jq.21",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run check -> exit 0, Biome checked 232 files; npm run typecheck -> exit 0; npm run test -> exit 0, 1179 passed and 3 skipped across 90 files. Acceptance review: source-code license state is explicit as deferred/private; root/core/cli package metadata has descriptions, repository metadata, and private guards; README separates source-code license from rules/adventure content; loreweaver-9s6 remains referenced for third-party adventure legality.",
+      "created_at": "2026-06-05T16:59:49Z"
+    },
+    {
+      "id": "1f32a569-478b-5eb6-96b5-c96917d680fa",
+      "issue_id": "eshyra-0jq.21",
+      "author": "Joseph Bongaarts",
+      "text": "Beads hygiene before PR: bd preflight printed the default Go/Nix checklist, which is not the applicable repo gate for this npm workspace; applicable gates were npm run check/typecheck/test and all passed. bd orphans found unrelated in-progress loreweaver-0m9.5 (D&D SRD importer), and bd list --status=in_progress shows only that unrelated issue; bd stale found none.",
+      "created_at": "2026-06-05T17:00:35Z"
+    },
+    {
+      "id": "a97aaeff-a631-59af-8331-52d1dc4e318f",
+      "issue_id": "eshyra-0jq.21",
+      "author": "Joseph Bongaarts",
+      "text": "bd preflight --check result: failed because the default checklist runs Go/Nix project checks in this TypeScript/npm repo (go test reports no Go module; golangci-lint absent). It also warned that AGENTS.md and CLAUDE.md diverge; this is pre-existing and unrelated to this docs/package metadata change.",
+      "created_at": "2026-06-05T17:00:53Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 3
+}

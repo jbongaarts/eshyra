@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-6uy",
+  "title": "Centralize PDF hyphen-cluster normalization in SRD extractor",
+  "description": "The committed canonical SRD 5.1 pack (PR #140) contains PDF hyphen-cluster artifacts (U+00AD/U+2010/U+2011 around an ASCII hyphen) in record text from parsers lacking local normalization (e.g. parseAncestries/parseFeatures/parseRules) — examples: 'appendix PH-A', '10-year-old'. Move hyphen-cluster normalization into the extraction/text layer (extract.ts) so every parser input is normalized consistently. Collapse runs of ASCII hyphen + U+00AD + U+2010 + U+2011 to a single ASCII hyphen, using explicit \\uXXXX escapes. Add a committed-pack regression test asserting the generated pack contains none of those codepoints. Regenerate the canonical pack and keep verify:dnd5e-srd-pack strict (exit 0). Out of scope: exact creature name-set validation (loreweaver-0m9.5.14).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-03T04:16:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:50Z",
+  "started_at": "2026-06-03T04:16:37Z",
+  "closed_at": "2026-06-03T04:22:34Z",
+  "close_reason": "Centralized PDF hyphen-cluster normalization in extract.ts (normalizePdfHyphenCluster applied to every emitted line); added committed-pack regression test for U+00AD/U+2010/U+2011; regenerated canonical pack (all 403 artifacts removed, counts/dashes unchanged); verify:dnd5e-srd-pack exits 0; full suite green. Pushed to PR #140 branch (cb18008).",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

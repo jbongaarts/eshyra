@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.11",
+  "title": "Add new playable-model re-freeze gates to the SRD audit",
+  "description": "GATES-FIRST bead — implement EARLY, right after the thaw. Codify the known deficiencies as RED/failing gates that the modeling beads (.2-.10) then turn green. Layer on top of the still-green legacy gates (reproducible importer, source coverage 0, region ledger 0, suspicious records 0, hidden/control bytes 0). New gates in packages/core/src/rules/srdAudit.ts + tests, each expected to fail against the CURRENT thawed pack:\n  (3) all class levels typed — no raw no-ref feature markers except typed subclass slots, no null numeric spellcasting placeholders (Ranger spellsKnown:null);\n  (4) all level-up rows classifiable/applicable;\n  (5) no missing feature headings (Rogue Thieves' Cant-style);\n  (6) no mixed mechanical note tokens (Druid metal restriction);\n  (7) feature/rule/spell/magic-item table links complete;\n  (8) no duplicate table linearization in primary prose unless under sourceText;\n  (9) choice coverage — every level-1/level-up player choice structured or explicitly out-of-scope with a named unsupported marker;\n  (extra) no consumer overlay required for core character creation (ASIs, languages, spellcasting ability/prep, starting equipment present in pack).\nGates must fail loudly in CI. Writing them first makes the deficiencies machine-checkable so .2-.10 have an objective definition of done.",
+  "notes": "Implemented: packages/core/src/rules/srdPlayabilityAudit.ts (auditSrdPlayability) + tests, exported via internal.ts. 5 gates: untyped-progression-marker (RED 47 ->.2), null-spellcasting-value (RED Ranger L1 ->.2), missing-class-feature-record (RED Thieves' Cant ->.3), overlay-dependence (RED 47 ->.5), proficiency-note-bleed (GREEN guard ->.6). Per-gate fixture pairs + committed-pack RED baselines + it.fails re-freeze-readiness ratchet. No frozen path touched -> no thaw note. PR #352. verify:worktree green (2843 passed, 1 expected-fail). Table-link (.8) and choice-coverage (.9) gates deferred to those beads. Close when #352 merges.\nPR #352 review addressed (commit 7881121): overlay-dependence starting-equipment gate now requires the existing overlay shape (startingEquipment.entries[] of typed {kind:'choice',options[],sourceText}|{kind:'fixed',text,sourceText}), NOT a root choices/fixed shape. Frozen pack already has startingEquipment.entries but as PROSE STRINGS; gate stays RED (12 classes) and goes green when .5 converts them in place. verify:worktree green (2843 passed).\nLanded on main: PR #352 merged (merge 0676b2b). CodeQL ReDoS fixed in-PR. Branch+worktree cleaned. Closing.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:06:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-28T06:48:43Z",
+  "closed_at": "2026-06-28T15:39:16Z",
+  "close_reason": "Closed",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.11",
+      "depends_on_id": "eshyra-o9bd.1",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:07:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.11",
+      "depends_on_id": "eshyra-o9bd",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:06:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 10,
+  "comment_count": 0
+}

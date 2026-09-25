@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ojnq",
+  "title": "Dispatch: PR #455 adversarial review R1 — importer/pack source faithfulness (attempt 1)",
+  "description": "Read-only Codex review dispatch (gpt-5.6-luna, reasoning=high, sandbox read-only) in .worktrees/complete-epics. Scope: magic-item importer family projectors (parseMagicItems, magicItemCompiler, all magicItem*.ts), emit, committed pack records vs vendored SRD PDF. Bar: final pre-freeze audit; clause conservation; no paraphrase drift; numeric fidelity. Output: structured findings report to stdout.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T06:55:42Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-19T06:58:07Z",
+  "close_reason": "Cancelled: reviews are performed by the supervisor directly (user direction 2026-07-19); Codex dispatches are for code-writing only",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

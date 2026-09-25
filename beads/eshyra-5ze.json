@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5ze",
+  "title": "Model-extracted campaign bible (06b-B)",
+  "description": "Populate the campaign_bible row's worldFacts / majorNpcs / factions / openThreads (currently always empty) by extracting structured entries from session content via the ModelClient. Reuses the model-summarization plumbing pattern introduced by 06b-A. Parent: loreweaver-06b.",
+  "design": "Pipeline: recaps -> extractCampaignBible -> bible; then composeArcSummary(recaps, bible) -> summary; then single rollupArcSummary(summary, bible) DB write.\n\nNEW packages/core/src/memory/campaignBibleExtractor.ts:\n  extractCampaignBible(model: ModelClient, input: {\n    campaignId: string;\n    recaps: SessionRecapRecord[];\n  }): Promise<CampaignBibleInput>\n\nPure read-side (no DB). System prompt asks the model to emit a dedicated fenced JSON block (following the existing parseToolCalls pattern in orchestrator/protocol.ts — fence tag 'bible_json'). Internal: regex-match the fence -> JSON.parse -> shape-check (object with worldFacts/majorNpcs/factions/openThreads each a string[]) -> return CampaignBibleInput. Throws MemorySummaryError on missing-fence / unparseable / wrong-shape. ModelClientError from the provider propagates.\n\nMOD packages/core/src/memory/arcSummary.ts:\n  composeArcSummary signature gains `bible: CampaignBibleInput`. The user message gets a bible-rendered prelude (4 buckets, one section each). System prompt gains a line telling the model to reference the bible's NPCs/factions canonically.\n\nCLI orchestration in packages/cli/src/play.ts:\n\n  async function rollupCampaignArc(deps, db, campaignId) {\n    const recaps = ...; if (recaps.length === 0) return;\n    let bible;\n    try { bible = await extractBibleWithRetry(deps.model, { campaignId, recaps }); }\n    catch (e) { deps.io.write('Arc rollup skipped (bible extraction failed): ' + msg + '.'); return; }\n    let summary;\n    try { summary = await composeArcSummary(deps.model, { campaignId, arcId: CAMPAIGN_ARC_ID, recaps, bible }); }\n    catch (e) { deps.io.write('Arc rollup skipped (arc summary failed): ' + msg + '.'); return; }\n    rollupArcSummary(db, { campaignId, arcId: CAMPAIGN_ARC_ID, summary, sourceSessionIds, campaignBible: bible, createdAt: deps.now() });\n  }\n\n  async function extractBibleWithRetry(model, input) {\n    try { return await extractCampaignBible(model, input); }\n    catch { return await extractCampaignBible(model, input); }  // one retry; if this throws, propagate\n  }\n\nextractBibleWithRetry is a private CLI helper (policy lives in CLI; core stays pure).\n\nError handling:\n  - Bible fails once -> silent retry\n  - Bible fails twice -> warning 'bible extraction failed' + atomic skip; no DB write\n  - Bible succeeds, summary fails -> warning 'arc summary failed' + atomic skip; no DB write\n  - Both succeed -> single rollupArcSummary write\n\nSingle DB write at the tail means partial state never lands.\n\nTest strategy:\n  - NEW packages/core/test/campaignBibleExtractor.test.ts: happy path (valid fenced JSON -> CampaignBibleInput), prompt-rendering shape, parse-failure modes (missing fence / non-JSON / wrong shape -> MemorySummaryError), ModelClientError propagation.\n  - MOD packages/core/test/arcSummary.test.ts: existing tests gain a bible arg; new test verifies the user message contains bible-derived NPC/faction names.\n  - MOD packages/cli/test/play.test.ts: migrate the default fake model to a call-count router so the bible call and the summary call can return distinct responses. Tests for: happy path, bible retry-success, bible fails twice, summary fails after bible succeeds.\n\nFile map:\n  NEW packages/core/src/memory/campaignBibleExtractor.ts\n  NEW packages/core/test/campaignBibleExtractor.test.ts\n  MOD packages/core/src/index.ts (re-export extractCampaignBible + types)\n  MOD packages/core/src/memory/arcSummary.ts (bible param, render, prompt)\n  MOD packages/core/test/arcSummary.test.ts (existing tests + new bible-render test)\n  MOD packages/cli/src/play.ts (two-call pipeline, retry helper, warnings, JSDoc update on PlayDeps.model)\n  MOD packages/cli/test/play.test.ts (fake-model call-count router, new failure-mode tests)\n\nTradeoffs:\n  - Pipeline (chosen) vs. two independent calls: chosen because the summary should reference NPCs/factions canonically. Cost: the arc-summary prompt is now coupled to bible shape.\n  - Retry-once on bible only (not on summary): bible has a structural-parse failure mode that's plausibly transient; arc summary is free-text and a retry there is less likely to help.\n\nPrompt content: drafted in implementation, tuned via test snapshot. Bible extractor: instructions for the four bucket categories with a noun-phrase length cap; fenced 'bible_json' block as the only output. Updated arc summary: existing continuity-primer framing + a line about referencing bible entries canonically.\n\nOpen follow-up: multi-arc boundaries (06b-C = loreweaver-x63) still separate.",
+  "acceptance_criteria": "1. extractCampaignBible exists in @loreweaver/core and returns a structurally-validated CampaignBibleInput from SessionRecapRecord[] plus a ModelClient.\n2. composeArcSummary accepts a bible: CampaignBibleInput parameter; its prompts incorporate the bible (system prompt + user message prelude).\n3. CLI rollupCampaignArc runs the bible-extract -> arc-summary -> single-write pipeline in order.\n4. The bible call is retried exactly once on any thrown error; on second failure, gracefulClose still completes with a warning and no arc_summary write.\n5. If the bible call succeeds and the arc-summary call fails, gracefulClose still completes with a warning and no arc_summary write (atomic skip).\n6. campaignBibleExtractor unit tests cover: happy path, prompt rendering, parse-failure modes (MemorySummaryError on missing fence / non-JSON / wrong shape), ModelClientError propagation.\n7. CLI play.test.ts covers four scenarios: happy path, bible retry-success, bible-fails-twice, summary-fails-after-bible.\n8. npm run typecheck and npm run test (vitest run) both succeed.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:28:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T18:30:25Z",
+  "closed_at": "2026-05-24T03:14:25Z",
+  "close_reason": "Merged via PR #54 (commit 7147a01)",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-5ze",
+      "depends_on_id": "eshyra-4ua",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:29:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "87830cf1-b83a-5edf-b952-8538e177197a",
+      "issue_id": "eshyra-5ze",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline @ work/loreweaver-5ze rebased on origin/main (9013971): npm install OK; npm run typecheck OK; npm run test = 339 passed / 2 skipped / 0 failed.",
+      "created_at": "2026-05-23T18:32:25Z"
+    },
+    {
+      "id": "bc1beff2-d62f-5108-beb7-a3f9ee88526d",
+      "issue_id": "eshyra-5ze",
+      "author": "Joseph Bongaarts",
+      "text": "Final verification on work/loreweaver-5ze @ 1914e1d: npm run typecheck clean; npm run test = 350 passed / 2 skipped / 0 failed. 5 child tasks (T1-T5) closed via per-task spec + code-quality review with one minor fix-up commit (T1 empty-recaps guard). Whole-branch reviewer agent failed to return; controller verified all gates directly. Ready to push and open PR.",
+      "created_at": "2026-05-24T03:11:27Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 2
+}

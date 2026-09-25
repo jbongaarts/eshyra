@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7wc.1",
+  "title": "Task 1: beads-Dolt separation guard",
+  "description": "Objective:\nPure beads-Dolt separation guard: a Loreweaver campaign Dolt directory must never\nbe equal to, nested within, or a parent of the beads Dolt repo, and must not use\nthe beads ref namespace. Offline, no Dolt binary needed.\n\nFiles:\n- Create: `packages/core/src/persistence/checkpoint/separation.ts`\n- Modify: `packages/core/src/index.ts`\n- Test:   `packages/core/test/checkpoint.separation.test.ts`\n\nSteps:\n\n1. Write the failing test `packages/core/test/checkpoint.separation.test.ts`:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport {\n  SeparationError,\n  assertSeparateFromBeads,\n  BEADS_RESERVED_REF,\n} from '../src/persistence/checkpoint/separation.js';\n\ndescribe('beads-Dolt separation guard', () => {\n  it('allows a clearly disjoint dolt dir', () => {\n    expect(() =>\n      assertSeparateFromBeads('/proj/.loreweaver/dolt', '/proj/.beads'),\n    ).not.toThrow();\n  });\n\n  it('rejects a dolt dir equal to the beads dir', () => {\n    expect(() => assertSeparateFromBeads('/proj/.beads', '/proj/.beads')).toThrow(\n      SeparationError,\n    );\n  });\n\n  it('rejects a dolt dir nested inside the beads dir', () => {\n    expect(() =>\n      assertSeparateFromBeads('/proj/.beads/dolt', '/proj/.beads'),\n    ).toThrow(SeparationError);\n  });\n\n  it('rejects a dolt dir that contains the beads dir', () => {\n    expect(() => assertSeparateFromBeads('/proj', '/proj/.beads')).toThrow(\n      SeparationError,\n    );\n  });\n\n  it('exposes the reserved beads ref so callers never reuse it', () => {\n    expect(BEADS_RESERVED_REF).toBe('refs/dolt/data');\n  });\n});\n```\n\n2. Run it to verify FAIL.\n   Command: `npx vitest run packages/core/test/checkpoint.separation.test.ts`\n   Expected: FAIL — module not found.\n\n3. Create `packages/core/src/persistence/checkpoint/separation.ts`:\n```ts\nimport { resolve, relative, isAbsolute } from 'node:path';\n\nexport const BEADS_RESERVED_REF = 'refs/dolt/data';\n\nexport class SeparationError extends Error {\n  constructor(message: string) {\n    super(message);\n    this.name = 'SeparationError';\n  }\n}\n\nfunction isInside(child: string, parent: string): boolean {\n  const rel = relative(parent, child);\n  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));\n}\n\nexport function assertSeparateFromBeads(\n  doltDir: string,\n  beadsDir: string,\n): void {\n  const a = resolve(doltDir);\n  const b = resolve(beadsDir);\n  if (a === b || isInside(a, b) || isInside(b, a)) {\n    throw new SeparationError(\n      `Loreweaver Dolt dir ${a} must be disjoint from beads Dolt dir ${b}`,\n    );\n  }\n}\n```\n\n4. Add to `packages/core/src/index.ts` (append):\n```ts\nexport {\n  SeparationError,\n  assertSeparateFromBeads,\n  BEADS_RESERVED_REF,\n} from './persistence/checkpoint/separation.js';\n```\n\n5. Run the test to verify PASS.\n   Command: `npx vitest run packages/core/test/checkpoint.separation.test.ts`\n   Expected: 5 passed.\n\n6. Typecheck.\n   Command: `npm run build`\n   Expected: exit 0.\n\n7. Commit.\n   Command: `git add -A && git commit -m \"feat(e8): beads-Dolt separation guard\"`\n",
+  "design": "Pure path logic, zero Dolt/IO, so it runs in CI without the dolt binary. `isInside`\nuses `path.relative`: empty (equal) or a non-`..`, non-absolute relative path means\ncontainment. Checked both directions (dolt inside beads AND beads inside dolt) plus\nequality. `BEADS_RESERVED_REF` is exported as the single source of the forbidden ref\nnamespace so DoltRepo (E8.T3) and any sync code refuse to reuse `refs/dolt/data`.\nRemote-URL collision is enforced later in `DoltRepo` (it owns remote config); this\nunit covers the filesystem and ref-namespace halves of the parent-epic separation\nconstraint.\n",
+  "acceptance_criteria": "npx vitest run packages/core/test/checkpoint.separation.test.ts shows 5 passed; npm run build exits 0. Pure/offline (no dolt).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T05:41:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T02:48:37Z",
+  "closed_at": "2026-05-19T02:49:23Z",
+  "close_reason": "separation guard implemented; 5 tests pass, build exit 0",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7wc.1",
+      "depends_on_id": "eshyra-7wc",
+      "type": "parent-child",
+      "created_at": "2026-05-17T00:41:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

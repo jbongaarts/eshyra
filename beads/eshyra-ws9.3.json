@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ws9.3",
+  "title": "E5 Task 2: deterministic tool layer (roll, mark_scene, registry)",
+  "description": "Deterministic, code-owned tools invoked by the DM model (E5 acceptance #3). Implement roll(dice,reason) with a seeded code-owned RNG + dice-notation parser (NdM+K), and mark_scene(boundary,title) writing scene boundaries. Provide a ToolRegistry with structured ToolResult (ok/data | error code+message) and thin wrappers exposing lookup_srd (E1), mutate_state (E3), world_query (E2), memory_drilldown (E4) to the tool layer. Fills the ToolLayer seam.",
+  "acceptance_criteria": "roll RNG is code-owned and reproducible under a fixed seed in test; dice parser handles NdM and modifiers; mark_scene records boundaries; registry dispatch returns structured errors for unknown tools / bad input; build + test pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-20T22:45:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-20T22:49:30Z",
+  "closed_at": "2026-05-20T22:52:35Z",
+  "close_reason": "deterministic tool layer implemented and verified",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ws9.3",
+      "depends_on_id": "eshyra-ws9",
+      "type": "parent-child",
+      "created_at": "2026-05-20T17:45:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-ws9.3",
+      "depends_on_id": "eshyra-ws9.2",
+      "type": "blocks",
+      "created_at": "2026-05-20T17:45:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "e9787eb5-5305-58bc-b9e5-d37d72cc7ca8",
+      "issue_id": "eshyra-ws9.3",
+      "author": "Joseph Bongaarts",
+      "text": "TDD: RED — test/tools.test.ts 19/20 failing (rng/dice/tools absent). GREEN — implemented orchestrator/rng.ts, dice.ts, tools.ts; 20/20 pass. roll RNG reproducible under fixed seed (acceptance #3). REFACTOR — none. Full suite 124 passed / 1 skipped.",
+      "created_at": "2026-05-20T22:52:34Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-tba9",
+  "title": "Add generated cross-family fail-closed clause regression matrix",
+  "description": "Extend the generic clause-completeness regression evidence with generated fixtures spanning all mechanics-bearing record families. Preserve the reduced boundary: exercise missing and unknown obligation references, choice/variant partition failures, and capturable evidence matching through each family-facing contract without reintroducing obligation authority, scope, aggregate closure, production census, or resolver implementation.",
+  "acceptance_criteria": "Generated or table-driven coverage demonstrates the four readiness dimensions remain independent across every mechanics-bearing family; no authority or aggregate-closure surface is added.",
+  "notes": "2026-09-22 RE-DISPOSITIONED by eshyra-9l5s.5 against AGENTS.md 'Permanent Test Evidence' (audit T5 / eshyra-9l5s.3). This bead proposes extending 'the generic clause-completeness regression evidence' of the clause IR. That evidence does not exist on main: PR #475 (eshyra-o9bd.19.1.1) was closed unmerged on 2026-07-28 and eshyra-o9bd.19.1.1 records DESIGN_INVALIDATED ('PR #475 STOPPED 2026-07-27 ... superseded and retained for history and salvage'). packages/core/src/rules/clauseIr/ and test/clauseIr*.test.ts are absent from origin/main (83a4a3ac); the fail-closed fix it came from (7f38879a) is not an ancestor of main. So the proposed matrix names no surviving invariant, contract, or consumer, and the four-readiness-dimension model it would exercise belongs to the invalidated design. DISPOSITION: retired, no requirement. Replacing responsibility: the fail-closed and complete-partition obligations survive, if at all, in whatever successor contract eshyra-o9bd.19.1 adopts, which must scope its own permanent evidence under the same policy. Nothing source-fidelity, discovery, capability, adjudication, or state-integrity related is hidden: no code or test exists to retire.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T02:53:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T22:47:48Z",
+  "closed_at": "2026-09-22T22:47:48Z",
+  "close_reason": "Retired: extends evidence for the clause IR, whose design was invalidated and whose PR #475 closed unmerged; no surviving invariant or consumer on main. Disposition in notes (eshyra-9l5s.5).",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-tba9",
+      "depends_on_id": "eshyra-o9bd.19.1.1.6",
+      "type": "discovered-from",
+      "created_at": "2026-07-27T21:53:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-vk23.6",
+  "title": "Improve SRD gameplay-readiness reporting",
+  "description": "Improve gameplay-readiness report accuracy for partially structured records.\n\nProblem:\nThe ngcj gameplay-readiness report is useful, but it appears to undercount some existing structure. It marks all 15 conditions as prose-only even though records such as Blinded have effects and Exhaustion has structured levels.\n\nWhy this matters:\nThe report is becoming an important work-ordering signal. If it overstates prose-only gaps, it can mislead planning and obscure real progress.\n\nScope:\n- Review gameplay-readiness report classification logic.\n- Count existing structure for conditions, features, actions, equipment, magic items, and other record kinds consistently.\n- Distinguish \"prose-only\", \"partially structured\", and \"deterministically executable\" where possible.\n- Keep conservative warnings, but avoid false prose-only classifications.\n- Add focused tests/fixtures for records with partial structure.\n\nAcceptance criteria:\n- Blinded and Exhaustion are not reported as fully prose-only when structured data exists.\n- The report clearly distinguishes prose-only from partially structured records.\n- The report remains conservative about deterministic executability.\n- Existing gameplay-readiness findings remain actionable and not noisy.\n- npm run typecheck passes.\n- npm test passes.\n- npm run check passes.\n- npm run verify:dnd5e-srd-pack passes and regenerated pack output is intentional.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T03:18:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T05:49:01Z",
+  "started_at": "2026-06-30T05:39:00Z",
+  "closed_at": "2026-06-30T05:49:01Z",
+  "close_reason": "Completed in branch eshyra-vk23-rest: gameplay-readiness partial-structure reporting, clean Biome 2.5.1 check output, and SRD option source-page attribution.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-vk23.6",
+      "depends_on_id": "eshyra-vk23",
+      "type": "parent-child",
+      "created_at": "2026-06-29T22:18:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

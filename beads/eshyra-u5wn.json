@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-u5wn",
+  "title": "staff-of-striking powerful-strike operation lacks typed per-charge damage representation",
+  "description": "Discovered during eshyra-jjti (exact-token dice conservation gate, PR #455 follow-ups): the family-match tolerance was hiding a representation question on `magic-item:staff-of-striking`.\n\nThe prose clause \"For each charge you expend, the target takes an extra 1d6 force damage\" is C2-owned per the reviewed master inventory (docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md line ~299: \"+1d6 force per charge (<=3): C2\"), but the emitted record's mechanics carry no dice token for it: the `powerful-strike` operation has only `cost: [{economy: charges, amount: 'variable'}]` and the sole effect is the +3 attack/damage bonus. The daily recharge `1d6+4` conserves exactly and is unrelated.\n\nAdjudicate under docs/importer-fix-protocol.md: either the operation should gain a typed per-charge damage representation (importer/curated-spec fix + pack regeneration), or source-backed evidence should document why a variable-cost operation without a damage formula is the reviewed representation. When resolved, remove the scoped exception `magic-item:staff-of-striking|forward|1d6` in packages/core/test/srdGeneratedPack.test.ts (the exhaustive used-exception assertion will fail if it goes stale, which is intended).\n\nNote memory context: the o9bd 2026-07-01 reaudit found residual pack defects — re-verify the committed pack state before implementing.\n",
+  "notes": "## Supervisor adjudication (2026-07-21)\n\n**Ruling: the operation gains a typed per-charge damage representation.** The\n\"no typed damage\" state is a curation gap, not a reviewed representation.\n\nEvidence. SRD 5.1 staff-of-striking: \"When you hit with a melee attack using\nit, you can expend up to 3 of its charges. For each charge you expend, the\ntarget takes an extra 1d6 force damage.\" The master inventory\n(2026-07-06-o9bd-18-7-7-3, line 299) classifies this \"+1d6 force per charge\n(<=3)\" as C2 — mechanics-owned. Nothing in the reviewed record justifies\nomitting it, and the near-identical sibling is already represented.\n\n**Sibling precedent — Staff of Withering** (\"expend 1 charge ... extra 2d10\nnecrotic damage on a hit\"): `withering-strike` operation +\n`c2-withering-strike-payload`, a `triggeredEffect` carrying nested\n`extraDamage: { dice, type }`, `activation: { cost: 'free', trigger: 'hit with\nstaff' }`. Staff of Striking is the same shape with a variable cost, so it takes\nthe same representation. **Ring of Shooting Stars** is the precedent for the\nvariable-cost side: `cost: [{economy:'charges', amount:'variable'}]` plus\n`activation.requirement: 'expend 1 to 3 charges'` prose.\n\nTarget representation:\n\n    payload(\n      'powerful-strike',\n      'triggeredEffect',\n      {\n        trigger: 'hit with a melee attack using the staff',\n        extraDamage: {\n          dice: '1d6',\n          type: 'force',\n          perChargeExpended: true,\n          maximumCharges: 3,\n        },\n      },\n      [F2, F6, F9],\n      { cost: 'free', trigger: 'hit with a melee attack using the staff' },\n    )\n\nHook bindings drop F8 deliberately: there is no save DC or spell attack here.\nPrecedent for dropping it on no-save payloads is magicItemActivatedEffects.ts\nlines ~151 ([F2, F6, F9]) and ~435 ([F6, F9]).\n\n### Acceptance criteria\n\n1. `magic-item:staff-of-striking` mechanics carry a `1d6` force damage token\n   bound to `powerful-strike`, with the <=3 charge cap represented.\n2. The scoped exception `magic-item:staff-of-striking|forward|1d6` is removed\n   from `packages/core/test/srdGeneratedPack.test.ts`; the exhaustive\n   used-exception assertion still passes (it fails on a stale exception, which\n   is the intended self-enforcement).\n3. Pack regenerated through the importer; the generated diff touches only\n   `magic-item:staff-of-striking`; `npm run verify:dnd5e-srd-pack` clean.\n4. `npm run verify:worktree` clean.\n\n### Out of scope (decided)\n\n- **No typed maximum for variable operation costs.** Encoding \"<=3 charges\" as a\n  schema-validated cost cap would touch every variable-cost item and the\n  `costAmount` path in `packages/core/src/state/itemState.ts`. The reviewed\n  precedent (Ring of Shooting Stars) keeps the cap as activation prose; here it\n  is additionally carried as `maximumCharges` inside the damage payload. If a\n  typed cost cap is wanted, that is its own bead.\n- **No new nested-payload schema validation.** `triggeredEffect` validates only\n  `trigger`/`result`/`condition`; nested payload keys are free-form across all\n  existing magic items. Tightening that is a separate decision.\n- Pack state re-verified before dispatch: `verify:dnd5e-srd-pack` reports the\n  committed pack matches importer output exactly (0 records changed).\nPR #469 open: https://github.com/jbongaarts/eshyra/pull/469 (branch eshyra-u5wn at 29ffa5e). All four acceptance criteria met; scoped dice-conservation exception removed. Child eshyra-kdr5 closed. Leave this bead in_progress until the PR merges.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-20T00:28:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-22T05:16:20Z",
+  "started_at": "2026-07-22T04:43:08Z",
+  "closed_at": "2026-07-22T05:16:20Z",
+  "close_reason": "PR #469 merged to main: typed per-charge damage representation for magic-item:staff-of-striking, scoped dice-conservation exception removed. Reviewer approved with no blocking findings.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-u5wn",
+      "depends_on_id": "eshyra-kdr5",
+      "type": "blocks",
+      "created_at": "2026-07-21T23:45:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

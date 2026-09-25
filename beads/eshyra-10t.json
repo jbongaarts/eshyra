@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-10t",
+  "title": "Emit the Travel Pace and Ability Scores and Modifiers core-rules tables",
+  "description": "eshyra-0m9.22 recovered the section prose that resumes below excluded table captions (rule:speed now carries the Travel Pace / Forced March / Mounts and Vehicles prose; rule:ability-scores-and-modifiers its modifier-arithmetic prose), but two core-rules tables behind those captions still emit NO table record: Travel Pace (p84, columns Pace / Distance per Minute / Hour / Day + effect column) and Ability Scores and Modifiers (p76, score-range to modifier). Both captions are in TABLE_CAPTION_LEAF_TITLES (excluded from the rule kind) and have no parseTables reconstruction rule, so the row data is dropped entirely. The core-rules Combat 'Size Categories' table (p92, Size/Space) also emits nothing, but the Monsters-chapter table:size-categories (p254) is a strict superset (adds Examples), so review whether p92 needs its own record or a documented intentional omission. Expected behavior: add anchored reconstruction rules in parseTables.ts (likely header-row anchors since captions repeat in body prose), add the names to EXPECTED_SRD_5_1_TABLE_NAMES, regenerate, and extend srdGeneratedPack.test.ts pinned table assertions. Files: packages/core/scripts/importers/dnd5e-srd-5.1/parseTables.ts, index.ts, packages/core/test/srdGeneratedPack.test.ts, packages/core/data/rules-packs/rules__dnd5e-srd-5.1. Follow docs/importer-fix-protocol.md.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-10T03:41:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-11T03:49:05Z",
+  "started_at": "2026-06-11T03:30:26Z",
+  "closed_at": "2026-06-11T03:49:05Z",
+  "close_reason": "Emitted both core-rules tables behind excluded captions via header-row anchors in parseTables.ts (Score Modifier / 'Pace Distance Traveled per . . .'; both unique document-wide since the captions repeat as section headings). table:ability-scores-and-modifiers (p76, 16 rows, fail-closed) and table:travel-pace (p84, 3 multi-line rows with units folding, bounded by Difficult Terrain, fail-closed). p92 Size Categories resolved as documented intentional omission: Space cells identical to the p254 superset table (adds Examples). Pack regenerated (27->29 tables, diff exactly the 2 new records), verify:dnd5e-srd-pack exact match, audit clean, full suite green (1439 passed). PR: https://github.com/jbongaarts/eshyra/pull/192",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-10t",
+      "depends_on_id": "eshyra-0m9.22",
+      "type": "blocks",
+      "created_at": "2026-06-09T22:41:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x3w.16",
+  "title": "Task 8: Validate broad level-1 Pathfinder character drafts",
+  "description": "Objective:\nAdd broad playable level-1 Pathfinder character validation backed by Pathfinder rules records.\n\nFiles:\n- Create: `packages/core/src/characterCreation/pathfinder2e.ts` if character creation is split\n- Modify: `packages/core/src/characterCreation.ts` if the file remains single-module\n- Modify: `packages/core/src/rules/pathfinder2eRemaster.ts`\n- Test: `packages/core/test/pathfinderCharacterCreation.test.ts`\n\nSteps:\n1. Write failing tests for one valid level-1 Pathfinder draft with ancestry, background, class, ability boosts, trained skills/proficiencies, a class feat or ancestry feat, starting equipment, HP, and derived values.\n2. Write failing tests for invalid ancestry, invalid class, invalid background, illegal ability boost total, missing required feat choice, and incorrect HP.\n3. Run `npx vitest run packages/core/test/pathfinderCharacterCreation.test.ts`; expected: FAIL because Pathfinder validator does not exist.\n4. Extend the Pathfinder fixture with the minimum ORC-backed records needed for the tests.\n5. Implement Pathfinder draft types and validator. Keep level 1 as the accepted level and return clear errors for unsupported advancement levels.\n6. Map successful Pathfinder drafts into the canonical `character` projection plus system-specific JSON detail.\n7. Run focused tests; expected: PASS.\n8. Commit with `git add packages/core/src/characterCreation.ts packages/core/src/characterCreation packages/core/src/rules/pathfinder2eRemaster.ts packages/core/test/pathfinderCharacterCreation.test.ts` and `git commit -m feat-validate-pathfinder-character-creation`.",
+  "design": "Favor breadth at level 1 over advancement. The validator should cover the choice families named in the epic, but test fixtures can use a compact subset of real ORC mechanical records. Derived output should include base ancestry/class/background names, level, HP, ability scores, proficiency summary, feats, equipment, and spells when the selected class uses them.\n\nInitial test sketch:\n```ts\nconst result = completeCharacterCreation(dbWithPathfinderCampaign(), {\n  draft: validPathfinderDraft(),\n  sessionId: 's1',\n  at: now,\n});\nexpect(result.ok).toBe(true);\nexpect(readCharacter(db).class_name).toBe('Fighter');\nexpect(JSON.parse(readCharacter(db).ability_scores_json).strength).toBeGreaterThanOrEqual(16);\n```",
+  "acceptance_criteria": "`npx vitest run packages/core/test/pathfinderCharacterCreation.test.ts` passes. Valid Pathfinder level-1 drafts persist canonical character state. Invalid drafts return actionable validation errors.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T05:10:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-23T22:05:10Z",
+  "close_reason": "Added broad level-1 Pathfinder character validator (validatePathfinderCharacterDraft + PathfinderCharacterCreationError) covering ancestry, background, class, ability bounds + total sanity, class+ancestry feats (trait-checked against the chosen class/ancestry), starting equipment, spell list (rejected for non-caster Fighter), and HP = ancestry + class/level + Con mod. Pathfinder fixture extended with FEAT_NATURAL_AMBITION. completeCharacterCreation now dispatches pathfinder2e-remaster bindings to this validator and persists the canonical character projection. Verified: focused pathfinderCharacterCreation vitest pass (13/13), full npm run typecheck and npm run test pass (388 passed, 2 documented skips).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x3w.16",
+      "depends_on_id": "eshyra-x3w",
+      "type": "parent-child",
+      "created_at": "2026-05-23T00:10:32Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.16",
+      "depends_on_id": "eshyra-x3w.11",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:12:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x3w.16",
+      "depends_on_id": "eshyra-x3w.15",
+      "type": "blocks",
+      "created_at": "2026-05-23T00:11:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

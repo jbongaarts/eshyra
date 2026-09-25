@@ -1,0 +1,61 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ecr.4",
+  "title": "Fix magic-item Ring description contamination",
+  "description": "PR #150 review feedback: the magic-item exact-name gate passes, but generated Ring descriptions are cross-contaminated by neighboring entries because the Magic Items A-Z parser slices a flat page body from category end to next name start. Fix body assignment and add committed-pack regression assertions for Ring of Feather Falling, Ring of Evasion, Ring of Free Action, Ring of Invisibility, Ring of Jumping, and Ring of Mind Shielding.",
+  "notes": "Evidence: committed records.json currently reproduces the review. Ring of Feather Falling includes acid resistance / earth movement Elemental Command bullets; Ring of Free Action includes stone shape/stoneskin/wall of stone plus Fire Elemental Command text; Ring of Invisibility includes fire resistance/Ignan/fire immunity text; Ring of Jumping includes burning hands/fireball/wall of fire and Water Elemental Command text; Ring of Mind Shielding includes water elemental/breathe underwater/create or destroy water text; Ring of Evasion includes neighboring telepathic/jump spell fragments. Exact name-set assertions still pass because the record keys/names are present.\nRED: npx vitest run packages/core/test/srdGeneratedPack.test.ts fails on the new committed-pack Ring body assignment test. First failure: Ring of Feather Falling description contains the leaked phrase 'resistance to acid damage'. This proves exact-name coverage does not catch body corruption.\nRoot cause: extractPdfText chose a page-column cut by largest accepted x-gap. On SRD p236, two far-right words inside the right column (the split 'jump spell') formed a wider gap than the real page gutter and satisfied the minimum count/distinct-x guards. The extractor therefore left the real left/right columns merged in y-row order; parseMagicItems then sliced each body from category end to next name start across that interleaved text, contaminating Ring descriptions. Confirmed fix direction: rank candidate gutters by stronger smaller-side item support, using gap width only as a tiebreaker; page 236 then emits Elemental Command text, Ring of Evasion, and the short Ring entries in correct reading order.\nResult: npm run import:dnd5e-srd after the first extractor scoring change failed with EquipmentColumnMismatchError: Gear table column mismatch left=20 right=0. The fix is too broad and changes another parser's expected extraction shape. Returning to root-cause tracing for the changed extractor behavior before regenerating the pack.\nResult: after scoped extractor fix and committed-pack regeneration, Ring records are clean, but git diff exposed additional Magic Items A-Z body-boundary changes on p247-p248. Some are corrections (Trident of Fish Command, Universal Solvent, Wand descriptions), but Vicious Weapon now includes Vorpal Sword text, so body assignment still needs parser-level boundary protection before final verification.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-05T02:53:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:49Z",
+  "started_at": "2026-06-05T02:54:26Z",
+  "closed_at": "2026-06-05T03:16:17Z",
+  "close_reason": "Fixed Magic Items A-Z body contamination by rejecting tiny far-right outlier column cuts on SRD p236, recognizing wrapped-rarity category starts, regenerating the committed SRD pack with 237 magic items including Vorpal Sword, and adding committed-pack regressions for affected Ring records plus Vicious/Vorpal. Verification passed: focused vitest 72 tests, verify:dnd5e-srd-pack, npm run check, npm run typecheck, npm run test.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ecr.4",
+      "depends_on_id": "eshyra-ecr",
+      "type": "parent-child",
+      "created_at": "2026-06-04T21:53:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "eecb983f-a966-57ea-a864-cfe71ebc18b8",
+      "issue_id": "eshyra-ecr.4",
+      "author": "Joseph Bongaarts",
+      "text": "Review item: Magic Items A-Z generated descriptions are cross-contaminated by neighboring Ring entries while exact-name coverage still passes. Evaluation: accepted. Evidence to verify: committed pack Ring records should not include unrelated Ring of Elemental Command or neighboring ring text; current flat category-end to next-name slice is likely unsafe for interleaved two-column SRD pages. Plan: add committed-pack regression assertions first, reproduce RED, then fix parser body assignment and regenerate the committed pack.",
+      "created_at": "2026-06-05T02:54:26Z"
+    },
+    {
+      "id": "f8cbc445-6de8-5670-afba-1ab2eede04ba",
+      "issue_id": "eshyra-ecr.4",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: RED confirmed with npx vitest run packages/core/test/srdGeneratedPack.test.ts -> exit 1 before the fix; Ring of Feather Falling contained leaked 'resistance to acid damage'. GREEN/final commands: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/extract.test.ts packages/core/test/importers/dnd5e-srd-5.1/parseMagicItems.test.ts packages/core/test/srdGeneratedPack.test.ts -> 3 files, 72 tests passed; npm run verify:dnd5e-srd-pack -> exit 0, committed pack matches importer output exactly with 237 magic items; npm run check -> exit 0; npm run typecheck -> exit 0; npm run test -> exit 0, 88 files passed / 2 skipped, 1155 tests passed / 3 skipped.",
+      "created_at": "2026-06-05T03:16:06Z"
+    },
+    {
+      "id": "97b01071-878b-5109-88ad-b1684cbf8ff3",
+      "issue_id": "eshyra-ecr.4",
+      "author": "Joseph Bongaarts",
+      "text": "PR verification: pushed commit 3efafff to PR #150; GitHub check rollup completed successfully for CI build-test, install smoke on ubuntu/windows/macos, SRD importer reproducibility verify, and CodeQL. PR mergeStateStatus is CLEAN.",
+      "created_at": "2026-06-05T03:19:54Z"
+    },
+    {
+      "id": "76c4fbf5-19d4-59d1-b6e1-91ae466e10e6",
+      "issue_id": "eshyra-ecr.4",
+      "author": "Joseph Bongaarts",
+      "text": "PR verification: pushed commit 3efafff to PR #150; GitHub check rollup completed successfully for CI build-test, install smoke on ubuntu/windows/macos, SRD importer reproducibility verify, and CodeQL. PR mergeStateStatus is CLEAN.",
+      "created_at": "2026-06-05T03:20:01Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

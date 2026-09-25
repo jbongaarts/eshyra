@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7wc.4",
+  "title": "Task 4: CheckpointStore checkpoint + list",
+  "description": "Objective:\n`CheckpointStore.checkpoint()` composes separation guard + serialize + DoltRepo to\nturn the live SQLite campaign into a committed Dolt checkpoint; `list()` returns\nthe checkpoint history.\n\nFiles:\n- Create: `packages/core/src/persistence/checkpoint/store.ts`\n- Modify: `packages/core/src/index.ts`\n- Test:   `packages/core/test/checkpoint.store.test.ts`\n\nSteps:\n\n1. Write the failing test `packages/core/test/checkpoint.store.test.ts`:\n```ts\nimport { mkdtempSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport { join } from 'node:path';\nimport { describe, expect, it } from 'vitest';\nimport { openDatabase } from '../src/persistence/db.js';\nimport { DoltRepo } from '../src/persistence/checkpoint/doltRepo.js';\nimport { CheckpointStore } from '../src/persistence/checkpoint/store.js';\n\nconst doltOk = DoltRepo.available();\nfunction ws() {\n  return mkdtempSync(join(tmpdir(), 'lw-cp-'));\n}\n\ndescribe.skipIf(!doltOk)('CheckpointStore.checkpoint/list', () => {\n  it('checkpoints a live SQLite db and lists it', () => {\n    const root = ws();\n    const dbPath = join(root, 'live.db');\n    const db = openDatabase(dbPath);\n    db.exec('CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);');\n    db.prepare('INSERT INTO meta(key, value) VALUES (?, ?)').run('hp', '10');\n    db.close();\n\n    const store = new CheckpointStore(\n      join(root, 'dolt'),\n      join(root, '.beads'),\n    );\n    const id = store.checkpoint(dbPath, 'session-close: s1');\n    expect(id).toMatch(/\\S+/);\n\n    const list = store.list();\n    expect(list.some((c) => c.message.includes('session-close: s1'))).toBe(true);\n  });\n});\n\ndescribe('CheckpointStore separation guard (no dolt needed)', () => {\n  it('refuses a dolt dir colocated with beads', () => {\n    const root = ws();\n    expect(\n      () => new CheckpointStore(join(root, '.beads'), join(root, '.beads')),\n    ).toThrow();\n  });\n});\n```\n\n2. Run it to verify FAIL.\n   Command: `npx vitest run packages/core/test/checkpoint.store.test.ts`\n   Expected: FAIL — module not found.\n\n3. Create `packages/core/src/persistence/checkpoint/store.ts`:\n```ts\nimport { openDatabase } from '../db.js';\nimport { assertSeparateFromBeads } from './separation.js';\nimport { serializeCampaign } from './serialize.js';\nimport { DoltRepo, type Checkpoint } from './doltRepo.js';\n\nexport class CheckpointStore {\n  private readonly repo: DoltRepo;\n\n  constructor(doltDir: string, beadsDir: string) {\n    assertSeparateFromBeads(doltDir, beadsDir);\n    this.repo = new DoltRepo(doltDir);\n  }\n\n  checkpoint(liveDbPath: string, message: string): string {\n    const db = openDatabase(liveDbPath);\n    try {\n      const records = serializeCampaign(db);\n      this.repo.init();\n      this.repo.applySnapshot(records);\n      return this.repo.commit(message);\n    } finally {\n      db.close();\n    }\n  }\n\n  list(): Checkpoint[] {\n    return this.repo.log();\n  }\n}\n```\n\n4. Add to `packages/core/src/index.ts` (append):\n```ts\nexport { CheckpointStore } from './persistence/checkpoint/store.js';\n```\n\n5. Run the test to verify PASS.\n   Command: `npx vitest run packages/core/test/checkpoint.store.test.ts`\n   Expected: with dolt → 2 passed; without dolt → 1 passed (separation guard)\n   and 1 skipped (the dolt-gated checkpoint/list test).\n\n6. Typecheck.\n   Command: `npm run build`\n   Expected: exit 0.\n\n7. Commit.\n   Command: `git add -A && git commit -m \"feat(e8): CheckpointStore checkpoint + list\"`\n",
+  "design": "`CheckpointStore` is the public seam for E6/E4 call sites (session-close, arc\nroll-up). Constructor enforces the beads separation guard up front so an\nmisconfigured campaign fails fast, before any Dolt repo is created. `checkpoint`\nopens the live SQLite read-only-in-effect (only SELECTs via serialize), closes it\nin `finally`, and never mutates it — SQLite stays the single live truth. It is a\nplain synchronous call invoked OUTSIDE the turn loop. `list` is a thin pass-through\nto `DoltRepo.log`. Restore/fork are added in E8.T5/T6 to keep each task one\ncoherent area.\n",
+  "acceptance_criteria": "npx vitest run packages/core/test/checkpoint.store.test.ts shows 2 passed with dolt or 1 passed (separation) + 1 skipped without; npm run build exits 0.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T05:41:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T02:51:39Z",
+  "closed_at": "2026-05-19T02:52:21Z",
+  "close_reason": "CheckpointStore implemented; 1 passed (separation) + 1 skipped (no dolt), build exit 0",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-7wc.4",
+      "depends_on_id": "eshyra-7wc.2",
+      "type": "blocks",
+      "created_at": "2026-05-17T00:41:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7wc.4",
+      "depends_on_id": "eshyra-7wc",
+      "type": "parent-child",
+      "created_at": "2026-05-17T00:41:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7wc.4",
+      "depends_on_id": "eshyra-7wc.3",
+      "type": "blocks",
+      "created_at": "2026-05-17T00:41:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-7wc.4",
+      "depends_on_id": "eshyra-7wc.1",
+      "type": "blocks",
+      "created_at": "2026-05-17T00:41:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-x63.6",
+  "title": "Task 6: CLI rollupCampaignArc replacement + messaging",
+  "description": "## Objective\n\nReplace the CLI's `rollupCampaignArc` (today's single-arc placeholder) with\nthe multi-arc flow that uses the lifecycle module from tasks 2 and 3.\nImplement the CLI messaging contract from the epic design. Thread\n`memoryConfig` through where needed.\n\n## Files\n\n- Modify: `packages/cli/src/play.ts`\n\n## Design notes\n\n### Current state (to be removed)\n\n```typescript\n// packages/cli/src/play.ts:493\nconst CAMPAIGN_ARC_ID = 'arc-1';\n\nasync function rollupCampaignArc(deps, db, campaignId): Promise<void> {\n  // ... reads ALL session recaps, composes summary into arc-1, calls\n  //     rollupArcSummary with arc_id='arc-1' every time.\n}\n```\n\nDelete the `CAMPAIGN_ARC_ID` constant and the entire `rollupCampaignArc`\nfunction. The call site at `play.ts:489` becomes a new flow described\nbelow. `extractBibleWithRetry` stays — it's reused.\n\n### New flow\n\nAfter the existing session-close path (`closeSessionGracefully` and its\nrecap write), call this replacement:\n\n```typescript\nasync function rollupCampaignArcIfReady(\n  deps: PlayDeps,\n  db: Db,\n  campaignId: string,\n  sessionId: string,\n): Promise<void> {\n  const now = deps.now();\n  const openArc = openArcIfMissing(db, { campaignId, now });\n  stampSessionWithOpenArc(db, { campaignId, sessionId });\n\n  const closedSessions = getClosedSessionsInOpenArc(db, { campaignId });\n  if (closedSessions.length < deps.memoryConfig.arcRolloverThreshold) {\n    return; // not yet at N; silent\n  }\n\n  const recaps = closedSessions\n    .map((s) => getSessionRecap(db, { campaignId, sessionId: s.sessionId }))\n    .filter((r): r is SessionRecapRecord => r !== undefined);\n\n  let bible: CampaignBibleInput;\n  try {\n    bible = await extractBibleWithRetry(deps.model, { campaignId, recaps });\n  } catch (error) {\n    const message = error instanceof Error ? error.message : String(error);\n    deps.io.write(`Arc rollup skipped (bible extraction failed): ${message}.`);\n    return;\n  }\n\n  let summary: string;\n  try {\n    summary = await composeArcSummary(deps.model, {\n      campaignId,\n      arcId: openArc.arcId,\n      recaps,\n      bible,\n    });\n  } catch (error) {\n    const message = error instanceof Error ? error.message : String(error);\n    deps.io.write(`Arc rollup skipped (arc summary failed): ${message}.`);\n    return;\n  }\n\n  const result = closeOpenArcAndOpenNext(db, {\n    campaignId,\n    arcId: openArc.arcId,\n    summary,\n    sourceSessionIds: recaps.map((r) => r.sessionId),\n    campaignBible: bible,\n    now,\n  });\n  deps.io.write(`Arc ${result.closedArcId} closed; opened ${result.newArcId}.`);\n}\n```\n\n### Call site update\n\nIn `runPlay`, find the existing `await rollupCampaignArc(deps, db, campaignId)`\ncall and replace with:\n\n```typescript\nawait rollupCampaignArcIfReady(deps, db, campaignId, sessionId);\n```\n\nMake sure `sessionId` is in scope at that call site — it should be the\n`closed.session.sessionId` from the `closeSessionGracefully` return.\n\n### Imports\n\nAdd to the import block at the top of `play.ts`:\n\n```typescript\nimport {\n  closeOpenArcAndOpenNext,\n  getClosedSessionsInOpenArc,\n  openArcIfMissing,\n  stampSessionWithOpenArc,\n} from '@loreweaver/core/internal';\n```\n\nThe existing imports of `composeArcSummary`, `extractCampaignBible`,\n`getSessionRecap`, `rollupArcSummary`, etc. stay where they are.\n\n## Steps\n\n1. **Replace the function and its call site.** This task is mostly a\n   surgical refactor — no new tests are written here (task 7 covers\n   integration coverage). Verify by typecheck.\n\n   Steps:\n   - Delete `CAMPAIGN_ARC_ID` constant.\n   - Delete `rollupCampaignArc` function.\n   - Add `rollupCampaignArcIfReady` (code above).\n   - Update the call site to the new function name and pass `sessionId`.\n   - Add the new internal-subpath imports.\n   - Remove the now-unused import of `rollupArcSummary` if no other\n     callers remain (the new flow uses `closeOpenArcAndOpenNext` which\n     calls `rollupArcSummary` internally; double-check by Grep).\n\n2. **Typecheck.**\n   Command: `npm run typecheck`\n   Expected: PASS.\n\n3. **Run the existing CLI test suite.**\n   Command: `npm run test -- packages/cli/test/play.test.ts`\n   Expected: many existing tests now FAIL — that is correct. The\n   pre-existing tests assume the single-arc behavior (e.g. they read\n   `getArcSummary(db, { arcId: 'arc-1' })` after exactly one session\n   close, but with N=5 no arc summary is written until five closes).\n\n   List the failing tests. They will be the input to task 7, which\n   rewrites them. For now, leave them failing.\n\n4. **Skip or annotate the failing tests temporarily.** Because the full\n   gate runs in step 5 and we want the gate green before commit:\n\n   For each failing test, mark it with `.skip` and add a comment:\n   ```typescript\n   it.skip('rolls the campaign arc up after a session closes (rewritten in loreweaver-x63 task 7)', async () => {\n     // ...\n   });\n   ```\n\n   Do this only for the tests that assert the obsolete single-arc\n   semantic. Tests that pass should not be touched. The skips are\n   removed in task 7.\n\n5. **Run the full gate.**\n   Command: `npm run typecheck && npm run test`\n   Expected: PASS. The temporarily-skipped tests are documented skips\n   that task 7 unblocks.\n\n6. **Commit.**\n   ```\n   git add packages/cli/src/play.ts packages/cli/test/play.test.ts\n   git commit -m \"Replace rollupCampaignArc with multi-arc lifecycle flow (loreweaver-x63)\"\n   ```\n\n## Acceptance\n\n- `CAMPAIGN_ARC_ID = 'arc-1'` is gone from `play.ts`.\n- `rollupCampaignArc` (old) is gone; `rollupCampaignArcIfReady` (new)\n  exists and is called in `runPlay`.\n- On successful rollover, CLI emits exactly one new line:\n  `Arc {closedArcId} closed; opened {newArcId}.`\n- On rollover failure (bible or summary throws), CLI emits the existing\n  skip warning verbatim, identical to today's text.\n- `npm run typecheck && npm run test` pass (with the documented\n  task-7-deferred test skips).\n\n## Notes\n\n- The temporary `.skip` annotations in step 4 are a controlled deferral,\n  not a placeholder. Each annotation MUST name the next task that\n  un-skips it. Task 7's first action is to delete those annotations and\n  rewrite the test bodies for multi-arc semantics.\n- If any non-arc test fails here, that is a real regression — investigate\n  before skipping. Only single-arc-shape assertions should be deferred.\n",
+  "acceptance_criteria": "npm run typecheck && npm run test pass (single-arc tests temporarily .skip'd with task-7 pointer). CAMPAIGN_ARC_ID and rollupCampaignArc deleted; rollupCampaignArcIfReady writes the Arc X closed; opened Y line on success and preserves existing skip warnings on model failure.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-24T21:11:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-24T22:43:11Z",
+  "closed_at": "2026-05-24T22:45:35Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-x63.6",
+      "depends_on_id": "eshyra-x63.3",
+      "type": "blocks",
+      "created_at": "2026-05-24T16:11:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x63.6",
+      "depends_on_id": "eshyra-x63",
+      "type": "parent-child",
+      "created_at": "2026-05-24T16:11:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-x63.6",
+      "depends_on_id": "eshyra-x63.4",
+      "type": "blocks",
+      "created_at": "2026-05-24T16:11:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "1afcfe73-1c2b-53cc-a3c9-e1f54f6ce642",
+      "issue_id": "eshyra-x63.6",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `f08ae0e..d619d37`:\n\nAssessment: Ready to merge\n\nCritical:\n- none\n\nImportant:\n- none\n\nMinor:\n- **Message wording — \"Arc arc-1 closed; opened arc-2.\"** (`play.ts:577`): Because arc IDs are `arc-{n}`, the rendered CLI line reads \"Arc arc-1 closed; opened arc-2.\" The leading \"Arc \" is redundant with the \"arc-\" prefix baked into every arc ID. This was specified verbatim in the task-6 plan template, so the implementation is correct per spec. A follow-up could change the arc ID schema (e.g. rename to `arc1`/`arc2`) or reword the message to `Arc 1 closed; arc 2 opened.` — but that is a separate decision not in scope here.\n- **`stampSessionWithOpenArc` is not idempotent on double-stamp** (`campaignArc.ts:197`): The UPDATE unconditionally overwrites `arc_id`. If somehow called twice on the same session it silently reassigns. This is not a problem in the current single-codepath CLI (session close is not retried at the arc-stamp level), but worth documenting or adding a guard in a follow-up.\n\nFollow-up:\n- Task 7 (loreweaver-x63.7) removes the 5 `.skip` annotations and writes multi-arc integration tests. All 5 skips have the required task-7 pointer comment.",
+      "created_at": "2026-05-24T22:51:18Z"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 1
+}

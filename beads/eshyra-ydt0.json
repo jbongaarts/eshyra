@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ydt0",
+  "title": "Publish under-construction eshyra.app site with SRD rules-pack offering",
+  "description": "Create a simple eshyra.app website on the Cloudflare free tier. The site should present Eshyra itself as under construction / early pre-release, while prominently offering the structured D&D SRD rules pack as a useful standalone artifact. Position the rules pack accurately: it is a structured, machine-friendly representation of SRD 5.1 content derived from CC BY 4.0 source material, not original game content and not an endorsement by Wizards of the Coast. Include clear license/attribution language and link to the repository/release artifact or a downloadable rules-pack JSON bundle as appropriate. Keep the site lightweight and static; Cloudflare Pages or Workers Static Assets are acceptable if free-tier friendly. Acceptance: eshyra.app serves a minimal landing page over HTTPS; page states Eshyra is under construction; page prominently offers the SRD rules pack download or link; page includes CC BY 4.0 attribution and repository/license links; deployment steps are documented; no proprietary/closed Eshyra code or non-CC assets are exposed unintentionally.",
+  "notes": "Site implemented in PR #251 (branch feat/eshyra-site-ydt0): static site/ + GitHub Actions -> Cloudflare Pages workflow (site-v* tags / manual dispatch, decoupled from app v* releases) + docs/site-deployment.md credential setup. REMAINING before close: (1) merge PR; (2) create Cloudflare Pages project 'eshyra-site'; (3) add repo secrets CLOUDFLARE_API_TOKEN (Pages:Edit) + CLOUDFLARE_ACCOUNT_ID; (4) attach eshyra.app custom domain; (5) trigger first deploy and confirm HTTPS landing page serves the rules-pack download. Steps 2-5 require the owner's Cloudflare account.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T03:58:11Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-20T05:38:05Z",
+  "started_at": "2026-06-20T04:43:15Z",
+  "closed_at": "2026-06-20T05:38:05Z",
+  "close_reason": "Shipped. PR #251 merged to main; tagged site-v1; GitHub Actions -> Cloudflare Pages deploy succeeded (run 27861712613). eshyra.app serves the under-construction landing page over HTTPS with the CC BY 4.0 D&D 5e SRD 5.1 rules-pack download (476.6 KB ZIP, 1811 records) and CC BY/repo/license links. Site has its own site-v* release cycle, decoupled from the app v* pipeline. Token fix: Pages:Edit had to be bound to the account resource (ca70145d...), not a zone.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

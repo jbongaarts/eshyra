@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-rtgi",
+  "title": "Add structured armor AC data for deterministic equipment calculations",
+  "description": "The SRD 5.1 equipment records preserve armor AC values as source-shaped strings, which is accurate enough for prose/display but weaker than needed for deterministic character-sheet and combat tooling.\n\nConfirmed in the 2026-06-30 audit bundle `/home/jhbongaarts/src/dnd5e-srd-audit-bundle-0630-1.zip`:\n- `equipment:chain-mail` has `data.ac: \"16\"`.\n- `equipment:leather` has `data.ac: \"11 + Dex modifier\"`.\n- `equipment:shield` has `data.ac: \"+2\"`.\n- No structured fields distinguish base AC, Dex modifier allowance/cap, shield bonus, stealth disadvantage, or strength requirements as machine-executable armor rules.\n\nThis is not a current pack accuracy blocker: the string values match the source-shaped table data and existing schema/tests permit them. It is a deterministic gameplay usability gap for tools that need to compute AC without reparsing prose/formula strings.\n\nAcceptance criteria:\n- Decide and document the structured armor/equipment AC schema needed by deterministic tools.\n- Emit structured armor calculation data for SRD armor and shields while retaining source text/provenance.\n- Add validation/tests for representative light armor, medium armor, heavy armor, and shield records.\n",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T04:35:57Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T14:05:53Z",
+  "closed_at": "2026-07-01T14:05:53Z",
+  "close_reason": "Added structured data.armorClass ({base, dexModifier, dexModifierCap?} for armor; {bonus} for shields) derived deterministically from the verbatim ac cell, alongside the retained ac string. Validated in kindSchemas.ts; fails closed on any AC shape outside the four reviewed SRD 5.1 cases.",
+  "labels": [
+    "equipment",
+    "modeling",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-rtgi",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

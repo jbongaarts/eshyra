@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.4",
+  "title": "Repair hazard/poison/disease/trap source procedures and selected stateful capabilities",
+  "description": "Repair known hazard/poison/disease/trap projection defects: success branches, variants,\nSphere of Annihilation, detection/trigger/disarm/geometry, recurrence/progression/cure/\nimmunity/termination, and harvesting-versus-target-effect distinctions. Preserve\nsource/procedure relationships for discovery; deterministic state transitions remain\nrequired where state is actually mutated.",
+  "acceptance_criteria": "- Known hazard-family source-fidelity defects are repaired against source evidence.\n- Source-defined variants remain separately addressable and option-local.\n- Independently enumerable printed branches/fields cannot silently disappear.\n- Pack data consumed by a capability in force is source-faithful; that capability's contract, execution, and state evidence belong to the capability lane (eshyra-o9bd.19.5 / eshyra-olc5).\n- The bead does not require every hazard to be an end-to-end deterministic state machine.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F3, F6, F7, F8, F9.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): RESHAPED. This bead is now LANE A (importer/source-fidelity and projection repair) only. The '*** PACK/ENGINE PAIRING (2026-07-25) ***' note above is SUPERSEDED: the reference engine is not the validator of this bead's representation, and this bead does not coordinate decomposition with engine:F epics. Capability-execution acceptance items were moved to the capability lane (eshyra-o9bd.19.5 family epics / eshyra-olc5.1-.2). Order of work: source -> capture -> identity/provenance -> emitted pack; attach generalized evidence per repaired defect class and search meaningful siblings (no bulk regression program). Every finding-registry row owned here stays owned here.\n2026-09-22: PR #567 https://github.com/jbongaarts/eshyra/pull/567 (eshyra-o9bd.19.4.3.1, head e18e2bc8) repairs the successful-save half-damage class (registry rows half-damage-branches and hazard-success-branches; Bag of Beans = 19.2.1 item 3). Pending merge; registry row statuses are unchanged by that PR.\n2026-09-23: PR #567 merged (25631abf). The successful-save half-damage class is repaired on main (registry rows half-damage-branches and hazard-success-branches; Bag of Beans = 19.2.1 item 3). Evidence: packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts plus the committed census. Registry row statuses are for the re-freeze audit to update.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:18Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-23T04:29:00Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.4",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.4",
+      "depends_on_id": "eshyra-o9bd.19.4",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:18Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.4",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

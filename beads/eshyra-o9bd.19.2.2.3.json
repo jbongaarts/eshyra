@@ -1,0 +1,42 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.2.3",
+  "title": "Locator completeness: ledger-derived page gate for records and field-level provenance (continuations, container capacity, spell lists)",
+  "description": "SCOPE (registry rows locator-completeness indep:008, container-continuation fable:F4, source-provenance-fields sol:CAP-010; plan B2 \"include all 23 adjacent-page locator gaps and container-capacity page 70; include spell-list pages and class primary-ability source pages at field level\").\nThe audit's \"23\" is a 07-24 snapshot, not acceptance. Live derivation (c53ba040): for every source-region-ledger entry classified record:<key>, the pages pageStart..pageEnd not cited by that record's `source`/provenance.locator. Current result = 11 records:\n rule:class-features (p.57; regions on 8,11,15,19,24,26,30,35,39,42,46,52 - likely a MIS-ATTRIBUTION of per-class \"Class Features\" headings, investigate before extending the locator), feature:druid:wild-shape (+21), feature:sorcerer:font-of-magic (+44), feature:draconic-bloodline:dragon-ancestor (+45), equipment:crystal (+67), spell:scrying (+177), magic-item:deck-of-many-things (+218), magic-item:figurine-of-wondrous-power (+223), magic-item:manual-of-golems (+230), rule:hit-points (+256), rule:half-dragon-template (+321).\nField level: Container Capacity rows (table p.69-70) attach `capacity` to gear records; the field must cite the page its row is printed on. Spell-list membership (spell.data.classes) and class primary-ability fields must cite their source pages in field-provenance.json.\nRequired invariant (gate, fail-closed in verify:dnd5e-srd-pack): record locator pages ⊇ pages of every ledger region owned by the record; structured field provenance cites the page of its source row/span. Denominator = region ledger (source-derived). A mismatch caused by wrong ownership must be fixed at ownership, never by widening the locator (see recordSourceAnchors.ts header).\n",
+  "notes": "PR #576 opened 2026-09-25 (https://github.com/jbongaarts/eshyra/pull/576). Child .3.1 merged into branch; supervisor review fix R1 (spell /classes cited non-printing pages for 93 spells) committed on top. verify:worktree 5479 pass/3 skip; verify:dnd5e-srd-pack exit 0. Stays in_progress until merge.\n2026-09-25: review at fafab24e (F1 JSON Pointer resolver accepted inherited props/non-canonical indices; F2 count assertions as evidence) fixed in 1bb29c53; PR comment posted. Still in_progress until #576 merges.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-23T21:52:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-25T03:23:29Z",
+  "started_at": "2026-09-24T23:40:01Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.2.3",
+      "depends_on_id": "eshyra-o9bd.19.2.2.3.1",
+      "type": "blocks",
+      "created_at": "2026-09-24T18:46:13Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.2.3",
+      "depends_on_id": "eshyra-o9bd.19.2.2",
+      "type": "parent-child",
+      "created_at": "2026-09-23T16:52:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

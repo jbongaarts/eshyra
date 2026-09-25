@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-oqvj",
+  "title": "Add a captain-gated exit channel for seat handoffs (PreCompact)",
+  "description": "Every gated seat delivery path is SessionStart-shaped: charter injection, the handoff read, bd prime, and PreCompact -> bd prime (a context refill fired at the moment context is about to be destroyed). The seat charter's exit obligation has no gated carrier. Candidate: a second, model-gated PreCompact handler alongside the existing 'bd prime' in .claude/settings.json, reusing classifyClaudeSession (scripts/seats/seatContext.mjs:27), which has no hook_event_name guard and is already event-agnostic. PREREQUISITE: confirm the PreCompact hook payload carries a 'model' field. The classifier is fail-closed on absent model identity, so if it does not, the handler silently emits nothing — the same quiet-failure mode the Codex hook-trust section of docs/agent-captain-seats.md describes. SessionEnd cannot deliver text to a model that is already ending, and Stop fires every turn, so neither is a drop-in substitute. classifyCodexSession (seatContext.mjs:58-63) hard-refuses any non-SessionStart event, so an equivalent Codex exit channel is a separate decision requiring a deliberate widening of that guard.",
+  "acceptance_criteria": "Either a gated exit-channel handler lands with evidence that its payload reaches only an eligible occupant, or the bead records why the available hook events cannot carry one.",
+  "notes": "PR #560 (https://github.com/jbongaarts/eshyra/pull/560) open at head e0375856, branch eshyra-oqvj. Stays in_progress until merged. PREREQUISITE RESOLVED: no exit-side hook event carries 'model' (verified against CLI 2.1.278) — the common payload builder omits it and SessionStart adds it. PreCompact stdout becomes the compaction summarizer's newCustomInstructions, not model context; SessionEnd output goes nowhere. Stop + hookSpecificOutput.additionalContext is the only exit channel that reaches the model. Gated by a SessionStart-written occupant ledger under <git common dir>/eshyra-seats/claude-captain/sessions/. Spun out eshyra-nuf2 for the PreCompact/bd prime mismatch found along the way. verify:worktree clean: 5613 passed, 3 documented skips.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-22T04:11:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T04:59:53Z",
+  "started_at": "2026-09-22T04:24:23Z",
+  "closed_at": "2026-09-22T04:59:53Z",
+  "close_reason": "PR #560 merged 2026-09-22 as merge commit 46048f55d505af7711cae02f50b99c3856ef5d12; branch and worktree removed. Spun out eshyra-nuf2.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

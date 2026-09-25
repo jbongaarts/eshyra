@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ar72",
+  "title": "Map current rules-pack claim, authority, and defect state for the ADR 0020 transition",
+  "description": "Produce docs/audits/rules-awareness-transition/2026-07-29-current-state-claim-and-defect-map.md: an evidence-based map of what Eshyra currently claims about the rules pack, engine readiness, and defects under ADR 0020.\n\nInventory and trace present authority and consumers for source-fidelity/provenance claims, source/reference completeness, semantic readiness, pack-wide/negative executability, deterministic capability, state-kernel invariants, model-adjudication classifications, GAMEPLAY_READINESS_DISPOSITIONS, RULE_DISPOSITIONS, ENGINE_PROCEDURE_COVERAGE, srdPlayabilityAudit.ts, srdChoiceProseAudit.ts, srdEquipmentResolutionAudit.ts, itemExecutionReadiness.ts, the ADR 0019 inventory/census, engine:F1-F10, the freeze manifest and thaw-note gate, open SRD findings, and real runtime consumers of the generated pack.\n\nKeep the five ADR 0020 dimensions independent: source fidelity, discovery, adjudication, deterministic capability, state integrity. Preserve every known defect; do not close, retire, or reclassify findings. Distinguish verified fact, inference, and open question.\n\nSibling of eshyra-jued (discovery-substrate map) in the same directory; not a duplicate. Documentation only: no generated pack output and no production code changes.",
+  "notes": "PR #484 first review (CHANGES REQUESTED at 63895c6): two report defects, both correct, both fixed at 226b4d0.\n\n1. FALSE [VERIFIED] CLAIM CORRECTED: I wrote that RulesAmbiguity 'has no runtime consumer' and 'never reaches the DM'. Wrong. lookupRulesTool returns record: result.record UNCHANGED (toolLookupRules.ts:169-170) and the ambiguities live at record.data.mechanics.ambiguities, so the material DOES reach the DM on lookup of the three records. My grep was field-specific and missed the generic whole-record consumer. Narrower true defect: reaching the DM is conditional on the model independently choosing the exact containing record; no automatic surfacing, no campaign-ruling store/resolver, no ruling-to-capability path.\n\nLASTING LESSON for anyone tracing pack-data consumers: 'no field-specific reader' NEVER means 'unreachable'. lookup_rules returns the whole record, so every field of any pack record is DM-reachable on request. The distinction is now documented in report §4.12. The audit registries (GAMEPLAY_READINESS_DISPOSITIONS, RULE_DISPOSITIONS, ENGINE_PROCEDURE_COVERAGE, the srd*Audit modules, the ADR 0019 inventory) genuinely have no consumer in either sense -- they are code/docs, not pack records.\n\n2. D-5 RECAST (not removed): it stated 'Violated invariant: none -- design property' while being counted as a live defect and said to block approval. Now recast around the concrete still-active claim: the zero-engine-pending re-freeze bar, still recorded VERBATIM in eshyra-olc5 notes and still blocking eshyra-o9bd.14 and eshyra-2zyy, infers completeness from an open schema. Invariant: ADR 0020 §3. The open-schema properties moved to new §7A 'Architectural constraints -- properties, not defects', not counted among §6.1's nine. §6.1 gained a status key separating: live-with-instances (D-1..D-4, D-6..D-8) / live-claim-no-instance (D-5) / structurally-present-no-trigger (D-9). D-7, D-8, D-9 gained explicit violated-invariant lines.\n\n3. NEW VERIFIED FACT found while writing §7A (a drafted claim that per-kind validators close the mechanics object was probed and proved FALSE): key closure over data.mechanics exists for magic-item ONLY. Injecting data.mechanics.madeUpKey is REJECTED for magic-item:adamantine-armor (magicItemMechanics.ts:468) but ACCEPTED for spell:fireball and creature:goblin. data.mechanics.saves[0].madeUpKey is ACCEPTED. data.madeUpKey is ACCEPTED even on magic-item. requireOnlyKeys (kindSchemas.ts:923) closes ~20 nested sub-objects, not the mechanics object above them. So the only corner of the corpus where a schema-closure argument is available at all is magic-item.data.mechanics -- the same kind that carries executionReadiness and feeds the live runtime gate. Relevant to eshyra-olc5.3/.4 (certify clause-complete absence) and to F1.\n\nVerified at 226b4d0: verify:worktree 262 files / 4709 tests passed, 19 documented skips. Reply posted: PR #484 comment 5126826648. Awaiting re-review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-30T04:20:25Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-30T05:14:55Z",
+  "started_at": "2026-07-30T04:20:40Z",
+  "closed_at": "2026-07-30T05:14:55Z",
+  "close_reason": "Delivered and merged. docs/audits/rules-awareness-transition/2026-07-29-current-state-claim-and-defect-map.md is on main via PR #484, merge commit f4b3461 (branch commits 63895c6 + review-fix 226b4d0 remain reachable per the merge-commit policy). Reviewed once (CHANGES REQUESTED), both report defects corrected and re-verified, then merged with all checks green.\n\nSibling eshyra-jued landed just before as 52c111d (PR #483), so both rules-awareness-transition maps are now on main. Report §10 item 8 records that jued was in progress and unread when this map was written; any disagreement at the lookup_rules / context-assembly seam resolves to whichever cites the tighter code evidence.\n\nNothing dispositioned: no finding closed, retired, or reclassified. The report's §9 lists twelve decisions the transition program must make, as questions.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ar72",
+      "depends_on_id": "eshyra-o9bd.19",
+      "type": "parent-child",
+      "created_at": "2026-07-29T23:20:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

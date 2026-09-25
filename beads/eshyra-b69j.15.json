@@ -1,0 +1,44 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.15",
+  "title": "Add transcript tests for guided character creation CLI",
+  "description": "Add CLI transcript-style tests for the guided character creation experience.\n\nScenarios\n- successful concept-first level-1 character;\n- successful ability-first level-1 character;\n- invalid class with correction;\n- invalid ancestry with correction;\n- point-buy out-of-range score rejected immediately;\n- non-integer score rejected immediately;\n- missing name after revision is caught without losing other answers;\n- HP waits for prerequisites;\n- save/resume;\n- review shows missing choices.\n\nAcceptance criteria\n- Tests exercise the CLI shell separately from pure engine tests where practical.\n- Error-message assertions focus on stable actionable content, not brittle formatting.\n- Tests are deterministic and do not rely on LLM output.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:23Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T01:23:42Z",
+  "closed_at": "2026-06-26T01:23:42Z",
+  "close_reason": "Completed remaining guided character creation transcript coverage and documented ADR deferral.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.15",
+      "depends_on_id": "eshyra-b69j.8",
+      "type": "blocks",
+      "created_at": "2026-06-24T18:16:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-b69j.15",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:23Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-b69j.15",
+      "depends_on_id": "eshyra-b69j.9",
+      "type": "blocks",
+      "created_at": "2026-06-24T18:16:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14.4",
+  "title": "Add character timeline conflict-resolution UX",
+  "description": "Build the user-facing conflict-resolution layer on top of the character custody lifecycle from eshyra-lupf.14.3. When a campaign resumes with a registry-linked character whose registry head has advanced elsewhere, do not silently overwrite, steal custody, or revert history. Present explicit choices: cancel, catch this campaign up to the latest registry revision, or intentionally branch/fork into an alternate timeline. Define and document the more advanced 'future detour' case as out-of-order narrative continuity with manual mechanical reconciliation, not automatic timeline merging.\n\nThis bead is the parent/epic; the tractable work is split across children eshyra-lupf.14.4.1 (policy design), .2 (catch-up-to-head CLI), .3 (continuity-bridge narration), .4 (explicit fork CLI), and .5 (future-detour design-only). The earlier 14.3 follow-up scope (CLI fork + non-head checkout revision) is folded into .4 / .2.",
+  "acceptance_criteria": "- Resume conflicts are surfaced as user choices rather than only raw custody errors.\n- Catch-up-to-head is supported as the primary happy path.\n- Fork/alternate timeline is explicit and clearly warns that continuity breaks.\n- Future-detour semantics are documented, including limitations and consequences.\n- No implementation path silently merges or rewrites character timelines.\n- Mid-scene/combat catch-up requires an explicit warning or confirmation.\n- ADR 0012 or a follow-up design doc records the policy.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T06:25:05Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T18:26:22Z",
+  "closed_at": "2026-06-27T18:51:14Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14.4",
+      "depends_on_id": "eshyra-lupf.14",
+      "type": "parent-child",
+      "created_at": "2026-06-27T01:25:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.14.4",
+      "depends_on_id": "eshyra-lupf.14.3",
+      "type": "blocks",
+      "created_at": "2026-06-27T01:25:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

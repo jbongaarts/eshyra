@@ -1,0 +1,70 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.11",
+  "title": "SRD 5.1 importer: action parser",
+  "description": "**Prerequisites (apply to all SRD 5.1 importer child issues):**\n- Vendored SRD 5.1 PDF must be in place at `packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf` — see that directory's README.md.\n- Reference implementation: mirror the structure of `packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts` (parser), `emit.ts` (record builder + manifest description), `index.ts` (pipeline wiring), and the test layout under `packages/core/test/importers/dnd5e-srd-5.1/`.\n- Depends on `loreweaver-0m9.5.9` (section detection + orchestrator) — receive a narrowed slice of the combat-actions section.\n\n---\n\nAdd a parser for the standard combat-action entries in SRD 5.1 (kind=action): Attack, Cast a Spell, Dash, Disengage, Dodge, Help, Hide, Ready, Search, Use an Object. Each becomes a kind=action record with description text in `data.description`. `key` should be `action:<slug>`.\n\nSplit from the original 0m9.5.7 to keep ticket scope shippable in one session.",
+  "acceptance_criteria": "- Parser extracts every named standard action from the SRD combat-actions section.\n- Records satisfy dnd5e-srd action baseline kindSchema.\n- Manifest description includes 'action' in Included record kinds.\n- Unit tests cover at least three standard actions.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:18:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T05:39:34Z",
+  "closed_at": "2026-05-28T05:52:48Z",
+  "close_reason": "Implemented SRD combat action parser (10 standard actions), section/orchestrator + emitter wiring, manifest kind inclusion, and importer/pipeline/unit tests; verification: npm run check, npm run typecheck, npm run test passed.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.11",
+      "depends_on_id": "eshyra-0m9.5.9",
+      "type": "blocks",
+      "created_at": "2026-05-27T18:19:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.11",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:18:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "30d25d12-5652-5063-89af-472f9bcd8330",
+      "issue_id": "eshyra-0m9.5.11",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline (D:\\src\\loreweaver\\.worktrees\\0m9-5-11-action-parser, branch work/0m9-5-11-action-parser): npm run check PASS; npm run typecheck PASS; npm run test PASS (64 files passed, 2 skipped; 717 tests passed, 3 skipped). Setup: npm install succeeded with Node engine warnings because current runtime is Node v24.14.1 while repo expects >=22 <23.",
+      "created_at": "2026-05-28T05:41:37Z"
+    },
+    {
+      "id": "a167bdf2-0ed7-5196-8ec9-3ba9a18606d0",
+      "issue_id": "eshyra-0m9.5.11",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED loreweaver-0m9.5.11.1 (expected failing importer tests observed), GREEN loreweaver-0m9.5.11.3 (action parser + wiring implemented, focused+nearby importer tests passing), REFACTOR loreweaver-0m9.5.11.2 (cleanup with importer suite still green). Verification: npm run check -> exit 0; npm run typecheck -> exit 0; npm run test -> exit 0 (65 files passed, 2 skipped; 729 tests passed, 3 skipped).",
+      "created_at": "2026-05-28T05:52:41Z"
+    },
+    {
+      "id": "047bb791-9fcb-5953-92df-c514e634c8f6",
+      "issue_id": "eshyra-0m9.5.11",
+      "author": "Joseph Bongaarts",
+      "text": "Shipped on branch work/0m9-5-11-action-parser at commit 946d373; PR opened: https://github.com/jbongaarts/loreweaver/pull/98",
+      "created_at": "2026-05-28T06:06:15Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 3
+}

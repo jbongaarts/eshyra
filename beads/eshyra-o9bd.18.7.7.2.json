@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.2",
+  "title": "Model common magic item combat bonuses and defensive effects",
+  "description": "Scope:\n- Cover common deterministic magic item effects: AC bonuses, weapon bonuses, saving throw DCs, damage, resistance/immunity, advantage/disadvantage, conditions, spell grants, and activation requirements.\n- Include magic-item:armor-of-invulnerability as an explicit example from Codex.\n\nAcceptance criteria:\n- Inventory magic items with numeric combat/defense effects.\n- Add typed projections for bounded categories.\n- Tests cover armor, weapon, resistance/immunity, spell-granting, and save/DC examples.",
+  "notes": "Exact worklist now exists (2026-07-06): the C2 tags in the 18.7.7.3 inventory artifact (PR #407) — 169 of 240 items carry C2 clauses. Scope per artifact §1: rarity-scaled bonuses, type-scoped riders, crit riders/thresholds, save-DC'd effects, resistance/immunity/vulnerability, adv/dis grants, spell-grant projections, activation requirements. The effects vocabulary defined here is reused wholesale by M1 consumable payloads and M2/M3 passives (PR #408 contract §3). Split-owner rule applies (armor-of-invulnerability: C2 effects + C1 1/dawn).\nPR #408 final contract (7090d6c): effects vocabulary plus operation→effect binding (operations[].effects references effect ids). Per-item clause-registry rows for C2 clauses land with this bead; bindings must resolve to concrete effect ids, not block presence.\n2026-07-08 ADR 0017 adjustment: Combat/defense bonuses should close as typed pack effects with operation bindings and F-family hook/disposition evidence for application. Derived-math, roll resolution, resistance/vulnerability transforms, and special modifier application are shared engine concerns; the pack must expose the data and hook requirement without reimplementing those services privately.\nImplemented the source-grounded family projector, strict schema validation, clause registry bindings, generated pack projection, and representative/exhaustive tests. The exact 240-row owner-tag conservation census passes; all magic items now carry reviewed executable mechanics.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:23Z",
+  "started_at": "2026-07-18T16:34:28Z",
+  "closed_at": "2026-07-18T20:23:23Z",
+  "close_reason": "Source-faithful executable magic-item family complete; canonical regeneration, conservation gates, deep audit, and full worktree verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.2",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

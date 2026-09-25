@@ -1,0 +1,64 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cck.5",
+  "title": "Task 5: ModelClient interface + Agent SDK adapter",
+  "description": "Objective:\nDefine the local `ModelClient` interface and an `AgentSdkModelClient` adapter that\nis the ONLY file importing the Claude Agent SDK. Unit-test the contract with a fake;\nprovide one real round-trip integration test gated on `ANTHROPIC_API_KEY`\n(satisfies epic acceptance #3 — round-trip behind the interface).\n\nFiles:\n- Create: `packages/core/src/model/client.ts`\n- Create: `packages/core/src/model/agentSdkClient.ts`\n- Modify: `packages/core/package.json` (add SDK dep)\n- Modify: `packages/core/src/index.ts`\n- Test:   `packages/core/test/model.test.ts`\n- Test:   `packages/core/test/model.integration.test.ts`\n\nSteps:\n\n1. Add the SDK dependency and install.\n   Command: `npm install @anthropic-ai/claude-agent-sdk --workspace @loreweaver/core`\n   Expected: dependency added to `packages/core/package.json`, exit 0.\n\n2. Write the failing contract test `packages/core/test/model.test.ts`:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport type { ModelClient, ModelMessage } from '../src/model/client.js';\n\nclass FakeModelClient implements ModelClient {\n  async complete(input: { system?: string; messages: ModelMessage[] }): Promise<string> {\n    const last = input.messages.at(-1)?.content ?? '';\n    return `echo:${last}`;\n  }\n}\n\ndescribe('ModelClient contract', () => {\n  it('a conforming client returns assistant text for the last message', async () => {\n    const client: ModelClient = new FakeModelClient();\n    const out = await client.complete({\n      system: 'be terse',\n      messages: [{ role: 'user', content: 'ping' }],\n    });\n    expect(out).toBe('echo:ping');\n  });\n});\n```\n\n3. Run it to verify FAIL.\n   Command: `npx vitest run packages/core/test/model.test.ts`\n   Expected: FAIL — cannot resolve `../src/model/client.js`.\n\n4. Create `packages/core/src/model/client.ts`:\n```ts\nexport interface ModelMessage {\n  role: 'user' | 'assistant';\n  content: string;\n}\n\nexport interface ModelCompleteInput {\n  system?: string;\n  messages: ModelMessage[];\n}\n\nexport interface ModelClient {\n  complete(input: ModelCompleteInput): Promise<string>;\n}\n```\n\n5. Create `packages/core/src/model/agentSdkClient.ts`:\n```ts\nimport { query } from '@anthropic-ai/claude-agent-sdk';\nimport type { ModelClient, ModelCompleteInput } from './client.js';\n\n/**\n * The ONLY file permitted to import the Claude Agent SDK. If the installed SDK's\n * surface differs from the assumptions below, adapt ONLY this file — the\n * ModelClient contract and all unit tests stay unchanged.\n *\n * Assumption: `query({ prompt, options })` returns an async iterable of messages;\n * assistant text arrives on messages of type 'assistant' / 'result'. Verify against\n * the installed package's exported types before implementing; adjust extraction\n * accordingly.\n */\nexport class AgentSdkModelClient implements ModelClient {\n  constructor(private readonly model: string) {}\n\n  async complete(input: ModelCompleteInput): Promise<string> {\n    const prompt = input.messages.map((m) => `${m.role}: ${m.content}`).join('\\n');\n    let out = '';\n    for await (const message of query({\n      prompt,\n      options: {\n        model: this.model,\n        ...(input.system ? { systemPrompt: input.system } : {}),\n      },\n    })) {\n      const m = message as { type?: string; result?: string };\n      if (m.type === 'result' && typeof m.result === 'string') {\n        out = m.result;\n      }\n    }\n    return out;\n  }\n}\n```\n\n6. Add to `packages/core/src/index.ts` (append):\n```ts\nexport type { ModelClient, ModelMessage, ModelCompleteInput } from './model/client.js';\nexport { AgentSdkModelClient } from './model/agentSdkClient.js';\n```\n\n7. Run the contract test to verify PASS.\n   Command: `npx vitest run packages/core/test/model.test.ts`\n   Expected: 1 passed.\n\n8. Write the gated integration test `packages/core/test/model.integration.test.ts`:\n```ts\nimport { describe, expect, it } from 'vitest';\nimport { AgentSdkModelClient } from '../src/model/agentSdkClient.js';\n\nconst hasKey = !!process.env.ANTHROPIC_API_KEY;\n\ndescribe.skipIf(!hasKey)('AgentSdkModelClient round-trip', () => {\n  it('returns non-empty assistant text from a real call', async () => {\n    const client = new AgentSdkModelClient(\n      process.env.LOREWEAVER_MODEL ?? 'claude-opus-4-7',\n    );\n    const out = await client.complete({\n      system: 'Reply with exactly the word: pong',\n      messages: [{ role: 'user', content: 'ping' }],\n    });\n    expect(out.trim().length).toBeGreaterThan(0);\n  }, 30_000);\n});\n```\n\n9. Verify the suite: contract passes, integration is skipped without a key.\n   Command: `npx vitest run packages/core/test/model.test.ts packages/core/test/model.integration.test.ts`\n   Expected: 1 passed, 1 skipped (no `ANTHROPIC_API_KEY` in CI/dev).\n\n10. Typecheck.\n   Command: `npm run build`\n   Expected: exit 0. If the SDK's exported types differ from the assumption in\n   step 5, adjust ONLY `agentSdkClient.ts` until build + step 9 pass.\n\n11. Commit.\n   Command: `git add -A && git commit -m \"feat(e0): ModelClient interface + Agent SDK adapter\"`\n",
+  "design": "Risk isolation: the exact Claude Agent SDK TypeScript surface is uncertain at plan\ntime, so the design forces ALL of it into `agentSdkClient.ts`. Everything else in\nthe codebase depends only on `ModelClient` (`complete(input) => Promise<string>`),\nwhich is stable. Unit tests use an in-test `FakeModelClient` (no SDK, no network),\nso the suite is deterministic and offline. Acceptance #3's \"round-trip\" is a single\nintegration test using `describe.skipIf(!ANTHROPIC_API_KEY)` so it runs only when a\nkey is present and never blocks CI/offline dev — but proves the real wrapper when\nrun with a key. The adapter's message-extraction logic is the expected adaptation\npoint: the implementer must check the installed package's exported types and adjust\nonly that block; the contract, barrel, and tests are unaffected by such changes.\n`model` is injected via constructor for later swappability (parent-epic design:\n\"swappable model later\").\n",
+  "acceptance_criteria": "npx vitest run of model.test.ts and model.integration.test.ts shows 1 passed and 1 skipped when ANTHROPIC_API_KEY is unset; npm run build exits 0.",
+  "notes": "SYNTHESIS UPDATE 2026-05-17: Keep this task scoped to the initial Claude Agent SDK adapter, but avoid provider-specific leakage in the ModelClient contract. Follow-up provider/profile registry work is tracked separately so E0 can proceed without overloading this task.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:43:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-18T03:55:28Z",
+  "closed_at": "2026-05-18T04:18:45Z",
+  "close_reason": "ModelClient + Agent SDK adapter implemented; spec compliant; quality-reviewed (cast fix applied a76d15d, error-semantics deferred to jmv)",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cck.5",
+      "depends_on_id": "eshyra-cck.1",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:43:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-cck.5",
+      "depends_on_id": "eshyra-cck",
+      "type": "parent-child",
+      "created_at": "2026-05-16T23:43:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "5057ac4a-a2f7-5518-9f68-9dbc820fe291",
+      "issue_id": "eshyra-cck.5",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `8644e9b..0a1d464`:\n\nAssessment: Ready to merge\n\nCritical:\n- none\n\nImportant:\n- agentSdkClient.ts:34 — `as { type?: string; result?: string }` widens away the full `SDKMessage` union. The SDK exports `SDKResultSuccess` / `SDKResultError` as named types; using them (with a narrow type-guard or a targeted intersection cast) would let the compiler catch future SDK breakage rather than silently accepting it. Correct at runtime due to the verified comment, but a type regression risk. Suggested fix: import `SDKResultSuccess` and narrow with `(m as SDKResultSuccess).type === 'result' && 'result' in m`, or import the union `SDKResultMessage` and switch on `subtype`.\n- agentSdkClient.ts:38 — returns empty string `''` on error or empty stream, with no signal to callers. The ModelClient contract says `Promise<string>` with no error-path semantics defined. For production callers (E1 Orchestrator, E3 DM loop) a silent empty return will manifest as blank narration, not a thrown error. A follow-up (cck.8 or a new child task) should define whether `complete` throws on SDK error or returns a typed Result. Flag now, not critical for E0 merge.\n\nMinor:\n- agentSdkClient.ts:25 — prompt-flattening (`role: content` join) is untested offline. FakeModelClient in model.test.ts ignores prompt shape entirely. The flattening logic is the adapter's core responsibility and is only exercised in the gated integration test. A follow-up unit test with a mock query fn (vi.mock) would give offline coverage.\n- model.integration.test.ts:15 — assertion is `out.trim().length > 0`, which passes even if the SDK returns an error string or unexpected content. A tighter assertion (e.g. `not.toBe('')` and checking for absence of error keywords) would improve confidence that the round-trip actually worked.\n- packages/core/package.json — `@anthropic-ai/claude-agent-sdk` is listed under `dependencies` rather than a scoped optional dep. Consumers that only want the provider-neutral `ModelClient` interface still pull the SDK. Not a blocker for E0, but worth revisiting when the provider registry (cck.8) is built.\n\nFollow-up:\n- Define error-path semantics for ModelClient.complete (throw vs typed Result) before E1 Orchestrator integration — add as a sub-task under cck.8 or a new task.\n- Add an offline unit test for agentSdkClient prompt-flattening using vi.mock on the SDK query function.",
+      "created_at": "2026-05-18T04:03:51Z"
+    },
+    {
+      "id": "00026632-7540-5200-a1eb-f4126771c652",
+      "issue_id": "eshyra-cck.5",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 8644e9b..0a1d464:\n\nAssessment: Ready to merge (with one in-scope fix applied; two items deferred to follow-up beads)\n\nCritical: none\nImportant:\n- agentSdkClient.ts: 'as { type?: string; result?: string }' widens away the SDKMessage union -> being tightened to SDK-exported SDKResultSuccess with subtype:'success' discrimination (in-scope: extraction block is the spec-designated adaptation point, stays within agentSdkClient.ts).\n- ModelClient.complete returns '' on error/no-result with no contract error semantics -> DEFERRED to loreweaver-jmv (E0 design explicitly defers; pre-E1 Orchestrator blocker).\nMinor:\n- prompt-flattening untested offline -> DEFERRED to loreweaver-bq1.\n- weak integration assertion; SDK is a hard dep -> noted, revisit at cck.8.\n\nFollow-up beads: loreweaver-jmv (P2 error-path semantics), loreweaver-bq1 (P3 offline flatten test).",
+      "created_at": "2026-05-18T04:05:21Z"
+    },
+    {
+      "id": "66feb9e5-e8e1-54d3-9430-786cdc04c719",
+      "issue_id": "eshyra-cck.5",
+      "author": "Joseph Bongaarts",
+      "text": "Re-review after fix commit a76d15d: Important #1 (widened SDK cast) RESOLVED — extraction now narrows via type==='result' && subtype==='success' then casts to SDK-exported SDKResultSuccess; type-only import still confined to agentSdkClient.ts; no regression/scope creep. Deferrals (jmv, bq1) confirmed appropriate for E0. Assessment: Approved. vitest 1 passed/1 skipped; npm run build exit 0.",
+      "created_at": "2026-05-18T04:18:44Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 3
+}

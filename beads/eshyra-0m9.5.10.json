@@ -1,0 +1,98 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.10",
+  "title": "SRD 5.1 importer: rule-text parser",
+  "description": "**Prerequisites (apply to all SRD 5.1 importer child issues):**\n- Vendored SRD 5.1 PDF must be in place at `packages/core/sources/dnd5e-srd-5.1/SRD_CC_v5.1.pdf` — see that directory's README.md.\n- Reference implementation: mirror the structure of `packages/core/scripts/importers/dnd5e-srd-5.1/parseSpells.ts` (parser), `emit.ts` (record builder + manifest description), `index.ts` (pipeline wiring), and the test layout under `packages/core/test/importers/dnd5e-srd-5.1/`.\n- Depends on `loreweaver-0m9.5.9` (section detection + orchestrator) — receive a narrowed slice of the SRD core-rules chapters.\n\n---\n\nAdd a parser for general rule-text sections in the SRD 5.1 (kind=rule). Each labeled rule section (e.g. \"Advantage and Disadvantage\", \"Cover\", \"Resting\", \"Underwater Combat\") becomes one record. The `rule` kindSchema requires a non-empty `text` field; capture the full rule body there. `key` should be `rule:<slug>`.\n\nSplit from the original 0m9.5.7 to keep ticket scope shippable in one session.",
+  "acceptance_criteria": "- Parser extracts each labeled rule section from the SRD core-rules chapters as a kind=rule record.\n- Records satisfy dnd5e-srd rule kindSchema (data.text required).\n- Manifest description includes 'rule' in Included record kinds.\n- Unit tests cover representative rule sections of varying length (short like 'Cover', longer like 'Resting').",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-27T23:18:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:56Z",
+  "started_at": "2026-05-28T04:47:44Z",
+  "closed_at": "2026-05-28T04:58:48Z",
+  "close_reason": "Implemented SRD 5.1 rule-text parser (parseRules), coreRules section anchoring, emitter/orchestrator wiring for kind=rule records and manifest kinds; verification passed (importer tests + typecheck + biome check).",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.10",
+      "depends_on_id": "eshyra-0m9.5.9",
+      "type": "blocks",
+      "created_at": "2026-05-27T18:19:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5.10",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-05-27T18:18:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "6f02664a-fb89-554a-b693-e50702d9a987",
+      "issue_id": "eshyra-0m9.5.10",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install (Node v24.14.1, engine warns); npx vitest run packages/core/test/importers/dnd5e-srd-5.1 -> 7 files, 130 tests passed.",
+      "created_at": "2026-05-28T04:49:26Z"
+    },
+    {
+      "id": "5d129c38-31fc-5234-832a-979c0b52665a",
+      "issue_id": "eshyra-0m9.5.10",
+      "author": "Joseph Bongaarts",
+      "text": "TDD evidence: RED npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseRules.test.ts failed (Cannot find module parseRules.js), then RED integration run (emit/sections/pipeline) failed as expected for missing coreRules/rule wiring. GREEN after implementation: npx vitest run packages/core/test/importers/dnd5e-srd-5.1 -> 8 files, 137 tests passed. REFACTOR verification: npm run typecheck and npm run check both passed.",
+      "created_at": "2026-05-28T04:58:10Z"
+    },
+    {
+      "id": "aead2cf6-039f-5416-8ec4-b1348d24cb3b",
+      "issue_id": "eshyra-0m9.5.10",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1 -> 8 files, 137 tests passed; npm run typecheck -> exit 0; npm run check -> exit 0 (Biome: 189 files checked, no fixes).",
+      "created_at": "2026-05-28T04:58:48Z"
+    },
+    {
+      "id": "6967a622-4e49-5508-af08-b8d881343c68",
+      "issue_id": "eshyra-0m9.5.10",
+      "author": "Joseph Bongaarts",
+      "text": "PR opened: https://github.com/jbongaarts/loreweaver/pull/97",
+      "created_at": "2026-05-28T04:59:57Z"
+    },
+    {
+      "id": "e03f3e78-2271-5cf8-9e04-0cb5f423af23",
+      "issue_id": "eshyra-0m9.5.10",
+      "author": "Joseph Bongaarts",
+      "text": "Review follow-up evaluation (PR #97): accepted. (1) parseRules heading detection was too broad because non-boundary heading-case lines could be promoted; fix required boundary gating (slice start/page start/after blank). (2) add regressions for title-case prose lines and table-label headers (Task Difficulty/DC) not becoming rule records. (3) README cleanup to keep implemented-kind table and anchor prose aligned.",
+      "created_at": "2026-05-28T05:25:12Z"
+    },
+    {
+      "id": "96acacc1-4280-542a-a556-f0c6f0ee50be",
+      "issue_id": "eshyra-0m9.5.10",
+      "author": "Joseph Bongaarts",
+      "text": "Review-fix TDD evidence (post-PR feedback): RED npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseRules.test.ts failed because table header 'DC' was promoted as a rule; GREEN after boundary gating + regressions: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseRules.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> passed.",
+      "created_at": "2026-05-28T05:28:09Z"
+    },
+    {
+      "id": "571c2d56-5c40-574d-b4a3-76eb3a63217f",
+      "issue_id": "eshyra-0m9.5.10",
+      "author": "Joseph Bongaarts",
+      "text": "Review-fix verification: npm run typecheck -> exit 0; npm run test -> 67 files (65 passed, 2 skipped), 729 tests (726 passed, 3 skipped); npm run smoke:cli-install -> passed; npm run check -> exit 0.",
+      "created_at": "2026-05-28T05:28:16Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 7
+}

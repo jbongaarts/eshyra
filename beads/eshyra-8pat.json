@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-8pat",
+  "title": "Deliver the seat-handoff write mechanism inside the gated seat payload",
+  "description": "renderSeatContext (scripts/seats/seatContext.mjs) already computes and prints the handoff staleness signal ('Recorded Nh ago at <path>') but ships no remedy beside it: the rendered payload never names 'npm run seat:handoff -- write <seat>'. That command exists only in package.json, the script usage string, and docs/agent-captain-seats.md, which AGENTS.md points at as operator details. The seat-occupancy instruction set cannot be added to AGENTS.md, CLAUDE.md, bd memories, or bead descriptions, because those are auto-injected into every subagent context; the gated hook payload is the one channel that reaches an eligible seat occupant and nothing else. Observed effect: the claude-captain handoff went 11 days and 13 first-parent merges without an update (last write 2026-09-10 01:08), and codex-captain likewise (2026-09-11).",
+  "acceptance_criteria": "Rendered seat context names the seat-specific write command in both the recorded-handoff and no-handoff branches; a staleness cue appears past an age threshold; the guidance never appears in output for a subagent, dispatched worker, unauthorized model, or absent model identity; packages/core/test/captainSeats.test.ts pins the leak boundary; npm run verify:worktree passes.",
+  "notes": "PR #559 (https://github.com/jbongaarts/eshyra/pull/559) open at head de0fd27a, branch eshyra-8pat, worktree .worktrees/eshyra-8pat. Stays in_progress until that PR merges. verify:worktree clean: 5605 passed, 3 documented skips. Both behavior tests confirmed red against the unchanged renderer. Follow-up eshyra-oqvj covers the gated exit channel.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-22T04:11:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T04:22:36Z",
+  "started_at": "2026-09-22T04:11:46Z",
+  "closed_at": "2026-09-22T04:22:36Z",
+  "close_reason": "PR #559 merged 2026-09-22 as merge commit ae19112bda26e2e74678f37ad78159f06eb7ccc8; branch and worktree removed.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

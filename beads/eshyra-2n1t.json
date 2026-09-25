@@ -1,0 +1,25 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t",
+  "title": "Close deterministic rule-procedure implementation gaps (engine epic F1-F10)",
+  "description": "Home for the engine-side implementation work identified by the eshyra-o9bd.18.7.8 execution-boundary classification (docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md, §4). That artifact found 21 implementation-required + 47 partial deterministic rule procedures clustering into ten shared-primitive families (F1 dice-grammar, F2 action-economy budget, F3 concentration/active-effects, F4 spell-slot economy, F5 usage/recharge/attunement, F6 death/dying/HP-buffer, F7 rest engine, F8 character-build gap closures, F9 derived-math primitives, F10 currency surface), plus two design decisions (D1 multiclass scope, D2 creation-variant policy). These are engine/tool-surface changes to @eshyra/core's orchestrator and character systems — explicitly out of scope for the SRD importer/audit epic eshyra-o9bd.18.7.8, which only classifies and tracks them. Recommended implementation order per the artifact: F1+F9 -> F6 -> F2 -> F4 -> F10 -> F7 -> F5 -> F3 -> F8.",
+  "notes": "Completion verification: canonical SRD pack regenerates byte-exactly; rules-pack audit reports 0 suspicious records; independent deep audit reports 0 findings; verify:worktree passes Biome, forced typecheck, and 4,533 passing tests (19 documented skips).\nImplementation handoff: PR #455 https://github.com/jbongaarts/eshyra/pull/455\nReopened after PR #455 review identified merge-blocking end-to-end execution and readiness gaps.\nReopened for PR #455 holistic re-review task eshyra-o9bd.18.7.7.13 covering runtime integration contracts.\nReopened for PR #455 source-semantic re-review task eshyra-o9bd.18.7.7.14 covering duration budgets and attunement lifecycle.\nReopened for PR #455 lifecycle/compatibility re-review task eshyra-o9bd.18.7.7.15.\nFinal PR #455 engine/runtime lifecycle re-review is complete with independent Sol approval. Canonical item operations have one state/spend owner; custody, attunement, adoption, placement, and compatibility paths fail closed and pass full local verification.\n*** CLOSURE UNDER RECONCILIATION (2026-07-25) ***\nDo NOT cite this epic's closed status as proof of engine completeness. The\n2026-07-24 multi-model SRD audit found 794 engine-pending magic-item clauses in\nthe committed pack three days after this epic closed.\n\nTwo things must be checked before relying on any claim here:\n  * TAXONOMY. This epic's F1-F10 are NOT the pack's engine:F1-F10\n    (data.executionReadiness.clauses[].engineHooks[].engine). This epic used\n    F1 dice-grammar, F4 spell-slot economy, F8 character-build gap closures,\n    F9 derived-math primitives, F10 currency surface. Only F2/F3/F5/F7 roughly\n    correspond. A same-numbered child here does NOT cover the same-numbered pack\n    capability family.\n  * RECONCILIATION. eshyra-o9bd.19.5.1 owns a required deliverable classifying\n    each bead here as: different scope/taxonomy | stale readiness mapping |\n    incomplete integration | premature closure. This epic stays closed where the\n    scope was genuinely different; individual children reopen only where their\n    stated acceptance was objectively unmet.\n\nEngine implementation now continues under eshyra-olc5.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:39:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-25T04:53:38Z",
+  "started_at": "2026-07-18T21:19:29Z",
+  "closed_at": "2026-07-19T02:44:38Z",
+  "close_reason": "PR #455 review findings and Sol adversarial blockers are closed; full worktree, test, importer reproducibility, and freeze verification pass.",
+  "external_ref": "gh-455",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

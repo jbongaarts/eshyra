@@ -1,0 +1,42 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.2.2",
+  "title": "Repair source segmentation, record boundaries, and complete locators",
+  "description": "Repair known heading/ownership/continuation/locator defects and strengthen source-side\nstructural checks so those defect classes cannot silently recur. The denominator for\nan exhaustive assertion must come from independently observed source structure, not\nthe generated records being checked. Historical counts are evidence, not acceptance\nconstants.",
+  "acceptance_criteria": "- Known boundary and continuation defects are repaired and generalized against independently observed source structure.\n- A source continuation cannot be silently represented with a partial locator.\n- Ambiguous/unresolved ownership remains explicit and cannot count as clean source coverage.\n- Historical hand-copied counts are not authoritative membership.\n- Corpus-wide structural predicates are allowed only when their denominator is independently source-derived.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): KEPT - Lane A capture layer (segmentation, boundaries, continuations, locators). Also now owns the multi-span locator and ambiguous-ownership pieces re-owned from eshyra-o9bd.19.1.3.\n2026-09-23: registry row rock-gnome-boundary (indep:010, sol:CAP-012) instance repaired in PR #569 (eshyra-o9bd.19.2.1.3): TRAIT_LABEL_RE accepts U+2019 so 'Artificer’s Lore' is its own trait; pinned by parser + committed-pack tests. Registry status update is for the re-freeze audit.\n2026-09-23 decomposition (claude-captain, from live c53ba040 + /mnt/d/eshyra-2026-07-24-audit-repair-bead-plan.md §B2): children .1 wererat-crossbow (opus:F-30), .2 vehicle-tool-row (opus:F-17), .3 locator-completeness+container-continuation+source-provenance-fields (indep:008, fable:F4, sol:CAP-010; live ledger-derived gap population = 11 records), .4 spellcasting-granularity (opus:F-15, needs design decision), .5 ambiguous-coverage (indep:009; 187 ambiguous / 75 unresolved live). rock-gnome-boundary already repaired by #569. OWNERSHIP QUESTION: registry row equipment-report (indep:012 'equipment/material/potion/report issues') maps in the plan to C3/B3/A5 (wooden-shield material, Potion of Healing use, report issues) - not segmentation; propose re-owning to the C3-equivalent bead rather than doing it here.\n2026-09-23: indep:012 re-owned to eshyra-o9bd.19.3.3 (user decision); registry PR opened. .4 analysis: source prints one Spellcasting/Pact Magic feature per class with uniform subheadings; class tables list only Spellcasting. Pack splits 5 subsections (cleric/druid/sorcerer/wizard Cantrips, wizard Spellbook) via parser artifact + classProgression.ts SPELLCASTING_SECTION_MOVES, duplicating parent text; bard/warlock Cantrips not split. Recommended option A (fold, alias removed keys, move wizard spellbook choices to spellcasting); awaiting user approval.\nPR #572 merged (2244549d): equipment-report now owned by eshyra-o9bd.19.3.3.\n.4 design decided and recorded on eshyra-o9bd.19.2.2.4 (fold into one feature per class-table entry + structured verbatim sections + aliases).",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:21:39Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-23T23:40:12Z",
+  "started_at": "2026-09-23T21:52:33Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.2.2",
+      "depends_on_id": "eshyra-o9bd.19.2",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:21:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.2.2",
+      "depends_on_id": "eshyra-o9bd.19.1.3",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

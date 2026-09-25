@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.9",
+  "title": "Add ability-first guided character creation flow",
+  "description": "Implement the guided CLI flow for the nostalgia/discovery path: Ability-first — let the dice inspire me.\n\nStep order\nidentity/loose concept → ability score method → roll/enter/assign scores → class recommendations → class → ancestry → background → remaining choices → spells/equipment → review\n\nDesign intent\nAbility-first should support the Eshyra user profile that enjoys 80s-era RPG discovery: see what the scores suggest, then choose a class and ancestry that fit. It should not be hostile or random-only; users may enter or assign scores depending on supported methods.\n\nAcceptance criteria\n- User can choose the exact ability-first mode label.\n- Ability scores can be collected before class.\n- The flow offers deterministic class-fit suggestions from score data and recipe metadata.\n- The user can still choose a poor fit if desired after a warning or neutral explanation.\n- Later class/ancestry selection reuses the same resolver and validation engine as concept-first.\n- Transcript-style tests cover a representative ability-first path.",
+  "notes": "PR #304 open for review: https://github.com/jbongaarts/eshyra/pull/304. Ability-first mode in the shared wizard: new ability-method step, deterministic class-recommendations panel (recommendClasses, advisory; poor-fit allowed), and a roll command (rollAbilityScoreSet) with an injected seeded RNG. CLI-only, reuses core. Tests: ability-first transcript, seeded roll, poor-fit override. verify:worktree green (2516 passed/19 skipped). Unblocks b69j.15.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T22:26:46Z",
+  "closed_at": "2026-06-25T22:50:04Z",
+  "close_reason": "Merged via PR #304. Ability-first mode in the shared wizard: ability-method step, deterministic class-recommendations panel (recommendClasses, advisory; poor-fit allowed), roll command (rollAbilityScoreSet) with injected seeded RNG. CLI-only, reuses core. Tests: ability-first transcript, seeded roll, poor-fit override.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.9",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-b69j.9",
+      "depends_on_id": "eshyra-b69j.11",
+      "type": "blocks",
+      "created_at": "2026-06-24T18:16:09Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-b69j.9",
+      "depends_on_id": "eshyra-b69j.8",
+      "type": "blocks",
+      "created_at": "2026-06-24T18:16:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

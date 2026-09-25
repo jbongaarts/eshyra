@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-5ze.3",
+  "title": "06b-B T3: composeArcSummary accepts a bible parameter",
+  "description": "Objective:\nAdd a required `bible: CampaignBibleInput` parameter to composeArcSummary. The system prompt and user message both incorporate the bible so the arc summary can reference NPCs/factions canonically. Update the existing arcSummary tests to pass a bible argument. Add a new test that asserts bible content lands in the user prompt. Update play.ts's call site to pass an empty CampaignBibleInput placeholder (T4 will replace this with the extracted bible).\n\nFiles:\n- Modify: packages/core/src/memory/arcSummary.ts\n- Modify: packages/core/test/arcSummary.test.ts\n- Modify: packages/cli/src/play.ts\n\nSteps:\n1. In packages/core/src/memory/arcSummary.ts:\n   a. Import CampaignBibleInput from './summary.js'.\n   b. Add `bible: CampaignBibleInput` to ComposeArcSummaryInput.\n   c. Add an extra line to ARC_SUMMARY_SYSTEM_PROMPT instructing the model to reference the bible's NPCs/factions canonically (see Design).\n   d. Replace the existing `renderRecaps(input.recaps)` call with a new helper that joins `renderBible(input.bible)` and `renderRecaps(input.recaps)`.\n   e. Add the renderBible helper (see Design).\n2. In packages/core/test/arcSummary.test.ts:\n   a. Add a small EMPTY_BIBLE constant and a NON_EMPTY_BIBLE constant (see Design).\n   b. Update each of the 4 existing tests to pass a `bible:` argument (EMPTY_BIBLE for happy-path; NON_EMPTY_BIBLE wherever assertions check the rendered prompt).\n   c. Add a new test 'renders the campaign bible into the user prompt' (see Design).\n3. In packages/cli/src/play.ts, in rollupCampaignArc's call to composeArcSummary, add a placeholder `bible: { worldFacts: [], majorNpcs: [], factions: [], openThreads: [] }` argument. This is a temporary placeholder that T4 immediately replaces with the extracted bible.\n4. Run: npx vitest run --reporter=verbose\n   Expected: all tests pass (arcSummary suite has 5 tests now: 2 originally-happy + 2 originally-failure + 1 new bible-render test).\n5. Run: npm run typecheck. Expected: success.\n6. Commit:\n     git add packages/core/src/memory/arcSummary.ts packages/core/test/arcSummary.test.ts packages/cli/src/play.ts\n     git commit -m \"composeArcSummary accepts a campaign bible parameter (loreweaver-5ze)\"",
+  "design": "Changes to packages/core/src/memory/arcSummary.ts:\n\n1. Update the system prompt array — add this line BEFORE the existing final 'in-world chronicle' instruction:\n\n  'A campaign bible of established world facts, NPCs, factions, and open threads is provided before the recaps; reference its entries canonically.',\n\n2. Update the import block:\n\n  import type { CampaignBibleInput, SessionRecapRecord } from './summary.js';\n  import { MemorySummaryError } from './summary.js';\n\n3. Update the ComposeArcSummaryInput interface:\n\n  export interface ComposeArcSummaryInput {\n    campaignId: string;\n    arcId: string;\n    recaps: SessionRecapRecord[];\n    bible: CampaignBibleInput;\n  }\n\n4. Replace `const userContent = renderRecaps(input.recaps);` with:\n\n  const userContent = renderBibleAndRecaps(input.bible, input.recaps);\n\n5. Add these helpers (place after renderRecaps):\n\n  function renderBibleAndRecaps(\n    bible: CampaignBibleInput,\n    recaps: SessionRecapRecord[],\n  ): string {\n    return [renderBible(bible), renderRecaps(recaps)].join('\\n\\n');\n  }\n\n  function renderBible(bible: CampaignBibleInput): string {\n    const sections: Array<readonly [string, readonly string[]]> = [\n      ['worldFacts', bible.worldFacts],\n      ['majorNpcs', bible.majorNpcs],\n      ['factions', bible.factions],\n      ['openThreads', bible.openThreads],\n    ];\n    const blocks = sections.map(([name, items]) => {\n      const body =\n        items.length === 0 ? '(none)' : items.map((s) => '- ' + s).join('\\n');\n      return '### ' + name + '\\n' + body;\n    });\n    return ['## campaign bible', ...blocks].join('\\n');\n  }\n\nChanges to packages/core/test/arcSummary.test.ts:\n\n1. Add these constants near the top (after the helpers, before the describe):\n\n  const EMPTY_BIBLE = {\n    worldFacts: [],\n    majorNpcs: [],\n    factions: [],\n    openThreads: [],\n  };\n\n  const NON_EMPTY_BIBLE = {\n    worldFacts: ['Emberfall sits on a fault line'],\n    majorNpcs: ['Mira the runesmith'],\n    factions: ['Lantern Court'],\n    openThreads: ['The chalk sigil is unsolved'],\n  };\n\n2. Pass `bible: EMPTY_BIBLE` to each of the four existing tests. For the prompt-rendering happy-path test (currently 'renders each session recap and stateDelta into the user prompt'), use NON_EMPTY_BIBLE instead and ADD an assertion that the bible content appears (see new test below — you can fold the bible assertion into the existing test if neater).\n\n3. Add this new test inside the existing describe('composeArcSummary'):\n\n  it('renders the campaign bible into the user prompt', async () => {\n    let captured: ModelCompleteInput | undefined;\n    const model = fakeModel((input) => {\n      captured = input;\n      return 'OK';\n    });\n    await composeArcSummary(model, {\n      campaignId: 'camp-1',\n      arcId: 'arc-1',\n      recaps: [recap('session-1', 'Mira found the chalk sigil.', '2026-05-20T10:00:00.000Z')],\n      bible: NON_EMPTY_BIBLE,\n    });\n    const userContent = captured?.messages[0].content ?? '';\n    expect(userContent).toContain('campaign bible');\n    expect(userContent).toContain('Emberfall sits on a fault line');\n    expect(userContent).toContain('Mira the runesmith');\n    expect(userContent).toContain('Lantern Court');\n    expect(userContent).toContain('The chalk sigil is unsolved');\n  });\n\nChanges to packages/cli/src/play.ts:\n\nIn rollupCampaignArc, the existing call to composeArcSummary becomes:\n\n  summary = await composeArcSummary(deps.model, {\n    campaignId,\n    arcId: CAMPAIGN_ARC_ID,\n    recaps,\n    bible: { worldFacts: [], majorNpcs: [], factions: [], openThreads: [] },\n  });\n\nThis empty-bible literal is a temporary placeholder. T4 replaces it with the result of extractBibleWithRetry. Do not generalize or extract a constant — T4 will remove it entirely.\n\nNOTE TO IMPLEMENTER: After this commit, the arc summary will be model-authored but will not yet reference any bible (the empty placeholder produces empty bullet lists in the user prompt). That is fine — T4 wires the real extraction. The point of this task is to make composeArcSummary capable of consuming a bible without yet supplying one from the model.",
+  "acceptance_criteria": "1. ComposeArcSummaryInput includes a required `bible: CampaignBibleInput` field.\n2. composeArcSummary's user message renders a '## campaign bible' section before the session recaps; each bucket (worldFacts/majorNpcs/factions/openThreads) renders as a list or '(none)'.\n3. The arcSummary system prompt instructs the model to reference the bible canonically.\n4. packages/core/test/arcSummary.test.ts contains 5 tests (existing 4 updated + 1 new bible-render test); all pass.\n5. packages/cli/src/play.ts passes a placeholder empty bible to composeArcSummary so the typecheck stays green; this placeholder is documented as temporary in the commit message.\n6. npm run typecheck and npx vitest run both succeed (full suite).\n7. The commit message references loreweaver-5ze.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T16:11:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T22:03:17Z",
+  "closed_at": "2026-05-23T22:09:18Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-5ze.3",
+      "depends_on_id": "eshyra-5ze",
+      "type": "parent-child",
+      "created_at": "2026-05-23T11:11:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "54f0654e-71cf-5a24-bf38-74182658f937",
+      "issue_id": "eshyra-5ze.3",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for `4f288b3..329049c`:\n\nAssessment: Ready to merge\n\nCritical: none\nImportant: none\nMinor: The `renderBible` helper hardcodes the four bucket names as display strings (e.g. `### majorNpcs`). If `CampaignBibleInput` gains a fifth field, `renderBible` silently omits it. Consider deriving from `Object.entries(bible)` or adding a compile-time exhaustiveness check. Low urgency given T4 owns the extraction path.\nFollow-up: T4 (replace empty-bible placeholder in play.ts with extracted bible); consider ordering the bucket keys derivation if the type stabilises.",
+      "created_at": "2026-05-23T22:08:52Z"
+    },
+    {
+      "id": "e7d4c03d-36a3-5f76-8ca0-7e357765a1df",
+      "issue_id": "eshyra-5ze.3",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 4f288b3..329049c: Ready to merge. Critical: none. Important: none. Minor: renderBible enumerates the four bucket keys manually — a future fifth CampaignBibleInput field would be silently omitted. Low urgency since the type is stable.",
+      "created_at": "2026-05-23T22:09:16Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 2
+}

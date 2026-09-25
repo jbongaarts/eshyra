@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.8",
+  "title": "F6: Death, dying & HP-buffer state",
+  "description": "Dying/stable/dead status on the HP write path; adjust_hp must surface sub-zero overflow (instant-death threshold) instead of discarding it; death-save counters w/ nat-1/nat-20 semantics; damage-at-0 escalation; temp-HP buffer consumed before HP with no-stacking choice and long-rest expiry. Members: death-saving-throws, falling-unconscious, instant-death, stabilizing-a-creature, temporary-hit-points (IMPL); clauses: healing (dead-gate), suffocating (breath/round countdown -> 0-HP dying transition). Highest-stakes safety gap. Source: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4.",
+  "notes": "2026-07-10: F6 implemented on branch eshyra-2n1t.8-death-dying, PR #420 (https://github.com/jbongaarts/eshyra/pull/420) open for review. Migration 0005 (hp_temp/life_state/death-save counters), state/hpLifecycle.ts owns adjustHp + recordDeathSave/stabilizeCharacter/grantTemporaryHp/expireTemporaryHp (expireTemporaryHp is the F7 long-rest hook, eshyra-2n1t.9 wires it). New tools record_death_save/stabilize_character/grant_temporary_hp; coverage census now 6/97/46/16/10. Suffocating countdown state deliberately NOT built (stays partial). Close on merge.\n2026-07-10 (later): review on PR #420 requested changes; all four findings addressed in 251e6bc — (1) applyLevelUp fails closed for non-alive characters (F6 lifecycle gate), (2) migration 0005 backfills pre-0005 0-HP initialized-sheet rows to 'stable', (3) damage at 0 HP costs a death-save failure even when fully temp-HP-absorbed, (4) stabilizing-a-creature downgraded to partial (durable 1d4h recovery deadline -> eshyra-2n1t.8.1); census pin now 5/97/47/16/10. PR awaiting re-review.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:40:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-10T22:44:02Z",
+  "closed_at": "2026-07-11T00:06:25Z",
+  "close_reason": "Merged to main in PR #420 (merge commit 67c1de9): death/dying/stable/dead machine on the HP write path (migration 0005 + state/hpLifecycle.ts), death-save/stabilize/temp-HP tools, level-up lifecycle gate, 0-HP migration backfill to stable, coverage census 5/97/47/16/10. Durable 1d4h stable-recovery deadline follows up in eshyra-2n1t.8.1.",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.8",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:40:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

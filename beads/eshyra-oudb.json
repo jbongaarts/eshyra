@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-oudb",
+  "title": "Update Codex gameplay model defaults",
+  "description": "The recently added Codex subscription provider defaults premium DM and mechanics auditor calls to gpt-5-codex. Verify current ChatGPT-authenticated Codex model availability and update each role to the appropriate supported model.",
+  "acceptance_criteria": "Codex premium DM defaults to the current frontier model appropriate for premium gameplay; Codex mechanics auditor defaults to a supported faster model appropriate for bounded audit work; tests and documentation match; worktree verification passes.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-20T21:58:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-20T22:00:42Z",
+  "started_at": "2026-06-20T21:58:42Z",
+  "closed_at": "2026-06-20T22:00:42Z",
+  "close_reason": "Updated Codex premium DM to gpt-5.5 and mechanics auditor to gpt-5.4-mini per current official Codex model guidance; synchronized tests/docs and passed full verification.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

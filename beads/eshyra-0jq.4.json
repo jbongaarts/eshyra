@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0jq.4",
+  "title": "Split orchestrator turn loop responsibilities",
+  "description": "Refactor orchestrator turn execution so context assembly, model/tool loop, transcript persistence, trace projection, and scene-close handling are not all concentrated in one file.\r\n\r\nPreserve the existing transactional/savepoint safety behavior.",
+  "acceptance_criteria": "- Turn-running logic is separated from model/tool loop mechanics.\r\n- Trace projection is isolated.\r\n- Scene transcript/logging behavior is isolated.\r\n- Scene-close/summarization hooks are isolated.\r\n- Transaction/savepoint rollback behavior is preserved.\r\n- Existing orchestrator tests pass.",
+  "notes": "PR #78 opened: https://github.com/jbongaarts/loreweaver/pull/78 — refactor splits orchestrator.ts into turnLoop, turnTraceProjection, turnTranscript, turnSceneSummary modules; SAVEPOINT semantics preserved; all tests pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:31:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-26T05:22:08Z",
+  "closed_at": "2026-05-26T05:32:54Z",
+  "close_reason": "Merged via PR #78",
+  "labels": [
+    "architecture",
+    "file-layout",
+    "orchestrator",
+    "refactor",
+    "technical-debt"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0jq.4",
+      "depends_on_id": "eshyra-0jq.1",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:32:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0jq.4",
+      "depends_on_id": "eshyra-0jq",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:31:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}
