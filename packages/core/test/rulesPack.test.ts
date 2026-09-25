@@ -332,6 +332,152 @@ describe('rules pack validation', () => {
     expect(() => validateRulesPack(pack)).toThrow(/records\[0\]\.provenance/);
   });
 
+  describe('provenance.fieldLocators (eshyra-o9bd.19.2.2.3.1 F4)', () => {
+    it('accepts a single-page fieldLocators entry pointing at an existing data field', () => {
+      const pack = validRulesPack({
+        records: [
+          record('creature:goblin', {
+            provenance: recordProvenance({
+              fieldLocators: { '/size': 'p. 2' },
+            }),
+          }),
+        ],
+      });
+      const validated = validateRulesPack(pack);
+      expect(validated.records[0].provenance.fieldLocators).toEqual({
+        '/size': 'p. 2',
+      });
+    });
+
+    it('accepts an ascending, deduplicated multi-page fieldLocators value', () => {
+      const pack = validRulesPack({
+        records: [
+          record('creature:goblin', {
+            provenance: recordProvenance({
+              fieldLocators: { '/size': 'pp. 2, 5, 9' },
+            }),
+          }),
+        ],
+      });
+      expect(() => validateRulesPack(pack)).not.toThrow();
+    });
+
+    it('rejects a non-object fieldLocators value', () => {
+      const pack = validRulesPack({
+        records: [
+          record('creature:goblin', {
+            provenance: {
+              ...recordProvenance(),
+              fieldLocators: ['not', 'an', 'object'],
+            } as unknown as RecordProvenance,
+          }),
+        ],
+      });
+      expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
+      expect(() => validateRulesPack(pack)).toThrow(
+        /fieldLocators must be an object/,
+      );
+    });
+
+    it('rejects a fieldLocators key that does not start with "/"', () => {
+      const pack = validRulesPack({
+        records: [
+          record('creature:goblin', {
+            provenance: recordProvenance({
+              fieldLocators: { size: 'p. 2' },
+            }),
+          }),
+        ],
+      });
+      expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
+      expect(() => validateRulesPack(pack)).toThrow(
+        /must be a JSON Pointer starting with "\/"/,
+      );
+    });
+
+    it('rejects an empty fieldLocators value', () => {
+      const pack = validRulesPack({
+        records: [
+          record('creature:goblin', {
+            provenance: recordProvenance({
+              fieldLocators: { '/size': '' },
+            }),
+          }),
+        ],
+      });
+      expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
+    });
+
+    it.each([
+      'p 2', // missing the period
+      'page 2', // wrong word
+      'pp. 2-5', // dash range not in the field-locator grammar
+      'pp. 2, 2', // duplicate, not strictly ascending
+      'pp. 5, 2', // descending
+    ])(
+      'rejects a fieldLocators value %j that does not match the locator grammar',
+      (value) => {
+        const pack = validRulesPack({
+          records: [
+            record('creature:goblin', {
+              provenance: recordProvenance({
+                fieldLocators: { '/size': value },
+              }),
+            }),
+          ],
+        });
+        expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
+        expect(() => validateRulesPack(pack)).toThrow(
+          /must match the field-locator grammar/,
+        );
+      },
+    );
+
+    it('rejects a fieldLocators pointer that does not resolve into record.data (dangling pointer)', () => {
+      const pack = validRulesPack({
+        records: [
+          record('creature:goblin', {
+            provenance: recordProvenance({
+              fieldLocators: { '/noSuchField': 'p. 2' },
+            }),
+          }),
+        ],
+      });
+      expect(() => validateRulesPack(pack)).toThrow(RulesPackError);
+      expect(() => validateRulesPack(pack)).toThrow(
+        /does not resolve to a value in records\[0\]\.data/,
+      );
+    });
+
+    it('rejects a nested fieldLocators pointer that does not resolve into record.data', () => {
+      const pack = validRulesPack({
+        records: [
+          record('creature:goblin', {
+            provenance: recordProvenance({
+              fieldLocators: { '/abilityScores/notAnAbility': 'p. 2' },
+            }),
+          }),
+        ],
+      });
+      expect(() => validateRulesPack(pack)).toThrow(
+        /does not resolve to a value in records\[0\]\.data/,
+      );
+    });
+
+    it('accepts a fieldLocators pointer into a nested object field', () => {
+      const pack = validRulesPack({
+        records: [
+          record('creature:goblin', {
+            provenance: recordProvenance({
+              fieldLocators: { '/abilityScores/strength': 'p. 2' },
+            }),
+          }),
+        ],
+      });
+      expect(() => validateRulesPack(pack)).not.toThrow();
+    });
+  });
+
   it('rejects packs missing meta.source entirely', () => {
     const validMeta = validRulesPack().meta;
     const { source: _s, ...metaWithoutSource } = validMeta;

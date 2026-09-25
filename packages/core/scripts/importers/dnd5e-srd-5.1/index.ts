@@ -48,7 +48,10 @@ import {
   writePackToDirectory,
   writeSourceCoverageArtifacts,
 } from './emit.js';
-import { enrichProvenanceFromRegionLedger } from './enrichProvenance.js';
+import {
+  enrichProvenanceFromRegionLedger,
+  enrichSpellClassFieldLocatorsFromRegionLedger,
+} from './enrichProvenance.js';
 import { extractPdfText } from './extract.js';
 import { parseActions } from './parseActions.js';
 import { parseAncestries } from './parseAncestries.js';
@@ -86,6 +89,7 @@ import { parseSubclasses } from './parseSubclasses.js';
 import { parseSubclassOverviews } from './parseSubclassOverviews.js';
 import { parseTables } from './parseTables.js';
 import { parseTraps } from './parseTraps.js';
+import { assertRecordLocatorCompleteness } from './recordLocatorCompleteness.js';
 import { assertRecordsAnchoredInSource } from './recordSourceAnchors.js';
 import {
   type SectionAnchorOptions,
@@ -3622,8 +3626,19 @@ export async function runImporter(
     // read record.data, not provenance) so it cannot affect their pass/fail.
     pack = {
       ...pack,
-      records: enrichProvenanceFromRegionLedger(pack.records, regionLedger),
+      records: enrichSpellClassFieldLocatorsFromRegionLedger(
+        enrichProvenanceFromRegionLedger(pack.records, regionLedger),
+        regionLedger,
+      ),
     };
+    // Record/field locator completeness gate (eshyra-o9bd.19.2.2.3): every
+    // page the region ledger attributes to a record — and every field-level
+    // source (spell class-list membership, equipment container capacity,
+    // class primary abilities) — is verified against the FINAL, enriched
+    // provenance above. See recordLocatorCompleteness.ts for the invariant.
+    assertRecordLocatorCompleteness(pack.records, regionLedger, pages, {
+      requireComplete: input.assertDeclarationsAreLive === true,
+    });
     // Class spell-list parity gate (eshyra-erf5.2): the source-coverage gate
     // above only proves the spell-list PAGES are structurally accounted for
     // (mostly via the `spell-list-header` ignore), not that the emitted

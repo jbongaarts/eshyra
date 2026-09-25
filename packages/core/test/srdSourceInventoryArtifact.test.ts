@@ -335,7 +335,12 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // core-rules-chapter "Cantrips" subsection heading (p101, unrelated to
     // any class) now uniquely auto-matches `rule:cantrips` instead of being
     // `ambiguous` (+1 record).
-    expect(coverage.summary.record).toBe(1445);
+    // 1445 -> 1433 (eshyra-o9bd.19.2.2.3.1 F3): the 12 per-class "Class
+    // Features" headings (Barbarian, Bard, …, Wizard) no longer collapse onto
+    // the shared `rule:class-features` record (the p57 Multiclassing rule) via
+    // the unique-normalized-name auto-match; each is now curated `child-of`
+    // its own class record (see `childOf` below).
+    expect(coverage.summary.record).toBe(1433);
     // childOf 14 -> 98 (eshyra-4a7.6, PR2): the broad class-chapter known-gap is
     // gone. The 86 feature-option / spellcasting-boilerplate leaf subheadings
     // map child-of their owning feature/subclass records (the text rides in
@@ -356,7 +361,9 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // Casting", …) — they are now `data.sections` entries on that record,
     // not separate top-level records a bare-name auto-match (or ambiguity)
     // has to resolve.
-    expect(coverage.summary.childOf).toBe(469);
+    // 469 -> 481 (eshyra-o9bd.19.2.2.3.1 F3): the 12 per-class "Class
+    // Features" headings reclassify from `record` (see above) to `childOf`.
+    expect(coverage.summary.childOf).toBe(481);
     // 187 -> 179 (eshyra-o9bd.19.2.2.4): retiring the 5 duplicate-named
     // feature:{cleric,druid,sorcerer,wizard}:cantrips / feature:wizard:
     // spellbook records, and moving "Cantrips"/"Spellbook" to the curated
@@ -1036,10 +1043,18 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // (92) are unchanged; only this one group's category reclassifies).
     // "Spellbook" has only one printed occurrence, so it was never a
     // "duplicate" text group and is unaffected here.
+    // auto-collapsed 6 -> 5, mixed-resolution 10 -> 11 (eshyra-o9bd.19.2.2.3.1
+    // F3): the "class features" duplicate-text group (12 occurrences across
+    // all 12 base classes) previously auto-collapsed onto the single shared
+    // `rule:class-features` record for every occurrence. Each now resolves
+    // via the curated `child-of` rule to its OWN class record — a genuine
+    // per-occurrence resolution, not a uniform auto-match — so the group
+    // reclassifies to `mixed-resolution` (the p57 Multiclassing heading is a
+    // separate, unrelated normalized-text occurrence set and is unaffected).
     expect(categoryCounts).toEqual({
-      'auto-collapsed': 6,
+      'auto-collapsed': 5,
       'explicitly-disambiguated': 19,
-      'mixed-resolution': 10,
+      'mixed-resolution': 11,
       'same-owner-explicit': 18,
       'unresolved-owner': 39,
     });

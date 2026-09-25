@@ -2968,7 +2968,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 8"
+      "locator": "p. 8",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -3685,7 +3688,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 11"
+      "locator": "p. 11",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -4381,7 +4387,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 15"
+      "locator": "p. 15",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -5006,7 +5015,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 19"
+      "locator": "p. 19",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -5457,7 +5469,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 24"
+      "locator": "p. 24",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -6204,7 +6219,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 26"
+      "locator": "p. 26",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -6790,7 +6808,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 30"
+      "locator": "p. 30",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -7400,7 +7421,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 35"
+      "locator": "p. 35",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -7944,7 +7968,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 39"
+      "locator": "p. 39",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -8665,7 +8692,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 42"
+      "locator": "p. 42",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -9267,7 +9297,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 46"
+      "locator": "p. 46",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -9863,7 +9896,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 52"
+      "locator": "p. 52",
+      "fieldLocators": {
+        "/primaryAbilities": "p. 56"
+      }
     }
   },
   {
@@ -67064,7 +67100,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 69, 70"
+      "locator": "pp. 69, 70",
+      "fieldLocators": {
+        "/capacity": "p. 69"
+      }
     }
   },
   {
@@ -67206,7 +67245,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 69"
+      }
     }
   },
   {
@@ -67239,7 +67281,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 69"
+      }
     }
   },
   {
@@ -67610,7 +67655,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 69"
+      }
     }
   },
   {
@@ -67718,7 +67766,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 69"
+      }
     }
   },
   {
@@ -68517,7 +68568,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 69"
+      }
     }
   },
   {
@@ -69116,7 +69170,7 @@
       "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
-    "source": "SRD 5.1 pp. 66, 69",
+    "source": "SRD 5.1 pp. 66, 67, 69",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -69135,7 +69189,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 66, 69"
+      "locator": "pp. 66, 67, 69"
     }
   },
   {
@@ -69926,7 +69980,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 70"
+      }
     }
   },
   {
@@ -71139,7 +71196,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 70"
+      }
     }
   },
   {
@@ -72575,7 +72635,7 @@
       "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
-    "source": "SRD 5.1 pp. 66, 69",
+    "source": "SRD 5.1 pp. 66, 67, 69",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -72594,7 +72654,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 66, 69"
+      "locator": "pp. 66, 67, 69"
     }
   },
   {
@@ -73207,7 +73267,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 70"
+      }
     }
   },
   {
@@ -73308,7 +73371,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 68, 69"
+      "locator": "pp. 68, 69",
+      "fieldLocators": {
+        "/capacity": "p. 70"
+      }
     }
   },
   {
@@ -73740,7 +73806,7 @@
       "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
-    "source": "SRD 5.1 pp. 66, 69",
+    "source": "SRD 5.1 pp. 66, 67, 69",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -73759,7 +73825,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 66, 69"
+      "locator": "pp. 66, 67, 69"
     }
   },
   {
@@ -73944,7 +74010,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 70"
+      }
     }
   },
   {
@@ -75169,7 +75238,7 @@
       "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
-    "source": "SRD 5.1 pp. 66, 69",
+    "source": "SRD 5.1 pp. 66, 67, 69",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -75188,7 +75257,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 66, 69"
+      "locator": "pp. 66, 67, 69"
     }
   },
   {
@@ -75623,7 +75692,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 70"
+      }
     }
   },
   {
@@ -75704,7 +75776,7 @@
       "equipmentGroup": "arcane-focus",
       "description": "Arcane Focus. An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
     },
-    "source": "SRD 5.1 pp. 66, 69",
+    "source": "SRD 5.1 pp. 66, 67, 69",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -75723,7 +75795,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 66, 69"
+      "locator": "pp. 66, 67, 69"
     }
   },
   {
@@ -75905,7 +75977,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 69"
+      "locator": "p. 69",
+      "fieldLocators": {
+        "/capacity": "p. 70"
+      }
     }
   },
   {
@@ -78511,7 +78586,7 @@
         "table:draconic-bloodline-draconic-ancestry"
       ]
     },
-    "source": "SRD 5.1 p. 44",
+    "source": "SRD 5.1 pp. 44, 45",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -78530,7 +78605,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 44"
+      "locator": "pp. 44, 45"
     }
   },
   {
@@ -78982,7 +79057,7 @@
         "table:beast-shapes"
       ]
     },
-    "source": "SRD 5.1 p. 20",
+    "source": "SRD 5.1 pp. 20, 21",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -79001,7 +79076,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 20"
+      "locator": "pp. 20, 21"
     }
   },
   {
@@ -83443,7 +83518,7 @@
         "table:creating-spell-slots"
       ]
     },
-    "source": "SRD 5.1 p. 43",
+    "source": "SRD 5.1 pp. 43, 44",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -83462,7 +83537,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 43"
+      "locator": "pp. 43, 44"
     }
   },
   {
@@ -96479,7 +96554,7 @@
         ]
       }
     },
-    "source": "SRD 5.1 pp. 216, 217",
+    "source": "SRD 5.1 pp. 216, 217, 218",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -96498,7 +96573,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 216, 217"
+      "locator": "pp. 216, 217, 218"
     }
   },
   {
@@ -100655,7 +100730,7 @@
         ]
       }
     },
-    "source": "SRD 5.1 pp. 221, 222",
+    "source": "SRD 5.1 pp. 221, 222, 223",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -100674,7 +100749,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 221, 222"
+      "locator": "pp. 221, 222, 223"
     }
   },
   {
@@ -108912,7 +108987,7 @@
         ]
       }
     },
-    "source": "SRD 5.1 p. 229",
+    "source": "SRD 5.1 pp. 229, 230",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -108931,7 +109006,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 229"
+      "locator": "pp. 229, 230"
     }
   },
   {
@@ -147096,7 +147171,7 @@
         "table:half-dragon-breath-weapon"
       ]
     },
-    "source": "SRD 5.1 p. 320",
+    "source": "SRD 5.1 pp. 320, 321",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -147115,7 +147190,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 320"
+      "locator": "pp. 320, 321"
     }
   },
   {
@@ -147279,7 +147354,7 @@
         "table:hit-dice-by-size"
       ]
     },
-    "source": "SRD 5.1 p. 255",
+    "source": "SRD 5.1 pp. 255, 256",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -147298,7 +147373,7 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 255"
+      "locator": "pp. 255, 256"
     }
   },
   {
@@ -153335,7 +153410,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 114"
+      "locator": "p. 114",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -153405,7 +153483,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 114"
+      "locator": "p. 114",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111"
+      }
     }
   },
   {
@@ -153492,7 +153573,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 114"
+      "locator": "p. 114",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108"
+      }
     }
   },
   {
@@ -153555,7 +153639,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 114"
+      "locator": "p. 114",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111, 112"
+      }
     }
   },
   {
@@ -153635,7 +153722,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 114, 115"
+      "locator": "pp. 114, 115",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 112"
+      }
     }
   },
   {
@@ -153725,7 +153815,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 115"
+      "locator": "p. 115",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 109"
+      }
     }
   },
   {
@@ -153818,7 +153911,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 115"
+      "locator": "p. 115",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 109"
+      }
     }
   },
   {
@@ -153877,7 +153973,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 115"
+      "locator": "p. 115",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -154061,7 +154160,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 115, 116"
+      "locator": "pp. 115, 116",
+      "fieldLocators": {
+        "/classes": "pp. 106, 112"
+      }
     }
   },
   {
@@ -154286,7 +154388,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 116"
+      "locator": "p. 116",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 112, 113"
+      }
     }
   },
   {
@@ -154352,7 +154457,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 116, 117"
+      "locator": "pp. 116, 117",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -154420,7 +154528,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 117"
+      "locator": "p. 117",
+      "fieldLocators": {
+        "/classes": "pp. 107, 113"
+      }
     }
   },
   {
@@ -154485,7 +154596,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 117, 118"
+      "locator": "pp. 117, 118",
+      "fieldLocators": {
+        "/classes": "pp. 108, 113"
+      }
     }
   },
   {
@@ -154546,7 +154660,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 118"
+      "locator": "p. 118",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -154660,7 +154777,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 118"
+      "locator": "p. 118",
+      "fieldLocators": {
+        "/classes": "pp. 112, 113"
+      }
     }
   },
   {
@@ -154718,7 +154838,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 118, 119"
+      "locator": "pp. 118, 119",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -154780,7 +154903,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 119"
+      "locator": "p. 119",
+      "fieldLocators": {
+        "/classes": "pp. 106, 113"
+      }
     }
   },
   {
@@ -154841,7 +154967,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 119"
+      "locator": "p. 119",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -154900,7 +155029,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 119, 120"
+      "locator": "pp. 119, 120",
+      "fieldLocators": {
+        "/classes": "pp. 107, 111, 113"
+      }
     }
   },
   {
@@ -154964,7 +155096,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 120"
+      "locator": "p. 120",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -155022,7 +155157,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 120"
+      "locator": "p. 120",
+      "fieldLocators": {
+        "/classes": "pp. 105, 108"
+      }
     }
   },
   {
@@ -155118,7 +155256,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 120"
+      "locator": "p. 120",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106"
+      }
     }
   },
   {
@@ -155218,7 +155359,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 120, 121"
+      "locator": "pp. 120, 121",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 109, 110, 111, 112"
+      }
     }
   },
   {
@@ -155280,7 +155424,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 121"
+      "locator": "p. 121",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109"
+      }
     }
   },
   {
@@ -155341,7 +155488,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 121"
+      "locator": "p. 121",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -155496,7 +155646,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 121"
+      "locator": "p. 121",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 112"
+      }
     }
   },
   {
@@ -155572,7 +155725,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 121"
+      "locator": "p. 121",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -155637,7 +155793,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 122"
+      "locator": "p. 122",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -155733,7 +155892,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 122"
+      "locator": "p. 122",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108"
+      }
     }
   },
   {
@@ -155829,7 +155991,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 122"
+      "locator": "p. 122",
+      "fieldLocators": {
+        "/classes": "pp. 108, 110, 111, 112"
+      }
     }
   },
   {
@@ -155927,7 +156092,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 122"
+      "locator": "p. 122",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 109, 110, 112"
+      }
     }
   },
   {
@@ -155992,7 +156160,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 122, 123"
+      "locator": "pp. 122, 123",
+      "fieldLocators": {
+        "/classes": "pp. 110, 112"
+      }
     }
   },
   {
@@ -156053,7 +156224,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 123"
+      "locator": "p. 123",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 112"
+      }
     }
   },
   {
@@ -156151,7 +156325,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 123"
+      "locator": "p. 123",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -156251,7 +156428,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 123"
+      "locator": "p. 123",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111, 112"
+      }
     }
   },
   {
@@ -156343,7 +156523,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 123"
+      "locator": "p. 123",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108"
+      }
     }
   },
   {
@@ -156412,7 +156595,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 123, 124"
+      "locator": "pp. 123, 124",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106"
+      }
     }
   },
   {
@@ -156504,7 +156690,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 124"
+      "locator": "p. 124",
+      "fieldLocators": {
+        "/classes": "pp. 110, 113"
+      }
     }
   },
   {
@@ -156601,7 +156790,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 124"
+      "locator": "p. 124",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 109, 111, 112"
+      }
     }
   },
   {
@@ -156677,7 +156869,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 124"
+      "locator": "p. 124",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 111"
+      }
     }
   },
   {
@@ -156774,7 +156969,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 124"
+      "locator": "p. 124",
+      "fieldLocators": {
+        "/classes": "pp. 110, 111, 113"
+      }
     }
   },
   {
@@ -156838,7 +157036,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 124, 125"
+      "locator": "pp. 124, 125",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 110, 112"
+      }
     }
   },
   {
@@ -156895,7 +157096,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 125"
+      "locator": "p. 125",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -156999,7 +157203,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 125"
+      "locator": "p. 125",
+      "fieldLocators": {
+        "/classes": "pp. 110, 112, 113"
+      }
     }
   },
   {
@@ -157095,7 +157302,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 125"
+      "locator": "p. 125",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111, 112"
+      }
     }
   },
   {
@@ -157184,7 +157394,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 125, 126"
+      "locator": "pp. 125, 126",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108"
+      }
     }
   },
   {
@@ -157254,7 +157467,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 126"
+      "locator": "p. 126",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -157305,7 +157521,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 126"
+      "locator": "p. 126",
+      "fieldLocators": {
+        "/classes": "pp. 108, 109"
+      }
     }
   },
   {
@@ -157369,7 +157588,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 126"
+      "locator": "p. 126",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 111, 112"
+      }
     }
   },
   {
@@ -157433,7 +157655,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 126, 127"
+      "locator": "pp. 126, 127",
+      "fieldLocators": {
+        "/classes": "p. 105"
+      }
     }
   },
   {
@@ -157535,7 +157760,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 127"
+      "locator": "p. 127",
+      "fieldLocators": {
+        "/classes": "pp. 110, 112, 113"
+      }
     }
   },
   {
@@ -157627,7 +157855,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 127"
+      "locator": "p. 127",
+      "fieldLocators": {
+        "/classes": "pp. 105, 108, 110, 112"
+      }
     }
   },
   {
@@ -157842,7 +158073,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 127"
+      "locator": "p. 127",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108, 109"
+      }
     }
   },
   {
@@ -158003,7 +158237,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 127, 128"
+      "locator": "pp. 127, 128",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -158249,7 +158486,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 128"
+      "locator": "p. 128",
+      "fieldLocators": {
+        "/classes": "pp. 108, 112, 113"
+      }
     }
   },
   {
@@ -158508,7 +158748,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 128"
+      "locator": "p. 128",
+      "fieldLocators": {
+        "/classes": "pp. 108, 111"
+      }
     }
   },
   {
@@ -158716,7 +158959,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 128, 129"
+      "locator": "pp. 128, 129",
+      "fieldLocators": {
+        "/classes": "pp. 108, 112"
+      }
     }
   },
   {
@@ -158926,7 +159172,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 129"
+      "locator": "p. 129",
+      "fieldLocators": {
+        "/classes": "pp. 108, 109"
+      }
     }
   },
   {
@@ -158990,7 +159239,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 129"
+      "locator": "p. 129",
+      "fieldLocators": {
+        "/classes": "pp. 111, 112, 113"
+      }
     }
   },
   {
@@ -159095,7 +159347,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 129, 130"
+      "locator": "pp. 129, 130",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108"
+      }
     }
   },
   {
@@ -159172,7 +159427,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 130"
+      "locator": "p. 130",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -159230,7 +159488,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 130"
+      "locator": "p. 130",
+      "fieldLocators": {
+        "/classes": "pp. 106, 112"
+      }
     }
   },
   {
@@ -159303,7 +159564,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 130, 131"
+      "locator": "pp. 130, 131",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108, 112"
+      }
     }
   },
   {
@@ -159387,7 +159651,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 131"
+      "locator": "p. 131",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108, 113"
+      }
     }
   },
   {
@@ -159469,7 +159736,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 131"
+      "locator": "p. 131",
+      "fieldLocators": {
+        "/classes": "pp. 110, 111, 112"
+      }
     }
   },
   {
@@ -159536,7 +159806,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 131"
+      "locator": "p. 131",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108"
+      }
     }
   },
   {
@@ -159642,7 +159915,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 132"
+      "locator": "p. 132",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107"
+      }
     }
   },
   {
@@ -159934,7 +160210,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 132"
+      "locator": "p. 132",
+      "fieldLocators": {
+        "/classes": "pp. 107, 111, 113"
+      }
     }
   },
   {
@@ -160015,7 +160294,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 132"
+      "locator": "p. 132",
+      "fieldLocators": {
+        "/classes": "pp. 110, 112, 113"
+      }
     }
   },
   {
@@ -160106,7 +160388,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 132, 133"
+      "locator": "pp. 132, 133",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 108, 109"
+      }
     }
   },
   {
@@ -160176,7 +160461,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 133"
+      "locator": "p. 133",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 111"
+      }
     }
   },
   {
@@ -160241,7 +160529,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 133"
+      "locator": "p. 133",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 111, 112"
+      }
     }
   },
   {
@@ -160304,7 +160595,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 133"
+      "locator": "p. 133",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109, 110, 112"
+      }
     }
   },
   {
@@ -160367,7 +160661,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 133"
+      "locator": "p. 133",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108, 109, 110"
+      }
     }
   },
   {
@@ -160431,7 +160728,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 133"
+      "locator": "p. 133",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 109"
+      }
     }
   },
   {
@@ -160520,7 +160820,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 133, 134"
+      "locator": "pp. 133, 134",
+      "fieldLocators": {
+        "/classes": "pp. 110, 113"
+      }
     }
   },
   {
@@ -160579,7 +160882,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 134"
+      "locator": "p. 134",
+      "fieldLocators": {
+        "/classes": "pp. 111, 113"
+      }
     }
   },
   {
@@ -160641,7 +160947,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 134"
+      "locator": "p. 134",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108"
+      }
     }
   },
   {
@@ -160708,7 +161017,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 134"
+      "locator": "p. 134",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 108, 109, 111, 112"
+      }
     }
   },
   {
@@ -160774,7 +161086,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 134"
+      "locator": "p. 134",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108, 109"
+      }
     }
   },
   {
@@ -160836,7 +161151,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 135"
+      "locator": "p. 135",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 112"
+      }
     }
   },
   {
@@ -160893,7 +161211,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 135"
+      "locator": "p. 135",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 111, 112"
+      }
     }
   },
   {
@@ -160955,7 +161276,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 135"
+      "locator": "p. 135",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 111, 112"
+      }
     }
   },
   {
@@ -161050,7 +161374,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 135, 136"
+      "locator": "pp. 135, 136",
+      "fieldLocators": {
+        "/classes": "pp. 110, 113"
+      }
     }
   },
   {
@@ -161121,7 +161448,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 136"
+      "locator": "p. 136",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109"
+      }
     }
   },
   {
@@ -161208,7 +161538,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 136"
+      "locator": "p. 136",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 108, 110, 111, 112"
+      }
     }
   },
   {
@@ -161272,7 +161605,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 136"
+      "locator": "p. 136",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107"
+      }
     }
   },
   {
@@ -161331,7 +161667,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 136, 137"
+      "locator": "pp. 136, 137",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -161398,7 +161737,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 137"
+      "locator": "p. 137",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -161534,7 +161876,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 137"
+      "locator": "p. 137",
+      "fieldLocators": {
+        "/classes": "pp. 108, 110"
+      }
     }
   },
   {
@@ -161640,7 +161985,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 137, 138"
+      "locator": "pp. 137, 138",
+      "fieldLocators": {
+        "/classes": "pp. 106, 110, 111, 113"
+      }
     }
   },
   {
@@ -161777,7 +162125,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 138"
+      "locator": "p. 138",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 112, 113"
+      }
     }
   },
   {
@@ -161843,7 +162194,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 138"
+      "locator": "p. 138",
+      "fieldLocators": {
+        "/classes": "pp. 105, 111, 112, 113"
+      }
     }
   },
   {
@@ -161892,7 +162246,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 138, 139"
+      "locator": "pp. 138, 139",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -161967,7 +162324,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 139"
+      "locator": "p. 139",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108, 110"
+      }
     }
   },
   {
@@ -162024,7 +162384,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 139"
+      "locator": "p. 139",
+      "fieldLocators": {
+        "/classes": "p. 110"
+      }
     }
   },
   {
@@ -162160,7 +162523,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 139"
+      "locator": "p. 139",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 109, 110"
+      }
     }
   },
   {
@@ -162245,7 +162611,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 140"
+      "locator": "p. 140",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 112"
+      }
     }
   },
   {
@@ -162309,7 +162678,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 140"
+      "locator": "p. 140",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -162390,7 +162762,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 140"
+      "locator": "p. 140",
+      "fieldLocators": {
+        "/classes": "pp. 105, 111"
+      }
     }
   },
   {
@@ -162485,7 +162860,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 140, 141"
+      "locator": "pp. 140, 141",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 110, 111, 113"
+      }
     }
   },
   {
@@ -162549,7 +162927,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 141"
+      "locator": "p. 141",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111, 112"
+      }
     }
   },
   {
@@ -162632,7 +163013,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 141"
+      "locator": "p. 141",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 110, 111, 113"
+      }
     }
   },
   {
@@ -162681,7 +163065,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 141"
+      "locator": "p. 141",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -162745,7 +163132,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 141"
+      "locator": "p. 141",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107"
+      }
     }
   },
   {
@@ -162810,7 +163200,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 142"
+      "locator": "p. 142",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -162896,7 +163289,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 142"
+      "locator": "p. 142",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111, 112"
+      }
     }
   },
   {
@@ -162971,7 +163367,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 142"
+      "locator": "p. 142",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 111, 112"
+      }
     }
   },
   {
@@ -163032,7 +163431,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 142"
+      "locator": "p. 142",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 111, 112"
+      }
     }
   },
   {
@@ -163097,7 +163499,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 142"
+      "locator": "p. 142",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108, 111, 113"
+      }
     }
   },
   {
@@ -163449,7 +163854,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 143"
+      "locator": "p. 143",
+      "fieldLocators": {
+        "/classes": "pp. 111, 112"
+      }
     }
   },
   {
@@ -163656,7 +164064,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 143"
+      "locator": "p. 143",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -163719,7 +164130,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 143, 144"
+      "locator": "pp. 143, 144",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 108"
+      }
     }
   },
   {
@@ -163776,7 +164190,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 144"
+      "locator": "p. 144",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 109"
+      }
     }
   },
   {
@@ -163839,7 +164256,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 144"
+      "locator": "p. 144",
+      "fieldLocators": {
+        "/classes": "pp. 110, 111, 113"
+      }
     }
   },
   {
@@ -163904,7 +164324,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 144"
+      "locator": "p. 144",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111"
+      }
     }
   },
   {
@@ -163967,7 +164390,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 144"
+      "locator": "p. 144",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -164030,7 +164456,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 145"
+      "locator": "p. 145",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108, 110"
+      }
     }
   },
   {
@@ -164126,7 +164555,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 144"
+      "locator": "p. 144",
+      "fieldLocators": {
+        "/classes": "pp. 110, 112"
+      }
     }
   },
   {
@@ -164222,7 +164654,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 145"
+      "locator": "p. 145",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -164320,7 +164755,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 145"
+      "locator": "p. 145",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -164428,7 +164866,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 145"
+      "locator": "p. 145",
+      "fieldLocators": {
+        "/classes": "pp. 107, 112"
+      }
     }
   },
   {
@@ -164505,7 +164946,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 145, 146"
+      "locator": "pp. 145, 146",
+      "fieldLocators": {
+        "/classes": "pp. 111, 113"
+      }
     }
   },
   {
@@ -164572,7 +165016,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 146"
+      "locator": "p. 146",
+      "fieldLocators": {
+        "/classes": "pp. 111, 112"
+      }
     }
   },
   {
@@ -164659,7 +165106,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 146"
+      "locator": "p. 146",
+      "fieldLocators": {
+        "/classes": "pp. 110, 111, 112"
+      }
     }
   },
   {
@@ -164747,7 +165197,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 146"
+      "locator": "p. 146",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109, 111, 112"
+      }
     }
   },
   {
@@ -164817,7 +165270,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 146"
+      "locator": "p. 146",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -164883,7 +165339,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 147"
+      "locator": "p. 147",
+      "fieldLocators": {
+        "/classes": "pp. 106, 111, 113"
+      }
     }
   },
   {
@@ -164947,7 +165406,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 147"
+      "locator": "p. 147",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108, 111, 113"
+      }
     }
   },
   {
@@ -165017,7 +165479,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 147"
+      "locator": "p. 147",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 108, 109"
+      }
     }
   },
   {
@@ -165112,7 +165577,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 147, 148"
+      "locator": "pp. 147, 148",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -165187,7 +165655,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 148"
+      "locator": "p. 148",
+      "fieldLocators": {
+        "/classes": "pp. 110, 111, 112"
+      }
     }
   },
   {
@@ -165259,7 +165730,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 148"
+      "locator": "p. 148",
+      "fieldLocators": {
+        "/classes": "pp. 107, 110, 113"
+      }
     }
   },
   {
@@ -165374,7 +165848,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 148"
+      "locator": "p. 148",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 108, 109, 112, 113"
+      }
     }
   },
   {
@@ -165435,7 +165912,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 148, 149"
+      "locator": "pp. 148, 149",
+      "fieldLocators": {
+        "/classes": "pp. 106, 112"
+      }
     }
   },
   {
@@ -165617,7 +166097,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 149"
+      "locator": "p. 149",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -165679,7 +166162,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 149"
+      "locator": "p. 149",
+      "fieldLocators": {
+        "/classes": "pp. 106, 111"
+      }
     }
   },
   {
@@ -165773,7 +166259,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 149"
+      "locator": "p. 149",
+      "fieldLocators": {
+        "/classes": "pp. 110, 113"
+      }
     }
   },
   {
@@ -165904,7 +166393,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 149, 150"
+      "locator": "pp. 149, 150",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 112"
+      }
     }
   },
   {
@@ -165962,7 +166454,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 150"
+      "locator": "p. 150",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109"
+      }
     }
   },
   {
@@ -166026,7 +166521,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 150"
+      "locator": "p. 150",
+      "fieldLocators": {
+        "/classes": "pp. 111, 112"
+      }
     }
   },
   {
@@ -166087,7 +166585,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 150"
+      "locator": "p. 150",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 112"
+      }
     }
   },
   {
@@ -166154,7 +166655,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 150"
+      "locator": "p. 150",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 108"
+      }
     }
   },
   {
@@ -166210,7 +166714,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 150, 151"
+      "locator": "pp. 150, 151",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107"
+      }
     }
   },
   {
@@ -166270,7 +166777,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 151"
+      "locator": "p. 151",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 113"
+      }
     }
   },
   {
@@ -166333,7 +166843,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 151"
+      "locator": "p. 151",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107"
+      }
     }
   },
   {
@@ -166430,7 +166943,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 151, 152"
+      "locator": "pp. 151, 152",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -166509,7 +167025,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 152"
+      "locator": "p. 152",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109, 110, 112"
+      }
     }
   },
   {
@@ -166575,7 +167094,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 152"
+      "locator": "p. 152",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -166639,7 +167161,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 152, 153"
+      "locator": "pp. 152, 153",
+      "fieldLocators": {
+        "/classes": "pp. 105, 108, 111, 112"
+      }
     }
   },
   {
@@ -166700,7 +167225,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 153"
+      "locator": "p. 153",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -166772,7 +167300,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 153"
+      "locator": "p. 153",
+      "fieldLocators": {
+        "/classes": "pp. 110, 112"
+      }
     }
   },
   {
@@ -166854,7 +167385,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 153"
+      "locator": "p. 153",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108"
+      }
     }
   },
   {
@@ -166942,7 +167476,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 153"
+      "locator": "p. 153",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107"
+      }
     }
   },
   {
@@ -167049,7 +167586,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 153, 154"
+      "locator": "pp. 153, 154",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107"
+      }
     }
   },
   {
@@ -167142,7 +167682,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 154"
+      "locator": "p. 154",
+      "fieldLocators": {
+        "/classes": "p. 111"
+      }
     }
   },
   {
@@ -167200,7 +167743,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 154"
+      "locator": "p. 154",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108"
+      }
     }
   },
   {
@@ -167296,7 +167842,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 154"
+      "locator": "p. 154",
+      "fieldLocators": {
+        "/classes": "pp. 105, 108"
+      }
     }
   },
   {
@@ -167381,7 +167930,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 154"
+      "locator": "p. 154",
+      "fieldLocators": {
+        "/classes": "pp. 105, 111, 112"
+      }
     }
   },
   {
@@ -167488,7 +168040,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 154"
+      "locator": "p. 154",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 111, 112, 113"
+      }
     }
   },
   {
@@ -167598,7 +168153,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 154, 155"
+      "locator": "pp. 154, 155",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 109, 110, 111, 112"
+      }
     }
   },
   {
@@ -167672,7 +168230,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 155"
+      "locator": "p. 155",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -167784,7 +168345,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 155"
+      "locator": "p. 155",
+      "fieldLocators": {
+        "/classes": "p. 109"
+      }
     }
   },
   {
@@ -167856,7 +168420,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 155"
+      "locator": "p. 155",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 111, 112"
+      }
     }
   },
   {
@@ -167952,7 +168519,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 155"
+      "locator": "p. 155",
+      "fieldLocators": {
+        "/classes": "pp. 108, 110, 112"
+      }
     }
   },
   {
@@ -168005,7 +168575,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 155, 156"
+      "locator": "pp. 155, 156",
+      "fieldLocators": {
+        "/classes": "pp. 105, 111, 112"
+      }
     }
   },
   {
@@ -168060,7 +168633,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 156"
+      "locator": "p. 156",
+      "fieldLocators": {
+        "/classes": "pp. 105, 111, 112"
+      }
     }
   },
   {
@@ -168123,7 +168699,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 156, 157"
+      "locator": "pp. 156, 157",
+      "fieldLocators": {
+        "/classes": "pp. 111, 113"
+      }
     }
   },
   {
@@ -168195,7 +168774,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 157"
+      "locator": "p. 157",
+      "fieldLocators": {
+        "/classes": "pp. 110, 113"
+      }
     }
   },
   {
@@ -168282,7 +168864,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 157"
+      "locator": "p. 157",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -168389,7 +168974,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 157"
+      "locator": "p. 157",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108, 110"
+      }
     }
   },
   {
@@ -168447,7 +169035,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 157"
+      "locator": "p. 157",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -168541,7 +169132,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 157, 158"
+      "locator": "pp. 157, 158",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 111, 112"
+      }
     }
   },
   {
@@ -168613,7 +169207,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 158"
+      "locator": "p. 158",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 113"
+      }
     }
   },
   {
@@ -168675,7 +169272,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 158"
+      "locator": "p. 158",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109, 111, 112"
+      }
     }
   },
   {
@@ -168732,7 +169332,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 158"
+      "locator": "p. 158",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 112"
+      }
     }
   },
   {
@@ -168785,7 +169388,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 158"
+      "locator": "p. 158",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 112, 113"
+      }
     }
   },
   {
@@ -168856,7 +169462,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 158"
+      "locator": "p. 158",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 108, 109"
+      }
     }
   },
   {
@@ -168917,7 +169526,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 158, 159"
+      "locator": "pp. 158, 159",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 112"
+      }
     }
   },
   {
@@ -168985,7 +169597,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 159"
+      "locator": "p. 159",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 109, 111"
+      }
     }
   },
   {
@@ -169087,7 +169702,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 159"
+      "locator": "p. 159",
+      "fieldLocators": {
+        "/classes": "pp. 110, 112"
+      }
     }
   },
   {
@@ -169148,7 +169766,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 159"
+      "locator": "p. 159",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 109"
+      }
     }
   },
   {
@@ -169215,7 +169836,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 159"
+      "locator": "p. 159",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 108, 109, 112"
+      }
     }
   },
   {
@@ -169282,7 +169906,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 159, 160"
+      "locator": "pp. 159, 160",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 108, 109, 112"
+      }
     }
   },
   {
@@ -169374,7 +170001,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 160"
+      "locator": "p. 160",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 109, 111, 112"
+      }
     }
   },
   {
@@ -169437,7 +170067,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 160"
+      "locator": "p. 160",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111, 112"
+      }
     }
   },
   {
@@ -169505,7 +170138,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 160"
+      "locator": "p. 160",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 111"
+      }
     }
   },
   {
@@ -169610,7 +170246,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 160"
+      "locator": "p. 160",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108, 111, 112"
+      }
     }
   },
   {
@@ -169666,7 +170305,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 160, 161"
+      "locator": "pp. 160, 161",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -169748,7 +170390,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 161"
+      "locator": "p. 161",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111, 112"
+      }
     }
   },
   {
@@ -169808,7 +170453,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 161"
+      "locator": "p. 161",
+      "fieldLocators": {
+        "/classes": "pp. 105, 112"
+      }
     }
   },
   {
@@ -169909,7 +170557,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 161, 162"
+      "locator": "pp. 161, 162",
+      "fieldLocators": {
+        "/classes": "pp. 108, 112"
+      }
     }
   },
   {
@@ -169969,7 +170620,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 162"
+      "locator": "p. 162",
+      "fieldLocators": {
+        "/classes": "pp. 106, 113"
+      }
     }
   },
   {
@@ -170065,7 +170719,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 162"
+      "locator": "p. 162",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 111, 112"
+      }
     }
   },
   {
@@ -170154,7 +170811,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 162"
+      "locator": "p. 162",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 108"
+      }
     }
   },
   {
@@ -170213,7 +170873,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 163"
+      "locator": "p. 163",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -170299,7 +170962,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 163"
+      "locator": "p. 163",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -170426,7 +171092,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 163"
+      "locator": "p. 163",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 110, 111, 113"
+      }
     }
   },
   {
@@ -170488,7 +171157,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 163"
+      "locator": "p. 163",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -170553,7 +171225,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 163, 164"
+      "locator": "pp. 163, 164",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108"
+      }
     }
   },
   {
@@ -170608,7 +171283,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 164"
+      "locator": "p. 164",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 109, 111"
+      }
     }
   },
   {
@@ -170700,7 +171378,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 164"
+      "locator": "p. 164",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 111"
+      }
     }
   },
   {
@@ -170766,7 +171447,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 164"
+      "locator": "p. 164",
+      "fieldLocators": {
+        "/classes": "pp. 110, 113"
+      }
     }
   },
   {
@@ -170824,7 +171508,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 164"
+      "locator": "p. 164",
+      "fieldLocators": {
+        "/classes": "pp. 106, 113"
+      }
     }
   },
   {
@@ -170888,7 +171575,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 164, 165"
+      "locator": "pp. 164, 165",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 111"
+      }
     }
   },
   {
@@ -170953,7 +171643,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 165"
+      "locator": "p. 165",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108, 113"
+      }
     }
   },
   {
@@ -171027,7 +171720,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 165"
+      "locator": "p. 165",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 111, 112"
+      }
     }
   },
   {
@@ -171094,7 +171790,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 165"
+      "locator": "p. 165",
+      "fieldLocators": {
+        "/classes": "pp. 105, 112, 113"
+      }
     }
   },
   {
@@ -171150,7 +171849,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 165, 166"
+      "locator": "pp. 165, 166",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 111, 112"
+      }
     }
   },
   {
@@ -171297,7 +171999,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 166"
+      "locator": "p. 166",
+      "fieldLocators": {
+        "/classes": "pp. 105, 112, 113"
+      }
     }
   },
   {
@@ -171396,7 +172101,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 166"
+      "locator": "p. 166",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -171453,7 +172161,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 166, 167"
+      "locator": "pp. 166, 167",
+      "fieldLocators": {
+        "/classes": "pp. 108, 110, 113"
+      }
     }
   },
   {
@@ -171514,7 +172225,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 167"
+      "locator": "p. 167",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 112"
+      }
     }
   },
   {
@@ -171578,7 +172292,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 167"
+      "locator": "p. 167",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109"
+      }
     }
   },
   {
@@ -171640,7 +172357,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 167"
+      "locator": "p. 167",
+      "fieldLocators": {
+        "/classes": "pp. 112, 113"
+      }
     }
   },
   {
@@ -171742,7 +172462,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 167"
+      "locator": "p. 167",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -171939,7 +172662,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 167, 168"
+      "locator": "pp. 167, 168",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -171988,7 +172714,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 168"
+      "locator": "p. 168",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -172125,7 +172854,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 168"
+      "locator": "p. 168",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 108, 112, 113"
+      }
     }
   },
   {
@@ -172185,7 +172917,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 168, 169"
+      "locator": "pp. 168, 169",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108, 110, 111, 113"
+      }
     }
   },
   {
@@ -172242,7 +172977,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 169"
+      "locator": "p. 169",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 108, 109"
+      }
     }
   },
   {
@@ -172314,7 +173052,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 169"
+      "locator": "p. 169",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109, 110, 111"
+      }
     }
   },
   {
@@ -172383,7 +173124,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 169"
+      "locator": "p. 169",
+      "fieldLocators": {
+        "/classes": "pp. 105, 108, 110, 112"
+      }
     }
   },
   {
@@ -172440,7 +173184,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 170"
+      "locator": "p. 170",
+      "fieldLocators": {
+        "/classes": "pp. 106, 110, 111, 113"
+      }
     }
   },
   {
@@ -172502,7 +173249,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 170"
+      "locator": "p. 170",
+      "fieldLocators": {
+        "/classes": "pp. 106, 110, 111, 113"
+      }
     }
   },
   {
@@ -172588,7 +173338,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 170"
+      "locator": "p. 170",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -172651,7 +173404,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 170"
+      "locator": "p. 170",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 111"
+      }
     }
   },
   {
@@ -172749,7 +173505,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 170, 171"
+      "locator": "pp. 170, 171",
+      "fieldLocators": {
+        "/classes": "pp. 110, 113"
+      }
     }
   },
   {
@@ -172842,7 +173601,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 171"
+      "locator": "p. 171",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -172946,7 +173708,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 171, 172"
+      "locator": "pp. 171, 172",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -173020,7 +173785,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 172"
+      "locator": "p. 172",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -173081,7 +173849,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 172"
+      "locator": "p. 172",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 113"
+      }
     }
   },
   {
@@ -173156,7 +173927,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 172, 173"
+      "locator": "pp. 172, 173",
+      "fieldLocators": {
+        "/classes": "pp. 106, 113"
+      }
     }
   },
   {
@@ -173225,7 +173999,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 173"
+      "locator": "p. 173",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108, 109, 110, 112"
+      }
     }
   },
   {
@@ -173301,7 +174078,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 173"
+      "locator": "p. 173",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108, 111, 112"
+      }
     }
   },
   {
@@ -173375,7 +174155,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 173"
+      "locator": "p. 173",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108, 109"
+      }
     }
   },
   {
@@ -173427,7 +174210,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 173"
+      "locator": "p. 173",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108"
+      }
     }
   },
   {
@@ -173486,7 +174272,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 173"
+      "locator": "p. 173",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 109"
+      }
     }
   },
   {
@@ -173545,7 +174334,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 174"
+      "locator": "p. 174",
+      "fieldLocators": {
+        "/classes": "pp. 111, 112"
+      }
     }
   },
   {
@@ -173610,7 +174402,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 174"
+      "locator": "p. 174",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111"
+      }
     }
   },
   {
@@ -173671,7 +174466,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 174"
+      "locator": "p. 174",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108"
+      }
     }
   },
   {
@@ -173731,7 +174529,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 174"
+      "locator": "p. 174",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -173788,7 +174589,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 174, 175"
+      "locator": "pp. 174, 175",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108, 111, 112"
+      }
     }
   },
   {
@@ -173848,7 +174652,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 175"
+      "locator": "p. 175",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -173913,7 +174720,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 175"
+      "locator": "p. 175",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107"
+      }
     }
   },
   {
@@ -173977,7 +174787,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 175"
+      "locator": "p. 175",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107"
+      }
     }
   },
   {
@@ -174039,7 +174852,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 175"
+      "locator": "p. 175",
+      "fieldLocators": {
+        "/classes": "pp. 108, 110, 113"
+      }
     }
   },
   {
@@ -174097,7 +174913,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 175, 176"
+      "locator": "pp. 175, 176",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108"
+      }
     }
   },
   {
@@ -174156,7 +174975,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 176"
+      "locator": "p. 176",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -174225,7 +175047,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 176"
+      "locator": "p. 176",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -174283,7 +175108,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 176"
+      "locator": "p. 176",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -174365,7 +175193,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 176"
+      "locator": "p. 176",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 112"
+      }
     }
   },
   {
@@ -174420,7 +175251,7 @@
         "table:scrying-knowledge"
       ]
     },
-    "source": "SRD 5.1 p. 176",
+    "source": "SRD 5.1 pp. 176, 177",
     "license": {
       "licenseClass": "open",
       "licenseName": "Creative Commons Attribution 4.0 International",
@@ -174439,7 +175270,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 176"
+      "locator": "pp. 176, 177",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 108, 111, 112, 113"
+      }
     }
   },
   {
@@ -174500,7 +175334,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 177"
+      "locator": "p. 177",
+      "fieldLocators": {
+        "/classes": "p. 112"
+      }
     }
   },
   {
@@ -174561,7 +175398,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 177"
+      "locator": "p. 177",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 112"
+      }
     }
   },
   {
@@ -174628,7 +175468,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 177"
+      "locator": "p. 177",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 112, 113"
+      }
     }
   },
   {
@@ -174692,7 +175535,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 177, 178"
+      "locator": "pp. 177, 178",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 112"
+      }
     }
   },
   {
@@ -174749,7 +175595,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 178"
+      "locator": "p. 178",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -174811,7 +175660,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 178"
+      "locator": "p. 178",
+      "fieldLocators": {
+        "/classes": "pp. 108, 113"
+      }
     }
   },
   {
@@ -174909,7 +175761,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 178, 179"
+      "locator": "pp. 178, 179",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 111, 112"
+      }
     }
   },
   {
@@ -174973,7 +175828,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 179"
+      "locator": "p. 179",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111, 112"
+      }
     }
   },
   {
@@ -175035,7 +175893,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 179"
+      "locator": "p. 179",
+      "fieldLocators": {
+        "/classes": "pp. 106, 108"
+      }
     }
   },
   {
@@ -175109,7 +175970,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 179"
+      "locator": "p. 179",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -175182,7 +176046,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 179"
+      "locator": "p. 179",
+      "fieldLocators": {
+        "/classes": "pp. 109, 111"
+      }
     }
   },
   {
@@ -175244,7 +176111,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 179"
+      "locator": "p. 179",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 109"
+      }
     }
   },
   {
@@ -175310,7 +176180,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 179, 180"
+      "locator": "pp. 179, 180",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 111, 112"
+      }
     }
   },
   {
@@ -175489,7 +176362,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 180"
+      "locator": "p. 180",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -175580,7 +176456,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 180"
+      "locator": "p. 180",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 111, 112"
+      }
     }
   },
   {
@@ -175654,7 +176533,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 180"
+      "locator": "p. 180",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108, 110, 112"
+      }
     }
   },
   {
@@ -175726,7 +176608,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 180, 181"
+      "locator": "pp. 180, 181",
+      "fieldLocators": {
+        "/classes": "pp. 110, 112"
+      }
     }
   },
   {
@@ -175781,7 +176666,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 181"
+      "locator": "p. 181",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -175843,7 +176731,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 181"
+      "locator": "p. 181",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 109"
+      }
     }
   },
   {
@@ -175914,7 +176805,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 181"
+      "locator": "p. 181",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106"
+      }
     }
   },
   {
@@ -175979,7 +176873,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 181"
+      "locator": "p. 181",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 108, 109"
+      }
     }
   },
   {
@@ -176046,7 +176943,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 182"
+      "locator": "p. 182",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 111, 112"
+      }
     }
   },
   {
@@ -176108,7 +177008,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 182"
+      "locator": "p. 182",
+      "fieldLocators": {
+        "/classes": "pp. 107, 109"
+      }
     }
   },
   {
@@ -176227,7 +177130,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 182"
+      "locator": "p. 182",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -176312,7 +177218,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 182"
+      "locator": "p. 182",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -176380,7 +177289,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 182, 183"
+      "locator": "pp. 182, 183",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 112"
+      }
     }
   },
   {
@@ -176433,7 +177345,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 183"
+      "locator": "p. 183",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108, 112"
+      }
     }
   },
   {
@@ -176502,7 +177417,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 183"
+      "locator": "p. 183",
+      "fieldLocators": {
+        "/classes": "pp. 108, 109, 110, 112"
+      }
     }
   },
   {
@@ -176595,7 +177513,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 183"
+      "locator": "p. 183",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -176663,7 +177584,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 183, 184"
+      "locator": "pp. 183, 184",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 111, 112"
+      }
     }
   },
   {
@@ -176752,7 +177676,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 184"
+      "locator": "p. 184",
+      "fieldLocators": {
+        "/classes": "pp. 108, 110, 113"
+      }
     }
   },
   {
@@ -176829,7 +177756,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 184"
+      "locator": "p. 184",
+      "fieldLocators": {
+        "/classes": "pp. 108, 110, 113"
+      }
     }
   },
   {
@@ -176931,7 +177861,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 184, 185"
+      "locator": "pp. 184, 185",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 113"
+      }
     }
   },
   {
@@ -176991,7 +177924,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 185"
+      "locator": "p. 185",
+      "fieldLocators": {
+        "/classes": "pp. 110, 112, 113"
+      }
     }
   },
   {
@@ -177054,7 +177990,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 185"
+      "locator": "p. 185",
+      "fieldLocators": {
+        "/classes": "pp. 112, 113"
+      }
     }
   },
   {
@@ -177113,7 +178052,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 185, 186"
+      "locator": "pp. 185, 186",
+      "fieldLocators": {
+        "/classes": "pp. 106, 110, 113"
+      }
     }
   },
   {
@@ -177173,7 +178115,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 186, 187"
+      "locator": "pp. 186, 187",
+      "fieldLocators": {
+        "/classes": "pp. 105, 110, 112, 113"
+      }
     }
   },
   {
@@ -177232,7 +178177,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 187"
+      "locator": "p. 187",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -177341,7 +178289,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 187"
+      "locator": "p. 187",
+      "fieldLocators": {
+        "/classes": "pp. 105, 107, 109, 111, 112"
+      }
     }
   },
   {
@@ -177396,7 +178347,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 187"
+      "locator": "p. 187",
+      "fieldLocators": {
+        "/classes": "pp. 110, 113"
+      }
     }
   },
   {
@@ -177477,7 +178431,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 187"
+      "locator": "p. 187",
+      "fieldLocators": {
+        "/classes": "pp. 105, 112"
+      }
     }
   },
   {
@@ -177540,7 +178497,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 187, 188"
+      "locator": "pp. 187, 188",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 110, 111, 112"
+      }
     }
   },
   {
@@ -177599,7 +178559,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 188"
+      "locator": "p. 188",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -177661,7 +178624,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 188"
+      "locator": "p. 188",
+      "fieldLocators": {
+        "/classes": "pp. 108, 109"
+      }
     }
   },
   {
@@ -177729,7 +178695,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 188"
+      "locator": "p. 188",
+      "fieldLocators": {
+        "/classes": "pp. 106, 111, 113"
+      }
     }
   },
   {
@@ -177787,7 +178756,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 189"
+      "locator": "p. 189",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108"
+      }
     }
   },
   {
@@ -177851,7 +178823,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 189"
+      "locator": "p. 189",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 107, 110, 111, 113"
+      }
     }
   },
   {
@@ -177914,7 +178889,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 189"
+      "locator": "p. 189",
+      "fieldLocators": {
+        "/classes": "pp. 105, 109, 110, 111"
+      }
     }
   },
   {
@@ -177976,7 +178954,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 189"
+      "locator": "p. 189",
+      "fieldLocators": {
+        "/classes": "pp. 105, 111, 112"
+      }
     }
   },
   {
@@ -178068,7 +179049,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 189"
+      "locator": "p. 189",
+      "fieldLocators": {
+        "/classes": "pp. 111, 112"
+      }
     }
   },
   {
@@ -178144,7 +179128,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 189, 190"
+      "locator": "pp. 189, 190",
+      "fieldLocators": {
+        "/classes": "p. 105"
+      }
     }
   },
   {
@@ -178261,7 +179248,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 190"
+      "locator": "p. 190",
+      "fieldLocators": {
+        "/classes": "pp. 108, 110, 112"
+      }
     }
   },
   {
@@ -178322,7 +179312,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 190"
+      "locator": "p. 190",
+      "fieldLocators": {
+        "/classes": "pp. 112, 113"
+      }
     }
   },
   {
@@ -178432,7 +179425,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 190"
+      "locator": "p. 190",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -178494,7 +179490,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 190, 191"
+      "locator": "pp. 190, 191",
+      "fieldLocators": {
+        "/classes": "pp. 108, 110, 112, 113"
+      }
     }
   },
   {
@@ -178596,7 +179595,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 191"
+      "locator": "p. 191",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -178655,7 +179657,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 191"
+      "locator": "p. 191",
+      "fieldLocators": {
+        "/classes": "p. 106"
+      }
     }
   },
   {
@@ -178721,7 +179726,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 191"
+      "locator": "p. 191",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108, 109, 110, 112"
+      }
     }
   },
   {
@@ -178784,7 +179792,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 191, 192"
+      "locator": "pp. 191, 192",
+      "fieldLocators": {
+        "/classes": "pp. 106, 107, 108, 109, 110"
+      }
     }
   },
   {
@@ -178857,7 +179868,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 192"
+      "locator": "p. 192",
+      "fieldLocators": {
+        "/classes": "pp. 109, 110, 112"
+      }
     }
   },
   {
@@ -178927,7 +179941,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 192"
+      "locator": "p. 192",
+      "fieldLocators": {
+        "/classes": "p. 113"
+      }
     }
   },
   {
@@ -178986,7 +180003,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 192"
+      "locator": "p. 192",
+      "fieldLocators": {
+        "/classes": "p. 108"
+      }
     }
   },
   {
@@ -179054,7 +180074,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 192, 193"
+      "locator": "pp. 192, 193",
+      "fieldLocators": {
+        "/classes": "pp. 107, 108, 109"
+      }
     }
   },
   {
@@ -179138,7 +180161,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 193"
+      "locator": "p. 193",
+      "fieldLocators": {
+        "/classes": "pp. 110, 113"
+      }
     }
   },
   {
@@ -179192,7 +180218,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "p. 193"
+      "locator": "p. 193",
+      "fieldLocators": {
+        "/classes": "p. 107"
+      }
     }
   },
   {
@@ -179250,7 +180279,10 @@
     },
     "provenance": {
       "sourceRef": "https://dnd.wizards.com/resources/systems-reference-document",
-      "locator": "pp. 193, 194"
+      "locator": "pp. 193, 194",
+      "fieldLocators": {
+        "/classes": "pp. 105, 106, 108"
+      }
     }
   },
   {

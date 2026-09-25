@@ -651,7 +651,7 @@ derived(
 derived(
   'equipment',
   '/capacity',
-  'a container capacity value, parsed from the printed item description.',
+  'a container capacity value, parsed from the printed Container Capacity table row (not the item description).',
 );
 derived(
   'equipment',

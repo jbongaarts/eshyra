@@ -875,11 +875,7 @@ for (const spec of EQUIPMENT_MECHANICS_SPECS) {
 
 function pagesFor(item: EquipmentExtraction): number[] {
   return [
-    ...new Set(
-      [item.sourcePage, item.descriptionSourcePage].filter(
-        (page): page is number => page !== undefined,
-      ),
-    ),
+    ...new Set([item.sourcePage, ...(item.descriptionSourcePages ?? [])]),
   ].sort((a, b) => a - b);
 }
 

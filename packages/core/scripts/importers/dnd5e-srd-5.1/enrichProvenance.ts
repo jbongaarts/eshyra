@@ -33,15 +33,14 @@
  * A ledger page more than `MAX_CONTINUATION_GAP` pages from the record's own
  * starting page is dropped rather than unioned in. Every genuine multi-page
  * continuation in the committed pack is exactly 2 sequential pages; a "same
- * record" ledger match dozens of pages away is a bare-heading-name collision
- * in source coverage, not a physical continuation — e.g. every class chapter
- * prints its own one-line "As a barbarian, you gain the following class
- * features" under a heading literally titled "Class Features", and since
- * `rule:class-features` (the general multiclassing rule on p57) is the only
- * record actually named that, the coverage auto-match collapses all 13
- * chapter-opening occurrences onto it. That is a pre-existing source-coverage
- * classification, not something eshyra-lpk9 introduces or fixes — but
- * provenance must not repeat it as thirteen unrelated pages.
+ * record" ledger match dozens of pages away would be a same-heading-name
+ * collision in source-region ownership, not a physical continuation, and
+ * provenance must not repeat it as an unrelated far-away page. A page dropped
+ * here for being out of gap range is not silently accepted: the
+ * `recordLocatorCompleteness.ts` gate (eshyra-o9bd.19.2.2.3) re-checks every
+ * `record:`/`child-of:` ledger entry against the record's FINAL locator and
+ * fails the import closed if a genuine continuation's page was ever dropped —
+ * the exact defect class this comment used to describe as unfixed.
  */
 
 import type { RulesRecord } from '../../../src/rules/types.js';
@@ -111,6 +110,73 @@ export function enrichProvenanceFromRegionLedger(
       provenance: {
         ...record.provenance,
         locator,
+      },
+    };
+  });
+}
+
+/**
+ * Field-level provenance for `spell.data.classes` (eshyra-o9bd.19.2.2.3.1
+ * F4), derived from the SAME `structured-field:spell.data.classes` ledger
+ * entries the `recordLocatorCompleteness.ts` gate (eshyra-o9bd.19.2.2.3)
+ * checks it against — deliberately NOT from a separate, line-level scan of
+ * the spell-list pages (`parseSpellClassLevelLists`).
+ *
+ * `sourceInventoryCoverage.ts`'s `spellListStructuredFieldRules` attaches one
+ * shared evidence object — naming every spell in a whole (class, level) group
+ * — to that group's owning heading. When the group's printed list spans a
+ * page break, `buildSourceRegionLedger` still splits it into one ledger
+ * entry per physical page (a page boundary always starts a new region), and
+ * every one of those split entries carries the SAME, whole-group evidence.
+ * So the ledger's own notion of "the page(s) a spell's class membership is
+ * sourced from" is the union of every page any entry naming that spell's key
+ * touches — not just the one line the spell's name happens to print on. A
+ * field locator computed from `parseSpellClassLevelLists`'s per-line pages
+ * would disagree with that whenever a group spans a page break — verified
+ * against the real SRD 5.1 corpus: 6 of the 70 (class, level) groups do,
+ * affecting 93 spell records — so this function and the gate are built from
+ * one shared source instead, which cannot drift apart.
+ */
+export function enrichSpellClassFieldLocatorsFromRegionLedger(
+  records: readonly RulesRecord[],
+  regionLedger: SourceRegionLedger,
+): RulesRecord[] {
+  const pagesBySpellKey = new Map<string, Set<number>>();
+  for (const entry of regionLedger.entries) {
+    if (entry.classification !== 'structured-field:spell.data.classes') {
+      continue;
+    }
+    const evidence = entry.structuredFieldEvidence;
+    if (evidence === undefined) continue;
+    for (const spellKey of evidence.spellKeys) {
+      const pages = pagesBySpellKey.get(spellKey) ?? new Set<number>();
+      for (let page = entry.pageStart; page <= entry.pageEnd; page++) {
+        pages.add(page);
+      }
+      pagesBySpellKey.set(spellKey, pages);
+    }
+  }
+
+  return records.map((record) => {
+    if (record.kind !== 'spell') return record;
+    const data = record.data as { readonly classes?: unknown };
+    const classes = Array.isArray(data.classes) ? data.classes : [];
+    if (classes.length === 0) return record;
+    const pages = pagesBySpellKey.get(record.key);
+    if (pages === undefined || pages.size === 0) return record;
+    const sortedPages = [...pages].sort((a, b) => a - b);
+    const locator =
+      sortedPages.length === 1
+        ? `p. ${sortedPages[0]}`
+        : `pp. ${sortedPages.join(', ')}`;
+    return {
+      ...record,
+      provenance: {
+        ...record.provenance,
+        fieldLocators: {
+          ...record.provenance.fieldLocators,
+          '/classes': locator,
+        },
       },
     };
   });
