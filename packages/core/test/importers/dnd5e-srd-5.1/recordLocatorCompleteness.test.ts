@@ -39,14 +39,14 @@ function record(
   kind: RulesRecord['kind'],
   data: unknown,
   provenance: RecordProvenance,
-  options: { readonly source?: string } = {},
+  options: { readonly source?: string; readonly name?: string } = {},
 ): RulesRecord {
   const locator = provenance.locator;
   return {
     systemId: 'dnd5e-srd',
     kind,
     key,
-    name: key,
+    name: options.name ?? key,
     data,
     source:
       options.source ??
@@ -66,6 +66,8 @@ interface LedgerEntryFixture {
   readonly pageStart: number;
   readonly pageEnd: number;
   readonly contentMatch?: boolean;
+  readonly lineStart?: number;
+  readonly lineEnd?: number;
   readonly structuredFieldEvidence?: SourceRegionLedgerEntry['structuredFieldEvidence'];
 }
 
@@ -94,8 +96,8 @@ function ledger(entries: readonly LedgerEntryFixture[]): SourceRegionLedger {
       id: `fixture-${i}`,
       pageStart: e.pageStart,
       pageEnd: e.pageEnd,
-      lineStart: 0,
-      lineEnd: 0,
+      lineStart: e.lineStart ?? 0,
+      lineEnd: e.lineEnd ?? 0,
       headingPath: [],
       sourceContext: null,
       regionType: 'record-body',
@@ -298,6 +300,7 @@ describe('assertRecordLocatorCompleteness', () => {
             locator: 'p. 110',
             fieldLocators: { '/classes': 'pp. 110, 112' },
           },
+          { name: 'Fireball' },
         ),
       ];
       expect(() =>
@@ -317,7 +320,7 @@ describe('assertRecordLocatorCompleteness', () => {
               structuredFieldEvidence: evidence(['spell:fireball']),
             },
           ]),
-          [],
+          [page(110, ['Fireball']), page(112, ['Fireball'])],
           { requireComplete: true },
         ),
       ).not.toThrow();
@@ -334,6 +337,7 @@ describe('assertRecordLocatorCompleteness', () => {
             locator: 'p. 110',
             fieldLocators: { '/classes': 'pp. 110, 112' },
           },
+          { name: 'Fireball' },
         ),
       ];
       expect(() =>
@@ -347,7 +351,7 @@ describe('assertRecordLocatorCompleteness', () => {
               structuredFieldEvidence: evidence(['spell:fireball']),
             },
           ]),
-          [],
+          [page(110, ['Fireball']), page(112, ['Fireball'])],
           { requireComplete: true },
         ),
       ).toThrow(/fieldLocators\['\/classes'\]/);
@@ -364,6 +368,7 @@ describe('assertRecordLocatorCompleteness', () => {
             locator: 'p. 110',
             fieldLocators: { '/classes': 'p. 110' },
           },
+          { name: 'Fireball' },
         ),
       ];
       expect(() =>
@@ -383,7 +388,7 @@ describe('assertRecordLocatorCompleteness', () => {
               structuredFieldEvidence: evidence(['spell:fireball']),
             },
           ]),
-          [],
+          [page(110, ['Fireball']), page(112, ['Fireball'])],
           { requireComplete: true },
         ),
       ).toThrow(/fieldLocators\['\/classes'\]/);
@@ -409,7 +414,7 @@ describe('assertRecordLocatorCompleteness', () => {
               structuredFieldEvidence: evidence(['spell:fireball']),
             },
           ]),
-          [],
+          [page(110, ['Fireball']), page(112, ['Fireball'])],
           { requireComplete: true },
         ),
       ).toThrow(/is required when data\.classes is non-empty/);
@@ -426,6 +431,7 @@ describe('assertRecordLocatorCompleteness', () => {
             locator: 'p. 200',
             fieldLocators: { '/classes': 'p. 110' },
           },
+          { name: 'Fireball' },
         ),
       ];
       expect(() =>
@@ -433,6 +439,79 @@ describe('assertRecordLocatorCompleteness', () => {
           requireComplete: true,
         }),
       ).toThrow(/must be absent when data\.classes is empty/);
+    });
+
+    it('counts only the page whose own list lines print the spell when a group spans a page break (eshyra-o9bd.19.2.2.3)', () => {
+      // One (class, level) group split across pp. 110-111: both entries carry
+      // the whole group's evidence, but Fireball prints only on p. 110.
+      const split = [
+        {
+          classification: 'structured-field:spell.data.classes' as const,
+          pageStart: 110,
+          pageEnd: 110,
+          lineStart: 0,
+          lineEnd: 1,
+          structuredFieldEvidence: evidence(['spell:fireball', 'spell:fly']),
+        },
+        {
+          classification: 'structured-field:spell.data.classes' as const,
+          pageStart: 111,
+          pageEnd: 111,
+          lineStart: 0,
+          lineEnd: 0,
+          structuredFieldEvidence: evidence(['spell:fireball', 'spell:fly']),
+        },
+      ];
+      const pages = [page(110, ['3rd Level', 'Fireball']), page(111, ['Fly'])];
+      const fireball = (classesLocator: string) => [
+        record(
+          'spell:fireball',
+          'spell',
+          { classes: ['Wizard'] },
+          {
+            sourceRef: 'https://example.test',
+            locator: 'p. 241',
+            fieldLocators: { '/classes': classesLocator },
+          },
+          { name: 'Fireball' },
+        ),
+      ];
+      expect(() =>
+        assertRecordLocatorCompleteness(
+          fireball('pp. 110, 111'),
+          ledger(split),
+          pages,
+          { requireComplete: true },
+        ),
+      ).toThrow(/cites pages \[110, 111\].*are on \[110\]/);
+      expect(() =>
+        assertRecordLocatorCompleteness(
+          fireball('p. 110'),
+          ledger(split),
+          pages,
+          { requireComplete: true },
+        ),
+      ).not.toThrow();
+    });
+
+    it('skips the exact-pages comparison when requireComplete is false', () => {
+      const records = [
+        record(
+          'spell:fireball',
+          'spell',
+          { classes: ['Wizard'] },
+          {
+            sourceRef: 'https://example.test',
+            locator: 'p. 110',
+            fieldLocators: { '/classes': 'p. 7' },
+          },
+        ),
+      ];
+      expect(() =>
+        assertRecordLocatorCompleteness(records, ledger([]), [], {
+          requireComplete: false,
+        }),
+      ).not.toThrow();
     });
   });
 

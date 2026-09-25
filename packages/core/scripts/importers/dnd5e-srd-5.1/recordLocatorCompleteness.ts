@@ -24,10 +24,15 @@
  * this gate):
  *
  *   (b) `spell.data.classes`: every spell's `fieldLocators['/classes']`
- *       pages exactly match the pages of the ledger's
- *       `structured-field:spell.data.classes` entries whose
- *       `structuredFieldEvidence.spellKeys` name that spell — present if and
- *       only if `data.classes` is non-empty.
+ *       pages exactly match the pages on which a ledger
+ *       `structured-field:spell.data.classes` entry naming that spell in its
+ *       `structuredFieldEvidence.spellKeys` ALSO prints the spell's name as
+ *       one of its own source lines — present if and only if `data.classes`
+ *       is non-empty. The evidence is per (class, level) group, so a group
+ *       whose list spans a page break names every member on each page's
+ *       entry; the printed-line check narrows it to the page each spell is
+ *       actually printed on. The line text comes from the extracted pages,
+ *       independently of the spell-list parser that produces the locator.
  *   (c) every other `fieldLocators` entry: the pointed-to value (a string,
  *       or every string of a string array) is found as whole-token text on
  *       at least one of that entry's own cited pages, reusing the same
@@ -39,10 +44,13 @@
  *       matching field locator; a silently-missing one fails closed here
  *       rather than passing by omission.
  *
- * `requireComplete` gates only the two PRESENCE requirements above — a
- * spell's non-empty `classes` needing `fieldLocators['/classes']` at all, and
- * an equipment/class record's `capacity`/`primaryAbilities` needing its field
- * locator at all. Mirrors `assertRecordsAnchoredInSource`'s
+ * `requireComplete` gates the PRESENCE requirements above — a spell's
+ * non-empty `classes` needing `fieldLocators['/classes']` at all, and an
+ * equipment/class record's `capacity`/`primaryAbilities` needing its field
+ * locator at all — and the exact-pages comparison in (b), whose denominator is
+ * the ledger's `structured-field:spell.data.classes` entries: a fixture's
+ * coverage rules may classify its spell-list lines some other way (e.g. a
+ * catch-all ignore), leaving the ledger no evidence to compare against. Mirrors `assertRecordsAnchoredInSource`'s
  * `requireDeclarationsLive` / `assertCreatureAttackLeadInsSegmented`'s
  * `requireComplete` elsewhere in this importer: a reduced fixture PDF's
  * `SpellExtraction`/`EquipmentExtraction` test data can set `classes` /
@@ -52,7 +60,7 @@
  * completeness property the fixture never claimed. Only the real CLI import
  * (`assertDeclarationsAreLive`) has the full corpus this presence check is
  * meaningful against. Every OTHER check here — record locator coverage (a),
- * an EXISTING field locator's exact pages (b) or anchor text (c), and the
+ * an EXISTING field locator's anchor text (c), and the
  * source-label consistency check (d) — is unconditional: those check internal
  * consistency of whatever the pipeline actually emitted, which is meaningful
  * for any fixture, reduced or not.
@@ -70,6 +78,7 @@ import type { RulesRecord } from '../../../src/rules/types.js';
 import {
   anchorFoundOnAnyPage,
   citedPages,
+  normalizeAnchorText,
   normalizedPageTextByNumber,
   RecordSourceAnchorError,
 } from './recordSourceAnchors.js';
@@ -197,9 +206,18 @@ function checkRecordLocators(
 function checkSpellClassFieldLocators(
   records: readonly RulesRecord[],
   ledger: SourceRegionLedger,
+  pages: readonly PageText[],
   requireComplete: boolean,
   violations: string[],
 ): void {
+  const recordNameByKey = new Map(
+    records
+      .filter((record) => record.kind === 'spell')
+      .map((record) => [record.key, normalizeAnchorText(record.name)] as const),
+  );
+  const linesByPage = new Map(
+    pages.map((page) => [page.pageNumber, page.lines] as const),
+  );
   const pagesBySpellKey = new Map<string, Set<number>>();
   for (const entry of ledger.entries) {
     if (entry.classification !== 'structured-field:spell.data.classes') {
@@ -207,12 +225,21 @@ function checkSpellClassFieldLocators(
     }
     const evidence = entry.structuredFieldEvidence;
     if (evidence === undefined) continue;
-    for (const spellKey of evidence.spellKeys) {
-      const pages = pagesBySpellKey.get(spellKey) ?? new Set<number>();
-      for (let page = entry.pageStart; page <= entry.pageEnd; page++) {
-        pages.add(page);
+    for (let page = entry.pageStart; page <= entry.pageEnd; page++) {
+      const lines = linesByPage.get(page) ?? [];
+      const first = page === entry.pageStart ? entry.lineStart : 0;
+      const last =
+        page === entry.pageEnd ? entry.lineEnd : Math.max(lines.length - 1, 0);
+      const printed = new Set(
+        lines.slice(first, last + 1).map((line) => normalizeAnchorText(line)),
+      );
+      for (const spellKey of evidence.spellKeys) {
+        const name = recordNameByKey.get(spellKey);
+        if (name === undefined || !printed.has(name)) continue;
+        const spellPages = pagesBySpellKey.get(spellKey) ?? new Set<number>();
+        spellPages.add(page);
+        pagesBySpellKey.set(spellKey, spellPages);
       }
-      pagesBySpellKey.set(spellKey, pages);
     }
   }
 
@@ -241,10 +268,13 @@ function checkSpellClassFieldLocators(
       }
       continue;
     }
+    // Exact pages need the ledger's spell-list classification, which only
+    // the real corpus's coverage rules supply (see `requireComplete`).
+    if (!requireComplete) continue;
     const actualPages = safeCitedPages(locatorValue) ?? [];
     if (!arraysEqual(actualPages, expectedPages)) {
       violations.push(
-        `${record.key}: fieldLocators['/classes'] cites pages [${actualPages.join(', ')}], but the ledger's structured-field:spell.data.classes entries naming this spell key cite [${expectedPages.join(', ')}]`,
+        `${record.key}: fieldLocators['/classes'] cites pages [${actualPages.join(', ')}], but the spell-list lines printing this spell (ledger structured-field:spell.data.classes entries) are on [${expectedPages.join(', ')}]`,
       );
     }
   }
@@ -377,6 +407,7 @@ export function assertRecordLocatorCompleteness(
   checkSpellClassFieldLocators(
     records,
     ledger,
+    pages,
     options.requireComplete,
     violations,
   );

@@ -282,6 +282,12 @@ function equipmentProvenance(item: EquipmentExtraction): RecordProvenance {
 
 export interface SpellExtractionsToRecordsOptions {
   readonly allowSyntheticSourceBindings?: true;
+  /**
+   * Spell name -> pages its own spell-list lines print on
+   * (`spellClassListPagesBySpellName`). Source of
+   * `provenance.fieldLocators['/classes']` (eshyra-o9bd.19.2.2.3).
+   */
+  readonly classListPages?: ReadonlyMap<string, readonly number[]>;
 }
 
 export function spellExtractionsToRecords(
@@ -292,16 +298,13 @@ export function spellExtractionsToRecords(
   const out: RulesRecord[] = spells.map((spell) => {
     const classList = classes.get(spell.name) ?? [];
     const data = buildSpellData(spell, classList, options);
-    // `provenance.fieldLocators['/classes']` (eshyra-o9bd.19.2.2.3.1 F4) is
-    // NOT set here: it is derived, after the region ledger is built, by
-    // `enrichSpellClassFieldLocatorsFromRegionLedger` in enrichProvenance.ts,
-    // from the SAME `structured-field:spell.data.classes` ledger entries the
-    // `recordLocatorCompleteness.ts` gate checks it against. Computing both
-    // sides of that invariant from one shared source makes them structurally
-    // unable to drift apart — see that function's doc comment for why a
-    // spell-list-LINE-level computation here would disagree with the
-    // ledger's per-region evidence whenever a class/level's printed list
-    // spans a page break.
+    const classListPages = options.classListPages?.get(spell.name);
+    const fieldLocators =
+      classList.length > 0 &&
+      classListPages !== undefined &&
+      classListPages.length > 0
+        ? { '/classes': formatPagesLocator(classListPages) }
+        : undefined;
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'spell',
@@ -310,7 +313,7 @@ export function spellExtractionsToRecords(
       data,
       source: sourceLabelFor(spell.sourcePage),
       license: SRD_5_1_LICENSE,
-      provenance: provenanceFor(spell.sourcePage),
+      provenance: provenanceFor(spell.sourcePage, fieldLocators),
     };
     return record;
   });
@@ -1638,6 +1641,8 @@ export interface BuildPackInput {
    * buildPack fixtures and callers that already provide exact-name keys.
    */
   readonly spellClasses?: ReadonlyMap<string, readonly SpellCasterClass[]>;
+  /** See `SpellExtractionsToRecordsOptions.classListPages`. */
+  readonly spellClassListPages?: ReadonlyMap<string, readonly number[]>;
   /**
    * Per-class primary abilities read from the Multiclassing prerequisites
    * listing (loreweaver-0m9.5.19). Optional: absent/empty when the Multiclassing
@@ -1697,6 +1702,9 @@ export function buildPack(input: BuildPackInput): RulesPack {
       ...(input.allowSyntheticSpellSourceBindings === true
         ? { allowSyntheticSourceBindings: true as const }
         : {}),
+      ...(input.spellClassListPages === undefined
+        ? {}
+        : { classListPages: input.spellClassListPages }),
     },
   );
   const creatureRecords = creatureExtractionsToRecords(
