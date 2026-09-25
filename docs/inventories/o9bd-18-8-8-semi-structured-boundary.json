@@ -9,11 +9,11 @@
     "dnd5eSrd": 1809,
     "pathfinderFixture": 7
   },
-  "rowCount": 1849,
+  "rowCount": 1852,
   "dispositionCounts": {
     "complete": 427,
     "model-adjudicated": 1220,
-    "not-mechanical": 193,
+    "not-mechanical": 196,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
   },
@@ -3906,6 +3906,26 @@
       "typedSchemaOrConsumer": "normalizeRulesRecordName / RulesStackKindIndex.byName",
       "retainedProseBoundary": null,
       "owner": "rules-stack indexing and rules lookup",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "class"
+      ],
+      "fieldPath": "record.provenance.fieldLocators./primaryAbilities",
+      "representativeValues": [
+        "p. 56"
+      ],
+      "population": 12,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
+      "deterministicConsumers": "provenance/display/licensing consumers only",
+      "currentAuditReadiness": "source coverage and license audits retain this evidence",
+      "disposition": "not-mechanical",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": "RulesRecord.source / RecordProvenance / RulesPackLicense",
       "futureWork": false
     },
     {
@@ -12573,6 +12593,27 @@
       "typedSchemaOrConsumer": "normalizeRulesRecordName / RulesStackKindIndex.byName",
       "retainedProseBoundary": null,
       "owner": "rules-stack indexing and rules lookup",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "equipment"
+      ],
+      "fieldPath": "record.provenance.fieldLocators./capacity",
+      "representativeValues": [
+        "p. 69",
+        "p. 70"
+      ],
+      "population": 13,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
+      "deterministicConsumers": "provenance/display/licensing consumers only",
+      "currentAuditReadiness": "source coverage and license audits retain this evidence",
+      "disposition": "not-mechanical",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": "RulesRecord.source / RecordProvenance / RulesPackLicense",
       "futureWork": false
     },
     {
@@ -34679,6 +34720,30 @@
       "typedSchemaOrConsumer": "normalizeRulesRecordName / RulesStackKindIndex.byName",
       "retainedProseBoundary": null,
       "owner": "rules-stack indexing and rules lookup",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "spell"
+      ],
+      "fieldPath": "record.provenance.fieldLocators./classes",
+      "representativeValues": [
+        "p. 112",
+        "pp. 109, 111",
+        "pp. 106, 108",
+        "pp. 109, 111, 112",
+        "pp. 109, 110, 112"
+      ],
+      "population": 319,
+      "valueClass": "source prose",
+      "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
+      "deterministicConsumers": "provenance/display/licensing consumers only",
+      "currentAuditReadiness": "source coverage and license audits retain this evidence",
+      "disposition": "not-mechanical",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": "RulesRecord.source / RecordProvenance / RulesPackLicense",
       "futureWork": false
     },
     {

@@ -147,6 +147,47 @@ function source(value: unknown): RulesPackSource {
   };
 }
 
+// Field-locator value grammar (eshyra-o9bd.19.2.2.3.1 F4): `p. N` or
+// `pp. N, M, ...`, strictly ascending. Deliberately narrower than the record
+// `locator` field's grammar (no `pp. N-M` dash range) — see the doc comment
+// on `RecordProvenance.fieldLocators` in `types.ts`.
+const FIELD_LOCATOR_SINGLE_PAGE = /^p\. (\d+)$/;
+const FIELD_LOCATOR_PAGE_LIST = /^pp\. (\d+(?:, \d+)+)$/;
+
+function isAscendingPageList(pages: readonly number[]): boolean {
+  return pages.every((page, i) => i === 0 || page > pages[i - 1]);
+}
+
+function fieldLocatorValue(value: unknown, path: string): string {
+  const locator = str(value, path);
+  const single = FIELD_LOCATOR_SINGLE_PAGE.exec(locator);
+  if (single !== null) return locator;
+  const list = FIELD_LOCATOR_PAGE_LIST.exec(locator);
+  if (list !== null && isAscendingPageList(list[1].split(', ').map(Number))) {
+    return locator;
+  }
+  throw new RulesPackError(
+    `${path} must match the field-locator grammar "p. N" or "pp. N, M, ..." (ascending, deduplicated page numbers), got ${JSON.stringify(locator)}`,
+  );
+}
+
+function fieldLocators(
+  value: unknown,
+  path: string,
+): Readonly<Record<string, string>> {
+  const o = obj(value, path);
+  const result: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(o)) {
+    if (!key.startsWith('/')) {
+      throw new RulesPackError(
+        `${path} key ${JSON.stringify(key)} must be a JSON Pointer starting with "/"`,
+      );
+    }
+    result[key] = fieldLocatorValue(raw, `${path}[${JSON.stringify(key)}]`);
+  }
+  return result;
+}
+
 function provenance(value: unknown, path: string): RecordProvenance {
   const o = obj(value, path);
   return {
@@ -155,7 +196,50 @@ function provenance(value: unknown, path: string): RecordProvenance {
       ? {}
       : { locator: str(o.locator, `${path}.locator`) }),
     ...(o.note === undefined ? {} : { note: str(o.note, `${path}.note`) }),
+    ...(o.fieldLocators === undefined
+      ? {}
+      : {
+          fieldLocators: fieldLocators(
+            o.fieldLocators,
+            `${path}.fieldLocators`,
+          ),
+        }),
   };
+}
+
+/**
+ * Resolve a JSON Pointer (RFC 6901) into a value, without throwing on a
+ * dangling path — the caller decides what a miss means. Supports object
+ * property and array index segments; `~1`/`~0` escapes decode to `/`/`~`.
+ */
+function resolveJsonPointer(
+  data: unknown,
+  pointer: string,
+): { readonly found: boolean; readonly value: unknown } {
+  if (!pointer.startsWith('/')) return { found: false, value: undefined };
+  const segments = pointer
+    .slice(1)
+    .split('/')
+    .map((segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
+  let current: unknown = data;
+  for (const segment of segments) {
+    if (typeof current !== 'object' || current === null) {
+      return { found: false, value: undefined };
+    }
+    if (Array.isArray(current)) {
+      const index = Number(segment);
+      if (!Number.isInteger(index) || index < 0 || index >= current.length) {
+        return { found: false, value: undefined };
+      }
+      current = current[index];
+      continue;
+    }
+    if (!(segment in current)) {
+      return { found: false, value: undefined };
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return { found: true, value: current };
 }
 
 function compatibleBaseSystem(value: unknown, i: number): CompatibleBaseSystem {
@@ -203,15 +287,26 @@ function meta(value: unknown): RulesPackMeta {
 function record(value: unknown, i: number): RulesRecord {
   const path = `records[${i}]`;
   const o = obj(value, path);
+  const data = required(o.data, `${path}.data`);
+  const recordProvenance = provenance(o.provenance, `${path}.provenance`);
+  if (recordProvenance.fieldLocators !== undefined) {
+    for (const pointer of Object.keys(recordProvenance.fieldLocators)) {
+      if (!resolveJsonPointer(data, pointer).found) {
+        throw new RulesPackError(
+          `${path}.provenance.fieldLocators has pointer ${JSON.stringify(pointer)}, which does not resolve to a value in ${path}.data`,
+        );
+      }
+    }
+  }
   return {
     systemId: str(o.systemId, `${path}.systemId`),
     kind: oneOf(o.kind, `${path}.kind`, RULES_RECORD_KINDS),
     key: str(o.key, `${path}.key`),
     name: str(o.name, `${path}.name`),
-    data: required(o.data, `${path}.data`),
+    data,
     source: str(o.source, `${path}.source`),
     license: license(o.license, `${path}.license`),
-    provenance: provenance(o.provenance, `${path}.provenance`),
+    provenance: recordProvenance,
     ...(o.overrides === undefined
       ? {}
       : { overrides: strArray(o.overrides, `${path}.overrides`) }),

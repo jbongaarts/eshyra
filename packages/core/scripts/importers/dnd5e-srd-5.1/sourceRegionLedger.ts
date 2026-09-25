@@ -33,6 +33,7 @@ import {
   type SourceInventoryItem,
 } from './sourceInventory.js';
 import {
+  CLASS_CHAPTER_SECTIONS,
   type CoverageRecordRef,
   formatCoverageStatus,
   type SourceCoverageEntry,
@@ -126,6 +127,15 @@ export interface SourceRegionLedgerEntry {
    * also projected into a table's rows); it says nothing about which PAGE
    * that record's own content lives on, so consumers computing a record's
    * physical page span (eshyra-lpk9) must exclude these entries.
+   *
+   * EXCLUDED (eshyra-o9bd.19.2.2.3.1 F1): a content-search match whose key
+   * equals the `targetKey` of the immediately preceding prose region in
+   * document order — when that preceding region is not itself a
+   * `contentMatch` — is a physical page-break continuation of the SAME
+   * printed prose, not a cross-reference, so `contentMatch` is left unset
+   * for it. Chains propagate: clearing one continuation's flag lets the
+   * NEXT region in the chain match against it in turn (e.g. a magic item's
+   * description spanning three printed pages).
    */
   readonly contentMatch?: boolean;
 }
@@ -433,6 +443,19 @@ function classifyRegionByOwner(
 }
 
 /**
+ * The per-class lead-in sentence's structured-equivalent reason, shared
+ * verbatim by all 12 classes (eshyra-o9bd.19.2.2.3.1 F3): before F3, the 12
+ * per-class "Class Features" headings all collapsed onto the single
+ * `rule:class-features#Class Features` key below because they all resolved
+ * (wrongly) to the same p57 Multiclassing rule record. Now each class chapter's
+ * heading owns its OWN region as `child-of:class:<name>`, so the reason is
+ * generated once per class from `CLASS_CHAPTER_SECTIONS` instead of being
+ * hand-listed 12 times.
+ */
+const CLASS_FEATURES_LEAD_IN_STRUCTURED_EQUIVALENT_REASON =
+  'The per-class lead-in sentence "As a <class>, you gain the following class features." is boilerplate whose content — the class grants these features — is the class record\'s structured features[] and progression advancement data.';
+
+/**
  * Reviewed structured-equivalent regions (eshyra-o9bd.18.9.2): owned prose
  * whose emitted representation is structured data that intentionally does not
  * reproduce the printed sentence flow, so neither full-body nor
@@ -444,8 +467,12 @@ function classifyRegionByOwner(
  */
 export const STRUCTURED_EQUIVALENT_REGIONS: Readonly<Record<string, string>> =
   Object.freeze({
-    'rule:class-features#Class Features':
-      'The per-class lead-in sentence "As a <class>, you gain the following class features." is boilerplate whose content — the class grants these features — is the class record\'s structured features[] and progression advancement data.',
+    ...Object.fromEntries(
+      [...CLASS_CHAPTER_SECTIONS].map((section) => [
+        `class:${section.toLowerCase()}#Class Features`,
+        CLASS_FEATURES_LEAD_IN_STRUCTURED_EQUIVALENT_REASON,
+      ]),
+    ),
     'rule:equipment-packs#Equipment Packs':
       'The bulleted pack list ("Burglar\'s Pack (16 gp). Includes …") is emitted as equipment records: each pack is its own record with structured cost and contents[], verified by the equipment-pack contents gate.',
     'rule:sample-poisons#Sample Poisons':
@@ -823,12 +850,25 @@ function computeEmission(
   };
 }
 
+/**
+ * The (targetKey, contentMatch) of the most recently classified prose region
+ * in document order, threaded into `classifyRegion` so a physical
+ * page-break continuation can be told apart from a genuine cross-reference
+ * (eshyra-o9bd.19.2.2.3.1 F1). `undefined` at the start of the document or
+ * after a region with no `targetKey` (pure structure, ignored, unrepresented).
+ */
+interface PrecedingRegion {
+  readonly targetKey: string | undefined;
+  readonly contentMatch: boolean;
+}
+
 function classifyRegion(
   owner: ActiveOwner | undefined,
   pageStart: number,
   body: string,
   searchableRecords: readonly SearchableRecord[],
   emissionIndex: EmissionIndex,
+  precedingRegion: PrecedingRegion | undefined,
 ): Pick<
   SourceRegionLedgerEntry,
   | 'classification'
@@ -866,16 +906,25 @@ function classifyRegion(
     const ambiguousCandidates = owner?.status.startsWith('ambiguous:')
       ? owner.status.slice('ambiguous:'.length).split('|')
       : [];
+    // A physical page-break continuation of the SAME preceding region's
+    // prose (F1): the preceding region already resolved to this exact key
+    // and was not itself a cross-reference match.
+    const isContinuation =
+      precedingRegion !== undefined &&
+      precedingRegion.targetKey === representedRecordKey &&
+      !precedingRegion.contentMatch;
     // A content match that lands on the SAME key the owner already implies
-    // (or on one of an ambiguous owner's own candidates) is just confirming
-    // genuine physical containment — safe for page-span purposes. A match on
-    // a DIFFERENT, unrelated key is a document-wide cross-reference (e.g. a
-    // spell-list page's names also projected into an unrelated table's rows
-    // far earlier in the document) and must be flagged (eshyra-lpk9's
-    // `contentMatch`) so page-span consumers exclude it.
+    // (or on one of an ambiguous owner's own candidates), or that is a
+    // physical continuation of the preceding region, is safe for page-span
+    // purposes. A match on a DIFFERENT, unrelated key is a document-wide
+    // cross-reference (e.g. a spell-list page's names also projected into an
+    // unrelated table's rows far earlier in the document) and must be
+    // flagged (eshyra-lpk9's `contentMatch`) so page-span consumers exclude
+    // it.
     const isSelfConsistent =
       ownerBased.targetKey === representedRecordKey ||
-      ambiguousCandidates.includes(representedRecordKey);
+      ambiguousCandidates.includes(representedRecordKey) ||
+      isContinuation;
     return {
       classification: `record:${representedRecordKey}`,
       targetKey: representedRecordKey,
@@ -1308,6 +1357,12 @@ export function buildSourceRegionLedger(
   let regionOwner: ActiveOwner | undefined;
   const cellRuns: TableCellRun[] = [];
   let currentCellRun: TableCellRun | undefined;
+  // Threaded into `classifyRegion` so a physical page-break continuation can
+  // be told apart from a genuine cross-reference (F1). Updated after every
+  // classified prose entry, in the same document order those entries are
+  // pushed — including each equipment lead-in segment of a single flushed
+  // region, which are themselves separate regions for this purpose.
+  let precedingRegion: PrecedingRegion | undefined;
 
   const flushRegion = () => {
     if (regionLines.length === 0) return;
@@ -1334,6 +1389,7 @@ export function buildSourceRegionLedger(
         segment.body,
         searchableRecords,
         emissionIndex,
+        precedingRegion,
       );
       entries.push({
         id: `p${first.page}-l${first.lineIndex}-prose${segment.idSuffix}`,
@@ -1349,6 +1405,10 @@ export function buildSourceRegionLedger(
         normalizedCharCount: segment.body.length,
         ...classified,
       });
+      precedingRegion = {
+        targetKey: classified.targetKey,
+        contentMatch: classified.contentMatch === true,
+      };
     }
     regionLines = [];
   };

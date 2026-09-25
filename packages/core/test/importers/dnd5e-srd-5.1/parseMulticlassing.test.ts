@@ -46,15 +46,24 @@ describe('parseMulticlassing', () => {
   const map = parseMulticlassing([MULTICLASSING_PAGE]);
 
   it('parses a single-ability prerequisite (Wizard → Intelligence)', () => {
-    expect(map.get('Wizard')).toEqual(['Intelligence']);
+    expect(map.get('Wizard')).toEqual({
+      abilities: ['Intelligence'],
+      page: 165,
+    });
   });
 
   it('parses an "or" prerequisite preserving order (Fighter → Strength, Dexterity)', () => {
-    expect(map.get('Fighter')).toEqual(['Strength', 'Dexterity']);
+    expect(map.get('Fighter')).toEqual({
+      abilities: ['Strength', 'Dexterity'],
+      page: 165,
+    });
   });
 
   it('parses an "and" prerequisite preserving order (Monk → Dexterity, Wisdom)', () => {
-    expect(map.get('Monk')).toEqual(['Dexterity', 'Wisdom']);
+    expect(map.get('Monk')).toEqual({
+      abilities: ['Dexterity', 'Wisdom'],
+      page: 165,
+    });
   });
 
   it('covers all twelve SRD base classes', () => {
@@ -77,15 +86,36 @@ describe('parseMulticlassing', () => {
   });
 
   it('maps each remaining class to its single key ability', () => {
-    expect(map.get('Barbarian')).toEqual(['Strength']);
-    expect(map.get('Bard')).toEqual(['Charisma']);
-    expect(map.get('Cleric')).toEqual(['Wisdom']);
-    expect(map.get('Druid')).toEqual(['Wisdom']);
-    expect(map.get('Paladin')).toEqual(['Strength', 'Charisma']);
-    expect(map.get('Ranger')).toEqual(['Dexterity', 'Wisdom']);
-    expect(map.get('Rogue')).toEqual(['Dexterity']);
-    expect(map.get('Sorcerer')).toEqual(['Charisma']);
-    expect(map.get('Warlock')).toEqual(['Charisma']);
+    expect(map.get('Barbarian')).toEqual({
+      abilities: ['Strength'],
+      page: 165,
+    });
+    expect(map.get('Bard')).toEqual({ abilities: ['Charisma'], page: 165 });
+    expect(map.get('Cleric')).toEqual({ abilities: ['Wisdom'], page: 165 });
+    expect(map.get('Druid')).toEqual({ abilities: ['Wisdom'], page: 165 });
+    expect(map.get('Paladin')).toEqual({
+      abilities: ['Strength', 'Charisma'],
+      page: 165,
+    });
+    expect(map.get('Ranger')).toEqual({
+      abilities: ['Dexterity', 'Wisdom'],
+      page: 165,
+    });
+    expect(map.get('Rogue')).toEqual({ abilities: ['Dexterity'], page: 165 });
+    expect(map.get('Sorcerer')).toEqual({ abilities: ['Charisma'], page: 165 });
+    expect(map.get('Warlock')).toEqual({ abilities: ['Charisma'], page: 165 });
+  });
+
+  it('reads the source page from the prerequisites row, not a hard-coded constant', () => {
+    // Same fixture shape, on a different page: the recorded page must track
+    // the source, proving F4's page is read, not authored.
+    const otherPageMap = parseMulticlassing([
+      page(999, ['Wizard Intelligence 13']),
+    ]);
+    expect(otherPageMap.get('Wizard')).toEqual({
+      abilities: ['Intelligence'],
+      page: 999,
+    });
   });
 });
 
@@ -113,6 +143,9 @@ describe('parseMulticlassing — fail-safe (no model-authored values)', () => {
         'Fighter Intelligence 13',
       ]),
     ]);
-    expect(map.get('Fighter')).toEqual(['Strength', 'Dexterity']);
+    expect(map.get('Fighter')).toEqual({
+      abilities: ['Strength', 'Dexterity'],
+      page: 165,
+    });
   });
 });

@@ -488,9 +488,11 @@ assertDeclaredAnchorsWellFormed(DECLARED_RECORD_SOURCE_ANCHORS);
 /**
  * Each page's token text in both readings of a line-end hyphen (see
  * HYPHEN_LINE_BREAK), padded with a boundary space on each side so a
- * whole-token search is a plain `includes(' anchor ')`.
+ * whole-token search is a plain `includes(' anchor ')`. Exported so other
+ * source-vs-output gates (e.g. `recordLocatorCompleteness.ts`) reuse the same
+ * page-text normalization instead of re-implementing it.
  */
-function normalizedPageTextByNumber(
+export function normalizedPageTextByNumber(
   pages: readonly PageText[],
 ): ReadonlyMap<number, readonly string[]> {
   const map = new Map<number, readonly string[]>();
@@ -504,7 +506,13 @@ function normalizedPageTextByNumber(
   return map;
 }
 
-function anchorFoundOnAnyPage(
+/**
+ * Whole-token search for `anchor` across the given pages' normalized text.
+ * Exported so other source-vs-output gates (e.g.
+ * `recordLocatorCompleteness.ts`) reuse the same anchor-matching semantics as
+ * this module's own record-name/declared-anchor gate.
+ */
+export function anchorFoundOnAnyPage(
   anchor: string,
   pageNumbers: readonly number[],
   normalizedPages: ReadonlyMap<number, readonly string[]>,

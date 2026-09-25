@@ -219,10 +219,25 @@ function slug(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-function provenanceFor(page: number): RecordProvenance {
+/**
+ * Format a page-number list in the pack's one multi-page locator grammar:
+ * `p. N` for a single page, `pp. N, M, ...` (ascending, deduped) otherwise.
+ * Shared by every field-level `fieldLocators` value (eshyra-o9bd.19.2.2.3.1
+ * F4) as well as record-level provenance, so both stay byte-identical in
+ * shape. `pages` must already be ascending and deduplicated.
+ */
+function formatPagesLocator(pages: readonly number[]): string {
+  return pages.length === 1 ? `p. ${pages[0]}` : `pp. ${pages.join(', ')}`;
+}
+
+function provenanceFor(
+  page: number,
+  fieldLocators?: Readonly<Record<string, string>>,
+): RecordProvenance {
   return {
     sourceRef: SOURCE_URL,
     locator: `p. ${page}`,
+    ...(fieldLocators !== undefined ? { fieldLocators } : {}),
   };
 }
 
@@ -232,36 +247,61 @@ function sourceLabelFor(page: number): string {
 
 function equipmentSourcePages(item: EquipmentExtraction): readonly number[] {
   return [
-    ...new Set(
-      [item.descriptionSourcePage, item.sourcePage].filter(
-        (page): page is number => page !== undefined,
-      ),
-    ),
+    ...new Set([...(item.descriptionSourcePages ?? []), item.sourcePage]),
   ].sort((a, b) => a - b);
 }
 
 function equipmentSourceLabel(item: EquipmentExtraction): string {
-  const pages = equipmentSourcePages(item);
-  return pages.length === 1
-    ? sourceLabelFor(pages[0])
-    : `SRD 5.1 pp. ${pages.join(', ')}`;
+  return `SRD 5.1 ${formatPagesLocator(equipmentSourcePages(item))}`;
+}
+
+/**
+ * Field-level provenance for `equipment.data.capacity` (eshyra-o9bd.19.2.2.3.1
+ * F4): the Container Capacity table row is a DIFFERENT printed source than
+ * the item's own table row (`sourcePage`, folded into the record-level
+ * locator above), so it gets its own `fieldLocators['/capacity']` entry.
+ */
+function equipmentFieldLocators(
+  item: EquipmentExtraction,
+): Readonly<Record<string, string>> | undefined {
+  if (item.capacity === undefined || item.capacitySourcePage === undefined) {
+    return undefined;
+  }
+  return { '/capacity': `p. ${item.capacitySourcePage}` };
 }
 
 function equipmentProvenance(item: EquipmentExtraction): RecordProvenance {
   const pages = equipmentSourcePages(item);
-  return pages.length === 1
-    ? provenanceFor(pages[0])
-    : { sourceRef: SOURCE_URL, locator: `pp. ${pages.join(', ')}` };
+  const fieldLocators = equipmentFieldLocators(item);
+  return {
+    sourceRef: SOURCE_URL,
+    locator: formatPagesLocator(pages),
+    ...(fieldLocators !== undefined ? { fieldLocators } : {}),
+  };
+}
+
+export interface SpellExtractionsToRecordsOptions {
+  readonly allowSyntheticSourceBindings?: true;
 }
 
 export function spellExtractionsToRecords(
   spells: readonly SpellExtraction[],
   classes: ReadonlyMap<string, readonly SpellCasterClass[]>,
-  options: { readonly allowSyntheticSourceBindings?: true } = {},
+  options: SpellExtractionsToRecordsOptions = {},
 ): RulesRecord[] {
   const out: RulesRecord[] = spells.map((spell) => {
     const classList = classes.get(spell.name) ?? [];
     const data = buildSpellData(spell, classList, options);
+    // `provenance.fieldLocators['/classes']` (eshyra-o9bd.19.2.2.3.1 F4) is
+    // NOT set here: it is derived, after the region ledger is built, by
+    // `enrichSpellClassFieldLocatorsFromRegionLedger` in enrichProvenance.ts,
+    // from the SAME `structured-field:spell.data.classes` ledger entries the
+    // `recordLocatorCompleteness.ts` gate checks it against. Computing both
+    // sides of that invariant from one shared source makes them structurally
+    // unable to drift apart — see that function's doc comment for why a
+    // spell-list-LINE-level computation here would disagree with the
+    // ledger's per-region evidence whenever a class/level's printed list
+    // spans a page break.
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'spell',
@@ -741,10 +781,18 @@ export function classExtractionsToRecords(
     // value the block DID carry (a variant/homebrew layout) is more specific
     // and wins; otherwise the prerequisites map fills it; otherwise it stays
     // empty (ADR 0007 — never authored from model knowledge).
+    const indexEntry = primaryAbilityIndex?.get(cls.name);
     const primaryAbilities =
       cls.primaryAbilities.length > 0
         ? cls.primaryAbilities
-        : (primaryAbilityIndex?.get(cls.name) ?? []);
+        : (indexEntry?.abilities ?? []);
+    // Field-level provenance (eshyra-o9bd.19.2.2.3.1 F4): only when the value
+    // actually came from the prerequisites index, never when the class's own
+    // Class Features block already carried it.
+    const fieldLocators =
+      cls.primaryAbilities.length === 0 && indexEntry !== undefined
+        ? { '/primaryAbilities': `p. ${indexEntry.page}` }
+        : undefined;
     const record: RulesRecord = {
       systemId: SYSTEM_ID,
       kind: 'class',
@@ -753,7 +801,7 @@ export function classExtractionsToRecords(
       data: buildClassData(cls, primaryAbilities),
       source: sourceLabelFor(cls.sourcePage),
       license: SRD_5_1_LICENSE,
-      provenance: provenanceFor(cls.sourcePage),
+      provenance: provenanceFor(cls.sourcePage, fieldLocators),
     };
     return record;
   });
