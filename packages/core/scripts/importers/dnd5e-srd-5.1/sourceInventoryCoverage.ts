@@ -1026,8 +1026,13 @@ export function buildSourceCoverageReport(
 // starts enforcing the new coverage.
 // ---------------------------------------------------------------------------
 
-/** The 12 class names; each renders at chapter tier, so it IS the `section`. */
-const CLASS_CHAPTER_SECTIONS: ReadonlySet<string> = new Set([
+/**
+ * The 12 class names; each renders at chapter tier, so it IS the `section`.
+ * Exported so `sourceRegionLedger.ts` can generate its per-class
+ * `STRUCTURED_EQUIVALENT_REGIONS` keys from the same set (eshyra-o9bd.19.2.2.3.1
+ * F3) rather than hand-listing them a second time.
+ */
+export const CLASS_CHAPTER_SECTIONS: ReadonlySet<string> = new Set([
   'Barbarian',
   'Bard',
   'Cleric',
@@ -1497,6 +1502,25 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
       i.section !== null &&
       CLASS_CHAPTER_SECTIONS.has(i.section) &&
       i.structure === 'table-shape',
+  ),
+  // Each class chapter's own "Class Features" heading (opening that chapter's
+  // "As a <class>, you gain the following class features." lead-in) is child
+  // data on THAT class record — eshyra-o9bd.19.2.2.3.1 F3. This is distinct
+  // from the p57 Multiclassing "Class Features" heading (section "Beyond 1st
+  // Level", not a class-chapter section), which is unaffected by this rule and
+  // keeps resolving via unique-normalized-name to `rule:class-features`, the
+  // general multiclassing rule. Before this rule, ALL 13 "Class Features"
+  // headings (the 12 per-class ones plus the p57 one) shared that single
+  // normalized-name match, so every class chapter's own continuation prose
+  // silently collapsed onto the unrelated p57 rule instead of its own class.
+  ...[...CLASS_CHAPTER_SECTIONS].map((section) =>
+    childOfRule(
+      `class:${section.toLowerCase()}`,
+      (i) =>
+        i.section === section &&
+        i.structure === 'heading' &&
+        i.text === 'Class Features',
+    ),
   ),
   // Feature-OPTION subheadings the SRD prints as bold leaves inside a parent
   // feature's body; parseFeatures keeps that text in the parent feature record,

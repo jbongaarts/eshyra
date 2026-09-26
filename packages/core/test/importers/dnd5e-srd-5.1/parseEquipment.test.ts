@@ -669,6 +669,10 @@ describe('parseEquipment — Adventuring Gear', () => {
       cost: '2 gp',
       weight: '5 lb.',
       capacity: '1 cubic foot/30 pounds of gear',
+      // Field-level provenance (eshyra-o9bd.19.2.2.3.1 F4): the page the
+      // Container Capacity ROW itself printed on, independent of the item's
+      // own Adventuring Gear table row page.
+      capacitySourcePage: 69,
     });
   });
 
@@ -676,11 +680,42 @@ describe('parseEquipment — Adventuring Gear', () => {
     expect(byName(gear, 'Acid (vial)')).toMatchObject({
       description:
         'Acid. As an action, you can splash the contents of this vial onto a creature within 5 feet of you. On a hit, the target takes 2d6 acid damage.',
-      descriptionSourcePage: 69,
+      descriptionSourcePages: [69],
     });
     expect(byName(gear, 'Hunting trap')?.description).toContain(
       'DC 13 Dexterity saving throw',
     );
+  });
+
+  it('tracks every page a description spans, not just its lead-in page (eshyra-o9bd.19.2.2.3.1 F2)', () => {
+    // A shared description ("Arcane Focus.") can run past a printed page
+    // break; before F2, only the lead-in page (68 here) was tracked, so a
+    // continuation page like 69 silently vanished from the locator — exactly
+    // the crystal/orb/rod/staff/wand defect this fixture reproduces in
+    // miniature with a single item.
+    const spanning = [
+      page(68, [
+        'Acid. As an action, you can splash the contents of this vial onto a',
+      ]),
+      page(69, [
+        'creature within 5 feet of you. On a hit, the target takes 2d6 acid damage.',
+        'Item',
+        'Acid (vial)',
+        '25 gp 1 lb.',
+        'Equipment Packs',
+      ]),
+    ];
+    const spanningItems = parseEquipment(spanning);
+    const acid = byName(spanningItems, 'Acid (vial)');
+    expect(acid).toMatchObject({
+      category: 'gear',
+      cost: '25 gp',
+      weight: '1 lb.',
+      sourcePage: 69,
+      description:
+        'Acid. As an action, you can splash the contents of this vial onto a creature within 5 feet of you. On a hit, the target takes 2d6 acid damage.',
+    });
+    expect(acid?.descriptionSourcePages).toEqual([68, 69]);
   });
 
   it('throws when names and values disagree in count (extraction drift)', () => {

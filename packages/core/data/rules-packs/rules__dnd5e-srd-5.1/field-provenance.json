@@ -641,7 +641,7 @@
       "kind": "equipment",
       "pointerPrefix": "/capacity",
       "class": "source-derived",
-      "reason": "a container capacity value, parsed from the printed item description."
+      "reason": "a container capacity value, parsed from the printed Container Capacity table row (not the item description)."
     },
     {
       "kind": "equipment",

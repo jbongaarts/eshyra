@@ -143,13 +143,15 @@ describe('SRD equipment mechanics inventory', () => {
         description: string;
       };
       expect(data.description).toContain(from);
+      const lastPage = spec?.pages.at(-1);
       expect(() =>
         equipmentMechanicsFor(
           {
             name: record.name,
             category: data.category,
             sourcePage: spec?.pages[0] ?? 0,
-            descriptionSourcePage: spec?.pages.at(-1),
+            descriptionSourcePages:
+              lastPage === undefined ? undefined : [lastPage],
             description: data.description.replace(from, to),
           },
           key,

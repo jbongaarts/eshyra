@@ -1,7 +1,7 @@
 {
   "summary": {
-    "record": 1445,
-    "childOf": 469,
+    "record": 1433,
+    "childOf": 481,
     "ambiguous": 179,
     "taxonomy": 33,
     "structuredField": 78,
@@ -13766,7 +13766,7 @@
       },
       {
         "normalizedText": "class features",
-        "category": "auto-collapsed",
+        "category": "mixed-resolution",
         "occurrences": [
           {
             "page": 8,
@@ -13776,13 +13776,12 @@
             "section": "Barbarian",
             "context": "Barbarian",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:barbarian",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:barbarian"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:barbarian"
           },
           {
             "page": 11,
@@ -13792,13 +13791,12 @@
             "section": "Bard",
             "context": "Bard",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:bard",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:bard"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:bard"
           },
           {
             "page": 15,
@@ -13808,13 +13806,12 @@
             "section": "Cleric",
             "context": "Cleric",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:cleric",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:cleric"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:cleric"
           },
           {
             "page": 19,
@@ -13824,13 +13821,12 @@
             "section": "Druid",
             "context": "Druid",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:druid",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:druid"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:druid"
           },
           {
             "page": 24,
@@ -13840,13 +13836,12 @@
             "section": "Fighter",
             "context": "Fighter",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:fighter",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:fighter"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:fighter"
           },
           {
             "page": 26,
@@ -13856,13 +13851,12 @@
             "section": "Monk",
             "context": "Monk",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:monk",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:monk"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:monk"
           },
           {
             "page": 30,
@@ -13872,13 +13866,12 @@
             "section": "Paladin",
             "context": "Paladin",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:paladin",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:paladin"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:paladin"
           },
           {
             "page": 35,
@@ -13888,13 +13881,12 @@
             "section": "Ranger",
             "context": "Ranger",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:ranger",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:ranger"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:ranger"
           },
           {
             "page": 39,
@@ -13904,13 +13896,12 @@
             "section": "Rogue",
             "context": "Rogue",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:rogue",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:rogue"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:rogue"
           },
           {
             "page": 42,
@@ -13920,13 +13911,12 @@
             "section": "Sorcerer",
             "context": "Sorcerer",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:sorcerer",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:sorcerer"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:sorcerer"
           },
           {
             "page": 46,
@@ -13936,13 +13926,12 @@
             "section": "Warlock",
             "context": "Warlock",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:warlock",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:warlock"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:warlock"
           },
           {
             "page": 52,
@@ -13952,13 +13941,12 @@
             "section": "Wizard",
             "context": "Wizard",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:wizard",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:wizard"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:wizard"
           },
           {
             "page": 57,
@@ -13979,10 +13967,22 @@
         ],
         "candidateKeys": [],
         "ownerKeys": [
+          "class:barbarian",
+          "class:bard",
+          "class:cleric",
+          "class:druid",
+          "class:fighter",
+          "class:monk",
+          "class:paladin",
+          "class:ranger",
+          "class:rogue",
+          "class:sorcerer",
+          "class:warlock",
+          "class:wizard",
           "rule:class-features"
         ],
         "reasonCodes": [
-          "auto-collapsed"
+          "mixed-explicit-and-automatic"
         ]
       },
       {
@@ -26333,7 +26333,7 @@
       },
       {
         "normalizedText": "class features",
-        "category": "auto-collapsed",
+        "category": "mixed-resolution",
         "occurrences": [
           {
             "page": 8,
@@ -26343,13 +26343,12 @@
             "section": "Barbarian",
             "context": "Barbarian",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:barbarian",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:barbarian"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:barbarian"
           },
           {
             "page": 11,
@@ -26359,13 +26358,12 @@
             "section": "Bard",
             "context": "Bard",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:bard",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:bard"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:bard"
           },
           {
             "page": 15,
@@ -26375,13 +26373,12 @@
             "section": "Cleric",
             "context": "Cleric",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:cleric",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:cleric"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:cleric"
           },
           {
             "page": 19,
@@ -26391,13 +26388,12 @@
             "section": "Druid",
             "context": "Druid",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:druid",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:druid"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:druid"
           },
           {
             "page": 24,
@@ -26407,13 +26403,12 @@
             "section": "Fighter",
             "context": "Fighter",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:fighter",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:fighter"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:fighter"
           },
           {
             "page": 26,
@@ -26423,13 +26418,12 @@
             "section": "Monk",
             "context": "Monk",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:monk",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:monk"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:monk"
           },
           {
             "page": 30,
@@ -26439,13 +26433,12 @@
             "section": "Paladin",
             "context": "Paladin",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:paladin",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:paladin"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:paladin"
           },
           {
             "page": 35,
@@ -26455,13 +26448,12 @@
             "section": "Ranger",
             "context": "Ranger",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:ranger",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:ranger"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:ranger"
           },
           {
             "page": 39,
@@ -26471,13 +26463,12 @@
             "section": "Rogue",
             "context": "Rogue",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:rogue",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:rogue"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:rogue"
           },
           {
             "page": 42,
@@ -26487,13 +26478,12 @@
             "section": "Sorcerer",
             "context": "Sorcerer",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:sorcerer",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:sorcerer"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:sorcerer"
           },
           {
             "page": 46,
@@ -26503,13 +26493,12 @@
             "section": "Warlock",
             "context": "Warlock",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:warlock",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:warlock"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:warlock"
           },
           {
             "page": 52,
@@ -26519,13 +26508,12 @@
             "section": "Wizard",
             "context": "Wizard",
             "text": "Class Features",
-            "status": "record:rule:class-features",
+            "status": "child-of:class:wizard",
             "resolution": {
-              "kind": "unique-normalized-name",
-              "normalizedName": "class features",
-              "ownerKey": "rule:class-features"
+              "kind": "curated-child-of",
+              "ownerKey": "class:wizard"
             },
-            "ownerKey": "rule:class-features"
+            "ownerKey": "class:wizard"
           },
           {
             "page": 57,
@@ -26546,10 +26534,22 @@
         ],
         "candidateKeys": [],
         "ownerKeys": [
+          "class:barbarian",
+          "class:bard",
+          "class:cleric",
+          "class:druid",
+          "class:fighter",
+          "class:monk",
+          "class:paladin",
+          "class:ranger",
+          "class:rogue",
+          "class:sorcerer",
+          "class:warlock",
+          "class:wizard",
           "rule:class-features"
         ],
         "reasonCodes": [
-          "auto-collapsed"
+          "mixed-explicit-and-automatic"
         ]
       },
       {
@@ -37516,11 +37516,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Barbarian",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:barbarian",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:barbarian"
       }
     },
     {
@@ -37900,11 +37899,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Bard",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:bard",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:bard"
       }
     },
     {
@@ -38342,11 +38340,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Cleric",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:cleric",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:cleric"
       }
     },
     {
@@ -38788,11 +38785,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Druid",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:druid",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:druid"
       }
     },
     {
@@ -39338,11 +39334,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Fighter",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:fighter",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:fighter"
       }
     },
     {
@@ -39730,11 +39725,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Monk",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:monk",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:monk"
       }
     },
     {
@@ -40256,11 +40250,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Paladin",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:paladin",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:paladin"
       }
     },
     {
@@ -40849,11 +40842,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Ranger",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:ranger",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:ranger"
       }
     },
     {
@@ -41360,11 +41352,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Rogue",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:rogue",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:rogue"
       }
     },
     {
@@ -41753,11 +41744,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Sorcerer",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:sorcerer",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:sorcerer"
       }
     },
     {
@@ -42294,11 +42284,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Warlock",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:warlock",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:warlock"
       }
     },
     {
@@ -43177,11 +43166,10 @@
       "structure": "heading",
       "text": "Class Features",
       "section": "Wizard",
-      "status": "record:rule:class-features",
+      "status": "child-of:class:wizard",
       "resolution": {
-        "kind": "unique-normalized-name",
-        "normalizedName": "class features",
-        "ownerKey": "rule:class-features"
+        "kind": "curated-child-of",
+        "ownerKey": "class:wizard"
       }
     },
     {

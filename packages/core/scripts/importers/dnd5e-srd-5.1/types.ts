@@ -106,16 +106,29 @@ export type SpellClassIndex = ReadonlyMap<
 >;
 
 /**
+ * One base class's primary/key abilities as read from the SRD 5.1
+ * Multiclassing "Prerequisites" listing, plus the source page that row
+ * printed on (eshyra-o9bd.19.2.2.3.1 F4: field-level provenance for
+ * `class.data.primaryAbilities`). The ability list preserves source order (so
+ * "Strength 13 or Dexterity 13" yields `['Strength', 'Dexterity']`).
+ */
+export interface ClassPrimaryAbilityEntry {
+  readonly abilities: readonly string[];
+  readonly page: number;
+}
+
+/**
  * Map from a base-class name (e.g. "Fighter") to its primary/key abilities, as
  * read from the SRD 5.1 Multiclassing "Prerequisites" listing
  * (loreweaver-0m9.5.19). Mirrors how `SpellClassIndex` carries the spell→class
  * cross-reference parsed from a separate slice: the SRD's Class Features block
  * does not print a per-class primary-ability line (ADR 0007), so this listing
  * is the canonical source the class emitter merges into `data.primaryAbilities`.
- * The ability list preserves source order (so "Strength 13 or Dexterity 13"
- * yields `['Strength', 'Dexterity']`).
  */
-export type ClassPrimaryAbilityIndex = ReadonlyMap<string, readonly string[]>;
+export type ClassPrimaryAbilityIndex = ReadonlyMap<
+  string,
+  ClassPrimaryAbilityEntry
+>;
 
 /** One level of the exhaustion condition (levels 1–6). */
 export interface ExhaustionLevel {
@@ -377,14 +390,26 @@ export interface EquipmentExtraction {
    * Attached to the matching `gear` record from the Container Capacity table.
    */
   readonly capacity?: string;
+  /**
+   * Source page of the Container Capacity TABLE ROW `capacity` was read from
+   * (eshyra-o9bd.19.2.2.3.1 F4) — field-level provenance, since that page can
+   * differ from the item's own `sourcePage` (its Adventuring Gear table row).
+   */
+  readonly capacitySourcePage?: number;
   /** Mount/vehicle speed cell, verbatim: "50 ft." (mounts) or "4 mph" (ships). */
   readonly speed?: string;
   /** Mount carrying-capacity cell, verbatim: "480 lb.". */
   readonly carryingCapacity?: string;
   /** Equipment-pack bundled-contents sentence, verbatim. */
   readonly description?: string;
-  /** Source page where `description` begins when it differs from the table row. */
-  readonly descriptionSourcePage?: number;
+  /**
+   * Every source page `description`'s lines were read from, ascending and
+   * deduped (eshyra-o9bd.19.2.2.3.1 F2) — not just the page its lead-in
+   * started on. A shared description ("Arcane Focus.") can run past a
+   * printed page break; tracking only the lead-in page understated the
+   * locator for every item that shares it.
+   */
+  readonly descriptionSourcePages?: readonly number[];
   /** 1-based page in the source PDF where the entry's row appears. */
   readonly sourcePage: number;
 }

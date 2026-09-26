@@ -603,6 +603,36 @@ export function parseSpellClassLists(
  * index keep an empty `classes` array on the eventual record; callers can
  * decide whether to warn.
  */
+/**
+ * Spell name -> the ascending, deduplicated pages its own spell-list LINES
+ * print on (eshyra-o9bd.19.2.2.3): field-level provenance for
+ * `spell.data.classes`. Keyed by the emitted spell name, resolved with the same
+ * normalization as `applyClassLists`. A (class, level) group that spans a page
+ * break contributes only the page each member is actually printed on.
+ */
+export function spellClassListPagesBySpellName(
+  spells: readonly SpellExtraction[],
+  entries: readonly SpellClassLevelEntry[],
+): ReadonlyMap<string, readonly number[]> {
+  const pagesByNormalizedName = new Map<string, Set<number>>();
+  for (const entry of entries) {
+    const normalizedName = normalizeSpellListName(entry.spellName);
+    const bucket = pagesByNormalizedName.get(normalizedName) ?? new Set();
+    bucket.add(entry.sourcePage);
+    pagesByNormalizedName.set(normalizedName, bucket);
+  }
+  const result = new Map<string, readonly number[]>();
+  for (const spell of spells) {
+    const pages = pagesByNormalizedName.get(normalizeSpellListName(spell.name));
+    if (pages === undefined) continue;
+    result.set(
+      spell.name,
+      [...pages].sort((a, b) => a - b),
+    );
+  }
+  return result;
+}
+
 export function applyClassLists(
   spells: readonly SpellExtraction[],
   index: SpellClassIndex,

@@ -7780,6 +7780,70 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
     });
   });
 
+  describe('record and field locators (eshyra-o9bd.19.2.2.3)', () => {
+    // Source-verified examples (pdftotext -layout on the vendored PDF). The
+    // corpus-wide invariant is the importer's recordLocatorCompleteness gate,
+    // run by verify:dnd5e-srd-pack; these pin what the committed pack ships.
+    const byKey = new Map(pack.records.map((r) => [r.key, r] as const));
+    const provenanceOf = (key: string) => {
+      const record = byKey.get(key);
+      expect(record, key).toBeDefined();
+      return record?.provenance;
+    };
+
+    it('cites the page a record body continues onto', () => {
+      expect(provenanceOf('feature:druid:wild-shape')?.locator).toBe(
+        'pp. 20, 21',
+      );
+      expect(provenanceOf('spell:scrying')?.locator).toBe('pp. 176, 177');
+      expect(provenanceOf('magic-item:deck-of-many-things')?.locator).toBe(
+        'pp. 216, 217, 218',
+      );
+    });
+
+    it('cites both pages of the shared Arcane Focus description on every member', () => {
+      for (const key of [
+        'equipment:crystal',
+        'equipment:orb',
+        'equipment:rod',
+        'equipment:staff',
+        'equipment:wand',
+      ]) {
+        expect(provenanceOf(key)?.locator, key).toBe('pp. 66, 67, 69');
+      }
+    });
+
+    it('keeps rule:class-features on its own p57 heading', () => {
+      expect(provenanceOf('rule:class-features')?.locator).toBe('p. 57');
+    });
+
+    it('cites the Container Capacity row page for capacity', () => {
+      expect(provenanceOf('equipment:chest')?.fieldLocators).toEqual({
+        '/capacity': 'p. 69',
+      });
+      expect(provenanceOf('equipment:vial')?.fieldLocators).toEqual({
+        '/capacity': 'p. 70',
+      });
+    });
+
+    it('cites the Multiclassing Prerequisites page for primary abilities', () => {
+      expect(provenanceOf('class:barbarian')?.fieldLocators).toEqual({
+        '/primaryAbilities': 'p. 56',
+      });
+    });
+
+    it('cites only the spell-list pages that print the spell', () => {
+      expect(provenanceOf('spell:fireball')?.fieldLocators).toEqual({
+        '/classes': 'pp. 110, 112',
+      });
+      // The Wizard 5th-level list runs from p112 onto p113; Arcane Hand
+      // prints only on p113.
+      expect(provenanceOf('spell:arcane-hand')?.fieldLocators).toEqual({
+        '/classes': 'p. 113',
+      });
+    });
+  });
+
   describe('hidden-Unicode hygiene', () => {
     // Read the committed records.json verbatim (not the parsed pack) so the
     // assertion covers the exact bytes that ship — the durable artifact a

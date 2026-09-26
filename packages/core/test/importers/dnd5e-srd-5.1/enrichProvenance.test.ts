@@ -170,9 +170,12 @@ describe('enrichProvenanceFromRegionLedger', () => {
   });
 
   it('drops a ledger page far from the record start (bare heading-name collision), not just far-away content matches', () => {
-    // Mirrors rule:class-features: the "Class Features" heading auto-matches
-    // one shared record from 13 different class chapters, only one of which
-    // (its own starting page) is genuinely that record's content.
+    // A same-named heading auto-matching one unrelated shared record from a
+    // page far outside the record's own physical location — e.g. the
+    // now-fixed rule:class-features defect (eshyra-o9bd.19.2.2.3.1 F3), where
+    // 12 different class chapters' own "Class Features" headings used to
+    // collapse onto the p57 Multiclassing rule before each was reowned to its
+    // own class record — must not widen the locator to cover the far page.
     const [enriched] = enrichProvenanceFromRegionLedger(
       [record('rule:class-features', 'p. 57')],
       ledger([
@@ -261,12 +264,18 @@ describe('committed SRD 5.1 pack — provenance matches the committed region led
     const byKey = new Map(pack.records.map((r) => [r.key, r] as const));
     const expected = {
       'feature:warlock:eldritch-invocations': 'pp. 47, 48, 49, 50',
-      'feature:druid:wild-shape': 'p. 20',
-      'feature:sorcerer:font-of-magic': 'p. 43',
-      'spell:scrying': 'p. 176',
-      'rule:half-dragon-template': 'p. 320',
-      'rule:hit-points': 'p. 255',
-      'equipment:crystal': 'pp. 66, 69',
+      // The next six locators widened under eshyra-o9bd.19.2.2.3.1 F1/F2: the
+      // ledger continuation fix (F1) now correctly folds each record's own
+      // continuation page into its locator instead of dropping it as a
+      // mis-flagged content match, and the equipment description page-span
+      // fix (F2) now tracks every page a shared description ("Arcane
+      // Focus.") actually spans instead of only its lead-in page.
+      'feature:druid:wild-shape': 'pp. 20, 21',
+      'feature:sorcerer:font-of-magic': 'pp. 43, 44',
+      'spell:scrying': 'pp. 176, 177',
+      'rule:half-dragon-template': 'pp. 320, 321',
+      'rule:hit-points': 'pp. 255, 256',
+      'equipment:crystal': 'pp. 66, 67, 69',
     } as const;
     for (const [key, locator] of Object.entries(expected)) {
       expect(byKey.get(key)?.provenance.locator, key).toBe(locator);

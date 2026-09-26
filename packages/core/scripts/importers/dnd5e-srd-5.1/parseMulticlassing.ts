@@ -80,17 +80,20 @@ function extractAbilities(text: string): string[] {
 
 /**
  * Parse the Multiclassing prerequisites listing from the narrowed
- * Multiclassing-section `PageText[]`. Returns a class-name → ability-list map.
- * Classes with no prerequisites row in the slice are simply absent (the emitter
- * leaves their `primaryAbilities` empty per ADR 0007). Returns an empty map when
- * the slice carries no recognizable rows.
+ * Multiclassing-section `PageText[]`. Returns a class-name → (ability-list,
+ * source page) map. Classes with no prerequisites row in the slice are simply
+ * absent (the emitter leaves their `primaryAbilities` empty per ADR 0007).
+ * Returns an empty map when the slice carries no recognizable rows. The
+ * source page (eshyra-o9bd.19.2.2.3.1 F4) is field-level provenance for
+ * `class.data.primaryAbilities` — every row in the SRD 5.1 corpus prints on
+ * p56, but the page is read from the source, never hard-coded.
  */
 export function parseMulticlassing(
   pages: readonly PageText[],
 ): ClassPrimaryAbilityIndex {
-  const map = new Map<string, string[]>();
-  for (const page of pages) {
-    for (const raw of page.lines) {
+  const map = new Map<string, { abilities: string[]; page: number }>();
+  for (const pageText of pages) {
+    for (const raw of pageText.lines) {
       const line = normalizeLine(raw);
       const className = BASE_CLASS_NAMES.find(
         (name) => line === name || line.startsWith(`${name} `),
@@ -105,7 +108,7 @@ export function parseMulticlassing(
       if (!/\d/.test(rest)) continue;
       const abilities = extractAbilities(rest);
       if (abilities.length === 0) continue;
-      map.set(className, abilities);
+      map.set(className, { abilities, page: pageText.pageNumber });
     }
   }
   return map;

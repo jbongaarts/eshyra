@@ -321,7 +321,7 @@ function activeDescriptionIsDangling(
   currentNames: readonly string[],
   descriptions: ReadonlyMap<
     string,
-    { readonly page: number; readonly parts: string[] }
+    { readonly pages: number[]; readonly parts: string[] }
   >,
 ): boolean {
   return currentNames.some((name) => {
@@ -373,6 +373,30 @@ function attachEquipmentGroups(
   });
 }
 
+/**
+ * Append one printed line (and its page) to a description already being
+ * accumulated for `name`, tracking every page a line came from — not just the
+ * page the description's lead-in started on (eshyra-o9bd.19.2.2.3.1 F2). A
+ * shared description ("Arcane Focus.") can run past a printed page break, and
+ * losing the continuation page understated the SRD's crystal/orb/rod/staff/
+ * wand locators by exactly the page their description text actually
+ * continues onto.
+ */
+function pushDescriptionLine(
+  descriptions: Map<
+    string,
+    { readonly pages: number[]; readonly parts: string[] }
+  >,
+  name: string,
+  line: string,
+  page: number,
+): void {
+  const entry = descriptions.get(name);
+  if (entry === undefined) return;
+  entry.parts.push(line);
+  entry.pages.push(page);
+}
+
 function attachDescriptions(
   items: readonly EquipmentExtraction[],
   flat: readonly FlatLine[],
@@ -391,7 +415,7 @@ function attachDescriptions(
 
   const descriptions = new Map<
     string,
-    { readonly page: number; readonly parts: string[] }
+    { readonly pages: number[]; readonly parts: string[] }
   >();
   let currentNames: readonly string[] = [];
   for (const { line, page, height } of flat) {
@@ -411,20 +435,20 @@ function attachDescriptions(
       const names = targets.get(normalizeDescriptionName(leadIn[1]));
       if (names !== undefined && startsWithLowercase(leadIn[1])) {
         for (const name of currentNames) {
-          descriptions.get(name)?.parts.push(line);
+          pushDescriptionLine(descriptions, name, line, page);
         }
         continue;
       }
       if (names !== undefined) {
         currentNames = names;
         for (const name of names) {
-          descriptions.set(name, { page, parts: [line] });
+          descriptions.set(name, { pages: [page], parts: [line] });
         }
         continue;
       }
     }
     for (const name of currentNames) {
-      descriptions.get(name)?.parts.push(line);
+      pushDescriptionLine(descriptions, name, line, page);
     }
   }
 
@@ -434,7 +458,9 @@ function attachDescriptions(
     return {
       ...item,
       description: normalize(description.parts.join(' ')),
-      descriptionSourcePage: description.page,
+      descriptionSourcePages: [...new Set(description.pages)].sort(
+        (a, b) => a - b,
+      ),
     };
   });
 }
@@ -824,12 +850,20 @@ function collectGear(flat: readonly FlatLine[]): EquipmentExtraction[] {
 
   const leftValues: GearLeftValue[] = [];
   const rightRows: EquipmentExtraction[] = [];
-  const capacities = new Map<string, string>();
+  // Page tracking (eshyra-o9bd.19.2.2.3.1 F4): the Container Capacity value
+  // is field-level provenance for `capacity`, cited separately from the
+  // gear record's own `sourcePage` — the capacity cell comes from a
+  // different printed row (the Container Capacity table) than the item's own
+  // Adventuring Gear table row.
+  const capacities = new Map<
+    string,
+    { readonly capacity: string; readonly page: number }
+  >();
   let backpackStrapFootnote:
-    | { readonly text: string; readonly page: number }
+    | { readonly text: string; readonly pages: readonly number[] }
     | undefined;
   let backpackStrapFootnoteParts:
-    | { readonly parts: string[]; readonly page: number }
+    | { readonly parts: string[]; readonly pages: number[] }
     | undefined;
   for (let j = i; j < regionEnd; j++) {
     const { line, page } = flat[j];
@@ -873,13 +907,13 @@ function collectGear(flat: readonly FlatLine[]): EquipmentExtraction[] {
     if (container !== null) {
       const name = container[1].trim();
       const resolved = CONTAINER_NAME_ALIASES.get(name) ?? name;
-      capacities.set(resolved, normalize(container[2]));
+      capacities.set(resolved, { capacity: normalize(container[2]), page });
       continue;
     }
     if (BACKPACK_STRAP_FOOTNOTE.test(rest)) {
       backpackStrapFootnoteParts = {
         parts: [rest.replace(/^\*\s*/, '')],
-        page,
+        pages: [page],
       };
       continue;
     }
@@ -888,9 +922,12 @@ function collectGear(flat: readonly FlatLine[]): EquipmentExtraction[] {
       BACKPACK_STRAP_FOOTNOTE_END.test(rest)
     ) {
       backpackStrapFootnoteParts.parts.push(rest);
+      backpackStrapFootnoteParts.pages.push(page);
       backpackStrapFootnote = {
         text: normalize(backpackStrapFootnoteParts.parts.join(' ')),
-        page: backpackStrapFootnoteParts.page,
+        pages: [...new Set(backpackStrapFootnoteParts.pages)].sort(
+          (a, b) => a - b,
+        ),
       };
       backpackStrapFootnoteParts = undefined;
     }
@@ -919,12 +956,16 @@ function collectGear(flat: readonly FlatLine[]): EquipmentExtraction[] {
 
   // Attach capacities; every Container Capacity row must match a gear item.
   const byName = new Map(gear.map((g, idx) => [g.name, idx] as const));
-  for (const [name, capacity] of capacities) {
+  for (const [name, entry] of capacities) {
     const idx = byName.get(name);
     if (idx === undefined) {
       throw new ContainerCapacityError(name);
     }
-    gear[idx] = { ...gear[idx], capacity };
+    gear[idx] = {
+      ...gear[idx],
+      capacity: entry.capacity,
+      capacitySourcePage: entry.page,
+    };
   }
 
   if (backpackStrapFootnote !== undefined) {
@@ -935,7 +976,7 @@ function collectGear(flat: readonly FlatLine[]): EquipmentExtraction[] {
     gear[idx] = {
       ...gear[idx],
       description: backpackStrapFootnote.text,
-      descriptionSourcePage: backpackStrapFootnote.page,
+      descriptionSourcePages: backpackStrapFootnote.pages,
     };
   }
 

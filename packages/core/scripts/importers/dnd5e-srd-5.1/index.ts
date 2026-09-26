@@ -80,12 +80,14 @@ import {
   parseSpellClassLevelLists,
   parseSpellClassLists,
   parseSpells,
+  spellClassListPagesBySpellName,
 } from './parseSpells.js';
 import { parseStatBlocks } from './parseStatBlocks.js';
 import { parseSubclasses } from './parseSubclasses.js';
 import { parseSubclassOverviews } from './parseSubclassOverviews.js';
 import { parseTables } from './parseTables.js';
 import { parseTraps } from './parseTraps.js';
+import { assertRecordLocatorCompleteness } from './recordLocatorCompleteness.js';
 import { assertRecordsAnchoredInSource } from './recordSourceAnchors.js';
 import {
   type SectionAnchorOptions,
@@ -2730,6 +2732,14 @@ export async function runImporter(
   const spells = parseSpells(spellDescriptionPages);
   const classIndex = parseSpellClassLists(spellListPages);
   const { classes: spellClasses } = applyClassLists(spells, classIndex);
+  // Field-level provenance for spell.data.classes (eshyra-o9bd.19.2.2.3): the
+  // page each spell's own list line prints on, never its whole (class, level)
+  // group's page span.
+  const spellListEntries = parseSpellClassLevelLists(spellListPages);
+  const spellClassListPages = spellClassListPagesBySpellName(
+    spells,
+    spellListEntries,
+  );
   // Throws SectionNotFoundError if the monsters start OR end anchor doesn't
   // match — creature is an implemented kind, so fail closed rather than emit a
   // pack without creatures or let trailing content bleed in (the monsters
@@ -3538,6 +3548,7 @@ export async function runImporter(
     spells,
     classIndex,
     spellClasses,
+    spellClassListPages,
     primaryAbilityIndex,
     // Monsters + Appendix MM-A + Appendix MM-B NPCs all emit under the
     // `creature` kind; `emit.ts` sorts by key, so concatenation order does not
@@ -3591,7 +3602,6 @@ export async function runImporter(
     | undefined;
   if (input.sourceCoverageRules !== undefined) {
     const inventory = buildSourceInventory(pages);
-    const spellListEntries = parseSpellClassLevelLists(spellListPages);
     const coverageRules = [
       ...input.sourceCoverageRules,
       ...spellListStructuredFieldRules(spellListEntries, pack.records),
@@ -3624,6 +3634,14 @@ export async function runImporter(
       ...pack,
       records: enrichProvenanceFromRegionLedger(pack.records, regionLedger),
     };
+    // Record/field locator completeness gate (eshyra-o9bd.19.2.2.3): every
+    // page the region ledger attributes to a record — and every field-level
+    // source (spell class-list membership, equipment container capacity,
+    // class primary abilities) — is verified against the FINAL, enriched
+    // provenance above. See recordLocatorCompleteness.ts for the invariant.
+    assertRecordLocatorCompleteness(pack.records, regionLedger, pages, {
+      requireComplete: input.assertDeclarationsAreLive === true,
+    });
     // Class spell-list parity gate (eshyra-erf5.2): the source-coverage gate
     // above only proves the spell-list PAGES are structurally accounted for
     // (mostly via the `spell-list-header` ignore), not that the emitted

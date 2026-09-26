@@ -1,3 +1,4 @@
+import { resolveJsonPointer } from './jsonPointer.js';
 import { validateRecordKindSchema } from './kindSchemas.js';
 import type {
   CompatibleBaseSystem,
@@ -147,6 +148,47 @@ function source(value: unknown): RulesPackSource {
   };
 }
 
+// Field-locator value grammar (eshyra-o9bd.19.2.2.3.1 F4): `p. N` or
+// `pp. N, M, ...`, strictly ascending. Deliberately narrower than the record
+// `locator` field's grammar (no `pp. N-M` dash range) — see the doc comment
+// on `RecordProvenance.fieldLocators` in `types.ts`.
+const FIELD_LOCATOR_SINGLE_PAGE = /^p\. (\d+)$/;
+const FIELD_LOCATOR_PAGE_LIST = /^pp\. (\d+(?:, \d+)+)$/;
+
+function isAscendingPageList(pages: readonly number[]): boolean {
+  return pages.every((page, i) => i === 0 || page > pages[i - 1]);
+}
+
+function fieldLocatorValue(value: unknown, path: string): string {
+  const locator = str(value, path);
+  const single = FIELD_LOCATOR_SINGLE_PAGE.exec(locator);
+  if (single !== null) return locator;
+  const list = FIELD_LOCATOR_PAGE_LIST.exec(locator);
+  if (list !== null && isAscendingPageList(list[1].split(', ').map(Number))) {
+    return locator;
+  }
+  throw new RulesPackError(
+    `${path} must match the field-locator grammar "p. N" or "pp. N, M, ..." (ascending, deduplicated page numbers), got ${JSON.stringify(locator)}`,
+  );
+}
+
+function fieldLocators(
+  value: unknown,
+  path: string,
+): Readonly<Record<string, string>> {
+  const o = obj(value, path);
+  const result: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(o)) {
+    if (!key.startsWith('/')) {
+      throw new RulesPackError(
+        `${path} key ${JSON.stringify(key)} must be a JSON Pointer starting with "/"`,
+      );
+    }
+    result[key] = fieldLocatorValue(raw, `${path}[${JSON.stringify(key)}]`);
+  }
+  return result;
+}
+
 function provenance(value: unknown, path: string): RecordProvenance {
   const o = obj(value, path);
   return {
@@ -155,6 +197,14 @@ function provenance(value: unknown, path: string): RecordProvenance {
       ? {}
       : { locator: str(o.locator, `${path}.locator`) }),
     ...(o.note === undefined ? {} : { note: str(o.note, `${path}.note`) }),
+    ...(o.fieldLocators === undefined
+      ? {}
+      : {
+          fieldLocators: fieldLocators(
+            o.fieldLocators,
+            `${path}.fieldLocators`,
+          ),
+        }),
   };
 }
 
@@ -203,15 +253,26 @@ function meta(value: unknown): RulesPackMeta {
 function record(value: unknown, i: number): RulesRecord {
   const path = `records[${i}]`;
   const o = obj(value, path);
+  const data = required(o.data, `${path}.data`);
+  const recordProvenance = provenance(o.provenance, `${path}.provenance`);
+  if (recordProvenance.fieldLocators !== undefined) {
+    for (const pointer of Object.keys(recordProvenance.fieldLocators)) {
+      if (!resolveJsonPointer(data, pointer).found) {
+        throw new RulesPackError(
+          `${path}.provenance.fieldLocators has pointer ${JSON.stringify(pointer)}, which does not resolve to a value in ${path}.data`,
+        );
+      }
+    }
+  }
   return {
     systemId: str(o.systemId, `${path}.systemId`),
     kind: oneOf(o.kind, `${path}.kind`, RULES_RECORD_KINDS),
     key: str(o.key, `${path}.key`),
     name: str(o.name, `${path}.name`),
-    data: required(o.data, `${path}.data`),
+    data,
     source: str(o.source, `${path}.source`),
     license: license(o.license, `${path}.license`),
-    provenance: provenance(o.provenance, `${path}.provenance`),
+    provenance: recordProvenance,
     ...(o.overrides === undefined
       ? {}
       : { overrides: strArray(o.overrides, `${path}.overrides`) }),
