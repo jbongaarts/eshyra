@@ -654,13 +654,15 @@ caption is a `table-shape` item of its own.
 
 **Coverage** (`sourceInventoryCoverage.ts`): every inventory item resolves to
 exactly one status — explicit curated record mapping first, contextual
-stat-block ownership, unique-name auto-match, then the remaining curated
-`SRD_5_1_COVERAGE_RULES` (first match wins), then an `ambiguous` status for
-multi-record name collisions, then a document-structure default for unmatched
-chapter/section tiers, else `unaccounted`, which makes `runImporter` throw
-before writing anything. Ambiguous entries remain in the artifact and do not
-count as covered records, so `unaccounted: 0` cannot silently claim that an
-arbitrary collision winner proved coverage. The
+stat-block ownership, remaining curated `SRD_5_1_COVERAGE_RULES` (first match
+wins), and name auto-match. A multi-record name match applies cumulative
+structure, class-chapter, and page-locality filters; the first filter leaving
+one candidate is recorded as `structural-normalized-name`. Remaining
+ambiguities and non-local automatic owners fail the complete real import with
+the source coordinates and a requirement for a structural or curated owner
+rule. Fixture imports keep the relaxed behavior. Chapter/section defaults then
+handle unmatched document structure; other unmatched entries are
+`unaccounted`, which makes `runImporter` throw before writing anything. The
 gate is opt-in per run (`RunImporterInput.sourceCoverageRules`) because
 fixture PDFs render at one body size and carry no tier signal; the CLI and
 `verify:dnd5e-srd-pack` always pass the curated rules.

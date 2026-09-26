@@ -695,7 +695,6 @@
       "normalizedCharCount": 191,
       "classification": "child-of:class:barbarian",
       "targetKey": "class:barbarian",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -718,7 +717,6 @@
       "normalizedCharCount": 231,
       "classification": "child-of:class:barbarian",
       "targetKey": "class:barbarian",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -1185,7 +1183,6 @@
       "normalizedCharCount": 178,
       "classification": "child-of:class:bard",
       "targetKey": "class:bard",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -1208,7 +1205,6 @@
       "normalizedCharCount": 18,
       "classification": "child-of:class:bard",
       "targetKey": "class:bard",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -1787,7 +1783,6 @@
       "normalizedCharCount": 182,
       "classification": "child-of:class:cleric",
       "targetKey": "class:cleric",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -1810,7 +1805,6 @@
       "normalizedCharCount": 65,
       "classification": "child-of:class:cleric",
       "targetKey": "class:cleric",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -2393,7 +2387,6 @@
       "normalizedCharCount": 180,
       "classification": "child-of:class:druid",
       "targetKey": "class:druid",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -2416,7 +2409,6 @@
       "normalizedCharCount": 99,
       "classification": "child-of:class:druid",
       "targetKey": "class:druid",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -3087,7 +3079,6 @@
       "normalizedCharCount": 187,
       "classification": "child-of:class:fighter",
       "targetKey": "class:fighter",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -3110,7 +3101,6 @@
       "normalizedCharCount": 244,
       "classification": "child-of:class:fighter",
       "targetKey": "class:fighter",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -3604,7 +3594,6 @@
       "normalizedCharCount": 178,
       "classification": "child-of:class:monk",
       "targetKey": "class:monk",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -3627,7 +3616,6 @@
       "normalizedCharCount": 11,
       "classification": "child-of:class:monk",
       "targetKey": "class:monk",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -4371,7 +4359,6 @@
       "normalizedCharCount": 187,
       "classification": "child-of:class:paladin",
       "targetKey": "class:paladin",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -4394,7 +4381,6 @@
       "normalizedCharCount": 25,
       "classification": "child-of:class:paladin",
       "targetKey": "class:paladin",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -5255,7 +5241,6 @@
       "normalizedCharCount": 185,
       "classification": "child-of:class:ranger",
       "targetKey": "class:ranger",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -5278,7 +5263,6 @@
       "normalizedCharCount": 82,
       "classification": "child-of:class:ranger",
       "targetKey": "class:ranger",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -6027,7 +6011,6 @@
       "normalizedCharCount": 180,
       "classification": "child-of:class:rogue",
       "targetKey": "class:rogue",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -6050,7 +6033,6 @@
       "normalizedCharCount": 316,
       "classification": "child-of:class:rogue",
       "targetKey": "class:rogue",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -6581,7 +6563,6 @@
       "normalizedCharCount": 186,
       "classification": "child-of:class:sorcerer",
       "targetKey": "class:sorcerer",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -6604,7 +6585,6 @@
       "normalizedCharCount": 11,
       "classification": "child-of:class:sorcerer",
       "targetKey": "class:sorcerer",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -7407,7 +7387,6 @@
       "normalizedCharCount": 184,
       "classification": "child-of:class:warlock",
       "targetKey": "class:warlock",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -7430,7 +7409,6 @@
       "normalizedCharCount": 18,
       "classification": "child-of:class:warlock",
       "targetKey": "class:warlock",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -8845,7 +8823,6 @@
       "normalizedCharCount": 182,
       "classification": "child-of:class:wizard",
       "targetKey": "class:wizard",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -8868,7 +8845,6 @@
       "normalizedCharCount": 11,
       "classification": "child-of:class:wizard",
       "targetKey": "class:wizard",
-      "guardNotes": "Class Features metadata is represented as structured child data on the class record.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -10044,7 +10020,6 @@
       "normalizedCharCount": 851,
       "classification": "record:background:acolyte",
       "targetKey": "background:acolyte",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -30354,7 +30329,6 @@
       "normalizedCharCount": 795,
       "classification": "record:hazard:sphere-of-annihilation",
       "targetKey": "hazard:sphere-of-annihilation",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -31262,7 +31236,6 @@
       "normalizedCharCount": 202,
       "classification": "record:magic-item:armor-of-resistance",
       "targetKey": "magic-item:armor-of-resistance",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -31351,7 +31324,6 @@
       "normalizedCharCount": 753,
       "classification": "record:magic-item:bag-of-beans",
       "targetKey": "magic-item:bag-of-beans",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -31506,7 +31478,6 @@
       "normalizedCharCount": 468,
       "classification": "record:magic-item:belt-of-giant-strength",
       "targetKey": "magic-item:belt-of-giant-strength",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -31815,7 +31786,6 @@
       "normalizedCharCount": 286,
       "classification": "record:magic-item:candle-of-invocation",
       "targetKey": "magic-item:candle-of-invocation",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -31904,7 +31874,6 @@
       "normalizedCharCount": 308,
       "classification": "record:magic-item:carpet-of-flying",
       "targetKey": "magic-item:carpet-of-flying",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -32389,7 +32358,6 @@
       "normalizedCharCount": 988,
       "classification": "record:magic-item:deck-of-illusions",
       "targetKey": "magic-item:deck-of-illusions",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -32434,7 +32402,6 @@
       "normalizedCharCount": 451,
       "classification": "record:magic-item:deck-of-many-things",
       "targetKey": "magic-item:deck-of-many-things",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -32679,7 +32646,6 @@
       "normalizedCharCount": 841,
       "classification": "record:magic-item:dragon-scale-mail",
       "targetKey": "magic-item:dragon-scale-mail",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -32878,7 +32844,6 @@
       "normalizedCharCount": 383,
       "classification": "record:magic-item:efreeti-bottle",
       "targetKey": "magic-item:efreeti-bottle",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -32901,7 +32866,6 @@
       "normalizedCharCount": 276,
       "classification": "record:magic-item:elemental-gem",
       "targetKey": "magic-item:elemental-gem",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -33056,7 +33020,6 @@
       "normalizedCharCount": 201,
       "classification": "record:magic-item:feather-token",
       "targetKey": "magic-item:feather-token",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -33783,7 +33746,6 @@
       "normalizedCharCount": 628,
       "classification": "record:magic-item:horn-of-valhalla",
       "targetKey": "magic-item:horn-of-valhalla",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -34004,7 +33966,6 @@
       "normalizedCharCount": 1305,
       "classification": "record:magic-item:iron-flask",
       "targetKey": "magic-item:iron-flask",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -34247,7 +34208,6 @@
       "normalizedCharCount": 363,
       "classification": "record:magic-item:manual-of-golems",
       "targetKey": "magic-item:manual-of-golems",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -34468,7 +34428,6 @@
       "normalizedCharCount": 709,
       "classification": "record:magic-item:necklace-of-prayer-beads",
       "targetKey": "magic-item:necklace-of-prayer-beads",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -35041,7 +35000,6 @@
       "normalizedCharCount": 449,
       "classification": "record:magic-item:potion-of-giant-strength",
       "targetKey": "magic-item:potion-of-giant-strength",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -35086,7 +35044,6 @@
       "normalizedCharCount": 170,
       "classification": "record:magic-item:potion-of-healing",
       "targetKey": "magic-item:potion-of-healing",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -35219,7 +35176,6 @@
       "normalizedCharCount": 172,
       "classification": "record:magic-item:potion-of-resistance",
       "targetKey": "magic-item:potion-of-resistance",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -35594,7 +35550,6 @@
       "normalizedCharCount": 181,
       "classification": "record:magic-item:ring-of-resistance",
       "targetKey": "magic-item:ring-of-resistance",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -35617,7 +35572,6 @@
       "normalizedCharCount": 830,
       "classification": "record:magic-item:ring-of-shooting-stars",
       "targetKey": "magic-item:ring-of-shooting-stars",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -35992,7 +35946,6 @@
       "normalizedCharCount": 463,
       "classification": "record:magic-item:robe-of-useful-items",
       "targetKey": "magic-item:robe-of-useful-items",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -36501,7 +36454,6 @@
       "normalizedCharCount": 501,
       "classification": "record:magic-item:sphere-of-annihilation",
       "targetKey": "magic-item:sphere-of-annihilation",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -36634,7 +36586,6 @@
       "normalizedCharCount": 279,
       "classification": "record:magic-item:staff-of-power",
       "targetKey": "magic-item:staff-of-power",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -36723,7 +36674,6 @@
       "normalizedCharCount": 1396,
       "classification": "record:magic-item:staff-of-the-magi",
       "targetKey": "magic-item:staff-of-the-magi",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },
@@ -37604,7 +37554,6 @@
       "normalizedCharCount": 598,
       "classification": "record:magic-item:wand-of-wonder",
       "targetKey": "magic-item:wand-of-wonder",
-      "guardNotes": "Duplicate source heading resolved by source section context.",
       "emission": "structured-equivalent",
       "emissionNotes": "header/label content proven against the structured fields of the target record"
     },

@@ -44,6 +44,7 @@
 
 import { CREATURE_TAXONOMY_SPECS } from './creatureTaxonomy.js';
 import type { SpellClassLevelEntry } from './parseSpells.js';
+import { citedPages } from './recordSourceAnchors.js';
 import type { SourceInventoryItem } from './sourceInventory.js';
 
 export type CoverageStatus =
@@ -70,6 +71,7 @@ export interface CoverageRecordRef {
   readonly key: string;
   readonly name: string;
   readonly data?: unknown;
+  readonly provenance?: { readonly locator?: string };
 }
 
 export interface SpellListCoverageEvidence {
@@ -85,7 +87,13 @@ export interface SourceCoverageEntry {
   readonly resolution: CoverageResolution;
 }
 
-/** The exact decision that produced a coverage status. */
+/**
+ * The exact decision that produced a coverage status. Name collisions may be
+ * resolved structurally in order: heading/table shape, class-chapter feature
+ * ownership, then a record locator that cites the source page. `step` records
+ * the first filter that leaves one candidate; unresolved residue remains
+ * `ambiguous-normalized-name` for the complete-import gate to reject.
+ */
 export type CoverageResolution =
   | { readonly kind: 'curated-record'; readonly ownerKey: string }
   | { readonly kind: 'curated-child-of'; readonly ownerKey: string }
@@ -109,6 +117,13 @@ export type CoverageResolution =
   | {
       readonly kind: 'ambiguous-normalized-name';
       readonly normalizedName: string;
+      readonly candidateKeys: readonly string[];
+    }
+  | {
+      readonly kind: 'structural-normalized-name';
+      readonly normalizedName: string;
+      readonly ownerKey: string;
+      readonly step: 'structure' | 'class-chapter' | 'page-locality';
       readonly candidateKeys: readonly string[];
     }
   | {
@@ -358,6 +373,7 @@ export function evaluateSourceCoverage(
   rules: readonly CoverageRule[],
 ): readonly SourceCoverageEntry[] {
   const keysByName = new Map<string, string[]>();
+  const recordsByKey = new Map(records.map((record) => [record.key, record]));
   for (const record of records) {
     const name = normalizeName(record.name);
     const existing = keysByName.get(name);
@@ -459,6 +475,73 @@ export function evaluateSourceCoverage(
       };
     }
     if (matchedKeys.length > 1) {
+      // Filters are cumulative and ordered. The recorded step is the first
+      // filter to leave exactly one candidate.
+      let candidates = matchedKeys;
+      const filters: readonly [
+        'structure' | 'class-chapter' | 'page-locality',
+        (keys: readonly string[]) => string[],
+      ][] = [
+        [
+          'structure',
+          (keys) => {
+            if (item.structure === 'table-caption') {
+              return keys.filter(
+                (key) => recordsByKey.get(key)?.kind === 'table',
+              );
+            }
+            if (item.structure === 'heading') {
+              return keys.filter(
+                (key) => recordsByKey.get(key)?.kind !== 'table',
+              );
+            }
+            return [...keys];
+          },
+        ],
+        [
+          'class-chapter',
+          (keys) =>
+            item.section !== null && CLASS_CHAPTER_SECTIONS.has(item.section)
+              ? keys.filter((key) =>
+                  key.startsWith(`feature:${item.section?.toLowerCase()}:`),
+                )
+              : [...keys],
+        ],
+        [
+          'page-locality',
+          (keys) =>
+            keys.filter((key) => {
+              try {
+                return citedPages(
+                  recordsByKey.get(key)?.provenance?.locator,
+                ).includes(item.page);
+              } catch {
+                return false;
+              }
+            }),
+        ],
+      ];
+      for (const [step, filter] of filters) {
+        const filtered = filter(candidates);
+        // A structure/category filter that has no compatible candidate is
+        // inconclusive; retain the prior set and let the next source signal
+        // decide. This matters when a class heading has no feature candidate.
+        if (filtered.length > 0) candidates = filtered;
+        if (filtered.length === 1) {
+          const ownerKey = filtered[0];
+          return {
+            item,
+            status: { kind: 'record', key: ownerKey },
+            resolution: {
+              kind: 'structural-normalized-name',
+              normalizedName: normalizeName(item.text),
+              ownerKey,
+              step,
+              candidateKeys: matchedKeys,
+            },
+          };
+        }
+      }
       return {
         item,
         status: { kind: 'ambiguous', candidateKeys: matchedKeys },
@@ -524,6 +607,8 @@ export function assertSourceCoverage(
   entries: readonly SourceCoverageEntry[],
   options: {
     readonly statBlockExceptionReasons?: readonly string[];
+    readonly requireComplete?: boolean;
+    readonly records?: readonly CoverageRecordRef[];
   } = {},
 ): void {
   const invalidProvenance = entries.filter(({ status, resolution }) => {
@@ -539,6 +624,12 @@ export function assertSourceCoverage(
         );
       case 'unique-normalized-name':
         return status.kind !== 'record' || status.key !== resolution.ownerKey;
+      case 'structural-normalized-name':
+        return (
+          status.kind !== 'record' ||
+          status.key !== resolution.ownerKey ||
+          !resolution.candidateKeys.includes(resolution.ownerKey)
+        );
       case 'ambiguous-normalized-name':
         return (
           status.kind !== 'ambiguous' ||
@@ -584,6 +675,36 @@ export function assertSourceCoverage(
   const unaccounted = entries.filter((e) => e.status.kind === 'unaccounted');
   if (unaccounted.length > 0) {
     throw new SourceInventoryCoverageError(unaccounted);
+  }
+  if (options.requireComplete === true) {
+    const ambiguous = entries.filter(
+      ({ resolution }) => resolution.kind === 'ambiguous-normalized-name',
+    );
+    const recordsByKey = new Map(
+      (options.records ?? []).map((record) => [record.key, record]),
+    );
+    const nonLocal = entries.filter(({ item, status, resolution }) => {
+      if (
+        (resolution.kind !== 'unique-normalized-name' &&
+          resolution.kind !== 'structural-normalized-name') ||
+        status.kind !== 'record'
+      )
+        return false;
+      try {
+        return !citedPages(
+          recordsByKey.get(status.key)?.provenance?.locator,
+        ).includes(item.page);
+      } catch {
+        return true;
+      }
+    });
+    if (ambiguous.length > 0 || nonLocal.length > 0) {
+      const describe = ({ item, status }: SourceCoverageEntry) =>
+        `p${item.page}#${item.lineIndex} "${item.text}" -> ${formatCoverageStatus(status)}`;
+      throw new Error(
+        `SRD source coverage has ${ambiguous.length} ambiguous and ${nonLocal.length} non-local owner(s); fix each with a source-structural or curated owner rule, never by widening a locator:\n${[...ambiguous, ...nonLocal].map(describe).join('\n')}`,
+      );
+    }
   }
   const statBlockExceptionReasons = new Set(
     options.statBlockExceptionReasons ?? [],
@@ -875,7 +996,9 @@ export function buildSourceCoverageReport(
       o.resolution.kind.startsWith('curated-'),
     );
     const automatic = occurrences.filter(
-      (o) => o.resolution.kind === 'unique-normalized-name',
+      (o) =>
+        o.resolution.kind === 'unique-normalized-name' ||
+        o.resolution.kind === 'structural-normalized-name',
     );
     const unresolved = occurrences.some(
       (o) => o.resolution.kind === 'ambiguous-normalized-name',
@@ -1121,6 +1244,8 @@ const SPELLCASTING_BOILERPLATE: ReadonlySet<string> = new Set([
   'Spellcasting Focus',
   'Spells Known of 1st Level and Higher',
   'Learning Spells of 1st Level and Higher',
+  'Spellcasting Ability',
+  'Spell Slots',
 ]);
 
 /**
@@ -1260,6 +1385,63 @@ const MAGIC_ITEM_TABLE_INVENTORY_RECORDS: ReadonlyArray<
  * `source-coverage.json` artifact shows the resulting per-item statuses.
  */
 export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
+  // Chapter/feature structures whose printed names collide with generic rules
+  // are owned by their source parent, not by name-only matches.
+  ignoreRule(
+    'document-structure',
+    (i) => i.page === 62 && i.tier === 'chapter' && i.text === 'Equipment',
+  ),
+  recordRule(
+    'rule:intelligence-spellcasting-ability',
+    (i) =>
+      i.page === 82 &&
+      i.text === 'Spellcasting Ability' &&
+      i.context === 'Intelligence Checks',
+  ),
+  recordRule(
+    'rule:wisdom-spellcasting-ability',
+    (i) =>
+      i.page === 82 &&
+      i.text === 'Spellcasting Ability' &&
+      i.context === 'Wisdom Checks',
+  ),
+  recordRule(
+    'table:size-categories',
+    (i) =>
+      i.page === 92 &&
+      i.structure === 'table-caption' &&
+      i.text === 'Size Categories',
+  ),
+  childOfRule(
+    'background:acolyte',
+    (i) => i.page === 61 && i.text === 'Suggested Characteristics',
+  ),
+  childOfRule(
+    'feature:paladin:sacred-oath',
+    (i) =>
+      i.page === 32 && i.section === 'Paladin' && i.text === 'Channel Divinity',
+  ),
+  ...[
+    'Attack',
+    'Cast a Spell',
+    'Dash',
+    'Disengage',
+    'Dodge',
+    'Help',
+    'Hide',
+    'Ready',
+    'Search',
+    'Use an Object',
+  ].map((name) =>
+    recordRule(
+      `action:${name.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`,
+      (i) =>
+        i.page >= 93 &&
+        i.page <= 94 &&
+        i.section === 'Using Ability Scores' &&
+        i.text === name,
+    ),
+  ),
   // Cross-kind and repeated rule names require source-context mappings. A
   // bare name match is intentionally non-covering when multiple records share
   // the normalized title.
@@ -1520,6 +1702,17 @@ export const SRD_5_1_COVERAGE_RULES: readonly CoverageRule[] = [
         i.section === section &&
         i.structure === 'heading' &&
         i.text === 'Class Features',
+    ),
+  ),
+  ...[...CLASS_CHAPTER_SECTIONS].flatMap((section) =>
+    ['Hit Points', 'Proficiencies', 'Equipment'].map((heading) =>
+      childOfRule(
+        `class:${section.toLowerCase()}`,
+        (i) =>
+          i.section === section &&
+          i.structure === 'heading' &&
+          i.text === heading,
+      ),
     ),
   ),
   // Feature-OPTION subheadings the SRD prints as bold leaves inside a parent

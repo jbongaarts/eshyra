@@ -29,6 +29,7 @@
  * module's caller in `index.ts` for how that case is handled.
  */
 import type { RulesRecord } from '../../../src/rules/types.js';
+import { REPRINTED_RECORD_SOURCE_PAGES } from './sourceReprints.js';
 import type { PageText } from './types.js';
 
 export class RecordSourceAnchorError extends Error {
@@ -596,6 +597,22 @@ export function assertRecordsAnchoredInSource(
     ) {
       failures.push(
         `${record.key}: declared anchor ${JSON.stringify(declaration.anchor)} not found on cited page(s) (${record.provenance.locator ?? '<no locator>'})`,
+      );
+    }
+  }
+
+  // A reviewed reprint declaration is a claim about every printed copy, not
+  // merely one page in the record's locator. Keep that claim source-backed.
+  for (const [key, reprint] of REPRINTED_RECORD_SOURCE_PAGES) {
+    const record = records.find((candidate) => candidate.key === key);
+    if (record === undefined) continue;
+    const pageNumbers = citedPages(record.provenance.locator);
+    const missingAnchorPages = pageNumbers.filter(
+      (page) => !anchorFoundOnAnyPage(record.name, [page], normalizedPages),
+    );
+    if (!pageNumbers.includes(reprint.page) || missingAnchorPages.length > 0) {
+      failures.push(
+        `${key}: reviewed reprint page p${reprint.page} (${reprint.reason}) must be cited and every cited page must contain ${JSON.stringify(record.name)}; missing anchor on p${missingAnchorPages.join(', p') || '<none>'}; locator is ${record.provenance.locator ?? '<no locator>'}`,
       );
     }
   }

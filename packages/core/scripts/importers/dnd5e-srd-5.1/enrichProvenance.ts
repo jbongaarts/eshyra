@@ -45,11 +45,13 @@
 
 import type { RulesRecord } from '../../../src/rules/types.js';
 import type { SourceRegionLedger } from './sourceRegionLedger.js';
+import { REPRINTED_RECORD_SOURCE_PAGES } from './sourceReprints.js';
 
 const SINGLE_PAGE_LOCATOR = /^p\. (\d+)$/;
 const SRD_5_1_SINGLE_PAGE_SOURCE = /^SRD 5\.1 p\. (\d+)$/;
 export const MAX_CONTINUATION_GAP = 3;
 
+/** Reviewed reprint pages that belong to an existing record's source span. */
 /** Every page each record key's prose or child data occupies, per the ledger. */
 export function pageSpansByRecordKey(
   regionLedger: SourceRegionLedger,
@@ -87,18 +89,22 @@ export function enrichProvenanceFromRegionLedger(
   const pageSpans = pageSpansByRecordKey(regionLedger);
   return records.map((record) => {
     const ledgerPages = pageSpans.get(record.key);
-    if (ledgerPages === undefined || ledgerPages.length === 0) return record;
     const currentLocator = record.provenance.locator;
     if (currentLocator === undefined) return record;
     const match = SINGLE_PAGE_LOCATOR.exec(currentLocator);
     if (match === null) return record;
     const startPage = Number(match[1]);
-    const nearbyPages = ledgerPages.filter(
+    const nearbyPages = (ledgerPages ?? []).filter(
       (page) => Math.abs(page - startPage) <= MAX_CONTINUATION_GAP,
     );
-    const allPages = [...new Set([startPage, ...nearbyPages])].sort(
-      (a, b) => a - b,
-    );
+    const reprint = REPRINTED_RECORD_SOURCE_PAGES.get(record.key);
+    const allPages = [
+      ...new Set([
+        startPage,
+        ...nearbyPages,
+        ...(reprint === undefined ? [] : [reprint.page]),
+      ]),
+    ].sort((a, b) => a - b);
     if (allPages.length <= 1) return record;
     const locator = `pp. ${allPages.join(', ')}`;
     return {

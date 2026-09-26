@@ -126,6 +126,101 @@ describe('evaluateSourceCoverage — name auto-match', () => {
     });
   });
 
+  it('resolves duplicate names by structure, class chapter, then page locality', () => {
+    const candidates = [
+      {
+        kind: 'rule',
+        key: 'rule:spell-slots',
+        name: 'Spell Slots',
+        provenance: { locator: 'p. 100' },
+      },
+      {
+        kind: 'feature',
+        key: 'feature:bard:spell-slots',
+        name: 'Spell Slots',
+        provenance: { locator: 'p. 12' },
+      },
+    ];
+    const structure = evaluateSourceCoverage(
+      [item({ text: 'Spell Slots', structure: 'table-caption', page: 12 })],
+      [
+        ...candidates,
+        {
+          kind: 'table',
+          key: 'table:spell-slots',
+          name: 'Spell Slots',
+          provenance: { locator: 'p. 12' },
+        },
+      ],
+      [],
+    )[0];
+    expect(structure?.resolution).toMatchObject({
+      kind: 'structural-normalized-name',
+      step: 'structure',
+      ownerKey: 'table:spell-slots',
+    });
+
+    const classChapter = evaluateSourceCoverage(
+      [item({ text: 'Spell Slots', section: 'Bard', page: 12 })],
+      candidates,
+      [],
+    )[0];
+    expect(classChapter?.resolution).toMatchObject({
+      kind: 'structural-normalized-name',
+      step: 'class-chapter',
+      ownerKey: 'feature:bard:spell-slots',
+    });
+
+    const pageLocality = evaluateSourceCoverage(
+      [item({ text: 'Spell Slots', page: 12 })],
+      [
+        { ...candidates[0], provenance: { locator: 'p. 12' } },
+        { ...candidates[1], provenance: { locator: 'p. 36' } },
+      ],
+      [],
+    )[0];
+    expect(pageLocality?.resolution).toMatchObject({
+      kind: 'structural-normalized-name',
+      step: 'page-locality',
+      ownerKey: 'rule:spell-slots',
+    });
+  });
+
+  it('skips a class-chapter filter with no feature candidates before page locality', () => {
+    const entries = evaluateSourceCoverage(
+      [item({ text: 'Multiattack', section: 'Ranger', page: 38 })],
+      [
+        {
+          kind: 'rule',
+          key: 'rule:multiattack',
+          name: 'Multiattack',
+          provenance: { locator: 'p. 22' },
+        },
+        {
+          kind: 'feature',
+          key: 'feature:hunter:multiattack',
+          name: 'Multiattack',
+          provenance: { locator: 'p. 38' },
+        },
+      ],
+      [],
+    );
+    expect(entries[0]?.resolution).toMatchObject({
+      kind: 'structural-normalized-name',
+      step: 'page-locality',
+      ownerKey: 'feature:hunter:multiattack',
+    });
+  });
+
+  it('keeps an unresolved duplicate ambiguous after all structural filters', () => {
+    const entries = evaluateSourceCoverage(
+      [item({ text: 'Improved Critical', page: 99 })],
+      records,
+      [],
+    );
+    expect(entries[0]?.resolution.kind).toBe('ambiguous-normalized-name');
+  });
+
   it('attributes stat-block section headings to the active stat block', () => {
     const entries = evaluateSourceCoverage(
       [
@@ -503,6 +598,57 @@ describe('assertSourceCoverage', () => {
       [],
     );
     expect(() => assertSourceCoverage(entries)).not.toThrow();
+  });
+
+  it('fails complete imports for every ambiguous or non-local automatic owner', () => {
+    const ownerRecords = [
+      {
+        kind: 'rule',
+        key: 'rule:shared',
+        name: 'Shared',
+        provenance: { locator: 'p. 2' },
+      },
+      {
+        kind: 'rule',
+        key: 'rule:other',
+        name: 'Other',
+        provenance: { locator: 'p. 9' },
+      },
+      {
+        kind: 'rule',
+        key: 'rule:shared-copy',
+        name: 'Shared',
+        provenance: { locator: 'p. 3' },
+      },
+    ];
+    const entries = evaluateSourceCoverage(
+      [
+        item({ page: 4, text: 'Shared' }),
+        item({ page: 2, text: 'Other', lineIndex: 1 }),
+      ],
+      ownerRecords,
+      [],
+    );
+    expect(() => assertSourceCoverage(entries)).not.toThrow();
+    expect(() =>
+      assertSourceCoverage(entries, {
+        requireComplete: true,
+        records: ownerRecords,
+      }),
+    ).toThrow(
+      /1 ambiguous and 1 non-local owner.*source-structural or curated owner rule.*never by widening a locator:[\s\S]*p4.*Shared[\s\S]*p2.*Other/,
+    );
+    const clean = evaluateSourceCoverage(
+      [item({ page: 9, text: 'Other' })],
+      ownerRecords,
+      [],
+    );
+    expect(() =>
+      assertSourceCoverage(clean, {
+        requireComplete: true,
+        records: ownerRecords,
+      }),
+    ).not.toThrow();
   });
 
   it('rejects stat-block inventory entries mapped to non-stat records', () => {

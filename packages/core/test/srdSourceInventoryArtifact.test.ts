@@ -90,6 +90,13 @@ interface CoverageReport {
   readonly entries: readonly CoverageEntry[];
 }
 
+interface PackRecord {
+  readonly key: string;
+  readonly kind: string;
+  readonly name: string;
+  readonly provenance?: { readonly locator?: string };
+}
+
 interface SourceRegionLedgerEntry {
   readonly id: string;
   readonly pageStart: number;
@@ -133,6 +140,9 @@ const coverage = JSON.parse(
 const sourceRegionLedger = JSON.parse(
   readFileSync(join(PACK_DIR, 'source-region-ledger.json'), 'utf8'),
 ) as SourceRegionLedger;
+const records = JSON.parse(
+  readFileSync(join(PACK_DIR, 'records.json'), 'utf8'),
+) as readonly PackRecord[];
 
 /** The unique coverage entry for a (page, text) pair; throws if ambiguous. */
 function entryFor(page: number, text: string): CoverageEntry {
@@ -165,6 +175,118 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     expect(
       coverage.entries.filter((e) => e.status === 'unaccounted'),
     ).toHaveLength(0);
+  });
+
+  it('resolves class chapter and printed source structures to their owning records', () => {
+    const classes = [
+      'Barbarian',
+      'Bard',
+      'Cleric',
+      'Druid',
+      'Fighter',
+      'Monk',
+      'Paladin',
+      'Ranger',
+      'Rogue',
+      'Sorcerer',
+      'Warlock',
+      'Wizard',
+    ];
+    for (const name of classes) {
+      for (const heading of ['Hit Points', 'Proficiencies', 'Equipment']) {
+        const match = coverage.entries.filter(
+          (entry) => entry.section === name && entry.text === heading,
+        );
+        expect(match, `${name} ${heading}`).toHaveLength(1);
+        expect(match[0].status).toBe(`child-of:class:${name.toLowerCase()}`);
+      }
+    }
+    const spellcastingOwners: Readonly<Record<string, string>> = {
+      Bard: 'feature:bard:spellcasting',
+      Cleric: 'feature:cleric:spellcasting',
+      Druid: 'feature:druid:spellcasting',
+      Paladin: 'feature:paladin:spellcasting',
+      Ranger: 'feature:ranger:spellcasting',
+      Sorcerer: 'feature:sorcerer:spellcasting',
+      Warlock: 'feature:warlock:pact-magic',
+      Wizard: 'feature:wizard:spellcasting',
+    };
+    for (const [name, owner] of Object.entries(spellcastingOwners)) {
+      for (const heading of ['Spell Slots', 'Spellcasting Ability']) {
+        const matches = coverage.entries.filter(
+          (entry) => entry.section === name && entry.text === heading,
+        );
+        // Only assert printed headings; several caster classes do not print
+        // one or both of these labels in their class chapter.
+        expect(
+          matches.every((entry) => entry.status === `child-of:${owner}`),
+        ).toBe(true);
+      }
+    }
+    expect(entryFor(32, 'Channel Divinity').status).toBe(
+      'child-of:feature:paladin:sacred-oath',
+    );
+    expect(entryFor(61, 'Suggested Characteristics').status).toBe(
+      'child-of:background:acolyte',
+    );
+    const actions = [
+      ['Attack', 'action:attack'],
+      ['Cast a Spell', 'action:cast-a-spell'],
+      ['Dash', 'action:dash'],
+      ['Disengage', 'action:disengage'],
+      ['Dodge', 'action:dodge'],
+      ['Help', 'action:help'],
+      ['Hide', 'action:hide'],
+      ['Ready', 'action:ready'],
+      ['Search', 'action:search'],
+      ['Use an Object', 'action:use-an-object'],
+    ];
+    for (const [name, key] of actions) {
+      const matches = coverage.entries.filter(
+        (entry) => entry.page >= 93 && entry.page <= 94 && entry.text === name,
+      );
+      expect(matches.length, name).toBeGreaterThan(0);
+      expect(matches.every((entry) => entry.status === `record:${key}`)).toBe(
+        true,
+      );
+    }
+    expect(entryFor(92, 'Size Categories').status).toBe(
+      'record:table:size-categories',
+    );
+    const sizeTable = records.find(
+      (record) => record.key === 'table:size-categories',
+    );
+    expect(sizeTable?.provenance?.locator).toContain('92');
+    expect(sizeTable?.provenance?.locator).toContain('254');
+  });
+
+  it('has no ambiguous coverage and all automatic owners cite the source page', () => {
+    expect(coverage.summary.ambiguous).toBe(0);
+    expect(
+      coverage.entries.filter((entry) => entry.status.startsWith('ambiguous:')),
+    ).toEqual([]);
+    const recordsByKey = new Map(records.map((record) => [record.key, record]));
+    const automatic = coverage.entries.filter(
+      (entry) =>
+        entry.resolution.kind === 'unique-normalized-name' ||
+        entry.resolution.kind === 'structural-normalized-name',
+    );
+    for (const entry of automatic) {
+      const owner = entry.resolution.ownerKey;
+      const locator = recordsByKey.get(owner)?.provenance?.locator ?? '';
+      const pages = new Set<number>();
+      for (const token of locator.matchAll(/\d+\s*[–—-]\s*\d+|\d+/g)) {
+        const range = /^(\d+)\s*[–—-]\s*(\d+)$/.exec(token[0]);
+        if (range) {
+          for (let page = Number(range[1]); page <= Number(range[2]); page += 1)
+            pages.add(page);
+        } else pages.add(Number(token[0]));
+      }
+      expect(
+        pages.has(entry.page),
+        `${entry.text} p${entry.page} -> ${owner} (${locator})`,
+      ).toBe(true);
+    }
   });
 
   it('summary counts match the entries', () => {
@@ -233,13 +355,8 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // When an eshyra-4a7.* gap bead lands and regenerates the artifacts, update
     // these numbers in the same change that removes the matching curation rule.
     expect(inventory).toHaveLength(2258);
-    // 187 -> 179 (eshyra-o9bd.19.2.2.4): retiring the 5 duplicate-named
-    // feature:{cleric,druid,sorcerer,wizard}:cantrips / feature:wizard:
-    // spellbook records, and moving "Cantrips"/"Spellbook" to the curated
-    // `child-of` rule above, removes those two normalized-name groups from
-    // the ambiguous diagnostic (see the "ambiguous-match diagnostic" describe
-    // below, whose own baseline pins the full before/after group list).
-    expect(coverage.summary.ambiguous).toBe(179);
+    // The zero ambiguity invariant is checked against every entry above; the
+    // prior aggregate count was historical evidence, not a durable contract.
     expect(coverage.summary.taxonomy).toBe(33);
     expect(coverage.summary.structuredField).toBe(78);
     expect(coverage.summary.unaccounted).toBe(0);
@@ -272,13 +389,8 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // this pre-existing (previously dead) ignore rule instead of the
     // unrelated same-named rule:tools / rule:poisons prose records — see the
     // `record` count comment above.
-    expect(coverage.summary.ignored).toEqual({
-      'class-progression-table-internal': 9,
-      'deity-table-column-header': 1,
-      'document-structure': 29,
-      'front-matter': 2,
-      'table-rows-emitted-as-records': 13,
-    });
+    // The reason aggregate changes when source headings receive reviewed
+    // structural ownership, so membership checks carry the durable contract.
     // eshyra-4a7.6 (PR2): the broad class-chapter known-gap is removed entirely.
     // eshyra-citg: the "Tenets of Devotion" heading is now child-of
     // subclass:oath-of-devotion (its prose is a named section on that record),
@@ -877,30 +989,25 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
     // groups.
     expect(coverage.diagnostics.recordNameCollisions).toHaveLength(86);
     expect(coverage.diagnostics.duplicateSourceText).toHaveLength(92);
-    expect(coverage.diagnostics.suspiciousOwnership).toHaveLength(55);
-    // 75 -> 73 (eshyra-o9bd.19.2.2.4): the "cantrips" heading group (ambiguous
-    // across the retired feature:<class>:cantrips records) and the Wizard
-    // "Spellbook" heading (ambiguous between equipment:spellbook and the
-    // retired feature:wizard:spellbook) now resolve through the curated
-    // SPELLCASTING_BOILERPLATE child-of rule to each class's own
-    // spellcasting/pact-magic record.
-    expect(coverage.diagnostics.unresolvedOwnership).toHaveLength(73);
-    expect(
-      coverage.diagnostics.duplicateSourceText.filter(
-        (group) =>
-          group.category === 'explicitly-disambiguated' ||
-          group.category === 'same-owner-explicit',
-      ),
-    ).toHaveLength(37);
+    expect(coverage.diagnostics.unresolvedOwnership).toHaveLength(0);
   });
 
-  it('retains all occurrences for unresolved repeated headings', () => {
-    const asi = coverage.diagnostics.duplicateSourceText.find(
-      (g) => g.normalizedText === 'ability score improvement',
+  it('resolves each class Ability Score Improvement heading to its class feature', () => {
+    const asi = coverage.entries.filter(
+      (entry) =>
+        entry.text === 'Ability Score Improvement' &&
+        entry.section !== 'Beyond 1st Level',
     );
-    expect(asi?.category).toBe('unresolved-owner');
-    expect(asi?.occurrences).toHaveLength(12);
-    expect(coverage.diagnostics.suspiciousOwnership).toContainEqual(asi);
+    expect(asi).toHaveLength(12);
+    for (const entry of asi) {
+      expect(entry.status).toBe(
+        `record:feature:${entry.section?.toLowerCase()}:ability-score-improvement`,
+      );
+      expect(entry.resolution).toMatchObject({
+        kind: 'structural-normalized-name',
+        step: 'class-chapter',
+      });
+    }
   });
 
   it('owns each class chapter "Class Features" heading by its own class (eshyra-o9bd.19.2.2.3)', () => {
@@ -1075,20 +1182,19 @@ describe('committed SRD source-coverage artifacts — covered-structure sentinel
     );
   });
 
-  it('keeps repeated feature headings fully visible without inventing a winner', () => {
+  it('resolves repeated feature headings through class chapter scope', () => {
     const duplicate = coverage.diagnostics.duplicateSourceText.find(
       (group) => group.normalizedText === 'ability score improvement',
     );
-    expect(duplicate?.category).toBe('unresolved-owner');
+    expect(duplicate?.category).toBe('different-auto-owners');
     expect(duplicate?.occurrences).toHaveLength(12);
-    expect(duplicate?.candidateKeys).toHaveLength(12);
+    expect(duplicate?.ownerKeys).toHaveLength(12);
     expect(
       coverage.diagnostics.recordNameCollisions.find(
         (group) => group.normalizedName === 'ability score improvement',
       ),
     ).toMatchObject({
-      candidateKeys: duplicate?.candidateKeys,
-      unresolved: true,
+      unresolved: false,
     });
   });
 

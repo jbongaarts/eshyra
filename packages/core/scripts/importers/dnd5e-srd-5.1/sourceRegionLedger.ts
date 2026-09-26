@@ -371,6 +371,21 @@ function classifyRegionByOwner(
     };
   }
 
+  // In a complete import, coverage has already resolved source ownership and
+  // is authoritative. The legacy context heuristics below remain for fixture
+  // pipelines whose headings are still ambiguous or lack a curated status.
+  if (owner.status.startsWith('record:')) {
+    const targetKey = owner.status.slice('record:'.length);
+    return { classification: owner.status as `record:${string}`, targetKey };
+  }
+  if (owner.status.startsWith('child-of:')) {
+    const targetKey = owner.status.slice('child-of:'.length);
+    return {
+      classification: owner.status as `child-of:${string}`,
+      targetKey,
+    };
+  }
+
   const structuredClassKey = classChildDataKey(owner);
   if (structuredClassKey !== undefined) {
     return {
@@ -401,17 +416,6 @@ function classifyRegionByOwner(
     };
   }
 
-  if (owner.status.startsWith('record:')) {
-    const targetKey = owner.status.slice('record:'.length);
-    return { classification: owner.status as `record:${string}`, targetKey };
-  }
-  if (owner.status.startsWith('child-of:')) {
-    const targetKey = owner.status.slice('child-of:'.length);
-    return {
-      classification: owner.status as `child-of:${string}`,
-      targetKey,
-    };
-  }
   if (owner.status.startsWith('ignored:')) {
     const reason = owner.status.slice('ignored:'.length);
     if (BROAD_STRUCTURAL_IGNORES.has(owner.status)) {
