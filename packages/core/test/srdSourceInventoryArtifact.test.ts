@@ -211,16 +211,20 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
       Warlock: 'feature:warlock:pact-magic',
       Wizard: 'feature:wizard:spellcasting',
     };
+    // Every caster chapter prints "Spellcasting Ability"; only Bard, Ranger,
+    // Sorcerer, and Warlock print a "Spell Slots" subheading (SRD 5.1
+    // pp. 12, 36, 43, 47).
+    const printedSpellSlots = new Set(['Bard', 'Ranger', 'Sorcerer', 'Warlock']);
     for (const [name, owner] of Object.entries(spellcastingOwners)) {
       for (const heading of ['Spell Slots', 'Spellcasting Ability']) {
-        const matches = coverage.entries.filter(
-          (entry) => entry.section === name && entry.text === heading,
+        const statuses = coverage.entries
+          .filter((entry) => entry.section === name && entry.text === heading)
+          .map((entry) => entry.status);
+        const printed =
+          heading === 'Spellcasting Ability' || printedSpellSlots.has(name);
+        expect(statuses, `${name} ${heading}`).toEqual(
+          printed ? [`child-of:${owner}`] : [],
         );
-        // Only assert printed headings; several caster classes do not print
-        // one or both of these labels in their class chapter.
-        expect(
-          matches.every((entry) => entry.status === `child-of:${owner}`),
-        ).toBe(true);
       }
     }
     expect(entryFor(32, 'Channel Divinity').status).toBe(

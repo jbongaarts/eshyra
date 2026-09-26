@@ -51,7 +51,6 @@ const SINGLE_PAGE_LOCATOR = /^p\. (\d+)$/;
 const SRD_5_1_SINGLE_PAGE_SOURCE = /^SRD 5\.1 p\. (\d+)$/;
 export const MAX_CONTINUATION_GAP = 3;
 
-/** Reviewed reprint pages that belong to an existing record's source span. */
 /** Every page each record key's prose or child data occupies, per the ledger. */
 export function pageSpansByRecordKey(
   regionLedger: SourceRegionLedger,
