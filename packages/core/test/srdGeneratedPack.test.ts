@@ -5584,7 +5584,8 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         ]),
       });
       expect((sizes?.data as { rows: unknown[] })?.rows).toHaveLength(6);
-      expect(sizes?.provenance.locator).toBe('p. 254');
+      // The reviewed combat-chapter reprint is also cited by the same record.
+      expect(sizes?.provenance.locator).toBe('pp. 92, 254');
 
       const hitDice = table('table:hit-dice-by-size');
       expect(hitDice?.data).toMatchObject({

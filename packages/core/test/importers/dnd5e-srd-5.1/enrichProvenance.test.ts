@@ -10,6 +10,7 @@ import {
   pageSpansByRecordKey,
 } from '../../../scripts/importers/dnd5e-srd-5.1/enrichProvenance.js';
 import type { SourceRegionLedger } from '../../../scripts/importers/dnd5e-srd-5.1/sourceRegionLedger.js';
+import { REPRINTED_RECORD_SOURCE_PAGES } from '../../../scripts/importers/dnd5e-srd-5.1/sourceReprints.js';
 import { getBundledDnd5eSrdPack } from '../../../src/internal.js';
 import type { RulesRecord } from '../../../src/rules/types.js';
 
@@ -293,7 +294,13 @@ describe('committed SRD 5.1 pack — provenance matches the committed region led
         .slice('pp. '.length)
         .split(', ')
         .map((p) => Number(p));
-      const span = Math.max(...pages) - Math.min(...pages);
+      const reprint = REPRINTED_RECORD_SOURCE_PAGES.get(record.key);
+      if (reprint !== undefined) {
+        expect(pages, `${record.key} declared reprint`).toContain(reprint.page);
+      }
+      const continuationPages = pages.filter((page) => page !== reprint?.page);
+      const span =
+        Math.max(...continuationPages) - Math.min(...continuationPages);
       expect(span, record.key).toBeLessThanOrEqual(4);
     }
   });

@@ -3634,6 +3634,16 @@ export async function runImporter(
       ...pack,
       records: enrichProvenanceFromRegionLedger(pack.records, regionLedger),
     };
+    // Complete imports also enforce that automatic owners cite the source
+    // page using FINAL enriched locators. Structural page-locality resolution
+    // above intentionally uses the pre-enrichment locator: a heading is
+    // printed on its record's start page, while enrichment adds continuation
+    // pages only after region ownership has been established.
+    assertSourceCoverage(coverageEntries, {
+      statBlockExceptionReasons: input.statBlockCoverageExceptionReasons,
+      requireComplete: input.assertDeclarationsAreLive === true,
+      records: pack.records,
+    });
     // Record/field locator completeness gate (eshyra-o9bd.19.2.2.3): every
     // page the region ledger attributes to a record — and every field-level
     // source (spell class-list membership, equipment container capacity,

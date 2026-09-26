@@ -8,9 +8,13 @@ import {
 } from '../../../scripts/importers/dnd5e-srd-5.1/sourceRegionLedger.js';
 import type { PageText } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
 
-function page(lines: readonly string[], heights: readonly number[]): PageText {
+function page(
+  lines: readonly string[],
+  heights: readonly number[],
+  pageNumber = 3,
+): PageText {
   return {
-    pageNumber: 3,
+    pageNumber,
     lines,
     lineHeights: heights,
     lineGaps: lines.map((_, index) => (index === 0 ? null : 10)),
@@ -285,6 +289,34 @@ describe('buildSourceRegionLedger', () => {
       targetKey: 'feature:cleric:ability-score-improvement',
     });
     expect(body?.contentMatch).toBeUndefined();
+  });
+
+  it('uses resolved coverage ownership before class-heading heuristics and preserves its continuation', () => {
+    const heading = item({
+      text: 'Hit Points',
+      page: 255,
+      lineIndex: 0,
+      section: 'Monsters',
+    });
+    const firstText = 'A monster has hit points as described here.';
+    const continuation = 'Damage reduces a monster’s hit points.';
+    const ledger = buildSourceRegionLedger(
+      [
+        page(['Hit Points', firstText], [12, 9.8], 255),
+        page([continuation], [9.8], 256),
+      ],
+      [coverage(heading, { kind: 'record', key: 'rule:hit-points' })],
+      [record('rule:hit-points', 'Hit Points', `${firstText} ${continuation}`)],
+    );
+
+    expect(ledger.entries).toHaveLength(2);
+    expect(ledger.entries.map((entry) => entry.classification)).toEqual([
+      'record:rule:hit-points',
+      'record:rule:hit-points',
+    ]);
+    expect(ledger.entries.every((entry) => entry.contentMatch !== true)).toBe(
+      true,
+    );
   });
 
   describe('contentMatch — physical continuation vs. cross-reference (eshyra-o9bd.19.2.2.3.1 F1)', () => {
