@@ -35,7 +35,7 @@ Codex children it dispatches cannot read it.
 /home/jhbongaarts/.claude/dispatch-codex.sh <child-bead-id> --dry-run   # preview
 ```
 
-- Defaults to `-m gpt-5.6-luna -c model_reasoning_effort=medium` with YOLO
+- Defaults to `-m gpt-6-luna -c model_reasoning_effort=medium` with YOLO
   (`--dangerously-bypass-approvals-and-sandbox`); override with `--model`,
   `--effort`, `--prompt-file`, or `--sandbox` (drops YOLO).
 - It reads `<root>/.worktrees/.dispatch/<child>.prompt`, writes `<child>.log` and
