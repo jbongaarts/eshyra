@@ -214,7 +214,12 @@ describe('committed SRD source-coverage artifacts — integrity', () => {
     // Every caster chapter prints "Spellcasting Ability"; only Bard, Ranger,
     // Sorcerer, and Warlock print a "Spell Slots" subheading (SRD 5.1
     // pp. 12, 36, 43, 47).
-    const printedSpellSlots = new Set(['Bard', 'Ranger', 'Sorcerer', 'Warlock']);
+    const printedSpellSlots = new Set([
+      'Bard',
+      'Ranger',
+      'Sorcerer',
+      'Warlock',
+    ]);
     for (const [name, owner] of Object.entries(spellcastingOwners)) {
       for (const heading of ['Spell Slots', 'Spellcasting Ability']) {
         const statuses = coverage.entries
