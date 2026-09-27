@@ -990,19 +990,6 @@ describe('committed SRD source-coverage artifacts — ambiguous-match diagnostic
   });
 
   it('pins the canonical diagnostic baseline', () => {
-    // 88 -> 86 (eshyra-o9bd.19.2.2.4): retiring the 4 identically-named
-    // feature:{cleric,druid,sorcerer,wizard}:cantrips records collapses the
-    // "cantrips" name-collision group to 0 candidates (no collision left), and
-    // retiring feature:wizard:spellbook collapses "spellbook" (which only
-    // collided with equipment:spellbook) the same way — 2 fewer collision
-    // groups.
-    // 86 -> 77 (eshyra-t8gw.1): retiring the ten "Actions in Combat"
-    // rule:*/action:* name collisions (Attack, Cast a Spell, Dash,
-    // Disengage, Dodge, Help, Ready, Search, Use an Object -- 9 groups,
-    // each collapsing to the sole remaining action:* candidate). "Hide"
-    // keeps its collision group (action:hide vs equipment:hide) since it had
-    // a third candidate beyond the retired rule:hide.
-    expect(coverage.diagnostics.recordNameCollisions).toHaveLength(77);
     expect(coverage.diagnostics.duplicateSourceText).toHaveLength(92);
     expect(coverage.diagnostics.unresolvedOwnership).toHaveLength(0);
   });

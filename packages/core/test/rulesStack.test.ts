@@ -473,6 +473,25 @@ describe('retired record keys and Spellcasting section names (bundled SRD)', () 
     });
   });
 
+  it('resolves a by-name lookup under a retired key\'s kind to its canonical record (eshyra-t8gw)', () => {
+    const crossKind = [...RETIRED_RECORD_KEY_ALIASES].filter(
+      ([retired, canonical]) => retired.split(':')[0] !== canonical.split(':')[0],
+    );
+    expect(crossKind.length).toBeGreaterThan(0);
+    for (const [retired, canonical] of crossKind) {
+      const kind = retired.split(':')[0] as RulesRecordKind;
+      const target = pack.records.find((record) => record.key === canonical);
+      expect(target, canonical).toBeDefined();
+      expect(
+        lookupRulesRecord(stack, { kind, name: target?.name ?? '' }),
+        retired,
+      ).toMatchObject({ ok: true, record: { key: canonical } });
+    }
+    expect(
+      lookupRulesRecord(stack, { kind: 'rule', name: 'No Such Action' }),
+    ).toMatchObject({ ok: false, code: 'not_found' });
+  });
+
   it('finds every printed section name, ambiguous exactly when several records print it', () => {
     const owners = new Map<string, string[]>();
     for (const record of pack.records) {

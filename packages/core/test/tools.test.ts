@@ -625,19 +625,19 @@ describe('lookup_rules tool', () => {
     }
   });
 
-  it('returns not_found for the retired rule:hide by name (eshyra-t8gw.1)', () => {
-    // RETIRED_RECORD_KEY_ALIASES (rule:hide -> action:hide) only covers
-    // ref-based lookups; name-based lookup has no alias fallback, so a
-    // caller asking kind 'rule' for the bare name "Hide" gets a clean
-    // not_found rather than a stale rule-kind hit or a silent redirect.
+  it('resolves the retired rule-kind name "Hide" to the canonical action record (eshyra-t8gw)', () => {
+    // rule:hide retired into action:hide; a by-name lookup under kind 'rule'
+    // still reaches the canonical record instead of dead-ending in not_found.
     const result = createDefaultToolRegistry().invoke(
       'lookup_rules',
       { kind: 'rule', name: 'Hide' },
       ctx(),
     );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.code).toBe('not_found');
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { card: { kind: string; name: string } };
+      expect(data.card.kind).toBe('action');
+      expect(data.card.name).toBe('Hide');
     }
   });
 

@@ -121,9 +121,10 @@ export function lookupRulesRecord(
       : found(canonicalEntry);
   }
 
-  const matches = kindIndex?.byName.get(normalizeRulesRecordName(input.name));
+  const normalizedName = normalizeRulesRecordName(input.name);
+  const matches = kindIndex?.byName.get(normalizedName);
   if (matches === undefined || matches.length === 0) {
-    return notFound(input);
+    return retiredNameMatch(stack, input.kind, normalizedName) ?? notFound(input);
   }
   if (matches.length === 1) {
     return found(matches[0] as (typeof matches)[number]);
@@ -152,6 +153,36 @@ function found(entry: RulesStackRecordEntry): RulesLookupResult {
     license: entry.license,
     overrideChain: entry.overrideChain,
   };
+}
+
+/**
+ * A by-name lookup that misses in `kind` still reaches a record retired from
+ * that kind: the retired key's canonical record answers when its name matches
+ * (e.g. kind `rule`, name "Dodge" -> `action:dodge`, eshyra-t8gw), mirroring
+ * the by-ref alias path above. Only an unambiguous single match resolves.
+ */
+function retiredNameMatch(
+  stack: ResolvedRulesStack,
+  kind: RulesRecordKind,
+  normalizedName: string,
+): RulesLookupResult | undefined {
+  const hits: RulesStackRecordEntry[] = [];
+  for (const [retired, canonical] of RETIRED_RECORD_KEY_ALIASES) {
+    if (retired.slice(0, retired.indexOf(':')) !== kind) continue;
+    const canonicalKind = canonical.slice(
+      0,
+      canonical.indexOf(':'),
+    ) as RulesRecordKind;
+    const entry = stack.recordsByKind.get(canonicalKind)?.byKey.get(canonical);
+    if (
+      entry !== undefined &&
+      normalizeRulesRecordName(entry.record.name) === normalizedName &&
+      !hits.includes(entry)
+    ) {
+      hits.push(entry);
+    }
+  }
+  return hits.length === 1 ? found(hits[0]) : undefined;
 }
 
 function notFound(input: RulesLookupInput): RulesLookupResult {
