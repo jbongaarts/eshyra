@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0700" />
+    <title>Agentic Anti-Patterns</title>
+    <meta
+      name="description"
+      content="Recurring patterns that emerge when models write and review software, even when humans remain in the loop."
+    />
+    <link rel="canonical" href="https://eshyra.app/agentic-anti-patterns/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://eshyra.app/agentic-anti-patterns/" />
+    <meta property="og:title" content="Agentic Anti-Patterns" />
+    <meta
+      property="og:description"
+      content="Recurring patterns that emerge when models write and review software, even when humans remain in the loop."
+    />
+    <meta property="og:image" content="https://eshyra.app/art/backdrop-mural.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="mural-bg" aria-hidden="true"></div>
+    <header class="site-banner">
+      <div class="banner-inner">
+        <a class="brand-mark" href="/">
+          <span aria-hidden="true">&gt;</span>
+          <span>ESHYRA</span>
+        </a>
+        <span class="status-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          UNDER CONSTRUCTION
+        </span>
+      </div>
+    </header>
+
+    <main class="page-shell page-shell-article">
+      <article class="terminal-panel" aria-labelledby="essay-title">
+        <header class="terminal-titlebar">
+          <span>eshyra://agentic-anti-patterns</span>
+          <span class="window-controls" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </header>
+        <div class="terminal-body">
+          <nav class="doc-nav" aria-label="Page navigation">
+            <a href="/">&larr; Home</a>
+          </nav>
+
+          <div class="article">
+            <h1 id="essay-title">Agentic Anti-Patterns</h1>
+
+            <p class="lede">
+              Recurring patterns that emerge when models write and review
+              software, even when humans remain in the loop.
+            </p>
+
+            <p>
+              Agentic software development, where agents write the code and
+              agents review it, has a strange economic property: it makes many
+              good engineering practices effortless enough to become harmful.
+            </p>
+
+            <p>
+              What I have increasingly started to think we are seeing is a
+              family of <strong>agentic anti-patterns</strong>. That term
+              matters. An anti-pattern is not just a bad practice. It is a
+              practice that gets repeated precisely because it looks reasonable
+              at first and usually has an understandable local justification.
+            </p>
+
+            <p>
+              Coding agents fall into these traps extremely well. They write
+              tests. They add documentation. They introduce abstractions. They
+              preserve backwards compatibility. They add validation. They create
+              plans, checklists, ADRs, fixtures, reproducers, audit scripts, and
+              regression coverage. They review each other's work and find real
+              defects.
+            </p>
+
+            <p>
+              Individually, almost all of these things can be justified. That is
+              exactly what makes them dangerous. Collectively, they can make a
+              codebase slower, more expensive, harder to understand, and
+              increasingly difficult for the same agents to modify.
+            </p>
+
+            <p>
+              I have now seen these patterns in five projects out of five,
+              across very different domains, languages, and frameworks. The only
+              thing those projects had in common was the development model:
+              agents wrote essentially all of the code <em>and</em> agents
+              reviewed it, while humans set direction and constraints without
+              reading the contents of individual pull requests. The consistency
+              makes me think these are not quirks of any one project, model,
+              language, or framework. They are recurring failure modes of agents
+              writing and reviewing code.
+            </p>
+
+            <p>
+              This is not an essay about how people should prompt or supervise
+              agents. It is about the choices agents make on their own when
+              nothing in the loop pushes back. The trap in an anti-pattern only
+              becomes visible once you have seen the failure mode often enough,
+              and an agent working one task at a time never does. Every session
+              sees only the local justification.
+            </p>
+
+            <p>
+              The problem is not that agents are careless. It is that they have
+              removed many of the natural scarcity constraints that used to keep
+              engineering practices in balance.
+            </p>
+
+            <h2 id="the-brakes-we-didnt-know-we-had">The brakes we didn't know we had</h2>
+
+            <p>
+              Human software development has always been constrained by effort.
+              Writing ten tests takes longer than writing one. Producing a
+              detailed design document is tedious. Creating five layers of
+              abstraction takes time. Performing another code review consumes
+              another engineer's attention. Maintaining elaborate process
+              eventually annoys everyone involved.
+            </p>
+
+            <p>
+              Those costs acted as an implicit regulator. We rarely described
+              them as part of our engineering methodology, but they were. A
+              human developer deciding whether to add another test, another
+              interface, or another page of documentation is subconsciously
+              pricing the work against everything else they could be doing.
+              Those brakes lived in the judgment of whoever wrote and reviewed
+              the code. In a fully agentic loop, that judgment belongs to the
+              agents, and nothing prices the work for them.
+            </p>
+
+            <p>
+              Agents change that. If an agent can write ten regression tests
+              nearly as easily as one, the old equilibrium disappears. If it can
+              produce a thousand-word design document in seconds, "document it
+              thoroughly" no longer means what it used to mean. If a reviewer
+              agent can keep searching for subtle defects without getting bored,
+              "keep reviewing until you're satisfied" can turn into a recursive
+              audit that has no natural stopping point.
+            </p>
+
+            <p>
+              There is another important difference: much of the downstream cost
+              is now literally metered. A document that gets pulled into agent
+              context costs tokens every time it is read. Additional
+              abstractions require more files to be searched and loaded before
+              the agent can reconstruct a call path. Larger test suites consume
+              execution time and often require agents to read more fixtures,
+              failures, and harness code. Another review cycle means input
+              tokens to understand the change, output tokens to describe
+              findings, more tokens for the authoring agent to investigate and
+              repair them, and still more tokens for the next reviewer to verify
+              the repair.
+            </p>
+
+            <p>
+              None of this is free, but the cost has moved. A human paid for an
+              extra test in effort, at the moment of deciding to write it. An
+              agent pays nothing it can feel at that moment. The cost arrives
+              later, on a bill, spread across every future session that reads,
+              runs, or reviews what it produced. That gap between a decision
+              that feels free and a cost that is recurring and compounds is what
+              makes these anti-patterns possible.
+            </p>
+
+            <h2 id="anti-pattern-recursive-review">Anti-pattern: recursive review</h2>
+
+            <p>
+              Code review is where I first became uncomfortable with this.
+            </p>
+
+            <p>
+              In a conventional human-reviewed workflow, a pull request might
+              receive one or two rounds of review. Reviewers catch defects,
+              misunderstandings, or poor design choices. The author repairs
+              them. At some point everyone decides the change is good enough to
+              merge. That process obviously leaves defects behind. Everyone
+              knows this, even if we rarely say it explicitly. Human review is
+              expensive in time and attention, and that expense creates a
+              natural stopping pressure.
+            </p>
+
+            <p>
+              Agentic review removes much of that pressure. A strong coding
+              model reviewing another model's implementation can find subtle
+              semantic errors, edge cases, stale assumptions, mismatched
+              documentation, weak tests, and flaws in fixes from previous
+              rounds. With the frontier coding models I am using in late 2026,
+              almost all of these findings are real rather than hallucinated
+              objections. That makes "one more review" especially compelling: it
+              is relatively cheap, and there is a good chance it will find
+              something worth fixing.
+            </p>
+
+            <p>
+              Projects where I have used Claude to write most of the code but
+              had human engineers review the pull requests gave me an accidental
+              comparison. Those PRs were commonly approved after one or two
+              rounds of review. On the projects with agentic code review,
+              similarly agent-authored pull requests routinely needed six or
+              more review cycles.
+            </p>
+
+            <p>
+              The economic result was counterintuitive. The agent was cheaper
+              than a human at finding any individual defect, yet the agentic
+              review process often cost more overall. That was not in spite of
+              the lower cost per defect detected, but partly because of it. Each
+              additional search was cheap enough to look worthwhile in
+              isolation, and because it frequently found a real problem, it
+              triggered repair work and another opportunity to review. The lower
+              unit cost removed the stopping pressure, and total review expanded
+              enough to overwhelm the savings.
+            </p>
+
+            <p>
+              This would be merely an efficiency problem if the additional
+              review were obviously buying a correspondingly large improvement
+              in downstream quality. So far, I have not seen that. Defects
+              surfaced after merge in the human-reviewed projects, and they have
+              also surfaced in the much more heavily agent-reviewed projects.
+            </p>
+
+            <p>
+              This is not a controlled experiment, and the projects differ
+              enough that I would not claim the production defect rates are
+              actually equivalent. But the contrast is hard to ignore. The agent
+              reviewers are unquestionably finding many more real problems
+              before merge, while the practical quality difference downstream
+              has been much less obvious than the difference in review cost.
+            </p>
+
+            <p>
+              That raises a more useful question than whether the additional
+              findings are valid. Most of them are. The question is how much
+              marginal production risk each additional review cycle is actually
+              buying down.
+            </p>
+
+            <p>
+              That creates an uncomfortable question: if review round seven
+              finds a real bug, wasn't review round seven worthwhile? Not
+              necessarily. A defect can be worth fixing once discovered while
+              the search process that discovered it is still economically
+              irrational.
+            </p>
+
+            <p>
+              This becomes quite concrete when reviews are performed by metered
+              models. A review cycle is not just the cost of the reviewer
+              producing a few comments. The reviewer may need to ingest a large
+              fraction of the PR and surrounding repository. The authoring agent
+              then consumes another substantial context while understanding the
+              finding, reproducing it, changing the implementation, and updating
+              tests or documentation. A closure review pays much of the context
+              cost again. If that review becomes another unrestricted audit, the
+              loop starts over. Six review cycles can therefore cost much more
+              than six times the visible review output.
+            </p>
+
+            <p>
+              The search also leaves residue behind. A subtle defect may lead to
+              a fix, several regression tests, a fixture, a checker, a baseline,
+              and documentation explaining the newly protected behavior. Those
+              artifacts enlarge the surface that later agents must search, read,
+              test, and review. The review process can therefore increase the
+              cost of future review as well as the cost of the change currently
+              being reviewed.
+            </p>
+
+            <h3 id="recursive-proof-machinery">Recursive proof machinery</h3>
+
+            <p>
+              There is an especially pathological version of this: recursive
+              proof machinery. We create evidence to satisfy a review, then
+              create more tests or checkers to prove that the evidence itself is
+              correct, and eventually review the expanded proof system as
+              another part of the implementation. A checker needs tests. A
+              baseline needs a consistency validator. The validator needs
+              fixtures demonstrating malformed and valid cases. A later reviewer
+              finds that the fixtures can drift together with the implementation
+              and adds another independent comparison. None of those steps is
+              obviously absurd in isolation. Collectively, we can end up
+              spending more effort validating the evidence machinery than
+              protecting the behavior that originally mattered.
+            </p>
+
+            <p>
+              This is one place where a <strong>materiality bar</strong> becomes
+              essential. A reviewer finding should not become mandatory work
+              merely because the observation is technically correct. Before
+              turning it into a finding, there should be a real violated
+              requirement or invariant, a relevant and reachable boundary, a
+              material consequence, and a proportionate repair. The same
+              standard applies to permanent evidence: not every observed defect
+              requires another durable checker or regression artifact. The bar
+              does not mean tolerating known consequential defects. It prevents
+              unlimited engineering work from being generated by observations
+              whose expected value does not justify the implementation and
+              carrying cost they create.
+            </p>
+
+            <p>
+              Suppose a later review cycle costs $100 in model usage and repair
+              work and occasionally finds a defect whose expected downstream
+              cost is much lower than that. The defect is real. Fixing it may be
+              cheap and sensible. But spending $100 repeatedly to search for
+              bugs of that class may still be a bad investment.
+            </p>
+
+            <p>
+              This distinction matters: <strong>"worth fixing" is not the same
+              as "worth searching for."</strong> It is easy to miss when every
+              discovered defect comes with a persuasive explanation of why it
+              matters.
+            </p>
+
+            <h3 id="zero-known-defects-is-different-from-zero-discoverable-defects">Zero known defects is different from zero discoverable defects</h3>
+
+            <p>
+              I do not think the answer is to knowingly merge accepted material
+              defects. If a review finds a real problem that crosses the
+              project's materiality threshold, fix it. The mistake is turning
+              that into a requirement to continue performing unrestricted
+              searches until no agent can find anything else.
+            </p>
+
+            <p>
+              Those are different standards. A sustainable review process should
+              separate <strong>closing known defects</strong> from
+              <strong>continuing to search for unknown defects</strong>. The
+              first is part of completing the change. The second is an assurance
+              investment, and that investment should be deliberate and bounded.
+            </p>
+
+            <p>
+              A workflow I increasingly prefer looks like:
+            </p>
+
+            <p>
+              <strong>candidate → planned breadth review → aggregate findings →
+              batch repair → bounded closure review → merge or escalate</strong>
+            </p>
+
+            <p>
+              If multiple independent reviews are desired, run them against the
+              same candidate revision. That buys genuine diversity without
+              creating a moving target after every repair.
+            </p>
+
+            <p>
+              The closure review should verify that the identified defect
+              classes were actually fixed, that meaningful sibling cases were
+              considered, and that the repairs did not introduce problems within
+              their blast radius. It should not automatically become a fresh
+              unrestricted audit. Otherwise the process becomes review → repair
+              → full review → repair → full review → repair, and the search
+              surface is reopened indefinitely. Each trip through that loop also
+              pays again for context acquisition and produces opportunities to
+              enlarge the permanent test and proof surface.
+            </p>
+
+            <p>
+              A new broad review should require new evidence that the assurance
+              problem itself changed: an invalidated assumption, unexpectedly
+              broad blast radius, repeated repair failure, a serious
+              repair-induced defect, or entry into a higher-risk boundary.
+            </p>
+
+            <p>
+              The stopping rule should not be "we have done three cycles." It
+              also should not be "two models finally returned zero findings." A
+              much more meaningful definition of readiness is:
+            </p>
+
+            <p>
+              <strong>the planned assurance process has completed, all accepted
+              material findings are closed, and nothing discovered requires us
+              to widen the assurance scope.</strong>
+            </p>
+
+            <h2 id="anti-pattern-documentation-as-duplicated-state">Anti-pattern: documentation as duplicated state</h2>
+
+            <p>
+              Agents are also exceptionally good at documentation. At first this
+              seems like an unambiguous improvement. They can add Javadocs,
+              inline comments, architectural explanations, design documents,
+              ADRs, handoff notes, and README updates at almost no apparent
+              cost.
+            </p>
+
+            <p>
+              But documentation creates another copy of the system's meaning,
+              and copies drift. A comment that merely restates code is not free.
+              It creates something that future engineers and agents must read,
+              interpret, maintain, review, and keep synchronized. If the code
+              changes and the prose does not, the documentation becomes worse
+              than absent: it becomes misleading.
+            </p>
+
+            <p>
+              For an agent, that cost can be unusually literal. A large design
+              document or heavily commented source file may be pulled into
+              context again and again across implementation, debugging, and
+              review sessions. Even when the documentation is correct, repeated
+              low-value prose consumes input tokens and competes with more
+              useful source for a finite context window. When it is wrong, the
+              cost is greater: the agent spends tokens reconciling contradictory
+              evidence, reviewers flag the mismatch, and another repair cycle is
+              created to bring two representations of the same behavior back
+              into agreement.
+            </p>
+
+            <p>
+              That means the right question is not <strong>would this
+              documentation be useful?</strong> Almost any competent
+              documentation is somewhat useful. The better question is:
+            </p>
+
+            <p>
+              <strong>Does this documentation contain information that a capable
+              future maintainer cannot cheaply and reliably reconstruct from the
+              authoritative code, types, tests, schemas, and repository
+              structure?</strong>
+            </p>
+
+            <p>
+              If not, it is probably duplicated state.
+            </p>
+
+            <p>
+              Good documentation preserves things like:
+            </p>
+
+            <ul>
+              <li>intent;</li>
+              <li>rationale;</li>
+              <li>non-obvious invariants;</li>
+              <li>public behavioral contracts;</li>
+              <li>ownership and trust boundaries;</li>
+              <li>external constraints;</li>
+              <li>ordering or lifecycle requirements;</li>
+              <li>intentional choices that a future maintainer might otherwise "fix."</li>
+            </ul>
+
+            <p>
+              Bad documentation often explains what the code plainly does. A
+              comment like "Sort the events by sequence number" adds almost
+              nothing if the next line visibly sorts the events by sequence
+              number. A comment like "Replay must use persisted sequence rather
+              than timestamp because multiple producers may emit identical or
+              skewed timestamps" carries information the code itself cannot
+              fully explain. The latter constrains future decisions. The former
+              duplicates implementation.
+            </p>
+
+            <p>
+              ADRs are valuable for the same reason. A good ADR records why an
+              architectural responsibility lives where it does and what
+              assumptions motivated that decision. An ADR that simply narrates
+              which current classes call which other current classes will age
+              badly.
+            </p>
+
+            <p>
+              Agents have made documentation cheap to create. That means we need
+              to become more selective about what deserves to survive.
+            </p>
+
+            <h2 id="anti-pattern-regression-test-accretion">Anti-pattern: regression-test accretion</h2>
+
+            <p>
+              Tests exhibit exactly the same pathology. Every discovered bug
+              invites an obvious response: add a regression test. Sometimes
+              several. Perhaps a fixture too, or a checker, an integration test,
+              a snapshot, a baseline file. Each artifact is easy to justify.
+            </p>
+
+            <p>
+              Agents also make it cheap to create several overlapping layers of
+              tests for the same behavior. A broad test of an endpoint may
+              already exercise the resource, service, repository, and datastore
+              together, while separate tests pin each of those pieces in
+              isolation. The narrower tests can be extremely useful while the
+              implementation is being built or diagnosed. The question is
+              whether each one continues to provide enough unique assurance to
+              justify becoming permanent once the same behavior is already
+              protected through broader boundaries.
+            </p>
+
+            <p>
+              That distinction matters because fine-grained tests are often
+              tightly coupled to the implementation they helped create. When the
+              surrounding behavior later changes for a feature or bug fix, those
+              tests may need to change with it even though the broader contract
+              remains well protected elsewhere. Agents can maintain all of these
+              layers cheaply enough that deleting redundant tests rarely feels
+              urgent, so the suite accumulates overlapping evidence instead.
+            </p>
+
+            <p>
+              Recursive review accelerates the process. A review finds a defect,
+              the repair adds several tests, and the next reviewer quite
+              reasonably inspects both the production change and the new
+              evidence. A weakness found there adds another layer of validation,
+              and the proof machinery described above begins to grow. That is
+              expensive in three ways at once. More tests consume execution time
+              and memory. More test code and fixtures consume agent context
+              whenever the subsystem is modified or reviewed. And the enlarged
+              proof surface creates more things capable of producing review
+              findings, which creates more repair cycles and potentially still
+              more tests.
+            </p>
+
+            <p>
+              After enough iterations, a repository can contain thousands of
+              tests and large amounts of evidence machinery whose marginal
+              assurance value is tiny. The problem is not "too much testing" in
+              the abstract. The problem is treating every useful
+              development-time test, every defect reproducer, and every
+              overlapping layer of coverage as though it automatically deserves
+              the same permanent status.
+            </p>
+
+            <p>
+              A useful lifecycle is:
+            </p>
+
+            <p>
+              <strong>observation → disposition → defect class → repair →
+              generalized permanent evidence → retire redundant
+              reproducers</strong>
+            </p>
+
+            <p>
+              A test that helped construct or reproduce something does not
+              automatically deserve to live forever. The durable question is:
+            </p>
+
+            <p>
+              <strong>What is the smallest permanent evidence that meaningfully
+              protects the underlying invariant or defect class?</strong>
+            </p>
+
+            <p>
+              Sometimes that is one generalized test. Sometimes the right answer
+              is a type constraint, schema constraint, state ownership rule,
+              static analysis rule, or runtime invariant. Sometimes broader
+              tests already protect the behavior well enough, and the narrower
+              tests have finished the job they were originally useful for.
+            </p>
+
+            <p>
+              Permanent evidence needs its own reason to exist, proportionate to
+              the consequence and the invariant it protects. Finding an edge
+              case during review does not by itself justify preserving the exact
+              reproducer, adding a generalized checker, and then adding
+              machinery to prove that checker. Nor does the fact that a test was
+              valuable during implementation necessarily make it valuable
+              forever. The goal should be assurance, not test accumulation.
+            </p>
+
+            <h2 id="anti-pattern-abstraction-inflation">Anti-pattern: abstraction inflation</h2>
+
+            <p>
+              Coding agents also have a strong bias toward architecture that
+              looks professionally structured: interfaces, factories,
+              registries, strategies, adapters, providers, configuration
+              objects, extension points. This often reflects sensible software
+              design. Each abstraction can be defended in isolation with
+              familiar arguments: separation of concerns, extensibility,
+              testability, inversion of control. Together they create
+              indirection.
+            </p>
+
+            <p>
+              Indirection is particularly expensive for agents. A human
+              developer with an IDE can navigate several interfaces quickly. An
+              agent may need to search for implementations, retrieve multiple
+              files, reconcile aliases, inspect factories, follow dependency
+              injection, and reconstruct the runtime path every time it reasons
+              about the same behavior. In a metered workflow, that indirection
+              turns into repeated search calls and input tokens every time the
+              feature is touched.
+            </p>
+
+            <p>
+              An abstraction should therefore pay rent. A useful default
+              question is:
+            </p>
+
+            <p>
+              <strong>Do we have a real variation, ownership boundary,
+              substitutable dependency, or existing consumer that requires this
+              abstraction today?</strong>
+            </p>
+
+            <p>
+              If the answer is "we may someday," the abstraction may be
+              speculative carrying cost rather than flexibility. Agentic coding
+              makes speculative architecture effortless to create. It remains
+              expensive to understand forever.
+            </p>
+
+            <h2 id="anti-pattern-defensive-state-proliferation">Anti-pattern: defensive-state proliferation</h2>
+
+            <p>
+              Another locally virtuous practice is defensive handling. An agent
+              sees uncertainty and tries to make the system robust. A value that
+              "should never be null" gets fallback behavior. An impossible
+              lifecycle state gets handled gracefully in three services. An
+              invalid record gets accepted and normalized. Each individual
+              choice looks safer.
+            </p>
+
+            <p>
+              Soon the system supports states that the architecture originally
+              intended to prohibit, and different layers may assign those states
+              different meanings. This makes reasoning harder because the state
+              space expands. It also creates more branches for tests, more cases
+              for reviewers to consider, and more code that future agents must
+              load before they can establish which behavior is actually
+              intended.
+            </p>
+
+            <p>
+              Often the better answer is to establish the invariant at the
+              boundary that owns creation or mutation, then allow internal code
+              to rely on it. Robustness does not always mean supporting more
+              states. Sometimes it means making fewer states representable.
+            </p>
+
+            <h2 id="anti-pattern-process-accretion">Anti-pattern: process accretion</h2>
+
+            <p>
+              Agentic projects can also grow large amounts of machinery around
+              the code: plans, handoffs, checklists, issue hierarchies, review
+              instructions, acceptance documents, audit artifacts, agent rules,
+              status summaries.
+            </p>
+
+            <p>
+              Many of these are genuinely useful. Persistent work items can
+              encode real ownership and dependency structure. Agent instructions
+              can prevent costly category errors. Architecture records can
+              preserve otherwise unrecoverable decisions. But agents are also
+              extremely good at generating process artifacts that merely restate
+              information already available elsewhere. That produces an unusual
+              failure mode: the project begins maintaining a second software
+              system whose purpose is coordinating the construction of the
+              first.
+            </p>
+
+            <p>
+              Every standing instruction becomes recurring context. In an
+              agentic workflow that is not metaphorical overhead: instructions,
+              plans, handoffs, and design artifacts may be repeatedly loaded
+              into prompts, summarized by one agent for another, checked against
+              implementation, and reviewed when they drift. A few hundred
+              unnecessary lines of standing process can be paid for in input
+              tokens across hundreds of future runs. Every checklist becomes
+              something future agents must satisfy, and every workflow artifact
+              becomes another source that can drift or contradict reality.
+            </p>
+
+            <p>
+              The same rule applies:
+            </p>
+
+            <p>
+              <strong>Persist process information when it carries durable
+              knowledge that cannot be cheaply reconstructed.</strong>
+            </p>
+
+            <p>
+              Do not preserve transient reasoning just because generating a
+              polished permanent version is cheap.
+            </p>
+
+            <h2 id="anti-pattern-compatibility-without-a-consumer">Anti-pattern: compatibility without a consumer</h2>
+
+            <p>
+              Agents also tend to preserve compatibility reflexively. A renamed
+              API gets an alias. A replaced path gets a deprecated wrapper. An
+              old configuration shape gets migration support. An obsolete
+              behavior gets another test to make sure it still works.
+            </p>
+
+            <p>
+              In a mature public library, that may be exactly right. In an
+              internal system or a young project with no real consumer of the
+              old behavior, it can be pure carrying cost. Compatibility also
+              multiplies the state space that agents must reason about. Old and
+              new paths both need implementation, tests, review, and often
+              migration logic, and every later change must determine whether
+              both representations remain supported.
+            </p>
+
+            <p>
+              Before preserving compatibility, the useful question is:
+            </p>
+
+            <p>
+              <strong>What actual consumer or durable artifact requires this
+              contract to survive?</strong>
+            </p>
+
+            <p>
+              If there is no answer, compatibility may be preserving history
+              rather than protecting users.
+            </p>
+
+            <h2 id="anti-pattern-finite-completeness-theater">Anti-pattern: finite-completeness theater</h2>
+
+            <p>
+              Agents are also very good at turning ambiguous problems into
+              finite inventories. Everything in the checklist is green. Every
+              known scenario has a test. Every category has been classified.
+              Every row in the matrix is complete. This feels rigorous.
+            </p>
+
+            <p>
+              But some domains are not actually closed. A finite inventory
+              proves completeness only when there is an authoritative reason to
+              believe the inventory itself is complete. Otherwise, it can create
+              a dangerous illusion: the system becomes very good at proving that
+              it covers everything it already knows about.
+            </p>
+
+            <p>
+              Completeness tables attract their own proof machinery: tests that
+              every row is classified, validators that the test input matches
+              the table, review procedures that the validators cover the
+              expected categories. The result may be internally consistent while
+              still saying little about whatever the original inventory failed
+              to discover. This matters in rule systems, discovery systems,
+              security work, knowledge systems, and many other semantic domains.
+            </p>
+
+            <p>
+              A green table is evidence about the table. It is not automatically
+              evidence about the universe outside it.
+            </p>
+
+            <h2 id="anti-pattern-addition-without-retirement">Anti-pattern: addition without retirement</h2>
+
+            <p>
+              Most of these patterns share one deeper cause. Adding something
+              requires only a plausible local justification. Deleting something
+              requires confidence that it is no longer needed. That asymmetry
+              creates a ratchet: more tests, more abstractions, more
+              documentation, more compatibility layers, more validation, more
+              process, more configuration, more derived state. Very little
+              disappears.
+            </p>
+
+            <p>
+              I increasingly think deletion needs to become a first-class
+              operation in agentic development. After changing a responsibility,
+              ask what became obsolete. After generalizing a regression test,
+              ask which reproducer can disappear. After replacing an API,
+              identify whether any real consumer still requires the old one.
+              After accepting an ADR, retire design notes that only described
+              the implementation process. After fixing an invariant at its
+              owning boundary, remove defensive workarounds that supported
+              invalid states elsewhere.
+            </p>
+
+            <p>
+              A mature agentic codebase should not merely accumulate evidence of
+              every decision it has ever made. It should continuously reduce
+              artifacts whose responsibilities have been subsumed by stronger
+              ones.
+            </p>
+
+            <h2 id="repository-carrying-cost">Repository carrying cost</h2>
+
+            <p>
+              These anti-patterns all point toward a more general concept:
+              <strong>repository carrying cost</strong>. Every permanent
+              artifact imposes some combination of:
+            </p>
+
+            <ul>
+              <li>tokens spent creating it;</li>
+              <li>tokens spent rereading it in future contexts;</li>
+              <li>search noise and context-window competition;</li>
+              <li>review surface;</li>
+              <li>synchronization obligations;</li>
+              <li>tokens spent explaining, repairing, and re-reviewing inconsistencies;</li>
+              <li>CI time, memory, and runtime cost;</li>
+              <li>compatibility and migration burden;</li>
+              <li>risk of misleading future engineers or agents.</li>
+            </ul>
+
+            <p>
+              These costs compound through the same chain recursive review
+              creates: a redundant document drifts and becomes a finding, the
+              finding becomes a repair, the repair adds a test and perhaps a
+              checker, and each enlarges the surface the next review must read.
+              A locally inexpensive artifact can create downstream costs much
+              larger than its original generation cost.
+            </p>
+
+            <p>
+              Traditional software practice usually asked whether something is
+              useful. That standard is too weak when the agent making the
+              decision does not bear the downstream cost, because agents can
+              produce endless things that are useful. The better question is:
+            </p>
+
+            <p>
+              <strong>Does this artifact provide enough unique, durable value to
+              justify carrying it indefinitely?</strong>
+            </p>
+
+            <p>
+              That applies to code, tests, documentation, abstractions,
+              compatibility, process, and review itself. When deciding whether
+              an observation deserves to create more of those artifacts, the
+              materiality bar is the first filter.
+            </p>
+
+            <h2 id="the-new-optimization-target">The new optimization target</h2>
+
+            <p>
+              The lesson I am taking from all of this is not that testing,
+              documentation, abstraction, defensive programming, review, or
+              process are bad practices. That would miss the point.
+              Anti-patterns are dangerous precisely because they are usually
+              distorted forms of good practices, and the assumptions that kept
+              those practices in balance under human development no longer hold
+              when generation stops costing the author effort.
+            </p>
+
+            <p>
+              Agentic development therefore needs a different definition of
+              rigor. Rigor is not maximizing the number of artifacts we create
+              around a change. It is not requiring every possible edge case to
+              receive permanent evidence. It is not reviewing until every model
+              is silent. It is not documenting every behavior an agent can
+              explain. It is not abstracting every dependency that could
+              conceivably vary. The goal should be:
+            </p>
+
+            <p>
+              <strong>the minimum durable surface area required to preserve the
+              system's real contracts, invariants, decisions, and justified
+              assurance.</strong>
+            </p>
+
+            <p>
+              Agentic development removes the effort of generation. It does not
+              remove the cost. And many of the most important anti-patterns
+              emerge precisely in the gap between those two facts.
+            </p>
+
+            <nav class="doc-nav doc-nav-foot" aria-label="Page navigation">
+              <a href="/">&larr; Back to home</a>
+            </nav>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        Eshyra &middot; early pre-release &middot;
+        <a href="https://github.com/jbongaarts/eshyra">source on GitHub</a>
+      </p>
+      <p aria-hidden="true">&lt; end of transmission &gt;</p>
+    </footer>
+  </body>
+</html>

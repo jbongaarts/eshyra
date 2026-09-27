@@ -228,5 +228,9 @@ renderTemplate(
   'rules-pack.html.tmpl',
   join(distDir, 'rules-pack', 'index.html'),
 );
+renderTemplate(
+  'agentic-anti-patterns.html.tmpl',
+  join(distDir, 'agentic-anti-patterns', 'index.html'),
+);
 
 log(`done -> ${distDir}`);
