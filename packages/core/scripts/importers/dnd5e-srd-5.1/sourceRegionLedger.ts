@@ -372,8 +372,9 @@ function classifyRegionByOwner(
   }
 
   // In a complete import, coverage has already resolved source ownership and
-  // is authoritative. The legacy context heuristics below remain for fixture
-  // pipelines whose headings are still ambiguous or lack a curated status.
+  // is authoritative. The legacy heuristics below (classChildDataKey,
+  // contextualAmbiguousCandidate, nonTableAmbiguousCandidate) each apply only
+  // to an `ambiguous:` owner, which only fixture pipelines still produce.
   if (owner.status.startsWith('record:')) {
     const targetKey = owner.status.slice('record:'.length);
     return { classification: owner.status as `record:${string}`, targetKey };
@@ -959,7 +960,11 @@ function classifyRegion(
 }
 
 function classChildDataKey(owner: ActiveOwner): string | undefined {
+  // Fixture fallback only (eshyra-o9bd.19.2.2.5 D5): a non-ambiguous coverage
+  // disposition is authoritative and must never be replaced by this
+  // heading-text heuristic.
   if (
+    !owner.status.startsWith('ambiguous:') ||
     owner.item.section === null ||
     !['Hit Points', 'Proficiencies', 'Equipment'].includes(owner.item.text)
   ) {

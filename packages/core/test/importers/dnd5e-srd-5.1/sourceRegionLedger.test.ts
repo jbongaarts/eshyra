@@ -319,6 +319,51 @@ describe('buildSourceRegionLedger', () => {
     );
   });
 
+  it('preserves a non-ambiguous curated status on a class-child-shaped heading (eshyra-o9bd.19.2.2.5 D5)', () => {
+    const heading = item({
+      text: 'Equipment',
+      lineIndex: 0,
+      section: 'Barbarian',
+    });
+    const ledger = buildSourceRegionLedger(
+      [page(['Equipment', 'Curated note prose kept out of scope.'], [12, 9.8])],
+      [coverage(heading, { kind: 'ignored', reason: 'designer-note' })],
+      [record('class:barbarian', 'Barbarian', 'Unrelated class text.')],
+    );
+    expect(ledger.entries[0]).toMatchObject({
+      classification: 'intentionally-ignored:designer-note',
+      ignoreReason: 'designer-note',
+    });
+    expect(ledger.entries[0]?.targetKey).toBeUndefined();
+  });
+
+  it('falls back to class child data only for an ambiguous class-child-shaped heading', () => {
+    const heading = item({
+      text: 'Equipment',
+      lineIndex: 0,
+      section: 'Barbarian',
+    });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          ['Equipment', 'You start with the following equipment.'],
+          [12, 9.8],
+        ),
+      ],
+      [
+        coverage(heading, {
+          kind: 'ambiguous',
+          candidateKeys: ['rule:backgrounds-equipment', 'rule:equipment'],
+        }),
+      ],
+      [record('class:barbarian', 'Barbarian', 'Unrelated class text.')],
+    );
+    expect(ledger.entries[0]).toMatchObject({
+      classification: 'child-of:class:barbarian',
+      targetKey: 'class:barbarian',
+    });
+  });
+
   describe('contentMatch — physical continuation vs. cross-reference (eshyra-o9bd.19.2.2.3.1 F1)', () => {
     it("clears contentMatch when a content-search match repeats the IMMEDIATELY PRECEDING non-contentMatch region's key (physical continuation)", () => {
       // "Wild Shape" owns its own body directly (heading status ==
