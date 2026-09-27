@@ -8,9 +8,13 @@ import {
 } from '../../../scripts/importers/dnd5e-srd-5.1/sourceRegionLedger.js';
 import type { PageText } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
 
-function page(lines: readonly string[], heights: readonly number[]): PageText {
+function page(
+  lines: readonly string[],
+  heights: readonly number[],
+  pageNumber = 3,
+): PageText {
   return {
-    pageNumber: 3,
+    pageNumber,
     lines,
     lineHeights: heights,
     lineGaps: lines.map((_, index) => (index === 0 ? null : 10)),
@@ -285,6 +289,79 @@ describe('buildSourceRegionLedger', () => {
       targetKey: 'feature:cleric:ability-score-improvement',
     });
     expect(body?.contentMatch).toBeUndefined();
+  });
+
+  it('uses resolved coverage ownership before class-heading heuristics and preserves its continuation', () => {
+    const heading = item({
+      text: 'Hit Points',
+      page: 255,
+      lineIndex: 0,
+      section: 'Monsters',
+    });
+    const firstText = 'A monster has hit points as described here.';
+    const continuation = 'Damage reduces a monster’s hit points.';
+    const ledger = buildSourceRegionLedger(
+      [
+        page(['Hit Points', firstText], [12, 9.8], 255),
+        page([continuation], [9.8], 256),
+      ],
+      [coverage(heading, { kind: 'record', key: 'rule:hit-points' })],
+      [record('rule:hit-points', 'Hit Points', `${firstText} ${continuation}`)],
+    );
+
+    expect(ledger.entries).toHaveLength(2);
+    expect(ledger.entries.map((entry) => entry.classification)).toEqual([
+      'record:rule:hit-points',
+      'record:rule:hit-points',
+    ]);
+    expect(ledger.entries.every((entry) => entry.contentMatch !== true)).toBe(
+      true,
+    );
+  });
+
+  it('preserves a non-ambiguous curated status on a class-child-shaped heading (eshyra-o9bd.19.2.2.5 D5)', () => {
+    const heading = item({
+      text: 'Equipment',
+      lineIndex: 0,
+      section: 'Barbarian',
+    });
+    const ledger = buildSourceRegionLedger(
+      [page(['Equipment', 'Curated note prose kept out of scope.'], [12, 9.8])],
+      [coverage(heading, { kind: 'ignored', reason: 'designer-note' })],
+      [record('class:barbarian', 'Barbarian', 'Unrelated class text.')],
+    );
+    expect(ledger.entries[0]).toMatchObject({
+      classification: 'intentionally-ignored:designer-note',
+      ignoreReason: 'designer-note',
+    });
+    expect(ledger.entries[0]?.targetKey).toBeUndefined();
+  });
+
+  it('falls back to class child data only for an ambiguous class-child-shaped heading', () => {
+    const heading = item({
+      text: 'Equipment',
+      lineIndex: 0,
+      section: 'Barbarian',
+    });
+    const ledger = buildSourceRegionLedger(
+      [
+        page(
+          ['Equipment', 'You start with the following equipment.'],
+          [12, 9.8],
+        ),
+      ],
+      [
+        coverage(heading, {
+          kind: 'ambiguous',
+          candidateKeys: ['rule:backgrounds-equipment', 'rule:equipment'],
+        }),
+      ],
+      [record('class:barbarian', 'Barbarian', 'Unrelated class text.')],
+    );
+    expect(ledger.entries[0]).toMatchObject({
+      classification: 'child-of:class:barbarian',
+      targetKey: 'class:barbarian',
+    });
   });
 
   describe('contentMatch — physical continuation vs. cross-reference (eshyra-o9bd.19.2.2.3.1 F1)', () => {

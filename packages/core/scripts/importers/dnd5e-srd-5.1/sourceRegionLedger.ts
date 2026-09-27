@@ -371,6 +371,22 @@ function classifyRegionByOwner(
     };
   }
 
+  // In a complete import, coverage has already resolved source ownership and
+  // is authoritative. The legacy heuristics below (classChildDataKey,
+  // contextualAmbiguousCandidate, nonTableAmbiguousCandidate) each apply only
+  // to an `ambiguous:` owner, which only fixture pipelines still produce.
+  if (owner.status.startsWith('record:')) {
+    const targetKey = owner.status.slice('record:'.length);
+    return { classification: owner.status as `record:${string}`, targetKey };
+  }
+  if (owner.status.startsWith('child-of:')) {
+    const targetKey = owner.status.slice('child-of:'.length);
+    return {
+      classification: owner.status as `child-of:${string}`,
+      targetKey,
+    };
+  }
+
   const structuredClassKey = classChildDataKey(owner);
   if (structuredClassKey !== undefined) {
     return {
@@ -401,17 +417,6 @@ function classifyRegionByOwner(
     };
   }
 
-  if (owner.status.startsWith('record:')) {
-    const targetKey = owner.status.slice('record:'.length);
-    return { classification: owner.status as `record:${string}`, targetKey };
-  }
-  if (owner.status.startsWith('child-of:')) {
-    const targetKey = owner.status.slice('child-of:'.length);
-    return {
-      classification: owner.status as `child-of:${string}`,
-      targetKey,
-    };
-  }
   if (owner.status.startsWith('ignored:')) {
     const reason = owner.status.slice('ignored:'.length);
     if (BROAD_STRUCTURAL_IGNORES.has(owner.status)) {
@@ -955,7 +960,11 @@ function classifyRegion(
 }
 
 function classChildDataKey(owner: ActiveOwner): string | undefined {
+  // Fixture fallback only (eshyra-o9bd.19.2.2.5 D5): a non-ambiguous coverage
+  // disposition is authoritative and must never be replaced by this
+  // heading-text heuristic.
   if (
+    !owner.status.startsWith('ambiguous:') ||
     owner.item.section === null ||
     !['Hit Points', 'Proficiencies', 'Equipment'].includes(owner.item.text)
   ) {
