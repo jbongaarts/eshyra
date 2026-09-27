@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
-    <meta name="theme-color" content="#0a0700" />
+    <meta name="theme-color" content="#07151c" />
     <title>Eshyra - A text-first, persistent AI Dungeon Master</title>
     <meta
       name="description"
@@ -26,78 +26,41 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="mural-bg" aria-hidden="true"></div>
-    <header class="site-banner">
-      <div class="banner-inner">
-        <div class="brand-mark">
-          <span aria-hidden="true">&gt;</span>
-          <span>ESHYRA</span>
+    {{SITE_HEADER}}
+    <main class="page-shell" id="main">
+      <section class="hero" aria-labelledby="intro-title">
+        <div class="hero-copy">
+          <p class="eyebrow">A WORLD WORTH REMEMBERING</p>
+          <h1 id="intro-title">ESHYRA</h1>
+          <p class="hero-deck">A text-first, persistent<br />AI Dungeon Master.</p>
+          <p class="hero-description">Long-running fantasy campaigns.<br />A world that remembers.<br />A story shaped by you.</p>
+          <a class="text-link" href="#essays">Explore the essays <span aria-hidden="true">&darr;</span></a>
+          <p class="project-status">Early pre-release</p>
         </div>
-        <span class="status-pill">
-          <span class="status-dot" aria-hidden="true"></span>
-          UNDER CONSTRUCTION
-        </span>
-      </div>
-    </header>
-
-    <main class="page-shell">
-      <section class="terminal-panel hero" aria-labelledby="intro-title">
-        <header class="terminal-titlebar">
-          <span>eshyra://intro</span>
-          <span class="window-controls" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </header>
-        <div class="terminal-body">
-          <div class="hero-layout">
-            <div>
-              <p class="comment">// new campaign initialized</p>
-              <h1 id="intro-title">
-                A text-first, persistent AI Dungeon Master
-              </h1>
-              <p class="lede">
-                Eshyra is a campaign engine for long-running fantasy play: it
-                remembers prior events, tracks structured game state,
-                adjudicates rules through deterministic tools, and sustains a
-                tabletop-like solo or small-group experience entirely through
-                text.
-              </p>
-              <p class="lede">
-                <strong>Eshyra itself is early pre-release and under construction.</strong>
-                There is no sign-up yet. In the meantime, the project has
-                produced something useful on its own - a structured, openly
-                licensed D&amp;D 5e SRD rules pack you can download and use today.
-              </p>
-              <p class="prompt" aria-hidden="true">&gt; _</p>
-            </div>
-
-            <figure class="art-frame hero-art">
-              <img
-                src="/art/hero-module-cover.png"
-                alt="Vintage painted adventuring party exploring a glowing fantasy ruin"
-              />
-            </figure>
-          </div>
+        <figure class="hero-art">
+          <img src="/art/midnight-library.webp" width="1536" height="1024" fetchpriority="high" alt="A blue-robed wizard at an amber computer terminal in a candlelit library overlooking a moonlit fantasy city" />
+        </figure>
+      </section>
+      <section class="essays-section" id="essays" aria-labelledby="essays-title">
+        <div class="section-heading"><h2 id="essays-title">Essays</h2><a href="/essays/">All essays &rarr;</a></div>
+        <p class="section-intro">Lessons learned building Eshyra: agentic software engineering, persistent worlds, and the decisions behind the project.</p>
+        {{ESSAY_CARDS}}
+      </section>
+      <section class="about-section" id="about" aria-labelledby="about-title">
+        <div class="section-heading"><h2 id="about-title">The project</h2><span>IN DEVELOPMENT</span></div>
+        <div class="about-columns">
+          <p>Eshyra is a campaign engine for long-running fantasy play: it remembers prior events, tracks structured game state, adjudicates rules through deterministic tools, and sustains a tabletop-like solo or small-group experience entirely through text.</p>
+          <div><p>Eshyra itself is early pre-release and under construction. There is no sign-up yet. In the meantime, the project has produced something useful on its own: a structured, openly licensed D&amp;D 5e SRD rules pack you can download and use today.</p><a class="text-link" href="https://github.com/jbongaarts/eshyra">Follow development on GitHub &nearr;</a></div>
         </div>
       </section>
-
       <section
-        class="terminal-panel"
+        class="resource-panel"
         id="rules-pack"
         aria-labelledby="rules-pack-title"
       >
-        <header class="terminal-titlebar">
-          <span>DOWNLOAD.D&amp;D-5E-SRD-5.1</span>
-          <span class="window-controls" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </header>
+
         <div class="terminal-body">
-          <div class="split">
+          <div class="resource-intro">
             <div>
               <h2 id="rules-pack-title">D&amp;D 5e SRD 5.1 rules pack</h2>
               <p class="lede">
@@ -126,12 +89,7 @@
               </p>
             </div>
 
-            <figure class="art-frame">
-              <img
-                src="/art/accent-dragon.png"
-                alt="Vintage painted red dragon perched on a hoard of treasure"
-              />
-            </figure>
+
           </div>
 
           <dl class="stats" aria-label="Rules-pack statistics">
@@ -214,23 +172,11 @@
         </div>
       </section>
 
-      <section class="terminal-panel" id="license" aria-labelledby="license-title">
-        <header class="terminal-titlebar">
-          <span>LICENSE.&amp;.ATTRIBUTION</span>
-          <span class="window-controls" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </header>
+      <section class="resource-panel" id="license" aria-labelledby="license-title">
+
         <div class="terminal-body">
-          <div class="split split-reverse">
-            <figure class="art-frame">
-              <img
-                src="/art/accent-ruins.png"
-                alt="Vintage painted hooded mage holding a glowing scroll in ancient ruins"
-              />
-            </figure>
+          <div class="resource-intro">
+
 
             <div>
               <h2 id="license-title">License &amp; attribution</h2>
@@ -264,32 +210,7 @@
         </div>
       </section>
 
-      <section class="terminal-panel" id="essays">
-        <header class="terminal-titlebar">
-          <span>eshyra://agentic-anti-patterns</span>
-          <span class="window-controls" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </header>
-        <div class="terminal-body">
-          <p class="story-link">
-            <span aria-hidden="true">&gt;</span>
-            <a href="/agentic-anti-patterns/">Agentic Anti-Patterns</a>
-            &mdash; Recurring patterns that emerge when models write and review
-            software, even when humans remain in the loop.
-          </p>
-        </div>
-      </section>
     </main>
-
-    <footer class="site-footer">
-      <p>
-        Eshyra &middot; early pre-release &middot;
-        <a href="https://github.com/jbongaarts/eshyra">source on GitHub</a>
-      </p>
-      <p aria-hidden="true">&lt; end of transmission &gt;</p>
-    </footer>
+    {{SITE_FOOTER}}
   </body>
 </html>

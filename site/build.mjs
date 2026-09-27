@@ -206,9 +206,35 @@ const replacements = {
 // build date) so their metadata can never drift apart. Add a page by adding a
 // template + one `renderTemplate` call; no framework, bundler, or generator is
 // involved.
-function renderTemplate(templateName, outputPath) {
+function renderTemplate(templateName, outputPath, location = 'home') {
   let html = readFileSync(join(srcDir, templateName), 'utf8');
-  for (const [key, value] of Object.entries(replacements)) {
+  const headings = [...html.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/g)];
+  const contents = `<ol class="contents-list">${headings
+    .map(([, id, title]) => `<li><a href="#${id}">${title}</a></li>`)
+    .join('')}</ol>`;
+  const pageReplacements = {
+    SITE_HEADER: readFileSync(join(srcDir, 'header.html.tmpl'), 'utf8'),
+    SITE_FOOTER: readFileSync(join(srcDir, 'footer.html.tmpl'), 'utf8'),
+    ESSAY_CARDS: readFileSync(join(srcDir, 'essay-cards.html.tmpl'), 'utf8'),
+    ARTICLE_CONTENTS: `<nav class="contents-rail" aria-label="Article contents"><h2>Contents</h2>${contents}</nav><details class="contents-mobile"><summary>On this page</summary><nav aria-label="Article contents">${contents}</nav></details>`,
+    PAGE_LOCATION: location,
+    ESSAYS_CURRENT:
+      location === 'essays'
+        ? 'aria-current="page"'
+        : location.startsWith('essays/')
+          ? 'aria-current="location"'
+          : '',
+    ...replacements,
+  };
+  // Source-authored heading IDs remain stable; both contents menus are built
+  // from those headings, so navigation never needs a second hand-kept list.
+  if (html.includes('{{ARTICLE_CONTENTS}}')) {
+    html = html.replace(
+      /<h2 id="([^"]+)">([\s\S]*?)<\/h2>/g,
+      (_, id, title) => `<h2 id="${id}"><a href="#${id}">${title}</a></h2>`,
+    );
+  }
+  for (const [key, value] of Object.entries(pageReplacements)) {
     html = html.replaceAll(`{{${key}}}`, value);
   }
   const leftover = html.match(/\{\{[A-Z_]+\}\}/);
@@ -227,10 +253,18 @@ renderTemplate('index.html.tmpl', join(distDir, 'index.html'));
 renderTemplate(
   'rules-pack.html.tmpl',
   join(distDir, 'rules-pack', 'index.html'),
+  'essays/rules-pack',
 );
 renderTemplate(
   'agentic-anti-patterns.html.tmpl',
   join(distDir, 'agentic-anti-patterns', 'index.html'),
+  'essays/agentic-anti-patterns',
+);
+
+renderTemplate(
+  'essays.html.tmpl',
+  join(distDir, 'essays', 'index.html'),
+  'essays',
 );
 
 log(`done -> ${distDir}`);

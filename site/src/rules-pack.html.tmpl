@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
-    <meta name="theme-color" content="#0a0700" />
+    <meta name="theme-color" content="#07151c" />
     <title>
       How and why the Eshyra rules pack is built - a source-grounded D&amp;D 5e
       SRD rules compiler
@@ -29,36 +29,18 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="mural-bg" aria-hidden="true"></div>
-    <header class="site-banner">
-      <div class="banner-inner">
-        <a class="brand-mark" href="/">
-          <span aria-hidden="true">&gt;</span>
-          <span>ESHYRA</span>
-        </a>
-        <span class="status-pill">
-          <span class="status-dot" aria-hidden="true"></span>
-          UNDER CONSTRUCTION
-        </span>
-      </div>
-    </header>
+    {{SITE_HEADER}}
 
-    <main class="page-shell page-shell-article">
+    <main class="page-shell page-shell-article" id="main">
+      {{ARTICLE_CONTENTS}}
       <article
-        class="terminal-panel"
+        class="reading-panel"
         aria-labelledby="story-title"
       >
-        <header class="terminal-titlebar">
-          <span>eshyra://rules-pack/how-and-why</span>
-          <span class="window-controls" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </header>
+
         <div class="terminal-body">
           <nav class="doc-nav" aria-label="Page navigation">
-            <a href="/">&larr; Home</a>
+            <a href="/essays/">&larr; All essays</a>
             <a href="/#rules-pack">Download the rules pack &darr;</a>
           </nav>
 
@@ -855,7 +837,8 @@
             </p>
 
             <nav class="doc-nav doc-nav-foot" aria-label="Page navigation">
-              <a href="/">&larr; Back to home</a>
+              <a href="/essays/">&larr; All essays</a>
+              <a href="#main">Back to top &uarr;</a>
               <a href="/#rules-pack">Download the rules pack &darr;</a>
             </nav>
           </div>
@@ -863,12 +846,6 @@
       </article>
     </main>
 
-    <footer class="site-footer">
-      <p>
-        Eshyra &middot; early pre-release &middot;
-        <a href="https://github.com/jbongaarts/eshyra">source on GitHub</a>
-      </p>
-      <p aria-hidden="true">&lt; end of transmission &gt;</p>
-    </footer>
+    {{SITE_FOOTER}}
   </body>
 </html>
