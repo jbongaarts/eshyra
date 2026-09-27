@@ -124,7 +124,9 @@ export function lookupRulesRecord(
   const normalizedName = normalizeRulesRecordName(input.name);
   const matches = kindIndex?.byName.get(normalizedName);
   if (matches === undefined || matches.length === 0) {
-    return retiredNameMatch(stack, input.kind, normalizedName) ?? notFound(input);
+    return (
+      retiredNameMatch(stack, input.kind, normalizedName) ?? notFound(input)
+    );
   }
   if (matches.length === 1) {
     return found(matches[0] as (typeof matches)[number]);

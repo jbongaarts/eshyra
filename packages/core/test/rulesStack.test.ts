@@ -473,9 +473,10 @@ describe('retired record keys and Spellcasting section names (bundled SRD)', () 
     });
   });
 
-  it('resolves a by-name lookup under a retired key\'s kind to its canonical record (eshyra-t8gw)', () => {
+  it("resolves a by-name lookup under a retired key's kind to its canonical record (eshyra-t8gw)", () => {
     const crossKind = [...RETIRED_RECORD_KEY_ALIASES].filter(
-      ([retired, canonical]) => retired.split(':')[0] !== canonical.split(':')[0],
+      ([retired, canonical]) =>
+        retired.split(':')[0] !== canonical.split(':')[0],
     );
     expect(crossKind.length).toBeGreaterThan(0);
     for (const [retired, canonical] of crossKind) {
