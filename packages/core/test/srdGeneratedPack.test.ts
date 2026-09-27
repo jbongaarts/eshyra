@@ -248,8 +248,13 @@ const EXPECTED_COUNTS_BY_KIND: Readonly<Record<string, number>> = {
   // Spellcasting chapter intro as previously unrepresented prose.
   // 329 -> 335: the ledger follow-up represents prose under armor category
   // headings, subclass spell-table intro headings, and Adventuring Gear.
+  // 335 -> 325 (eshyra-t8gw.1): retired the ten "Actions in Combat"
+  // standard-action `rule:*` records (Attack, Cast a Spell, Dash, Disengage,
+  // Dodge, Help, Hide, Ready, Search, Use an Object) as pure duplicates of
+  // the `action:*` records of the same printed heading; `action` count above
+  // is unchanged (those ten records already existed).
   // Validated exactly against EXPECTED_SRD_5_1_RULE_KEYS.
-  rule: 335,
+  rule: 325,
   spell: 319,
   // Avatar of Death (Deck of Many Things, p218) and Giant Fly (Figurine of
   // Wondrous Power, p222): abbreviated combat stat blocks defined inline under a
@@ -863,17 +868,20 @@ const EXPECTED_PARTIAL_FIELDS: ReadonlyArray<{
   // eshyra-o9bd.18.7.8.2 adds three reviewed secondary rule table refs:
   // beyond-1st-level, creature-size, and expenses-lifestyle-expenses.
   // eshyra-erf5.1: rule:skills alone carries the p78 skill-to-ability map.
+  // 335 -> 325 (eshyra-t8gw.1): the ten retired "Actions in Combat"
+  // standard-action `rule:*` records carried neither `skillsByAbility` nor
+  // `tableRefs`, so both missingCount and totalInKind drop by exactly 10.
   {
     kind: 'rule',
     field: 'skillsByAbility',
-    missingCount: 334,
-    totalInKind: 335,
+    missingCount: 324,
+    totalInKind: 325,
   },
   {
     kind: 'rule',
     field: 'tableRefs',
-    missingCount: 303,
-    totalInKind: 335,
+    missingCount: 293,
+    totalInKind: 325,
   },
   {
     kind: 'spell',
@@ -1444,6 +1452,29 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         const mechanics = (condition.data as { mechanics?: unknown }).mechanics;
         expect(mechanics, condition.key).toBeDefined();
       }
+    });
+
+    it("never emits a rule:* record whose text duplicates an action:* record's description (eshyra-t8gw.1)", () => {
+      // Generalized committed-pack invariant, not a list of the ten retired
+      // "Actions in Combat" keys: one printed heading must never produce both
+      // a `rule:*` and an `action:*` record with byte-identical bodies.
+      // action:* is canonical (eshyra-t8gw); a future re-introduction of a
+      // rule:*/action:* duplicate for ANY heading must fail this test.
+      const rules = pack.records.filter((r) => r.kind === 'rule');
+      const actions = pack.records.filter((r) => r.kind === 'action');
+      const duplicates: string[] = [];
+      for (const rule of rules) {
+        const ruleText = (rule.data as { text?: unknown }).text;
+        if (typeof ruleText !== 'string') continue;
+        for (const action of actions) {
+          const description = (action.data as { description?: unknown })
+            .description;
+          if (typeof description === 'string' && description === ruleText) {
+            duplicates.push(`${rule.key} duplicates ${action.key}`);
+          }
+        }
+      }
+      expect(duplicates).toEqual([]);
     });
 
     it('exposes typed action economy and effects for all action records (eshyra-o9bd.18.7.2)', () => {

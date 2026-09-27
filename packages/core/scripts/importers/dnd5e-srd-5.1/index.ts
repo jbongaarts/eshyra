@@ -42,6 +42,7 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { excludeActionOwnedRuleDuplicates } from './actionOwnedRuleDedup.js';
 import { assertCreatureAttackLeadInsSegmented } from './creatureAttackLeadIns.js';
 import {
   buildPack,
@@ -974,7 +975,11 @@ export const SRD_5_1_STAT_BLOCK_CONTAINING_ITEMS: ReadonlyMap<string, string> =
  * records; creature-specific variant sidebars are parsed separately as child
  * data on their creature records.
  *
- * The full baseline is 129 core-rules keys, 34 general Spellcasting keys, five
+ * The full baseline is 119 core-rules keys (eshyra-t8gw.1 retired the ten
+ * "Actions in Combat" standard-action headings — Attack, Cast a Spell, Dash,
+ * Disengage, Dodge, Help, Hide, Ready, Search, Use an Object — as `rule:*`
+ * duplicates of the canonical `action:*` records `parseActions` already
+ * emits for the same printed headings), 34 general Spellcasting keys, five
  * gamemastering Madness/Objects keys, five Classes-chapter callout keys, and six
  * gamemastering Traps keys (eshyra-0m9.20), plus three chapter/appendix intro
  * keys (`rule:feats`, `rule:conditions`, `rule:using-ability-scores`) and the
@@ -994,14 +999,12 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:actions-in-combat',
   'rule:advantage-and-disadvantage',
   'rule:armor-class',
-  'rule:attack',
   'rule:attack-rolls',
   'rule:being-prone',
   'rule:between-adventures',
   'rule:blindsight',
   'rule:bonus-actions',
   'rule:breaking-up-your-move',
-  'rule:cast-a-spell',
   'rule:charisma',
   'rule:charisma-checks',
   'rule:charisma-spellcasting-ability',
@@ -1023,14 +1026,11 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:damage-rolls',
   'rule:damage-types',
   'rule:darkvision',
-  'rule:dash',
   'rule:death-saving-throws',
   'rule:dexterity',
   'rule:dexterity-attack-rolls-and-damage',
   'rule:dexterity-checks',
   'rule:dexterity-initiative',
-  'rule:disengage',
-  'rule:dodge',
   'rule:downtime-activities',
   'rule:dropping-to-0-hit-points',
   'rule:falling',
@@ -1041,8 +1041,6 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:grappling',
   'rule:group-checks',
   'rule:healing',
-  'rule:help',
-  'rule:hide',
   'rule:hiding',
   'rule:instant-death',
   'rule:intelligence',
@@ -1075,13 +1073,11 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:ranged-attacks',
   'rule:ranged-attacks-in-close-combat',
   'rule:reactions',
-  'rule:ready',
   'rule:recuperating',
   'rule:researching',
   'rule:resting',
   'rule:rolling-1-or-20',
   'rule:saving-throws',
-  'rule:search',
   'rule:short-rest',
   'rule:shoving-a-creature',
   'rule:skills',
@@ -1106,7 +1102,6 @@ export const EXPECTED_SRD_5_1_RULE_KEYS: readonly string[] = [
   'rule:two-weapon-fighting',
   'rule:underwater-combat',
   'rule:unseen-attackers-and-targets',
-  'rule:use-an-object',
   'rule:using-different-speeds',
   'rule:using-each-ability',
   'rule:variant-encumbrance',
@@ -2913,7 +2908,16 @@ export async function runImporter(
     pages,
     anchors.treasureTables,
   );
-  const coreRules = parseRules(coreRulePages);
+  // F1 (eshyra-t8gw.1): the "Actions in Combat" subsection (within
+  // coreRulePages) prints the ten standard-action headings that
+  // `parseActions` (above) already owns as canonical `action:*` records.
+  // `excludeActionOwnedRuleDuplicates` derives the excluded set from the
+  // emitted `actions` and fails closed if an excluded rule's text no longer
+  // matches its action's description verbatim.
+  const coreRules = excludeActionOwnedRuleDuplicates(
+    parseRules(coreRulePages),
+    actions,
+  );
   // The general Spellcasting-rules chapter (loreweaver-3hp) is a separate slice
   // (the coreRules anchor ends at "Spellcasting"), parsed by the same
   // nesting-aware parser and concatenated. Its key slugs are reserved against

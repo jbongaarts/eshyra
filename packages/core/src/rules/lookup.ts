@@ -54,16 +54,27 @@ export type RulesLookupHit = Extract<RulesLookupResult, { readonly ok: true }>;
 export const RULES_LOOKUP_AMBIGUOUS_CANDIDATE_CAP = 12;
 
 /**
- * Retired `feature:` record keys, mapped to the canonical record that now
- * carries their content (eshyra-o9bd.19.2.2.4). The dnd5e-srd-5.1 feature
+ * Retired record keys, mapped to the canonical record that now carries their
+ * content.
+ *
+ * `feature:*` entries (eshyra-o9bd.19.2.2.4): the dnd5e-srd-5.1 feature
  * parser used to promote a class Spellcasting/Pact Magic feature's own
  * printed subheading ("Cantrips", "Spellbook") to a separate top-level
  * record; those 5 keys no longer exist in the generated pack, but a
  * pre-existing reference to one (saved campaign content, a prior lookup, …)
  * still resolves — to the class's canonical `feature:<class>:spellcasting`
  * / `:pact-magic` record, whose `data.sections` now carries that same
- * subheading verbatim. The canonical key is authoritative; this alias exists
- * only so old references keep resolving, never as a second source of truth.
+ * subheading verbatim.
+ *
+ * `rule:*` entries (eshyra-t8gw.1): the SRD 5.1 "Actions in Combat" heading
+ * for each of the ten standard actions used to be parsed twice — once as a
+ * `rule:*` record and once as the canonical `action:*` record with typed
+ * `data.mechanics`. The `rule:*` copy is retired; a pre-existing reference
+ * resolves to the `action:*` record of the same heading, whose `data.
+ * description` carries the same rule text verbatim.
+ *
+ * The canonical key is authoritative; this map exists only so old references
+ * keep resolving, never as a second source of truth.
  */
 export const RETIRED_RECORD_KEY_ALIASES: ReadonlyMap<string, string> = new Map([
   ['feature:cleric:cantrips', 'feature:cleric:spellcasting'],
@@ -71,6 +82,16 @@ export const RETIRED_RECORD_KEY_ALIASES: ReadonlyMap<string, string> = new Map([
   ['feature:sorcerer:cantrips', 'feature:sorcerer:spellcasting'],
   ['feature:wizard:cantrips', 'feature:wizard:spellcasting'],
   ['feature:wizard:spellbook', 'feature:wizard:spellcasting'],
+  ['rule:attack', 'action:attack'],
+  ['rule:cast-a-spell', 'action:cast-a-spell'],
+  ['rule:dash', 'action:dash'],
+  ['rule:disengage', 'action:disengage'],
+  ['rule:dodge', 'action:dodge'],
+  ['rule:help', 'action:help'],
+  ['rule:hide', 'action:hide'],
+  ['rule:ready', 'action:ready'],
+  ['rule:search', 'action:search'],
+  ['rule:use-an-object', 'action:use-an-object'],
 ]);
 
 export function lookupRulesRecord(
@@ -83,18 +104,36 @@ export function lookupRulesRecord(
     const entry = kindIndex?.byKey.get(input.ref);
     if (entry !== undefined) return found(entry);
     const canonicalRef = RETIRED_RECORD_KEY_ALIASES.get(input.ref);
-    const canonicalEntry =
-      canonicalRef === undefined
-        ? undefined
-        : kindIndex?.byKey.get(canonicalRef);
+    // Lookup is kind-scoped (ADR 0013): an alias only answers a request made
+    // under its retired key's own kind, never a mismatched (kind, ref) pair.
+    if (
+      canonicalRef === undefined ||
+      input.ref.slice(0, input.ref.indexOf(':')) !== input.kind
+    ) {
+      return notFound(input);
+    }
+    // The canonical record an alias points to is not always the same kind as
+    // the retired key (e.g. `rule:dash` -> `action:dash`, eshyra-t8gw.1), so
+    // resolve it in ITS OWN kind index — the prefix before the first `:` —
+    // rather than assuming it shares `input.kind`'s index.
+    const canonicalKind = canonicalRef.slice(
+      0,
+      canonicalRef.indexOf(':'),
+    ) as RulesRecordKind;
+    const canonicalEntry = stack.recordsByKind
+      .get(canonicalKind)
+      ?.byKey.get(canonicalRef);
     return canonicalEntry === undefined
       ? notFound(input)
       : found(canonicalEntry);
   }
 
-  const matches = kindIndex?.byName.get(normalizeRulesRecordName(input.name));
+  const normalizedName = normalizeRulesRecordName(input.name);
+  const matches = kindIndex?.byName.get(normalizedName);
   if (matches === undefined || matches.length === 0) {
-    return notFound(input);
+    return (
+      retiredNameMatch(stack, input.kind, normalizedName) ?? notFound(input)
+    );
   }
   if (matches.length === 1) {
     return found(matches[0] as (typeof matches)[number]);
@@ -123,6 +162,36 @@ function found(entry: RulesStackRecordEntry): RulesLookupResult {
     license: entry.license,
     overrideChain: entry.overrideChain,
   };
+}
+
+/**
+ * A by-name lookup that misses in `kind` still reaches a record retired from
+ * that kind: the retired key's canonical record answers when its name matches
+ * (e.g. kind `rule`, name "Dodge" -> `action:dodge`, eshyra-t8gw), mirroring
+ * the by-ref alias path above. Only an unambiguous single match resolves.
+ */
+function retiredNameMatch(
+  stack: ResolvedRulesStack,
+  kind: RulesRecordKind,
+  normalizedName: string,
+): RulesLookupResult | undefined {
+  const hits: RulesStackRecordEntry[] = [];
+  for (const [retired, canonical] of RETIRED_RECORD_KEY_ALIASES) {
+    if (retired.slice(0, retired.indexOf(':')) !== kind) continue;
+    const canonicalKind = canonical.slice(
+      0,
+      canonical.indexOf(':'),
+    ) as RulesRecordKind;
+    const entry = stack.recordsByKind.get(canonicalKind)?.byKey.get(canonical);
+    if (
+      entry !== undefined &&
+      normalizeRulesRecordName(entry.record.name) === normalizedName &&
+      !hits.includes(entry)
+    ) {
+      hits.push(entry);
+    }
+  }
+  return hits.length === 1 ? found(hits[0]) : undefined;
 }
 
 function notFound(input: RulesLookupInput): RulesLookupResult {

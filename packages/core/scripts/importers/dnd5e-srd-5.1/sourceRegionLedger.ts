@@ -906,8 +906,12 @@ function classifyRegion(
   if (representedRecordKey !== undefined) {
     // A same-named heading disambiguates to `ambiguous:a|b` (no single
     // owner-implied key); the content search choosing one of those exact
-    // candidates (e.g. "Ready" -> action:ready vs rule:ready) is a genuine,
-    // intended disambiguation, not a cross-reference.
+    // candidates (e.g. "Darkvision" -> rule:darkvision vs spell:darkvision vs
+    // rule:senses-darkvision, each disambiguated by page/section context in
+    // `sourceInventoryCoverage.ts`) is a genuine, intended disambiguation, not
+    // a cross-reference. ("Ready" -> action:ready vs rule:ready was this
+    // comment's prior example; rule:ready retired as a pure duplicate of
+    // action:ready, eshyra-t8gw.1.)
     const ambiguousCandidates = owner?.status.startsWith('ambiguous:')
       ? owner.status.slice('ambiguous:'.length).split('|')
       : [];

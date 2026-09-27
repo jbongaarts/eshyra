@@ -3,11 +3,13 @@ import type {
   RulesPack,
   RulesPackLicense,
   RulesRecord,
+  RulesRecordKind,
 } from '../src/internal.js';
 import {
   getBundledDnd5eSrdPack,
   lookupRulesRecord,
   RETIRED_RECORD_KEY_ALIASES,
+  RULES_RECORD_KINDS,
   RulesPackError,
   resolveRulesStack,
 } from '../src/internal.js';
@@ -421,7 +423,7 @@ describe('rules stack resolution', () => {
 // Spellcasting subheadings to their own records. Those keys are retired, but
 // existing references must still resolve, and the subheading names must still
 // find their owning record.
-describe('retired feature keys and Spellcasting section names (bundled SRD)', () => {
+describe('retired record keys and Spellcasting section names (bundled SRD)', () => {
   const pack = getBundledDnd5eSrdPack();
   const stack = resolveRulesStack({ base: pack, addons: [] });
   const keys = new Set(pack.records.map((r) => r.key));
@@ -433,14 +435,80 @@ describe('retired feature keys and Spellcasting section names (bundled SRD)', ()
       'feature:sorcerer:cantrips',
       'feature:wizard:cantrips',
       'feature:wizard:spellbook',
+      'rule:attack',
+      'rule:cast-a-spell',
+      'rule:dash',
+      'rule:disengage',
+      'rule:dodge',
+      'rule:help',
+      'rule:hide',
+      'rule:ready',
+      'rule:search',
+      'rule:use-an-object',
     ]);
     for (const [retired, canonical] of RETIRED_RECORD_KEY_ALIASES) {
       expect(keys.has(retired), retired).toBe(false);
+      // The retired key's own prefix names the kind to query by (ADR 0013
+      // lookups are kind-scoped); the canonical record may live under a
+      // DIFFERENT kind, which is exactly what the eshyra-t8gw.1 `rule:*` ->
+      // `action:*` aliases below exercise.
+      const retiredKind = retired.slice(
+        0,
+        retired.indexOf(':'),
+      ) as RulesRecordKind;
       expect(
-        lookupRulesRecord(stack, { kind: 'feature', ref: retired }),
+        lookupRulesRecord(stack, { kind: retiredKind, ref: retired }),
         retired,
       ).toMatchObject({ ok: true, record: { key: canonical } });
     }
+  });
+
+  it('resolves every retired alias only under its retired kind (eshyra-t8gw, ADR 0013)', () => {
+    for (const [retired, canonical] of RETIRED_RECORD_KEY_ALIASES) {
+      const retiredKind = retired.split(':')[0] as RulesRecordKind;
+      expect(
+        lookupRulesRecord(stack, { kind: retiredKind, ref: retired }),
+        retired,
+      ).toMatchObject({ ok: true, record: { key: canonical } });
+      for (const kind of RULES_RECORD_KINDS) {
+        if (kind === retiredKind) continue;
+        expect(
+          lookupRulesRecord(stack, { kind, ref: retired }),
+          `${kind} ${retired}`,
+        ).toMatchObject({ ok: false, code: 'not_found' });
+      }
+    }
+  });
+
+  it('resolves a cross-kind alias (kind rule, ref rule:dash) to the canonical action:dash record', () => {
+    expect(keys.has('rule:dash')).toBe(false);
+    expect(keys.has('action:dash')).toBe(true);
+    expect(
+      lookupRulesRecord(stack, { kind: 'rule', ref: 'rule:dash' }),
+    ).toMatchObject({
+      ok: true,
+      record: { key: 'action:dash', kind: 'action' },
+    });
+  });
+
+  it("resolves a by-name lookup under a retired key's kind to its canonical record (eshyra-t8gw)", () => {
+    const crossKind = [...RETIRED_RECORD_KEY_ALIASES].filter(
+      ([retired, canonical]) =>
+        retired.split(':')[0] !== canonical.split(':')[0],
+    );
+    expect(crossKind.length).toBeGreaterThan(0);
+    for (const [retired, canonical] of crossKind) {
+      const kind = retired.split(':')[0] as RulesRecordKind;
+      const target = pack.records.find((record) => record.key === canonical);
+      expect(target, canonical).toBeDefined();
+      expect(
+        lookupRulesRecord(stack, { kind, name: target?.name ?? '' }),
+        retired,
+      ).toMatchObject({ ok: true, record: { key: canonical } });
+    }
+    expect(
+      lookupRulesRecord(stack, { kind: 'rule', name: 'No Such Action' }),
+    ).toMatchObject({ ok: false, code: 'not_found' });
   });
 
   it('finds every printed section name, ambiguous exactly when several records print it', () => {

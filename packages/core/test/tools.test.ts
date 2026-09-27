@@ -606,24 +606,40 @@ describe('lookup_rules tool', () => {
     }
   });
 
-  it.each([
-    ['action', 'Hide'],
-    ['rule', 'Hide'],
-  ])(
-    'resolves cross-kind duplicate name %s:Hide unambiguously by kind',
-    (kind, name) => {
-      const result = createDefaultToolRegistry().invoke(
-        'lookup_rules',
-        { kind, name },
-        ctx(),
-      );
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        const data = result.data as { card: { kind: string; name: string } };
-        expect(data.card.kind).toBe(kind);
-      }
-    },
-  );
+  // eshyra-t8gw.1: rule:hide retired as a pure duplicate of action:hide (the
+  // SRD 5.1 "Actions in Combat" heading text was byte-identical on both
+  // records). "Hide" was previously a genuine cross-kind name collision
+  // (action:hide vs rule:hide, both resolved unambiguously by kind); it no
+  // longer is one, since only action:hide remains. The Shield case below
+  // keeps the general cross-kind-name-by-kind mechanism covered.
+  it('resolves action:Hide by name', () => {
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'action', name: 'Hide' },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { card: { kind: string; name: string } };
+      expect(data.card.kind).toBe('action');
+    }
+  });
+
+  it('resolves the retired rule-kind name "Hide" to the canonical action record (eshyra-t8gw)', () => {
+    // rule:hide retired into action:hide; a by-name lookup under kind 'rule'
+    // still reaches the canonical record instead of dead-ending in not_found.
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'rule', name: 'Hide' },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { card: { kind: string; name: string } };
+      expect(data.card.kind).toBe('action');
+      expect(data.card.name).toBe('Hide');
+    }
+  });
 
   it.each([
     ['spell', 'Shield'],
