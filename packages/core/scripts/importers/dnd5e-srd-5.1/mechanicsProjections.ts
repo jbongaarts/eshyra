@@ -311,7 +311,11 @@ const STANDARD_ACTION_MECHANICS: ReadonlyMap<
           releaseCost: 'reaction',
           timing: 'after-trigger-finishes-before-start-of-your-next-turn',
           mayIgnoreTrigger: true,
-          ruleRef: 'rule:ready',
+          // eshyra-t8gw.1: rule:ready retired (duplicate of the Actions in
+          // Combat "Ready" heading action:ready already owns); this effect's
+          // own record IS action:ready, so the ref now names itself as the
+          // rule authority for the readied-trigger clause.
+          ruleRef: 'action:ready',
         },
         {
           kind: 'readySpell',

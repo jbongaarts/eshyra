@@ -67,6 +67,22 @@ function ruleRecord(
   };
 }
 
+function actionRecord(
+  key: string,
+  data: unknown = { description: 'fixture' },
+): RulesRecord {
+  return {
+    systemId: 'dnd5e-srd',
+    kind: 'action',
+    key,
+    name: key,
+    data,
+    source: 'fixture',
+    license: LICENSE,
+    provenance: { sourceRef: 'fixture', locator: 'p. 1' },
+  };
+}
+
 function pack(records: readonly RulesRecord[]): RulesPack {
   return {
     meta: {
@@ -475,8 +491,12 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
   });
 
   it('fails closed on a new (unreviewed) rule record', () => {
+    // eshyra-t8gw.1: assertRuleDispositions now also covers `action:*`
+    // records, so this fixture keeps both kinds (not just `rule`) to isolate
+    // the single new-key failure this test targets from spurious
+    // stale-disposition noise for the real action:* keys.
     const records = getBundledDnd5eSrdPack().records.filter(
-      (record) => record.kind === 'rule',
+      (record) => record.kind === 'rule' || record.kind === 'action',
     );
     const errors = assertRuleDispositions(
       pack([...records, ruleRecord('rule:a-brand-new-rule')]),
@@ -489,11 +509,40 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
   it('fails closed on a stale disposition (pack record removed)', () => {
     const records = getBundledDnd5eSrdPack().records.filter(
       (record) =>
-        record.kind === 'rule' && record.key !== 'rule:ability-checks',
+        (record.kind === 'rule' || record.kind === 'action') &&
+        record.key !== 'rule:ability-checks',
     );
     const errors = assertRuleDispositions(pack(records));
     expect(errors).toContain(
       'rule:ability-checks: stale disposition — remove from RULE_DISPOSITIONS',
+    );
+  });
+
+  // eshyra-t8gw.1: `assertRuleDispositions` now also covers `action:*`
+  // records (the ten SRD 5.1 standard-action dispositions moved there from
+  // `rule:*`). These two mirror the `rule:*` fail-closed pair above for the
+  // `action:*` half of the same check.
+  it('fails closed on a new (unreviewed) action record', () => {
+    const records = getBundledDnd5eSrdPack().records.filter(
+      (record) => record.kind === 'rule' || record.kind === 'action',
+    );
+    const errors = assertRuleDispositions(
+      pack([...records, actionRecord('action:a-brand-new-action')]),
+    );
+    expect(errors).toContain(
+      'action:a-brand-new-action: unreviewed rule record — add to RULE_DISPOSITIONS',
+    );
+  });
+
+  it('fails closed on a stale disposition (action pack record removed)', () => {
+    const records = getBundledDnd5eSrdPack().records.filter(
+      (record) =>
+        (record.kind === 'rule' || record.kind === 'action') &&
+        record.key !== 'action:dash',
+    );
+    const errors = assertRuleDispositions(pack(records));
+    expect(errors).toContain(
+      'action:dash: stale disposition — remove from RULE_DISPOSITIONS',
     );
   });
 

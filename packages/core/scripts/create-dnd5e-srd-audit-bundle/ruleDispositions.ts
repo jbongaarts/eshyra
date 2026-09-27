@@ -2,11 +2,16 @@
  * Rule-record disposition & engine-procedure coverage layer
  * (eshyra-o9bd.18.7.8.1).
  *
- * Exact classification of `rule:*` records only. It is not a corpus-wide
- * semantic ownership, discovery-completeness, capability-completeness, or
- * exclusive-clause-ownership artifact (ADR 0020 §5.3). Kept in a sibling
- * module (not inline in cli.ts) purely for file-size reasons — it is wired
- * into the same audit-bundle build path via `assertRuleDispositions`.
+ * Exact classification of `rule:*` and `action:*` records only. It is not a
+ * corpus-wide semantic ownership, discovery-completeness,
+ * capability-completeness, or exclusive-clause-ownership artifact (ADR 0020
+ * §5.3). Kept in a sibling module (not inline in cli.ts) purely for
+ * file-size reasons — it is wired into the same audit-bundle build path via
+ * `assertRuleDispositions`. `action:*` joined the scope in eshyra-t8gw.1,
+ * when the ten SRD 5.1 "Actions in Combat" standard-action rows moved from
+ * `rule:*` keys to the `action:*` keys they had duplicated; every field
+ * carried over byte-identical, so the classification claim these rows make
+ * is unchanged, only their key prefix.
  *
  * Two independent registries, deliberately not nested (design doc §2,
  * docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-1-rule-disposition-layer-design.md):
@@ -207,7 +212,7 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
       family: 'monster-conventions',
       note: 'monster-conventions: default assumption — monster is proficient with its listed armor/weapons/tools (promoted from REF: deterministic engine default; swap guidance remains GM prose)',
     },
-    'rule:attack': {
+    'action:attack': {
       class: 'engine-procedure',
       family: 'combat-core',
       note: 'combat-core: Attack action grants exactly one melee/ranged attack (promoted from DEF 2026-07-06: deterministic action-economy grant)',
@@ -292,7 +297,7 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
       deterministicOwner: 'rule:spell-slots',
       note: 'no-slot/at-will exemption is owned by the spell-slot economy engine procedure (rule:spell-slots, PROC)',
     },
-    'rule:cast-a-spell': {
+    'action:cast-a-spell': {
       class: 'reference-prose',
       note: '',
     },
@@ -547,7 +552,7 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
       family: 'perception-senses',
       note: 'perception-senses: darkness→dim, dim→bright lighting substitution within radius; no color (promoted from DEF: deterministic lighting semantics). Canonical over senses-darkvision',
     },
-    'rule:dash': {
+    'action:dash': {
       class: 'engine-procedure',
       family: 'combat-core',
       note: 'action: extra movement = current speed',
@@ -588,12 +593,12 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
       class: 'reference-prose',
       note: '',
     },
-    'rule:disengage': {
+    'action:disengage': {
       class: 'engine-procedure',
       family: 'combat-core',
       note: 'action: no opportunity attacks this turn',
     },
-    'rule:dodge': {
+    'action:dodge': {
       class: 'engine-procedure',
       family: 'combat-core',
       note: 'action: attackers disadv, Dex saves adv; void if incapacitated/speed 0',
@@ -735,12 +740,12 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
       canonicalOwner: 'record-data:equipment.armorClass',
       note: 'canonical: gear armor records (no Dex to AC)',
     },
-    'rule:help': {
+    'action:help': {
       class: 'engine-procedure',
       family: 'combat-core',
       note: 'action: advantage grant, 5-ft attack aid',
     },
-    'rule:hide': {
+    'action:hide': {
       class: 'engine-procedure',
       family: 'combat-core',
       note: 'action: Stealth check per hiding rules',
@@ -1151,7 +1156,7 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
       family: 'combat-core',
       note: 'action-economy: one per round; interrupt semantics',
     },
-    'rule:ready': {
+    'action:ready': {
       class: 'engine-procedure',
       family: 'combat-core',
       note: 'action: trigger + readied spell concentration',
@@ -1209,7 +1214,7 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
       family: 'core-d20',
       note: 'core-d20: d20 + mod (+PB if proficient)',
     },
-    'rule:search': {
+    'action:search': {
       class: 'engine-procedure',
       family: 'combat-core',
       note: 'action',
@@ -1543,7 +1548,7 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
       family: 'combat-core',
       note: 'combat-core: disadv vs unseen, adv when unseen; auto-miss wrong guess',
     },
-    'rule:use-an-object': {
+    'action:use-an-object': {
       class: 'engine-procedure',
       family: 'combat-core',
       note: 'action',
@@ -1784,7 +1789,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['lookup_rules', 'roll'],
     contextRequirement: 'default statblock assumption; no state',
   },
-  'rule:attack': {
+  'action:attack': {
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'resolve_check', 'spend_turn_resource'],
     contextRequirement:
@@ -2119,7 +2124,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['lookup_rules', 'roll'],
     contextRequirement: 'lighting-substitution ruling; radii structured',
   },
-  'rule:dash': {
+  'action:dash': {
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll'],
     contextRequirement: 'extra-movement grant; narrative movement',
@@ -2155,7 +2160,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement:
       'initiative rolls + combatant state code-owned; ordering visible',
   },
-  'rule:disengage': {
+  'action:disengage': {
     status: 'model-adjudicated-supported',
     primitives: [
       'add_condition',
@@ -2169,7 +2174,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement:
       'until-end-of-turn effect; condition entry representable',
   },
-  'rule:dodge': {
+  'action:dodge': {
     status: 'model-adjudicated-supported',
     primitives: [
       'add_condition',
@@ -2309,12 +2314,12 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/domainMutations.test.ts',
     ],
   },
-  'rule:help': {
+  'action:help': {
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll'],
     contextRequirement: 'advantage grant; per-roll',
   },
-  'rule:hide': {
+  'action:hide': {
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll'],
     contextRequirement: 'Stealth check per hiding ruling',
@@ -2597,7 +2602,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
-  'rule:ready': {
+  'action:ready': {
     status: 'model-adjudicated-supported',
     primitives: [
       'add_condition',
@@ -2649,7 +2654,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/resolutionTools.test.ts',
     ],
   },
-  'rule:search': {
+  'action:search': {
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll'],
     contextRequirement: 'check-based action',
@@ -2870,7 +2875,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['lookup_rules', 'roll'],
     contextRequirement: 'adv/disadv + wrong-guess auto-miss rulings',
   },
-  'rule:use-an-object': {
+  'action:use-an-object': {
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll', 'spend_turn_resource'],
     contextRequirement:
@@ -3120,12 +3125,16 @@ function requireFindingReference(id: string, context: string): string {
 }
 
 /**
- * Identity-pinned classification of the reviewed `rule:*` corpus. This hash
- * covers every sorted `key:class` pair, so an equal-size reclassification is
- * still drift. It intentionally makes no claim beyond `rule:*` records.
+ * Identity-pinned classification of the reviewed `rule:*`/`action:*` corpus.
+ * This hash covers every sorted `key:class` pair, so an equal-size
+ * reclassification is still drift. It intentionally makes no claim beyond
+ * `rule:*` and `action:*` records. eshyra-t8gw.1 moved ten rows from
+ * `rule:*` to `action:*` keys (their `class` unchanged), which changes this
+ * hash purely because the key text moved — see that bead's notes for the
+ * sorted (suffix, class) multiset proof that nothing else changed.
  */
 const EXPECTED_RULE_DISPOSITION_IDENTITY_FINGERPRINT =
-  'ce931fcf6307c8ff6de62a446b6436ab70f7bdc74701e7311f6b1ff61dd53e58';
+  'de97edb00e05374282ba4afcb00481db87acbefadfffde37da6329e024423e32';
 
 function ruleDispositionIdentityFingerprint(
   dispositions: Readonly<Record<string, RuleDisposition>>,
@@ -3399,8 +3408,16 @@ export function validateRuleRegistries(
 
 /**
  * Fail-closed registry-integrity check (design §3) for the audit-bundle
- * build: new/stale `rule:*` pack keys against `RULE_DISPOSITIONS`, plus the
- * full `validateRuleRegistries` check over the real registries.
+ * build: new/stale `rule:*`/`action:*` pack keys against `RULE_DISPOSITIONS`,
+ * plus the full `validateRuleRegistries` check over the real registries.
+ *
+ * `action:*` joined this gate in eshyra-t8gw.1: the ten SRD 5.1 "Actions in
+ * Combat" standard-action headings used to be double-emitted as both
+ * `rule:*` and `action:*` records; the `rule:*` copy retired and its
+ * disposition row moved to the `action:*` key it duplicated. Every emitted
+ * `action:*` record must have a disposition, and no disposition may name a
+ * missing `action:*` key, exactly like the pre-existing `rule:*` half of this
+ * check.
  */
 function hasNonEmptyTableRefs(data: unknown): boolean {
   if (typeof data !== 'object' || data === null) return false;
@@ -3410,7 +3427,9 @@ function hasNonEmptyTableRefs(data: unknown): boolean {
 
 export function assertRuleDispositions(pack: RulesPack): readonly string[] {
   const errors: string[] = [];
-  const ruleRecords = pack.records.filter((record) => record.kind === 'rule');
+  const ruleRecords = pack.records.filter(
+    (record) => record.kind === 'rule' || record.kind === 'action',
+  );
   const packKeys = new Set(ruleRecords.map((record) => record.key));
   const dispositionKeys = new Set(Object.keys(RULE_DISPOSITIONS));
 
@@ -3458,7 +3477,10 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
 }
 
 export interface RuleDispositionReport {
-  /** Exact `rule:*` classification only; never corpus-wide ownership. */
+  /**
+   * Exact `rule:*`/`action:*` classification only; never corpus-wide
+   * ownership.
+   */
   readonly scope: 'rule-record-classification-only';
   readonly referencesProse: number;
   readonly definitions: number;

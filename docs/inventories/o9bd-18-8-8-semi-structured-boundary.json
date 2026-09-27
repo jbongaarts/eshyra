@@ -6,7 +6,7 @@
     "packages/core/src/rules/pathfinder2eRemaster.ts"
   ],
   "recordCounts": {
-    "dnd5eSrd": 1809,
+    "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
   "rowCount": 1852,
@@ -28069,7 +28069,7 @@
         "An ability check tests a character’s or monster’s innate talent and training in an effort to overcome a challenge. The GM calls for an ability check when a character or monster attempts an action (other than an attack) that has a chance of failure. When the outcome is uncertain, the dice determine the results. For every ability check, the GM decides which of the six abilities is relevant to the task at hand and the difficulty of the task, represented by a Difficulty Class. The more difficult a task, the higher its DC. The Typical Difficulty Classes table shows the most common DCs.\n\nTo make an ability check, roll a d20 and add the relevant ability modifier. As with other d20 rolls, apply bonuses and penalties, and compare the total to the DC. If the total equals or exceeds the DC, the ability check is a success—the creature overcomes the challenge at hand. Otherwise, it’s a failure, which means the character or monster makes no progress toward the objective or makes progress combined with a setback determined by the GM.",
         "Every race increases one or more of a character’s ability scores."
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "compound mechanical text",
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "model context only; any deterministic core must be represented by a separate named projection",
@@ -28093,7 +28093,7 @@
         "rule:ability-checks",
         "rule:ability-score-increase"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.key is required by the baseline record validator",
       "deterministicConsumers": "rules-stack `byKey` index and `lookupRulesRecord({ ref })`",
@@ -28113,7 +28113,7 @@
       "representativeValues": [
         "rule"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.kind is checked against the closed RulesRecordKind union/validator",
       "deterministicConsumers": "RulesRecordKind discriminator and kind-specific schema dispatch",
@@ -28133,7 +28133,7 @@
       "representativeValues": [
         "This work includes material taken from the System Reference Document 5.1 (\"SRD 5.1\") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode."
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -28153,7 +28153,7 @@
       "representativeValues": [
         "open"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -28173,7 +28173,7 @@
       "representativeValues": [
         "Creative Commons Attribution 4.0 International"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -28193,7 +28193,7 @@
       "representativeValues": [
         "Preserve the SRD 5.1 attribution text on redistributed records and derivatives."
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -28213,7 +28213,7 @@
       "representativeValues": [
         "Every record names the SRD page it was extracted from."
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -28233,7 +28233,7 @@
       "representativeValues": [
         "System Reference Document 5.1 at https://dnd.wizards.com/resources/systems-reference-document"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -28257,7 +28257,7 @@
         "Ability Checks",
         "Ability Score Increase"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.name is required by the baseline record validator",
       "deterministicConsumers": "rules-stack `byName` index using `normalizeRulesRecordName`; display identity",
@@ -28281,7 +28281,7 @@
         "p. 77",
         "p. 3"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -28301,7 +28301,7 @@
       "representativeValues": [
         "https://dnd.wizards.com/resources/systems-reference-document"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RecordProvenance.sourceRef must match meta.source.sourceUrl or meta.source.sourceIdentity",
       "deterministicConsumers": "validateRulesPack `assertProvenanceMatchesPackSource` cross-field invariant",
@@ -28325,7 +28325,7 @@
         "SRD 5.1 p. 77",
         "SRD 5.1 p. 3"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "source prose",
       "currentSchemaValidation": "RulesRecord source, provenance, and license contracts validate metadata shape",
       "deterministicConsumers": "provenance/display/licensing consumers only",
@@ -28345,7 +28345,7 @@
       "representativeValues": [
         "dnd5e-srd"
       ],
-      "population": 335,
+      "population": 325,
       "valueClass": "identifier-like",
       "currentSchemaValidation": "RulesRecord.systemId is required by the baseline pack model",
       "deterministicConsumers": "rules-stack system binding and `resolveRulesStack` compatibility",

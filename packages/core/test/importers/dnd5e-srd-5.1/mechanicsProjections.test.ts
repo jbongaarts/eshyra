@@ -582,7 +582,7 @@ describe('deriveActionMechanics standard action semantics (eshyra-o9bd.18.7.2)',
         releaseCost: 'reaction',
         timing: 'after-trigger-finishes-before-start-of-your-next-turn',
         mayIgnoreTrigger: true,
-        ruleRef: 'rule:ready',
+        ruleRef: 'action:ready',
       },
       {
         kind: 'readySpell',

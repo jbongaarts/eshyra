@@ -51,8 +51,14 @@ describe('semi-structured boundary inventory', () => {
     // printed text now lives as `data.sections` on the owning
     // feature:<class>:spellcasting / :pact-magic record instead of as
     // separate top-level records.
+    // 1809 -> 1799 (eshyra-t8gw.1): the ten "Actions in Combat"
+    // standard-action `rule:*` records (Attack, Cast a Spell, Dash,
+    // Disengage, Dodge, Help, Hide, Ready, Search, Use an Object) are
+    // retired as pure duplicates of the `action:*` records of the same
+    // printed heading; the `action:*` records already existed, so only the
+    // `rule` kind's record count drops.
     expect(artifact.recordCounts).toEqual({
-      dnd5eSrd: 1809,
+      dnd5eSrd: 1799,
       pathfinderFixture: 7,
     });
   });

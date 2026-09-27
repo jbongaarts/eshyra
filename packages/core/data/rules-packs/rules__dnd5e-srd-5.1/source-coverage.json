@@ -683,34 +683,6 @@
         "unresolved": false
       },
       {
-        "normalizedName": "attack",
-        "candidateKeys": [
-          "action:attack",
-          "rule:attack"
-        ],
-        "occurrences": [
-          {
-            "page": 93,
-            "lineIndex": 10,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Using Ability Scores",
-            "context": "Actions in Combat",
-            "text": "Attack",
-            "status": "record:action:attack",
-            "resolution": {
-              "kind": "curated-record",
-              "ownerKey": "action:attack"
-            },
-            "ownerKey": "action:attack"
-          }
-        ],
-        "explicitlyClaimedKeys": [
-          "action:attack"
-        ],
-        "unresolved": false
-      },
-      {
         "normalizedName": "attack rolls",
         "candidateKeys": [
           "rule:attack-rolls",
@@ -1024,34 +996,6 @@
         "unresolved": false
       },
       {
-        "normalizedName": "cast a spell",
-        "candidateKeys": [
-          "action:cast-a-spell",
-          "rule:cast-a-spell"
-        ],
-        "occurrences": [
-          {
-            "page": 93,
-            "lineIndex": 21,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Using Ability Scores",
-            "context": "Attack",
-            "text": "Cast a Spell",
-            "status": "record:action:cast-a-spell",
-            "resolution": {
-              "kind": "curated-record",
-              "ownerKey": "action:cast-a-spell"
-            },
-            "ownerKey": "action:cast-a-spell"
-          }
-        ],
-        "explicitlyClaimedKeys": [
-          "action:cast-a-spell"
-        ],
-        "unresolved": false
-      },
-      {
         "normalizedName": "channel divinity",
         "candidateKeys": [
           "feature:cleric:channel-divinity",
@@ -1204,34 +1148,6 @@
           "rule:darkvision",
           "rule:senses-darkvision",
           "spell:darkvision"
-        ],
-        "unresolved": false
-      },
-      {
-        "normalizedName": "dash",
-        "candidateKeys": [
-          "action:dash",
-          "rule:dash"
-        ],
-        "occurrences": [
-          {
-            "page": 93,
-            "lineIndex": 31,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Using Ability Scores",
-            "context": "Cast a Spell",
-            "text": "Dash",
-            "status": "record:action:dash",
-            "resolution": {
-              "kind": "curated-record",
-              "ownerKey": "action:dash"
-            },
-            "ownerKey": "action:dash"
-          }
-        ],
-        "explicitlyClaimedKeys": [
-          "action:dash"
         ],
         "unresolved": false
       },
@@ -1399,62 +1315,6 @@
           }
         ],
         "explicitlyClaimedKeys": [],
-        "unresolved": false
-      },
-      {
-        "normalizedName": "disengage",
-        "candidateKeys": [
-          "action:disengage",
-          "rule:disengage"
-        ],
-        "occurrences": [
-          {
-            "page": 93,
-            "lineIndex": 42,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Using Ability Scores",
-            "context": "Dash",
-            "text": "Disengage",
-            "status": "record:action:disengage",
-            "resolution": {
-              "kind": "curated-record",
-              "ownerKey": "action:disengage"
-            },
-            "ownerKey": "action:disengage"
-          }
-        ],
-        "explicitlyClaimedKeys": [
-          "action:disengage"
-        ],
-        "unresolved": false
-      },
-      {
-        "normalizedName": "dodge",
-        "candidateKeys": [
-          "action:dodge",
-          "rule:dodge"
-        ],
-        "occurrences": [
-          {
-            "page": 93,
-            "lineIndex": 46,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Using Ability Scores",
-            "context": "Disengage",
-            "text": "Dodge",
-            "status": "record:action:dodge",
-            "resolution": {
-              "kind": "curated-record",
-              "ownerKey": "action:dodge"
-            },
-            "ownerKey": "action:dodge"
-          }
-        ],
-        "explicitlyClaimedKeys": [
-          "action:dodge"
-        ],
         "unresolved": false
       },
       {
@@ -2416,39 +2276,10 @@
         "unresolved": false
       },
       {
-        "normalizedName": "help",
-        "candidateKeys": [
-          "action:help",
-          "rule:help"
-        ],
-        "occurrences": [
-          {
-            "page": 93,
-            "lineIndex": 54,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Using Ability Scores",
-            "context": "Dodge",
-            "text": "Help",
-            "status": "record:action:help",
-            "resolution": {
-              "kind": "curated-record",
-              "ownerKey": "action:help"
-            },
-            "ownerKey": "action:help"
-          }
-        ],
-        "explicitlyClaimedKeys": [
-          "action:help"
-        ],
-        "unresolved": false
-      },
-      {
         "normalizedName": "hide",
         "candidateKeys": [
           "action:hide",
-          "equipment:hide",
-          "rule:hide"
+          "equipment:hide"
         ],
         "occurrences": [
           {
@@ -3988,34 +3819,6 @@
         "unresolved": false
       },
       {
-        "normalizedName": "ready",
-        "candidateKeys": [
-          "action:ready",
-          "rule:ready"
-        ],
-        "occurrences": [
-          {
-            "page": 93,
-            "lineIndex": 73,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Using Ability Scores",
-            "context": "Hide",
-            "text": "Ready",
-            "status": "record:action:ready",
-            "resolution": {
-              "kind": "curated-record",
-              "ownerKey": "action:ready"
-            },
-            "ownerKey": "action:ready"
-          }
-        ],
-        "explicitlyClaimedKeys": [
-          "action:ready"
-        ],
-        "unresolved": false
-      },
-      {
         "normalizedName": "ring of resistance",
         "candidateKeys": [
           "magic-item:ring-of-resistance",
@@ -4187,34 +3990,6 @@
           }
         ],
         "explicitlyClaimedKeys": [],
-        "unresolved": false
-      },
-      {
-        "normalizedName": "search",
-        "candidateKeys": [
-          "action:search",
-          "rule:search"
-        ],
-        "occurrences": [
-          {
-            "page": 94,
-            "lineIndex": 7,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Using Ability Scores",
-            "context": "Ready",
-            "text": "Search",
-            "status": "record:action:search",
-            "resolution": {
-              "kind": "curated-record",
-              "ownerKey": "action:search"
-            },
-            "ownerKey": "action:search"
-          }
-        ],
-        "explicitlyClaimedKeys": [
-          "action:search"
-        ],
         "unresolved": false
       },
       {
@@ -5394,34 +5169,6 @@
           }
         ],
         "explicitlyClaimedKeys": [],
-        "unresolved": false
-      },
-      {
-        "normalizedName": "use an object",
-        "candidateKeys": [
-          "action:use-an-object",
-          "rule:use-an-object"
-        ],
-        "occurrences": [
-          {
-            "page": 94,
-            "lineIndex": 13,
-            "tier": "subsection",
-            "structure": "heading",
-            "section": "Using Ability Scores",
-            "context": "Search",
-            "text": "Use an Object",
-            "status": "record:action:use-an-object",
-            "resolution": {
-              "kind": "curated-record",
-              "ownerKey": "action:use-an-object"
-            },
-            "ownerKey": "action:use-an-object"
-          }
-        ],
-        "explicitlyClaimedKeys": [
-          "action:use-an-object"
-        ],
         "unresolved": false
       },
       {
