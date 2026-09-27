@@ -240,7 +240,9 @@ describe('a provenance partition never invents a leaf', () => {
     // Spellcasting/Pact Magic subheading artifact records
     // (feature:{cleric,druid,sorcerer,wizard}:cantrips,
     // feature:wizard:spellbook) shrink the bundled record count.
-    expect(entries.length).toBe(1809);
+    // 1809 -> 1799 (eshyra-t8gw.1): the ten retired "Actions in Combat"
+    // standard-action rule:* duplicates of the canonical action:* records.
+    expect(entries.length).toBe(1799);
     expect(bucketLeaves).toBeGreaterThan(60_000);
     expect(invented).toBe(0);
     expect(lost).toBe(0);

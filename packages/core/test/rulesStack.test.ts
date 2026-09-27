@@ -3,6 +3,7 @@ import type {
   RulesPack,
   RulesPackLicense,
   RulesRecord,
+  RulesRecordKind,
 } from '../src/internal.js';
 import {
   getBundledDnd5eSrdPack,
@@ -421,7 +422,7 @@ describe('rules stack resolution', () => {
 // Spellcasting subheadings to their own records. Those keys are retired, but
 // existing references must still resolve, and the subheading names must still
 // find their owning record.
-describe('retired feature keys and Spellcasting section names (bundled SRD)', () => {
+describe('retired record keys and Spellcasting section names (bundled SRD)', () => {
   const pack = getBundledDnd5eSrdPack();
   const stack = resolveRulesStack({ base: pack, addons: [] });
   const keys = new Set(pack.records.map((r) => r.key));
@@ -433,14 +434,43 @@ describe('retired feature keys and Spellcasting section names (bundled SRD)', ()
       'feature:sorcerer:cantrips',
       'feature:wizard:cantrips',
       'feature:wizard:spellbook',
+      'rule:attack',
+      'rule:cast-a-spell',
+      'rule:dash',
+      'rule:disengage',
+      'rule:dodge',
+      'rule:help',
+      'rule:hide',
+      'rule:ready',
+      'rule:search',
+      'rule:use-an-object',
     ]);
     for (const [retired, canonical] of RETIRED_RECORD_KEY_ALIASES) {
       expect(keys.has(retired), retired).toBe(false);
+      // The retired key's own prefix names the kind to query by (ADR 0013
+      // lookups are kind-scoped); the canonical record may live under a
+      // DIFFERENT kind, which is exactly what the eshyra-t8gw.1 `rule:*` ->
+      // `action:*` aliases below exercise.
+      const retiredKind = retired.slice(
+        0,
+        retired.indexOf(':'),
+      ) as RulesRecordKind;
       expect(
-        lookupRulesRecord(stack, { kind: 'feature', ref: retired }),
+        lookupRulesRecord(stack, { kind: retiredKind, ref: retired }),
         retired,
       ).toMatchObject({ ok: true, record: { key: canonical } });
     }
+  });
+
+  it('resolves a cross-kind alias (kind rule, ref rule:dash) to the canonical action:dash record', () => {
+    expect(keys.has('rule:dash')).toBe(false);
+    expect(keys.has('action:dash')).toBe(true);
+    expect(
+      lookupRulesRecord(stack, { kind: 'rule', ref: 'rule:dash' }),
+    ).toMatchObject({
+      ok: true,
+      record: { key: 'action:dash', kind: 'action' },
+    });
   });
 
   it('finds every printed section name, ambiguous exactly when several records print it', () => {
