@@ -34,3 +34,7 @@ involved.
   pipeline that produces it works. It links to and from the homepage download
   section. See `docs/rules-pack-compiler.md`, ADR 0017, and ADR 0007 for the
   canonical architecture the article narrates.
+- `src/agentic-anti-patterns.html.tmpl` → `dist/agentic-anti-patterns/index.html`
+  (served at `/agentic-anti-patterns/`) — an essay, linked from the homepage.
+  Its title, subheading, and body are approved publication copy: change
+  presentation only, never the words.
