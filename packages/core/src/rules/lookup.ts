@@ -104,7 +104,14 @@ export function lookupRulesRecord(
     const entry = kindIndex?.byKey.get(input.ref);
     if (entry !== undefined) return found(entry);
     const canonicalRef = RETIRED_RECORD_KEY_ALIASES.get(input.ref);
-    if (canonicalRef === undefined) return notFound(input);
+    // Lookup is kind-scoped (ADR 0013): an alias only answers a request made
+    // under its retired key's own kind, never a mismatched (kind, ref) pair.
+    if (
+      canonicalRef === undefined ||
+      input.ref.slice(0, input.ref.indexOf(':')) !== input.kind
+    ) {
+      return notFound(input);
+    }
     // The canonical record an alias points to is not always the same kind as
     // the retired key (e.g. `rule:dash` -> `action:dash`, eshyra-t8gw.1), so
     // resolve it in ITS OWN kind index — the prefix before the first `:` —

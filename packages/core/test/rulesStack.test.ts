@@ -9,6 +9,7 @@ import {
   getBundledDnd5eSrdPack,
   lookupRulesRecord,
   RETIRED_RECORD_KEY_ALIASES,
+  RULES_RECORD_KINDS,
   RulesPackError,
   resolveRulesStack,
 } from '../src/internal.js';
@@ -459,6 +460,23 @@ describe('retired record keys and Spellcasting section names (bundled SRD)', () 
         lookupRulesRecord(stack, { kind: retiredKind, ref: retired }),
         retired,
       ).toMatchObject({ ok: true, record: { key: canonical } });
+    }
+  });
+
+  it('resolves every retired alias only under its retired kind (eshyra-t8gw, ADR 0013)', () => {
+    for (const [retired, canonical] of RETIRED_RECORD_KEY_ALIASES) {
+      const retiredKind = retired.split(':')[0] as RulesRecordKind;
+      expect(
+        lookupRulesRecord(stack, { kind: retiredKind, ref: retired }),
+        retired,
+      ).toMatchObject({ ok: true, record: { key: canonical } });
+      for (const kind of RULES_RECORD_KINDS) {
+        if (kind === retiredKind) continue;
+        expect(
+          lookupRulesRecord(stack, { kind, ref: retired }),
+          `${kind} ${retired}`,
+        ).toMatchObject({ ok: false, code: 'not_found' });
+      }
     }
   });
 
