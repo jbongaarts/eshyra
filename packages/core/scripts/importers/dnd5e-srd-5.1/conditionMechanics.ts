@@ -9,6 +9,68 @@ export interface ConditionMechanics {
     readonly level: number;
     readonly effects: readonly MechanicsEffect[];
   }[];
+  readonly levelLifecycle?: ExhaustionLevelLifecycle;
+}
+
+/**
+ * How an exhaustion level is gained, lost, and ended (eshyra-o9bd.19.3.4).
+ * The six level rows say only what each level DOES; the introductory prose
+ * also says how the level CHANGES, including the one rest interaction the
+ * condition owns. Each clause is emitted only when its exact source sentence
+ * is present, so a reworded source drops the clause instead of keeping a
+ * curated claim the text no longer makes.
+ */
+export interface ExhaustionLevelLifecycle {
+  readonly gain?: 'increase-by-amount-specified-by-effect';
+  readonly removal?: 'reduce-by-amount-specified-by-effect';
+  readonly endsWhenLevelBelow?: 1;
+  readonly restReduction?: {
+    readonly rest: 'long-rest';
+    readonly levels: 1;
+    readonly requires: 'ingested-food-and-drink';
+  };
+  /**
+   * Rules elsewhere in the source that override this lifecycle. SRD 5.1
+   * "Food and Water": exhaustion caused by lack of food or water "can't be
+   * removed until the character eats and drinks the full required amount".
+   */
+  readonly exceptionRuleRefs?: readonly string[];
+}
+
+const EXHAUSTION_LIFECYCLE_CLAUSES = {
+  gain: 'If an already exhausted creature suffers another effect that causes exhaustion, its current level of exhaustion increases by the amount specified in the effect’s description.',
+  removal:
+    'An effect that removes exhaustion reduces its level as specified in the effect’s description, with all exhaustion effects ending if a creature’s exhaustion level is reduced below 1.',
+  restReduction:
+    'Finishing a long rest reduces a creature’s exhaustion level by 1, provided that the creature has also ingested some food and drink.',
+} as const;
+
+function deriveExhaustionLevelLifecycle(
+  description: string,
+): ExhaustionLevelLifecycle | undefined {
+  const says = (clause: string): boolean => description.includes(clause);
+  const lifecycle: ExhaustionLevelLifecycle = {
+    ...(says(EXHAUSTION_LIFECYCLE_CLAUSES.gain)
+      ? { gain: 'increase-by-amount-specified-by-effect' }
+      : {}),
+    ...(says(EXHAUSTION_LIFECYCLE_CLAUSES.removal)
+      ? {
+          removal: 'reduce-by-amount-specified-by-effect',
+          endsWhenLevelBelow: 1,
+        }
+      : {}),
+    ...(says(EXHAUSTION_LIFECYCLE_CLAUSES.restReduction)
+      ? {
+          restReduction: {
+            rest: 'long-rest',
+            levels: 1,
+            requires: 'ingested-food-and-drink',
+          },
+          exceptionRuleRefs: ['rule:food-and-water'],
+        }
+      : {}),
+  };
+  return Object.keys(lifecycle).length > 0 ? lifecycle : undefined;
 }
 
 const STRENGTH_DEXTERITY = ['strength', 'dexterity'] as const;
@@ -378,10 +440,13 @@ export function deriveConditionRecordMechanics(
     return undefined;
   }
 
+  const hasLevels = levels !== undefined && levels.length > 0;
+  const levelLifecycle = hasLevels
+    ? deriveExhaustionLevelLifecycle(condition.description)
+    : undefined;
   return {
     ...(effects.length > 0 ? { effects } : {}),
-    ...(levels !== undefined && levels.length > 0
-      ? { levelApplication: 'current-and-lower', levels }
-      : {}),
+    ...(hasLevels ? { levelApplication: 'current-and-lower', levels } : {}),
+    ...(levelLifecycle !== undefined ? { levelLifecycle } : {}),
   };
 }

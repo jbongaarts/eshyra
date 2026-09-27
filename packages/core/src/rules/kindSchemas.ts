@@ -936,6 +936,77 @@ function requireOnlyKeys(
   }
 }
 
+// How a level-bearing condition's level changes (eshyra-o9bd.19.3.4). Only
+// meaningful beside `levels`; each field is one source clause.
+function optLevelLifecycle(
+  mechanics: Obj,
+  hasLevels: boolean,
+  path: string,
+): void {
+  const value = mechanics.levelLifecycle;
+  if (value === undefined) return;
+  const lifecyclePath = `${path}.levelLifecycle`;
+  if (!hasLevels) {
+    throw new RulesPackError(`${lifecyclePath} requires ${path}.levels`);
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RulesPackError(`${lifecyclePath} must be an object`);
+  }
+  const lifecycle = value as Obj;
+  requireOnlyKeys(
+    lifecycle,
+    [
+      'gain',
+      'removal',
+      'endsWhenLevelBelow',
+      'restReduction',
+      'exceptionRuleRefs',
+    ],
+    lifecyclePath,
+  );
+  optEnum(
+    lifecycle,
+    'gain',
+    lifecyclePath,
+    new Set(['increase-by-amount-specified-by-effect']),
+  );
+  optEnum(
+    lifecycle,
+    'removal',
+    lifecyclePath,
+    new Set(['reduce-by-amount-specified-by-effect']),
+  );
+  optInt(lifecycle, 'endsWhenLevelBelow', lifecyclePath, 1);
+  const rest = lifecycle.restReduction;
+  if (rest !== undefined) {
+    const restPath = `${lifecyclePath}.restReduction`;
+    if (typeof rest !== 'object' || rest === null || Array.isArray(rest)) {
+      throw new RulesPackError(`${restPath} must be an object`);
+    }
+    requireOnlyKeys(rest as Obj, ['rest', 'levels', 'requires'], restPath);
+    reqEnum(
+      rest as Obj,
+      'rest',
+      restPath,
+      new Set(['short-rest', 'long-rest']),
+    );
+    reqInt(rest as Obj, 'levels', restPath, 1);
+    optStr(rest as Obj, 'requires', restPath);
+  }
+  const refs = lifecycle.exceptionRuleRefs;
+  if (refs !== undefined) {
+    if (
+      !Array.isArray(refs) ||
+      refs.length === 0 ||
+      refs.some((ref) => typeof ref !== 'string' || !ref.startsWith('rule:'))
+    ) {
+      throw new RulesPackError(
+        `${lifecyclePath}.exceptionRuleRefs must be a non-empty list of 'rule:' keys`,
+      );
+    }
+  }
+}
+
 function optMechanics(parent: Obj, key: string, path: string): void {
   const value = parent[key];
   if (value === undefined) return;
@@ -1035,6 +1106,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
     effects.forEach((effect, i) => {
       validateMechanicsEffect(effect, `${path}.${key}.effects[${i}]`);
     });
+    validateEffectChoiceGroups(effects, `${path}.${key}.effects`);
     effects.forEach((effect, i) => {
       if (
         effect.kind === 'summoning' &&
@@ -1087,6 +1159,7 @@ function optMechanics(parent: Obj, key: string, path: string): void {
       `${path}.${key}.levelApplication requires ${path}.${key}.levels`,
     );
   }
+  optLevelLifecycle(mechanics, levels !== undefined, `${path}.${key}`);
   // `damage`/`hitDamage` entries are dealt damage, so `type` must be one of
   // the 13 canonical SRD damage types — not any "<dice> <word> damage" match,
   // which would also capture non-damage adjectives like Enlarge/Reduce's
@@ -1646,6 +1719,37 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
   },
   attackOrDamageBonus: (effect, path) => {
     reqAbility(effect, 'addAbilityModifier', path);
+  },
+  makeAbilityCheck: (effect, path) => {
+    // A choice among checks is a list of ability-skill PAIRS. Two parallel
+    // `abilityOptions`/`skillOptions` lists admit cross products the source
+    // never offers (Search's "Wisdom (Perception) ... or Intelligence
+    // (Investigation)" is not Wisdom (Investigation)) — eshyra-o9bd.19.3.4.
+    for (const unpaired of ['abilityOptions', 'skillOptions']) {
+      if (effect[unpaired] !== undefined) {
+        throw new RulesPackError(
+          `${path}.${unpaired} is unsupported; use checkOptions ability-skill pairs`,
+        );
+      }
+    }
+    const options = objArray(effect, 'checkOptions', path);
+    if (options === undefined) return;
+    if (options.length < 2) {
+      throw new RulesPackError(
+        `${path}.checkOptions must offer at least two checks`,
+      );
+    }
+    if (effect.ability !== undefined || effect.skill !== undefined) {
+      throw new RulesPackError(
+        `${path} must not carry both checkOptions and a single ability/skill`,
+      );
+    }
+    options.forEach((option, i) => {
+      const optionPath = `${path}.checkOptions[${i}]`;
+      requireOnlyKeys(option, ['ability', 'skill'], optionPath);
+      reqAbility(option, 'ability', optionPath);
+      reqStr(option, 'skill', optionPath);
+    });
   },
   attackableAppendage: (effect, path) => {
     reqStr(effect, 'appendage', path);
@@ -3885,6 +3989,45 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
     }
   },
 };
+
+/**
+ * Mutually exclusive alternatives inside one `mechanics.effects` list
+ * (eshyra-o9bd.19.3.4). Effects sharing a `choice.groupId` are options of
+ * one decision — the actor gets exactly one `optionId`'s effects, never the
+ * union — so a group must offer at least two distinct options. Same
+ * `{ groupId, optionId }` shape as spell upcast operations.
+ */
+function validateEffectChoiceGroups(
+  effects: readonly Obj[],
+  path: string,
+): void {
+  const groups = new Map<string, Set<string>>();
+  effects.forEach((effect, i) => {
+    if (effect.choice === undefined) return;
+    const choicePath = `${path}[${i}].choice`;
+    const choice = effect.choice;
+    if (
+      typeof choice !== 'object' ||
+      choice === null ||
+      Array.isArray(choice)
+    ) {
+      throw new RulesPackError(`${choicePath} must be an object`);
+    }
+    requireOnlyKeys(choice as Obj, ['groupId', 'optionId'], choicePath);
+    const groupId = reqStr(choice as Obj, 'groupId', choicePath);
+    const optionId = reqStr(choice as Obj, 'optionId', choicePath);
+    const options = groups.get(groupId) ?? new Set<string>();
+    options.add(optionId);
+    groups.set(groupId, options);
+  });
+  for (const [groupId, options] of groups) {
+    if (options.size < 2) {
+      throw new RulesPackError(
+        `${path} choice group ${JSON.stringify(groupId)} must offer at least two options`,
+      );
+    }
+  }
+}
 
 function validateMechanicsEffect(effect: Obj, path: string): void {
   const kind = reqStr(effect, 'kind', path);

@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1852,
+  "rowCount": 1860,
   "dispositionCounts": {
     "complete": 427,
-    "model-adjudicated": 1220,
+    "model-adjudicated": 1228,
     "not-mechanical": 196,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -147,27 +147,6 @@
       "recordKinds": [
         "action"
       ],
-      "fieldPath": "data.mechanics.effects[].abilityOptions[]",
-      "representativeValues": [
-        "wisdom",
-        "intelligence"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].abilityOptions[]",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "action"
-      ],
       "fieldPath": "data.mechanics.effects[].alsoUseWhen",
       "representativeValues": [
         "interact-with-more-than-one-object-on-your-turn"
@@ -197,6 +176,26 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].amount",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "action"
+      ],
+      "fieldPath": "data.mechanics.effects[].appliesTo",
+      "representativeValues": [
+        "first-attack-roll-against-target"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].appliesTo",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -238,6 +237,89 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].castingTime",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "action"
+      ],
+      "fieldPath": "data.mechanics.effects[].checkOptions[].ability",
+      "representativeValues": [
+        "wisdom",
+        "intelligence"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].checkOptions[].ability",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "action"
+      ],
+      "fieldPath": "data.mechanics.effects[].checkOptions[].skill",
+      "representativeValues": [
+        "perception",
+        "investigation"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].checkOptions[].skill",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "action"
+      ],
+      "fieldPath": "data.mechanics.effects[].choice.groupId",
+      "representativeValues": [
+        "help:use"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].choice.groupId",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "action"
+      ],
+      "fieldPath": "data.mechanics.effects[].choice.optionId",
+      "representativeValues": [
+        "aid-task",
+        "aid-attack"
+      ],
+      "population": 2,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].choice.optionId",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -592,27 +674,6 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].skill",
-      "disposition": "model-adjudicated",
-      "typedSchemaOrConsumer": null,
-      "retainedProseBoundary": null,
-      "owner": null,
-      "futureWork": false
-    },
-    {
-      "system": "dnd5e-srd",
-      "recordKinds": [
-        "action"
-      ],
-      "fieldPath": "data.mechanics.effects[].skillOptions[]",
-      "representativeValues": [
-        "perception",
-        "investigation"
-      ],
-      "population": 1,
-      "valueClass": "scalar-like",
-      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
-      "deterministicConsumers": "no deterministic consumer is registered for this field",
-      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].skillOptions[]",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
@@ -4524,6 +4585,106 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.levelApplication",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "condition"
+      ],
+      "fieldPath": "data.mechanics.levelLifecycle.exceptionRuleRefs[]",
+      "representativeValues": [
+        "rule:food-and-water"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.levelLifecycle.exceptionRuleRefs[]",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "condition"
+      ],
+      "fieldPath": "data.mechanics.levelLifecycle.gain",
+      "representativeValues": [
+        "increase-by-amount-specified-by-effect"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.levelLifecycle.gain",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "condition"
+      ],
+      "fieldPath": "data.mechanics.levelLifecycle.removal",
+      "representativeValues": [
+        "reduce-by-amount-specified-by-effect"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.levelLifecycle.removal",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "condition"
+      ],
+      "fieldPath": "data.mechanics.levelLifecycle.restReduction.requires",
+      "representativeValues": [
+        "ingested-food-and-drink"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.levelLifecycle.restReduction.requires",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "condition"
+      ],
+      "fieldPath": "data.mechanics.levelLifecycle.restReduction.rest",
+      "representativeValues": [
+        "long-rest"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.levelLifecycle.restReduction.rest",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,

@@ -168,4 +168,37 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       reason:
         'Condition names are resolved against the condition kind; a missing, non-string, or unrecognized relation sibling now yields a typed indeterminate outcome (see recordRelationships.ts RelationshipResolution), never a silently skipped occurrence.',
     },
+    // eshyra-o9bd.19.3.4: rule/action/condition discovery. These fields
+    // already carried resolvable record keys, but no declaration said they
+    // were links, so discovery could not follow them.
+    {
+      kind: 'action',
+      pointerPrefix: '/mechanics/effects/*/ruleRef',
+      linkField: 'data.mechanics.effects[].ruleRef',
+      disposition: 'reference',
+      relation: 'governing-rule',
+      targetResolution: 'record-key',
+      reason:
+        'The curated record key of the rule that governs this action effect (e.g. Hide -> rule:hiding).',
+    },
+    {
+      kind: 'action',
+      pointerPrefix: '/mechanics/effects/*/ordinaryInteractionRuleRef',
+      linkField: 'data.mechanics.effects[].ordinaryInteractionRuleRef',
+      disposition: 'reference',
+      relation: 'governing-rule',
+      targetResolution: 'record-key',
+      reason:
+        'Use an Object names the rule for the free object interaction it is distinguished from.',
+    },
+    {
+      kind: 'condition',
+      pointerPrefix: '/mechanics/levelLifecycle/exceptionRuleRefs/*',
+      linkField: 'data.mechanics.levelLifecycle.exceptionRuleRefs',
+      disposition: 'reference',
+      relation: 'lifecycle-exception',
+      targetResolution: 'record-key',
+      reason:
+        'A rule elsewhere in the source that overrides this condition level lifecycle (Food and Water blocks exhaustion removal).',
+    },
   ];

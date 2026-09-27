@@ -1545,7 +1545,9 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
             kind: 'attackRollModifier',
             subject: 'helped-friendly-creature',
             mode: 'advantage',
+            appliesTo: 'first-attack-roll-against-target',
             targetConstraint: 'target-creature-within-5-feet-of-you',
+            choice: { groupId: 'help:use', optionId: 'aid-attack' },
           }),
         ]),
       );
@@ -1572,8 +1574,10 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
       });
       expect(actionEffects('action:search')).toContainEqual({
         kind: 'makeAbilityCheck',
-        abilityOptions: ['wisdom', 'intelligence'],
-        skillOptions: ['perception', 'investigation'],
+        checkOptions: [
+          { ability: 'wisdom', skill: 'perception' },
+          { ability: 'intelligence', skill: 'investigation' },
+        ],
         purpose: 'find-something',
         chosenBy: 'gm',
         ruleRef: 'rule:ability-checks',

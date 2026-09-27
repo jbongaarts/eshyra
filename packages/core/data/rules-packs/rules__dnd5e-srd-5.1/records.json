@@ -258,14 +258,23 @@
             "subject": "helped-creature",
             "mode": "advantage",
             "timing": "next-ability-check-before-start-of-your-next-turn",
-            "constraint": "check-must-perform-the-task-you-helped-with"
+            "constraint": "check-must-perform-the-task-you-helped-with",
+            "choice": {
+              "groupId": "help:use",
+              "optionId": "aid-task"
+            }
           },
           {
             "kind": "attackRollModifier",
             "subject": "helped-friendly-creature",
             "mode": "advantage",
             "timing": "before-your-next-turn",
-            "targetConstraint": "target-creature-within-5-feet-of-you"
+            "appliesTo": "first-attack-roll-against-target",
+            "targetConstraint": "target-creature-within-5-feet-of-you",
+            "choice": {
+              "groupId": "help:use",
+              "optionId": "aid-attack"
+            }
           }
         ]
       }
@@ -411,13 +420,15 @@
         "effects": [
           {
             "kind": "makeAbilityCheck",
-            "abilityOptions": [
-              "wisdom",
-              "intelligence"
-            ],
-            "skillOptions": [
-              "perception",
-              "investigation"
+            "checkOptions": [
+              {
+                "ability": "wisdom",
+                "skill": "perception"
+              },
+              {
+                "ability": "intelligence",
+                "skill": "investigation"
+              }
             ],
             "purpose": "find-something",
             "chosenBy": "gm",
@@ -10159,7 +10170,20 @@
               }
             ]
           }
-        ]
+        ],
+        "levelLifecycle": {
+          "gain": "increase-by-amount-specified-by-effect",
+          "removal": "reduce-by-amount-specified-by-effect",
+          "endsWhenLevelBelow": 1,
+          "restReduction": {
+            "rest": "long-rest",
+            "levels": 1,
+            "requires": "ingested-food-and-drink"
+          },
+          "exceptionRuleRefs": [
+            "rule:food-and-water"
+          ]
+        }
       }
     },
     "source": "SRD 5.1 p. 358",
