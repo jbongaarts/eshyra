@@ -579,6 +579,72 @@ blockquote {
   padding-top: 24px;
   border-top: 1px solid var(--line);
 }
+/* Preserve the article author-aside interaction, including its accessible name. */
+.tip {
+  position: relative;
+  display: inline;
+}
+
+.tip-marker {
+  appearance: none;
+  padding: 0 0.15em;
+  border: 0;
+  background: none;
+  color: var(--gold);
+  font: inherit;
+  font-size: 0.72em;
+  font-weight: 900;
+  line-height: 1;
+  vertical-align: super;
+  cursor: help;
+}
+
+.tip-marker:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Visually hidden but present for assistive tech: the accessible name of the
+   marker button, and the collapsed state of the note bubble. */
+.tip-label,
+.tip-bubble {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tip:hover .tip-bubble,
+.tip:focus-within .tip-bubble {
+  top: 1.7em;
+  right: 0;
+  left: auto;
+  z-index: 6;
+  width: max-content;
+  max-width: min(19rem, calc(100vw - 3rem));
+  height: auto;
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  background: var(--panel);
+  box-shadow: 0 6px 18px #000;
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: normal;
+}
+
 @media (min-width: 1400px) {
   .page-shell-article {
     gap: 64px;
@@ -632,6 +698,20 @@ blockquote {
   }
 }
 @media (max-width: 640px) {
+  /* Anchor the aside to its paragraph on narrow screens so wrapping the
+     marker cannot send the bubble outside the reading column. */
+  .article p:has(.tip) {
+    position: relative;
+  }
+  .tip {
+    position: static;
+  }
+  .tip:hover .tip-bubble,
+  .tip:focus-within .tip-bubble {
+    top: 100%;
+    max-width: min(19rem, 100%);
+  }
+
   .site-header,
   .page-shell,
   .site-footer {
