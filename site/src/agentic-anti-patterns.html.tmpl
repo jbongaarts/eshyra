@@ -38,8 +38,8 @@
             <h1 id="essay-title">Agentic Anti-Patterns</h1>
 
             <p class="lede">
-              Recurring patterns that emerge when models write and review
-              software, even when humans remain in the loop.
+              <em>Recurring patterns that emerge when models write and review
+              software, even when humans remain in the loop.</em>
             </p>
 
             <p>
@@ -53,7 +53,10 @@
               family of <strong>agentic anti-patterns</strong>. That term
               matters. An anti-pattern is not just a bad practice. It is a
               practice that gets repeated precisely because it looks reasonable
-              at first and usually has an understandable local justification.
+              at first. It usually has an understandable local justification.
+              The trap only becomes visible once you have seen the failure mode
+              often enough to recognize what the apparently sensible choice is
+              really optimizing for.
             </p>
 
             <p>
@@ -122,9 +125,10 @@
             </p>
 
             <p>
-              Agents change that. If an agent can write ten regression tests
-              nearly as easily as one, the old equilibrium disappears. If it can
-              produce a thousand-word design document in seconds, "document it
+              Once that brake disappears, the old equilibrium disappears with
+              it. If an agent can write ten regression tests nearly as easily
+              as one, there is little pressure to choose one. If it can produce
+              a thousand-word design document in seconds, "document it
               thoroughly" no longer means what it used to mean. If a reviewer
               agent can keep searching for subtle defects without getting bored,
               "keep reviewing until you're satisfied" can turn into a recursive
@@ -226,15 +230,10 @@
               That raises a more useful question than whether the additional
               findings are valid. Most of them are. The question is how much
               marginal production risk each additional review cycle is actually
-              buying down.
-            </p>
-
-            <p>
-              That creates an uncomfortable question: if review round seven
-              finds a real bug, wasn't review round seven worthwhile? Not
-              necessarily. A defect can be worth fixing once discovered while
-              the search process that discovered it is still economically
-              irrational.
+              buying down. If review round seven finds a real bug, it is
+              tempting to conclude that round seven was worthwhile. But a defect
+              can be worth fixing once discovered while the search process that
+              discovered it is still economically irrational.
             </p>
 
             <p>
