@@ -25,6 +25,8 @@ import {
   type RulesPackLicense,
   type RulesRecord,
 } from '../src/internal.js';
+import { RULE_ADJUDICATION_CONTEXT } from '../src/rules/ruleAdjudicationContext.js';
+import { RULE_KNOWN_LIMITS } from '../src/rules/ruleKnownLimits.js';
 
 /**
  * Committed-pack + registry-integrity assertions for the
@@ -166,16 +168,32 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // implements spell-slot expenditure/recovery; F3, eshyra-2n1t.5 moved
     // concentration to implemented); keep them in lockstep with
     // EXPECTED_COVERAGE_CENSUS.
-    expect(report.engineProcedure.implemented).toBe(39);
-    expect(report.engineProcedure.modelAdjudicatedSupported).toBe(108);
-    expect(report.engineProcedure.partial).toHaveLength(16);
-    expect(report.engineProcedure.unimplemented).toHaveLength(2);
-    expect(report.engineProcedure.designBlocked).toHaveLength(10);
-    // Five pre-existing external clauses plus two runtime-execution clauses
-    // remain after equipment payload closure.
-    expect(report.engineProcedure.externalClauses).toHaveLength(7);
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:long-rest']?.status).toBe(
+      'implemented',
+    );
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:short-rest']?.status).toBe(
+      'implemented',
+    );
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:charges']?.status).toBe(
+      'model-adjudicated-supported',
+    );
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:suffocating']?.status).toBe(
+      'partial',
+    );
     expect(Object.keys(RULE_DISPOSITIONS)).toHaveLength(335);
     expect(Object.keys(ENGINE_PROCEDURE_COVERAGE)).toHaveLength(175);
+  });
+
+  it('projects runtime statement rows by object identity into the audit', () => {
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:cover']).toBe(
+      RULE_ADJUDICATION_CONTEXT['rule:cover'],
+    );
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:charges']).toBe(
+      RULE_ADJUDICATION_CONTEXT['rule:charges'],
+    );
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:suffocating']).toBe(
+      RULE_KNOWN_LIMITS['rule:suffocating']?.[0],
+    );
   });
 
   it('surfaces actionable detail (key + missing/designOwner/clause), not just counts', () => {
@@ -348,7 +366,6 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       .filter(([, coverage]) => coverage.status === 'implemented')
       .map(([ruleKey]) => ruleKey)
       .sort();
-    expect(report.deterministicCapabilitySourceOutcomes).toHaveLength(39);
     expect(
       report.deterministicCapabilitySourceOutcomes
         .map(({ ruleKey }) => ruleKey)

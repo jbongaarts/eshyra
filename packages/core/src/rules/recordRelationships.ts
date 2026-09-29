@@ -1,8 +1,10 @@
 import { CONDITION_RELATION_VALUES } from './conditionRelations.js';
 import { walkFieldPointers } from './fieldProvenance.js';
+import type { ResolvedRulesStack } from './stack.js';
 import { normalizeRulesRecordName } from './stack.js';
 import {
   RULES_RECORD_KINDS,
+  type RulesPack,
   RulesPackError,
   type RulesRecord,
   type RulesRecordKind,
@@ -257,6 +259,42 @@ export interface RelationshipIndex {
       >;
     }
   >;
+}
+
+export type RecordRelationshipManifestSource = (
+  pack: RulesPack,
+) => RecordRelationshipManifest | undefined;
+
+export interface RelationshipArtifactState {
+  readonly packId: string;
+  readonly state: 'present' | 'absent';
+}
+
+/** Build the resolver index from the same winning entries discovery uses. */
+export function relationshipIndexFromStack(
+  stack: ResolvedRulesStack,
+): RelationshipIndex {
+  return {
+    recordsByKey: new Map(
+      [...stack.recordsByKey].map(([key, entry]) => [
+        key,
+        { record: entry.record },
+      ]),
+    ),
+    recordsByKind: new Map(
+      [...stack.recordsByKind].map(([kind, index]) => [
+        kind,
+        {
+          byName: new Map(
+            [...index.byName].map(([name, entries]) => [
+              name,
+              entries.map((entry) => ({ record: entry.record })),
+            ]),
+          ),
+        },
+      ]),
+    ),
+  };
 }
 
 function valueAtActualPointer(data: unknown, pointer: string): unknown {

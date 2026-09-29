@@ -7,7 +7,11 @@ import type {
 import type { Db } from '../persistence/db.js';
 import type { RuleDeterministicCapabilityDisposition } from '../rules/deterministicCapabilityLedger.js';
 import type { FieldProvenanceManifest } from '../rules/fieldProvenance.js';
-import type { RelationshipResolution } from '../rules/recordRelationships.js';
+import type {
+  RecordRelationshipManifestSource,
+  RelationshipArtifactState,
+  RelationshipResolution,
+} from '../rules/recordRelationships.js';
 import type {
   ResolvedRulesStack,
   RulesStackRecordEntry,
@@ -20,6 +24,10 @@ export type {
   CampaignRuleReadSeam,
   CampaignRulingProjection,
 } from '../campaign/campaignRules.js';
+export type {
+  RecordRelationshipManifestSource,
+  RelationshipArtifactState,
+} from '../rules/recordRelationships.js';
 
 export type RouteClass =
   | 'direct-state-ref'
@@ -216,22 +224,6 @@ export interface TypedTraversal {
  * canonical bundled SRD pack OBJECT, by identity, exactly as
  * `bundledDnd5eSrdFieldProvenanceSource` does for field provenance.
  */
-export type RecordRelationshipManifestSource = (
-  pack: RulesPack,
-) =>
-  | import('../rules/recordRelationships.js').RecordRelationshipManifest
-  | undefined;
-
-/**
- * Whether a relationship manifest was present or absent for one producing
- * pack, keyed by `RulesPackMeta.packId` (the stable identity `stack.base` /
- * `stack.addons` already report — see `ProjectedPackIdentity`).
- */
-export interface RelationshipArtifactState {
-  readonly packId: string;
-  readonly state: 'present' | 'absent';
-}
-
 export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
   readonly traversals: readonly TypedTraversal[];
   readonly relationshipResolutions: readonly RelationshipResolution[];
@@ -592,6 +584,15 @@ export interface PacketCandidate {
    */
   readonly capabilities: readonly CapabilityPreflight[];
   readonly deterministicCapabilityDisposition?: RuleDeterministicCapabilityDisposition;
+  readonly ruleAdjudicationContext?: {
+    readonly tools: readonly string[];
+    readonly dmContext: string;
+  };
+  readonly ruleKnownLimits?: readonly {
+    readonly limit: 'partial' | 'unimplemented' | 'deferred';
+    readonly statement: string;
+    readonly findingId: string;
+  }[];
   readonly projectionLimits: readonly ProjectionLimitNote[];
 }
 

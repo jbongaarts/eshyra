@@ -25,7 +25,10 @@ import {
   loadRecordRelationshipManifest,
   loadRulesPackFromDirectory,
 } from './packLoader.js';
-import type { RecordRelationshipManifest } from './recordRelationships.js';
+import type {
+  RecordRelationshipManifest,
+  RecordRelationshipManifestSource,
+} from './recordRelationships.js';
 import type { RulesPack } from './types.js';
 
 /** Canonical pack id for the runtime D&D 5e SRD 5.1 rules pack (ADR 0013). */
@@ -142,4 +145,12 @@ export function getBundledDnd5eSrdRecordRelationshipManifest():
     loadRecordRelationshipManifest(PACK_DIR),
   );
   return cachedRecordRelationshipManifest;
+}
+
+/** Associate the bundled manifest with the bundled producer by object identity. */
+export function bundledDnd5eSrdRecordRelationshipManifestSource(): RecordRelationshipManifestSource {
+  return (pack) =>
+    pack === getBundledDnd5eSrdPack()
+      ? getBundledDnd5eSrdRecordRelationshipManifest()
+      : undefined;
 }

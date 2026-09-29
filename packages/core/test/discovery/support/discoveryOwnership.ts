@@ -51,6 +51,9 @@ export interface OwnershipViolation {
 export const REVIEWED_FOREIGN_DEPENDENCIES: readonly string[] = [
   '../adventure/types.js',
   '../campaign/campaignRules.js',
+  // F-09's shared read-only statement facade; discovery consumes Eshyra-owned
+  // rule-awareness data without owning its schema or state.
+  '../rules/ruleAwareness.js',
   // W9 (`eshyra-o9bd.19.11`) additions. None is a campaign-rule owner:
   // `turnTrace` is the accepted-turn trace authority design section 12.2 names
   // as the attachment point for shadow evidence; `lookup`, `bundledSrdPack`

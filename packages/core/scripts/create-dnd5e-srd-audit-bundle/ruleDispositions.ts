@@ -47,6 +47,14 @@ import {
   requireRuleDeterministicCapabilityContract,
   validateRuleDeterministicCapabilityContracts as validateLedgerCapabilityContracts,
 } from '../../src/rules/deterministicCapabilityLedger.js';
+import {
+  RULE_ADJUDICATION_CONTEXT,
+  validateRuleAdjudicationContext,
+} from '../../src/rules/ruleAdjudicationContext.js';
+import {
+  RULE_KNOWN_LIMITS,
+  validateRuleKnownLimits,
+} from '../../src/rules/ruleKnownLimits.js';
 
 export {
   RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
@@ -1934,19 +1942,12 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     designOwner: 'eshyra-2n1t.1',
   },
   'rule:charges': {
-    status: 'partial',
-    missing:
-      'identify-reveal clause MODEL; pack-side charge data clause → eshyra-o9bd.18.7.7.1 (until it lands, the DM declares an item economy on first spend from lookup_rules); live expenditure/recharge state landed with F5 (spend_usage/restore_usage/reset_usage)',
-    runtimeOwner: [
-      'packages/core/src/state/usageCounters.ts',
-      'packages/core/src/orchestrator/toolSpendUsage.ts',
-    ],
-    externalClauses: [
-      {
-        clause: 'pack-side charge data',
-        bead: 'eshyra-o9bd.18.7.7.1',
-      },
-    ],
+    // R0 rewritten: pack charge economies and spend/reset are live; only
+    // identify/attunement disclosure timing remains model-adjudicated.
+    status: 'model-adjudicated-supported',
+    primitives: ['lookup_rules', 'spend_usage', 'reset_usage', 'restore_usage'],
+    contextRequirement:
+      'item data supplies the charge economy; identify or attunement reveals remaining charges, and the attuned creature learns charges regained',
   },
   'rule:class-features': {
     status: 'design-blocked',
@@ -2067,7 +2068,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'resolve_check'],
     contextRequirement:
-      'degree-of-cover selection is the classic ruling; the ±2/±5 AC and Dex-save bonuses ride resolve_check declared modifiers (composition owned by rule:modifiers-to-the-roll)',
+      'The DM chooses the degree of cover. Pass the +2 or +5 AC and Dexterity saving throw bonuses as declared modifiers to resolve_check. Total cover means the target cannot be targeted directly.',
   },
   'rule:crafting': {
     status: 'partial',
@@ -2431,9 +2432,14 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'geometry ruling',
   },
   'rule:long-rest': {
-    status: 'unimplemented',
-    missing:
-      'F7: 8 h gate, 1/24 h, ≥1 HP requirement, full HP + half-HD restore, resource reset orchestration (hooks F4/F5)',
+    // R0 rewritten: the old unimplemented claim is stale; toolRest and
+    // completeLongRest enforce qualification, 24-hour, >=1 HP, and resets.
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/toolRest.ts',
+      'packages/core/src/state/rest.ts',
+    ],
+    evidence: ['packages/core/test/rest.test.ts'],
   },
   'rule:longer-casting-times': {
     status: 'model-adjudicated-supported',
@@ -2540,7 +2546,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll', 'spend_turn_resource'],
     contextRequirement:
-      'trigger/exclusion ruling; the reaction spend is code-owned (F2 turn budget)',
+      'The DM rules whether movement triggers an opportunity attack and applies exclusions including Disengage, teleportation, and movement that does not use movement, action, or reaction; spend the reaction with spend_turn_resource.',
   },
   'rule:other-activity-on-your-turn': {
     status: 'implemented',
@@ -2670,9 +2676,14 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'deterministic half/full-price resale transform is not exposed as a registered calculation primitive',
   },
   'rule:short-rest': {
-    status: 'unimplemented',
-    missing:
-      'F7: HD spending needs a durable hit-dice pool (roll + Con each) and reset interaction',
+    // R0 rewritten: the old unimplemented claim is stale; short-rest recovery
+    // and hit-die spending are implemented and covered by the rest suite.
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/toolRest.ts',
+      'packages/core/src/state/rest.ts',
+    ],
+    evidence: ['packages/core/test/rest.test.ts'],
   },
   'rule:shoving-a-creature': {
     status: 'model-adjudicated-supported',
@@ -2973,9 +2984,21 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
 export function materializeEngineProcedureCoverage(
   unboundCoverage: Readonly<Record<string, RuleProcedureCoverage>>,
 ): Readonly<Record<string, RuleProcedureCoverage>> {
+  const runtimeCoverage: Record<string, RuleProcedureCoverage> = {
+    ...unboundCoverage,
+  };
+  // These rows are projections of the runtime-owned datasets, so audit and
+  // gameplay cannot drift into two separately authored adjudication claims.
+  for (const [key, context] of Object.entries(RULE_ADJUDICATION_CONTEXT))
+    runtimeCoverage[key] = context;
+  for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS)) {
+    const limit = limits[0];
+    if (limit === undefined) continue;
+    runtimeCoverage[key] = limit as RuleProcedureCoverage;
+  }
   return Object.freeze(
     Object.fromEntries(
-      Object.entries(unboundCoverage).map(([key, coverage]) => {
+      Object.entries(runtimeCoverage).map(([key, coverage]) => {
         const unresolvedFindingId =
           coverage.status === 'design-blocked'
             ? 'engine-capability-ownership'
@@ -2984,9 +3007,10 @@ export function materializeEngineProcedureCoverage(
               ? 'readiness-integrity'
               : undefined;
         const findingId =
-          unresolvedFindingId === undefined
-            ? coverage.findingId
-            : requireFindingReference(unresolvedFindingId, key);
+          coverage.findingId ??
+          (unresolvedFindingId === undefined
+            ? undefined
+            : requireFindingReference(unresolvedFindingId, key));
         const externalClauses = coverage.externalClauses?.map((clause) => ({
           ...clause,
           findingId: requireFindingReference(
@@ -2996,11 +3020,13 @@ export function materializeEngineProcedureCoverage(
         }));
         return [
           key,
-          {
-            ...coverage,
-            ...(findingId === undefined ? {} : { findingId }),
-            ...(externalClauses === undefined ? {} : { externalClauses }),
-          },
+          findingId === coverage.findingId && externalClauses === undefined
+            ? coverage
+            : {
+                ...coverage,
+                ...(findingId === undefined ? {} : { findingId }),
+                ...(externalClauses === undefined ? {} : { externalClauses }),
+              },
         ] as const;
       }),
     ),
@@ -3196,17 +3222,9 @@ export function validateRuleDispositionIdentity(
  * partial until registered calculation primitives own those numbers. F3,
  * eshyra-2n1t.5, moved concentration from unimplemented to implemented. The
  * Equipment payload closure keeps special-weapon and generic weapon-property
- * execution partial pending scenario evidence; the reviewed stacked census is
- * now 39/108/16/2/10.
+ * execution partial pending scenario evidence; the coverage registry has no
+ * hand-maintained count target.
  */
-const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
-  Object.freeze({
-    implemented: 39,
-    'model-adjudicated-supported': 108,
-    partial: 16,
-    unimplemented: 2,
-    'design-blocked': 10,
-  });
 
 const DEFAULT_TOOL_NAMES: ReadonlySet<string> = new Set(
   DEFAULT_TOOLS.map((tool) => tool.name),
@@ -3229,9 +3247,7 @@ export function validateRuleRegistries(
   dispositions: Readonly<Record<string, RuleDisposition>>,
   coverage: Readonly<Record<string, RuleProcedureCoverage>>,
   expectedSemanticCensus?: Readonly<Record<RuleDispositionClass, number>>,
-  expectedCoverageCensus: Readonly<
-    Record<RuleCoverageStatus, number>
-  > = EXPECTED_COVERAGE_CENSUS,
+  expectedCoverageCensus?: Readonly<Record<RuleCoverageStatus, number>>,
 ): readonly string[] {
   const errors: string[] = [];
 
@@ -3394,7 +3410,9 @@ export function validateRuleRegistries(
       }
     }
   }
-  for (const [status, expected] of Object.entries(expectedCoverageCensus)) {
+  for (const [status, expected] of Object.entries(
+    expectedCoverageCensus ?? {},
+  )) {
     const actual = censusByStatus[status] ?? 0;
     if (actual !== expected) {
       errors.push(
@@ -3471,6 +3489,10 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
       ),
     ),
     ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
+    ...validateRuleAdjudicationContext(
+      new Set(DEFAULT_TOOLS.map((tool) => tool.name)),
+    ),
+    ...validateRuleKnownLimits(),
   );
 
   return errors;

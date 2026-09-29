@@ -1,8 +1,11 @@
 import {
+  bundledDnd5eSrdRecordRelationshipManifestSource,
   getBundledDnd5eSrdFieldProvenanceManifest,
   getBundledDnd5eSrdPack,
-  getBundledDnd5eSrdRecordRelationshipManifest,
 } from '../rules/bundledSrdPack.js';
+
+export { bundledDnd5eSrdRecordRelationshipManifestSource } from '../rules/bundledSrdPack.js';
+
 import { resolveStrictCampaignRulesStack } from '../state/campaignRecordLookup.js';
 import { candidateBand } from './bands.js';
 import { joinCampaignRules } from './campaignRuleSeam.js';
@@ -16,7 +19,6 @@ import type {
   DiscoveryRunInput,
   DiscoveryTrace,
   FieldProvenanceSource,
-  RecordRelationshipManifestSource,
 } from './types.js';
 
 /** Execute the seven offline stages. The database is used only to resolve the
@@ -133,6 +135,8 @@ export function runDiscoveryStages(input: DiscoveryRunInput): DiscoveryTrace {
     // (`fieldProvenance.ts`), so the one bundled manifest applies to every
     // candidate this harness can produce.
     bundledDnd5eSrdFieldProvenanceSource(),
+    stack,
+    relationshipManifestSource,
   );
   return {
     signals,
@@ -212,9 +216,3 @@ export function bundledDnd5eSrdFieldProvenanceSource(): FieldProvenanceSource {
  * cross-producer laundering `RecordRelationshipManifestSource`'s doc comment
  * warns against.
  */
-export function bundledDnd5eSrdRecordRelationshipManifestSource(): RecordRelationshipManifestSource {
-  return (pack) =>
-    pack === getBundledDnd5eSrdPack()
-      ? getBundledDnd5eSrdRecordRelationshipManifest()
-      : undefined;
-}
