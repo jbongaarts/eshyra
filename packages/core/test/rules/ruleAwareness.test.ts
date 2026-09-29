@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { expandTypedRelationships } from '../../src/discovery/expansion.js';
 import { buildContextPacket } from '../../src/discovery/packet.js';
+import { renderContextPacketMessage } from '../../src/discovery/packetMessage.js';
 import { retainCandidates } from '../../src/discovery/retention.js';
 import { DEFAULT_TOOLS } from '../../src/orchestrator/tools.js';
 import {
@@ -25,7 +26,7 @@ import { RulesPackError } from '../../src/rules/types.js';
 const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
 const manifestSource = bundledDnd5eSrdRecordRelationshipManifestSource();
 
-function packetCandidateFor(recordKey: string) {
+function packetTraceFor(recordKey: string) {
   const entry = stack.recordsByKey.get(recordKey);
   if (entry === undefined) throw new Error(`missing record ${recordKey}`);
   return buildContextPacket(
@@ -49,7 +50,25 @@ function packetCandidateFor(recordKey: string) {
     ]),
     [],
     50_000_000,
-  ).packet.candidates.find(({ identity }) => identity.key === recordKey);
+  );
+}
+
+function packetCandidateFor(recordKey: string) {
+  return packetTraceFor(recordKey).packet.candidates.find(
+    ({ identity }) => identity.key === recordKey,
+  );
+}
+
+function renderedFor(recordKey: string): string {
+  const trace = packetTraceFor(recordKey);
+  return renderContextPacketMessage({
+    retention: { overflow: [] },
+    packet: {
+      packet: trace.packet,
+      byteOverflow: trace.byteOverflow,
+      dropped: trace.dropped,
+    },
+  }).text;
 }
 
 describe('rule awareness', () => {
@@ -170,6 +189,19 @@ describe('rule awareness', () => {
     const lair = packetCandidateFor('rule:a-legendary-creatures-lair');
     expect(lair?.ruleAdjudicationContext).toBeUndefined();
     expect(lair?.ruleKnownLimits).toBeUndefined();
+  });
+
+  it('renders the statement channels into the model-facing packet message only when present', () => {
+    const cover = renderedFor('rule:cover');
+    expect(cover).toContain('### Eshyra adjudication context');
+    expect(cover).toContain('- tools: lookup_rules, resolve_check');
+    expect(cover).toContain('not rules text');
+    const suffocating = renderedFor('rule:suffocating');
+    expect(suffocating).toContain('### Eshyra known limits');
+    expect(suffocating).toContain('(finding: readiness-integrity)');
+    const lair = renderedFor('rule:a-legendary-creatures-lair');
+    expect(lair).not.toContain('### Eshyra adjudication context');
+    expect(lair).not.toContain('### Eshyra known limits');
   });
 
   it('validates tool and finding identities in its authored datasets', () => {
