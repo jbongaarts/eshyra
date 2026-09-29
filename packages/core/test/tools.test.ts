@@ -17,6 +17,7 @@ import {
   openScene,
   parseDice,
   RULES_RECORD_KINDS,
+  type RulesPack,
   recordSceneSummary,
   rollDice,
   startSession,
@@ -25,6 +26,15 @@ import {
   upsertCampaignActor,
   writeCampaignRulesBinding,
 } from '../src/internal.js';
+import {
+  bundledDnd5eSrdRecordRelationshipManifestSource,
+  getBundledDnd5eSrdPack,
+} from '../src/rules/bundledSrdPack.js';
+import { buildRecordRelationshipManifest } from '../src/rules/recordRelationships.js';
+import {
+  installLateAmbiguityAddon,
+  LATE_AMBIGUITY_ROOT_KEY,
+} from './discovery/support/lateAmbiguityAddon.js';
 
 const closedMarkSceneDataTypecheck = {
   boundary: 'close',
@@ -426,6 +436,264 @@ describe('mark_scene tool', () => {
 });
 
 describe('lookup_rules tool', () => {
+  it('returns relationship awareness beside the unchanged source record', () => {
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'action', ref: 'action:hide' },
+      ctx(),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as {
+        record: { key: string; data: { mechanics: { effects: unknown[] } } };
+        ruleAwareness: {
+          relationshipArtifact: { state: string };
+          relationships: readonly {
+            outcome: string;
+            sourceRecordKey: string;
+          }[];
+        };
+      };
+      expect(data.record.key).toBe('action:hide');
+      expect(data.ruleAwareness.relationshipArtifact.state).toBe('present');
+      expect(data.ruleAwareness.relationships).toContainEqual(
+        expect.objectContaining({
+          outcome: 'resolved',
+          sourceRecordKey: 'action:hide',
+        }),
+      );
+      // Invariant 4: the source record is exactly the pack record; every
+      // Eshyra-authored statement sits only in the separate envelope.
+      expect(data.record).toEqual(
+        getBundledDnd5eSrdPack().records.find(
+          (record) => record.key === 'action:hide',
+        ),
+      );
+      expect(Object.keys(data.record)).not.toContain('ruleAwareness');
+    }
+  });
+
+  it('exposes known limits and keeps empty rule channels non-claiming', () => {
+    const registry = createDefaultToolRegistry();
+    const suffocating = registry.invoke(
+      'lookup_rules',
+      { kind: 'rule', ref: 'rule:suffocating' },
+      ctx(),
+    );
+    expect(suffocating.ok).toBe(true);
+    if (suffocating.ok) {
+      const data = suffocating.data as {
+        ruleAwareness: {
+          knownLimits: readonly { statement: string; findingId: string }[];
+        };
+      };
+      expect(data.ruleAwareness.knownLimits[0]).toMatchObject({
+        findingId: 'readiness-integrity',
+        statement: expect.stringContaining('suffocation round countdown'),
+      });
+    }
+
+    const longRest = registry.invoke(
+      'lookup_rules',
+      { kind: 'rule', ref: 'rule:long-rest' },
+      ctx(),
+    );
+    expect(longRest.ok).toBe(true);
+    if (longRest.ok)
+      expect(
+        (
+          longRest.data as {
+            ruleAwareness: { knownLimits: readonly unknown[] };
+          }
+        ).ruleAwareness.knownLimits,
+      ).toEqual([]);
+
+    const reference = registry.invoke(
+      'lookup_rules',
+      { kind: 'rule', ref: 'rule:a-legendary-creatures-lair' },
+      ctx(),
+    );
+    expect(reference.ok).toBe(true);
+    if (reference.ok) {
+      const awareness = (
+        reference.data as {
+          ruleAwareness: {
+            capabilities: { outcome: string };
+            adjudicationContext?: unknown;
+            knownLimits: readonly unknown[];
+          };
+        }
+      ).ruleAwareness;
+      expect(awareness.capabilities.outcome).toBe('no-statement');
+      expect(awareness.adjudicationContext).toBeUndefined();
+      expect(awareness.knownLimits).toEqual([]);
+    }
+  });
+
+  it('uses the add-on relationship source supplied through ToolContext', () => {
+    const c = ctx();
+    const installed = installLateAmbiguityAddon(c.db, c.at);
+    c.resolveRulesPack = installed.resolver;
+    c.relationshipManifestSource = installed.relationshipManifestSource;
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'feature', ref: LATE_AMBIGUITY_ROOT_KEY },
+      c,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const awareness = (
+        result.data as {
+          ruleAwareness: {
+            relationshipArtifact: { packId: string; state: string };
+            relationships: readonly { outcome: string; relation: string }[];
+          };
+        }
+      ).ruleAwareness;
+      expect(awareness.relationshipArtifact).toMatchObject({
+        state: 'present',
+      });
+      expect(awareness.relationshipArtifact.packId).toBe(
+        'rules:test-late-ambiguity-addon',
+      );
+      expect(awareness.relationships).toContainEqual(
+        expect.objectContaining({
+          outcome: 'resolved',
+          relation: 'granted-by',
+        }),
+      );
+    }
+  });
+
+  it('reports an add-on manifest as absent without inheriting the SRD one', () => {
+    const c = ctx();
+    const installed = installLateAmbiguityAddon(c.db, c.at);
+    c.resolveRulesPack = installed.resolver;
+    c.relationshipManifestSource =
+      bundledDnd5eSrdRecordRelationshipManifestSource();
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'feature', ref: LATE_AMBIGUITY_ROOT_KEY },
+      c,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const awareness = (
+        result.data as {
+          ruleAwareness: {
+            relationshipArtifact: { packId: string; state: string };
+            relationships: readonly unknown[];
+          };
+        }
+      ).ruleAwareness;
+      expect(awareness.relationshipArtifact).toMatchObject({
+        packId: 'rules:test-late-ambiguity-addon',
+        state: 'absent',
+      });
+      expect(awareness.relationships).toEqual([]);
+    }
+  });
+
+  it('uses the winning override producer manifest and excludes the base loser', () => {
+    const c = ctx();
+    const base = getBundledDnd5eSrdPack();
+    const original = base.records.find(
+      (record) => record.key === 'action:hide',
+    );
+    if (original === undefined) throw new Error('missing action:hide fixture');
+    const data = structuredClone(original.data) as {
+      mechanics: { effects: { ruleRef?: string }[] };
+    };
+    data.mechanics.effects = [{ ruleRef: 'rule:darkvision' }];
+    const addon: RulesPack = {
+      meta: {
+        ...base.meta,
+        packId: 'rules:test-hide-override',
+        title: 'Test Hide Override',
+        description: 'Override producer fixture.',
+        role: 'addon',
+        version: '1.0.0',
+        order: 1,
+        compatibleBaseSystems: [
+          { systemId: base.meta.systemId, versions: [base.meta.version] },
+        ],
+      },
+      records: [
+        {
+          ...original,
+          data,
+          overrides: [`${base.meta.packId}/action:hide`],
+        },
+      ],
+    };
+    const addonManifest = buildRecordRelationshipManifest([
+      {
+        kind: 'action',
+        pointerPrefix: '/mechanics/effects/*/ruleRef',
+        linkField: 'data.mechanics.effects[].ruleRef',
+        disposition: 'reference',
+        relation: 'override-governing-rule',
+        targetResolution: 'record-key',
+        reason: 'The override fixture owns its own relationship semantics.',
+      },
+    ]);
+    writeCampaignRulesBinding(c.db, {
+      base: {
+        systemId: base.meta.systemId,
+        packId: base.meta.packId,
+        version: base.meta.version,
+      },
+      addons: [
+        {
+          systemId: addon.meta.systemId,
+          packId: addon.meta.packId,
+          version: addon.meta.version,
+        },
+      ],
+      resolvedAt: c.at,
+    });
+    c.resolveRulesPack = (binding) =>
+      binding.packId === addon.meta.packId
+        ? addon
+        : binding.packId === base.meta.packId
+          ? base
+          : undefined;
+    c.relationshipManifestSource = (pack) =>
+      pack === addon
+        ? addonManifest
+        : bundledDnd5eSrdRecordRelationshipManifestSource()(pack);
+
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'action', ref: 'action:hide' },
+      c,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as {
+        overrideChain: readonly unknown[];
+        ruleAwareness: {
+          relationshipArtifact: { packId: string; state: string };
+          relationships: readonly {
+            relation: string;
+            targetRecordKey: string;
+          }[];
+        };
+      };
+      expect(data.overrideChain).toHaveLength(1);
+      expect(data.ruleAwareness.relationshipArtifact).toEqual({
+        packId: addon.meta.packId,
+        state: 'present',
+      });
+      expect(data.ruleAwareness.relationships).toEqual([
+        expect.objectContaining({
+          relation: 'override-governing-rule',
+          targetRecordKey: 'rule:darkvision',
+        }),
+      ]);
+    }
+  });
+
   it('resolves a known creature by name via the default D&D binding', () => {
     const result = createDefaultToolRegistry().invoke(
       'lookup_rules',

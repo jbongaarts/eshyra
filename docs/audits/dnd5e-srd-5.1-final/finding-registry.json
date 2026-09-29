@@ -338,7 +338,8 @@
       "canonicalId": "rule-corpus-procedures",
       "aliases": ["sol:CAP-001"],
       "invariant": "The rule corpus has executable procedures",
-      "status": "accepted",
+      "status": "narrowed",
+      "statusReasoning": "Deterministic execution exists only through positively selected bounded capabilities, while known limitations remain explicit rule-awareness and adjudication facts. eshyra-olc5 owns work only when a deterministic capability is selected, and a known limit does not itself create an engine obligation.",
       "provenance": {
         "auditFinding": "sol:CAP-001",
         "evidenceBasis": "audit-finding"

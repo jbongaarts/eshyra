@@ -47,6 +47,15 @@ import {
   requireRuleDeterministicCapabilityContract,
   validateRuleDeterministicCapabilityContracts as validateLedgerCapabilityContracts,
 } from '../../src/rules/deterministicCapabilityLedger.js';
+import {
+  RULE_ADJUDICATION_CONTEXT,
+  validateRuleAdjudicationContext,
+} from '../../src/rules/ruleAdjudicationContext.js';
+import {
+  RULE_KNOWN_LIMITS,
+  type RuleKnownLimit,
+  validateRuleKnownLimits,
+} from '../../src/rules/ruleKnownLimits.js';
 
 export {
   RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
@@ -1697,6 +1706,10 @@ export interface RuleProcedureCoverage {
     readonly bead: string;
     readonly findingId?: string;
   }[];
+  /** Set only on rows projected from a runtime statement dataset
+   *  (`RULE_ADJUDICATION_CONTEXT` / `RULE_KNOWN_LIMITS`): the runtime entry
+   *  itself, so the audit provably reads the single runtime definition. */
+  readonly runtimeSource?: object;
 }
 
 const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
@@ -1929,25 +1942,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement:
       'armor-proficiency data structured; gate is per-cast check',
   },
-  'rule:channel-divinity': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.1',
-  },
-  'rule:charges': {
-    status: 'partial',
-    missing:
-      'identify-reveal clause MODEL; pack-side charge data clause → eshyra-o9bd.18.7.7.1 (until it lands, the DM declares an item economy on first spend from lookup_rules); live expenditure/recharge state landed with F5 (spend_usage/restore_usage/reset_usage)',
-    runtimeOwner: [
-      'packages/core/src/state/usageCounters.ts',
-      'packages/core/src/orchestrator/toolSpendUsage.ts',
-    ],
-    externalClauses: [
-      {
-        clause: 'pack-side charge data',
-        bead: 'eshyra-o9bd.18.7.7.1',
-      },
-    ],
-  },
   'rule:class-features': {
     status: 'design-blocked',
     designOwner: 'eshyra-2n1t.1',
@@ -2062,12 +2056,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
     contextRequirement:
       'controlled/independent ruling; initiative sync narratable',
-  },
-  'rule:cover': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'resolve_check'],
-    contextRequirement:
-      'degree-of-cover selection is the classic ruling; the ±2/±5 AC and Dex-save bonuses ride resolve_check declared modifiers (composition owned by rule:modifiers-to-the-roll)',
   },
   'rule:crafting': {
     status: 'partial',
@@ -2431,9 +2419,14 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement: 'geometry ruling',
   },
   'rule:long-rest': {
-    status: 'unimplemented',
-    missing:
-      'F7: 8 h gate, 1/24 h, ≥1 HP requirement, full HP + half-HD restore, resource reset orchestration (hooks F4/F5)',
+    // R0 rewritten: the old unimplemented claim is stale; toolRest and
+    // completeLongRest enforce qualification, 24-hour, >=1 HP, and resets.
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/toolRest.ts',
+      'packages/core/src/state/rest.ts',
+    ],
+    evidence: ['packages/core/test/rest.test.ts'],
   },
   'rule:longer-casting-times': {
     status: 'model-adjudicated-supported',
@@ -2535,12 +2528,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     status: 'model-adjudicated-supported',
     primitives: ['adjust_hp', 'lookup_rules', 'roll'],
     contextRequirement: 'AC/HP tables structured; threshold/immunity rulings',
-  },
-  'rule:opportunity-attacks': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'spend_turn_resource'],
-    contextRequirement:
-      'trigger/exclusion ruling; the reaction spend is code-owned (F2 turn budget)',
   },
   'rule:other-activity-on-your-turn': {
     status: 'implemented',
@@ -2670,9 +2657,14 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'deterministic half/full-price resale transform is not exposed as a registered calculation primitive',
   },
   'rule:short-rest': {
-    status: 'unimplemented',
-    missing:
-      'F7: HD spending needs a durable hit-dice pool (roll + Con each) and reset interaction',
+    // R0 rewritten: the old unimplemented claim is stale; short-rest recovery
+    // and hit-die spending are implemented and covered by the rest suite.
+    status: 'implemented',
+    runtimeOwner: [
+      'packages/core/src/orchestrator/toolRest.ts',
+      'packages/core/src/state/rest.ts',
+    ],
+    evidence: ['packages/core/test/rest.test.ts'],
   },
   'rule:shoving-a-creature': {
     status: 'model-adjudicated-supported',
@@ -2764,12 +2756,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     status: 'model-adjudicated-supported',
     primitives: ['lookup_rules', 'roll'],
     contextRequirement: 'which-ability ruling',
-  },
-  'rule:suffocating': {
-    status: 'partial',
-    missing:
-      'breath duration formula (1+Con min, min 30 s) and the Con-mod round countdown are deterministic cross-turn counters that can silently drift; missing: countdown state — the 0-HP dying transition itself now lands through the adjust_hp death machine (F6)',
-    runtimeOwner: ['packages/core/src/state/hpLifecycle.ts'],
   },
   'rule:surprise': {
     status: 'implemented',
@@ -2970,12 +2956,68 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
  * as a resolution signal. These broad, existing audit identities preserve the
  * prior mappings without inventing new finding dispositions.
  */
+const KNOWN_LIMIT_AUDIT_STATUS: Readonly<
+  Record<RuleKnownLimit['limit'], RuleCoverageStatus>
+> = Object.freeze({
+  partial: 'partial',
+  unimplemented: 'unimplemented',
+  deferred: 'design-blocked',
+});
+
 export function materializeEngineProcedureCoverage(
   unboundCoverage: Readonly<Record<string, RuleProcedureCoverage>>,
 ): Readonly<Record<string, RuleProcedureCoverage>> {
+  // Rows owned by the runtime statement datasets (F-09 vertical slice) are
+  // projected from them, never authored here too: one definition per row.
+  // `runtimeSource` keeps the runtime entry by reference so the audit can be
+  // proven to read it rather than a copy.
+  const runtimeCoverage: Record<string, RuleProcedureCoverage> = {
+    ...unboundCoverage,
+  };
+  for (const [key, context] of Object.entries(RULE_ADJUDICATION_CONTEXT)) {
+    if (key in unboundCoverage)
+      throw new Error(
+        `${key}: coverage is authored both here and in RULE_ADJUDICATION_CONTEXT`,
+      );
+    runtimeCoverage[key] = {
+      status: 'model-adjudicated-supported',
+      primitives: context.tools,
+      contextRequirement: context.dmContext,
+      runtimeSource: context,
+    };
+  }
+  for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS)) {
+    if (key in runtimeCoverage)
+      throw new Error(`${key}: coverage is authored in more than one place`);
+    // The audit row carries one status; a key with several runtime limits has
+    // no faithful single-row projection, so refuse rather than drop one.
+    if (limits.length !== 1)
+      throw new Error(
+        `${key}: RULE_KNOWN_LIMITS must project to exactly one audit row (got ${limits.length})`,
+      );
+    const [limit] = limits;
+    runtimeCoverage[key] = {
+      status: KNOWN_LIMIT_AUDIT_STATUS[limit.limit],
+      missing: limit.statement,
+      findingId: limit.findingId,
+      ...(limit.designOwner === undefined
+        ? {}
+        : { designOwner: limit.designOwner }),
+      ...(limit.externalClauses === undefined
+        ? {}
+        : {
+            externalClauses: limit.externalClauses.map((clause) => ({
+              clause: clause.clause,
+              bead: clause.bead,
+              findingId: clause.findingId,
+            })),
+          }),
+      runtimeSource: limit,
+    };
+  }
   return Object.freeze(
     Object.fromEntries(
-      Object.entries(unboundCoverage).map(([key, coverage]) => {
+      Object.entries(runtimeCoverage).map(([key, coverage]) => {
         const unresolvedFindingId =
           coverage.status === 'design-blocked'
             ? 'engine-capability-ownership'
@@ -2984,9 +3026,10 @@ export function materializeEngineProcedureCoverage(
               ? 'readiness-integrity'
               : undefined;
         const findingId =
-          unresolvedFindingId === undefined
-            ? coverage.findingId
-            : requireFindingReference(unresolvedFindingId, key);
+          coverage.findingId ??
+          (unresolvedFindingId === undefined
+            ? undefined
+            : requireFindingReference(unresolvedFindingId, key));
         const externalClauses = coverage.externalClauses?.map((clause) => ({
           ...clause,
           findingId: requireFindingReference(
@@ -2996,11 +3039,13 @@ export function materializeEngineProcedureCoverage(
         }));
         return [
           key,
-          {
-            ...coverage,
-            ...(findingId === undefined ? {} : { findingId }),
-            ...(externalClauses === undefined ? {} : { externalClauses }),
-          },
+          findingId === coverage.findingId && externalClauses === undefined
+            ? coverage
+            : {
+                ...coverage,
+                ...(findingId === undefined ? {} : { findingId }),
+                ...(externalClauses === undefined ? {} : { externalClauses }),
+              },
         ] as const;
       }),
     ),
@@ -3196,17 +3241,9 @@ export function validateRuleDispositionIdentity(
  * partial until registered calculation primitives own those numbers. F3,
  * eshyra-2n1t.5, moved concentration from unimplemented to implemented. The
  * Equipment payload closure keeps special-weapon and generic weapon-property
- * execution partial pending scenario evidence; the reviewed stacked census is
- * now 39/108/16/2/10.
+ * execution partial pending scenario evidence; the coverage registry has no
+ * hand-maintained count target.
  */
-const EXPECTED_COVERAGE_CENSUS: Readonly<Record<RuleCoverageStatus, number>> =
-  Object.freeze({
-    implemented: 39,
-    'model-adjudicated-supported': 108,
-    partial: 16,
-    unimplemented: 2,
-    'design-blocked': 10,
-  });
 
 const DEFAULT_TOOL_NAMES: ReadonlySet<string> = new Set(
   DEFAULT_TOOLS.map((tool) => tool.name),
@@ -3229,9 +3266,7 @@ export function validateRuleRegistries(
   dispositions: Readonly<Record<string, RuleDisposition>>,
   coverage: Readonly<Record<string, RuleProcedureCoverage>>,
   expectedSemanticCensus?: Readonly<Record<RuleDispositionClass, number>>,
-  expectedCoverageCensus: Readonly<
-    Record<RuleCoverageStatus, number>
-  > = EXPECTED_COVERAGE_CENSUS,
+  expectedCoverageCensus?: Readonly<Record<RuleCoverageStatus, number>>,
 ): readonly string[] {
   const errors: string[] = [];
 
@@ -3394,11 +3429,13 @@ export function validateRuleRegistries(
       }
     }
   }
-  for (const [status, expected] of Object.entries(expectedCoverageCensus)) {
+  for (const [status, expected] of Object.entries(
+    expectedCoverageCensus ?? {},
+  )) {
     const actual = censusByStatus[status] ?? 0;
     if (actual !== expected) {
       errors.push(
-        `coverage census drift: ${status} is ${actual}, expected ${expected} — update EXPECTED_COVERAGE_CENSUS in a reviewed diff`,
+        `coverage census drift: ${status} is ${actual}, expected ${expected} (caller-supplied census)`,
       );
     }
   }
@@ -3471,6 +3508,10 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
       ),
     ),
     ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
+    ...validateRuleAdjudicationContext(
+      new Set(DEFAULT_TOOLS.map((tool) => tool.name)),
+    ),
+    ...validateRuleKnownLimits(),
   );
 
   return errors;

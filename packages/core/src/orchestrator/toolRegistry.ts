@@ -68,6 +68,8 @@ export interface ToolContext {
   resolveAdventureModule?: (moduleId: string) => AdventureModule | undefined;
   /** Resolve exact campaign-bound base/add-on packs not bundled by core. */
   resolveRulesPack?: import('../state/campaignRecordLookup.js').CampaignRulesPackResolver;
+  /** Manifest association supplied alongside the campaign pack resolver. */
+  relationshipManifestSource?: import('../rules/recordRelationships.js').RecordRelationshipManifestSource;
 }
 
 export interface Tool {

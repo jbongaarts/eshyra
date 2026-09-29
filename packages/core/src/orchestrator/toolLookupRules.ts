@@ -3,6 +3,7 @@ import {
   readCampaignRulesBinding,
 } from '../rules/binding.js';
 import {
+  bundledDnd5eSrdRecordRelationshipManifestSource,
   DND5E_SRD_PACK_ID,
   getBundledDnd5eSrdPack,
   RETIRED_DND5E_SRD_PLACEHOLDER_PACK_ID,
@@ -10,6 +11,7 @@ import {
 import { lookupRulesRecord } from '../rules/lookup.js';
 import { PATHFINDER2E_REMASTER_RULES_PACK } from '../rules/pathfinder2eRemaster.js';
 import { buildRulesRecordCard } from '../rules/recordCard.js';
+import { ruleAwareness } from '../rules/ruleAwareness.js';
 import type { ResolvedRulesStack } from '../rules/stack.js';
 import { resolveRulesStack } from '../rules/stack.js';
 import type { RulesPack, RulesRecordKind } from '../rules/types.js';
@@ -67,7 +69,8 @@ export const lookupRulesTool: Tool = {
     'ambiguous error listing candidate keys (also in structured data.candidateKeys); ' +
     're-query by ref with one of them. A successful result includes a `card` ' +
     'summary (key, kind, name, source locator, grantor/parent ref) to ' +
-    'disambiguate same- or cross-kind duplicate names without parsing the raw record.',
+    'disambiguate same- or cross-kind duplicate names without parsing the raw record. ' +
+    'The separate ruleAwareness envelope is Eshyra-authored runtime context, not rules text; an empty envelope makes no claim.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -159,6 +162,12 @@ export const lookupRulesTool: Tool = {
           sourcePack: result.pack,
           license: result.license,
           overrideChain: result.overrideChain,
+          ruleAwareness: ruleAwareness(
+            result.record.key,
+            stack,
+            ctx.relationshipManifestSource ??
+              bundledDnd5eSrdRecordRelationshipManifestSource(),
+          ),
         });
       }
       // For `ambiguous`, the candidate keys are both embedded in the message
