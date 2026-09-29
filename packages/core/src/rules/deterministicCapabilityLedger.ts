@@ -123,11 +123,15 @@ const IMPLEMENTED_ROWS_WITHOUT_SELECTED_CAPABILITY = [
   'rule:bonus-actions',
   'rule:constitution-hit-points',
   'rule:contests',
+  // R0 rewritten: characterDraft.ts BackgroundCustomization and applyBackgroundCustomization preserve the SRD's two skill and two tool/language replacement choices; characterDraftEngine.test.ts and finalizeCharacter.test.ts cover the flow.
+  'rule:customizing-a-background',
   'rule:critical-hits',
   'rule:damage-resistance-and-vulnerability',
   'rule:damage-rolls',
   'rule:death-saving-throws',
   'rule:falling-unconscious',
+  // R0 rewritten: levelUpEngine.ts featsGained handles feat-in-place-of-ASI selection and prerequisites; levelUpEngine.test.ts covers the branch.
+  'rule:feats',
   'rule:gaining-inspiration',
   'rule:grapple-rules-for-monsters',
   'rule:group-checks',
