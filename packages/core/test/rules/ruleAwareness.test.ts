@@ -199,6 +199,12 @@ describe('rule awareness', () => {
     const suffocating = renderedFor('rule:suffocating');
     expect(suffocating).toContain('### Eshyra known limits');
     expect(suffocating).toContain('(finding: readiness-integrity)');
+    // Source-fidelity: the SRD rule forbids HP regain and stabilization until
+    // the creature can breathe again, and no runtime gate enforces it.
+    expect(suffocating).toContain(
+      'cannot regain hit points or be stabilized until it can breathe again',
+    );
+    expect(suffocating).toContain('do not call stabilize_character');
     const lair = renderedFor('rule:a-legendary-creatures-lair');
     expect(lair).not.toContain('### Eshyra adjudication context');
     expect(lair).not.toContain('### Eshyra known limits');

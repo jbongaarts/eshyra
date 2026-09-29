@@ -17,13 +17,15 @@ export interface RuleKnownLimit {
 export const RULE_KNOWN_LIMITS: Readonly<
   Record<string, readonly RuleKnownLimit[]>
 > = Object.freeze({
-  // R0 confirmed: no breath-duration or suffocation-countdown state exists;
-  // adjust_hp applies the 0-HP transition and dying rules.
+  // R0 confirmed: no breath-duration, suffocation-countdown, or
+  // unable-to-breathe state exists; adjust_hp applies the 0-HP transition and
+  // dying rules, and neither stabilize_character nor HP recovery is gated on
+  // breathing, so the DM must withhold both.
   'rule:suffocating': Object.freeze([
     Object.freeze({
       limit: 'partial' as const,
       statement:
-        'Eshyra does not track how long a creature has held its breath or the suffocation round countdown; the DM tracks both from this rule. When the creature drops to 0 hit points, apply it with adjust_hp, which runs the dying rules.',
+        'Eshyra does not track how long a creature has held its breath or the suffocation round countdown; the DM tracks both from this rule. When the creature drops to 0 hit points, apply it with adjust_hp, which runs the dying rules. Eshyra also does not enforce that a suffocating creature cannot regain hit points or be stabilized until it can breathe again: do not call stabilize_character or restore its hit points while it still cannot breathe.',
       findingId: 'readiness-integrity',
     }),
   ]),
