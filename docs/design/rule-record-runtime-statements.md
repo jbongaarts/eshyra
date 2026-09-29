@@ -6,8 +6,8 @@ readiness disposition". Related row owned by the same bead:
 `rule-corpus-procedures` (`sol:CAP-001`), "The rule corpus has executable
 procedures".
 
-Status: **proposed, revision 3** (addresses the PR #589 reviews at
-`97da90f2` and `d05ed6ad`). This document asks for design authorization under
+Status: **proposed, revision 4** (addresses the PR #589 reviews at
+`97da90f2`, `d05ed6ad`, and `34089ef9`). This document asks for design authorization under
 `docs/design-and-pr-review-policy.md` ("Design authorization"). No
 implementation lands with it.
 
@@ -163,8 +163,9 @@ three separately owned runtime datasets. None of them is derived from another.
 - The audit bundle imports all three datasets, so there is one definition of
   each (the `eshyra-o9bd.19.1.4` pattern).
 
-**R5 — One read-only facade.** A new `ruleAwareness(recordKey, stack)` in
-`src/rules/` assembles, for consumers:
+**R5 — One read-only facade.** A new
+`ruleAwareness(recordKey, stack, relationshipManifestSource)` in `src/rules/`
+assembles, for consumers:
 
 ```ts
 interface RuleAwareness {
@@ -178,6 +179,13 @@ interface RuleAwareness {
   knownLimits: readonly RuleKnownLimit[];            // independent channel
 }
 ```
+
+The manifest association is an **explicit input**, never recovered from
+`stack`. A `RulesPack` carries only `meta` and `records`,
+`CampaignRulesPackResolver` returns only a `RulesPack`, and a pack's
+relationship manifest is associated with it separately
+(`RecordRelationshipManifestSource`, as discovery already takes it). The facade
+has no default for this parameter; its callers supply one (R6).
 
 The facade only reads and combines. It owns no data and never derives one
 channel from another. Relationship semantics are exactly those of
@@ -194,7 +202,27 @@ result for any record gains a separate `ruleAwareness` envelope beside, and
 outside, the authoritative source `record`. Today the result carries `record`,
 `card`, `sourcePack`, `license`, and `overrideChain`, and does not resolve the
 relationship manifest. The envelope carries the facade output, so resolved
-relationships and all three channels reach the live DM. The source `record`
+relationships and all three channels reach the live DM.
+
+**How the live path receives the manifest association.** It is one live
+input, threaded exactly like `resolveRulesPack`:
+
+- `RunTurnDeps` gains
+  `relationshipManifestSource?: RecordRelationshipManifestSource`, next to
+  `resolveRulesPack`. Whoever installs a campaign-bound pack supplies both from
+  the same install, as the `lateAmbiguityAddon` fixture already does
+  (`{ resolver, manifestSource }`).
+- `ToolContext` gains the same field, which `lookup_rules` passes to the facade.
+- Shadow/intervention discovery capture in `orchestrator.ts` receives the
+  same value. Today it passes `resolveRulesPack` but no manifest source, so
+  it falls back to the bundled-SRD-only default: the same gap on the discovery
+  side, closed by the same input.
+- One resolution function supplies the default when the dependency is
+  omitted: `bundledDnd5eSrdRecordRelationshipManifestSource()`, the fail-safe
+  discovery already uses. It recognizes only the bundled SRD pack object, so an
+  add-on reports `absent` rather than inheriting SRD semantics. Tool context
+  and discovery capture both take their value from that one function, so they
+  cannot silently diverge. The source `record`
 remains exactly the pack record: provenance stays separate from
 Eshyra-authored annotation. The tool description tells the model the envelope
 is Eshyra-authored and is not rules text. The discovery packet consumes the
@@ -224,13 +252,25 @@ same facade, replacing its direct ledger call in `dispositionField`.
    `findingId` that `findingByCanonicalId` resolves.
 8. **Relationships resolve.** `duplicate-of` declarations fall under the
    committed-pack resolution gate added in PR #582.
-9. **Relationship failure semantics preserved.** The envelope's relationships
-   are producer-qualified, carry explicit manifest `present`/`absent` state,
-   and keep all three resolution outcomes. Permanent evidence reuses the
-   existing F1 add-on/override cases through `lookup_rules`: an add-on with no
-   manifest reports `absent` and does not inherit the SRD manifest.
+9. **Relationship failure semantics preserved across the full producer
+   set.** The envelope's relationships are producer-qualified, carry explicit
+   manifest `present`/`absent` state, and keep all three resolution outcomes.
+   Permanent evidence runs **through `lookup_rules` with the live input
+   wired as in R6**, reusing the existing F1 fixtures (cases (a)–(d) in
+   `recordRelationships.test.ts`), for each producer:
+   - **bundled SRD record** → `present`, SRD semantics;
+   - **add-on with no manifest** → `absent`, no inherited SRD semantics;
+   - **add-on with its own manifest** (`lateAmbiguityAddon`, or F1 case (c))
+     → `present`, resolved under its own declarations;
+   - **override** → the winning producer's manifest governs, and the
+     `overrideChain` losers contribute none.
 10. **No stale promotion.** Every migrated row carries its R0 outcome and
     evidence.
+11. **Consumer parity.** For the same stack and the same
+    `relationshipManifestSource`, the relationships in `lookup_rules`'s
+    envelope for a record equal the `relationshipResolutions` discovery
+    produces for that record, and discovery capture and tool context in one
+    turn receive the same manifest source.
 
 ## 5. Evidence plan: vertical first
 
@@ -250,7 +290,7 @@ a hypothesis to test, not a result.
 | `rule:opportunity-attacks` | adjudication context confirmed or rewritten | probe P2 packet |
 | `rule:channel-divinity` | `deferred`, statement from ADR 0018 §6 | facade/packet |
 | a `reference-prose` key | empty channels | envelope text makes no support or absence claim |
-| add-on record without a manifest | `relationshipArtifact.state: 'absent'` | `lookup_rules` through a stack with that add-on |
+| full producer set (bundled / no-manifest add-on / own-manifest add-on / override) | per invariant 9 | `lookup_rules` through `ToolContext` wired with the R6 live input (**permanent**) |
 
 The `lookup_rules` cases marked permanent protect a durable model-facing tool
 contract. The channel-independence test (invariant 1) is
@@ -289,8 +329,9 @@ One sequence, in order:
 
 1. **Authorization** of this design.
 2. **Vertical-slice PR:** the §5 rows (each with its R0 outcome), the
-   `duplicateOf` representation, the three channels, the facade, and the
-   `lookup_rules` envelope, plus the `sol:CAP-001` → `narrowed` registry
+   `duplicateOf` representation, the three channels, the facade, the R6
+   manifest-source input (`RunTurnDeps` → `ToolContext` and discovery
+   capture), and the `lookup_rules` envelope, plus the `sol:CAP-001` → `narrowed` registry
    update. The bead stays `in_progress`.
 3. **Generalization PR(s):** re-derive and migrate the remaining legacy rows
    under R0. The census comes from the generated registries, not hand-copied
