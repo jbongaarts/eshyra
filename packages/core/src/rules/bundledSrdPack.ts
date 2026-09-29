@@ -25,7 +25,10 @@ import {
   loadRecordRelationshipManifest,
   loadRulesPackFromDirectory,
 } from './packLoader.js';
-import type { RecordRelationshipManifest } from './recordRelationships.js';
+import type {
+  RecordRelationshipManifest,
+  RecordRelationshipManifestSource,
+} from './recordRelationships.js';
 import type { RulesPack } from './types.js';
 
 /** Canonical pack id for the runtime D&D 5e SRD 5.1 rules pack (ADR 0013). */
@@ -142,4 +145,33 @@ export function getBundledDnd5eSrdRecordRelationshipManifest():
     loadRecordRelationshipManifest(PACK_DIR),
   );
   return cachedRecordRelationshipManifest;
+}
+
+/**
+ * A {@link RecordRelationshipManifestSource} that answers for the canonical
+ * bundled D&D 5e SRD pack and for nothing else (eshyra-jgxl, F1).
+ *
+ * Same identity proof as `discovery/harness.ts`'s `bundledDnd5eSrdFieldProvenanceSource` and the
+ * same reason: `record-relationships.json` is emitted by the SRD importer and
+ * declares the meaning of THAT artifact's own fields, so "may this manifest
+ * govern this record?" is really "did this record come out of that
+ * artifact?" — a question object identity against the cached bundled pack
+ * answers exactly, and that resembling metadata (`packId`, `version`,
+ * `compatibleBaseSystems`) cannot.
+ *
+ * Every add-on, custom resolver result, or foreign-system pack resolves to
+ * `undefined` here — explicit absence, never a fallback to this manifest and
+ * never an inference from base/system compatibility (design decision D1,
+ * `discovery/expansion.ts`'s module doc comment). Before this function
+ * existed, `runDiscoveryStages` threaded ONE manifest across every resolved
+ * record regardless of which pack produced it, interpreting add-on and
+ * override content under the SRD's declared semantics — the exact
+ * cross-producer laundering `RecordRelationshipManifestSource`'s doc comment
+ * warns against.
+ */
+export function bundledDnd5eSrdRecordRelationshipManifestSource(): RecordRelationshipManifestSource {
+  return (pack) =>
+    pack === getBundledDnd5eSrdPack()
+      ? getBundledDnd5eSrdRecordRelationshipManifest()
+      : undefined;
 }

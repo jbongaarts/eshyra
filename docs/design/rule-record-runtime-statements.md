@@ -6,10 +6,8 @@ readiness disposition". Related row owned by the same bead:
 `rule-corpus-procedures` (`sol:CAP-001`), "The rule corpus has executable
 procedures".
 
-Status: **proposed, revision 4** (addresses the PR #589 reviews at
-`97da90f2`, `d05ed6ad`, and `34089ef9`). This document asks for design authorization under
-`docs/design-and-pr-review-policy.md` ("Design authorization"). No
-implementation lands with it.
+Status: **accepted (revision 4) + amendment A1 from the vertical slice**
+(addresses the PR #589 reviews at `97da90f2`, `d05ed6ad`, and `34089ef9`).
 
 ## 1. Authority
 
@@ -59,8 +57,8 @@ Consequence: for 136 of 175 engine-procedure rows, and for all 160 other rows,
   Promoting this row as-is would tell the DM something false. See R0.
 - `rule:cover` (probe P1): the DM never sees that the cover bonus has to
   arrive as a declared `resolve_check` modifier.
-- `rule:armor-class` is a duplicate of `rule:armor-guidance`, but discovery
-  has no edge between the two.
+- `rule:armor-class` is not a duplicate of `rule:armor-guidance`; the source
+  passages state different rules (Amendment A1 below).
 
 ## 3. Decisions
 
@@ -98,12 +96,12 @@ and is not generalized.
 
 **R3 — Source side: only source-verified relationships.**
 
-- **`duplicate-of` (4 candidates):** `rule:armor-class` → `rule:armor-guidance`,
-  and `rule:senses-{blindsight,darkvision,truesight}` → `rule:{blindsight,
-  darkvision,truesight}`. Each edge is emitted only after its two passages are
-  compared against the source PDF text and shown to state the same rule. The
-  verification is recorded with the curated spec, not inferred from the audit
-  `canonicalOwner`.
+- **`duplicate-of` (4 candidates considered):** `rule:armor-class` →
+  `rule:armor-guidance`, and `rule:senses-{blindsight,darkvision,truesight}` →
+  `rule:{blindsight,darkvision,truesight}`. Each candidate requires comparing
+  both passages against the source PDF; none is emitted unless the comparison
+  shows the same rule. The verification is recorded with the curated spec, not
+  inferred from the audit `canonicalOwner`. Amendment A1 rejects all four.
 - **Representation.** `record-relationships-v1` declares the meaning of leaves
   that record data already contains; it does not store edge instances. So:
   - The importer emits `data.duplicateOf: '<rule key>'` on each verified
@@ -133,6 +131,19 @@ and is not generalized.
   one record.
 - **Classification labels stay audit-only,** retained per §5.3 as an exact
   classification of `rule:*` records and nothing more.
+- **Amendment A1 (vertical slice):** Source comparison rejected all four
+  candidate pairs as duplicates. `rule:armor-class` (p. 80) says, “Depending
+  on the armor you wear, you might add some or all of your Dexterity modifier
+  to your Armor Class”; `rule:armor-guidance` (pp. 62–63) says armor determines
+  base AC, with Dexterity rules in the Light/Medium Armor paragraphs.
+  `rule:senses-darkvision` (p. 257) says it “can see in dim light within the
+  radius as if it were bright light”; `rule:darkvision` (p. 86) lacks that
+  clause. `rule:senses-truesight` adds “within the same range” to its Ethereal
+  Plane clause, which `rule:truesight` lacks. `rule:senses-blindsight` adds
+  the naturally-blind parenthetical stat-block convention. The pack text
+  matches the PDF for all eight records. No `duplicate-of` edge is emitted.
+  Whether a non-duplicate source relation, such as parallel definitions of a
+  sense in another chapter, is warranted is deferred to a follow-up bead.
 
 **R4 — Eshyra side: three independent channels, not one disposition.**
 `ENGINE_PROCEDURE_COVERAGE` is split, as transition design §5.4 requires, into
@@ -226,7 +237,12 @@ input, threaded exactly like `resolveRulesPack`:
 remains exactly the pack record: provenance stays separate from
 Eshyra-authored annotation. The tool description tells the model the envelope
 is Eshyra-authored and is not rules text. The discovery packet consumes the
-same facade, replacing its direct ledger call in `dispositionField`.
+same facade, replacing its direct ledger call in `dispositionField`. It
+uses the facade's statement half (`ruleStatements`: capabilities,
+adjudication context, known limits), which needs no stack or manifest, so
+no packet caller can lose a statement channel for lack of a manifest
+source. The packet's relationships already come from discovery expansion
+under the same manifest source (invariant 11).
 
 ## 4. Invariants
 
@@ -250,8 +266,9 @@ same facade, replacing its direct ledger call in `dispositionField`.
    required next state).
 7. **Durable identity.** Every known limit and external clause carries a
    `findingId` that `findingByCanonicalId` resolves.
-8. **Relationships resolve.** `duplicate-of` declarations fall under the
-   committed-pack resolution gate added in PR #582.
+8. **Relationships resolve.** Any emitted relationship declarations fall
+   under the committed-pack resolution gate added in PR #582. Amendment A1
+   emits no `duplicate-of` declarations for the four compared pairs.
 9. **Relationship failure semantics preserved across the full producer
    set.** The envelope's relationships are producer-qualified, carry explicit
    manifest `present`/`absent` state, and keep all three resolution outcomes.
@@ -282,7 +299,7 @@ a hypothesis to test, not a result.
 
 | Row | Expected after R0 | Evidence |
 |---|---|---|
-| `rule:armor-class` → `rule:armor-guidance` | `duplicate-of` confirmed by source comparison | `lookup_rules` envelope carries the resolved relationship with `relationshipArtifact.state: 'present'` (**permanent**: durable tool contract) |
+| `action:hide` `ruleRef` | existing declared record-key relationship resolves under the bundled SRD manifest | `lookup_rules` envelope carries the resolved relationship with `relationshipArtifact.state: 'present'` (**permanent**: durable tool contract); exact pointer is `/mechanics/effects/*/ruleRef` in `records.json` and `record-relationships.json`. `action:help` currently has no `ruleRef` leaf in the committed pack. |
 | `rule:long-rest` | legacy `unimplemented` limit **retired** (`toolRest.ts`, `eshyra-2n1t.9`) | `lookup_rules` envelope carries **no** unimplemented limit (**permanent**: guards against stale promotion) |
 | `rule:suffocating` | `partial` limit likely **confirmed** (no breath countdown state found in `src/`) | `lookup_rules` envelope carries the limit statement + `findingId` (**permanent**, if confirmed; otherwise the next confirmed limit row replaces it) |
 | `rule:charges` | `partial` limit likely **rewritten** (expenditure landed with F5; pack-side charge data still external) | channel content matches the re-derived claim; `findingId`s resolve |
@@ -316,6 +333,9 @@ Generalization follows the sequence in §8.
 
 - No pack readiness, status, or classification field (R2).
 - No pack edge from an audit pointer alone; no `record-data:` edges (R3).
+  Amendment A1 emits no duplicate-of edges for the four source-compared pairs;
+  whether a non-duplicate relation for parallel sense definitions is warranted
+  is deferred.
 - No widening of the capability ledger contract (R4).
 - No new capability selection or binding. That belongs to the `eshyra-olc5`
   capability lane.
@@ -329,8 +349,7 @@ One sequence, in order:
 
 1. **Authorization** of this design.
 2. **Vertical-slice PR:** the §5 rows (each with its R0 outcome), the
-   `duplicateOf` representation, the three channels, the facade, the R6
-   manifest-source input (`RunTurnDeps` → `ToolContext` and discovery
+   three channels, the facade, the R6 manifest-source input (`RunTurnDeps` → `ToolContext` and discovery
    capture), and the `lookup_rules` envelope, plus the `sol:CAP-001` → `narrowed` registry
    update. The bead stays `in_progress`.
 3. **Generalization PR(s):** re-derive and migrate the remaining legacy rows

@@ -3,6 +3,7 @@ import {
   classifyFieldPointer,
   type FieldProvenanceManifest,
 } from '../rules/fieldProvenance.js';
+import { ruleStatements } from '../rules/ruleAwareness.js';
 import type {
   RulesAmbiguity,
   RulesRecord,
@@ -669,18 +670,31 @@ function splitRecordData(
 }
 
 /**
- * The ledger's explicit `not-positively-selected` row for this candidate, as a
- * spreadable field. One lookup, narrowed by its own discriminant: the
- * discriminated union is what makes the cast unnecessary, so using one would
- * discard the guarantee the union exists to provide.
+ * Eshyra's own statements for this candidate, as spreadable fields: the
+ * ledger's explicit `not-positively-selected` row (narrowed by its own
+ * discriminant, so no cast discards the union's guarantee), and the
+ * independent adjudication-context and known-limit channels (design R4).
+ * None of them depends on a relationship manifest.
  */
-function dispositionField(candidate: DiscoveryCandidate) {
+function statementFields(candidate: DiscoveryCandidate) {
   const recordKey = candidate.entry?.record.key;
   if (recordKey === undefined) return {};
-  const result = DETERMINISTIC_CAPABILITY_LEDGER.lookup(recordKey);
-  return result.outcome === 'not-positively-selected'
-    ? { deterministicCapabilityDisposition: result.disposition }
-    : {};
+  // The same statement facade `lookup_rules` uses (design R6), so the packet
+  // and the tool cannot present different Eshyra statements for one key.
+  const {
+    capabilities: result,
+    adjudicationContext,
+    knownLimits,
+  } = ruleStatements(recordKey);
+  return {
+    ...(result.outcome === 'not-positively-selected'
+      ? { deterministicCapabilityDisposition: result.disposition }
+      : {}),
+    ...(adjudicationContext === undefined
+      ? {}
+      : { ruleAdjudicationContext: adjudicationContext }),
+    ...(knownLimits.length === 0 ? {} : { ruleKnownLimits: knownLimits }),
+  };
 }
 
 function packetCandidate(
@@ -794,7 +808,7 @@ function packetCandidate(
     campaignRules: candidate.campaignRules,
     campaignRulings: candidate.campaignRulings,
     capabilities: capabilities(candidate, declarations),
-    ...dispositionField(candidate),
+    ...statementFields(candidate),
     // Built from the CLASSIFIED partitions this candidate carries, never from
     // the raw record body: a projection-limit note is model-facing text, and
     // the source-authority half of it may come only from attested prose

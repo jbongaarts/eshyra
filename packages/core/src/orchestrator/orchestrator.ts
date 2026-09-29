@@ -59,6 +59,8 @@ import type {
   TurnOutcome,
 } from '../model/usage.js';
 import type { Db } from '../persistence/db.js';
+import { bundledDnd5eSrdRecordRelationshipManifestSource } from '../rules/bundledSrdPack.js';
+import type { RecordRelationshipManifestSource } from '../rules/recordRelationships.js';
 import { resolveActingCharacterId } from '../state/activeCharacter.js';
 import type { CampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
 import { memoizeCampaignRulesPackResolver } from '../state/campaignRecordLookup.js';
@@ -130,6 +132,8 @@ export interface RunTurnDeps {
   registry: ToolRegistry;
   /** Resolves exact campaign-bound base/add-on packs not bundled in core. */
   resolveRulesPack?: CampaignRulesPackResolver;
+  /** Manifest association installed with the campaign's rules pack. */
+  relationshipManifestSource?: RecordRelationshipManifestSource;
   /**
    * Optional mechanics-audit gate (eshyra-oobh). When provided, every candidate
    * DM response is audited before it is shown or persisted: a candidate that
@@ -717,6 +721,9 @@ export async function runTurn(
   // to be added to every one of those sites individually.
   const discoveryMode = deps.discoveryMode ?? 'off';
   const discoveryObserving = discoveryMode !== 'off';
+  const relationshipManifestSource =
+    deps.relationshipManifestSource ??
+    bundledDnd5eSrdRecordRelationshipManifestSource();
   const toolCtx: ToolContext = {
     db,
     rng: createSeededRng(input.seed),
@@ -726,6 +733,7 @@ export async function runTurn(
     at: input.at,
     resolveAdventureModule: deps.resolveAdventureModule,
     resolveRulesPack: deps.resolveRulesPack,
+    relationshipManifestSource,
     // Installed only when this turn is recording observations, so a turn that
     // is not observing has no observer at all. The hook cannot reach the tool's
     // own result; it only appends to the turn-owned buffer above.
@@ -859,6 +867,7 @@ export async function runTurn(
             ? {}
             : { resolveAdventureModule }),
           ...(resolveRulesPack === undefined ? {} : { resolveRulesPack }),
+          relationshipManifestSource,
           tools: registry,
         }
       : undefined;

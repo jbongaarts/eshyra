@@ -46,16 +46,27 @@ describe('finding registry', () => {
   });
 
   it('preserves status reasoning and non-accepted dispositions', () => {
-    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(4);
+    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(5);
     expect(
       real.rows.find((row) => row.canonicalId === 'source-authority-opus-f19')
         ?.statusReasoning,
     ).toBe(
       'Reviewed empty current membership: the source-backed spellPreparation clause is absent from the current pack; preserve this source identity until the clause IR follow-up lands.',
     );
-    expect(real.rows.filter((row) => row.status === 'narrowed')).toHaveLength(
-      1,
-    );
+    expect(
+      real.rows
+        .filter((row) => row.status === 'narrowed')
+        .map((row) => row.canonicalId)
+        .sort(),
+    ).toEqual(['condition-structure-no-regression', 'rule-corpus-procedures']);
+    expect(
+      real.rows.find((row) => row.canonicalId === 'rule-corpus-procedures'),
+    ).toMatchObject({
+      status: 'narrowed',
+      statusReasoning: expect.stringContaining(
+        'does not itself create an engine obligation',
+      ),
+    });
     expect(
       real.rows.filter((row) => row.status === 'disclosed-dependency'),
     ).toHaveLength(2);
