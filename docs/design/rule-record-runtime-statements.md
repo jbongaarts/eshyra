@@ -8,7 +8,8 @@ procedures".
 
 Status: **accepted (revision 4) + amendment A1 from the vertical slice +
 amendment A2** (the `excluded` resolution outcome, from
-`docs/design/condition-condition-relationships.md` C7)
+`docs/design/condition-condition-relationships.md` C7) **+ amendment A3**
+(positive-only statement channels, from the generalization, §3 after R4)
 (addresses the PR #589 reviews at `97da90f2`, `d05ed6ad`, and `34089ef9`).
 
 ## 1. Authority
@@ -176,6 +177,55 @@ three separately owned runtime datasets. None of them is derived from another.
 - The audit bundle imports all three datasets, so there is one definition of
   each (the `eshyra-o9bd.19.1.4` pattern).
 
+**Amendment A3 (generalization) — statement channels are positive and
+bounded.** Two failed generalization attempts showed what an unconstrained
+`dmContext` becomes: per-rule prose about what Eshyra does *not* track and
+what "the DM decides". That is an open negative space. It can never be
+complete, no finding owns it, and nothing detects it going stale when a
+capability lands (the same failure R0 exists for: `rule:long-rest`). It also
+restates the default: under ADR 0020 §3 every rule without a positively
+selected capability is model-adjudicated, so saying so per row adds nothing.
+ADR 0020 builds Eshyra's side from positive, bounded commitments; the two
+statement channels follow the same rule.
+
+- **Adjudication context is a positive tool mapping.** An entry exists only
+  when at least one registered tool other than `lookup_rules` carries state or
+  resolution that the rule governs. Its `dmContext` says how the rule maps onto
+  those tools: which tool, for what, and the rule-specific input it takes (for
+  example, the degree of cover as a declared `resolve_check` modifier). Every
+  listed tool other than `lookup_rules` is named in the `dmContext`, and every
+  tool named there is listed. It contains no statement of what Eshyra does not
+  do, no generic "the DM decides" prose, and no restatement of the rule text
+  (invariant 4). The validator enforces the tool rules, and rejects an entry
+  with no tool other than `lookup_rules` and any `dmContext` asserting what
+  "Eshyra does not" do.
+- **A rule with nothing positive to state gets no entry.** When `lookup_rules`
+  is the only relevant tool, the channel is empty, and invariant 3 already
+  makes that empty channel a non-claim. R0's "retired" outcome covers the
+  legacy `model-adjudicated-supported` label for such a row: nothing migrates.
+- **Negatives live only in known limits, under a trap criterion.** A known
+  limit states a specific clause of the rule that an existing Eshyra tool or
+  tracked state participates in, where using that tool or state as it stands
+  would contradict the clause or silently omit it (`rule:suffocating`:
+  `stabilize_character` and HP recovery are not gated on breathing). Each
+  carries a registered `findingId`, so the set is owned and bounded. A clause
+  that no Eshyra tool or state touches is not a known limit: nothing misleads
+  the DM, and the rule is adjudicated from its text by default. `deferred`
+  limits are the ADR 0018 scope boundary (a character with more than one class
+  is refused), a positive selected decision, and stay as they are.
+- **Approved slice entries conform.** `rule:cover`,
+  `rule:opportunity-attacks`, and `rule:charges` are rewritten to the tool
+  mapping alone, keeping their approved tool sets except where the mapping
+  corrects them (`rule:opportunity-attacks` resolves its attack through
+  `resolve_check`, not `roll`). `rule:suffocating` and `rule:channel-divinity`
+  already meet the criteria and are unchanged.
+- **Audit projection.** An engine-procedure row that is neither
+  `implemented` nor carried by a runtime channel materializes in the audit
+  bundle as `no-runtime-statement`, with no `findingId`. The audit script no
+  longer authors any Eshyra fact for it, so one definition per row still
+  holds (invariant 5). The label says only that Eshyra makes no statement
+  about the row, never that it is unsupported or safe (invariant 3).
+
 **R5 — One read-only facade.** A new
 `ruleAwareness(recordKey, stack, relationshipManifestSource)` in `src/rules/`
 assembles, for consumers:
@@ -292,6 +342,12 @@ under the same manifest source (invariant 11).
     envelope for a record equal the `relationshipResolutions` discovery
     produces for that record, and discovery capture and tool context in one
     turn receive the same manifest source.
+12. **Statements are positive and bounded (A3).** Every adjudication-context
+    entry maps the rule onto at least one registered tool other than
+    `lookup_rules`, and asserts nothing about what Eshyra does not do. Every
+    known limit meets the trap criterion and carries a registered
+    `findingId`. No `dmContext` or `statement` restates the rule's source
+    text.
 
 ## 5. Evidence plan: vertical first
 
