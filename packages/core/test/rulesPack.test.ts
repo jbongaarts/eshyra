@@ -857,6 +857,115 @@ describe('rules pack validation', () => {
     expect(() => validateRulesPack(pack)).toThrow(/data\.description/);
   });
 
+  describe('action alternatives and paired check options (eshyra-o9bd.19.3.4)', () => {
+    function actionPack(effects: readonly Record<string, unknown>[]) {
+      return validRulesPack({
+        records: [
+          record('action:example', {
+            kind: 'action',
+            name: 'Example',
+            data: {
+              description: 'An example action.',
+              mechanics: { actionEconomy: { cost: 'action' }, effects },
+            },
+          }),
+        ],
+      });
+    }
+    const aidTask = {
+      kind: 'abilityCheckModifier',
+      mode: 'advantage',
+      choice: { groupId: 'example:use', optionId: 'task' },
+    };
+    const aidAttack = {
+      kind: 'attackRollModifier',
+      mode: 'advantage',
+      choice: { groupId: 'example:use', optionId: 'attack' },
+    };
+
+    it('accepts a choice group offering two distinct options', () => {
+      expect(() =>
+        validateRulesPack(actionPack([aidTask, aidAttack])),
+      ).not.toThrow();
+    });
+
+    it('rejects a choice group that offers only one option', () => {
+      expect(() =>
+        validateRulesPack(
+          actionPack([
+            aidTask,
+            { ...aidAttack, choice: { ...aidAttack.choice, optionId: 'task' } },
+          ]),
+        ),
+      ).toThrow(/choice group "example:use" must offer at least two options/);
+    });
+
+    it('rejects unpaired ability and skill option lists', () => {
+      expect(() =>
+        validateRulesPack(
+          actionPack([
+            {
+              kind: 'makeAbilityCheck',
+              abilityOptions: ['wisdom', 'intelligence'],
+              skillOptions: ['perception', 'investigation'],
+            },
+          ]),
+        ),
+      ).toThrow(/abilityOptions is unsupported; use checkOptions/);
+    });
+
+    it('validates each paired check option', () => {
+      expect(() =>
+        validateRulesPack(
+          actionPack([
+            {
+              kind: 'makeAbilityCheck',
+              checkOptions: [
+                { ability: 'wisdom', skill: 'perception' },
+                { ability: 'intelligence', skill: 'investigation' },
+              ],
+            },
+          ]),
+        ),
+      ).not.toThrow();
+      expect(() =>
+        validateRulesPack(
+          actionPack([
+            {
+              kind: 'makeAbilityCheck',
+              checkOptions: [
+                { ability: 'wisdom', skill: 'perception' },
+                { ability: 'insight', skill: 'investigation' },
+              ],
+            },
+          ]),
+        ),
+      ).toThrow(/checkOptions\[1\]\.ability must be an ability name/);
+    });
+  });
+
+  it('rejects a condition level lifecycle without levels (eshyra-o9bd.19.3.4)', () => {
+    const pack = validRulesPack({
+      records: [
+        record('condition:example', {
+          kind: 'condition',
+          name: 'Example',
+          data: {
+            description: 'An example condition.',
+            mechanics: {
+              levelLifecycle: {
+                gain: 'increase-by-amount-specified-by-effect',
+              },
+            },
+          },
+        }),
+      ],
+    });
+    expect(() => validateRulesPack(pack)).toThrow(
+      /levelLifecycle requires .*\.levels/,
+    );
+  });
+
   it('accepts dnd5e feature records linked to a grantor and level', () => {
     const pack = validateRulesPack(
       validRulesPack({

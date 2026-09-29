@@ -538,7 +538,9 @@ describe('deriveActionMechanics standard action semantics (eshyra-o9bd.18.7.2)',
     ]);
   });
 
-  it('Help models both aided checks and friendly attack timing constraints', () => {
+  it('Help models its two uses as mutually exclusive alternatives', () => {
+    // SRD 5.1 p. 93: the attack aid is introduced with "Alternatively", and
+    // only "the first attack roll" gains advantage.
     expect(deriveActionMechanics(action('Help')).effects).toEqual([
       {
         kind: 'abilityCheckModifier',
@@ -546,13 +548,16 @@ describe('deriveActionMechanics standard action semantics (eshyra-o9bd.18.7.2)',
         mode: 'advantage',
         timing: 'next-ability-check-before-start-of-your-next-turn',
         constraint: 'check-must-perform-the-task-you-helped-with',
+        choice: { groupId: 'help:use', optionId: 'aid-task' },
       },
       {
         kind: 'attackRollModifier',
         subject: 'helped-friendly-creature',
         mode: 'advantage',
         timing: 'before-your-next-turn',
+        appliesTo: 'first-attack-roll-against-target',
         targetConstraint: 'target-creature-within-5-feet-of-you',
+        choice: { groupId: 'help:use', optionId: 'aid-attack' },
       },
     ]);
   });
@@ -595,12 +600,16 @@ describe('deriveActionMechanics standard action semantics (eshyra-o9bd.18.7.2)',
     ]);
   });
 
-  it('Search links GM-selected Perception or Investigation checks', () => {
+  it('Search keeps each GM-selected check as an ability-skill pair', () => {
+    // SRD 5.1 p. 94: "a Wisdom (Perception) check or an Intelligence
+    // (Investigation) check" — two pairs, not a cross product.
     expect(deriveActionMechanics(action('Search')).effects).toEqual([
       {
         kind: 'makeAbilityCheck',
-        abilityOptions: ['wisdom', 'intelligence'],
-        skillOptions: ['perception', 'investigation'],
+        checkOptions: [
+          { ability: 'wisdom', skill: 'perception' },
+          { ability: 'intelligence', skill: 'investigation' },
+        ],
         purpose: 'find-something',
         chosenBy: 'gm',
         ruleRef: 'rule:ability-checks',

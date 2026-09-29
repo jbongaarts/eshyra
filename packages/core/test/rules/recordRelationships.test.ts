@@ -1006,3 +1006,33 @@ describe('F6: an edge is resolved once per expansion pass, never duplicated with
     expect(unresolvedFor(secondPass)).toHaveLength(1);
   });
 });
+
+describe('committed SRD pack relationship integrity (eshyra-o9bd.19.3.4)', () => {
+  it('resolves every declared reference occurrence in the committed pack', () => {
+    const failures = pack.records.flatMap((r) =>
+      resolveRecordRelationships(manifest, r, stack).filter(
+        (resolution) => resolution.outcome !== 'resolved',
+      ),
+    );
+    expect(failures).toEqual([]);
+  });
+
+  it('lets discovery follow action governing rules and the exhaustion food-and-water exception', () => {
+    const edges = (key: string) =>
+      resolutions(key).flatMap((r) =>
+        r.outcome === 'resolved' ? [`${r.relation} ${r.targetRecordKey}`] : [],
+      );
+    expect(edges('action:hide')).toEqual(
+      expect.arrayContaining([
+        'governing-rule rule:hiding',
+        'governing-rule rule:unseen-attackers-and-targets',
+      ]),
+    );
+    expect(edges('action:use-an-object')).toContain(
+      'governing-rule rule:interacting-with-objects',
+    );
+    expect(edges('condition:exhaustion')).toEqual([
+      'lifecycle-exception rule:food-and-water',
+    ]);
+  });
+});

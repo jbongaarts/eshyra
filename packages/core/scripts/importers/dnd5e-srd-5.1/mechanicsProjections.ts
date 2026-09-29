@@ -262,6 +262,8 @@ const STANDARD_ACTION_MECHANICS: ReadonlyMap<
     'help',
     {
       actionEconomy: { cost: 'action' },
+      // The source offers the attack aid as an "Alternatively": one Help
+      // action grants one of these, never both (eshyra-o9bd.19.3.4).
       effects: [
         {
           kind: 'abilityCheckModifier',
@@ -269,13 +271,16 @@ const STANDARD_ACTION_MECHANICS: ReadonlyMap<
           mode: 'advantage',
           timing: 'next-ability-check-before-start-of-your-next-turn',
           constraint: 'check-must-perform-the-task-you-helped-with',
+          choice: { groupId: 'help:use', optionId: 'aid-task' },
         },
         {
           kind: 'attackRollModifier',
           subject: 'helped-friendly-creature',
           mode: 'advantage',
           timing: 'before-your-next-turn',
+          appliesTo: 'first-attack-roll-against-target',
           targetConstraint: 'target-creature-within-5-feet-of-you',
+          choice: { groupId: 'help:use', optionId: 'aid-attack' },
         },
       ],
     },
@@ -335,8 +340,13 @@ const STANDARD_ACTION_MECHANICS: ReadonlyMap<
       effects: [
         {
           kind: 'makeAbilityCheck',
-          abilityOptions: ['wisdom', 'intelligence'],
-          skillOptions: ['perception', 'investigation'],
+          // Paired, not two independent lists: the source names Wisdom
+          // (Perception) or Intelligence (Investigation), never a cross
+          // product such as Wisdom (Investigation) (eshyra-o9bd.19.3.4).
+          checkOptions: [
+            { ability: 'wisdom', skill: 'perception' },
+            { ability: 'intelligence', skill: 'investigation' },
+          ],
           purpose: 'find-something',
           chosenBy: 'gm',
           ruleRef: 'rule:ability-checks',
