@@ -214,6 +214,10 @@ function renderTemplate(templateName, outputPath, location = 'home') {
     .join('')}</ol>`;
   const pageReplacements = {
     SITE_HEADER: readFileSync(join(srcDir, 'header.html.tmpl'), 'utf8'),
+    SITE_ICONS: readFileSync(
+      join(srcDir, 'head-icons.html.tmpl'),
+      'utf8',
+    ).trim(),
     SITE_FOOTER: readFileSync(join(srcDir, 'footer.html.tmpl'), 'utf8'),
     ESSAY_CARDS: readFileSync(join(srcDir, 'essay-cards.html.tmpl'), 'utf8'),
     ARTICLE_CONTENTS: `<nav class="contents-rail" aria-label="Article contents"><h2>Contents</h2>${contents}</nav><details class="contents-mobile"><summary>On this page</summary><nav aria-label="Article contents">${contents}</nav></details>`,

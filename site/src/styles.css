@@ -1,11 +1,11 @@
 :root {
   color-scheme: dark;
-  --bg: #07151c;
-  --panel: #0b1b23;
+  --bg: #09130d;
+  --panel: #0d1b12;
   --ink: #e9e5dc;
-  --muted: #a4b6ba;
-  --cyan: #8bcdd5;
-  --line: #2b4d58;
+  --muted: #a6b8a8;
+  --green: #88d789;
+  --line: #2a4a33;
   --gold: #dfb775;
   --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --serif:
@@ -26,12 +26,12 @@ body {
 }
 a {
   overflow-wrap: anywhere;
-  color: var(--cyan);
+  color: var(--green);
   text-underline-offset: 0.22em;
   text-decoration-thickness: 1px;
 }
 a:hover {
-  color: #c6f4f7;
+  color: #b5efb6;
 }
 a:focus-visible,
 summary:focus-visible {
@@ -39,7 +39,7 @@ summary:focus-visible {
   outline-offset: 5px;
 }
 ::selection {
-  background: #385a64;
+  background: #2f5a3a;
   color: #fff;
 }
 img {
@@ -109,8 +109,15 @@ h3 {
   text-decoration: none;
   white-space: nowrap;
 }
-.brand-mark span {
-  color: var(--cyan);
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+}
+.brand-icon {
+  width: 1.2em;
+  height: 1.2em;
+  flex: none;
 }
 .site-nav {
   display: flex;
@@ -125,7 +132,7 @@ h3 {
 .site-nav a:hover,
 .site-nav a[aria-current="page"],
 .site-nav a[aria-current="location"] {
-  background: var(--cyan);
+  background: var(--green);
   color: var(--bg);
 }
 .location-bar {
@@ -134,7 +141,7 @@ h3 {
   gap: 1rem;
   border-top: 1px solid var(--line);
   padding: 7px 24px;
-  color: var(--cyan);
+  color: var(--green);
   font: 11px / 1.5 var(--mono);
   overflow-wrap: anywhere;
 }
@@ -157,7 +164,7 @@ h3 {
 }
 .eyebrow,
 .comment {
-  color: var(--cyan);
+  color: var(--green);
   font: 11px / 1.6 var(--mono);
   letter-spacing: 0.1em;
 }
@@ -227,7 +234,7 @@ h3 {
 }
 .section-heading h2 {
   flex: 1;
-  color: var(--cyan);
+  color: var(--green);
   font: 14px / 1.5 var(--mono);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -276,7 +283,7 @@ h3 {
   text-decoration: none;
 }
 .essay-card :where(h3) a:hover {
-  color: var(--cyan);
+  color: var(--green);
 }
 .essay-card p:not(.eyebrow) {
   line-height: 1.55;
@@ -339,14 +346,14 @@ h3 {
 .download-button {
   display: inline-block;
   padding: 14px 22px;
-  background: var(--cyan);
+  background: var(--green);
   color: var(--bg);
   font: 14px / 1.5 var(--mono);
   text-decoration: none;
 }
 .download-button:hover {
   color: var(--bg);
-  background: #b4e4e8;
+  background: #b5efb6;
 }
 .metadata {
   margin: 28px 0;
@@ -369,7 +376,7 @@ h3 {
   padding-top: 18px;
 }
 summary {
-  color: var(--cyan);
+  color: var(--green);
   cursor: pointer;
   font: 13px / 1.6 var(--mono);
 }
@@ -383,12 +390,12 @@ pre {
 }
 code {
   overflow-wrap: anywhere;
-  color: #cee5e4;
+  color: #cfe6cd;
 }
 pre {
   overflow-x: auto;
   padding: 20px;
-  background: #051017;
+  background: #060e09;
   border: 1px solid var(--line);
 }
 pre code {
@@ -479,7 +486,7 @@ blockquote {
 }
 .contents-rail h2 {
   font: 12px / 1.5 var(--mono);
-  color: var(--cyan);
+  color: var(--green);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin: 6px 0 20px;
@@ -503,12 +510,12 @@ blockquote {
 }
 .contents-list a::before {
   content: counter(contents, decimal-leading-zero);
-  color: var(--cyan);
+  color: var(--green);
   font-size: 10px;
   padding-top: 2px;
 }
 .contents-list a:hover {
-  color: var(--cyan);
+  color: var(--green);
   text-decoration: underline;
 }
 .contents-mobile {
@@ -545,7 +552,7 @@ blockquote {
   text-decoration: none;
 }
 .article :where(h2) a:hover {
-  color: var(--cyan);
+  color: var(--green);
 }
 .article h3 {
   margin: 32px 0 18px;
@@ -600,7 +607,7 @@ blockquote {
 }
 
 .tip-marker:focus-visible {
-  outline: 2px solid var(--cyan);
+  outline: 2px solid var(--green);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -663,7 +670,7 @@ blockquote {
   }
   .hero-art::after {
     background:
-      linear-gradient(90deg, var(--bg), #07151c66 25%, transparent 55%),
+      linear-gradient(90deg, var(--bg), #09130d66 25%, transparent 55%),
       linear-gradient(0deg, var(--bg), transparent 25%);
   }
   .hero-copy {
