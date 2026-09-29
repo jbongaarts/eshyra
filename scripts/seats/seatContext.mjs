@@ -407,6 +407,151 @@ export function clearOccupantSession(seatId, cwd, env, sessionId) {
   }
 }
 
+// /clear ends one session and starts another with a NEW id, and the new
+// SessionStart payload need not carry `model` (eshyra-8uuv). Without help the
+// successor fails the model gate: no charter, no handoff, no ledger record, and
+// so no exit reminder for a session that may merge work. The occupant's
+// identity is not lost, though. It was proven when the predecessor was
+// admitted, and it survives in two places this module can read:
+//
+//   - a single-use handover the predecessor's SessionEnd(reason: clear)
+//     leaves behind (start side: lets the successor get its charter);
+//   - the successor's own transcript, which begins with a SessionStart:clear
+//     hook attachment and records the model on every main-thread assistant
+//     message (exit side: covers a SessionStart that ran before SessionEnd).
+//
+// Both inherit only a model that itself passes CAPTAIN_MODEL_PATTERN. A session
+// with no provable identity — `claude -p`, which cannot /clear; an unknown
+// model; a subagent; a dispatched worker — is still refused.
+const CLEAR_HANDOVER_TTL_MS = 5 * 60 * 1000;
+
+function clearHandoverFile(seatId, cwd, env) {
+  if (!VALID_SEATS.has(seatId)) return null;
+  const roots = resolveSeatRoots(cwd, env);
+  if (roots === null) return null;
+  return join(roots.stateDir, seatId, 'clear-handover.json');
+}
+
+export function recordClearHandover(seatId, cwd, env, sessionId) {
+  const session = readOccupantSession(seatId, cwd, env, sessionId);
+  if (
+    session === null ||
+    typeof session.model !== 'string' ||
+    !CAPTAIN_MODEL_PATTERN.test(session.model)
+  )
+    return false;
+  const file = clearHandoverFile(seatId, cwd, env);
+  if (file === null) return false;
+  try {
+    writeFileSync(
+      file,
+      `${JSON.stringify(
+        {
+          seat: seatId,
+          fromSession: sessionId,
+          model: session.model,
+          at: new Date().toISOString(),
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Single use: the handover is removed whether or not it is honored, so one
+// /clear can admit at most one successor.
+export function consumeClearHandover(seatId, cwd, env, now = Date.now()) {
+  const file = clearHandoverFile(seatId, cwd, env);
+  if (file === null) return null;
+  const record = readLedgerRecord(file);
+  try {
+    rmSync(file, { force: true });
+  } catch {
+    return null;
+  }
+  if (record === null || record.seat !== seatId) return null;
+  const at = Date.parse(record.at ?? '');
+  if (!Number.isFinite(at) || now - at > CLEAR_HANDOVER_TTL_MS || now < at)
+    return null;
+  return typeof record.model === 'string' &&
+    CAPTAIN_MODEL_PATTERN.test(record.model)
+    ? record.model
+    : null;
+}
+
+// The exit-side recovery. Returns `{ model, startedAt }` only for a transcript
+// that began with SessionStart:clear and whose latest main-thread assistant
+// message names a captain model; anything else is "no identity observed".
+export function transcriptClearContinuation(transcriptPath) {
+  if (typeof transcriptPath !== 'string' || transcriptPath.trim() === '')
+    return null;
+  let text;
+  try {
+    text = readFileSync(transcriptPath, 'utf8');
+  } catch {
+    return null;
+  }
+  let startedByClear = false;
+  let startedAt = null;
+  let model = null;
+  for (const line of text.split('\n')) {
+    const isClearStart = line.includes('"SessionStart:clear"');
+    const isAssistant = line.includes('"assistant"');
+    if (!isClearStart && !isAssistant && startedAt !== null) continue;
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (startedAt === null && typeof entry?.timestamp === 'string')
+      startedAt = entry.timestamp;
+    if (
+      entry?.attachment?.hookName === 'SessionStart:clear' &&
+      entry.isSidechain !== true
+    )
+      startedByClear = true;
+    if (
+      entry?.type === 'assistant' &&
+      entry.isSidechain !== true &&
+      typeof entry.message?.model === 'string'
+    )
+      model = entry.message.model;
+  }
+  if (!startedByClear || model === null || startedAt === null) return null;
+  if (!CAPTAIN_MODEL_PATTERN.test(model)) return null;
+  return { model, startedAt };
+}
+
+// Admits a /clear successor the SessionStart gate missed. No HEAD baseline is
+// recorded: HEAD may already have moved, and a baseline read now would hide
+// that. The transcript signal still sees any merge, commit, or push.
+export function recordLateOccupantSession(seatId, cwd, env, session) {
+  const dir = sessionLedgerDir(seatId, cwd, env);
+  const file = sessionLedgerFile(dir, session?.sessionId);
+  if (file === null) return null;
+  try {
+    mkdirSync(dir, { recursive: true });
+    const record = {
+      seat: seatId,
+      session: session.sessionId,
+      model: session.model,
+      startedAt: session.startedAt,
+      remindedAt: null,
+      headAt: null,
+      admittedBy: 'clear-transcript',
+    };
+    writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
+    return record;
+  } catch {
+    return null;
+  }
+}
+
 // Did this session move the checkout it is standing in? A commit, a merge, a
 // pull, a branch switch — anything that makes the recorded handoff describe a
 // repository that no longer exists. Absence of evidence is not movement: no

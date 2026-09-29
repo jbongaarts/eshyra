@@ -461,6 +461,138 @@ describe('agent captain seats', () => {
       expect(stop('compacting')).toBe('');
     });
 
+    // eshyra-8uuv. /clear starts a NEW session id and its SessionStart may
+    // carry no `model`, so a Captain that cleared lost the seat entirely: no
+    // charter, no ledger record, and no exit reminder after merging work.
+    describe('/clear continuation', () => {
+      function end(sessionId: string, reason: string): void {
+        run(exitScript, {
+          hook_event_name: 'SessionEnd',
+          session_id: sessionId,
+          reason,
+        });
+      }
+
+      function clearStart(sessionId: string): string {
+        return run(claudeScript, { source: 'clear', session_id: sessionId });
+      }
+
+      function transcript(lines: readonly Record<string, unknown>[]): string {
+        const file = join(tmp, `${Math.random().toString(36).slice(2)}.jsonl`);
+        writeFileSync(file, lines.map((l) => JSON.stringify(l)).join('\n'));
+        return file;
+      }
+
+      const clearMarker = {
+        type: 'attachment',
+        isSidechain: false,
+        timestamp: new Date(Date.now() - 3 * 3600000).toISOString(),
+        attachment: { type: 'hook_success', hookName: 'SessionStart:clear' },
+      };
+      const assistant = (model: string, sidechain = false) => ({
+        type: 'assistant',
+        isSidechain: sidechain,
+        message: { model, role: 'assistant', content: [] },
+      });
+
+      it('admits the successor of an admitted session that cleared', () => {
+        startSession('before-clear');
+        end('before-clear', 'clear');
+        expect(clearStart('after-clear')).toContain('Claude charter');
+        expect(existsSync(ledgerFile('after-clear'))).toBe(true);
+        expect(
+          JSON.parse(readFileSync(ledgerFile('after-clear'), 'utf8')).model,
+        ).toBe('claude-opus-5');
+      });
+
+      it('honors a clear handover once, and never for a non-clear start', () => {
+        startSession('pred');
+        end('pred', 'clear');
+        expect(run(claudeScript, { source: 'startup', session_id: 'x' })).toBe(
+          '',
+        );
+        // The startup consumed nothing; the handover is still single-use.
+        expect(clearStart('first')).toContain('Claude charter');
+        expect(clearStart('second')).toBe('');
+        expect(existsSync(ledgerFile('second'))).toBe(false);
+      });
+
+      it('leaves no handover for an unadmitted session or a non-clear end', () => {
+        startSession('sonnet', 'claude-sonnet-5');
+        end('sonnet', 'clear');
+        expect(clearStart('after-sonnet')).toBe('');
+
+        startSession('exiting');
+        end('exiting', 'prompt_input_exit');
+        expect(clearStart('after-exit')).toBe('');
+      });
+
+      it('refuses a stale clear handover', () => {
+        startSession('old');
+        end('old', 'clear');
+        const file = join(
+          tmp,
+          'state',
+          'claude-captain',
+          'clear-handover.json',
+        );
+        const record = JSON.parse(readFileSync(file, 'utf8'));
+        record.at = new Date(Date.now() - 3600000).toISOString();
+        writeFileSync(file, JSON.stringify(record));
+        expect(clearStart('late')).toBe('');
+      });
+
+      it('re-injects the charter on a compaction that carries no model', () => {
+        startSession('compacting-nomodel');
+        expect(
+          run(claudeScript, {
+            source: 'compact',
+            session_id: 'compacting-nomodel',
+          }),
+        ).toContain('Claude charter');
+        expect(
+          run(claudeScript, { source: 'compact', session_id: 'never-seen' }),
+        ).toBe('');
+      });
+
+      it('reminds a clear successor the start gate missed, from its transcript', () => {
+        const file = transcript([clearMarker, assistant('claude-opus-5')]);
+        const output = stop('missed-at-start', { transcript_path: file });
+        expect(
+          JSON.parse(output).hookSpecificOutput.additionalContext,
+        ).toContain('npm run seat:handoff -- write claude-captain');
+        expect(
+          JSON.parse(readFileSync(ledgerFile('missed-at-start'), 'utf8')),
+        ).toMatchObject({ headAt: null, admittedBy: 'clear-transcript' });
+      });
+
+      it('never late-admits without a clear start or a captain main-thread model', () => {
+        const refused = [
+          // No SessionStart:clear: e.g. `claude -p`, which cannot /clear.
+          transcript([
+            {
+              ...clearMarker,
+              attachment: { hookName: 'SessionStart:startup' },
+            },
+            assistant('claude-opus-5'),
+          ]),
+          // A non-captain occupant.
+          transcript([clearMarker, assistant('claude-sonnet-5')]),
+          // Only a subagent (sidechain) ran a captain model.
+          transcript([
+            clearMarker,
+            assistant('claude-sonnet-5'),
+            assistant('claude-opus-5', true),
+          ]),
+        ];
+        refused.forEach((file, i) => {
+          expect(stop(`refused-${i}`, { transcript_path: file })).toBe('');
+          expect(existsSync(ledgerFile(`refused-${i}`))).toBe(false);
+        });
+        expect(stop('no-transcript')).toBe('');
+      });
+    });
+
     // eshyra-qqrr. Elapsed time was the only trigger, so the session that
     // merged PR #561 in 17m42s was never reminded and left a 12-day-old
     // handoff describing a main that had moved 21 merges past it. Repository
