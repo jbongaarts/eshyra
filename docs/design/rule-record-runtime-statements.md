@@ -1,0 +1,345 @@
+# Rule-record runtime statements (finding `opus:F-09`)
+
+Owning bead: `eshyra-o9bd.19.3.4`. Finding-registry row:
+`rules-prose-readiness` (`opus:F-09`), invariant "Rules prose has an in-band
+readiness disposition". Related row owned by the same bead:
+`rule-corpus-procedures` (`sol:CAP-001`), "The rule corpus has executable
+procedures".
+
+Status: **proposed, revision 4** (addresses the PR #589 reviews at
+`97da90f2`, `d05ed6ad`, and `34089ef9`). This document asks for design authorization under
+`docs/design-and-pr-review-policy.md` ("Design authorization"). No
+implementation lands with it.
+
+## 1. Authority
+
+In order:
+[ADR 0020](../adr/0020-rules-pack-as-rule-awareness-infrastructure-with-bounded-deterministic-capabilities.md);
+the integrated transition design
+(`docs/audits/rules-awareness-transition/2026-07-30-integrated-transition-design.md`,
+§§3, 4, 5.3, 5.4, 7); `AGENTS.md`; the owning bead.
+
+The original F-09 framing (bead text dated 2026-07-25) called for "uniform
+in-band readiness" across every record kind, with zero engine-pending clauses
+at re-freeze. ADR 0020 and the §5.9 truthfulness bar **withdrew** that framing
+(bd memory `adr-0020-transition-ownership-and-refreeze-bar`). This design does
+not revive it. It reads F-09 under current authority as follows:
+
+> A runtime consumer of a `rule:*` or `action:*` record can obtain, without
+> reading an audit-only artifact, (a) the source relationships Eshyra has
+> curated for that record and (b) Eshyra's own bounded statement about it:
+> a positively selected capability, the adjudication context the DM needs,
+> or a known limit. Absence of a statement stays "no statement". It never
+> means supported, safe, irrelevant, or mechanically empty.
+
+## 2. Current state (verified on `main` @ `f1cdca92`)
+
+The 325 `rule:*` records carry only `text` (plus `tableRefs` on 32 and
+`skillsByAbility` on 1). The 10 `action:*` records carry `description` and
+curated `mechanics`. Three
+kinds of fact about them exist only in the audit-bundle script
+`packages/core/scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.ts`.
+
+| Fact | Owner of truth | Where it lives | Runtime visible? |
+|---|---|---|---|
+| Classification: `RULE_DISPOSITIONS` — 175 engine-procedure, 96 reference-prose, 33 definition, 19 table-backed, 12 duplicate | the source (what the text *is*) | audit script | no |
+| Canonical/deterministic owner pointers: 24 rows, 10 to a `rule:` key, 14 to `record-data:<kind>.<field>` | the source | audit script | no |
+| Positive capability bindings: 8 rows bound to 3 contracts | Eshyra | `src/rules/deterministicCapabilityLedger.ts` (`eshyra-o9bd.19.1.4`) | **yes**, via ledger lookup and discovery packet |
+| "Implemented but not positively selected": 31 rows | Eshyra | same ledger | **yes** (`not-positively-selected`) |
+| Adjudication context: 108 `model-adjudicated-supported` rows (`primitives` + free-text `contextRequirement`) | Eshyra | audit script | no |
+| Known limits: 16 `partial`, 2 `unimplemented`, 10 `design-blocked`, and 7 rows with `externalClauses`, each with a durable `findingId` | Eshyra | audit script | no |
+
+Consequence: for 136 of 175 engine-procedure rows, and for all 160 other rows,
+`DETERMINISTIC_CAPABILITY_LEDGER.lookup` returns `no-statement`. Examples:
+
+- `rule:long-rest`: the audit still records `unimplemented`, but the claim is
+  **stale**. `complete_long_rest` (`packages/core/src/orchestrator/toolRest.ts`)
+  now enforces the qualification, ≥1 HP, and 24-hour gates and performs the
+  HP, Hit Dice, and resource resets. The F7 bead (`eshyra-2n1t.9`) is closed.
+  Promoting this row as-is would tell the DM something false. See R0.
+- `rule:cover` (probe P1): the DM never sees that the cover bonus has to
+  arrive as a declared `resolve_check` modifier.
+- `rule:armor-class` is a duplicate of `rule:armor-guidance`, but discovery
+  has no edge between the two.
+
+## 3. Decisions
+
+**R0 — Legacy rows are candidate evidence, not runtime truth.**
+`ENGINE_PROCEDURE_COVERAGE` and `RULE_DISPOSITIONS` are historical audit
+artifacts, and at least some of their rows are stale (`rule:long-rest`,
+`rule:short-rest`). No row moves into a runtime dataset mechanically. As each
+row migrates, it is **re-derived** against the current source text and the
+current runtime (tools, state modules, closed beads), and gets exactly one of
+three outcomes:
+
+- **confirmed** — the claim still holds, and it is rewritten as model-facing
+  text;
+- **rewritten** — the claim holds only in part, and only the surviving part is
+  migrated;
+- **retired** — the claim no longer holds, and nothing is migrated for it.
+
+Each outcome records its evidence (code path, test, or bead) in the migrating
+PR. Stale legacy rows are not corrected in place in the audit script; they are
+superseded when the runtime dataset takes over.
+
+
+**R1 — Split by owner of truth.** Facts about the source go in the pack.
+Facts about Eshyra stay in runtime code under `src/`. Nothing about Eshyra's
+capability, adjudication practice, or limits goes in pack data. The pack
+describes the rules, and ADR 0020 §3 makes capability statements "statements
+about Eshyra". An audit pointer is not source authority. A pack edge is
+emitted only when the licensed source itself supports it (ADR 0007).
+
+**R2 — No readiness label in the pack.** Rule records get no
+`executionReadiness`, `readiness`, `status`, or classification field. D5 and
+D7 of the transition design forbid turning projection or classification
+presence into readiness. Magic-item `executionReadiness` stays as it is (§5.5)
+and is not generalized.
+
+**R3 — Source side: only source-verified relationships.**
+
+- **`duplicate-of` (4 candidates):** `rule:armor-class` → `rule:armor-guidance`,
+  and `rule:senses-{blindsight,darkvision,truesight}` → `rule:{blindsight,
+  darkvision,truesight}`. Each edge is emitted only after its two passages are
+  compared against the source PDF text and shown to state the same rule. The
+  verification is recorded with the curated spec, not inferred from the audit
+  `canonicalOwner`.
+- **Representation.** `record-relationships-v1` declares the meaning of leaves
+  that record data already contains; it does not store edge instances. So:
+  - The importer emits `data.duplicateOf: '<rule key>'` on each verified
+    duplicate rule record, from a curated spec
+    (`scripts/importers/dnd5e-srd-5.1/`) that records each pair's source
+    comparison.
+  - Field provenance declares `(rule, /duplicateOf)` as `compiler-projection`:
+    it is a curated judgement about two passages, not verbatim or parsed
+    source text.
+  - Relationship manifest: `{ kind: 'rule', pointerPrefix: '/duplicateOf',
+    disposition: 'reference', relation: 'duplicate-of', targetResolution:
+    'record-key' }`.
+  - `kindSchemas` validates `duplicateOf` as a `rule:` key that is not the
+    record's own key. The committed-pack resolution gate (PR #582) proves it
+    resolves.
+  - The duplicate record's `text` is kept. Nothing is removed from the pack.
+- **The six rule-key `deterministicOwner` pointers are not emitted as pack
+  edges.** They are Eshyra execution interpretations. For example,
+  `rule:cantrips` → `rule:spell-slots` is noted as "owned by the spell-slot
+  economy engine procedure". A pointer may become a pack edge only if it is
+  independently re-derived as a relationship the source actually states, under
+  a source-appropriate relation name (for example, where one passage defers to
+  another). That re-derivation is optional and per row. The audit pointer alone
+  is never sufficient.
+- **The 14 `record-data:` pointers are excluded.** Each names a field across a
+  whole kind, not a record, and `resolveRecordRelationships` resolves only to
+  one record.
+- **Classification labels stay audit-only,** retained per §5.3 as an exact
+  classification of `rule:*` records and nothing more.
+
+**R4 — Eshyra side: three independent channels, not one disposition.**
+`ENGINE_PROCEDURE_COVERAGE` is split, as transition design §5.4 requires, into
+three separately owned runtime datasets. None of them is derived from another.
+
+| Channel | Owner module | Content | Candidate legacy rows (re-derived under R0) |
+|---|---|---|---|
+| capabilities | `src/rules/deterministicCapabilityLedger.ts` (**unchanged contract**) | positively selected bindings, plus the existing `not-positively-selected` rows | `implemented` rows |
+| adjudication context | new `src/rules/ruleAdjudicationContext.ts` | tools the DM uses (validated against `DEFAULT_TOOLS`) + reviewed model-facing `dmContext` | `model-adjudicated-supported` rows; also any row where residual DM interpretation needs context, even one that has a capability |
+| known limits | new `src/rules/ruleKnownLimits.ts` | `limit: partial \| unimplemented \| deferred`, model-facing `statement`, durable `findingId`, optional `externalClauses[{clause, findingId}]` | `partial`, `unimplemented`, `design-blocked` rows and `externalClauses` |
+
+- The capability ledger keeps its narrow, capability-only contract. It gains
+  no adjudication or limit outcomes.
+- A rule may appear in any combination of channels. ADR 0020 §4 requires that
+  a bounded capability, residual adjudication, and a known limit can coexist.
+  **No current rule is known to have all three.** The four `partial` rows that
+  name runtime owners (`casting-a-spell-saving-throws`, `charges`,
+  `experience-points`, `suffocating`) are **not** positively selected
+  capabilities: ledger bindings require an `implemented` row, and none of
+  these is bound. Coexistence evidence is therefore explicitly **synthetic
+  representability evidence**. No binding is added to manufacture a test case.
+- `design-blocked` becomes `limit: 'deferred'`, with a `statement` written from
+  ADR 0018 §6. Today these rows carry only a closed-bead `designOwner`, which
+  stays as history, not identity.
+- `dmContext` and `statement` are **model-facing text** that replaces the
+  current internal shorthand ("F2 turn budget", "hooks F4/F5"). Each rewrite is
+  reviewed against the source record, and no legacy note is exposed verbatim.
+- The audit bundle imports all three datasets, so there is one definition of
+  each (the `eshyra-o9bd.19.1.4` pattern).
+
+**R5 — One read-only facade.** A new
+`ruleAwareness(recordKey, stack, relationshipManifestSource)` in `src/rules/`
+assembles, for consumers:
+
+```ts
+interface RuleAwareness {
+  // Producer-qualified: the WINNING stack entry's pack, looked up through the
+  // same RecordRelationshipManifestSource discovery uses. No inheritance
+  // across add-ons, overrides, or foreign packs.
+  relationshipArtifact: RelationshipArtifactState;   // { packId, state: 'present' | 'absent' }
+  relationships: readonly RelationshipResolution[];  // full union: resolved | unresolved-target | indeterminate
+  capabilities: CapabilityLedgerLookup;              // from the ledger, unchanged
+  adjudicationContext?: RuleAdjudicationContext;     // independent channel
+  knownLimits: readonly RuleKnownLimit[];            // independent channel
+}
+```
+
+The manifest association is an **explicit input**, never recovered from
+`stack`. A `RulesPack` carries only `meta` and `records`,
+`CampaignRulesPackResolver` returns only a `RulesPack`, and a pack's
+relationship manifest is associated with it separately
+(`RecordRelationshipManifestSource`, as discovery already takes it). The facade
+has no default for this parameter; its callers supply one (R6).
+
+The facade only reads and combines. It owns no data and never derives one
+channel from another. Relationship semantics are exactly those of
+`recordRelationships.ts`: the facade calls `resolveRecordRelationships` with
+the producing pack's own manifest. When that pack has no manifest,
+`relationshipArtifact.state` is `'absent'` and `relationships` is empty
+*because* it is absent, never as a silent default. Unresolved and
+indeterminate occurrences are passed through, not filtered out. If every channel is empty, it says so, and that is a
+statement about Eshyra only, never "no mechanics", "unsupported", or "safe"
+(ADR 0020 §3).
+
+**R6 — Live exposure through `lookup_rules`.** A successful `lookup_rules`
+result for any record gains a separate `ruleAwareness` envelope beside, and
+outside, the authoritative source `record`. Today the result carries `record`,
+`card`, `sourcePack`, `license`, and `overrideChain`, and does not resolve the
+relationship manifest. The envelope carries the facade output, so resolved
+relationships and all three channels reach the live DM.
+
+**How the live path receives the manifest association.** It is one live
+input, threaded exactly like `resolveRulesPack`:
+
+- `RunTurnDeps` gains
+  `relationshipManifestSource?: RecordRelationshipManifestSource`, next to
+  `resolveRulesPack`. Whoever installs a campaign-bound pack supplies both from
+  the same install, as the `lateAmbiguityAddon` fixture already does
+  (`{ resolver, manifestSource }`).
+- `ToolContext` gains the same field, which `lookup_rules` passes to the facade.
+- Shadow/intervention discovery capture in `orchestrator.ts` receives the
+  same value. Today it passes `resolveRulesPack` but no manifest source, so
+  it falls back to the bundled-SRD-only default: the same gap on the discovery
+  side, closed by the same input.
+- One resolution function supplies the default when the dependency is
+  omitted: `bundledDnd5eSrdRecordRelationshipManifestSource()`, the fail-safe
+  discovery already uses. It recognizes only the bundled SRD pack object, so an
+  add-on reports `absent` rather than inheriting SRD semantics. Tool context
+  and discovery capture both take their value from that one function, so they
+  cannot silently diverge. The source `record`
+remains exactly the pack record: provenance stays separate from
+Eshyra-authored annotation. The tool description tells the model the envelope
+is Eshyra-authored and is not rules text. The discovery packet consumes the
+same facade, replacing its direct ledger call in `dispositionField`.
+
+## 4. Invariants
+
+1. **Channels are independent.** No channel's presence, absence, or content is
+   computed from another's. Adding an entry to one channel cannot remove or
+   change what another returns for the same key. Permanent evidence: a
+   **synthetic** facade test, with injected datasets, where one key carries a
+   capability, adjudication context, and a known limit together. It proves
+   representability only, not a real selected capability.
+2. **Capability ledger unchanged.** `DeterministicCapabilityLedger`'s outcome
+   union and contract are not widened. Packet `capabilities[]` still comes
+   only from `bound` contracts.
+3. **Absence is not a claim.** An empty envelope or channel is never rendered
+   as "no mechanics", "unsupported", or "safe".
+4. **Source and annotation stay separate.** `lookup_rules`'s `record` is
+   byte-identical to the pack record, and all Eshyra-authored material sits
+   only in the envelope.
+5. **One definition per dataset.** The audit bundle imports each runtime
+   dataset. A test asserts object identity (`toBe`) so the check can fail.
+6. **Identity-pinned membership.** Membership pins keys, not counts (§5.3
+   required next state).
+7. **Durable identity.** Every known limit and external clause carries a
+   `findingId` that `findingByCanonicalId` resolves.
+8. **Relationships resolve.** `duplicate-of` declarations fall under the
+   committed-pack resolution gate added in PR #582.
+9. **Relationship failure semantics preserved across the full producer
+   set.** The envelope's relationships are producer-qualified, carry explicit
+   manifest `present`/`absent` state, and keep all three resolution outcomes.
+   Permanent evidence runs **through `lookup_rules` with the live input
+   wired as in R6**, reusing the existing F1 fixtures (cases (a)–(d) in
+   `recordRelationships.test.ts`), for each producer:
+   - **bundled SRD record** → `present`, SRD semantics;
+   - **add-on with no manifest** → `absent`, no inherited SRD semantics;
+   - **add-on with its own manifest** (`lateAmbiguityAddon`, or F1 case (c))
+     → `present`, resolved under its own declarations;
+   - **override** → the winning producer's manifest governs, and the
+     `overrideChain` losers contribute none.
+10. **No stale promotion.** Every migrated row carries its R0 outcome and
+    evidence.
+11. **Consumer parity.** For the same stack and the same
+    `relationshipManifestSource`, the relationships in `lookup_rules`'s
+    envelope for a record equal the `relationshipResolutions` discovery
+    produces for that record, and discovery capture and tool context in one
+    turn receive the same manifest source.
+
+## 5. Evidence plan: vertical first
+
+Prove the design on real rows through **both** real consumers
+(`lookup_rules` and the discovery packet) before moving the remaining rows.
+
+Every row below goes through R0 re-derivation first. The "expected" column is
+a hypothesis to test, not a result.
+
+| Row | Expected after R0 | Evidence |
+|---|---|---|
+| `rule:armor-class` → `rule:armor-guidance` | `duplicate-of` confirmed by source comparison | `lookup_rules` envelope carries the resolved relationship with `relationshipArtifact.state: 'present'` (**permanent**: durable tool contract) |
+| `rule:long-rest` | legacy `unimplemented` limit **retired** (`toolRest.ts`, `eshyra-2n1t.9`) | `lookup_rules` envelope carries **no** unimplemented limit (**permanent**: guards against stale promotion) |
+| `rule:suffocating` | `partial` limit likely **confirmed** (no breath countdown state found in `src/`) | `lookup_rules` envelope carries the limit statement + `findingId` (**permanent**, if confirmed; otherwise the next confirmed limit row replaces it) |
+| `rule:charges` | `partial` limit likely **rewritten** (expenditure landed with F5; pack-side charge data still external) | channel content matches the re-derived claim; `findingId`s resolve |
+| `rule:cover` | adjudication context confirmed | probe P1 packet carries `tools` + `dmContext` |
+| `rule:opportunity-attacks` | adjudication context confirmed or rewritten | probe P2 packet |
+| `rule:channel-divinity` | `deferred`, statement from ADR 0018 §6 | facade/packet |
+| a `reference-prose` key | empty channels | envelope text makes no support or absence claim |
+| full producer set (bundled / no-manifest add-on / own-manifest add-on / override) | per invariant 9 | `lookup_rules` through `ToolContext` wired with the R6 live input (**permanent**) |
+
+The `lookup_rules` cases marked permanent protect a durable model-facing tool
+contract. The channel-independence test (invariant 1) is
+permanent. No corpus-wide completeness test is added.
+
+Generalization follows the sequence in §8.
+
+## 6. Decisions recorded from review
+
+- **Q1 — `lookup_rules` exposure: yes, broadened.** Adopted as R6: a separate
+  envelope carrying resolved relationships and all three independent channels,
+  not only a ledger statement.
+- **Q2 — `sol:CAP-001`: narrowed.** The row becomes `narrowed`, with this
+  reasoning: *deterministic execution exists only through positively selected
+  bounded capabilities, while known limitations remain explicit rule-awareness
+  and adjudication facts. `eshyra-olc5` owns work only when a deterministic
+  capability is selected, and a known limit does not itself create an engine
+  obligation.* This is not replaced by any exhaustive "set of known-limit rows"
+  claim. It lands in the vertical-slice PR. `opus:F-09` changes only after
+  generalization (§8).
+
+## 7. Exclusions
+
+- No pack readiness, status, or classification field (R2).
+- No pack edge from an audit pointer alone; no `record-data:` edges (R3).
+- No widening of the capability ledger contract (R4).
+- No new capability selection or binding. That belongs to the `eshyra-olc5`
+  capability lane.
+- No change to magic-item `executionReadiness` or `itemExecutionReadiness.ts`.
+- No per-clause decomposition of rule prose.
+- No condition→condition edges. That is a separate item on this bead.
+
+## 8. Next state
+
+One sequence, in order:
+
+1. **Authorization** of this design.
+2. **Vertical-slice PR:** the §5 rows (each with its R0 outcome), the
+   `duplicateOf` representation, the three channels, the facade, the R6
+   manifest-source input (`RunTurnDeps` → `ToolContext` and discovery
+   capture), and the `lookup_rules` envelope, plus the `sol:CAP-001` → `narrowed` registry
+   update. The bead stays `in_progress`.
+3. **Generalization PR(s):** re-derive and migrate the remaining legacy rows
+   under R0. The census comes from the generated registries, not hand-copied
+   counts.
+4. **`opus:F-09` registry update,** after generalization lands.
+
+**On failure** at any step (for example, the envelope reads as rules
+authority in live turns, a `duplicate-of` pair does not survive source
+comparison, or R0 shows the legacy registry is too stale to seed from):
+stop, record the failure on the bead, and revise this design before
+continuing.
