@@ -8,8 +8,10 @@ discovery relationships only. It does not reopen that row. Related row
 are durable") is owned by `eshyra-o9bd.19.2.4`. This design contributes
 evidence toward that row but does not change its status.
 
-Status: **proposed, revision 2** (design review 1 at `48875bd3`: a `null`
-table mapping must not erase a declared occurrence; see C1 and §9). This document asks for design authorization
+Status: **proposed, revision 3** (design review 1 at `48875bd3`: a `null`
+table mapping must not erase a declared occurrence; design re-review at
+`2bfca47e`: reconcile the new outcome with the committed-pack gate and the
+accepted F-09 design; see C1, C7, invariant 2, and §9). This document asks for design authorization
 under `docs/design-and-pr-review-policy.md` ("Design authorization"). No
 implementation lands with it.
 
@@ -155,8 +157,11 @@ A path that loses an occurrence produces none of the four, so a consumer can
 tell an authorized exclusion from a dropped one. The module doc comment's
 "exactly one typed outcome" list is updated to name all four.
 
-**Consumer handling of `excluded`** (both consumers already switch on
-`outcome`):
+**Consumer handling of `excluded`.** Every site that branches on
+`outcome` was enumerated on `main` @ `b9f4fa9e`. Sites that select only
+`resolved` for traversal or edge listing (for example the reverse-index
+pass in `expansion.ts`) are correct unchanged: `excluded` must never
+traverse. The sites that assume the three-member union are:
 
 - `discovery/expansion.ts` records it in `relationshipResolutions` like every
   outcome, creates no traversal, and does **not** record a `StageLoss`. A
@@ -165,8 +170,12 @@ tell an authorized exclusion from a dropped one. The module doc comment's
   becomes an explicit per-outcome switch, so a future fifth outcome fails
   type-checking instead of being counted silently as a loss.
 - `ruleAwareness` (and so the `lookup_rules` envelope) passes it through
-  unchanged, as it does every outcome. The envelope already states that it is
-  Eshyra runtime context; the `excluded` entry is self-describing.
+  unchanged, as it does every outcome; no facade code changes. The envelope
+  already states that it is Eshyra runtime context; the `excluded` entry is
+  self-describing. The accepted F-09 design states a three-member union for
+  this field, so C7 amends it.
+- The committed-pack resolution gate in `recordRelationships.test.ts`
+  (`outcome !== 'resolved'` → failure) is redefined by invariant 2.
 
 *Rejected: widening `CONDITION_RELATION_VALUES`.* That list is the closed
 effect-to-condition contract for deterministic consumers
@@ -252,6 +261,24 @@ other key. This closes problem 4 for this field and for every future one. The
 committed SRD manifest and the in-repo fixture manifests are checked against
 it.
 
+**C7 — Amendment to the accepted F-09 design.** This PR amends
+`docs/design/rule-record-runtime-statements.md` (merged with PR #594) in
+place, as amendment A2, so the two accepted designs do not disagree about
+the model-facing contract:
+
+- R5's `relationships` field comment names the full four-member union:
+  `resolved | unresolved-target | indeterminate | excluded`.
+- Invariant 9 says the envelope keeps **every** resolution outcome,
+  including `excluded`, and still says it keeps `unresolved-target` and
+  `indeterminate` (the failure semantics that invariant protects).
+- The status line records A2 and points here.
+
+A2 changes no F-09 behavior: the facade already passes the union through
+unfiltered. Its permanent evidence (invariant 9's `lookup_rules` cases) is
+unchanged; the implementation PR adds one assertion that a Grappled lookup
+envelope carries the `excluded` outcome, since that is the first committed
+producer of it.
+
 **C6 — Scope.**
 
 In scope:
@@ -304,13 +331,18 @@ Explicitly **out** of scope, each recorded as a finding for its owner:
   untouched (bd memory `srd-freeze-manifest-hashes-frozen-until-o9bd-closes`).
 - **Contract:** `recordRelationships.ts`, which covers C1, C2, and C5's
   validation half, and `packLoader.ts` (C5).
-- **Consumers, unchanged code:**
-  - discovery expansion (`discovery/expansion.ts`, `expandTypedRelationships`);
-  - the `ruleAwareness` facade and `lookup_rules` envelope, if the opus:F-09
-    vertical slice (`eshyra-o9bd.19.3.4.1`) has landed. Both call
-    `resolveRecordRelationships` with the producing pack's manifest, so the new
-    edges reach them without consumer changes.
-  - `state/activeEffects.ts`, which does not read the manifest.
+- **Consumers:**
+  - discovery expansion (`discovery/expansion.ts`): **changed**. Loss
+    accounting becomes an exhaustive per-outcome switch in which `excluded`
+    is neither a traversal nor a `StageLoss` (C1). Its traversal passes,
+    which select only `resolved`, are unchanged.
+  - the `ruleAwareness` facade and `lookup_rules` envelope (landed with
+    PR #594): **code unchanged**, contract amended (C7). Both call
+    `resolveRecordRelationships` with the producing pack's manifest, so the
+    new edges and the `excluded` outcome reach them without code changes.
+  - the committed-pack resolution gate (test code): **changed**, per
+    invariant 2.
+  - `state/activeEffects.ts`: unchanged; it does not read the manifest.
 - **Discovery retention budget:** new edges from condition seeds can add
   candidates to a packet. The existing discovery probe and intervention suites
   (`test/discovery/discoveryProbes.test.ts`, `packetIntervention.test.ts`) must
@@ -334,10 +366,30 @@ Explicitly **out** of scope, each recorded as a finding for its owner:
    resolver's result for a declared occurrence is never empty. An unknown effect `kind`
    carrying a `condition` leaf fails the committed-pack gate
    (`relation-not-recognized`).
-2. **Committed-pack resolution gate stays green with the new edges in it.** The
+2. **Committed-pack resolution gate: generalized, not weakened.** The
    existing test ("resolves every declared reference occurrence in the
-   committed pack", `recordRelationships.test.ts`) requires every declared
-   occurrence to resolve. The six new occurrences must resolve.
+   committed pack", `recordRelationships.test.ts`) today fails on any
+   outcome other than `resolved`, so it would fail on every legitimate
+   exclusion. Its durable responsibility is unchanged: a committed declared
+   reference must never become `unresolved-target` or `indeterminate`. Its
+   predicate becomes an exhaustive switch over `outcome`:
+   - `resolved` → accepted;
+   - `unresolved-target`, `indeterminate` → failure, exactly as today;
+   - `excluded` → accepted **only** if its `(declaration.kind,
+     declaration.pointerPrefix, relationFieldValue)` triple is in the gate's
+     explicit justified-exclusion list, and every entry in that list has an
+     invariant-7-style committed-pack assertion proving the exclusion is
+     source- and pack-correct. Today the list has exactly one entry:
+     `(condition, /mechanics/effects/*/condition, conditionEndsWhen)`. An
+     `excluded` outcome from any other declaration or sibling value fails
+     the gate, so a new `null` mapping cannot land without its own
+     justification evidence.
+   - an unknown outcome fails type-checking (the switch is exhaustive).
+
+   The six source occurrences in §2 must be `resolved`. The one
+   `conditionEndsWhen` `condition` leaf on `condition:grappled` must be
+   `excluded`. The gate is renamed to say it accepts resolved and justified
+   excluded occurrences.
 3. **No self-edges.** No emitted relationship has `targetRecordKey ===
    sourceRecordKey` for these declarations.
 4. **Existing declarations are unchanged.** Resolutions for the five
@@ -373,6 +425,8 @@ vertical slice is needed.
 | Loader test, **permanent**: an unknown declaration key is rejected, naming the key and path. | contract boundary |
 | Discovery probe: seeding `condition:stunned` expands to `condition:incapacitated` through `expandTypedRelationships` with the bundled manifest source. **Permanent** only if no existing probe already proves that `record-name` expansion reaches discovery; otherwise it is dropped after it is observed. | real consumer |
 | Importer test (`conditionMechanics.test.ts`): Grappled's `triggerCondition` is present only on the `grappler-incapacitated` effect. Any existing exact-projection assertion for Grappled is **extended**, not weakened, with §2's source clause as evidence (`docs/importer-fix-protocol.md`). | producer |
+| Committed-pack resolution gate (invariant 2), **permanent**, redefined. It still fails on an introduced `unresolved-target` or `indeterminate`. It accepts `excluded` only for the listed, justified triple. The implementation PR proves the gate's discrimination once by observation (a synthetic `unresolved-target`, a synthetic `indeterminate`, and an unlisted `excluded` each make it fail), then keeps the gate itself as the permanent evidence. | protects the durable committed-pack contract |
+| `lookup_rules` envelope for `condition:grappled` carries the `excluded` outcome (C7), **permanent**. | amended F-09 contract, first committed producer |
 | Committed-pack exclusion check (invariant 7), **permanent**. It reads the `excluded` outcomes the resolver emits for the committed pack (Grappled's `conditionEndsWhen`), reads the leaf at each outcome's `pointer`, and asserts the self-reference. It therefore checks the occurrences the resolver actually excluded, not a re-derivation of them. | protects a declared assumption |
 | Existing condition source-fidelity tests (slice 1) unchanged and green. | regression |
 
@@ -419,6 +473,18 @@ continuing. Failure cases include:
 
 ## 9. Revision history
 
+- **Revision 3** (design re-review at `2bfca47e`, CHANGES REQUESTED). The
+  review confirmed revision 2 fixed the original defect class and found one
+  sibling in its blast radius: the new terminal outcome was not reconciled
+  with (a) the committed-pack gate, whose `outcome !== 'resolved'` predicate
+  fails every legitimate exclusion and contradicted invariant 1, or (b) the
+  accepted F-09 design's three-member union in R5 and invariant 9. Repair:
+  invariant 2 redefines the gate as an exhaustive switch that still fails
+  `unresolved-target`/`indeterminate` and accepts `excluded` only for an
+  explicit, individually justified list; C7 amends the F-09 design in place
+  (amendment A2); §4 now names the consumers whose code changes; §6 adds the
+  gate and envelope evidence. Branch merged with `main` @ `b9f4fa9e`
+  (PR #594 landed during review).
 - **Revision 2** (design review 1 at `48875bd3`, CHANGES REQUESTED). The
   review found that revision 1's `null` table mapping made a covered
   `reference` occurrence emit nothing, breaking the manifest invariant that

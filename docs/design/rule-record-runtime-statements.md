@@ -6,7 +6,9 @@ readiness disposition". Related row owned by the same bead:
 `rule-corpus-procedures` (`sol:CAP-001`), "The rule corpus has executable
 procedures".
 
-Status: **accepted (revision 4) + amendment A1 from the vertical slice**
+Status: **accepted (revision 4) + amendment A1 from the vertical slice +
+amendment A2** (the `excluded` resolution outcome, from
+`docs/design/condition-condition-relationships.md` C7)
 (addresses the PR #589 reviews at `97da90f2`, `d05ed6ad`, and `34089ef9`).
 
 ## 1. Authority
@@ -184,7 +186,7 @@ interface RuleAwareness {
   // same RecordRelationshipManifestSource discovery uses. No inheritance
   // across add-ons, overrides, or foreign packs.
   relationshipArtifact: RelationshipArtifactState;   // { packId, state: 'present' | 'absent' }
-  relationships: readonly RelationshipResolution[];  // full union: resolved | unresolved-target | indeterminate
+  relationships: readonly RelationshipResolution[];  // full union: resolved | unresolved-target | indeterminate | excluded (A2)
   capabilities: CapabilityLedgerLookup;              // from the ledger, unchanged
   adjudicationContext?: RuleAdjudicationContext;     // independent channel
   knownLimits: readonly RuleKnownLimit[];            // independent channel
@@ -271,7 +273,9 @@ under the same manifest source (invariant 11).
    emits no `duplicate-of` declarations for the four compared pairs.
 9. **Relationship failure semantics preserved across the full producer
    set.** The envelope's relationships are producer-qualified, carry explicit
-   manifest `present`/`absent` state, and keep all three resolution outcomes.
+   manifest `present`/`absent` state, and keep every resolution outcome
+   unfiltered: `resolved`, `unresolved-target`, `indeterminate`, and (A2)
+   `excluded`.
    Permanent evidence runs **through `lookup_rules` with the live input
    wired as in R6**, reusing the existing F1 fixtures (cases (a)–(d) in
    `recordRelationships.test.ts`), for each producer:
