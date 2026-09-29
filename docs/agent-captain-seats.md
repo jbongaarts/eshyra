@@ -237,9 +237,33 @@ Absence of evidence is never movement. A ledger record written before the
 baseline field existed, a `HEAD` git cannot resolve, and a missing or
 unreadable transcript all read as "nothing observed" rather than nudging
 blindly. The baseline survives
-compaction and `/clear` for the same reason `startedAt` does: `SessionStart`
-re-fires with the same session id, and re-reading `HEAD` there would erase the
-movement the trigger exists to notice.
+compaction for the same reason `startedAt` does: `SessionStart` re-fires with
+the same session id, and re-reading `HEAD` there would erase the movement the
+trigger exists to notice.
+
+**`/clear` is different: it starts a new session id, and its `SessionStart`
+payload may carry no `model`** (`eshyra-8uuv`: a Captain that cleared got no
+charter and no ledger record, then merged two PRs and was never asked for a
+handoff). The occupant's identity was already proven when the predecessor was
+admitted, so the seat carries it forward instead of re-deriving it:
+
+- `SessionEnd` with `reason: clear` leaves a single-use `clear-handover.json`
+  holding the admitted session's model. A `SessionStart` with `source: clear`
+  and no `model` consumes it (at most once, within five minutes) and is
+  admitted and given its charter as usual. A `compact` start with no `model`
+  reuses its own existing ledger record.
+- If the successor's `SessionStart` ran before the predecessor's `SessionEnd`,
+  there was no handover to consume. The exit hook then admits the session late
+  from its own transcript, but only when that transcript begins with a
+  `SessionStart:clear` hook attachment and its latest main-thread (non-sidechain)
+  assistant message names a captain model. Such a record has no `HEAD` baseline,
+  because `HEAD` may already have moved; the transcript signal still sees any
+  merge, commit, or push.
+
+Neither path weakens the gate: each inherits only a model that itself matches
+the captain pattern, and a session with no provable identity (a `claude -p`
+run, which cannot `/clear`; an unknown model; a subagent; a dispatched worker)
+is still refused.
 
 `Stop` runs at every turn end, so the transcript read and the git call are
 ordered last — the read first, because it spawns nothing. Both are reached only
