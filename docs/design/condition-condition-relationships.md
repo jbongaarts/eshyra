@@ -8,12 +8,11 @@ discovery relationships only. It does not reopen that row. Related row
 are durable") is owned by `eshyra-o9bd.19.2.4`. This design contributes
 evidence toward that row but does not change its status.
 
-Status: **proposed, revision 3** (design review 1 at `48875bd3`: a `null`
-table mapping must not erase a declared occurrence; design re-review at
-`2bfca47e`: reconcile the new outcome with the committed-pack gate and the
-accepted F-09 design; see C1, C7, invariant 2, and §9). This document asks for design authorization
-under `docs/design-and-pr-review-policy.md` ("Design authorization"). No
-implementation lands with it.
+Status: **accepted (revision 3)**, authorized and merged via PR #593
+(`7452fbff`), with implementation correction I1 (§9). Revision history:
+design review 1 at `48875bd3` (a `null` table mapping must not erase a
+declared occurrence); design re-review at `2bfca47e` (reconcile the new
+outcome with the committed-pack gate and the accepted F-09 design).
 
 ## 1. Authority
 
@@ -386,9 +385,10 @@ Explicitly **out** of scope, each recorded as a finding for its owner:
      justification evidence.
    - an unknown outcome fails type-checking (the switch is exhaustive).
 
-   The six source occurrences in §2 must be `resolved`. The one
-   `conditionEndsWhen` `condition` leaf on `condition:grappled` must be
-   `excluded`. The gate is renamed to say it accepts resolved and justified
+   The six source occurrences in §2 must be `resolved`. Both
+   `conditionEndsWhen` `condition` leaves on `condition:grappled` (the
+   `grappler-incapacitated` and `removed-from-grappler-reach` effects, each
+   naming `grappled`) must be `excluded`. The gate is renamed to say it accepts resolved and justified
    excluded occurrences.
 3. **No self-edges.** No emitted relationship has `targetRecordKey ===
    sourceRecordKey` for these declarations.
@@ -427,7 +427,7 @@ vertical slice is needed.
 | Importer test (`conditionMechanics.test.ts`): Grappled's `triggerCondition` is present only on the `grappler-incapacitated` effect. Any existing exact-projection assertion for Grappled is **extended**, not weakened, with §2's source clause as evidence (`docs/importer-fix-protocol.md`). | producer |
 | Committed-pack resolution gate (invariant 2), **permanent**, redefined. It still fails on an introduced `unresolved-target` or `indeterminate`. It accepts `excluded` only for the listed, justified triple. The implementation PR proves the gate's discrimination once by observation (a synthetic `unresolved-target`, a synthetic `indeterminate`, and an unlisted `excluded` each make it fail), then keeps the gate itself as the permanent evidence. | protects the durable committed-pack contract |
 | `lookup_rules` envelope for `condition:grappled` carries the `excluded` outcome (C7), **permanent**. | amended F-09 contract, first committed producer |
-| Committed-pack exclusion check (invariant 7), **permanent**. It reads the `excluded` outcomes the resolver emits for the committed pack (Grappled's `conditionEndsWhen`), reads the leaf at each outcome's `pointer`, and asserts the self-reference. It therefore checks the occurrences the resolver actually excluded, not a re-derivation of them. | protects a declared assumption |
+| Committed-pack exclusion check (invariant 7), **permanent**. It reads the `excluded` outcomes the resolver emits for the committed pack (both of Grappled's `conditionEndsWhen` effects), reads the leaf at each outcome's `pointer`, and asserts the self-reference. It therefore checks the occurrences the resolver actually excluded, not a re-derivation of them. | protects a declared assumption |
 | Existing condition source-fidelity tests (slice 1) unchanged and green. | regression |
 
 No corpus-wide completeness test is added (ADR 0020).
@@ -472,6 +472,14 @@ continuing. Failure cases include:
   should be valid.
 
 ## 9. Revision history
+
+- **Implementation correction I1** (implementation PR, `eshyra-o9bd.19.3.4.3`;
+  found by the implementer, `eshyra-0p5j`). Invariant 2 and the §6
+  invariant-7 row said Grappled has one `conditionEndsWhen` `condition` leaf.
+  The committed pack has two (`grappler-incapacitated` and
+  `removed-from-grappler-reach`), both naming `grappled`, so both are
+  `excluded` under the approved table and both are asserted as
+  self-references. Wording only; no contract or semantics change.
 
 - **Revision 3** (design re-review at `2bfca47e`, CHANGES REQUESTED). The
   review confirmed revision 2 fixed the original defect class and found one

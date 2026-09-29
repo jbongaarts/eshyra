@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import type { ToolContext } from '../../src/internal.js';
 import {
   bundledDnd5eSrdRecordRelationshipManifestSource,
+  createDefaultToolRegistry,
+  createSeededRng,
   expandTypedRelationships,
   getBundledDnd5eSrdPack,
   getBundledDnd5eSrdRecordRelationshipManifest,
+  initSchema,
   normalizeRulesRecordName,
+  openDatabase,
   resolveRecordRelationships,
   resolveRulesStack,
+  startSession,
 } from '../../src/internal.js';
-import { ruleAwareness } from '../../src/rules/ruleAwareness.js';
 
 const pack = getBundledDnd5eSrdPack();
 const stack = resolveRulesStack({ base: pack });
@@ -211,12 +216,34 @@ describe('condition discovery relationships in the committed SRD pack', () => {
       }),
     );
 
-    const awareness = ruleAwareness(
-      'condition:grappled',
-      stack,
-      bundledDnd5eSrdRecordRelationshipManifestSource(),
+    // Amended F-09 contract (A2): the live lookup_rules envelope passes the
+    // `excluded` outcome through unfiltered.
+    const db = openDatabase(':memory:');
+    initSchema(db);
+    startSession(db, {
+      campaignId: 'campaign-1',
+      sessionId: 'session-1',
+      startedAt: '2026-05-20T09:00:00.000Z',
+    });
+    const toolContext: ToolContext = {
+      db,
+      rng: createSeededRng(42),
+      campaignId: 'campaign-1',
+      sessionId: 'session-1',
+      turnId: 'turn-1',
+      at: '2026-05-20T10:00:00.000Z',
+    };
+    const result = createDefaultToolRegistry().invoke(
+      'lookup_rules',
+      { kind: 'condition', ref: 'condition:grappled' },
+      toolContext,
     );
-    expect(awareness.relationships).toContainEqual(
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as {
+      ruleAwareness: { relationships: readonly unknown[] };
+    };
+    expect(data.ruleAwareness.relationships).toContainEqual(
       expect.objectContaining({
         outcome: 'excluded',
         relationFieldValue: 'conditionEndsWhen',
