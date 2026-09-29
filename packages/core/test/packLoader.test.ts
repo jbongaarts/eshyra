@@ -312,6 +312,32 @@ describe('loadRecordRelationshipManifest — negative paths', () => {
     expect(() => loadRecordRelationshipManifest(dir)).toThrow(/targetKind/);
   });
 
+  it('rejects unknown declaration fields with the field name and path', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'record-relationships.json'),
+      JSON.stringify({
+        schema: RECORD_RELATIONSHIP_SCHEMA,
+        declarations: [
+          {
+            kind: 'feature',
+            pointerPrefix: '/source',
+            linkField: 'data.source',
+            disposition: 'reference',
+            relation: 'granted-by',
+            targetResolution: 'record-key',
+            reason: 'fixture',
+            typoedField: true,
+          },
+        ],
+      }),
+      'utf8',
+    );
+    expect(() => loadRecordRelationshipManifest(dir)).toThrow(
+      /declarations\[0\]\.typoedField is an unknown declaration key/,
+    );
+  });
+
   it('fails closed on a non-string pointerPrefix instead of an unrelated native error', () => {
     const dir = makeTmpDir();
     writeFileSync(

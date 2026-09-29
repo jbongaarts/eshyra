@@ -276,6 +276,21 @@ function parseRecordRelationshipDeclaration(
   if (typeof value !== 'object' || value === null || Array.isArray(value))
     throw new RulesPackError(`${path} must be an object`);
   const o = value as Record<string, unknown>;
+  const allowedKeys = new Set([
+    'kind',
+    'pointerPrefix',
+    'linkField',
+    'disposition',
+    'relation',
+    'targetResolution',
+    'targetKind',
+    'relationField',
+    'relationByFieldValue',
+    'reason',
+  ]);
+  for (const key of Object.keys(o))
+    if (!allowedKeys.has(key))
+      throw new RulesPackError(`${path}.${key} is an unknown declaration key`);
   const kind = o.kind;
   if (
     typeof kind !== 'string' ||
@@ -321,6 +336,27 @@ function parseRecordRelationshipDeclaration(
     throw new RulesPackError(
       `${path}.relationField must be a string when present`,
     );
+  const relationByFieldValue = o.relationByFieldValue;
+  if (relationByFieldValue !== undefined) {
+    if (
+      typeof relationByFieldValue !== 'object' ||
+      relationByFieldValue === null ||
+      Array.isArray(relationByFieldValue)
+    )
+      throw new RulesPackError(
+        `${path}.relationByFieldValue must be an object when present`,
+      );
+    for (const [key, mappedRelation] of Object.entries(relationByFieldValue))
+      if (
+        key.length === 0 ||
+        (mappedRelation !== null &&
+          (typeof mappedRelation !== 'string' ||
+            mappedRelation.trim().length === 0))
+      )
+        throw new RulesPackError(
+          `${path}.relationByFieldValue entries must have non-empty keys and non-empty string or null values`,
+        );
+  }
   const reason = o.reason;
   if (typeof reason !== 'string' || reason.trim().length === 0)
     throw new RulesPackError(`${path}.reason must be a non-empty string`);
@@ -335,6 +371,14 @@ function parseRecordRelationshipDeclaration(
       ? {}
       : { targetKind: targetKind as RulesRecordKind }),
     ...(relationField === undefined ? {} : { relationField }),
+    ...(relationByFieldValue === undefined
+      ? {}
+      : {
+          relationByFieldValue: relationByFieldValue as Record<
+            string,
+            string | null
+          >,
+        }),
     reason,
   };
 }

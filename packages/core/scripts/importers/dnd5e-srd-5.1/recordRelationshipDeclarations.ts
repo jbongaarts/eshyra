@@ -201,4 +201,31 @@ export const DND5E_RECORD_RELATIONSHIP_DECLARATIONS: readonly RecordRelationship
       reason:
         'A rule elsewhere in the source that overrides this condition level lifecycle (Food and Water blocks exhaustion removal).',
     },
+    {
+      kind: 'condition',
+      pointerPrefix: '/mechanics/effects/*/condition',
+      linkField: 'data.mechanics.effects[].condition',
+      disposition: 'reference',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      relationField: 'kind',
+      relationByFieldValue: {
+        impliesCondition: 'implied-condition',
+        imposesCondition: 'imposed-condition',
+        conditionEndsWhen: null, // names the record's own condition: a self-reference, not a relationship
+      },
+      reason:
+        'Condition effects name their related condition for impliesCondition and imposesCondition; conditionEndsWhen names the source condition itself and is explicitly excluded.',
+    },
+    {
+      kind: 'condition',
+      pointerPrefix: '/mechanics/effects/*/triggerCondition',
+      linkField: 'data.mechanics.effects[].triggerCondition',
+      disposition: 'reference',
+      relation: 'ending-trigger-condition',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      reason:
+        'The Grappled source clause says its condition ends when the grappler is incapacitated (see the condition).',
+    },
   ];

@@ -171,14 +171,27 @@ export function expandTypedRelationships(
     resolutionCache.set(entry, resolutions);
     relationshipResolutions.push(...resolutions);
     for (const resolution of resolutions) {
-      if (resolution.outcome === 'resolved') continue;
-      losses.push({
-        reason:
-          resolution.outcome === 'indeterminate'
-            ? 'indeterminate-typed-occurrence'
-            : 'unresolved-typed-target',
-        detail: { ...resolution },
-      });
+      switch (resolution.outcome) {
+        case 'resolved':
+        case 'excluded':
+          break;
+        case 'indeterminate':
+          losses.push({
+            reason: 'indeterminate-typed-occurrence',
+            detail: { ...resolution },
+          });
+          break;
+        case 'unresolved-target':
+          losses.push({
+            reason: 'unresolved-typed-target',
+            detail: { ...resolution },
+          });
+          break;
+        default: {
+          const exhaustive: never = resolution;
+          throw new Error(`Unhandled relationship resolution: ${exhaustive}`);
+        }
+      }
     }
     return resolutions;
   }

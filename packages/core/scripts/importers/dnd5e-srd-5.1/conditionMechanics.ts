@@ -152,6 +152,7 @@ function effectsForCondition(name: string): readonly MechanicsEffect[] {
           kind: 'conditionEndsWhen',
           condition: 'grappled',
           trigger: 'grappler-incapacitated',
+          triggerCondition: 'incapacitated',
         },
         {
           kind: 'conditionEndsWhen',

@@ -402,14 +402,13 @@ describe('pack-owned record relationships', () => {
       { ...valid, targetResolution: undefined },
       { ...valid, targetResolution: 'record-name', targetKind: undefined },
       { ...valid, linkField: '' },
-      // record-name must DECLARE the sibling carrying each occurrence's own
-      // relation; leaving it undeclared is what forced the pointer-string
-      // rewrite this field replaced.
+      // A record-name declaration with no sibling needs a fixed relation.
       {
         ...valid,
         targetResolution: 'record-name',
         targetKind: 'condition',
         relationField: undefined,
+        relation: undefined,
       },
       {
         ...valid,
@@ -1008,12 +1007,29 @@ describe('F6: an edge is resolved once per expansion pass, never duplicated with
 });
 
 describe('committed SRD pack relationship integrity (eshyra-o9bd.19.3.4)', () => {
-  it('resolves every declared reference occurrence in the committed pack', () => {
-    const failures = pack.records.flatMap((r) =>
-      resolveRecordRelationships(manifest, r, stack).filter(
-        (resolution) => resolution.outcome !== 'resolved',
-      ),
-    );
+  it('accepts resolved and justified-excluded declared occurrences in the committed pack', () => {
+    const justifiedExclusions = new Set([
+      'condition|/mechanics/effects/*/condition|conditionEndsWhen',
+    ]);
+    const failures = pack.records
+      .flatMap((r) => resolveRecordRelationships(manifest, r, stack))
+      .filter((resolution) => {
+        switch (resolution.outcome) {
+          case 'resolved':
+            return false;
+          case 'unresolved-target':
+          case 'indeterminate':
+            return true;
+          case 'excluded':
+            return !justifiedExclusions.has(
+              `${resolution.declaration.kind}|${resolution.declaration.pointerPrefix}|${resolution.relationFieldValue}`,
+            );
+          default: {
+            const exhaustive: never = resolution;
+            throw new Error(`Unhandled relationship resolution: ${exhaustive}`);
+          }
+        }
+      });
     expect(failures).toEqual([]);
   });
 
@@ -1034,5 +1050,129 @@ describe('committed SRD pack relationship integrity (eshyra-o9bd.19.3.4)', () =>
     expect(edges('condition:exhaustion')).toEqual([
       'lifecycle-exception rule:food-and-water',
     ]);
+  });
+});
+
+describe('record-name relation tables and fixed relations', () => {
+  const tableDeclaration: RecordRelationshipDeclaration = {
+    kind: 'action',
+    pointerPrefix: '/mechanics/effects/*/condition',
+    linkField: 'data.mechanics.effects[].condition',
+    disposition: 'reference',
+    targetResolution: 'record-name',
+    targetKind: 'condition',
+    relationField: 'kind',
+    relationByFieldValue: {
+      impliesCondition: 'implied-condition',
+      conditionEndsWhen: null,
+    },
+    reason: 'synthetic contract test',
+  };
+
+  it('distinguishes mapped, excluded, unrecognized, missing, and malformed siblings', () => {
+    const source = record('action:dodge');
+    const synthetic: RulesRecord = {
+      ...source,
+      data: {
+        mechanics: {
+          effects: [
+            { kind: 'impliesCondition', condition: 'Incapacitated' },
+            { kind: 'conditionEndsWhen', condition: 42 },
+            { kind: 'futureEffect', condition: 'Incapacitated' },
+            { condition: 'Incapacitated' },
+            { kind: 7, condition: 'Incapacitated' },
+          ],
+        },
+      },
+    };
+    const found = resolveRecordRelationships(
+      buildRecordRelationshipManifest([tableDeclaration]),
+      synthetic,
+      stack,
+    );
+    expect(found.map((item) => item.outcome)).toEqual([
+      'resolved',
+      'excluded',
+      'indeterminate',
+      'indeterminate',
+      'indeterminate',
+    ]);
+    expect(found[0]).toMatchObject({
+      relation: 'implied-condition',
+      targetRecordKey: 'condition:incapacitated',
+    });
+    expect(found[1]).toMatchObject({
+      outcome: 'excluded',
+      pointer: '/mechanics/effects/*/condition',
+      reason: 'relation-table-exclusion',
+      relationFieldValue: 'conditionEndsWhen',
+    });
+    expect(found[1]).not.toHaveProperty('relation');
+    expect(found[1]).not.toHaveProperty('targetRecordKey');
+    expect(found[2]).toMatchObject({ reason: 'relation-not-recognized' });
+    expect(found[3]).toMatchObject({ reason: 'relation-sibling-missing' });
+    expect(found[4]).toMatchObject({
+      reason: 'relation-sibling-not-a-string',
+      rawValue: 7,
+    });
+    expect(found).toHaveLength(5);
+  });
+
+  it('uses a fixed relation when a record-name declaration omits relationField', () => {
+    const source = record('action:dodge');
+    const declaration: RecordRelationshipDeclaration = {
+      kind: 'action',
+      pointerPrefix: '/source',
+      linkField: 'data.source',
+      disposition: 'reference',
+      relation: 'fixed-relation',
+      targetResolution: 'record-name',
+      targetKind: 'condition',
+      reason: 'synthetic fixed relation',
+    };
+    const named = { ...source, data: { source: 'Incapacitated' } };
+    expect(
+      resolveRecordRelationships(
+        buildRecordRelationshipManifest([declaration]),
+        named,
+        stack,
+      ),
+    ).toMatchObject([
+      {
+        outcome: 'resolved',
+        relation: 'fixed-relation',
+        targetRecordKey: 'condition:incapacitated',
+      },
+    ]);
+  });
+
+  it('rejects malformed relation-table declarations', () => {
+    const invalid: RecordRelationshipDeclaration[] = [
+      { ...tableDeclaration, relation: 'also-set' },
+      { ...tableDeclaration, relationField: undefined },
+      {
+        ...tableDeclaration,
+        relationByFieldValue: { conditionEndsWhen: null },
+      },
+      {
+        ...tableDeclaration,
+        relationByFieldValue: { impliesCondition: '' },
+      },
+      {
+        ...tableDeclaration,
+        relationByFieldValue: { '': 'implied-condition' },
+      },
+    ];
+    for (const declaration of invalid)
+      expect(() => buildRecordRelationshipManifest([declaration])).toThrow();
+    expect(() =>
+      buildRecordRelationshipManifest([
+        {
+          ...tableDeclaration,
+          relationByFieldValue: undefined,
+          relationField: undefined,
+        },
+      ]),
+    ).toThrow();
   });
 });

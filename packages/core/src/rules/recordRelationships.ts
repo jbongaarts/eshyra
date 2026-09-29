@@ -27,9 +27,10 @@ import {
  *
  * `resolveRecordRelationships` resolves every DECLARED `reference` occurrence
  * to exactly one typed outcome: `resolved`, `unresolved-target` (a well-formed
- * value naming an absent or ambiguous target), or `indeterminate` (the
+ * value naming an absent or ambiguous target), `indeterminate` (the
  * declared occurrence's own emitted data could not be read at all — see that
- * outcome's doc comment). None of the three is ever a silent empty result:
+ * outcome's doc comment), or `excluded` (a declared relation table explicitly
+ * excludes the sibling value). None of the four is ever a silent empty result:
  * an occurrence this module cannot resolve is retained and typed, never
  * dropped.
  */
@@ -54,6 +55,9 @@ export interface RecordRelationshipDeclaration {
    * case. Required exactly when `targetResolution` is `record-name`.
    */
   readonly relationField?: string;
+  /** Maps record-name relation sibling values to relations; null is an
+   * explicit per-occurrence exclusion. */
+  readonly relationByFieldValue?: Readonly<Record<string, string | null>>;
   readonly reason: string;
 }
 
@@ -108,15 +112,17 @@ export function buildRecordRelationshipManifest(
       (decl.relation !== undefined ||
         decl.targetResolution !== undefined ||
         decl.targetKind !== undefined ||
-        decl.relationField !== undefined)
+        decl.relationField !== undefined ||
+        decl.relationByFieldValue !== undefined)
     )
       throw new RecordRelationshipError(
         `${where}: not-a-reference cannot carry relationship fields`,
       );
     if (
       decl.disposition === 'reference' &&
-      (decl.relation === undefined ||
-        decl.relation.trim() === '' ||
+      ((decl.relation === undefined &&
+        decl.relationByFieldValue === undefined) ||
+        (decl.relation !== undefined && decl.relation.trim() === '') ||
         decl.targetResolution === undefined)
     )
       throw new RecordRelationshipError(
@@ -147,14 +153,58 @@ export function buildRecordRelationshipManifest(
       );
     if (
       decl.targetResolution === 'record-name' &&
-      (decl.relationField === undefined ||
-        decl.relationField.trim() === '' ||
-        decl.relationField.includes('/'))
+      decl.relationField !== undefined &&
+      (decl.relationField.trim() === '' || decl.relationField.includes('/'))
     )
       throw new RecordRelationshipError(
         `${where}: record-name requires a non-empty relationField naming a ` +
           'single sibling key',
       );
+    if (
+      decl.targetResolution === 'record-name' &&
+      decl.relationField === undefined &&
+      (decl.relation === undefined || decl.relation.trim() === '')
+    )
+      throw new RecordRelationshipError(
+        `${where}: fixed record-name relation requires relation and omits relationField`,
+      );
+    if (decl.relationByFieldValue !== undefined) {
+      if (
+        decl.targetResolution !== 'record-name' ||
+        decl.relationField === undefined
+      )
+        throw new RecordRelationshipError(
+          `${where}: relationByFieldValue requires record-name with relationField`,
+        );
+      if (decl.relation !== undefined)
+        throw new RecordRelationshipError(
+          `${where}: relation cannot be combined with relationByFieldValue`,
+        );
+      if (
+        typeof decl.relationByFieldValue !== 'object' ||
+        decl.relationByFieldValue === null ||
+        Array.isArray(decl.relationByFieldValue)
+      )
+        throw new RecordRelationshipError(
+          `${where}.relationByFieldValue must be an object`,
+        );
+      const entries = Object.entries(decl.relationByFieldValue);
+      if (
+        entries.some(
+          ([key, value]) =>
+            key.length === 0 ||
+            (value !== null &&
+              (typeof value !== 'string' || value.trim().length === 0)),
+        )
+      )
+        throw new RecordRelationshipError(
+          `${where}.relationByFieldValue keys and string values must be non-empty`,
+        );
+      if (!entries.some(([, value]) => typeof value === 'string'))
+        throw new RecordRelationshipError(
+          `${where}.relationByFieldValue must contain at least one string value`,
+        );
+    }
     if (
       decl.targetResolution === 'record-key' &&
       decl.relationField !== undefined
@@ -245,6 +295,14 @@ export type RelationshipResolution =
        * `relation-sibling-missing`, where there is no value to name. */
       readonly rawValue?: unknown;
       readonly declaration: RecordRelationshipDeclaration;
+    }
+  | {
+      readonly outcome: 'excluded';
+      readonly sourceRecordKey: string;
+      readonly pointer: string;
+      readonly reason: 'relation-table-exclusion';
+      readonly relationFieldValue: string;
+      readonly declaration: RecordRelationshipDeclaration;
     };
 
 export interface RelationshipIndex {
@@ -317,13 +375,94 @@ export function resolveRecordRelationships(
       pointer,
     );
     if (declaration?.disposition !== 'reference') return;
-    // A DECLARED reference whose emitted value is not a string used to
-    // return here silently — the occurrence vanished from the result exactly
-    // as if nothing had been declared for this pointer at all. That is the
-    // fail-open this module exists to close (see the module doc comment and
-    // the `indeterminate` outcome's doc comment): every declared occurrence
-    // now yields a typed outcome, positive, negative, or indeterminate, never
-    // nothing.
+    let relation = declaration.relation;
+    // Preserve the original leaf-first order for declarations without a
+    // relation table. Table-bearing declarations intentionally inspect the
+    // sibling first so a null entry excludes even a non-string leaf.
+    if (
+      declaration.relationByFieldValue === undefined &&
+      typeof value !== 'string'
+    ) {
+      resolutions.push({
+        outcome: 'indeterminate',
+        sourceRecordKey: record.key,
+        pointer,
+        reason: 'value-not-a-string',
+        rawValue: value,
+        declaration,
+      });
+      return;
+    }
+    if (declaration.targetResolution === 'record-name') {
+      if (declaration.relationField === undefined) {
+        // Fixed-relation record-name declarations do not read a sibling.
+      } else {
+        // The sibling the DECLARATION names, not a pointer-string rewrite.
+        const entry = valueAtActualPointer(
+          record.data,
+          `${actualPointer.slice(0, actualPointer.lastIndexOf('/'))}/${declaration.relationField as string}`,
+        );
+        if (entry === undefined) {
+          resolutions.push({
+            outcome: 'indeterminate',
+            sourceRecordKey: record.key,
+            pointer,
+            reason: 'relation-sibling-missing',
+            declaration,
+          });
+          return;
+        }
+        if (typeof entry !== 'string') {
+          resolutions.push({
+            outcome: 'indeterminate',
+            sourceRecordKey: record.key,
+            pointer,
+            reason: 'relation-sibling-not-a-string',
+            rawValue: entry,
+            declaration,
+          });
+          return;
+        }
+        if (declaration.relationByFieldValue !== undefined) {
+          if (!Object.hasOwn(declaration.relationByFieldValue, entry)) {
+            resolutions.push({
+              outcome: 'indeterminate',
+              sourceRecordKey: record.key,
+              pointer,
+              reason: 'relation-not-recognized',
+              rawValue: entry,
+              declaration,
+            });
+            return;
+          }
+          const mappedRelation = declaration.relationByFieldValue[entry];
+          if (mappedRelation === null) {
+            resolutions.push({
+              outcome: 'excluded',
+              sourceRecordKey: record.key,
+              pointer,
+              reason: 'relation-table-exclusion',
+              relationFieldValue: entry,
+              declaration,
+            });
+            return;
+          }
+          relation = mappedRelation;
+        } else if (!CONDITION_RELATION_VALUES.includes(entry as never)) {
+          resolutions.push({
+            outcome: 'indeterminate',
+            sourceRecordKey: record.key,
+            pointer,
+            reason: 'relation-not-recognized',
+            rawValue: entry,
+            declaration,
+          });
+          return;
+        } else relation = entry;
+      }
+    }
+    // Table-bearing declarations have now handled their sibling, including a
+    // declared exclusion. Only surviving occurrences need a string leaf.
     if (typeof value !== 'string') {
       resolutions.push({
         outcome: 'indeterminate',
@@ -335,47 +474,10 @@ export function resolveRecordRelationships(
       });
       return;
     }
-    let relation = declaration.relation as string;
-    if (declaration.targetResolution === 'record-name') {
-      // The sibling the DECLARATION names, not a pointer-string rewrite.
-      const entry = valueAtActualPointer(
-        record.data,
-        `${actualPointer.slice(0, actualPointer.lastIndexOf('/'))}/${declaration.relationField as string}`,
+    if (relation === undefined)
+      throw new RecordRelationshipError(
+        `reference declaration for (${declaration.kind}, ${declaration.pointerPrefix}) has no relation`,
       );
-      if (entry === undefined) {
-        resolutions.push({
-          outcome: 'indeterminate',
-          sourceRecordKey: record.key,
-          pointer,
-          reason: 'relation-sibling-missing',
-          declaration,
-        });
-        return;
-      }
-      if (typeof entry !== 'string') {
-        resolutions.push({
-          outcome: 'indeterminate',
-          sourceRecordKey: record.key,
-          pointer,
-          reason: 'relation-sibling-not-a-string',
-          rawValue: entry,
-          declaration,
-        });
-        return;
-      }
-      if (!CONDITION_RELATION_VALUES.includes(entry as never)) {
-        resolutions.push({
-          outcome: 'indeterminate',
-          sourceRecordKey: record.key,
-          pointer,
-          reason: 'relation-not-recognized',
-          rawValue: entry,
-          declaration,
-        });
-        return;
-      }
-      relation = entry;
-    }
     if (declaration.targetResolution === 'record-key') {
       const target = index.recordsByKey.get(value);
       resolutions.push(
