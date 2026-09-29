@@ -49,6 +49,14 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["site/src/icons/*.svg"],
+      "linter": {
+        "rules": { "a11y": { "noSvgWithoutTitle": "off" } }
+      }
+    }
+  ],
   "files": {
     "includes": [
       "**",

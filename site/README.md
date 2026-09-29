@@ -41,7 +41,7 @@ involved.
 
 ## Presentation conventions
 
-The midnight palette keeps terminal details in navigation and metadata. Article
+The palette is phosphor green (`--green`, ~#88d789) on near-black forest (`--bg`, ~#09130d); the artwork keeps its own blues and ambers. Terminal details stay in navigation and metadata. Article
 bodies use opaque backgrounds and proportional system serif type, with no
 scanlines, flicker, remote fonts, client JavaScript, or framework dependencies.
 
@@ -54,6 +54,7 @@ scanlines, flicker, remote fonts, client JavaScript, or framework dependencies.
   self-links to those headings. Keep IDs stable. Desktop shows a scrollable,
   sticky contents rail; mobile uses a native collapsed disclosure. Both work
   without JavaScript. Preserve article wording when changing presentation.
+- Icons live in `src/icons/` (green doorway mark). `head-icons.html.tmpl` is the shared `<head>` declaration block (ICO, tuned 16 px SVG, 192 px PNG, 180 px Apple touch icon); the transparent mark sits beside the header/footer wordmark as a decorative `alt=""` image. The 32/48/512 px exports are kept for future icon contexts; there is deliberately no web manifest or service worker.
 - The `/making-of/` story-series work remains owned by `eshyra-ss08.1`; this
   redesign does not publish planned stories or change that series' scope.
 
