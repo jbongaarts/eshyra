@@ -185,6 +185,9 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     expect(ENGINE_PROCEDURE_COVERAGE['rule:charges']?.status).toBe(
       'model-adjudicated-supported',
     );
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:blindsight']).toEqual({
+      status: 'no-runtime-statement',
+    });
     expect(ENGINE_PROCEDURE_COVERAGE['rule:suffocating']?.status).toBe(
       'partial',
     );
@@ -282,6 +285,94 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     ).toEqual([]);
   });
 
+  it('rejects context without a positive registered tool mapping', () => {
+    const tools = new Set(['lookup_rules', 'resolve_check', 'spend_usage']);
+    expect(
+      validateRuleAdjudicationContext(tools, {
+        'rule:lookup-only': {
+          tools: ['lookup_rules'],
+          dmContext: 'Read the rule.',
+        },
+      }),
+    ).toContain(
+      'rule:lookup-only: adjudication context requires a non-lookup tool',
+    );
+    expect(
+      validateRuleAdjudicationContext(tools, {
+        'rule:missing': {
+          tools: ['lookup_rules', 'resolve_check'],
+          dmContext: 'Use resolve_check and spend_usage.',
+        },
+      }),
+    ).toContain(
+      "rule:missing: tool 'spend_usage' is named in dmContext but not listed",
+    );
+    expect(
+      validateRuleAdjudicationContext(tools, {
+        'rule:negative': {
+          tools: ['lookup_rules', 'resolve_check'],
+          dmContext: "Eshyra doesn't resolve attacks; use resolve_check.",
+        },
+      }),
+    ).toContain(
+      'rule:negative: dmContext asserts an unbounded Eshyra negative',
+    );
+  });
+
+  it('projects source procedures without runtime entries as no statement', () => {
+    const coverage = materializeEngineProcedureCoverage(
+      {},
+      {
+        procedureKeys: ['rule:fixture'],
+        adjudicationContext: {},
+        knownLimits: {},
+      },
+    );
+    expect(coverage['rule:fixture']).toEqual({
+      status: 'no-runtime-statement',
+    });
+    expect(
+      buildRuleDispositionReport(coverage).engineProcedure.noRuntimeStatement,
+    ).toBe(1);
+  });
+
+  it('keeps runtime statements distinct from eight-word source passages', () => {
+    const records = new Map(
+      getBundledDnd5eSrdPack().records.map((record) => [record.key, record]),
+    );
+    const words = (text: string) =>
+      text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+    const violations: string[] = [];
+    for (const [key, statements] of [
+      ...Object.entries(RULE_ADJUDICATION_CONTEXT).map(
+        ([key, context]) => [key, [context.dmContext]] as const,
+      ),
+      ...Object.entries(RULE_KNOWN_LIMITS).map(
+        ([key, limits]) =>
+          [key, limits.map((limit) => limit.statement)] as const,
+      ),
+    ]) {
+      const record = records.get(key);
+      if (record === undefined)
+        throw new Error(`missing committed record ${key}`);
+      const data = record.data as { text?: string; description?: string };
+      const source = words(data.text ?? data.description ?? '');
+      const sourceWindows = new Set(
+        source
+          .slice(0, -7)
+          .map((_, index) => source.slice(index, index + 8).join(' ')),
+      );
+      for (const statement of statements) {
+        const statementWords = words(statement);
+        for (let index = 0; index + 8 <= statementWords.length; index++) {
+          const window = statementWords.slice(index, index + 8).join(' ');
+          if (sourceWindows.has(window)) violations.push(`${key}: ${window}`);
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
   it('rejects non-implemented rows authored in the audit materializer input', () => {
     expect(() =>
       materializeEngineProcedureCoverage({
@@ -316,12 +407,13 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       'rule:weapon-properties',
     ])
       expect(ENGINE_PROCEDURE_COVERAGE[key]?.externalClauses).toBeUndefined();
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:armor-guidance']?.missing).toContain(
-      'armor class',
+    // A3 retires armor-guidance: character AC is not derived by a live tool.
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:armor-guidance']?.status).toBe(
+      'no-runtime-statement',
     );
     expect(
       ENGINE_PROCEDURE_COVERAGE['rule:special-weapons']?.missing,
-    ).toContain('net escape');
+    ).toContain('one attack');
   });
 
   it('preserves an explicit non-default external finding ID through materialization and reporting', () => {

@@ -202,7 +202,7 @@ describe('rule awareness', () => {
     // Source-fidelity: the SRD rule forbids HP regain and stabilization until
     // the creature can breathe again, and no runtime gate enforces it.
     expect(suffocating).toContain(
-      'cannot regain hit points or be stabilized until it can breathe again',
+      'does not gate stabilization or HP recovery on renewed breathing',
     );
     expect(suffocating).toContain('do not call stabilize_character');
     const lair = renderedFor('rule:a-legendary-creatures-lair');

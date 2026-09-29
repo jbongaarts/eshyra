@@ -1477,10 +1477,10 @@ export type GameplayReadinessReport = {
    * Rule-record disposition & engine-procedure coverage counts
    * (eshyra-o9bd.18.7.8.1): what every `rule:*` record IS (reference-prose /
    * definition / table-backed / duplicate / engine-procedure) crossed with,
-   * for engine-procedure rows, whether the deterministic behavior is
-   * actually covered. `implemented` and `modelAdjudicatedSupported` are the
-   * two green buckets; `partial`/`unimplemented`/`designBlocked` are
-   * visible, truthful readiness gaps that do not by themselves fail this
+   * for engine-procedure rows, the projected runtime statement status.
+   * `noRuntimeStatement` makes no support or safety claim. The
+   * `partial`/`unimplemented`/`designBlocked` buckets are visible gaps
+   * that do not by themselves fail this
    * report (see `dispositionErrors` for registry-integrity failures, which
    * do).
    */
@@ -2142,7 +2142,7 @@ export function formatGameplayReadinessReport(
     'Rule-record disposition & engine-procedure coverage (eshyra-o9bd.18.7.8.1)',
     '- Scope: exact rule:* classification only; not corpus-wide semantic, discovery, capability, or exclusive-clause ownership.',
     `- reference-prose: ${report.rules.referencesProse}; definition: ${report.rules.definitions}; table-backed: ${report.rules.tableBacked}; duplicate: ${report.rules.duplicates}`,
-    `- engine-procedure: implemented ${report.rules.engineProcedure.implemented}; model-adjudicated-supported ${report.rules.engineProcedure.modelAdjudicatedSupported}; partial ${report.rules.engineProcedure.partial.length}; unimplemented ${report.rules.engineProcedure.unimplemented.length}; design-blocked ${report.rules.engineProcedure.designBlocked.length}`,
+    `- engine-procedure: implemented ${report.rules.engineProcedure.implemented}; model-adjudicated-supported ${report.rules.engineProcedure.modelAdjudicatedSupported}; no-runtime-statement ${report.rules.engineProcedure.noRuntimeStatement}; partial ${report.rules.engineProcedure.partial.length}; unimplemented ${report.rules.engineProcedure.unimplemented.length}; design-blocked ${report.rules.engineProcedure.designBlocked.length}`,
     'Partial (actionable gaps: key — missing)',
     ...(report.rules.engineProcedure.partial.length === 0
       ? ['(none)']

@@ -1668,6 +1668,7 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
 export type RuleCoverageStatus =
   | 'implemented'
   | 'model-adjudicated-supported'
+  | 'no-runtime-statement'
   | 'partial'
   | 'unimplemented'
   | 'design-blocked';
@@ -2145,6 +2146,7 @@ const KNOWN_LIMIT_AUDIT_STATUS: Readonly<
 export function materializeEngineProcedureCoverage(
   unboundCoverage: Readonly<Record<string, RuleProcedureCoverage>>,
   statementDatasets: {
+    readonly procedureKeys?: readonly string[];
     readonly adjudicationContext?: Readonly<
       Record<string, RuleAdjudicationContext>
     >;
@@ -2219,6 +2221,10 @@ export function materializeEngineProcedureCoverage(
       runtimeLimitSource: limit,
     };
   }
+  for (const key of statementDatasets.procedureKeys ?? []) {
+    if (runtimeCoverage[key] === undefined)
+      runtimeCoverage[key] = { status: 'no-runtime-statement' };
+  }
   return Object.freeze(
     Object.fromEntries(
       Object.entries(runtimeCoverage).map(([key, coverage]) => {
@@ -2258,6 +2264,11 @@ export function materializeEngineProcedureCoverage(
 
 export const ENGINE_PROCEDURE_COVERAGE = materializeEngineProcedureCoverage(
   UNBOUND_ENGINE_PROCEDURE_COVERAGE,
+  {
+    procedureKeys: Object.entries(RULE_DISPOSITIONS)
+      .filter(([, disposition]) => disposition.class === 'engine-procedure')
+      .map(([key]) => key),
+  },
 );
 
 type RuntimeRuleDeterministicCapabilityContract =
@@ -2562,6 +2573,11 @@ export function validateRuleRegistries(
         errors.push(`${key}: implemented row is missing evidence`);
       }
     }
+    if (
+      coverageRow.status === 'no-runtime-statement' &&
+      coverageRow.findingId !== undefined
+    )
+      errors.push(`${key}: no-runtime-statement row must not have findingId`);
     if (coverageRow.status === 'model-adjudicated-supported') {
       if (!coverageRow.primitives || coverageRow.primitives.length === 0) {
         errors.push(
@@ -2734,6 +2750,7 @@ export interface RuleDispositionReport {
   readonly engineProcedure: {
     readonly implemented: number;
     readonly modelAdjudicatedSupported: number;
+    readonly noRuntimeStatement: number;
     /** Actionable gap list: key + missing semantics (design §4). */
     readonly partial: readonly {
       readonly key: string;
@@ -2825,6 +2842,7 @@ export function buildRuleDispositionReport(
   }
   let implemented = 0;
   let modelAdjudicatedSupported = 0;
+  let noRuntimeStatement = 0;
   const partial: { key: string; missing: string }[] = [];
   const unimplemented: { key: string; missing: string }[] = [];
   const designBlocked: { key: string; designOwner: string }[] = [];
@@ -2841,6 +2859,7 @@ export function buildRuleDispositionReport(
   const unresolvedWork: RuleDispositionReport['unresolvedWork'][number][] = [];
   for (const [key, coverage] of Object.entries(coverageRegistry)) {
     if (coverage.status === 'implemented') implemented += 1;
+    if (coverage.status === 'no-runtime-statement') noRuntimeStatement += 1;
     if (coverage.status === 'model-adjudicated-supported') {
       modelAdjudicatedSupported += 1;
       adjudicationContextInventory.push({
@@ -2924,6 +2943,7 @@ export function buildRuleDispositionReport(
     engineProcedure: {
       implemented,
       modelAdjudicatedSupported,
+      noRuntimeStatement,
       partial: partial.sort(byKey),
       unimplemented: unimplemented.sort(byKey),
       designBlocked: designBlocked.sort(byKey),
