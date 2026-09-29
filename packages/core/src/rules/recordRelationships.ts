@@ -1,6 +1,5 @@
 import { CONDITION_RELATION_VALUES } from './conditionRelations.js';
 import { walkFieldPointers } from './fieldProvenance.js';
-import type { ResolvedRulesStack } from './stack.js';
 import { normalizeRulesRecordName } from './stack.js';
 import {
   RULES_RECORD_KINDS,
@@ -261,40 +260,39 @@ export interface RelationshipIndex {
   >;
 }
 
+/**
+ * Which record-relationship manifest, if any, governs a given PRODUCING
+ * PACK (eshyra-jgxl F1, mirroring discovery's `FieldProvenanceSource`).
+ *
+ * A function of the pack rather than one manifest for the whole resolved
+ * stack: a relationship manifest attests only the meaning its own producer
+ * declared for ITS fields, so applying one pack's manifest to another pack's
+ * records interprets add-on, override, or foreign-system content under
+ * semantics its author never wrote (the defect `expandTypedRelationships`
+ * used to have, threading one bundled manifest across every
+ * `RulesStackRecordEntry` regardless of `entry.pack`). Returning `undefined`
+ * is the safe, explicit answer: that producer's occurrences resolve to no
+ * declaration at all, which is the true, reportable state — never a fallback
+ * to another pack's manifest, and never an inference from base/system
+ * compatibility, pack id, or version.
+ *
+ * Production callers (`bundledSrdPack.ts`'s
+ * `bundledDnd5eSrdRecordRelationshipManifestSource`) answers only for the
+ * canonical bundled SRD pack OBJECT, by identity, exactly as
+ * `bundledDnd5eSrdFieldProvenanceSource` does for field provenance.
+ */
 export type RecordRelationshipManifestSource = (
   pack: RulesPack,
 ) => RecordRelationshipManifest | undefined;
 
+/**
+ * Whether a relationship manifest was present or absent for one producing
+ * pack, keyed by `RulesPackMeta.packId` (the stable identity `stack.base` /
+ * `stack.addons` already report).
+ */
 export interface RelationshipArtifactState {
   readonly packId: string;
   readonly state: 'present' | 'absent';
-}
-
-/** Build the resolver index from the same winning entries discovery uses. */
-export function relationshipIndexFromStack(
-  stack: ResolvedRulesStack,
-): RelationshipIndex {
-  return {
-    recordsByKey: new Map(
-      [...stack.recordsByKey].map(([key, entry]) => [
-        key,
-        { record: entry.record },
-      ]),
-    ),
-    recordsByKind: new Map(
-      [...stack.recordsByKind].map(([kind, index]) => [
-        kind,
-        {
-          byName: new Map(
-            [...index.byName].map(([name, entries]) => [
-              name,
-              entries.map((entry) => ({ record: entry.record })),
-            ]),
-          ),
-        },
-      ]),
-    ),
-  };
 }
 
 function valueAtActualPointer(data: unknown, pointer: string): unknown {

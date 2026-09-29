@@ -53,6 +53,7 @@ import {
 } from '../../src/rules/ruleAdjudicationContext.js';
 import {
   RULE_KNOWN_LIMITS,
+  type RuleKnownLimit,
   validateRuleKnownLimits,
 } from '../../src/rules/ruleKnownLimits.js';
 
@@ -1705,6 +1706,10 @@ export interface RuleProcedureCoverage {
     readonly bead: string;
     readonly findingId?: string;
   }[];
+  /** Set only on rows projected from a runtime statement dataset
+   *  (`RULE_ADJUDICATION_CONTEXT` / `RULE_KNOWN_LIMITS`): the runtime entry
+   *  itself, so the audit provably reads the single runtime definition. */
+  readonly runtimeSource?: object;
 }
 
 const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
@@ -1937,18 +1942,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     contextRequirement:
       'armor-proficiency data structured; gate is per-cast check',
   },
-  'rule:channel-divinity': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.1',
-  },
-  'rule:charges': {
-    // R0 rewritten: pack charge economies and spend/reset are live; only
-    // identify/attunement disclosure timing remains model-adjudicated.
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'spend_usage', 'reset_usage', 'restore_usage'],
-    contextRequirement:
-      'item data supplies the charge economy; identify or attunement reveals remaining charges, and the attuned creature learns charges regained',
-  },
   'rule:class-features': {
     status: 'design-blocked',
     designOwner: 'eshyra-2n1t.1',
@@ -2063,12 +2056,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
     contextRequirement:
       'controlled/independent ruling; initiative sync narratable',
-  },
-  'rule:cover': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'resolve_check'],
-    contextRequirement:
-      'The DM chooses the degree of cover. Pass the +2 or +5 AC and Dexterity saving throw bonuses as declared modifiers to resolve_check. Total cover means the target cannot be targeted directly.',
   },
   'rule:crafting': {
     status: 'partial',
@@ -2542,12 +2529,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['adjust_hp', 'lookup_rules', 'roll'],
     contextRequirement: 'AC/HP tables structured; threshold/immunity rulings',
   },
-  'rule:opportunity-attacks': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'spend_turn_resource'],
-    contextRequirement:
-      'The DM rules whether movement triggers an opportunity attack and applies exclusions including Disengage, teleportation, and movement that does not use movement, action, or reaction; spend the reaction with spend_turn_resource.',
-  },
   'rule:other-activity-on-your-turn': {
     status: 'implemented',
     runtimeOwner: [
@@ -2776,12 +2757,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     primitives: ['lookup_rules', 'roll'],
     contextRequirement: 'which-ability ruling',
   },
-  'rule:suffocating': {
-    status: 'partial',
-    missing:
-      'breath duration formula (1+Con min, min 30 s) and the Con-mod round countdown are deterministic cross-turn counters that can silently drift; missing: countdown state — the 0-HP dying transition itself now lands through the adjust_hp death machine (F6)',
-    runtimeOwner: ['packages/core/src/state/hpLifecycle.ts'],
-  },
   'rule:surprise': {
     status: 'implemented',
     runtimeOwner: [
@@ -2981,20 +2956,64 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
  * as a resolution signal. These broad, existing audit identities preserve the
  * prior mappings without inventing new finding dispositions.
  */
+const KNOWN_LIMIT_AUDIT_STATUS: Readonly<
+  Record<RuleKnownLimit['limit'], RuleCoverageStatus>
+> = Object.freeze({
+  partial: 'partial',
+  unimplemented: 'unimplemented',
+  deferred: 'design-blocked',
+});
+
 export function materializeEngineProcedureCoverage(
   unboundCoverage: Readonly<Record<string, RuleProcedureCoverage>>,
 ): Readonly<Record<string, RuleProcedureCoverage>> {
+  // Rows owned by the runtime statement datasets (F-09 vertical slice) are
+  // projected from them, never authored here too: one definition per row.
+  // `runtimeSource` keeps the runtime entry by reference so the audit can be
+  // proven to read it rather than a copy.
   const runtimeCoverage: Record<string, RuleProcedureCoverage> = {
     ...unboundCoverage,
   };
-  // These rows are projections of the runtime-owned datasets, so audit and
-  // gameplay cannot drift into two separately authored adjudication claims.
-  for (const [key, context] of Object.entries(RULE_ADJUDICATION_CONTEXT))
-    runtimeCoverage[key] = context;
+  for (const [key, context] of Object.entries(RULE_ADJUDICATION_CONTEXT)) {
+    if (key in unboundCoverage)
+      throw new Error(
+        `${key}: coverage is authored both here and in RULE_ADJUDICATION_CONTEXT`,
+      );
+    runtimeCoverage[key] = {
+      status: 'model-adjudicated-supported',
+      primitives: context.tools,
+      contextRequirement: context.dmContext,
+      runtimeSource: context,
+    };
+  }
   for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS)) {
-    const limit = limits[0];
-    if (limit === undefined) continue;
-    runtimeCoverage[key] = limit as RuleProcedureCoverage;
+    if (key in runtimeCoverage)
+      throw new Error(`${key}: coverage is authored in more than one place`);
+    // The audit row carries one status; a key with several runtime limits has
+    // no faithful single-row projection, so refuse rather than drop one.
+    if (limits.length !== 1)
+      throw new Error(
+        `${key}: RULE_KNOWN_LIMITS must project to exactly one audit row (got ${limits.length})`,
+      );
+    const [limit] = limits;
+    runtimeCoverage[key] = {
+      status: KNOWN_LIMIT_AUDIT_STATUS[limit.limit],
+      missing: limit.statement,
+      findingId: limit.findingId,
+      ...(limit.designOwner === undefined
+        ? {}
+        : { designOwner: limit.designOwner }),
+      ...(limit.externalClauses === undefined
+        ? {}
+        : {
+            externalClauses: limit.externalClauses.map((clause) => ({
+              clause: clause.clause,
+              bead: clause.bead,
+              findingId: clause.findingId,
+            })),
+          }),
+      runtimeSource: limit,
+    };
   }
   return Object.freeze(
     Object.fromEntries(
@@ -3416,7 +3435,7 @@ export function validateRuleRegistries(
     const actual = censusByStatus[status] ?? 0;
     if (actual !== expected) {
       errors.push(
-        `coverage census drift: ${status} is ${actual}, expected ${expected} — update EXPECTED_COVERAGE_CENSUS in a reviewed diff`,
+        `coverage census drift: ${status} is ${actual}, expected ${expected} (caller-supplied census)`,
       );
     }
   }

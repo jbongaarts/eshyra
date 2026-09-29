@@ -4,13 +4,13 @@ export interface RuleKnownLimit {
   readonly limit: 'partial' | 'unimplemented' | 'deferred';
   readonly statement: string;
   readonly findingId: string;
-  /** Audit view fields; the facade intentionally projects only the fields above. */
-  readonly status: 'partial' | 'unimplemented' | 'design-blocked';
-  readonly missing: string;
+  /** Historical design-decision bead, kept as history, never as identity. */
   readonly designOwner?: string;
   readonly externalClauses?: readonly {
     readonly clause: string;
     readonly findingId: string;
+    /** Historical owning bead; history only. `findingId` is the identity. */
+    readonly bead: string;
   }[];
 }
 
@@ -25,9 +25,6 @@ export const RULE_KNOWN_LIMITS: Readonly<
       statement:
         'Eshyra does not track how long a creature has held its breath or the suffocation round countdown; the DM tracks both from this rule. When the creature drops to 0 hit points, apply it with adjust_hp, which runs the dying rules.',
       findingId: 'readiness-integrity',
-      status: 'partial' as const,
-      missing:
-        'Eshyra does not track how long a creature has held its breath or the suffocation round countdown; the DM tracks both from this rule. When the creature drops to 0 hit points, apply it with adjust_hp, which runs the dying rules.',
     }),
   ]),
   // R0 confirmed: ADR 0018 supports single-class characters only. A
@@ -38,9 +35,6 @@ export const RULE_KNOWN_LIMITS: Readonly<
       statement:
         'Eshyra supports single-class characters only under ADR 0018. A character with more than one class is refused, so this multiclass Channel Divinity interaction is deliberately unsupported and is not adjudicated.',
       findingId: 'engine-capability-ownership',
-      status: 'design-blocked' as const,
-      missing:
-        'Eshyra supports single-class characters only under ADR 0018. A character with more than one class is refused, so this multiclass Channel Divinity interaction is deliberately unsupported and is not adjudicated.',
       designOwner: 'eshyra-2n1t.1',
     }),
   ]),

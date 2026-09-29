@@ -54,6 +54,12 @@ describe('finding registry', () => {
       'Reviewed empty current membership: the source-backed spellPreparation clause is absent from the current pack; preserve this source identity until the clause IR follow-up lands.',
     );
     expect(
+      real.rows
+        .filter((row) => row.status === 'narrowed')
+        .map((row) => row.canonicalId)
+        .sort(),
+    ).toEqual(['condition-structure-no-regression', 'rule-corpus-procedures']);
+    expect(
       real.rows.find((row) => row.canonicalId === 'rule-corpus-procedures'),
     ).toMatchObject({
       status: 'narrowed',

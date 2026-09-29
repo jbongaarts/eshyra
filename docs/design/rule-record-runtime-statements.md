@@ -237,7 +237,12 @@ input, threaded exactly like `resolveRulesPack`:
 remains exactly the pack record: provenance stays separate from
 Eshyra-authored annotation. The tool description tells the model the envelope
 is Eshyra-authored and is not rules text. The discovery packet consumes the
-same facade, replacing its direct ledger call in `dispositionField`.
+same facade, replacing its direct ledger call in `dispositionField`. It
+uses the facade's statement half (`ruleStatements`: capabilities,
+adjudication context, known limits), which needs no stack or manifest, so
+no packet caller can lose a statement channel for lack of a manifest
+source. The packet's relationships already come from discovery expansion
+under the same manifest source (invariant 11).
 
 ## 4. Invariants
 
@@ -344,8 +349,7 @@ One sequence, in order:
 
 1. **Authorization** of this design.
 2. **Vertical-slice PR:** the §5 rows (each with its R0 outcome), the
-  three channels, the facade, the R6
-   manifest-source input (`RunTurnDeps` → `ToolContext` and discovery
+   three channels, the facade, the R6 manifest-source input (`RunTurnDeps` → `ToolContext` and discovery
    capture), and the `lookup_rules` envelope, plus the `sol:CAP-001` → `narrowed` registry
    update. The bead stays `in_progress`.
 3. **Generalization PR(s):** re-derive and migrate the remaining legacy rows

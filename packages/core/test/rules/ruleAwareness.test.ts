@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { expandTypedRelationships } from '../../src/discovery/expansion.js';
+import { buildContextPacket } from '../../src/discovery/packet.js';
+import { retainCandidates } from '../../src/discovery/retention.js';
 import { DEFAULT_TOOLS } from '../../src/orchestrator/tools.js';
 import {
   bundledDnd5eSrdRecordRelationshipManifestSource,
@@ -9,18 +11,51 @@ import {
   RULE_ADJUDICATION_CONTEXT,
   validateRuleAdjudicationContext,
 } from '../../src/rules/ruleAdjudicationContext.js';
-import { ruleAwareness } from '../../src/rules/ruleAwareness.js';
+import {
+  ruleAwareness,
+  ruleStatements,
+} from '../../src/rules/ruleAwareness.js';
 import {
   RULE_KNOWN_LIMITS,
   validateRuleKnownLimits,
 } from '../../src/rules/ruleKnownLimits.js';
 import { resolveRulesStack } from '../../src/rules/stack.js';
+import { RulesPackError } from '../../src/rules/types.js';
 
 const stack = resolveRulesStack({ base: getBundledDnd5eSrdPack() });
 const manifestSource = bundledDnd5eSrdRecordRelationshipManifestSource();
 
+function packetCandidateFor(recordKey: string) {
+  const entry = stack.recordsByKey.get(recordKey);
+  if (entry === undefined) throw new Error(`missing record ${recordKey}`);
+  return buildContextPacket(
+    retainCandidates([
+      {
+        candidateKey: recordKey,
+        targetKind: 'rules-record',
+        entry,
+        routes: [
+          {
+            routeClass: 'explicit-name-or-alias',
+            trigger: 'test',
+            evidence: {},
+            signalId: 'test',
+          },
+        ],
+        traversals: [],
+        campaignRules: [],
+        campaignRulings: [],
+      },
+    ]),
+    [],
+    50_000_000,
+  ).packet.candidates.find(({ identity }) => identity.key === recordKey);
+}
+
 describe('rule awareness', () => {
-  it('keeps the capability, adjudication, and limit channels independent', () => {
+  it('keeps the capability, adjudication, and limit channels independent (synthetic)', () => {
+    // Synthetic representability evidence (design invariant 1): no real rule
+    // is known to carry all three, and no binding is added to fake one.
     const key = 'rule:ability-checks';
     const context = {
       tools: ['lookup_rules'],
@@ -30,22 +65,46 @@ describe('rule awareness', () => {
       limit: 'partial' as const,
       statement: 'Synthetic limit.',
       findingId: 'readiness-integrity',
-      status: 'partial' as const,
-      missing: 'Synthetic limit.',
     };
-    const result = ruleAwareness(key, stack, manifestSource, {
+    const bare = ruleAwareness(key, stack, manifestSource, {
+      adjudicationContext: {},
+      knownLimits: {},
+    });
+    const withContext = ruleAwareness(key, stack, manifestSource, {
+      adjudicationContext: { [key]: context },
+      knownLimits: {},
+    });
+    const withBoth = ruleAwareness(key, stack, manifestSource, {
       adjudicationContext: { [key]: context },
       knownLimits: { [key]: [limit] },
     });
-    expect(result.capabilities.outcome).toBe('bound');
-    expect(result.adjudicationContext).toEqual(context);
-    expect(result.knownLimits).toEqual([
-      {
-        limit: limit.limit,
-        statement: limit.statement,
-        findingId: limit.findingId,
-      },
-    ]);
+    expect(withBoth.capabilities.outcome).toBe('bound');
+    expect(withBoth.adjudicationContext).toEqual(context);
+    expect(withBoth.knownLimits).toEqual([limit]);
+    // Adding an entry to one channel changes nothing another returns.
+    expect(withContext.capabilities).toEqual(bare.capabilities);
+    expect(withContext.knownLimits).toEqual(bare.knownLimits);
+    expect(withBoth.capabilities).toEqual(bare.capabilities);
+    expect(withBoth.adjudicationContext).toEqual(
+      withContext.adjudicationContext,
+    );
+    expect(withBoth.relationships).toEqual(bare.relationships);
+    // A missing relationship manifest removes relationships only.
+    const noManifest = ruleAwareness(key, stack, () => undefined, {
+      adjudicationContext: { [key]: context },
+      knownLimits: { [key]: [limit] },
+    });
+    expect(noManifest.relationshipArtifact.state).toBe('absent');
+    expect(noManifest.relationships).toEqual([]);
+    expect(noManifest.capabilities).toEqual(withBoth.capabilities);
+    expect(noManifest.adjudicationContext).toEqual(context);
+    expect(noManifest.knownLimits).toEqual([limit]);
+  });
+
+  it('refuses a key the stack does not hold rather than naming another producer', () => {
+    expect(() =>
+      ruleAwareness('rule:no-such-rule', stack, manifestSource),
+    ).toThrow(RulesPackError);
   });
 
   it('preserves the declared action:hide ruleRef relationship', () => {
@@ -89,6 +148,28 @@ describe('rule awareness', () => {
     expect(lair.capabilities.outcome).toBe('no-statement');
     expect(lair.adjudicationContext).toBeUndefined();
     expect(lair.knownLimits).toEqual([]);
+  });
+
+  it('carries adjudication context and known limits into the discovery packet (probes P1/P2)', () => {
+    for (const key of ['rule:cover', 'rule:opportunity-attacks']) {
+      const candidate = packetCandidateFor(key);
+      expect(candidate?.ruleAdjudicationContext).toEqual(
+        ruleStatements(key).adjudicationContext,
+      );
+    }
+    expect(
+      packetCandidateFor('rule:cover')?.ruleAdjudicationContext?.tools,
+    ).toContain('resolve_check');
+    expect(
+      packetCandidateFor('rule:opportunity-attacks')?.ruleAdjudicationContext
+        ?.tools,
+    ).toContain('spend_turn_resource');
+    expect(packetCandidateFor('rule:suffocating')?.ruleKnownLimits).toEqual(
+      ruleStatements('rule:suffocating').knownLimits,
+    );
+    const lair = packetCandidateFor('rule:a-legendary-creatures-lair');
+    expect(lair?.ruleAdjudicationContext).toBeUndefined();
+    expect(lair?.ruleKnownLimits).toBeUndefined();
   });
 
   it('validates tool and finding identities in its authored datasets', () => {

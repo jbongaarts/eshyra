@@ -166,8 +166,8 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // dice-grammar / resolution / derived-math rows to implemented and 9
     // clause-only rows to model-adjudicated-supported; F4, eshyra-2n1t.6,
     // implements spell-slot expenditure/recovery; F3, eshyra-2n1t.5 moved
-    // concentration to implemented); keep them in lockstep with
-    // EXPECTED_COVERAGE_CENSUS.
+    // concentration to implemented). The F-09 vertical slice replaced the
+    // hand-maintained status census with the identity assertions below.
     expect(ENGINE_PROCEDURE_COVERAGE['rule:long-rest']?.status).toBe(
       'implemented',
     );
@@ -185,15 +185,32 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
   });
 
   it('projects runtime statement rows by object identity into the audit', () => {
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:cover']).toBe(
-      RULE_ADJUDICATION_CONTEXT['rule:cover'],
-    );
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:charges']).toBe(
-      RULE_ADJUDICATION_CONTEXT['rule:charges'],
-    );
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:suffocating']).toBe(
-      RULE_KNOWN_LIMITS['rule:suffocating']?.[0],
-    );
+    // One definition per dataset (design invariant 5): each migrated audit row
+    // points at the runtime entry itself, never at an authored copy.
+    for (const [key, context] of Object.entries(RULE_ADJUDICATION_CONTEXT)) {
+      expect(ENGINE_PROCEDURE_COVERAGE[key]?.runtimeSource).toBe(context);
+      expect(ENGINE_PROCEDURE_COVERAGE[key]?.contextRequirement).toBe(
+        context.dmContext,
+      );
+    }
+    for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS))
+      expect(ENGINE_PROCEDURE_COVERAGE[key]?.runtimeSource).toBe(limits[0]);
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:channel-divinity']).toMatchObject({
+      status: 'design-blocked',
+      findingId: 'engine-capability-ownership',
+    });
+  });
+
+  it('refuses coverage authored both in the audit and in a runtime dataset', () => {
+    expect(() =>
+      materializeEngineProcedureCoverage({
+        'rule:cover': {
+          status: 'model-adjudicated-supported',
+          primitives: ['lookup_rules'],
+          contextRequirement: 'second definition',
+        },
+      }),
+    ).toThrow(/authored both/);
   });
 
   it('surfaces actionable detail (key + missing/designOwner/clause), not just counts', () => {

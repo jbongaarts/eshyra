@@ -462,7 +462,14 @@ describe('lookup_rules tool', () => {
           sourceRecordKey: 'action:hide',
         }),
       );
-      expect(data.record.data.mechanics.effects).toHaveLength(2);
+      // Invariant 4: the source record is exactly the pack record; every
+      // Eshyra-authored statement sits only in the separate envelope.
+      expect(data.record).toEqual(
+        getBundledDnd5eSrdPack().records.find(
+          (record) => record.key === 'action:hide',
+        ),
+      );
+      expect(Object.keys(data.record)).not.toContain('ruleAwareness');
     }
   });
 

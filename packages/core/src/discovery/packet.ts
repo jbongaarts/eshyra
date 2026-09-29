@@ -3,9 +3,7 @@ import {
   classifyFieldPointer,
   type FieldProvenanceManifest,
 } from '../rules/fieldProvenance.js';
-import type { RecordRelationshipManifestSource } from '../rules/recordRelationships.js';
-import { ruleAwareness } from '../rules/ruleAwareness.js';
-import type { ResolvedRulesStack } from '../rules/stack.js';
+import { ruleStatements } from '../rules/ruleAwareness.js';
 import type {
   RulesAmbiguity,
   RulesRecord,
@@ -672,39 +670,37 @@ function splitRecordData(
 }
 
 /**
- * The ledger's explicit `not-positively-selected` row for this candidate, as a
- * spreadable field. One lookup, narrowed by its own discriminant: the
- * discriminated union is what makes the cast unnecessary, so using one would
- * discard the guarantee the union exists to provide.
+ * Eshyra's own statements for this candidate, as spreadable fields: the
+ * ledger's explicit `not-positively-selected` row (narrowed by its own
+ * discriminant, so no cast discards the union's guarantee), and the
+ * independent adjudication-context and known-limit channels (design R4).
+ * None of them depends on a relationship manifest.
  */
-function dispositionField(
-  candidate: DiscoveryCandidate,
-  stack?: ResolvedRulesStack,
-  relationshipManifestSource?: RecordRelationshipManifestSource,
-) {
+function statementFields(candidate: DiscoveryCandidate) {
   const recordKey = candidate.entry?.record.key;
-  if (
-    recordKey === undefined ||
-    stack === undefined ||
-    relationshipManifestSource === undefined
-  )
-    return {};
-  const result = ruleAwareness(
-    recordKey,
-    stack,
-    relationshipManifestSource,
-  ).capabilities;
-  return result.outcome === 'not-positively-selected'
-    ? { deterministicCapabilityDisposition: result.disposition }
-    : {};
+  if (recordKey === undefined) return {};
+  // The same statement facade `lookup_rules` uses (design R6), so the packet
+  // and the tool cannot present different Eshyra statements for one key.
+  const {
+    capabilities: result,
+    adjudicationContext,
+    knownLimits,
+  } = ruleStatements(recordKey);
+  return {
+    ...(result.outcome === 'not-positively-selected'
+      ? { deterministicCapabilityDisposition: result.disposition }
+      : {}),
+    ...(adjudicationContext === undefined
+      ? {}
+      : { ruleAdjudicationContext: adjudicationContext }),
+    ...(knownLimits.length === 0 ? {} : { ruleKnownLimits: knownLimits }),
+  };
 }
 
 function packetCandidate(
   candidate: DiscoveryCandidate,
   declarations: readonly OfflineCapabilityDeclaration[],
   provenanceSource: FieldProvenanceSource | undefined,
-  stack?: ResolvedRulesStack,
-  relationshipManifestSource?: RecordRelationshipManifestSource,
 ): PacketCandidate {
   if (candidate.routes.length === 0)
     throw new Error(
@@ -784,10 +780,6 @@ function packetCandidate(
     record.kind,
     provenanceSource?.(candidate.entry.pack),
   );
-  const awareness =
-    stack === undefined || relationshipManifestSource === undefined
-      ? undefined
-      : ruleAwareness(record.key, stack, relationshipManifestSource);
   const sourceProseRoot = { data: split.sourceProse };
   const projectionRoot = { data: split.projection };
   return {
@@ -816,13 +808,7 @@ function packetCandidate(
     campaignRules: candidate.campaignRules,
     campaignRulings: candidate.campaignRulings,
     capabilities: capabilities(candidate, declarations),
-    ...dispositionField(candidate, stack, relationshipManifestSource),
-    ...(awareness?.adjudicationContext === undefined
-      ? {}
-      : { ruleAdjudicationContext: awareness.adjudicationContext }),
-    ...(awareness === undefined || awareness.knownLimits.length === 0
-      ? {}
-      : { ruleKnownLimits: awareness.knownLimits }),
+    ...statementFields(candidate),
     // Built from the CLASSIFIED partitions this candidate carries, never from
     // the raw record body: a projection-limit note is model-facing text, and
     // the source-authority half of it may come only from attested prose
@@ -861,19 +847,11 @@ export function buildContextPacket(
   declarations: readonly OfflineCapabilityDeclaration[] = [],
   maxPacketBytes = 512_000,
   fieldProvenanceSource?: FieldProvenanceSource,
-  stack?: ResolvedRulesStack,
-  relationshipManifestSource?: RecordRelationshipManifestSource,
 ): PacketTrace {
   const built = retained.outputsProduced.map((candidate) => ({
     band: candidate.band,
     candidate,
-    packet: packetCandidate(
-      candidate,
-      declarations,
-      fieldProvenanceSource,
-      stack,
-      relationshipManifestSource,
-    ),
+    packet: packetCandidate(candidate, declarations, fieldProvenanceSource),
   }));
   // ONE decision per retained candidate, recorded AT the byte comparison that
   // makes it. An exclusion's reason is the budget arithmetic that excluded it,

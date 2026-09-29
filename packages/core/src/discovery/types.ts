@@ -203,27 +203,6 @@ export interface TypedTraversal {
   readonly targetRecordKey: string;
 }
 
-/**
- * Which record-relationship manifest, if any, governs a given PRODUCING
- * PACK (eshyra-jgxl F1, mirroring `FieldProvenanceSource` immediately below).
- *
- * A function of the pack rather than one manifest for the whole resolved
- * stack: a relationship manifest attests only the meaning its own producer
- * declared for ITS fields, so applying one pack's manifest to another pack's
- * records interprets add-on, override, or foreign-system content under
- * semantics its author never wrote (the defect `expandTypedRelationships`
- * used to have, threading one bundled manifest across every
- * `RulesStackRecordEntry` regardless of `entry.pack`). Returning `undefined`
- * is the safe, explicit answer: that producer's occurrences resolve to no
- * declaration at all, which is the true, reportable state — never a fallback
- * to another pack's manifest, and never an inference from base/system
- * compatibility, pack id, or version.
- *
- * Production discovery (`discovery/harness.ts`'s
- * `bundledDnd5eSrdRecordRelationshipManifestSource`) answers only for the
- * canonical bundled SRD pack OBJECT, by identity, exactly as
- * `bundledDnd5eSrdFieldProvenanceSource` does for field provenance.
- */
 export interface ExpansionTrace extends StageTrace<DiscoveryCandidate> {
   readonly traversals: readonly TypedTraversal[];
   readonly relationshipResolutions: readonly RelationshipResolution[];
@@ -588,11 +567,7 @@ export interface PacketCandidate {
     readonly tools: readonly string[];
     readonly dmContext: string;
   };
-  readonly ruleKnownLimits?: readonly {
-    readonly limit: 'partial' | 'unimplemented' | 'deferred';
-    readonly statement: string;
-    readonly findingId: string;
-  }[];
+  readonly ruleKnownLimits?: readonly import('../rules/ruleAwareness.js').RuleKnownLimitStatement[];
   readonly projectionLimits: readonly ProjectionLimitNote[];
 }
 
