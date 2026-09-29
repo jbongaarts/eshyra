@@ -8,7 +8,8 @@ discovery relationships only. It does not reopen that row. Related row
 are durable") is owned by `eshyra-o9bd.19.2.4`. This design contributes
 evidence toward that row but does not change its status.
 
-Status: **proposed, revision 1.** This document asks for design authorization
+Status: **proposed, revision 2** (design review 1 at `48875bd3`: a `null`
+table mapping must not erase a declared occurrence; see C1 and §9). This document asks for design authorization
 under `docs/design-and-pr-review-policy.md` ("Design authorization"). No
 implementation lands with it.
 
@@ -31,6 +32,8 @@ The relationship-manifest contract is `packages/core/src/rules/recordRelationshi
 - declarations resolve per producing pack;
 - there is no default disposition;
 - every declared `reference` occurrence yields exactly one typed outcome.
+  This design keeps that rule without exception: it adds one outcome
+  (`excluded`, C1) rather than any path that emits nothing.
 
 ## 2. Problem (verified on `main` @ `de7df402`)
 
@@ -91,8 +94,12 @@ that the resolver emits.
   occurrence then resolves as today: `resolved`, `unresolved-target`, or
   `indeterminate`.
 - A sibling value that maps to **`null`** is a declared, reviewable
-  per-occurrence `not-a-reference`. The resolver emits nothing for it, exactly
-  as a declaration-level `not-a-reference` emits nothing.
+  per-occurrence exclusion. The resolver emits an **`excluded`** outcome for
+  it (below). It never emits nothing: the occurrence is covered by a
+  `reference` declaration, so it must stay observable and distinguishable
+  from an occurrence the resolver failed to retain. A declaration-level
+  `not-a-reference` is different: it covers no `reference` occurrence, and its
+  emit-nothing behavior is unchanged.
 - A sibling value that is **absent from the table** yields `indeterminate` /
   `relation-not-recognized`. That is loud, and the committed-pack resolution
   gate fails on it.
@@ -119,6 +126,47 @@ that the resolver emits.
     `relationByFieldValue` (per occurrence). The existing five keep their
     legacy `relation` plus sibling form, unchanged per invariant 4. Their
     placeholder is recorded in the C6 follow-up and not repaired here.
+
+**The `excluded` outcome.** `RelationshipResolution` gains a fourth member:
+
+```ts
+| {
+    readonly outcome: 'excluded';
+    readonly sourceRecordKey: string;
+    readonly pointer: string;
+    readonly reason: 'relation-table-exclusion';
+    /** The sibling value whose table entry is `null`. */
+    readonly relationFieldValue: string;
+    readonly declaration: RecordRelationshipDeclaration;
+  }
+```
+
+It carries no `relation`, no `targetRecordKey`, and no leaf value: an
+exclusion makes no claim about a target (resolution order, step 3). It is
+positive evidence that a declared exclusion fired, and it differs from every
+other outcome:
+
+- `resolved` / `unresolved-target` make a claim about a target;
+- `indeterminate` says the occurrence's data could not be read;
+- `excluded` says the data was read and the manifest disposes of this
+  occurrence as not-a-relationship, citing the table entry that did so.
+
+A path that loses an occurrence produces none of the four, so a consumer can
+tell an authorized exclusion from a dropped one. The module doc comment's
+"exactly one typed outcome" list is updated to name all four.
+
+**Consumer handling of `excluded`** (both consumers already switch on
+`outcome`):
+
+- `discovery/expansion.ts` records it in `relationshipResolutions` like every
+  outcome, creates no traversal, and does **not** record a `StageLoss`. A
+  declared exclusion is a disposition, not a loss, so it must not move
+  measured loss counts. The current `outcome !== 'resolved'` → loss test
+  becomes an explicit per-outcome switch, so a future fifth outcome fails
+  type-checking instead of being counted silently as a loss.
+- `ruleAwareness` (and so the `lookup_rules` envelope) passes it through
+  unchanged, as it does every outcome. The envelope already states that it is
+  Eshyra runtime context; the `excluded` entry is self-describing.
 
 *Rejected: widening `CONDITION_RELATION_VALUES`.* That list is the closed
 effect-to-condition contract for deterministic consumers
@@ -183,8 +231,9 @@ declared sibling **first**, then applies the rest of the resolution:
    with the existing reasons.
 2. If the sibling value is absent from the table, the result is
    `indeterminate` / `relation-not-recognized`.
-3. If the value maps to `null`, nothing is emitted, whatever the leaf value
-   is. A declared exclusion makes no claim about the excluded leaf.
+3. If the value maps to `null`, the result is `excluded` /
+   `relation-table-exclusion`, whatever the leaf value is. A declared
+   exclusion makes no claim about the excluded leaf, so no leaf check runs.
 4. Otherwise, the existing leaf checks apply: `value-not-a-string`, then
    resolution by name.
 
@@ -279,9 +328,10 @@ Explicitly **out** of scope, each recorded as a finding for its owner:
    - `resolved`;
    - `unresolved-target`;
    - `indeterminate`;
-   - declared-excluded, meaning its sibling maps to `null`.
+   - `excluded`, meaning its sibling maps to `null`.
 
-   Nothing disappears for an undeclared reason. An unknown effect `kind`
+   Nothing disappears, for a declared reason or an undeclared one: the
+   resolver's result for a declared occurrence is never empty. An unknown effect `kind`
    carrying a `condition` leaf fails the committed-pack gate
    (`relation-not-recognized`).
 2. **Committed-pack resolution gate stays green with the new edges in it.** The
@@ -318,11 +368,12 @@ vertical slice is needed.
 | Evidence | Kind |
 |---|---|
 | Identity assertion on resolved edges, **permanent**. `paralyzed`, `petrified`, `stunned` → `implied-condition condition:incapacitated`. `unconscious` → `implied-condition condition:incapacitated` and `imposed-condition condition:prone`. `grappled` → `ending-trigger-condition condition:incapacitated` and no self-edge. Every other condition record → no condition-effect edges, and exhaustion keeps exactly its lifecycle exception. | durable discovery contract; identities, not counts |
-| Resolver unit tests (`recordRelationships.test.ts`, synthetic manifests), **permanent**. Table string, `null`, and missing sibling value. Missing relation sibling. Fixed-relation `record-name`. Each `buildRecordRelationshipManifest` rejection in C1/C2. | contract boundary |
+| Resolver unit tests (`recordRelationships.test.ts`, synthetic manifests), **permanent**. Table string → `resolved`/`unresolved-target`. Table `null` → exactly one `excluded` outcome carrying the pointer and sibling value, including when the leaf is not a string (no leaf check runs). Sibling value absent from the table → `indeterminate`/`relation-not-recognized`. Missing and non-string sibling → `indeterminate`. The test asserts these as four distinct outcomes for one synthetic record, so an exclusion can never be confused with a missing, malformed, or unrecognized occurrence. Fixed-relation `record-name`. Each `buildRecordRelationshipManifest` rejection in C1/C2. | contract boundary |
+| Expansion unit test, **permanent**: an `excluded` resolution appears in `relationshipResolutions` and produces neither a traversal nor a `StageLoss`. | consumer boundary |
 | Loader test, **permanent**: an unknown declaration key is rejected, naming the key and path. | contract boundary |
 | Discovery probe: seeding `condition:stunned` expands to `condition:incapacitated` through `expandTypedRelationships` with the bundled manifest source. **Permanent** only if no existing probe already proves that `record-name` expansion reaches discovery; otherwise it is dropped after it is observed. | real consumer |
 | Importer test (`conditionMechanics.test.ts`): Grappled's `triggerCondition` is present only on the `grappler-incapacitated` effect. Any existing exact-projection assertion for Grappled is **extended**, not weakened, with §2's source clause as evidence (`docs/importer-fix-protocol.md`). | producer |
-| Committed-pack exclusion check (invariant 7), **permanent**. | protects a declared assumption |
+| Committed-pack exclusion check (invariant 7), **permanent**. It reads the `excluded` outcomes the resolver emits for the committed pack (Grappled's `conditionEndsWhen`), reads the leaf at each outcome's `pointer`, and asserts the self-reference. It therefore checks the occurrences the resolver actually excluded, not a re-derivation of them. | protects a declared assumption |
 | Existing condition source-fidelity tests (slice 1) unchanged and green. | regression |
 
 No corpus-wide completeness test is added (ADR 0020).
@@ -360,7 +411,23 @@ No corpus-wide completeness test is added (ADR 0020).
 **On failure:** stop, record it on the bead, and revise this design before
 continuing. Failure cases include:
 - a new occurrence does not resolve;
+- a declared occurrence yields no outcome;
 - a self-edge appears;
 - an existing declaration's resolutions change;
 - the loader hardening rejects a manifest already committed in the repo that
   should be valid.
+
+## 9. Revision history
+
+- **Revision 2** (design review 1 at `48875bd3`, CHANGES REQUESTED). The
+  review found that revision 1's `null` table mapping made a covered
+  `reference` occurrence emit nothing, breaking the manifest invariant that
+  every declared occurrence yields exactly one typed outcome. Defect class:
+  every `relationByFieldValue` `null` mapping (a general manifest feature, not
+  only Grappled). Repair: the new `excluded` outcome (C1), resolution order
+  step 3, invariant 1, explicit consumer handling in expansion and
+  `ruleAwareness`, and resolver/expansion evidence that distinguishes an
+  exclusion from missing, malformed, and unrecognized occurrences (§6).
+  Invariant 7's committed-pack self-reference assertion is kept. String
+  mappings, absent-table entries, fixed-relation `record-name`, and the
+  Grappled `triggerCondition` projection are unchanged.
