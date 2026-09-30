@@ -30,8 +30,9 @@ not revive it. It reads F-09 under current authority as follows:
 > A runtime consumer of a `rule:*` or `action:*` record can obtain, without
 > reading an audit-only artifact, (a) the source relationships Eshyra has
 > curated for that record and (b) Eshyra's own bounded statement about it:
-> a positively selected capability, the adjudication context the DM needs,
-> or a known limit. Absence of a statement stays "no statement". It never
+> a positively selected capability or a known limit (A4 retired the
+> adjudication context originally listed here; tool-contract knowledge lives
+> in the tools' descriptions). Absence of a statement stays "no statement". It never
 > means supported, safe, irrelevant, or mechanically empty.
 
 ## 2. Current state (verified on `main` @ `f1cdca92`)
@@ -149,7 +150,9 @@ and is not generalized.
   Whether a non-duplicate source relation, such as parallel definitions of a
   sense in another chapter, is warranted is deferred to a follow-up bead.
 
-**R4 — Eshyra side: three independent channels, not one disposition.**
+**R4 — Eshyra side: independent channels, not one disposition.** *(A4
+retires the adjudication-context row below; the live channels are the
+capability ledger and known limits. The table is kept as history.)*
 `ENGINE_PROCEDURE_COVERAGE` is split, as transition design §5.4 requires, into
 three separately owned runtime datasets. None of them is derived from another.
 
@@ -252,7 +255,7 @@ statement channels follow the same rule.
   - `implementation`: authored implementation evidence (`runtimeOwner` +
     `evidence`). This is the only fact the audit script still authors, and it
     is what the capability ledger's `implemented` input reads.
-  - `adjudicationContext`: the runtime entry, by identity.
+  - `adjudicationContext`: the runtime entry, by identity. *(Retired by A4.)*
   - `knownLimits`: every runtime limit for the key, each by identity and each
     carrying its own `findingId`. A key may have any number, as the runtime
     contract is an array.
@@ -320,8 +323,7 @@ interface RuleAwareness {
   relationshipArtifact: RelationshipArtifactState;   // { packId, state: 'present' | 'absent' }
   relationships: readonly RelationshipResolution[];  // full union: resolved | unresolved-target | indeterminate | excluded (A2)
   capabilities: CapabilityLedgerLookup;              // from the ledger, unchanged
-  adjudicationContext?: RuleAdjudicationContext;     // independent channel
-  knownLimits: readonly RuleKnownLimit[];            // independent channel
+  knownLimits: readonly RuleKnownLimit[];            // independent channel (A4: adjudication context retired)
 }
 ```
 
@@ -347,7 +349,8 @@ result for any record gains a separate `ruleAwareness` envelope beside, and
 outside, the authoritative source `record`. Today the result carries `record`,
 `card`, `sourcePack`, `license`, and `overrideChain`, and does not resolve the
 relationship manifest. The envelope carries the facade output, so resolved
-relationships and all three channels reach the live DM.
+relationships, capabilities, and known limits reach the live DM (A4 retired
+adjudication context).
 
 **How the live path receives the manifest association.** It is one live
 input, threaded exactly like `resolveRulesPack`:
@@ -372,8 +375,8 @@ remains exactly the pack record: provenance stays separate from
 Eshyra-authored annotation. The tool description tells the model the envelope
 is Eshyra-authored and is not rules text. The discovery packet consumes the
 same facade, replacing its direct ledger call in `dispositionField`. It
-uses the facade's statement half (`ruleStatements`: capabilities,
-adjudication context, known limits), which needs no stack or manifest, so
+uses the facade's statement half (`ruleStatements`: capabilities and known
+limits, per A4), which needs no stack or manifest, so
 no packet caller can lose a statement channel for lack of a manifest
 source. The packet's relationships already come from discovery expansion
 under the same manifest source (invariant 11).
@@ -460,8 +463,9 @@ Generalization follows the sequence in §8.
 ## 6. Decisions recorded from review
 
 - **Q1 — `lookup_rules` exposure: yes, broadened.** Adopted as R6: a separate
-  envelope carrying resolved relationships and all three independent channels,
-  not only a ledger statement.
+  envelope carrying resolved relationships and the independent statement
+  channels (capabilities and known limits after A4), not only a ledger
+  statement.
 - **Q2 — `sol:CAP-001`: narrowed.** The row becomes `narrowed`, with this
   reasoning: *deterministic execution exists only through positively selected
   bounded capabilities, while known limitations remain explicit rule-awareness
@@ -491,7 +495,8 @@ One sequence, in order:
 
 1. **Authorization** of this design.
 2. **Vertical-slice PR:** the §5 rows (each with its R0 outcome), the
-   three channels, the facade, the R6 manifest-source input (`RunTurnDeps` → `ToolContext` and discovery
+   three channels (as landed in PR #594; A4 later retired adjudication
+   context), the facade, the R6 manifest-source input (`RunTurnDeps` → `ToolContext` and discovery
    capture), and the `lookup_rules` envelope, plus the `sol:CAP-001` → `narrowed` registry
    update. The bead stays `in_progress`.
 3. **Generalization PR(s):** re-derive and migrate the remaining legacy rows

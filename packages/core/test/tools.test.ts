@@ -2116,9 +2116,13 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
     );
     const expected = {
       resolve_check:
-        "vs is a single number: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller. To compare against a total that is already fixed (for example a hider's retained Stealth check), pass that total as vs.",
+        // resolution.ts resolves `total >= vs` as success and validateVs
+        // accepts 1..99, while SRD contests (rule:hiding, rule:contests) need
+        // a strictly higher total and leave a tie unchanged; a fixed contest
+        // total must therefore never be passed as vs.
+        "vs is a single DC or AC from 1 to 99, and a total equal to vs succeeds: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller. For a contest against a total that is already fixed (for example a hider's retained Stealth check), omit vs and compare the returned total yourself: only a strictly higher total wins, and a tie leaves the situation as it was.",
       resolve_contest:
-        "Both sides always roll. When one side's total is already fixed (for example a hider's retained Stealth check against a later search), use resolve_check with that total as vs instead.",
+        "Both sides always roll. When one side's total is already fixed (for example a hider's retained Stealth check against a later search), roll only the other side with resolve_check without vs and compare: only a strictly higher total wins, and a tie leaves the situation as it was.",
       add_condition:
         'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Because it is a no-op on an existing id, it cannot raise a graded condition: add exhaustion with its level (1-6); a later level increase cannot be recorded with this tool.',
       remove_condition:
