@@ -17,7 +17,7 @@ export interface RuleKnownLimit {
 function exhaustionLevelLimit(cause: string): RuleKnownLimit {
   return Object.freeze({
     limit: 'partial' as const,
-    statement: `Exhaustion from ${cause} is graded. add_condition can record it only for a character with no exhaustion yet, and must then pass {id: "exhaustion", level: 1}, because long-rest recovery requires a level from 1 to 6. add_condition ignores an exhaustion condition the character already has, so it cannot raise an existing level; the DM tracks any further level from this rule.`,
+    statement: `Exhaustion from ${cause} is graded. add_condition can record it only for a character with no exhaustion yet, and must then pass {id: "exhaustion", level: 1}, because long-rest recovery requires a level from 1 to 6. add_condition ignores an exhaustion condition the character already has, and no exposed tool raises an existing exhaustion level, so a further level from this rule cannot currently be persisted.`,
     findingId: 'readiness-integrity',
   });
 }
@@ -41,7 +41,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
     Object.freeze({
       limit: 'partial',
       statement:
-        'Damage to a creature charmed by a sentient item permits another saving throw, but adjust_hp does not trigger that save from the tracked effect. After applying damage, resolve the repeat save with resolve_check and end the effect if it succeeds.',
+        'Damage to a creature charmed by a sentient item permits another saving throw, but adjust_hp does not trigger that save from the tracked effect. After applying damage, resolve the repeat save with resolve_check and, if it succeeds, end the charm with end_effect.',
       findingId: 'readiness-integrity',
     }),
   ]),
@@ -124,12 +124,12 @@ export const RULE_KNOWN_LIMITS: Readonly<
       designOwner: 'eshyra-2n1t.1',
     }),
   ]),
-  // R0 confirmed, target-domain split: for characters hpLifecycle.ts adjustHp handles the 0-HP transition, and toolAdjustHp.ts / toolStabilizeCharacter.ts (character-only) do not gate recovery on breathing; for encounter combatants toolUpdateCombatant.ts hpDelta is likewise ungated.
+  // R0 confirmed, target-domain split: for characters hpLifecycle.ts adjustHp handles the 0-HP transition to dying, and toolAdjustHp.ts / toolStabilizeCharacter.ts (character-only) do not gate recovery on breathing. For encounter combatants, encounterCombatants.ts updateCombatant defaults status to 'dead' when hpDelta reaches 0, and CombatantStatus has no dying state, so the source's 0-HP-and-dying transition is not representable there.
   'rule:suffocating': Object.freeze([
     Object.freeze({
       limit: 'partial',
       statement:
-        'When a character drops to 0 hit points, apply it with adjust_hp, which runs the dying rules. Eshyra does not gate stabilization or HP recovery on renewed breathing: do not call stabilize_character or restore the character’s HP with adjust_hp before it can breathe. For an encounter combatant, do not restore its hit points with update_combatant hpDelta before it can breathe.',
+        'When a character drops to 0 hit points, apply it with adjust_hp, which runs the dying rules. Eshyra does not gate stabilization or HP recovery on renewed breathing: do not call stabilize_character or restore the character’s HP with adjust_hp before it can breathe. For an encounter combatant, the dying state this rule requires cannot be recorded: update_combatant sets a combatant whose hpDelta reaches 0 hit points to dead unless another status is given, and combatant state has no dying status.',
       findingId: 'readiness-integrity',
     }),
   ]),
@@ -157,7 +157,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
     Object.freeze({
       limit: 'partial',
       statement:
-        'resolve_check does not spend ammunition for an attack with the ammunition property. Spend one piece with remove_item after each such attack, and apply the loading restriction before another attack with that weapon.',
+        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece from the character’s inventory with remove_item after each such attack, and apply the loading restriction before another attack with that weapon.',
       findingId: 'readiness-integrity',
     }),
   ]),

@@ -252,8 +252,15 @@ describe('rule awareness', () => {
       'When a character drops to 0 hit points',
     );
     expect(limit?.statement).not.toMatch(/When the creature drops/);
+    // Encounter combatants: updateCombatant defaults 0 HP to 'dead' and
+    // CombatantStatus has no dying state, so the source's dying transition is
+    // disclosed as unrepresentable, never offered as an update_combatant path.
     expect(limit?.statement).toContain('encounter combatant');
-    expect(limit?.statement).toContain('update_combatant hpDelta');
+    expect(limit?.statement).toContain('cannot be recorded');
+    expect(limit?.statement).toContain(
+      'to dead unless another status is given',
+    );
+    expect(limit?.statement).not.toMatch(/unconscious/);
   });
 
   it('does not map graded exhaustion onto add_condition', () => {
@@ -271,7 +278,10 @@ describe('rule awareness', () => {
       const [limit] = statements.knownLimits;
       expect(limit?.findingId).toBe('readiness-integrity');
       expect(limit?.statement).toContain('level: 1');
-      expect(limit?.statement).toContain('cannot raise an existing level');
+      // The increment is disclosed as unpersistable; canonical state is never
+      // delegated to the DM (ADR 0020 §2).
+      expect(limit?.statement).toContain('cannot currently be persisted');
+      expect(limit?.statement).not.toMatch(/DM tracks/);
     }
   });
 

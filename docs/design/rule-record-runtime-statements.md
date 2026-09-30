@@ -220,9 +220,11 @@ statement channels follow the same rule.
   `resolve_check`, not `roll`). `rule:suffocating` keeps only its trap, split
   by target domain: for a character, `adjust_hp` applies the 0-HP transition
   and neither it nor `stabilize_character` is gated on breathing; for an
-  encounter combatant, `update_combatant` `hpDelta` is likewise ungated. Its
-  breath-duration and countdown sentence is removed: no Eshyra tool or state
-  touches that clause.
+  encounter combatant, the source's 0-HP-and-dying transition is not
+  representable (`update_combatant` defaults a combatant at 0 HP to `dead`,
+  and combatant state has no dying status), and the limit says so without
+  offering a substitute. Its breath-duration and countdown sentence is
+  removed: no Eshyra tool or state touches that clause.
   `rule:channel-divinity` already meets the criteria and is unchanged.
 - **Positive mappings are target-domain correct.** A mapping names the tool
   that can actually write the state for the rule's subject.
@@ -236,6 +238,12 @@ statement channels follow the same rule.
   ignores an existing condition id and so cannot raise a level. That gap is a
   known limit on the rules that impose exhaustion (`rule:food`, `rule:water`,
   `rule:speed`).
+- **A known limit never assigns canonical state to the DM.** The DM may
+  adjudicate that a rule's outcome applies, but durable game state stays with
+  Eshyra's deterministic state boundary (ADR 0020 §2). When no exposed tool can
+  persist an outcome, the limit discloses that it cannot currently be
+  persisted. It never tells the DM to hold the state in narrative or memory
+  instead, and it never offers a lossy substitute state.
 - **Audit projection is per channel, not per row status.** R4's channels are
   independent (invariant 1), so the audit bundle cannot reduce a key to one
   exclusive status. Each engine-procedure key materializes as the set of
