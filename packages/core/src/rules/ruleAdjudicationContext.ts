@@ -81,11 +81,16 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Spend the Use an Object action with spend_turn_resource when the interaction requires an action.',
   }),
-  // R0 confirmed: rule:being-prone (being prone) uses add_condition, remove_condition; tool descriptions: packages/core/src/orchestrator/toolAddCondition.ts, packages/core/src/orchestrator/toolRemoveCondition.ts.
+  // R0 confirmed: rule:being-prone (being prone) uses character condition tools and update_combatant for encounter combatants.
   'rule:being-prone': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'add_condition', 'remove_condition']),
+    tools: Object.freeze([
+      'lookup_rules',
+      'add_condition',
+      'remove_condition',
+      'update_combatant',
+    ]),
     dmContext:
-      'Record a creature becoming prone with add_condition and its recovery with remove_condition.',
+      'For a character, record becoming prone with add_condition and recovery with remove_condition. For an encounter combatant, use update_combatant with addCondition {id: "prone"} or removeCondition "prone".',
   }),
   // R0 confirmed: rule:casting-a-spell-attack-rolls (casting a spell attack rolls) uses resolve_check; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:casting-a-spell-attack-rolls': Object.freeze({
@@ -156,7 +161,7 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Record elapsed downtime with advance_time after the activity duration is established.',
   }),
-  // R0 confirmed: rule:falling (falling) uses calc, resolve_damage, adjust_hp, update_combatant, add_condition; tool descriptions: packages/core/src/orchestrator/toolCalc.ts, packages/core/src/orchestrator/toolResolveDamage.ts, packages/core/src/orchestrator/toolAdjustHp.ts, packages/core/src/orchestrator/toolUpdateCombatant.ts, packages/core/src/orchestrator/toolAddCondition.ts.
+  // R0 confirmed: rule:falling uses calc, resolve_damage, character HP/condition tools, and update_combatant for encounter combatants.
   'rule:falling': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
@@ -167,7 +172,7 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
       'add_condition',
     ]),
     dmContext:
-      'Use calc with fall_damage_dice, evaluate the resulting packet with resolve_damage, apply damage through adjust_hp or update_combatant, and record prone with add_condition when applicable.',
+      'Use calc with fall_damage_dice and evaluate the packet with resolve_damage. For a character, apply damage with adjust_hp and record prone with add_condition when applicable. For an encounter combatant, use update_combatant for damage and addCondition {id: "prone"} when applicable.',
   }),
   // R0 confirmed: rule:food (food) uses calc, add_condition; tool descriptions: packages/core/src/orchestrator/toolCalc.ts, packages/core/src/orchestrator/toolAddCondition.ts.
   'rule:food': Object.freeze({
@@ -175,17 +180,22 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use calc with days_without_food_limit for the Constitution threshold, then record resulting exhaustion with add_condition.',
   }),
-  // R0 confirmed: rule:grappling (grappling) uses resolve_contest, add_condition; tool descriptions: packages/core/src/orchestrator/toolResolveContest.ts, packages/core/src/orchestrator/toolAddCondition.ts.
+  // R0 confirmed: rule:grappling uses resolve_contest, add_condition for characters, and update_combatant for encounter combatants.
   'rule:grappling': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'resolve_contest', 'add_condition']),
+    tools: Object.freeze([
+      'lookup_rules',
+      'resolve_contest',
+      'add_condition',
+      'update_combatant',
+    ]),
     dmContext:
-      'Resolve the Athletics contest with resolve_contest, then record the grappled condition with add_condition on success.',
+      'Resolve the Athletics contest with resolve_contest. On success, record grappled on a character with add_condition or on an encounter combatant with update_combatant addCondition {id: "grappled"}.',
   }),
-  // R0 confirmed: rule:hiding (hiding) uses resolve_contest, calc; tool descriptions: packages/core/src/orchestrator/toolResolveContest.ts, packages/core/src/orchestrator/toolCalc.ts.
+  // SRD Hiding: a hider's Dexterity (Stealth) total remains until discovery or the hider stops hiding; active Wisdom (Perception) checks compare against that retained total.
   'rule:hiding': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'resolve_contest', 'calc']),
+    tools: Object.freeze(['lookup_rules', 'resolve_check', 'calc']),
     dmContext:
-      'Use resolve_contest when an observer actively searches for the hidden creature, or calc with passive_score for passive observers.',
+      'Use resolve_check for the hider’s Dexterity (Stealth) check and retain its total. For a later active search, use resolve_check for the searcher’s Wisdom (Perception) check with vs set to that retained Stealth total. For passive observers, use calc with passive_score and compare it to the retained total.',
   }),
   // R0 confirmed: rule:hit-points (hit points) uses adjust_hp; tool descriptions: packages/core/src/orchestrator/toolAdjustHp.ts.
   'rule:hit-points': Object.freeze({
@@ -235,11 +245,16 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use resolve_check with kind attack so natural 1 and 20 receive the attack-only automatic results.',
   }),
-  // R0 confirmed: rule:shoving-a-creature (shoving a creature) uses resolve_contest, add_condition; tool descriptions: packages/core/src/orchestrator/toolResolveContest.ts, packages/core/src/orchestrator/toolAddCondition.ts.
+  // R0 confirmed: rule:shoving-a-creature uses resolve_contest, add_condition for characters, and update_combatant for encounter combatants.
   'rule:shoving-a-creature': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'resolve_contest', 'add_condition']),
+    tools: Object.freeze([
+      'lookup_rules',
+      'resolve_contest',
+      'add_condition',
+      'update_combatant',
+    ]),
     dmContext:
-      'Resolve the opposed Athletics and Athletics or Acrobatics checks with resolve_contest, then record prone with add_condition if that is the chosen result.',
+      'Resolve the opposed Athletics and Athletics or Acrobatics checks with resolve_contest. If prone is the chosen result, record it on a character with add_condition or on an encounter combatant with update_combatant addCondition {id: "prone"}.',
   }),
   // R0 confirmed: rule:speed (speed) uses calc, resolve_check, add_condition; tool descriptions: packages/core/src/orchestrator/toolCalc.ts, packages/core/src/orchestrator/toolResolveCheck.ts, packages/core/src/orchestrator/toolAddCondition.ts.
   'rule:speed': Object.freeze({

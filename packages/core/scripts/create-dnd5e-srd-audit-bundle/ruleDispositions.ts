@@ -23,7 +23,7 @@
  *   evidence and runtime rule statements for every `engine-procedure` key
  *   (175 rows). Only implemented rows are authored in the audit bundle;
  *   adjudication contexts and known limits are projected from their runtime
- *   datasets. A row's disposition class never implies its coverage status.
+ *   datasets. A row's disposition class implies no channel fact.
  *
  * `RULE_DISPOSITIONS` is transcribed from its source classification artifact
  * (docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-rule-classification.md).
@@ -1665,62 +1665,27 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
     },
   });
 
-export type RuleCoverageStatus =
-  | 'implemented'
-  | 'model-adjudicated-supported'
-  | 'no-runtime-statement'
-  | 'partial'
-  | 'unimplemented'
-  | 'design-blocked';
+export interface RuleImplementationEvidence {
+  readonly runtimeOwner: readonly string[];
+  readonly evidence: readonly string[];
+}
+
+export type RuleCoverageChannel =
+  | 'implementation'
+  | 'adjudicationContext'
+  | 'knownLimit'
+  | 'noRuntimeStatement';
 
 export interface RuleProcedureCoverage {
-  readonly status: RuleCoverageStatus;
-  /** Repo-relative code path(s). Required for 'implemented'; present for a
-   *  'partial' row when code owns part of the behavior. */
-  readonly runtimeOwner?: readonly string[];
-  /** Test file(s) exercising the behavior. Required for 'implemented'. */
-  readonly evidence?: readonly string[];
-  /** Registered tool names the row's model-adjudication relies on;
-   *  required for 'model-adjudicated-supported', each checked against
-   *  DEFAULT_TOOLS. */
-  readonly primitives?: readonly string[];
-  /** What must be retrievable/structured at play time; required for
-   *  'model-adjudicated-supported'. */
-  readonly contextRequirement?: string;
-  /** Optional forward-reference, e.g. "F3's active-effect registry will
-   *  improve visibility". */
-  readonly dependencyNote?: string;
-  /** Exact missing semantics; required for 'partial' and carried for
-   *  'unimplemented' rows for readability. May name a shared primitive
-   *  family (F1-F10) or design decision (D1/D2). */
-  readonly missing?: string;
-  /** Bead owning the design decision; required for 'design-blocked'. */
-  readonly designOwner?: string;
-  /** Durable Foundation-2 finding-registry identity; bead IDs are history. */
-  readonly findingId?: string;
-  /** Clause-level external ownership: the row's primary status stands and
-   *  bead closure alone never auto-upgrades it — closing requires new
-   *  runtime/pack evidence in a reviewed diff. */
-  readonly externalClauses?: readonly {
-    readonly clause: string;
-    readonly bead: string;
-    readonly findingId?: string;
-  }[];
-  /** Set only on rows projected from a runtime statement dataset
-   *  (`RULE_ADJUDICATION_CONTEXT` / `RULE_KNOWN_LIMITS`): the runtime entry
-   *  itself, so the audit provably reads the single runtime definition. */
-  readonly runtimeSource?: object;
-  /** Second identity proof when a runtime context and known limit coexist. */
-  readonly runtimeContextSource?: object;
-  /** Identity proof for the known-limit entry, including dual-channel rows. */
-  readonly runtimeLimitSource?: object;
+  readonly implementation?: RuleImplementationEvidence;
+  readonly adjudicationContext?: RuleAdjudicationContext;
+  readonly knownLimits: readonly RuleKnownLimit[];
 }
 
 const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
-  Record<string, RuleProcedureCoverage>
+  Record<string, RuleImplementationEvidence>
 > = Object.freeze({
   'rule:abilities': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/dice.ts',
       'packages/core/src/orchestrator/toolRoll.ts',
@@ -1731,7 +1696,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:ability-checks': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveCheck.ts',
@@ -1743,7 +1707,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:ability-scores-and-modifiers': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/character/abilities.ts',
       'packages/core/src/character/derivedValues.ts',
@@ -1751,7 +1714,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/liveStateSchema.test.ts'],
   },
   'rule:advantage-and-disadvantage': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/dice.ts',
       'packages/core/src/orchestrator/resolution.ts',
@@ -1763,7 +1725,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:attack-rolls': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveCheck.ts',
@@ -1774,7 +1735,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:attunement': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/attunement.ts',
       'packages/core/src/orchestrator/toolAttuneItem.ts',
@@ -1783,7 +1743,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/attunement.test.ts'],
   },
   'rule:backgrounds-equipment': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/character/srdStartingEquipmentGrants.ts',
       'packages/core/src/character/srdEquipmentPacks.ts',
@@ -1795,7 +1754,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:backgrounds-proficiencies': {
-    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/characterDraft.ts'],
     evidence: [
       'packages/core/test/characterDraftEngine.test.ts',
@@ -1803,7 +1761,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:beyond-1st-level': {
-    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/levelUpEngine.ts'],
     evidence: [
       'packages/core/test/levelUpEngine.test.ts',
@@ -1812,7 +1769,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:bonus-action': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
@@ -1820,7 +1776,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:bonus-actions': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
@@ -1828,8 +1783,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:casting-a-spell-at-a-higher-level': {
-    status: 'implemented',
-    primitives: ['lookup_rules', 'spend_spell_slot', 'resolve_spell_upcast'],
     runtimeOwner: [
       'packages/core/src/orchestrator/spellUpcast.ts',
       'packages/core/src/rules/spellUpcastContract.ts',
@@ -1844,11 +1797,8 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/spellSlots.test.ts',
       'packages/core/test/turnTraceProjection.test.ts',
     ],
-    contextRequirement:
-      'The player or DM chooses whether to upcast and selects targets or a typed exclusive branch; the tools apply the resulting arithmetic, thresholds, constraints, and source provenance.',
   },
   'rule:concentration': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/activeEffects.ts',
       'packages/core/src/state/hpLifecycle.ts',
@@ -1859,12 +1809,10 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/activeEffects.test.ts'],
   },
   'rule:constitution-hit-points': {
-    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/levelUpEngine.ts'],
     evidence: ['packages/core/test/levelUpEngine.test.ts'],
   },
   'rule:contests': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveContest.ts',
@@ -1875,7 +1823,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:critical-hits': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveDamage.ts',
@@ -1887,7 +1834,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   // R0 rewritten: the accepted custom-background policy is implemented and validated during character creation (characterDraftEngine.test.ts).
   'rule:customizing-a-background': {
-    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/characterDraft.ts'],
     evidence: [
       'packages/core/test/characterDraftEngine.test.ts',
@@ -1895,7 +1841,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:damage-resistance-and-vulnerability': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveDamage.ts',
@@ -1903,7 +1848,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/resolution.test.ts'],
   },
   'rule:damage-rolls': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/dice.ts',
       'packages/core/src/orchestrator/resolution.ts',
@@ -1915,7 +1859,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:death-saving-throws': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolRecordDeathSave.ts',
@@ -1923,7 +1866,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
   'rule:falling-unconscious': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolAdjustHp.ts',
@@ -1932,12 +1874,10 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
   // R0 rewritten: optional feats are selected at ability-score-improvement levels with prerequisite and duplicate checks (levelUpEngine.test.ts).
   'rule:feats': {
-    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/levelUpEngine.ts'],
     evidence: ['packages/core/test/levelUpEngine.test.ts'],
   },
   'rule:gaining-inspiration': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/inspiration.ts',
       'packages/core/src/orchestrator/toolAwardInspiration.ts',
@@ -1945,7 +1885,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/inspiration.test.ts'],
   },
   'rule:grapple-rules-for-monsters': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/calc.ts',
       'packages/core/src/orchestrator/toolCalc.ts',
@@ -1953,7 +1892,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:group-checks': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/calc.ts',
       'packages/core/src/orchestrator/resolution.ts',
@@ -1964,7 +1902,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:healing': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolAdjustHp.ts',
@@ -1975,7 +1912,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:instant-death': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolAdjustHp.ts',
@@ -1983,7 +1919,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
   'rule:legendary-actions': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
@@ -1991,7 +1926,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:limited-usage': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/usageCounters.ts',
       'packages/core/src/orchestrator/toolSpendUsage.ts',
@@ -2001,7 +1935,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/usageCounters.test.ts'],
   },
   'rule:long-rest': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/toolRest.ts',
       'packages/core/src/state/rest.ts',
@@ -2009,7 +1942,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/rest.test.ts'],
   },
   'rule:modifiers-to-the-roll': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolutionShared.ts',
@@ -2017,7 +1949,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/resolution.test.ts'],
   },
   'rule:other-activity-on-your-turn': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
@@ -2025,7 +1956,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:passive-checks': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/calc.ts',
       'packages/core/src/orchestrator/toolCalc.ts',
@@ -2033,7 +1963,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/calc.test.ts'],
   },
   'rule:proficiency-bonus': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/character/derivedValues.ts',
@@ -2042,7 +1971,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/resolution.test.ts'],
   },
   'rule:reactions': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
@@ -2051,7 +1979,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:saving-throws': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveCheck.ts',
@@ -2063,7 +1990,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:short-rest': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/toolRest.ts',
       'packages/core/src/state/rest.ts',
@@ -2071,7 +1997,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/rest.test.ts'],
   },
   'rule:spell-slots': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/spellSlots.ts',
       'packages/core/src/orchestrator/toolSpendSpellSlot.ts',
@@ -2079,7 +2004,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/spellSlots.test.ts'],
   },
   'rule:stabilizing-a-creature': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolStabilizeCharacter.ts',
@@ -2087,7 +2011,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
   'rule:surprise': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSetSurprised.ts',
@@ -2099,7 +2022,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:temporary-hit-points': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolGrantTempHp.ts',
@@ -2107,7 +2029,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
   'rule:using-inspiration': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/inspiration.ts',
       'packages/core/src/orchestrator/toolUseInspiration.ts',
@@ -2119,7 +2040,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:your-turn': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolBeginTurn.ts',
@@ -2129,22 +2049,8 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
 });
 
-/**
- * Attach the reviewed Foundation-2 identity to unresolved rows as the registry
- * is materialized. The historical bead remains alongside it; it is never used
- * as a resolution signal. These broad, existing audit identities preserve the
- * prior mappings without inventing new finding dispositions.
- */
-const KNOWN_LIMIT_AUDIT_STATUS: Readonly<
-  Record<RuleKnownLimit['limit'], RuleCoverageStatus>
-> = Object.freeze({
-  partial: 'partial',
-  unimplemented: 'unimplemented',
-  deferred: 'design-blocked',
-});
-
 export function materializeEngineProcedureCoverage(
-  unboundCoverage: Readonly<Record<string, RuleProcedureCoverage>>,
+  implementationEvidence: Readonly<Record<string, RuleImplementationEvidence>>,
   statementDatasets: {
     readonly procedureKeys?: readonly string[];
     readonly adjudicationContext?: Readonly<
@@ -2153,111 +2059,32 @@ export function materializeEngineProcedureCoverage(
     readonly knownLimits?: Readonly<Record<string, readonly RuleKnownLimit[]>>;
   } = {},
 ): Readonly<Record<string, RuleProcedureCoverage>> {
-  // Rows owned by runtime statement datasets are projected from them, never
-  // authored here too. The remaining authored rows are implemented only.
-  // `runtimeSource` keeps the runtime entry by reference so the audit can be
-  // proven to read it rather than a copy.
-  const runtimeCoverage: Record<string, RuleProcedureCoverage> = {
-    ...unboundCoverage,
-  };
   const adjudicationContext =
     statementDatasets.adjudicationContext ?? RULE_ADJUDICATION_CONTEXT;
   const knownLimits = statementDatasets.knownLimits ?? RULE_KNOWN_LIMITS;
-  for (const [key, coverage] of Object.entries(unboundCoverage))
-    if (coverage.status !== 'implemented')
-      throw new Error(
-        `${key}: unbound engine procedure coverage must be implemented (got ${coverage.status})`,
-      );
-  for (const [key, context] of Object.entries(adjudicationContext)) {
-    if (key in unboundCoverage)
-      throw new Error(
-        `${key}: coverage is authored both here and in RULE_ADJUDICATION_CONTEXT`,
-      );
-    if (runtimeCoverage[key] !== undefined) {
-      runtimeCoverage[key] = {
-        ...runtimeCoverage[key],
-        primitives: context.tools,
-        contextRequirement: context.dmContext,
-        runtimeContextSource: context,
-      };
-      continue;
-    }
-    runtimeCoverage[key] = {
-      status: 'model-adjudicated-supported',
-      primitives: context.tools,
-      contextRequirement: context.dmContext,
-      runtimeSource: context,
-      runtimeContextSource: context,
-    };
-  }
-  for (const [key, limits] of Object.entries(knownLimits)) {
-    if (key in unboundCoverage)
-      throw new Error(`${key}: coverage is authored in more than one place`);
-    // The audit row carries one status; a key with several runtime limits has
-    // no faithful single-row projection, so refuse rather than drop one.
-    if (limits.length !== 1)
-      throw new Error(
-        `${key}: RULE_KNOWN_LIMITS must project to exactly one audit row (got ${limits.length})`,
-      );
-    const [limit] = limits;
-    runtimeCoverage[key] = {
-      ...runtimeCoverage[key],
-      status: KNOWN_LIMIT_AUDIT_STATUS[limit.limit],
-      missing: limit.statement,
-      findingId: limit.findingId,
-      ...(limit.designOwner === undefined
-        ? {}
-        : { designOwner: limit.designOwner }),
-      ...(limit.externalClauses === undefined
-        ? {}
-        : {
-            externalClauses: limit.externalClauses.map((clause) => ({
-              clause: clause.clause,
-              bead: clause.bead,
-              findingId: clause.findingId,
-            })),
-          }),
-      runtimeSource: runtimeCoverage[key]?.runtimeSource ?? limit,
-      runtimeLimitSource: limit,
-    };
-  }
-  for (const key of statementDatasets.procedureKeys ?? []) {
-    if (runtimeCoverage[key] === undefined)
-      runtimeCoverage[key] = { status: 'no-runtime-statement' };
-  }
+  const keys = new Set([
+    ...(statementDatasets.procedureKeys ?? []),
+    ...Object.keys(implementationEvidence),
+    ...Object.keys(adjudicationContext),
+    ...Object.keys(knownLimits),
+  ]);
   return Object.freeze(
     Object.fromEntries(
-      Object.entries(runtimeCoverage).map(([key, coverage]) => {
-        const unresolvedFindingId =
-          coverage.status === 'design-blocked'
-            ? 'engine-capability-ownership'
-            : coverage.status === 'partial' ||
-                coverage.status === 'unimplemented'
-              ? 'readiness-integrity'
-              : undefined;
-        const findingId =
-          coverage.findingId ??
-          (unresolvedFindingId === undefined
-            ? undefined
-            : requireFindingReference(unresolvedFindingId, key));
-        const externalClauses = coverage.externalClauses?.map((clause) => ({
-          ...clause,
-          findingId: requireFindingReference(
-            clause.findingId ?? 'rule-corpus-procedures',
-            `${key}:${clause.clause}`,
-          ),
-        }));
-        return [
-          key,
-          findingId === coverage.findingId && externalClauses === undefined
-            ? coverage
-            : {
-                ...coverage,
-                ...(findingId === undefined ? {} : { findingId }),
-                ...(externalClauses === undefined ? {} : { externalClauses }),
-              },
-        ] as const;
-      }),
+      [...keys].map(
+        (key) =>
+          [
+            key,
+            {
+              ...(implementationEvidence[key] === undefined
+                ? {}
+                : { implementation: implementationEvidence[key] }),
+              ...(adjudicationContext[key] === undefined
+                ? {}
+                : { adjudicationContext: adjudicationContext[key] }),
+              knownLimits: knownLimits[key] ?? [],
+            },
+          ] as const,
+      ),
     ),
   );
 }
@@ -2337,7 +2164,7 @@ export function validateRuleDeterministicCapabilityInput(
 }
 
 export function validateRuleDeterministicCapabilityContracts(
-  coverage: Readonly<Record<string, { readonly status: string }>>,
+  coverage: Readonly<Record<string, { readonly implementation?: object }>>,
   contracts: Readonly<Record<string, RuleDeterministicCapabilityContract>>,
   bindings = RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
   dispositions = RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
@@ -2373,15 +2200,6 @@ export function validateRuleDeterministicCapabilityContracts(
     }
   }
   return errors;
-}
-
-function requireFindingReference(id: string, context: string): string {
-  if (findingByCanonicalId(id) === undefined) {
-    throw new Error(
-      `${context}: unknown canonical finding ID ${JSON.stringify(id)}`,
-    );
-  }
-  return id;
 }
 
 /**
@@ -2470,7 +2288,7 @@ const BEAD_ID_PATTERN = /^eshyra-[a-z0-9]+(\.[0-9]+)*$/;
 /**
  * Registry-integrity check (design §3) over an arbitrary
  * (dispositions, coverage) pair: class invariants, coverage completeness,
- * status invariants, and optional fixture census. Pack-independent and pure,
+ * channel invariants, and optional fixture census. Pack-independent and pure,
  * so tests can exercise each failure mode against small fixtures without the
  * production identity pin getting in the way. `assertRuleDispositions` is the
  * production entry point, applied to the real registries plus the
@@ -2481,7 +2299,7 @@ export function validateRuleRegistries(
   dispositions: Readonly<Record<string, RuleDisposition>>,
   coverage: Readonly<Record<string, RuleProcedureCoverage>>,
   expectedSemanticCensus?: Readonly<Record<RuleDispositionClass, number>>,
-  expectedCoverageCensus?: Readonly<Record<RuleCoverageStatus, number>>,
+  expectedCoverageCensus?: Readonly<Record<RuleCoverageChannel, number>>,
 ): readonly string[] {
   const errors: string[] = [];
 
@@ -2561,103 +2379,81 @@ export function validateRuleRegistries(
     }
   }
 
-  const censusByStatus: Record<string, number> = {};
+  const censusByChannel: Record<string, number> = {};
+  const count = (channel: RuleCoverageChannel) => {
+    censusByChannel[channel] = (censusByChannel[channel] ?? 0) + 1;
+  };
   for (const [key, coverageRow] of Object.entries(coverage)) {
-    censusByStatus[coverageRow.status] =
-      (censusByStatus[coverageRow.status] ?? 0) + 1;
-    if (coverageRow.status === 'implemented') {
-      if (!coverageRow.runtimeOwner || coverageRow.runtimeOwner.length === 0) {
-        errors.push(`${key}: implemented row is missing runtimeOwner`);
-      }
-      if (!coverageRow.evidence || coverageRow.evidence.length === 0) {
-        errors.push(`${key}: implemented row is missing evidence`);
-      }
+    const implementation = coverageRow.implementation;
+    const context = coverageRow.adjudicationContext;
+    const limits = coverageRow.knownLimits;
+    if (implementation !== undefined) {
+      count('implementation');
+      if (!implementation.runtimeOwner?.length)
+        errors.push(`${key}: implementation is missing runtimeOwner`);
+      if (!implementation.evidence?.length)
+        errors.push(`${key}: implementation is missing evidence`);
+    }
+    if (context !== undefined) {
+      count('adjudicationContext');
+      if (!context.tools?.length)
+        errors.push(`${key}: adjudication context is missing tools`);
+      for (const tool of context.tools ?? [])
+        if (!DEFAULT_TOOL_NAMES.has(tool))
+          errors.push(
+            `${key}: tool '${tool}' is not a registered DEFAULT_TOOLS name`,
+          );
+      if (!context.dmContext)
+        errors.push(`${key}: adjudication context is missing dmContext`);
+    }
+    if (!Array.isArray(limits)) {
+      errors.push(`${key}: knownLimits must be an array`);
+      continue;
     }
     if (
-      coverageRow.status === 'no-runtime-statement' &&
-      coverageRow.findingId !== undefined
+      implementation === undefined &&
+      context === undefined &&
+      limits.length === 0
     )
-      errors.push(`${key}: no-runtime-statement row must not have findingId`);
-    if (coverageRow.status === 'model-adjudicated-supported') {
-      if (!coverageRow.primitives || coverageRow.primitives.length === 0) {
+      count('noRuntimeStatement');
+    for (const limit of limits) {
+      count('knownLimit');
+      if (!limit.statement)
+        errors.push(`${key}: ${limit.limit} known limit is missing statement`);
+      if (findingByCanonicalId(limit.findingId) === undefined)
         errors.push(
-          `${key}: model-adjudicated-supported row is missing primitives`,
+          `${key}: unknown canonical finding ID ${JSON.stringify(limit.findingId)}`,
         );
-      } else {
-        for (const primitive of coverageRow.primitives) {
-          if (!DEFAULT_TOOL_NAMES.has(primitive)) {
-            errors.push(
-              `${key}: primitive '${primitive}' is not a registered DEFAULT_TOOLS name`,
-            );
-          }
-        }
+      if (limit.limit === 'deferred') {
+        if (!limit.designOwner)
+          errors.push(`${key}: deferred known limit is missing designOwner`);
+        else if (!BEAD_ID_PATTERN.test(limit.designOwner))
+          errors.push(
+            `${key}: designOwner '${limit.designOwner}' is not a real bead-id shape`,
+          );
       }
-      if (!coverageRow.contextRequirement) {
-        errors.push(
-          `${key}: model-adjudicated-supported row is missing contextRequirement`,
-        );
-      }
-    }
-    if (coverageRow.status === 'partial' && !coverageRow.missing) {
-      errors.push(`${key}: partial row is missing 'missing'`);
-    }
-    if (
-      (coverageRow.status === 'partial' ||
-        coverageRow.status === 'unimplemented' ||
-        coverageRow.status === 'design-blocked') &&
-      coverageRow.findingId === undefined
-    ) {
-      errors.push(`${key}: unresolved row is missing durable findingId`);
-    } else if (
-      coverageRow.findingId !== undefined &&
-      findingByCanonicalId(coverageRow.findingId) === undefined
-    ) {
-      errors.push(
-        `${key}: unknown canonical finding ID ${JSON.stringify(coverageRow.findingId)}`,
-      );
-    }
-    if (coverageRow.status === 'design-blocked') {
-      if (!coverageRow.designOwner) {
-        errors.push(`${key}: design-blocked row is missing designOwner`);
-      } else if (!BEAD_ID_PATTERN.test(coverageRow.designOwner)) {
-        errors.push(
-          `${key}: designOwner '${coverageRow.designOwner}' is not a real bead-id shape`,
-        );
-      }
-    }
-    // Clause-level external ownership (design §5 item 3): each clause must
-    // name a real bead and a non-empty description — never a placeholder —
-    // so a malformed cross-bead pointer can't silently pass review.
-    for (const { clause, bead, findingId } of coverageRow.externalClauses ??
-      []) {
-      if (!clause) {
-        errors.push(`${key}: externalClauses entry is missing 'clause'`);
-      }
-      if (!BEAD_ID_PATTERN.test(bead)) {
-        errors.push(
-          `${key}: externalClauses bead '${bead}' is not a real bead-id shape`,
-        );
-      }
-      if (findingId === undefined) {
-        errors.push(
-          `${key}: externalClauses entry is missing durable findingId`,
-        );
-      } else if (findingByCanonicalId(findingId) === undefined) {
-        errors.push(
-          `${key}: externalClauses findingId ${JSON.stringify(findingId)} is not a canonical finding ID`,
-        );
+      for (const { clause, bead, findingId } of limit.externalClauses ?? []) {
+        if (!clause)
+          errors.push(`${key}: externalClauses entry is missing 'clause'`);
+        if (!BEAD_ID_PATTERN.test(bead))
+          errors.push(
+            `${key}: externalClauses bead '${bead}' is not a real bead-id shape`,
+          );
+        if (findingByCanonicalId(findingId) === undefined)
+          errors.push(
+            `${key}: externalClauses findingId ${JSON.stringify(findingId)} is not a canonical finding ID`,
+          );
       }
     }
   }
-  for (const [status, expected] of Object.entries(
+  for (const [channel, expected] of Object.entries(
     expectedCoverageCensus ?? {},
   )) {
-    const actual = censusByStatus[status] ?? 0;
-    if (actual !== expected) {
+    const actual = censusByChannel[channel] ?? 0;
+    if (actual !== expected)
       errors.push(
-        `coverage census drift: ${status} is ${actual}, expected ${expected} (caller-supplied census)`,
+        `coverage census drift: ${channel} is ${actual}, expected ${expected} (caller-supplied census)`,
       );
-    }
   }
 
   return errors;
@@ -2748,24 +2544,20 @@ export interface RuleDispositionReport {
   readonly tableBacked: number;
   readonly duplicates: number;
   readonly engineProcedure: {
-    readonly implemented: number;
-    readonly modelAdjudicatedSupported: number;
+    readonly implementation: number;
+    readonly adjudicationContext: number;
     readonly noRuntimeStatement: number;
-    /** Actionable gap list: key + missing semantics (design §4). */
-    readonly partial: readonly {
-      readonly key: string;
-      readonly missing: string;
-    }[];
-    /** Transitional actionable gap list: key + missing semantics. */
-    readonly unimplemented: readonly {
-      readonly key: string;
-      readonly missing: string;
-    }[];
-    /** key + design owner (design §4). */
-    readonly designBlocked: readonly {
-      readonly key: string;
-      readonly designOwner: string;
-    }[];
+    readonly knownLimits: Readonly<
+      Record<
+        RuleKnownLimit['limit'],
+        readonly {
+          readonly key: string;
+          readonly statement: string;
+          readonly findingId: string;
+          readonly designOwner?: string;
+        }[]
+      >
+    >;
     /** Flattened key + clause + bead (design §4) — a row with multiple
      *  externally owned clauses (e.g. armor-guidance) contributes one entry
      *  per clause. */
@@ -2803,14 +2595,10 @@ export interface RuleDispositionReport {
         readonly coverageEvidence: readonly string[];
       })
   )[];
-  /** Deferred, partial, unimplemented, design-blocked, and external work. */
+  /** Known limits and externally owned clauses. */
   readonly unresolvedWork: readonly {
     readonly key: string;
-    readonly kind:
-      | 'partial'
-      | 'unimplemented'
-      | 'design-blocked'
-      | 'external-clause';
+    readonly kind: 'partial' | 'unimplemented' | 'deferred' | 'external-clause';
     readonly detail: string;
     readonly findingId: string;
     readonly historicalBead?: string;
@@ -2820,7 +2608,7 @@ export interface RuleDispositionReport {
 /**
  * Readiness-report detail (design §4). Registry-integrity errors
  * (`assertRuleDispositions`) fail every build; these lists are visibility
- * only — partial/unimplemented/design-blocked rows are truthful, actionable
+ * only — partial/unimplemented/deferred limits are truthful, actionable
  * readiness gaps that stay visible without failing day-to-day CI. Detail
  * arrays (not just counts) so a reviewer can see exactly which keys and
  * clauses are outstanding without re-deriving them from the registry.
@@ -2840,12 +2628,17 @@ export function buildRuleDispositionReport(
     if (disposition.class === 'table-backed') tableBacked += 1;
     if (disposition.class === 'duplicate') duplicates += 1;
   }
-  let implemented = 0;
-  let modelAdjudicatedSupported = 0;
+  let implementation = 0;
+  let adjudicationContext = 0;
   let noRuntimeStatement = 0;
-  const partial: { key: string; missing: string }[] = [];
-  const unimplemented: { key: string; missing: string }[] = [];
-  const designBlocked: { key: string; designOwner: string }[] = [];
+  const knownLimits: {
+    [K in RuleKnownLimit['limit']]: {
+      key: string;
+      statement: string;
+      findingId: string;
+      designOwner?: string;
+    }[];
+  } = { partial: [], unimplemented: [], deferred: [] };
   const externalClauses: {
     key: string;
     clause: string;
@@ -2858,61 +2651,57 @@ export function buildRuleDispositionReport(
   }[] = [];
   const unresolvedWork: RuleDispositionReport['unresolvedWork'][number][] = [];
   for (const [key, coverage] of Object.entries(coverageRegistry)) {
-    if (coverage.status === 'implemented') implemented += 1;
-    if (coverage.status === 'no-runtime-statement') noRuntimeStatement += 1;
-    if (coverage.status === 'model-adjudicated-supported') {
-      modelAdjudicatedSupported += 1;
+    if (coverage.implementation !== undefined) implementation += 1;
+    if (coverage.adjudicationContext !== undefined) {
+      adjudicationContext += 1;
       adjudicationContextInventory.push({
         key,
-        contextRequirement: coverage.contextRequirement ?? '',
+        contextRequirement: coverage.adjudicationContext.dmContext,
       });
     }
-    if (coverage.status === 'partial') {
-      partial.push({ key, missing: coverage.missing ?? '' });
+    if (
+      coverage.implementation === undefined &&
+      coverage.adjudicationContext === undefined &&
+      coverage.knownLimits.length === 0
+    )
+      noRuntimeStatement += 1;
+    for (const limit of coverage.knownLimits) {
+      knownLimits[limit.limit].push({
+        key,
+        statement: limit.statement,
+        findingId: limit.findingId,
+        ...(limit.designOwner === undefined
+          ? {}
+          : { designOwner: limit.designOwner }),
+      });
       unresolvedWork.push({
         key,
-        kind: 'partial',
-        detail: coverage.missing ?? '',
-        findingId: coverage.findingId ?? '',
+        kind: limit.limit,
+        detail: limit.statement,
+        findingId: limit.findingId,
+        ...(limit.designOwner === undefined
+          ? {}
+          : { historicalBead: limit.designOwner }),
       });
-    }
-    if (coverage.status === 'unimplemented') {
-      unimplemented.push({ key, missing: coverage.missing ?? '' });
-      unresolvedWork.push({
-        key,
-        kind: 'unimplemented',
-        detail: coverage.missing ?? '',
-        findingId: coverage.findingId ?? '',
-      });
-    }
-    if (coverage.status === 'design-blocked') {
-      designBlocked.push({ key, designOwner: coverage.designOwner ?? '' });
-      unresolvedWork.push({
-        key,
-        kind: 'design-blocked',
-        detail:
-          'Deliberately deferred design work; ADR 0018 §6 reporting remains required for multiclass procedures.',
-        findingId: coverage.findingId ?? '',
-        historicalBead: coverage.designOwner,
-      });
-    }
-    for (const { clause, bead, findingId } of coverage.externalClauses ?? []) {
-      externalClauses.push({ key, clause, bead, findingId: findingId ?? '' });
-      unresolvedWork.push({
-        key,
-        kind: 'external-clause',
-        detail: clause,
-        findingId: findingId ?? '',
-        historicalBead: bead,
-      });
+      for (const { clause, bead, findingId } of limit.externalClauses ?? []) {
+        externalClauses.push({ key, clause, bead, findingId });
+        unresolvedWork.push({
+          key,
+          kind: 'external-clause',
+          detail: clause,
+          findingId,
+          historicalBead: bead,
+        });
+      }
     }
   }
+
   const byKey = <T extends { key: string }>(a: T, b: T) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
   const deterministicCapabilitySourceOutcomes: RuleDispositionReport['deterministicCapabilitySourceOutcomes'][number][] =
     [];
   for (const [ruleKey, coverage] of Object.entries(coverageRegistry)) {
-    if (coverage.status !== 'implemented') continue;
+    if (coverage.implementation === undefined) continue;
     const capabilities = RULE_DETERMINISTIC_CAPABILITY_BINDINGS.filter(
       (binding) => binding.ruleKey === ruleKey,
     ).map(({ capability }) => capability);
@@ -2921,8 +2710,8 @@ export function buildRuleDispositionReport(
         ruleKey,
         outcome: 'bound',
         capabilities,
-        coverageRuntimeOwner: coverage.runtimeOwner ?? [],
-        coverageEvidence: coverage.evidence ?? [],
+        coverageRuntimeOwner: coverage.implementation.runtimeOwner,
+        coverageEvidence: coverage.implementation.evidence,
       });
       continue;
     }
@@ -2930,8 +2719,8 @@ export function buildRuleDispositionReport(
     if (disposition !== undefined)
       deterministicCapabilitySourceOutcomes.push({
         ...disposition,
-        coverageRuntimeOwner: coverage.runtimeOwner ?? [],
-        coverageEvidence: coverage.evidence ?? [],
+        coverageRuntimeOwner: coverage.implementation.runtimeOwner,
+        coverageEvidence: coverage.implementation.evidence,
       });
   }
   return {
@@ -2941,12 +2730,14 @@ export function buildRuleDispositionReport(
     tableBacked,
     duplicates,
     engineProcedure: {
-      implemented,
-      modelAdjudicatedSupported,
+      implementation,
+      adjudicationContext,
       noRuntimeStatement,
-      partial: partial.sort(byKey),
-      unimplemented: unimplemented.sort(byKey),
-      designBlocked: designBlocked.sort(byKey),
+      knownLimits: {
+        partial: knownLimits.partial.sort(byKey),
+        unimplemented: knownLimits.unimplemented.sort(byKey),
+        deferred: knownLimits.deferred.sort(byKey),
+      },
       externalClauses: externalClauses.sort(
         (a, b) => byKey(a, b) || (a.clause < b.clause ? -1 : 1),
       ),

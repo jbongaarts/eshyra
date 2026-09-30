@@ -205,9 +205,46 @@ describe('rule awareness', () => {
       'does not gate stabilization or HP recovery on renewed breathing',
     );
     expect(suffocating).toContain('do not call stabilize_character');
+    expect(suffocating).not.toMatch(
+      /held its breath|suffocation round countdown/i,
+    );
     const lair = renderedFor('rule:a-legendary-creatures-lair');
     expect(lair).not.toContain('### Eshyra adjudication context');
     expect(lair).not.toContain('### Eshyra known limits');
+  });
+
+  it('routes creature conditions to the correct target domain', () => {
+    for (const key of [
+      'rule:being-prone',
+      'rule:falling',
+      'rule:grappling',
+      'rule:shoving-a-creature',
+    ]) {
+      const context = ruleStatements(key).adjudicationContext;
+      expect(context?.tools).toEqual(
+        expect.arrayContaining(['add_condition', 'update_combatant']),
+      );
+      expect(context?.dmContext).toContain('character');
+      expect(context?.dmContext).toContain('encounter combatant');
+      expect(context?.dmContext).toContain('update_combatant');
+      expect(context?.dmContext).toContain('addCondition {id:');
+    }
+    const prone = ruleStatements('rule:being-prone').adjudicationContext;
+    expect(prone?.tools).toContain('remove_condition');
+    expect(prone?.dmContext).toContain('removeCondition "prone"');
+  });
+
+  it('uses the retained hiding check total for later searches', () => {
+    // SRD rule:hiding: "Until you are discovered or you stop hiding, that
+    // check’s total is contested" by an active searcher's Perception check.
+    const context = ruleStatements('rule:hiding').adjudicationContext;
+    expect(context?.tools).toEqual(['lookup_rules', 'resolve_check', 'calc']);
+    expect(context?.tools).not.toContain('resolve_contest');
+    expect(context?.dmContext).toContain('retain its total');
+    expect(context?.dmContext).toMatch(
+      /resolve_check.*vs set to that retained Stealth total/,
+    );
+    expect(context?.dmContext).toContain('passive_score');
   });
 
   it('validates tool and finding identities in its authored datasets', () => {

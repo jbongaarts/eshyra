@@ -489,8 +489,13 @@ describe('lookup_rules tool', () => {
       };
       expect(data.ruleAwareness.knownLimits[0]).toMatchObject({
         findingId: 'readiness-integrity',
-        statement: expect.stringContaining('suffocation round countdown'),
+        statement: expect.stringContaining(
+          'does not gate stabilization or HP recovery',
+        ),
       });
+      expect(data.ruleAwareness.knownLimits[0].statement).not.toMatch(
+        /held its breath|suffocation round countdown/i,
+      );
     }
 
     const longRest = registry.invoke(

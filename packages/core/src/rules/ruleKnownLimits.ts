@@ -116,12 +116,12 @@ export const RULE_KNOWN_LIMITS: Readonly<
       designOwner: 'eshyra-2n1t.1',
     }),
   ]),
-  // R0 confirmed: the breath countdown has no state owner; hpLifecycle.ts adjustHp handles the 0-HP transition, while toolAdjustHp.ts and toolStabilizeCharacter.ts do not gate recovery on breathing.
+  // R0 confirmed: hpLifecycle.ts adjustHp handles the 0-HP transition, while toolAdjustHp.ts and toolStabilizeCharacter.ts do not gate recovery on breathing.
   'rule:suffocating': Object.freeze([
     Object.freeze({
       limit: 'partial',
       statement:
-        'Eshyra does not track how long a creature has held its breath or the suffocation round countdown; the DM tracks both from this rule. When the creature drops to 0 hit points, apply it with adjust_hp, which runs the dying rules. Eshyra does not gate stabilization or HP recovery on renewed breathing: do not call stabilize_character or restore HP before the creature can breathe.',
+        'When the creature drops to 0 hit points, apply it with adjust_hp, which runs the dying rules. Eshyra does not gate stabilization or HP recovery on renewed breathing: do not call stabilize_character or restore HP before the creature can breathe.',
       findingId: 'readiness-integrity',
     }),
   ]),

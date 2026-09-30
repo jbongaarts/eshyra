@@ -184,7 +184,7 @@ export function requireRuleDeterministicCapabilityContract(
   return contract;
 }
 
-type CoverageRow = { readonly status: string };
+type CoverageRow = { readonly implementation?: object };
 type CapabilityBinding = {
   readonly ruleKey: string;
   readonly capability: string;
@@ -200,7 +200,7 @@ export function validateRuleDeterministicCapabilityContracts(
   const errors: string[] = [];
   const implemented = new Set(
     Object.entries(coverage)
-      .filter(([, row]) => row.status === 'implemented')
+      .filter(([, row]) => row.implementation !== undefined)
       .map(([key]) => key),
   );
   for (const [capability, contract] of Object.entries(contracts)) {

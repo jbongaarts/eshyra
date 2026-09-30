@@ -1477,9 +1477,9 @@ export type GameplayReadinessReport = {
    * Rule-record disposition & engine-procedure coverage counts
    * (eshyra-o9bd.18.7.8.1): what every `rule:*` record IS (reference-prose /
    * definition / table-backed / duplicate / engine-procedure) crossed with,
-   * for engine-procedure rows, the projected runtime statement status.
-   * `noRuntimeStatement` makes no support or safety claim. The
-   * `partial`/`unimplemented`/`designBlocked` buckets are visible gaps
+   * for engine-procedure rows, independent runtime statement channels.
+   * `noRuntimeStatement` makes no support or safety claim. The known-limit
+   * buckets are visible gaps
    * that do not by themselves fail this
    * report (see `dispositionErrors` for registry-integrity failures, which
    * do).
@@ -2142,24 +2142,28 @@ export function formatGameplayReadinessReport(
     'Rule-record disposition & engine-procedure coverage (eshyra-o9bd.18.7.8.1)',
     '- Scope: exact rule:* classification only; not corpus-wide semantic, discovery, capability, or exclusive-clause ownership.',
     `- reference-prose: ${report.rules.referencesProse}; definition: ${report.rules.definitions}; table-backed: ${report.rules.tableBacked}; duplicate: ${report.rules.duplicates}`,
-    `- engine-procedure: implemented ${report.rules.engineProcedure.implemented}; model-adjudicated-supported ${report.rules.engineProcedure.modelAdjudicatedSupported}; no-runtime-statement ${report.rules.engineProcedure.noRuntimeStatement}; partial ${report.rules.engineProcedure.partial.length}; unimplemented ${report.rules.engineProcedure.unimplemented.length}; design-blocked ${report.rules.engineProcedure.designBlocked.length}`,
-    'Partial (actionable gaps: key — missing)',
-    ...(report.rules.engineProcedure.partial.length === 0
+    `- engine-procedure channels: implementation ${report.rules.engineProcedure.implementation}; adjudication context ${report.rules.engineProcedure.adjudicationContext}; known limits: partial ${report.rules.engineProcedure.knownLimits.partial.length}, unimplemented ${report.rules.engineProcedure.knownLimits.unimplemented.length}, deferred ${report.rules.engineProcedure.knownLimits.deferred.length}; no-runtime-statement keys ${report.rules.engineProcedure.noRuntimeStatement}`,
+    '- A key may count in several channels; no-runtime-statement means no channel facts.',
+    'Partial known limits (key — statement)',
+    ...(report.rules.engineProcedure.knownLimits.partial.length === 0
       ? ['(none)']
-      : report.rules.engineProcedure.partial.map(
-          (row) => `- ${row.key} — ${row.missing}`,
+      : report.rules.engineProcedure.knownLimits.partial.map(
+          (row) =>
+            `- ${row.key} — ${row.statement} [finding: ${row.findingId}]`,
         )),
-    'Unimplemented (transitional actionable gaps: key — missing)',
-    ...(report.rules.engineProcedure.unimplemented.length === 0
+    'Unimplemented known limits (key — statement)',
+    ...(report.rules.engineProcedure.knownLimits.unimplemented.length === 0
       ? ['(none)']
-      : report.rules.engineProcedure.unimplemented.map(
-          (row) => `- ${row.key} — ${row.missing}`,
+      : report.rules.engineProcedure.knownLimits.unimplemented.map(
+          (row) =>
+            `- ${row.key} — ${row.statement} [finding: ${row.findingId}]`,
         )),
-    'Design-blocked (key — design owner)',
-    ...(report.rules.engineProcedure.designBlocked.length === 0
+    'Deferred known limits (key — design owner)',
+    ...(report.rules.engineProcedure.knownLimits.deferred.length === 0
       ? ['(none)']
-      : report.rules.engineProcedure.designBlocked.map(
-          (row) => `- ${row.key} — ${row.designOwner}`,
+      : report.rules.engineProcedure.knownLimits.deferred.map(
+          (row) =>
+            `- ${row.key} — ${row.designOwner} [finding: ${row.findingId}]`,
         )),
     `External clauses (clause-level cross-bead ownership, not auto-resolved on bead closure): ${report.rules.engineProcedure.externalClauses.length}`,
     ...(report.rules.engineProcedure.externalClauses.length === 0
@@ -2168,7 +2172,7 @@ export function formatGameplayReadinessReport(
           (row) => `- ${row.key}: ${row.clause} → ${row.bead}`,
         )),
     '',
-    `Adjudication-context inventory: ${report.rules.adjudicationContextInventory.length} model-adjudicated procedures with retrievable context requirements`,
+    `Adjudication-context inventory: ${report.rules.adjudicationContextInventory.length} procedures with positive tool mappings`,
     ...report.rules.adjudicationContextInventory.map(
       (row) => `- ${row.key}: ${row.contextRequirement}`,
     ),
