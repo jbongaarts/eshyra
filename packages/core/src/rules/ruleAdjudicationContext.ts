@@ -21,7 +21,7 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
   'action:dash': Object.freeze({
     tools: Object.freeze(['lookup_rules', 'spend_turn_resource']),
     dmContext:
-      'Record the Dash action with spend_turn_resource; its movement is represented by the turn activity.',
+      'Spend the Dash action with spend_turn_resource and record the extra movement in its activity text.',
   }),
   // R0 confirmed: action:disengage (disengage) uses spend_turn_resource; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts.
   'action:disengage': Object.freeze({
@@ -59,11 +59,15 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Spend the Hide action with spend_turn_resource in combat, then use resolve_check for the Dexterity (Stealth) check.',
   }),
-  // R0 confirmed: action:ready (ready) uses spend_turn_resource; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts.
+  // R0 rewritten (Sol review F6): readying a spell casts it at Ready time and holds its energy; spend_turn_resource requires spellRef for a cast action and spend_spell_slot records the slot. Tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, packages/core/src/orchestrator/toolSpendSpellSlot.ts.
   'action:ready': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'spend_turn_resource']),
+    tools: Object.freeze([
+      'lookup_rules',
+      'spend_turn_resource',
+      'spend_spell_slot',
+    ]),
     dmContext:
-      'Spend the Ready action with spend_turn_resource, then spend the reaction with spend_turn_resource if its declared trigger occurs.',
+      'Spend the Ready action with spend_turn_resource, then spend the reaction with spend_turn_resource if the declared trigger occurs. When readying a spell, pass its spellRef on the Ready action and spend the slot with spend_spell_slot when it is readied, before any trigger.',
   }),
   // R0 confirmed: action:search (search) uses spend_turn_resource, resolve_check; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
   'action:search': Object.freeze({
@@ -115,33 +119,24 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Record received coins with gain_currency, payments with spend_currency, and exact denomination changes with convert_currency.',
   }),
-  // R0 confirmed: rule:combat-step-by-step (combat step by step) uses start_encounter, set_surprised, begin_turn, close_combat_instance; tool descriptions: packages/core/src/orchestrator/toolStartEncounter.ts, packages/core/src/orchestrator/toolSetSurprised.ts, packages/core/src/orchestrator/toolBeginTurn.ts, packages/core/src/orchestrator/toolCloseCombatInstance.ts.
+  // R0 rewritten (Sol review F8): the source's step 3 is rolling initiative; resolve_check resolves the Dexterity checks before begin_turn. Tool descriptions: packages/core/src/orchestrator/toolStartEncounter.ts, toolSetSurprised.ts, toolResolveCheck.ts, toolBeginTurn.ts, toolCloseCombatInstance.ts.
   'rule:combat-step-by-step': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
       'start_encounter',
       'set_surprised',
+      'resolve_check',
       'begin_turn',
       'close_combat_instance',
     ]),
     dmContext:
-      'Start the encounter with start_encounter, mark surprised participants with set_surprised, advance their turns with begin_turn, and close combat with close_combat_instance.',
+      'Start the encounter with start_encounter, mark surprised participants with set_surprised, resolve initiative with resolve_check, advance turns in initiative order with begin_turn, and close combat with close_combat_instance.',
   }),
-  // R0 confirmed: rule:complex-traps (complex traps) uses start_encounter, update_combatant; tool descriptions: packages/core/src/orchestrator/toolStartEncounter.ts, packages/core/src/orchestrator/toolUpdateCombatant.ts.
-  'rule:complex-traps': Object.freeze({
-    tools: Object.freeze([
-      'lookup_rules',
-      'start_encounter',
-      'update_combatant',
-    ]),
-    dmContext:
-      'If a complex trap participates in combat, include it with start_encounter and record its combatant changes with update_combatant.',
-  }),
-  // R0 confirmed: rule:consumables (activation consumes the item) uses use_item for pack-bound operations or remove_item for an unbound physical item; tool descriptions: packages/core/src/orchestrator/toolUseItem.ts, packages/core/src/orchestrator/toolRemoveItem.ts.
+  // R0 rewritten (Sol review F5): use_item and remove_item address character-held inventory only (CHARACTER_TARGET_SCHEMA). Tool descriptions: packages/core/src/orchestrator/toolUseItem.ts, packages/core/src/orchestrator/toolRemoveItem.ts.
   'rule:consumables': Object.freeze({
     tools: Object.freeze(['lookup_rules', 'use_item', 'remove_item']),
     dmContext:
-      'Use use_item for a pack-bound consumable operation; after an unbound consumable is used, record its destruction with remove_item.',
+      'For a consumable a character holds, use use_item for a pack-bound consumable operation; after an unbound consumable is used, record its destruction with remove_item.',
   }),
   // R0 confirmed: rule:dexterity-attack-rolls-and-damage (dexterity attack rolls and damage) uses resolve_check, resolve_damage; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts, packages/core/src/orchestrator/toolResolveDamage.ts.
   'rule:dexterity-attack-rolls-and-damage': Object.freeze({
@@ -180,16 +175,18 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use calc with days_without_food_limit for the number of days a creature can go without food before deprivation begins.',
   }),
-  // R0 confirmed: rule:grappling uses resolve_contest, add_condition for characters, and update_combatant for encounter combatants.
+  // R0 rewritten (Sol review F10): the grapple replaces one attack of the Attack action; escape uses the grappled creature's action and a contest; release or escape removes the condition. Tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, toolResolveContest.ts, toolAddCondition.ts, toolRemoveCondition.ts, toolUpdateCombatant.ts.
   'rule:grappling': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
+      'spend_turn_resource',
       'resolve_contest',
       'add_condition',
+      'remove_condition',
       'update_combatant',
     ]),
     dmContext:
-      'Resolve the Athletics contest with resolve_contest. On success, record grappled on a character with add_condition or on an encounter combatant with update_combatant addCondition {id: "grappled"}.',
+      'The grapple replaces one attack of the Attack action spent with spend_turn_resource; resolve its contest with resolve_contest and, on success, record grappled on a character with add_condition or on an encounter combatant with update_combatant addCondition {id: "grappled"}. For an escape, spend the grappled creature\'s action with spend_turn_resource and resolve its contest with resolve_contest; on escape or release, remove grappled with remove_condition or update_combatant removeCondition "grappled".',
   }),
   // SRD Hiding: a hider's Dexterity (Stealth) total remains until discovery or the hider stops hiding; active Wisdom (Perception) checks compare against that retained total.
   'rule:hiding': Object.freeze({
@@ -197,25 +194,25 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use resolve_check for the hider’s Dexterity (Stealth) check and retain its total. For a later active search, use resolve_check for the searcher’s Wisdom (Perception) check with vs set to that retained Stealth total. For passive observers, use calc with passive_score and compare it to the retained total.',
   }),
-  // R0 confirmed: rule:hit-points (hit points) applies to any creature; characters use adjust_hp and encounter combatants use update_combatant hpDelta; tool descriptions: packages/core/src/orchestrator/toolAdjustHp.ts, packages/core/src/orchestrator/toolUpdateCombatant.ts.
-  'rule:hit-points': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'adjust_hp', 'update_combatant']),
-    dmContext:
-      'Apply changes to a character’s current hit points with adjust_hp; for an encounter combatant, use update_combatant with hpDelta.',
-  }),
-  // R0 confirmed: rule:interacting-with-objects (interacting with objects) uses spend_turn_resource; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts.
+  // R0 rewritten (source identity): this record is the environment passage (forcing a rusted lever with a Strength check against a GM-set DC; damaging objects), not combat's free object interaction (rule:interacting-with-objects-around-you). resolve_check with vs carries the check; tool description: packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:interacting-with-objects': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'spend_turn_resource']),
+    tools: Object.freeze(['lookup_rules', 'resolve_check']),
     dmContext:
-      'Record the free object interaction or required action with spend_turn_resource during combat.',
+      'When forcing or manipulating an object calls for a check, such as a Strength check to wrench a stuck lever, use resolve_check with kind ability_check and vs set to the DC the DM chooses for the task.',
   }),
-  // R0 confirmed: rule:jumping (jumping) uses calc; tool descriptions: packages/core/src/orchestrator/toolCalc.ts.
+  // R0 rewritten (Sol review F11): calc jump_distance carries distance; the source's DC 10 obstacle and landing checks resolve through resolve_check, and a failed landing imposes prone (character vs combatant). Tool descriptions: packages/core/src/orchestrator/toolCalc.ts, toolResolveCheck.ts, toolAddCondition.ts, toolUpdateCombatant.ts.
   'rule:jumping': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'calc']),
+    tools: Object.freeze([
+      'lookup_rules',
+      'calc',
+      'resolve_check',
+      'add_condition',
+      'update_combatant',
+    ]),
     dmContext:
-      'Use calc with jump_distance and the jumper’s Strength score, modifier, and running-start choice.',
+      'Use calc with jump_distance and the jumper\'s Strength score, modifier, and running-start choice. For the DC 10 Strength (Athletics) obstacle check or Dexterity (Acrobatics) landing check, use resolve_check with vs 10; after a failed landing, record prone on a character with add_condition or on an encounter combatant with update_combatant addCondition {id: "prone"}.',
   }),
-  // R0 confirmed: rule:knocking-a-creature-out (melee knockout at zero HP) applies to any creature; characters use adjust_hp then stabilize_character, encounter combatants use update_combatant hpDelta with status "unconscious"; tool descriptions: packages/core/src/orchestrator/toolAdjustHp.ts, packages/core/src/orchestrator/toolStabilizeCharacter.ts, packages/core/src/orchestrator/toolUpdateCombatant.ts.
+  // R0 rewritten (Sol review F3): for characters, adjust_hp can kill outright by massive damage (hpLifecycle.ts instant death) and stabilize_character stabilizes only a dying character, so the character path applies only when the damage leaves the character dying (trap in RULE_KNOWN_LIMITS); encounter combatants take hpDelta with status unconscious. Tool descriptions: packages/core/src/orchestrator/toolAdjustHp.ts, toolStabilizeCharacter.ts, toolUpdateCombatant.ts.
   'rule:knocking-a-creature-out': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
@@ -224,7 +221,7 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
       'update_combatant',
     ]),
     dmContext:
-      'When the attacker chooses a nonlethal result, apply the damage to a character with adjust_hp and then mark it stable with stabilize_character; for an encounter combatant, use update_combatant with hpDelta and status "unconscious".',
+      'When the attacker chooses a nonlethal result against a character, apply the damage with adjust_hp and, if it leaves the character dying, mark it stable with stabilize_character; for an encounter combatant, use update_combatant with hpDelta and status "unconscious".',
   }),
   // R0 confirmed: rule:lifting-and-carrying (lifting and carrying) uses calc; tool descriptions: packages/core/src/orchestrator/toolCalc.ts.
   'rule:lifting-and-carrying': Object.freeze({
@@ -232,17 +229,22 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use calc with carry_capacity and the creature’s Strength score and size for its carrying and lifting limits.',
   }),
-  // R0 confirmed: rule:making-an-attack (making an attack) uses resolve_check, resolve_damage; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts, packages/core/src/orchestrator/toolResolveDamage.ts.
+  // R0 rewritten (Sol review F7): the source rolls damage on a hit unless the attack specifies otherwise. Tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts, toolResolveDamage.ts.
   'rule:making-an-attack': Object.freeze({
     tools: Object.freeze(['lookup_rules', 'resolve_check', 'resolve_damage']),
     dmContext:
-      'Resolve the attack against the target AC with resolve_check; on a hit, use resolve_damage for the damage packet.',
+      'Resolve the attack against the target AC with resolve_check; on a hit that deals damage, use resolve_damage for its damage packet.',
   }),
-  // R0 confirmed: rule:recuperating (recuperating) uses advance_time, resolve_check; tool descriptions: packages/core/src/orchestrator/toolRest.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
+  // R0 rewritten (Sol review F13): advance_time and resolve_check carry the period and the DC 15 save; end_effect carries the first success option when the effect is tracked. The 24-hour advantage option has no stated tool path. Tool descriptions: packages/core/src/orchestrator/toolRest.ts, toolResolveCheck.ts, toolEndEffect.ts.
   'rule:recuperating': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'advance_time', 'resolve_check']),
+    tools: Object.freeze([
+      'lookup_rules',
+      'advance_time',
+      'resolve_check',
+      'end_effect',
+    ]),
     dmContext:
-      'Record the recuperation period with advance_time, then resolve its Constitution saving throw at the stated DC with resolve_check.',
+      'Record the recuperation period with advance_time, then resolve its Constitution saving throw at the stated DC with resolve_check. If the chosen success result ends a tracked effect that prevents regaining hit points, end it with end_effect.',
   }),
   // R0 confirmed: rule:rolling-1-or-20 (rolling 1 or 20) uses resolve_check; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:rolling-1-or-20': Object.freeze({
@@ -279,15 +281,16 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use resolve_check for each initiative check, then call begin_turn in the resulting order.',
   }),
-  // R0 confirmed: rule:two-weapon-fighting (two weapon fighting) uses spend_turn_resource, resolve_check; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
+  // R0 rewritten (Sol review F12): the bonus attack's damage omits a positive ability modifier; resolve_damage packet modifiers carry it. Tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, toolResolveCheck.ts, toolResolveDamage.ts.
   'rule:two-weapon-fighting': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
       'spend_turn_resource',
       'resolve_check',
+      'resolve_damage',
     ]),
     dmContext:
-      'Spend the off-hand bonus action with spend_turn_resource and resolve its attack with resolve_check.',
+      'Spend the off-hand bonus action with spend_turn_resource and resolve its attack with resolve_check; in its resolve_damage packet, omit the ability modifier unless it is negative.',
   }),
   // R0 confirmed: rule:unseen-attackers-and-targets (unseen attackers and targets) uses resolve_check; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:unseen-attackers-and-targets': Object.freeze({
@@ -307,11 +310,11 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use resolve_check with kind saving_throw for the Constitution save after a day of inadequate water.',
   }),
-  // R0 confirmed: rule:cover (cover) uses resolve_check; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts.
+  // R0 rewritten (Sol review F4): resolve_check modifiers apply to the rolling side and vs is a bare AC/DC, so cover raises vs for an attack against the covered target and is a declared modifier on the covered creature's Dexterity save. Tool description: packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:cover': Object.freeze({
     tools: Object.freeze(['lookup_rules', 'resolve_check']),
     dmContext:
-      'Pass the bonus for the target’s degree of cover to resolve_check as a declared modifier to AC or to the Dexterity saving throw.',
+      "For an attack against a target with cover, add the cover bonus to the target's AC in resolve_check's vs; for the covered creature's Dexterity saving throw, pass the bonus to resolve_check as a declared modifier.",
   }),
   // R0 confirmed: rule:opportunity-attacks (opportunity attacks) uses spend_turn_resource, resolve_check; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:opportunity-attacks': Object.freeze({
@@ -323,7 +326,7 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Spend the attacker’s reaction with spend_turn_resource, then resolve the opportunity attack with resolve_check.',
   }),
-  // R0 confirmed: rule:charges (item charge expenditure and recharge) uses use_item for pack-bound operations, or generic usage counters for unbound items; tool descriptions: packages/core/src/orchestrator/toolUseItem.ts, packages/core/src/orchestrator/toolSpendUsage.ts, packages/core/src/orchestrator/toolRestoreUsage.ts, packages/core/src/orchestrator/toolResetUsage.ts.
+  // R0 rewritten (Sol review F5): use_item addresses character-held items and spend_usage/restore_usage/reset_usage carry unbound item charges for a character; combatant usage covers statblock abilities only. Tool descriptions: packages/core/src/orchestrator/toolUseItem.ts, toolSpendUsage.ts, toolRestoreUsage.ts, toolResetUsage.ts.
   'rule:charges': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
@@ -333,7 +336,7 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
       'reset_usage',
     ]),
     dmContext:
-      'Use use_item for a pack-bound item’s declared charge-spending operation. For an unbound item, use spend_usage with its charge maximum and reset economy, restore_usage for rolled recovery, and reset_usage for a full recharge event.',
+      "For an item a character holds, use use_item for a pack-bound item's declared charge-spending operation. For an unbound item a character holds, use spend_usage with its charge maximum and reset economy, restore_usage for rolled recovery, and reset_usage for a full recharge event.",
   }),
 });
 

@@ -234,7 +234,7 @@ describe('rule awareness', () => {
     expect(prone?.dmContext).toContain('removeCondition "prone"');
     // Sibling class: HP writes. adjust_hp and stabilize_character address
     // characters; encounter combatants take HP through update_combatant.
-    for (const key of ['rule:hit-points', 'rule:knocking-a-creature-out']) {
+    for (const key of ['rule:knocking-a-creature-out']) {
       const context = ruleStatements(key).adjudicationContext;
       expect(context?.tools).toEqual(
         expect.arrayContaining(['adjust_hp', 'update_combatant']),
@@ -283,6 +283,63 @@ describe('rule awareness', () => {
       expect(limit?.statement).toContain('cannot currently be persisted');
       expect(limit?.statement).not.toMatch(/DM tracks/);
     }
+  });
+
+  it('maps rules by their source procedure, not their name', () => {
+    // rule:hit-points is the monster HP-construction passage (Hit Dice by
+    // size, Constitution modifier x Hit Dice), which no exposed tool carries;
+    // it must not map to live HP mutation (adjust_hp / update_combatant).
+    expect(
+      ruleStatements('rule:hit-points').adjudicationContext,
+    ).toBeUndefined();
+    // rule:interacting-with-objects is the environment passage (a GM-set DC
+    // Strength check to force a lever), not combat's free object interaction.
+    const objects = ruleStatements(
+      'rule:interacting-with-objects',
+    ).adjudicationContext;
+    expect(objects?.tools).not.toContain('spend_turn_resource');
+    expect(objects?.dmContext).toMatch(
+      /resolve_check with kind ability_check and vs/,
+    );
+  });
+
+  it('keeps each mapping to the source procedure and the tool contract', () => {
+    const ctx = (key: string) => ruleStatements(key).adjudicationContext;
+    // Cover: resolve_check modifiers apply to the roller; vs is a bare AC/DC.
+    expect(ctx('rule:cover')?.dmContext).toContain("AC in resolve_check's vs");
+    expect(ctx('rule:cover')?.dmContext).not.toMatch(/modifier to AC/);
+    // Readying a spell casts it (slot spent) at Ready time.
+    expect(ctx('action:ready')?.tools).toContain('spend_spell_slot');
+    expect(ctx('action:ready')?.dmContext).toContain('spellRef');
+    // Grapple escape/release removes the condition on both target domains.
+    expect(ctx('rule:grappling')?.dmContext).toMatch(
+      /remove_condition or update_combatant removeCondition "grappled"/,
+    );
+    // Initiative is rolled between surprise and turns.
+    expect(ctx('rule:combat-step-by-step')?.tools).toContain('resolve_check');
+    // Damage only on a hit that deals damage; two-weapon damage modifier rule.
+    expect(ctx('rule:making-an-attack')?.dmContext).toContain(
+      'on a hit that deals damage',
+    );
+    expect(ctx('rule:two-weapon-fighting')?.dmContext).toContain(
+      'omit the ability modifier unless it is negative',
+    );
+    // Knockout: the character path holds only while the target is dying;
+    // instant death from massive damage is a disclosed trap.
+    expect(ctx('rule:knocking-a-creature-out')?.dmContext).toContain(
+      'if it leaves the character dying',
+    );
+    expect(
+      ruleStatements('rule:knocking-a-creature-out').knownLimits[0]?.statement,
+    ).toContain('instant death');
+    // Water: two levels at once when exhaustion already exists.
+    expect(ruleStatements('rule:water').knownLimits[0]?.statement).toContain(
+      'two levels at once',
+    );
+    // Ammunition stays recoverable (dropped, then claim_item for half).
+    const ammo = ruleStatements('rule:weapon-properties').knownLimits[0];
+    expect(ammo?.statement).toContain('disposition dropped');
+    expect(ammo?.statement).toContain('claim_item');
   });
 
   it('uses the retained hiding check total for later searches', () => {

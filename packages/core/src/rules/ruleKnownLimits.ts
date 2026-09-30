@@ -14,10 +14,13 @@ export interface RuleKnownLimit {
   }[];
 }
 
-function exhaustionLevelLimit(cause: string): RuleKnownLimit {
+function exhaustionLevelLimit(
+  cause: string,
+  sourceSpecific = '',
+): RuleKnownLimit {
   return Object.freeze({
     limit: 'partial' as const,
-    statement: `Exhaustion from ${cause} is graded. add_condition can record it only for a character with no exhaustion yet, and must then pass {id: "exhaustion", level: 1}, because long-rest recovery requires a level from 1 to 6. add_condition ignores an exhaustion condition the character already has, and no exposed tool raises an existing exhaustion level, so a further level from this rule cannot currently be persisted.`,
+    statement: `Exhaustion from ${cause} is graded. add_condition can record it only for a character with no exhaustion yet, and must then pass {id: "exhaustion", level: 1}, because long-rest recovery requires a level from 1 to 6. add_condition ignores an exhaustion condition the character already has, and no exposed tool raises an existing exhaustion level, so a further level from this rule cannot currently be persisted.${sourceSpecific}`,
     findingId: 'readiness-integrity',
   });
 }
@@ -139,8 +142,24 @@ export const RULE_KNOWN_LIMITS: Readonly<
   // {id:'exhaustion', level:1..6} and throws on a missing level. So
   // add_condition can neither increment exhaustion nor safely record it
   // without a level. Shared by the three source procedures that impose it.
+  // R0 new trap (Sol review F3): hpLifecycle.ts applyDamage turns overflow
+  // >= hp_max into instant death and toolAdjustHp.ts has no nonlethal option;
+  // hpLifecycle.ts stabilizeCharacter refuses any state but dying.
+  'rule:knocking-a-creature-out': Object.freeze([
+    Object.freeze({
+      limit: 'partial' as const,
+      statement:
+        'adjust_hp applies instant death when damage beyond 0 hit points equals or exceeds the character’s hit point maximum, even when the attacker chooses to knock the character out, and stabilize_character stabilizes only a dying character. A nonlethal knockout of a character killed outright by that damage cannot currently be recorded.',
+      findingId: 'readiness-integrity',
+    }),
+  ]),
   'rule:food': Object.freeze([exhaustionLevelLimit('lack of food')]),
-  'rule:water': Object.freeze([exhaustionLevelLimit('inadequate water')]),
+  'rule:water': Object.freeze([
+    exhaustionLevelLimit(
+      'inadequate water',
+      ' When the character already has exhaustion, this rule imposes two levels at once, and neither can currently be persisted.',
+    ),
+  ]),
   'rule:speed': Object.freeze([exhaustionLevelLimit('a forced march')]),
   // R0 confirmed: the source says an Unarmored Defense feature from a second class is not gained; ADR 0018 §6 and closed bead eshyra-2n1t.1 defer the interaction.
   'rule:unarmored-defense': Object.freeze([
@@ -157,7 +176,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
     Object.freeze({
       limit: 'partial',
       statement:
-        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece from the character’s inventory with remove_item after each such attack, and apply the loading restriction before another attack with that weapon.',
+        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece after each such attack with remove_item and disposition dropped, which keeps expended ammunition as claimable rows at the battle location; after the battle, recover half of those rows with claim_item. Apply the loading restriction before another attack with that weapon.',
       findingId: 'readiness-integrity',
     }),
   ]),
