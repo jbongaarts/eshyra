@@ -9,10 +9,10 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1860,
+  "rowCount": 1861,
   "dispositionCounts": {
     "complete": 427,
-    "model-adjudicated": 1228,
+    "model-adjudicated": 1229,
     "not-mechanical": 196,
     "typed-core-with-prose-qualifier": 3,
     "unsupported": 6
@@ -4565,6 +4565,26 @@
       "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
       "deterministicConsumers": "no deterministic consumer is registered for this field",
       "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].trigger",
+      "disposition": "model-adjudicated",
+      "typedSchemaOrConsumer": null,
+      "retainedProseBoundary": null,
+      "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "condition"
+      ],
+      "fieldPath": "data.mechanics.effects[].triggerCondition",
+      "representativeValues": [
+        "incapacitated"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "the registered system/kind validator checks the declared string or string-array shape",
+      "deterministicConsumers": "no deterministic consumer is registered for this field",
+      "currentAuditReadiness": "syntax alone does not establish deterministic authority for data.mechanics.effects[].triggerCondition",
       "disposition": "model-adjudicated",
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
