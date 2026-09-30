@@ -197,11 +197,11 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use resolve_check for the hider’s Dexterity (Stealth) check and retain its total. For a later active search, use resolve_check for the searcher’s Wisdom (Perception) check with vs set to that retained Stealth total. For passive observers, use calc with passive_score and compare it to the retained total.',
   }),
-  // R0 confirmed: rule:hit-points (hit points) uses adjust_hp; tool descriptions: packages/core/src/orchestrator/toolAdjustHp.ts.
+  // R0 confirmed: rule:hit-points (hit points) applies to any creature; characters use adjust_hp and encounter combatants use update_combatant hpDelta; tool descriptions: packages/core/src/orchestrator/toolAdjustHp.ts, packages/core/src/orchestrator/toolUpdateCombatant.ts.
   'rule:hit-points': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'adjust_hp']),
+    tools: Object.freeze(['lookup_rules', 'adjust_hp', 'update_combatant']),
     dmContext:
-      'Apply changes to a character’s current hit points with adjust_hp.',
+      'Apply changes to a character’s current hit points with adjust_hp; for an encounter combatant, use update_combatant with hpDelta.',
   }),
   // R0 confirmed: rule:interacting-with-objects (interacting with objects) uses spend_turn_resource; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts.
   'rule:interacting-with-objects': Object.freeze({
@@ -215,11 +215,16 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use calc with jump_distance and the jumper’s Strength score, modifier, and running-start choice.',
   }),
-  // R0 confirmed: rule:knocking-a-creature-out (melee knockout at zero HP) uses adjust_hp and stabilize_character; tool descriptions: packages/core/src/orchestrator/toolAdjustHp.ts, packages/core/src/orchestrator/toolStabilizeCharacter.ts.
+  // R0 confirmed: rule:knocking-a-creature-out (melee knockout at zero HP) applies to any creature; characters use adjust_hp then stabilize_character, encounter combatants use update_combatant hpDelta with status "unconscious"; tool descriptions: packages/core/src/orchestrator/toolAdjustHp.ts, packages/core/src/orchestrator/toolStabilizeCharacter.ts, packages/core/src/orchestrator/toolUpdateCombatant.ts.
   'rule:knocking-a-creature-out': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'adjust_hp', 'stabilize_character']),
+    tools: Object.freeze([
+      'lookup_rules',
+      'adjust_hp',
+      'stabilize_character',
+      'update_combatant',
+    ]),
     dmContext:
-      'Apply the knockout damage to a character with adjust_hp, then mark the character stable with stabilize_character when the attacker chooses a nonlethal result.',
+      'When the attacker chooses a nonlethal result, apply the damage to a character with adjust_hp and then mark it stable with stabilize_character; for an encounter combatant, use update_combatant with hpDelta and status "unconscious".',
   }),
   // R0 confirmed: rule:lifting-and-carrying (lifting and carrying) uses calc; tool descriptions: packages/core/src/orchestrator/toolCalc.ts.
   'rule:lifting-and-carrying': Object.freeze({

@@ -232,6 +232,16 @@ describe('rule awareness', () => {
     const prone = ruleStatements('rule:being-prone').adjudicationContext;
     expect(prone?.tools).toContain('remove_condition');
     expect(prone?.dmContext).toContain('removeCondition "prone"');
+    // Sibling class: HP writes. adjust_hp and stabilize_character address
+    // characters; encounter combatants take HP through update_combatant.
+    for (const key of ['rule:hit-points', 'rule:knocking-a-creature-out']) {
+      const context = ruleStatements(key).adjudicationContext;
+      expect(context?.tools).toEqual(
+        expect.arrayContaining(['adjust_hp', 'update_combatant']),
+      );
+      expect(context?.dmContext).toContain('encounter combatant');
+      expect(context?.dmContext).toContain('update_combatant with hpDelta');
+    }
   });
 
   it('uses the retained hiding check total for later searches', () => {
