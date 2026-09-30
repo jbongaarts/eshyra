@@ -50,3 +50,34 @@ describe('deriveConditionRecordMechanics exhaustion level lifecycle', () => {
     expect(lifecycle?.gain).toBe('increase-by-amount-specified-by-effect');
   });
 });
+
+describe('deriveConditionRecordMechanics Grappled trigger condition', () => {
+  it('projects only the source-named incapacitated trigger condition', () => {
+    // SRD 5.1 p. 358: “The condition ends if the grappler is incapacitated
+    // (see the condition).” The reach clause names no condition.
+    const mechanics = deriveConditionRecordMechanics({
+      name: 'Grappled',
+      description:
+        'The condition ends if the grappler is incapacitated (see the condition), or if an effect removes the grappled creature from the grappler’s reach.',
+      effects: [],
+      sourcePage: 358,
+    });
+    expect(
+      mechanics?.effects?.filter(
+        (effect) => effect.kind === 'conditionEndsWhen',
+      ),
+    ).toEqual([
+      {
+        kind: 'conditionEndsWhen',
+        condition: 'grappled',
+        trigger: 'grappler-incapacitated',
+        triggerCondition: 'incapacitated',
+      },
+      {
+        kind: 'conditionEndsWhen',
+        condition: 'grappled',
+        trigger: 'removed-from-grappler-reach',
+      },
+    ]);
+  });
+});

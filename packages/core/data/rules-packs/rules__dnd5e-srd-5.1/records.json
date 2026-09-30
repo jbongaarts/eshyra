@@ -10290,7 +10290,8 @@
           {
             "kind": "conditionEndsWhen",
             "condition": "grappled",
-            "trigger": "grappler-incapacitated"
+            "trigger": "grappler-incapacitated",
+            "triggerCondition": "incapacitated"
           },
           {
             "kind": "conditionEndsWhen",
