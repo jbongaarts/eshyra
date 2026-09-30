@@ -14,6 +14,14 @@ export interface RuleKnownLimit {
   }[];
 }
 
+function exhaustionLevelLimit(cause: string): RuleKnownLimit {
+  return Object.freeze({
+    limit: 'partial' as const,
+    statement: `Exhaustion from ${cause} is graded. add_condition can record it only for a character with no exhaustion yet, and must then pass {id: "exhaustion", level: 1}, because long-rest recovery requires a level from 1 to 6. add_condition ignores an exhaustion condition the character already has, so it cannot raise an existing level; the DM tracks any further level from this rule.`,
+    findingId: 'readiness-integrity',
+  });
+}
+
 /** Source-grounded limits re-derived against current runtime behavior under R0. */
 export const RULE_KNOWN_LIMITS: Readonly<
   Record<string, readonly RuleKnownLimit[]>
@@ -116,15 +124,24 @@ export const RULE_KNOWN_LIMITS: Readonly<
       designOwner: 'eshyra-2n1t.1',
     }),
   ]),
-  // R0 confirmed: hpLifecycle.ts adjustHp handles the 0-HP transition, while toolAdjustHp.ts and toolStabilizeCharacter.ts do not gate recovery on breathing.
+  // R0 confirmed, target-domain split: for characters hpLifecycle.ts adjustHp handles the 0-HP transition, and toolAdjustHp.ts / toolStabilizeCharacter.ts (character-only) do not gate recovery on breathing; for encounter combatants toolUpdateCombatant.ts hpDelta is likewise ungated.
   'rule:suffocating': Object.freeze([
     Object.freeze({
       limit: 'partial',
       statement:
-        'When the creature drops to 0 hit points, apply it with adjust_hp, which runs the dying rules. Eshyra does not gate stabilization or HP recovery on renewed breathing: do not call stabilize_character or restore HP before the creature can breathe.',
+        'When a character drops to 0 hit points, apply it with adjust_hp, which runs the dying rules. Eshyra does not gate stabilization or HP recovery on renewed breathing: do not call stabilize_character or restore the character’s HP with adjust_hp before it can breathe. For an encounter combatant, do not restore its hit points with update_combatant hpDelta before it can breathe.',
       findingId: 'readiness-integrity',
     }),
   ]),
+  // R0 rewritten (graded exhaustion): domainMutations.ts addCondition stores
+  // only the object it is given and returns added:false when a condition with
+  // the same id already exists, while rest.ts applyExhaustion requires
+  // {id:'exhaustion', level:1..6} and throws on a missing level. So
+  // add_condition can neither increment exhaustion nor safely record it
+  // without a level. Shared by the three source procedures that impose it.
+  'rule:food': Object.freeze([exhaustionLevelLimit('lack of food')]),
+  'rule:water': Object.freeze([exhaustionLevelLimit('inadequate water')]),
+  'rule:speed': Object.freeze([exhaustionLevelLimit('a forced march')]),
   // R0 confirmed: the source says an Unarmored Defense feature from a second class is not gained; ADR 0018 §6 and closed bead eshyra-2n1t.1 defer the interaction.
   'rule:unarmored-defense': Object.freeze([
     Object.freeze({

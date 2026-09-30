@@ -244,6 +244,37 @@ describe('rule awareness', () => {
     }
   });
 
+  it('scopes suffocation HP guidance by target domain', () => {
+    const [limit] = ruleStatements('rule:suffocating').knownLimits;
+    // adjust_hp / stabilize_character address characters only; encounter
+    // combatants take HP through update_combatant hpDelta.
+    expect(limit?.statement).toContain(
+      'When a character drops to 0 hit points',
+    );
+    expect(limit?.statement).not.toMatch(/When the creature drops/);
+    expect(limit?.statement).toContain('encounter combatant');
+    expect(limit?.statement).toContain('update_combatant hpDelta');
+  });
+
+  it('does not map graded exhaustion onto add_condition', () => {
+    // domainMutations.ts addCondition no-ops on an existing id, and rest.ts
+    // applyExhaustion requires {id:'exhaustion', level:1..6}; SRD food, water,
+    // and forced march each impose (further) exhaustion levels.
+    for (const key of ['rule:food', 'rule:water', 'rule:speed']) {
+      const statements = ruleStatements(key);
+      expect(statements.adjudicationContext?.tools).not.toContain(
+        'add_condition',
+      );
+      expect(statements.adjudicationContext?.dmContext).not.toContain(
+        'add_condition',
+      );
+      const [limit] = statements.knownLimits;
+      expect(limit?.findingId).toBe('readiness-integrity');
+      expect(limit?.statement).toContain('level: 1');
+      expect(limit?.statement).toContain('cannot raise an existing level');
+    }
+  });
+
   it('uses the retained hiding check total for later searches', () => {
     // SRD rule:hiding: "Until you are discovered or you stop hiding, that
     // check’s total is contested" by an active searcher's Perception check.

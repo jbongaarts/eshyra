@@ -217,19 +217,25 @@ statement channels follow the same rule.
   `rule:opportunity-attacks`, and `rule:charges` are rewritten to the tool
   mapping alone, keeping their approved tool sets except where the mapping
   corrects them (`rule:opportunity-attacks` resolves its attack through
-  `resolve_check`, not `roll`). `rule:suffocating` keeps only its trap (HP
-  recovery and `stabilize_character` are not gated on breathing, plus the
-  positive `adjust_hp` instruction). Its breath-duration and countdown
-  sentence is removed: no Eshyra tool or state touches that clause.
+  `resolve_check`, not `roll`). `rule:suffocating` keeps only its trap, split
+  by target domain: for a character, `adjust_hp` applies the 0-HP transition
+  and neither it nor `stabilize_character` is gated on breathing; for an
+  encounter combatant, `update_combatant` `hpDelta` is likewise ungated. Its
+  breath-duration and countdown sentence is removed: no Eshyra tool or state
+  touches that clause.
   `rule:channel-divinity` already meets the criteria and is unchanged.
 - **Positive mappings are target-domain correct.** A mapping names the tool
   that can actually write the state for the rule's subject.
   `add_condition` / `remove_condition` address characters only;
   encounter combatants take conditions through `update_combatant`. A rule
   about any creature names both paths and says which applies to which target.
-  A mapping also preserves the rule's own procedure. For example, a retained
-  roll is compared as a fixed total (`resolve_check` with `vs`), never
-  re-rolled through a tool that rolls both sides.
+  A mapping also preserves the rule's own procedure and the tool's state
+  contract. For example, a retained roll is compared as a fixed total
+  (`resolve_check` with `vs`), never re-rolled through a tool that rolls
+  both sides. Graded exhaustion is not mapped onto `add_condition`, which
+  ignores an existing condition id and so cannot raise a level. That gap is a
+  known limit on the rules that impose exhaustion (`rule:food`, `rule:water`,
+  `rule:speed`).
 - **Audit projection is per channel, not per row status.** R4's channels are
   independent (invariant 1), so the audit bundle cannot reduce a key to one
   exclusive status. Each engine-procedure key materializes as the set of
@@ -387,7 +393,7 @@ a hypothesis to test, not a result.
 |---|---|---|
 | `action:hide` `ruleRef` | existing declared record-key relationship resolves under the bundled SRD manifest | `lookup_rules` envelope carries the resolved relationship with `relationshipArtifact.state: 'present'` (**permanent**: durable tool contract); exact pointer is `/mechanics/effects/*/ruleRef` in `records.json` and `record-relationships.json`. `action:help` currently has no `ruleRef` leaf in the committed pack. |
 | `rule:long-rest` | legacy `unimplemented` limit **retired** (`toolRest.ts`, `eshyra-2n1t.9`) | `lookup_rules` envelope carries **no** unimplemented limit (**permanent**: guards against stale promotion) |
-| `rule:suffocating` | `partial` limit likely **confirmed** (no breath countdown state found in `src/`) | `lookup_rules` envelope carries the limit statement + `findingId` (**permanent**, if confirmed; otherwise the next confirmed limit row replaces it) |
+| `rule:suffocating` | `partial` limit **confirmed** as a trap: HP recovery and stabilization are not gated on breathing (A3 retires the breath-countdown clause and splits the statement by target domain) | `lookup_rules` envelope carries the limit statement + `findingId` (**permanent**) |
 | `rule:charges` | `partial` limit likely **rewritten** (expenditure landed with F5; pack-side charge data still external) | channel content matches the re-derived claim; `findingId`s resolve |
 | `rule:cover` | adjudication context confirmed | probe P1 packet carries `tools` + `dmContext` |
 | `rule:opportunity-attacks` | adjudication context confirmed or rewritten | probe P2 packet |

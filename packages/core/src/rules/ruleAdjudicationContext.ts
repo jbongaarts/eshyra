@@ -174,11 +174,11 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use calc with fall_damage_dice and evaluate the packet with resolve_damage. For a character, apply damage with adjust_hp and record prone with add_condition when applicable. For an encounter combatant, use update_combatant for damage and addCondition {id: "prone"} when applicable.',
   }),
-  // R0 confirmed: rule:food (food) uses calc, add_condition; tool descriptions: packages/core/src/orchestrator/toolCalc.ts, packages/core/src/orchestrator/toolAddCondition.ts.
+  // R0 rewritten: calc days_without_food_limit is a positive mapping; the add_condition exhaustion write is retired (add_condition does not grade or increment exhaustion; see RULE_KNOWN_LIMITS['rule:food']). Tool descriptions: packages/core/src/orchestrator/toolCalc.ts.
   'rule:food': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'calc', 'add_condition']),
+    tools: Object.freeze(['lookup_rules', 'calc']),
     dmContext:
-      'Use calc with days_without_food_limit for the Constitution threshold, then record resulting exhaustion with add_condition.',
+      'Use calc with days_without_food_limit for the number of days a creature can go without food before deprivation begins.',
   }),
   // R0 confirmed: rule:grappling uses resolve_contest, add_condition for characters, and update_combatant for encounter combatants.
   'rule:grappling': Object.freeze({
@@ -261,16 +261,11 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Resolve the opposed Athletics and Athletics or Acrobatics checks with resolve_contest. If prone is the chosen result, record it on a character with add_condition or on an encounter combatant with update_combatant addCondition {id: "prone"}.',
   }),
-  // R0 confirmed: rule:speed (speed) uses calc, resolve_check, add_condition; tool descriptions: packages/core/src/orchestrator/toolCalc.ts, packages/core/src/orchestrator/toolResolveCheck.ts, packages/core/src/orchestrator/toolAddCondition.ts.
+  // R0 rewritten: calc forced_march_dc and resolve_check are positive mappings; the add_condition exhaustion write is retired (see RULE_KNOWN_LIMITS['rule:speed']). Tool descriptions: packages/core/src/orchestrator/toolCalc.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:speed': Object.freeze({
-    tools: Object.freeze([
-      'lookup_rules',
-      'calc',
-      'resolve_check',
-      'add_condition',
-    ]),
+    tools: Object.freeze(['lookup_rules', 'calc', 'resolve_check']),
     dmContext:
-      'Use calc with forced_march_dc after the eighth travel hour, resolve_check for the Constitution save, and add_condition for resulting exhaustion.',
+      'For a forced march, use calc with forced_march_dc for each hour past the eighth and resolve_check with kind saving_throw for each Constitution save.',
   }),
   // R0 confirmed: rule:strength-attack-rolls-and-damage (strength attack rolls and damage) uses resolve_check, resolve_damage; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts, packages/core/src/orchestrator/toolResolveDamage.ts.
   'rule:strength-attack-rolls-and-damage': Object.freeze({
@@ -306,11 +301,11 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use calc with encumbrance_thresholds and the creature’s Strength score, then declare heavy-encumbrance disadvantage to resolve_check for affected checks.',
   }),
-  // R0 confirmed: rule:water (water) uses resolve_check, add_condition; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts, packages/core/src/orchestrator/toolAddCondition.ts.
+  // R0 rewritten: resolve_check for the saving throw is a positive mapping; the add_condition exhaustion write is retired (see RULE_KNOWN_LIMITS['rule:water']). Tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:water': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'resolve_check', 'add_condition']),
+    tools: Object.freeze(['lookup_rules', 'resolve_check']),
     dmContext:
-      'Use resolve_check for the Constitution save after inadequate water and add_condition for resulting exhaustion.',
+      'Use resolve_check with kind saving_throw for the Constitution save after a day of inadequate water.',
   }),
   // R0 confirmed: rule:cover (cover) uses resolve_check; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:cover': Object.freeze({
