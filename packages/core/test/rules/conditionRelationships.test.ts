@@ -132,38 +132,46 @@ describe('condition discovery relationships in the committed SRD pack', () => {
     ]);
   });
 
-  it('checks each actual excluded leaf against its source record name', () => {
+  it('checks every actual excluded leaf against its source record name', () => {
     const excluded = pack.records.flatMap((record) =>
-      resolveRecordRelationships(manifest, record, stack)
-        .filter((resolution) => resolution.outcome === 'excluded')
-        .map((resolution) => ({ record, resolution })),
-    );
-    expect(excluded).toHaveLength(2);
-    expect(
-      (
-        entry('condition:grappled').record.data as {
-          mechanics: { effects: readonly Record<string, unknown>[] };
-        }
-      ).mechanics.effects.filter(
-        (effect) => effect.kind === 'conditionEndsWhen',
+      resolveRecordRelationships(manifest, record, stack).flatMap(
+        (resolution) =>
+          resolution.outcome === 'excluded' ? [{ record, resolution }] : [],
       ),
-    ).toHaveLength(excluded.length);
-    for (const { record, resolution } of excluded) {
-      // RelationshipResolution.pointer is the declared pointer shape (array
-      // indexes normalized to `*`); the sibling value identifies the actual
-      // effect instance whose leaf the table excluded.
-      const matchingEffects = (
-        record.data as {
-          mechanics: { effects: readonly Record<string, unknown>[] };
-        }
-      ).mechanics.effects.find(
-        (candidate) => candidate.kind === resolution.relationFieldValue,
+    );
+    expect(
+      excluded.map(({ resolution }) => resolution.sourceRecordKey),
+    ).toEqual(['condition:grappled', 'condition:grappled']);
+    // An excluded outcome carries the declared pointer SHAPE, so repeated
+    // outcomes for one record are indistinguishable by identity. Group them,
+    // enumerate every array element the shape covers whose relation sibling
+    // carries the excluded value, require one element per outcome (so no two
+    // outcomes can alias one element), and check EVERY such element's leaf.
+    const groups = new Map<string, typeof excluded>();
+    for (const item of excluded) {
+      const id = `${item.record.key}|${item.resolution.pointer}|${item.resolution.relationFieldValue}`;
+      groups.set(id, [...(groups.get(id) ?? []), item]);
+    }
+    for (const items of groups.values()) {
+      const [{ record, resolution }] = items;
+      const [arrayPath, leafPath] = resolution.pointer.split('/*/');
+      const relationField = resolution.declaration.relationField as string;
+      let container: unknown = record.data;
+      for (const segment of arrayPath.split('/').filter(Boolean))
+        container = (container as Record<string, unknown>)[segment];
+      const covered = (container as readonly Record<string, unknown>[]).filter(
+        (element) =>
+          element[relationField] === resolution.relationFieldValue &&
+          leafPath in element,
       );
-      const leaf = matchingEffects?.condition;
-      expect(typeof leaf).toBe('string');
-      expect(normalizeRulesRecordName(leaf as string)).toBe(
-        normalizeRulesRecordName(record.name),
-      );
+      expect(covered).toHaveLength(items.length);
+      for (const element of covered) {
+        const leaf = element[leafPath];
+        expect(typeof leaf).toBe('string');
+        expect(normalizeRulesRecordName(leaf as string)).toBe(
+          normalizeRulesRecordName(record.name),
+        );
+      }
     }
   });
 
