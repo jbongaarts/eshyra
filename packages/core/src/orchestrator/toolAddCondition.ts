@@ -14,7 +14,8 @@ export const addConditionTool: Tool = {
   // Writes character conditions — a canon write (eshyra-dwkm).
   mutates: true,
   description:
-    'Add a condition to a character. No-op if a condition with the same id already exists. ' +
+    'Add a condition to a character. Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. ' +
+    'Because it is a no-op on an existing id, it cannot raise a graded condition: add exhaustion with its level (1-6); a later level increase cannot be recorded with this tool. ' +
     'Extra fields (duration, severity, etc.) are preserved. A condition that ' +
     'incapacitates (incapacitated itself, or one whose record implies it — ' +
     'paralyzed, stunned, petrified, unconscious) atomically breaks the ' +

@@ -19,16 +19,11 @@ import {
   validateRuleRegistries,
 } from '../scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.js';
 import {
-  DEFAULT_TOOLS,
   getBundledDnd5eSrdPack,
   type RulesPack,
   type RulesPackLicense,
   type RulesRecord,
 } from '../src/internal.js';
-import {
-  RULE_ADJUDICATION_CONTEXT,
-  validateRuleAdjudicationContext,
-} from '../src/rules/ruleAdjudicationContext.js';
 import { RULE_KNOWN_LIMITS } from '../src/rules/ruleKnownLimits.js';
 
 /**
@@ -125,32 +120,6 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     );
   });
 
-  it('closes every F10-owned coverage row against registered primitives', () => {
-    const rows = [
-      'rule:coinage',
-      'rule:crafting',
-      'rule:expenses-lifestyle-expenses',
-      'rule:practicing-a-profession',
-      'rule:researching',
-      'rule:selling-treasure',
-      'rule:silvered-weapons',
-      'rule:training',
-      'rule:wizard-your-spellbook',
-      'rule:self-sufficiency',
-      'rule:mounts-and-vehicles',
-    ];
-    const tools = new Set(DEFAULT_TOOLS.map((tool) => tool.name));
-    for (const row of rows) {
-      const coverage = ENGINE_PROCEDURE_COVERAGE[row];
-      expect(coverage).toBeDefined();
-      if (coverage?.adjudicationContext !== undefined) {
-        expect(coverage.adjudicationContext.tools).toContain('lookup_rules');
-        for (const primitive of coverage.adjudicationContext.tools) {
-          expect(tools.has(primitive)).toBe(true);
-        }
-      }
-    }
-  });
   it('pins the exact 335-key semantic census against the committed pack', () => {
     expect(assertRuleDispositions(getBundledDnd5eSrdPack())).toEqual([]);
     const report = buildRuleDispositionReport();
@@ -182,9 +151,6 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       ENGINE_PROCEDURE_COVERAGE['rule:experience-points']?.knownLimits[0]
         ?.limit,
     ).toBe('deferred');
-    expect(
-      ENGINE_PROCEDURE_COVERAGE['rule:charges']?.adjudicationContext,
-    ).toBeDefined();
     expect(ENGINE_PROCEDURE_COVERAGE['rule:blindsight']).toEqual({
       knownLimits: [],
     });
@@ -198,9 +164,6 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
   it('projects runtime statement rows by object identity into the audit', () => {
     // One definition per dataset (design invariant 5): each migrated audit row
     // points at the runtime entry itself, never at an authored copy.
-    for (const [key, context] of Object.entries(RULE_ADJUDICATION_CONTEXT)) {
-      expect(ENGINE_PROCEDURE_COVERAGE[key]?.adjudicationContext).toBe(context);
-    }
     for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS)) {
       expect(ENGINE_PROCEDURE_COVERAGE[key]?.knownLimits).toBe(limits);
       limits.forEach((limit, index) => {
@@ -213,14 +176,10 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     ).toBe('engine-capability-ownership');
   });
 
-  it('projects implementation, context, and every limit independently', () => {
+  it('projects implementation and every limit independently', () => {
     const implementation = Object.freeze({
       runtimeOwner: ['fixture.ts'],
       evidence: ['fixture.test.ts'],
-    });
-    const context = Object.freeze({
-      tools: Object.freeze(['lookup_rules']),
-      dmContext: 'The DM determines the outcome from the retrieved rule.',
     });
     const partial = Object.freeze({
       limit: 'partial' as const,
@@ -238,12 +197,10 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       { 'rule:fixture': implementation },
       {
         procedureKeys: ['rule:fixture', 'rule:empty'],
-        adjudicationContext: { 'rule:fixture': context },
         knownLimits: { 'rule:fixture': limits },
       },
     );
     expect(coverage['rule:fixture']?.implementation).toBe(implementation);
-    expect(coverage['rule:fixture']?.adjudicationContext).toBe(context);
     expect(coverage['rule:fixture']?.knownLimits).toBe(limits);
     expect(coverage['rule:fixture']?.knownLimits[0]).toBe(partial);
     expect(coverage['rule:fixture']?.knownLimits[1]).toBe(deferred);
@@ -251,7 +208,6 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     const report = buildRuleDispositionReport(coverage);
     expect(report.engineProcedure).toMatchObject({
       implementation: 1,
-      adjudicationContext: 1,
       noRuntimeStatement: 1,
     });
     expect(report.engineProcedure.knownLimits.partial).toContainEqual({
@@ -267,72 +223,11 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     });
   });
 
-  it('requires every listed adjudication tool to be named in its DM context', () => {
-    expect(
-      validateRuleAdjudicationContext(
-        new Set(['lookup_rules', 'resolve_check']),
-        {
-          'rule:fixture': {
-            tools: ['lookup_rules', 'resolve_check'],
-            dmContext:
-              'Use lookup_rules to read the rule, then resolve the roll.',
-          },
-        },
-      ),
-    ).toContain("rule:fixture: tool 'resolve_check' is not named in dmContext");
-    expect(
-      validateRuleAdjudicationContext(
-        new Set(['lookup_rules', 'resolve_check']),
-        {
-          'rule:fixture': {
-            tools: ['lookup_rules', 'resolve_check'],
-            dmContext: 'Pass the declared modifier to resolve_check.',
-          },
-        },
-      ),
-    ).toEqual([]);
-  });
-
-  it('rejects context without a positive registered tool mapping', () => {
-    const tools = new Set(['lookup_rules', 'resolve_check', 'spend_usage']);
-    expect(
-      validateRuleAdjudicationContext(tools, {
-        'rule:lookup-only': {
-          tools: ['lookup_rules'],
-          dmContext: 'Read the rule.',
-        },
-      }),
-    ).toContain(
-      'rule:lookup-only: adjudication context requires a non-lookup tool',
-    );
-    expect(
-      validateRuleAdjudicationContext(tools, {
-        'rule:missing': {
-          tools: ['lookup_rules', 'resolve_check'],
-          dmContext: 'Use resolve_check and spend_usage.',
-        },
-      }),
-    ).toContain(
-      "rule:missing: tool 'spend_usage' is named in dmContext but not listed",
-    );
-    expect(
-      validateRuleAdjudicationContext(tools, {
-        'rule:negative': {
-          tools: ['lookup_rules', 'resolve_check'],
-          dmContext: "Eshyra doesn't resolve attacks; use resolve_check.",
-        },
-      }),
-    ).toContain(
-      'rule:negative: dmContext asserts an unbounded Eshyra negative',
-    );
-  });
-
   it('projects source procedures without runtime entries as no statement', () => {
     const coverage = materializeEngineProcedureCoverage(
       {},
       {
         procedureKeys: ['rule:fixture'],
-        adjudicationContext: {},
         knownLimits: {},
       },
     );
@@ -349,15 +244,8 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     const words = (text: string) =>
       text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
     const violations: string[] = [];
-    for (const [key, statements] of [
-      ...Object.entries(RULE_ADJUDICATION_CONTEXT).map(
-        ([key, context]) => [key, [context.dmContext]] as const,
-      ),
-      ...Object.entries(RULE_KNOWN_LIMITS).map(
-        ([key, limits]) =>
-          [key, limits.map((limit) => limit.statement)] as const,
-      ),
-    ]) {
+    for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS)) {
+      const statements = limits.map((limit) => limit.statement);
       const record = records.get(key);
       if (record === undefined)
         throw new Error(`missing committed record ${key}`);
@@ -414,7 +302,6 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     const coverage = materializeEngineProcedureCoverage(
       {},
       {
-        adjudicationContext: {},
         knownLimits: {
           'rule:fixture': [
             {
@@ -587,63 +474,6 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     ).toContain(
       "resolve-check-v1: required schema input 'reason' is missing from the contract",
     );
-  });
-
-  it('registers every literally-named supporting tool in its context', () => {
-    expect(
-      ENGINE_PROCEDURE_COVERAGE['rule:consumables']?.adjudicationContext?.tools,
-    ).toEqual(expect.arrayContaining(['remove_item']));
-  });
-
-  it('pins the full tool chain on the F1/F9-reclassified rows, not just the formula', () => {
-    // resolve_damage is read-only: falling's damage lands only through the
-    // HP mutation tools, and the reclassified rows must pin every tool
-    // their context names so a tool removal fails validation.
-    expect(
-      ENGINE_PROCEDURE_COVERAGE['rule:falling']?.adjudicationContext?.tools,
-    ).toEqual(
-      expect.arrayContaining([
-        'calc',
-        'resolve_damage',
-        'adjust_hp',
-        'update_combatant',
-        'add_condition',
-      ]),
-    );
-    expect(
-      ENGINE_PROCEDURE_COVERAGE['rule:variant-encumbrance']?.adjudicationContext
-        ?.tools,
-    ).toEqual(expect.arrayContaining(['calc', 'resolve_check']));
-    expect(
-      ENGINE_PROCEDURE_COVERAGE['rule:speed']?.adjudicationContext?.tools,
-    ).toEqual(expect.arrayContaining(['calc', 'resolve_check']));
-    expect(
-      ENGINE_PROCEDURE_COVERAGE['rule:hiding']?.adjudicationContext?.tools,
-    ).toEqual(expect.arrayContaining(['calc', 'resolve_check']));
-    // Every tool a context names literally must be pinned.
-    const violations: string[] = [];
-    for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
-      if (coverage.adjudicationContext === undefined) continue;
-      const primitives = new Set(coverage.adjudicationContext.tools);
-      for (const tool of [
-        'resolve_check',
-        'resolve_contest',
-        'resolve_damage',
-        'calc',
-        'adjust_hp',
-        'update_combatant',
-        'add_condition',
-        'spend_turn_resource',
-      ]) {
-        if (
-          coverage.adjudicationContext.dmContext.includes(tool) &&
-          !primitives.has(tool)
-        ) {
-          violations.push(`${key}: names '${tool}' but omits it`);
-        }
-      }
-    }
-    expect(violations).toEqual([]);
   });
 
   it('checks every runtimeOwner/evidence path against the repo tree', () => {
@@ -867,21 +697,6 @@ describe('validateRuleRegistries (eshyra-o9bd.18.7.8.1 §6 failure modes)', () =
     });
     expect(errors).toContain('rule:x: implementation is missing runtimeOwner');
     expect(errors).toContain('rule:x: implementation is missing evidence');
-  });
-
-  it('fails closed on an unregistered adjudication tool and missing context', () => {
-    const errors = validateRuleRegistries(procedure, {
-      'rule:x': {
-        adjudicationContext: { tools: ['not_a_real_tool'], dmContext: '' },
-        knownLimits: [],
-      },
-    });
-    expect(errors).toContain(
-      "rule:x: tool 'not_a_real_tool' is not a registered DEFAULT_TOOLS name",
-    );
-    expect(errors).toContain(
-      'rule:x: adjudication context is missing dmContext',
-    );
   });
 
   it('fails closed on a known limit missing its statement or finding', () => {

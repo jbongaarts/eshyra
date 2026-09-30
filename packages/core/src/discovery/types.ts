@@ -563,10 +563,6 @@ export interface PacketCandidate {
    */
   readonly capabilities: readonly CapabilityPreflight[];
   readonly deterministicCapabilityDisposition?: RuleDeterministicCapabilityDisposition;
-  readonly ruleAdjudicationContext?: {
-    readonly tools: readonly string[];
-    readonly dmContext: string;
-  };
   readonly ruleKnownLimits?: readonly import('../rules/ruleAwareness.js').RuleKnownLimitStatement[];
   readonly projectionLimits: readonly ProjectionLimitNote[];
 }

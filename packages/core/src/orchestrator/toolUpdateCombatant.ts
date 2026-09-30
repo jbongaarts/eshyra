@@ -32,7 +32,7 @@ export const updateCombatantTool: Tool = {
   name: 'update_combatant',
   mutates: true,
   description:
-    'Update a live encounter combatant by exact combatant id. args: { combatantId: string, hpDelta?: integer, addCondition?: {id:string,...}, removeCondition?: string, status?: "alive"|"dead"|"unconscious"|"escaped"|"inactive", locationId?: string, placement?: string, reactionAllowance?: integer }. reactionAllowance records the current total reactions per round for a creature whose rules record carries a state-dependent extraReactions mechanic (e.g. hydra Reactive Heads: 1 + heads beyond one); it is refused for other creatures.',
+    'Update a live encounter combatant by exact combatant id. args: { combatantId: string, hpDelta?: integer, addCondition?: {id:string,...}, removeCondition?: string, status?: "alive"|"dead"|"unconscious"|"escaped"|"inactive", locationId?: string, placement?: string, reactionAllowance?: integer }. reactionAllowance records the current total reactions per round for a creature whose rules record carries a state-dependent extraReactions mechanic (e.g. hydra Reactive Heads: 1 + heads beyond one); it is refused for other creatures. An hpDelta that brings the combatant to 0 hit points sets its status to dead unless status is also passed (for example "unconscious" for a nonlethal knockout); combatants have no dying or death-save state.',
   inputSchema: {
     type: 'object',
     properties: {

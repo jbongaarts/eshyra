@@ -136,12 +136,6 @@ export const RULE_KNOWN_LIMITS: Readonly<
       findingId: 'readiness-integrity',
     }),
   ]),
-  // R0 rewritten (graded exhaustion): domainMutations.ts addCondition stores
-  // only the object it is given and returns added:false when a condition with
-  // the same id already exists, while rest.ts applyExhaustion requires
-  // {id:'exhaustion', level:1..6} and throws on a missing level. So
-  // add_condition can neither increment exhaustion nor safely record it
-  // without a level. Shared by the three source procedures that impose it.
   // R0 new trap (second pass): a readied spell's held energy is not a
   // start_effect-tracked effect, so toolAdjustHp.ts / toolUpdateCombatant.ts
   // report no concentration save for it and toolResolveConcentration.ts cannot
@@ -165,6 +159,9 @@ export const RULE_KNOWN_LIMITS: Readonly<
       findingId: 'readiness-integrity',
     }),
   ]),
+  // R0 rewritten (graded exhaustion): add_condition no-ops on an existing id;
+  // rest.ts requires {id:'exhaustion', level:1..6}. A further level cannot be
+  // persisted. Shared by the food, water, and forced-march procedures.
   'rule:food': Object.freeze([exhaustionLevelLimit('lack of food')]),
   'rule:water': Object.freeze([
     exhaustionLevelLimit(

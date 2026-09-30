@@ -22,7 +22,7 @@
  * - `ENGINE_PROCEDURE_COVERAGE` — the audit projection of implementation
  *   evidence and runtime rule statements for every `engine-procedure` key
  *   (175 rows). Only implemented rows are authored in the audit bundle;
- *   adjudication contexts and known limits are projected from their runtime
+ *   known limits are projected from their runtime
  *   datasets. A row's disposition class implies no channel fact.
  *
  * `RULE_DISPOSITIONS` is transcribed from its source classification artifact
@@ -45,11 +45,6 @@ import {
   requireRuleDeterministicCapabilityContract,
   validateRuleDeterministicCapabilityContracts as validateLedgerCapabilityContracts,
 } from '../../src/rules/deterministicCapabilityLedger.js';
-import {
-  RULE_ADJUDICATION_CONTEXT,
-  type RuleAdjudicationContext,
-  validateRuleAdjudicationContext,
-} from '../../src/rules/ruleAdjudicationContext.js';
 import {
   RULE_KNOWN_LIMITS,
   type RuleKnownLimit,
@@ -1672,13 +1667,11 @@ export interface RuleImplementationEvidence {
 
 export type RuleCoverageChannel =
   | 'implementation'
-  | 'adjudicationContext'
   | 'knownLimit'
   | 'noRuntimeStatement';
 
 export interface RuleProcedureCoverage {
   readonly implementation?: RuleImplementationEvidence;
-  readonly adjudicationContext?: RuleAdjudicationContext;
   readonly knownLimits: readonly RuleKnownLimit[];
 }
 
@@ -2053,19 +2046,13 @@ export function materializeEngineProcedureCoverage(
   implementationEvidence: Readonly<Record<string, RuleImplementationEvidence>>,
   statementDatasets: {
     readonly procedureKeys?: readonly string[];
-    readonly adjudicationContext?: Readonly<
-      Record<string, RuleAdjudicationContext>
-    >;
     readonly knownLimits?: Readonly<Record<string, readonly RuleKnownLimit[]>>;
   } = {},
 ): Readonly<Record<string, RuleProcedureCoverage>> {
-  const adjudicationContext =
-    statementDatasets.adjudicationContext ?? RULE_ADJUDICATION_CONTEXT;
   const knownLimits = statementDatasets.knownLimits ?? RULE_KNOWN_LIMITS;
   const keys = new Set([
     ...(statementDatasets.procedureKeys ?? []),
     ...Object.keys(implementationEvidence),
-    ...Object.keys(adjudicationContext),
     ...Object.keys(knownLimits),
   ]);
   return Object.freeze(
@@ -2078,9 +2065,6 @@ export function materializeEngineProcedureCoverage(
               ...(implementationEvidence[key] === undefined
                 ? {}
                 : { implementation: implementationEvidence[key] }),
-              ...(adjudicationContext[key] === undefined
-                ? {}
-                : { adjudicationContext: adjudicationContext[key] }),
               knownLimits: knownLimits[key] ?? [],
             },
           ] as const,
@@ -2278,10 +2262,6 @@ export function validateRuleDispositionIdentity(
  * hand-maintained count target.
  */
 
-const DEFAULT_TOOL_NAMES: ReadonlySet<string> = new Set(
-  DEFAULT_TOOLS.map((tool) => tool.name),
-);
-
 /** Shape of a real bead ID, e.g. `eshyra-o9bd.18.7.6` or `eshyra-b69j.13`. */
 const BEAD_ID_PATTERN = /^eshyra-[a-z0-9]+(\.[0-9]+)*$/;
 
@@ -2385,7 +2365,6 @@ export function validateRuleRegistries(
   };
   for (const [key, coverageRow] of Object.entries(coverage)) {
     const implementation = coverageRow.implementation;
-    const context = coverageRow.adjudicationContext;
     const limits = coverageRow.knownLimits;
     if (implementation !== undefined) {
       count('implementation');
@@ -2394,27 +2373,11 @@ export function validateRuleRegistries(
       if (!implementation.evidence?.length)
         errors.push(`${key}: implementation is missing evidence`);
     }
-    if (context !== undefined) {
-      count('adjudicationContext');
-      if (!context.tools?.length)
-        errors.push(`${key}: adjudication context is missing tools`);
-      for (const tool of context.tools ?? [])
-        if (!DEFAULT_TOOL_NAMES.has(tool))
-          errors.push(
-            `${key}: tool '${tool}' is not a registered DEFAULT_TOOLS name`,
-          );
-      if (!context.dmContext)
-        errors.push(`${key}: adjudication context is missing dmContext`);
-    }
     if (!Array.isArray(limits)) {
       errors.push(`${key}: knownLimits must be an array`);
       continue;
     }
-    if (
-      implementation === undefined &&
-      context === undefined &&
-      limits.length === 0
-    )
+    if (implementation === undefined && limits.length === 0)
       count('noRuntimeStatement');
     for (const limit of limits) {
       count('knownLimit');
@@ -2524,9 +2487,6 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
       ),
     ),
     ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
-    ...validateRuleAdjudicationContext(
-      new Set(DEFAULT_TOOLS.map((tool) => tool.name)),
-    ),
     ...validateRuleKnownLimits(),
   );
 
@@ -2545,7 +2505,6 @@ export interface RuleDispositionReport {
   readonly duplicates: number;
   readonly engineProcedure: {
     readonly implementation: number;
-    readonly adjudicationContext: number;
     readonly noRuntimeStatement: number;
     readonly knownLimits: Readonly<
       Record<
@@ -2568,11 +2527,6 @@ export interface RuleDispositionReport {
       readonly findingId: string;
     }[];
   };
-  /** Context that must be retrievable when a procedure is model-adjudicated. */
-  readonly adjudicationContextInventory: readonly {
-    readonly key: string;
-    readonly contextRequirement: string;
-  }[];
   /**
    * Positive, bounded ADR 0020 §3 contracts, not a capability inventory.
    * Scoped to `RULE_DISPOSITION_REPORT_CONTRACT_REVISIONS` — the runtime
@@ -2629,7 +2583,6 @@ export function buildRuleDispositionReport(
     if (disposition.class === 'duplicate') duplicates += 1;
   }
   let implementation = 0;
-  let adjudicationContext = 0;
   let noRuntimeStatement = 0;
   const knownLimits: {
     [K in RuleKnownLimit['limit']]: {
@@ -2645,23 +2598,11 @@ export function buildRuleDispositionReport(
     bead: string;
     findingId: string;
   }[] = [];
-  const adjudicationContextInventory: {
-    key: string;
-    contextRequirement: string;
-  }[] = [];
   const unresolvedWork: RuleDispositionReport['unresolvedWork'][number][] = [];
   for (const [key, coverage] of Object.entries(coverageRegistry)) {
     if (coverage.implementation !== undefined) implementation += 1;
-    if (coverage.adjudicationContext !== undefined) {
-      adjudicationContext += 1;
-      adjudicationContextInventory.push({
-        key,
-        contextRequirement: coverage.adjudicationContext.dmContext,
-      });
-    }
     if (
       coverage.implementation === undefined &&
-      coverage.adjudicationContext === undefined &&
       coverage.knownLimits.length === 0
     )
       noRuntimeStatement += 1;
@@ -2731,7 +2672,6 @@ export function buildRuleDispositionReport(
     duplicates,
     engineProcedure: {
       implementation,
-      adjudicationContext,
       noRuntimeStatement,
       knownLimits: {
         partial: knownLimits.partial.sort(byKey),
@@ -2742,7 +2682,6 @@ export function buildRuleDispositionReport(
         (a, b) => byKey(a, b) || (a.clause < b.clause ? -1 : 1),
       ),
     },
-    adjudicationContextInventory: adjudicationContextInventory.sort(byKey),
     deterministicCapabilities: Object.values(
       ruleDispositionReportCapabilityContracts(
         RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,

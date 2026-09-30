@@ -2142,7 +2142,7 @@ export function formatGameplayReadinessReport(
     'Rule-record disposition & engine-procedure coverage (eshyra-o9bd.18.7.8.1)',
     '- Scope: exact rule:* classification only; not corpus-wide semantic, discovery, capability, or exclusive-clause ownership.',
     `- reference-prose: ${report.rules.referencesProse}; definition: ${report.rules.definitions}; table-backed: ${report.rules.tableBacked}; duplicate: ${report.rules.duplicates}`,
-    `- engine-procedure channels: implementation ${report.rules.engineProcedure.implementation}; adjudication context ${report.rules.engineProcedure.adjudicationContext}; known limits: partial ${report.rules.engineProcedure.knownLimits.partial.length}, unimplemented ${report.rules.engineProcedure.knownLimits.unimplemented.length}, deferred ${report.rules.engineProcedure.knownLimits.deferred.length}; no-runtime-statement keys ${report.rules.engineProcedure.noRuntimeStatement}`,
+    `- engine-procedure channels: implementation ${report.rules.engineProcedure.implementation}; known limits: partial ${report.rules.engineProcedure.knownLimits.partial.length}, unimplemented ${report.rules.engineProcedure.knownLimits.unimplemented.length}, deferred ${report.rules.engineProcedure.knownLimits.deferred.length}; no-runtime-statement keys ${report.rules.engineProcedure.noRuntimeStatement}`,
     '- A key may count in several channels; no-runtime-statement means no channel facts.',
     'Partial known limits (key — statement)',
     ...(report.rules.engineProcedure.knownLimits.partial.length === 0
@@ -2172,10 +2172,6 @@ export function formatGameplayReadinessReport(
           (row) => `- ${row.key}: ${row.clause} → ${row.bead}`,
         )),
     '',
-    `Adjudication-context inventory: ${report.rules.adjudicationContextInventory.length} procedures with positive tool mappings`,
-    ...report.rules.adjudicationContextInventory.map(
-      (row) => `- ${row.key}: ${row.contextRequirement}`,
-    ),
     `Positive bounded deterministic capabilities (ADR 0020 §3; not a corpus-wide inventory): ${report.rules.deterministicCapabilities.length}`,
     ...report.rules.deterministicCapabilities.map(
       (row) =>

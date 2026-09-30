@@ -33,8 +33,9 @@ export const resolveCheckTool: Tool = {
     '(multiplier handles expertise/half/none), and resolves vs the DC/AC ' +
     'including natural 1/20 auto-miss/hit on attacks. Choosing WHICH ' +
     'modifiers apply and setting the DC stay your rulings; the arithmetic is ' +
-    'engine-owned. args: { kind, reason, actor?, advantage?, disadvantage?, ' +
-    'modifiers?, proficiency?, vs?, visibility? }.',
+    'engine-owned. ' +
+    "vs is a single number: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller. To compare against a total that is already fixed (for example a hider's retained Stealth check), pass that total as vs. " +
+    'args: { kind, reason, actor?, advantage?, disadvantage?, modifiers?, proficiency?, vs?, visibility? }.',
   inputSchema: {
     type: 'object',
     properties: {

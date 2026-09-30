@@ -524,13 +524,11 @@ describe('lookup_rules tool', () => {
         reference.data as {
           ruleAwareness: {
             capabilities: { outcome: string };
-            adjudicationContext?: unknown;
             knownLimits: readonly unknown[];
           };
         }
       ).ruleAwareness;
       expect(awareness.capabilities.outcome).toBe('no-statement');
-      expect(awareness.adjudicationContext).toBeUndefined();
       expect(awareness.knownLimits).toEqual([]);
     }
   });
@@ -2110,6 +2108,30 @@ describe('memory_drilldown tool', () => {
 });
 
 describe('tool schema metadata (eshyra-0jq.10)', () => {
+  it('states the six target-domain and resolution contracts in tool descriptions', () => {
+    const descriptions = new Map(
+      createDefaultToolRegistry()
+        .definitions()
+        .map(({ name, description }) => [name, description]),
+    );
+    const expected = {
+      resolve_check:
+        "vs is a single number: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller. To compare against a total that is already fixed (for example a hider's retained Stealth check), pass that total as vs.",
+      resolve_contest:
+        "Both sides always roll. When one side's total is already fixed (for example a hider's retained Stealth check against a later search), use resolve_check with that total as vs instead.",
+      add_condition:
+        'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Because it is a no-op on an existing id, it cannot raise a graded condition: add exhaustion with its level (1-6); a later level increase cannot be recorded with this tool.',
+      remove_condition:
+        'Remove a condition from a character by id (characters only: for an encounter combatant, use update_combatant removeCondition). No-op if the condition is not present.',
+      adjust_hp:
+        'Characters only: for an encounter combatant, use update_combatant hpDelta.',
+      update_combatant:
+        'An hpDelta that brings the combatant to 0 hit points sets its status to dead unless status is also passed (for example "unconscious" for a nonlethal knockout); combatants have no dying or death-save state.',
+    };
+    for (const [name, sentence] of Object.entries(expected))
+      expect(descriptions.get(name)).toContain(sentence);
+  });
+
   const VALIDATED_SCHEMA_KEYWORDS = new Set([
     'additionalProperties',
     'anyOf',

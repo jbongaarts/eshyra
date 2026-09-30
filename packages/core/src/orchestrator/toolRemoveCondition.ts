@@ -14,7 +14,7 @@ export const removeConditionTool: Tool = {
   // Writes character conditions — a canon write (eshyra-dwkm).
   mutates: true,
   description:
-    'Remove a condition from a character by id. No-op if the condition is not present.',
+    'Remove a condition from a character by id (characters only: for an encounter combatant, use update_combatant removeCondition). No-op if the condition is not present.',
   inputSchema: {
     type: 'object',
     properties: {
