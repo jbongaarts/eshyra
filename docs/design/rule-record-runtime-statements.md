@@ -217,14 +217,38 @@ statement channels follow the same rule.
   `rule:opportunity-attacks`, and `rule:charges` are rewritten to the tool
   mapping alone, keeping their approved tool sets except where the mapping
   corrects them (`rule:opportunity-attacks` resolves its attack through
-  `resolve_check`, not `roll`). `rule:suffocating` and `rule:channel-divinity`
-  already meet the criteria and are unchanged.
-- **Audit projection.** An engine-procedure row that is neither
-  `implemented` nor carried by a runtime channel materializes in the audit
-  bundle as `no-runtime-statement`, with no `findingId`. The audit script no
-  longer authors any Eshyra fact for it, so one definition per row still
-  holds (invariant 5). The label says only that Eshyra makes no statement
-  about the row, never that it is unsupported or safe (invariant 3).
+  `resolve_check`, not `roll`). `rule:suffocating` keeps only its trap (HP
+  recovery and `stabilize_character` are not gated on breathing, plus the
+  positive `adjust_hp` instruction). Its breath-duration and countdown
+  sentence is removed: no Eshyra tool or state touches that clause.
+  `rule:channel-divinity` already meets the criteria and is unchanged.
+- **Positive mappings are target-domain correct.** A mapping names the tool
+  that can actually write the state for the rule's subject.
+  `add_condition` / `remove_condition` address characters only;
+  encounter combatants take conditions through `update_combatant`. A rule
+  about any creature names both paths and says which applies to which target.
+  A mapping also preserves the rule's own procedure. For example, a retained
+  roll is compared as a fixed total (`resolve_check` with `vs`), never
+  re-rolled through a tool that rolls both sides.
+- **Audit projection is per channel, not per row status.** R4's channels are
+  independent (invariant 1), so the audit bundle cannot reduce a key to one
+  exclusive status. Each engine-procedure key materializes as the set of
+  channel facts it has:
+  - `implementation`: authored implementation evidence (`runtimeOwner` +
+    `evidence`). This is the only fact the audit script still authors, and it
+    is what the capability ledger's `implemented` input reads.
+  - `adjudicationContext`: the runtime entry, by identity.
+  - `knownLimits`: every runtime limit for the key, each by identity and each
+    carrying its own `findingId`. A key may have any number, as the runtime
+    contract is an array.
+
+  Any combination is admissible, including implementation evidence together
+  with context and limits. A key with none of the three is reported as
+  `no-runtime-statement`: a count of keys about which Eshyra makes no
+  statement, never "unsupported" or "safe" (invariant 3). The readiness
+  report counts each channel separately, so a key counted in several channels
+  is expected. The audit script authors no Eshyra fact that a runtime channel
+  owns, so one definition per fact holds (invariant 5).
 
 **R5 — One read-only facade.** A new
 `ruleAwareness(recordKey, stack, relationshipManifestSource)` in `src/rules/`
@@ -344,7 +368,9 @@ under the same manifest source (invariant 11).
     turn receive the same manifest source.
 12. **Statements are positive and bounded (A3).** Every adjudication-context
     entry maps the rule onto at least one registered tool other than
-    `lookup_rules`, and asserts nothing about what Eshyra does not do. Every
+    `lookup_rules`, names a tool that can write the rule subject's state
+    without changing the rule's procedure, and asserts nothing about what
+    Eshyra does not do. Every
     known limit meets the trap criterion and carries a registered
     `findingId`. No `dmContext` or `statement` restates the rule's source
     text.
