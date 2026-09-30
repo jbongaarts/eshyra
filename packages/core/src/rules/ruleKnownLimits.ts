@@ -142,6 +142,18 @@ export const RULE_KNOWN_LIMITS: Readonly<
   // {id:'exhaustion', level:1..6} and throws on a missing level. So
   // add_condition can neither increment exhaustion nor safely record it
   // without a level. Shared by the three source procedures that impose it.
+  // R0 new trap (second pass): a readied spell's held energy is not a
+  // start_effect-tracked effect, so toolAdjustHp.ts / toolUpdateCombatant.ts
+  // report no concentration save for it and toolResolveConcentration.ts cannot
+  // resolve one.
+  'action:ready': Object.freeze([
+    Object.freeze({
+      limit: 'partial' as const,
+      statement:
+        'A readied spell’s held energy is not a tracked effect, so adjust_hp and update_combatant report no concentration save for it and resolve_concentration cannot resolve one. If the caster takes damage before releasing the spell, resolve the Constitution save with resolve_check at DC 10 or half the damage, whichever is higher; on a failure the spell dissipates without taking effect.',
+      findingId: 'readiness-integrity',
+    }),
+  ]),
   // R0 new trap (Sol review F3): hpLifecycle.ts applyDamage turns overflow
   // >= hp_max into instant death and toolAdjustHp.ts has no nonlethal option;
   // hpLifecycle.ts stabilizeCharacter refuses any state but dying.

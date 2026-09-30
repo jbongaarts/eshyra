@@ -29,7 +29,7 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Record the Disengage action with spend_turn_resource so its turn cost is spent.',
   }),
-  // R0 confirmed: action:dodge (dodge) uses spend_turn_resource, resolve_check; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
+  // R0 rewritten (second pass, conditional result): the benefit lasts until the start of the dodger's next turn and ends early if it is incapacitated or its speed drops to 0. Tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, toolResolveCheck.ts.
   'action:dodge': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
@@ -37,7 +37,7 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
       'resolve_check',
     ]),
     dmContext:
-      'Spend the Dodge action with spend_turn_resource, then declare its advantage or disadvantage to resolve_check for an affected save or attack.',
+      'Spend the Dodge action with spend_turn_resource, then, while its benefit lasts, declare its advantage or disadvantage to resolve_check for an affected save or attack.',
   }),
   // R0 confirmed: action:help (help) uses spend_turn_resource, resolve_check; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
   'action:help': Object.freeze({
@@ -49,7 +49,7 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Spend the Help action with spend_turn_resource, then give the assisted check or attack advantage through resolve_check.',
   }),
-  // R0 confirmed: action:hide (hide) uses spend_turn_resource, resolve_check; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
+  // R0 rewritten (second pass, procedure): the Stealth total is retained for rule:hiding's later searches and passive comparisons. Tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, toolResolveCheck.ts.
   'action:hide': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
@@ -57,17 +57,18 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
       'resolve_check',
     ]),
     dmContext:
-      'Spend the Hide action with spend_turn_resource in combat, then use resolve_check for the Dexterity (Stealth) check.',
+      'Spend the Hide action with spend_turn_resource in combat, then use resolve_check for the Dexterity (Stealth) check and retain its total for later searches.',
   }),
-  // R0 rewritten (Sol review F6): readying a spell casts it at Ready time and holds its energy; spend_turn_resource requires spellRef for a cast action and spend_spell_slot records the slot. Tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, packages/core/src/orchestrator/toolSpendSpellSlot.ts.
+  // R0 rewritten (second pass, target domain + procedure): spend_spell_slot is character-only; readying a spell requires concentration, which ends any concentration effect the caster maintains (end_effect). The held spell's own concentration is a trap in RULE_KNOWN_LIMITS. Tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, toolSpendSpellSlot.ts, toolEndEffect.ts.
   'action:ready': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
       'spend_turn_resource',
       'spend_spell_slot',
+      'end_effect',
     ]),
     dmContext:
-      'Spend the Ready action with spend_turn_resource, then spend the reaction with spend_turn_resource if the declared trigger occurs. When readying a spell, pass its spellRef on the Ready action and spend the slot with spend_spell_slot when it is readied, before any trigger.',
+      'Spend the Ready action with spend_turn_resource, then spend the reaction with spend_turn_resource if the declared trigger occurs. When a character readies a spell, pass its spellRef on the Ready action, spend the slot with spend_spell_slot when it is readied, and end any concentration effect the caster is maintaining with end_effect.',
   }),
   // R0 confirmed: action:search (search) uses spend_turn_resource, resolve_check; tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
   'action:search': Object.freeze({
@@ -194,11 +195,11 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Use resolve_check for the hider’s Dexterity (Stealth) check and retain its total. For a later active search, use resolve_check for the searcher’s Wisdom (Perception) check with vs set to that retained Stealth total. For passive observers, use calc with passive_score and compare it to the retained total.',
   }),
-  // R0 rewritten (source identity): this record is the environment passage (forcing a rusted lever with a Strength check against a GM-set DC; damaging objects), not combat's free object interaction (rule:interacting-with-objects-around-you). resolve_check with vs carries the check; tool description: packages/core/src/orchestrator/toolResolveCheck.ts.
+  // R0 rewritten (source identity): this record is the environment passage (forcing a rusted lever or breaking an object with a Strength check against a GM-set DC; damaging objects), not combat's free object interaction (rule:interacting-with-objects-around-you). resolve_check with vs carries the check. Tool description: packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:interacting-with-objects': Object.freeze({
     tools: Object.freeze(['lookup_rules', 'resolve_check']),
     dmContext:
-      'When forcing or manipulating an object calls for a check, such as a Strength check to wrench a stuck lever, use resolve_check with kind ability_check and vs set to the DC the DM chooses for the task.',
+      'When forcing, manipulating, or breaking an object calls for a check, such as a Strength check to wrench a stuck lever, use resolve_check with kind ability_check and vs set to the DC the DM chooses for the task.',
   }),
   // R0 rewritten (Sol review F11): calc jump_distance carries distance; the source's DC 10 obstacle and landing checks resolve through resolve_check, and a failed landing imposes prone (character vs combatant). Tool descriptions: packages/core/src/orchestrator/toolCalc.ts, toolResolveCheck.ts, toolAddCondition.ts, toolUpdateCombatant.ts.
   'rule:jumping': Object.freeze({
@@ -246,22 +247,23 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Record the recuperation period with advance_time, then resolve its Constitution saving throw at the stated DC with resolve_check. If the chosen success result ends a tracked effect that prevents regaining hit points, end it with end_effect.',
   }),
-  // R0 confirmed: rule:rolling-1-or-20 (rolling 1 or 20) uses resolve_check; tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts.
+  // R0 rewritten (second pass, omitted step): a natural 20 on an attack is a critical hit, and resolve_damage doubles the dice when passed critical:true. Tool descriptions: packages/core/src/orchestrator/toolResolveCheck.ts, toolResolveDamage.ts.
   'rule:rolling-1-or-20': Object.freeze({
-    tools: Object.freeze(['lookup_rules', 'resolve_check']),
+    tools: Object.freeze(['lookup_rules', 'resolve_check', 'resolve_damage']),
     dmContext:
-      'Use resolve_check with kind attack so natural 1 and 20 receive the attack-only automatic results.',
+      'Use resolve_check with kind attack so natural 1 and 20 receive the attack-only automatic results; for a critical hit, pass critical: true to resolve_damage.',
   }),
-  // R0 confirmed: rule:shoving-a-creature uses resolve_contest, add_condition for characters, and update_combatant for encounter combatants.
+  // R0 rewritten (second pass, omitted step; sibling of rule:grappling): the shove replaces one attack of the Attack action. Tool descriptions: packages/core/src/orchestrator/toolSpendTurnResource.ts, toolResolveContest.ts, toolAddCondition.ts, toolUpdateCombatant.ts.
   'rule:shoving-a-creature': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
+      'spend_turn_resource',
       'resolve_contest',
       'add_condition',
       'update_combatant',
     ]),
     dmContext:
-      'Resolve the opposed Athletics and Athletics or Acrobatics checks with resolve_contest. If prone is the chosen result, record it on a character with add_condition or on an encounter combatant with update_combatant addCondition {id: "prone"}.',
+      'The shove replaces one attack of the Attack action spent with spend_turn_resource; resolve the opposed Athletics and Athletics or Acrobatics checks with resolve_contest. If prone is the chosen result, record it on a character with add_condition or on an encounter combatant with update_combatant addCondition {id: "prone"}.',
   }),
   // R0 rewritten: calc forced_march_dc and resolve_check are positive mappings; the add_condition exhaustion write is retired (see RULE_KNOWN_LIMITS['rule:speed']). Tool descriptions: packages/core/src/orchestrator/toolCalc.ts, packages/core/src/orchestrator/toolResolveCheck.ts.
   'rule:speed': Object.freeze({
@@ -326,17 +328,18 @@ export const RULE_ADJUDICATION_CONTEXT: Readonly<
     dmContext:
       'Spend the attacker’s reaction with spend_turn_resource, then resolve the opportunity attack with resolve_check.',
   }),
-  // R0 rewritten (Sol review F5): use_item addresses character-held items and spend_usage/restore_usage/reset_usage carry unbound item charges for a character; combatant usage covers statblock abilities only. Tool descriptions: packages/core/src/orchestrator/toolUseItem.ts, toolSpendUsage.ts, toolRestoreUsage.ts, toolResetUsage.ts.
+  // R0 rewritten (second pass, tool contract): reset_usage applies a dawn or rest event, returning rolled recharges in needsRolledRestore; those are rolled with roll and applied with restore_usage amount. use_item and the usage counters address character-held items. Tool descriptions: packages/core/src/orchestrator/toolUseItem.ts, toolSpendUsage.ts, toolResetUsage.ts, toolRestoreUsage.ts, toolRoll.ts.
   'rule:charges': Object.freeze({
     tools: Object.freeze([
       'lookup_rules',
       'use_item',
       'spend_usage',
-      'restore_usage',
       'reset_usage',
+      'roll',
+      'restore_usage',
     ]),
     dmContext:
-      "For an item a character holds, use use_item for a pack-bound item's declared charge-spending operation. For an unbound item a character holds, use spend_usage with its charge maximum and reset economy, restore_usage for rolled recovery, and reset_usage for a full recharge event.",
+      "For an item a character holds, use use_item for a pack-bound item's declared charge-spending operation. For an unbound item a character holds, spend charges with spend_usage; at dawn apply reset_usage with event dawn, and for an item returned in needsRolledRestore, roll its regained amount with roll and apply it with restore_usage amount.",
   }),
 });
 

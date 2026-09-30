@@ -336,6 +336,23 @@ describe('rule awareness', () => {
     expect(ruleStatements('rule:water').knownLimits[0]?.statement).toContain(
       'two levels at once',
     );
+    // Charges follow the reset_usage/needsRolledRestore/restore_usage contract.
+    expect(ctx('rule:charges')?.tools).toContain('roll');
+    expect(ctx('rule:charges')?.dmContext).toContain('needsRolledRestore');
+    // A readied spell ends existing concentration; its own is a disclosed trap.
+    expect(ctx('action:ready')?.dmContext).toContain(
+      'When a character readies',
+    );
+    expect(ctx('action:ready')?.tools).toContain('end_effect');
+    expect(ruleStatements('action:ready').knownLimits[0]?.statement).toContain(
+      'not a tracked effect',
+    );
+    // Shove, like grapple, replaces an attack of the Attack action.
+    expect(ctx('rule:shoving-a-creature')?.tools).toContain(
+      'spend_turn_resource',
+    );
+    // Critical hits double damage dice through resolve_damage.
+    expect(ctx('rule:rolling-1-or-20')?.dmContext).toContain('critical: true');
     // Ammunition stays recoverable (dropped, then claim_item for half).
     const ammo = ruleStatements('rule:weapon-properties').knownLimits[0];
     expect(ammo?.statement).toContain('disposition dropped');
