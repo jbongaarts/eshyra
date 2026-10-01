@@ -2116,7 +2116,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
     );
     const expected = {
       resolve_check:
-        "vs is a single DC or AC from 1 to 99, and a total equal to vs succeeds: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller.",
+        "vs is the target's unmodified DC or AC from 1 to 99, and a total equal to vs succeeds. Modifiers apply only to the roller and are summed by the engine, so declare a bonus to the target's AC (for example cover) as an equal negative modifier on the attacker's roll, and a bonus to the roller's own save as a positive modifier.",
       resolve_contest:
         "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed.",
       add_condition:
@@ -2146,6 +2146,9 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       expect(description).not.toMatch(
         /compare|retained|strictly|total yourself/i,
       );
+      // Target-side bonuses are engine-summed roller modifiers, never folded
+      // into vs by the model.
+      expect(description).not.toMatch(/goes into vs|add .* to vs/i);
     }
   });
 

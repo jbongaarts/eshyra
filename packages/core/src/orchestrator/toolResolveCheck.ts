@@ -34,7 +34,7 @@ export const resolveCheckTool: Tool = {
     'including natural 1/20 auto-miss/hit on attacks. Choosing WHICH ' +
     'modifiers apply and setting the DC stay your rulings; the arithmetic is ' +
     'engine-owned. ' +
-    "vs is a single DC or AC from 1 to 99, and a total equal to vs succeeds: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller. " +
+    "vs is the target's unmodified DC or AC from 1 to 99, and a total equal to vs succeeds. Modifiers apply only to the roller and are summed by the engine, so declare a bonus to the target's AC (for example cover) as an equal negative modifier on the attacker's roll, and a bonus to the roller's own save as a positive modifier. " +
     'args: { kind, reason, actor?, advantage?, disadvantage?, modifiers?, proficiency?, vs?, visibility? }.',
   inputSchema: {
     type: 'object',

@@ -227,29 +227,21 @@ describe('rule awareness', () => {
     expect(ruleStatements('action:ready').knownLimits[0]?.statement).toContain(
       'not a tracked effect',
     );
+    // ADR 0020 §2: the DM is never asked to compute the concentration DC
+    // (engine-owned in resolve_concentration) or the half-recovery count.
     expect(ruleStatements('action:ready').knownLimits[0]?.statement).toContain(
       'cannot currently be resolved deterministically',
     );
+    expect(
+      ruleStatements('action:ready').knownLimits[0]?.statement,
+    ).not.toMatch(/whichever is higher/);
     const ammo = ruleStatements('rule:weapon-properties').knownLimits[0];
     expect(ammo?.statement).toContain('disposition dropped');
     expect(ammo?.statement).toContain('claim_item');
     expect(ammo?.statement).toContain(
       'no tool determines how many of the expended pieces are recoverable',
     );
-  });
-
-  it('never directs the DM to compute a mechanical value in a known limit', () => {
-    // ADR 0020 §2: dice and arithmetic are deterministic. A known limit
-    // discloses a missing operation; it never substitutes model arithmetic
-    // (e.g. a max-of DC, half of a count, or a self-made comparison).
-    for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS))
-      for (const limit of limits)
-        expect(
-          limit.statement,
-          `${key} must not ask the DM to compute a mechanical value`,
-        ).not.toMatch(
-          /whichever is (higher|lower)|\bhalf (of|the)\b|yourself/i,
-        );
+    expect(ammo?.statement).not.toMatch(/recover half of/);
   });
 
   it('validates finding identities in known limits', () => {

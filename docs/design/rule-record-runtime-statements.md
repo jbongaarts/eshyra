@@ -294,7 +294,8 @@ of tool behavior is the wrong owner for that knowledge.
   substitute for a deterministic operation the tool lacks (ADR 0020 §2). Where
   a rule needs such an operation and no tool owns it, the gap is a known limit
   on that rule (for example `rule:hiding`'s retained Stealth total). Examples: `vs` is a bare
-  AC/DC, and bonuses to it go into `vs`; modifiers apply to the roller;
+  AC/DC; modifiers apply to the roller and are engine-summed, so a target AC
+  bonus such as cover is an equal negative roller modifier;
   `resolve_contest` rolls both sides; `add_condition` and `adjust_hp` address
   characters only; `update_combatant` sets a combatant at 0 HP to `dead`
   unless another status is given. Each description change is checked against
@@ -452,7 +453,7 @@ a hypothesis to test, not a result.
 | `rule:long-rest` | legacy `unimplemented` limit **retired** (`toolRest.ts`, `eshyra-2n1t.9`) | `lookup_rules` envelope carries **no** unimplemented limit (**permanent**: guards against stale promotion) |
 | `rule:suffocating` | `partial` limit **confirmed** as a trap: HP recovery and stabilization are not gated on breathing (A3 retires the breath-countdown clause and splits the statement by target domain) | `lookup_rules` envelope carries the limit statement + `findingId` (**permanent**) |
 | `rule:charges` | `partial` limit likely **rewritten** (expenditure landed with F5; pack-side charge data still external); its adjudication context is **retired by A4** (the `reset_usage` / `needsRolledRestore` / `restore_usage` sequence is in those tools' descriptions) | superseded |
-| `rule:cover` | adjudication context confirmed; **retired by A4** (the cover-into-`vs` fact moved to `resolve_check`'s description) | superseded |
+| `rule:cover` | adjudication context confirmed; **retired by A4** (the cover fact moved to `resolve_check`'s description: a target AC bonus is an equal negative roller modifier, engine-summed) | superseded |
 | `rule:opportunity-attacks` | adjudication context confirmed or rewritten; **retired by A4** | superseded |
 | `rule:channel-divinity` | `deferred`, statement from ADR 0018 §6 | facade/packet |
 | a `reference-prose` key | empty channels | envelope text makes no support or absence claim |
