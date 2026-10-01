@@ -136,6 +136,20 @@ export const RULE_KNOWN_LIMITS: Readonly<
       findingId: 'readiness-integrity',
     }),
   ]),
+  // R0 new trap (review @5e2b74ad): the source keeps the hider's Stealth
+  // total and contests it against a later active search (a tie leaves the
+  // hider hidden) and compares it with passive Perception. toolResolveContest.ts
+  // rolls both sides; resolution.ts resolveD20 resolves `total >= vs` with vs
+  // limited to 1..99; calc passive_score computes the score but compares
+  // nothing. No tool performs either comparison.
+  'rule:hiding': Object.freeze([
+    Object.freeze({
+      limit: 'partial' as const,
+      statement:
+        'No tool resolves a search against a hider’s retained Stealth total: resolve_contest rolls both sides, so it would reroll the hider, and resolve_check counts a total equal to vs as success and accepts vs only from 1 to 99, while this rule leaves the hider hidden on a tie. No tool compares a passive Perception score from calc passive_score with that total either. These comparisons cannot currently be resolved deterministically.',
+      findingId: 'readiness-integrity',
+    }),
+  ]),
   // R0 new trap (second pass): a readied spell's held energy is not a
   // start_effect-tracked effect, so toolAdjustHp.ts / toolUpdateCombatant.ts
   // report no concentration save for it and toolResolveConcentration.ts cannot

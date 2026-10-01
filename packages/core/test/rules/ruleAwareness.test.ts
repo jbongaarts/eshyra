@@ -204,6 +204,19 @@ describe('rule awareness', () => {
     }
   });
 
+  it('discloses the unresolvable fixed-total hiding comparison', () => {
+    // SRD rule:hiding: the retained Stealth total is contested by a later
+    // search (a tie keeps the hider hidden) and compared with passive
+    // Perception; no deterministic tool performs either comparison.
+    const [limit] = ruleStatements('rule:hiding').knownLimits;
+    expect(limit?.findingId).toBe('readiness-integrity');
+    expect(limit?.statement).toContain(
+      'cannot currently be resolved deterministically',
+    );
+    expect(limit?.statement).toContain('resolve_contest rolls both sides');
+    expect(limit?.statement).not.toMatch(/compare (it|the totals?) yourself/i);
+  });
+
   it('preserves the knockout, ready, water, and ammunition known limits', () => {
     expect(
       ruleStatements('rule:knocking-a-creature-out').knownLimits[0]?.statement,

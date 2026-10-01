@@ -289,7 +289,11 @@ of tool behavior is the wrong owner for that knowledge.
 "Permanent Test Evidence").*
 - **Tool-contract knowledge → the tool's own description.** How a tool must be
   called and what it does lives once, next to its implementation, and reaches
-  the DM on every call of that tool, for every rule. Examples: `vs` is a bare
+  the DM on every call of that tool, for every rule. A description states only
+  what its tool does. It never offers model-side arithmetic or comparison as a
+  substitute for a deterministic operation the tool lacks (ADR 0020 §2). Where
+  a rule needs such an operation and no tool owns it, the gap is a known limit
+  on that rule (for example `rule:hiding`'s retained Stealth total). Examples: `vs` is a bare
   AC/DC, and bonuses to it go into `vs`; modifiers apply to the roller;
   `resolve_contest` rolls both sides; `add_condition` and `adjust_hp` address
   characters only; `update_combatant` sets a combatant at 0 HP to `dead`

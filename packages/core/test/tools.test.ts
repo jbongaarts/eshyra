@@ -2116,13 +2116,9 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
     );
     const expected = {
       resolve_check:
-        // resolution.ts resolves `total >= vs` as success and validateVs
-        // accepts 1..99, while SRD contests (rule:hiding, rule:contests) need
-        // a strictly higher total and leave a tie unchanged; a fixed contest
-        // total must therefore never be passed as vs.
-        "vs is a single DC or AC from 1 to 99, and a total equal to vs succeeds: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller. For a contest against a total that is already fixed (for example a hider's retained Stealth check), omit vs and compare the returned total yourself: only a strictly higher total wins, and a tie leaves the situation as it was.",
+        "vs is a single DC or AC from 1 to 99, and a total equal to vs succeeds: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller.",
       resolve_contest:
-        "Both sides always roll. When one side's total is already fixed (for example a hider's retained Stealth check against a later search), roll only the other side with resolve_check without vs and compare: only a strictly higher total wins, and a tie leaves the situation as it was.",
+        "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed.",
       add_condition:
         'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Because it is a no-op on an existing id, it cannot raise a graded condition: add exhaustion with its level (1-6); a later level increase cannot be recorded with this tool.',
       remove_condition:
@@ -2134,6 +2130,23 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
     };
     for (const [name, sentence] of Object.entries(expected))
       expect(descriptions.get(name)).toContain(sentence);
+  });
+
+  it('never offers model-side arithmetic as a resolution fallback', () => {
+    // ADR 0020 §2 keeps dice and arithmetic deterministic. No tool resolves a
+    // contest with one already-fixed side (resolve_contest rerolls both;
+    // resolve_check's vs is >= with 1..99), so neither description may tell
+    // the model to compare totals itself; rule:hiding discloses the gap.
+    for (const name of ['resolve_check', 'resolve_contest']) {
+      const description = DEFAULT_TOOLS.find(
+        (tool) => tool.name === name,
+      )?.description;
+      expect(description).toBeDefined();
+      // "never roll two d20s yourself" is a prohibition, not a fallback.
+      expect(description).not.toMatch(
+        /compare|retained|strictly|total yourself/i,
+      );
+    }
   });
 
   const VALIDATED_SCHEMA_KEYWORDS = new Set([

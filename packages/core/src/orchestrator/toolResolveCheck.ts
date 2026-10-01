@@ -34,7 +34,7 @@ export const resolveCheckTool: Tool = {
     'including natural 1/20 auto-miss/hit on attacks. Choosing WHICH ' +
     'modifiers apply and setting the DC stay your rulings; the arithmetic is ' +
     'engine-owned. ' +
-    "vs is a single DC or AC from 1 to 99, and a total equal to vs succeeds: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller. For a contest against a total that is already fixed (for example a hider's retained Stealth check), omit vs and compare the returned total yourself: only a strictly higher total wins, and a tie leaves the situation as it was. " +
+    "vs is a single DC or AC from 1 to 99, and a total equal to vs succeeds: a bonus to the target's AC or DC (for example cover) goes into vs, while modifiers apply only to the roller. " +
     'args: { kind, reason, actor?, advantage?, disadvantage?, modifiers?, proficiency?, vs?, visibility? }.',
   inputSchema: {
     type: 'object',
