@@ -158,7 +158,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
     Object.freeze({
       limit: 'partial' as const,
       statement:
-        'A readied spell’s held energy is not a tracked effect, so adjust_hp and update_combatant report no concentration save for it and resolve_concentration cannot resolve one. If the caster takes damage before releasing the spell, resolve the Constitution save with resolve_check at DC 10 or half the damage, whichever is higher; on a failure the spell dissipates without taking effect.',
+        'A readied spell’s held energy is not a tracked effect, so adjust_hp and update_combatant report no concentration save for it and resolve_concentration cannot resolve one. If the caster takes damage before releasing the spell, no tool resolves the concentration save it owes: resolve_concentration computes that DC and resolves the save only for a tracked effect, and no calc formula computes the DC. That save cannot currently be resolved deterministically.',
       findingId: 'readiness-integrity',
     }),
   ]),
@@ -199,7 +199,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
     Object.freeze({
       limit: 'partial',
       statement:
-        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece after each such attack with remove_item and disposition dropped, which keeps expended ammunition as claimable rows at the battle location; after the battle, recover half of those rows with claim_item. Apply the loading restriction before another attack with that weapon.',
+        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece after each such attack with remove_item and disposition dropped, which keeps expended ammunition as claimable rows at the battle location; after the battle, claim_item can claim recovered rows, but no tool determines how many of the expended pieces are recoverable. Apply the loading restriction before another attack with that weapon.',
       findingId: 'readiness-integrity',
     }),
   ]),
