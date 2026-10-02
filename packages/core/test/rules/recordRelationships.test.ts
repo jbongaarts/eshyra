@@ -1045,7 +1045,7 @@ describe('committed SRD pack relationship integrity (eshyra-o9bd.19.3.4)', () =>
       ]),
     );
     expect(edges('action:use-an-object')).toContain(
-      'governing-rule rule:interacting-with-objects',
+      'governing-rule rule:other-activity-on-your-turn',
     );
     expect(edges('condition:exhaustion')).toEqual([
       'lifecycle-exception rule:food-and-water',

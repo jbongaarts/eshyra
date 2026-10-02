@@ -623,7 +623,7 @@ describe('deriveActionMechanics standard action semantics (eshyra-o9bd.18.7.2)',
         kind: 'objectInteraction',
         useWhen: 'object-requires-your-action',
         alsoUseWhen: 'interact-with-more-than-one-object-on-your-turn',
-        ordinaryInteractionRuleRef: 'rule:interacting-with-objects',
+        ordinaryInteractionRuleRef: 'rule:other-activity-on-your-turn',
       },
     ]);
   });
