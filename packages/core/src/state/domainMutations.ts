@@ -82,6 +82,11 @@ export function addCondition(
   if (typeof condition.id !== 'string' || condition.id.length === 0) {
     throw new MutateStateError('condition id must be a non-empty string');
   }
+  if (condition.id === 'exhaustion' || condition.id === 'exhausted') {
+    throw new MutateStateError(
+      'exhaustion levels must be changed with adjust_exhaustion',
+    );
+  }
 
   return withTransaction(db, (txnDb) => {
     const charId = resolveCharacterId(txnDb, ctx.characterId);

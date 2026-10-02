@@ -18,6 +18,7 @@ import {
   type CampaignRulesPackResolver,
   lookupCampaignRecord,
 } from './campaignRecordLookup.js';
+import { effectiveHpMax } from './exhaustion.js';
 import { resolveDeathSaveTransition } from './hpLifecycle.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
 import { closeOpenShortRestRecoveryWindows } from './rest.js';
@@ -191,6 +192,8 @@ export interface UpdateCombatantInput {
   /** Seeds the stable-recovery deadline when a knockout makes the combatant stable. */
   readonly rng?: Rng;
   readonly addCondition?: CharacterConditionEntry;
+  /** Internal atomic condition replacement used by engine-owned transitions. */
+  readonly replaceConditions?: readonly CharacterConditionEntry[];
   readonly removeCondition?: string;
   readonly status?: CombatantStatus;
   readonly locationId?: string;
@@ -1107,7 +1110,7 @@ function validCombatantIdsMessage(db: Db, campaignId: string): string {
     : 'No active combatants are currently instantiated.';
 }
 
-function readCombatant(
+export function readCombatant(
   db: Db,
   campaignId: string,
   combatantId: string,
@@ -1161,7 +1164,7 @@ export function resolveCombatantDeathSave(
       successes: c.deathSaveSuccesses,
       failures: c.deathSaveFailures,
       hp: c.hpCurrent,
-      hpMax: c.hpMax,
+      hpMax: effectiveHpMax(c.hpMax, c.conditions),
       recoveryBlocked: c.recoveryBlock !== null,
     });
     const { hpCurrent, successes, failures, outcome } = transition;
@@ -1416,11 +1419,14 @@ function updateCombatantInTxn(
     );
   }
   const previousHp = current.hpCurrent;
+  const conditions = input.replaceConditions
+    ? [...input.replaceConditions]
+    : [...current.conditions];
+  const hpMax = effectiveHpMax(current.hpMax, conditions);
   const nextHp =
     input.hpDelta === undefined
       ? current.hpCurrent
-      : Math.max(0, Math.min(current.hpMax, current.hpCurrent + input.hpDelta));
-  const conditions = [...current.conditions];
+      : Math.max(0, Math.min(hpMax, current.hpCurrent + input.hpDelta));
   let conditionAdded = false;
   let conditionRemoved = false;
   if (input.addCondition !== undefined) {
@@ -1430,6 +1436,13 @@ function updateCombatantInTxn(
     ) {
       throw new EncounterCombatantError('addCondition.id must be non-empty');
     }
+    if (
+      input.addCondition.id === 'exhaustion' ||
+      input.addCondition.id === 'exhausted'
+    )
+      throw new EncounterCombatantError(
+        'exhaustion levels must be changed with adjust_exhaustion',
+      );
     if (!conditions.some((c) => c.id === input.addCondition?.id)) {
       conditions.push(input.addCondition);
       conditionAdded = true;
@@ -1506,7 +1519,7 @@ function updateCombatantInTxn(
     } else if (input.hpDelta !== undefined) {
       if (droppedToZero) {
         const overflow = Math.max(0, -input.hpDelta - current.hpCurrent);
-        status = overflow >= current.hpMax ? 'dead' : 'dying';
+        status = overflow >= hpMax ? 'dead' : 'dying';
         successes = 0;
         failures = 0;
       } else if (

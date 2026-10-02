@@ -16,6 +16,11 @@ import { expireElapsedWorldEffects } from './activeEffects.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
 import { resolveCombatantRecoveries } from './encounterCombatants.js';
 import {
+  effectiveHpMax,
+  exhaustionLevel,
+  withExhaustionLevel,
+} from './exhaustion.js';
+import {
   adjustHp,
   expireTemporaryHp,
   type LifeState,
@@ -321,7 +326,7 @@ export function readOpenShortRestRecovery(
   const row = db
     .prepare(
       `SELECT p.rest_id, p.character_id, h.dice_maximum, h.dice_used,
-              h.die_faces, c.hp_current, c.hp_max
+              h.die_faces, c.hp_current, c.hp_max, c.conditions_json
        FROM rest_participant p
        JOIN rest_event r USING(campaign_id, rest_id)
        JOIN character c ON c.id = p.character_id
@@ -339,6 +344,7 @@ export function readOpenShortRestRecovery(
         die_faces: number | null;
         hp_current: number;
         hp_max: number;
+        conditions_json: string;
       }
     | undefined;
   if (!row || row.dice_maximum === null || row.die_faces === null)
@@ -349,7 +355,7 @@ export function readOpenShortRestRecovery(
     remainingHitDice: row.dice_maximum - (row.dice_used ?? 0),
     hitDieFaces: row.die_faces,
     hpCurrent: row.hp_current,
-    hpMax: row.hp_max,
+    hpMax: effectiveHpMax(row.hp_max, JSON.parse(row.conditions_json)),
   };
 }
 
@@ -450,21 +456,15 @@ function applyExhaustion(
   } catch {
     throw new RestError(`malformed conditions for '${id}'`);
   }
-  const index = conditions.findIndex(
-    (condition) =>
-      condition.id === 'exhaustion' || condition.id === 'exhausted',
-  );
-  if (index < 0 || !eligible) return { changed: false };
-  const level = conditions[index]?.level;
-  if (
-    !Number.isInteger(level) ||
-    (level as number) < 1 ||
-    (level as number) > 6
-  )
+  let level: number;
+  try {
+    level = exhaustionLevel(conditions as never);
+  } catch {
     throw new RestError(`malformed exhaustion state for '${id}'`);
-  const next = [...conditions];
-  if (level === 1) next.splice(index, 1);
-  else next[index] = { ...conditions[index], level: (level as number) - 1 };
+  }
+  if (level === 0 || !eligible) return { changed: false };
+  const nextLevel = level - 1;
+  const next = withExhaustionLevel(conditions as never, nextLevel);
   mutateState(db, {
     target: 'character',
     id,
@@ -476,7 +476,7 @@ function applyExhaustion(
   return {
     changed: true,
     from: level,
-    to: level === 1 ? 0 : (level as number) - 1,
+    to: nextLevel,
   };
 }
 

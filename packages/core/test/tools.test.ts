@@ -158,6 +158,7 @@ describe('ToolRegistry', () => {
       [
         'accept_ambiguity_precedent',
         'add_condition',
+        'adjust_exhaustion',
         'adjust_hp',
         'advance_time',
         'adopt_item',
@@ -2213,7 +2214,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       resolve_contest:
         "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed.",
       add_condition:
-        'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Because it is a no-op on an existing id, it cannot raise a graded condition: add exhaustion with its level (1-6); a later level increase cannot be recorded with this tool.',
+        'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Exhaustion must be changed with adjust_exhaustion.',
       remove_condition:
         'Remove a condition from a character by id (characters only: for an encounter combatant, use update_combatant removeCondition). No-op if the condition is not present.',
       adjust_hp:
@@ -2359,6 +2360,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       [
         'accept_ambiguity_precedent',
         'add_condition',
+        'adjust_exhaustion',
         'adjust_hp',
         'adopt_item',
         'advance_time',
