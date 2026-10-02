@@ -852,6 +852,8 @@ function renderState(state: StateSnapshot): string {
     lines.push('Active combatants:');
     for (const combatant of state.combatants) {
       const ac = combatant.ac === undefined ? '' : `, AC ${combatant.ac}`;
+      const heads =
+        combatant.headCount === null ? '' : `, heads ${combatant.headCount}`;
       const conditions =
         combatant.conditions.length === 0
           ? ''
@@ -871,7 +873,7 @@ function renderState(state: StateSnapshot): string {
         combatant.conditions,
       );
       lines.push(
-        `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}${combatant.status === 'dying' ? `, death saves ${combatant.deathSaveSuccesses}S/${combatant.deathSaveFailures}F${combatant.recoveryBlock ? ', suffocating: no healing or stabilizing' : ''}` : ''}], ${combatant.side}, HP ${combatant.hpCurrent}/${effectiveMax}${ac}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
+        `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}${combatant.status === 'dying' ? `, death saves ${combatant.deathSaveSuccesses}S/${combatant.deathSaveFailures}F${combatant.recoveryBlock ? ', suffocating: no healing or stabilizing' : ''}` : ''}], ${combatant.side}, HP ${combatant.hpCurrent}/${effectiveMax}${ac}${heads}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
       );
     }
   }

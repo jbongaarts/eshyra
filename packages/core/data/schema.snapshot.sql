@@ -494,7 +494,8 @@ CREATE TABLE "encounter_combatant" (
   recovery_block TEXT CHECK (recovery_block IS NULL OR recovery_block = 'suffocating'),
   stable_recovery_roll INTEGER CHECK (stable_recovery_roll BETWEEN 1 AND 4),
   stable_recovery_anchor_elapsed_minutes INTEGER CHECK (stable_recovery_anchor_elapsed_minutes >= 0),
-  stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0),
+  stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0), head_count INTEGER CHECK (head_count IS NULL OR head_count >= 0), heads_died_since_own_turn INTEGER NOT NULL DEFAULT 0, fire_damage_since_own_turn INTEGER NOT NULL DEFAULT 0
+  CHECK (fire_damage_since_own_turn IN (0, 1)), damage_this_turn INTEGER NOT NULL DEFAULT 0, damage_turn_key TEXT, head_died_this_turn INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (campaign_id, combatant_id)
 );
 

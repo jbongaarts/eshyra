@@ -113,6 +113,8 @@ export interface EncounterCombatant {
   readonly stableRecoveryRoll: number | null;
   readonly stableRecoveryAnchorElapsedMinutes: number | null;
   readonly stableRecoveryDeadlineElapsedMinutes: number | null;
+  /** Current creature head count when its record has a multipleHeads mechanic. */
+  readonly headCount: number | null;
 }
 
 export interface UpsertCampaignActorInput {
@@ -187,6 +189,9 @@ export interface UpdateCombatantInput {
   readonly campaignId: string;
   readonly combatantId: string;
   readonly hpDelta?: number;
+  /** Declared damage types returned by resolve_damage for a negative hpDelta. */
+  readonly damageTypes?: readonly string[];
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
   readonly deathRules?: 'player-character';
   readonly critical?: boolean;
   /** Seeds the stable-recovery deadline when a knockout makes the combatant stable. */
@@ -382,6 +387,110 @@ export interface UpdateCombatantResult {
   };
 }
 
+export interface CombatantHeadRegrowthResult {
+  readonly combatantId: string;
+  readonly headsRegrown: number;
+  readonly hitPointsRegained: number;
+  readonly headCount: number;
+}
+
+/** Settle Multiple Heads when beginTurn implicitly ends the combatant's turn. */
+export function settleCombatantHeadsAtTurnEnd(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly combatantId: string;
+    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+): CombatantHeadRegrowthResult | undefined {
+  const combatant = readCombatant(db, input.campaignId, input.combatantId);
+  if (combatant?.headCount === null || combatant === undefined)
+    return undefined;
+  const mechanic = multipleHeadsMechanic(
+    lookupCampaignRecord(
+      db,
+      'creature',
+      combatant.rulesRef,
+      input.resolveRulesPack,
+    ),
+  );
+  if (mechanic === undefined) return undefined;
+  const counters = db
+    .prepare(
+      `SELECT heads_died_since_own_turn, fire_damage_since_own_turn
+     FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?`,
+    )
+    .get(input.campaignId, input.combatantId) as {
+    heads_died_since_own_turn: number;
+    fire_damage_since_own_turn: number;
+  };
+  const count = counters.heads_died_since_own_turn;
+  const canRegrow =
+    count > 0 &&
+    counters.fire_damage_since_own_turn === 0 &&
+    combatant.status !== 'dead';
+  const headsRegrown = canRegrow ? count * mechanic.headsRegrownPerDeadHead : 0;
+  const headCount = combatant.headCount + headsRegrown;
+  db.prepare(
+    `UPDATE encounter_combatant
+     SET head_count = ?, heads_died_since_own_turn = 0,
+         fire_damage_since_own_turn = 0, damage_this_turn = 0,
+         damage_turn_key = NULL, head_died_this_turn = 0
+     WHERE campaign_id = ? AND combatant_id = ?`,
+  ).run(headCount, input.campaignId, input.combatantId);
+  if (
+    headsRegrown > 0 &&
+    hasOnePerHeadReaction(
+      lookupCampaignRecord(
+        db,
+        'creature',
+        combatant.rulesRef,
+        input.resolveRulesPack,
+      ),
+    )
+  ) {
+    db.prepare(
+      `UPDATE combat_turn_budget SET reaction_allowance = ?,
+         provenance = ?, session_id = ?, updated_at = ?
+       WHERE campaign_id = ? AND combat_instance_id = ?
+         AND participant_kind = 'combatant' AND participant_ref = ?`,
+    ).run(
+      Math.max(1, headCount),
+      input.provenance,
+      input.sessionId,
+      input.at,
+      input.campaignId,
+      combatant.combatInstanceId,
+      input.combatantId,
+    );
+  }
+  const requestedHealing = headsRegrown * mechanic.hitPointsPerRegrownHead;
+  let hitPointsRegained = 0;
+  if (requestedHealing > 0) {
+    const healed = updateCombatant(db, {
+      campaignId: input.campaignId,
+      combatantId: input.combatantId,
+      hpDelta: requestedHealing,
+      resolveRulesPack: input.resolveRulesPack,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+    hitPointsRegained = healed.combatant.hpCurrent - healed.previousHp;
+  }
+  return headsRegrown === 0
+    ? undefined
+    : {
+        combatantId: input.combatantId,
+        headsRegrown,
+        hitPointsRegained,
+        headCount,
+      };
+}
+
 export class EncounterCombatantError extends Error {
   constructor(message: string) {
     super(message);
@@ -448,6 +557,7 @@ interface CombatantRow {
   readonly stable_recovery_roll: number | null;
   readonly stable_recovery_anchor_elapsed_minutes: number | null;
   readonly stable_recovery_deadline_elapsed_minutes: number | null;
+  readonly head_count: number | null;
 }
 
 function rowToCombatInstance(row: CombatInstanceRow): CombatInstance {
@@ -511,6 +621,7 @@ function rowToCombatant(row: CombatantRow): EncounterCombatant {
       row.stable_recovery_anchor_elapsed_minutes,
     stableRecoveryDeadlineElapsedMinutes:
       row.stable_recovery_deadline_elapsed_minutes,
+    headCount: row.head_count,
   };
 }
 
@@ -578,6 +689,78 @@ function readCreatureAc(record: RulesRecord | undefined): number | undefined {
   return typeof value === 'number' && Number.isInteger(value)
     ? value
     : undefined;
+}
+
+function initialHeadCount(record: RulesRecord | undefined): number | undefined {
+  const visit = (value: unknown): number | undefined => {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const found = visit(item);
+        if (found !== undefined) return found;
+      }
+    } else if (typeof value === 'object' && value !== null) {
+      const candidate = value as Record<string, unknown>;
+      if (candidate.kind === 'multipleHeads') {
+        return typeof candidate.initialHeads === 'number'
+          ? candidate.initialHeads
+          : undefined;
+      }
+      for (const nested of Object.values(candidate)) {
+        const found = visit(nested);
+        if (found !== undefined) return found;
+      }
+    }
+    return undefined;
+  };
+  return visit(record?.data);
+}
+
+interface MultipleHeadsMechanic {
+  readonly initialHeads: number;
+  readonly headDiesWhenDamageInOneTurnAtLeast: number;
+  readonly headsRegrownPerDeadHead: number;
+  readonly regrowthSuppressedByDamageType: string;
+  readonly hitPointsPerRegrownHead: number;
+  readonly deathWhenNoHeads: boolean;
+}
+
+function multipleHeadsMechanic(
+  record: RulesRecord | undefined,
+): MultipleHeadsMechanic | undefined {
+  const visit = (value: unknown): MultipleHeadsMechanic | undefined => {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const found = visit(item);
+        if (found !== undefined) return found;
+      }
+    } else if (typeof value === 'object' && value !== null) {
+      const candidate = value as Record<string, unknown>;
+      if (candidate.kind === 'multipleHeads') {
+        return candidate as unknown as MultipleHeadsMechanic;
+      }
+      for (const nested of Object.values(candidate)) {
+        const found = visit(nested);
+        if (found !== undefined) return found;
+      }
+    }
+    return undefined;
+  };
+  return visit(record?.data);
+}
+
+function hasOnePerHeadReaction(record: RulesRecord | undefined): boolean {
+  const visit = (value: unknown): boolean => {
+    if (Array.isArray(value)) return value.some(visit);
+    if (typeof value !== 'object' || value === null) return false;
+    const candidate = value as Record<string, unknown>;
+    if (
+      candidate.kind === 'extraReactions' &&
+      candidate.formula === 'one-per-head-beyond-one'
+    )
+      return true;
+    return Object.values(candidate).some(visit);
+  };
+  return visit(record?.data);
 }
 
 function readCreatureHp(record: RulesRecord | undefined): number {
@@ -759,7 +942,7 @@ export function listCombatantsForInstance(
               conditions_json, status, location_id, placement, death_rules,
               death_save_successes, death_save_failures, recovery_block,
               stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
-              stable_recovery_deadline_elapsed_minutes
+              stable_recovery_deadline_elapsed_minutes, head_count
        FROM encounter_combatant
        WHERE campaign_id = ? AND combat_instance_id = ?
        ORDER BY combatant_id`,
@@ -815,6 +998,7 @@ function insertCombatant(
     status: CombatantStatus;
     locationId?: string;
     placement?: string;
+    headCount?: number;
     provenance: string;
     sessionId: string;
     at: string;
@@ -825,9 +1009,9 @@ function insertCombatant(
        campaign_id, combat_instance_id, source_encounter_id, combatant_id,
        identity_kind, identity_ref, display_label, rules_ref, side, faction,
        hp_current, hp_max, ac, conditions_json, status, location_id, placement,
-       provenance, session_id, updated_at
+       head_count, provenance, session_id, updated_at
      )
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     input.campaignId,
     input.combatInstanceId,
@@ -846,6 +1030,7 @@ function insertCombatant(
     input.status,
     input.locationId ?? null,
     input.placement ?? null,
+    input.headCount ?? null,
     input.provenance,
     input.sessionId,
     input.at,
@@ -918,6 +1103,7 @@ function startEncounterInTxn(
         hpMax,
         ac,
         status: 'alive',
+        headCount: initialHeadCount(record),
         locationId,
         placement: creature.role,
         provenance: input.provenance,
@@ -991,6 +1177,7 @@ function startEncounterInTxn(
           : actor.status === 'unknown'
             ? 'alive'
             : actor.status,
+      headCount: initialHeadCount(record),
       locationId: actor.currentLocationId ?? locationId,
       placement: actorInput.placement,
       provenance: input.provenance,
@@ -1123,7 +1310,7 @@ export function readCombatant(
               conditions_json, status, location_id, placement, death_rules,
               death_save_successes, death_save_failures, recovery_block,
               stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
-              stable_recovery_deadline_elapsed_minutes
+              stable_recovery_deadline_elapsed_minutes, head_count
        FROM encounter_combatant
        WHERE campaign_id = ? AND combatant_id = ?`,
     )
@@ -1456,6 +1643,70 @@ function updateCombatantInTxn(
   }
   const deathRules = input.deathRules ? 'player-character' : current.deathRules;
   let status = input.status ?? current.status;
+  let headCount = current.headCount;
+  let headsDiedSinceOwnTurn = 0;
+  let fireDamageSinceOwnTurn = 0;
+  let damageThisTurn = 0;
+  let damageTurnKey: string | null = null;
+  let headDiedThisTurn = 0;
+  if (headCount !== null) {
+    const tracked = db
+      .prepare(
+        `SELECT heads_died_since_own_turn, fire_damage_since_own_turn,
+              damage_this_turn, damage_turn_key, head_died_this_turn
+       FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?`,
+      )
+      .get(input.campaignId, input.combatantId) as {
+      heads_died_since_own_turn: number;
+      fire_damage_since_own_turn: number;
+      damage_this_turn: number;
+      damage_turn_key: string | null;
+      head_died_this_turn: number;
+    };
+    headsDiedSinceOwnTurn = tracked.heads_died_since_own_turn;
+    fireDamageSinceOwnTurn = tracked.fire_damage_since_own_turn;
+    damageThisTurn = tracked.damage_this_turn;
+    damageTurnKey = tracked.damage_turn_key;
+    headDiedThisTurn = tracked.head_died_this_turn;
+    if (input.hpDelta !== undefined && input.hpDelta < 0) {
+      const turn = db
+        .prepare(
+          `SELECT round_number, active_participant_kind, active_participant_ref
+         FROM combat_instance WHERE campaign_id = ? AND combat_instance_id = ?`,
+        )
+        .get(input.campaignId, current.combatInstanceId) as {
+        round_number: number;
+        active_participant_kind: string | null;
+        active_participant_ref: string | null;
+      };
+      const key = `${current.combatInstanceId}:${turn.round_number}:${turn.active_participant_kind ?? 'none'}:${turn.active_participant_ref ?? 'none'}`;
+      if (damageTurnKey !== key) {
+        damageThisTurn = 0;
+        headDiedThisTurn = 0;
+        damageTurnKey = key;
+      }
+      damageThisTurn += -input.hpDelta;
+      if (input.damageTypes?.includes('fire')) fireDamageSinceOwnTurn = 1;
+      const mechanic = multipleHeadsMechanic(
+        lookupCampaignRecord(
+          db,
+          'creature',
+          current.rulesRef,
+          input.resolveRulesPack,
+        ),
+      );
+      if (
+        mechanic !== undefined &&
+        headDiedThisTurn === 0 &&
+        damageThisTurn >= mechanic.headDiesWhenDamageInOneTurnAtLeast
+      ) {
+        headCount = Math.max(0, headCount - 1);
+        headsDiedSinceOwnTurn += 1;
+        headDiedThisTurn = 1;
+      }
+      if (headCount === 0 && mechanic?.deathWhenNoHeads) status = 'dead';
+    }
+  }
   let successes = current.deathSaveSuccesses;
   let failures = current.deathSaveFailures;
   let recoveryBlock = current.recoveryBlock;
@@ -1544,6 +1795,7 @@ function updateCombatantInTxn(
           ? 'alive'
           : current.status);
   }
+  if (headCount === 0 && current.headCount !== 0) status = 'dead';
   if (status !== 'stable' || armRecovery) {
     recoveryRoll = null;
     recoveryAnchor = null;
@@ -1557,6 +1809,9 @@ function updateCombatantInTxn(
   db.prepare(
     `UPDATE encounter_combatant
      SET hp_current = ?, conditions_json = ?, status = ?, location_id = ?,
+         head_count = ?, heads_died_since_own_turn = ?,
+         fire_damage_since_own_turn = ?, damage_this_turn = ?,
+         damage_turn_key = ?, head_died_this_turn = ?,
          death_rules = ?, death_save_successes = ?, death_save_failures = ?,
          recovery_block = ?, stable_recovery_roll = ?,
          stable_recovery_anchor_elapsed_minutes = ?, stable_recovery_deadline_elapsed_minutes = ?,
@@ -1567,6 +1822,12 @@ function updateCombatantInTxn(
     JSON.stringify(conditions),
     status,
     locationId ?? null,
+    headCount,
+    headsDiedSinceOwnTurn,
+    fireDamageSinceOwnTurn,
+    damageThisTurn,
+    damageTurnKey,
+    headDiedThisTurn,
     deathRules,
     successes,
     failures,
@@ -1581,6 +1842,33 @@ function updateCombatantInTxn(
     input.campaignId,
     input.combatantId,
   );
+  if (
+    headCount !== current.headCount &&
+    headCount !== null &&
+    hasOnePerHeadReaction(
+      lookupCampaignRecord(
+        db,
+        'creature',
+        current.rulesRef,
+        input.resolveRulesPack,
+      ),
+    )
+  ) {
+    db.prepare(
+      `UPDATE combat_turn_budget SET reaction_allowance = ?,
+         provenance = ?, session_id = ?, updated_at = ?
+       WHERE campaign_id = ? AND combat_instance_id = ?
+         AND participant_kind = 'combatant' AND participant_ref = ?`,
+    ).run(
+      Math.max(1, headCount),
+      input.provenance,
+      input.sessionId,
+      input.at,
+      input.campaignId,
+      current.combatInstanceId,
+      current.combatantId,
+    );
+  }
   // A knockout ("falls unconscious and is stable") arms the same 1d4-hour
   // recovery deadline a stabilized combatant gets.
   if (armRecovery)

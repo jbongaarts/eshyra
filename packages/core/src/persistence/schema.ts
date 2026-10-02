@@ -43,7 +43,8 @@ import { migrateDatabase } from './migrationRunner.js';
  *                                        mechanics across combat instances)
  *   - `encounter_combatant`             (live/historical tactical projection
  *                                        with per-combatant death rules, death
- *                                        saves, recovery block, and stable recovery)
+ *                                        saves, recovery block, stable recovery,
+ *                                        and tracked creature head lifecycle)
  *   - `ammunition_expenditure`           (combat-scoped ammunition expenditure
  *                                        linked to its battlefield inventory row)
  *   - `ammunition_expenditure`           (combat-scoped expenditure rows tied

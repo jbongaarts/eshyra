@@ -9,9 +9,9 @@
     "dnd5eSrd": 1799,
     "pathfinderFixture": 7
   },
-  "rowCount": 1861,
+  "rowCount": 1863,
   "dispositionCounts": {
-    "complete": 427,
+    "complete": 429,
     "model-adjudicated": 1229,
     "not-mechanical": 196,
     "typed-core-with-prose-qualifier": 3,
@@ -8562,7 +8562,7 @@
         "climbWithoutCheck",
         "ignoreDifficultTerrain"
       ],
-      "population": 459,
+      "population": 460,
       "valueClass": "scalar-like",
       "currentSchemaValidation": "domain-specific mechanics schema validates the closed scalar/discriminator",
       "deterministicConsumers": "mechanicsProjections domain discriminators and kindSchemas closed vocabularies",
@@ -8867,6 +8867,26 @@
       "recordKinds": [
         "creature"
       ],
+      "fieldPath": "data.traits[].mechanics.effects[].regrowthSuppressedByDamageType",
+      "representativeValues": [
+        "fire"
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "kindSchemas multipleHeads validator checks the curated source values",
+      "deterministicConsumers": "tracked combatant head lifecycle and derived reaction allowance in state/encounterCombatants.ts and state/actionEconomy.ts",
+      "currentAuditReadiness": "encounter combatant head lifecycle consumes the typed values; the importer pins them to the Multiple Heads source span",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "Multiple Heads typed engine contract",
+      "retainedProseBoundary": null,
+      "owner": "mechanicsProjections.ts, rules/kindSchemas.ts, and the combatant engine",
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
       "fieldPath": "data.traits[].mechanics.effects[].reliesOn[]",
       "representativeValues": [
         "smell",
@@ -9153,6 +9173,26 @@
       "typedSchemaOrConsumer": null,
       "retainedProseBoundary": null,
       "owner": null,
+      "futureWork": false
+    },
+    {
+      "system": "dnd5e-srd",
+      "recordKinds": [
+        "creature"
+      ],
+      "fieldPath": "data.traits[].mechanics.effects[].sourceSpan",
+      "representativeValues": [
+        "The hydra has five heads."
+      ],
+      "population": 1,
+      "valueClass": "scalar-like",
+      "currentSchemaValidation": "kindSchemas multipleHeads validator checks the curated source values",
+      "deterministicConsumers": "tracked combatant head lifecycle and derived reaction allowance in state/encounterCombatants.ts and state/actionEconomy.ts",
+      "currentAuditReadiness": "encounter combatant head lifecycle consumes the typed values; the importer pins them to the Multiple Heads source span",
+      "disposition": "complete",
+      "typedSchemaOrConsumer": "Multiple Heads typed engine contract",
+      "retainedProseBoundary": null,
+      "owner": "mechanicsProjections.ts, rules/kindSchemas.ts, and the combatant engine",
       "futureWork": false
     },
     {

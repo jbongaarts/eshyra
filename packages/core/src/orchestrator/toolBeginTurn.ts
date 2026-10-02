@@ -16,6 +16,8 @@ export const beginTurnTool: Tool = {
     'action, free object interaction, movement note) and returns their ' +
     'reaction; implicitly ends the previous turn (clearing its surprise) and ' +
     'automatically settles due F3 round and participant-turn effects. ' +
+    "At the end of a multi-headed creature's turn, it also applies eligible " +
+    'head regrowth and healing and reports the new head count. ' +
     'A known but dead, escaped, or inactive participant still establishes its ' +
     'boundary and returns turnAvailable:false; skipped initiative boundaries ' +
     'must still be reported when participant-local timers depend on them. Call ' +
