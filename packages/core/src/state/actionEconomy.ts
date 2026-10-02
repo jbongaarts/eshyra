@@ -29,9 +29,11 @@
 //   model-declared flag. A spend whose activity reads like a spell cast
 //   without a spellRef fails closed.
 // - A surprised participant can take no move, action, or bonus action on its
-//   first turn and no reaction until that turn ends (surprise). Surprise
-//   determination (Stealth vs passive Perception) stays a DM ruling; this
-//   module owns recording and enforcing the restriction.
+//   first turn and no reaction until that turn ends (surprise). This module
+//   owns recording and enforcing the restriction. Surprise determination
+//   (Stealth vs passive Perception) is a comparison no tool performs yet
+//   (capability gap eshyra-o9bd.19.5.10.3), so the model-facing contract
+//   discloses it as undeterminable rather than leaving it to a DM ruling.
 // - Two-weapon fighting's extra attack is an ordinary bonus-action spend;
 //   its damage composition is F9's, its weapon eligibility a ruling
 //   (two-weapon-fighting).
@@ -1358,8 +1360,10 @@ export function setReactionAllowance(
 }
 
 /**
- * Record which participants are surprised, after the DM adjudicates the
- * Stealth-vs-passive-Perception determination. Surprise applies only to the
+ * Record which participants are surprised. Nothing determines who is: the
+ * Stealth-vs-passive-Perception comparison is the open capability gap
+ * eshyra-o9bd.19.5.10.3, so the model-facing contract discloses surprise as
+ * undeterminable (F-09 design A5). Surprise applies only to the
  * first turn of combat, so a participant that has already taken a turn is
  * rejected; {@link beginTurn} clears the flag when the surprised turn ends.
  */

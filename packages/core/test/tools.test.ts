@@ -2155,6 +2155,18 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
     }
   });
 
+  it('discloses surprise as undeterminable instead of leaving the comparison to the DM', () => {
+    // The Stealth-vs-passive-Perception comparison is the retained-total gap
+    // (eshyra-o9bd.19.5.10.3); set_surprised only records an outcome.
+    const description = DEFAULT_TOOLS.find(
+      (entry) => entry.name === 'set_surprised',
+    )?.description;
+    expect(description).toContain(
+      'surprise cannot currently be determined deterministically',
+    );
+    expect(description).not.toMatch(/adjudicate/i);
+  });
+
   it('never offers model-side arithmetic as a resolution fallback', () => {
     // ADR 0020 §2 keeps dice and arithmetic deterministic. No tool resolves a
     // contest with one already-fixed side (resolve_contest rerolls both;

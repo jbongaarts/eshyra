@@ -403,7 +403,7 @@ producer and consumer:
 
 | Key | Class | Gap → owning bead |
 |---|---|---|
-| `rule:hiding` | blocking | `retained-check-total-resolution` → `eshyra-o9bd.19.5.10.3` |
+| `rule:hiding`, `rule:surprise` | blocking | `retained-check-total-resolution` → `eshyra-o9bd.19.5.10.3` |
 | `rule:food`, `rule:water`, `rule:speed` | blocking | `graded-exhaustion-increase` → `eshyra-o9bd.19.5.7.3` |
 | `rule:suffocating` | blocking | `suffocation-recovery-gate` → `eshyra-o9bd.19.5.7.4`; `combatant-dying-state` → `eshyra-o9bd.19.5.7.5` |
 | `rule:knocking-a-creature-out` | blocking | `nonlethal-knockout` → `eshyra-o9bd.19.5.7.6` |
@@ -428,10 +428,15 @@ recorded. The regression is accepted: a hydra keeps one reaction per round
 until the blocking gap `eshyra-o9bd.19.3.4.6` lands, and that bead blocks
 `eshyra-o9bd.19.3.4`. The gap belongs to a creature record, not to a `rule:*`
 or `action:*` key, so tool text discloses it and it is not an
-`ENGINE_CAPABILITY_GAPS` entry. `set_surprised` still has the DM adjudicate
-Stealth against passive Perception, the same operation as the hiding gap.
-Downgrading it would remove the only path to surprise, so it stays unchanged
-until an explicit decision is made.
+`ENGINE_CAPABILITY_GAPS` entry. `set_surprised` had the DM adjudicate
+Stealth against passive Perception, the same operation as the hiding gap
+(accepted design `eshyra-2n1t.4`). By the same decision it is **downgraded**:
+its description and the Hybrid Contract now say that no tool performs the
+comparison, so surprise cannot currently be determined, and a new
+`rule:surprise` known limit discloses the `retained-check-total-resolution`
+gap. The regression is accepted: surprise has no deterministic path until
+`eshyra-o9bd.19.5.10.3` lands. `set_surprised` still records and enforces a
+surprise outcome.
 
 **R5 — One read-only facade.** A new
 `ruleAwareness(recordKey, stack, relationshipManifestSource)` in `src/rules/`

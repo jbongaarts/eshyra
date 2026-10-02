@@ -232,6 +232,23 @@ export const RULE_KNOWN_LIMITS: Readonly<
       findingId: 'readiness-integrity',
     }),
   ]),
+  // A5 (user decision 2026-10-01): set_surprised previously left the
+  // Stealth-vs-passive-Perception comparison to the DM. The comparison is the
+  // retained-total resolution gap (one Stealth total per hider against each
+  // observer's passive score); calc passive_score computes a score and
+  // compares nothing, and set_surprised (toolSetSurprised.ts) only records.
+  'rule:surprise': Object.freeze([
+    Object.freeze({
+      participants: Object.freeze(['calc', 'set_surprised']),
+      capabilityGaps: Object.freeze([
+        'retained-check-total-resolution' as const,
+      ]),
+      limit: 'partial' as const,
+      statement:
+        'Deciding who is surprised needs each hider’s Stealth total compared with each observer’s passive Perception score. calc passive_score computes a score but compares nothing, and set_surprised only records an outcome, so who is surprised cannot currently be determined deterministically.',
+      findingId: 'readiness-integrity',
+    }),
+  ]),
   // R0 new trap (second pass), rewritten under A5: casting does not track the
   // held energy, so toolAdjustHp.ts / toolUpdateCombatant.ts report no
   // concentration save for it. activeEffects.ts EFFECT_KIND_PROFILES lets a

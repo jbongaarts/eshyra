@@ -271,6 +271,7 @@ describe('rule awareness', () => {
         'suffocation-recovery-gate',
         'combatant-dying-state',
       ],
+      'rule:surprise': ['retained-check-total-resolution'],
       'rule:water': ['graded-exhaustion-increase'],
       'rule:weapon-properties': ['ammunition-recovery-count'],
     });
