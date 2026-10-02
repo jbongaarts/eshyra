@@ -38,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 32,
-      name: 'character_recovery_block',
+      version: 33,
+      name: 'combatant_death_rules',
     });
     db.close();
   });

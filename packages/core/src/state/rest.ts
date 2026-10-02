@@ -14,6 +14,7 @@ import {
 import type { ExpiredWorldEffectSummary } from './activeEffects.js';
 import { expireElapsedWorldEffects } from './activeEffects.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
+import { resolveCombatantRecoveries } from './encounterCombatants.js';
 import {
   adjustHp,
   expireTemporaryHp,
@@ -210,6 +211,11 @@ export function advanceWorldTime(
       at: input.at,
     });
     const stableRecoveries = resolveStableRecoveries(txn, next, input);
+    const combatantStableRecoveries = resolveCombatantRecoveries(
+      txn,
+      next,
+      input,
+    );
     const itemEvents = resolveDueItemClockEvents(txn, {
       ...input,
       campaignId: input.campaignId,
@@ -227,6 +233,7 @@ export function advanceWorldTime(
       expiredEffects,
       closedRecoveryWindows,
       stableRecoveries,
+      combatantStableRecoveries,
       itemResets: itemEvents.itemResets,
       itemTimerResolutions: itemEvents.itemTimerResolutions,
     };

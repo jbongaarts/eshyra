@@ -84,6 +84,44 @@ function setup() {
 }
 
 describe('encounter combatants', () => {
+  it('opts a combatant into player-character death saves through the tools', () => {
+    const { db, registry, ctx } = setup();
+    registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx);
+    const target = listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID)[0];
+    expect(target).toBeDefined();
+    if (!target) throw new Error('encounter did not create a combatant');
+    const dropped = registry.invoke(
+      'update_combatant',
+      {
+        combatantId: target.combatantId,
+        deathRules: 'player-character',
+        hpDelta: -target.hpCurrent,
+      },
+      ctx,
+    );
+    expect(dropped.ok).toBe(true);
+    expect(listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID)[0]).toMatchObject({
+      status: 'dying',
+      deathRules: 'player-character',
+      deathSaveSuccesses: 0,
+      deathSaveFailures: 0,
+    });
+    const save = registry.invoke(
+      'record_death_save',
+      {
+        combatantId: target.combatantId,
+        roll: 1,
+      },
+      ctx,
+    );
+    expect(save.ok).toBe(true);
+    expect(listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID)[0]).toMatchObject({
+      status: 'dying',
+      deathSaveFailures: 2,
+    });
+    db.close();
+  });
+
   it('starts module creatures as anonymous combatants with instance-scoped ids', () => {
     const { db, registry, ctx } = setup();
 

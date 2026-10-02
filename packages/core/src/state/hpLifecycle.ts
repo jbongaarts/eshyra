@@ -581,6 +581,50 @@ export interface DeathSaveResult {
   recoveryBlocked?: 'suffocating';
 }
 
+/** Pure shared death-save state transition used by characters and combatants. */
+export function resolveDeathSaveTransition(input: {
+  roll: number;
+  successes: number;
+  failures: number;
+  hp: number;
+  hpMax: number;
+  recoveryBlocked: boolean;
+}) {
+  let { successes, failures } = input;
+  let hpCurrent = input.hp;
+  let lifeState: LifeState = 'dying';
+  let outcome: DeathSaveOutcome;
+  if (input.roll === 20) {
+    if (input.recoveryBlocked) {
+      successes = Math.min(3, successes + 1);
+      outcome = 'success';
+    } else {
+      hpCurrent = Math.min(1, input.hpMax);
+      lifeState = 'alive';
+      successes = 0;
+      failures = 0;
+      outcome = 'revived';
+    }
+  } else if (input.roll === 1) {
+    failures = Math.min(3, failures + 2);
+    lifeState = failures >= 3 ? 'dead' : 'dying';
+    outcome = failures >= 3 ? 'dead' : 'critical-failure';
+  } else if (input.roll >= 10) {
+    successes = Math.min(3, successes + 1);
+    if (successes >= 3 && !input.recoveryBlocked) {
+      lifeState = 'stable';
+      successes = 0;
+      failures = 0;
+      outcome = 'stabilized';
+    } else outcome = 'success';
+  } else {
+    failures = Math.min(3, failures + 1);
+    lifeState = failures >= 3 ? 'dead' : 'dying';
+    outcome = failures >= 3 ? 'dead' : 'failure';
+  }
+  return { hpCurrent, lifeState, successes, failures, outcome };
+}
+
 /**
  * Apply one already-rolled d20 death saving throw to a dying character.
  * The die goes through the `roll` tool (category `death_save`) so it is
@@ -608,45 +652,16 @@ export function recordDeathSave(
       );
     }
 
-    let outcome: DeathSaveOutcome;
-    let hpCurrent = row.hp_current;
-    let lifeState: LifeState = 'dying';
-    let successes = row.death_save_successes;
-    let failures = row.death_save_failures;
     const recoveryBlocked = row.recovery_block !== null;
-
-    if (roll === 20) {
-      if (recoveryBlocked) {
-        successes = Math.min(3, successes + 1);
-        outcome = 'success';
-      } else {
-        // Natural 20: regain 1 hit point; counters reset on regaining HP.
-        outcome = 'revived';
-        hpCurrent = Math.min(1, row.hp_max);
-        lifeState = 'alive';
-        successes = 0;
-        failures = 0;
-      }
-    } else if (roll === 1) {
-      failures = Math.min(3, failures + 2);
-      outcome = failures >= 3 ? 'dead' : 'critical-failure';
-      lifeState = failures >= 3 ? 'dead' : 'dying';
-    } else if (roll >= 10) {
-      successes = Math.min(3, successes + 1);
-      if (successes >= 3 && !recoveryBlocked) {
-        // Third success: stable; counters reset on becoming stable.
-        outcome = 'stabilized';
-        lifeState = 'stable';
-        successes = 0;
-        failures = 0;
-      } else {
-        outcome = 'success';
-      }
-    } else {
-      failures += 1;
-      outcome = failures >= 3 ? 'dead' : 'failure';
-      lifeState = failures >= 3 ? 'dead' : 'dying';
-    }
+    const transition = resolveDeathSaveTransition({
+      roll,
+      successes: row.death_save_successes,
+      failures: row.death_save_failures,
+      hp: row.hp_current,
+      hpMax: row.hp_max,
+      recoveryBlocked,
+    });
+    const { hpCurrent, lifeState, successes, failures, outcome } = transition;
 
     writeHpFields(
       txnDb,

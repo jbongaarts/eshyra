@@ -1,4 +1,6 @@
 import type { AdventureModule } from '../adventure/types.js';
+import { rollDice } from '../orchestrator/dice.js';
+import { createSeededRng, type Rng } from '../orchestrator/rng.js';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import type { RulesRecord } from '../rules/types.js';
@@ -16,6 +18,7 @@ import {
   type CampaignRulesPackResolver,
   lookupCampaignRecord,
 } from './campaignRecordLookup.js';
+import { resolveDeathSaveTransition } from './hpLifecycle.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
 import { closeOpenShortRestRecoveryWindows } from './rest.js';
 
@@ -38,7 +41,9 @@ export type ActorStatus =
   | 'unconscious'
   | 'escaped'
   | 'inactive'
-  | 'unknown';
+  | 'unknown'
+  | 'dying'
+  | 'stable';
 export type CombatantIdentityKind =
   | 'encounter_instance'
   | 'module_npc'
@@ -49,7 +54,9 @@ export type CombatantStatus =
   | 'dead'
   | 'unconscious'
   | 'escaped'
-  | 'inactive';
+  | 'inactive'
+  | 'dying'
+  | 'stable';
 
 export interface CombatInstance {
   readonly campaignId: string;
@@ -98,6 +105,13 @@ export interface EncounterCombatant {
   readonly status: CombatantStatus;
   readonly locationId: string | undefined;
   readonly placement: string | undefined;
+  readonly deathRules: 'monster' | 'player-character';
+  readonly deathSaveSuccesses: number;
+  readonly deathSaveFailures: number;
+  readonly recoveryBlock: 'suffocating' | null;
+  readonly stableRecoveryRoll: number | null;
+  readonly stableRecoveryAnchorElapsedMinutes: number | null;
+  readonly stableRecoveryDeadlineElapsedMinutes: number | null;
 }
 
 export interface UpsertCampaignActorInput {
@@ -172,6 +186,8 @@ export interface UpdateCombatantInput {
   readonly campaignId: string;
   readonly combatantId: string;
   readonly hpDelta?: number;
+  readonly deathRules?: 'player-character';
+  readonly critical?: boolean;
   readonly addCondition?: CharacterConditionEntry;
   readonly removeCondition?: string;
   readonly status?: CombatantStatus;
@@ -420,6 +436,13 @@ interface CombatantRow {
   readonly status: string;
   readonly location_id: string | null;
   readonly placement: string | null;
+  readonly death_rules: 'monster' | 'player-character';
+  readonly death_save_successes: number;
+  readonly death_save_failures: number;
+  readonly recovery_block: 'suffocating' | null;
+  readonly stable_recovery_roll: number | null;
+  readonly stable_recovery_anchor_elapsed_minutes: number | null;
+  readonly stable_recovery_deadline_elapsed_minutes: number | null;
 }
 
 function rowToCombatInstance(row: CombatInstanceRow): CombatInstance {
@@ -474,6 +497,15 @@ function rowToCombatant(row: CombatantRow): EncounterCombatant {
     status: row.status as CombatantStatus,
     locationId: row.location_id ?? undefined,
     placement: row.placement ?? undefined,
+    deathRules: row.death_rules,
+    deathSaveSuccesses: row.death_save_successes,
+    deathSaveFailures: row.death_save_failures,
+    recoveryBlock: row.recovery_block,
+    stableRecoveryRoll: row.stable_recovery_roll,
+    stableRecoveryAnchorElapsedMinutes:
+      row.stable_recovery_anchor_elapsed_minutes,
+    stableRecoveryDeadlineElapsedMinutes:
+      row.stable_recovery_deadline_elapsed_minutes,
   };
 }
 
@@ -719,7 +751,10 @@ export function listCombatantsForInstance(
       `SELECT campaign_id, combat_instance_id, source_encounter_id,
               combatant_id, identity_kind, identity_ref, display_label,
               rules_ref, side, faction, hp_current, hp_max, ac,
-              conditions_json, status, location_id, placement
+              conditions_json, status, location_id, placement, death_rules,
+              death_save_successes, death_save_failures, recovery_block,
+              stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+              stable_recovery_deadline_elapsed_minutes
        FROM encounter_combatant
        WHERE campaign_id = ? AND combat_instance_id = ?
        ORDER BY combatant_id`,
@@ -1080,7 +1115,10 @@ function readCombatant(
       `SELECT campaign_id, combat_instance_id, source_encounter_id,
               combatant_id, identity_kind, identity_ref, display_label,
               rules_ref, side, faction, hp_current, hp_max, ac,
-              conditions_json, status, location_id, placement
+              conditions_json, status, location_id, placement, death_rules,
+              death_save_successes, death_save_failures, recovery_block,
+              stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
+              stable_recovery_deadline_elapsed_minutes
        FROM encounter_combatant
        WHERE campaign_id = ? AND combatant_id = ?`,
     )
@@ -1096,6 +1134,261 @@ export function updateCombatant(
   // concentration reaction below: a combatant can never be committed as
   // down/dead while its concentration cleanup is lost or partial.
   return withTransaction(db, (txnDb) => updateCombatantInTxn(txnDb, input));
+}
+
+export function resolveCombatantDeathSave(
+  db: Db,
+  campaignId: string,
+  combatantId: string,
+  roll: number,
+  ctx: { provenance: string; sessionId: string; at: string },
+  rng: Rng = createSeededRng(0),
+) {
+  if (!Number.isInteger(roll) || roll < 1 || roll > 20)
+    throw new EncounterCombatantError(
+      'death save roll must be an integer between 1 and 20',
+    );
+  return withTransaction(db, (txn) => {
+    const c = readCombatant(txn, campaignId, combatantId);
+    if (c?.deathRules !== 'player-character' || c.status !== 'dying')
+      throw new EncounterCombatantError(
+        'only a dying player-character combatant may make death saves',
+      );
+    const transition = resolveDeathSaveTransition({
+      roll,
+      successes: c.deathSaveSuccesses,
+      failures: c.deathSaveFailures,
+      hp: c.hpCurrent,
+      hpMax: c.hpMax,
+      recoveryBlocked: c.recoveryBlock !== null,
+    });
+    const { hpCurrent, successes, failures, outcome } = transition;
+    const status = transition.lifeState as CombatantStatus;
+    txn
+      .prepare(
+        'UPDATE encounter_combatant SET hp_current=?,status=?,death_save_successes=?,death_save_failures=?,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?',
+      )
+      .run(
+        hpCurrent,
+        status,
+        successes,
+        failures,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+        campaignId,
+        combatantId,
+      );
+    if (status === 'stable')
+      scheduleCombatantRecovery(txn, campaignId, combatantId, rng);
+    syncCombatantActor(txn, campaignId, combatantId, ctx);
+    return {
+      roll,
+      outcome,
+      deathSaveSuccesses: successes,
+      deathSaveFailures: failures,
+      lifeState: status,
+      hpCurrent,
+      ...(c.recoveryBlock ? { recoveryBlocked: c.recoveryBlock } : {}),
+    };
+  });
+}
+
+export function stabilizeCombatant(
+  db: Db,
+  campaignId: string,
+  combatantId: string,
+  ctx: { provenance: string; sessionId: string; at: string },
+  rng: Rng = createSeededRng(0),
+) {
+  return withTransaction(db, (txn) => {
+    const c = readCombatant(txn, campaignId, combatantId);
+    if (c?.deathRules !== 'player-character' || c.status !== 'dying')
+      throw new EncounterCombatantError(
+        'only a dying player-character combatant can be stabilized',
+      );
+    if (c.recoveryBlock)
+      throw new EncounterCombatantError(
+        `cannot stabilize while ${c.recoveryBlock}`,
+      );
+    txn
+      .prepare(
+        "UPDATE encounter_combatant SET status='stable',death_save_successes=0,death_save_failures=0,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?",
+      )
+      .run(ctx.provenance, ctx.sessionId, ctx.at, campaignId, combatantId);
+    scheduleCombatantRecovery(txn, campaignId, combatantId, rng);
+    syncCombatantActor(txn, campaignId, combatantId, ctx);
+    return { lifeState: 'stable' as const, hpCurrent: c.hpCurrent };
+  });
+}
+
+export function setCombatantSuffocation(
+  db: Db,
+  campaignId: string,
+  combatantId: string,
+  event: 'drop' | 'breathe',
+  ctx: { provenance: string; sessionId: string; at: string },
+  rng: Rng = createSeededRng(0),
+) {
+  return withTransaction(db, (txn) => {
+    const c = readCombatant(txn, campaignId, combatantId);
+    if (!c) throw new EncounterCombatantError('unknown combatant');
+    const wasDown =
+      c.hpCurrent === 0 ||
+      c.status === 'dead' ||
+      c.status === 'unconscious' ||
+      c.status === 'inactive' ||
+      c.status === 'dying' ||
+      c.status === 'stable';
+    let status = c.status,
+      hp = c.hpCurrent,
+      block = c.recoveryBlock,
+      successes = c.deathSaveSuccesses,
+      failures = c.deathSaveFailures;
+    if (event === 'drop') {
+      if (status === 'dead')
+        throw new EncounterCombatantError(
+          'cannot begin suffocation for a dead combatant',
+        );
+      if (!block) {
+        hp = 0;
+        block = 'suffocating';
+        status = c.deathRules === 'player-character' ? 'dying' : 'dead';
+        if (status === 'dying') {
+          successes = 0;
+          failures = 0;
+        }
+      }
+    } else {
+      if (!block)
+        throw new EncounterCombatantError(
+          'combatant has no recovery block to clear',
+        );
+      block = null;
+      if (status === 'dying' && successes >= 3) {
+        status = 'stable';
+        successes = 0;
+        failures = 0;
+        scheduleCombatantRecovery(txn, campaignId, combatantId, rng);
+      }
+    }
+    txn
+      .prepare(
+        'UPDATE encounter_combatant SET hp_current=?,status=?,recovery_block=?,death_save_successes=?,death_save_failures=?,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?',
+      )
+      .run(
+        hp,
+        status,
+        block,
+        successes,
+        failures,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+        campaignId,
+        combatantId,
+      );
+    const isDown =
+      hp === 0 ||
+      status === 'dead' ||
+      status === 'unconscious' ||
+      status === 'inactive' ||
+      status === 'dying' ||
+      status === 'stable';
+    if (!wasDown && isDown)
+      breakCombatantConcentration(
+        db,
+        campaignId,
+        combatantId,
+        status === 'dead' ? 'dead' : 'incapacitated',
+        ctx,
+      );
+    syncCombatantActor(txn, campaignId, combatantId, ctx);
+    return { lifeState: status, hpCurrent: hp };
+  });
+}
+
+export function resolveCombatantRecoveries(
+  db: Db,
+  elapsed: number,
+  ctx: { provenance: string; sessionId: string; at: string },
+) {
+  const columns = db
+    .prepare('PRAGMA table_info(encounter_combatant)')
+    .all() as Array<{ name: string }>;
+  if (
+    !columns.some(
+      (column) => column.name === 'stable_recovery_deadline_elapsed_minutes',
+    )
+  )
+    return 0;
+  return withTransaction(db, (txn) => {
+    const rows = txn
+      .prepare(
+        "SELECT campaign_id,combatant_id FROM encounter_combatant WHERE status='stable' AND hp_current=0 AND stable_recovery_deadline_elapsed_minutes<=? ORDER BY stable_recovery_deadline_elapsed_minutes,combatant_id",
+      )
+      .all(elapsed) as Array<{ campaign_id: string; combatant_id: string }>;
+    for (const row of rows) {
+      txn
+        .prepare(
+          "UPDATE encounter_combatant SET hp_current=1,status='alive',death_save_successes=0,death_save_failures=0,stable_recovery_roll=NULL,stable_recovery_anchor_elapsed_minutes=NULL,stable_recovery_deadline_elapsed_minutes=NULL,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?",
+        )
+        .run(
+          ctx.provenance,
+          ctx.sessionId,
+          ctx.at,
+          row.campaign_id,
+          row.combatant_id,
+        );
+      syncCombatantActor(txn, row.campaign_id, row.combatant_id, ctx);
+    }
+    return rows.length;
+  });
+}
+
+function scheduleCombatantRecovery(
+  db: Db,
+  campaignId: string,
+  combatantId: string,
+  rng: Rng,
+) {
+  const clock = db
+    .prepare('SELECT elapsed_minutes FROM clock WHERE id=1')
+    .get() as { elapsed_minutes: number };
+  const roll = rollDice('1d4', rng).total;
+  const anchor = clock.elapsed_minutes;
+  db.prepare(
+    'UPDATE encounter_combatant SET stable_recovery_roll=?,stable_recovery_anchor_elapsed_minutes=?,stable_recovery_deadline_elapsed_minutes=? WHERE campaign_id=? AND combatant_id=?',
+  ).run(roll, anchor, anchor + roll * 60, campaignId, combatantId);
+}
+function syncCombatantActor(
+  db: Db,
+  campaignId: string,
+  id: string,
+  ctx: { provenance: string; sessionId: string; at: string },
+) {
+  const c = readCombatant(db, campaignId, id);
+  if (c?.identityKind !== 'campaign_actor' || !c.identityRef) return;
+  const a = getCampaignActor(db, campaignId, c.identityRef);
+  if (!a) return;
+  upsertCampaignActor(db, {
+    campaignId,
+    actorId: c.identityRef,
+    displayName: a.displayName,
+    actorKind: a.actorKind,
+    sourceKind: a.sourceKind,
+    sourceRef: a.sourceRef,
+    rulesRef: a.rulesRef,
+    hpCurrent: c.hpCurrent,
+    hpMax: c.hpMax,
+    conditions: c.conditions,
+    status: c.status,
+    currentLocationId: c.locationId,
+    state: a.state,
+    provenance: ctx.provenance,
+    sessionId: ctx.sessionId,
+    at: ctx.at,
+  });
 }
 
 function updateCombatantInTxn(
@@ -1152,19 +1445,66 @@ function updateCombatantInTxn(
     conditionRemoved = remaining.length !== before;
     conditions.splice(0, conditions.length, ...remaining);
   }
-  const status =
-    input.status ??
-    (nextHp === 0
-      ? 'dead'
-      : current.status === 'dead'
-        ? 'alive'
-        : current.status);
+  const deathRules = input.deathRules ? 'player-character' : current.deathRules;
+  let status = input.status ?? current.status;
+  let successes = current.deathSaveSuccesses;
+  let failures = current.deathSaveFailures;
+  const recoveryBlock = current.recoveryBlock;
+  let recoveryRoll = current.stableRecoveryRoll;
+  let recoveryAnchor = current.stableRecoveryAnchorElapsedMinutes;
+  let recoveryDeadline = current.stableRecoveryDeadlineElapsedMinutes;
+  if (input.hpDelta !== undefined) {
+    if (deathRules === 'player-character') {
+      if (current.hpCurrent > 0 && nextHp === 0) {
+        const overflow = Math.max(0, -input.hpDelta - current.hpCurrent);
+        status = overflow >= current.hpMax ? 'dead' : 'dying';
+        successes = 0;
+        failures = 0;
+      } else if (
+        current.hpCurrent === 0 &&
+        input.hpDelta < 0 &&
+        (current.status === 'dying' || current.status === 'stable')
+      ) {
+        failures = Math.min(3, failures + (input.critical ? 2 : 1));
+        status = failures >= 3 ? 'dead' : 'dying';
+      } else if (input.hpDelta > 0 && current.hpCurrent === 0) {
+        if (recoveryBlock)
+          throw new EncounterCombatantError(
+            `cannot regain hit points while ${recoveryBlock}`,
+          );
+        status = 'alive';
+        successes = 0;
+        failures = 0;
+      } else if (
+        input.status === undefined &&
+        current.status === 'dead' &&
+        nextHp > 0
+      )
+        status = 'alive';
+    } else {
+      status =
+        input.status ??
+        (nextHp === 0
+          ? 'dead'
+          : current.status === 'dead'
+            ? 'alive'
+            : current.status);
+    }
+  } else if (input.status !== undefined) status = input.status;
+  if (status !== 'stable') {
+    recoveryRoll = null;
+    recoveryAnchor = null;
+    recoveryDeadline = null;
+  }
   const locationId = input.locationId ?? current.locationId;
   const placement = input.placement ?? current.placement;
 
   db.prepare(
     `UPDATE encounter_combatant
      SET hp_current = ?, conditions_json = ?, status = ?, location_id = ?,
+         death_rules = ?, death_save_successes = ?, death_save_failures = ?,
+         recovery_block = ?, stable_recovery_roll = ?,
+         stable_recovery_anchor_elapsed_minutes = ?, stable_recovery_deadline_elapsed_minutes = ?,
          placement = ?, provenance = ?, session_id = ?, updated_at = ?
      WHERE campaign_id = ? AND combatant_id = ?`,
   ).run(
@@ -1172,6 +1512,13 @@ function updateCombatantInTxn(
     JSON.stringify(conditions),
     status,
     locationId ?? null,
+    deathRules,
+    successes,
+    failures,
+    recoveryBlock,
+    recoveryRoll,
+    recoveryAnchor,
+    recoveryDeadline,
     placement ?? null,
     input.provenance,
     input.sessionId,
@@ -1221,11 +1568,15 @@ function updateCombatantInTxn(
     current.hpCurrent === 0 ||
     current.status === 'dead' ||
     current.status === 'unconscious' ||
+    current.status === 'dying' ||
+    current.status === 'stable' ||
     current.status === 'inactive';
   const isDown =
     nextHp === 0 ||
     status === 'dead' ||
     status === 'unconscious' ||
+    status === 'dying' ||
+    status === 'stable' ||
     status === 'inactive';
   const wasIncapacitated =
     wasDown ||

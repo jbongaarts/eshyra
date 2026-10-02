@@ -42,8 +42,8 @@ import { migrateDatabase } from './migrationRunner.js';
  *   - `campaign_actor`                  (persistent named/recurring actor
  *                                        mechanics across combat instances)
  *   - `encounter_combatant`             (live/historical tactical projection
- *                                        of anonymous creatures or actors into
- *                                        one combat instance)
+ *                                        with per-combatant death rules, death
+ *                                        saves, recovery block, and stable recovery)
  *
  * Archival / trace / generated — deliberately opaque, jsonColumn<TraceJsonValue[]>.
  * Do not add shape validation here; these blobs are owned by the memory subsystem:

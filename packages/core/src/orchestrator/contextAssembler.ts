@@ -863,7 +863,7 @@ function renderState(state: StateSnapshot): string {
           ? ''
           : `, identity: ${combatant.identityRef}`;
       lines.push(
-        `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}], ${combatant.side}, HP ${combatant.hpCurrent}/${combatant.hpMax}${ac}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
+        `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}${combatant.status === 'dying' ? `, death saves ${combatant.deathSaveSuccesses}S/${combatant.deathSaveFailures}F${combatant.recoveryBlock ? ', suffocating: no healing or stabilizing' : ''}` : ''}], ${combatant.side}, HP ${combatant.hpCurrent}/${combatant.hpMax}${ac}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
       );
     }
   }

@@ -29,11 +29,6 @@ export const ENGINE_CAPABILITY_GAPS = Object.freeze({
     ownerBead: 'eshyra-o9bd.19.5.7.3',
     findingId: 'engine-capability-ownership' as const,
   }),
-  'combatant-dying-state': Object.freeze({
-    operation: 'Represent dying and death saves for an encounter combatant.',
-    ownerBead: 'eshyra-o9bd.19.5.7.5',
-    findingId: 'engine-capability-ownership' as const,
-  }),
   'nonlethal-knockout': Object.freeze({
     operation:
       'Apply a melee knockout to a character as unconscious and stable in one step, including when the damage would otherwise kill outright.',
@@ -189,7 +184,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
       designOwner: 'eshyra-2n1t.1',
     }),
   ]),
-  // R0 re-derived: characters have a suffocation drop/breathe event and source-derived duration formulas; encounter combatants still lack a dying state.
+  // R0 re-derived after combatant death lifecycle landed.
   'rule:suffocating': Object.freeze([
     Object.freeze({
       participants: Object.freeze([
@@ -197,10 +192,9 @@ export const RULE_KNOWN_LIMITS: Readonly<
         'calc',
         'update_combatant',
       ]),
-      capabilityGaps: Object.freeze(['combatant-dying-state' as const]),
       limit: 'partial',
       statement:
-        'For a character whose breath runs out, apply set_suffocation with event drop at the start of its turn, then record event breathe when it can breathe again; derive the durations with calc breath_hold_duration and suffocation_survival_rounds. For an encounter combatant, the dying state this rule requires cannot be recorded: update_combatant sets a combatant whose hpDelta reaches 0 hit points to dead unless another status is given, and combatant state has no dying status.',
+        'For a character whose breath runs out, apply set_suffocation with event drop at the start of its turn, then record event breathe when it can breathe again; derive the durations with calc breath_hold_duration and suffocation_survival_rounds. For an encounter combatant, opt into player-character death rules with update_combatant deathRules, then use set_suffocation with event drop and event breathe.',
       findingId: 'readiness-integrity',
     }),
   ]),
