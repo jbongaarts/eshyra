@@ -556,6 +556,8 @@ function resolveBoundaryParticipant(
       displayLabel: combatant.display_label,
       rulesRef: combatant.rules_ref,
       ...(combatant.status === 'dead' ||
+      combatant.status === 'dying' ||
+      combatant.status === 'stable' ||
       combatant.status === 'escaped' ||
       combatant.status === 'inactive'
         ? {

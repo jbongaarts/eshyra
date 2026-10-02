@@ -177,14 +177,9 @@ describe('rule awareness', () => {
     expect(limit?.statement).toContain('breath_hold_duration');
     expect(limit?.statement).toContain('suffocation_survival_rounds');
     expect(limit?.statement).not.toMatch(/When the creature drops/);
-    // Encounter combatants: updateCombatant defaults 0 HP to 'dead' and
-    // CombatantStatus has no dying state, so the source's dying transition is
-    // disclosed as unrepresentable, never offered as an update_combatant path.
     expect(limit?.statement).toContain('encounter combatant');
-    expect(limit?.statement).toContain('cannot be recorded');
-    expect(limit?.statement).toContain(
-      'to dead unless another status is given',
-    );
+    expect(limit?.statement).toContain('opt into player-character death rules');
+    expect(limit?.statement).toContain('update_combatant deathRules');
     expect(limit?.statement).not.toMatch(/unconscious/);
   });
 
@@ -262,7 +257,6 @@ describe('rule awareness', () => {
       'rule:hiding': ['retained-check-total-resolution'],
       'rule:knocking-a-creature-out': ['nonlethal-knockout'],
       'rule:speed': ['graded-exhaustion-increase'],
-      'rule:suffocating': ['combatant-dying-state'],
       'rule:surprise': ['retained-check-total-resolution'],
       'rule:water': ['graded-exhaustion-increase'],
       'rule:weapon-properties': ['ammunition-recovery-count'],

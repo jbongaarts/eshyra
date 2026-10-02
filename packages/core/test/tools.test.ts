@@ -2162,7 +2162,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       adjust_hp:
         'Characters only: for an encounter combatant, use update_combatant hpDelta.',
       update_combatant:
-        'An hpDelta that brings the combatant to 0 hit points sets its status to dead unless status is also passed (for example "unconscious" for a nonlethal knockout); combatants have no dying or death-save state.',
+        'Opt in to player-character death rules once per combatant with deathRules: "player-character"; this persists.',
     };
     for (const [name, sentence] of Object.entries(expected))
       expect(descriptions.get(name)).toContain(sentence);

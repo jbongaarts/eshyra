@@ -22,6 +22,8 @@ const COMBATANT_STATUSES: readonly CombatantStatus[] = [
   'unconscious',
   'escaped',
   'inactive',
+  'dying',
+  'stable',
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -32,7 +34,7 @@ export const updateCombatantTool: Tool = {
   name: 'update_combatant',
   mutates: true,
   description:
-    'Update a live encounter combatant by exact combatant id. args: { combatantId: string, hpDelta?: integer, addCondition?: {id:string,...}, removeCondition?: string, status?: "alive"|"dead"|"unconscious"|"escaped"|"inactive", locationId?: string, placement?: string, reactionAllowance?: integer }. reactionAllowance stores a reactions-per-round total only for a creature whose rules record carries a state-dependent extraReactions mechanic, and is refused for other creatures. Neither this tool nor any other derives that total from the current state of the creature (for example the Reactive Heads of a hydra), and that state is not tracked, so the extra reactions such a mechanic grants cannot currently be recorded. An hpDelta that brings the combatant to 0 hit points sets its status to dead unless status is also passed (for example "unconscious" for a nonlethal knockout); combatants have no dying or death-save state.',
+    'Update a live encounter combatant by exact combatant id. Opt in to player-character death rules once per combatant with deathRules: "player-character"; this persists. Monster mode remains the default and reaching 0 HP sets dead unless status is explicit. Player-character mode applies dying, death saves, and instant death on sufficient overflow; critical marks damage at 0 HP as a critical hit. reactionAllowance stores a reactions-per-round total only for a creature whose rules record carries a state-dependent extraReactions mechanic, and is refused for other creatures. Neither this tool nor any other derives that total from creature state, so the extra reactions such a mechanic grants cannot currently be recorded.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -46,6 +48,16 @@ export const updateCombatantTool: Tool = {
         type: 'integer',
         description:
           'Signed HP delta. Negative damages, positive heals; clamped to [0, hpMax].',
+      },
+      deathRules: {
+        type: 'string',
+        enum: ['player-character'],
+        description:
+          'One-way opt-in to player-character death rules for this combatant.',
+      },
+      critical: {
+        type: 'boolean',
+        description: 'Damage at 0 HP was a critical hit.',
       },
       addCondition: {
         type: 'object',
@@ -143,6 +155,8 @@ export const updateCombatantTool: Tool = {
     }
     const hasCombatantUpdate =
       a.hpDelta !== undefined ||
+      a.deathRules !== undefined ||
+      a.critical !== undefined ||
       a.addCondition !== undefined ||
       a.removeCondition !== undefined ||
       a.status !== undefined ||
@@ -167,6 +181,10 @@ export const updateCombatantTool: Tool = {
         campaignId: ctx.campaignId,
         combatantId: a.combatantId,
         ...(typeof a.hpDelta === 'number' ? { hpDelta: a.hpDelta } : {}),
+        ...(a.deathRules === 'player-character'
+          ? { deathRules: 'player-character' as const }
+          : {}),
+        ...(typeof a.critical === 'boolean' ? { critical: a.critical } : {}),
         ...(isRecord(a.addCondition)
           ? { addCondition: a.addCondition as CharacterConditionEntry }
           : {}),

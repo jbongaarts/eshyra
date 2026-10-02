@@ -1,3 +1,7 @@
+import {
+  EncounterCombatantError,
+  setCombatantSuffocation,
+} from '../state/encounterCombatants.js';
 import { beginSuffocation, endSuffocation } from '../state/hpLifecycle.js';
 import { MutateStateError } from '../state/mutateState.js';
 import type { Tool } from './toolRegistry.js';
@@ -13,12 +17,13 @@ export const setSuffocationTool: Tool = {
   name: 'set_suffocation',
   mutates: true,
   description:
-    'Characters only. `drop` applies the moment the rule drops the character to 0 hit points (dying, recovery blocked); `breathe` records that it can breathe again. While blocked, healing and stabilize_character are refused and record_death_save does not stabilize or restore hit points.',
+    'Record the suffocation drop or breathing event for a character or combatant.',
   inputSchema: {
     type: 'object',
     properties: {
       event: { type: 'string', enum: ['drop', 'breathe'] },
       character: CHARACTER_TARGET_SCHEMA,
+      combatantId: { type: 'string', minLength: 1 },
     },
     required: ['event'],
     additionalProperties: false,
@@ -31,6 +36,30 @@ export const setSuffocationTool: Tool = {
         "set_suffocation requires { event: 'drop' | 'breathe' }",
       );
     const target = resolveTargetCharacterId(a.character, ctx);
+    if (a.character !== undefined && a.combatantId !== undefined)
+      return err('invalid_args', 'provide character or combatantId, not both');
+    if (typeof a.combatantId === 'string') {
+      try {
+        return ok(
+          setCombatantSuffocation(
+            ctx.db,
+            ctx.campaignId,
+            a.combatantId,
+            a.event,
+            {
+              provenance: `model:${ctx.turnId}`,
+              sessionId: ctx.sessionId,
+              at: ctx.at,
+            },
+            ctx.rng,
+          ),
+        );
+      } catch (e) {
+        if (e instanceof EncounterCombatantError)
+          return err('mutate_error', e.message);
+        throw e;
+      }
+    }
     if ('ok' in target) return target;
     const mutationContext = {
       provenance: `model:${ctx.turnId}`,
