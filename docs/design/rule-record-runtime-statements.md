@@ -395,23 +395,27 @@ whose operation it adds, entering it by explicit selection, and blocks
 `eshyra-o9bd.19.3.4`. Through that bead the gaps also hold the candidate-pack
 chain (`eshyra-o9bd.19.6.1`). When a capability lands, its PR re-derives the
 affected known limit under R0 and removes the gap entry, and the dependency
-resolves. Recording a gap never closes its bead.
+resolves. Recording a gap never closes its bead. After `eshyra-o9bd.19.3.4.8`
+every gap recorded at this amendment has landed, so `ENGINE_CAPABILITY_GAPS` is
+empty. Its validator, audit projection, and evidence are **retained**
+(AGENTS.md disposition): the responsibility survives for the next gap that
+re-derivation finds.
 
 *Classification at this amendment,* re-derived for every known limit against
 the source clause, the statement, each participating tool, and the real state
 producer and consumer:
 
-| Key | Class | Capability / gap disposition |
+| Key | Class at A5 | State after `eshyra-o9bd.19.3.4.8` |
 |---|---|---|
-| `rule:hiding`, `rule:surprise` | landed | retained-check comparison and surprise derivation in `eshyra-o9bd.19.5.10.3` |
-| `rule:food`, `rule:water`, `rule:speed` | bounded | exhaustion levels are recorded through `adjust_exhaustion`, landed in `eshyra-o9bd.19.5.7.3` |
-| `rule:suffocating` | bounded | landed in `eshyra-o9bd.19.5.7.4` (characters) and `eshyra-o9bd.19.5.7.5` (combatants); no remaining capability gap |
-| `rule:knocking-a-creature-out` | bounded | `nonlethal-knockout` landed in `eshyra-o9bd.19.5.7.6` |
-| `rule:weapon-properties` | landed in `eshyra-o9bd.19.5.11.4` | ammunition expenditure and recovery are engine-owned |
-| `action:ready` | bounded | none: a ruling-sourced concentration effect carries the save |
-| `rule:conflict` | bounded | none: `resolve_check` takes the DC's Charisma term as a negative modifier, and `end_effect` ends the charm |
-| `rule:special-weapons` | bounded | none: attack counting is model-adjudicated by the F2 design (`state/actionEconomy.ts`), and each attack resolves through `resolve_check` |
-| the nine `deferred` multiclass limits | bounded | none: ADR 0018 scope boundary |
+| `rule:hiding`, `rule:surprise` | blocking: `retained-check-total-resolution` | landed in `eshyra-o9bd.19.5.10.3` (`roll_retained_check`, `resolve_retained_check`, `set_surprised` derivation); bounded limits keep the `resolve_check` / `resolve_contest` trap |
+| `rule:food`, `rule:water`, `rule:speed` | blocking: `graded-exhaustion-increase` | landed in `eshyra-o9bd.19.5.7.3` (`adjust_exhaustion`); bounded limits |
+| `rule:suffocating` | blocking: `suffocation-recovery-gate`, `combatant-dying-state` | landed in `eshyra-o9bd.19.5.7.4` (`set_suffocation`) and `eshyra-o9bd.19.5.7.5` (player-character death rules for combatants); bounded limit |
+| `rule:knocking-a-creature-out` | blocking: `nonlethal-knockout` | landed in `eshyra-o9bd.19.5.7.6` (`adjust_hp` `knockOut`); bounded limit |
+| `rule:weapon-properties` | blocking: `ammunition-recovery-count` | landed in `eshyra-o9bd.19.5.11.4` (`expend_ammunition`, `recover_ammunition`); bounded limit |
+| `action:ready` | bounded | unchanged: a ruling-sourced concentration effect carries the save |
+| `rule:conflict` | bounded | unchanged: `resolve_check` takes the DC's Charisma term as a negative modifier, and `end_effect` ends the charm |
+| `rule:special-weapons` | bounded | unchanged: attack counting is model-adjudicated by the F2 design (`state/actionEconomy.ts`), and each attack resolves through `resolve_check` |
+| the nine `deferred` multiclass limits | bounded | unchanged: ADR 0018 scope boundary |
 
 `rule:suffocating` also gains a disclosure it lacked: `record_death_save`
 stabilizes on a third success and restores 1 hit point on a natural 20 with no
@@ -425,8 +429,7 @@ superseded by `eshyra-o9bd.19.3.4.6`: the engine tracks the source-grounded
 Multiple Heads lifecycle, derives the allowance from current head count, and
 preserves the opportunity-attack restriction. `reactionAllowance` is no longer
 a tool argument; the contract is restored on a deterministic derived path.
-This capability lands as the child of `eshyra-o9bd.19.3.4.6` and blocks
-`eshyra-o9bd.19.3.4` until integration. The gap belongs to a creature record,
+The gap belongs to a creature record,
 not to a `rule:*` or `action:*` key, so it is not an
 `ENGINE_CAPABILITY_GAPS` entry. `set_surprised` had the DM adjudicate Stealth
 against passive Perception, the same operation as the hiding gap (accepted
@@ -651,6 +654,8 @@ One sequence, in order:
    `eshyra-o9bd.19.3.4.7`: the `rules-prose-readiness` row is
    `disclosed-dependency`, following the `magic-item-effects` precedent, and
    its reasoning records both this reading of F-09 and the open A5 gaps.
+   When every A5 gap landed (`eshyra-o9bd.19.3.4.8`), the row became
+   `narrowed`, and its reasoning names the landed capabilities.
 
 **On failure** at any step (for example, the envelope reads as rules
 authority in live turns, a `duplicate-of` pair does not survive source
