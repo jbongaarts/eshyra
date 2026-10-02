@@ -87,6 +87,24 @@ describe('listParty', () => {
     expect(member?.hpCurrent).toBe(18);
     expect(member?.conditions).toEqual([{ id: 'prone' }]);
   });
+
+  it('projects an exhausted nonacting member with the effective HP maximum', () => {
+    const db = freshDb();
+    ensureCharacterRow(db, 'pc-2', CTX.provenance, CTX.sessionId, CTX.at);
+    setField(db, 'pc-2', 'hp_max', 20);
+    setField(db, 'pc-2', 'hp_current', 10);
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-2',
+      field: 'conditions_json',
+      op: 'set',
+      value: [{ id: 'exhaustion', level: 4 }],
+      ...CTX,
+    });
+    const member = listParty(db).find((row) => row.id === 'pc-2');
+    expect(member?.isActive).toBe(false);
+    expect(member).toMatchObject({ hpCurrent: 10, hpMax: 10 });
+  });
 });
 
 describe('setActiveCharacterId validation', () => {

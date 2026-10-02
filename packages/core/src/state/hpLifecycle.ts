@@ -577,7 +577,10 @@ function applyDamage(
       successes = 0;
       failures = 0;
       knockedOut = true;
-    } else if (overflow >= rowEffectiveHpMax(row)) {
+    } else if (
+      rowEffectiveHpMax(row) > 0 &&
+      overflow >= rowEffectiveHpMax(row)
+    ) {
       lifeState = 'dead';
       instantDeath = true;
     } else {

@@ -11,7 +11,7 @@ export const listNearbyItemsTool: Tool = {
   name: 'list_nearby_items',
   mutates: false,
   description:
-    'List bounded claim-selection identity for unheld physical inventory rows at the current campaign location, ordered by exact id. Returns only id, name, quantity, world location, and pack/variant identity. Use nextCursor for stable pagination; remote and unknown-location rows are never exposed.',
+    'List bounded claim-selection identity for unheld physical inventory rows at the current campaign location, ordered by exact id. Expended ammunition reserved for recover_ammunition is omitted. Returns only id, name, quantity, world location, and pack/variant identity. Use nextCursor for stable pagination; remote and unknown-location rows are never exposed.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -51,6 +51,7 @@ export const listNearbyItemsTool: Tool = {
          FROM inventory
          WHERE character_id IS NULL
            AND unheld_disposition='dropped'
+           AND NOT EXISTS (SELECT 1 FROM ammunition_expenditure e WHERE e.expended_inventory_id=inventory.id AND e.status='expended')
            AND world_location_id=?
            AND trim(world_location_id) <> ''
            AND id>?

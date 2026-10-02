@@ -408,7 +408,7 @@ producer and consumer:
 | Key | Class at A5 | State after `eshyra-o9bd.19.3.4.8` |
 |---|---|---|
 | `rule:hiding`, `rule:surprise` | blocking: `retained-check-total-resolution` | landed in `eshyra-o9bd.19.5.10.3` (`roll_retained_check`, `resolve_retained_check`, `set_surprised` derivation); bounded limits keep the `resolve_check` / `resolve_contest` trap |
-| `rule:food`, `rule:water`, `rule:speed` | blocking: `graded-exhaustion-increase` | landed in `eshyra-o9bd.19.5.7.3` (`adjust_exhaustion`); bounded limits |
+| `rule:food`, `rule:water`, `rule:speed` | blocking: `graded-exhaustion-increase` | retired after the capability landed in `eshyra-o9bd.19.5.7.3` (`adjust_exhaustion`) |
 | `rule:suffocating` | blocking: `suffocation-recovery-gate`, `combatant-dying-state` | landed in `eshyra-o9bd.19.5.7.4` (`set_suffocation`) and `eshyra-o9bd.19.5.7.5` (player-character death rules for combatants); bounded limit |
 | `rule:knocking-a-creature-out` | blocking: `nonlethal-knockout` | landed in `eshyra-o9bd.19.5.7.6` (`adjust_hp` `knockOut`); bounded limit |
 | `rule:weapon-properties` | blocking: `ammunition-recovery-count` | landed in `eshyra-o9bd.19.5.11.4` (`expend_ammunition`, `recover_ammunition`); bounded limit |

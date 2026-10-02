@@ -44,18 +44,6 @@ export interface RuleKnownLimit {
   }[];
 }
 
-function exhaustionLevelLimit(
-  cause: string,
-  sourceSpecific = '',
-): RuleKnownLimit {
-  return Object.freeze({
-    limit: 'partial' as const,
-    participants: Object.freeze(['adjust_exhaustion']),
-    statement: `Record exhaustion from ${cause} through adjust_exhaustion with the number of levels this rule imposes.${sourceSpecific}`,
-    findingId: 'readiness-integrity',
-  });
-}
-
 /** Source-grounded limits re-derived against current runtime behavior under R0. */
 export const RULE_KNOWN_LIMITS: Readonly<
   Record<string, readonly RuleKnownLimit[]>
@@ -170,7 +158,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
       ]),
       limit: 'partial',
       statement:
-        'For a character whose breath runs out, apply set_suffocation with event drop at the start of its turn, then record event breathe when it can breathe again; derive the durations with calc breath_hold_duration and suffocation_survival_rounds. For an encounter combatant, opt into player-character death rules with update_combatant deathRules, then use set_suffocation with event drop and event breathe.',
+        'Breath running out starts the survival interval calculated by calc suffocation_survival_rounds. It does not itself reduce the creature to 0 hit points: set_suffocation event drop records that at the start of the creature’s turn after the interval expires, and event breathe records when it can breathe again. update_combatant deathRules selects player-character death rules for an encounter combatant.',
       findingId: 'readiness-integrity',
     }),
   ]),
@@ -201,7 +189,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
       ]),
       limit: 'partial' as const,
       statement:
-        'Record each hider’s Stealth check with roll_retained_check, compare every opposing observer’s passive Perception with resolve_retained_check, and derive surprise from those comparison records with set_surprised. The DM decides which creatures are hiding and which opposing creatures are observers.',
+        'A hider’s Stealth check is retained with roll_retained_check. resolve_check and resolve_contest cannot determine surprise: each roll compares one check against one target, and a fresh roll replaces a hider’s retained check. Surprise is determined only from passive comparisons recorded by resolve_retained_check and passed to set_surprised.',
       findingId: 'readiness-integrity',
     }),
   ]),
@@ -239,15 +227,6 @@ export const RULE_KNOWN_LIMITS: Readonly<
       findingId: 'readiness-integrity',
     }),
   ]),
-  // R0 re-derived after adjust_exhaustion landed in eshyra-o9bd.19.5.7.3.1.
-  'rule:food': Object.freeze([exhaustionLevelLimit('lack of food')]),
-  'rule:water': Object.freeze([
-    exhaustionLevelLimit(
-      'inadequate water',
-      ' When the character already has exhaustion, this rule imposes two levels at once; pass delta 2.',
-    ),
-  ]),
-  'rule:speed': Object.freeze([exhaustionLevelLimit('a forced march')]),
   // R0 confirmed: the source says an Unarmored Defense feature from a second class is not gained; ADR 0018 §6 and closed bead eshyra-2n1t.1 defer the interaction.
   'rule:unarmored-defense': Object.freeze([
     Object.freeze({

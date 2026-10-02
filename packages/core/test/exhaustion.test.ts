@@ -301,11 +301,65 @@ describe('adjust_exhaustion tool', () => {
 });
 
 describe('effectiveHpMax floor (eshyra-o9bd.19.5.7.3)', () => {
-  it('never halves a positive maximum to 0', () => {
+  it('halves uniformly and uses the character 0-HP lifecycle when the clamp reaches zero', () => {
     const level4 = [{ id: 'exhaustion', level: 4 }];
-    expect(effectiveHpMax(1, level4)).toBe(1);
+    expect(effectiveHpMax(1, level4)).toBe(0);
     expect(effectiveHpMax(3, level4)).toBe(1);
     expect(effectiveHpMax(20, level4)).toBe(10);
     expect(effectiveHpMax(0, level4)).toBe(0);
+    for (const [maximum, expectedMaximum, expectedLife] of [
+      [1, 0, 'dying'],
+      [3, 1, 'alive'],
+      [4, 2, 'alive'],
+    ] as const) {
+      const { db, ctx, registry } = setup();
+      db.prepare(
+        "UPDATE character SET hp_max=?, hp_current=? WHERE id='pc-1'",
+      ).run(maximum, maximum);
+      expect(
+        registry.invoke('adjust_exhaustion', { delta: 4 }, ctx),
+      ).toMatchObject({
+        ok: true,
+        data: { hpMax: expectedMaximum, hpCurrent: expectedMaximum },
+      });
+      expect(
+        db
+          .prepare(
+            "SELECT hp_current, life_state FROM character WHERE id='pc-1'",
+          )
+          .get(),
+      ).toEqual({ hp_current: expectedMaximum, life_state: expectedLife });
+      db.close();
+    }
   });
+
+  it.each([
+    [1, 0, 'dead'],
+    [3, 1, 'alive'],
+    [4, 2, 'alive'],
+  ] as const)(
+    'routes combatant exhaustion at maximum %i through its lifecycle',
+    (maximum, expectedMaximum, expectedStatus) => {
+      const { db, ctx, registry } = setup();
+      const combatantId = startCombatant(ctx, registry);
+      db.prepare(
+        'UPDATE encounter_combatant SET hp_max=?, hp_current=? WHERE combatant_id=?',
+      ).run(maximum, maximum, combatantId);
+      expect(
+        registry.invoke('adjust_exhaustion', { delta: 4, combatantId }, ctx),
+      ).toMatchObject({
+        ok: true,
+        data: { hpMax: expectedMaximum, hpCurrent: expectedMaximum },
+      });
+      expect(
+        registry.invoke('update_combatant', { combatantId, hpDelta: 0 }, ctx),
+      ).toMatchObject({
+        ok: true,
+        data: {
+          combatant: { status: expectedStatus, hpCurrent: expectedMaximum },
+        },
+      });
+      db.close();
+    },
+  );
 });

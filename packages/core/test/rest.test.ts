@@ -40,6 +40,7 @@ import {
 } from '../src/orchestrator/contextAssembler.js';
 import { playerVisibleRollEntries } from '../src/orchestrator/playerVisibleRollLedger.js';
 import type { ExecutedToolCall } from '../src/orchestrator/turnLoop.js';
+import { effectiveHpMax } from '../src/state/exhaustion.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_CAMPAIGN_POSITION,
@@ -1222,6 +1223,44 @@ describe('F7 rest qualification boundary', () => {
     });
     db.close();
   });
+
+  it.each([3, 4, 5])(
+    'restores to the final effective maximum at exhaustion %i with and without food',
+    (level) => {
+      for (const foodAndDrink of [true, false]) {
+        const db = setupCharacters();
+        expect(recordExhaustion(db, level).ok).toBe(true);
+        db.prepare("UPDATE character SET hp_current=3 WHERE id='pc-1'").run();
+        completeLongRest(db, {
+          ...CTX,
+          restId: `exhaustion-${level}-${foodAndDrink}`,
+          participants: ['pc-1'],
+          qualification: {
+            durationMinutes: 480,
+            sleepMinutes: 360,
+            lightActivityMinutes: 0,
+            strenuousInterruptionMinutes: 0,
+            foodAndDrink,
+          },
+        });
+        const row = db
+          .prepare(
+            "SELECT hp_current, hp_max, conditions_json FROM character WHERE id='pc-1'",
+          )
+          .get() as {
+          hp_current: number;
+          hp_max: number;
+          conditions_json: string;
+        };
+        const conditions = JSON.parse(row.conditions_json) as Array<{
+          id: string;
+          level?: number;
+        }>;
+        expect(row.hp_current).toBe(effectiveHpMax(row.hp_max, conditions));
+        db.close();
+      }
+    },
+  );
 
   it('rejects coercible, malformed, and unknown qualification fields', () => {
     const db = freshDbWithSession();

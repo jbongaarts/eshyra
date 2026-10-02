@@ -8,7 +8,7 @@ import {
   exhaustionLevel,
   withExhaustionLevel,
 } from './exhaustion.js';
-import { killCharacterFromExhaustion } from './hpLifecycle.js';
+import { adjustHp, killCharacterFromExhaustion } from './hpLifecycle.js';
 import { MutateStateError, mutateState } from './mutateState.js';
 
 export interface AdjustExhaustionInput extends DomainMutationContext {
@@ -127,13 +127,9 @@ export function adjustExhaustion(
     );
     const hpCurrent = Math.min(row.hp_current, hpMax);
     if (hpCurrent !== row.hp_current)
-      mutateState(txn, {
-        target: 'character',
-        id: characterId,
-        field: 'hp_current',
-        op: 'set',
-        value: hpCurrent,
+      adjustHp(txn, hpCurrent - row.hp_current, {
         ...input,
+        characterId,
       });
     const died = newLevel === 6;
     if (died) killCharacterFromExhaustion(txn, { ...input, characterId });

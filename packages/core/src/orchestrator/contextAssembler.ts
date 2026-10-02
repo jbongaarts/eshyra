@@ -216,6 +216,15 @@ export interface NearbyInventoryItem {
   worldLocationId: string;
 }
 
+export interface RetainedCheckSnapshot {
+  retainedCheckId: string;
+  label: string;
+  participantKind: string | undefined;
+  participantRef: string | undefined;
+  combatInstanceId: string | undefined;
+  visibility: string;
+}
+
 export interface ClockSnapshot {
   inGameTime: string;
   currentLocationId: string | undefined;
@@ -231,6 +240,8 @@ export interface StateSnapshot {
   /** Deterministically bounded unheld physical rows co-located with the clock. */
   nearbyInventory: NearbyInventoryItem[];
   nearbyInventoryTruncated: boolean;
+  /** Most recent 20 active campaign checks; totals remain engine-owned. */
+  retainedChecks: RetainedCheckSnapshot[];
   /** The acting character's attuned magic items (F5), at most three. */
   attunements: readonly AttunementEntry[];
   /** Live (active or suppressed) durable effects (F3): concentration and
@@ -400,12 +411,30 @@ export function readStateSnapshot(
              FROM inventory
              WHERE character_id IS NULL
                AND unheld_disposition = 'dropped'
+               AND NOT EXISTS (SELECT 1 FROM ammunition_expenditure e WHERE e.expended_inventory_id=inventory.id AND e.status='expended')
                AND world_location_id = ?
                AND trim(world_location_id) <> ''
              ORDER BY id
              LIMIT 21`,
         )
         .all(clock.current_location_id) as NearbyInventoryRow[]);
+
+  const retainedChecks =
+    campaignId === undefined
+      ? []
+      : (db
+          .prepare(`SELECT retained_check_id, label, participant_kind, participant_ref,
+                     combat_instance_id, visibility
+              FROM retained_check WHERE campaign_id=? AND status='active'
+              ORDER BY created_at DESC, retained_check_id DESC LIMIT 20`)
+          .all(campaignId) as Array<{
+          retained_check_id: string;
+          label: string;
+          participant_kind: string | null;
+          participant_ref: string | null;
+          combat_instance_id: string | null;
+          visibility: string;
+        }>);
 
   const plotFlagRows = db
     .prepare('SELECT key, value_json FROM plot_flags ORDER BY key')
@@ -518,6 +547,14 @@ export function readStateSnapshot(
     nearbyInventory,
     nearbyInventoryTruncated:
       nearbyInventoryRows.length > nearbyInventory.length,
+    retainedChecks: retainedChecks.map((row) => ({
+      retainedCheckId: row.retained_check_id,
+      label: row.label,
+      participantKind: row.participant_kind ?? undefined,
+      participantRef: row.participant_ref ?? undefined,
+      combatInstanceId: row.combat_instance_id ?? undefined,
+      visibility: row.visibility,
+    })),
     attunements:
       campaignId === undefined ? [] : listAttunements(db, campaignId, charId),
     activeEffects:
@@ -818,6 +855,20 @@ function renderState(state: StateSnapshot): string {
       lines.push(`- ${formatActiveEffect(effect)}`);
     }
   }
+  if (state.retainedChecks.length > 0) {
+    lines.push(
+      'Active retained checks (most recent 20; totals are engine-owned):',
+    );
+    for (const check of state.retainedChecks) {
+      const participant =
+        check.participantKind === undefined
+          ? 'unattributed'
+          : `${check.participantKind}/${check.participantRef ?? ''}`;
+      lines.push(
+        `- ${check.retainedCheckId}: ${check.label}; participant ${participant}; combat ${check.combatInstanceId ?? 'none'}; visibility ${check.visibility}`,
+      );
+    }
+  }
   if (state.inventory.length > 0) {
     lines.push(
       `Inventory: ${state.inventory
@@ -834,7 +885,9 @@ function renderState(state: StateSnapshot): string {
     lines.push('Inventory: (empty)');
   }
   if (state.nearbyInventory.length > 0) {
-    lines.push('Nearby unheld items (claim with exact id via claim_item):');
+    lines.push(
+      'Nearby unheld items (claimable with claim_item; expended ammunition reserved for recover_ammunition is omitted):',
+    );
     for (const item of state.nearbyInventory) {
       const pack = item.packRef === undefined ? '' : `; ${item.packRef}`;
       const variant =

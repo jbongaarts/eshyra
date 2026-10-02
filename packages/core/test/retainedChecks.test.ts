@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AdventureModule, ToolContext } from '../src/internal.js';
 import {
+  assembleContext,
   createDefaultToolRegistry,
   createSeededRng,
   listCombatants,
@@ -13,6 +14,7 @@ import { deriveTraceFields } from '../src/orchestrator/turnTraceProjection.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
+  DEFAULT_TEST_CAMPAIGN_POSITION,
   DEFAULT_TEST_SESSION_ID,
   freshDbWithSession,
 } from './support/db.js';
@@ -119,6 +121,53 @@ function hide(
 }
 
 describe('retained check tools', () => {
+  it('re-exposes an active retained identity in fresh context and omits it after ending', () => {
+    const { db, registry, ctx, combatants } = setup();
+    const retained = hide(registry, ctx, combatantId(combatants, 0));
+    const assemble = () =>
+      assembleContext({
+        db,
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        playerInput: 'continue',
+      });
+    const fresh = assemble();
+    expect(fresh.state.retainedChecks).toContainEqual(
+      expect.objectContaining({
+        retainedCheckId: retained.retainedCheckId,
+        label: 'hider',
+        participantKind: 'combatant',
+        participantRef: combatantId(combatants, 0),
+        combatInstanceId: combatants[0]?.combatInstanceId,
+        visibility: 'player_visible',
+      }),
+    );
+    const resolved = registry.invoke(
+      'resolve_retained_check',
+      {
+        retainedCheckId: fresh.state.retainedChecks[0]?.retainedCheckId,
+        reason: 'resume search',
+        passive: [{ label: 'watcher', modifier: 20 }],
+      },
+      ctx,
+    );
+    expect(resolved.ok).toBe(true);
+    expect(
+      db.prepare('SELECT count(*) AS n FROM retained_check').get(),
+    ).toEqual({ n: 1 });
+    registry.invoke(
+      'end_retained_check',
+      {
+        retainedCheckId: retained.retainedCheckId,
+        reason: 'stopped',
+      },
+      ctx,
+    );
+    expect(assemble().state.retainedChecks).toEqual([]);
+    db.close();
+  });
+
   it('persists a retained roll once and later search never rerolls it; higher search notices and a tie stays hidden', () => {
     const { db, registry, ctx, combatants } = setup();
     const retained = hide(registry, ctx, combatantId(combatants, 0));

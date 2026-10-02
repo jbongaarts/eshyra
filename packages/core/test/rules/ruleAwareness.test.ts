@@ -161,9 +161,9 @@ describe('rule awareness', () => {
     const suffocating = renderedFor('rule:suffocating');
     expect(suffocating).toContain('### Eshyra known limits');
     expect(suffocating).toContain('(finding: readiness-integrity)');
-    expect(suffocating).toContain('set_suffocation with event drop');
+    expect(suffocating).toContain('set_suffocation event drop');
     expect(suffocating).toContain('event breathe');
-    expect(suffocating).toContain('calc breath_hold_duration');
+    expect(suffocating).toContain('calc suffocation_survival_rounds');
     expect(suffocating).not.toMatch(
       /held its breath|suffocation round countdown/i,
     );
@@ -173,26 +173,36 @@ describe('rule awareness', () => {
 
   it('scopes suffocation HP guidance by target domain', () => {
     const [limit] = ruleStatements('rule:suffocating').knownLimits;
-    expect(limit?.statement).toContain('set_suffocation with event drop');
-    expect(limit?.statement).toContain('breath_hold_duration');
+    const sourceText = (
+      stack.recordsByKey.get('rule:suffocating')?.record.data as
+        | { text?: string }
+        | undefined
+    )?.text;
+    expect(sourceText).toContain('At the start of its next turn');
+    expect(sourceText).toContain('2 rounds to reach air before it drops');
+    expect(limit?.statement).toContain('set_suffocation event drop');
+    expect(limit?.statement).toContain('after the interval expires');
     expect(limit?.statement).toContain('suffocation_survival_rounds');
     expect(limit?.statement).not.toMatch(/When the creature drops/);
     expect(limit?.statement).toContain('encounter combatant');
-    expect(limit?.statement).toContain('opt into player-character death rules');
     expect(limit?.statement).toContain('update_combatant deathRules');
     expect(limit?.statement).not.toMatch(/unconscious/);
   });
 
-  it('routes exhaustion recording through adjust_exhaustion after R0 re-derivation', () => {
+  it('retires exhaustion procedure limits after adjust_exhaustion landed', () => {
     for (const key of ['rule:food', 'rule:water', 'rule:speed']) {
-      const [limit] = ruleStatements(key).knownLimits;
-      expect(limit?.findingId).toBe('readiness-integrity');
-      expect(limit?.statement).toContain('adjust_exhaustion');
-      expect(limit?.capabilityGaps ?? []).toEqual([]);
-      expect(limit?.statement).not.toMatch(/DM tracks/);
+      expect(ruleStatements(key).knownLimits).toEqual([]);
+      expect(RULE_KNOWN_LIMITS[key]).toBeUndefined();
     }
-    expect(ruleStatements('rule:water').knownLimits[0]?.statement).toContain(
-      'pass delta 2',
+  });
+
+  it('states the retained-check trap for surprise without a procedure recipe', () => {
+    const [limit] = ruleStatements('rule:surprise').knownLimits;
+    expect(limit?.statement).toContain('resolve_contest');
+    expect(limit?.statement).toContain('resolve_retained_check');
+    expect(limit?.statement).toContain('set_surprised');
+    expect(limit?.statement).not.toMatch(
+      /Record each|compare every|first roll/i,
     );
   });
 
@@ -216,9 +226,7 @@ describe('rule awareness', () => {
     expect(knockout?.statement).toContain('knockOut=true to adjust_hp');
     expect(knockout?.statement).toContain('stabilize_character');
     expect(knockout?.capabilityGaps ?? []).toEqual([]);
-    expect(ruleStatements('rule:water').knownLimits[0]?.statement).toContain(
-      'two levels at once',
-    );
+    expect(ruleStatements('rule:water').knownLimits).toEqual([]);
     // A5 re-evaluation: the held energy can be tracked as a ruling-sourced
     // concentration effect, so the save stays engine-owned (DC included)
     // through resolve_concentration; the DM never computes the DC.
@@ -369,11 +377,9 @@ describe('rule awareness', () => {
     // re-adding exhaustion instead of using its level owner.
     const suffocating =
       ruleStatements('rule:suffocating').knownLimits[0]?.statement;
-    expect(suffocating).toContain('set_suffocation with event drop');
+    expect(suffocating).toContain('set_suffocation event drop');
     expect(suffocating).not.toMatch(/skip|in prose|yourself|narrat/i);
     for (const key of ['rule:food', 'rule:water', 'rule:speed'])
-      expect(ruleStatements(key).knownLimits[0]?.statement).not.toMatch(
-        /remove_condition|re-?add/,
-      );
+      expect(ruleStatements(key).knownLimits).toEqual([]);
   });
 });

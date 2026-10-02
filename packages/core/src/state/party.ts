@@ -1,6 +1,7 @@
 import type { Db } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
 import { tryGetActiveCharacterId } from './activeCharacter.js';
+import { effectiveHpMax } from './exhaustion.js';
 import type { LifeState } from './hpLifecycle.js';
 import type { CharacterConditionEntry } from './liveStateSchema.js';
 import { validateConditionsJson } from './liveStateSchema.js';
@@ -27,7 +28,6 @@ export interface PartyMember {
   role: string;
   isActive: boolean;
 }
-
 const conditionsColumn = jsonColumn<unknown>('character.conditions_json');
 
 interface PartyRow {
@@ -66,24 +66,27 @@ export function listParty(db: Db): PartyMember[] {
     )
     .all() as PartyRow[];
 
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name ?? undefined,
-    ancestry: row.ancestry ?? undefined,
-    className: row.class_name ?? undefined,
-    level: row.level,
-    hpCurrent: row.hp_current,
-    hpMax: row.hp_max,
-    hpTemp: row.hp_temp,
-    lifeState: row.life_state,
-    deathSaveSuccesses: row.death_save_successes,
-    deathSaveFailures: row.death_save_failures,
-    recoveryBlock: row.recovery_block,
-    conditions: validateConditionsJson(
+  return rows.map((row) => {
+    const conditions = validateConditionsJson(
       conditionsColumn.decode(row.conditions_json),
       `character[${row.id}].conditions_json`,
-    ),
-    role: row.role,
-    isActive: row.id === activeId,
-  }));
+    );
+    return {
+      id: row.id,
+      name: row.name ?? undefined,
+      ancestry: row.ancestry ?? undefined,
+      className: row.class_name ?? undefined,
+      level: row.level,
+      hpCurrent: row.hp_current,
+      hpMax: effectiveHpMax(row.hp_max, conditions),
+      hpTemp: row.hp_temp,
+      lifeState: row.life_state,
+      deathSaveSuccesses: row.death_save_successes,
+      deathSaveFailures: row.death_save_failures,
+      recoveryBlock: row.recovery_block,
+      conditions,
+      role: row.role,
+      isActive: row.id === activeId,
+    };
+  });
 }
