@@ -833,6 +833,301 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     db.close();
   });
 
+  it('uses the effective maximum for damage at 0 HP from dying or stable', () => {
+    const dying = optedIn();
+    dying.update({ hpDelta: -dying.hpMax });
+    dying.update({ hpDelta: -(dying.hpMax - 1) });
+    expect(dying.read()).toMatchObject({
+      status: 'dying',
+      deathSaveFailures: 1,
+    });
+    dying.update({ hpDelta: -dying.hpMax });
+    expect(dying.read()).toMatchObject({ status: 'dead' });
+    dying.db.close();
+
+    const stable = optedIn();
+    stable.update({ hpDelta: -stable.hpMax });
+    expect(stable.update({ status: 'stable', hpDelta: -stable.hpMax }).ok).toBe(
+      false,
+    );
+    // Stabilize by recording three successful saves, then test the exact
+    // lethal threshold while the recovery schedule is active.
+    stable.registry.invoke(
+      'record_death_save',
+      { combatantId: stable.id, roll: 10 },
+      stable.ctx,
+    );
+    stable.registry.invoke(
+      'record_death_save',
+      { combatantId: stable.id, roll: 10 },
+      stable.ctx,
+    );
+    stable.registry.invoke(
+      'record_death_save',
+      { combatantId: stable.id, roll: 10 },
+      stable.ctx,
+    );
+    expect(stable.read()?.status).toBe('stable');
+    stable.update({ hpDelta: -stable.hpMax });
+    expect(stable.read()?.status).toBe('dead');
+    stable.db.close();
+
+    const critical = optedIn();
+    critical.update({ hpDelta: -critical.hpMax });
+    critical.update({ hpDelta: -1, critical: true });
+    expect(critical.read()).toMatchObject({
+      status: 'dying',
+      deathSaveFailures: 2,
+    });
+    critical.db.close();
+
+    const exhausted = optedIn();
+    expect(
+      exhausted.registry.invoke(
+        'adjust_exhaustion',
+        { combatantId: exhausted.id, delta: 4 },
+        exhausted.ctx,
+      ).ok,
+    ).toBe(true);
+    exhausted.update({ hpDelta: -3 });
+    exhausted.update({ hpDelta: -2 });
+    expect(exhausted.read()).toMatchObject({
+      status: 'dying',
+      deathSaveFailures: 1,
+    });
+    exhausted.update({ hpDelta: -3 });
+    expect(exhausted.read()).toMatchObject({ status: 'dead' });
+    exhausted.db.close();
+  });
+
+  it('preserves dying counters across suffocation and prevents dead status bypasses', () => {
+    const { db, registry, ctx, id, update, read, hpMax } = optedIn();
+    update({ hpDelta: -hpMax });
+    registry.invoke('record_death_save', { combatantId: id, roll: 1 }, ctx);
+    registry.invoke('set_suffocation', { combatantId: id, event: 'drop' }, ctx);
+    expect(read()).toMatchObject({
+      status: 'dying',
+      deathSaveFailures: 2,
+      recoveryBlock: 'suffocating',
+    });
+    registry.invoke(
+      'set_suffocation',
+      { combatantId: id, event: 'breathe' },
+      ctx,
+    );
+    registry.invoke('set_suffocation', { combatantId: id, event: 'drop' }, ctx);
+    expect(read()).toMatchObject({
+      status: 'dying',
+      deathSaveFailures: 2,
+      recoveryBlock: 'suffocating',
+    });
+    expect(update({ status: 'alive' }).ok).toBe(false);
+    db.close();
+  });
+
+  it('keeps dead player-character combatants terminal while allowing encounter removal', () => {
+    const { db, update, read, hpMax } = optedIn();
+    update({ hpDelta: -hpMax * 2 });
+    for (const status of ['escaped', 'unconscious', 'alive'])
+      expect(update({ status }).ok).toBe(false);
+    expect(update({ hpDelta: 1 }).ok).toBe(false);
+    expect(update({ status: 'inactive' }).ok).toBe(true);
+    expect(read()).toMatchObject({ status: 'inactive', hpCurrent: 0 });
+    db.close();
+  });
+
+  it('keeps exhaustion-six player-character combatants dead on every update', () => {
+    const { db, registry, ctx, id, update, read } = optedIn();
+    expect(
+      registry.invoke('adjust_exhaustion', { combatantId: id, delta: 6 }, ctx)
+        .ok,
+    ).toBe(true);
+    expect(read()).toMatchObject({ status: 'dead' });
+    const hpAtDeath = read()?.hpCurrent;
+    expect(update({ status: 'alive' }).ok).toBe(false);
+    expect(update({ hpDelta: 1 }).ok).toBe(false);
+    expect(read()).toMatchObject({ status: 'dead', hpCurrent: hpAtDeath });
+    db.close();
+  });
+
+  it('carries a recurring actor combat lifecycle through encounter projections', () => {
+    const { db, registry, ctx } = setup();
+    const first = startEncounter(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      actors: [
+        { actorId: 'recurring', rulesRef: 'creature:goblin', hpCurrent: 7 },
+        {
+          actorId: 'stable-recurring',
+          rulesRef: 'creature:goblin',
+          hpCurrent: 7,
+        },
+        {
+          actorId: 'hydra-recurring',
+          rulesRef: 'creature:hydra',
+          hpCurrent: 172,
+        },
+      ],
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    const old = first.combatants.find((c) => c.identityRef === 'recurring');
+    if (!old) throw new Error('actor projection missing');
+    const stableOld = first.combatants.find(
+      (c) => c.identityRef === 'stable-recurring',
+    );
+    const hydraOld = first.combatants.find(
+      (c) => c.identityRef === 'hydra-recurring',
+    );
+    if (!stableOld || !hydraOld)
+      throw new Error('recurring actor projections missing');
+    registry.invoke(
+      'update_combatant',
+      {
+        combatantId: stableOld.combatantId,
+        deathRules: 'player-character',
+        hpDelta: -7,
+      },
+      ctx,
+    );
+    for (let i = 0; i < 3; i += 1)
+      registry.invoke(
+        'record_death_save',
+        { combatantId: stableOld.combatantId, roll: 10 },
+        ctx,
+      );
+    registry.invoke(
+      'update_combatant',
+      { combatantId: hydraOld.combatantId, hpDelta: -25 },
+      ctx,
+    );
+    const oldDeadline = (
+      db
+        .prepare(
+          'SELECT stable_recovery_deadline_elapsed_minutes AS deadline FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
+        .get(DEFAULT_TEST_CAMPAIGN_ID, stableOld.combatantId) as {
+        deadline: number;
+      }
+    ).deadline;
+    expect(
+      registry.invoke(
+        'update_combatant',
+        {
+          combatantId: old.combatantId,
+          deathRules: 'player-character',
+          hpDelta: -7,
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'set_suffocation',
+        { combatantId: old.combatantId, event: 'drop' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    closeCombatInstance(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      combatInstanceId: first.combatInstance.combatInstanceId,
+      status: 'completed',
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    const second = startEncounter(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      actors: [
+        { actorId: 'recurring', rulesRef: 'creature:goblin' },
+        { actorId: 'stable-recurring', rulesRef: 'creature:goblin' },
+        { actorId: 'hydra-recurring', rulesRef: 'creature:hydra' },
+      ],
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    const projected = second.combatants.find(
+      (c) => c.identityRef === 'recurring',
+    );
+    const stableProjected = second.combatants.find(
+      (c) => c.identityRef === 'stable-recurring',
+    );
+    const hydraProjected = second.combatants.find(
+      (c) => c.identityRef === 'hydra-recurring',
+    );
+    expect(projected).toMatchObject({
+      deathRules: 'player-character',
+      status: 'dying',
+      hpCurrent: 0,
+      recoveryBlock: 'suffocating',
+    });
+    expect(stableProjected).toMatchObject({
+      status: 'stable',
+      stableRecoveryDeadlineElapsedMinutes: oldDeadline,
+    });
+    expect(hydraProjected?.headCount).toBe(4);
+    expect(
+      (
+        db
+          .prepare(
+            'SELECT stable_recovery_deadline_elapsed_minutes AS deadline FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+          )
+          .get(DEFAULT_TEST_CAMPAIGN_ID, stableOld.combatantId) as {
+          deadline: number | null;
+        }
+      ).deadline,
+    ).toBeNull();
+    expect(
+      registry.invoke(
+        'update_combatant',
+        {
+          combatantId: stableProjected?.combatantId,
+          hpDelta: -(stableProjected?.hpMax ?? 7),
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const elapsed = (
+      db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get() as {
+        elapsed_minutes: number;
+      }
+    ).elapsed_minutes;
+    advanceWorldTime(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      minutes: oldDeadline - elapsed + 1,
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    expect(
+      getCampaignActor(db, DEFAULT_TEST_CAMPAIGN_ID, 'stable-recurring')
+        ?.status,
+    ).toBe('dead');
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: projected?.combatantId, hpDelta: 1 },
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      registry.invoke(
+        'record_death_save',
+        { combatantId: old.combatantId, roll: 10 },
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      getCampaignActor(db, DEFAULT_TEST_CAMPAIGN_ID, 'recurring')?.state
+        .combatLifecycle,
+    ).toMatchObject({
+      deathRules: 'player-character',
+      recoveryBlock: 'suffocating',
+    });
+    db.close();
+  });
+
   it('heals a dying combatant back to alive with fresh counters', () => {
     const { db, update, read, hpMax } = optedIn();
     update({ hpDelta: -hpMax });
