@@ -46,7 +46,7 @@ describe('finding registry', () => {
   });
 
   it('preserves status reasoning and non-accepted dispositions', () => {
-    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(5);
+    expect(real.rows.filter((row) => row.statusReasoning)).toHaveLength(6);
     expect(
       real.rows.find((row) => row.canonicalId === 'source-authority-opus-f19')
         ?.statusReasoning,
@@ -68,8 +68,25 @@ describe('finding registry', () => {
       ),
     });
     expect(
-      real.rows.filter((row) => row.status === 'disclosed-dependency'),
-    ).toHaveLength(2);
+      real.rows
+        .filter((row) => row.status === 'disclosed-dependency')
+        .map((row) => row.canonicalId)
+        .sort(),
+    ).toEqual([
+      'engine-capability-ownership',
+      'magic-item-effects',
+      'rules-prose-readiness',
+    ]);
+    // F-09 (design §8 step 4): the ADR 0020 reading is in place, but A5
+    // blocking engine-capability gaps keep it from being recorded resolved.
+    expect(
+      real.rows.find((row) => row.canonicalId === 'rules-prose-readiness'),
+    ).toMatchObject({
+      status: 'disclosed-dependency',
+      statusReasoning: expect.stringContaining(
+        'F-09 is not recorded as resolved while those gaps are open',
+      ),
+    });
     for (const row of real.rows.filter((row) => row.status !== 'accepted'))
       expect(row.statusReasoning).toBeTruthy();
   });
