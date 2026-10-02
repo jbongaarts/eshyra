@@ -98,6 +98,16 @@ export function expendAmmunition(
         `could not expend inventory item '${input.itemId}'`,
       );
     const expendedInventoryId = result.relinquishedItemId ?? input.itemId;
+    const alreadyTracked = txnDb
+      .prepare(
+        `SELECT 1 FROM ammunition_expenditure
+         WHERE expended_inventory_id=? LIMIT 1`,
+      )
+      .get(expendedInventoryId);
+    if (alreadyTracked !== undefined)
+      throw new AmmunitionError(
+        `inventory row '${expendedInventoryId}' is already accounted for as ammunition`,
+      );
     // Deterministic identity (replay and checkpoints compare state), not a
     // random id: one sequence per campaign.
     const sequence =
@@ -245,6 +255,23 @@ export function recoverAmmunition(
       groups.set(identity, group);
     }
 
+    // Release the reservation before claimItem; the encompassing transaction
+    // restores it if any custody change fails.
+    txnDb
+      .prepare(
+        `UPDATE ammunition_expenditure SET status='resolved', resolved_at=?,
+         provenance=?, session_id=?
+       WHERE campaign_id=? AND combat_instance_id=? AND character_id=? AND status='expended'`,
+      )
+      .run(
+        ctx.at,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.campaignId,
+        combatInstanceId,
+        characterId,
+      );
+
     let recovered = 0;
     let destroyed = 0;
     for (const group of groups.values()) {
@@ -277,20 +304,6 @@ export function recoverAmmunition(
         destroyed += entry.present - take;
       }
     }
-    txnDb
-      .prepare(
-        `UPDATE ammunition_expenditure SET status='resolved', resolved_at=?,
-         provenance=?, session_id=?
-       WHERE campaign_id=? AND combat_instance_id=? AND character_id=? AND status='expended'`,
-      )
-      .run(
-        ctx.at,
-        ctx.provenance,
-        ctx.sessionId,
-        ctx.campaignId,
-        combatInstanceId,
-        characterId,
-      );
     return { combatInstanceId, characterId, recovered, destroyed, movedAway };
   });
 }

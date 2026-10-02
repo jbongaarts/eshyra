@@ -533,7 +533,7 @@ describe('lookup_rules tool', () => {
       };
       expect(data.ruleAwareness.knownLimits[0]).toMatchObject({
         findingId: 'readiness-integrity',
-        statement: expect.stringContaining('set_suffocation with event drop'),
+        statement: expect.stringContaining('set_suffocation event drop'),
       });
       expect(data.ruleAwareness.knownLimits[0].statement).not.toMatch(
         /held its breath|suffocation round countdown/i,

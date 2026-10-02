@@ -145,6 +145,31 @@ function seedLiveHp(
 }
 
 describe('applyLevelUp — martial (Fighter)', () => {
+  it.each([
+    [3, 20, 16],
+    [3, 21, 16],
+    [4, 20, 13],
+    [4, 21, 13],
+  ])(
+    'clamps progression at exhaustion %i with sheet maximum %i',
+    (exhaustion, startingMax, expectedHp) => {
+      const db = bareDb();
+      const store = createSqliteCharacterSheetStore(db, () => AT);
+      store.save('pc-1', buildSheet({ maxHitPoints: startingMax }));
+      seedLiveHp(db, startingMax, 10);
+      db.prepare("UPDATE character SET conditions_json=? WHERE id='pc-1'").run(
+        JSON.stringify([{ id: 'exhaustion', level: exhaustion }]),
+      );
+      applyLevelUp(db, { store, ...APPLY });
+      expect(
+        db
+          .prepare("SELECT hp_current, hp_max FROM character WHERE id='pc-1'")
+          .get(),
+      ).toEqual({ hp_current: expectedHp, hp_max: startingMax + 6 });
+      db.close();
+    },
+  );
+
   it('raises proficient saves at the level-4→5 proficiency boundary', () => {
     const db = freshDbWithSession();
     const store = createSqliteCharacterSheetStore(db, () => AT);

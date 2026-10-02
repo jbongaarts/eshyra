@@ -37,6 +37,8 @@ import {
   readCampaignRulesBinding,
 } from '../rules/binding.js';
 import { resolveCharacterId } from '../state/activeCharacter.js';
+import { effectiveHpMax } from '../state/exhaustion.js';
+import { validateConditionsJson } from '../state/liveStateSchema.js';
 import { mutateState } from '../state/mutateState.js';
 import {
   type ProgressionEventRecord,
@@ -1301,8 +1303,10 @@ function projectToLiveCharacter(
   input: ApplyLevelUpInput,
 ): void {
   const row = db
-    .prepare('SELECT hp_current FROM character WHERE id = ?')
-    .get(characterId) as { hp_current: number } | undefined;
+    .prepare('SELECT hp_current, conditions_json FROM character WHERE id = ?')
+    .get(characterId) as
+    | { hp_current: number; conditions_json: string }
+    | undefined;
 
   const ctx = {
     provenance: input.provenance,
@@ -1359,10 +1363,18 @@ function projectToLiveCharacter(
       id: characterId,
       field: 'hp_current',
       op: 'set',
-      value:
+      value: Math.min(
         row.hp_current +
-        (changeSet.hitPoints.maxHitPoints.to -
-          changeSet.hitPoints.maxHitPoints.from),
+          (changeSet.hitPoints.maxHitPoints.to -
+            changeSet.hitPoints.maxHitPoints.from),
+        effectiveHpMax(
+          changeSet.hitPoints.maxHitPoints.to,
+          validateConditionsJson(
+            JSON.parse(row.conditions_json),
+            `character[${characterId}].conditions_json`,
+          ),
+        ),
+      ),
       ...ctx,
     });
   }

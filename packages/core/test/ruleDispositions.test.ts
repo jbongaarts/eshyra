@@ -301,6 +301,42 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     ).toEqual(expected.map(pair).sort());
   });
 
+  it('projects a registered fixture gap through the report producer and unresolved work', () => {
+    const coverage: Record<string, RuleProcedureCoverage> = {
+      'rule:fixture-gap': {
+        knownLimits: [
+          {
+            limit: 'partial',
+            statement: 'The fixture operation remains blocked.',
+            findingId: 'engine-capability-ownership',
+            capabilityGaps: ['fixture-gap'],
+          },
+        ],
+      },
+    };
+    const report = buildRuleDispositionReport(coverage, {
+      'fixture-gap': {
+        operation: 'resolve fixture operation',
+        ownerBead: 'eshyra-fixture.1',
+        findingId: 'engine-capability-ownership',
+      },
+    });
+    expect(report.engineProcedure.blockingCapabilityGaps).toContainEqual({
+      key: 'rule:fixture-gap',
+      gap: 'fixture-gap',
+      operation: 'resolve fixture operation',
+      ownerBead: 'eshyra-fixture.1',
+      findingId: 'engine-capability-ownership',
+    });
+    expect(report.unresolvedWork).toContainEqual({
+      key: 'rule:fixture-gap',
+      kind: 'blocking-capability-gap',
+      detail: 'resolve fixture operation',
+      findingId: 'engine-capability-ownership',
+      ownerBead: 'eshyra-fixture.1',
+    });
+  });
+
   it('surfaces each known limit with its key and finding', () => {
     const report = buildRuleDispositionReport();
     expect(

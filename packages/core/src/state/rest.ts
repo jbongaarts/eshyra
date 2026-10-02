@@ -430,13 +430,24 @@ function readLife(
 ): { hp: number; max: number; life: LifeState; temp: number } {
   const row = db
     .prepare(
-      'SELECT hp_current hp, hp_max max, life_state life, hp_temp temp FROM character WHERE id = ?',
+      'SELECT hp_current hp, hp_max, life_state life, hp_temp temp, conditions_json FROM character WHERE id = ?',
     )
     .get(id) as
-    | { hp: number; max: number; life: LifeState; temp: number }
+    | {
+        hp: number;
+        hp_max: number;
+        life: LifeState;
+        temp: number;
+        conditions_json: string;
+      }
     | undefined;
   if (!row) throw new RestError(`participant '${id}' does not exist`);
-  return row;
+  return {
+    hp: row.hp,
+    max: effectiveHpMax(row.hp_max, JSON.parse(row.conditions_json)),
+    life: row.life,
+    temp: row.temp,
+  };
 }
 
 function applyExhaustion(
@@ -656,7 +667,14 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           recoveryOpen: true,
         };
       if (kind === 'long') {
-        const healed = adjustHp(txn, s.max - s.hp, {
+        const exhaustion = applyExhaustion(
+          txn,
+          s.id,
+          (normalizedQualification as LongRestQualification).foodAndDrink,
+          input,
+        );
+        const finalState = readLife(txn, s.id);
+        const healed = adjustHp(txn, finalState.max - finalState.hp, {
           ...input,
           characterId: s.id,
         });
@@ -669,7 +687,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           )
           .run(restored, input.provenance, input.sessionId, input.at, s.id);
         const finalPool = resolvePool(txn, s.id, input);
-        benefits.hpRestored[s.id] = healed.newHp - s.hp;
+        benefits.hpRestored[s.id] = healed.newHp - finalState.hp;
         benefits.temporaryHpRemoved[s.id] = temp.previousTempHp;
         benefits.hitDiceRestored[s.id] = {
           restored,
@@ -687,12 +705,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           event: 'long_rest',
           owner: { kind: 'character', ref: s.id },
         }).reset;
-        benefits.exhaustion[s.id] = applyExhaustion(
-          txn,
-          s.id,
-          (normalizedQualification as LongRestQualification).foodAndDrink,
-          input,
-        );
+        benefits.exhaustion[s.id] = exhaustion;
         txn
           .prepare(
             'UPDATE rest_participant SET short_recovery_open=0 WHERE campaign_id=? AND rest_id=? AND character_id=?',

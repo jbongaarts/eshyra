@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ToolContext } from '../src/internal.js';
-import { createDefaultToolRegistry, createSeededRng } from '../src/internal.js';
+import {
+  createDefaultToolRegistry,
+  createSeededRng,
+  readStateSnapshot,
+} from '../src/internal.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_SESSION_ID,
@@ -262,7 +266,7 @@ describe('ammunition expenditure and battlefield recovery tools', () => {
     ).toEqual({ quantity: 1 });
   });
 
-  it('does not count an expended row claimed before recovery', () => {
+  it('reserves an expended row from claim until recovery accounts for it', () => {
     const { db, registry, ctx } = setup();
     combat(db);
     stack(db, 'arrows', 4);
@@ -275,12 +279,67 @@ describe('ammunition expenditure and battlefield recovery tools', () => {
         'SELECT expended_inventory_id FROM ammunition_expenditure ORDER BY expenditure_id LIMIT 1',
       )
       .get() as { expended_inventory_id: string };
-    invoke(registry, 'claim_item', { id: row.expended_inventory_id }, ctx);
+    expect(
+      invoke(registry, 'claim_item', { id: row.expended_inventory_id }, ctx),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('recover_ammunition'),
+    });
+    expect(invoke(registry, 'list_nearby_items', {}, ctx)).toMatchObject({
+      ok: true,
+      data: {
+        items: expect.not.arrayContaining([
+          expect.objectContaining({ id: row.expended_inventory_id }),
+        ]),
+      },
+    });
+    expect(
+      readStateSnapshot(db, 'pc-1', DEFAULT_TEST_CAMPAIGN_ID).nearbyInventory,
+    ).not.toContainEqual(
+      expect.objectContaining({ id: row.expended_inventory_id }),
+    );
+    expect(
+      invoke(
+        registry,
+        'give_item',
+        {
+          id: row.expended_inventory_id,
+          name: 'Arrow',
+        },
+        ctx,
+      ),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('recover_ammunition'),
+    });
     close(db);
     expect(recover(registry, ctx)).toMatchObject({
       ok: true,
-      data: { recovered: 1, destroyed: 2, movedAway: 1 },
+      data: { recovered: 2, destroyed: 2, movedAway: 0 },
     });
+  });
+
+  it('tracks each physical split row once and never returns more than half expended', () => {
+    const { db, registry, ctx } = setup();
+    combat(db);
+    stack(db, 'arrow-stack', 4);
+    const first = spend(registry, ctx, 'arrow-stack', 2);
+    const second = spend(registry, ctx, 'arrow-stack', 2);
+    expect(first.expendedInventoryId).not.toBe(second.expendedInventoryId);
+    close(db);
+    expect(recover(registry, ctx)).toMatchObject({
+      ok: true,
+      data: { recovered: 2 },
+    });
+    const total = (
+      db
+        .prepare(
+          "SELECT COALESCE(SUM(quantity),0) AS quantity FROM inventory WHERE character_id='pc-1' AND name='Arrow'",
+        )
+        .get() as { quantity: number }
+    ).quantity;
+    expect(total).toBe(2);
+    db.close();
   });
 
   it('refuses recovery at a different current location', () => {

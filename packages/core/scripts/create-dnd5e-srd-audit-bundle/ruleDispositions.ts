@@ -47,6 +47,7 @@ import {
 } from '../../src/rules/deterministicCapabilityLedger.js';
 import {
   ENGINE_CAPABILITY_GAPS,
+  type EngineCapabilityGap,
   RULE_KNOWN_LIMITS,
   type RuleKnownLimit,
   validateRuleKnownLimits,
@@ -2591,6 +2592,9 @@ export function buildRuleDispositionReport(
   coverageRegistry: Readonly<
     Record<string, RuleProcedureCoverage>
   > = ENGINE_PROCEDURE_COVERAGE,
+  gapRegistry: Readonly<
+    Record<string, EngineCapabilityGap>
+  > = ENGINE_CAPABILITY_GAPS,
 ): RuleDispositionReport {
   let referencesProse = 0;
   let definitions = 0;
@@ -2647,7 +2651,7 @@ export function buildRuleDispositionReport(
           : { historicalBead: limit.designOwner }),
       });
       for (const gapId of limit.capabilityGaps ?? []) {
-        const gap = ENGINE_CAPABILITY_GAPS[gapId];
+        const gap = gapRegistry[gapId];
         if (gap === undefined)
           throw new Error(
             `known limit ${key} references unregistered capability gap '${gapId}'`,
