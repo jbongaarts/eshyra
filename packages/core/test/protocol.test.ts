@@ -8,6 +8,16 @@ import {
 } from '../src/internal.js';
 
 describe('DM system prompt', () => {
+  it('never asks the model to total state-dependent extra reactions', () => {
+    // The Hybrid Contract is a second producer of the reactionAllowance
+    // contract; it discloses the gap (eshyra-o9bd.19.3.4.6) instead.
+    const prompt = buildSystemPrompt(createDefaultToolRegistry());
+    expect(prompt).toContain(
+      'are not derived by any tool, so they cannot currently',
+    );
+    expect(prompt).not.toMatch(/current total recorded/);
+  });
+
   it('encodes the Hybrid rules contract', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
     expect(prompt.toLowerCase()).toContain('narrate');

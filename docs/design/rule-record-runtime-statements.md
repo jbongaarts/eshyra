@@ -418,15 +418,20 @@ stabilizes on a third success and restores 1 hit point on a natural 20 with no
 breathing gate. Death saves are engine-owned, so the DM cannot avoid the
 contradiction by declining a call.
 
-*Existing contracts this amendment does not change.* Two existing runtime
-contracts have the DM supply a value that A5 treats as engine-owned.
-`update_combatant`'s `reactionAllowance` takes the hydra's current reaction
-total from the DM (accepted design `eshyra-2n1t.4`; bead
-`eshyra-o9bd.19.3.4.6`, which blocks `eshyra-o9bd.19.3.4`). `set_surprised`
-has the DM adjudicate Stealth against passive Perception, the same operation
-as the hiding gap. Downgrading either to a disclosed gap would remove the only
-path to hydra extra reactions or to surprise, so neither changes without an
-explicit decision.
+*Existing contracts.* `update_combatant`'s `reactionAllowance` took the
+hydra's current reaction total from the DM (accepted design `eshyra-2n1t.4`).
+By the user's decision of 2026-10-01 that contract is **downgraded**: the tool
+description, its schema field, the over-budget rejection in
+`state/actionEconomy.ts`, and the Hybrid Contract in `protocol.ts` now say
+that nothing derives the total, so the extra reactions cannot currently be
+recorded. The regression is accepted: a hydra keeps one reaction per round
+until the blocking gap `eshyra-o9bd.19.3.4.6` lands, and that bead blocks
+`eshyra-o9bd.19.3.4`. The gap belongs to a creature record, not to a `rule:*`
+or `action:*` key, so tool text discloses it and it is not an
+`ENGINE_CAPABILITY_GAPS` entry. `set_surprised` still has the DM adjudicate
+Stealth against passive Perception, the same operation as the hiding gap.
+Downgrading it would remove the only path to surprise, so it stays unchanged
+until an explicit decision is made.
 
 **R5 — One read-only facade.** A new
 `ruleAwareness(recordKey, stack, relationshipManifestSource)` in `src/rules/`

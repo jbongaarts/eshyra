@@ -32,7 +32,7 @@ export const updateCombatantTool: Tool = {
   name: 'update_combatant',
   mutates: true,
   description:
-    'Update a live encounter combatant by exact combatant id. args: { combatantId: string, hpDelta?: integer, addCondition?: {id:string,...}, removeCondition?: string, status?: "alive"|"dead"|"unconscious"|"escaped"|"inactive", locationId?: string, placement?: string, reactionAllowance?: integer }. reactionAllowance records the current total reactions per round for a creature whose rules record carries a state-dependent extraReactions mechanic (e.g. hydra Reactive Heads: 1 + heads beyond one); it is refused for other creatures. An hpDelta that brings the combatant to 0 hit points sets its status to dead unless status is also passed (for example "unconscious" for a nonlethal knockout); combatants have no dying or death-save state.',
+    'Update a live encounter combatant by exact combatant id. args: { combatantId: string, hpDelta?: integer, addCondition?: {id:string,...}, removeCondition?: string, status?: "alive"|"dead"|"unconscious"|"escaped"|"inactive", locationId?: string, placement?: string, reactionAllowance?: integer }. reactionAllowance stores a reactions-per-round total only for a creature whose rules record carries a state-dependent extraReactions mechanic, and is refused for other creatures. Neither this tool nor any other derives that total from the current state of the creature (for example the Reactive Heads of a hydra), and that state is not tracked, so the extra reactions such a mechanic grants cannot currently be recorded. An hpDelta that brings the combatant to 0 hit points sets its status to dead unless status is also passed (for example "unconscious" for a nonlethal knockout); combatants have no dying or death-save state.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -80,9 +80,11 @@ export const updateCombatantTool: Tool = {
       reactionAllowance: {
         type: 'integer',
         description:
-          'Current total reactions per round, for creatures whose rules ' +
-          'record grants state-dependent extra reactions (validated against ' +
-          'the record).',
+          'A reactions-per-round total to store, accepted only for a ' +
+          'creature whose rules record grants state-dependent extra ' +
+          'reactions. The engine checks only that the record grants them; ' +
+          'it does not derive the total or check it against the ' +
+          "creature's state, and no tool derives it.",
         minimum: 1,
       },
     },

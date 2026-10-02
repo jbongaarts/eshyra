@@ -2132,6 +2132,29 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       expect(descriptions.get(name)).toContain(sentence);
   });
 
+  it('discloses state-dependent extra reactions instead of asking for a derived total', () => {
+    // ADR 0020 §2: the arithmetic is engine-owned. setReactionAllowance only
+    // stores a supplied total; nothing derives it from the creature's state
+    // (blocking gap eshyra-o9bd.19.3.4.6), so neither the description nor
+    // the schema field may ask the model for the current total or give a
+    // per-head recipe.
+    const tool = DEFAULT_TOOLS.find(
+      (entry) => entry.name === 'update_combatant',
+    );
+    const properties = (tool?.inputSchema.properties ?? {}) as Record<
+      string,
+      { description?: string }
+    >;
+    const field = properties.reactionAllowance?.description;
+    expect(tool?.description).toContain(
+      'the extra reactions such a mechanic grants cannot currently be recorded',
+    );
+    expect(field).toContain('no tool derives it');
+    for (const text of [tool?.description, field]) {
+      expect(text).not.toMatch(/heads? beyond one|current total/i);
+    }
+  });
+
   it('never offers model-side arithmetic as a resolution fallback', () => {
     // ADR 0020 §2 keeps dice and arithmetic deterministic. No tool resolves a
     // contest with one already-fixed side (resolve_contest rerolls both;
