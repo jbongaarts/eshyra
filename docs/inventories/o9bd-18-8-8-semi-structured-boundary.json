@@ -521,7 +521,7 @@
       ],
       "fieldPath": "data.mechanics.effects[].ordinaryInteractionRuleRef",
       "representativeValues": [
-        "rule:interacting-with-objects"
+        "rule:other-activity-on-your-turn"
       ],
       "population": 1,
       "valueClass": "scalar-like",

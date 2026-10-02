@@ -363,7 +363,7 @@ const STANDARD_ACTION_MECHANICS: ReadonlyMap<
           kind: 'objectInteraction',
           useWhen: 'object-requires-your-action',
           alsoUseWhen: 'interact-with-more-than-one-object-on-your-turn',
-          ordinaryInteractionRuleRef: 'rule:interacting-with-objects',
+          ordinaryInteractionRuleRef: 'rule:other-activity-on-your-turn',
         },
       ],
     },
