@@ -342,12 +342,19 @@ export function applyLevelUp(
     // character could end up dying/dead at positive HP. Level-ups are a
     // living character's action; fail closed before any write.
     const lifeRow = txnDb
-      .prepare('SELECT life_state FROM character WHERE id = ?')
-      .get(characterId) as { life_state: string } | undefined;
-    if (lifeRow !== undefined && lifeRow.life_state !== 'alive') {
+      .prepare('SELECT life_state, recovery_block FROM character WHERE id = ?')
+      .get(characterId) as
+      | { life_state: string; recovery_block: 'suffocating' | null }
+      | undefined;
+    if (
+      lifeRow !== undefined &&
+      (lifeRow.life_state !== 'alive' || lifeRow.recovery_block !== null)
+    ) {
       throw new LevelUpEngineError(
         `cannot apply a level-up to a ${lifeRow.life_state} character: ` +
-          'stabilize and heal them first',
+          (lifeRow.recovery_block === 'suffocating'
+            ? 'cannot regain hit points while suffocating'
+            : 'stabilize and heal them first'),
       );
     }
     const sheet = input.store.load(characterId);

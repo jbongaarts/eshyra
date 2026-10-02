@@ -263,6 +263,49 @@ export const CALC_FORMULAS: Readonly<Record<string, CalcFormula>> =
         };
       },
     },
+    // SRD rule:suffocating — breath hold lasts 1 + Constitution modifier
+    // minutes (minimum 30 seconds); survival after running out is rounds
+    // equal to the modifier (minimum 1).
+    breath_hold_duration: {
+      description:
+        'Breath-hold duration: max(0.5, 1 + Constitution modifier) minutes. args: { constitutionModifier }',
+      evaluate(args) {
+        rejectUnknownArgs(args, ['constitutionModifier']);
+        const constitutionModifier = requireInt(
+          args,
+          'constitutionModifier',
+          -5,
+          10,
+        );
+        const minutes = Math.max(0.5, 1 + constitutionModifier);
+        return {
+          formula: 'breath_hold_duration',
+          inputs: { constitutionModifier },
+          outputs: { minutes, seconds: minutes * 60 },
+          explanation: `max(0.5, 1 + ${constitutionModifier}) = ${minutes} minute(s) (${minutes * 60} seconds)`,
+        };
+      },
+    },
+    suffocation_survival_rounds: {
+      description:
+        'Suffocation survival after running out of breath: max(1, Constitution modifier) rounds. args: { constitutionModifier }',
+      evaluate(args) {
+        rejectUnknownArgs(args, ['constitutionModifier']);
+        const constitutionModifier = requireInt(
+          args,
+          'constitutionModifier',
+          -5,
+          10,
+        );
+        const rounds = Math.max(1, constitutionModifier);
+        return {
+          formula: 'suffocation_survival_rounds',
+          inputs: { constitutionModifier },
+          outputs: { rounds },
+          explanation: `max(1, ${constitutionModifier}) = ${rounds} round(s)`,
+        };
+      },
+    },
     // SRD rule:speed (Forced March) — Constitution save at the end of each
     // hour past 8; DC 10 + 1 per hour past 8.
     forced_march_dc: {

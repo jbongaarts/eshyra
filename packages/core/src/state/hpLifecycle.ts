@@ -43,7 +43,11 @@ import {
 } from './activeEffects.js';
 import { endAllAttunementsOnDeath } from './attunement.js';
 import type { DomainMutationContext } from './domainMutations.js';
-import { MutateStateError, mutateStateBatch } from './mutateState.js';
+import {
+  MutateStateError,
+  mutateState,
+  mutateStateBatch,
+} from './mutateState.js';
 
 export type LifeState = 'alive' | 'dying' | 'stable' | 'dead';
 
@@ -123,6 +127,105 @@ export interface AdjustHpOptions {
   critical?: boolean;
 }
 
+export interface SuffocationResult {
+  lifeState: LifeState;
+  hpCurrent: number;
+  alreadySuffocating?: true;
+}
+
+/** Apply the SRD suffocation drop for a character. */
+export function beginSuffocation(
+  db: Db,
+  ctx: DomainMutationContext,
+): SuffocationResult {
+  return withTransaction(db, (txnDb) => {
+    const charId = resolveCharacterId(txnDb, ctx.characterId);
+    const row = readHpRow(txnDb, charId);
+    if (row.life_state === 'dead')
+      throw new MutateStateError(
+        'cannot begin suffocation for a dead character',
+      );
+    if (row.recovery_block === 'suffocating')
+      return {
+        lifeState: row.life_state,
+        hpCurrent: row.hp_current,
+        alreadySuffocating: true,
+      };
+    writeHpFields(
+      txnDb,
+      charId,
+      row,
+      {
+        hp_current: 0,
+        hp_temp: row.hp_temp, // The source says hit points; temporary hit points are a separate buffer.
+        life_state: 'dying',
+        death_save_successes:
+          row.life_state === 'dying' ? row.death_save_successes : 0,
+        death_save_failures:
+          row.life_state === 'dying' ? row.death_save_failures : 0,
+      },
+      ctx,
+    );
+    mutateState(txnDb, {
+      target: 'character',
+      id: charId,
+      field: 'recovery_block',
+      op: 'set',
+      value: 'suffocating',
+      ...ctx,
+    });
+    return { lifeState: 'dying', hpCurrent: 0 };
+  });
+}
+
+/** Clear the breathing recovery block and resolve an accrued third success. */
+export function endSuffocation(
+  db: Db,
+  ctx: DomainMutationContext,
+  rng: Rng = createSeededRng(0),
+): SuffocationResult {
+  return withTransaction(db, (txnDb) => {
+    const charId = resolveCharacterId(txnDb, ctx.characterId);
+    const row = readHpRow(txnDb, charId);
+    if (row.recovery_block === null)
+      throw new MutateStateError('character has no recovery block to clear');
+    if (row.life_state === 'dying' && row.death_save_successes >= 3) {
+      writeHpFields(
+        txnDb,
+        charId,
+        row,
+        {
+          hp_current: row.hp_current,
+          hp_temp: row.hp_temp,
+          life_state: 'stable',
+          death_save_successes: 0,
+          death_save_failures: 0,
+        },
+        ctx,
+      );
+      mutateState(txnDb, {
+        target: 'character',
+        id: charId,
+        field: 'recovery_block',
+        op: 'set',
+        value: null,
+        ...ctx,
+      });
+      scheduleStableRecovery(txnDb, charId, ctx, rng);
+      return { lifeState: 'stable', hpCurrent: row.hp_current };
+    }
+    mutateState(txnDb, {
+      target: 'character',
+      id: charId,
+      field: 'recovery_block',
+      op: 'set',
+      value: null,
+      ...ctx,
+    });
+    return { lifeState: row.life_state, hpCurrent: row.hp_current };
+  });
+}
+
 interface HpRow {
   hp_current: number;
   hp_max: number;
@@ -133,6 +236,7 @@ interface HpRow {
   stable_recovery_roll: number | null;
   stable_recovery_anchor_elapsed_minutes: number | null;
   stable_recovery_deadline_elapsed_minutes: number | null;
+  recovery_block: 'suffocating' | null;
 }
 
 function scheduleStableRecovery(
@@ -193,6 +297,7 @@ function readHpRow(db: Db, charId: string): HpRow {
               death_save_successes, death_save_failures,
               stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
               stable_recovery_deadline_elapsed_minutes
+              , recovery_block
        FROM character WHERE id = ?`,
     )
     .get(charId) as HpRow | undefined;
@@ -243,6 +348,16 @@ function writeHpFields(
   if (mutations.length > 0) {
     mutateStateBatch(db, mutations);
   }
+  if (after.life_state === 'dead' && before.recovery_block !== null) {
+    mutateState(db, {
+      target: 'character',
+      id: charId,
+      field: 'recovery_block',
+      op: 'set',
+      value: null,
+      ...ctx,
+    });
+  }
   // Death ends attunement (SRD ending condition, F5): every life_state
   // transition into 'dead' — instant death, third failure, damage-at-0
   // escalation — releases the character's attunement slots.
@@ -282,6 +397,11 @@ export function adjustHp(
           ? 'character is dead: healing cannot restore a dead character ' +
               '(revival is a distinct act, not an adjust_hp call)'
           : 'character is dead: hp changes no longer apply',
+      );
+    }
+    if (amount > 0 && row.recovery_block !== null) {
+      throw new MutateStateError(
+        `cannot regain hit points while ${row.recovery_block}`,
       );
     }
 
@@ -452,6 +572,7 @@ export interface DeathSaveResult {
   deathSaveFailures: number;
   lifeState: LifeState;
   hpCurrent: number;
+  recoveryBlocked?: 'suffocating';
 }
 
 /**
@@ -486,21 +607,27 @@ export function recordDeathSave(
     let lifeState: LifeState = 'dying';
     let successes = row.death_save_successes;
     let failures = row.death_save_failures;
+    const recoveryBlocked = row.recovery_block !== null;
 
     if (roll === 20) {
-      // Natural 20: regain 1 hit point; counters reset on regaining HP.
-      outcome = 'revived';
-      hpCurrent = Math.min(1, row.hp_max);
-      lifeState = 'alive';
-      successes = 0;
-      failures = 0;
+      if (recoveryBlocked) {
+        successes = Math.min(3, successes + 1);
+        outcome = 'success';
+      } else {
+        // Natural 20: regain 1 hit point; counters reset on regaining HP.
+        outcome = 'revived';
+        hpCurrent = Math.min(1, row.hp_max);
+        lifeState = 'alive';
+        successes = 0;
+        failures = 0;
+      }
     } else if (roll === 1) {
       failures = Math.min(3, failures + 2);
       outcome = failures >= 3 ? 'dead' : 'critical-failure';
       lifeState = failures >= 3 ? 'dead' : 'dying';
     } else if (roll >= 10) {
-      successes += 1;
-      if (successes >= 3) {
+      successes = Math.min(3, successes + 1);
+      if (successes >= 3 && !recoveryBlocked) {
         // Third success: stable; counters reset on becoming stable.
         outcome = 'stabilized';
         lifeState = 'stable';
@@ -537,6 +664,7 @@ export function recordDeathSave(
       deathSaveFailures: failures,
       lifeState,
       hpCurrent,
+      ...(recoveryBlocked ? { recoveryBlocked: 'suffocating' as const } : {}),
     };
   });
 }
@@ -564,6 +692,11 @@ export function stabilizeCharacter(
     if (row.life_state !== 'dying') {
       throw new MutateStateError(
         `only a dying character can be stabilized (current state: ${row.life_state})`,
+      );
+    }
+    if (row.recovery_block !== null) {
+      throw new MutateStateError(
+        `cannot stabilize a character while ${row.recovery_block}`,
       );
     }
 

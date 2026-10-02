@@ -161,12 +161,9 @@ describe('rule awareness', () => {
     const suffocating = renderedFor('rule:suffocating');
     expect(suffocating).toContain('### Eshyra known limits');
     expect(suffocating).toContain('(finding: readiness-integrity)');
-    // Source-fidelity: the SRD rule forbids HP regain and stabilization until
-    // the creature can breathe again, and no runtime gate enforces it.
-    expect(suffocating).toContain(
-      'does not gate stabilization or HP recovery on renewed breathing',
-    );
-    expect(suffocating).toContain('do not call stabilize_character');
+    expect(suffocating).toContain('set_suffocation with event drop');
+    expect(suffocating).toContain('event breathe');
+    expect(suffocating).toContain('calc breath_hold_duration');
     expect(suffocating).not.toMatch(
       /held its breath|suffocation round countdown/i,
     );
@@ -176,11 +173,9 @@ describe('rule awareness', () => {
 
   it('scopes suffocation HP guidance by target domain', () => {
     const [limit] = ruleStatements('rule:suffocating').knownLimits;
-    // adjust_hp / stabilize_character address characters only; encounter
-    // combatants take HP through update_combatant hpDelta.
-    expect(limit?.statement).toContain(
-      'When a character drops to 0 hit points',
-    );
+    expect(limit?.statement).toContain('set_suffocation with event drop');
+    expect(limit?.statement).toContain('breath_hold_duration');
+    expect(limit?.statement).toContain('suffocation_survival_rounds');
     expect(limit?.statement).not.toMatch(/When the creature drops/);
     // Encounter combatants: updateCombatant defaults 0 HP to 'dead' and
     // CombatantStatus has no dying state, so the source's dying transition is
@@ -267,10 +262,7 @@ describe('rule awareness', () => {
       'rule:hiding': ['retained-check-total-resolution'],
       'rule:knocking-a-creature-out': ['nonlethal-knockout'],
       'rule:speed': ['graded-exhaustion-increase'],
-      'rule:suffocating': [
-        'suffocation-recovery-gate',
-        'combatant-dying-state',
-      ],
+      'rule:suffocating': ['combatant-dying-state'],
       'rule:surprise': ['retained-check-total-resolution'],
       'rule:water': ['graded-exhaustion-increase'],
       'rule:weapon-properties': ['ammunition-recovery-count'],
@@ -384,7 +376,7 @@ describe('rule awareness', () => {
     // re-adding exhaustion at a model-computed level.
     const suffocating =
       ruleStatements('rule:suffocating').knownLimits[0]?.statement;
-    expect(suffocating).toContain('record_death_save is not gated');
+    expect(suffocating).toContain('set_suffocation with event drop');
     expect(suffocating).not.toMatch(/skip|in prose|yourself|narrat/i);
     for (const key of ['rule:food', 'rule:water', 'rule:speed'])
       expect(ruleStatements(key).knownLimits[0]?.statement).not.toMatch(

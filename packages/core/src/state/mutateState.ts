@@ -106,7 +106,7 @@ export interface StateProvenanceRecord {
  */
 type FieldDescriptor =
   | { kind: 'text'; nullable: boolean }
-  | { kind: 'text-enum'; values: readonly string[] }
+  | { kind: 'text-enum'; values: readonly string[]; nullable?: boolean }
   | { kind: 'integer'; min: number; max?: number; nullable?: boolean }
   | { kind: 'json'; root: 'array' | 'object' }
   | {
@@ -139,6 +139,11 @@ const CHARACTER_FIELDS: Record<string, FieldDescriptor> = {
   stable_recovery_deadline_elapsed_minutes: {
     kind: 'integer',
     min: 0,
+    nullable: true,
+  },
+  recovery_block: {
+    kind: 'text-enum',
+    values: ['suffocating'],
     nullable: true,
   },
   ability_scores_json: {
@@ -526,6 +531,7 @@ function validatedFieldValue(
         ? nullableStringValue(target, field, value)
         : requiredStringValue(target, field, value);
     case 'text-enum':
+      if (descriptor.nullable && value === null) return null;
       return enumStringValue(target, field, value, descriptor.values);
     case 'integer':
       if (descriptor.nullable && value === null) return null;

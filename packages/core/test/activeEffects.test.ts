@@ -16,6 +16,7 @@ import {
   advanceWorldTime,
   applyCombatClosureToEffects,
   auditActiveEffectIntegrity,
+  beginSuffocation,
   beginTurn,
   breakCombatantConcentration,
   closeCombatInstance,
@@ -999,6 +1000,19 @@ describe('adjustHp concentration integration', () => {
     expect(characterConditionIds(db, pcId)).toEqual([]);
     const ended = listEffectEvents(db, CAMPAIGN, 'fx-bless').at(-1);
     expect(ended?.detail).toMatchObject({
+      reason: 'concentration-broken',
+      detail: 'incapacitated',
+    });
+  });
+
+  it('breaks concentration when suffocation applies the 0 HP dying transition', () => {
+    const { db, pcId } = setup();
+    castBless(db, pcId);
+    beginSuffocation(db, { ...CTX, characterId: pcId });
+    expect(getConcentrationEffect(db, CAMPAIGN, pc(pcId))).toBeUndefined();
+    expect(
+      listEffectEvents(db, CAMPAIGN, 'fx-bless').at(-1)?.detail,
+    ).toMatchObject({
       reason: 'concentration-broken',
       detail: 'incapacitated',
     });

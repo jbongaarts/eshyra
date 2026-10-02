@@ -201,6 +201,7 @@ describe('ToolRegistry', () => {
         'restore_usage',
         'roll',
         'set_plot_flag',
+        'set_suffocation',
         'set_surprised',
         'set_world_fact',
         'spend_currency',
@@ -436,6 +437,43 @@ describe('mark_scene tool', () => {
 });
 
 describe('lookup_rules tool', () => {
+  it('registers set_suffocation and applies drop/breathe events end to end', () => {
+    const toolContext = ctx();
+    const registry = createDefaultToolRegistry();
+    const dropped = registry.invoke(
+      'set_suffocation',
+      { event: 'drop' },
+      toolContext,
+    );
+    expect(dropped.ok).toBe(true);
+    expect(
+      toolContext.db
+        .prepare(
+          "SELECT life_state, recovery_block FROM character WHERE id='pc-1'",
+        )
+        .get(),
+    ).toEqual({ life_state: 'dying', recovery_block: 'suffocating' });
+    const healed = registry.invoke('adjust_hp', { amount: 1 }, toolContext);
+    expect(healed).toMatchObject({
+      ok: false,
+      message: 'cannot regain hit points while suffocating',
+    });
+    const breathed = registry.invoke(
+      'set_suffocation',
+      { event: 'breathe' },
+      toolContext,
+    );
+    expect(breathed.ok).toBe(true);
+    expect(
+      (
+        toolContext.db
+          .prepare("SELECT recovery_block FROM character WHERE id='pc-1'")
+          .get() as { recovery_block: string | null }
+      ).recovery_block,
+    ).toBeNull();
+    toolContext.db.close();
+  });
+
   it('returns relationship awareness beside the unchanged source record', () => {
     const result = createDefaultToolRegistry().invoke(
       'lookup_rules',
@@ -489,9 +527,7 @@ describe('lookup_rules tool', () => {
       };
       expect(data.ruleAwareness.knownLimits[0]).toMatchObject({
         findingId: 'readiness-integrity',
-        statement: expect.stringContaining(
-          'does not gate stabilization or HP recovery',
-        ),
+        statement: expect.stringContaining('set_suffocation with event drop'),
       });
       expect(data.ruleAwareness.knownLimits[0].statement).not.toMatch(
         /held its breath|suffocation round countdown/i,
@@ -2309,6 +2345,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'restore_usage',
         'roll',
         'set_plot_flag',
+        'set_suffocation',
         'set_surprised',
         'set_world_fact',
         'spend_currency',

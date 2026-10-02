@@ -7,6 +7,27 @@ import {
 import { initSchema } from '../src/persistence/schema.js';
 
 describe('persistence', () => {
+  it('migration 0032 adds the constrained character recovery block', () => {
+    const db = openDatabase(':memory:');
+    initSchema(db);
+    expect(
+      (
+        db.prepare('PRAGMA table_info(character)').all() as Array<{
+          name: string;
+        }>
+      ).some((column) => column.name === 'recovery_block'),
+    ).toBe(true);
+    db.prepare(
+      "UPDATE character SET recovery_block='suffocating' WHERE id='pc-1'",
+    ).run();
+    expect(() =>
+      db
+        .prepare("UPDATE character SET recovery_block='other' WHERE id='pc-1'")
+        .run(),
+    ).toThrow(/CHECK constraint failed/);
+    db.close();
+  });
+
   it('initSchema applies the bundled migrations and records the ledger', () => {
     const db = openDatabase(':memory:');
     initSchema(db);
@@ -17,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 31,
-      name: 'turn_trace_discovery_shadow',
+      version: 32,
+      name: 'character_recovery_block',
     });
     db.close();
   });

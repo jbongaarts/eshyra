@@ -19,7 +19,8 @@ export const recordDeathSaveTool: Tool = {
     'pass the natural die result here — never a modified total. This tool ' +
     'owns the outcome: 10+ is a success, 9 or lower a failure, a natural 1 ' +
     'counts as two failures, and a natural 20 restores 1 HP. Three ' +
-    'successes stabilize; three failures kill. Never track death saves in ' +
+    'successes stabilize; three failures kill. While suffocating, successes ' +
+    'accumulate without stabilizing and a natural 20 does not restore HP. Never track death saves in ' +
     'prose.',
   inputSchema: {
     type: 'object',

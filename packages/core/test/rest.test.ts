@@ -7,6 +7,7 @@ import type {
 import {
   addCondition,
   advanceWorldTime,
+  beginSuffocation,
   completeLongRest,
   completeShortRest,
   createActiveEffect,
@@ -461,6 +462,52 @@ describe('F7 rest qualification boundary', () => {
         rng: createSeededRng(1),
       }),
     ).toThrow(/closed/);
+    db.close();
+  });
+
+  it('refuses short-rest Hit Die recovery before spending the die while suffocating', () => {
+    const db = setupCharacters();
+    completeShortRest(db, {
+      ...CTX,
+      restId: 'suffocating-short-rest',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'hp_current',
+      op: 'set',
+      value: 0,
+      ...CTX,
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'life_state',
+      op: 'set',
+      value: 'dying',
+      ...CTX,
+    });
+    beginSuffocation(db, { ...CTX, characterId: 'pc-1' });
+    const before = db
+      .prepare('SELECT dice_used FROM character_hit_dice WHERE character_id=?')
+      .get('pc-1');
+    expect(() =>
+      spendRestHitDie(db, {
+        ...CTX,
+        restId: 'suffocating-short-rest',
+        characterId: 'pc-1',
+        rng: createSeededRng(1),
+      }),
+    ).toThrow('cannot regain hit points while suffocating');
+    expect(
+      db
+        .prepare(
+          'SELECT dice_used FROM character_hit_dice WHERE character_id=?',
+        )
+        .get('pc-1'),
+    ).toEqual(before);
     db.close();
   });
 
