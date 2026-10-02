@@ -63,11 +63,17 @@ export function formatHpStatus(status: {
   lifeState: LifeState;
   deathSaveSuccesses: number;
   deathSaveFailures: number;
+  recoveryBlock?: 'suffocating' | null;
 }): string {
   const temp = status.hpTemp > 0 ? ` (+${status.hpTemp} temp)` : '';
+  // The block is engine state the DM must see to record `breathe` later.
+  const blocked =
+    status.recoveryBlock === 'suffocating'
+      ? ', suffocating: no healing or stabilizing'
+      : '';
   let state = '';
   if (status.lifeState === 'dying') {
-    state = ` [dying, death saves ${status.deathSaveSuccesses}S/${status.deathSaveFailures}F]`;
+    state = ` [dying${blocked}, death saves ${status.deathSaveSuccesses}S/${status.deathSaveFailures}F]`;
   } else if (status.lifeState === 'stable') {
     state = ' [stable at 0 HP]';
   } else if (status.lifeState === 'dead') {

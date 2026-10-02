@@ -22,6 +22,7 @@ export interface PartyMember {
   lifeState: LifeState;
   deathSaveSuccesses: number;
   deathSaveFailures: number;
+  recoveryBlock: 'suffocating' | null;
   conditions: readonly CharacterConditionEntry[];
   role: string;
   isActive: boolean;
@@ -41,6 +42,7 @@ interface PartyRow {
   life_state: LifeState;
   death_save_successes: number;
   death_save_failures: number;
+  recovery_block: 'suffocating' | null;
   conditions_json: string;
   role: string;
 }
@@ -57,6 +59,7 @@ export function listParty(db: Db): PartyMember[] {
     .prepare(
       `SELECT id, name, ancestry, class_name, level, hp_current, hp_max,
               hp_temp, life_state, death_save_successes, death_save_failures,
+              recovery_block,
               conditions_json, role
        FROM character
        ORDER BY CASE WHEN role = 'pc' THEN 0 ELSE 1 END, id`,
@@ -75,6 +78,7 @@ export function listParty(db: Db): PartyMember[] {
     lifeState: row.life_state,
     deathSaveSuccesses: row.death_save_successes,
     deathSaveFailures: row.death_save_failures,
+    recoveryBlock: row.recovery_block,
     conditions: validateConditionsJson(
       conditionsColumn.decode(row.conditions_json),
       `character[${row.id}].conditions_json`,

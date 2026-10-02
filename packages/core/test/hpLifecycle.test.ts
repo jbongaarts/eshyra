@@ -913,6 +913,22 @@ describe('mutateState validation of the new character fields', () => {
 });
 
 describe('formatHpStatus', () => {
+  it('shows the suffocation recovery block on a dying character', () => {
+    expect(
+      formatHpStatus({
+        hpCurrent: 0,
+        hpMax: 20,
+        hpTemp: 0,
+        lifeState: 'dying',
+        deathSaveSuccesses: 3,
+        deathSaveFailures: 1,
+        recoveryBlock: 'suffocating',
+      }),
+    ).toBe(
+      'HP 0/20 [dying, suffocating: no healing or stabilizing, death saves 3S/1F]',
+    );
+  });
+
   it('renders temp HP and death state fragments', () => {
     const base = {
       hpMax: 20,

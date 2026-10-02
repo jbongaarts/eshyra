@@ -183,6 +183,7 @@ export interface CharacterSnapshot {
   lifeState: LifeState;
   deathSaveSuccesses: number;
   deathSaveFailures: number;
+  recoveryBlock: 'suffocating' | null;
   abilityScores: AbilityScores;
   conditions: readonly CharacterConditionEntry[];
   role: string;
@@ -302,6 +303,7 @@ interface CharacterRow {
   life_state: LifeState;
   death_save_successes: number;
   death_save_failures: number;
+  recovery_block: 'suffocating' | null;
   ability_scores_json: string;
   conditions_json: string;
   role: string;
@@ -354,6 +356,7 @@ export function readStateSnapshot(
     .prepare(
       `SELECT id, name, ancestry, class_name, level, hp_current, hp_max,
               hp_temp, life_state, death_save_successes, death_save_failures,
+              recovery_block,
               ability_scores_json, conditions_json, role, inspiration
        FROM character WHERE id = ?`,
     )
@@ -459,6 +462,7 @@ export function readStateSnapshot(
       lifeState: character.life_state,
       deathSaveSuccesses: character.death_save_successes,
       deathSaveFailures: character.death_save_failures,
+      recoveryBlock: character.recovery_block,
       abilityScores: validateAbilityScoresJson(
         rawAbilityScores,
         'character.ability_scores_json',
