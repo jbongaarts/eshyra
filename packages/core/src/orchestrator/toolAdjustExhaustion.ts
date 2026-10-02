@@ -69,7 +69,11 @@ export const adjustExhaustionTool: Tool = {
         adjustExhaustion(ctx.db, {
           delta: a.delta,
           ...(typeof a.combatantId === 'string'
-            ? { combatantId: a.combatantId, campaignId: ctx.campaignId }
+            ? {
+                combatantId: a.combatantId,
+                campaignId: ctx.campaignId,
+                resolveRulesPack: ctx.resolveRulesPack,
+              }
             : { characterId: character?.id }),
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,

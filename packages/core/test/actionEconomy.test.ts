@@ -30,6 +30,7 @@ import {
   startEncounter,
   updateCombatant,
 } from '../src/internal.js';
+import { installLateAmbiguityAddon } from './discovery/support/lateAmbiguityAddon.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
@@ -932,6 +933,7 @@ describe('turn-budget tools', () => {
 
   it('set_surprised derives party-member surprise and rejects the former free-list arguments', () => {
     const { pcId, registry, ctx } = toolSetup();
+    ctx.resolveRulesPack = installLateAmbiguityAddon(ctx.db, NOW).resolver;
 
     const none = registry.invoke('set_surprised', {}, ctx);
     expect(none.ok).toBe(false);

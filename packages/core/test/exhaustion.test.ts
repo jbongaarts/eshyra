@@ -82,6 +82,305 @@ function startCombatant(
 }
 
 describe('adjust_exhaustion tool', () => {
+  it('refuses encounter admission inputs that revive a dead campaign actor', () => {
+    const { db, ctx, registry } = setup();
+    expect(
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: 'terminal-admission',
+          actors: [
+            {
+              actorId: 'terminal',
+              rulesRef: 'creature:goblin',
+              hpMax: 8,
+              hpCurrent: 8,
+            },
+          ],
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const combatantId = 'terminal-admission-terminal';
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId, deathRules: 'player-character' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke('update_combatant', { combatantId, hpDelta: -40 }, ctx)
+        .ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'close_combat_instance',
+        { combatInstanceId: 'terminal-admission', status: 'completed' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: 'terminal-reopen',
+          actors: [
+            {
+              actorId: 'terminal',
+              rulesRef: 'creature:goblin',
+              hpCurrent: 8,
+              status: 'alive',
+            },
+          ],
+        },
+        ctx,
+      ),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('lifecycle tools'),
+    });
+    db.close();
+  });
+
+  it('settles and re-arms zero-maximum combatant recovery without blocking later clocks', () => {
+    const { db, ctx, registry } = setup();
+    expect(
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: 'settled-zero',
+          actors: [
+            {
+              actorId: 'settled',
+              rulesRef: 'creature:goblin',
+              hpMax: 1,
+              hpCurrent: 1,
+            },
+          ],
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const combatantId = 'settled-zero-settled';
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId, deathRules: 'player-character' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke('adjust_exhaustion', { combatantId, delta: 4 }, ctx).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke('stabilize_character', { combatantId }, ctx).ok,
+    ).toBe(true);
+    const deadline = (
+      db
+        .prepare(
+          'SELECT stable_recovery_deadline_elapsed_minutes AS deadline FROM encounter_combatant WHERE combatant_id=?',
+        )
+        .get(combatantId) as { deadline: number }
+    ).deadline;
+    expect(registry.invoke('advance_time', { minutes: deadline }, ctx).ok).toBe(
+      true,
+    );
+    expect(
+      db
+        .prepare(
+          'SELECT status,stable_recovery_settled,stable_recovery_deadline_elapsed_minutes FROM encounter_combatant WHERE combatant_id=?',
+        )
+        .get(combatantId),
+    ).toEqual({
+      status: 'stable',
+      stable_recovery_settled: 1,
+      stable_recovery_deadline_elapsed_minutes: null,
+    });
+    expect(
+      registry.invoke('adjust_exhaustion', { combatantId, delta: -1 }, ctx).ok,
+    ).toBe(true);
+    for (let i = 0; i < 3; i += 1)
+      expect(registry.invoke('advance_time', { minutes: 60 }, ctx).ok).toBe(
+        true,
+      );
+    db.close();
+  });
+
+  it('keeps generated combatant lifecycle transitions valid across repeated projection reopen', () => {
+    const { db, ctx, registry } = setup();
+    let seed = 0x9e3779b9;
+    const random = (max: number) => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed % max;
+    };
+    const ids = ['pc', 'monster', 'hydra'];
+    const start = (instance: string, initial = false) =>
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: instance,
+          actors: [
+            {
+              actorId: 'pc',
+              rulesRef: 'creature:goblin',
+              ...(initial ? { hpMax: 7, hpCurrent: 7 } : {}),
+            },
+            {
+              actorId: 'monster',
+              rulesRef: 'creature:goblin',
+              ...(initial ? { hpMax: 7, hpCurrent: 7 } : {}),
+            },
+            {
+              actorId: 'hydra',
+              rulesRef: 'creature:hydra',
+              ...(initial ? { hpMax: 172, hpCurrent: 172 } : {}),
+            },
+          ],
+        },
+        ctx,
+      );
+    expect(start('sequence-0', true).ok).toBe(true);
+    const combatantId = (actor: string, instance = 'sequence-0') =>
+      `${instance}-${actor}`;
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: combatantId('pc'), deathRules: 'player-character' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+
+    const assertState = (instance: string) => {
+      const rows = db
+        .prepare(`SELECT combatant_id,identity_ref,hp_current,hp_max,status,death_rules,
+        death_save_successes,death_save_failures,recovery_block,stable_recovery_roll,
+        stable_recovery_anchor_elapsed_minutes,stable_recovery_deadline_elapsed_minutes,
+        stable_recovery_settled,head_count,conditions_json FROM encounter_combatant
+        WHERE campaign_id=? AND combat_instance_id=?`)
+        .all(ctx.campaignId, instance) as Array<Record<string, unknown>>;
+      expect(rows).toHaveLength(3);
+      for (const row of rows) {
+        const conditions = JSON.parse(row.conditions_json as string) as Array<{
+          id: string;
+          level?: number;
+        }>;
+        const exhaustion = conditions.find((x) => x.id === 'exhaustion')?.level;
+        const pc = row.death_rules === 'player-character';
+        const status = row.status as string;
+        const hp = row.hp_current as number;
+        const schedule = [
+          row.stable_recovery_roll,
+          row.stable_recovery_anchor_elapsed_minutes,
+          row.stable_recovery_deadline_elapsed_minutes,
+        ];
+        expect(exhaustion === 6 ? status === 'dead' : true).toBe(true);
+        expect(row.head_count === 0 ? status === 'dead' : true).toBe(true);
+        expect(
+          ['dying', 'stable'].includes(status) ? pc && hp === 0 : true,
+        ).toBe(true);
+        expect(
+          pc && hp === 0 ? ['dying', 'stable', 'dead'].includes(status) : true,
+        ).toBe(true);
+        expect(row.recovery_block !== null ? status === 'dying' : true).toBe(
+          true,
+        );
+        expect(hp).toBeLessThanOrEqual(
+          effectiveHpMax(row.hp_max as number, conditions),
+        );
+        const present = schedule.filter((x) => x !== null).length;
+        expect(
+          status === 'stable' && present === 0
+            ? row.stable_recovery_settled === 1
+            : true,
+        ).toBe(true);
+        expect(status !== 'stable' ? present === 0 : true).toBe(true);
+        const actor = db
+          .prepare(
+            'SELECT hp_current,status,state_json FROM campaign_actor WHERE campaign_id=? AND actor_id=?',
+          )
+          .get(ctx.campaignId, row.identity_ref) as {
+          hp_current: number;
+          status: string;
+          state_json: string;
+        };
+        expect(actor.hp_current).toBe(hp);
+        expect(actor.status).toBe(status);
+        const lifecycle = JSON.parse(actor.state_json).combatLifecycle;
+        expect(lifecycle.deathRules).toBe(row.death_rules);
+        expect(lifecycle.deathSaveSuccesses).toBe(row.death_save_successes);
+        expect(lifecycle.deathSaveFailures).toBe(row.death_save_failures);
+        expect(lifecycle.recoveryBlock).toBe(row.recovery_block);
+        expect(lifecycle.headCount).toBe(row.head_count);
+      }
+    };
+    for (let step = 1; step <= 360; step += 1) {
+      const actor = ids[random(ids.length)];
+      const id = combatantId(actor, `sequence-${Math.floor((step - 1) / 90)}`);
+      switch (random(6)) {
+        case 0:
+          registry.invoke(
+            'update_combatant',
+            {
+              combatantId: id,
+              hpDelta: random(2) ? -(1 + random(30)) : 1 + random(8),
+              critical: random(2) === 0,
+            },
+            ctx,
+          );
+          break;
+        case 1:
+          registry.invoke(
+            'record_death_save',
+            { combatantId: id, roll: 1 + random(20) },
+            ctx,
+          );
+          break;
+        case 2:
+          registry.invoke('stabilize_character', { combatantId: id }, ctx);
+          break;
+        case 3:
+          registry.invoke(
+            'set_suffocation',
+            { combatantId: id, event: random(2) ? 'drop' : 'breathe' },
+            ctx,
+          );
+          break;
+        case 4:
+          registry.invoke(
+            'adjust_exhaustion',
+            { combatantId: id, delta: random(2) ? 1 : -1 },
+            ctx,
+          );
+          break;
+        default:
+          registry.invoke(
+            'begin_turn',
+            { combatantId: id, round: Math.ceil(step / 12) },
+            ctx,
+          );
+      }
+      if (step % 90 === 0) {
+        const old = `sequence-${Math.floor((step - 1) / 90)}`;
+        assertState(old);
+        expect(
+          registry.invoke(
+            'close_combat_instance',
+            { combatInstanceId: old, status: 'completed' },
+            ctx,
+          ).ok,
+        ).toBe(true);
+        const next = `sequence-${step / 90}`;
+        const reopened = start(next);
+        if (!reopened.ok) throw new Error(reopened.message);
+        assertState(next);
+      } else {
+        assertState(`sequence-${Math.floor((step - 1) / 90)}`);
+      }
+    }
+    db.close();
+  });
+
   it('records +1 from absence and +2 on an existing level through the registry', () => {
     const { db, ctx, registry } = setup();
     expect(

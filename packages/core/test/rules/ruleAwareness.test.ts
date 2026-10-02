@@ -163,7 +163,7 @@ describe('rule awareness', () => {
     expect(suffocating).toContain('(finding: readiness-integrity)');
     expect(suffocating).toContain('set_suffocation event drop');
     expect(suffocating).toContain('event breathe');
-    expect(suffocating).toContain('calc suffocation_survival_rounds');
+    expect(suffocating).toContain('calc_suffocation_survival_rounds');
     expect(suffocating).not.toMatch(
       /held its breath|suffocation round countdown/i,
     );
@@ -184,8 +184,8 @@ describe('rule awareness', () => {
     expect(limit?.statement).toContain('after the interval expires');
     expect(limit?.statement).toContain('suffocation_survival_rounds');
     expect(limit?.statement).not.toMatch(/When the creature drops/);
-    expect(limit?.statement).toContain('encounter combatant');
-    expect(limit?.statement).toContain('update_combatant deathRules');
+    expect(limit?.statement).toContain('player-character rules');
+    expect(limit?.statement).toContain('update_combatant');
     expect(limit?.statement).not.toMatch(/unconscious/);
   });
 
@@ -242,7 +242,7 @@ describe('rule awareness', () => {
     expect(
       RULE_KNOWN_LIMITS['rule:weapon-properties']?.[0]?.participants,
     ).toEqual(['resolve_check', 'expend_ammunition', 'recover_ammunition']);
-    expect(ammo?.statement).toContain('half the expended pieces');
+    expect(ammo?.statement).toContain('half the expended ammunition');
     expect(ammo?.capabilityGaps).toBeUndefined();
   });
 

@@ -210,6 +210,7 @@ export interface SpendTurnResourceResult {
 export interface SetSurprisedInput extends TurnMutationContext {
   readonly campaignId: string;
   readonly participants: readonly TurnParticipantInput[];
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 export interface SetSurprisedResult {
@@ -1447,7 +1448,7 @@ export function setSurprisedInTransaction(
       reactionProfileFor(
         txnDb,
         rulesRef,
-        undefined,
+        input.resolveRulesPack,
         combatantHeadCount(
           txnDb,
           input.campaignId,
@@ -1455,7 +1456,7 @@ export function setSurprisedInTransaction(
           participant,
         ),
       ),
-      legendaryProfileFor(txnDb, rulesRef),
+      legendaryProfileFor(txnDb, rulesRef, input.resolveRulesPack),
       input,
     );
     const row = readBudgetRow(

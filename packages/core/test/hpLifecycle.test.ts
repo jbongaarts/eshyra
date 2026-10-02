@@ -25,6 +25,8 @@ import {
   resolveStableRecoveries,
   stabilizeCharacter,
 } from '../src/internal.js';
+import { withExhaustionLevel } from '../src/state/exhaustion.js';
+import { adjustExhaustion } from '../src/state/exhaustionMutation.js';
 
 const CTX = {
   provenance: 'test:hp-lifecycle',
@@ -507,6 +509,43 @@ describe('adjustHp — damage at 0 HP escalation', () => {
 });
 
 describe('adjustHp — temporary hit points', () => {
+  it('uses full damage for instant death at 0 HP across stable/dying and temp buffers', () => {
+    for (const lifeState of ['dying', 'stable'] as const) {
+      for (const critical of [false, true]) {
+        for (const damage of [9, 10, 11]) {
+          for (const temp of [0, Math.floor(damage / 2), damage]) {
+            const db = freshDb({
+              max: 10,
+              current: 0,
+              lifeState,
+              temp,
+              successes: 1,
+              failures: 1,
+            });
+            const result = adjustHp(db, -damage, CTX, { critical });
+            expect(result.instantDeath).toBe(damage >= 10);
+            expect(readMachine(db)).toMatchObject({
+              hp_current: 0,
+              hp_temp: Math.max(0, temp - damage),
+              life_state: damage >= 10 || critical ? 'dead' : 'dying',
+            });
+            expect(
+              db
+                .prepare(
+                  "SELECT death_save_failures FROM character WHERE id='pc-1'",
+                )
+                .get(),
+            ).toEqual({
+              death_save_failures:
+                damage >= 10 ? 1 : Math.min(3, 1 + (critical ? 2 : 1)),
+            });
+            db.close();
+          }
+        }
+      }
+    }
+  });
+
   it('damage consumes the temp-HP buffer before real HP', () => {
     const db = freshDb({ max: 20, current: 10, temp: 5 });
 
@@ -763,6 +802,58 @@ describe('recordDeathSave', () => {
 });
 
 describe('stabilizeCharacter', () => {
+  it('settles zero-maximum recovery and keeps later clock advances valid', () => {
+    const db = freshDb({ max: 1, current: 0, lifeState: 'dying' });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'conditions_json',
+      op: 'set',
+      value: withExhaustionLevel([], 4),
+      ...CTX,
+    });
+    stabilizeCharacter(db, CTX, createSeededRng(42));
+    const deadline = (
+      db
+        .prepare(
+          "SELECT stable_recovery_deadline_elapsed_minutes AS deadline FROM character WHERE id='pc-1'",
+        )
+        .get() as { deadline: number }
+    ).deadline;
+    advanceWorldTime(db, {
+      ...CTX,
+      campaignId: 'campaign-1',
+      minutes: deadline,
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT life_state,hp_current,stable_recovery_settled,stable_recovery_deadline_elapsed_minutes FROM character WHERE id='pc-1'",
+        )
+        .get(),
+    ).toEqual({
+      life_state: 'stable',
+      hp_current: 0,
+      stable_recovery_settled: 1,
+      stable_recovery_deadline_elapsed_minutes: null,
+    });
+    adjustExhaustion(db, { ...CTX, characterId: 'pc-1', delta: -1 });
+    expect(
+      db
+        .prepare(
+          "SELECT stable_recovery_settled,stable_recovery_deadline_elapsed_minutes FROM character WHERE id='pc-1'",
+        )
+        .get(),
+    ).toMatchObject({
+      stable_recovery_settled: 0,
+      stable_recovery_deadline_elapsed_minutes: expect.any(Number),
+    });
+    for (let i = 0; i < 3; i += 1)
+      expect(() =>
+        advanceWorldTime(db, { ...CTX, campaignId: 'campaign-1', minutes: 60 }),
+      ).not.toThrow();
+    db.close();
+  });
   it('marks a dying character stable and resets the counters', () => {
     const db = freshDb({
       max: 20,

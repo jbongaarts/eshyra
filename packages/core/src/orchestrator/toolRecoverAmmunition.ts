@@ -14,7 +14,7 @@ export const recoverAmmunitionTool: Tool = {
   mutates: true,
   requiresExplicitAction: true,
   description:
-    'After the battle’s combat instance is closed, recover half (rounded down) of this character’s expended ammunition pieces that remain where they were expended, and destroy the rest. Call after the battle; the tool does not advance the clock.',
+    'After the battle’s combat instance is closed, recover half the expended ammunition, rounded down per ammunition identity, limited to what is still at the battlefield. The remaining present pieces are destroyed; pieces no longer present are reported as unavailable. The result reports entitlement, returned, destroyed, and unavailable counts. Call after the battle; the tool does not advance the clock.',
   inputSchema: {
     type: 'object',
     properties: {

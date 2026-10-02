@@ -113,6 +113,30 @@ function recover(
 }
 
 describe('ammunition expenditure and battlefield recovery tools', () => {
+  it('computes half of original expenditure, capped by the pieces still present', () => {
+    const { db, registry, ctx } = setup();
+    combat(db);
+    stack(db, 'arrows', 4);
+    const expenditure = spend(registry, ctx, 'arrows', 4);
+    db.prepare('UPDATE inventory SET quantity=2 WHERE id=?').run(
+      expenditure.expendedInventoryId,
+    );
+    close(db);
+    expect(recover(registry, ctx)).toMatchObject({
+      ok: true,
+      data: {
+        entitlement: 2,
+        recovered: 2,
+        destroyed: 0,
+        unavailable: 2,
+      },
+    });
+    expect(
+      db.prepare("SELECT quantity FROM inventory WHERE id='arrows'").get(),
+    ).toEqual({ quantity: 2 });
+    db.close();
+  });
+
   it.each([
     [2, 2],
     [4, 2],

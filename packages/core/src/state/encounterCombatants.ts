@@ -18,7 +18,7 @@ import {
   type CampaignRulesPackResolver,
   lookupCampaignRecord,
 } from './campaignRecordLookup.js';
-import { effectiveHpMax } from './exhaustion.js';
+import { effectiveHpMax, exhaustionLevel } from './exhaustion.js';
 import { resolveDeathSaveTransition } from './hpLifecycle.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
 import { closeOpenShortRestRecoveryWindows } from './rest.js';
@@ -353,7 +353,12 @@ export function ensureCampaignActorFromCombatant(
       `campaign actor '${input.actorId}' has incompatible rules reference`,
     );
   }
-  return upsertCampaignActor(db, {
+  const lifecycle = combatLifecycleForCombatant(
+    db,
+    input.campaignId,
+    input.combatantId,
+  );
+  const promoted = upsertCampaignActor(db, {
     campaignId: input.campaignId,
     actorId: input.actorId,
     displayName: existing?.displayName ?? combatant.displayLabel,
@@ -366,11 +371,35 @@ export function ensureCampaignActorFromCombatant(
     conditions: combatant.conditions,
     status: combatant.status,
     currentLocationId: combatant.locationId,
-    state: existing?.state,
+    state: {
+      ...(existing?.state ?? {}),
+      combatLifecycle: lifecycle as unknown as JsonValue,
+    },
+    replaceCombatLifecycle: true,
     provenance: input.provenance,
     sessionId: input.sessionId,
     at: input.at,
   });
+  if (
+    combatant.identityKind !== 'campaign_actor' ||
+    combatant.identityRef !== input.actorId
+  ) {
+    db.prepare(`UPDATE encounter_combatant SET stable_recovery_roll=NULL,
+      stable_recovery_anchor_elapsed_minutes=NULL, stable_recovery_deadline_elapsed_minutes=NULL,
+      stable_recovery_settled=CASE WHEN status='stable' THEN 1 ELSE 0 END
+      WHERE campaign_id=? AND combatant_id=?`).run(
+      input.campaignId,
+      input.combatantId,
+    );
+    assertCombatantLifecycle(
+      db,
+      input.campaignId,
+      input.combatantId,
+      combatant,
+    );
+  }
+  assertCampaignActorLifecycle(promoted);
+  return promoted;
 }
 
 export interface UpdateCombatantResult {
@@ -506,6 +535,111 @@ export class EncounterCombatantError extends Error {
     super(message);
     this.name = 'EncounterCombatantError';
   }
+}
+
+/** Validate canonical lifecycle after a combatant write, before its transaction commits. */
+export function assertCombatantLifecycle(
+  db: Db,
+  campaignId: string,
+  combatantId: string,
+  previous?: EncounterCombatant,
+): void {
+  const c = readCombatant(db, campaignId, combatantId);
+  if (!c) return;
+  const row = db
+    .prepare(`SELECT stable_recovery_settled FROM encounter_combatant
+    WHERE campaign_id=? AND combatant_id=?`)
+    .get(campaignId, combatantId) as { stable_recovery_settled: number };
+  const exhaustion = exhaustionLevel(c.conditions);
+  const schedule = [
+    c.stableRecoveryRoll,
+    c.stableRecoveryAnchorElapsedMinutes,
+    c.stableRecoveryDeadlineElapsedMinutes,
+  ];
+  const present = schedule.filter((v) => v !== null).length;
+  const fail = (rule: string): never => {
+    throw new EncounterCombatantError(
+      `combatant lifecycle invariant ${rule} violated for '${combatantId}'`,
+    );
+  };
+  if (exhaustion === 6 && c.status !== 'dead')
+    fail('I1 (exhaustion level 6 requires dead)');
+  if (c.headCount === 0 && c.status !== 'dead')
+    fail('I2 (zero heads requires dead)');
+  if (
+    (c.status === 'dying' || c.status === 'stable') &&
+    (c.deathRules !== 'player-character' || c.hpCurrent !== 0)
+  )
+    fail('I3 (dying/stable requires player-character rules at 0 HP)');
+  if (
+    c.deathRules === 'player-character' &&
+    c.hpCurrent === 0 &&
+    !['dying', 'stable', 'dead'].includes(c.status)
+  )
+    fail('I4 (0 HP player-character state must be dying, stable, or dead)');
+  if (c.recoveryBlock !== null && c.status !== 'dying')
+    fail('I5 (recovery block requires dying)');
+  if (c.hpCurrent > effectiveHpMax(c.hpMax, c.conditions))
+    fail('I6 (HP exceeds effective maximum)');
+  if (
+    (c.status !== 'stable' && present !== 0) ||
+    (present > 0 && present !== 3) ||
+    (c.status === 'stable' &&
+      present === 0 &&
+      row.stable_recovery_settled !== 1)
+  )
+    fail('I7 (stable recovery schedule is incomplete or unsettled)');
+  if (previous?.status === 'dead' && c.status !== 'dead') {
+    const previousTerminalCause =
+      exhaustionLevel(previous.conditions) === 6 || previous.headCount === 0;
+    const monsterHealing =
+      previous.deathRules === 'monster' &&
+      c.deathRules === 'monster' &&
+      !previousTerminalCause &&
+      exhaustion < 6 &&
+      previous.headCount !== 0 &&
+      c.headCount !== 0 &&
+      c.hpCurrent > previous.hpCurrent;
+    if (!monsterHealing) fail('I8 (dead state is terminal)');
+  }
+}
+
+function assertCampaignActorLifecycle(actor: CampaignActor): void {
+  const lifecycle = readCombatLifecycle(actor.state);
+  if (!lifecycle) return;
+  const exhaustion = exhaustionLevel(actor.conditions);
+  const fail = (rule: string): never => {
+    throw new EncounterCombatantError(
+      `campaign actor lifecycle invariant ${rule} violated for '${actor.actorId}'`,
+    );
+  };
+  if (exhaustion === 6 && actor.status !== 'dead') fail('I1');
+  if (lifecycle.headCount === 0 && actor.status !== 'dead') fail('I2');
+  if (
+    (actor.status === 'dying' || actor.status === 'stable') &&
+    (lifecycle.deathRules !== 'player-character' || actor.hpCurrent !== 0)
+  )
+    fail('I3');
+  if (
+    lifecycle.deathRules === 'player-character' &&
+    actor.hpCurrent === 0 &&
+    !['dying', 'stable', 'dead'].includes(actor.status)
+  )
+    fail('I4');
+  if (lifecycle.recoveryBlock !== null && actor.status !== 'dying') fail('I5');
+  if (
+    actor.hpCurrent !== undefined &&
+    actor.hpMax !== undefined &&
+    actor.hpCurrent > effectiveHpMax(actor.hpMax, actor.conditions)
+  )
+    fail('I6');
+  if (
+    (lifecycle.stableRecovery !== null && actor.status !== 'stable') ||
+    (actor.status === 'stable' &&
+      lifecycle.stableRecovery === null &&
+      !lifecycle.stableRecoverySettled)
+  )
+    fail('I7');
 }
 
 function requireActiveCombatant(
@@ -650,6 +784,7 @@ interface CombatLifecycle {
   headCount: number | null;
   headsDiedSinceOwnTurn: number;
   fireDamageSinceOwnTurn: number;
+  stableRecoverySettled: boolean;
 }
 
 function readCombatLifecycle(
@@ -681,7 +816,9 @@ function readCombatLifecycle(
         (v.headsDiedSinceOwnTurn as number) < 0)) ||
     (v.fireDamageSinceOwnTurn !== undefined &&
       v.fireDamageSinceOwnTurn !== 0 &&
-      v.fireDamageSinceOwnTurn !== 1)
+      v.fireDamageSinceOwnTurn !== 1) ||
+    (v.stableRecoverySettled !== undefined &&
+      typeof v.stableRecoverySettled !== 'boolean')
   )
     return fail();
   let stableRecovery: CombatLifecycle['stableRecovery'] = null;
@@ -707,11 +844,48 @@ function readCombatLifecycle(
     deathSaveFailures: v.deathSaveFailures as number,
     recoveryBlock: v.recoveryBlock,
     stableRecovery,
+    stableRecoverySettled: v.stableRecoverySettled === true,
     headCount: v.headCount as number | null,
     headsDiedSinceOwnTurn: (v.headsDiedSinceOwnTurn as number | undefined) ?? 0,
     fireDamageSinceOwnTurn:
       (v.fireDamageSinceOwnTurn as number | undefined) ?? 0,
   };
+}
+
+function combatLifecycleForCombatant(
+  db: Db,
+  campaignId: string,
+  combatantId: string,
+): Record<string, JsonValue> {
+  const c = readCombatant(db, campaignId, combatantId);
+  if (!c)
+    throw new EncounterCombatantError(`unknown combatant '${combatantId}'`);
+  const pending = db
+    .prepare(`SELECT heads_died_since_own_turn, fire_damage_since_own_turn,
+      stable_recovery_settled FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?`)
+    .get(campaignId, combatantId) as {
+    heads_died_since_own_turn: number;
+    fire_damage_since_own_turn: number;
+    stable_recovery_settled: number;
+  };
+  return {
+    deathRules: c.deathRules,
+    deathSaveSuccesses: c.deathSaveSuccesses,
+    deathSaveFailures: c.deathSaveFailures,
+    recoveryBlock: c.recoveryBlock,
+    stableRecovery:
+      c.stableRecoveryRoll === null
+        ? null
+        : {
+            roll: c.stableRecoveryRoll,
+            anchor: c.stableRecoveryAnchorElapsedMinutes,
+            deadline: c.stableRecoveryDeadlineElapsedMinutes,
+          },
+    stableRecoverySettled: pending.stable_recovery_settled === 1,
+    headCount: c.headCount,
+    headsDiedSinceOwnTurn: pending.heads_died_since_own_turn,
+    fireDamageSinceOwnTurn: pending.fire_damage_since_own_turn,
+  } as unknown as Record<string, JsonValue>;
 }
 
 function rowToCombatant(row: CombatantRow): EncounterCombatant {
@@ -1054,6 +1228,20 @@ export function upsertCampaignActor(
   if (actor === undefined) {
     throw new EncounterCombatantError('campaign actor upsert failed');
   }
+  if (existing?.status === 'dead' && actor.status !== 'dead') {
+    const prior = readCombatLifecycle(existing.state);
+    const monsterHealing =
+      prior?.deathRules === 'monster' &&
+      exhaustionLevel(actor.conditions) < 6 &&
+      exhaustionLevel(existing.conditions) < 6 &&
+      prior.headCount !== 0 &&
+      (actor.hpCurrent ?? 0) > (existing.hpCurrent ?? 0);
+    if (!monsterHealing)
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' is dead; use the lifecycle tools`,
+      );
+  }
+  assertCampaignActorLifecycle(actor);
   return actor;
 }
 
@@ -1258,6 +1446,54 @@ function startEncounterInTxn(
     const baselineHp = readCreatureHp(record);
     const hpMax = actorInput.hpMax ?? existing?.hpMax ?? baselineHp;
     const conditions = actorInput.conditions ?? existing?.conditions ?? [];
+    const lifecycleBefore = existing
+      ? readCombatLifecycle(existing.state)
+      : undefined;
+    const suppliedHp = actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax;
+    if (
+      existing &&
+      ['dead', 'dying', 'stable'].includes(existing.status) &&
+      ((actorInput.status !== undefined &&
+        actorInput.status !== existing.status) ||
+        (existing.status === 'dead' &&
+          suppliedHp > (existing.hpCurrent ?? 0)) ||
+        (existing.status !== 'dead' && suppliedHp > 0))
+    )
+      throw new EncounterCombatantError(
+        `start_encounter cannot change a ${existing.status} campaign actor or supply replacement HP; use the lifecycle tools`,
+      );
+    if (
+      lifecycleBefore?.recoveryBlock !== null &&
+      lifecycleBefore?.recoveryBlock !== undefined &&
+      suppliedHp > (existing?.hpCurrent ?? 0)
+    )
+      throw new EncounterCombatantError(
+        'start_encounter cannot raise HP while recovery is blocked; use the lifecycle tools',
+      );
+    const actorHeadCount =
+      lifecycleBefore?.headCount ?? initialHeadCount(record);
+    const terminalCause =
+      exhaustionLevel(conditions) === 6 || actorHeadCount === 0;
+    if (
+      terminalCause &&
+      actorInput.status !== undefined &&
+      actorInput.status !== 'dead'
+    )
+      throw new EncounterCombatantError(
+        'start_encounter cannot admit a terminally dead creature as alive; use the lifecycle tools',
+      );
+    if (
+      (lifecycleBefore?.deathRules === 'player-character' ||
+        actorInput.status === 'dying' ||
+        actorInput.status === 'stable') &&
+      suppliedHp === 0 &&
+      !['dead', 'dying', 'stable'].includes(
+        actorInput.status ?? existing?.status ?? '',
+      )
+    )
+      throw new EncounterCombatantError(
+        'start_encounter cannot admit a 0 HP player-character as alive; use the lifecycle tools',
+      );
     const hpCurrent = Math.min(
       actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax,
       effectiveHpMax(hpMax, conditions),
@@ -1294,7 +1530,8 @@ function startEncounterInTxn(
     db.prepare(
       `UPDATE encounter_combatant SET stable_recovery_roll=NULL,
        stable_recovery_anchor_elapsed_minutes=NULL,
-       stable_recovery_deadline_elapsed_minutes=NULL
+       stable_recovery_deadline_elapsed_minutes=NULL,
+       stable_recovery_settled=CASE WHEN status='stable' THEN 1 ELSE 0 END
        WHERE campaign_id=? AND identity_kind='campaign_actor' AND identity_ref=?`,
     ).run(input.campaignId, actor.actorId);
     insertCombatant(db, {
@@ -1315,8 +1552,9 @@ function startEncounterInTxn(
       hpMax: actor.hpMax ?? hpMax,
       ac: readCreatureAc(record),
       conditions: actor.conditions,
-      status:
-        hpCurrent === 0
+      status: terminalCause
+        ? 'dead'
+        : hpCurrent === 0
           ? (lifecycle?.deathRules ?? 'monster') === 'player-character'
             ? actor.status === 'stable' || actor.status === 'dead'
               ? actor.status
@@ -1343,7 +1581,8 @@ function startEncounterInTxn(
     db.prepare(
       `UPDATE encounter_combatant SET death_rules=?, death_save_successes=?,
        death_save_failures=?, recovery_block=?, stable_recovery_roll=?,
-       stable_recovery_anchor_elapsed_minutes=?, stable_recovery_deadline_elapsed_minutes=?
+       stable_recovery_anchor_elapsed_minutes=?, stable_recovery_deadline_elapsed_minutes=?,
+       stable_recovery_settled=?
        WHERE campaign_id=? AND combatant_id=?`,
     ).run(
       lifecycle?.deathRules ?? 'monster',
@@ -1353,6 +1592,7 @@ function startEncounterInTxn(
       lifecycle?.stableRecovery?.roll ?? null,
       lifecycle?.stableRecovery?.anchor ?? null,
       lifecycle?.stableRecovery?.deadline ?? null,
+      lifecycle?.stableRecoverySettled ? 1 : 0,
       input.campaignId,
       projectedId,
     );
@@ -1366,6 +1606,7 @@ function startEncounterInTxn(
       );
     }
     syncCombatantActor(db, input.campaignId, projectedId, input);
+    assertCombatantLifecycle(db, input.campaignId, projectedId);
   }
 
   const combatInstance = activeInstance(db, input.campaignId);
@@ -1557,6 +1798,7 @@ export function resolveCombatantDeathSave(
       );
     if (status === 'stable')
       scheduleCombatantRecovery(txn, campaignId, combatantId, rng);
+    assertCombatantLifecycle(txn, campaignId, combatantId, c);
     syncCombatantActor(txn, campaignId, combatantId, ctx);
     return {
       roll,
@@ -1595,6 +1837,7 @@ export function stabilizeCombatant(
       .run(ctx.provenance, ctx.sessionId, ctx.at, campaignId, combatantId);
     scheduleCombatantRecovery(txn, campaignId, combatantId, rng);
     syncCombatantActor(txn, campaignId, combatantId, ctx);
+    assertCombatantLifecycle(txn, campaignId, combatantId, c);
     return { lifeState: 'stable' as const, hpCurrent: c.hpCurrent };
   });
 }
@@ -1666,7 +1909,7 @@ export function setCombatantSuffocation(
     }
     txn
       .prepare(
-        'UPDATE encounter_combatant SET hp_current=?,status=?,recovery_block=?,death_save_successes=?,death_save_failures=?,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?',
+        "UPDATE encounter_combatant SET hp_current=?,status=?,recovery_block=?,death_save_successes=?,death_save_failures=?,stable_recovery_settled=CASE WHEN ?='stable' THEN stable_recovery_settled ELSE 0 END,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?",
       )
       .run(
         hp,
@@ -1674,6 +1917,7 @@ export function setCombatantSuffocation(
         block,
         successes,
         failures,
+        status,
         ctx.provenance,
         ctx.sessionId,
         ctx.at,
@@ -1696,6 +1940,7 @@ export function setCombatantSuffocation(
         ctx,
       );
     syncCombatantActor(txn, campaignId, combatantId, ctx);
+    assertCombatantLifecycle(txn, campaignId, combatantId, c);
     return { lifeState: status, hpCurrent: hp };
   });
 }
@@ -1706,11 +1951,21 @@ export function resolveCombatantRecoveries(
   ctx: { provenance: string; sessionId: string; at: string },
 ) {
   return withTransaction(db, (txn) => {
+    const malformed = txn
+      .prepare(`SELECT combatant_id FROM encounter_combatant
+      WHERE status='stable' AND hp_current=0 AND stable_recovery_settled=0 AND
+      (stable_recovery_roll IS NULL OR stable_recovery_anchor_elapsed_minutes IS NULL OR stable_recovery_deadline_elapsed_minutes IS NULL)
+      ORDER BY combatant_id`)
+      .all() as Array<{ combatant_id: string }>;
+    if (malformed.length)
+      throw new EncounterCombatantError(
+        `stable recovery schedule is incomplete for combatant(s): ${malformed.map((x) => x.combatant_id).join(', ')}`,
+      );
     const candidates = txn
       .prepare(
         `SELECT c.campaign_id,c.combatant_id,c.combat_instance_id,c.identity_kind,c.identity_ref
          FROM encounter_combatant c JOIN combat_instance i USING(campaign_id,combat_instance_id)
-         WHERE c.status='stable' AND c.hp_current=0 AND c.stable_recovery_deadline_elapsed_minutes<=?
+         WHERE c.status='stable' AND c.hp_current=0 AND c.stable_recovery_settled=0 AND c.stable_recovery_deadline_elapsed_minutes<=?
          ORDER BY c.stable_recovery_deadline_elapsed_minutes,c.combatant_id`,
       )
       .all(elapsed) as Array<{ campaign_id: string; combatant_id: string }>;
@@ -1735,7 +1990,7 @@ export function resolveCombatantRecoveries(
         txn
           .prepare(`UPDATE encounter_combatant SET stable_recovery_roll=NULL,
           stable_recovery_anchor_elapsed_minutes=NULL,
-          stable_recovery_deadline_elapsed_minutes=NULL,provenance=?,session_id=?,updated_at=?
+          stable_recovery_deadline_elapsed_minutes=NULL,stable_recovery_settled=1,provenance=?,session_id=?,updated_at=?
           WHERE campaign_id=? AND combatant_id=?`)
           .run(
             ctx.provenance,
@@ -1745,11 +2000,17 @@ export function resolveCombatantRecoveries(
             row.combatant_id,
           );
         syncCombatantActor(txn, row.campaign_id, row.combatant_id, ctx);
+        assertCombatantLifecycle(
+          txn,
+          row.campaign_id,
+          row.combatant_id,
+          combatant,
+        );
         continue;
       }
       txn
         .prepare(
-          "UPDATE encounter_combatant SET hp_current=?,status='alive',death_save_successes=0,death_save_failures=0,stable_recovery_roll=NULL,stable_recovery_anchor_elapsed_minutes=NULL,stable_recovery_deadline_elapsed_minutes=NULL,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?",
+          "UPDATE encounter_combatant SET hp_current=?,status='alive',death_save_successes=0,death_save_failures=0,stable_recovery_roll=NULL,stable_recovery_anchor_elapsed_minutes=NULL,stable_recovery_deadline_elapsed_minutes=NULL,stable_recovery_settled=0,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?",
         )
         .run(
           Math.min(1, maximum),
@@ -1760,6 +2021,12 @@ export function resolveCombatantRecoveries(
           row.combatant_id,
         );
       syncCombatantActor(txn, row.campaign_id, row.combatant_id, ctx);
+      assertCombatantLifecycle(
+        txn,
+        row.campaign_id,
+        row.combatant_id,
+        combatant,
+      );
     }
     return rows.length;
   });
@@ -1777,7 +2044,7 @@ function scheduleCombatantRecovery(
   const roll = rollDice('1d4', rng).total;
   const anchor = clock.elapsed_minutes;
   db.prepare(
-    'UPDATE encounter_combatant SET stable_recovery_roll=?,stable_recovery_anchor_elapsed_minutes=?,stable_recovery_deadline_elapsed_minutes=? WHERE campaign_id=? AND combatant_id=?',
+    'UPDATE encounter_combatant SET stable_recovery_roll=?,stable_recovery_anchor_elapsed_minutes=?,stable_recovery_deadline_elapsed_minutes=?,stable_recovery_settled=0 WHERE campaign_id=? AND combatant_id=?',
   ).run(roll, anchor, anchor + roll * 60, campaignId, combatantId);
 }
 function syncCombatantActor(
@@ -1792,11 +2059,12 @@ function syncCombatantActor(
   const a = getCampaignActor(db, campaignId, c.identityRef);
   if (!a) return;
   const pending = db
-    .prepare(`SELECT heads_died_since_own_turn, fire_damage_since_own_turn
+    .prepare(`SELECT heads_died_since_own_turn, fire_damage_since_own_turn, stable_recovery_settled
     FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?`)
     .get(campaignId, id) as {
     heads_died_since_own_turn: number;
     fire_damage_since_own_turn: number;
+    stable_recovery_settled: number;
   };
   const state = {
     ...a.state,
@@ -1813,6 +2081,7 @@ function syncCombatantActor(
               anchor: c.stableRecoveryAnchorElapsedMinutes,
               deadline: c.stableRecoveryDeadlineElapsedMinutes,
             },
+      stableRecoverySettled: pending.stable_recovery_settled === 1,
       headCount: c.headCount,
       headsDiedSinceOwnTurn: pending.heads_died_since_own_turn,
       fireDamageSinceOwnTurn: pending.fire_damage_since_own_turn,
@@ -1992,6 +2261,21 @@ function updateCombatantInTxn(
   let recoveryAnchor = current.stableRecoveryAnchorElapsedMinutes;
   let recoveryDeadline = current.stableRecoveryDeadlineElapsedMinutes;
   let armRecovery = false;
+  if (
+    status === 'stable' &&
+    current.status === 'stable' &&
+    current.stableRecoveryRoll === null &&
+    (
+      db
+        .prepare(
+          'SELECT stable_recovery_settled FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
+        .get(input.campaignId, input.combatantId) as {
+        stable_recovery_settled: number;
+      }
+    ).stable_recovery_settled === 1
+  )
+    armRecovery = true;
   // 'dying' and 'stable' exist only under the player-character death rules,
   // and the engine owns their transitions (rule:monsters-and-death opts a
   // creature in; the character death rules then apply).
@@ -2001,6 +2285,14 @@ function updateCombatantInTxn(
   )
     throw new EncounterCombatantError(
       `status '${input.status}' requires deathRules 'player-character'`,
+    );
+  if (
+    input.deathRules === 'player-character' &&
+    current.hpCurrent === 0 &&
+    current.status !== 'dead'
+  )
+    throw new EncounterCombatantError(
+      'cannot opt a 0 HP combatant into player-character death rules unless it is dead; resolve its lifecycle first',
     );
   const droppedToZero =
     input.hpDelta !== undefined && current.hpCurrent > 0 && nextHp === 0;
@@ -2016,6 +2308,16 @@ function updateCombatantInTxn(
   )
     throw new EncounterCombatantError(
       'apply damage and participation status in separate calls under player-character death rules',
+    );
+  if (
+    deathRules === 'player-character' &&
+    (input.status === 'escaped' ||
+      input.status === 'inactive' ||
+      input.status === 'unconscious') &&
+    (current.status !== 'alive' || nextHp <= 0)
+  )
+    throw new EncounterCombatantError(
+      `status '${input.status}' requires an alive player-character combatant with hit points above 0`,
     );
   if (
     current.status === 'dead' &&
@@ -2130,14 +2432,13 @@ function updateCombatantInTxn(
     }
   } else if (input.hpDelta !== undefined || input.clampToEffectiveMaximum) {
     status =
-      (input.clampToEffectiveMaximum && current.hpCurrent > 0 && nextHp === 0
+      current.status === 'dead'
         ? 'dead'
-        : input.status) ??
-      (nextHp === 0
-        ? 'dead'
-        : current.status === 'dead'
-          ? 'alive'
-          : current.status);
+        : ((input.clampToEffectiveMaximum &&
+          current.hpCurrent > 0 &&
+          nextHp === 0
+            ? 'dead'
+            : input.status) ?? (nextHp === 0 ? 'dead' : current.status));
   }
   if (input.clampToEffectiveMaximum && nextHp === 0 && current.hpCurrent > 0) {
     successes = 0;
@@ -2164,6 +2465,7 @@ function updateCombatantInTxn(
          death_rules = ?, death_save_successes = ?, death_save_failures = ?,
          recovery_block = ?, stable_recovery_roll = ?,
          stable_recovery_anchor_elapsed_minutes = ?, stable_recovery_deadline_elapsed_minutes = ?,
+         stable_recovery_settled = 0,
          placement = ?, provenance = ?, session_id = ?, updated_at = ?
      WHERE campaign_id = ? AND combatant_id = ?`,
   ).run(
@@ -2227,6 +2529,8 @@ function updateCombatantInTxn(
       input.combatantId,
       input.rng ?? createSeededRng(0),
     );
+
+  assertCombatantLifecycle(db, input.campaignId, input.combatantId, current);
 
   let syncedActor: CampaignActor | undefined;
   if (
