@@ -29,12 +29,6 @@ export const ENGINE_CAPABILITY_GAPS = Object.freeze({
     ownerBead: 'eshyra-o9bd.19.5.7.3',
     findingId: 'engine-capability-ownership' as const,
   }),
-  'suffocation-recovery-gate': Object.freeze({
-    operation:
-      'Keep a dying character from regaining hit points or being stabilized, including through death saves, until it can breathe again.',
-    ownerBead: 'eshyra-o9bd.19.5.7.4',
-    findingId: 'engine-capability-ownership' as const,
-  }),
   'combatant-dying-state': Object.freeze({
     operation: 'Represent dying and death saves for an encounter combatant.',
     ownerBead: 'eshyra-o9bd.19.5.7.5',
@@ -195,22 +189,18 @@ export const RULE_KNOWN_LIMITS: Readonly<
       designOwner: 'eshyra-2n1t.1',
     }),
   ]),
-  // R0 confirmed, target-domain split: for characters hpLifecycle.ts adjustHp handles the 0-HP transition to dying, and toolAdjustHp.ts / toolStabilizeCharacter.ts (character-only) do not gate recovery on breathing; A5 re-evaluation: hpLifecycle.ts recordDeathSave stabilizes on a third success and restores 1 HP on a natural 20 with no breathing gate, and death saves are engine-owned, so the clause is a blocking gap. For encounter combatants, encounterCombatants.ts updateCombatant defaults status to 'dead' when hpDelta reaches 0, and CombatantStatus has no dying state, so the source's 0-HP-and-dying transition is not representable there.
+  // R0 re-derived: characters have a suffocation drop/breathe event and source-derived duration formulas; encounter combatants still lack a dying state.
   'rule:suffocating': Object.freeze([
     Object.freeze({
       participants: Object.freeze([
-        'adjust_hp',
-        'stabilize_character',
-        'record_death_save',
+        'set_suffocation',
+        'calc',
         'update_combatant',
       ]),
-      capabilityGaps: Object.freeze([
-        'suffocation-recovery-gate' as const,
-        'combatant-dying-state' as const,
-      ]),
+      capabilityGaps: Object.freeze(['combatant-dying-state' as const]),
       limit: 'partial',
       statement:
-        'When a character drops to 0 hit points, apply it with adjust_hp, which runs the dying rules. Eshyra does not gate stabilization or HP recovery on renewed breathing: do not call stabilize_character or restore the character’s HP with adjust_hp before it can breathe. record_death_save is not gated either: it stabilizes the character on a third success and restores 1 hit point on a natural 20, so while the character cannot breathe its death saves cannot currently be resolved as this rule requires. For an encounter combatant, the dying state this rule requires cannot be recorded: update_combatant sets a combatant whose hpDelta reaches 0 hit points to dead unless another status is given, and combatant state has no dying status.',
+        'For a character whose breath runs out, apply set_suffocation with event drop at the start of its turn, then record event breathe when it can breathe again; derive the durations with calc breath_hold_duration and suffocation_survival_rounds. For an encounter combatant, the dying state this rule requires cannot be recorded: update_combatant sets a combatant whose hpDelta reaches 0 hit points to dead unless another status is given, and combatant state has no dying status.',
       findingId: 'readiness-integrity',
     }),
   ]),

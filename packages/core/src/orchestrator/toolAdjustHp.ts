@@ -21,7 +21,7 @@ export const adjustHpTool: Tool = {
     'when the leftover damage beyond 0 reaches their HP maximum — the result ' +
     'reports the overflow); damage taken at 0 HP adds a death-save failure ' +
     '(two if critical=true) and knocks a stable character back to dying. ' +
-    'Healing a dying or stable character returns them to consciousness; ' +
+    'Healing a dying or stable character returns them to consciousness; healing is refused while suffocating. ' +
     'healing a dead character is refused. Death state and death-save ' +
     'counters are maintained by this tool — never track them in prose. ' +
     'If the damaged character is concentrating, the result reports the ' +

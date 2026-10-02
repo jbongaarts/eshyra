@@ -9,7 +9,9 @@ import { describe, expect, it } from 'vitest';
 import {
   adjustHp,
   advanceWorldTime,
+  beginSuffocation,
   createSeededRng,
+  endSuffocation,
   expireTemporaryHp,
   formatHpStatus,
   grantTemporaryHp,
@@ -141,6 +143,189 @@ describe('adjustHp — falling unconscious and instant death', () => {
       instantDeath: false,
       deathSaveFailuresAdded: 0,
     });
+    db.close();
+  });
+});
+
+describe('suffocation recovery block', () => {
+  it('refuses to end suffocation when no recovery block is set', () => {
+    const db = freshDb({ max: 10, current: 10 });
+    expect(() => endSuffocation(db, { ...CTX, characterId: 'pc-1' })).toThrow(
+      'character has no recovery block to clear',
+    );
+    db.close();
+  });
+
+  it('drops alive, stable, and dying characters to 0, preserving temp HP and existing dying saves', () => {
+    for (const initial of [
+      {
+        lifeState: 'alive' as const,
+        current: 7,
+        temp: 4,
+        successes: 2,
+        failures: 1,
+      },
+      {
+        lifeState: 'stable' as const,
+        current: 0,
+        temp: 3,
+        successes: 0,
+        failures: 0,
+      },
+      {
+        lifeState: 'dying' as const,
+        current: 0,
+        temp: 2,
+        successes: 1,
+        failures: 1,
+      },
+    ]) {
+      const db = freshDb({ max: 10, ...initial });
+      if (initial.lifeState === 'stable') {
+        mutateStateBatch(
+          db,
+          [
+            ['stable_recovery_roll', 2],
+            ['stable_recovery_anchor_elapsed_minutes', 0],
+            ['stable_recovery_deadline_elapsed_minutes', 120],
+          ].map(([field, value]) => ({
+            target: 'character' as const,
+            id: 'pc-1',
+            field: field as string,
+            op: 'set' as const,
+            value: value as number,
+            ...CTX,
+          })),
+        );
+      }
+      const result = beginSuffocation(db, { ...CTX, characterId: 'pc-1' });
+      expect(result).toMatchObject({ lifeState: 'dying', hpCurrent: 0 });
+      expect(
+        db
+          .prepare(
+            "SELECT hp_current, hp_temp, life_state, death_save_successes, death_save_failures, recovery_block FROM character WHERE id='pc-1'",
+          )
+          .get(),
+      ).toMatchObject({
+        hp_current: 0,
+        hp_temp: initial.temp,
+        life_state: 'dying',
+        recovery_block: 'suffocating',
+      });
+      expect(
+        db
+          .prepare(
+            "SELECT death_save_successes, death_save_failures FROM character WHERE id='pc-1'",
+          )
+          .get(),
+      ).toEqual(
+        initial.lifeState === 'dying'
+          ? { death_save_successes: 1, death_save_failures: 1 }
+          : { death_save_successes: 0, death_save_failures: 0 },
+      );
+      expect(readMachine(db)).toMatchObject({
+        stable_recovery_roll: null,
+        stable_recovery_anchor_elapsed_minutes: null,
+        stable_recovery_deadline_elapsed_minutes: null,
+      });
+      expect(
+        beginSuffocation(db, { ...CTX, characterId: 'pc-1' })
+          .alreadySuffocating,
+      ).toBe(true);
+      db.close();
+    }
+  });
+
+  it('refuses dead characters and blocks healing and stabilization', () => {
+    const db = freshDb({ max: 10, current: 0, lifeState: 'dying' });
+    beginSuffocation(db, { ...CTX, characterId: 'pc-1' });
+    expect(() => adjustHp(db, 1, CTX)).toThrow(
+      'cannot regain hit points while suffocating',
+    );
+    expect(() => stabilizeCharacter(db, CTX)).toThrow(
+      'cannot stabilize a character while suffocating',
+    );
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'life_state',
+      op: 'set',
+      value: 'dead',
+      ...CTX,
+    });
+    expect(() => beginSuffocation(db, { ...CTX, characterId: 'pc-1' })).toThrow(
+      'dead character',
+    );
+    db.close();
+  });
+
+  it('keeps natural 20 and a third success blocked until breathing resumes', () => {
+    const db = freshDb({ max: 10, current: 0, lifeState: 'dying' });
+    beginSuffocation(db, { ...CTX, characterId: 'pc-1' });
+    expect(recordDeathSave(db, 20, CTX)).toMatchObject({
+      outcome: 'success',
+      hpCurrent: 0,
+      lifeState: 'dying',
+      deathSaveSuccesses: 1,
+      recoveryBlocked: 'suffocating',
+    });
+    recordDeathSave(db, 10, CTX);
+    expect(recordDeathSave(db, 10, CTX)).toMatchObject({
+      outcome: 'success',
+      hpCurrent: 0,
+      lifeState: 'dying',
+      deathSaveSuccesses: 3,
+      recoveryBlocked: 'suffocating',
+    });
+    recordDeathSave(db, 10, CTX);
+    expect(readMachine(db).death_save_successes).toBe(3);
+    expect(
+      endSuffocation(db, { ...CTX, characterId: 'pc-1' }, createSeededRng(1)),
+    ).toMatchObject({ lifeState: 'stable', hpCurrent: 0 });
+    expect(readMachine(db)).toMatchObject({
+      life_state: 'stable',
+      death_save_successes: 0,
+      stable_recovery_deadline_elapsed_minutes: expect.any(Number),
+    });
+    expect(
+      (
+        db
+          .prepare("SELECT recovery_block FROM character WHERE id='pc-1'")
+          .get() as { recovery_block: string | null }
+      ).recovery_block,
+    ).toBeNull();
+    db.close();
+  });
+
+  it('keeps a dying character when fewer than three successes accrued', () => {
+    const db = freshDb({ max: 10, current: 0, lifeState: 'dying' });
+    beginSuffocation(db, { ...CTX, characterId: 'pc-1' });
+    recordDeathSave(db, 10, CTX);
+    expect(endSuffocation(db, { ...CTX, characterId: 'pc-1' })).toMatchObject({
+      lifeState: 'dying',
+    });
+    expect(
+      (
+        db
+          .prepare("SELECT recovery_block FROM character WHERE id='pc-1'")
+          .get() as { recovery_block: string | null }
+      ).recovery_block,
+    ).toBeNull();
+    db.close();
+  });
+
+  it('clears the recovery block when a blocked character dies', () => {
+    const db = freshDb({ max: 10, current: 0, lifeState: 'dying' });
+    beginSuffocation(db, { ...CTX, characterId: 'pc-1' });
+    expect(recordDeathSave(db, 1, CTX)).toMatchObject({ lifeState: 'dying' });
+    expect(recordDeathSave(db, 1, CTX)).toMatchObject({ lifeState: 'dead' });
+    expect(
+      (
+        db
+          .prepare("SELECT recovery_block FROM character WHERE id='pc-1'")
+          .get() as { recovery_block: string | null }
+      ).recovery_block,
+    ).toBeNull();
     db.close();
   });
 });

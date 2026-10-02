@@ -1603,10 +1603,13 @@ export type {
   LifeState,
   StabilizeResult,
   StableRecoveryResult,
+  SuffocationResult,
 } from './state/hpLifecycle.js';
 // HP write path + death/dying/temp-HP state machine (F6, eshyra-2n1t.8).
 export {
   adjustHp,
+  beginSuffocation,
+  endSuffocation,
   expireTemporaryHp,
   grantTemporaryHp,
   recordDeathSave,

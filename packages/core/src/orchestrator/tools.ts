@@ -67,6 +67,7 @@ import {
 import { restoreUsageTool } from './toolRestoreUsage.js';
 import { rollTool } from './toolRoll.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
+import { setSuffocationTool } from './toolSetSuffocation.js';
 import { setSurprisedTool } from './toolSetSurprised.js';
 import { setWorldFactTool } from './toolSetWorldFact.js';
 import { spendCurrencyTool } from './toolSpendCurrency.js';
@@ -105,6 +106,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   setSurprisedTool,
   adjustHpTool,
   recordDeathSaveTool,
+  setSuffocationTool,
   stabilizeCharacterTool,
   grantTempHpTool,
   addConditionTool,

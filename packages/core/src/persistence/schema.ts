@@ -30,6 +30,9 @@ import { migrateDatabase } from './migrationRunner.js';
  *                                        validated by `character/currency.ts`)
  *
  * Typed live campaign canon:
+ *   - `character.recovery_block`       (nullable lifecycle prohibition; currently
+ *                                        `suffocating` blocks HP recovery and
+ *                                        stabilization until breathing resumes)
  *   - `campaign_overlay_lore`           (improvised lore and continuity
  *                                        dressing promoted during play;
  *                                        append-friendly rows with truth status,

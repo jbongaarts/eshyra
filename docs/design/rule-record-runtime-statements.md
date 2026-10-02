@@ -405,7 +405,7 @@ producer and consumer:
 |---|---|---|
 | `rule:hiding`, `rule:surprise` | blocking | `retained-check-total-resolution` → `eshyra-o9bd.19.5.10.3` |
 | `rule:food`, `rule:water`, `rule:speed` | blocking | `graded-exhaustion-increase` → `eshyra-o9bd.19.5.7.3` |
-| `rule:suffocating` | blocking | `suffocation-recovery-gate` → `eshyra-o9bd.19.5.7.4`; `combatant-dying-state` → `eshyra-o9bd.19.5.7.5` |
+| `rule:suffocating` | blocking | landed in `eshyra-o9bd.19.5.7.4`; `combatant-dying-state` → `eshyra-o9bd.19.5.7.5` |
 | `rule:knocking-a-creature-out` | blocking | `nonlethal-knockout` → `eshyra-o9bd.19.5.7.6` |
 | `rule:weapon-properties` | blocking | `ammunition-recovery-count` → `eshyra-o9bd.19.5.11.4` |
 | `action:ready` | bounded | none: a ruling-sourced concentration effect carries the save |

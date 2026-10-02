@@ -19,7 +19,8 @@ export const stabilizeCharacterTool: Tool = {
     'character stays at 0 HP and unconscious but makes no more death saves; ' +
     'their death-save counters reset. The engine records a seeded 1d4-hour ' +
     'recovery deadline and automatically regains 1 hit point if they remain ' +
-    'at 0 HP when campaign time reaches it. Damage knocks a stable character ' +
+    'at 0 HP when campaign time reaches it. Stabilization is refused while ' +
+    'the character is suffocating. Damage knocks a stable character ' +
     'back to dying.',
   inputSchema: {
     type: 'object',
