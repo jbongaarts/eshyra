@@ -161,9 +161,8 @@ describe('rule awareness', () => {
     const suffocating = renderedFor('rule:suffocating');
     expect(suffocating).toContain('### Eshyra known limits');
     expect(suffocating).toContain('(finding: readiness-integrity)');
-    expect(suffocating).toContain('set_suffocation event drop');
-    expect(suffocating).toContain('event breathe');
-    expect(suffocating).toContain('calc_suffocation_survival_rounds');
+    expect(suffocating).toContain('with set_suffocation instead');
+    expect(suffocating).toContain('calc suffocation_survival_rounds');
     expect(suffocating).not.toMatch(
       /held its breath|suffocation round countdown/i,
     );
@@ -171,7 +170,7 @@ describe('rule awareness', () => {
     expect(lair).not.toContain('### Eshyra known limits');
   });
 
-  it('scopes suffocation HP guidance by target domain', () => {
+  it('names the damage-path trap and the survival timing for suffocation', () => {
     const [limit] = ruleStatements('rule:suffocating').knownLimits;
     const sourceText = (
       stack.recordsByKey.get('rule:suffocating')?.record.data as
@@ -180,13 +179,26 @@ describe('rule awareness', () => {
     )?.text;
     expect(sourceText).toContain('At the start of its next turn');
     expect(sourceText).toContain('2 rounds to reach air before it drops');
-    expect(limit?.statement).toContain('set_suffocation event drop');
-    expect(limit?.statement).toContain('after the interval expires');
-    expect(limit?.statement).toContain('suffocation_survival_rounds');
-    expect(limit?.statement).not.toMatch(/When the creature drops/);
-    expect(limit?.statement).toContain('player-character rules');
-    expect(limit?.statement).toContain('update_combatant');
+    // The trap: damage through the HP tools reaches 0 without the breathing
+    // gate. The timing: the drop follows the survival interval, it does not
+    // happen when breath runs out.
+    expect(limit?.statement).toContain(
+      'as damage through adjust_hp or update_combatant does not block healing or stabilization',
+    );
+    expect(limit?.statement).toContain(
+      'after the survival interval from calc suffocation_survival_rounds expires, not when its breath runs out',
+    );
     expect(limit?.statement).not.toMatch(/unconscious/);
+    const description = DEFAULT_TOOLS.find(
+      (tool) => tool.name === 'set_suffocation',
+    )?.description;
+    expect(description).toContain(
+      'event drop sets it to 0 hit points and blocks healing and stabilization',
+    );
+    expect(description).toContain(
+      'Never apply the drop as damage with adjust_hp or update_combatant',
+    );
+    expect(description).not.toMatch(/calc_suffocation/);
   });
 
   it('retires exhaustion procedure limits after adjust_exhaustion landed', () => {
@@ -377,7 +389,7 @@ describe('rule awareness', () => {
     // re-adding exhaustion instead of using its level owner.
     const suffocating =
       ruleStatements('rule:suffocating').knownLimits[0]?.statement;
-    expect(suffocating).toContain('set_suffocation event drop');
+    expect(suffocating).toContain('with set_suffocation instead');
     expect(suffocating).not.toMatch(/skip|in prose|yourself|narrat/i);
     for (const key of ['rule:food', 'rule:water', 'rule:speed'])
       expect(ruleStatements(key).knownLimits).toEqual([]);

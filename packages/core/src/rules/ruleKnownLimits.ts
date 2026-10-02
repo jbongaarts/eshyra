@@ -159,7 +159,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
       ]),
       limit: 'partial',
       statement:
-        'Using adjust_hp or update_combatant to apply the drop alone does not record suffocation or later breathing. Calculate the survival interval with calc_suffocation_survival_rounds, then call set_suffocation event drop at the start of the creature’s next turn after the interval expires; call event breathe when it can breathe again. The drop itself is damage through adjust_hp or update_combatant: player-character rules start ordinary dying at 0 HP, while monster rules kill the combatant.',
+        'Applying the suffocation drop to 0 hit points as damage through adjust_hp or update_combatant does not block healing or stabilization, so record the drop and the later breathing with set_suffocation instead. The drop comes at the start of the creature’s next turn after the survival interval from calc suffocation_survival_rounds expires, not when its breath runs out.',
       findingId: 'readiness-integrity',
     }),
   ]),
