@@ -34,7 +34,7 @@ export const updateCombatantTool: Tool = {
   name: 'update_combatant',
   mutates: true,
   description:
-    'Update a live encounter combatant by exact combatant id. Opt in to player-character death rules once per combatant with deathRules: "player-character"; this persists. Monster mode remains the default and reaching 0 HP sets dead unless status is explicit. Player-character mode applies dying, death saves, and instant death on sufficient overflow; critical marks damage at 0 HP as a critical hit. reactionAllowance stores a reactions-per-round total only for a creature whose rules record carries a state-dependent extraReactions mechanic, and is refused for other creatures. Neither this tool nor any other derives that total from creature state, so the extra reactions such a mechanic grants cannot currently be recorded.',
+    'Update a live encounter combatant by exact combatant id. args: { combatantId, hpDelta?, critical?, deathRules?, addCondition?, removeCondition?, status?, locationId?, placement?, reactionAllowance? }. Monster death rules are the default: an hpDelta that brings the combatant to 0 hit points sets it dead unless status is also passed (for a nonlethal knockout, "unconscious"). deathRules: "player-character" opts the combatant into the character death rules for good: reaching 0 hit points makes it dying (dead outright when the damage beyond 0 reaches its hit point maximum), damage at 0 hit points adds a death-save failure (two when critical is true), healing from 0 returns it to alive, a dead combatant cannot be healed, and a nonlethal knockout is passed as status "stable" together with that damage. Otherwise "dying" and "stable" are engine-owned and refused as explicit statuses. reactionAllowance stores a reactions-per-round total only for a creature whose rules record carries a state-dependent extraReactions mechanic, and is refused for other creatures. Neither this tool nor any other derives that total from creature state, so the extra reactions such a mechanic grants cannot currently be recorded.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -185,6 +185,7 @@ export const updateCombatantTool: Tool = {
           ? { deathRules: 'player-character' as const }
           : {}),
         ...(typeof a.critical === 'boolean' ? { critical: a.critical } : {}),
+        rng: ctx.rng,
         ...(isRecord(a.addCondition)
           ? { addCondition: a.addCondition as CharacterConditionEntry }
           : {}),

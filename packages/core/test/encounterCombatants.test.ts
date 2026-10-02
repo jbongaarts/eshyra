@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { closeSession, startSession } from '../src/index.js';
 import type { AdventureModule, ToolContext } from '../src/internal.js';
 import {
+  advanceWorldTime,
   assembleContext,
   closeCombatInstance,
   createDefaultToolRegistry,
@@ -771,5 +772,185 @@ describe('encounter combatants', () => {
       { combatantId: 'ci-enc-goblins-1-goblin-1', hpDelta: -7 },
       { status: 'completed' },
     ]);
+  });
+});
+
+describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', () => {
+  // rule:monsters-and-death lets the GM run a creature under the character
+  // death rules; the engine then owns dying, death saves, and stabilizing.
+  function optedIn() {
+    const harness = setup();
+    harness.registry.invoke(
+      'start_encounter',
+      { encounterId: 'enc-goblins' },
+      harness.ctx,
+    );
+    const target = listCombatants(harness.db, DEFAULT_TEST_CAMPAIGN_ID)[0];
+    if (!target) throw new Error('encounter did not create a combatant');
+    const id = target.combatantId;
+    const update = (args: Record<string, unknown>) =>
+      harness.registry.invoke(
+        'update_combatant',
+        { combatantId: id, ...args },
+        harness.ctx,
+      );
+    const read = () =>
+      listCombatants(harness.db, DEFAULT_TEST_CAMPAIGN_ID).find(
+        (c) => c.combatantId === id,
+      );
+    expect(update({ deathRules: 'player-character', hpDelta: 0 }).ok).toBe(
+      true,
+    );
+    return { ...harness, id, hpMax: target.hpMax, update, read };
+  }
+  const advance = (db: ReturnType<typeof setup>['db'], minutes: number) =>
+    advanceWorldTime(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      minutes,
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+
+  it('dies outright when the overflow reaches the hit point maximum', () => {
+    const { db, update, read, hpMax } = optedIn();
+    expect(update({ hpDelta: -(hpMax * 2) }).ok).toBe(true);
+    expect(read()).toMatchObject({ status: 'dead', hpCurrent: 0 });
+    db.close();
+  });
+
+  it('escalates damage at 0 hit points and refuses to heal the dead', () => {
+    const { db, update, read, hpMax } = optedIn();
+    update({ hpDelta: -hpMax });
+    expect(read()).toMatchObject({ status: 'dying', deathSaveFailures: 0 });
+    update({ hpDelta: -1 });
+    expect(read()).toMatchObject({ status: 'dying', deathSaveFailures: 1 });
+    update({ hpDelta: -1, critical: true });
+    expect(read()).toMatchObject({ status: 'dead', deathSaveFailures: 3 });
+    const heal = update({ hpDelta: 5 });
+    expect(heal.ok).toBe(false);
+    expect(read()).toMatchObject({ status: 'dead', hpCurrent: 0 });
+    db.close();
+  });
+
+  it('heals a dying combatant back to alive with fresh counters', () => {
+    const { db, update, read, hpMax } = optedIn();
+    update({ hpDelta: -hpMax });
+    update({ hpDelta: -1 });
+    expect(update({ hpDelta: 2 }).ok).toBe(true);
+    expect(read()).toMatchObject({
+      status: 'alive',
+      hpCurrent: 2,
+      deathSaveFailures: 0,
+    });
+    db.close();
+  });
+
+  it('keeps dying and stable engine-owned', () => {
+    const { db, update, read, hpMax } = optedIn();
+    expect(update({ status: 'dying' }).ok).toBe(false);
+    expect(update({ status: 'stable' }).ok).toBe(false);
+    update({ hpDelta: -hpMax });
+    expect(update({ status: 'alive' }).ok).toBe(false);
+    expect(read()).toMatchObject({ status: 'dying' });
+    db.close();
+  });
+
+  it('refuses dying and stable for a combatant under monster rules', () => {
+    const { db, registry, ctx } = setup();
+    registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx);
+    const target = listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID)[0];
+    if (!target) throw new Error('encounter did not create a combatant');
+    for (const status of ['dying', 'stable'])
+      expect(
+        registry.invoke(
+          'update_combatant',
+          {
+            combatantId: target.combatantId,
+            hpDelta: -target.hpCurrent,
+            status,
+          },
+          ctx,
+        ).ok,
+      ).toBe(false);
+    db.close();
+  });
+
+  it('records a knockout as stable and recovers on the world clock', () => {
+    const { db, update, read, hpMax } = optedIn();
+    expect(update({ hpDelta: -(hpMax * 2), status: 'stable' }).ok).toBe(true);
+    const stable = read();
+    expect(stable).toMatchObject({ status: 'stable', hpCurrent: 0 });
+    expect(stable?.stableRecoveryDeadlineElapsedMinutes).not.toBeNull();
+    advance(db, 4 * 60);
+    expect(read()).toMatchObject({ status: 'alive', hpCurrent: 1 });
+    db.close();
+  });
+
+  it('stabilizes through stabilize_character and recovers on the clock', () => {
+    const { db, registry, ctx, id, update, read, hpMax } = optedIn();
+    update({ hpDelta: -hpMax });
+    expect(
+      registry.invoke('stabilize_character', { combatantId: id }, ctx).ok,
+    ).toBe(true);
+    expect(read()).toMatchObject({ status: 'stable' });
+    advance(db, 4 * 60);
+    expect(read()).toMatchObject({ status: 'alive', hpCurrent: 1 });
+    db.close();
+  });
+
+  it('blocks recovery while suffocating and stabilizes on breathing', () => {
+    const { db, registry, ctx, id, update, read } = optedIn();
+    const suffocate = (event: string) =>
+      registry.invoke('set_suffocation', { combatantId: id, event }, ctx);
+    const save = (roll: number) =>
+      registry.invoke('record_death_save', { combatantId: id, roll }, ctx);
+    expect(suffocate('drop').ok).toBe(true);
+    expect(read()).toMatchObject({
+      status: 'dying',
+      hpCurrent: 0,
+      recoveryBlock: 'suffocating',
+    });
+    expect(update({ hpDelta: 3 }).ok).toBe(false);
+    expect(
+      registry.invoke('stabilize_character', { combatantId: id }, ctx).ok,
+    ).toBe(false);
+    save(20);
+    expect(read()).toMatchObject({ hpCurrent: 0, deathSaveSuccesses: 1 });
+    save(15);
+    save(15);
+    expect(read()).toMatchObject({ status: 'dying', deathSaveSuccesses: 3 });
+    expect(suffocate('breathe').ok).toBe(true);
+    expect(read()).toMatchObject({ status: 'stable', recoveryBlock: null });
+    db.close();
+  });
+
+  it('clears the block when a suffocating combatant dies', () => {
+    const { db, registry, ctx, id, read } = optedIn();
+    registry.invoke('set_suffocation', { combatantId: id, event: 'drop' }, ctx);
+    registry.invoke('record_death_save', { combatantId: id, roll: 1 }, ctx);
+    registry.invoke('record_death_save', { combatantId: id, roll: 1 }, ctx);
+    expect(read()).toMatchObject({ status: 'dead', recoveryBlock: null });
+    db.close();
+  });
+
+  it('applies the monster default when a monster-rules combatant suffocates', () => {
+    const { db, registry, ctx } = setup();
+    registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx);
+    const target = listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID)[0];
+    if (!target) throw new Error('encounter did not create a combatant');
+    expect(
+      registry.invoke(
+        'set_suffocation',
+        { combatantId: target.combatantId, event: 'drop' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID)[0]).toMatchObject({
+      status: 'dead',
+      hpCurrent: 0,
+      recoveryBlock: null,
+    });
+    db.close();
   });
 });

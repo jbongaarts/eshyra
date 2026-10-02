@@ -188,6 +188,8 @@ export interface UpdateCombatantInput {
   readonly hpDelta?: number;
   readonly deathRules?: 'player-character';
   readonly critical?: boolean;
+  /** Seeds the stable-recovery deadline when a knockout makes the combatant stable. */
+  readonly rng?: Rng;
   readonly addCondition?: CharacterConditionEntry;
   readonly removeCondition?: string;
   readonly status?: CombatantStatus;
@@ -1166,13 +1168,14 @@ export function resolveCombatantDeathSave(
     const status = transition.lifeState as CombatantStatus;
     txn
       .prepare(
-        'UPDATE encounter_combatant SET hp_current=?,status=?,death_save_successes=?,death_save_failures=?,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?',
+        'UPDATE encounter_combatant SET hp_current=?,status=?,death_save_successes=?,death_save_failures=?,recovery_block=?,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?',
       )
       .run(
         hpCurrent,
         status,
         successes,
         failures,
+        status === 'dead' ? null : c.recoveryBlock,
         ctx.provenance,
         ctx.sessionId,
         ctx.at,
@@ -1252,8 +1255,10 @@ export function setCombatantSuffocation(
         );
       if (!block) {
         hp = 0;
-        block = 'suffocating';
         status = c.deathRules === 'player-character' ? 'dying' : 'dead';
+        // A monster dies at 0 HP (rule:monsters-and-death), so only a dying
+        // combatant carries the block.
+        block = status === 'dying' ? 'suffocating' : null;
         if (status === 'dying') {
           successes = 0;
           failures = 0;
@@ -1297,7 +1302,7 @@ export function setCombatantSuffocation(
       status === 'stable';
     if (!wasDown && isDown)
       breakCombatantConcentration(
-        db,
+        txn,
         campaignId,
         combatantId,
         status === 'dead' ? 'dead' : 'incapacitated',
@@ -1313,15 +1318,6 @@ export function resolveCombatantRecoveries(
   elapsed: number,
   ctx: { provenance: string; sessionId: string; at: string },
 ) {
-  const columns = db
-    .prepare('PRAGMA table_info(encounter_combatant)')
-    .all() as Array<{ name: string }>;
-  if (
-    !columns.some(
-      (column) => column.name === 'stable_recovery_deadline_elapsed_minutes',
-    )
-  )
-    return 0;
   return withTransaction(db, (txn) => {
     const rows = txn
       .prepare(
@@ -1449,13 +1445,66 @@ function updateCombatantInTxn(
   let status = input.status ?? current.status;
   let successes = current.deathSaveSuccesses;
   let failures = current.deathSaveFailures;
-  const recoveryBlock = current.recoveryBlock;
+  let recoveryBlock = current.recoveryBlock;
   let recoveryRoll = current.stableRecoveryRoll;
   let recoveryAnchor = current.stableRecoveryAnchorElapsedMinutes;
   let recoveryDeadline = current.stableRecoveryDeadlineElapsedMinutes;
-  if (input.hpDelta !== undefined) {
-    if (deathRules === 'player-character') {
-      if (current.hpCurrent > 0 && nextHp === 0) {
+  let armRecovery = false;
+  // 'dying' and 'stable' exist only under the player-character death rules,
+  // and the engine owns their transitions (rule:monsters-and-death opts a
+  // creature in; the character death rules then apply).
+  if (
+    (input.status === 'dying' || input.status === 'stable') &&
+    deathRules !== 'player-character'
+  )
+    throw new EncounterCombatantError(
+      `status '${input.status}' requires deathRules 'player-character'`,
+    );
+  const droppedToZero =
+    input.hpDelta !== undefined && current.hpCurrent > 0 && nextHp === 0;
+  if (deathRules === 'player-character') {
+    if (input.status === 'dying')
+      throw new EncounterCombatantError(
+        'a player-character combatant becomes dying through hpDelta, never an explicit status',
+      );
+    if (
+      (input.status === 'alive' || input.status === 'unconscious') &&
+      nextHp === 0
+    )
+      throw new EncounterCombatantError(
+        `status '${input.status}' needs hit points above 0 under player-character death rules`,
+      );
+    if (input.status === 'stable' && !droppedToZero)
+      throw new EncounterCombatantError(
+        "status 'stable' is accepted only as a knockout: with an hpDelta that reduces the combatant from above 0 to 0 hit points",
+      );
+    if (input.status === 'stable' && recoveryBlock !== null)
+      throw new EncounterCombatantError(
+        `cannot stabilize while ${recoveryBlock}`,
+      );
+    if (
+      input.hpDelta !== undefined &&
+      input.hpDelta > 0 &&
+      current.status === 'dead'
+    )
+      throw new EncounterCombatantError(
+        'healing a dead player-character combatant is refused',
+      );
+    if (input.hpDelta !== undefined && input.hpDelta > 0 && recoveryBlock)
+      throw new EncounterCombatantError(
+        `cannot regain hit points while ${recoveryBlock}`,
+      );
+    if (input.status !== undefined) {
+      // Explicit statuses validated above: dead/escaped/inactive at any HP,
+      // alive/unconscious above 0, stable only as a knockout.
+      status = input.status;
+      if (status === 'stable') {
+        successes = 0;
+        failures = 0;
+        armRecovery = true;
+      }
+    } else if (input.hpDelta !== undefined) {
+      if (droppedToZero) {
         const overflow = Math.max(0, -input.hpDelta - current.hpCurrent);
         status = overflow >= current.hpMax ? 'dead' : 'dying';
         successes = 0;
@@ -1468,34 +1517,27 @@ function updateCombatantInTxn(
         failures = Math.min(3, failures + (input.critical ? 2 : 1));
         status = failures >= 3 ? 'dead' : 'dying';
       } else if (input.hpDelta > 0 && current.hpCurrent === 0) {
-        if (recoveryBlock)
-          throw new EncounterCombatantError(
-            `cannot regain hit points while ${recoveryBlock}`,
-          );
         status = 'alive';
         successes = 0;
         failures = 0;
-      } else if (
-        input.status === undefined &&
-        current.status === 'dead' &&
-        nextHp > 0
-      )
-        status = 'alive';
-    } else {
-      status =
-        input.status ??
-        (nextHp === 0
-          ? 'dead'
-          : current.status === 'dead'
-            ? 'alive'
-            : current.status);
+      }
     }
-  } else if (input.status !== undefined) status = input.status;
-  if (status !== 'stable') {
+  } else if (input.hpDelta !== undefined) {
+    status =
+      input.status ??
+      (nextHp === 0
+        ? 'dead'
+        : current.status === 'dead'
+          ? 'alive'
+          : current.status);
+  }
+  if (status !== 'stable' || armRecovery) {
     recoveryRoll = null;
     recoveryAnchor = null;
     recoveryDeadline = null;
   }
+  // A dead creature carries no recovery block (mirrors characters).
+  if (status === 'dead') recoveryBlock = null;
   const locationId = input.locationId ?? current.locationId;
   const placement = input.placement ?? current.placement;
 
@@ -1526,6 +1568,15 @@ function updateCombatantInTxn(
     input.campaignId,
     input.combatantId,
   );
+  // A knockout ("falls unconscious and is stable") arms the same 1d4-hour
+  // recovery deadline a stabilized combatant gets.
+  if (armRecovery)
+    scheduleCombatantRecovery(
+      db,
+      input.campaignId,
+      input.combatantId,
+      input.rng ?? createSeededRng(0),
+    );
 
   let syncedActor: CampaignActor | undefined;
   if (

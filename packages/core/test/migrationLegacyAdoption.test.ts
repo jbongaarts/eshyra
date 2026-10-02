@@ -470,7 +470,11 @@ describe('migration 0022 stable-recovery adoption', () => {
 
       const result = runMigrations(db, { dir: adoptionDir, now: NOW });
       expect(result.applied).toEqual([22]);
-      const latestDir = migrationDirThrough(32);
+      // The runtime code below needs the full schema, so migrate to the
+      // latest version rather than a pinned one.
+      const latestDir = migrationDirThrough(
+        Math.max(...discoverMigrations().map((m) => m.version)),
+      );
       try {
         runMigrations(db, { dir: latestDir, now: NOW });
       } finally {
