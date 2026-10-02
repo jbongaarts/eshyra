@@ -17,7 +17,7 @@ export const setSuffocationTool: Tool = {
   name: 'set_suffocation',
   mutates: true,
   description:
-    'Record the suffocation drop or breathing event for a character or combatant.',
+    'For a character or combatant: breathing again clears suffocation. When breath runs out, calculate the survival interval with calc_suffocation_survival_rounds; at the start of the creature’s next turn after that interval, record event drop here. The drop applies damage through adjust_hp or update_combatant: at 0 HP it does not block healing or stabilization and a player-character-rules combatant starts ordinary dying; a monster-rules combatant dies. Use this tool to record the suffocation state, not to apply the HP loss.',
   inputSchema: {
     type: 'object',
     properties: {

@@ -141,6 +141,7 @@ const CHARACTER_FIELDS: Record<string, FieldDescriptor> = {
     min: 0,
     nullable: true,
   },
+  stable_recovery_settled: { kind: 'integer', min: 0, max: 1 },
   recovery_block: {
     kind: 'text-enum',
     values: ['suffocating'],

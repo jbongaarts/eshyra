@@ -154,11 +154,12 @@ export const RULE_KNOWN_LIMITS: Readonly<
       participants: Object.freeze([
         'set_suffocation',
         'calc',
+        'adjust_hp',
         'update_combatant',
       ]),
       limit: 'partial',
       statement:
-        'Breath running out starts the survival interval calculated by calc suffocation_survival_rounds. It does not itself reduce the creature to 0 hit points: set_suffocation event drop records that at the start of the creature’s turn after the interval expires, and event breathe records when it can breathe again. update_combatant deathRules selects player-character death rules for an encounter combatant.',
+        'Using adjust_hp or update_combatant to apply the drop alone does not record suffocation or later breathing. Calculate the survival interval with calc_suffocation_survival_rounds, then call set_suffocation event drop at the start of the creature’s next turn after the interval expires; call event breathe when it can breathe again. The drop itself is damage through adjust_hp or update_combatant: player-character rules start ordinary dying at 0 HP, while monster rules kill the combatant.',
       findingId: 'readiness-integrity',
     }),
   ]),
@@ -247,7 +248,7 @@ export const RULE_KNOWN_LIMITS: Readonly<
       ]),
       limit: 'partial',
       statement:
-        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece with expend_ammunition after each attack with an ammunition weapon, and after the battle use recover_ammunition to recover half the expended pieces still at the battlefield, rounded down. Apply the loading restriction before another attack with that weapon.',
+        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece with expend_ammunition after each attack with an ammunition weapon. After the battle, recover_ammunition returns half the expended ammunition, rounded down, limited to what is still at the battlefield; it destroys the remaining present pieces and reports unavailable pieces. Apply the loading restriction before another attack with that weapon.',
       findingId: 'readiness-integrity',
     }),
   ]),

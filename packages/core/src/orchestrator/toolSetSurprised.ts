@@ -172,6 +172,7 @@ export const setSurprisedTool: Tool = {
           setSurprisedInTransaction(txnDb, {
             campaignId: ctx.campaignId,
             participants,
+            resolveRulesPack: ctx.resolveRulesPack,
             provenance: `model:${ctx.turnId}`,
             sessionId: ctx.sessionId,
             at: ctx.at,

@@ -327,7 +327,8 @@ CREATE TABLE character (
     CHECK (death_save_successes BETWEEN 0 AND 3), death_save_failures INTEGER NOT NULL DEFAULT 0
     CHECK (death_save_failures BETWEEN 0 AND 3), inspiration INTEGER NOT NULL DEFAULT 0
     CHECK (inspiration IN (0, 1)), stable_recovery_roll INTEGER CHECK (stable_recovery_roll BETWEEN 1 AND 4), stable_recovery_anchor_elapsed_minutes INTEGER CHECK (stable_recovery_anchor_elapsed_minutes >= 0), stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0), recovery_block TEXT
-  CHECK (recovery_block IS NULL OR recovery_block = 'suffocating'));
+  CHECK (recovery_block IS NULL OR recovery_block = 'suffocating'), stable_recovery_settled INTEGER NOT NULL DEFAULT 0
+  CHECK (stable_recovery_settled IN (0, 1)));
 
 CREATE TABLE character_hit_dice (
   character_id TEXT PRIMARY KEY REFERENCES character(id),
@@ -495,7 +496,8 @@ CREATE TABLE "encounter_combatant" (
   stable_recovery_roll INTEGER CHECK (stable_recovery_roll BETWEEN 1 AND 4),
   stable_recovery_anchor_elapsed_minutes INTEGER CHECK (stable_recovery_anchor_elapsed_minutes >= 0),
   stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0), head_count INTEGER CHECK (head_count IS NULL OR head_count >= 0), heads_died_since_own_turn INTEGER NOT NULL DEFAULT 0, fire_damage_since_own_turn INTEGER NOT NULL DEFAULT 0
-  CHECK (fire_damage_since_own_turn IN (0, 1)), damage_this_turn INTEGER NOT NULL DEFAULT 0, damage_turn_key TEXT, head_died_this_turn INTEGER NOT NULL DEFAULT 0,
+  CHECK (fire_damage_since_own_turn IN (0, 1)), damage_this_turn INTEGER NOT NULL DEFAULT 0, damage_turn_key TEXT, head_died_this_turn INTEGER NOT NULL DEFAULT 0, stable_recovery_settled INTEGER NOT NULL DEFAULT 0
+  CHECK (stable_recovery_settled IN (0, 1)),
   PRIMARY KEY (campaign_id, combatant_id)
 );
 

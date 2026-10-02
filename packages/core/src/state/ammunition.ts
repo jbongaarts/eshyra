@@ -151,6 +151,7 @@ export function expendAmmunition(
 
 interface ExpenditureRow {
   expenditure_id: string;
+  source_inventory_id: string;
   expended_inventory_id: string;
   quantity: number;
   world_location_id: string;
@@ -176,7 +177,9 @@ export function recoverAmmunition(
   combatInstanceId: string;
   characterId: string;
   recovered: number;
+  entitlement: number;
   destroyed: number;
+  unavailable: number;
   movedAway: number;
 } {
   if (!combatInstanceId)
@@ -199,7 +202,7 @@ export function recoverAmmunition(
     const locationId = currentWorldLocation(txnDb);
     const rows = txnDb
       .prepare(
-        `SELECT expenditure_id, expended_inventory_id, quantity, world_location_id
+        `SELECT expenditure_id, source_inventory_id, expended_inventory_id, quantity, world_location_id
        FROM ammunition_expenditure
        WHERE campaign_id=? AND combat_instance_id=? AND character_id=? AND status='expended'
        ORDER BY expenditure_id`,
@@ -223,9 +226,10 @@ export function recoverAmmunition(
           present: number;
         }[];
         total: number;
+        expended: number;
       }
     >();
-    let movedAway = 0;
+    let unavailable = 0;
     for (const expenditure of rows) {
       const item = txnDb
         .prepare(
@@ -241,17 +245,31 @@ export function recoverAmmunition(
         item.world_location_id === locationId
           ? Math.min(item.quantity, expenditure.quantity)
           : 0;
-      movedAway += expenditure.quantity - present;
-      if (present === 0 || item === undefined) continue;
-      const identity = JSON.stringify([
-        item.pack_ref,
-        item.variant_id,
-        item.name,
-        item.properties_json,
-      ]);
-      const group = groups.get(identity) ?? { rows: [], total: 0 };
-      group.rows.push({ expenditure, item, present });
-      group.total += present;
+      unavailable += expenditure.quantity - present;
+      const identityItem =
+        item ??
+        (txnDb
+          .prepare(`SELECT id,name,quantity,properties_json,pack_ref,variant_id,
+        character_id,world_location_id,unheld_disposition FROM inventory WHERE id=?`)
+          .get(expenditure.source_inventory_id) as ExpendedItemRow | undefined);
+      const identity =
+        identityItem === undefined
+          ? JSON.stringify([
+              'unavailable-source',
+              expenditure.source_inventory_id,
+            ])
+          : JSON.stringify([
+              identityItem.pack_ref,
+              identityItem.variant_id,
+              identityItem.name,
+              identityItem.properties_json,
+            ]);
+      const group = groups.get(identity) ?? { rows: [], total: 0, expended: 0 };
+      group.expended += expenditure.quantity;
+      if (present > 0 && item !== undefined) {
+        group.rows.push({ expenditure, item, present });
+        group.total += present;
+      }
       groups.set(identity, group);
     }
 
@@ -273,9 +291,11 @@ export function recoverAmmunition(
       );
 
     let recovered = 0;
+    let entitlement = 0;
     let destroyed = 0;
     for (const group of groups.values()) {
-      let toRecover = Math.floor(group.total / 2);
+      let toRecover = Math.min(Math.floor(group.expended / 2), group.total);
+      entitlement += Math.floor(group.expended / 2);
       for (const entry of group.rows) {
         const item = entry.item as ExpendedItemRow;
         const take = Math.min(toRecover, entry.present);
@@ -304,6 +324,14 @@ export function recoverAmmunition(
         destroyed += entry.present - take;
       }
     }
-    return { combatInstanceId, characterId, recovered, destroyed, movedAway };
+    return {
+      combatInstanceId,
+      characterId,
+      entitlement,
+      recovered,
+      destroyed,
+      unavailable,
+      movedAway: unavailable,
+    };
   });
 }

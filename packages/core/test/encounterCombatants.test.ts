@@ -17,6 +17,7 @@ import {
   upsertCampaignActor,
 } from '../src/internal.js';
 import { deriveTraceFields } from '../src/orchestrator/turnTraceProjection.js';
+import { ensureCampaignActorFromCombatant } from '../src/state/encounterCombatants.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
@@ -948,6 +949,92 @@ describe('encounter combatants', () => {
 });
 
 describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', () => {
+  it('promotes a combatant with its complete lifecycle into a durable actor and reprojects it', () => {
+    const { db, registry, ctx } = setup();
+    expect(
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: 'promotion-life',
+          actors: [
+            {
+              actorId: 'source',
+              rulesRef: 'creature:goblin',
+              hpMax: 7,
+              hpCurrent: 7,
+            },
+          ],
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const combatantId = 'promotion-life-source';
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId, deathRules: 'player-character' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke('update_combatant', { combatantId, hpDelta: -7 }, ctx).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke('set_suffocation', { combatantId, event: 'drop' }, ctx)
+        .ok,
+    ).toBe(true);
+    const promoted = ensureCampaignActorFromCombatant(db, {
+      campaignId: ctx.campaignId,
+      combatantId,
+      actorId: 'durable-promotion',
+      provenance: 'test',
+      sessionId: ctx.sessionId,
+      at: ctx.at,
+    });
+    expect(promoted.state.combatLifecycle).toMatchObject({
+      deathRules: 'player-character',
+      deathSaveSuccesses: 0,
+      deathSaveFailures: 0,
+      recoveryBlock: 'suffocating',
+    });
+    expect(
+      registry.invoke(
+        'close_combat_instance',
+        { combatInstanceId: 'promotion-life', status: 'completed' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: 'promotion-reopen',
+          actors: [
+            { actorId: 'durable-promotion', rulesRef: 'creature:goblin' },
+          ],
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const projected = db
+      .prepare(
+        'SELECT status,death_rules,recovery_block,hp_current FROM encounter_combatant WHERE combat_instance_id=?',
+      )
+      .get('promotion-reopen') as {
+      status: string;
+      death_rules: string;
+      recovery_block: string;
+      hp_current: number;
+    };
+    expect(projected).toEqual({
+      status: 'dying',
+      death_rules: 'player-character',
+      recovery_block: 'suffocating',
+      hp_current: 0,
+    });
+    db.close();
+  });
+
   // rule:monsters-and-death lets the GM run a creature under the character
   // death rules; the engine then owns dying, death saves, and stabilizing.
   function optedIn() {

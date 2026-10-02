@@ -11,6 +11,7 @@ import {
 import {
   clampCharacterHpToEffectiveMaximum,
   killCharacterFromExhaustion,
+  rearmSettledStableRecovery,
 } from './hpLifecycle.js';
 import { MutateStateError, mutateState } from './mutateState.js';
 
@@ -18,6 +19,7 @@ export interface AdjustExhaustionInput extends DomainMutationContext {
   delta: number;
   combatantId?: string;
   campaignId?: string;
+  resolveRulesPack?: import('./campaignRecordLookup.js').CampaignRulesPackResolver;
 }
 
 export interface AdjustExhaustionResult {
@@ -77,6 +79,7 @@ export function adjustExhaustion(
         combatantId: input.combatantId as string,
         replaceConditions: conditions,
         clampToEffectiveMaximum: true,
+        resolveRulesPack: input.resolveRulesPack,
         ...(newLevel === 6 ? { status: 'dead' as const } : {}),
         provenance: input.provenance,
         sessionId: input.sessionId,
@@ -130,6 +133,7 @@ export function adjustExhaustion(
       ...input,
       characterId,
     });
+    rearmSettledStableRecovery(txn, characterId, { ...input, characterId });
     const hpCurrent = (
       txn
         .prepare('SELECT hp_current FROM character WHERE id=?')
