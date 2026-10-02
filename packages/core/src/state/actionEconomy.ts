@@ -72,6 +72,7 @@ import {
 import {
   getActiveCombatInstance,
   listCombatantsForInstance,
+  readCombatant,
   settleCombatantHeadsAtTurnEnd,
 } from './encounterCombatants.js';
 import type { LifeState } from './hpLifecycle.js';
@@ -408,6 +409,8 @@ function combatantHeadCount(
   campaignId: string,
   instanceId: string,
   participant: TurnParticipant,
+  resolver?: CampaignRulesPackResolver,
+  rejectUnknown = true,
 ): number | null {
   if (participant.kind !== 'combatant') return null;
   const row = db
@@ -418,7 +421,27 @@ function combatantHeadCount(
     .get(campaignId, instanceId, participant.ref) as
     | { head_count: number | null }
     | undefined;
-  return row?.head_count ?? null;
+  const count = row?.head_count ?? null;
+  const combatant = readCombatant(db, campaignId, participant.ref);
+  const hasMultipleHeads = (value: unknown): boolean =>
+    Array.isArray(value)
+      ? value.some(hasMultipleHeads)
+      : typeof value === 'object' && value !== null
+        ? (value as Record<string, unknown>).kind === 'multipleHeads' ||
+          Object.values(value).some(hasMultipleHeads)
+        : false;
+  if (
+    rejectUnknown &&
+    count === null &&
+    combatant &&
+    hasMultipleHeads(
+      lookupCampaignRecord(db, 'creature', combatant.rulesRef, resolver)?.data,
+    )
+  )
+    throw new ActionEconomyError(
+      "this combatant's head count is unknown because its encounter began before head tracking; close the combat instance and start it again",
+    );
+  return count;
 }
 
 /** A legendary creature's per-round action economy, derived from its
@@ -857,6 +880,7 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
           input.campaignId,
           instance.combatInstanceId,
           participant,
+          input.resolveRulesPack,
         ),
       ),
       legendaryProfileFor(txnDb, rulesRef, input.resolveRulesPack),
@@ -954,6 +978,17 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
         participant,
         input,
       );
+      if (participant.kind === 'combatant') {
+        const regrowth = settleCombatantHeadsAtTurnEnd(txnDb, {
+          campaignId: input.campaignId,
+          combatantId: participant.ref,
+          resolveRulesPack: input.resolveRulesPack,
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+        });
+        if (regrowth !== undefined) headRegrowths.push(regrowth);
+      }
     }
 
     const row = readBudgetRow(
@@ -970,6 +1005,7 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       input.campaignId,
       instance.combatInstanceId,
       participant,
+      input.resolveRulesPack,
     );
     return {
       combatInstanceId: instance.combatInstanceId,
@@ -1076,6 +1112,8 @@ export function spendTurnResource(
         input.campaignId,
         instance.combatInstanceId,
         participant,
+        input.resolveRulesPack,
+        false,
       ),
     );
     const legendaryProfile = legendaryProfileFor(
@@ -1156,6 +1194,14 @@ export function spendTurnResource(
         break;
       }
       case 'reaction': {
+        if (row.reactions_used >= 1 && participant.kind === 'combatant')
+          combatantHeadCount(
+            txnDb,
+            input.campaignId,
+            instance.combatInstanceId,
+            participant,
+            input.resolveRulesPack,
+          );
         if (row.reactions_used >= row.reaction_allowance) {
           const spent =
             row.reaction_allowance === 1

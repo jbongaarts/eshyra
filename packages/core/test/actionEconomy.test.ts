@@ -1450,6 +1450,103 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
       )
       .get(CAMPAIGN, HYDRA) as { head_count: number | null; status: string };
     expect(hydra).toEqual({ head_count: 0, status: 'dead' });
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: HYDRA, hpDelta: 1, status: 'alive' },
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      db
+        .prepare(
+          'SELECT head_count,status,hp_current FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
+        .get(CAMPAIGN, HYDRA),
+    ).toEqual({ head_count: 0, status: 'dead', hp_current: 47 });
+  });
+
+  it('refuses pre-head-tracking hydras and settles heads on an unavailable turn', () => {
+    const { db } = setupLairCombat();
+    const registry = createDefaultToolRegistry();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      ...CTX,
+    });
+    db.prepare(
+      'UPDATE encounter_combatant SET head_count=NULL WHERE campaign_id=? AND combatant_id=?',
+    ).run(CAMPAIGN, HYDRA);
+    expect(() =>
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: participant(HYDRA),
+        ...CTX,
+      }),
+    ).toThrow(/head count is unknown/);
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: HYDRA, hpDelta: -25 },
+        {
+          db,
+          rng: createSeededRng(1),
+          campaignId: CAMPAIGN,
+          sessionId: DEFAULT_TEST_SESSION_ID,
+          turnId: 'legacy',
+          at: NOW,
+        },
+      ),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringMatching(/head count is unknown/),
+    });
+    expect(spendReaction(db, HYDRA, 'opportunity attack')).toBeDefined();
+    expect(() => spendReaction(db, HYDRA, 'second opportunity attack')).toThrow(
+      /head count is unknown/,
+    );
+    db.close();
+
+    const second = setupLairCombat();
+    beginTurn(second.db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    updateCombatant(second.db, {
+      campaignId: CAMPAIGN,
+      combatantId: HYDRA,
+      deathRules: 'player-character',
+      hpDelta: -25,
+      ...CTX,
+    });
+    const dropCtx: ToolContext = {
+      db: second.db,
+      rng: createSeededRng(2),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'suffocation',
+      at: NOW,
+    };
+    expect(
+      createDefaultToolRegistry().invoke(
+        'set_suffocation',
+        { combatantId: HYDRA, event: 'drop' },
+        dropCtx,
+      ).ok,
+    ).toBe(true);
+    const ended = beginTurn(second.db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      ...CTX,
+    });
+    expect(ended.turnAvailable).toBe(false);
+    expect(ended.headRegrowths).toMatchObject([
+      { headsRegrown: 2, hitPointsRegained: 0, headCount: 6 },
+    ]);
+    const hydra = second.db
+      .prepare(
+        'SELECT hp_current,head_count,status FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+      )
+      .get(CAMPAIGN, HYDRA);
+    expect(hydra).toEqual({ hp_current: 0, head_count: 6, status: 'dying' });
+    second.db.close();
   });
 
   it('the every_turn refresh does not erase the evidence the surprise guard needs', () => {

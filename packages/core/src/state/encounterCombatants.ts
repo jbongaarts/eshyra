@@ -407,8 +407,7 @@ export function settleCombatantHeadsAtTurnEnd(
   },
 ): CombatantHeadRegrowthResult | undefined {
   const combatant = readCombatant(db, input.campaignId, input.combatantId);
-  if (combatant?.headCount === null || combatant === undefined)
-    return undefined;
+  if (combatant === undefined) return undefined;
   const mechanic = multipleHeadsMechanic(
     lookupCampaignRecord(
       db,
@@ -418,6 +417,10 @@ export function settleCombatantHeadsAtTurnEnd(
     ),
   );
   if (mechanic === undefined) return undefined;
+  if (combatant.headCount === null)
+    throw new EncounterCombatantError(
+      "this combatant's head count is unknown because its encounter began before head tracking; close the combat instance and start it again",
+    );
   const counters = db
     .prepare(
       `SELECT heads_died_since_own_turn, fire_damage_since_own_turn
@@ -469,7 +472,7 @@ export function settleCombatantHeadsAtTurnEnd(
   }
   const requestedHealing = headsRegrown * mechanic.hitPointsPerRegrownHead;
   let hitPointsRegained = 0;
-  if (requestedHealing > 0) {
+  if (requestedHealing > 0 && combatant.recoveryBlock === null) {
     const healed = updateCombatant(db, {
       campaignId: input.campaignId,
       combatantId: input.combatantId,
@@ -496,6 +499,34 @@ export class EncounterCombatantError extends Error {
     super(message);
     this.name = 'EncounterCombatantError';
   }
+}
+
+function requireActiveCombatant(
+  db: Db,
+  campaignId: string,
+  c: EncounterCombatant | undefined,
+): asserts c is EncounterCombatant {
+  if (!c) throw new EncounterCombatantError('unknown combatant');
+  if (
+    readCombatInstance(db, campaignId, c.combatInstanceId)?.status !== 'active'
+  )
+    throw new EncounterCombatantError(
+      `combatant '${c.combatantId}' belongs to inactive combat instance '${c.combatInstanceId}'`,
+    );
+}
+
+function isCurrentActorProjection(
+  db: Db,
+  campaignId: string,
+  actorId: string,
+  combatantId: string,
+): boolean {
+  const row = db
+    .prepare(`SELECT c.combatant_id FROM encounter_combatant c JOIN combat_instance i USING(campaign_id,combat_instance_id)
+    WHERE c.campaign_id=? AND c.identity_kind='campaign_actor' AND c.identity_ref=?
+    ORDER BY i.opened_at DESC,c.combat_instance_id DESC,c.combatant_id DESC LIMIT 1`)
+    .get(campaignId, actorId) as { combatant_id: string } | undefined;
+  return row?.combatant_id === combatantId;
 }
 
 interface AdventureRunRow {
@@ -576,6 +607,16 @@ function rowToCombatInstance(row: CombatInstanceRow): CombatInstance {
 }
 
 function rowToActor(row: ActorRow): CampaignActor {
+  let state: Record<string, JsonValue>;
+  try {
+    const parsed: unknown = JSON.parse(row.state_json);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+      throw new Error('state_json root must be an object');
+    state = parsed as Record<string, JsonValue>;
+  } catch {
+    throw new EncounterCombatantError('campaign actor state_json is malformed');
+  }
+  readCombatLifecycle(state);
   return {
     campaignId: row.campaign_id,
     actorId: row.actor_id,
@@ -589,7 +630,69 @@ function rowToActor(row: ActorRow): CampaignActor {
     conditions: JSON.parse(row.conditions_json) as CharacterConditionEntry[],
     status: row.status as ActorStatus,
     currentLocationId: row.current_location_id ?? undefined,
-    state: JSON.parse(row.state_json) as Record<string, JsonValue>,
+    state,
+  };
+}
+
+interface CombatLifecycle {
+  deathRules: 'monster' | 'player-character';
+  deathSaveSuccesses: number;
+  deathSaveFailures: number;
+  recoveryBlock: 'suffocating' | null;
+  stableRecovery: { roll: number; anchor: number; deadline: number } | null;
+  headCount: number | null;
+}
+
+function readCombatLifecycle(
+  state: Record<string, JsonValue>,
+): CombatLifecycle | undefined {
+  const value = state.combatLifecycle;
+  if (value === undefined) return undefined;
+  const fail = (): never => {
+    throw new EncounterCombatantError(
+      'campaign actor combatLifecycle state is malformed',
+    );
+  };
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    return fail();
+  const v = value as Record<string, JsonValue>;
+  if (
+    (v.deathRules !== 'monster' && v.deathRules !== 'player-character') ||
+    !Number.isInteger(v.deathSaveSuccesses) ||
+    (v.deathSaveSuccesses as number) < 0 ||
+    (v.deathSaveSuccesses as number) > 3 ||
+    !Number.isInteger(v.deathSaveFailures) ||
+    (v.deathSaveFailures as number) < 0 ||
+    (v.deathSaveFailures as number) > 3 ||
+    (v.recoveryBlock !== null && v.recoveryBlock !== 'suffocating') ||
+    (v.headCount !== null &&
+      (!Number.isInteger(v.headCount) || (v.headCount as number) < 0))
+  )
+    return fail();
+  let stableRecovery: CombatLifecycle['stableRecovery'] = null;
+  if (v.stableRecovery !== null) {
+    if (typeof v.stableRecovery !== 'object' || Array.isArray(v.stableRecovery))
+      return fail();
+    const s = v.stableRecovery as Record<string, JsonValue>;
+    if (
+      !Number.isInteger(s.roll) ||
+      !Number.isInteger(s.anchor) ||
+      !Number.isInteger(s.deadline)
+    )
+      return fail();
+    stableRecovery = {
+      roll: s.roll as number,
+      anchor: s.anchor as number,
+      deadline: s.deadline as number,
+    };
+  }
+  return {
+    deathRules: v.deathRules,
+    deathSaveSuccesses: v.deathSaveSuccesses as number,
+    deathSaveFailures: v.deathSaveFailures as number,
+    recoveryBlock: v.recoveryBlock,
+    stableRecovery,
+    headCount: v.headCount as number | null,
   };
 }
 
@@ -1153,6 +1256,15 @@ function startEncounterInTxn(
       sessionId: input.sessionId,
       at: input.at,
     });
+    const lifecycle = readCombatLifecycle(actor.state);
+    // A new projection inherits the actor's canonical lifecycle. Any old
+    // projection schedule is invalidated in this same transaction.
+    db.prepare(
+      `UPDATE encounter_combatant SET stable_recovery_roll=NULL,
+       stable_recovery_anchor_elapsed_minutes=NULL,
+       stable_recovery_deadline_elapsed_minutes=NULL
+       WHERE campaign_id=? AND identity_kind='campaign_actor' AND identity_ref=?`,
+    ).run(input.campaignId, actor.actorId);
     insertCombatant(db, {
       campaignId: input.campaignId,
       combatInstanceId,
@@ -1177,13 +1289,32 @@ function startEncounterInTxn(
           : actor.status === 'unknown'
             ? 'alive'
             : actor.status,
-      headCount: initialHeadCount(record),
+      headCount: lifecycle
+        ? (lifecycle.headCount ?? undefined)
+        : initialHeadCount(record),
       locationId: actor.currentLocationId ?? locationId,
       placement: actorInput.placement,
       provenance: input.provenance,
       sessionId: input.sessionId,
       at: input.at,
     });
+    const projectedId = `${combatInstanceId}-${slug(actor.actorId)}`;
+    db.prepare(
+      `UPDATE encounter_combatant SET death_rules=?, death_save_successes=?,
+       death_save_failures=?, recovery_block=?, stable_recovery_roll=?,
+       stable_recovery_anchor_elapsed_minutes=?, stable_recovery_deadline_elapsed_minutes=?
+       WHERE campaign_id=? AND combatant_id=?`,
+    ).run(
+      lifecycle?.deathRules ?? 'monster',
+      lifecycle?.deathSaveSuccesses ?? 0,
+      lifecycle?.deathSaveFailures ?? 0,
+      lifecycle?.recoveryBlock ?? null,
+      lifecycle?.stableRecovery?.roll ?? null,
+      lifecycle?.stableRecovery?.anchor ?? null,
+      lifecycle?.stableRecovery?.deadline ?? null,
+      input.campaignId,
+      projectedId,
+    );
   }
 
   const combatInstance = activeInstance(db, input.campaignId);
@@ -1342,6 +1473,7 @@ export function resolveCombatantDeathSave(
     );
   return withTransaction(db, (txn) => {
     const c = readCombatant(txn, campaignId, combatantId);
+    requireActiveCombatant(txn, campaignId, c);
     if (c?.deathRules !== 'player-character' || c.status !== 'dying')
       throw new EncounterCombatantError(
         'only a dying player-character combatant may make death saves',
@@ -1396,6 +1528,7 @@ export function stabilizeCombatant(
 ) {
   return withTransaction(db, (txn) => {
     const c = readCombatant(txn, campaignId, combatantId);
+    requireActiveCombatant(txn, campaignId, c);
     if (c?.deathRules !== 'player-character' || c.status !== 'dying')
       throw new EncounterCombatantError(
         'only a dying player-character combatant can be stabilized',
@@ -1426,6 +1559,7 @@ export function setCombatantSuffocation(
   return withTransaction(db, (txn) => {
     const c = readCombatant(txn, campaignId, combatantId);
     if (!c) throw new EncounterCombatantError('unknown combatant');
+    requireActiveCombatant(txn, campaignId, c);
     const wasDown =
       c.hpCurrent === 0 ||
       c.status === 'dead' ||
@@ -1449,9 +1583,14 @@ export function setCombatantSuffocation(
         // A monster dies at 0 HP (rule:monsters-and-death), so only a dying
         // combatant carries the block.
         block = status === 'dying' ? 'suffocating' : null;
-        if (status === 'dying') {
+        if (status === 'dying' && c.status !== 'dying') {
           successes = 0;
           failures = 0;
+          txn
+            .prepare(
+              'UPDATE encounter_combatant SET stable_recovery_roll=NULL, stable_recovery_anchor_elapsed_minutes=NULL, stable_recovery_deadline_elapsed_minutes=NULL WHERE campaign_id=? AND combatant_id=?',
+            )
+            .run(campaignId, combatantId);
         }
       }
     } else {
@@ -1460,6 +1599,13 @@ export function setCombatantSuffocation(
           'combatant has no recovery block to clear',
         );
       block = null;
+      if (status === 'stable') {
+        txn
+          .prepare(
+            'UPDATE encounter_combatant SET stable_recovery_roll=NULL, stable_recovery_anchor_elapsed_minutes=NULL, stable_recovery_deadline_elapsed_minutes=NULL WHERE campaign_id=? AND combatant_id=?',
+          )
+          .run(campaignId, combatantId);
+      }
       if (status === 'dying' && successes >= 3) {
         status = 'stable';
         successes = 0;
@@ -1511,7 +1657,14 @@ export function resolveCombatantRecoveries(
   return withTransaction(db, (txn) => {
     const rows = txn
       .prepare(
-        "SELECT campaign_id,combatant_id FROM encounter_combatant WHERE status='stable' AND hp_current=0 AND stable_recovery_deadline_elapsed_minutes<=? ORDER BY stable_recovery_deadline_elapsed_minutes,combatant_id",
+        `SELECT c.campaign_id,c.combatant_id,c.combat_instance_id,c.identity_kind,c.identity_ref
+         FROM encounter_combatant c JOIN combat_instance i USING(campaign_id,combat_instance_id)
+         WHERE c.status='stable' AND c.hp_current=0 AND c.stable_recovery_deadline_elapsed_minutes<=?
+         AND (c.identity_kind<>'campaign_actor' OR NOT EXISTS (
+           SELECT 1 FROM encounter_combatant n JOIN combat_instance ni USING(campaign_id,combat_instance_id)
+           WHERE n.campaign_id=c.campaign_id AND n.identity_kind='campaign_actor' AND n.identity_ref=c.identity_ref
+             AND (ni.opened_at>i.opened_at OR (ni.opened_at=i.opened_at AND n.combatant_id>c.combatant_id))))
+         ORDER BY c.stable_recovery_deadline_elapsed_minutes,c.combatant_id`,
       )
       .all(elapsed) as Array<{ campaign_id: string; combatant_id: string }>;
     for (const row of rows) {
@@ -1555,8 +1708,27 @@ function syncCombatantActor(
 ) {
   const c = readCombatant(db, campaignId, id);
   if (c?.identityKind !== 'campaign_actor' || !c.identityRef) return;
+  if (!isCurrentActorProjection(db, campaignId, c.identityRef, id)) return;
   const a = getCampaignActor(db, campaignId, c.identityRef);
   if (!a) return;
+  const state = {
+    ...a.state,
+    combatLifecycle: {
+      deathRules: c.deathRules,
+      deathSaveSuccesses: c.deathSaveSuccesses,
+      deathSaveFailures: c.deathSaveFailures,
+      recoveryBlock: c.recoveryBlock,
+      stableRecovery:
+        c.stableRecoveryRoll === null
+          ? null
+          : {
+              roll: c.stableRecoveryRoll,
+              anchor: c.stableRecoveryAnchorElapsedMinutes,
+              deadline: c.stableRecoveryDeadlineElapsedMinutes,
+            },
+      headCount: c.headCount,
+    } as unknown as JsonValue,
+  };
   upsertCampaignActor(db, {
     campaignId,
     actorId: c.identityRef,
@@ -1570,7 +1742,7 @@ function syncCombatantActor(
     conditions: c.conditions,
     status: c.status,
     currentLocationId: c.locationId,
-    state: a.state,
+    state,
     provenance: ctx.provenance,
     sessionId: ctx.sessionId,
     at: ctx.at,
@@ -1600,6 +1772,22 @@ function updateCombatantInTxn(
       `combatant '${input.combatantId}' belongs to inactive combat instance '${current.combatInstanceId}'`,
     );
   }
+  const currentMechanic = multipleHeadsMechanic(
+    lookupCampaignRecord(
+      db,
+      'creature',
+      current.rulesRef,
+      input.resolveRulesPack,
+    ),
+  );
+  if (
+    currentMechanic &&
+    current.headCount === null &&
+    (input.hpDelta !== undefined || input.status !== undefined)
+  )
+    throw new EncounterCombatantError(
+      "this combatant's head count is unknown because its encounter began before head tracking; close the combat instance and start it again",
+    );
   if (input.hpDelta !== undefined && !Number.isInteger(input.hpDelta)) {
     throw new EncounterCombatantError(
       'hpDelta must be an integer when provided',
@@ -1649,6 +1837,7 @@ function updateCombatantInTxn(
   let damageThisTurn = 0;
   let damageTurnKey: string | null = null;
   let headDiedThisTurn = 0;
+  const mechanic = currentMechanic;
   if (headCount !== null) {
     const tracked = db
       .prepare(
@@ -1726,6 +1915,25 @@ function updateCombatantInTxn(
     );
   const droppedToZero =
     input.hpDelta !== undefined && current.hpCurrent > 0 && nextHp === 0;
+  const exhaustionSix = conditions.some(
+    (c) => c.id === 'exhaustion' && c.level === 6,
+  );
+  const noHeadsDeath = headCount === 0 && mechanic?.deathWhenNoHeads === true;
+  if ((deathRules === 'player-character' && exhaustionSix) || noHeadsDeath) {
+    if (
+      input.status !== undefined &&
+      input.status !== 'dead' &&
+      input.status !== 'inactive'
+    )
+      throw new EncounterCombatantError(
+        'this combatant is dead from an irreversible lifecycle condition',
+      );
+    if (input.hpDelta !== undefined && input.hpDelta > 0)
+      throw new EncounterCombatantError(
+        'healing cannot revive a combatant dead from an irreversible lifecycle condition',
+      );
+    status = input.status === 'inactive' ? 'inactive' : 'dead';
+  }
   if (deathRules === 'player-character') {
     if (input.status === 'dying')
       throw new EncounterCombatantError(
@@ -1745,6 +1953,15 @@ function updateCombatantInTxn(
     if (input.status === 'stable' && recoveryBlock !== null)
       throw new EncounterCombatantError(
         `cannot stabilize while ${recoveryBlock}`,
+      );
+    if (
+      current.status === 'dead' &&
+      input.status !== undefined &&
+      input.status !== 'dead' &&
+      input.status !== 'inactive'
+    )
+      throw new EncounterCombatantError(
+        'a dead player-character combatant cannot change to a living or escaped status',
       );
     if (
       input.hpDelta !== undefined &&
@@ -1778,8 +1995,11 @@ function updateCombatantInTxn(
         input.hpDelta < 0 &&
         (current.status === 'dying' || current.status === 'stable')
       ) {
-        failures = Math.min(3, failures + (input.critical ? 2 : 1));
-        status = failures >= 3 ? 'dead' : 'dying';
+        if (-input.hpDelta >= hpMax) status = 'dead';
+        else {
+          failures = Math.min(3, failures + (input.critical ? 2 : 1));
+          status = failures >= 3 ? 'dead' : 'dying';
+        }
       } else if (input.hpDelta > 0 && current.hpCurrent === 0) {
         status = 'alive';
         successes = 0;
@@ -1795,7 +2015,8 @@ function updateCombatantInTxn(
           ? 'alive'
           : current.status);
   }
-  if (headCount === 0 && current.headCount !== 0) status = 'dead';
+  if (headCount === 0 && current.headCount !== 0 && input.status !== 'inactive')
+    status = 'dead';
   if (status !== 'stable' || armRecovery) {
     recoveryRoll = null;
     recoveryAnchor = null;
@@ -1884,29 +2105,8 @@ function updateCombatantInTxn(
     current.identityKind === 'campaign_actor' &&
     current.identityRef !== undefined
   ) {
-    const existing = getCampaignActor(
-      db,
-      input.campaignId,
-      current.identityRef,
-    );
-    syncedActor = upsertCampaignActor(db, {
-      campaignId: input.campaignId,
-      actorId: current.identityRef,
-      displayName: existing?.displayName ?? current.displayLabel,
-      actorKind: existing?.actorKind ?? 'creature',
-      sourceKind: existing?.sourceKind ?? 'campaign_created',
-      sourceRef: existing?.sourceRef,
-      rulesRef: existing?.rulesRef ?? current.rulesRef,
-      hpCurrent: nextHp,
-      hpMax: current.hpMax,
-      conditions,
-      status,
-      currentLocationId: locationId,
-      state: existing?.state,
-      provenance: input.provenance,
-      sessionId: input.sessionId,
-      at: input.at,
-    });
+    syncCombatantActor(db, input.campaignId, input.combatantId, input);
+    syncedActor = getCampaignActor(db, input.campaignId, current.identityRef);
   }
 
   // F3 reaction (same-transaction, mirroring hpLifecycle's character hook):
