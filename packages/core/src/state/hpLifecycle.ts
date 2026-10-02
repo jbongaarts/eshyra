@@ -97,6 +97,8 @@ export interface AdjustHpResult {
   lifeState: LifeState;
   /** True when overflow >= hp_max killed the character outright. */
   instantDeath: boolean;
+  /** True when this damage reduced a living character to 0 HP nonlethally. */
+  knockedOut: boolean;
   /** Death-save failures added by damage taken at 0 HP (0, 1, or 2). */
   deathSaveFailuresAdded: number;
   deathSaveSuccesses: number;
@@ -131,6 +133,10 @@ export interface AdjustHpOptions {
    * where a critical costs two death-save failures instead of one.
    */
   critical?: boolean;
+  /** Choose a nonlethal knockout for damage that reduces an able character to 0 HP. */
+  knockOut?: boolean;
+  /** Seeded source for the stable-recovery deadline when knockOut is selected. */
+  rng?: Rng;
 }
 
 export interface SuffocationResult {
@@ -370,7 +376,7 @@ function writeHpFields(
   if (after.life_state === 'dead' && before.life_state !== 'dead') {
     endAllAttunementsOnDeath(db, charId);
   }
-  // Leaving 'alive' (dying or outright dead) is incapacitation, which breaks
+  // Leaving 'alive' (dying, stable, or dead) is incapacitation, which breaks
   // concentration (SRD concentration; F3). One-way reaction: the life-state
   // machine stays here, the effect cleanup lives in activeEffects.
   if (before.life_state === 'alive' && after.life_state !== 'alive') {
@@ -397,6 +403,24 @@ export function adjustHp(
     const charId = resolveCharacterId(txnDb, ctx.characterId);
     const row = readHpRow(txnDb, charId);
 
+    if (options.knockOut === true) {
+      if (amount >= 0) {
+        throw new MutateStateError(
+          'a knockout applies only to damage that reduces the character to 0 hit points',
+        );
+      }
+      if (row.recovery_block !== null) {
+        throw new MutateStateError(
+          `cannot stabilize a character while ${row.recovery_block}`,
+        );
+      }
+      if (row.hp_current === 0 || row.life_state === 'dead') {
+        throw new MutateStateError(
+          'a knockout applies only when the damage reduces the character to 0 hit points',
+        );
+      }
+    }
+
     if (row.life_state === 'dead') {
       throw new MutateStateError(
         amount > 0
@@ -420,10 +444,23 @@ export function adjustHp(
 
     const state =
       amount < 0
-        ? applyDamage(row, -amount, options.critical === true)
+        ? applyDamage(
+            row,
+            -amount,
+            options.critical === true,
+            options.knockOut === true,
+          )
         : applyHealing(row, amount);
 
     writeHpFields(txnDb, charId, row, state.after, ctx);
+    if (state.knockedOut) {
+      scheduleStableRecovery(
+        txnDb,
+        charId,
+        ctx,
+        options.rng ?? createSeededRng(0),
+      );
+    }
 
     let concentrationCheck: AdjustHpResult['concentrationCheck'];
     let concentrationBroken: AdjustHpResult['concentrationBroken'];
@@ -454,6 +491,7 @@ export function adjustHp(
       previousLifeState: row.life_state,
       lifeState: state.after.life_state,
       instantDeath: state.instantDeath,
+      knockedOut: state.knockedOut,
       deathSaveFailuresAdded: state.deathSaveFailuresAdded,
       deathSaveSuccesses: state.after.death_save_successes,
       deathSaveFailures: state.after.death_save_failures,
@@ -475,6 +513,7 @@ interface HpTransition {
   tempHpAbsorbed: number;
   overflow: number;
   instantDeath: boolean;
+  knockedOut: boolean;
   deathSaveFailuresAdded: number;
 }
 
@@ -482,6 +521,7 @@ function applyDamage(
   row: HpRow,
   damage: number,
   critical: boolean,
+  knockOut: boolean,
 ): HpTransition {
   const tempHpAbsorbed = Math.min(row.hp_temp, damage);
   const penetrating = damage - tempHpAbsorbed;
@@ -493,6 +533,7 @@ function applyDamage(
   let successes = row.death_save_successes;
   let failures = row.death_save_failures;
   let instantDeath = false;
+  let knockedOut = false;
   let failuresAdded = 0;
 
   if (row.hp_max === 0) {
@@ -500,9 +541,14 @@ function applyDamage(
     // clamp behavior — a death machine keyed on hp_max would treat any hit
     // as instant death.
   } else if (row.hp_current > 0 && newHp === 0) {
-    // Dropping to 0: instant death when the remainder reaches the maximum,
-    // otherwise fall unconscious and start dying with fresh counters.
-    if (overflow >= row.hp_max) {
+    // Dropping to 0: an explicitly chosen knockout takes precedence over the
+    // overflow instant-death threshold, otherwise use the ordinary lifecycle.
+    if (knockOut) {
+      lifeState = 'stable';
+      successes = 0;
+      failures = 0;
+      knockedOut = true;
+    } else if (overflow >= row.hp_max) {
       lifeState = 'dead';
       instantDeath = true;
     } else {
@@ -538,6 +584,7 @@ function applyDamage(
     tempHpAbsorbed,
     overflow,
     instantDeath,
+    knockedOut,
     deathSaveFailuresAdded: failuresAdded,
   };
 }
@@ -559,6 +606,7 @@ function applyHealing(row: HpRow, amount: number): HpTransition {
     tempHpAbsorbed: 0,
     overflow: 0,
     instantDeath: false,
+    knockedOut: false,
     deathSaveFailuresAdded: 0,
   };
 }

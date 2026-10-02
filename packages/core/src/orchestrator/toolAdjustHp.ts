@@ -19,7 +19,9 @@ export const adjustHpTool: Tool = {
     'Positive heals, negative damages. Damage consumes temporary hit points ' +
     'first; dropping to 0 HP makes the character dying (or dead outright ' +
     'when the leftover damage beyond 0 reaches their HP maximum — the result ' +
-    'reports the overflow); damage taken at 0 HP adds a death-save failure ' +
+    'reports the overflow). On damage that reduces a character from above 0 ' +
+    'to 0 HP, knockOut=true makes them unconscious and stable instead of dying ' +
+    'or dead. Damage taken at 0 HP adds a death-save failure ' +
     '(two if critical=true) and knocks a stable character back to dying. ' +
     'Healing a dying or stable character returns them to consciousness; healing is refused while suffocating. ' +
     'healing a dead character is refused. Death state and death-save ' +
@@ -41,6 +43,11 @@ export const adjustHpTool: Tool = {
           'The damage came from a critical hit. Only matters for damage ' +
           'dealt to a character already at 0 HP (two death-save failures ' +
           'instead of one).',
+      },
+      knockOut: {
+        type: 'boolean',
+        description:
+          'Choose a nonlethal knockout only when this damage reduces the character from above 0 HP to 0 HP.',
       },
       character: CHARACTER_TARGET_SCHEMA,
     },
@@ -66,7 +73,11 @@ export const adjustHpTool: Tool = {
           at: ctx.at,
           characterId: target.id,
         },
-        { critical: a.critical === true },
+        {
+          critical: a.critical === true,
+          knockOut: a.knockOut === true,
+          rng: ctx.rng,
+        },
       );
       return ok(result);
     } catch (e) {
