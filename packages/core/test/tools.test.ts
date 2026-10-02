@@ -1057,6 +1057,63 @@ describe('domain mutation tools', () => {
     }
   });
 
+  it('adjust_hp exposes knockout and reports incapacitation through the tool result', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    c.db
+      .prepare(
+        `UPDATE character SET hp_max = 10, hp_current = 5 WHERE id = 'pc-1'`,
+      )
+      .run();
+    registry.invoke(
+      'start_effect',
+      {
+        effectId: 'knockout-concentration',
+        kind: 'spell-effect',
+        displayName: 'Bless',
+        source: { kind: 'spell', ref: 'spell:bless' },
+        concentrationOwner: { kind: 'character', ref: 'pc-1' },
+        duration: {
+          kind: 'timed',
+          amount: 1,
+          unit: 'minute',
+          anchor: 'spell-cast',
+        },
+        conditions: [
+          {
+            target: { kind: 'character', ref: 'pc-1' },
+            condition: { id: 'blessed:knockout-concentration' },
+          },
+        ],
+      },
+      c,
+    );
+
+    const result = registry.invoke(
+      'adjust_hp',
+      { amount: -20, knockOut: true },
+      c,
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        newHp: 0,
+        lifeState: 'stable',
+        instantDeath: false,
+        knockedOut: true,
+        concentrationBroken: {
+          effectId: 'knockout-concentration',
+          cause: 'incapacitated',
+        },
+      },
+    });
+    const schema = DEFAULT_TOOLS.find((tool) => tool.name === 'adjust_hp')
+      ?.inputSchema as JsonSchema;
+    expect(schema.properties).toMatchObject({
+      knockOut: { type: 'boolean' },
+    });
+  });
+
   it('adjust_hp returns error for non-integer amount', () => {
     const result = createDefaultToolRegistry().invoke(
       'adjust_hp',

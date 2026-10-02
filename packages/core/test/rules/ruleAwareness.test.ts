@@ -211,10 +211,12 @@ describe('rule awareness', () => {
     expect(limit?.statement).not.toMatch(/compare (it|the totals?) yourself/i);
   });
 
-  it('preserves the knockout, ready, water, and ammunition known limits', () => {
-    expect(
-      ruleStatements('rule:knocking-a-creature-out').knownLimits[0]?.statement,
-    ).toContain('instant death');
+  it('preserves the bounded knockout, ready, water, and ammunition known limits', () => {
+    const knockout = ruleStatements('rule:knocking-a-creature-out')
+      .knownLimits[0];
+    expect(knockout?.statement).toContain('knockOut=true to adjust_hp');
+    expect(knockout?.statement).toContain('stabilize_character');
+    expect(knockout?.capabilityGaps ?? []).toEqual([]);
     expect(ruleStatements('rule:water').knownLimits[0]?.statement).toContain(
       'two levels at once',
     );
@@ -255,7 +257,6 @@ describe('rule awareness', () => {
     expect(gapsByKey).toEqual({
       'rule:food': ['graded-exhaustion-increase'],
       'rule:hiding': ['retained-check-total-resolution'],
-      'rule:knocking-a-creature-out': ['nonlethal-knockout'],
       'rule:speed': ['graded-exhaustion-increase'],
       'rule:surprise': ['retained-check-total-resolution'],
       'rule:water': ['graded-exhaustion-increase'],
@@ -275,10 +276,12 @@ describe('rule awareness', () => {
     expect(
       validateRuleKnownLimits(
         registeredTools,
-        { 'rule:x': [limit({ capabilityGaps: ['nonlethal-knockout'] })] },
+        {
+          'rule:x': [limit({ capabilityGaps: ['graded-exhaustion-increase'] })],
+        },
         {},
       ),
-    ).toEqual(["rule:x: unknown capability gap 'nonlethal-knockout'"]);
+    ).toEqual(["rule:x: unknown capability gap 'graded-exhaustion-increase'"]);
     // An owned gap no limit discloses, or an owner that is not a bead.
     expect(
       validateRuleKnownLimits(
@@ -303,12 +306,12 @@ describe('rule awareness', () => {
           limit({
             limit: 'deferred',
             participants: [],
-            capabilityGaps: ['nonlethal-knockout'],
+            capabilityGaps: ['graded-exhaustion-increase'],
           }),
         ],
       }).filter((error) => error.startsWith('rule:x')),
     ).toEqual([
-      "rule:x: a deferred limit cannot carry capability gap 'nonlethal-knockout'",
+      "rule:x: a deferred limit cannot carry capability gap 'graded-exhaustion-increase'",
     ]);
   });
 

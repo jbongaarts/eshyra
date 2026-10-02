@@ -405,8 +405,8 @@ producer and consumer:
 |---|---|---|
 | `rule:hiding`, `rule:surprise` | blocking | `retained-check-total-resolution` → `eshyra-o9bd.19.5.10.3` |
 | `rule:food`, `rule:water`, `rule:speed` | blocking | `graded-exhaustion-increase` → `eshyra-o9bd.19.5.7.3` |
-| `rule:suffocating` | blocking | landed in `eshyra-o9bd.19.5.7.4` and `eshyra-o9bd.19.5.7.5`; no remaining capability gap |
-| `rule:knocking-a-creature-out` | blocking | `nonlethal-knockout` → `eshyra-o9bd.19.5.7.6` |
+| `rule:suffocating` | bounded | landed in `eshyra-o9bd.19.5.7.4` (characters) and `eshyra-o9bd.19.5.7.5` (combatants); no remaining capability gap |
+| `rule:knocking-a-creature-out` | bounded | `nonlethal-knockout` landed in `eshyra-o9bd.19.5.7.6` |
 | `rule:weapon-properties` | blocking | `ammunition-recovery-count` → `eshyra-o9bd.19.5.11.4` |
 | `action:ready` | bounded | none: a ruling-sourced concentration effect carries the save |
 | `rule:conflict` | bounded | none: `resolve_check` takes the DC's Charisma term as a negative modifier, and `end_effect` ends the charm |

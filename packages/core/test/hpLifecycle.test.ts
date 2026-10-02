@@ -147,6 +147,108 @@ describe('adjustHp — falling unconscious and instant death', () => {
   });
 });
 
+describe('adjustHp — nonlethal knockout', () => {
+  it('knocks out from above 0 at exact zero and arms stable recovery', () => {
+    const db = freshDb({ max: 10, current: 5, successes: 2, failures: 1 });
+
+    const result = adjustHp(db, -5, CTX, {
+      knockOut: true,
+      rng: createSeededRng(7),
+    });
+
+    expect(result).toMatchObject({
+      newHp: 0,
+      overflow: 0,
+      lifeState: 'stable',
+      instantDeath: false,
+      knockedOut: true,
+      deathSaveSuccesses: 0,
+      deathSaveFailures: 0,
+    });
+    const machine = readMachine(db);
+    expect(machine).toMatchObject({
+      life_state: 'stable',
+      death_save_successes: 0,
+      death_save_failures: 0,
+      stable_recovery_roll: expect.any(Number),
+      stable_recovery_anchor_elapsed_minutes: 0,
+      stable_recovery_deadline_elapsed_minutes: expect.any(Number),
+    });
+    const resolved = resolveStableRecoveries(
+      db,
+      machine.stable_recovery_deadline_elapsed_minutes as number,
+      CTX,
+    );
+    expect(resolved).toHaveLength(1);
+    expect(readMachine(db).life_state).toBe('alive');
+    db.close();
+  });
+
+  it('keeps overflow that would otherwise cause instant death out of the death path', () => {
+    const db = freshDb({ max: 10, current: 4 });
+
+    const result = adjustHp(db, -14, CTX, { knockOut: true });
+
+    expect(result).toMatchObject({
+      newHp: 0,
+      overflow: 10,
+      lifeState: 'stable',
+      instantDeath: false,
+      knockedOut: true,
+    });
+    db.close();
+  });
+
+  it('absorbs temporary HP first and ignores knockout when damage does not reach 0', () => {
+    const db = freshDb({ max: 10, current: 5, temp: 2 });
+
+    const notDown = adjustHp(db, -3, CTX, { knockOut: true });
+    expect(notDown).toMatchObject({
+      newHp: 4,
+      newTempHp: 0,
+      tempHpAbsorbed: 2,
+      knockedOut: false,
+      lifeState: 'alive',
+    });
+    const knockedOut = adjustHp(db, -4, CTX, { knockOut: true });
+    expect(knockedOut).toMatchObject({
+      newHp: 0,
+      lifeState: 'stable',
+      knockedOut: true,
+    });
+    db.close();
+  });
+
+  it('refuses knockout at 0 HP, on dead characters, while healing, and while suffocating', () => {
+    for (const lifeState of ['dying', 'stable'] as const) {
+      const db = freshDb({ max: 10, current: 0, lifeState });
+      expect(() => adjustHp(db, -1, CTX, { knockOut: true })).toThrow(
+        'a knockout applies only when the damage reduces the character to 0 hit points',
+      );
+      db.close();
+    }
+
+    const dead = freshDb({ max: 10, current: 0, lifeState: 'dead' });
+    expect(() => adjustHp(dead, -1, CTX, { knockOut: true })).toThrow(
+      'a knockout applies only when the damage reduces the character to 0 hit points',
+    );
+    dead.close();
+
+    const healing = freshDb({ max: 10, current: 5 });
+    expect(() => adjustHp(healing, 1, CTX, { knockOut: true })).toThrow(
+      'a knockout applies only to damage',
+    );
+    healing.close();
+
+    const suffocating = freshDb({ max: 10, current: 5 });
+    beginSuffocation(suffocating, { ...CTX, characterId: 'pc-1' });
+    expect(() => adjustHp(suffocating, -1, CTX, { knockOut: true })).toThrow(
+      'cannot stabilize a character while suffocating',
+    );
+    suffocating.close();
+  });
+});
+
 describe('suffocation recovery block', () => {
   it('refuses to end suffocation when no recovery block is set', () => {
     const db = freshDb({ max: 10, current: 10 });

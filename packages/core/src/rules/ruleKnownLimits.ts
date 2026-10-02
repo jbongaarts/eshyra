@@ -29,12 +29,6 @@ export const ENGINE_CAPABILITY_GAPS = Object.freeze({
     ownerBead: 'eshyra-o9bd.19.5.7.3',
     findingId: 'engine-capability-ownership' as const,
   }),
-  'nonlethal-knockout': Object.freeze({
-    operation:
-      'Apply a melee knockout to a character as unconscious and stable in one step, including when the damage would otherwise kill outright.',
-    ownerBead: 'eshyra-o9bd.19.5.7.6',
-    findingId: 'engine-capability-ownership' as const,
-  }),
   'ammunition-recovery-count': Object.freeze({
     operation:
       'Determine and apply the recoverable half of a character’s expended ammunition after a battle.',
@@ -255,16 +249,15 @@ export const RULE_KNOWN_LIMITS: Readonly<
       findingId: 'readiness-integrity',
     }),
   ]),
-  // R0 new trap (Sol review F3): hpLifecycle.ts applyDamage turns overflow
-  // >= hp_max into instant death and toolAdjustHp.ts has no nonlethal option;
-  // hpLifecycle.ts stabilizeCharacter refuses any state but dying.
+  // R0 re-derived after eshyra-o9bd.19.5.7.6: adjust_hp can choose the
+  // nonlethal state atomically with the damage; a later stabilize call cannot
+  // undo an instant death already recorded.
   'rule:knocking-a-creature-out': Object.freeze([
     Object.freeze({
       participants: Object.freeze(['adjust_hp', 'stabilize_character']),
-      capabilityGaps: Object.freeze(['nonlethal-knockout' as const]),
       limit: 'partial' as const,
       statement:
-        'adjust_hp applies instant death when damage beyond 0 hit points equals or exceeds the character’s hit point maximum, even when the attacker chooses to knock the character out, and stabilize_character stabilizes only a dying character. A nonlethal knockout of a character killed outright by that damage cannot currently be recorded.',
+        'When the attacker chooses to knock a character out, pass knockOut=true to adjust_hp with the damage as it is dealt; a later stabilize_character call cannot undo an instant death already recorded.',
       findingId: 'readiness-integrity',
     }),
   ]),
