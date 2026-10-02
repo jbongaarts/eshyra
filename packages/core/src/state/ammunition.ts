@@ -101,7 +101,7 @@ export function expendAmmunition(
     const alreadyTracked = txnDb
       .prepare(
         `SELECT 1 FROM ammunition_expenditure
-         WHERE expended_inventory_id=? LIMIT 1`,
+         WHERE expended_inventory_id=? AND status='expended' LIMIT 1`,
       )
       .get(expendedInventoryId);
     if (alreadyTracked !== undefined)

@@ -439,7 +439,7 @@ function combatantHeadCount(
     )
   )
     throw new ActionEconomyError(
-      "this combatant's head count is unknown because its encounter began before head tracking; close the combat instance and start it again",
+      "this creature's head count is unknown because its state predates head tracking; Eshyra cannot reconstruct it, so head-dependent damage, healing, turn settlement, and extra reactions are refused",
     );
   return count;
 }

@@ -113,6 +113,42 @@ function recover(
 }
 
 describe('ammunition expenditure and battlefield recovery tools', () => {
+  it.each([
+    [2, 2],
+    [4, 2],
+    [3, 3],
+  ])(
+    'allows recovered physical rows to be expended in a later battle (%i pieces, spend %i)',
+    (quantity, firstSpend) => {
+      const { db, registry, ctx } = setup();
+      combat(db, 'battle-one');
+      stack(db, 'arrows', quantity);
+      const first = spend(registry, ctx, 'arrows', firstSpend);
+      close(db, 'battle-one');
+      const recovered = recover(registry, ctx, 'battle-one');
+      expect(recovered).toMatchObject({ ok: true, data: { recovered: 1 } });
+      combat(db, 'battle-two');
+      expect(spend(registry, ctx, first.expendedInventoryId)).toMatchObject({
+        expendedInventoryId: first.expendedInventoryId,
+      });
+      expect(
+        db
+          .prepare(
+            "SELECT status FROM ammunition_expenditure WHERE combat_instance_id='battle-one'",
+          )
+          .get(),
+      ).toEqual({ status: 'resolved' });
+      expect(
+        db
+          .prepare(
+            "SELECT status FROM ammunition_expenditure WHERE combat_instance_id='battle-two'",
+          )
+          .get(),
+      ).toEqual({ status: 'expended' });
+      db.close();
+    },
+  );
+
   it('expend_ammunition splits a partial stack and records its active combat row', () => {
     const { db, registry, ctx } = setup();
     combat(db);

@@ -2456,15 +2456,15 @@ describe('updateCombatant concentration atomicity', () => {
       displayName: 'Goblin Focus',
       cause: 'dead',
     });
-    // An explicit unconscious status also downs (and would break) — but an
-    // already-down combatant triggers nothing further.
-    const again = updateCombatant(db, {
-      campaignId: CAMPAIGN,
-      combatantId: GOBLIN_1,
-      status: 'unconscious',
-      ...CTX,
-    });
-    expect(again.concentrationBroken).toBeUndefined();
+    // Terminal death cannot be rewritten through a participation status.
+    expect(() =>
+      updateCombatant(db, {
+        campaignId: CAMPAIGN,
+        combatantId: GOBLIN_1,
+        status: 'unconscious',
+        ...CTX,
+      }),
+    ).toThrow(/dead combatant cannot change status/);
   });
 });
 

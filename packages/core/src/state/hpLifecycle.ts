@@ -675,7 +675,7 @@ export function resolveDeathSaveTransition(input: {
   let lifeState: LifeState = 'dying';
   let outcome: DeathSaveOutcome;
   if (input.roll === 20) {
-    if (input.recoveryBlocked) {
+    if (input.recoveryBlocked || input.hpMax === 0) {
       successes = Math.min(3, successes + 1);
       outcome = 'success';
     } else {
@@ -871,12 +871,54 @@ export function resolveStableRecoveries(
     stable_recovery_roll: number;
     stable_recovery_deadline_elapsed_minutes: number;
   }>;
-  return rows.map((row) => ({
-    characterId: row.id,
-    recoveryRoll: row.stable_recovery_roll,
-    deadlineElapsedMinutes: row.stable_recovery_deadline_elapsed_minutes,
-    hp: adjustHp(db, 1, { ...ctx, characterId: row.id }),
-  }));
+  return rows.map((row) => {
+    const hp = adjustHp(db, 1, { ...ctx, characterId: row.id });
+    if (hp.newHp === 0)
+      db.prepare(`UPDATE character SET stable_recovery_roll=NULL,
+        stable_recovery_anchor_elapsed_minutes=NULL,
+        stable_recovery_deadline_elapsed_minutes=NULL,
+        provenance=?,session_id=?,updated_at=? WHERE id=?`).run(
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+        row.id,
+      );
+    return {
+      characterId: row.id,
+      recoveryRoll: row.stable_recovery_roll,
+      deadlineElapsedMinutes: row.stable_recovery_deadline_elapsed_minutes,
+      hp,
+    };
+  });
+}
+
+/** Lower current HP to the derived maximum without creating a damage event. */
+export function clampCharacterHpToEffectiveMaximum(
+  db: Db,
+  ctx: DomainMutationContext,
+): number {
+  return withTransaction(db, (txnDb) => {
+    const charId = resolveCharacterId(txnDb, ctx.characterId);
+    const row = readHpRow(txnDb, charId);
+    const maximum = rowEffectiveHpMax(row);
+    const hp = Math.min(row.hp_current, maximum);
+    if (hp === row.hp_current) return hp;
+    const downed = row.hp_current > 0 && hp === 0;
+    writeHpFields(
+      txnDb,
+      charId,
+      row,
+      {
+        hp_current: hp,
+        hp_temp: row.hp_temp,
+        life_state: downed ? 'dying' : row.life_state,
+        death_save_successes: downed ? 0 : row.death_save_successes,
+        death_save_failures: downed ? 0 : row.death_save_failures,
+      },
+      ctx,
+    );
+    return hp;
+  });
 }
 
 export interface GrantTemporaryHpOptions {

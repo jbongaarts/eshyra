@@ -85,6 +85,178 @@ function setup() {
 }
 
 describe('encounter combatants', () => {
+  it('clamps model supplied actor HP to the condition-adjusted maximum on admission', () => {
+    const { db } = setup();
+    const started = startEncounter(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      actors: [
+        {
+          actorId: 'admitted-odd',
+          rulesRef: 'creature:goblin',
+          hpMax: 19,
+          hpCurrent: 19,
+          conditions: [{ id: 'exhaustion', level: 4 }],
+        },
+      ],
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    expect(started.combatants[0]).toMatchObject({ hpCurrent: 9, hpMax: 19 });
+    expect(
+      getCampaignActor(db, DEFAULT_TEST_CAMPAIGN_ID, 'admitted-odd'),
+    ).toMatchObject({ hpCurrent: 9, hpMax: 19 });
+    db.close();
+  });
+
+  it.each([
+    ['z-last-lexically', 'a-first-lexically'],
+    ['a-first-lexically', 'z-last-lexically'],
+    ['custom:latest', 'custom/older'],
+  ])(
+    'uses insertion order for equal timestamps (%s then %s)',
+    (firstId, secondId) => {
+      const { db } = setup();
+      let started = startEncounter(db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        combatInstanceId: firstId,
+        actors: [
+          {
+            actorId: 'projection-owner',
+            rulesRef: 'creature:goblin',
+            hpCurrent: 20,
+            hpMax: 20,
+          },
+        ],
+        provenance: 'test',
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        at: NOW,
+      });
+      closeCombatInstance(db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        status: 'completed',
+        provenance: 'test',
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        at: NOW,
+      });
+      started = startEncounter(db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        combatInstanceId: secondId,
+        actors: [{ actorId: 'projection-owner', rulesRef: 'creature:goblin' }],
+        provenance: 'test',
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        at: NOW,
+      });
+      const current = started.combatants[0];
+      expect(current?.combatInstanceId).toBe(secondId);
+      if (!current) throw new Error('current projection missing');
+      updateCombatant(db, {
+        campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+        combatantId: current.combatantId,
+        hpDelta: -3,
+        provenance: 'test',
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        at: NOW,
+      });
+      expect(
+        getCampaignActor(db, DEFAULT_TEST_CAMPAIGN_ID, 'projection-owner'),
+      ).toMatchObject({ hpCurrent: 17 });
+      db.close();
+    },
+  );
+
+  it('transfers pending hydra regrowth facts and syncs settlement without healing', () => {
+    const { db, registry, ctx } = setup();
+    let started = startEncounter(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      combatInstanceId: 'hydra-one',
+      actors: [
+        {
+          actorId: 'persistent-hydra',
+          rulesRef: 'creature:hydra',
+          hpCurrent: 172,
+          hpMax: 172,
+        },
+      ],
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    let hydra = started.combatants[0];
+    if (!hydra) throw new Error('first hydra missing');
+    updateCombatant(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      combatantId: hydra.combatantId,
+      hpDelta: -25,
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    closeCombatInstance(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      status: 'completed',
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    started = startEncounter(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      combatInstanceId: 'hydra-two',
+      actors: [{ actorId: 'persistent-hydra', rulesRef: 'creature:hydra' }],
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    hydra = started.combatants[0] as NonNullable<typeof hydra>;
+    expect(hydra).toMatchObject({ headCount: 4, hpCurrent: 147 });
+    expect(
+      db
+        .prepare(`SELECT heads_died_since_own_turn,fire_damage_since_own_turn
+      FROM encounter_combatant WHERE combatant_id=?`)
+        .get(hydra.combatantId),
+    ).toEqual({
+      heads_died_since_own_turn: 1,
+      fire_damage_since_own_turn: 0,
+    });
+    registry.invoke(
+      'update_combatant',
+      {
+        combatantId: hydra.combatantId,
+        deathRules: 'player-character',
+        hpDelta: 0,
+      },
+      ctx,
+    );
+    registry.invoke(
+      'set_suffocation',
+      { combatantId: hydra.combatantId, event: 'drop' },
+      ctx,
+    );
+    registry.invoke('begin_turn', { combatantId: hydra.combatantId }, ctx);
+    const settled = registry.invoke(
+      'begin_turn',
+      { combatantId: hydra.combatantId },
+      ctx,
+    );
+    expect(settled.ok).toBe(true);
+    expect(
+      getCampaignActor(db, DEFAULT_TEST_CAMPAIGN_ID, 'persistent-hydra')?.state
+        .combatLifecycle,
+    ).toMatchObject({
+      headCount: 6,
+      headsDiedSinceOwnTurn: 0,
+      fireDamageSinceOwnTurn: 0,
+      recoveryBlock: 'suffocating',
+    });
+    expect(listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID)[0]).toMatchObject({
+      headCount: 6,
+      hpCurrent: 0,
+      status: 'dying',
+      recoveryBlock: 'suffocating',
+    });
+    db.close();
+  });
+
   it('opts a combatant into player-character death saves through the tools', () => {
     const { db, registry, ctx } = setup();
     registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx);
@@ -925,14 +1097,14 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     db.close();
   });
 
-  it('keeps dead player-character combatants terminal while allowing encounter removal', () => {
+  it('keeps dead player-character combatants terminal and rejects removal status', () => {
     const { db, update, read, hpMax } = optedIn();
     update({ hpDelta: -hpMax * 2 });
     for (const status of ['escaped', 'unconscious', 'alive'])
       expect(update({ status }).ok).toBe(false);
     expect(update({ hpDelta: 1 }).ok).toBe(false);
-    expect(update({ status: 'inactive' }).ok).toBe(true);
-    expect(read()).toMatchObject({ status: 'inactive', hpCurrent: 0 });
+    expect(update({ status: 'inactive' }).ok).toBe(false);
+    expect(read()).toMatchObject({ status: 'dead', hpCurrent: 0 });
     db.close();
   });
 
@@ -947,6 +1119,141 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     expect(update({ status: 'alive' }).ok).toBe(false);
     expect(update({ hpDelta: 1 }).ok).toBe(false);
     expect(read()).toMatchObject({ status: 'dead', hpCurrent: hpAtDeath });
+    db.close();
+  });
+
+  it('derives lethal lifecycle before participation status and keeps monster exhaustion-six terminal', () => {
+    const pc = optedIn();
+    expect(pc.update({ hpDelta: -pc.hpMax, status: 'escaped' }).ok).toBe(false);
+    expect(pc.read()).toMatchObject({ status: 'alive', hpCurrent: pc.hpMax });
+    pc.update({ hpDelta: -pc.hpMax * 2 });
+    expect(pc.read()?.status).toBe('dead');
+    expect(pc.update({ status: 'inactive' }).ok).toBe(false);
+    expect(pc.update({ hpDelta: 1 }).ok).toBe(false);
+    pc.db.close();
+
+    const monster = setup();
+    monster.registry.invoke(
+      'start_encounter',
+      { encounterId: 'enc-goblins' },
+      monster.ctx,
+    );
+    const target = listCombatants(monster.db, DEFAULT_TEST_CAMPAIGN_ID)[0];
+    if (!target) throw new Error('monster combatant missing');
+    expect(
+      monster.registry.invoke(
+        'adjust_exhaustion',
+        { combatantId: target.combatantId, delta: 6 },
+        monster.ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      monster.registry.invoke(
+        'update_combatant',
+        { combatantId: target.combatantId, hpDelta: 1 },
+        monster.ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      monster.registry.invoke(
+        'update_combatant',
+        { combatantId: target.combatantId, status: 'inactive' },
+        monster.ctx,
+      ).ok,
+    ).toBe(false);
+    monster.db.close();
+  });
+
+  it('reports truthful continued refusal for an unknown recurring hydra head count', () => {
+    const { db, registry, ctx } = setup();
+    const started = startEncounter(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      actors: [{ actorId: 'old-hydra', rulesRef: 'creature:hydra' }],
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    const hydra = started.combatants[0];
+    if (!hydra) throw new Error('hydra projection missing');
+    db.prepare(
+      'UPDATE encounter_combatant SET head_count=NULL WHERE combatant_id=?',
+    ).run(hydra.combatantId);
+    updateCombatant(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      combatantId: hydra.combatantId,
+      locationId: 'loc-road',
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    closeCombatInstance(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      status: 'completed',
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    const retry = registry.invoke(
+      'start_encounter',
+      {
+        actors: [{ actorId: 'old-hydra', rulesRef: 'creature:hydra' }],
+      },
+      ctx,
+    );
+    expect(retry.ok).toBe(true);
+    const refused = registry.invoke(
+      'update_combatant',
+      {
+        combatantId: 'ci-combat-2-old-hydra',
+        hpDelta: -1,
+      },
+      ctx,
+    );
+    expect(refused).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('Eshyra cannot reconstruct it'),
+    });
+    expect(refused).toMatchObject({
+      message: expect.stringContaining(
+        'head-dependent damage, healing, turn settlement, and extra reactions are refused',
+      ),
+    });
+    db.close();
+  });
+
+  it('preserves actor lifecycle when unrelated state metadata is updated', () => {
+    const { db } = setup();
+    startEncounter(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      actors: [{ actorId: 'state-owner', rulesRef: 'creature:hydra' }],
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    const actor = getCampaignActor(db, DEFAULT_TEST_CAMPAIGN_ID, 'state-owner');
+    if (!actor) throw new Error('campaign actor missing');
+    upsertCampaignActor(db, {
+      campaignId: actor.campaignId,
+      actorId: actor.actorId,
+      displayName: actor.displayName,
+      actorKind: actor.actorKind,
+      sourceKind: actor.sourceKind,
+      rulesRef: actor.rulesRef,
+      hpCurrent: actor.hpCurrent,
+      hpMax: actor.hpMax,
+      conditions: actor.conditions,
+      status: actor.status,
+      state: { note: 'preserved metadata' },
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+    expect(
+      getCampaignActor(db, DEFAULT_TEST_CAMPAIGN_ID, 'state-owner')?.state,
+    ).toMatchObject({
+      note: 'preserved metadata',
+      combatLifecycle: { headCount: 5 },
+    });
     db.close();
   });
 

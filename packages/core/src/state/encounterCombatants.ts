@@ -131,6 +131,8 @@ export interface UpsertCampaignActorInput {
   readonly status?: ActorStatus;
   readonly currentLocationId?: string;
   readonly state?: Record<string, JsonValue>;
+  /** Internal lifecycle synchronization; callers must not expose this. */
+  readonly replaceCombatLifecycle?: boolean;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -189,6 +191,7 @@ export interface UpdateCombatantInput {
   readonly campaignId: string;
   readonly combatantId: string;
   readonly hpDelta?: number;
+  readonly clampToEffectiveMaximum?: boolean;
   /** Declared damage types returned by resolve_damage for a negative hpDelta. */
   readonly damageTypes?: readonly string[];
   readonly resolveRulesPack?: CampaignRulesPackResolver;
@@ -394,6 +397,9 @@ export interface CombatantHeadRegrowthResult {
   readonly headCount: number;
 }
 
+const UNKNOWN_HEAD_STATE_MESSAGE =
+  "this creature's head count is unknown because its state predates head tracking; Eshyra cannot reconstruct it, so head-dependent damage, healing, turn settlement, and extra reactions are refused";
+
 /** Settle Multiple Heads when beginTurn implicitly ends the combatant's turn. */
 export function settleCombatantHeadsAtTurnEnd(
   db: Db,
@@ -418,9 +424,7 @@ export function settleCombatantHeadsAtTurnEnd(
   );
   if (mechanic === undefined) return undefined;
   if (combatant.headCount === null)
-    throw new EncounterCombatantError(
-      "this combatant's head count is unknown because its encounter began before head tracking; close the combat instance and start it again",
-    );
+    throw new EncounterCombatantError(UNKNOWN_HEAD_STATE_MESSAGE);
   const counters = db
     .prepare(
       `SELECT heads_died_since_own_turn, fire_damage_since_own_turn
@@ -484,6 +488,9 @@ export function settleCombatantHeadsAtTurnEnd(
     });
     hitPointsRegained = healed.combatant.hpCurrent - healed.previousHp;
   }
+  // Settlement changes durable pending facts even when blocked or there was
+  // no healing. Persist that exact lifecycle in the same turn transaction.
+  syncCombatantActor(db, input.campaignId, input.combatantId, input);
   return headsRegrown === 0
     ? undefined
     : {
@@ -524,7 +531,7 @@ function isCurrentActorProjection(
   const row = db
     .prepare(`SELECT c.combatant_id FROM encounter_combatant c JOIN combat_instance i USING(campaign_id,combat_instance_id)
     WHERE c.campaign_id=? AND c.identity_kind='campaign_actor' AND c.identity_ref=?
-    ORDER BY i.opened_at DESC,c.combat_instance_id DESC,c.combatant_id DESC LIMIT 1`)
+    ORDER BY (i.status='active') DESC, i.rowid DESC LIMIT 1`)
     .get(campaignId, actorId) as { combatant_id: string } | undefined;
   return row?.combatant_id === combatantId;
 }
@@ -641,6 +648,8 @@ interface CombatLifecycle {
   recoveryBlock: 'suffocating' | null;
   stableRecovery: { roll: number; anchor: number; deadline: number } | null;
   headCount: number | null;
+  headsDiedSinceOwnTurn: number;
+  fireDamageSinceOwnTurn: number;
 }
 
 function readCombatLifecycle(
@@ -666,7 +675,13 @@ function readCombatLifecycle(
     (v.deathSaveFailures as number) > 3 ||
     (v.recoveryBlock !== null && v.recoveryBlock !== 'suffocating') ||
     (v.headCount !== null &&
-      (!Number.isInteger(v.headCount) || (v.headCount as number) < 0))
+      (!Number.isInteger(v.headCount) || (v.headCount as number) < 0)) ||
+    (v.headsDiedSinceOwnTurn !== undefined &&
+      (!Number.isInteger(v.headsDiedSinceOwnTurn) ||
+        (v.headsDiedSinceOwnTurn as number) < 0)) ||
+    (v.fireDamageSinceOwnTurn !== undefined &&
+      v.fireDamageSinceOwnTurn !== 0 &&
+      v.fireDamageSinceOwnTurn !== 1)
   )
     return fail();
   let stableRecovery: CombatLifecycle['stableRecovery'] = null;
@@ -693,6 +708,9 @@ function readCombatLifecycle(
     recoveryBlock: v.recoveryBlock,
     stableRecovery,
     headCount: v.headCount as number | null,
+    headsDiedSinceOwnTurn: (v.headsDiedSinceOwnTurn as number | undefined) ?? 0,
+    fireDamageSinceOwnTurn:
+      (v.fireDamageSinceOwnTurn as number | undefined) ?? 0,
   };
 }
 
@@ -985,6 +1003,13 @@ export function upsertCampaignActor(
   db: Db,
   input: UpsertCampaignActorInput,
 ): CampaignActor {
+  const existing = getCampaignActor(db, input.campaignId, input.actorId);
+  const nextState = { ...(input.state ?? {}) };
+  if (
+    !input.replaceCombatLifecycle &&
+    existing?.state.combatLifecycle !== undefined
+  )
+    nextState.combatLifecycle = existing.state.combatLifecycle;
   db.prepare(
     `INSERT INTO campaign_actor(
        campaign_id, actor_id, display_name, actor_kind, source_kind, source_ref,
@@ -1020,7 +1045,7 @@ export function upsertCampaignActor(
     JSON.stringify(input.conditions ?? []),
     input.status ?? 'unknown',
     input.currentLocationId ?? null,
-    JSON.stringify(input.state ?? {}),
+    JSON.stringify(nextState),
     input.provenance,
     input.sessionId,
     input.at,
@@ -1218,6 +1243,10 @@ function startEncounterInTxn(
   }
 
   for (const actorInput of input.actors ?? []) {
+    if (actorInput.state?.combatLifecycle !== undefined)
+      throw new EncounterCombatantError(
+        'state.combatLifecycle is engine-owned and cannot be supplied when starting an encounter',
+      );
     const existing = getCampaignActor(db, input.campaignId, actorInput.actorId);
     const rulesRef = actorInput.rulesRef ?? existing?.rulesRef;
     if (rulesRef === undefined) {
@@ -1228,8 +1257,11 @@ function startEncounterInTxn(
     const record = lookupCreatureRecord(db, rulesRef, input.resolveRulesPack);
     const baselineHp = readCreatureHp(record);
     const hpMax = actorInput.hpMax ?? existing?.hpMax ?? baselineHp;
-    const hpCurrent = actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax;
     const conditions = actorInput.conditions ?? existing?.conditions ?? [];
+    const hpCurrent = Math.min(
+      actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax,
+      effectiveHpMax(hpMax, conditions),
+    );
     const actor = upsertCampaignActor(db, {
       campaignId: input.campaignId,
       actorId: actorInput.actorId,
@@ -1276,19 +1308,28 @@ function startEncounterInTxn(
       rulesRef,
       side: actorInput.side ?? 'enemy',
       faction: actorInput.faction,
-      hpCurrent: actor.hpCurrent ?? hpMax,
+      hpCurrent: Math.min(
+        actor.hpCurrent ?? hpMax,
+        effectiveHpMax(actor.hpMax ?? hpMax, actor.conditions),
+      ),
       hpMax: actor.hpMax ?? hpMax,
       ac: readCreatureAc(record),
       conditions: actor.conditions,
       status:
-        actorInput.status === undefined &&
-        (actor.status === 'escaped' ||
-          actor.status === 'inactive' ||
-          actor.status === 'unknown')
-          ? 'alive'
-          : actor.status === 'unknown'
+        hpCurrent === 0
+          ? (lifecycle?.deathRules ?? 'monster') === 'player-character'
+            ? actor.status === 'stable' || actor.status === 'dead'
+              ? actor.status
+              : 'dying'
+            : 'dead'
+          : actorInput.status === undefined &&
+              (actor.status === 'escaped' ||
+                actor.status === 'inactive' ||
+                actor.status === 'unknown')
             ? 'alive'
-            : actor.status,
+            : actor.status === 'unknown'
+              ? 'alive'
+              : actor.status,
       headCount: lifecycle
         ? (lifecycle.headCount ?? undefined)
         : initialHeadCount(record),
@@ -1315,6 +1356,16 @@ function startEncounterInTxn(
       input.campaignId,
       projectedId,
     );
+    if (lifecycle) {
+      db.prepare(`UPDATE encounter_combatant SET heads_died_since_own_turn=?, fire_damage_since_own_turn=?
+        WHERE campaign_id=? AND combatant_id=?`).run(
+        lifecycle.headsDiedSinceOwnTurn,
+        lifecycle.fireDamageSinceOwnTurn,
+        input.campaignId,
+        projectedId,
+      );
+    }
+    syncCombatantActor(db, input.campaignId, projectedId, input);
   }
 
   const combatInstance = activeInstance(db, input.campaignId);
@@ -1655,24 +1706,53 @@ export function resolveCombatantRecoveries(
   ctx: { provenance: string; sessionId: string; at: string },
 ) {
   return withTransaction(db, (txn) => {
-    const rows = txn
+    const candidates = txn
       .prepare(
         `SELECT c.campaign_id,c.combatant_id,c.combat_instance_id,c.identity_kind,c.identity_ref
          FROM encounter_combatant c JOIN combat_instance i USING(campaign_id,combat_instance_id)
          WHERE c.status='stable' AND c.hp_current=0 AND c.stable_recovery_deadline_elapsed_minutes<=?
-         AND (c.identity_kind<>'campaign_actor' OR NOT EXISTS (
-           SELECT 1 FROM encounter_combatant n JOIN combat_instance ni USING(campaign_id,combat_instance_id)
-           WHERE n.campaign_id=c.campaign_id AND n.identity_kind='campaign_actor' AND n.identity_ref=c.identity_ref
-             AND (ni.opened_at>i.opened_at OR (ni.opened_at=i.opened_at AND n.combatant_id>c.combatant_id))))
          ORDER BY c.stable_recovery_deadline_elapsed_minutes,c.combatant_id`,
       )
       .all(elapsed) as Array<{ campaign_id: string; combatant_id: string }>;
+    const rows = candidates.filter((row) => {
+      const c = readCombatant(txn, row.campaign_id, row.combatant_id);
+      return (
+        c?.identityKind !== 'campaign_actor' ||
+        (c.identityRef !== undefined &&
+          isCurrentActorProjection(
+            txn,
+            row.campaign_id,
+            c.identityRef,
+            c.combatantId,
+          ))
+      );
+    });
     for (const row of rows) {
+      const combatant = readCombatant(txn, row.campaign_id, row.combatant_id);
+      if (!combatant) continue;
+      const maximum = effectiveHpMax(combatant.hpMax, combatant.conditions);
+      if (maximum === 0) {
+        txn
+          .prepare(`UPDATE encounter_combatant SET stable_recovery_roll=NULL,
+          stable_recovery_anchor_elapsed_minutes=NULL,
+          stable_recovery_deadline_elapsed_minutes=NULL,provenance=?,session_id=?,updated_at=?
+          WHERE campaign_id=? AND combatant_id=?`)
+          .run(
+            ctx.provenance,
+            ctx.sessionId,
+            ctx.at,
+            row.campaign_id,
+            row.combatant_id,
+          );
+        syncCombatantActor(txn, row.campaign_id, row.combatant_id, ctx);
+        continue;
+      }
       txn
         .prepare(
-          "UPDATE encounter_combatant SET hp_current=1,status='alive',death_save_successes=0,death_save_failures=0,stable_recovery_roll=NULL,stable_recovery_anchor_elapsed_minutes=NULL,stable_recovery_deadline_elapsed_minutes=NULL,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?",
+          "UPDATE encounter_combatant SET hp_current=?,status='alive',death_save_successes=0,death_save_failures=0,stable_recovery_roll=NULL,stable_recovery_anchor_elapsed_minutes=NULL,stable_recovery_deadline_elapsed_minutes=NULL,provenance=?,session_id=?,updated_at=? WHERE campaign_id=? AND combatant_id=?",
         )
         .run(
+          Math.min(1, maximum),
           ctx.provenance,
           ctx.sessionId,
           ctx.at,
@@ -1711,6 +1791,13 @@ function syncCombatantActor(
   if (!isCurrentActorProjection(db, campaignId, c.identityRef, id)) return;
   const a = getCampaignActor(db, campaignId, c.identityRef);
   if (!a) return;
+  const pending = db
+    .prepare(`SELECT heads_died_since_own_turn, fire_damage_since_own_turn
+    FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?`)
+    .get(campaignId, id) as {
+    heads_died_since_own_turn: number;
+    fire_damage_since_own_turn: number;
+  };
   const state = {
     ...a.state,
     combatLifecycle: {
@@ -1727,6 +1814,8 @@ function syncCombatantActor(
               deadline: c.stableRecoveryDeadlineElapsedMinutes,
             },
       headCount: c.headCount,
+      headsDiedSinceOwnTurn: pending.heads_died_since_own_turn,
+      fireDamageSinceOwnTurn: pending.fire_damage_since_own_turn,
     } as unknown as JsonValue,
   };
   upsertCampaignActor(db, {
@@ -1743,6 +1832,7 @@ function syncCombatantActor(
     status: c.status,
     currentLocationId: c.locationId,
     state,
+    replaceCombatLifecycle: true,
     provenance: ctx.provenance,
     sessionId: ctx.sessionId,
     at: ctx.at,
@@ -1785,9 +1875,7 @@ function updateCombatantInTxn(
     current.headCount === null &&
     (input.hpDelta !== undefined || input.status !== undefined)
   )
-    throw new EncounterCombatantError(
-      "this combatant's head count is unknown because its encounter began before head tracking; close the combat instance and start it again",
-    );
+    throw new EncounterCombatantError(UNKNOWN_HEAD_STATE_MESSAGE);
   if (input.hpDelta !== undefined && !Number.isInteger(input.hpDelta)) {
     throw new EncounterCombatantError(
       'hpDelta must be an integer when provided',
@@ -1798,8 +1886,9 @@ function updateCombatantInTxn(
     ? [...input.replaceConditions]
     : [...current.conditions];
   const hpMax = effectiveHpMax(current.hpMax, conditions);
-  const nextHp =
-    input.hpDelta === undefined
+  const nextHp = input.clampToEffectiveMaximum
+    ? Math.min(current.hpCurrent, hpMax)
+    : input.hpDelta === undefined
       ? current.hpCurrent
       : Math.max(0, Math.min(hpMax, current.hpCurrent + input.hpDelta));
   let conditionAdded = false;
@@ -1919,7 +2008,31 @@ function updateCombatantInTxn(
     (c) => c.id === 'exhaustion' && c.level === 6,
   );
   const noHeadsDeath = headCount === 0 && mechanic?.deathWhenNoHeads === true;
-  if ((deathRules === 'player-character' && exhaustionSix) || noHeadsDeath) {
+  const irreversibleDeath = exhaustionSix || noHeadsDeath;
+  if (
+    deathRules === 'player-character' &&
+    (input.status === 'escaped' || input.status === 'inactive') &&
+    input.hpDelta !== undefined
+  )
+    throw new EncounterCombatantError(
+      'apply damage and participation status in separate calls under player-character death rules',
+    );
+  if (
+    current.status === 'dead' &&
+    input.status !== undefined &&
+    input.status !== 'dead'
+  )
+    throw new EncounterCombatantError('a dead combatant cannot change status');
+  if (
+    ((deathRules === 'player-character' && current.status === 'dead') ||
+      irreversibleDeath) &&
+    input.hpDelta !== undefined &&
+    input.hpDelta > 0
+  )
+    throw new EncounterCombatantError(
+      'healing cannot revive a terminally dead combatant',
+    );
+  if (irreversibleDeath) {
     if (
       input.status !== undefined &&
       input.status !== 'dead' &&
@@ -1932,7 +2045,7 @@ function updateCombatantInTxn(
       throw new EncounterCombatantError(
         'healing cannot revive a combatant dead from an irreversible lifecycle condition',
       );
-    status = input.status === 'inactive' ? 'inactive' : 'dead';
+    status = 'dead';
   }
   if (deathRules === 'player-character') {
     if (input.status === 'dying')
@@ -1957,11 +2070,10 @@ function updateCombatantInTxn(
     if (
       current.status === 'dead' &&
       input.status !== undefined &&
-      input.status !== 'dead' &&
-      input.status !== 'inactive'
+      input.status !== 'dead'
     )
       throw new EncounterCombatantError(
-        'a dead player-character combatant cannot change to a living or escaped status',
+        'a dead player-character combatant cannot change status',
       );
     if (
       input.hpDelta !== undefined &&
@@ -1975,7 +2087,15 @@ function updateCombatantInTxn(
       throw new EncounterCombatantError(
         `cannot regain hit points while ${recoveryBlock}`,
       );
-    if (input.status !== undefined) {
+    if (
+      input.clampToEffectiveMaximum &&
+      current.hpCurrent > 0 &&
+      nextHp === 0
+    ) {
+      status = 'dying';
+      successes = 0;
+      failures = 0;
+    } else if (input.status !== undefined) {
       // Explicit statuses validated above: dead/escaped/inactive at any HP,
       // alive/unconscious above 0, stable only as a knockout.
       status = input.status;
@@ -2002,20 +2122,26 @@ function updateCombatantInTxn(
           failures = Math.min(3, failures + (input.critical ? 2 : 1));
           status = failures >= 3 ? 'dead' : 'dying';
         }
-      } else if (input.hpDelta > 0 && current.hpCurrent === 0) {
+      } else if (input.hpDelta > 0 && current.hpCurrent === 0 && nextHp > 0) {
         status = 'alive';
         successes = 0;
         failures = 0;
       }
     }
-  } else if (input.hpDelta !== undefined) {
+  } else if (input.hpDelta !== undefined || input.clampToEffectiveMaximum) {
     status =
-      input.status ??
+      (input.clampToEffectiveMaximum && current.hpCurrent > 0 && nextHp === 0
+        ? 'dead'
+        : input.status) ??
       (nextHp === 0
         ? 'dead'
         : current.status === 'dead'
           ? 'alive'
           : current.status);
+  }
+  if (input.clampToEffectiveMaximum && nextHp === 0 && current.hpCurrent > 0) {
+    successes = 0;
+    failures = 0;
   }
   if (headCount === 0 && current.headCount !== 0 && input.status !== 'inactive')
     status = 'dead';
