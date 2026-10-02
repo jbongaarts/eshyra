@@ -362,4 +362,30 @@ describe('effectiveHpMax floor (eshyra-o9bd.19.5.7.3)', () => {
       db.close();
     },
   );
+
+  it('makes a player-character combatant dying, not dead, when the clamp reaches zero', () => {
+    const { db, ctx, registry } = setup();
+    const combatantId = startCombatant(ctx, registry);
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId, deathRules: 'player-character', hpDelta: 0 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    db.prepare(
+      'UPDATE encounter_combatant SET hp_max=1, hp_current=1 WHERE combatant_id=?',
+    ).run(combatantId);
+    expect(
+      registry.invoke('adjust_exhaustion', { delta: 4, combatantId }, ctx),
+    ).toMatchObject({ ok: true, data: { hpMax: 0, hpCurrent: 0 } });
+    expect(
+      db
+        .prepare(
+          'SELECT status, hp_current FROM encounter_combatant WHERE combatant_id=?',
+        )
+        .get(combatantId),
+    ).toEqual({ status: 'dying', hp_current: 0 });
+    db.close();
+  });
 });

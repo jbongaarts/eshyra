@@ -1987,7 +1987,9 @@ function updateCombatantInTxn(
     } else if (input.hpDelta !== undefined) {
       if (droppedToZero) {
         const overflow = Math.max(0, -input.hpDelta - current.hpCurrent);
-        status = overflow >= hpMax ? 'dead' : 'dying';
+        // Instant death needs damage left over beyond 0; a clamp to a zero
+        // effective maximum (exhaustion) leaves none, so the creature is dying.
+        status = overflow > 0 && overflow >= hpMax ? 'dead' : 'dying';
         successes = 0;
         failures = 0;
       } else if (
