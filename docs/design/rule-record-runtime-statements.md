@@ -11,6 +11,8 @@ amendment A2** (the `excluded` resolution outcome, from
 `docs/design/condition-condition-relationships.md` C7) **+ amendment A3**
 (positive-only statement channels, from the generalization, §3 after R4)
 **+ amendment A4** (the adjudication-context channel is retired; §3 after A3)
+**+ amendment A5** (a known limit discloses a blocking engine-capability gap
+but never discharges it; §3 after A4)
 (addresses the PR #589 reviews at `97da90f2`, `d05ed6ad`, and `34089ef9`).
 
 ## 1. Authority
@@ -238,10 +240,12 @@ statement channels follow the same rule.
   A mapping also preserves the rule's own procedure and the tool's state
   contract. For example, a retained roll is compared as a fixed total
   (`resolve_check` with `vs`), never re-rolled through a tool that rolls
-  both sides. Graded exhaustion is not mapped onto `add_condition`, which
+  both sides. *(Superseded: A4 retired positive mappings, and that example is
+  wrong, because no tool compares a retained total; see A5 and `rule:hiding`.)*
+  Graded exhaustion is not mapped onto `add_condition`, which
   ignores an existing condition id and so cannot raise a level. That gap is a
   known limit on the rules that impose exhaustion (`rule:food`, `rule:water`,
-  `rule:speed`).
+  `rule:speed`), and under A5 a blocking engine-capability gap.
 - **A known limit never assigns canonical state to the DM.** The DM may
   adjudicate that a rule's outcome applies, but durable game state stays with
   Eshyra's deterministic state boundary (ADR 0020 §2). When no exposed tool can
@@ -292,10 +296,13 @@ of tool behavior is the wrong owner for that knowledge.
   the DM on every call of that tool, for every rule. A description states only
   what its tool does. It never offers model-side arithmetic or comparison as a
   substitute for a deterministic operation the tool lacks (ADR 0020 §2). Where
-  a rule needs such an operation and no tool owns it, the gap is a known limit
-  on that rule (for example `rule:hiding`'s retained Stealth total). Examples: `vs` is a bare
-  AC/DC; modifiers apply to the roller and are engine-summed, so a target AC
-  bonus such as cover is an equal negative roller modifier;
+  a rule needs such an operation and no tool owns it, a known limit on that
+  rule discloses the gap, and the gap is owned as a blocking engine-capability
+  gap (A5); for example `rule:hiding`'s retained Stealth total. Examples: `vs`
+  is a bare AC/DC; modifiers apply to the roller and are engine-summed, so a
+  target AC bonus such as cover is an equal negative roller modifier, and so
+  is a term the source adds to a DC (the Charisma modifier in `rule:conflict`'s
+  DC of 12 + that modifier);
   `resolve_contest` rolls both sides; `add_condition` and `adjust_hp` address
   characters only; `update_combatant` sets a combatant at 0 HP to `dead`
   unless another status is given. Each description change is checked against
@@ -315,6 +322,111 @@ of tool behavior is the wrong owner for that knowledge.
   Rules the legacy registry labelled `model-adjudicated-supported` are no
   exception: under ADR 0020 §3 model adjudication is the default and needs no
   statement.
+
+**Amendment A5 (generalization review) — a known limit discloses; it does
+not discharge.** It refines A3's known-limit rules, A4's sentence on missing
+operations, and §6 Q2.
+
+*Why.* A4 let a missing deterministic operation, such as `rule:hiding`'s
+comparison against a retained Stealth total, be recorded as a known limit.
+That is truthful, but incomplete. ADR 0020 §3 still requires deterministic
+ownership of dice outcomes, arithmetic, atomic state mutation, resource
+accounting, and state integrity, and §2 requires every adjudicated outcome
+that changes the game to pass through those boundaries. Disclosing that a
+step is missing does not perform it. Read as a terminal disposition, a known
+limit would retire an obligation ADR 0020 keeps, and would let the DM bypass
+deterministic ownership because the gap had been written down.
+
+*Rule.* If a governing clause requires an engine-owned mechanical step and no
+valid deterministic operation can perform it, the clause has a **blocking
+engine-capability gap**. A known limit may disclose the gap truthfully, but
+it does not satisfy or retire the obligation. The missing capability has an
+open blocking bead, and the owning rules work stays blocked until the
+capability is implemented or accepted authority explicitly changes the
+requirement.
+
+A known limit is **terminal (bounded)** only where the clause stays
+adjudicable through a valid architecture: the DM interprets applicability and
+meaning; every deterministic calculation and state effect the clause requires
+has a valid tool or state path; and the statement only prevents misuse,
+overclaim, or silent omission. A `deferred` limit is accepted authority
+narrowing the requirement (ADR 0018: a character with more than one class is
+refused), so it is a scope boundary, not a gap.
+
+This applies only where the clause itself requires a deterministic step under
+ADR 0020. It is not global deterministic closure. A gap is recorded where
+re-derivation finds one, and A5 claims no census of every such gap in the
+corpus. A clause that no tool or state touches still gets no known limit
+(A3), so the absence of a limit or of a registered gap makes no claim
+(invariant 3).
+
+*Four things are kept apart.*
+- **Truthful bounded limitation.** The statement names the trap and, where one
+  exists, the valid tool path. For example, for `action:ready` the held energy
+  is tracked as a ruling-sourced concentration effect, so
+  `resolve_concentration` owns the save and its DC.
+- **Blocking missing capability.** The statement says what cannot currently be
+  executed, and stops there.
+- **Model interpretation that remains valid.** Applicability, meaning, which
+  modifiers apply, whether a trigger occurred, which creatures are observing,
+  and reading a declared input such as an ability modifier.
+- **Forbidden substitution.** Model-side arithmetic or comparison of
+  mechanical values, model-held canonical state, skipping or hand-tracking an
+  engine-owned step, or a lossy substitute state. No statement or tool
+  description offers one as a fallback for a missing operation.
+
+*Representation.*
+- `ENGINE_CAPABILITY_GAPS` (`src/rules/ruleKnownLimits.ts`) registers each
+  gap: the missing operation, its owning bead, and the finding
+  `engine-capability-ownership` ("Required engine capabilities have qualified
+  ownership"). Gaps are grouped by missing capability, not by rule: graded
+  exhaustion is one gap disclosed by three rules.
+- A known limit lists the gaps it discloses (`capabilityGaps`). The validator
+  rejects an unregistered gap, a registered gap that no limit discloses, a gap
+  on a `deferred` limit, and an owner that is not a bead id.
+- The audit projection reports blocking gaps as their own list, and as
+  `blocking-capability-gap` unresolved work with the owner. They are never
+  folded into the known-limit lists or counted as a disposition.
+- The model-facing statement shape is unchanged. The statement text is the
+  disclosure.
+
+*Lifecycle.* Each owning bead sits under the `eshyra-olc5` engine family
+whose operation it adds, entering it by explicit selection, and blocks
+`eshyra-o9bd.19.3.4`. Through that bead the gaps also hold the candidate-pack
+chain (`eshyra-o9bd.19.6.1`). When a capability lands, its PR re-derives the
+affected known limit under R0 and removes the gap entry, and the dependency
+resolves. Recording a gap never closes its bead.
+
+*Classification at this amendment,* re-derived for every known limit against
+the source clause, the statement, each participating tool, and the real state
+producer and consumer:
+
+| Key | Class | Gap → owning bead |
+|---|---|---|
+| `rule:hiding` | blocking | `retained-check-total-resolution` → `eshyra-o9bd.19.5.10.3` |
+| `rule:food`, `rule:water`, `rule:speed` | blocking | `graded-exhaustion-increase` → `eshyra-o9bd.19.5.7.3` |
+| `rule:suffocating` | blocking | `suffocation-recovery-gate` → `eshyra-o9bd.19.5.7.4`; `combatant-dying-state` → `eshyra-o9bd.19.5.7.5` |
+| `rule:knocking-a-creature-out` | blocking | `nonlethal-knockout` → `eshyra-o9bd.19.5.7.6` |
+| `rule:weapon-properties` | blocking | `ammunition-recovery-count` → `eshyra-o9bd.19.5.11.4` |
+| `action:ready` | bounded | none: a ruling-sourced concentration effect carries the save |
+| `rule:conflict` | bounded | none: `resolve_check` takes the DC's Charisma term as a negative modifier, and `end_effect` ends the charm |
+| `rule:special-weapons` | bounded | none: attack counting is model-adjudicated by the F2 design (`state/actionEconomy.ts`), and each attack resolves through `resolve_check` |
+| the nine `deferred` multiclass limits | bounded | none: ADR 0018 scope boundary |
+
+`rule:suffocating` also gains a disclosure it lacked: `record_death_save`
+stabilizes on a third success and restores 1 hit point on a natural 20 with no
+breathing gate. Death saves are engine-owned, so the DM cannot avoid the
+contradiction by declining a call.
+
+*Existing contracts this amendment does not change.* Two existing runtime
+contracts have the DM supply a value that A5 treats as engine-owned.
+`update_combatant`'s `reactionAllowance` takes the hydra's current reaction
+total from the DM (accepted design `eshyra-2n1t.4`; bead
+`eshyra-o9bd.19.3.4.6`, which blocks `eshyra-o9bd.19.3.4`). `set_surprised`
+has the DM adjudicate Stealth against passive Perception, the same operation
+as the hiding gap. Downgrading either to a disclosed gap would remove the only
+path to hydra extra reactions or to surprise, so neither changes without an
+explicit decision.
 
 **R5 — One read-only facade.** A new
 `ruleAwareness(recordKey, stack, relationshipManifestSource)` in `src/rules/`
@@ -433,11 +545,23 @@ under the same manifest source (invariant 11).
     envelope for a record equal the `relationshipResolutions` discovery
     produces for that record, and discovery capture and tool context in one
     turn receive the same manifest source.
-12. **Statements are bounded (A3, A4).** Every known limit meets the trap
-    criterion, carries a registered `findingId`, names tools that can write
-    the rule subject's state, never assigns canonical state to the DM, and
-    does not restate the rule's source text. Tool-contract facts live in tool
-    descriptions, not in rule statements (A4).
+12. **Statements are bounded (A3, A4, A5).** Every known limit meets the trap
+    criterion, carries a registered `findingId`, and identifies the tool and
+    state boundary that participates in the affected clause: each non-deferred
+    limit lists its registered participating tools, and its statement names
+    each one. A participant may be read-only, so a resolution-only trap such
+    as `rule:hiding` needs no state-writing tool. Where a statement directs a
+    state write, the writer it names is target-domain correct for the rule's
+    subject. A limit never assigns canonical state to the DM, never offers a
+    substitute for a missing deterministic operation, and does not restate
+    the rule's source text. Tool-contract facts live in tool descriptions,
+    not in rule statements (A4).
+13. **A disclosure is not a discharge (A5).** Every blocking
+    engine-capability gap that a known limit discloses is registered with an
+    owning bead and the `engine-capability-ownership` finding, and the audit
+    projection reports it as unresolved work of its own kind. Permanent
+    evidence: the validator's gap checks, the identity-pinned map of the
+    limits that carry gaps, and the report projection test.
 
 ## 5. Evidence plan: vertical first
 
@@ -476,7 +600,10 @@ Generalization follows the sequence in §8.
   bounded capabilities, while known limitations remain explicit rule-awareness
   and adjudication facts. `eshyra-olc5` owns work only when a deterministic
   capability is selected, and a known limit does not itself create an engine
-  obligation.* This is not replaced by any exhaustive "set of known-limit rows"
+  obligation.* *(Refined by A5: a known limit neither creates nor discharges
+  an engine obligation. Where a governing rule requires an engine-owned step
+  that no valid operation performs, `eshyra-olc5` owns that capability as a
+  blocking gap, whether or not a known limit discloses it.)* This is not replaced by any exhaustive "set of known-limit rows"
   claim. It lands in the vertical-slice PR. `opus:F-09` changes only after
   generalization (§8).
 
@@ -507,7 +634,9 @@ One sequence, in order:
 3. **Generalization PR(s):** re-derive and migrate the remaining legacy rows
    under R0. The census comes from the generated registries, not hand-copied
    counts.
-4. **`opus:F-09` registry update,** after generalization lands.
+4. **`opus:F-09` registry update,** after generalization lands. It cannot
+   record F-09 as resolved while a blocking engine-capability gap (A5) is
+   open; each gap's bead blocks `eshyra-o9bd.19.3.4`.
 
 **On failure** at any step (for example, the envelope reads as rules
 authority in live turns, a `duplicate-of` pair does not survive source

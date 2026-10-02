@@ -46,6 +46,7 @@ import {
   validateRuleDeterministicCapabilityContracts as validateLedgerCapabilityContracts,
 } from '../../src/rules/deterministicCapabilityLedger.js';
 import {
+  ENGINE_CAPABILITY_GAPS,
   RULE_KNOWN_LIMITS,
   type RuleKnownLimit,
   validateRuleKnownLimits,
@@ -2487,7 +2488,7 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
       ),
     ),
     ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
-    ...validateRuleKnownLimits(),
+    ...validateRuleKnownLimits(new Set(DEFAULT_TOOLS.map((tool) => tool.name))),
   );
 
   return errors;
@@ -2517,6 +2518,18 @@ export interface RuleDispositionReport {
         }[]
       >
     >;
+    /**
+     * Blocking engine-capability gaps (design A5), one entry per key and gap.
+     * A known limit discloses these; it never discharges them, so they are
+     * reported apart from the limit lists and never as a disposition.
+     */
+    readonly blockingCapabilityGaps: readonly {
+      readonly key: string;
+      readonly gap: string;
+      readonly operation: string;
+      readonly ownerBead: string;
+      readonly findingId: string;
+    }[];
     /** Flattened key + clause + bead (design §4) — a row with multiple
      *  externally owned clauses (e.g. armor-guidance) contributes one entry
      *  per clause. */
@@ -2552,10 +2565,17 @@ export interface RuleDispositionReport {
   /** Known limits and externally owned clauses. */
   readonly unresolvedWork: readonly {
     readonly key: string;
-    readonly kind: 'partial' | 'unimplemented' | 'deferred' | 'external-clause';
+    readonly kind:
+      | 'partial'
+      | 'unimplemented'
+      | 'deferred'
+      | 'external-clause'
+      | 'blocking-capability-gap';
     readonly detail: string;
     readonly findingId: string;
     readonly historicalBead?: string;
+    /** Open bead owning a blocking capability gap (live, not history). */
+    readonly ownerBead?: string;
   }[];
 }
 
@@ -2598,6 +2618,8 @@ export function buildRuleDispositionReport(
     bead: string;
     findingId: string;
   }[] = [];
+  const blockingCapabilityGaps: RuleDispositionReport['engineProcedure']['blockingCapabilityGaps'][number][] =
+    [];
   const unresolvedWork: RuleDispositionReport['unresolvedWork'][number][] = [];
   for (const [key, coverage] of Object.entries(coverageRegistry)) {
     if (coverage.implementation !== undefined) implementation += 1;
@@ -2624,6 +2646,23 @@ export function buildRuleDispositionReport(
           ? {}
           : { historicalBead: limit.designOwner }),
       });
+      for (const gapId of limit.capabilityGaps ?? []) {
+        const gap = ENGINE_CAPABILITY_GAPS[gapId];
+        blockingCapabilityGaps.push({
+          key,
+          gap: gapId,
+          operation: gap.operation,
+          ownerBead: gap.ownerBead,
+          findingId: gap.findingId,
+        });
+        unresolvedWork.push({
+          key,
+          kind: 'blocking-capability-gap',
+          detail: gap.operation,
+          findingId: gap.findingId,
+          ownerBead: gap.ownerBead,
+        });
+      }
       for (const { clause, bead, findingId } of limit.externalClauses ?? []) {
         externalClauses.push({ key, clause, bead, findingId });
         unresolvedWork.push({
@@ -2678,6 +2717,9 @@ export function buildRuleDispositionReport(
         unimplemented: knownLimits.unimplemented.sort(byKey),
         deferred: knownLimits.deferred.sort(byKey),
       },
+      blockingCapabilityGaps: blockingCapabilityGaps.sort(
+        (a, b) => byKey(a, b) || a.gap.localeCompare(b.gap),
+      ),
       externalClauses: externalClauses.sort(
         (a, b) => byKey(a, b) || (a.clause < b.clause ? -1 : 1),
       ),

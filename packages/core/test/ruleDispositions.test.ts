@@ -24,7 +24,10 @@ import {
   type RulesPackLicense,
   type RulesRecord,
 } from '../src/internal.js';
-import { RULE_KNOWN_LIMITS } from '../src/rules/ruleKnownLimits.js';
+import {
+  ENGINE_CAPABILITY_GAPS,
+  RULE_KNOWN_LIMITS,
+} from '../src/rules/ruleKnownLimits.js';
 
 /**
  * Committed-pack + registry-integrity assertions for the
@@ -265,6 +268,38 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       }
     }
     expect(violations).toEqual([]);
+  });
+
+  it('reports blocking capability gaps apart from limits, with their owners (A5)', () => {
+    // A known limit discloses a blocking gap but never discharges it: the
+    // report carries every disclosed gap with its owning bead, as unresolved
+    // work of its own kind, not folded into the limit lists.
+    const report = buildRuleDispositionReport();
+    const expected = Object.entries(RULE_KNOWN_LIMITS)
+      .flatMap(([key, limits]) =>
+        limits.flatMap((limit) =>
+          (limit.capabilityGaps ?? []).map((gap) => ({
+            key,
+            gap,
+            operation: ENGINE_CAPABILITY_GAPS[gap].operation,
+            ownerBead: ENGINE_CAPABILITY_GAPS[gap].ownerBead,
+            findingId: 'engine-capability-ownership',
+          })),
+        ),
+      )
+      .sort((a, b) =>
+        a.key < b.key ? -1 : a.key > b.key ? 1 : a.gap.localeCompare(b.gap),
+      );
+    expect(expected.length).toBeGreaterThan(0);
+    expect(report.engineProcedure.blockingCapabilityGaps).toEqual(expected);
+    const pair = ({ key, ownerBead }: { key: string; ownerBead?: string }) =>
+      `${key} -> ${ownerBead}`;
+    expect(
+      report.unresolvedWork
+        .filter((row) => row.kind === 'blocking-capability-gap')
+        .map(pair)
+        .sort(),
+    ).toEqual(expected.map(pair).sort());
   });
 
   it('surfaces each known limit with its key and finding', () => {

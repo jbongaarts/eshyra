@@ -2116,7 +2116,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
     );
     const expected = {
       resolve_check:
-        "vs is the target's unmodified DC or AC from 1 to 99, and a total equal to vs succeeds. Modifiers apply only to the roller and are summed by the engine, so declare a bonus to the target's AC (for example cover) as an equal negative modifier on the attacker's roll, and a bonus to the roller's own save as a positive modifier.",
+        "vs is the target's unmodified DC or AC from 1 to 99, and a total equal to vs succeeds. Modifiers apply only to the roller and are summed by the engine. When the source adds a term to the target's AC or to a DC, pass the base number as vs and declare the term as an equal negative modifier on the roll: for example a cover bonus to AC, or the Charisma modifier in a DC of 12 + a Charisma modifier. Declare a bonus to the roller's own save as a positive modifier.",
       resolve_contest:
         "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed.",
       add_condition:

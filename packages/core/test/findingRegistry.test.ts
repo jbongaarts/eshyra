@@ -64,7 +64,7 @@ describe('finding registry', () => {
     ).toMatchObject({
       status: 'narrowed',
       statusReasoning: expect.stringContaining(
-        'does not itself create an engine obligation',
+        'neither creates nor discharges an engine obligation',
       ),
     });
     expect(

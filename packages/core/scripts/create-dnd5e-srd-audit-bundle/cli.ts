@@ -2165,6 +2165,13 @@ export function formatGameplayReadinessReport(
           (row) =>
             `- ${row.key} — ${row.designOwner} [finding: ${row.findingId}]`,
         )),
+    `Blocking engine-capability gaps (disclosed by a known limit, never discharged by it; each blocks its owning rules work until the owner bead lands): ${report.rules.engineProcedure.blockingCapabilityGaps.length}`,
+    ...(report.rules.engineProcedure.blockingCapabilityGaps.length === 0
+      ? ['(none)']
+      : report.rules.engineProcedure.blockingCapabilityGaps.map(
+          (row) =>
+            `- ${row.key}: ${row.operation} → ${row.ownerBead} [gap: ${row.gap}; finding: ${row.findingId}]`,
+        )),
     `External clauses (clause-level cross-bead ownership, not auto-resolved on bead closure): ${report.rules.engineProcedure.externalClauses.length}`,
     ...(report.rules.engineProcedure.externalClauses.length === 0
       ? ['(none)']
