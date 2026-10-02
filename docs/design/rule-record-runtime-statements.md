@@ -404,7 +404,7 @@ producer and consumer:
 | Key | Class | Gap → owning bead |
 |---|---|---|
 | `rule:hiding`, `rule:surprise` | blocking | `retained-check-total-resolution` → `eshyra-o9bd.19.5.10.3` |
-| `rule:food`, `rule:water`, `rule:speed` | blocking | `graded-exhaustion-increase` → `eshyra-o9bd.19.5.7.3` |
+| `rule:food`, `rule:water`, `rule:speed` | bounded | exhaustion levels are recorded through `adjust_exhaustion`, landed in `eshyra-o9bd.19.5.7.3` |
 | `rule:suffocating` | bounded | landed in `eshyra-o9bd.19.5.7.4` (characters) and `eshyra-o9bd.19.5.7.5` (combatants); no remaining capability gap |
 | `rule:knocking-a-creature-out` | bounded | `nonlethal-knockout` landed in `eshyra-o9bd.19.5.7.6` |
 | `rule:weapon-properties` | landed in `eshyra-o9bd.19.5.11.4` | ammunition expenditure and recovery are engine-owned |

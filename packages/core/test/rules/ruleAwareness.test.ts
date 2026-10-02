@@ -183,19 +183,17 @@ describe('rule awareness', () => {
     expect(limit?.statement).not.toMatch(/unconscious/);
   });
 
-  it('discloses that add_condition cannot raise graded exhaustion', () => {
-    // domainMutations.ts addCondition no-ops on an existing id, and rest.ts
-    // applyExhaustion requires {id:'exhaustion', level:1..6}; SRD food, water,
-    // and forced march each impose (further) exhaustion levels.
+  it('routes exhaustion recording through adjust_exhaustion after R0 re-derivation', () => {
     for (const key of ['rule:food', 'rule:water', 'rule:speed']) {
       const [limit] = ruleStatements(key).knownLimits;
       expect(limit?.findingId).toBe('readiness-integrity');
-      expect(limit?.statement).toContain('level: 1');
-      // The increment is disclosed as unpersistable; canonical state is never
-      // delegated to the DM (ADR 0020 §2).
-      expect(limit?.statement).toContain('cannot currently be persisted');
+      expect(limit?.statement).toContain('adjust_exhaustion');
+      expect(limit?.capabilityGaps ?? []).toEqual([]);
       expect(limit?.statement).not.toMatch(/DM tracks/);
     }
+    expect(ruleStatements('rule:water').knownLimits[0]?.statement).toContain(
+      'pass delta 2',
+    );
   });
 
   it('discloses the unresolvable fixed-total hiding comparison', () => {
@@ -256,11 +254,8 @@ describe('rule awareness', () => {
       }),
     );
     expect(gapsByKey).toEqual({
-      'rule:food': ['graded-exhaustion-increase'],
       'rule:hiding': ['retained-check-total-resolution'],
-      'rule:speed': ['graded-exhaustion-increase'],
       'rule:surprise': ['retained-check-total-resolution'],
-      'rule:water': ['graded-exhaustion-increase'],
     });
     for (const gap of Object.values(ENGINE_CAPABILITY_GAPS))
       expect(gap.findingId).toBe('engine-capability-ownership');
@@ -277,11 +272,11 @@ describe('rule awareness', () => {
       validateRuleKnownLimits(
         registeredTools,
         {
-          'rule:x': [limit({ capabilityGaps: ['graded-exhaustion-increase'] })],
+          'rule:x': [limit({ capabilityGaps: ['unknown' as never] })],
         },
         {},
       ),
-    ).toEqual(["rule:x: unknown capability gap 'graded-exhaustion-increase'"]);
+    ).toEqual(["rule:x: unknown capability gap 'unknown'"]);
     // An owned gap no limit discloses, or an owner that is not a bead.
     expect(
       validateRuleKnownLimits(
@@ -306,12 +301,12 @@ describe('rule awareness', () => {
           limit({
             limit: 'deferred',
             participants: [],
-            capabilityGaps: ['graded-exhaustion-increase'],
+            capabilityGaps: ['retained-check-total-resolution'],
           }),
         ],
       }).filter((error) => error.startsWith('rule:x')),
     ).toEqual([
-      "rule:x: a deferred limit cannot carry capability gap 'graded-exhaustion-increase'",
+      "rule:x: a deferred limit cannot carry capability gap 'retained-check-total-resolution'",
     ]);
   });
 
@@ -370,14 +365,14 @@ describe('rule awareness', () => {
   it('offers no substitute for a missing deterministic operation', () => {
     // Targeted regressions for substitutes the gaps invite (ADR 0020 §2/§3):
     // skipping or hand-tracking engine-owned death saves, and removing and
-    // re-adding exhaustion at a model-computed level.
+    // re-adding exhaustion instead of using its level owner.
     const suffocating =
       ruleStatements('rule:suffocating').knownLimits[0]?.statement;
     expect(suffocating).toContain('set_suffocation with event drop');
     expect(suffocating).not.toMatch(/skip|in prose|yourself|narrat/i);
     for (const key of ['rule:food', 'rule:water', 'rule:speed'])
       expect(ruleStatements(key).knownLimits[0]?.statement).not.toMatch(
-        /remove_condition|re-?add|level: [2-6]/,
+        /remove_condition|re-?add/,
       );
   });
 });

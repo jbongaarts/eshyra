@@ -5,7 +5,6 @@ import type {
   RulesRecord,
 } from '../src/internal.js';
 import {
-  addCondition,
   advanceWorldTime,
   beginSuffocation,
   completeLongRest,
@@ -54,6 +53,17 @@ const CTX = {
   sessionId: DEFAULT_TEST_SESSION_ID,
   at: '2026-07-14T00:00:00.000Z',
 };
+
+function recordExhaustion(
+  db: ReturnType<typeof freshDbWithSession>,
+  delta: number,
+) {
+  return createDefaultToolRegistry().invoke(
+    'adjust_exhaustion',
+    { delta },
+    { db, rng: createSeededRng(1), turnId: 'rest-exhaustion', ...CTX },
+  );
+}
 
 function sheet(
   classKey: 'class:wizard' | 'class:warlock',
@@ -836,11 +846,7 @@ describe('F7 rest qualification boundary', () => {
       ability: 'Second Wind',
       declared: { maxUses: 1, reset: 'short_rest' },
     });
-    addCondition(
-      db,
-      { id: 'exhaustion', level: 2 },
-      { ...CTX, characterId: 'pc-1' },
-    );
+    expect(recordExhaustion(db, 2).ok).toBe(true);
     grantTemporaryHp(db, 5, { ...CTX, characterId: 'pc-1' });
     completeShortRest(db, {
       ...CTX,
@@ -920,11 +926,7 @@ describe('F7 rest qualification boundary', () => {
 
   it('long rest restores HP, temporary HP, resources, half Hit Dice, and one exhaustion level with food', () => {
     const db = setupCharacters();
-    addCondition(
-      db,
-      { id: 'exhaustion', level: 2 },
-      { ...CTX, characterId: 'pc-1' },
-    );
+    expect(recordExhaustion(db, 2).ok).toBe(true);
     grantTemporaryHp(db, 5, { ...CTX, characterId: 'pc-1' });
     syncSpellSlots(db, { ...CTX, characterId: 'pc-1' });
     syncSpellSlots(db, { ...CTX, characterId: 'pc-2' });
@@ -1200,11 +1202,7 @@ describe('F7 rest qualification boundary', () => {
 
   it('does not reduce exhaustion when a long rest lacks food and drink', () => {
     const db = setupCharacters();
-    addCondition(
-      db,
-      { id: 'exhaustion', level: 2 },
-      { ...CTX, characterId: 'pc-1' },
-    );
+    expect(recordExhaustion(db, 2).ok).toBe(true);
     completeLongRest(db, {
       ...CTX,
       restId: 'no-food-long',

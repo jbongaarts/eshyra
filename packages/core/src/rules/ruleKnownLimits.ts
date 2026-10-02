@@ -23,12 +23,6 @@ export const ENGINE_CAPABILITY_GAPS = Object.freeze({
     ownerBead: 'eshyra-o9bd.19.5.10.3',
     findingId: 'engine-capability-ownership' as const,
   }),
-  'graded-exhaustion-increase': Object.freeze({
-    operation:
-      'Raise an existing exhaustion level by a source-declared number of levels, atomically.',
-    ownerBead: 'eshyra-o9bd.19.5.7.3',
-    findingId: 'engine-capability-ownership' as const,
-  }),
 } satisfies Record<string, EngineCapabilityGap>);
 
 export type EngineCapabilityGapId = keyof typeof ENGINE_CAPABILITY_GAPS;
@@ -61,9 +55,8 @@ function exhaustionLevelLimit(
 ): RuleKnownLimit {
   return Object.freeze({
     limit: 'partial' as const,
-    participants: Object.freeze(['add_condition']),
-    capabilityGaps: Object.freeze(['graded-exhaustion-increase' as const]),
-    statement: `Exhaustion from ${cause} is graded. add_condition can record it only for a character with no exhaustion yet, and must then pass {id: "exhaustion", level: 1}, because long-rest recovery requires a level from 1 to 6. add_condition ignores an exhaustion condition the character already has, and no exposed tool raises an existing exhaustion level, so a further level from this rule cannot currently be persisted.${sourceSpecific}`,
+    participants: Object.freeze(['adjust_exhaustion']),
+    statement: `Record exhaustion from ${cause} through adjust_exhaustion with the number of levels this rule imposes.${sourceSpecific}`,
     findingId: 'readiness-integrity',
   });
 }
@@ -255,14 +248,12 @@ export const RULE_KNOWN_LIMITS: Readonly<
       findingId: 'readiness-integrity',
     }),
   ]),
-  // R0 rewritten (graded exhaustion): add_condition no-ops on an existing id;
-  // rest.ts requires {id:'exhaustion', level:1..6}. A further level cannot be
-  // persisted. Shared by the food, water, and forced-march procedures.
+  // R0 re-derived after adjust_exhaustion landed in eshyra-o9bd.19.5.7.3.1.
   'rule:food': Object.freeze([exhaustionLevelLimit('lack of food')]),
   'rule:water': Object.freeze([
     exhaustionLevelLimit(
       'inadequate water',
-      ' When the character already has exhaustion, this rule imposes two levels at once, and neither can currently be persisted.',
+      ' When the character already has exhaustion, this rule imposes two levels at once; pass delta 2.',
     ),
   ]),
   'rule:speed': Object.freeze([exhaustionLevelLimit('a forced march')]),

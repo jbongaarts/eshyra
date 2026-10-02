@@ -22,6 +22,7 @@ export { ToolRegistry } from './toolRegistry.js';
 
 import { acceptAmbiguityPrecedentTool } from './toolAcceptAmbiguityPrecedent.js';
 import { addConditionTool } from './toolAddCondition.js';
+import { adjustExhaustionTool } from './toolAdjustExhaustion.js';
 import { adjustHpTool } from './toolAdjustHp.js';
 import { adoptItemTool } from './toolAdoptItem.js';
 import { attuneItemTool } from './toolAttuneItem.js';
@@ -107,6 +108,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   spendTurnResourceTool,
   setSurprisedTool,
   adjustHpTool,
+  adjustExhaustionTool,
   recordDeathSaveTool,
   setSuffocationTool,
   stabilizeCharacterTool,

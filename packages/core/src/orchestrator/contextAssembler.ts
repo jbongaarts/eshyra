@@ -52,6 +52,7 @@ import {
   listCampaignActors,
   listCombatants,
 } from '../state/encounterCombatants.js';
+import { effectiveHpMax } from '../state/exhaustion.js';
 import { formatHpStatus, type LifeState } from '../state/hpLifecycle.js';
 import {
   assertNoInventoryIdentityRepairs,
@@ -457,7 +458,10 @@ export function readStateSnapshot(
       className: character.class_name ?? undefined,
       level: character.level,
       hpCurrent: character.hp_current,
-      hpMax: character.hp_max,
+      hpMax: effectiveHpMax(
+        character.hp_max,
+        validateConditionsJson(rawConditions, 'character.conditions_json'),
+      ),
       hpTemp: character.hp_temp,
       lifeState: character.life_state,
       deathSaveSuccesses: character.death_save_successes,
@@ -862,8 +866,12 @@ function renderState(state: StateSnapshot): string {
         combatant.identityRef === undefined
           ? ''
           : `, identity: ${combatant.identityRef}`;
+      const effectiveMax = effectiveHpMax(
+        combatant.hpMax,
+        combatant.conditions,
+      );
       lines.push(
-        `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}${combatant.status === 'dying' ? `, death saves ${combatant.deathSaveSuccesses}S/${combatant.deathSaveFailures}F${combatant.recoveryBlock ? ', suffocating: no healing or stabilizing' : ''}` : ''}], ${combatant.side}, HP ${combatant.hpCurrent}/${combatant.hpMax}${ac}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
+        `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}${combatant.status === 'dying' ? `, death saves ${combatant.deathSaveSuccesses}S/${combatant.deathSaveFailures}F${combatant.recoveryBlock ? ', suffocating: no healing or stabilizing' : ''}` : ''}], ${combatant.side}, HP ${combatant.hpCurrent}/${effectiveMax}${ac}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
       );
     }
   }
@@ -953,7 +961,7 @@ function renderState(state: StateSnapshot): string {
       const hp =
         actor.hpCurrent === undefined || actor.hpMax === undefined
           ? ''
-          : `, HP ${actor.hpCurrent}/${actor.hpMax}`;
+          : `, HP ${actor.hpCurrent}/${effectiveHpMax(actor.hpMax, actor.conditions)}`;
       const conditions =
         actor.conditions.length === 0
           ? ''

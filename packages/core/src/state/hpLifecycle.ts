@@ -43,6 +43,7 @@ import {
 } from './activeEffects.js';
 import { endAllAttunementsOnDeath } from './attunement.js';
 import type { DomainMutationContext } from './domainMutations.js';
+import { effectiveHpMax } from './exhaustion.js';
 import {
   MutateStateError,
   mutateState,
@@ -249,6 +250,11 @@ interface HpRow {
   stable_recovery_anchor_elapsed_minutes: number | null;
   stable_recovery_deadline_elapsed_minutes: number | null;
   recovery_block: 'suffocating' | null;
+  conditions_json: string;
+}
+
+function rowEffectiveHpMax(row: HpRow): number {
+  return effectiveHpMax(row.hp_max, JSON.parse(row.conditions_json));
 }
 
 function scheduleStableRecovery(
@@ -305,7 +311,7 @@ function scheduleStableRecovery(
 function readHpRow(db: Db, charId: string): HpRow {
   const row = db
     .prepare(
-      `SELECT hp_current, hp_max, hp_temp, life_state,
+      `SELECT hp_current, hp_max, hp_temp, life_state, conditions_json,
               death_save_successes, death_save_failures,
               stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
               stable_recovery_deadline_elapsed_minutes
@@ -317,6 +323,29 @@ function readHpRow(db: Db, charId: string): HpRow {
     throw new MutateStateError('no character row exists');
   }
   return row;
+}
+
+/** Apply exhaustion level 6 through the canonical character death side effects.
+ * The caller owns the surrounding transaction and condition write. */
+export function killCharacterFromExhaustion(
+  db: Db,
+  ctx: DomainMutationContext,
+): void {
+  const charId = resolveCharacterId(db, ctx.characterId);
+  const row = readHpRow(db, charId);
+  writeHpFields(
+    db,
+    charId,
+    row,
+    {
+      hp_current: row.hp_current,
+      hp_temp: row.hp_temp,
+      life_state: 'dead',
+      death_save_successes: row.death_save_successes,
+      death_save_failures: row.death_save_failures,
+    },
+    ctx,
+  );
 }
 
 /** Write the HP-machine fields that changed, as one atomic batch. */
@@ -482,7 +511,7 @@ export function adjustHp(
     return {
       previousHp: row.hp_current,
       newHp: state.after.hp_current,
-      hpMax: row.hp_max,
+      hpMax: rowEffectiveHpMax(row),
       clamped: state.clamped,
       previousTempHp: row.hp_temp,
       newTempHp: state.after.hp_temp,
@@ -548,7 +577,7 @@ function applyDamage(
       successes = 0;
       failures = 0;
       knockedOut = true;
-    } else if (overflow >= row.hp_max) {
+    } else if (overflow >= rowEffectiveHpMax(row)) {
       lifeState = 'dead';
       instantDeath = true;
     } else {
@@ -562,7 +591,7 @@ function applyDamage(
     // temp-HP buffer absorbs every point — temp HP reduce the HP loss, not
     // the hit. Only the penetrating remainder (= overflow here) feeds the
     // instant-death threshold, which applies first.
-    if (overflow >= row.hp_max) {
+    if (overflow >= rowEffectiveHpMax(row)) {
       lifeState = 'dead';
       instantDeath = true;
     } else {
@@ -591,7 +620,7 @@ function applyDamage(
 
 function applyHealing(row: HpRow, amount: number): HpTransition {
   const raw = row.hp_current + amount;
-  const newHp = Math.min(raw, row.hp_max);
+  const newHp = Math.min(raw, rowEffectiveHpMax(row));
   const revived = row.life_state !== 'alive' && newHp > 0;
 
   return {
@@ -706,7 +735,7 @@ export function recordDeathSave(
       successes: row.death_save_successes,
       failures: row.death_save_failures,
       hp: row.hp_current,
-      hpMax: row.hp_max,
+      hpMax: rowEffectiveHpMax(row),
       recoveryBlocked,
     });
     const { hpCurrent, lifeState, successes, failures, outcome } = transition;
