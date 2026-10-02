@@ -230,12 +230,13 @@ describe('rule awareness', () => {
     expect(ready).toContain('resolve_concentration resolves it');
     expect(ready).not.toMatch(/whichever is higher|half the damage/);
     const ammo = ruleStatements('rule:weapon-properties').knownLimits[0];
-    expect(ammo?.statement).toContain('disposition dropped');
-    expect(ammo?.statement).toContain('claim_item');
-    expect(ammo?.statement).toContain(
-      'no tool determines how many of the expended pieces are recoverable',
-    );
-    expect(ammo?.statement).not.toMatch(/recover half of/);
+    expect(ammo?.statement).toContain('expend_ammunition');
+    expect(ammo?.statement).toContain('recover_ammunition');
+    expect(
+      RULE_KNOWN_LIMITS['rule:weapon-properties']?.[0]?.participants,
+    ).toEqual(['resolve_check', 'expend_ammunition', 'recover_ammunition']);
+    expect(ammo?.statement).toContain('half the expended pieces');
+    expect(ammo?.capabilityGaps).toBeUndefined();
   });
 
   it('validates finding identities in known limits', () => {
@@ -260,7 +261,6 @@ describe('rule awareness', () => {
       'rule:speed': ['graded-exhaustion-increase'],
       'rule:surprise': ['retained-check-total-resolution'],
       'rule:water': ['graded-exhaustion-increase'],
-      'rule:weapon-properties': ['ammunition-recovery-count'],
     });
     for (const gap of Object.values(ENGINE_CAPABILITY_GAPS))
       expect(gap.findingId).toBe('engine-capability-ownership');

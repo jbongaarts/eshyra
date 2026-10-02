@@ -29,12 +29,6 @@ export const ENGINE_CAPABILITY_GAPS = Object.freeze({
     ownerBead: 'eshyra-o9bd.19.5.7.3',
     findingId: 'engine-capability-ownership' as const,
   }),
-  'ammunition-recovery-count': Object.freeze({
-    operation:
-      'Determine and apply the recoverable half of a character’s expended ammunition after a battle.',
-    ownerBead: 'eshyra-o9bd.19.5.11.4',
-    findingId: 'engine-capability-ownership' as const,
-  }),
 } satisfies Record<string, EngineCapabilityGap>);
 
 export type EngineCapabilityGapId = keyof typeof ENGINE_CAPABILITY_GAPS;
@@ -282,18 +276,17 @@ export const RULE_KNOWN_LIMITS: Readonly<
       designOwner: 'eshyra-2n1t.1',
     }),
   ]),
-  // R0 rewritten: packages/core/src/orchestrator/toolResolveCheck.ts resolveCheckTool resolves ranged attacks without the source ammunition expenditure; packages/core/src/orchestrator/toolRemoveItem.ts removeItemTool requires an explicit inventory mutation.
+  // R0 rewritten: resolve_check leaves expenditure to expend_ammunition and recovery to recover_ammunition; both are deterministic character inventory operations.
   'rule:weapon-properties': Object.freeze([
     Object.freeze({
       participants: Object.freeze([
         'resolve_check',
-        'remove_item',
-        'claim_item',
+        'expend_ammunition',
+        'recover_ammunition',
       ]),
-      capabilityGaps: Object.freeze(['ammunition-recovery-count' as const]),
       limit: 'partial',
       statement:
-        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece after each such attack with remove_item and disposition dropped, which keeps expended ammunition as claimable rows at the battle location; after the battle, claim_item claims whole rows, but no tool determines how many of the expended pieces are recoverable, so that recovery cannot currently be applied. Apply the loading restriction before another attack with that weapon.',
+        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece with expend_ammunition after each attack with an ammunition weapon, and after the battle use recover_ammunition to recover half the expended pieces still at the battlefield, rounded down. Apply the loading restriction before another attack with that weapon.',
       findingId: 'readiness-integrity',
     }),
   ]),
