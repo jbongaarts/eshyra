@@ -420,22 +420,22 @@ contradiction by declining a call.
 
 *Existing contracts.* `update_combatant`'s `reactionAllowance` took the
 hydra's current reaction total from the DM (accepted design `eshyra-2n1t.4`).
-By the user's decision of 2026-10-01 that contract is **downgraded**: the tool
-description, its schema field, the over-budget rejection in
-`state/actionEconomy.ts`, and the Hybrid Contract in `protocol.ts` now say
-that nothing derives the total, so the extra reactions cannot currently be
-recorded. The regression is accepted: a hydra keeps one reaction per round
-until the blocking gap `eshyra-o9bd.19.3.4.6` lands, and that bead blocks
-`eshyra-o9bd.19.3.4`. The gap belongs to a creature record, not to a `rule:*`
-or `action:*` key, so tool text discloses it and it is not an
+The temporary disclosure and model-supplied write path from PR #596 are
+superseded by `eshyra-o9bd.19.3.4.6`: the engine tracks the source-grounded
+Multiple Heads lifecycle, derives the allowance from current head count, and
+preserves the opportunity-attack restriction. `reactionAllowance` is no longer
+a tool argument; the contract is restored on a deterministic derived path.
+This capability lands as the child of `eshyra-o9bd.19.3.4.6` and blocks
+`eshyra-o9bd.19.3.4` until integration. The gap belongs to a creature record,
+not to a `rule:*` or `action:*` key, so it is not an
 `ENGINE_CAPABILITY_GAPS` entry. `set_surprised` had the DM adjudicate Stealth
 against passive Perception, the same operation as the hiding gap (accepted
 design `eshyra-2n1t.4`). The retained-check capability landed in
 `eshyra-o9bd.19.5.10.3`: record each hider's check with
 `roll_retained_check`, compare active searches or passive observer scores with
 `resolve_retained_check`, and derive surprise from passive comparison ids with
-`set_surprised`. The rule limits now describe this bounded path and retain
-the `resolve_check` / `resolve_contest` trap; the blocking gap is removed.
+`set_surprised`. The rule limits now describe this bounded path and retain the
+`resolve_check` / `resolve_contest` trap; the blocking gap is removed.
 `set_surprised` enforces a derived surprise outcome and no longer accepts a
 free participant list.
 

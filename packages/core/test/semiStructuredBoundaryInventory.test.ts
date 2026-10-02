@@ -172,6 +172,21 @@ describe('semi-structured boundary inventory', () => {
     expect(
       row(
         artifact,
+        'data.traits[].mechanics.effects[].regrowthSuppressedByDamageType',
+        'creature',
+      ),
+    ).toMatchObject({
+      disposition: 'complete',
+      deterministicConsumers: expect.stringContaining(
+        'tracked combatant head lifecycle',
+      ),
+      typedSchemaOrConsumer: expect.stringContaining(
+        'Multiple Heads typed engine contract',
+      ),
+    });
+    expect(
+      row(
+        artifact,
         'data.mechanics.curse.possession.blocksVoluntaryRelinquishmentWhileStates[]',
         'magic-item',
       ),

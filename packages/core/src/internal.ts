@@ -1384,8 +1384,6 @@ export type {
   CombatTurnState,
   OtherSpellCast,
   ReactionRefresh,
-  SetReactionAllowanceInput,
-  SetReactionAllowanceResult,
   SetSurprisedInput,
   SetSurprisedResult,
   SpendTurnResourceInput,
@@ -1402,7 +1400,6 @@ export {
   beginTurn,
   formatTurnBudget,
   readCombatTurnState,
-  setReactionAllowance,
   setSurprised,
   spendTurnResource,
 } from './state/actionEconomy.js';

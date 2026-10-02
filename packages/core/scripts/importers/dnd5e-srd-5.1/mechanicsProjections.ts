@@ -3232,10 +3232,38 @@ function parseReckless(name: string, text: string): Mechanics | undefined {
  * Non-modifier trait/action effect grammars. Each is a single anchored
  * pattern for one reviewed SRD phrasing.
  */
+/** Reviewed executable curation, pinned to the exact source trait clause. */
+const CURATED_MULTIPLE_HEADS = {
+  traitName: 'Multiple Heads',
+  sourceText:
+    'The hydra has five heads. While it has more than one head, the hydra has advantage on saving throws against being blinded, charmed, deafened, frightened, stunned, and knocked unconscious. Whenever the hydra takes 25 or more damage in a single turn, one of its heads dies. If all its heads die, the hydra dies. At the end of its turn, it grows two heads for each of its heads that died since its last turn, unless it has taken fire damage since its last turn. The hydra regains 10 hit points for each head regrown in this way.',
+  mechanic: {
+    kind: 'multipleHeads',
+    initialHeads: 5,
+    headDiesWhenDamageInOneTurnAtLeast: 25,
+    headsRegrownPerDeadHead: 2,
+    regrowthSuppressedByDamageType: 'fire',
+    hitPointsPerRegrownHead: 10,
+    deathWhenNoHeads: true,
+    sourceSpan: 'The hydra has five heads.',
+  },
+} as const;
+
 function parseCreatureEntryEffects(name: string, text: string): Mechanics[] {
   const reckless = parseReckless(name, text);
   const effects: Mechanics[] =
     reckless === undefined ? [...parseModifierEffects(text)] : [reckless];
+  // Source-grounded curated mechanic: the source's Multiple Heads trait is
+  // irregular prose whose tracked lifecycle is consumed by the combat engine.
+  // Exact matching makes source drift fail closed.
+  if (name === CURATED_MULTIPLE_HEADS.traitName) {
+    if (text !== CURATED_MULTIPLE_HEADS.sourceText) {
+      throw new Error(
+        'Multiple Heads curated mechanic source text drifted; review the SRD clause before changing its values',
+      );
+    }
+    effects.push({ ...CURATED_MULTIPLE_HEADS.mechanic });
+  }
   const changeShape = parseChangeShape(name, text);
   if (changeShape !== undefined) {
     effects.push(changeShape);

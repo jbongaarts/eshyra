@@ -1,8 +1,4 @@
-import {
-  ActionEconomyError,
-  type SetReactionAllowanceResult,
-  setReactionAllowance,
-} from '../state/actionEconomy.js';
+import { ActionEconomyError } from '../state/actionEconomy.js';
 import {
   concentrationSaveDc,
   getConcentrationEffect,
@@ -34,7 +30,7 @@ export const updateCombatantTool: Tool = {
   name: 'update_combatant',
   mutates: true,
   description:
-    'Update a live encounter combatant by exact combatant id. args: { combatantId, hpDelta?, critical?, deathRules?, addCondition?, removeCondition?, status?, locationId?, placement?, reactionAllowance? }. Monster death rules are the default: an hpDelta that brings the combatant to 0 hit points sets it dead unless status is also passed (for a nonlethal knockout, "unconscious"). deathRules: "player-character" opts the combatant into the character death rules for good: reaching 0 hit points makes it dying (dead outright when the damage beyond 0 reaches its effective hit point maximum), damage at 0 hit points adds a death-save failure (two when critical is true), healing from 0 returns it to alive, a dead combatant cannot be healed, and a nonlethal knockout is passed as status "stable" together with that damage. Otherwise "dying" and "stable" are engine-owned and refused as explicit statuses. addCondition cannot add exhaustion; use adjust_exhaustion to change exhaustion levels. reactionAllowance stores a reactions-per-round total only for a creature whose rules record carries a state-dependent extraReactions mechanic, and is refused for other creatures. Neither this tool nor any other derives that total from creature state, so the extra reactions such a mechanic grants cannot currently be recorded.',
+    'Update a live encounter combatant by exact combatant id. args: { combatantId, hpDelta?, damageTypes?, critical?, deathRules?, addCondition?, removeCondition?, status?, locationId?, placement? }. Monster death rules are the default: an hpDelta that brings the combatant to 0 hit points sets it dead unless status is also passed (for a nonlethal knockout, "unconscious"). damageTypes declares the types in the resolve_damage result for a negative hpDelta. For creatures with tracked heads, the engine tracks head loss and regrowth; extra reactions derive from the current head count. deathRules: "player-character" opts the combatant into the character death rules for good: reaching 0 hit points makes it dying (dead outright when the damage beyond 0 reaches its effective hit point maximum), damage at 0 hit points adds a death-save failure (two when critical is true), healing from 0 returns it to alive, a dead combatant cannot be healed, and a nonlethal knockout is passed as status "stable" together with that damage. Otherwise "dying" and "stable" are engine-owned and refused as explicit statuses. addCondition cannot add exhaustion; use adjust_exhaustion to change exhaustion levels.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -48,6 +44,11 @@ export const updateCombatantTool: Tool = {
         type: 'integer',
         description:
           'Signed HP delta. Negative damages, positive heals; clamped to [0, hpMax].',
+      },
+      damageTypes: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Damage types from resolve_damage for negative hpDelta.',
       },
       deathRules: {
         type: 'string',
@@ -88,16 +89,6 @@ export const updateCombatantTool: Tool = {
         type: 'string',
         description: 'Optional updated tactical placement or zone.',
         minLength: 1,
-      },
-      reactionAllowance: {
-        type: 'integer',
-        description:
-          'A reactions-per-round total to store, accepted only for a ' +
-          'creature whose rules record grants state-dependent extra ' +
-          'reactions. The engine checks only that the record grants them; ' +
-          'it does not derive the total or check it against the ' +
-          "creature's state, and no tool derives it.",
-        minimum: 1,
       },
     },
     required: ['combatantId'],
@@ -144,43 +135,19 @@ export const updateCombatantTool: Tool = {
     if (a.placement !== undefined && typeof a.placement !== 'string') {
       return err('invalid_args', 'update_combatant placement must be a string');
     }
-    if (
-      a.reactionAllowance !== undefined &&
-      typeof a.reactionAllowance !== 'number'
-    ) {
-      return err(
-        'invalid_args',
-        'update_combatant reactionAllowance must be an integer',
-      );
-    }
-    const hasCombatantUpdate =
-      a.hpDelta !== undefined ||
-      a.deathRules !== undefined ||
-      a.critical !== undefined ||
-      a.addCondition !== undefined ||
-      a.removeCondition !== undefined ||
-      a.status !== undefined ||
-      a.locationId !== undefined ||
-      a.placement !== undefined;
     try {
-      let reactionAllowance: SetReactionAllowanceResult | undefined;
-      if (typeof a.reactionAllowance === 'number') {
-        reactionAllowance = setReactionAllowance(ctx.db, {
-          campaignId: ctx.campaignId,
-          combatantId: a.combatantId,
-          allowance: a.reactionAllowance,
-          provenance: `model:${ctx.turnId}`,
-          sessionId: ctx.sessionId,
-          at: ctx.at,
-        });
-        if (!hasCombatantUpdate) {
-          return ok({ reactionAllowance });
-        }
-      }
       const update = updateCombatant(ctx.db, {
         campaignId: ctx.campaignId,
         combatantId: a.combatantId,
         ...(typeof a.hpDelta === 'number' ? { hpDelta: a.hpDelta } : {}),
+        ...(Array.isArray(a.damageTypes)
+          ? {
+              damageTypes: a.damageTypes.filter(
+                (v): v is string => typeof v === 'string',
+              ),
+            }
+          : {}),
+        resolveRulesPack: ctx.resolveRulesPack,
         ...(a.deathRules === 'player-character'
           ? { deathRules: 'player-character' as const }
           : {}),
@@ -234,7 +201,6 @@ export const updateCombatantTool: Tool = {
       }
       return ok({
         ...update,
-        ...(reactionAllowance === undefined ? {} : { reactionAllowance }),
         ...(concentration === undefined ? {} : { concentration }),
       });
     } catch (e) {

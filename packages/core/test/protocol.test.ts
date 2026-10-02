@@ -8,14 +8,11 @@ import {
 } from '../src/internal.js';
 
 describe('DM system prompt', () => {
-  it('never asks the model to total state-dependent extra reactions', () => {
-    // The Hybrid Contract is a second producer of the reactionAllowance
-    // contract; it discloses the gap (eshyra-o9bd.19.3.4.6) instead.
+  it('describes engine-derived state-dependent reaction allowance', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
-    expect(prompt).toContain(
-      'are not derived by any tool, so they cannot currently',
-    );
-    expect(prompt).not.toMatch(/current total recorded/);
+    expect(prompt).toContain('derive from its tracked head count');
+    expect(prompt).toMatch(/never\s+compute or supply the total/);
+    expect(prompt).toContain('restricted to opportunity attacks');
   });
 
   it('routes surprise through retained-check comparisons', () => {
