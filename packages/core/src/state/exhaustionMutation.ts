@@ -8,7 +8,10 @@ import {
   exhaustionLevel,
   withExhaustionLevel,
 } from './exhaustion.js';
-import { adjustHp, killCharacterFromExhaustion } from './hpLifecycle.js';
+import {
+  clampCharacterHpToEffectiveMaximum,
+  killCharacterFromExhaustion,
+} from './hpLifecycle.js';
 import { MutateStateError, mutateState } from './mutateState.js';
 
 export interface AdjustExhaustionInput extends DomainMutationContext {
@@ -69,13 +72,11 @@ export function adjustExhaustion(
       const newLevel = Math.max(0, Math.min(6, previousLevel + input.delta));
       const conditions = withExhaustionLevel(current.conditions, newLevel);
       const hpMax = effectiveHpMax(current.hpMax, conditions);
-      const hpDelta =
-        current.hpCurrent > hpMax ? hpMax - current.hpCurrent : undefined;
       const update = updateCombatant(txn, {
         campaignId: input.campaignId as string,
         combatantId: input.combatantId as string,
         replaceConditions: conditions,
-        ...(hpDelta === undefined ? {} : { hpDelta }),
+        clampToEffectiveMaximum: true,
         ...(newLevel === 6 ? { status: 'dead' as const } : {}),
         provenance: input.provenance,
         sessionId: input.sessionId,
@@ -125,12 +126,15 @@ export function adjustExhaustion(
       row.hp_max,
       withExhaustionLevel(conditions as never, newLevel),
     );
-    const hpCurrent = Math.min(row.hp_current, hpMax);
-    if (hpCurrent !== row.hp_current)
-      adjustHp(txn, hpCurrent - row.hp_current, {
-        ...input,
-        characterId,
-      });
+    clampCharacterHpToEffectiveMaximum(txn, {
+      ...input,
+      characterId,
+    });
+    const hpCurrent = (
+      txn
+        .prepare('SELECT hp_current FROM character WHERE id=?')
+        .get(characterId) as { hp_current: number }
+    ).hp_current;
     const died = newLevel === 6;
     if (died) killCharacterFromExhaustion(txn, { ...input, characterId });
     return {
