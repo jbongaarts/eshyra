@@ -196,16 +196,17 @@ describe('rule awareness', () => {
     );
   });
 
-  it('discloses the unresolvable fixed-total hiding comparison', () => {
+  it('routes hiding comparisons through retained checks and preserves the old traps', () => {
     // SRD rule:hiding: the retained Stealth total is contested by a later
     // search (a tie keeps the hider hidden) and compared with passive
-    // Perception; no deterministic tool performs either comparison.
+    // Perception; comparisons now use the retained-check tools.
     const [limit] = ruleStatements('rule:hiding').knownLimits;
     expect(limit?.findingId).toBe('readiness-integrity');
+    expect(limit?.statement).toContain('roll_retained_check');
+    expect(limit?.statement).toContain('resolve_retained_check');
     expect(limit?.statement).toContain(
-      'cannot currently be resolved deterministically',
+      'resolve_contest always rolls both sides',
     );
-    expect(limit?.statement).toContain('resolve_contest rolls both sides');
     expect(limit?.statement).not.toMatch(/compare (it|the totals?) yourself/i);
   });
 
@@ -253,10 +254,8 @@ describe('rule awareness', () => {
         return gaps.length === 0 ? [] : [[key, gaps]];
       }),
     );
-    expect(gapsByKey).toEqual({
-      'rule:hiding': ['retained-check-total-resolution'],
-      'rule:surprise': ['retained-check-total-resolution'],
-    });
+    expect(gapsByKey).toEqual({});
+    expect(ENGINE_CAPABILITY_GAPS).toEqual({});
     for (const gap of Object.values(ENGINE_CAPABILITY_GAPS))
       expect(gap.findingId).toBe('engine-capability-ownership');
 
@@ -296,41 +295,43 @@ describe('rule awareness', () => {
     ]);
     // An ADR 0018 deferral narrows the requirement; it is never a gap.
     expect(
-      validateRuleKnownLimits(registeredTools, {
-        'rule:x': [
-          limit({
-            limit: 'deferred',
-            participants: [],
-            capabilityGaps: ['retained-check-total-resolution'],
-          }),
-        ],
-      }).filter((error) => error.startsWith('rule:x')),
+      validateRuleKnownLimits(
+        registeredTools,
+        {
+          'rule:x': [
+            limit({
+              limit: 'deferred',
+              participants: [],
+              capabilityGaps: ['unknown' as never],
+            }),
+          ],
+        },
+        {
+          unknown: {
+            operation: 'Synthetic operation.',
+            ownerBead: 'eshyra-x.1',
+            findingId: 'engine-capability-ownership',
+          },
+        },
+      ).filter((error) => error.startsWith('rule:x')),
     ).toEqual([
-      "rule:x: a deferred limit cannot carry capability gap 'retained-check-total-resolution'",
+      "rule:x: a deferred limit cannot carry capability gap 'unknown'",
     ]);
   });
 
-  it('identifies participating tools without requiring a state writer (invariant 12)', () => {
-    // rule:hiding is a resolution-only trap: every participant is read-only,
-    // and the validator admits it.
+  it('identifies the retained-check tools and resolve traps (invariant 12)', () => {
     const [hiding] = RULE_KNOWN_LIMITS['rule:hiding'] ?? [];
     expect(hiding?.participants).toEqual([
       'resolve_contest',
       'resolve_check',
-      'calc',
+      'roll_retained_check',
+      'resolve_retained_check',
     ]);
-    for (const name of hiding?.participants ?? [])
-      expect(DEFAULT_TOOLS.find((tool) => tool.name === name)?.mutates).toBe(
-        false,
-      );
     expect(
       validateRuleKnownLimits(
         registeredTools,
         { 'rule:hiding': RULE_KNOWN_LIMITS['rule:hiding'] ?? [] },
-        {
-          'retained-check-total-resolution':
-            ENGINE_CAPABILITY_GAPS['retained-check-total-resolution'],
-        },
+        {},
       ),
     ).toEqual([]);
 

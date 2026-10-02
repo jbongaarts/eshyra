@@ -270,10 +270,9 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     expect(violations).toEqual([]);
   });
 
-  it('reports blocking capability gaps apart from limits, with their owners (A5)', () => {
-    // A known limit discloses a blocking gap but never discharges it: the
-    // report carries every disclosed gap with its owning bead, as unresolved
-    // work of its own kind, not folded into the limit lists.
+  it('removes the landed retained-check gap from the A5 report', () => {
+    // The retained-check operation now owns this mechanical step; its bounded
+    // known-limit text remains, while the blocking capability gap is gone.
     const report = buildRuleDispositionReport();
     const expected = Object.entries(RULE_KNOWN_LIMITS)
       .flatMap(([key, limits]) =>
@@ -290,7 +289,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
       .sort((a, b) =>
         a.key < b.key ? -1 : a.key > b.key ? 1 : a.gap.localeCompare(b.gap),
       );
-    expect(expected.length).toBeGreaterThan(0);
+    expect(expected).toEqual([]);
     expect(report.engineProcedure.blockingCapabilityGaps).toEqual(expected);
     const pair = ({ key, ownerBead }: { key: string; ownerBead?: string }) =>
       `${key} -> ${ownerBead}`;

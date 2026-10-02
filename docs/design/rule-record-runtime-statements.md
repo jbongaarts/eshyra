@@ -401,9 +401,9 @@ resolves. Recording a gap never closes its bead.
 the source clause, the statement, each participating tool, and the real state
 producer and consumer:
 
-| Key | Class | Gap → owning bead |
+| Key | Class | Capability / gap disposition |
 |---|---|---|
-| `rule:hiding`, `rule:surprise` | blocking | `retained-check-total-resolution` → `eshyra-o9bd.19.5.10.3` |
+| `rule:hiding`, `rule:surprise` | landed | retained-check comparison and surprise derivation in `eshyra-o9bd.19.5.10.3` |
 | `rule:food`, `rule:water`, `rule:speed` | bounded | exhaustion levels are recorded through `adjust_exhaustion`, landed in `eshyra-o9bd.19.5.7.3` |
 | `rule:suffocating` | bounded | landed in `eshyra-o9bd.19.5.7.4` (characters) and `eshyra-o9bd.19.5.7.5` (combatants); no remaining capability gap |
 | `rule:knocking-a-creature-out` | bounded | `nonlethal-knockout` landed in `eshyra-o9bd.19.5.7.6` |
@@ -428,15 +428,16 @@ recorded. The regression is accepted: a hydra keeps one reaction per round
 until the blocking gap `eshyra-o9bd.19.3.4.6` lands, and that bead blocks
 `eshyra-o9bd.19.3.4`. The gap belongs to a creature record, not to a `rule:*`
 or `action:*` key, so tool text discloses it and it is not an
-`ENGINE_CAPABILITY_GAPS` entry. `set_surprised` had the DM adjudicate
-Stealth against passive Perception, the same operation as the hiding gap
-(accepted design `eshyra-2n1t.4`). By the same decision it is **downgraded**:
-its description and the Hybrid Contract now say that no tool performs the
-comparison, so surprise cannot currently be determined, and a new
-`rule:surprise` known limit discloses the `retained-check-total-resolution`
-gap. The regression is accepted: surprise has no deterministic path until
-`eshyra-o9bd.19.5.10.3` lands. `set_surprised` still records and enforces a
-surprise outcome.
+`ENGINE_CAPABILITY_GAPS` entry. `set_surprised` had the DM adjudicate Stealth
+against passive Perception, the same operation as the hiding gap (accepted
+design `eshyra-2n1t.4`). The retained-check capability landed in
+`eshyra-o9bd.19.5.10.3`: record each hider's check with
+`roll_retained_check`, compare active searches or passive observer scores with
+`resolve_retained_check`, and derive surprise from passive comparison ids with
+`set_surprised`. The rule limits now describe this bounded path and retain
+the `resolve_check` / `resolve_contest` trap; the blocking gap is removed.
+`set_surprised` enforces a derived surprise outcome and no longer accepts a
+free participant list.
 
 **R5 — One read-only facade.** A new
 `ruleAwareness(recordKey, stack, relationshipManifestSource)` in `src/rules/`

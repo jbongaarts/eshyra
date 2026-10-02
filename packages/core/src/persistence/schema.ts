@@ -48,6 +48,11 @@ import { migrateDatabase } from './migrationRunner.js';
  *                                        linked to its battlefield inventory row)
  *   - `ammunition_expenditure`           (combat-scoped expenditure rows tied
  *                                        to the physical battlefield items)
+ *   - `retained_check`                   (engine-recorded d20 totals kept for
+ *                                        later comparison, with explicit end
+ *                                        lifecycle and provenance)
+ *   - `retained_check_comparison`        (search/passive observer outcomes
+ *                                        against a retained check total)
  *
  * Archival / trace / generated — deliberately opaque, jsonColumn<TraceJsonValue[]>.
  * Do not add shape validation here; these blobs are owned by the memory subsystem:

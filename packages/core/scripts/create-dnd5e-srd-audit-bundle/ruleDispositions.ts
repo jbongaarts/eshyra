@@ -2648,6 +2648,10 @@ export function buildRuleDispositionReport(
       });
       for (const gapId of limit.capabilityGaps ?? []) {
         const gap = ENGINE_CAPABILITY_GAPS[gapId];
+        if (gap === undefined)
+          throw new Error(
+            `known limit ${key} references unregistered capability gap '${gapId}'`,
+          );
         blockingCapabilityGaps.push({
           key,
           gap: gapId,

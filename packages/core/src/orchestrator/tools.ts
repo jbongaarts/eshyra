@@ -34,6 +34,7 @@ import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
 import { convertCurrencyTool } from './toolConvertCurrency.js';
 import { endAttunementTool } from './toolEndAttunement.js';
 import { endEffectTool } from './toolEndEffect.js';
+import { endRetainedCheckTool } from './toolEndRetainedCheck.js';
 import { expendAmmunitionTool } from './toolExpendAmmunition.js';
 import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
@@ -59,6 +60,7 @@ import { resolveCheckTool } from './toolResolveCheck.js';
 import { resolveConcentrationTool } from './toolResolveConcentration.js';
 import { resolveContestTool } from './toolResolveContest.js';
 import { resolveDamageTool } from './toolResolveDamage.js';
+import { resolveRetainedCheckTool } from './toolResolveRetainedCheck.js';
 import { resolveSpellUpcastTool } from './toolResolveSpellUpcast.js';
 import {
   advanceTimeTool,
@@ -69,6 +71,7 @@ import {
 } from './toolRest.js';
 import { restoreUsageTool } from './toolRestoreUsage.js';
 import { rollTool } from './toolRoll.js';
+import { rollRetainedCheckTool } from './toolRollRetainedCheck.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
 import { setSuffocationTool } from './toolSetSuffocation.js';
 import { setSurprisedTool } from './toolSetSurprised.js';
@@ -94,6 +97,9 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   rollTool,
   resolveCheckTool,
   resolveContestTool,
+  rollRetainedCheckTool,
+  resolveRetainedCheckTool,
+  endRetainedCheckTool,
   resolveDamageTool,
   resolveSpellUpcastTool,
   calcTool,

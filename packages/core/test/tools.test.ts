@@ -196,6 +196,7 @@ describe('ToolRegistry', () => {
         'resolve_check',
         'resolve_contest',
         'resolve_damage',
+        'resolve_retained_check',
         'resolve_spell_upcast',
         'refresh_effect',
         'remove_effect_target',
@@ -203,9 +204,11 @@ describe('ToolRegistry', () => {
         'suppress_effect',
         'restore_usage',
         'roll',
+        'roll_retained_check',
         'set_plot_flag',
         'set_suffocation',
         'set_surprised',
+        'end_retained_check',
         'set_world_fact',
         'spend_currency',
         'spend_rest_hit_die',
@@ -2214,7 +2217,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       resolve_check:
         "vs is the target's unmodified DC or AC from 1 to 99, and a total equal to vs succeeds. Modifiers apply only to the roller and are summed by the engine. When the source adds a term to the target's AC or to a DC, pass the base number as vs and declare the term as an equal negative modifier on the roll: for example a cover bonus to AC, or the Charisma modifier in a DC of 12 + a Charisma modifier. Declare a bonus to the roller's own save as a positive modifier.",
       resolve_contest:
-        "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed.",
+        "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed; compare against a retained total with resolve_retained_check.",
       add_condition:
         'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Exhaustion must be changed with adjust_exhaustion.',
       remove_condition:
@@ -2251,14 +2254,14 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
     }
   });
 
-  it('discloses surprise as undeterminable instead of leaving the comparison to the DM', () => {
-    // The Stealth-vs-passive-Perception comparison is the retained-total gap
-    // (eshyra-o9bd.19.5.10.3); set_surprised only records an outcome.
+  it('describes the deterministic surprise comparison path', () => {
     const description = DEFAULT_TOOLS.find(
       (entry) => entry.name === 'set_surprised',
     )?.description;
+    expect(description).toContain('resolve_retained_check');
+    expect(description).toContain('comparison ids');
     expect(description).toContain(
-      'surprise cannot currently be determined deterministically',
+      'If neither side tries to be stealthy, there is no surprise',
     );
     expect(description).not.toMatch(/adjudicate/i);
   });
@@ -2275,12 +2278,16 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       expect(description).toBeDefined();
       // "never roll two d20s yourself" is a prohibition, not a fallback.
       expect(description).not.toMatch(
-        /compare|retained|strictly|total yourself/i,
+        /compare .* yourself|you (?:may|should|can) compare/i,
       );
       // Target-side bonuses are engine-summed roller modifiers, never folded
       // into vs by the model.
       expect(description).not.toMatch(/goes into vs|add .* to vs/i);
     }
+    expect(
+      DEFAULT_TOOLS.find((tool) => tool.name === 'resolve_retained_check')
+        ?.description,
+    ).toContain('Never compare totals yourself');
   });
 
   const VALIDATED_SCHEMA_KEYWORDS = new Set([
@@ -2400,6 +2407,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'resolve_check',
         'resolve_contest',
         'resolve_damage',
+        'resolve_retained_check',
         'resolve_spell_upcast',
         'refresh_effect',
         'remove_effect_target',
@@ -2407,6 +2415,8 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'suppress_effect',
         'restore_usage',
         'roll',
+        'roll_retained_check',
+        'end_retained_check',
         'set_plot_flag',
         'set_suffocation',
         'set_surprised',
