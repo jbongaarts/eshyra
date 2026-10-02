@@ -31,9 +31,8 @@
 // - A surprised participant can take no move, action, or bonus action on its
 //   first turn and no reaction until that turn ends (surprise). This module
 //   owns recording and enforcing the restriction. Surprise determination
-//   (Stealth vs passive Perception) is a comparison no tool performs yet
-//   (capability gap eshyra-o9bd.19.5.10.3), so the model-facing contract
-//   discloses it as undeterminable rather than leaving it to a DM ruling.
+//   runs through roll_retained_check, resolve_retained_check, and
+//   set_surprised; the model chooses applicability and observers.
 // - Two-weapon fighting's extra attack is an ordinary bonus-action spend;
 //   its damage composition is F9's, its weapon eligibility a ruling
 //   (two-weapon-fighting).
@@ -1362,15 +1361,23 @@ export function setReactionAllowance(
 }
 
 /**
- * Record which participants are surprised. Nothing determines who is: the
- * Stealth-vs-passive-Perception comparison is the open capability gap
- * eshyra-o9bd.19.5.10.3, so the model-facing contract discloses surprise as
- * undeterminable (F-09 design A5). Surprise applies only to the
- * first turn of combat, so a participant that has already taken a turn is
+ * Record participants already derived as surprised from retained-check
+ * comparisons. Surprise applies only to the first turn of combat, so a
+ * participant that has already taken a turn is
  * rejected; {@link beginTurn} clears the flag when the surprised turn ends.
  */
 export function setSurprised(
   db: Db,
+  input: SetSurprisedInput,
+): SetSurprisedResult {
+  return withTransaction(db, (txnDb) =>
+    setSurprisedInTransaction(txnDb, input),
+  );
+}
+
+/** Internal transaction seam for the comparison-backed tool. */
+export function setSurprisedInTransaction(
+  txnDb: Db,
   input: SetSurprisedInput,
 ): SetSurprisedResult {
   if (input.participants.length === 0) {
@@ -1379,92 +1386,90 @@ export function setSurprised(
     );
   }
 
-  return withTransaction(db, (txnDb) => {
-    const instance = requireActiveInstance(txnDb, input.campaignId);
-    const turn = readInstanceTurnFields(
+  const instance = requireActiveInstance(txnDb, input.campaignId);
+  const turn = readInstanceTurnFields(
+    txnDb,
+    input.campaignId,
+    instance.combatInstanceId,
+  );
+  const surprised: TurnParticipant[] = [];
+
+  for (const participantInput of input.participants) {
+    const { participant, displayLabel, rulesRef } = resolveParticipant(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
+      participantInput,
     );
-    const surprised: TurnParticipant[] = [];
-
-    for (const participantInput of input.participants) {
-      const { participant, displayLabel, rulesRef } = resolveParticipant(
-        txnDb,
-        input.campaignId,
-        instance.combatInstanceId,
-        participantInput,
+    ensureBudgetRow(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+      participant,
+      reactionProfileFor(txnDb, rulesRef),
+      legendaryProfileFor(txnDb, rulesRef),
+      input,
+    );
+    const row = readBudgetRow(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+      participant,
+    );
+    if (row !== undefined && row.turns_taken > 0) {
+      throw new ActionEconomyError(
+        `${displayLabel} has already taken a turn this combat; surprise applies only to the first turn`,
       );
-      ensureBudgetRow(
-        txnDb,
-        input.campaignId,
-        instance.combatInstanceId,
-        participant,
-        reactionProfileFor(txnDb, rulesRef),
-        legendaryProfileFor(txnDb, rulesRef),
-        input,
+    }
+    if (
+      turn.active_participant_kind === participant.kind &&
+      turn.active_participant_ref === participant.ref
+    ) {
+      throw new ActionEconomyError(
+        `${displayLabel}'s first turn is already underway; surprise must be recorded before it begins`,
       );
-      const row = readBudgetRow(
-        txnDb,
-        input.campaignId,
-        instance.combatInstanceId,
-        participant,
+    }
+    if (
+      row !== undefined &&
+      (row.action_used === 1 ||
+        row.bonus_action_used === 1 ||
+        row.reactions_used > 0 ||
+        // The every_turn refresh (perTurn extraReactions) zeroes
+        // reactions_used at each turn start, but the retained activity
+        // still evidences a pre-first-turn reaction — a surprised
+        // creature could not have taken it.
+        row.reaction_activity !== null ||
+        row.free_interaction_used === 1 ||
+        row.movement_note !== null ||
+        // Same evidence logic for legendary actions: beginTurn zeroes the
+        // count, but a retained activity proves a pre-first-turn spend.
+        row.legendary_actions_used > 0 ||
+        row.legendary_action_activity !== null)
+    ) {
+      throw new ActionEconomyError(
+        `${displayLabel} has already acted this combat (a surprised creature could not have); surprise must be recorded before any spend`,
       );
-      if (row !== undefined && row.turns_taken > 0) {
-        throw new ActionEconomyError(
-          `${displayLabel} has already taken a turn this combat; surprise applies only to the first turn`,
-        );
-      }
-      if (
-        turn.active_participant_kind === participant.kind &&
-        turn.active_participant_ref === participant.ref
-      ) {
-        throw new ActionEconomyError(
-          `${displayLabel}'s first turn is already underway; surprise must be recorded before it begins`,
-        );
-      }
-      if (
-        row !== undefined &&
-        (row.action_used === 1 ||
-          row.bonus_action_used === 1 ||
-          row.reactions_used > 0 ||
-          // The every_turn refresh (perTurn extraReactions) zeroes
-          // reactions_used at each turn start, but the retained activity
-          // still evidences a pre-first-turn reaction — a surprised
-          // creature could not have taken it.
-          row.reaction_activity !== null ||
-          row.free_interaction_used === 1 ||
-          row.movement_note !== null ||
-          // Same evidence logic for legendary actions: beginTurn zeroes the
-          // count, but a retained activity proves a pre-first-turn spend.
-          row.legendary_actions_used > 0 ||
-          row.legendary_action_activity !== null)
-      ) {
-        throw new ActionEconomyError(
-          `${displayLabel} has already acted this combat (a surprised creature could not have); surprise must be recorded before any spend`,
-        );
-      }
-      txnDb
-        .prepare(
-          `UPDATE combat_turn_budget
+    }
+    txnDb
+      .prepare(
+        `UPDATE combat_turn_budget
            SET surprised = 1, provenance = ?, session_id = ?, updated_at = ?
            WHERE campaign_id = ? AND combat_instance_id = ?
              AND participant_kind = ? AND participant_ref = ?`,
-        )
-        .run(
-          input.provenance,
-          input.sessionId,
-          input.at,
-          input.campaignId,
-          instance.combatInstanceId,
-          participant.kind,
-          participant.ref,
-        );
-      surprised.push(participant);
-    }
+      )
+      .run(
+        input.provenance,
+        input.sessionId,
+        input.at,
+        input.campaignId,
+        instance.combatInstanceId,
+        participant.kind,
+        participant.ref,
+      );
+    surprised.push(participant);
+  }
 
-    return { combatInstanceId: instance.combatInstanceId, surprised };
-  });
+  return { combatInstanceId: instance.combatInstanceId, surprised };
 }
 
 /**

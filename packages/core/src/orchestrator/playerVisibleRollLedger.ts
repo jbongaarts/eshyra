@@ -244,6 +244,29 @@ function readResolveContestEntry(
   };
 }
 
+function readResolveRetainedCheckEntry(
+  data: Record<string, unknown>,
+): PlayerVisibleRollEntry | undefined {
+  if (data.visibility !== 'player_visible' || !Array.isArray(data.comparisons))
+    return undefined;
+  for (const raw of data.comparisons) {
+    const comparison = asDataRecord(raw);
+    const resolution =
+      comparison === undefined
+        ? undefined
+        : asDataRecord(comparison.resolution);
+    if (comparison === undefined || resolution === undefined) continue;
+    const entry = readResolveCheckEntry({
+      ...resolution,
+      reason: `${String(comparison.label ?? 'Observer')} search against retained check`,
+      visibility: 'player_visible',
+      category: 'ability_check',
+    });
+    if (entry !== undefined) return entry;
+  }
+  return undefined;
+}
+
 function readResolveDamageEntry(
   data: Record<string, unknown>,
 ): PlayerVisibleRollEntry | undefined {
@@ -293,6 +316,8 @@ const ENTRY_READERS: Record<
   roll: readRollEntry,
   resolve_check: readResolveCheckEntry,
   resolve_contest: readResolveContestEntry,
+  roll_retained_check: readResolveCheckEntry,
+  resolve_retained_check: readResolveRetainedCheckEntry,
   resolve_damage: readResolveDamageEntry,
   spend_rest_hit_die: readRestHitDieEntry,
 };

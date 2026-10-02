@@ -16,16 +16,11 @@ export interface EngineCapabilityGap {
   readonly findingId: 'engine-capability-ownership';
 }
 
-export const ENGINE_CAPABILITY_GAPS = Object.freeze({
-  'retained-check-total-resolution': Object.freeze({
-    operation:
-      'Resolve a retained d20 check total against a later opposing check (tie leaves the situation unchanged) and against passive scores.',
-    ownerBead: 'eshyra-o9bd.19.5.10.3',
-    findingId: 'engine-capability-ownership' as const,
-  }),
-} satisfies Record<string, EngineCapabilityGap>);
+export const ENGINE_CAPABILITY_GAPS: Readonly<
+  Record<string, EngineCapabilityGap>
+> = Object.freeze({});
 
-export type EngineCapabilityGapId = keyof typeof ENGINE_CAPABILITY_GAPS;
+export type EngineCapabilityGapId = string;
 
 export interface RuleKnownLimit {
   readonly limit: 'partial' | 'unimplemented' | 'deferred';
@@ -179,38 +174,34 @@ export const RULE_KNOWN_LIMITS: Readonly<
       findingId: 'readiness-integrity',
     }),
   ]),
-  // R0 new trap (review @5e2b74ad): the source keeps the hider's Stealth
-  // total and contests it against a later active search (a tie leaves the
-  // hider hidden) and compares it with passive Perception. toolResolveContest.ts
-  // rolls both sides; resolution.ts resolveD20 resolves `total >= vs` with vs
-  // limited to 1..99; calc passive_score computes the score but compares
-  // nothing. No tool performs either comparison.
+  // R0 re-derived after retained-check resolution landed in
+  // eshyra-o9bd.19.5.10.3. resolve_contest and resolve_check remain traps for
+  // a fixed retained total; use the retained-check tools instead.
   'rule:hiding': Object.freeze([
     Object.freeze({
-      participants: Object.freeze(['resolve_contest', 'resolve_check', 'calc']),
-      capabilityGaps: Object.freeze([
-        'retained-check-total-resolution' as const,
+      participants: Object.freeze([
+        'resolve_contest',
+        'resolve_check',
+        'roll_retained_check',
+        'resolve_retained_check',
       ]),
       limit: 'partial' as const,
       statement:
-        'No tool resolves a search against a hider’s retained Stealth total: resolve_contest rolls both sides, so it would reroll the hider, and resolve_check counts a total equal to vs as success and accepts vs only from 1 to 99, while this rule leaves the hider hidden on a tie. No tool compares a passive Perception score from calc passive_score with that total either. These comparisons cannot currently be resolved deterministically.',
+        'Record the hider’s check with roll_retained_check and compare later searches or passive scores with resolve_retained_check. resolve_contest always rolls both sides, and resolve_check treats a tie as success, so neither resolves a retained Stealth total under this rule’s tie semantics. The DM decides whether hiding applies and which creatures search or observe.',
       findingId: 'readiness-integrity',
     }),
   ]),
-  // A5 (user decision 2026-10-01): set_surprised previously left the
-  // Stealth-vs-passive-Perception comparison to the DM. The comparison is the
-  // retained-total resolution gap (one Stealth total per hider against each
-  // observer's passive score); calc passive_score computes a score and
-  // compares nothing, and set_surprised (toolSetSurprised.ts) only records.
+  // R0 re-derived after the deterministic retained-check path landed.
   'rule:surprise': Object.freeze([
     Object.freeze({
-      participants: Object.freeze(['calc', 'set_surprised']),
-      capabilityGaps: Object.freeze([
-        'retained-check-total-resolution' as const,
+      participants: Object.freeze([
+        'roll_retained_check',
+        'resolve_retained_check',
+        'set_surprised',
       ]),
       limit: 'partial' as const,
       statement:
-        'Deciding who is surprised needs each hider’s Stealth total compared with each observer’s passive Perception score. calc passive_score computes a score but compares nothing, and set_surprised only records an outcome, so who is surprised cannot currently be determined deterministically.',
+        'Record each hider’s Stealth check with roll_retained_check, compare every opposing observer’s passive Perception with resolve_retained_check, and derive surprise from those comparison records with set_surprised. The DM decides which creatures are hiding and which opposing creatures are observers.',
       findingId: 'readiness-integrity',
     }),
   ]),

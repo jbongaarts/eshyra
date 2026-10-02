@@ -18,12 +18,14 @@ describe('DM system prompt', () => {
     expect(prompt).not.toMatch(/current total recorded/);
   });
 
-  it('never leaves the surprise comparison to the model', () => {
-    // Stealth vs passive Perception is the retained-total capability gap
-    // (eshyra-o9bd.19.5.10.3), disclosed rather than adjudicated.
+  it('routes surprise through retained-check comparisons', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
-    expect(prompt).toContain(
-      'no tool performs, so it cannot currently be determined',
+    expect(prompt).toContain('roll_retained_check');
+    expect(prompt).toContain('resolve_retained_check');
+    expect(prompt).toContain('set_surprised');
+    expect(prompt).toContain('Never compare totals');
+    expect(prompt).toMatch(
+      /If neither side is stealthy,\s+there is no surprise/,
     );
     expect(prompt).not.toMatch(/adjudicating\s+surprise/);
   });

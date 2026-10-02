@@ -21,6 +21,9 @@ const STATE_TOOLS = new Set([
   'begin_turn',
   'spend_turn_resource',
   'set_surprised',
+  'roll_retained_check',
+  'resolve_retained_check',
+  'end_retained_check',
   'spend_usage',
   'restore_usage',
   'reset_usage',
@@ -78,7 +81,17 @@ function readField(value: unknown, key: string): unknown {
 }
 
 function hasExplicitRollPresentationMetadata(call: ExecutedToolCall): boolean {
-  if (call.tool !== 'roll' || !call.result.ok) {
+  if (
+    ![
+      'roll',
+      'resolve_check',
+      'resolve_contest',
+      'resolve_damage',
+      'roll_retained_check',
+      'resolve_retained_check',
+    ].includes(call.tool) ||
+    !call.result.ok
+  ) {
     return false;
   }
   const visibility = readField(call.result.data, 'visibility');
@@ -92,11 +105,50 @@ function hasExplicitRollPresentationMetadata(call: ExecutedToolCall): boolean {
 }
 
 function isPlayerVisibleRoll(call: ExecutedToolCall): boolean {
-  return (
-    call.tool === 'roll' &&
-    call.result.ok &&
-    readField(call.result.data, 'visibility') === 'player_visible'
-  );
+  if (
+    !call.result.ok ||
+    readField(call.result.data, 'visibility') !== 'player_visible'
+  )
+    return false;
+  if (call.tool === 'resolve_retained_check') {
+    const comparisons = readField(call.result.data, 'comparisons');
+    return (
+      Array.isArray(comparisons) &&
+      comparisons.some(
+        (entry) =>
+          typeof readField(entry, 'resolution') === 'object' &&
+          readField(readField(entry, 'resolution'), 'dice') !== undefined,
+      )
+    );
+  }
+  return [
+    'roll',
+    'resolve_check',
+    'resolve_contest',
+    'resolve_damage',
+    'roll_retained_check',
+  ].includes(call.tool);
+}
+
+function hasRollEvidence(call: ExecutedToolCall): boolean {
+  if (!call.result.ok) return false;
+  if (call.tool === 'resolve_retained_check') {
+    const comparisons = readField(call.result.data, 'comparisons');
+    return (
+      Array.isArray(comparisons) &&
+      comparisons.some((entry) => {
+        const resolution = readField(entry, 'resolution');
+        return typeof readField(resolution, 'dice') === 'string';
+      })
+    );
+  }
+  return [
+    'roll',
+    'resolve_check',
+    'resolve_contest',
+    'resolve_damage',
+    'roll_retained_check',
+  ].includes(call.tool);
 }
 
 /**
@@ -125,7 +177,7 @@ export function classifyAuditPresentationRepair(
   if (toolCalls.some((call) => !call.result.ok)) {
     return null;
   }
-  const rollCalls = toolCalls.filter((call) => call.tool === 'roll');
+  const rollCalls = toolCalls.filter(hasRollEvidence);
   if (
     rollCalls.length === 0 ||
     !rollCalls.every(hasExplicitRollPresentationMetadata) ||

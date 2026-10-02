@@ -61,7 +61,7 @@ export const resolveContestTool: Tool = {
     'vs perception): both sides roll d20 with their own declared modifiers, ' +
     'proficiency, and advantage/disadvantage; higher total wins; a tie means ' +
     'the situation stays as it was. Side a rolls first, then side b. ' +
-    "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed. " +
+    "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed; compare against a retained total with resolve_retained_check. " +
     'args: { reason, a: side, b: side, visibility? } where side = { label, advantage?, disadvantage?, modifiers?, proficiency? }.',
   inputSchema: {
     type: 'object',

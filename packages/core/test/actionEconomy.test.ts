@@ -586,11 +586,59 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
 describe('surprise', () => {
   it('denies every spend on the surprised first turn and clears when that turn ends', () => {
     const { db } = setupCombat();
-    setSurprised(db, {
+    const registry = createDefaultToolRegistry();
+    const toolCtx: ToolContext = {
+      db,
+      rng: createSeededRng(7),
       campaignId: CAMPAIGN,
-      participants: [participant(GOBLIN_1)],
-      ...CTX,
-    });
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'surprise-path',
+      at: NOW,
+    };
+    const retained = registry.invoke(
+      'roll_retained_check',
+      {
+        kind: 'ability_check',
+        reason: 'hide from goblin 1',
+        label: 'goblin 2 stealth',
+        participant: { combatantId: GOBLIN_2 },
+      },
+      toolCtx,
+    );
+    expect(retained.ok).toBe(true);
+    if (!retained.ok) throw new Error(retained.message);
+    const retainedId = (retained.data as { retainedCheckId: string })
+      .retainedCheckId;
+    const comparison = registry.invoke(
+      'resolve_retained_check',
+      {
+        retainedCheckId: retainedId,
+        reason: 'ambush surprise',
+        passive: [
+          {
+            label: 'goblin 1',
+            participant: { combatantId: GOBLIN_1 },
+            modifier: -100,
+          },
+        ],
+      },
+      toolCtx,
+    );
+    expect(comparison.ok).toBe(true);
+    if (!comparison.ok) throw new Error(comparison.message);
+    const firstComparison = (
+      comparison.data as { comparisons: Array<{ comparisonId: string }> }
+    ).comparisons[0];
+    if (firstComparison === undefined)
+      throw new Error('missing surprise comparison');
+    const comparisonId = firstComparison.comparisonId;
+    expect(
+      registry.invoke(
+        'set_surprised',
+        { comparisonIds: [comparisonId] },
+        toolCtx,
+      ).ok,
+    ).toBe(true);
 
     // Reaction denied even before its first turn begins.
     expect(() =>
@@ -759,9 +807,46 @@ describe('turn-budget tools', () => {
   it('begin_turn / spend_turn_resource / set_surprised run end to end', () => {
     const { registry, ctx } = toolSetup();
 
+    const retained = registry.invoke(
+      'roll_retained_check',
+      {
+        kind: 'ability_check',
+        reason: 'hide from goblin 2',
+        label: 'goblin 1 stealth',
+        participant: { combatantId: GOBLIN_1 },
+      },
+      ctx,
+    );
+    expect(retained.ok).toBe(true);
+    if (!retained.ok) throw new Error(retained.message);
+    const retainedId = (retained.data as { retainedCheckId: string })
+      .retainedCheckId;
+    const compared = registry.invoke(
+      'resolve_retained_check',
+      {
+        retainedCheckId: retainedId,
+        reason: 'ambush surprise',
+        passive: [
+          {
+            label: 'goblin 2',
+            participant: { combatantId: GOBLIN_2 },
+            modifier: -100,
+          },
+        ],
+      },
+      ctx,
+    );
+    expect(compared.ok).toBe(true);
+    if (!compared.ok) throw new Error(compared.message);
+    const firstComparison = (
+      compared.data as { comparisons: Array<{ comparisonId: string }> }
+    ).comparisons[0];
+    if (firstComparison === undefined)
+      throw new Error('missing surprise comparison');
+    const comparisonId = firstComparison.comparisonId;
     const surprised = registry.invoke(
       'set_surprised',
-      { combatantIds: [GOBLIN_2] },
+      { comparisonIds: [comparisonId] },
       ctx,
     );
     expect(surprised.ok).toBe(true);
@@ -846,13 +931,59 @@ describe('turn-budget tools', () => {
     }
   });
 
-  it('set_surprised resolves party members by name/id and requires a participant', () => {
+  it('set_surprised derives party-member surprise and rejects the former free-list arguments', () => {
     const { pcId, registry, ctx } = toolSetup();
 
     const none = registry.invoke('set_surprised', {}, ctx);
     expect(none.ok).toBe(false);
-
-    const byId = registry.invoke('set_surprised', { characters: [pcId] }, ctx);
+    expect(
+      registry.invoke('set_surprised', { characters: [pcId] }, ctx).ok,
+    ).toBe(false);
+    expect(
+      registry.invoke('set_surprised', { combatantIds: [GOBLIN_1] }, ctx).ok,
+    ).toBe(false);
+    const retained = registry.invoke(
+      'roll_retained_check',
+      {
+        kind: 'ability_check',
+        reason: 'hide from the party',
+        label: 'goblin stealth',
+        participant: { combatantId: GOBLIN_1 },
+      },
+      ctx,
+    );
+    expect(retained.ok).toBe(true);
+    if (!retained.ok) throw new Error(retained.message);
+    const retainedId = (retained.data as { retainedCheckId: string })
+      .retainedCheckId;
+    const comparison = registry.invoke(
+      'resolve_retained_check',
+      {
+        retainedCheckId: retainedId,
+        reason: 'ambush surprise',
+        passive: [
+          {
+            label: 'party member',
+            participant: { character: pcId },
+            modifier: -100,
+          },
+        ],
+      },
+      ctx,
+    );
+    expect(comparison.ok).toBe(true);
+    if (!comparison.ok) throw new Error(comparison.message);
+    const firstComparison = (
+      comparison.data as { comparisons: Array<{ comparisonId: string }> }
+    ).comparisons[0];
+    if (firstComparison === undefined)
+      throw new Error('missing surprise comparison');
+    const comparisonId = firstComparison.comparisonId;
+    const byId = registry.invoke(
+      'set_surprised',
+      { comparisonIds: [comparisonId] },
+      ctx,
+    );
     expect(byId.ok).toBe(true);
     if (byId.ok) {
       expect(byId.data).toMatchObject({
