@@ -265,7 +265,7 @@ describe('migration 0013 elapsed-world transition', () => {
     );
     expect(migrateDatabase(db, { now: NOW }).migrations.applied).toEqual([
       13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-      31, 32, 33,
+      31, 32, 33, 34,
     ]);
     expect(
       db
@@ -327,7 +327,7 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.legacy.action).toBe('empty');
     expect(result.migrations.applied).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
     ]);
     expect(readMigrationLedger(db).map((r) => [r.version, r.name])).toEqual([
       [1, 'initial'],
@@ -363,6 +363,7 @@ describe('migrateDatabase (end to end)', () => {
       [31, 'turn_trace_discovery_shadow'],
       [32, 'character_recovery_block'],
       [33, 'combatant_death_rules'],
+      [34, 'ammunition_expenditure'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -381,7 +382,7 @@ describe('migrateDatabase (end to end)', () => {
     // 0001 is adopted (already applied); the post-baseline migrations apply.
     expect(result.migrations.applied).toEqual([
       2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
     ]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     expect(
@@ -389,7 +390,6 @@ describe('migrateDatabase (end to end)', () => {
         .slice(-10)
         .map((r) => [r.version, r.name]),
     ).toEqual([
-      [24, 'active_effect_zone_form_projections'],
       [25, 'campaign_rules'],
       [26, 'campaign_turn_positions'],
       [27, 'turn_trace_campaign_rules_evidence'],
@@ -399,6 +399,7 @@ describe('migrateDatabase (end to end)', () => {
       [31, 'turn_trace_discovery_shadow'],
       [32, 'character_recovery_block'],
       [33, 'combatant_death_rules'],
+      [34, 'ammunition_expenditure'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -625,7 +626,7 @@ describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
 
     expect(result.migrations.applied).toEqual([
       5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-      25, 26, 27, 28, 29, 30, 31, 32, 33,
+      25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
     ]);
     const row = db
       .prepare(

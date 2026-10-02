@@ -33,6 +33,7 @@ import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
 import { convertCurrencyTool } from './toolConvertCurrency.js';
 import { endAttunementTool } from './toolEndAttunement.js';
 import { endEffectTool } from './toolEndEffect.js';
+import { expendAmmunitionTool } from './toolExpendAmmunition.js';
 import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
@@ -44,6 +45,7 @@ import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
 import { reacquireItemTool } from './toolReacquireItem.js';
 import { recordDeathSaveTool } from './toolRecordDeathSave.js';
 import { recordWorldFactTool } from './toolRecordWorldFact.js';
+import { recoverAmmunitionTool } from './toolRecoverAmmunition.js';
 import { refreshEffectTool } from './toolRefreshEffect.js';
 import type { Tool } from './toolRegistry.js';
 import { ToolRegistry } from './toolRegistry.js';
@@ -140,6 +142,8 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   donItemTool,
   doffItemTool,
   removeItemTool,
+  expendAmmunitionTool,
+  recoverAmmunitionTool,
   updateClockTool,
   advanceTimeTool,
   completeShortRestTool,

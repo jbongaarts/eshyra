@@ -44,6 +44,10 @@ import { migrateDatabase } from './migrationRunner.js';
  *   - `encounter_combatant`             (live/historical tactical projection
  *                                        with per-combatant death rules, death
  *                                        saves, recovery block, and stable recovery)
+ *   - `ammunition_expenditure`           (combat-scoped ammunition expenditure
+ *                                        linked to its battlefield inventory row)
+ *   - `ammunition_expenditure`           (combat-scoped expenditure rows tied
+ *                                        to the physical battlefield items)
  *
  * Archival / trace / generated — deliberately opaque, jsonColumn<TraceJsonValue[]>.
  * Do not add shape validation here; these blobs are owned by the memory subsystem:
