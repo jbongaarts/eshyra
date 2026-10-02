@@ -23,7 +23,11 @@ export function effectiveHpMax(
   hpMax: number,
   conditions: readonly CharacterConditionEntry[],
 ): number {
-  return exhaustionLevel(conditions) >= 4 ? Math.floor(hpMax / 2) : hpMax;
+  // Halving never makes the maximum 0 for a creature that has one: a
+  // maximum of 0 would kill through the clamp, which the source does not say.
+  return exhaustionLevel(conditions) >= 4
+    ? Math.max(Math.min(hpMax, 1), Math.floor(hpMax / 2))
+    : hpMax;
 }
 
 export function withExhaustionLevel(

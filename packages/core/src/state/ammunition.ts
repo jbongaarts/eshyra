@@ -1,8 +1,7 @@
-import { randomUUID } from 'node:crypto';
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { resolveCharacterId } from './activeCharacter.js';
-import { removeItem } from './domainMutations.js';
+import { claimItem, removeItem } from './domainMutations.js';
 import { destroyInventoryItem } from './inventoryLifecycle.js';
 import {
   InventoryWorldLocationError,
@@ -99,7 +98,17 @@ export function expendAmmunition(
         `could not expend inventory item '${input.itemId}'`,
       );
     const expendedInventoryId = result.relinquishedItemId ?? input.itemId;
-    const expenditureId = `ammo-${randomUUID()}`;
+    // Deterministic identity (replay and checkpoints compare state), not a
+    // random id: one sequence per campaign.
+    const sequence =
+      (
+        txnDb
+          .prepare(
+            'SELECT COUNT(*) AS n FROM ammunition_expenditure WHERE campaign_id=?',
+          )
+          .get(ctx.campaignId) as { n: number }
+      ).n + 1;
+    const expenditureId = `ammo-${combat.combat_instance_id}-${sequence}`;
     txnDb
       .prepare(
         `INSERT INTO ammunition_expenditure(
@@ -245,35 +254,22 @@ export function recoverAmmunition(
         const take = Math.min(toRecover, entry.present);
         toRecover -= take;
         if (take > 0) {
-          if (take === item.quantity) {
+          // Unrecovered pieces of this row are destroyed first, so the row
+          // holds exactly the recovered pieces; custody then returns through
+          // claim_item's own path (co-location, quarantine, wear state).
+          if (take !== item.quantity)
             txnDb
               .prepare(
-                `UPDATE inventory SET character_id=?, location=NULL, world_location_id=NULL,
-                 unheld_disposition=NULL, provenance=?, session_id=?, updated_at=? WHERE id=?`,
+                `UPDATE inventory SET quantity=?, provenance=?, session_id=?, updated_at=?
+                 WHERE id=? AND character_id IS NULL`,
               )
-              .run(characterId, ctx.provenance, ctx.sessionId, ctx.at, item.id);
-          } else {
-            const newId = `${item.id}#recovered-${randomUUID()}`;
-            txnDb
-              .prepare(
-                `INSERT INTO inventory(id, character_id, name, quantity, location, world_location_id,
-                 properties_json, provenance, session_id, updated_at, pack_ref, variant_id)
-               VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, ?)`,
-              )
-              .run(
-                newId,
-                characterId,
-                item.name,
-                take,
-                item.properties_json,
-                ctx.provenance,
-                ctx.sessionId,
-                ctx.at,
-                item.pack_ref,
-                item.variant_id,
-              );
-            destroyInventoryItem(txnDb, item.id, ctx);
-          }
+              .run(take, ctx.provenance, ctx.sessionId, ctx.at, item.id);
+          claimItem(txnDb, item.id, {
+            provenance: ctx.provenance,
+            sessionId: ctx.sessionId,
+            at: ctx.at,
+            characterId,
+          });
           recovered += take;
         } else {
           destroyInventoryItem(txnDb, item.id, ctx);

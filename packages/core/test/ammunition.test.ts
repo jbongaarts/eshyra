@@ -344,4 +344,50 @@ describe('ammunition expenditure and battlefield recovery tools', () => {
       properties_json: JSON.stringify({ material: 'wood' }),
     });
   });
+
+  it('returns recovered pieces through the claim path with a wear-state row', () => {
+    // Custody goes back through claim_item's own write path, so a recovered
+    // row is indistinguishable from any other claimed physical row.
+    const { db, registry, ctx } = setup();
+    combat(db);
+    stack(db, 'arrows', 5);
+    spend(registry, ctx, 'arrows', 5);
+    close(db);
+    recover(registry, ctx);
+    const held = db
+      .prepare(
+        `SELECT i.id, i.quantity, w.wear_state FROM inventory i
+         LEFT JOIN inventory_wear_state w ON w.inventory_id = i.id
+         WHERE i.character_id='pc-1'`,
+      )
+      .all() as { id: string; quantity: number; wear_state: string | null }[];
+    expect(held).toHaveLength(1);
+    expect(held[0]).toMatchObject({ quantity: 2, wear_state: 'not_worn' });
+    // The unrecovered pieces are gone, not left lying at the location.
+    expect(
+      db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM inventory WHERE character_id IS NULL AND unheld_disposition='dropped'",
+        )
+        .get(),
+    ).toEqual({ n: 0 });
+  });
+
+  it('gives expenditures deterministic identities', () => {
+    const { db, registry, ctx } = setup();
+    combat(db);
+    stack(db, 'arrows', 3);
+    spend(registry, ctx, 'arrows', 1);
+    spend(registry, ctx, 'arrows', 1);
+    expect(
+      db
+        .prepare(
+          'SELECT expenditure_id FROM ammunition_expenditure ORDER BY expenditure_id',
+        )
+        .all(),
+    ).toEqual([
+      { expenditure_id: 'ammo-combat-1-1' },
+      { expenditure_id: 'ammo-combat-1-2' },
+    ]);
+  });
 });

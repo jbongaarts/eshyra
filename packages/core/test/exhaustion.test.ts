@@ -9,6 +9,7 @@ import {
   listAttunements,
   listCombatants,
 } from '../src/internal.js';
+import { effectiveHpMax } from '../src/state/exhaustion.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_SESSION_ID,
@@ -296,5 +297,15 @@ describe('adjust_exhaustion tool', () => {
       data: { combatant: { hpCurrent: 0, status: 'dead' } },
     });
     db.close();
+  });
+});
+
+describe('effectiveHpMax floor (eshyra-o9bd.19.5.7.3)', () => {
+  it('never halves a positive maximum to 0', () => {
+    const level4 = [{ id: 'exhaustion', level: 4 }];
+    expect(effectiveHpMax(1, level4)).toBe(1);
+    expect(effectiveHpMax(3, level4)).toBe(1);
+    expect(effectiveHpMax(20, level4)).toBe(10);
+    expect(effectiveHpMax(0, level4)).toBe(0);
   });
 });
