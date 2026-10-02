@@ -646,7 +646,10 @@ One sequence, in order:
    counts.
 4. **`opus:F-09` registry update,** after generalization lands. It cannot
    record F-09 as resolved while a blocking engine-capability gap (A5) is
-   open; each gap's bead blocks `eshyra-o9bd.19.3.4`.
+   open; each gap's bead blocks `eshyra-o9bd.19.3.4`. Done in
+   `eshyra-o9bd.19.3.4.7`: the `rules-prose-readiness` row is
+   `disclosed-dependency`, following the `magic-item-effects` precedent, and
+   its reasoning records both this reading of F-09 and the open A5 gaps.
 
 **On failure** at any step (for example, the envelope reads as rules
 authority in live turns, a `duplicate-of` pair does not survive source
