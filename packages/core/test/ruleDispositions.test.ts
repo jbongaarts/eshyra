@@ -19,14 +19,15 @@ import {
   validateRuleRegistries,
 } from '../scripts/create-dnd5e-srd-audit-bundle/ruleDispositions.js';
 import {
-  DEFAULT_TOOLS,
   getBundledDnd5eSrdPack,
   type RulesPack,
   type RulesPackLicense,
   type RulesRecord,
 } from '../src/internal.js';
-import { RULE_ADJUDICATION_CONTEXT } from '../src/rules/ruleAdjudicationContext.js';
-import { RULE_KNOWN_LIMITS } from '../src/rules/ruleKnownLimits.js';
+import {
+  ENGINE_CAPABILITY_GAPS,
+  RULE_KNOWN_LIMITS,
+} from '../src/rules/ruleKnownLimits.js';
 
 /**
  * Committed-pack + registry-integrity assertions for the
@@ -122,33 +123,6 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     );
   });
 
-  it('closes every F10-owned coverage row against registered primitives', () => {
-    const rows = [
-      'rule:coinage',
-      'rule:crafting',
-      'rule:expenses-lifestyle-expenses',
-      'rule:practicing-a-profession',
-      'rule:researching',
-      'rule:selling-treasure',
-      'rule:silvered-weapons',
-      'rule:training',
-      'rule:wizard-your-spellbook',
-      'rule:self-sufficiency',
-      'rule:mounts-and-vehicles',
-    ];
-    const tools = new Set(DEFAULT_TOOLS.map((tool) => tool.name));
-    for (const row of rows) {
-      const coverage = ENGINE_PROCEDURE_COVERAGE[row];
-      expect(coverage).toBeDefined();
-      expect(coverage?.missing ?? '').not.toContain('→ F10');
-      if (coverage?.status === 'model-adjudicated-supported') {
-        expect(coverage.primitives).toContain('lookup_rules');
-        for (const primitive of coverage.primitives) {
-          expect(tools.has(primitive)).toBe(true);
-        }
-      }
-    }
-  });
   it('pins the exact 335-key semantic census against the committed pack', () => {
     expect(assertRuleDispositions(getBundledDnd5eSrdPack())).toEqual([]);
     const report = buildRuleDispositionReport();
@@ -168,18 +142,24 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     // implements spell-slot expenditure/recovery; F3, eshyra-2n1t.5 moved
     // concentration to implemented). The F-09 vertical slice replaced the
     // hand-maintained status census with the identity assertions below.
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:long-rest']?.status).toBe(
-      'implemented',
-    );
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:short-rest']?.status).toBe(
-      'implemented',
-    );
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:charges']?.status).toBe(
-      'model-adjudicated-supported',
-    );
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:suffocating']?.status).toBe(
-      'partial',
-    );
+    expect(
+      ENGINE_PROCEDURE_COVERAGE['rule:long-rest']?.implementation,
+    ).toBeDefined();
+    expect(
+      ENGINE_PROCEDURE_COVERAGE['rule:short-rest']?.implementation,
+    ).toBeDefined();
+    for (const key of ['rule:feats', 'rule:customizing-a-background'])
+      expect(ENGINE_PROCEDURE_COVERAGE[key]?.implementation).toBeDefined();
+    expect(
+      ENGINE_PROCEDURE_COVERAGE['rule:experience-points']?.knownLimits[0]
+        ?.limit,
+    ).toBe('deferred');
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:blindsight']).toEqual({
+      knownLimits: [],
+    });
+    expect(
+      ENGINE_PROCEDURE_COVERAGE['rule:suffocating']?.knownLimits[0]?.limit,
+    ).toBe('partial');
     expect(Object.keys(RULE_DISPOSITIONS)).toHaveLength(335);
     expect(Object.keys(ENGINE_PROCEDURE_COVERAGE)).toHaveLength(175);
   });
@@ -187,110 +167,194 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
   it('projects runtime statement rows by object identity into the audit', () => {
     // One definition per dataset (design invariant 5): each migrated audit row
     // points at the runtime entry itself, never at an authored copy.
-    for (const [key, context] of Object.entries(RULE_ADJUDICATION_CONTEXT)) {
-      expect(ENGINE_PROCEDURE_COVERAGE[key]?.runtimeSource).toBe(context);
-      expect(ENGINE_PROCEDURE_COVERAGE[key]?.contextRequirement).toBe(
-        context.dmContext,
-      );
+    for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS)) {
+      expect(ENGINE_PROCEDURE_COVERAGE[key]?.knownLimits).toBe(limits);
+      limits.forEach((limit, index) => {
+        expect(ENGINE_PROCEDURE_COVERAGE[key]?.knownLimits[index]).toBe(limit);
+      });
     }
-    for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS))
-      expect(ENGINE_PROCEDURE_COVERAGE[key]?.runtimeSource).toBe(limits[0]);
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:channel-divinity']).toMatchObject({
-      status: 'design-blocked',
+    expect(
+      ENGINE_PROCEDURE_COVERAGE['rule:channel-divinity']?.knownLimits[0]
+        ?.findingId,
+    ).toBe('engine-capability-ownership');
+  });
+
+  it('projects implementation and every limit independently', () => {
+    const implementation = Object.freeze({
+      runtimeOwner: ['fixture.ts'],
+      evidence: ['fixture.test.ts'],
+    });
+    const partial = Object.freeze({
+      limit: 'partial' as const,
+      statement: 'Eshyra does not track the remaining duration.',
+      findingId: 'readiness-integrity',
+    });
+    const deferred = Object.freeze({
+      limit: 'deferred' as const,
+      statement: 'Multiclass progression is deferred.',
       findingId: 'engine-capability-ownership',
+      designOwner: 'eshyra-2n1t.1',
+    });
+    const limits = Object.freeze([partial, deferred]);
+    const coverage = materializeEngineProcedureCoverage(
+      { 'rule:fixture': implementation },
+      {
+        procedureKeys: ['rule:fixture', 'rule:empty'],
+        knownLimits: { 'rule:fixture': limits },
+      },
+    );
+    expect(coverage['rule:fixture']?.implementation).toBe(implementation);
+    expect(coverage['rule:fixture']?.knownLimits).toBe(limits);
+    expect(coverage['rule:fixture']?.knownLimits[0]).toBe(partial);
+    expect(coverage['rule:fixture']?.knownLimits[1]).toBe(deferred);
+    expect(coverage['rule:empty']).toEqual({ knownLimits: [] });
+    const report = buildRuleDispositionReport(coverage);
+    expect(report.engineProcedure).toMatchObject({
+      implementation: 1,
+      noRuntimeStatement: 1,
+    });
+    expect(report.engineProcedure.knownLimits.partial).toContainEqual({
+      key: 'rule:fixture',
+      statement: partial.statement,
+      findingId: partial.findingId,
+    });
+    expect(report.engineProcedure.knownLimits.deferred).toContainEqual({
+      key: 'rule:fixture',
+      statement: deferred.statement,
+      findingId: deferred.findingId,
+      designOwner: deferred.designOwner,
     });
   });
 
-  it('refuses coverage authored both in the audit and in a runtime dataset', () => {
-    expect(() =>
-      materializeEngineProcedureCoverage({
-        'rule:cover': {
-          status: 'model-adjudicated-supported',
-          primitives: ['lookup_rules'],
-          contextRequirement: 'second definition',
-        },
-      }),
-    ).toThrow(/authored both/);
+  it('projects source procedures without runtime entries as no statement', () => {
+    const coverage = materializeEngineProcedureCoverage(
+      {},
+      {
+        procedureKeys: ['rule:fixture'],
+        knownLimits: {},
+      },
+    );
+    expect(coverage['rule:fixture']).toEqual({ knownLimits: [] });
+    expect(
+      buildRuleDispositionReport(coverage).engineProcedure.noRuntimeStatement,
+    ).toBe(1);
   });
 
-  it('surfaces actionable detail (key + missing/designOwner/clause), not just counts', () => {
+  it('keeps runtime statements distinct from eight-word source passages', () => {
+    const records = new Map(
+      getBundledDnd5eSrdPack().records.map((record) => [record.key, record]),
+    );
+    const words = (text: string) =>
+      text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+    const violations: string[] = [];
+    for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS)) {
+      const statements = limits.map((limit) => limit.statement);
+      const record = records.get(key);
+      if (record === undefined)
+        throw new Error(`missing committed record ${key}`);
+      const data = record.data as { text?: string; description?: string };
+      const source = words(data.text ?? data.description ?? '');
+      const sourceWindows = new Set(
+        source
+          .slice(0, -7)
+          .map((_, index) => source.slice(index, index + 8).join(' ')),
+      );
+      for (const statement of statements) {
+        const statementWords = words(statement);
+        for (let index = 0; index + 8 <= statementWords.length; index++) {
+          const window = statementWords.slice(index, index + 8).join(' ');
+          if (sourceWindows.has(window)) violations.push(`${key}: ${window}`);
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  it('reports blocking capability gaps apart from limits, with their owners (A5)', () => {
+    // A known limit discloses a blocking gap but never discharges it: the
+    // report carries every disclosed gap with its owning bead, as unresolved
+    // work of its own kind, not folded into the limit lists.
+    const report = buildRuleDispositionReport();
+    const expected = Object.entries(RULE_KNOWN_LIMITS)
+      .flatMap(([key, limits]) =>
+        limits.flatMap((limit) =>
+          (limit.capabilityGaps ?? []).map((gap) => ({
+            key,
+            gap,
+            operation: ENGINE_CAPABILITY_GAPS[gap].operation,
+            ownerBead: ENGINE_CAPABILITY_GAPS[gap].ownerBead,
+            findingId: 'engine-capability-ownership',
+          })),
+        ),
+      )
+      .sort((a, b) =>
+        a.key < b.key ? -1 : a.key > b.key ? 1 : a.gap.localeCompare(b.gap),
+      );
+    expect(expected.length).toBeGreaterThan(0);
+    expect(report.engineProcedure.blockingCapabilityGaps).toEqual(expected);
+    const pair = ({ key, ownerBead }: { key: string; ownerBead?: string }) =>
+      `${key} -> ${ownerBead}`;
+    expect(
+      report.unresolvedWork
+        .filter((row) => row.kind === 'blocking-capability-gap')
+        .map(pair)
+        .sort(),
+    ).toEqual(expected.map(pair).sort());
+  });
+
+  it('surfaces each known limit with its key and finding', () => {
     const report = buildRuleDispositionReport();
     expect(
-      ENGINE_PROCEDURE_COVERAGE['rule:casting-a-spell-at-a-higher-level']
-        ?.primitives,
-    ).toEqual(
-      expect.arrayContaining(['spend_spell_slot', 'resolve_spell_upcast']),
-    );
-    expect(
-      report.engineProcedure.designBlocked.find(
+      report.engineProcedure.knownLimits.deferred.find(
         (row) => row.key === 'rule:multiclassing',
       )?.designOwner,
     ).toBe('eshyra-2n1t.1');
-    expect(report.engineProcedure.externalClauses).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          key: 'rule:special-weapons',
-          bead: 'eshyra-o9bd.18.7.8.3',
-        }),
-        expect.objectContaining({
-          key: 'rule:weapon-properties',
-          bead: 'eshyra-o9bd.18.7.8.3',
-        }),
-      ]),
-    );
-    // spells' per-item spell-data completeness routes to the (open)
-    // magic-item epic — a genuine pending gap, not this engine epic's
-    // own F1-F10 backlog.
-    expect(report.engineProcedure.externalClauses).toContainEqual({
-      key: 'rule:spells',
-      clause: 'per-item spell-data completeness',
-      bead: 'eshyra-o9bd.18.7.7',
-      findingId: 'rule-corpus-procedures',
-    });
-    expect(report.unresolvedWork).toContainEqual(
-      expect.objectContaining({
-        key: 'rule:special-weapons',
-        kind: 'external-clause',
-        findingId: 'rule-corpus-procedures',
-        historicalBead: 'eshyra-o9bd.18.7.8.3',
-      }),
-    );
-    // telepathy's per-creature payload contracts are the still-pending
-    // C3 slice tracked in CREATURE_ENTRY_REVIEWED_DISPOSITIONS — unlike
-    // multiattack's "(18.7.9)" mention, which credits already-typed
-    // routine data and correctly carries no external clause.
-    expect(report.engineProcedure.externalClauses).toContainEqual({
-      key: 'rule:telepathy',
-      clause: 'per-creature payload contracts (18.7.9 C3 slice)',
-      bead: 'eshyra-o9bd.18.7.9',
-      findingId: 'rule-corpus-procedures',
+    expect(report.engineProcedure.externalClauses).toEqual([]);
+    for (const key of [
+      'rule:armor-guidance',
+      'rule:casting-a-spell-saving-throws',
+      'rule:special-weapons',
+      'rule:spells',
+      'rule:telepathy',
+      'rule:weapon-properties',
+    ])
+      expect(
+        ENGINE_PROCEDURE_COVERAGE[key]?.knownLimits.flatMap(
+          (limit) => limit.externalClauses ?? [],
+        ),
+      ).toEqual([]);
+    // A3 retires armor-guidance: character AC is not derived by a live tool.
+    expect(ENGINE_PROCEDURE_COVERAGE['rule:armor-guidance']).toEqual({
+      knownLimits: [],
     });
     expect(
-      ENGINE_PROCEDURE_COVERAGE['rule:multiattack']?.externalClauses,
-    ).toBeUndefined();
-    // armor-guidance carries two distinct externally owned clauses.
-    expect(
-      report.engineProcedure.externalClauses.filter(
-        (row) => row.key === 'rule:armor-guidance',
-      ),
-    ).toHaveLength(1);
+      ENGINE_PROCEDURE_COVERAGE['rule:special-weapons']?.knownLimits[0]
+        ?.statement,
+    ).toContain('one attack');
   });
 
   it('preserves an explicit non-default external finding ID through materialization and reporting', () => {
-    const coverage = materializeEngineProcedureCoverage({
-      'rule:fixture': {
-        status: 'model-adjudicated-supported',
-        primitives: ['lookup_rules'],
-        contextRequirement: 'fixture context',
-        externalClauses: [
-          {
-            clause: 'fixture external clause',
-            bead: 'eshyra-o9bd.18.7.7',
-            findingId: 'magic-item-effects',
-          },
-        ],
+    const coverage = materializeEngineProcedureCoverage(
+      {},
+      {
+        knownLimits: {
+          'rule:fixture': [
+            {
+              limit: 'partial',
+              statement: 'fixture limit',
+              findingId: 'readiness-integrity',
+              externalClauses: [
+                {
+                  clause: 'fixture external clause',
+                  bead: 'eshyra-o9bd.18.7.7',
+                  findingId: 'magic-item-effects',
+                },
+              ],
+            },
+          ],
+        },
       },
-    });
+    );
     const report = buildRuleDispositionReport(coverage);
 
     expect(report.engineProcedure.externalClauses).toEqual([
@@ -380,7 +444,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
   it('accounts for every implemented row with a binding or explicit disposition', () => {
     const report = buildRuleDispositionReport();
     const implementedKeys = Object.entries(ENGINE_PROCEDURE_COVERAGE)
-      .filter(([, coverage]) => coverage.status === 'implemented')
+      .filter(([, coverage]) => coverage.implementation !== undefined)
       .map(([ruleKey]) => ruleKey)
       .sort();
     expect(
@@ -404,7 +468,7 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     });
     expect(
       validateRuleDeterministicCapabilityContracts(
-        { 'rule:x': { status: 'implemented' } },
+        { 'rule:x': { implementation: {} } },
         {},
         [],
         {},
@@ -447,74 +511,12 @@ describe('rule-record disposition registry (eshyra-o9bd.18.7.8.1)', () => {
     );
   });
 
-  it('registers every literally-named supporting tool in primitives, e.g. consumables/remove_item', () => {
-    // A supporting tool must be a checked primitive, not just prose — so
-    // removing it from DEFAULT_TOOLS invalidates the row (see the
-    // 'unregistered primitive' failure-mode test below).
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:consumables']?.primitives).toEqual(
-      expect.arrayContaining(['remove_item']),
-    );
-  });
-
-  it('pins the full tool chain on the F1/F9-reclassified rows, not just the formula', () => {
-    // resolve_damage is read-only: falling's damage lands only through the
-    // HP mutation tools, and the reclassified rows must pin every tool
-    // their contextRequirement names so a tool removal fails validation.
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:falling']?.primitives).toEqual(
-      expect.arrayContaining([
-        'calc',
-        'resolve_damage',
-        'adjust_hp',
-        'update_combatant',
-        'add_condition',
-      ]),
-    );
-    expect(
-      ENGINE_PROCEDURE_COVERAGE['rule:variant-encumbrance']?.primitives,
-    ).toEqual(expect.arrayContaining(['calc', 'resolve_check']));
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:speed']?.primitives).toEqual(
-      expect.arrayContaining(['calc', 'resolve_check']),
-    );
-    expect(ENGINE_PROCEDURE_COVERAGE['rule:hiding']?.primitives).toEqual(
-      expect.arrayContaining(['calc', 'resolve_contest']),
-    );
-    // Every tool a contextRequirement names literally must be pinned.
-    const violations: string[] = [];
-    for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
-      if (
-        coverage.status !== 'model-adjudicated-supported' ||
-        coverage.contextRequirement === undefined
-      ) {
-        continue;
-      }
-      const primitives = new Set(coverage.primitives ?? []);
-      for (const tool of [
-        'resolve_check',
-        'resolve_contest',
-        'resolve_damage',
-        'calc',
-        'adjust_hp',
-        'update_combatant',
-        'add_condition',
-        'spend_turn_resource',
-      ]) {
-        if (
-          coverage.contextRequirement.includes(tool) &&
-          !primitives.has(tool)
-        ) {
-          violations.push(`${key}: names '${tool}' but omits it`);
-        }
-      }
-    }
-    expect(violations).toEqual([]);
-  });
-
   it('checks every runtimeOwner/evidence path against the repo tree', () => {
     const missing: string[] = [];
     for (const [key, coverage] of Object.entries(ENGINE_PROCEDURE_COVERAGE)) {
       for (const path of [
-        ...(coverage.runtimeOwner ?? []),
-        ...(coverage.evidence ?? []),
+        ...(coverage.implementation?.runtimeOwner ?? []),
+        ...(coverage.implementation?.evidence ?? []),
       ]) {
         if (!existsSync(join(process.cwd(), path))) {
           missing.push(`${key}: ${path}`);
@@ -700,167 +702,118 @@ describe('validateRuleRegistries (eshyra-o9bd.18.7.8.1 §6 failure modes)', () =
     );
   });
 
-  it('fails closed on an orphan coverage entry (no matching engine-procedure disposition)', () => {
-    const errors = validateRuleRegistries(
-      dispositions({}),
-      { 'rule:x': { status: 'unimplemented', missing: 'n' } },
-      {} as never,
-      { unimplemented: 1 } as never,
-    );
+  const procedure = dispositions({
+    'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
+  });
+  const limit = (
+    overrides: Partial<RuleProcedureCoverage['knownLimits'][number]> = {},
+  ) => ({
+    limit: 'partial' as const,
+    statement: 'fixture gap',
+    findingId: 'readiness-integrity',
+    ...overrides,
+  });
+
+  it('fails closed on an orphan coverage entry', () => {
+    const errors = validateRuleRegistries(dispositions({}), {
+      'rule:x': { knownLimits: [] },
+    });
     expect(errors).toContain(
       'rule:x: ENGINE_PROCEDURE_COVERAGE entry is not an engine-procedure disposition (orphan)',
     );
   });
 
-  it('fails closed on an implemented row missing runtimeOwner/evidence', () => {
-    const errors = validateRuleRegistries(
-      dispositions({
-        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
-      }),
-      { 'rule:x': { status: 'implemented' } },
-      { 'engine-procedure': 1 } as never,
-      { implemented: 1 } as never,
-    );
-    expect(errors).toContain('rule:x: implemented row is missing runtimeOwner');
-    expect(errors).toContain('rule:x: implemented row is missing evidence');
-  });
-
-  it('fails closed on a model-adjudicated-supported row with an unregistered primitive', () => {
-    const errors = validateRuleRegistries(
-      dispositions({
-        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
-      }),
-      {
-        'rule:x': {
-          status: 'model-adjudicated-supported',
-          primitives: ['not_a_real_tool'],
-          contextRequirement: 'req',
-        } as RuleProcedureCoverage,
+  it('fails closed on implementation evidence missing paths', () => {
+    const errors = validateRuleRegistries(procedure, {
+      'rule:x': {
+        implementation: { runtimeOwner: [], evidence: [] },
+        knownLimits: [],
       },
-      { 'engine-procedure': 1 } as never,
-      { 'model-adjudicated-supported': 1 } as never,
-    );
-    expect(errors).toContain(
-      "rule:x: primitive 'not_a_real_tool' is not a registered DEFAULT_TOOLS name",
-    );
+    });
+    expect(errors).toContain('rule:x: implementation is missing runtimeOwner');
+    expect(errors).toContain('rule:x: implementation is missing evidence');
   });
 
-  it('fails closed on a model-adjudicated-supported row missing contextRequirement', () => {
-    const errors = validateRuleRegistries(
-      dispositions({
-        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
-      }),
-      {
-        'rule:x': {
-          status: 'model-adjudicated-supported',
-          primitives: ['lookup_rules'],
-        },
+  it('fails closed on a known limit missing its statement or finding', () => {
+    const errors = validateRuleRegistries(procedure, {
+      'rule:x': {
+        knownLimits: [limit({ statement: '', findingId: 'not-registered' })],
       },
-      { 'engine-procedure': 1 } as never,
-      { 'model-adjudicated-supported': 1 } as never,
+    });
+    expect(errors).toContain(
+      'rule:x: partial known limit is missing statement',
     );
     expect(errors).toContain(
-      'rule:x: model-adjudicated-supported row is missing contextRequirement',
+      'rule:x: unknown canonical finding ID "not-registered"',
     );
   });
 
-  it('fails closed on a partial row missing "missing"', () => {
-    const errors = validateRuleRegistries(
-      dispositions({
-        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
-      }),
-      { 'rule:x': { status: 'partial' } },
-      { 'engine-procedure': 1 } as never,
-      { partial: 1 } as never,
+  it('fails closed on deferred limits without a valid design owner', () => {
+    const missing = validateRuleRegistries(procedure, {
+      'rule:x': {
+        knownLimits: [limit({ limit: 'deferred', designOwner: undefined })],
+      },
+    });
+    expect(missing).toContain(
+      'rule:x: deferred known limit is missing designOwner',
     );
-    expect(errors).toContain(`rule:x: partial row is missing 'missing'`);
-  });
-
-  it('fails closed on a design-blocked row missing designOwner', () => {
-    const errors = validateRuleRegistries(
-      dispositions({
-        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
-      }),
-      { 'rule:x': { status: 'design-blocked' } },
-      { 'engine-procedure': 1 } as never,
-      { 'design-blocked': 1 } as never,
-    );
-    expect(errors).toContain(
-      'rule:x: design-blocked row is missing designOwner',
-    );
-  });
-
-  it('fails closed on a design-blocked row whose designOwner is not a real bead-id shape', () => {
-    const errors = validateRuleRegistries(
-      dispositions({
-        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
-      }),
-      { 'rule:x': { status: 'design-blocked', designOwner: 'TBD' } },
-      { 'engine-procedure': 1 } as never,
-      { 'design-blocked': 1 } as never,
-    );
-    expect(errors).toContain(
+    const malformed = validateRuleRegistries(procedure, {
+      'rule:x': {
+        knownLimits: [limit({ limit: 'deferred', designOwner: 'TBD' })],
+      },
+    });
+    expect(malformed).toContain(
       "rule:x: designOwner 'TBD' is not a real bead-id shape",
     );
   });
 
-  it('fails closed on an externalClauses entry with a malformed bead id or empty clause', () => {
-    const errors = validateRuleRegistries(
-      dispositions({
-        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
-      }),
-      {
-        'rule:x': {
-          status: 'model-adjudicated-supported',
-          primitives: ['lookup_rules'],
-          contextRequirement: 'req',
-          externalClauses: [
-            { clause: '', bead: 'eshyra-o9bd.18.7.6' },
-            { clause: 'valid clause', bead: 'not-a-bead' },
-          ],
-        },
+  it('fails closed on malformed external clause ownership', () => {
+    const errors = validateRuleRegistries(procedure, {
+      'rule:x': {
+        knownLimits: [
+          limit({
+            externalClauses: [
+              {
+                clause: '',
+                bead: 'eshyra-o9bd.18.7.6',
+                findingId: 'readiness-integrity',
+              },
+              {
+                clause: 'valid clause',
+                bead: 'not-a-bead',
+                findingId: 'readiness-integrity',
+              },
+            ],
+          }),
+        ],
       },
-      { 'engine-procedure': 1 } as never,
-      { 'model-adjudicated-supported': 1 } as never,
-    );
+    });
     expect(errors).toContain(
-      `rule:x: externalClauses entry is missing 'clause'`,
+      "rule:x: externalClauses entry is missing 'clause'",
     );
     expect(errors).toContain(
       "rule:x: externalClauses bead 'not-a-bead' is not a real bead-id shape",
     );
   });
 
-  it('fails closed on semantic or coverage census drift', () => {
+  it('fails closed on semantic or channel census drift', () => {
     const semanticErrors = validateRuleRegistries(
-      dispositions({
-        'rule:x': { class: 'reference-prose', note: 'n' },
-      }),
+      dispositions({ 'rule:x': { class: 'reference-prose', note: 'n' } }),
       {},
       { 'reference-prose': 2 } as never,
-      {} as never,
     );
-    expect(
-      semanticErrors.some((e) =>
-        e.includes(
-          'semantic fixture census drift: reference-prose is 1, expected 2',
-        ),
-      ),
-    ).toBe(true);
-
+    expect(semanticErrors).toContain(
+      'semantic fixture census drift: reference-prose is 1, expected 2',
+    );
     const coverageErrors = validateRuleRegistries(
-      dispositions({
-        'rule:x': { class: 'engine-procedure', family: 'core-d20', note: 'n' },
-      }),
-      { 'rule:x': { status: 'unimplemented', missing: 'n' } },
-      { 'engine-procedure': 1 } as never,
-      { unimplemented: 2 } as never,
+      procedure,
+      { 'rule:x': { knownLimits: [limit()] } },
+      undefined,
+      { knownLimit: 2 } as never,
     );
-    expect(
-      coverageErrors.some((e) =>
-        e.includes('coverage census drift: unimplemented is 1, expected 2'),
-      ),
-    ).toBe(true);
+    expect(coverageErrors).toContain(
+      'coverage census drift: knownLimit is 1, expected 2 (caller-supplied census)',
+    );
   });
 
   it('passes clean on an internally consistent fixture', () => {
@@ -871,13 +824,15 @@ describe('validateRuleRegistries (eshyra-o9bd.18.7.8.1 §6 failure modes)', () =
       }),
       {
         'rule:x': {
-          status: 'implemented',
-          runtimeOwner: ['packages/core/src/x.ts'],
-          evidence: ['packages/core/test/x.test.ts'],
+          implementation: {
+            runtimeOwner: ['packages/core/src/x.ts'],
+            evidence: ['packages/core/test/x.test.ts'],
+          },
+          knownLimits: [],
         },
       },
       { 'engine-procedure': 1, duplicate: 1 } as never,
-      { implemented: 1 } as never,
+      { implementation: 1 } as never,
     );
     expect(errors).toEqual([]);
   });

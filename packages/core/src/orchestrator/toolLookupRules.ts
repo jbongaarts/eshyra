@@ -70,7 +70,7 @@ export const lookupRulesTool: Tool = {
     're-query by ref with one of them. A successful result includes a `card` ' +
     'summary (key, kind, name, source locator, grantor/parent ref) to ' +
     'disambiguate same- or cross-kind duplicate names without parsing the raw record. ' +
-    'The separate ruleAwareness envelope is Eshyra-authored runtime context, not rules text; an empty envelope makes no claim.',
+    'The separate ruleAwareness envelope contains Eshyra-authored capabilities, known limits, and relationships; it is not rules text. An empty envelope makes no claim.',
   inputSchema: {
     type: 'object',
     properties: {

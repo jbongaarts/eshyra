@@ -15,6 +15,7 @@ export const adjustHpTool: Tool = {
   mutates: true,
   description:
     "Adjust a character's current hit points by a signed amount. " +
+    'Characters only: for an encounter combatant, use update_combatant hpDelta. ' +
     'Positive heals, negative damages. Damage consumes temporary hit points ' +
     'first; dropping to 0 HP makes the character dying (or dead outright ' +
     'when the leftover damage beyond 0 reaches their HP maximum — the result ' +

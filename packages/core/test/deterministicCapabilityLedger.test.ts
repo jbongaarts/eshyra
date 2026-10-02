@@ -287,10 +287,15 @@ describe('runtime-owned deterministic capability ledger', () => {
       'rule:constitution-hit-points',
       'rule:contests',
       'rule:critical-hits',
+      'rule:customizing-a-background',
       'rule:damage-resistance-and-vulnerability',
       'rule:damage-rolls',
       'rule:death-saving-throws',
+      // R0 re-derivation moved the multiclass XP row back under ADR 0018's
+      // deferred single-class boundary; it no longer belongs to this
+      // implemented-without-binding projection.
       'rule:falling-unconscious',
+      'rule:feats',
       'rule:gaining-inspiration',
       'rule:grapple-rules-for-monsters',
       'rule:group-checks',

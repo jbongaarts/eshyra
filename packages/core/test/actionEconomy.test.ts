@@ -1038,11 +1038,19 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
     expect(
       spendReaction(db, HYDRA, 'opportunity attack').budget.reactionsUsed,
     ).toBe(1);
-    // Until the DM records the head count, the default allowance holds —
-    // and the rejection points at the grant mechanism.
-    expect(() => spendReaction(db, HYDRA, 'opportunity attack')).toThrow(
-      /state-dependent extra-reaction mechanic.*reactionAllowance/,
+    // The default allowance holds. The rejection discloses that the extra
+    // reactions are not derived (ADR 0020 §2: the model never computes the
+    // total), and never points the model at reactionAllowance.
+    let rejection = '';
+    try {
+      spendReaction(db, HYDRA, 'opportunity attack');
+    } catch (error) {
+      rejection = String(error);
+    }
+    expect(rejection).toMatch(
+      /state-dependent extra-reaction mechanic.*cannot currently be recorded/,
     );
+    expect(rejection).not.toMatch(/reactionAllowance|record the total/);
 
     // Five heads: 1 + 4 extra reactions.
     const grant = setReactionAllowance(db, {

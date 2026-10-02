@@ -12,8 +12,10 @@ export const setSurprisedTool: Tool = {
   mutates: true,
   description:
     'Record which participants are surprised at the start of the active ' +
-    'combat instance, after you adjudicate the Stealth-vs-passive-Perception ' +
-    'determination. A surprised participant cannot move or act on its first ' +
+    'combat instance. Who is surprised depends on comparing Stealth check ' +
+    'totals with passive Perception scores, and no tool performs that ' +
+    'comparison, so surprise cannot currently be determined ' +
+    'deterministically; never make that comparison yourself. A surprised participant cannot move or act on its first ' +
     'turn and cannot take a reaction until that turn ends — the engine ' +
     'enforces this; begin_turn clears the flag when the surprised turn ends. ' +
     "Call before any surprised participant's first turn. args: { " +

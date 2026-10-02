@@ -14,9 +14,11 @@
 //   mechanics raise it: a `perTurn` grant (marilith Reactive) refreshes the
 //   count at the start of EVERY turn; a `formula` grant (hydra Reactive
 //   Heads, one per head beyond one) depends on live state the engine does
-//   not track, so the DM records the current total through the validated
-//   {@link setReactionAllowance} grant — accepted only for creatures whose
-//   record structurally carries such a mechanic. A `restrictedTo` clause
+//   not track. {@link setReactionAllowance} stores a supplied total, accepted
+//   only for creatures whose record structurally carries such a mechanic,
+//   but nothing derives that total, and arithmetic is engine-owned, so the
+//   model-facing contract discloses the extra reactions as unrecordable
+//   (blocking capability gap eshyra-o9bd.19.3.4.6; F-09 design A5). A `restrictedTo` clause
 //   (hydra: opportunity attacks only) is surfaced on extra spends; whether
 //   a given activity satisfies it stays a ruling.
 // - Casting a spell as a bonus action restricts every other spell cast that
@@ -27,9 +29,11 @@
 //   model-declared flag. A spend whose activity reads like a spell cast
 //   without a spellRef fails closed.
 // - A surprised participant can take no move, action, or bonus action on its
-//   first turn and no reaction until that turn ends (surprise). Surprise
-//   determination (Stealth vs passive Perception) stays a DM ruling; this
-//   module owns recording and enforcing the restriction.
+//   first turn and no reaction until that turn ends (surprise). This module
+//   owns recording and enforcing the restriction. Surprise determination
+//   (Stealth vs passive Perception) is a comparison no tool performs yet
+//   (capability gap eshyra-o9bd.19.5.10.3), so the model-facing contract
+//   discloses it as undeterminable rather than leaving it to a DM ruling.
 // - Two-weapon fighting's extra attack is an ordinary bonus-action spend;
 //   its damage composition is F9's, its weapon eligibility a ruling
 //   (two-weapon-fighting).
@@ -201,8 +205,8 @@ export interface SpendTurnResourceResult {
 export interface SetReactionAllowanceInput extends TurnMutationContext {
   readonly campaignId: string;
   readonly combatantId: string;
-  /** The combatant's current total reactions per round (its normal one plus
-   *  the extras its mechanic grants right now, e.g. hydra heads). */
+  /** A reactions-per-round total to store. Nothing derives it from the
+   *  creature's state (eshyra-o9bd.19.3.4.6). */
   readonly allowance: number;
 }
 
@@ -1098,7 +1102,7 @@ export function spendTurnResource(
                 ? '; it returns at the start of their next turn'
                 : '; they return at the start of their next turn';
           const grantHint = profile.hasFormulaGrant
-            ? ' This creature has a state-dependent extra-reaction mechanic: if its current state grants more, record the total via update_combatant reactionAllowance.'
+            ? " This creature has a state-dependent extra-reaction mechanic, but Eshyra does not derive the extra reactions it grants from the creature's state, so they cannot currently be recorded."
             : '';
           throw new ActionEconomyError(
             `${displayLabel} has already used ${spent} this round` +
@@ -1287,7 +1291,9 @@ export function spendTurnResource(
  * depends on live state the engine does not track (hydra Reactive Heads:
  * one extra reaction per head beyond one). Rejected unless the combatant's
  * creature record structurally carries such a mechanic, so the model cannot
- * invent extra reactions for ordinary creatures.
+ * invent extra reactions for ordinary creatures. It stores the supplied
+ * total and derives nothing; the deterministic derivation is the open
+ * capability gap eshyra-o9bd.19.3.4.6.
  */
 export function setReactionAllowance(
   db: Db,
@@ -1354,8 +1360,10 @@ export function setReactionAllowance(
 }
 
 /**
- * Record which participants are surprised, after the DM adjudicates the
- * Stealth-vs-passive-Perception determination. Surprise applies only to the
+ * Record which participants are surprised. Nothing determines who is: the
+ * Stealth-vs-passive-Perception comparison is the open capability gap
+ * eshyra-o9bd.19.5.10.3, so the model-facing contract discloses surprise as
+ * undeterminable (F-09 design A5). Surprise applies only to the
  * first turn of combat, so a participant that has already taken a turn is
  * rejected; {@link beginTurn} clears the flag when the surprised turn ends.
  */

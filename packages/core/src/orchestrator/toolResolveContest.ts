@@ -60,9 +60,9 @@ export const resolveContestTool: Tool = {
     'Resolve a contest (opposed ability checks, e.g. grapple, shove, hidden ' +
     'vs perception): both sides roll d20 with their own declared modifiers, ' +
     'proficiency, and advantage/disadvantage; higher total wins; a tie means ' +
-    'the situation stays as it was. Side a rolls first, then side b. args: ' +
-    '{ reason, a: side, b: side, visibility? } where side = { label, ' +
-    'advantage?, disadvantage?, modifiers?, proficiency? }.',
+    'the situation stays as it was. Side a rolls first, then side b. ' +
+    "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed. " +
+    'args: { reason, a: side, b: side, visibility? } where side = { label, advantage?, disadvantage?, modifiers?, proficiency? }.',
   inputSchema: {
     type: 'object',
     properties: {

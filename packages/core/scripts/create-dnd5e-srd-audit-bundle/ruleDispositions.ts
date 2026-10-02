@@ -19,18 +19,16 @@
  * - `RULE_DISPOSITIONS` — *what is this rule?* Exactly one of
  *   reference-prose / definition / engine-procedure / table-backed /
  *   duplicate per the 2026-07-06 rule-classification artifact (335 rows).
- * - `ENGINE_PROCEDURE_COVERAGE` — *is its deterministic behavior actually
- *   covered?* Exactly one of implemented / model-adjudicated-supported /
- *   partial / unimplemented / design-blocked per every `engine-procedure`
- *   key (175 rows), seeded from the 2026-07-06 execution-boundary
- *   classification artifact. A row's disposition class never implies its
- *   coverage status — `engine-procedure` is never blanket-green.
+ * - `ENGINE_PROCEDURE_COVERAGE` — the audit projection of implementation
+ *   evidence and runtime rule statements for every `engine-procedure` key
+ *   (175 rows). Only implemented rows are authored in the audit bundle;
+ *   known limits are projected from their runtime
+ *   datasets. A row's disposition class implies no channel fact.
  *
- * Both registries are transcribed mechanically from their source artifacts
- * (docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-rule-classification.md
- * and .../2026-07-06-o9bd-18-7-8-execution-boundary-classification.md) —
- * regenerate via the same parse when either artifact changes, don't
- * hand-edit around a stale key set.
+ * `RULE_DISPOSITIONS` is transcribed from its source classification artifact
+ * (docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-rule-classification.md).
+ * Engine-procedure membership remains pinned by identity, while runtime
+ * statements and implemented evidence come from their owning datasets.
  */
 
 import { createHash } from 'node:crypto';
@@ -48,10 +46,7 @@ import {
   validateRuleDeterministicCapabilityContracts as validateLedgerCapabilityContracts,
 } from '../../src/rules/deterministicCapabilityLedger.js';
 import {
-  RULE_ADJUDICATION_CONTEXT,
-  validateRuleAdjudicationContext,
-} from '../../src/rules/ruleAdjudicationContext.js';
-import {
+  ENGINE_CAPABILITY_GAPS,
   RULE_KNOWN_LIMITS,
   type RuleKnownLimit,
   validateRuleKnownLimits,
@@ -1666,63 +1661,25 @@ export const RULE_DISPOSITIONS: Readonly<Record<string, RuleDisposition>> =
     },
   });
 
-export type RuleCoverageStatus =
-  | 'implemented'
-  | 'model-adjudicated-supported'
-  | 'partial'
-  | 'unimplemented'
-  | 'design-blocked';
+export interface RuleImplementationEvidence {
+  readonly runtimeOwner: readonly string[];
+  readonly evidence: readonly string[];
+}
+
+export type RuleCoverageChannel =
+  | 'implementation'
+  | 'knownLimit'
+  | 'noRuntimeStatement';
 
 export interface RuleProcedureCoverage {
-  readonly status: RuleCoverageStatus;
-  /** Repo-relative code path(s). Required for 'implemented'; present for a
-   *  'partial' row when code owns part of the behavior. */
-  readonly runtimeOwner?: readonly string[];
-  /** Test file(s) exercising the behavior. Required for 'implemented'. */
-  readonly evidence?: readonly string[];
-  /** Registered tool names the row's model-adjudication relies on;
-   *  required for 'model-adjudicated-supported', each checked against
-   *  DEFAULT_TOOLS. */
-  readonly primitives?: readonly string[];
-  /** What must be retrievable/structured at play time; required for
-   *  'model-adjudicated-supported'. */
-  readonly contextRequirement?: string;
-  /** Optional forward-reference, e.g. "F3's active-effect registry will
-   *  improve visibility". */
-  readonly dependencyNote?: string;
-  /** Exact missing semantics; required for 'partial' and carried for
-   *  'unimplemented' rows for readability. May name a shared primitive
-   *  family (F1-F10) or design decision (D1/D2). */
-  readonly missing?: string;
-  /** Bead owning the design decision; required for 'design-blocked'. */
-  readonly designOwner?: string;
-  /** Durable Foundation-2 finding-registry identity; bead IDs are history. */
-  readonly findingId?: string;
-  /** Clause-level external ownership: the row's primary status stands and
-   *  bead closure alone never auto-upgrades it — closing requires new
-   *  runtime/pack evidence in a reviewed diff. */
-  readonly externalClauses?: readonly {
-    readonly clause: string;
-    readonly bead: string;
-    readonly findingId?: string;
-  }[];
-  /** Set only on rows projected from a runtime statement dataset
-   *  (`RULE_ADJUDICATION_CONTEXT` / `RULE_KNOWN_LIMITS`): the runtime entry
-   *  itself, so the audit provably reads the single runtime definition. */
-  readonly runtimeSource?: object;
+  readonly implementation?: RuleImplementationEvidence;
+  readonly knownLimits: readonly RuleKnownLimit[];
 }
 
 const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
-  Record<string, RuleProcedureCoverage>
+  Record<string, RuleImplementationEvidence>
 > = Object.freeze({
-  'rule:a-clear-path-to-the-target': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'targeting/obstruction ruling; no grid; rule text retrievable',
-  },
   'rule:abilities': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/dice.ts',
       'packages/core/src/orchestrator/toolRoll.ts',
@@ -1733,7 +1690,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:ability-checks': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveCheck.ts',
@@ -1745,27 +1701,13 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:ability-scores-and-modifiers': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/character/abilities.ts',
       'packages/core/src/character/derivedValues.ts',
     ],
     evidence: ['packages/core/test/liveStateSchema.test.ts'],
   },
-  'rule:activating-an-item': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'close_combat_instance',
-      'lookup_rules',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      'activation-vs-Use-an-Object distinction is a per-turn ruling',
-  },
   'rule:advantage-and-disadvantage': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/dice.ts',
       'packages/core/src/orchestrator/resolution.ts',
@@ -1776,40 +1718,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/resolution.test.ts',
     ],
   },
-  'rule:ammunition': {
-    status: 'model-adjudicated-supported',
-    primitives: ['give_item', 'lookup_rules', 'remove_item', 'roll'],
-    contextRequirement: 'statblock convention; inventory + ledger suffice',
-  },
-  'rule:areas-of-effect': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'narrative geometry; shape rows retrievable',
-  },
-  'rule:armor-guidance': {
-    status: 'partial',
-    missing:
-      'per-armor payloads are complete; penalty application per roll stays a ruling; missing: AC derivation from equipped armor (base + Dex, medium cap 2, heavy flat, shield +2) — `derivedValues.ts` defers AC/attack bonuses to eshyra-b69j.13',
-    externalClauses: [
-      {
-        clause: 'AC derivation from equipped armor',
-        bead: 'eshyra-b69j.13',
-      },
-    ],
-  },
-  'rule:armor-weapon-and-tool-proficiencies': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'default statblock assumption; no state',
-  },
-  'action:attack': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'resolve_check', 'spend_turn_resource'],
-    contextRequirement:
-      'one-attack grant adjudicated; the action spend itself is checkable via the F2 turn budget (spend_turn_resource); attack counting stays adjudicated (Extra Attack/Multiattack feature-dependent); the attack roll itself resolves via resolve_check',
-  },
   'rule:attack-rolls': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveCheck.ts',
@@ -1820,7 +1729,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:attunement': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/attunement.ts',
       'packages/core/src/orchestrator/toolAttuneItem.ts',
@@ -1829,7 +1737,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/attunement.test.ts'],
   },
   'rule:backgrounds-equipment': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/character/srdStartingEquipmentGrants.ts',
       'packages/core/src/character/srdEquipmentPacks.ts',
@@ -1841,20 +1748,13 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
   },
   'rule:backgrounds-proficiencies': {
-    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/characterDraft.ts'],
     evidence: [
       'packages/core/test/characterDraftEngine.test.ts',
       'packages/cli/test/characterWizard.test.ts',
     ],
   },
-  'rule:being-prone': {
-    status: 'model-adjudicated-supported',
-    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
-    contextRequirement: 'prone condition + movement-cost ruling',
-  },
   'rule:beyond-1st-level': {
-    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/levelUpEngine.ts'],
     evidence: [
       'packages/core/test/levelUpEngine.test.ts',
@@ -1862,13 +1762,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/cli/test/play.test.ts',
     ],
   },
-  'rule:blindsight': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'per-creature radii structured; detection ruling',
-  },
   'rule:bonus-action': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
@@ -1876,26 +1770,13 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
   'rule:bonus-actions': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
     ],
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
-  'rule:breaking-up-your-move': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'narrative movement',
-  },
-  'rule:burrow': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'movement-mode ruling; speeds structured',
-  },
   'rule:casting-a-spell-at-a-higher-level': {
-    status: 'implemented',
-    primitives: ['lookup_rules', 'spend_spell_slot', 'resolve_spell_upcast'],
     runtimeOwner: [
       'packages/core/src/orchestrator/spellUpcast.ts',
       'packages/core/src/rules/spellUpcastContract.ts',
@@ -1910,100 +1791,8 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/spellSlots.test.ts',
       'packages/core/test/turnTraceProjection.test.ts',
     ],
-    contextRequirement:
-      'player/DM chooses whether to upcast and selects targets or a typed exclusive branch; all resulting arithmetic, thresholds, constraints, and source provenance are tool-owned',
-  },
-  'rule:casting-a-spell-attack-rolls': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'spellAttackModifier code-owned for PCs; monster values structured; within-5-ft clause is a per-roll ruling',
-  },
-  'rule:casting-a-spell-range': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'narrative range/targeting validation',
-  },
-  'rule:casting-a-spell-saving-throws': {
-    status: 'partial',
-    missing: 'item-bonus special-modifier data clause → eshyra-o9bd.18.7.7.2',
-    runtimeOwner: ['packages/core/src/character/derivedValues.ts'],
-    evidence: ['packages/core/test/derivedValues.test.ts'],
-    externalClauses: [
-      {
-        clause: 'item-bonus special-modifier data',
-        bead: 'eshyra-o9bd.18.7.7.2',
-      },
-    ],
-  },
-  'rule:casting-in-armor': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'armor-proficiency data structured; gate is per-cast check',
-  },
-  'rule:class-features': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.1',
-  },
-  'rule:climb': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'cost-exemption ruling; speeds structured',
-  },
-  'rule:climbing-swimming-and-crawling': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'movement-cost ruling',
-  },
-  'rule:coinage': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'convert_currency',
-      'gain_currency',
-      'lookup_rules',
-      'spend_currency',
-    ],
-    contextRequirement:
-      'acting wallet snapshot; transaction intent and coin-weight ruling',
-  },
-  'rule:combat-step-by-step': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'close_combat_instance',
-      'lookup_rules',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      "encounter lifecycle state code-owned; the 5-step narration procedure is the DM's job",
-  },
-  'rule:combining-magical-effects': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      "same-effect non-stacking ruling; F3's active-effect registry will improve visibility (dependency note, not a blocker)",
-  },
-  'rule:command-word': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'silence/sound gating ruling',
-  },
-  'rule:complex-traps': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'close_combat_instance',
-      'lookup_rules',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      'trap initiative/actions procedure; encounter tools suffice',
   },
   'rule:concentration': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/activeEffects.ts',
       'packages/core/src/state/hpLifecycle.ts',
@@ -2013,29 +1802,11 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
     evidence: ['packages/core/test/activeEffects.test.ts'],
   },
-  'rule:cone': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'geometry ruling',
-  },
-  'rule:conflict': {
-    status: 'partial',
-    missing:
-      "contest procedure model-adjudicated over seeded dice; the 1/dawn control-attempt limit is hostable as a declared F5 usage counter (maxUses 1, reset dawn); missing: durable charmed 1d12 h duration and repeat-on-damage save trigger → F3's active-effect lifecycle",
-  },
   'rule:constitution-hit-points': {
-    status: 'implemented',
     runtimeOwner: ['packages/core/src/character/levelUpEngine.ts'],
     evidence: ['packages/core/test/levelUpEngine.test.ts'],
   },
-  'rule:consumables': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'remove_item', 'roll'],
-    contextRequirement:
-      'source-bound equipment useProfile declares consumption; one-shot inventory units use remove_item, finite-use equipment uses F5 item counters',
-  },
   'rule:contests': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveContest.ts',
@@ -2045,25 +1816,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/resolutionTools.test.ts',
     ],
   },
-  'rule:controlling-a-mount': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'close_combat_instance',
-      'lookup_rules',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      'controlled/independent ruling; initiative sync narratable',
-  },
-  'rule:crafting': {
-    status: 'partial',
-    missing:
-      'deterministic crafting cost/progress arithmetic is not exposed as a registered calculation primitive',
-  },
   'rule:critical-hits': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveDamage.ts',
@@ -2073,22 +1826,15 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/resolutionTools.test.ts',
     ],
   },
-  'rule:cube': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'geometry ruling',
-  },
+  // R0 rewritten: the accepted custom-background policy is implemented and validated during character creation (characterDraftEngine.test.ts).
   'rule:customizing-a-background': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.2',
-  },
-  'rule:cylinder': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'geometry ruling',
+    runtimeOwner: ['packages/core/src/character/characterDraft.ts'],
+    evidence: [
+      'packages/core/test/characterDraftEngine.test.ts',
+      'packages/core/test/finalizeCharacter.test.ts',
+    ],
   },
   'rule:damage-resistance-and-vulnerability': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveDamage.ts',
@@ -2096,7 +1842,6 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/resolution.test.ts'],
   },
   'rule:damage-rolls': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/dice.ts',
       'packages/core/src/orchestrator/resolution.ts',
@@ -2107,154 +1852,26 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/resolutionTools.test.ts',
     ],
   },
-  'rule:darkvision': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'lighting-substitution ruling; radii structured',
-  },
-  'action:dash': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'extra-movement grant; narrative movement',
-  },
   'rule:death-saving-throws': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolRecordDeathSave.ts',
     ],
     evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
-  'rule:detecting-and-disabling-a-trap': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'check-based procedure; seeded rolls + trap DCs retrievable',
-  },
-  'rule:dexterity-attack-rolls-and-damage': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'which-ability ruling; finesse tags structured',
-  },
-  'rule:dexterity-initiative': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'close_combat_instance',
-      'lookup_rules',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      'initiative rolls + combatant state code-owned; ordering visible',
-  },
-  'action:disengage': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'add_condition',
-      'close_combat_instance',
-      'lookup_rules',
-      'remove_condition',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      'until-end-of-turn effect; condition entry representable',
-  },
-  'action:dodge': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'add_condition',
-      'close_combat_instance',
-      'lookup_rules',
-      'remove_condition',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      'until-next-turn effect representable as combatant condition; per-roll adv/dis application',
-  },
-  'rule:downtime-activities': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'update_clock'],
-    contextRequirement: '8 h/day scheduling ruling; clock owned',
-  },
-  'rule:equipment': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'component default assumption',
-  },
-  'rule:expenses-lifestyle-expenses': {
-    status: 'partial',
-    missing:
-      'deterministic per-day lifestyle-cost multiplication is not exposed as a registered calculation primitive',
-  },
-  'rule:experience-points': {
-    status: 'partial',
-    missing: 'multiclass total-level clause → D1',
-    runtimeOwner: ['packages/core/src/rules/advancementTable.ts'],
-  },
-  'rule:extra-attack': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.1',
-  },
-  'rule:falling': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'calc',
-      'resolve_damage',
-      'adjust_hp',
-      'update_combatant',
-      'add_condition',
-      'lookup_rules',
-    ],
-    contextRequirement:
-      'fall-distance determination and landing narration stay rulings; the dice derivation is code-owned via calc fall_damage_dice (⌊d/10⌋d6 cap 20d6) and the roll via resolve_damage, whose result is applied through adjust_hp (party) / update_combatant (monsters); landing prone via a condition entry',
-  },
   'rule:falling-unconscious': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolAdjustHp.ts',
     ],
     evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
+  // R0 rewritten: optional feats are selected at ability-score-improvement levels with prerequisite and duplicate checks (levelUpEngine.test.ts).
   'rule:feats': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.2',
-  },
-  'rule:fly': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'hover/death-fall ruling; flags structured',
-  },
-  'rule:flying-movement': {
-    status: 'model-adjudicated-supported',
-    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
-    contextRequirement: 'fall-when-prone/speed-0 ruling',
-  },
-  'rule:food': {
-    status: 'model-adjudicated-supported',
-    primitives: ['calc', 'add_condition', 'update_clock', 'lookup_rules'],
-    contextRequirement:
-      'deprivation-day state stays durable character condition entries and the low-frequency clock stays model-adjudicated (as classified); the 3+Con-mod (min 1) day-threshold derivation is code-owned via calc days_without_food_limit',
-  },
-  'rule:food-and-water': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'add_condition',
-      'lookup_rules',
-      'remove_condition',
-      'roll',
-      'update_clock',
-    ],
-    contextRequirement:
-      "as `food` (condition-entry state, clock model-adjudicated); no formula of its own — this row is the exhaustion-not-removable-until-fed gate, a rest-time ruling (F7 hook noted); the deprivation-day arithmetic itself is `food`'s clause, not duplicated here",
+    runtimeOwner: ['packages/core/src/character/levelUpEngine.ts'],
+    evidence: ['packages/core/test/levelUpEngine.test.ts'],
   },
   'rule:gaining-inspiration': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/inspiration.ts',
       'packages/core/src/orchestrator/toolAwardInspiration.ts',
@@ -2262,21 +1879,13 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     evidence: ['packages/core/test/inspiration.test.ts'],
   },
   'rule:grapple-rules-for-monsters': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/calc.ts',
       'packages/core/src/orchestrator/toolCalc.ts',
     ],
     evidence: ['packages/core/test/calc.test.ts'],
   },
-  'rule:grappling': {
-    status: 'model-adjudicated-supported',
-    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
-    contextRequirement:
-      'contest rolls + grappled condition + half-speed drag ruling',
-  },
   'rule:group-checks': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/calc.ts',
       'packages/core/src/orchestrator/resolution.ts',
@@ -2286,13 +1895,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/resolutionTools.test.ts',
     ],
   },
-  'rule:half-dragon-template': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'GM-time content-creation procedure; tables structured',
-  },
   'rule:healing': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolAdjustHp.ts',
@@ -2302,109 +1905,21 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/domainMutations.test.ts',
     ],
   },
-  'action:help': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'advantage grant; per-roll',
-  },
-  'action:hide': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'Stealth check per hiding ruling',
-  },
-  'rule:hiding': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'resolve_contest', 'calc'],
-    contextRequirement:
-      'Stealth contest and hiding eligibility are rulings; the contest resolves via resolve_contest and passive scores via calc passive_score (owned by rule:passive-checks)',
-  },
-  'rule:hit-points': {
-    status: 'model-adjudicated-supported',
-    primitives: ['adjust_hp', 'lookup_rules', 'roll'],
-    contextRequirement:
-      'per-creature HP/HD structured; the size-die formula is GM-time creature design',
-  },
-  'rule:hit-points-and-hit-dice': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.1',
-  },
-  'rule:improvised-weapons': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      '1d4 / proficiency-analogy stays a ruling; every item-specific improvised attack carries its range, attack mode, damage, and consumption payload',
-  },
-  'rule:innate-spellcasting': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'spend_usage', 'update_clock'],
-    contextRequirement:
-      'statblock convention; per-creature entries structured; the X/day usage economies are code-owned once by the F5 usage counters (spend_usage derives per-day innate groups from the record — single-owner factoring)',
-  },
   'rule:instant-death': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolAdjustHp.ts',
     ],
     evidence: ['packages/core/test/hpLifecycle.test.ts'],
   },
-  'rule:interacting-with-objects': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'GM-set object stats; auto-fail/immunity rulings',
-  },
-  'rule:jumping': {
-    status: 'model-adjudicated-supported',
-    primitives: ['calc', 'resolve_check', 'lookup_rules'],
-    contextRequirement:
-      'movement-cost accounting and the optional obstacle/landing checks stay rulings; the long/high-jump distance formulas are code-owned via calc jump_distance',
-  },
-  'rule:knocking-a-creature-out': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'add_condition',
-      'adjust_hp',
-      'lookup_rules',
-      'remove_condition',
-      'roll',
-    ],
-    contextRequirement:
-      'declared choice at damage time → unconscious+stable conditions (durable once F6 defines stable)',
-  },
-  'rule:lair-actions': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'close_combat_instance',
-      'lookup_rules',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      "initiative-20 scheduling ruling; once-per-round is structural when the lair is entered as an initiative-20 combatant in the code-owned turn order; F5's per-round reset vocabulary can host the no-repeat clause if drift is observed",
-  },
   'rule:legendary-actions': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
     ],
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
-  'rule:legendary-creatures': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'form-assumption exclusion gate; ruling over structured data',
-  },
-  'rule:lifting-and-carrying': {
-    status: 'model-adjudicated-supported',
-    primitives: ['calc', 'add_condition', 'lookup_rules'],
-    contextRequirement:
-      'tracking what is carried and applying the over-capacity speed-5 penalty stay adjudicated over inventory + condition entries; the capacity arithmetic (Str×15, push/drag ×2, size doubling) is code-owned via calc carry_capacity',
-  },
   'rule:limited-usage': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/usageCounters.ts',
       'packages/core/src/orchestrator/toolSpendUsage.ts',
@@ -2413,156 +1928,35 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
     evidence: ['packages/core/test/usageCounters.test.ts'],
   },
-  'rule:line': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'geometry ruling',
-  },
   'rule:long-rest': {
-    // R0 rewritten: the old unimplemented claim is stale; toolRest and
-    // completeLongRest enforce qualification, 24-hour, >=1 HP, and resets.
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/toolRest.ts',
       'packages/core/src/state/rest.ts',
     ],
     evidence: ['packages/core/test/rest.test.ts'],
   },
-  'rule:longer-casting-times': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'add_condition',
-      'close_combat_instance',
-      'lookup_rules',
-      'remove_condition',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      'rare multi-turn casting; in-progress state durably representable as a character condition entry (readable in context); slot-kept-on-break ruling',
-  },
-  'rule:madness-effects': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'update_clock'],
-    contextRequirement: 'table rolls + durations; seeded dice + clock',
-  },
-  'rule:making-an-attack': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: '3-step narration procedure over code-owned rolls',
-  },
-  'rule:material-m': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'focus/pouch substitution + cost-component gating rulings; per-spell components structured',
-  },
-  'rule:melee-attacks': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'resolve_check', 'resolve_damage'],
-    contextRequirement:
-      'reach semantics are rulings; unarmed 1 + Str composition rides resolve_damage declared modifiers',
-  },
   'rule:modifiers-to-the-roll': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolutionShared.ts',
     ],
     evidence: ['packages/core/test/resolution.test.ts'],
   },
-  'rule:mounted-combat': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'eligibility gate ruling (size/anatomy/willing)',
-  },
-  'rule:mounting-and-dismounting': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'movement-cost + save rulings',
-  },
-  'rule:mounts-and-vehicles': {
-    status: 'model-adjudicated-supported',
-    primitives: ['calc', 'give_item', 'lookup_rules', 'spend_currency'],
-    contextRequirement:
-      'purchase availability and mount selection ruling; acting wallet and carry-capacity context',
-    runtimeOwner: ['packages/core/src/orchestrator/calc.ts'],
-  },
-  'rule:movement-and-position': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'budget-spending narration',
-  },
-  'rule:movement-and-position-difficult-terrain': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      '+1 ft/ft cost — narrative-magnitude arithmetic; movement costs live only in narration (boundary rule 1)',
-  },
-  'rule:moving-around-other-creatures': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'pass-through/occupancy ruling',
-  },
-  'rule:moving-between-attacks': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'narrative movement',
-  },
-  'rule:multiattack': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'no-OA restriction ruling; routines structured (18.7.9)',
-  },
-  'rule:multiclassing': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.1',
-  },
-  'rule:multiclassing-proficiency-bonus': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.1',
-  },
-  'rule:objects': {
-    status: 'model-adjudicated-supported',
-    primitives: ['adjust_hp', 'lookup_rules', 'roll'],
-    contextRequirement: 'AC/HP tables structured; threshold/immunity rulings',
-  },
   'rule:other-activity-on-your-turn': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
     ],
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
-  'rule:paired-items': {
-    status: 'model-adjudicated-supported',
-    primitives: ['give_item', 'lookup_rules', 'remove_item', 'roll'],
-    contextRequirement: 'both-of-pair requirement ruling; inventory visible',
-  },
   'rule:passive-checks': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/calc.ts',
       'packages/core/src/orchestrator/toolCalc.ts',
     ],
     evidence: ['packages/core/test/calc.test.ts'],
   },
-  'rule:poisons': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'delivery-type exposure rulings; hazard data structured',
-  },
-  'rule:practicing-a-profession': {
-    status: 'partial',
-    missing:
-      'deterministic profession-earnings arithmetic is not exposed as a registered calculation primitive',
-  },
   'rule:proficiency-bonus': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/character/derivedValues.ts',
@@ -2570,18 +1964,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
     evidence: ['packages/core/test/resolution.test.ts'],
   },
-  'rule:range': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'normal/long-range disadv ruling; ranges structured',
-  },
-  'rule:ranged-attacks-in-close-combat': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'within-5-ft disadv ruling',
-  },
   'rule:reactions': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSpendTurnResource.ts',
@@ -2589,48 +1972,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
     ],
     evidence: ['packages/core/test/actionEconomy.test.ts'],
   },
-  'action:ready': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'add_condition',
-      'lookup_rules',
-      'remove_condition',
-      'roll',
-      'spend_turn_resource',
-    ],
-    contextRequirement:
-      'held trigger + readied-spell concentration representable as condition; the reaction spend is code-owned (F2 turn budget)',
-  },
-  'rule:recuperating': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'add_condition',
-      'lookup_rules',
-      'remove_condition',
-      'roll',
-      'update_clock',
-    ],
-    contextRequirement:
-      'fixed DC 15, no derivation (not an arithmetic clause, so the `food`/`speed` correction does not apply); the 3-day counter is durably representable as a character condition entry over the owned clock (low-frequency state-ownership principle, as food/water)',
-  },
-  'rule:researching': {
-    status: 'partial',
-    missing:
-      'deterministic per-day research-cost multiplication is not exposed as a registered calculation primitive',
-  },
-  'rule:rituals': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: '+10 min, no-slot casting; ritual flags structured',
-  },
-  'rule:rolling-1-or-20': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'resolve_check', 'roll'],
-    contextRequirement:
-      'natural die visible in rolls[]/natural; the F9 spec note landed — resolve_check vs-AC honors nat-20 auto-hit (critical) and nat-1 auto-miss on attacks only, never on checks/saves',
-  },
   'rule:saving-throws': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/resolution.ts',
       'packages/core/src/orchestrator/toolResolveCheck.ts',
@@ -2641,124 +1983,28 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/resolutionTools.test.ts',
     ],
   },
-  'action:search': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'check-based action',
-  },
-  'rule:self-sufficiency': {
-    status: 'partial',
-    missing:
-      'deterministic lifestyle-offset arithmetic is not exposed as a registered calculation primitive',
-  },
-  'rule:selling-treasure': {
-    status: 'partial',
-    missing:
-      'deterministic half/full-price resale transform is not exposed as a registered calculation primitive',
-  },
   'rule:short-rest': {
-    // R0 rewritten: the old unimplemented claim is stale; short-rest recovery
-    // and hit-die spending are implemented and covered by the rest suite.
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/orchestrator/toolRest.ts',
       'packages/core/src/state/rest.ts',
     ],
     evidence: ['packages/core/test/rest.test.ts'],
   },
-  'rule:shoving-a-creature': {
-    status: 'model-adjudicated-supported',
-    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
-    contextRequirement: 'contest → prone/push ruling',
-  },
-  'rule:silvered-weapons': {
-    status: 'model-adjudicated-supported',
-    primitives: ['give_item', 'lookup_rules', 'spend_currency'],
-    contextRequirement:
-      'silvering availability and item identity ruling; acting wallet snapshot',
-  },
-  'rule:somatic-s': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'free-hand gating ruling',
-  },
-  'rule:special-traits-spellcasting': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'statblock convention; entries structured',
-  },
-  'rule:special-weapons': {
-    status: 'partial',
-    missing:
-      'per-record lance/net payloads are complete; runtime scenario evidence is still missing for net escape/removal, object damage/destruction, and one-attack enforcement',
-    externalClauses: [
-      {
-        clause: 'complete special-weapon runtime execution path',
-        bead: 'eshyra-o9bd.18.7.8.3',
-      },
-    ],
-  },
-  'rule:speed': {
-    status: 'model-adjudicated-supported',
-    primitives: ['calc', 'resolve_check', 'add_condition', 'lookup_rules'],
-    contextRequirement:
-      'travel pace, gallop, and movement rates/costs stay rulings (narrative-magnitude arithmetic; F2 deliberately excludes the movement budget); exhaustion as condition entry; the forced-march DC derivation is code-owned via calc forced_march_dc and the save via resolve_check',
-  },
-  'rule:speed-difficult-terrain': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'half-pace ruling',
-  },
   'rule:spell-slots': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/spellSlots.ts',
       'packages/core/src/orchestrator/toolSpendSpellSlot.ts',
     ],
     evidence: ['packages/core/test/spellSlots.test.ts'],
   },
-  'rule:spellcasting': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.1',
-  },
-  'rule:spells': {
-    status: 'model-adjudicated-supported',
-    primitives: ['give_item', 'lookup_rules', 'remove_item', 'roll'],
-    contextRequirement:
-      'item-casting procedure ruling; per-item spell data completeness → 18.7.7 corpus work',
-    externalClauses: [
-      {
-        clause: 'per-item spell-data completeness',
-        bead: 'eshyra-o9bd.18.7.7',
-      },
-    ],
-  },
-  'rule:sphere': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'geometry ruling',
-  },
-  'rule:squeezing-into-a-smaller-space': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'size/cost/disadv ruling',
-  },
   'rule:stabilizing-a-creature': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolStabilizeCharacter.ts',
     ],
     evidence: ['packages/core/test/hpLifecycle.test.ts'],
-    primitives: ['stabilize_character', 'advance_time', 'adjust_hp'],
-  },
-  'rule:strength-attack-rolls-and-damage': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'which-ability ruling',
   },
   'rule:surprise': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolSetSurprised.ts',
@@ -2769,112 +2015,14 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/calc.test.ts',
     ],
   },
-  'rule:swim': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'cost-exemption ruling',
-  },
-  'rule:targeting-yourself': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'self-target eligibility ruling',
-  },
-  'rule:telepathy': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'communication semantics ruling; per-creature payloads (18.7.9 C3)',
-    externalClauses: [
-      {
-        clause: 'per-creature payload contracts (18.7.9 C3 slice)',
-        bead: 'eshyra-o9bd.18.7.9',
-      },
-    ],
-  },
   'rule:temporary-hit-points': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/hpLifecycle.ts',
       'packages/core/src/orchestrator/toolGrantTempHp.ts',
     ],
     evidence: ['packages/core/test/hpLifecycle.test.ts'],
-    dependencyNote:
-      'long-rest expiry is exposed as the expireTemporaryHp reset hook; the rest engine (F7, eshyra-2n1t.9) wires it into the long-rest procedure',
-  },
-  'rule:the-order-of-combat': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'close_combat_instance',
-      'lookup_rules',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      "round/turn state code-owned; cycle narration is the DM's job",
-  },
-  'rule:the-order-of-combat-initiative': {
-    status: 'model-adjudicated-supported',
-    primitives: [
-      'close_combat_instance',
-      'lookup_rules',
-      'roll',
-      'start_encounter',
-      'update_combatant',
-    ],
-    contextRequirement:
-      'rolls + combatant state code-owned; group-roll/tie rulings',
-  },
-  'rule:training': {
-    status: 'partial',
-    missing:
-      'deterministic 250 days × 1 gp training-cost arithmetic is not exposed as a registered calculation primitive',
-  },
-  'rule:tremorsense': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'ground-contact detection ruling',
-  },
-  'rule:truesight': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement:
-      'auto-success bundle applied as per-event rulings; radii structured',
-  },
-  'rule:two-weapon-fighting': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'resolve_damage', 'spend_turn_resource'],
-    contextRequirement:
-      'light-property/weapon eligibility stays a ruling; omit-positive-ability-mod is an input choice on resolve_damage declared modifiers (composition owned by rule:damage-rolls); the bonus-attack spend landed with the F2 turn budget',
-  },
-  'rule:unarmored-defense': {
-    status: 'design-blocked',
-    designOwner: 'eshyra-2n1t.1',
-  },
-  'rule:underwater-combat': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'melee/ranged/fire-resistance rulings',
-  },
-  'rule:unseen-attackers-and-targets': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'adv/disadv + wrong-guess auto-miss rulings',
-  },
-  'action:use-an-object': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'spend_turn_resource'],
-    contextRequirement:
-      'action definition; the free-interaction/action budget is code-owned (F2 turn budget)',
-  },
-  'rule:using-different-speeds': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll', 'calc'],
-    contextRequirement:
-      "narrative-magnitude arithmetic (boundary rule 1): the movement budget is deliberately not code-owned, so the cross-mode subtraction operates on narrated quantities only; F9's calc primitive (landed) is an available aid, not a gap",
   },
   'rule:using-inspiration': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/inspiration.ts',
       'packages/core/src/orchestrator/toolUseInspiration.ts',
@@ -2885,62 +2033,7 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
       'packages/core/test/resolution.test.ts',
     ],
   },
-  'rule:variant-encumbrance': {
-    status: 'model-adjudicated-supported',
-    primitives: ['calc', 'resolve_check', 'add_condition', 'lookup_rules'],
-    contextRequirement:
-      'variant adoption is a table ruling; classifying the current load and applying the speed penalties / Str-Dex-Con disadvantage (declared per roll on resolve_check) stay adjudicated; the 5×/10×/15×Str threshold arithmetic is code-owned via calc encumbrance_thresholds',
-  },
-  'rule:variant-skills-with-different-abilities': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'optional recombination ruling, play-time',
-  },
-  'rule:verbal-v': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'gag/silence gating ruling',
-  },
-  'rule:vision-and-light': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'obscurement/light-level rulings',
-  },
-  'rule:water': {
-    status: 'model-adjudicated-supported',
-    primitives: ['add_condition', 'lookup_rules', 'remove_condition', 'roll'],
-    contextRequirement:
-      'as `food`: condition-entry deprivation state + Con saves',
-  },
-  'rule:weapon-proficiency': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'roll'],
-    contextRequirement: 'PB gating per roll over structured proficiencies',
-  },
-  'rule:weapon-properties': {
-    status: 'partial',
-    missing:
-      'closed parameterized weaponProperties are complete; runtime scenario evidence remains missing for ammunition decrement, loading, and attack-count restrictions',
-    externalClauses: [
-      {
-        clause: 'generic weapon-property runtime procedures',
-        bead: 'eshyra-o9bd.18.7.8.3',
-      },
-    ],
-  },
-  'rule:wizard-your-spellbook': {
-    status: 'partial',
-    missing:
-      'deterministic spell-copy cost-per-level multiplication is not exposed as a registered calculation primitive',
-  },
-  'rule:working-together': {
-    status: 'model-adjudicated-supported',
-    primitives: ['lookup_rules', 'resolve_check'],
-    contextRequirement:
-      'leader-rolls-with-advantage ruling (advantage via the resolve_check advantage flag)',
-  },
   'rule:your-turn': {
-    status: 'implemented',
     runtimeOwner: [
       'packages/core/src/state/actionEconomy.ts',
       'packages/core/src/orchestrator/toolBeginTurn.ts',
@@ -2950,110 +2043,44 @@ const UNBOUND_ENGINE_PROCEDURE_COVERAGE: Readonly<
   },
 });
 
-/**
- * Attach the reviewed Foundation-2 identity to unresolved rows as the registry
- * is materialized. The historical bead remains alongside it; it is never used
- * as a resolution signal. These broad, existing audit identities preserve the
- * prior mappings without inventing new finding dispositions.
- */
-const KNOWN_LIMIT_AUDIT_STATUS: Readonly<
-  Record<RuleKnownLimit['limit'], RuleCoverageStatus>
-> = Object.freeze({
-  partial: 'partial',
-  unimplemented: 'unimplemented',
-  deferred: 'design-blocked',
-});
-
 export function materializeEngineProcedureCoverage(
-  unboundCoverage: Readonly<Record<string, RuleProcedureCoverage>>,
+  implementationEvidence: Readonly<Record<string, RuleImplementationEvidence>>,
+  statementDatasets: {
+    readonly procedureKeys?: readonly string[];
+    readonly knownLimits?: Readonly<Record<string, readonly RuleKnownLimit[]>>;
+  } = {},
 ): Readonly<Record<string, RuleProcedureCoverage>> {
-  // Rows owned by the runtime statement datasets (F-09 vertical slice) are
-  // projected from them, never authored here too: one definition per row.
-  // `runtimeSource` keeps the runtime entry by reference so the audit can be
-  // proven to read it rather than a copy.
-  const runtimeCoverage: Record<string, RuleProcedureCoverage> = {
-    ...unboundCoverage,
-  };
-  for (const [key, context] of Object.entries(RULE_ADJUDICATION_CONTEXT)) {
-    if (key in unboundCoverage)
-      throw new Error(
-        `${key}: coverage is authored both here and in RULE_ADJUDICATION_CONTEXT`,
-      );
-    runtimeCoverage[key] = {
-      status: 'model-adjudicated-supported',
-      primitives: context.tools,
-      contextRequirement: context.dmContext,
-      runtimeSource: context,
-    };
-  }
-  for (const [key, limits] of Object.entries(RULE_KNOWN_LIMITS)) {
-    if (key in runtimeCoverage)
-      throw new Error(`${key}: coverage is authored in more than one place`);
-    // The audit row carries one status; a key with several runtime limits has
-    // no faithful single-row projection, so refuse rather than drop one.
-    if (limits.length !== 1)
-      throw new Error(
-        `${key}: RULE_KNOWN_LIMITS must project to exactly one audit row (got ${limits.length})`,
-      );
-    const [limit] = limits;
-    runtimeCoverage[key] = {
-      status: KNOWN_LIMIT_AUDIT_STATUS[limit.limit],
-      missing: limit.statement,
-      findingId: limit.findingId,
-      ...(limit.designOwner === undefined
-        ? {}
-        : { designOwner: limit.designOwner }),
-      ...(limit.externalClauses === undefined
-        ? {}
-        : {
-            externalClauses: limit.externalClauses.map((clause) => ({
-              clause: clause.clause,
-              bead: clause.bead,
-              findingId: clause.findingId,
-            })),
-          }),
-      runtimeSource: limit,
-    };
-  }
+  const knownLimits = statementDatasets.knownLimits ?? RULE_KNOWN_LIMITS;
+  const keys = new Set([
+    ...(statementDatasets.procedureKeys ?? []),
+    ...Object.keys(implementationEvidence),
+    ...Object.keys(knownLimits),
+  ]);
   return Object.freeze(
     Object.fromEntries(
-      Object.entries(runtimeCoverage).map(([key, coverage]) => {
-        const unresolvedFindingId =
-          coverage.status === 'design-blocked'
-            ? 'engine-capability-ownership'
-            : coverage.status === 'partial' ||
-                coverage.status === 'unimplemented'
-              ? 'readiness-integrity'
-              : undefined;
-        const findingId =
-          coverage.findingId ??
-          (unresolvedFindingId === undefined
-            ? undefined
-            : requireFindingReference(unresolvedFindingId, key));
-        const externalClauses = coverage.externalClauses?.map((clause) => ({
-          ...clause,
-          findingId: requireFindingReference(
-            clause.findingId ?? 'rule-corpus-procedures',
-            `${key}:${clause.clause}`,
-          ),
-        }));
-        return [
-          key,
-          findingId === coverage.findingId && externalClauses === undefined
-            ? coverage
-            : {
-                ...coverage,
-                ...(findingId === undefined ? {} : { findingId }),
-                ...(externalClauses === undefined ? {} : { externalClauses }),
-              },
-        ] as const;
-      }),
+      [...keys].map(
+        (key) =>
+          [
+            key,
+            {
+              ...(implementationEvidence[key] === undefined
+                ? {}
+                : { implementation: implementationEvidence[key] }),
+              knownLimits: knownLimits[key] ?? [],
+            },
+          ] as const,
+      ),
     ),
   );
 }
 
 export const ENGINE_PROCEDURE_COVERAGE = materializeEngineProcedureCoverage(
   UNBOUND_ENGINE_PROCEDURE_COVERAGE,
+  {
+    procedureKeys: Object.entries(RULE_DISPOSITIONS)
+      .filter(([, disposition]) => disposition.class === 'engine-procedure')
+      .map(([key]) => key),
+  },
 );
 
 type RuntimeRuleDeterministicCapabilityContract =
@@ -3122,7 +2149,7 @@ export function validateRuleDeterministicCapabilityInput(
 }
 
 export function validateRuleDeterministicCapabilityContracts(
-  coverage: Readonly<Record<string, { readonly status: string }>>,
+  coverage: Readonly<Record<string, { readonly implementation?: object }>>,
   contracts: Readonly<Record<string, RuleDeterministicCapabilityContract>>,
   bindings = RULE_DETERMINISTIC_CAPABILITY_BINDINGS,
   dispositions = RULE_DETERMINISTIC_CAPABILITY_DISPOSITIONS,
@@ -3158,15 +2185,6 @@ export function validateRuleDeterministicCapabilityContracts(
     }
   }
   return errors;
-}
-
-function requireFindingReference(id: string, context: string): string {
-  if (findingByCanonicalId(id) === undefined) {
-    throw new Error(
-      `${context}: unknown canonical finding ID ${JSON.stringify(id)}`,
-    );
-  }
-  return id;
 }
 
 /**
@@ -3245,17 +2263,13 @@ export function validateRuleDispositionIdentity(
  * hand-maintained count target.
  */
 
-const DEFAULT_TOOL_NAMES: ReadonlySet<string> = new Set(
-  DEFAULT_TOOLS.map((tool) => tool.name),
-);
-
 /** Shape of a real bead ID, e.g. `eshyra-o9bd.18.7.6` or `eshyra-b69j.13`. */
 const BEAD_ID_PATTERN = /^eshyra-[a-z0-9]+(\.[0-9]+)*$/;
 
 /**
  * Registry-integrity check (design §3) over an arbitrary
  * (dispositions, coverage) pair: class invariants, coverage completeness,
- * status invariants, and optional fixture census. Pack-independent and pure,
+ * channel invariants, and optional fixture census. Pack-independent and pure,
  * so tests can exercise each failure mode against small fixtures without the
  * production identity pin getting in the way. `assertRuleDispositions` is the
  * production entry point, applied to the real registries plus the
@@ -3266,7 +2280,7 @@ export function validateRuleRegistries(
   dispositions: Readonly<Record<string, RuleDisposition>>,
   coverage: Readonly<Record<string, RuleProcedureCoverage>>,
   expectedSemanticCensus?: Readonly<Record<RuleDispositionClass, number>>,
-  expectedCoverageCensus?: Readonly<Record<RuleCoverageStatus, number>>,
+  expectedCoverageCensus?: Readonly<Record<RuleCoverageChannel, number>>,
 ): readonly string[] {
   const errors: string[] = [];
 
@@ -3346,98 +2360,64 @@ export function validateRuleRegistries(
     }
   }
 
-  const censusByStatus: Record<string, number> = {};
+  const censusByChannel: Record<string, number> = {};
+  const count = (channel: RuleCoverageChannel) => {
+    censusByChannel[channel] = (censusByChannel[channel] ?? 0) + 1;
+  };
   for (const [key, coverageRow] of Object.entries(coverage)) {
-    censusByStatus[coverageRow.status] =
-      (censusByStatus[coverageRow.status] ?? 0) + 1;
-    if (coverageRow.status === 'implemented') {
-      if (!coverageRow.runtimeOwner || coverageRow.runtimeOwner.length === 0) {
-        errors.push(`${key}: implemented row is missing runtimeOwner`);
-      }
-      if (!coverageRow.evidence || coverageRow.evidence.length === 0) {
-        errors.push(`${key}: implemented row is missing evidence`);
-      }
+    const implementation = coverageRow.implementation;
+    const limits = coverageRow.knownLimits;
+    if (implementation !== undefined) {
+      count('implementation');
+      if (!implementation.runtimeOwner?.length)
+        errors.push(`${key}: implementation is missing runtimeOwner`);
+      if (!implementation.evidence?.length)
+        errors.push(`${key}: implementation is missing evidence`);
     }
-    if (coverageRow.status === 'model-adjudicated-supported') {
-      if (!coverageRow.primitives || coverageRow.primitives.length === 0) {
-        errors.push(
-          `${key}: model-adjudicated-supported row is missing primitives`,
-        );
-      } else {
-        for (const primitive of coverageRow.primitives) {
-          if (!DEFAULT_TOOL_NAMES.has(primitive)) {
-            errors.push(
-              `${key}: primitive '${primitive}' is not a registered DEFAULT_TOOLS name`,
-            );
-          }
-        }
-      }
-      if (!coverageRow.contextRequirement) {
-        errors.push(
-          `${key}: model-adjudicated-supported row is missing contextRequirement`,
-        );
-      }
+    if (!Array.isArray(limits)) {
+      errors.push(`${key}: knownLimits must be an array`);
+      continue;
     }
-    if (coverageRow.status === 'partial' && !coverageRow.missing) {
-      errors.push(`${key}: partial row is missing 'missing'`);
-    }
-    if (
-      (coverageRow.status === 'partial' ||
-        coverageRow.status === 'unimplemented' ||
-        coverageRow.status === 'design-blocked') &&
-      coverageRow.findingId === undefined
-    ) {
-      errors.push(`${key}: unresolved row is missing durable findingId`);
-    } else if (
-      coverageRow.findingId !== undefined &&
-      findingByCanonicalId(coverageRow.findingId) === undefined
-    ) {
-      errors.push(
-        `${key}: unknown canonical finding ID ${JSON.stringify(coverageRow.findingId)}`,
-      );
-    }
-    if (coverageRow.status === 'design-blocked') {
-      if (!coverageRow.designOwner) {
-        errors.push(`${key}: design-blocked row is missing designOwner`);
-      } else if (!BEAD_ID_PATTERN.test(coverageRow.designOwner)) {
+    if (implementation === undefined && limits.length === 0)
+      count('noRuntimeStatement');
+    for (const limit of limits) {
+      count('knownLimit');
+      if (!limit.statement)
+        errors.push(`${key}: ${limit.limit} known limit is missing statement`);
+      if (findingByCanonicalId(limit.findingId) === undefined)
         errors.push(
-          `${key}: designOwner '${coverageRow.designOwner}' is not a real bead-id shape`,
+          `${key}: unknown canonical finding ID ${JSON.stringify(limit.findingId)}`,
         );
+      if (limit.limit === 'deferred') {
+        if (!limit.designOwner)
+          errors.push(`${key}: deferred known limit is missing designOwner`);
+        else if (!BEAD_ID_PATTERN.test(limit.designOwner))
+          errors.push(
+            `${key}: designOwner '${limit.designOwner}' is not a real bead-id shape`,
+          );
       }
-    }
-    // Clause-level external ownership (design §5 item 3): each clause must
-    // name a real bead and a non-empty description — never a placeholder —
-    // so a malformed cross-bead pointer can't silently pass review.
-    for (const { clause, bead, findingId } of coverageRow.externalClauses ??
-      []) {
-      if (!clause) {
-        errors.push(`${key}: externalClauses entry is missing 'clause'`);
-      }
-      if (!BEAD_ID_PATTERN.test(bead)) {
-        errors.push(
-          `${key}: externalClauses bead '${bead}' is not a real bead-id shape`,
-        );
-      }
-      if (findingId === undefined) {
-        errors.push(
-          `${key}: externalClauses entry is missing durable findingId`,
-        );
-      } else if (findingByCanonicalId(findingId) === undefined) {
-        errors.push(
-          `${key}: externalClauses findingId ${JSON.stringify(findingId)} is not a canonical finding ID`,
-        );
+      for (const { clause, bead, findingId } of limit.externalClauses ?? []) {
+        if (!clause)
+          errors.push(`${key}: externalClauses entry is missing 'clause'`);
+        if (!BEAD_ID_PATTERN.test(bead))
+          errors.push(
+            `${key}: externalClauses bead '${bead}' is not a real bead-id shape`,
+          );
+        if (findingByCanonicalId(findingId) === undefined)
+          errors.push(
+            `${key}: externalClauses findingId ${JSON.stringify(findingId)} is not a canonical finding ID`,
+          );
       }
     }
   }
-  for (const [status, expected] of Object.entries(
+  for (const [channel, expected] of Object.entries(
     expectedCoverageCensus ?? {},
   )) {
-    const actual = censusByStatus[status] ?? 0;
-    if (actual !== expected) {
+    const actual = censusByChannel[channel] ?? 0;
+    if (actual !== expected)
       errors.push(
-        `coverage census drift: ${status} is ${actual}, expected ${expected} (caller-supplied census)`,
+        `coverage census drift: ${channel} is ${actual}, expected ${expected} (caller-supplied census)`,
       );
-    }
   }
 
   return errors;
@@ -3508,10 +2488,7 @@ export function assertRuleDispositions(pack: RulesPack): readonly string[] {
       ),
     ),
     ...validateRuleDispositionIdentity(RULE_DISPOSITIONS),
-    ...validateRuleAdjudicationContext(
-      new Set(DEFAULT_TOOLS.map((tool) => tool.name)),
-    ),
-    ...validateRuleKnownLimits(),
+    ...validateRuleKnownLimits(new Set(DEFAULT_TOOLS.map((tool) => tool.name))),
   );
 
   return errors;
@@ -3528,22 +2505,30 @@ export interface RuleDispositionReport {
   readonly tableBacked: number;
   readonly duplicates: number;
   readonly engineProcedure: {
-    readonly implemented: number;
-    readonly modelAdjudicatedSupported: number;
-    /** Actionable gap list: key + missing semantics (design §4). */
-    readonly partial: readonly {
+    readonly implementation: number;
+    readonly noRuntimeStatement: number;
+    readonly knownLimits: Readonly<
+      Record<
+        RuleKnownLimit['limit'],
+        readonly {
+          readonly key: string;
+          readonly statement: string;
+          readonly findingId: string;
+          readonly designOwner?: string;
+        }[]
+      >
+    >;
+    /**
+     * Blocking engine-capability gaps (design A5), one entry per key and gap.
+     * A known limit discloses these; it never discharges them, so they are
+     * reported apart from the limit lists and never as a disposition.
+     */
+    readonly blockingCapabilityGaps: readonly {
       readonly key: string;
-      readonly missing: string;
-    }[];
-    /** Transitional actionable gap list: key + missing semantics. */
-    readonly unimplemented: readonly {
-      readonly key: string;
-      readonly missing: string;
-    }[];
-    /** key + design owner (design §4). */
-    readonly designBlocked: readonly {
-      readonly key: string;
-      readonly designOwner: string;
+      readonly gap: string;
+      readonly operation: string;
+      readonly ownerBead: string;
+      readonly findingId: string;
     }[];
     /** Flattened key + clause + bead (design §4) — a row with multiple
      *  externally owned clauses (e.g. armor-guidance) contributes one entry
@@ -3555,11 +2540,6 @@ export interface RuleDispositionReport {
       readonly findingId: string;
     }[];
   };
-  /** Context that must be retrievable when a procedure is model-adjudicated. */
-  readonly adjudicationContextInventory: readonly {
-    readonly key: string;
-    readonly contextRequirement: string;
-  }[];
   /**
    * Positive, bounded ADR 0020 §3 contracts, not a capability inventory.
    * Scoped to `RULE_DISPOSITION_REPORT_CONTRACT_REVISIONS` — the runtime
@@ -3582,24 +2562,27 @@ export interface RuleDispositionReport {
         readonly coverageEvidence: readonly string[];
       })
   )[];
-  /** Deferred, partial, unimplemented, design-blocked, and external work. */
+  /** Known limits and externally owned clauses. */
   readonly unresolvedWork: readonly {
     readonly key: string;
     readonly kind:
       | 'partial'
       | 'unimplemented'
-      | 'design-blocked'
-      | 'external-clause';
+      | 'deferred'
+      | 'external-clause'
+      | 'blocking-capability-gap';
     readonly detail: string;
     readonly findingId: string;
     readonly historicalBead?: string;
+    /** Open bead owning a blocking capability gap (live, not history). */
+    readonly ownerBead?: string;
   }[];
 }
 
 /**
  * Readiness-report detail (design §4). Registry-integrity errors
  * (`assertRuleDispositions`) fail every build; these lists are visibility
- * only — partial/unimplemented/design-blocked rows are truthful, actionable
+ * only — partial/unimplemented/deferred limits are truthful, actionable
  * readiness gaps that stay visible without failing day-to-day CI. Detail
  * arrays (not just counts) so a reviewer can see exactly which keys and
  * clauses are outstanding without re-deriving them from the registry.
@@ -3619,77 +2602,86 @@ export function buildRuleDispositionReport(
     if (disposition.class === 'table-backed') tableBacked += 1;
     if (disposition.class === 'duplicate') duplicates += 1;
   }
-  let implemented = 0;
-  let modelAdjudicatedSupported = 0;
-  const partial: { key: string; missing: string }[] = [];
-  const unimplemented: { key: string; missing: string }[] = [];
-  const designBlocked: { key: string; designOwner: string }[] = [];
+  let implementation = 0;
+  let noRuntimeStatement = 0;
+  const knownLimits: {
+    [K in RuleKnownLimit['limit']]: {
+      key: string;
+      statement: string;
+      findingId: string;
+      designOwner?: string;
+    }[];
+  } = { partial: [], unimplemented: [], deferred: [] };
   const externalClauses: {
     key: string;
     clause: string;
     bead: string;
     findingId: string;
   }[] = [];
-  const adjudicationContextInventory: {
-    key: string;
-    contextRequirement: string;
-  }[] = [];
+  const blockingCapabilityGaps: RuleDispositionReport['engineProcedure']['blockingCapabilityGaps'][number][] =
+    [];
   const unresolvedWork: RuleDispositionReport['unresolvedWork'][number][] = [];
   for (const [key, coverage] of Object.entries(coverageRegistry)) {
-    if (coverage.status === 'implemented') implemented += 1;
-    if (coverage.status === 'model-adjudicated-supported') {
-      modelAdjudicatedSupported += 1;
-      adjudicationContextInventory.push({
+    if (coverage.implementation !== undefined) implementation += 1;
+    if (
+      coverage.implementation === undefined &&
+      coverage.knownLimits.length === 0
+    )
+      noRuntimeStatement += 1;
+    for (const limit of coverage.knownLimits) {
+      knownLimits[limit.limit].push({
         key,
-        contextRequirement: coverage.contextRequirement ?? '',
+        statement: limit.statement,
+        findingId: limit.findingId,
+        ...(limit.designOwner === undefined
+          ? {}
+          : { designOwner: limit.designOwner }),
       });
-    }
-    if (coverage.status === 'partial') {
-      partial.push({ key, missing: coverage.missing ?? '' });
       unresolvedWork.push({
         key,
-        kind: 'partial',
-        detail: coverage.missing ?? '',
-        findingId: coverage.findingId ?? '',
+        kind: limit.limit,
+        detail: limit.statement,
+        findingId: limit.findingId,
+        ...(limit.designOwner === undefined
+          ? {}
+          : { historicalBead: limit.designOwner }),
       });
-    }
-    if (coverage.status === 'unimplemented') {
-      unimplemented.push({ key, missing: coverage.missing ?? '' });
-      unresolvedWork.push({
-        key,
-        kind: 'unimplemented',
-        detail: coverage.missing ?? '',
-        findingId: coverage.findingId ?? '',
-      });
-    }
-    if (coverage.status === 'design-blocked') {
-      designBlocked.push({ key, designOwner: coverage.designOwner ?? '' });
-      unresolvedWork.push({
-        key,
-        kind: 'design-blocked',
-        detail:
-          'Deliberately deferred design work; ADR 0018 §6 reporting remains required for multiclass procedures.',
-        findingId: coverage.findingId ?? '',
-        historicalBead: coverage.designOwner,
-      });
-    }
-    for (const { clause, bead, findingId } of coverage.externalClauses ?? []) {
-      externalClauses.push({ key, clause, bead, findingId: findingId ?? '' });
-      unresolvedWork.push({
-        key,
-        kind: 'external-clause',
-        detail: clause,
-        findingId: findingId ?? '',
-        historicalBead: bead,
-      });
+      for (const gapId of limit.capabilityGaps ?? []) {
+        const gap = ENGINE_CAPABILITY_GAPS[gapId];
+        blockingCapabilityGaps.push({
+          key,
+          gap: gapId,
+          operation: gap.operation,
+          ownerBead: gap.ownerBead,
+          findingId: gap.findingId,
+        });
+        unresolvedWork.push({
+          key,
+          kind: 'blocking-capability-gap',
+          detail: gap.operation,
+          findingId: gap.findingId,
+          ownerBead: gap.ownerBead,
+        });
+      }
+      for (const { clause, bead, findingId } of limit.externalClauses ?? []) {
+        externalClauses.push({ key, clause, bead, findingId });
+        unresolvedWork.push({
+          key,
+          kind: 'external-clause',
+          detail: clause,
+          findingId,
+          historicalBead: bead,
+        });
+      }
     }
   }
+
   const byKey = <T extends { key: string }>(a: T, b: T) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
   const deterministicCapabilitySourceOutcomes: RuleDispositionReport['deterministicCapabilitySourceOutcomes'][number][] =
     [];
   for (const [ruleKey, coverage] of Object.entries(coverageRegistry)) {
-    if (coverage.status !== 'implemented') continue;
+    if (coverage.implementation === undefined) continue;
     const capabilities = RULE_DETERMINISTIC_CAPABILITY_BINDINGS.filter(
       (binding) => binding.ruleKey === ruleKey,
     ).map(({ capability }) => capability);
@@ -3698,8 +2690,8 @@ export function buildRuleDispositionReport(
         ruleKey,
         outcome: 'bound',
         capabilities,
-        coverageRuntimeOwner: coverage.runtimeOwner ?? [],
-        coverageEvidence: coverage.evidence ?? [],
+        coverageRuntimeOwner: coverage.implementation.runtimeOwner,
+        coverageEvidence: coverage.implementation.evidence,
       });
       continue;
     }
@@ -3707,8 +2699,8 @@ export function buildRuleDispositionReport(
     if (disposition !== undefined)
       deterministicCapabilitySourceOutcomes.push({
         ...disposition,
-        coverageRuntimeOwner: coverage.runtimeOwner ?? [],
-        coverageEvidence: coverage.evidence ?? [],
+        coverageRuntimeOwner: coverage.implementation.runtimeOwner,
+        coverageEvidence: coverage.implementation.evidence,
       });
   }
   return {
@@ -3718,16 +2710,20 @@ export function buildRuleDispositionReport(
     tableBacked,
     duplicates,
     engineProcedure: {
-      implemented,
-      modelAdjudicatedSupported,
-      partial: partial.sort(byKey),
-      unimplemented: unimplemented.sort(byKey),
-      designBlocked: designBlocked.sort(byKey),
+      implementation,
+      noRuntimeStatement,
+      knownLimits: {
+        partial: knownLimits.partial.sort(byKey),
+        unimplemented: knownLimits.unimplemented.sort(byKey),
+        deferred: knownLimits.deferred.sort(byKey),
+      },
+      blockingCapabilityGaps: blockingCapabilityGaps.sort(
+        (a, b) => byKey(a, b) || a.gap.localeCompare(b.gap),
+      ),
       externalClauses: externalClauses.sort(
         (a, b) => byKey(a, b) || (a.clause < b.clause ? -1 : 1),
       ),
     },
-    adjudicationContextInventory: adjudicationContextInventory.sort(byKey),
     deterministicCapabilities: Object.values(
       ruleDispositionReportCapabilityContracts(
         RULE_DETERMINISTIC_CAPABILITY_CONTRACTS,

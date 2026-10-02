@@ -339,7 +339,7 @@
       "aliases": ["sol:CAP-001"],
       "invariant": "The rule corpus has executable procedures",
       "status": "narrowed",
-      "statusReasoning": "Deterministic execution exists only through positively selected bounded capabilities, while known limitations remain explicit rule-awareness and adjudication facts. eshyra-olc5 owns work only when a deterministic capability is selected, and a known limit does not itself create an engine obligation.",
+      "statusReasoning": "Deterministic execution exists only through positively selected bounded capabilities, while known limitations remain explicit rule-awareness and adjudication facts. eshyra-olc5 owns work when a deterministic capability is selected, and when a governing rule requires an engine-owned step that no valid operation performs (a blocking engine-capability gap, F-09 design amendment A5). A known limit neither creates nor discharges an engine obligation: it discloses a blocking gap, whose owning bead blocks the rules work until the capability lands or accepted authority changes the requirement.",
       "provenance": {
         "auditFinding": "sol:CAP-001",
         "evidenceBasis": "audit-finding"

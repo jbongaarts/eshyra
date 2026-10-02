@@ -291,16 +291,8 @@ function candidateBlock(candidate: PacketCandidate): string {
       `- residual DM interpretation: ${capability.residualInterpretation ?? 'not declared'}`,
     );
   }
-  // The two F-09 statement channels (design R4), rendered only when present:
+  // The known-limit statement channel (design A4), rendered only when present:
   // an absent channel is no statement at all, so nothing is printed for it.
-  const context = candidate.ruleAdjudicationContext;
-  if (context !== undefined)
-    lines.push(
-      '### Eshyra adjudication context',
-      `- tools: ${context.tools.join(', ')}`,
-      `- ${context.dmContext}`,
-      '- This is Eshyra-authored runtime guidance, not rules text; the source prose above stays authoritative.',
-    );
   const limits = candidate.ruleKnownLimits;
   if (limits !== undefined && limits.length > 0) {
     lines.push('### Eshyra known limits');

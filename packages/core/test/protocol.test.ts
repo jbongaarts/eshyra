@@ -8,6 +8,26 @@ import {
 } from '../src/internal.js';
 
 describe('DM system prompt', () => {
+  it('never asks the model to total state-dependent extra reactions', () => {
+    // The Hybrid Contract is a second producer of the reactionAllowance
+    // contract; it discloses the gap (eshyra-o9bd.19.3.4.6) instead.
+    const prompt = buildSystemPrompt(createDefaultToolRegistry());
+    expect(prompt).toContain(
+      'are not derived by any tool, so they cannot currently',
+    );
+    expect(prompt).not.toMatch(/current total recorded/);
+  });
+
+  it('never leaves the surprise comparison to the model', () => {
+    // Stealth vs passive Perception is the retained-total capability gap
+    // (eshyra-o9bd.19.5.10.3), disclosed rather than adjudicated.
+    const prompt = buildSystemPrompt(createDefaultToolRegistry());
+    expect(prompt).toContain(
+      'no tool performs, so it cannot currently be determined',
+    );
+    expect(prompt).not.toMatch(/adjudicating\s+surprise/);
+  });
+
   it('encodes the Hybrid rules contract', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
     expect(prompt.toLowerCase()).toContain('narrate');

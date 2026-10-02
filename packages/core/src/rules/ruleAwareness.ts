@@ -8,10 +8,6 @@ import {
   type RelationshipResolution,
   resolveRecordRelationships,
 } from './recordRelationships.js';
-import {
-  RULE_ADJUDICATION_CONTEXT,
-  type RuleAdjudicationContext,
-} from './ruleAdjudicationContext.js';
 import { RULE_KNOWN_LIMITS, type RuleKnownLimit } from './ruleKnownLimits.js';
 import type { ResolvedRulesStack } from './stack.js';
 import { RulesPackError } from './types.js';
@@ -28,13 +24,11 @@ export type RuleKnownLimitStatement = Pick<
 };
 
 /**
- * Eshyra's own statements about a record key (design R4): the three
- * independently owned channels. None depends on a pack, a stack, or a
- * relationship manifest, so a consumer without one still gets all three.
+ * Eshyra's own statements about a record key (design A4): the capability
+ * and known-limit channels. Neither depends on a pack, stack, or manifest.
  */
 export interface RuleStatements {
   readonly capabilities: CapabilityLedgerLookup;
-  readonly adjudicationContext?: RuleAdjudicationContext;
   readonly knownLimits: readonly RuleKnownLimitStatement[];
 }
 
@@ -43,11 +37,8 @@ export interface RuleAwareness extends RuleStatements {
   readonly relationships: readonly RelationshipResolution[];
 }
 
-/** Injectable datasets, for the synthetic channel-independence evidence. */
+/** Injectable known limits, for synthetic channel-independence evidence. */
 export interface RuleAwarenessDatasets {
-  readonly adjudicationContext?: Readonly<
-    Record<string, RuleAdjudicationContext>
-  >;
   readonly knownLimits?: Readonly<Record<string, readonly RuleKnownLimit[]>>;
 }
 
@@ -55,19 +46,8 @@ export function ruleStatements(
   recordKey: string,
   datasets: RuleAwarenessDatasets = {},
 ): RuleStatements {
-  const context = (datasets.adjudicationContext ?? RULE_ADJUDICATION_CONTEXT)[
-    recordKey
-  ];
   return {
     capabilities: DETERMINISTIC_CAPABILITY_LEDGER.lookup(recordKey),
-    ...(context === undefined
-      ? {}
-      : {
-          adjudicationContext: {
-            tools: context.tools,
-            dmContext: context.dmContext,
-          },
-        }),
     knownLimits: (
       (datasets.knownLimits ?? RULE_KNOWN_LIMITS)[recordKey] ?? []
     ).map(({ limit, statement, findingId, externalClauses }) => ({

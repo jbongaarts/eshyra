@@ -489,8 +489,13 @@ describe('lookup_rules tool', () => {
       };
       expect(data.ruleAwareness.knownLimits[0]).toMatchObject({
         findingId: 'readiness-integrity',
-        statement: expect.stringContaining('suffocation round countdown'),
+        statement: expect.stringContaining(
+          'does not gate stabilization or HP recovery',
+        ),
       });
+      expect(data.ruleAwareness.knownLimits[0].statement).not.toMatch(
+        /held its breath|suffocation round countdown/i,
+      );
     }
 
     const longRest = registry.invoke(
@@ -519,13 +524,11 @@ describe('lookup_rules tool', () => {
         reference.data as {
           ruleAwareness: {
             capabilities: { outcome: string };
-            adjudicationContext?: unknown;
             knownLimits: readonly unknown[];
           };
         }
       ).ruleAwareness;
       expect(awareness.capabilities.outcome).toBe('no-statement');
-      expect(awareness.adjudicationContext).toBeUndefined();
       expect(awareness.knownLimits).toEqual([]);
     }
   });
@@ -2105,6 +2108,85 @@ describe('memory_drilldown tool', () => {
 });
 
 describe('tool schema metadata (eshyra-0jq.10)', () => {
+  it('states the six target-domain and resolution contracts in tool descriptions', () => {
+    const descriptions = new Map(
+      createDefaultToolRegistry()
+        .definitions()
+        .map(({ name, description }) => [name, description]),
+    );
+    const expected = {
+      resolve_check:
+        "vs is the target's unmodified DC or AC from 1 to 99, and a total equal to vs succeeds. Modifiers apply only to the roller and are summed by the engine. When the source adds a term to the target's AC or to a DC, pass the base number as vs and declare the term as an equal negative modifier on the roll: for example a cover bonus to AC, or the Charisma modifier in a DC of 12 + a Charisma modifier. Declare a bonus to the roller's own save as a positive modifier.",
+      resolve_contest:
+        "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed.",
+      add_condition:
+        'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Because it is a no-op on an existing id, it cannot raise a graded condition: add exhaustion with its level (1-6); a later level increase cannot be recorded with this tool.',
+      remove_condition:
+        'Remove a condition from a character by id (characters only: for an encounter combatant, use update_combatant removeCondition). No-op if the condition is not present.',
+      adjust_hp:
+        'Characters only: for an encounter combatant, use update_combatant hpDelta.',
+      update_combatant:
+        'An hpDelta that brings the combatant to 0 hit points sets its status to dead unless status is also passed (for example "unconscious" for a nonlethal knockout); combatants have no dying or death-save state.',
+    };
+    for (const [name, sentence] of Object.entries(expected))
+      expect(descriptions.get(name)).toContain(sentence);
+  });
+
+  it('discloses state-dependent extra reactions instead of asking for a derived total', () => {
+    // ADR 0020 §2: the arithmetic is engine-owned. setReactionAllowance only
+    // stores a supplied total; nothing derives it from the creature's state
+    // (blocking gap eshyra-o9bd.19.3.4.6), so neither the description nor
+    // the schema field may ask the model for the current total or give a
+    // per-head recipe.
+    const tool = DEFAULT_TOOLS.find(
+      (entry) => entry.name === 'update_combatant',
+    );
+    const properties = (tool?.inputSchema.properties ?? {}) as Record<
+      string,
+      { description?: string }
+    >;
+    const field = properties.reactionAllowance?.description;
+    expect(tool?.description).toContain(
+      'the extra reactions such a mechanic grants cannot currently be recorded',
+    );
+    expect(field).toContain('no tool derives it');
+    for (const text of [tool?.description, field]) {
+      expect(text).not.toMatch(/heads? beyond one|current total/i);
+    }
+  });
+
+  it('discloses surprise as undeterminable instead of leaving the comparison to the DM', () => {
+    // The Stealth-vs-passive-Perception comparison is the retained-total gap
+    // (eshyra-o9bd.19.5.10.3); set_surprised only records an outcome.
+    const description = DEFAULT_TOOLS.find(
+      (entry) => entry.name === 'set_surprised',
+    )?.description;
+    expect(description).toContain(
+      'surprise cannot currently be determined deterministically',
+    );
+    expect(description).not.toMatch(/adjudicate/i);
+  });
+
+  it('never offers model-side arithmetic as a resolution fallback', () => {
+    // ADR 0020 §2 keeps dice and arithmetic deterministic. No tool resolves a
+    // contest with one already-fixed side (resolve_contest rerolls both;
+    // resolve_check's vs is >= with 1..99), so neither description may tell
+    // the model to compare totals itself; rule:hiding discloses the gap.
+    for (const name of ['resolve_check', 'resolve_contest']) {
+      const description = DEFAULT_TOOLS.find(
+        (tool) => tool.name === name,
+      )?.description;
+      expect(description).toBeDefined();
+      // "never roll two d20s yourself" is a prohibition, not a fallback.
+      expect(description).not.toMatch(
+        /compare|retained|strictly|total yourself/i,
+      );
+      // Target-side bonuses are engine-summed roller modifiers, never folded
+      // into vs by the model.
+      expect(description).not.toMatch(/goes into vs|add .* to vs/i);
+    }
+  });
+
   const VALIDATED_SCHEMA_KEYWORDS = new Set([
     'additionalProperties',
     'anyOf',

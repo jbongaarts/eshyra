@@ -673,7 +673,7 @@ function splitRecordData(
  * Eshyra's own statements for this candidate, as spreadable fields: the
  * ledger's explicit `not-positively-selected` row (narrowed by its own
  * discriminant, so no cast discards the union's guarantee), and the
- * independent adjudication-context and known-limit channels (design R4).
+ * known-limit channel (design A4).
  * None of them depends on a relationship manifest.
  */
 function statementFields(candidate: DiscoveryCandidate) {
@@ -681,18 +681,11 @@ function statementFields(candidate: DiscoveryCandidate) {
   if (recordKey === undefined) return {};
   // The same statement facade `lookup_rules` uses (design R6), so the packet
   // and the tool cannot present different Eshyra statements for one key.
-  const {
-    capabilities: result,
-    adjudicationContext,
-    knownLimits,
-  } = ruleStatements(recordKey);
+  const { capabilities: result, knownLimits } = ruleStatements(recordKey);
   return {
     ...(result.outcome === 'not-positively-selected'
       ? { deterministicCapabilityDisposition: result.disposition }
       : {}),
-    ...(adjudicationContext === undefined
-      ? {}
-      : { ruleAdjudicationContext: adjudicationContext }),
     ...(knownLimits.length === 0 ? {} : { ruleKnownLimits: knownLimits }),
   };
 }
