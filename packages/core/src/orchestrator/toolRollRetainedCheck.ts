@@ -93,7 +93,7 @@ export const rollRetainedCheckTool: Tool = {
           resolution.modifierTotal,
           resolution.total,
           visibility,
-          `tool:${ctx.turnId}`,
+          `model:${ctx.turnId}`,
           ctx.sessionId,
           ctx.at,
         );

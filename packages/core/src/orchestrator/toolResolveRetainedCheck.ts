@@ -130,7 +130,7 @@ export const resolveRetainedCheckTool: Tool = {
             total,
             noticed ? 1 : 0,
             JSON.stringify(resolution),
-            `tool:${ctx.turnId}`,
+            `model:${ctx.turnId}`,
             ctx.sessionId,
             ctx.at,
           );

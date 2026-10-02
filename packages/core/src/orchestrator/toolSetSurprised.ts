@@ -74,12 +74,15 @@ export const setSurprisedTool: Tool = {
           rows.some(
             (row) =>
               row.status !== 'active' ||
-              row.combat_instance_id !== instance.combat_instance_id,
+              // A hider usually rolls Stealth while sneaking up, before the
+              // encounter starts; a check from another encounter is stale.
+              (row.combat_instance_id !== null &&
+                row.combat_instance_id !== instance.combat_instance_id),
           )
         )
           return err(
             'invalid_comparisons',
-            'all comparisons must come from active retained checks in the active combat instance',
+            'all comparisons must come from active retained checks rolled before or during the active combat instance',
           );
         if (
           rows.some(
@@ -169,7 +172,7 @@ export const setSurprisedTool: Tool = {
           setSurprisedInTransaction(txnDb, {
             campaignId: ctx.campaignId,
             participants,
-            provenance: `tool:${ctx.turnId}`,
+            provenance: `model:${ctx.turnId}`,
             sessionId: ctx.sessionId,
             at: ctx.at,
           }),

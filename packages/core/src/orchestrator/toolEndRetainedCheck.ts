@@ -38,7 +38,7 @@ export const endRetainedCheckTool: Tool = {
           .run(
             a.reason,
             ctx.at,
-            `tool:${ctx.turnId}`,
+            `model:${ctx.turnId}`,
             ctx.sessionId,
             ctx.campaignId,
             a.retainedCheckId,

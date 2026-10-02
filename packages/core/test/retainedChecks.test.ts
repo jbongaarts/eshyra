@@ -19,7 +19,7 @@ import {
 
 const NOW = '2026-05-20T10:05:00.000Z';
 
-function setup() {
+function setup(startNow = true) {
   const db = freshDbWithSession();
   const base = makeTestAdventureModule();
   const module: AdventureModule = {
@@ -54,16 +54,18 @@ function setup() {
     resolveAdventureModule: (moduleId) =>
       moduleId === module.id ? module : undefined,
   };
-  startEncounter(db, {
-    campaignId: DEFAULT_TEST_CAMPAIGN_ID,
-    encounterId: 'enc-watch',
-    resolveAdventureModule: ctx.resolveAdventureModule,
-    provenance: 'test',
-    sessionId: DEFAULT_TEST_SESSION_ID,
-    at: NOW,
-  });
+  const start = () =>
+    startEncounter(db, {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      encounterId: 'enc-watch',
+      resolveAdventureModule: ctx.resolveAdventureModule,
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    });
+  if (startNow) start();
   const combatants = listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID);
-  return { db, registry, ctx, combatants };
+  return { db, registry, ctx, combatants, start };
 }
 
 function data(
@@ -424,6 +426,53 @@ describe('retained check tools', () => {
       retainedChecks: [hider],
     });
     expect(playerVisibleRollEntries([call])).toHaveLength(1);
+    db.close();
+  });
+
+  it('accepts a Stealth check rolled while sneaking up, before the encounter starts', () => {
+    const { db, registry, ctx, start } = setup(false);
+    const sneak = data(
+      registry.invoke(
+        'roll_retained_check',
+        {
+          kind: 'ability_check',
+          reason: 'sneak up on the watch',
+          label: 'party scout',
+          participant: { character: 'pc-1' },
+          modifiers: [{ label: 'DEX', value: 0 }],
+        },
+        ctx,
+      ),
+    );
+    start();
+    const watch = listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID).map(
+      (c) => c.combatantId,
+    );
+    const compared = data(
+      registry.invoke(
+        'resolve_retained_check',
+        {
+          retainedCheckId: sneak.retainedCheckId,
+          reason: 'surprise',
+          passive: watch.map((id, index) => ({
+            label: `watch ${index}`,
+            participant: { combatantId: id },
+            modifier: -100,
+          })),
+        },
+        ctx,
+      ),
+    );
+    const surprised = data(
+      registry.invoke(
+        'set_surprised',
+        { comparisonIds: compared.comparisons.map((c) => c.comparisonId) },
+        ctx,
+      ),
+    );
+    expect(surprised.surprised.map((p) => p.ref).sort()).toEqual(
+      [...watch].sort(),
+    );
     db.close();
   });
 });
