@@ -77,6 +77,7 @@ export const closeCombatInstanceTool: Tool = {
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,
+          resolveRulesPack: ctx.resolveRulesPack,
         }),
       );
     } catch (e) {

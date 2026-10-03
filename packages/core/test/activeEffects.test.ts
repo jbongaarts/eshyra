@@ -4880,31 +4880,34 @@ describe('exact resolver through condition projection and cleanup (S32)', () => 
       expect(hasCondition()).toBe(true);
       const installed = installLateAmbiguityAddon(db, NOW);
 
-      // Genuine unavailability refuses atomically in both producers.
+      // Creating a projection resolves the stack, so genuine unavailability
+      // refuses it atomically.
       expect(start('fx-no-resolver').ok).toBe(false);
       expect(effectStatus('fx-no-resolver')).toBeUndefined();
-      const refusedEnd = registry.invoke(
+      // Cleanup removes a condition from the row and needs no creature
+      // record, so it succeeds even without the resolver.
+      const cleanedUp = registry.invoke(
         'end_effect',
         { effectId: 'fx-before-addon', reason: 'ruled', note: 'cleanup' },
         ctx,
       );
-      expect(refusedEnd.ok).toBe(false);
-      expect(effectStatus('fx-before-addon')).toBe('active');
-      expect(hasCondition()).toBe(true);
-
-      // With the exact resolver both paths succeed.
-      ctx.resolveRulesPack = installed.resolver;
-      const ended = registry.invoke(
-        'end_effect',
-        { effectId: 'fx-before-addon', reason: 'ruled', note: 'cleanup' },
-        ctx,
-      );
-      expect(ended.ok).toBe(true);
+      expect(cleanedUp.ok).toBe(true);
       expect(effectStatus('fx-before-addon')).toBe('ended');
       expect(hasCondition()).toBe(false);
+
+      // With the exact resolver, projection and cleanup both succeed.
+      ctx.resolveRulesPack = installed.resolver;
       expect(start('fx-with-resolver').ok).toBe(true);
       expect(effectStatus('fx-with-resolver')).toBe('active');
       expect(hasCondition()).toBe(true);
+      const ended = registry.invoke(
+        'end_effect',
+        { effectId: 'fx-with-resolver', reason: 'ruled', note: 'cleanup' },
+        ctx,
+      );
+      expect(ended.ok).toBe(true);
+      expect(effectStatus('fx-with-resolver')).toBe('ended');
+      expect(hasCondition()).toBe(false);
       db.close();
     });
   }

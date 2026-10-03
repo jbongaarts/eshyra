@@ -191,6 +191,7 @@ export interface CloseCombatInstanceInput {
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 export interface UpdateCombatantInput {
@@ -1978,6 +1979,7 @@ function closeCombatInstanceInTxn(
     provenance: input.provenance,
     sessionId: input.sessionId,
     at: input.at,
+    resolveRulesPack: input.resolveRulesPack,
   });
   db.prepare(
     `UPDATE combat_instance
@@ -2407,19 +2409,22 @@ function updateCombatantInTxn(
       `combatant '${input.combatantId}' belongs to inactive combat instance '${current.combatInstanceId}'`,
     );
   }
-  const currentMechanic = multipleHeadsMechanic(
-    lookupCampaignRecord(
-      db,
-      'creature',
-      current.rulesRef,
-      input.resolveRulesPack,
-    ),
-  );
-  if (
-    currentMechanic &&
-    current.headCount === null &&
-    (input.hpDelta !== undefined || input.status !== undefined)
-  )
+  // The creature record is needed only for HP changes (head loss and the
+  // unknown-head refusal). Condition and participation writes — including
+  // effect cleanup paths that may not carry the campaign resolver — read
+  // head state from the row and never resolve the record.
+  const currentMechanic =
+    input.hpDelta === undefined
+      ? undefined
+      : multipleHeadsMechanic(
+          lookupCampaignRecord(
+            db,
+            'creature',
+            current.rulesRef,
+            input.resolveRulesPack,
+          ),
+        );
+  if (currentMechanic && current.headCount === null)
     throw new EncounterCombatantError(UNKNOWN_HEAD_STATE_MESSAGE);
   if (input.hpDelta !== undefined && !Number.isInteger(input.hpDelta)) {
     throw new EncounterCombatantError(

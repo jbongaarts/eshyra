@@ -940,6 +940,7 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       provenance: input.provenance,
       sessionId: input.sessionId,
       at: input.at,
+      resolveRulesPack: input.resolveRulesPack,
     });
 
     const currentBoundaryIdentity = resolveBoundaryParticipant(
