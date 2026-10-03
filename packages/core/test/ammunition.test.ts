@@ -169,9 +169,14 @@ describe('ammunition expenditure and battlefield recovery tools', () => {
   ])('accounts from the expenditure snapshot when $label', (scenario) => {
     const { db, registry, ctx } = setup();
     combat(db);
-    stack(db, 'arrows', scenario.quantities.reduce((sum, n) => sum + n, 0));
-    const expendedIds = scenario.quantities.map((quantity) =>
-      spend(registry, ctx, 'arrows', quantity).expendedInventoryId,
+    stack(
+      db,
+      'arrows',
+      scenario.quantities.reduce((sum, n) => sum + n, 0),
+    );
+    const expendedIds = scenario.quantities.map(
+      (quantity) =>
+        spend(registry, ctx, 'arrows', quantity).expendedInventoryId,
     );
     for (const index of scenario.missingIndexes) {
       const id = expendedIds[index];
@@ -201,7 +206,9 @@ describe('ammunition expenditure and battlefield recovery tools', () => {
     stack(db, 'silver-arrows', 4, 'Arrow', 'silver');
     const wood = spend(registry, ctx, 'wood-arrows', 4).expendedInventoryId;
     const silver = spend(registry, ctx, 'silver-arrows', 4).expendedInventoryId;
-    db.prepare("UPDATE inventory SET name='Renamed', properties_json='{}' WHERE id=?").run(wood);
+    db.prepare(
+      "UPDATE inventory SET name='Renamed', properties_json='{}' WHERE id=?",
+    ).run(wood);
     db.prepare('DELETE FROM inventory WHERE id=?').run(silver);
     close(db);
 

@@ -154,11 +154,7 @@ describe('adjust_exhaustion tool', () => {
        WHERE combatant_id=?`,
     ).run(combatantId);
 
-    const result = registry.invoke(
-      'begin_turn',
-      { combatantId },
-      ctx,
-    );
+    const result = registry.invoke('begin_turn', { combatantId }, ctx);
 
     expect(result.ok).toBe(true);
     expect(
@@ -170,7 +166,8 @@ describe('adjust_exhaustion tool', () => {
     ).toEqual({
       status: 'dead',
       hp_current: 6,
-      damage_turn_key: 'exhaustion-combat:1:combatant:exhaustion-combat-exhaustion-npc',
+      damage_turn_key:
+        'exhaustion-combat:1:combatant:exhaustion-combat-exhaustion-npc',
     });
     db.close();
   });
@@ -230,11 +227,7 @@ describe('adjust_exhaustion tool', () => {
       stable_recovery_deadline_elapsed_minutes: null,
     });
     expect(
-      registry.invoke(
-        'update_combatant',
-        { combatantId, hpDelta: 1 },
-        ctx,
-      ).ok,
+      registry.invoke('update_combatant', { combatantId, hpDelta: 1 }, ctx).ok,
     ).toBe(true);
     expect(
       registry.invoke('adjust_exhaustion', { combatantId, delta: 1 }, ctx).ok,
@@ -285,14 +278,16 @@ describe('adjust_exhaustion tool', () => {
         elapsed_minutes: number;
       }
     ).elapsed_minutes;
-    expect(
-      registry.invoke('advance_time', { minutes: 1 }, ctx),
-    ).toMatchObject({
+    expect(registry.invoke('advance_time', { minutes: 1 }, ctx)).toMatchObject({
       ok: false,
       message: expect.stringMatching(/stable recovery|schedule/i),
     });
     expect(
-      (db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get() as { elapsed_minutes: number }).elapsed_minutes,
+      (
+        db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get() as {
+          elapsed_minutes: number;
+        }
+      ).elapsed_minutes,
     ).toBe(elapsedBefore);
     expect(
       registry.invoke(
@@ -377,18 +372,30 @@ describe('adjust_exhaustion tool', () => {
       expect(result.ok).toBe(expectedSuccess);
       const after = readRows();
       if (!expectedSuccess) expect(after).toEqual(before);
-      if (expectedSuccess) successes[eventClass] = (successes[eventClass] ?? 0) + 1;
+      if (expectedSuccess)
+        successes[eventClass] = (successes[eventClass] ?? 0) + 1;
       const afterById = new Map(after.map((row) => [row.combatant_id, row]));
       for (const previous of before) {
         const next = afterById.get(previous.combatant_id);
         if (previous.status === 'dead' && next?.status !== 'dead') {
-          const oldConditions = JSON.parse(previous.conditions_json) as Array<{ id: string; level?: number }>;
-          const newConditions = JSON.parse(next?.conditions_json ?? '[]') as Array<{ id: string; level?: number }>;
+          const oldConditions = JSON.parse(previous.conditions_json) as Array<{
+            id: string;
+            level?: number;
+          }>;
+          const newConditions = JSON.parse(
+            next?.conditions_json ?? '[]',
+          ) as Array<{ id: string; level?: number }>;
           expect(allowMonsterRevival).toBe(true);
           expect(previous.death_rules).toBe('monster');
           expect(previous.head_count).not.toBe(0);
-          expect(oldConditions.find((condition) => condition.id === 'exhaustion')?.level).not.toBe(6);
-          expect(newConditions.find((condition) => condition.id === 'exhaustion')?.level).not.toBe(6);
+          expect(
+            oldConditions.find((condition) => condition.id === 'exhaustion')
+              ?.level,
+          ).not.toBe(6);
+          expect(
+            newConditions.find((condition) => condition.id === 'exhaustion')
+              ?.level,
+          ).not.toBe(6);
           expect(next?.hp_current).toBeGreaterThan(previous.hp_current);
         }
       }
@@ -398,9 +405,17 @@ describe('adjust_exhaustion tool', () => {
     const assertState = () => {
       const rows = readRows();
       const activeOwnerIds = new Map<string, string>();
-      const actorIds = [...new Set(rows
-        .filter((row) => row.identity_kind === 'campaign_actor' && row.identity_ref !== null)
-        .map((row) => row.identity_ref as string))];
+      const actorIds = [
+        ...new Set(
+          rows
+            .filter(
+              (row) =>
+                row.identity_kind === 'campaign_actor' &&
+                row.identity_ref !== null,
+            )
+            .map((row) => row.identity_ref as string),
+        ),
+      ];
       for (const actorId of actorIds) {
         const owner = db
           .prepare(`SELECT c.combatant_id FROM encounter_combatant c
@@ -412,27 +427,66 @@ describe('adjust_exhaustion tool', () => {
         if (owner) activeOwnerIds.set(actorId, owner.combatant_id);
       }
       for (const row of rows) {
-        const conditions = JSON.parse(row.conditions_json) as Array<{ id: string; level?: number }>;
-        const exhaustion = conditions.find((condition) => condition.id === 'exhaustion')?.level;
+        const conditions = JSON.parse(row.conditions_json) as Array<{
+          id: string;
+          level?: number;
+        }>;
+        const exhaustion = conditions.find(
+          (condition) => condition.id === 'exhaustion',
+        )?.level;
         const pc = row.death_rules === 'player-character';
-        const schedule = [row.stable_recovery_roll, row.stable_recovery_anchor_elapsed_minutes, row.stable_recovery_deadline_elapsed_minutes];
+        const schedule = [
+          row.stable_recovery_roll,
+          row.stable_recovery_anchor_elapsed_minutes,
+          row.stable_recovery_deadline_elapsed_minutes,
+        ];
         const present = schedule.filter((value) => value !== null).length;
-        const owner = row.identity_kind !== 'campaign_actor' ||
+        const owner =
+          row.identity_kind !== 'campaign_actor' ||
           activeOwnerIds.get(row.identity_ref ?? '') === row.combatant_id;
         expect(exhaustion === 6 ? row.status === 'dead' : true).toBe(true);
         expect(row.head_count === 0 ? row.status === 'dead' : true).toBe(true);
-        expect(['dying', 'stable'].includes(row.status) ? pc && row.hp_current === 0 : true).toBe(true);
-        expect(pc && row.hp_current === 0 ? ['dying', 'stable', 'dead'].includes(row.status) : true).toBe(true);
-        expect(row.recovery_block !== null ? row.status === 'dying' : true).toBe(true);
-        expect(row.hp_current).toBeLessThanOrEqual(effectiveHpMax(row.hp_max, conditions));
+        expect(
+          ['dying', 'stable'].includes(row.status)
+            ? pc && row.hp_current === 0
+            : true,
+        ).toBe(true);
+        expect(
+          pc && row.hp_current === 0
+            ? ['dying', 'stable', 'dead'].includes(row.status)
+            : true,
+        ).toBe(true);
+        expect(
+          row.recovery_block !== null ? row.status === 'dying' : true,
+        ).toBe(true);
+        expect(row.hp_current).toBeLessThanOrEqual(
+          effectiveHpMax(row.hp_max, conditions),
+        );
         expect([0, 3]).toContain(present);
-        expect(row.stable_recovery_settled === 1 ? row.status === 'stable' && present === 0 : true).toBe(true);
+        expect(
+          row.stable_recovery_settled === 1
+            ? row.status === 'stable' && present === 0
+            : true,
+        ).toBe(true);
         expect(row.status !== 'stable' ? present === 0 : true).toBe(true);
-        expect(!owner ? present === 0 && row.stable_recovery_settled === 0 : true).toBe(true);
-        expect(owner && row.status === 'stable' && present === 0 ? row.stable_recovery_settled === 1 : true).toBe(true);
-        if (!owner || row.identity_kind !== 'campaign_actor' || row.identity_ref === null) continue;
+        expect(
+          !owner ? present === 0 && row.stable_recovery_settled === 0 : true,
+        ).toBe(true);
+        expect(
+          owner && row.status === 'stable' && present === 0
+            ? row.stable_recovery_settled === 1
+            : true,
+        ).toBe(true);
+        if (
+          !owner ||
+          row.identity_kind !== 'campaign_actor' ||
+          row.identity_ref === null
+        )
+          continue;
         const actor = db
-          .prepare('SELECT hp_current,hp_max,status,conditions_json,state_json FROM campaign_actor WHERE campaign_id=? AND actor_id=?')
+          .prepare(
+            'SELECT hp_current,hp_max,status,conditions_json,state_json FROM campaign_actor WHERE campaign_id=? AND actor_id=?',
+          )
           .get(ctx.campaignId, row.identity_ref) as {
           hp_current: number;
           hp_max: number;
@@ -450,13 +504,14 @@ describe('adjust_exhaustion tool', () => {
           deathSaveSuccesses: row.death_save_successes,
           deathSaveFailures: row.death_save_failures,
           recoveryBlock: row.recovery_block,
-          stableRecovery: present === 3
-            ? {
-                roll: row.stable_recovery_roll,
-                anchor: row.stable_recovery_anchor_elapsed_minutes,
-                deadline: row.stable_recovery_deadline_elapsed_minutes,
-              }
-            : null,
+          stableRecovery:
+            present === 3
+              ? {
+                  roll: row.stable_recovery_roll,
+                  anchor: row.stable_recovery_anchor_elapsed_minutes,
+                  deadline: row.stable_recovery_deadline_elapsed_minutes,
+                }
+              : null,
           stableRecoverySettled: row.stable_recovery_settled === 1,
           headCount: row.head_count,
           headsDiedSinceOwnTurn: row.heads_died_since_own_turn,
@@ -468,26 +523,53 @@ describe('adjust_exhaustion tool', () => {
       invoke('start', 'start_encounter', {
         combatInstanceId: instance,
         actors: [
-          { actorId: 'pc', rulesRef: 'creature:goblin', ...(initial ? { hpMax: 7, hpCurrent: 7 } : {}) },
-          { actorId: 'monster', rulesRef: 'creature:goblin', ...(initial ? { hpMax: 7, hpCurrent: 7 } : {}) },
-          { actorId: 'hydra', rulesRef: 'creature:hydra', ...(initial ? { hpMax: 172, hpCurrent: 172 } : {}) },
+          {
+            actorId: 'pc',
+            rulesRef: 'creature:goblin',
+            ...(initial ? { hpMax: 7, hpCurrent: 7 } : {}),
+          },
+          {
+            actorId: 'monster',
+            rulesRef: 'creature:goblin',
+            ...(initial ? { hpMax: 7, hpCurrent: 7 } : {}),
+          },
+          {
+            actorId: 'hydra',
+            rulesRef: 'creature:hydra',
+            ...(initial ? { hpMax: 172, hpCurrent: 172 } : {}),
+          },
         ],
       });
     expect(start('sequence-0', true).ok).toBe(true);
-    invoke('opt-in', 'update_combatant', { combatantId: activeId('pc'), deathRules: 'player-character' });
+    invoke('opt-in', 'update_combatant', {
+      combatantId: activeId('pc'),
+      deathRules: 'player-character',
+    });
 
     const ensurePcDying = () => {
       let pc = activeRow('pc');
-      if (pc.status === 'dead') throw new Error('state generator unexpectedly exhausted the PC lifecycle');
+      if (pc.status === 'dead')
+        throw new Error(
+          'state generator unexpectedly exhausted the PC lifecycle',
+        );
       if (pc.recovery_block !== null) {
-        invoke('support-breathe', 'set_suffocation', { combatantId: pc.combatant_id, event: 'breathe' });
+        invoke('support-breathe', 'set_suffocation', {
+          combatantId: pc.combatant_id,
+          event: 'breathe',
+        });
         pc = activeRow('pc');
       }
       if (pc.status === 'alive') {
-        invoke('support-damage', 'update_combatant', { combatantId: pc.combatant_id, hpDelta: -pc.hp_current });
+        invoke('support-damage', 'update_combatant', {
+          combatantId: pc.combatant_id,
+          hpDelta: -pc.hp_current,
+        });
         pc = activeRow('pc');
       } else if (pc.status === 'stable') {
-        invoke('support-damage', 'update_combatant', { combatantId: pc.combatant_id, hpDelta: -1 });
+        invoke('support-damage', 'update_combatant', {
+          combatantId: pc.combatant_id,
+          hpDelta: -1,
+        });
         pc = activeRow('pc');
       }
       expect(pc.status).toBe('dying');
@@ -497,33 +579,51 @@ describe('adjust_exhaustion tool', () => {
       let pc = activeRow('pc');
       if (pc.status !== 'alive' || pc.hp_current < pc.hp_max) {
         if (pc.recovery_block !== null)
-          invoke('support-breathe', 'set_suffocation', { combatantId: pc.combatant_id, event: 'breathe' });
+          invoke('support-breathe', 'set_suffocation', {
+            combatantId: pc.combatant_id,
+            event: 'breathe',
+          });
         pc = activeRow('pc');
         const amount = Math.max(1, pc.hp_max - pc.hp_current);
-        invoke('heal', 'update_combatant', { combatantId: pc.combatant_id, hpDelta: amount });
+        invoke('heal', 'update_combatant', {
+          combatantId: pc.combatant_id,
+          hpDelta: amount,
+        });
         pc = activeRow('pc');
       }
-      invoke('damage', 'update_combatant', { combatantId: pc.combatant_id, hpDelta: -pc.hp_current });
+      invoke('damage', 'update_combatant', {
+        combatantId: pc.combatant_id,
+        hpDelta: -pc.hp_current,
+      });
     };
     const doDeathSave = () => {
       ensurePcDying();
-      invoke('deathSave', 'record_death_save', { combatantId: activeId('pc'), roll: 20 });
+      invoke('deathSave', 'record_death_save', {
+        combatantId: activeId('pc'),
+        roll: 20,
+      });
     };
     const doStabilize = () => {
       ensurePcDying();
-      invoke('stabilize', 'stabilize_character', { combatantId: activeId('pc') });
+      invoke('stabilize', 'stabilize_character', {
+        combatantId: activeId('pc'),
+      });
     };
-    const doPromotion = () => invoke('promotion', 'start_effect', {
-      effectId: 'sequence-summoning-promotion',
-      kind: 'summoning',
-      displayName: 'Lifecycle promotion',
-      source: { kind: 'ruling' },
-      duration: { kind: 'until-removed' },
-      actors: [{ combatantId: activeId('pc'), campaignActorId: 'pc' }],
-    });
+    const doPromotion = () =>
+      invoke('promotion', 'start_effect', {
+        effectId: 'sequence-summoning-promotion',
+        kind: 'summoning',
+        displayName: 'Lifecycle promotion',
+        source: { kind: 'ruling' },
+        duration: { kind: 'until-removed' },
+        actors: [{ combatantId: activeId('pc'), campaignActorId: 'pc' }],
+      });
     const doCloseReopen = (nextIndex: number) => {
       const old = activeInstance();
-      invoke('close', 'close_combat_instance', { combatInstanceId: old, status: 'completed' });
+      invoke('close', 'close_combat_instance', {
+        combatInstanceId: old,
+        status: 'completed',
+      });
       start(`sequence-${nextIndex}`);
       successes.reopen = (successes.reopen ?? 0) + 1;
     };
@@ -531,47 +631,99 @@ describe('adjust_exhaustion tool', () => {
       const pc = activeRow('pc');
       const deadline = pc.stable_recovery_deadline_elapsed_minutes;
       if (pc.status !== 'stable' || deadline === null)
-        throw new Error('expected a pending stable recovery before clock advancement');
-      const elapsed = (db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get() as { elapsed_minutes: number }).elapsed_minutes;
+        throw new Error(
+          'expected a pending stable recovery before clock advancement',
+        );
+      const elapsed = (
+        db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get() as {
+          elapsed_minutes: number;
+        }
+      ).elapsed_minutes;
       invoke('recovery', 'advance_time', { minutes: deadline - elapsed + 1 });
     };
     const doSuffocation = () => {
       let pc = activeRow('pc');
       if (pc.status !== 'alive') {
         if (pc.recovery_block !== null)
-          invoke('support-breathe', 'set_suffocation', { combatantId: pc.combatant_id, event: 'breathe' });
+          invoke('support-breathe', 'set_suffocation', {
+            combatantId: pc.combatant_id,
+            event: 'breathe',
+          });
         pc = activeRow('pc');
-        invoke('heal', 'update_combatant', { combatantId: pc.combatant_id, hpDelta: Math.max(1, pc.hp_max - pc.hp_current) });
+        invoke('heal', 'update_combatant', {
+          combatantId: pc.combatant_id,
+          hpDelta: Math.max(1, pc.hp_max - pc.hp_current),
+        });
         pc = activeRow('pc');
       }
-      invoke('suffocationDrop', 'set_suffocation', { combatantId: pc.combatant_id, event: 'drop' });
-      invoke('suffocationBreathe', 'set_suffocation', { combatantId: pc.combatant_id, event: 'breathe' });
-      invoke('deathSave', 'record_death_save', { combatantId: activeId('pc'), roll: 20 });
+      invoke('suffocationDrop', 'set_suffocation', {
+        combatantId: pc.combatant_id,
+        event: 'drop',
+      });
+      invoke('suffocationBreathe', 'set_suffocation', {
+        combatantId: pc.combatant_id,
+        event: 'breathe',
+      });
+      invoke('deathSave', 'record_death_save', {
+        combatantId: activeId('pc'),
+        roll: 20,
+      });
     };
     const doMonsterDamage = () => {
       let monster = activeRow('monster');
       if (monster.status === 'dead') {
-        invoke('heal', 'update_combatant', { combatantId: monster.combatant_id, hpDelta: 1 }, true, true);
+        invoke(
+          'heal',
+          'update_combatant',
+          { combatantId: monster.combatant_id, hpDelta: 1 },
+          true,
+          true,
+        );
         monster = activeRow('monster');
       }
-      invoke('damage', 'update_combatant', { combatantId: monster.combatant_id, hpDelta: -monster.hp_current });
+      invoke('damage', 'update_combatant', {
+        combatantId: monster.combatant_id,
+        hpDelta: -monster.hp_current,
+      });
     };
     const doMonsterHeal = () => {
       const monster = activeRow('monster');
-      invoke('heal', 'update_combatant', { combatantId: monster.combatant_id, hpDelta: 1 }, true, monster.status === 'dead');
+      invoke(
+        'heal',
+        'update_combatant',
+        { combatantId: monster.combatant_id, hpDelta: 1 },
+        true,
+        monster.status === 'dead',
+      );
     };
     const doExhaustion = (delta: 1 | -1) => {
       let monster = activeRow('monster');
       if (monster.status === 'dead') {
-        invoke('heal', 'update_combatant', { combatantId: monster.combatant_id, hpDelta: 1 }, true, true);
+        invoke(
+          'heal',
+          'update_combatant',
+          { combatantId: monster.combatant_id, hpDelta: 1 },
+          true,
+          true,
+        );
         monster = activeRow('monster');
       }
-      invoke(delta === 1 ? 'exhaustionUp' : 'exhaustionDown', 'adjust_exhaustion', { combatantId: monster.combatant_id, delta });
+      invoke(
+        delta === 1 ? 'exhaustionUp' : 'exhaustionDown',
+        'adjust_exhaustion',
+        { combatantId: monster.combatant_id, delta },
+      );
     };
     const doHydraTurn = (round: number) => {
       const hydra = activeRow('hydra');
-      invoke('beginTurn', 'begin_turn', { combatantId: hydra.combatant_id, round });
-      invoke('headDamage', 'update_combatant', { combatantId: activeId('hydra'), hpDelta: -25 });
+      invoke('beginTurn', 'begin_turn', {
+        combatantId: hydra.combatant_id,
+        round,
+      });
+      invoke('headDamage', 'update_combatant', {
+        combatantId: activeId('hydra'),
+        hpDelta: -25,
+      });
     };
 
     for (let cycle = 0; cycle < 4; cycle += 1) {
@@ -587,8 +739,18 @@ describe('adjust_exhaustion tool', () => {
       doExhaustion(1);
       doExhaustion(-1);
       doHydraTurn(cycle + 1);
-      invoke('invalidDeathSave', 'record_death_save', { combatantId: activeId('pc'), roll: 12 }, false);
-      invoke('invalidStabilize', 'stabilize_character', { combatantId: activeId('pc') }, false);
+      invoke(
+        'invalidDeathSave',
+        'record_death_save',
+        { combatantId: activeId('pc'), roll: 12 },
+        false,
+      );
+      invoke(
+        'invalidStabilize',
+        'stabilize_character',
+        { combatantId: activeId('pc') },
+        false,
+      );
     }
     expect(operationCount).toBeGreaterThanOrEqual(75);
     for (const [eventClass, minimum] of Object.entries({
@@ -608,7 +770,9 @@ describe('adjust_exhaustion tool', () => {
       headDamage: 4,
       beginTurn: 4,
     }))
-      expect(successes[eventClass] ?? 0, eventClass).toBeGreaterThanOrEqual(minimum);
+      expect(successes[eventClass] ?? 0, eventClass).toBeGreaterThanOrEqual(
+        minimum,
+      );
     db.close();
   });
 
@@ -931,7 +1095,16 @@ describe('adjust_exhaustion tool', () => {
 
     expect(
       registry.invoke('adjust_exhaustion', { combatantId, delta: 6 }, ctx),
-    ).toMatchObject({ ok: true, data: { previousLevel: 0, newLevel: 6, hpMax: 0, hpCurrent: 0, died: true } });
+    ).toMatchObject({
+      ok: true,
+      data: {
+        previousLevel: 0,
+        newLevel: 6,
+        hpMax: 0,
+        hpCurrent: 0,
+        died: true,
+      },
+    });
     expect(
       listCombatants(db, ctx.campaignId).find(
         (entry) => entry.combatantId === combatantId,

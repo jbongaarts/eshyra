@@ -1022,9 +1022,14 @@ describe('turn-budget tools', () => {
         'SELECT identity_ref,combatant_id FROM encounter_combatant WHERE campaign_id=? ORDER BY identity_ref',
       )
       .all(CAMPAIGN) as Array<{ identity_ref: string; combatant_id: string }>;
-    const ordinaryId = ids.find((row) => row.identity_ref === 'ordinary')?.combatant_id;
-    const hydraId = ids.find((row) => row.identity_ref === 'hydra')?.combatant_id;
-    if (!ordinaryId || !hydraId) throw new Error('expected goblin and hydra combatants');
+    const ordinaryId = ids.find(
+      (row) => row.identity_ref === 'ordinary',
+    )?.combatant_id;
+    const hydraId = ids.find(
+      (row) => row.identity_ref === 'hydra',
+    )?.combatant_id;
+    if (!ordinaryId || !hydraId)
+      throw new Error('expected goblin and hydra combatants');
     const resolver = installLateAmbiguityAddon(db, NOW).resolver;
     ctx.resolveRulesPack = resolver;
 
@@ -1043,22 +1048,35 @@ describe('turn-budget tools', () => {
     const comparison = registry.invoke(
       'resolve_retained_check',
       {
-        retainedCheckId: (retained.data as { retainedCheckId: string }).retainedCheckId,
+        retainedCheckId: (retained.data as { retainedCheckId: string })
+          .retainedCheckId,
         reason: 'the goblin and hydra notice the hidden player',
         passive: [
-          { label: 'ordinary goblin observer', participant: { combatantId: ordinaryId }, modifier: -100 },
-          { label: 'hydra observer', participant: { combatantId: hydraId }, modifier: -100 },
+          {
+            label: 'ordinary goblin observer',
+            participant: { combatantId: ordinaryId },
+            modifier: -100,
+          },
+          {
+            label: 'hydra observer',
+            participant: { combatantId: hydraId },
+            modifier: -100,
+          },
         ],
       },
       ctx,
     );
     expect(comparison.ok).toBe(true);
     if (!comparison.ok) throw new Error(comparison.message);
-    const comparisonIds = (comparison.data as { comparisons: Array<{ comparisonId: string }> }).comparisons.map((entry) => entry.comparisonId);
+    const comparisonIds = (
+      comparison.data as { comparisons: Array<{ comparisonId: string }> }
+    ).comparisons.map((entry) => entry.comparisonId);
     expect(comparisonIds).toHaveLength(2);
 
     const budgetBefore = db
-      .prepare('SELECT * FROM combat_turn_budget WHERE campaign_id=? ORDER BY participant_ref')
+      .prepare(
+        'SELECT * FROM combat_turn_budget WHERE campaign_id=? ORDER BY participant_ref',
+      )
       .all(CAMPAIGN);
     ctx.resolveRulesPack = undefined;
     let surpriseUnavailable = false;
@@ -1071,7 +1089,9 @@ describe('turn-budget tools', () => {
     expect(surpriseUnavailable).toBe(true);
     expect(
       db
-        .prepare('SELECT * FROM combat_turn_budget WHERE campaign_id=? ORDER BY participant_ref')
+        .prepare(
+          'SELECT * FROM combat_turn_budget WHERE campaign_id=? ORDER BY participant_ref',
+        )
         .all(CAMPAIGN),
     ).toEqual(budgetBefore);
 
@@ -1088,7 +1108,9 @@ describe('turn-budget tools', () => {
     });
 
     const beforeExhaustion = db
-      .prepare('SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?')
+      .prepare(
+        'SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+      )
       .get(CAMPAIGN, ordinaryId);
     ctx.resolveRulesPack = undefined;
     let exhaustionUnavailable = false;
@@ -1105,7 +1127,9 @@ describe('turn-budget tools', () => {
     expect(exhaustionUnavailable).toBe(true);
     expect(
       db
-        .prepare('SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?')
+        .prepare(
+          'SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
         .get(CAMPAIGN, ordinaryId),
     ).toEqual(beforeExhaustion);
 
@@ -1119,7 +1143,9 @@ describe('turn-budget tools', () => {
     ).toBe(true);
     expect(
       db
-        .prepare('SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?')
+        .prepare(
+          'SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
         .get(CAMPAIGN, ordinaryId),
     ).toMatchObject({
       hp_current: 3,

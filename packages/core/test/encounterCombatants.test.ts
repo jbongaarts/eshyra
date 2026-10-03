@@ -1087,7 +1087,8 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     const combatants = listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID);
     const ordinary = combatants[0];
     const terminal = combatants[1];
-    if (!ordinary || !terminal) throw new Error('goblin encounter is incomplete');
+    if (!ordinary || !terminal)
+      throw new Error('goblin encounter is incomplete');
 
     expect(
       registry.invoke(
@@ -1526,7 +1527,7 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     expect(
       (
         db
-        .prepare(
+          .prepare(
             'SELECT stable_recovery_deadline_elapsed_minutes AS deadline, stable_recovery_settled AS settled FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
           )
           .get(DEFAULT_TEST_CAMPAIGN_ID, stableOld.combatantId) as {

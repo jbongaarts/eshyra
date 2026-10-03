@@ -8,9 +8,7 @@ import {
   exhaustionLevel,
   withExhaustionLevel,
 } from './exhaustion.js';
-import {
-  applyCharacterExhaustionChanged,
-} from './hpLifecycle.js';
+import { applyCharacterExhaustionChanged } from './hpLifecycle.js';
 import { MutateStateError } from './mutateState.js';
 
 export interface AdjustExhaustionInput extends DomainMutationContext {

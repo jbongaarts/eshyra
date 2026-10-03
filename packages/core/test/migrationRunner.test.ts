@@ -259,10 +259,12 @@ describe('runMigrations', () => {
     const bundled = discoverMigrations();
     const dir = makeMigrationDir(
       Object.fromEntries(
-        bundled.slice(0, 37).map((migration) => [
-          `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
-          migration.sql,
-        ]),
+        bundled
+          .slice(0, 37)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
       ),
     );
     const db = openDatabase(':memory:');
