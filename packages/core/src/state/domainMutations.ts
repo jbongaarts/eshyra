@@ -164,6 +164,11 @@ export function removeCondition(
   if (typeof conditionId !== 'string' || conditionId.length === 0) {
     throw new MutateStateError('condition id must be a non-empty string');
   }
+  if (conditionId === 'exhaustion' || conditionId === 'exhausted') {
+    throw new MutateStateError(
+      'exhaustion levels must be changed with adjust_exhaustion',
+    );
+  }
 
   return withTransaction(db, (txnDb) => {
     const charId = resolveCharacterId(txnDb, ctx.characterId);

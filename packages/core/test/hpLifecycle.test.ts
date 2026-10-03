@@ -22,6 +22,7 @@ import {
   mutateStateBatch,
   openDatabase,
   recordDeathSave,
+  removeCondition,
   resolveStableRecoveries,
   stabilizeCharacter,
 } from '../src/internal.js';
@@ -1211,4 +1212,144 @@ describe('formatHpStatus', () => {
       }),
     ).toBe('HP 0/20 [DEAD]');
   });
+});
+
+function conditionsOf(db: ReturnType<typeof openDatabase>) {
+  return (
+    db
+      .prepare("SELECT conditions_json AS c FROM character WHERE id='pc-1'")
+      .get() as { c: string }
+  ).c;
+}
+
+function setExhaustion(db: ReturnType<typeof openDatabase>, level: number) {
+  mutateState(db, {
+    target: 'character',
+    id: 'pc-1',
+    field: 'conditions_json',
+    op: 'set',
+    value: withExhaustionLevel([], level),
+    ...CTX,
+  });
+}
+
+function scheduleOf(db: ReturnType<typeof openDatabase>) {
+  const m = readMachine(db);
+  return {
+    roll: m.stable_recovery_roll,
+    deadline: m.stable_recovery_deadline_elapsed_minutes,
+  };
+}
+
+describe('settled zero-maximum stable recovery rearm (S33)', () => {
+  function settled() {
+    const db = freshDb({ max: 1, current: 0, lifeState: 'dying' });
+    setExhaustion(db, 4);
+    stabilizeCharacter(db, CTX, createSeededRng(42));
+    advanceWorldTime(db, { ...CTX, campaignId: 'campaign-1', minutes: 241 });
+    expect(scheduleOf(db).deadline).toBeNull();
+    expect(readMachine(db)).toMatchObject({
+      life_state: 'stable',
+      hp_current: 0,
+    });
+    return db;
+  }
+
+  it('adjust_exhaustion raising the maximum above 0 re-arms and recovers', () => {
+    const db = settled();
+    adjustExhaustion(db, { ...CTX, characterId: 'pc-1', delta: -4 });
+    expect(scheduleOf(db).deadline).not.toBeNull();
+    advanceWorldTime(db, { ...CTX, campaignId: 'campaign-1', minutes: 241 });
+    expect(readMachine(db)).toMatchObject({
+      life_state: 'alive',
+      hp_current: 1,
+    });
+    db.close();
+  });
+
+  it('adjust_exhaustion leaving the maximum at 0 stays settled', () => {
+    const db = settled();
+    adjustExhaustion(db, { ...CTX, characterId: 'pc-1', delta: 1 });
+    expect(scheduleOf(db).deadline).toBeNull();
+    advanceWorldTime(db, { ...CTX, campaignId: 'campaign-1', minutes: 241 });
+    expect(readMachine(db)).toMatchObject({
+      life_state: 'stable',
+      hp_current: 0,
+    });
+    db.close();
+  });
+
+  it.each(['exhaustion', 'exhausted'])(
+    'remove_condition(%s) is refused with state unchanged',
+    (id) => {
+      const db = settled();
+      const before = { machine: readMachine(db), cond: conditionsOf(db) };
+      expect(() => removeCondition(db, id, CTX)).toThrow(/adjust_exhaustion/);
+      expect(readMachine(db)).toEqual(before.machine);
+      expect(conditionsOf(db)).toBe(before.cond);
+      advanceWorldTime(db, { ...CTX, campaignId: 'campaign-1', minutes: 241 });
+      expect(readMachine(db).life_state).toBe('stable');
+      db.close();
+    },
+  );
+});
+
+describe('natural 20 death save at the third-success boundary (S34)', () => {
+  it.each([
+    // [last roll, effective max zero, suffocating, expected]
+    [12, true, false, 'stable'],
+    [20, true, false, 'stable'],
+    [12, false, false, 'stable'],
+    [20, false, false, 'alive'],
+    [12, true, true, 'dying'],
+    [20, true, true, 'dying'],
+    [12, false, true, 'dying'],
+    [20, false, true, 'dying'],
+  ] as const)(
+    'last roll %i, zero max %s, blocked %s -> %s',
+    (last, zeroMax, blocked, expected) => {
+      const db = freshDb({
+        max: zeroMax ? 1 : 10,
+        current: 0,
+        lifeState: 'dying',
+        successes: 2,
+        failures: 1,
+      });
+      if (zeroMax) setExhaustion(db, 4);
+      if (blocked) beginSuffocation(db, { ...CTX, characterId: 'pc-1' });
+      const result = recordDeathSave(db, last, CTX, createSeededRng(42));
+      const m = readMachine(db);
+      expect(m.life_state).toBe(expected);
+      if (expected === 'dying') {
+        expect(m).toMatchObject({
+          death_save_successes: 3,
+          death_save_failures: 1,
+        });
+        expect(m.stable_recovery_deadline_elapsed_minutes).toBeNull();
+        expect(result.outcome).toBe('success');
+      } else {
+        expect(m).toMatchObject({
+          death_save_successes: 0,
+          death_save_failures: 0,
+        });
+      }
+      if (expected === 'stable') {
+        expect(m.stable_recovery_deadline_elapsed_minutes).toBe(
+          (m.stable_recovery_roll as number) * 60,
+        );
+        advanceWorldTime(db, {
+          ...CTX,
+          campaignId: 'campaign-1',
+          minutes: 241,
+        });
+        expect(readMachine(db)).toMatchObject(
+          zeroMax
+            ? { life_state: 'stable', hp_current: 0 }
+            : { life_state: 'alive', hp_current: 1 },
+        );
+      }
+      if (expected === 'alive') expect(m.hp_current).toBe(1);
+      db.close();
+    },
+  );
 });

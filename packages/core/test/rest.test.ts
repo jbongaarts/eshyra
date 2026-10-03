@@ -1201,6 +1201,65 @@ describe('F7 rest qualification boundary', () => {
     db.close();
   });
 
+  it('long rest refuses a settled zero-maximum stable character without touching exhaustion', () => {
+    const db = setupCharacters();
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'hp_max',
+      op: 'set',
+      value: 1,
+      ...CTX,
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'hp_current',
+      op: 'set',
+      value: 0,
+      ...CTX,
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'life_state',
+      op: 'set',
+      value: 'dying',
+      ...CTX,
+    });
+    expect(recordExhaustion(db, 4).ok).toBe(true);
+    stabilizeCharacter(db, { ...CTX, characterId: 'pc-1' }, createSeededRng(3));
+    advanceWorldTime(db, { campaignId: CTX.campaignId, minutes: 241, ...CTX });
+    expect(
+      db
+        .prepare(
+          "SELECT stable_recovery_settled s, stable_recovery_deadline_elapsed_minutes d FROM character WHERE id='pc-1'",
+        )
+        .get(),
+    ).toEqual({ s: 1, d: null });
+    // A long rest can never be a rearm producer for a settled stable
+    // character: 0-HP participants are refused before any exhaustion write.
+    const before = db.prepare("SELECT * FROM character WHERE id='pc-1'").get();
+    expect(() =>
+      completeLongRest(db, {
+        ...CTX,
+        restId: 'long-settled',
+        participants: ['pc-1'],
+        qualification: {
+          durationMinutes: 480,
+          sleepMinutes: 360,
+          lightActivityMinutes: 120,
+          strenuousInterruptionMinutes: 0,
+          foodAndDrink: true,
+        },
+      }),
+    ).toThrow(/cannot benefit from a long rest/);
+    expect(db.prepare("SELECT * FROM character WHERE id='pc-1'").get()).toEqual(
+      before,
+    );
+    db.close();
+  });
+
   it('does not reduce exhaustion when a long rest lacks food and drink', () => {
     const db = setupCharacters();
     expect(recordExhaustion(db, 2).ok).toBe(true);

@@ -22,6 +22,7 @@ import {
 } from './exhaustion.js';
 import {
   adjustHp,
+  applyCharacterExhaustionChanged,
   expireTemporaryHp,
   type LifeState,
   resolveStableRecoveries,
@@ -476,14 +477,13 @@ function applyExhaustion(
   if (level === 0 || !eligible) return { changed: false };
   const nextLevel = level - 1;
   const next = withExhaustionLevel(conditions as never, nextLevel);
-  mutateState(db, {
-    target: 'character',
-    id,
-    field: 'conditions_json',
-    op: 'set',
-    value: next,
-    ...input,
-  });
+  // Canonical exhaustion/lifecycle transition: a settled zero-maximum stable
+  // character re-arms its recovery schedule when the maximum rises above 0.
+  applyCharacterExhaustionChanged(
+    db,
+    { characterId: id, conditions: next as never },
+    { ...input, characterId: id },
+  );
   return {
     changed: true,
     from: level,
