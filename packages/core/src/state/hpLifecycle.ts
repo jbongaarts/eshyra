@@ -772,22 +772,21 @@ export function resolveDeathSaveTransition(input: {
   let hpCurrent = input.hp;
   let lifeState: LifeState = 'dying';
   let outcome: DeathSaveOutcome;
-  if (input.roll === 20) {
-    if (input.recoveryBlocked || input.hpMax === 0) {
-      successes = Math.min(3, successes + 1);
-      outcome = 'success';
-    } else {
-      hpCurrent = Math.min(1, input.hpMax);
-      lifeState = 'alive';
-      successes = 0;
-      failures = 0;
-      outcome = 'revived';
-    }
+  const reviving =
+    input.roll === 20 && !input.recoveryBlocked && input.hpMax > 0;
+  if (reviving) {
+    hpCurrent = Math.min(1, input.hpMax);
+    lifeState = 'alive';
+    successes = 0;
+    failures = 0;
+    outcome = 'revived';
   } else if (input.roll === 1) {
     failures = Math.min(3, failures + 2);
     lifeState = failures >= 3 ? 'dead' : 'dying';
     outcome = failures >= 3 ? 'dead' : 'critical-failure';
   } else if (input.roll >= 10) {
+    // A natural 20 that cannot regain HP (zero effective maximum or a
+    // recovery block) is an ordinary capped success.
     successes = Math.min(3, successes + 1);
     if (successes >= 3 && !input.recoveryBlocked) {
       lifeState = 'stable';

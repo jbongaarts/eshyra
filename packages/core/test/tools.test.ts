@@ -2221,7 +2221,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       add_condition:
         'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Exhaustion must be changed with adjust_exhaustion.',
       remove_condition:
-        'Remove a condition from a character by id (characters only: for an encounter combatant, use update_combatant removeCondition). No-op if the condition is not present.',
+        'Remove a condition from a character by id (characters only: for an encounter combatant, use update_combatant removeCondition). Exhaustion cannot be removed here: use adjust_exhaustion. No-op if the condition is not present.',
       adjust_hp:
         'Characters only: for an encounter combatant, use update_combatant hpDelta.',
       update_combatant:
