@@ -1078,6 +1078,68 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     db.close();
   });
 
+  it('revives ordinary monster-rules death by healing but preserves terminal death causes', () => {
+    const { db, registry, ctx } = setup();
+    expect(
+      registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx)
+        .ok,
+    ).toBe(true);
+    const combatants = listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID);
+    const ordinary = combatants[0];
+    const terminal = combatants[1];
+    if (!ordinary || !terminal) throw new Error('goblin encounter is incomplete');
+
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: ordinary.combatantId, hpDelta: -ordinary.hpMax },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID).find(
+        (combatant) => combatant.combatantId === ordinary.combatantId,
+      ),
+    ).toMatchObject({ status: 'dead', hpCurrent: 0, deathRules: 'monster' });
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: ordinary.combatantId, hpDelta: 2 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID).find(
+        (combatant) => combatant.combatantId === ordinary.combatantId,
+      ),
+    ).toMatchObject({ status: 'alive', hpCurrent: 2 });
+
+    expect(
+      registry.invoke(
+        'adjust_exhaustion',
+        { combatantId: terminal.combatantId, delta: 6 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: terminal.combatantId, hpDelta: 2 },
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID).find(
+        (combatant) => combatant.combatantId === terminal.combatantId,
+      ),
+    ).toMatchObject({
+      status: 'dead',
+      hpCurrent: 3,
+      conditions: [{ id: 'exhaustion', level: 6 }],
+    });
+    db.close();
+  });
+
   it('escalates damage at 0 hit points and refuses to heal the dead', () => {
     const { db, update, read, hpMax } = optedIn();
     update({ hpDelta: -hpMax });
