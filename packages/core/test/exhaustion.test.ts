@@ -407,6 +407,7 @@ describe('adjust_exhaustion tool', () => {
       sessionId: ctx.sessionId,
       at,
     });
+    db.prepare("UPDATE character SET hp_current=15 WHERE id='pc-1'").run();
     registry.invoke(
       'start_effect',
       {
@@ -419,15 +420,16 @@ describe('adjust_exhaustion tool', () => {
       },
       ctx,
     );
-    registry.invoke('adjust_exhaustion', { delta: 5 }, ctx);
-    const result = registry.invoke('adjust_exhaustion', { delta: 4 }, ctx);
+    const result = registry.invoke('adjust_exhaustion', { delta: 6 }, ctx);
     expect(result).toMatchObject({
       ok: true,
-      data: { previousLevel: 5, newLevel: 6, died: true },
+      data: { previousLevel: 0, newLevel: 6, died: true, hpCurrent: 10 },
     });
     expect(
-      db.prepare("SELECT life_state FROM character WHERE id='pc-1'").get(),
-    ).toEqual({ life_state: 'dead' });
+      db
+        .prepare("SELECT life_state,hp_current FROM character WHERE id='pc-1'")
+        .get(),
+    ).toEqual({ life_state: 'dead', hp_current: 10 });
     expect(
       getConcentrationEffect(db, DEFAULT_TEST_CAMPAIGN_ID, {
         kind: 'character',
@@ -435,6 +437,15 @@ describe('adjust_exhaustion tool', () => {
       }),
     ).toBeUndefined();
     expect(listAttunements(db, DEFAULT_TEST_CAMPAIGN_ID, 'pc-1')).toEqual([]);
+    expect(
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM active_effect_event
+           WHERE campaign_id=? AND effect_id='character-exhaustion-concentration'
+             AND event_kind='ended'`,
+        )
+        .get(DEFAULT_TEST_CAMPAIGN_ID),
+    ).toEqual({ n: 1 });
     db.close();
   });
 
@@ -571,6 +582,72 @@ describe('adjust_exhaustion tool', () => {
       status: 'dead',
       conditions: [{ id: 'exhaustion', level: 6 }],
     });
+    db.close();
+  });
+
+  it('applies direct level-six death and the effective HP clamp in one combatant transition', () => {
+    const { db, ctx, registry } = setup();
+    expect(
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: 'one-one-exhaustion',
+          actors: [
+            {
+              actorId: 'goblin',
+              rulesRef: 'creature:goblin',
+              hpMax: 1,
+              hpCurrent: 1,
+            },
+          ],
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const combatantId = 'one-one-exhaustion-goblin';
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId, deathRules: 'player-character' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'start_effect',
+        {
+          effectId: 'one-one-concentration',
+          kind: 'spell-effect',
+          displayName: 'Focus',
+          source: { kind: 'ruling' },
+          concentrationOwner: { kind: 'combatant', ref: combatantId },
+          duration: { kind: 'until-removed' },
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+
+    expect(
+      registry.invoke('adjust_exhaustion', { combatantId, delta: 6 }, ctx),
+    ).toMatchObject({ ok: true, data: { previousLevel: 0, newLevel: 6, hpMax: 0, hpCurrent: 0, died: true } });
+    expect(
+      listCombatants(db, ctx.campaignId).find(
+        (entry) => entry.combatantId === combatantId,
+      ),
+    ).toMatchObject({
+      hpCurrent: 0,
+      status: 'dead',
+      conditions: [{ id: 'exhaustion', level: 6 }],
+    });
+    expect(
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM active_effect_event
+           WHERE campaign_id=? AND effect_id='one-one-concentration'
+             AND event_kind='ended'`,
+        )
+        .get(ctx.campaignId),
+    ).toEqual({ n: 1 });
     db.close();
   });
 

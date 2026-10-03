@@ -338,27 +338,51 @@ function readHpRow(db: Db, charId: string): HpRow {
   return row;
 }
 
-/** Apply exhaustion level 6 through the canonical character death side effects.
- * The caller owns the surrounding transaction and condition write. */
-export function killCharacterFromExhaustion(
+/** Apply the exhaustion condition, effective-maximum clamp, and level-six death
+ * as one character lifecycle transition before validating the resulting row. */
+export function applyCharacterExhaustionChanged(
   db: Db,
+  input: {
+    readonly characterId: string;
+    readonly conditions: readonly CharacterConditionEntry[];
+  },
   ctx: DomainMutationContext,
-): void {
-  const charId = resolveCharacterId(db, ctx.characterId);
-  const row = readHpRow(db, charId);
-  writeHpFields(
-    db,
-    charId,
-    row,
-    {
-      hp_current: row.hp_current,
-      hp_temp: row.hp_temp,
-      life_state: 'dead',
-      death_save_successes: row.death_save_successes,
-      death_save_failures: row.death_save_failures,
-    },
-    ctx,
-  );
+): { hpCurrent: number; hpMax: number; died: boolean } {
+  return withTransaction(db, (txnDb) => {
+    const charId = resolveCharacterId(txnDb, input.characterId);
+    const before = readHpRow(txnDb, charId);
+    const hpMax = effectiveHpMax(before.hp_max, input.conditions);
+    const hpCurrent = Math.min(before.hp_current, hpMax);
+    const died =
+      input.conditions.find((condition) => condition.id === 'exhaustion')
+        ?.level === 6;
+    const downed = before.hp_current > 0 && hpCurrent === 0;
+    const lifeState = died
+      ? 'dead'
+      : before.life_state === 'dead'
+        ? 'dead'
+        : downed
+          ? 'dying'
+          : before.life_state;
+
+    writeHpFields(
+      txnDb,
+      charId,
+      before,
+      {
+        conditions_json: JSON.stringify(input.conditions),
+        hp_current: hpCurrent,
+        hp_temp: before.hp_temp,
+        life_state: lifeState,
+        death_save_successes: downed ? 0 : before.death_save_successes,
+        death_save_failures: downed ? 0 : before.death_save_failures,
+      },
+      ctx,
+    );
+    if (!died) rearmSettledStableRecovery(txnDb, charId, ctx);
+    assertCharacterLifecycle(txnDb, charId, before);
+    return { hpCurrent, hpMax, died };
+  });
 }
 
 /** Write the HP-machine fields that changed, as one atomic batch. */
@@ -367,6 +391,7 @@ function writeHpFields(
   charId: string,
   before: HpRow,
   after: {
+    conditions_json?: string;
     hp_current: number;
     hp_temp: number;
     life_state: LifeState;
@@ -388,7 +413,8 @@ function writeHpFields(
         after.life_state === 'stable'
           ? before.stable_recovery_deadline_elapsed_minutes
           : null,
-      stable_recovery_settled: 0,
+      stable_recovery_settled:
+        after.life_state === 'stable' ? before.stable_recovery_settled : 0,
     }) as [keyof HpRow, number | string | null][]
   )
     .filter(([field, value]) => before[field] !== value)
@@ -479,6 +505,8 @@ function assertCharacterLifecycle(db: Db, charId: string, before: HpRow): void {
   if (
     (row.life_state !== 'stable' && present > 0) ||
     (present > 0 && present !== 3) ||
+    (row.stable_recovery_settled === 1 &&
+      (row.life_state !== 'stable' || present !== 0)) ||
     (row.life_state === 'stable' &&
       present === 0 &&
       row.stable_recovery_settled !== 1)
@@ -911,12 +939,27 @@ export function resolveStableRecoveries(
     .prepare(
       `SELECT id
        FROM character
-       WHERE life_state='stable' AND hp_current=0 AND stable_recovery_settled=0
-         AND (
-           stable_recovery_roll IS NULL
-           OR stable_recovery_anchor_elapsed_minutes IS NULL
-           OR stable_recovery_deadline_elapsed_minutes IS NULL
+       WHERE (
+         life_state='stable' AND (
+           hp_current<>0 OR
+           (stable_recovery_roll IS NULL AND
+            stable_recovery_anchor_elapsed_minutes IS NULL AND
+            stable_recovery_deadline_elapsed_minutes IS NULL AND
+            stable_recovery_settled=0) OR
+           ((stable_recovery_roll IS NULL) +
+            (stable_recovery_anchor_elapsed_minutes IS NULL) +
+            (stable_recovery_deadline_elapsed_minutes IS NULL)) IN (1, 2) OR
+           (stable_recovery_settled=1 AND
+            (stable_recovery_roll IS NOT NULL OR
+             stable_recovery_anchor_elapsed_minutes IS NOT NULL OR
+             stable_recovery_deadline_elapsed_minutes IS NOT NULL))
+         ) OR (
+           life_state<>'stable' AND
+           (stable_recovery_settled=1 OR stable_recovery_roll IS NOT NULL OR
+            stable_recovery_anchor_elapsed_minutes IS NOT NULL OR
+            stable_recovery_deadline_elapsed_minutes IS NOT NULL)
          )
+       )
        ORDER BY id`,
     )
     .all() as Array<{ id: string }>;
@@ -976,6 +1019,7 @@ export function rearmSettledStableRecovery(
   if (
     row.life_state === 'stable' &&
     row.stable_recovery_settled === 1 &&
+    rowEffectiveHpMax(row) > 0 &&
     row.stable_recovery_roll === null &&
     row.stable_recovery_anchor_elapsed_minutes === null &&
     row.stable_recovery_deadline_elapsed_minutes === null

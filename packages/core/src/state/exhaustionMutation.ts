@@ -9,11 +9,9 @@ import {
   withExhaustionLevel,
 } from './exhaustion.js';
 import {
-  clampCharacterHpToEffectiveMaximum,
-  killCharacterFromExhaustion,
-  rearmSettledStableRecovery,
+  applyCharacterExhaustionChanged,
 } from './hpLifecycle.js';
-import { MutateStateError, mutateState } from './mutateState.js';
+import { MutateStateError } from './mutateState.js';
 
 export interface AdjustExhaustionInput extends DomainMutationContext {
   delta: number;
@@ -117,37 +115,19 @@ export function adjustExhaustion(
     const conditions = readConditions(row.conditions_json, characterId);
     const previousLevel = exhaustionLevel(conditions as never);
     const newLevel = Math.max(0, Math.min(6, previousLevel + input.delta));
-    mutateState(txn, {
-      target: 'character',
-      id: characterId,
-      field: 'conditions_json',
-      op: 'set',
-      value: withExhaustionLevel(conditions as never, newLevel),
-      ...input,
-    });
-    const hpMax = effectiveHpMax(
-      row.hp_max,
-      withExhaustionLevel(conditions as never, newLevel),
+    const nextConditions = withExhaustionLevel(conditions as never, newLevel);
+    const transition = applyCharacterExhaustionChanged(
+      txn,
+      { characterId, conditions: nextConditions },
+      input,
     );
-    clampCharacterHpToEffectiveMaximum(txn, {
-      ...input,
-      characterId,
-    });
-    rearmSettledStableRecovery(txn, characterId, { ...input, characterId });
-    const hpCurrent = (
-      txn
-        .prepare('SELECT hp_current FROM character WHERE id=?')
-        .get(characterId) as { hp_current: number }
-    ).hp_current;
-    const died = newLevel === 6;
-    if (died) killCharacterFromExhaustion(txn, { ...input, characterId });
     return {
       previousLevel,
       newLevel,
       target: 'character',
-      hpMax,
-      hpCurrent,
-      died,
+      hpMax: transition.hpMax,
+      hpCurrent: transition.hpCurrent,
+      died: transition.died,
     };
   });
 }
