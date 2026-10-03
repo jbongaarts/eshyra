@@ -1588,6 +1588,109 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
     expect(hydra).toEqual({ head_count: 7, hp_current: 162 });
   });
 
+  it('settles own-turn regrowth through the lifecycle for dying player-character hydras with earned counters (S27)', () => {
+    for (const blocked of [false, true]) {
+      const { db } = setupLairCombat();
+      const registry = createDefaultToolRegistry();
+      const ctx: ToolContext = {
+        db,
+        rng: createSeededRng(3),
+        campaignId: CAMPAIGN,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: 'heads',
+        at: NOW,
+      };
+      const row = () =>
+        db
+          .prepare(
+            `SELECT status, hp_current, head_count, death_save_successes,
+                    death_save_failures, recovery_block
+             FROM encounter_combatant WHERE combatant_id=?`,
+          )
+          .get(HYDRA);
+      beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+      expect(
+        registry.invoke(
+          'update_combatant',
+          { combatantId: HYDRA, deathRules: 'player-character' },
+          ctx,
+        ).ok,
+      ).toBe(true);
+      const maxHp = (
+        db
+          .prepare(
+            'SELECT hp_max FROM encounter_combatant WHERE combatant_id=?',
+          )
+          .get(HYDRA) as { hp_max: number }
+      ).hp_max;
+      expect(
+        registry.invoke(
+          'update_combatant',
+          { combatantId: HYDRA, hpDelta: -maxHp },
+          ctx,
+        ).ok,
+      ).toBe(true);
+      expect(row()).toMatchObject({ status: 'dying', hp_current: 0 });
+      registry.invoke(
+        'record_death_save',
+        { combatantId: HYDRA, roll: 12 },
+        ctx,
+      );
+      registry.invoke(
+        'record_death_save',
+        { combatantId: HYDRA, roll: 5 },
+        ctx,
+      );
+      if (blocked)
+        expect(
+          registry.invoke(
+            'set_suffocation',
+            { combatantId: HYDRA, event: 'drop' },
+            ctx,
+          ).ok,
+        ).toBe(true);
+      expect(row()).toMatchObject({
+        status: 'dying',
+        death_save_successes: 1,
+        death_save_failures: 1,
+      });
+      const heads = (row() as { head_count: number }).head_count;
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: participant(HYDRA),
+        round: 2,
+        ...CTX,
+      });
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: PC,
+        round: 3,
+        ...CTX,
+      });
+      if (blocked) {
+        // Blocked: heads regrow, zero regain, still dying with counters kept.
+        expect(row()).toMatchObject({
+          status: 'dying',
+          hp_current: 0,
+          death_save_successes: 1,
+          death_save_failures: 1,
+          recovery_block: 'suffocating',
+        });
+      } else {
+        expect(row()).toMatchObject({
+          status: 'alive',
+          death_save_successes: 0,
+          death_save_failures: 0,
+        });
+        expect((row() as { hp_current: number }).hp_current).toBeGreaterThan(0);
+      }
+      expect((row() as { head_count: number }).head_count).toBeGreaterThan(
+        heads,
+      );
+      db.close();
+    }
+  });
+
   it('sets a tracked multi-head creature dead when its final head dies', () => {
     const { db } = setupLairCombat();
     const registry = createDefaultToolRegistry();

@@ -97,6 +97,7 @@ export const resolveConcentrationTool: Tool = {
           modifierTotal: resolution.modifierTotal,
           total: resolution.total,
         },
+        resolveRulesPack: ctx.resolveRulesPack,
         provenance: `model:${ctx.turnId}`,
         sessionId: ctx.sessionId,
         at: ctx.at,

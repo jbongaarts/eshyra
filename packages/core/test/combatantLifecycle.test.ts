@@ -586,4 +586,527 @@ describe('nextCombatantLifecycle', () => {
       }
     }
   });
+
+  describe('ordinary-state x profile transition matrix (no terminal causes)', () => {
+    const hydra = {
+      damageThreshold: 25,
+      deathWhenNoHeads: true,
+      regrowHeadsPerHead: 2,
+      hpPerHead: 10,
+      regrowthSuppressedByFire: true,
+    };
+    const pc = { deathRules: 'player-character' as const };
+    const dyingPc = (o: Partial<CombatantLifecycleState> = {}) =>
+      state({
+        ...pc,
+        status: 'dying',
+        hpCurrent: 0,
+        deathSaveSuccesses: 1,
+        deathSaveFailures: 1,
+        ...o,
+      });
+    const stablePc = (o: Partial<CombatantLifecycleState> = {}) =>
+      state({
+        ...pc,
+        status: 'stable',
+        hpCurrent: 0,
+        stableRecovery: schedule,
+        ...o,
+      });
+    const blocked = { recoveryBlock: 'suffocating' as const };
+    const zeroMax = { hpMax: 1, effectiveHpMax: 0, exhaustionLevel: 4 };
+    const headed = { headCount: 3, headsDiedSinceOwnTurn: 1 };
+    const regrowth: CombatantLifecycleEvent = {
+      type: 'headsRegrown',
+      count: 1,
+      hpPerHead: 10,
+    };
+    const settledRegrowth = {
+      headsDiedSinceOwnTurn: 0,
+      fireDamageSinceOwnTurn: 0,
+      damageThisTurn: 0,
+      damageTurnKey: null,
+      headDiedThisTurn: 0,
+    };
+
+    const cases: Array<{
+      name: string;
+      current: CombatantLifecycleState;
+      event: CombatantLifecycleEvent;
+      expected: CombatantLifecycleState | { refusal: RegExp };
+      regained?: number;
+    }> = [
+      // ---- monster / alive
+      {
+        name: 'monster alive: damage',
+        current: state({ hpCurrent: 6 }),
+        event: { type: 'damage', amount: 3 },
+        expected: state({ hpCurrent: 3, damageThisTurn: 3 }),
+      },
+      {
+        name: 'monster alive: lethal damage',
+        current: state({ hpCurrent: 6 }),
+        event: { type: 'damage', amount: 9 },
+        expected: state({ hpCurrent: 0, status: 'dead', damageThisTurn: 9 }),
+      },
+      {
+        name: 'monster alive: heal caps at the effective maximum',
+        current: state({ hpCurrent: 6 }),
+        event: { type: 'heal', amount: 9 },
+        expected: state({ hpCurrent: 10 }),
+      },
+      {
+        name: 'monster alive: nonlethal knockout (S29)',
+        current: state({ hpCurrent: 6 }),
+        event: { type: 'knockout', damage: 20 },
+        expected: state({
+          hpCurrent: 0,
+          status: 'unconscious',
+          damageThisTurn: 20,
+        }),
+      },
+      {
+        name: 'monster alive: death save refused',
+        current: state({ hpCurrent: 6 }),
+        event: { type: 'deathSave', roll: 15 },
+        expected: { refusal: /only a dying player-character/ },
+      },
+      {
+        name: 'monster alive: stabilize refused',
+        current: state({ hpCurrent: 6 }),
+        event: { type: 'stabilize' },
+        expected: { refusal: /only a dying player-character/ },
+      },
+      {
+        name: 'monster alive: suffocation drop kills',
+        current: state({ hpCurrent: 6 }),
+        event: { type: 'suffocationDrop' },
+        expected: state({ hpCurrent: 0, status: 'dead' }),
+      },
+      {
+        name: 'monster alive: regrowth heals heads x hp',
+        current: state({ hpCurrent: 6, ...headed }),
+        event: regrowth,
+        expected: state({
+          hpCurrent: 10,
+          ...headed,
+          headCount: 4,
+          ...settledRegrowth,
+        }),
+        regained: 4,
+      },
+      // ---- monster / unconscious knockout at 0
+      {
+        name: 'monster knocked out: further damage stays unconscious',
+        current: state({ hpCurrent: 0, status: 'unconscious' }),
+        event: { type: 'damage', amount: 1 },
+        expected: state({
+          hpCurrent: 0,
+          status: 'unconscious',
+          damageThisTurn: 1,
+        }),
+      },
+      {
+        name: 'monster knocked out: stabilize and death save refused',
+        current: state({ hpCurrent: 0, status: 'unconscious' }),
+        event: { type: 'deathSave', roll: 12 },
+        expected: { refusal: /only a dying player-character/ },
+      },
+      {
+        name: 'monster knocked out: suffocation drop kills',
+        current: state({ hpCurrent: 0, status: 'unconscious' }),
+        event: { type: 'suffocationDrop' },
+        expected: state({ hpCurrent: 0, status: 'dead' }),
+      },
+      {
+        name: 'monster knockout dies when the last head dies (terminal wins)',
+        current: state({ hpCurrent: 6, headCount: 1 }),
+        event: { type: 'knockout', damage: 30, headMechanic: hydra },
+        expected: state({
+          hpCurrent: 0,
+          status: 'dead',
+          headCount: 0,
+          headsDiedSinceOwnTurn: 1,
+          headDiedThisTurn: 1,
+          damageThisTurn: 30,
+        }),
+      },
+      // ---- monster / dead
+      {
+        name: 'monster dead: healing revives',
+        current: state({ hpCurrent: 0, status: 'dead' }),
+        event: { type: 'heal', amount: 3 },
+        expected: state({ hpCurrent: 3 }),
+      },
+      {
+        name: 'monster dead: damage refused',
+        current: state({ hpCurrent: 0, status: 'dead' }),
+        event: { type: 'damage', amount: 3 },
+        expected: { refusal: /dead combatant cannot undergo/ },
+      },
+      {
+        name: 'monster dead: knockout refused',
+        current: state({ hpCurrent: 0, status: 'dead' }),
+        event: { type: 'knockout', damage: 3 },
+        expected: { refusal: /dead combatant cannot undergo/ },
+      },
+      // ---- player-character / alive
+      {
+        name: 'pc alive: damage to zero is dying with reset counters',
+        current: state({ ...pc, hpCurrent: 6 }),
+        event: { type: 'damage', amount: 6 },
+        expected: state({
+          ...pc,
+          hpCurrent: 0,
+          status: 'dying',
+          damageThisTurn: 6,
+        }),
+      },
+      {
+        name: 'pc alive: overflow at the effective maximum is instant death',
+        current: state({ ...pc, hpCurrent: 6 }),
+        event: { type: 'damage', amount: 16 },
+        expected: state({
+          ...pc,
+          hpCurrent: 0,
+          status: 'dead',
+          damageThisTurn: 16,
+        }),
+      },
+      {
+        name: 'pc alive: knockout is stable with a schedule',
+        current: state({ ...pc, hpCurrent: 6 }),
+        event: { type: 'knockout', damage: 9 },
+        expected: state({
+          ...pc,
+          hpCurrent: 0,
+          status: 'stable',
+          stableRecovery: schedule,
+          damageThisTurn: 9,
+        }),
+      },
+      {
+        name: 'pc alive: suffocation drop is blocked dying',
+        current: state({ ...pc, hpCurrent: 6 }),
+        event: { type: 'suffocationDrop' },
+        expected: state({
+          ...pc,
+          hpCurrent: 0,
+          status: 'dying',
+          ...blocked,
+        }),
+      },
+      {
+        name: 'pc alive: death save refused',
+        current: state({ ...pc, hpCurrent: 6 }),
+        event: { type: 'deathSave', roll: 15 },
+        expected: { refusal: /only a dying player-character/ },
+      },
+      // ---- player-character / dying
+      {
+        name: 'pc dying: ordinary success adds one',
+        current: dyingPc(),
+        event: { type: 'deathSave', roll: 12 },
+        expected: dyingPc({ deathSaveSuccesses: 2 }),
+      },
+      {
+        name: 'pc dying: third success stabilizes and resets both counters',
+        current: dyingPc({ deathSaveSuccesses: 2, deathSaveFailures: 2 }),
+        event: { type: 'deathSave', roll: 10 },
+        expected: stablePc(),
+      },
+      {
+        name: 'pc dying blocked: third success stays dying',
+        current: dyingPc({ ...blocked, deathSaveSuccesses: 2 }),
+        event: { type: 'deathSave', roll: 12 },
+        expected: dyingPc({ ...blocked, deathSaveSuccesses: 3 }),
+      },
+      {
+        name: 'pc dying blocked: successes cap at three (S28)',
+        current: dyingPc({ ...blocked, deathSaveSuccesses: 3 }),
+        event: { type: 'deathSave', roll: 12 },
+        expected: dyingPc({ ...blocked, deathSaveSuccesses: 3 }),
+      },
+      {
+        name: 'pc dying blocked: natural 20 beyond three stays capped',
+        current: dyingPc({ ...blocked, deathSaveSuccesses: 3 }),
+        event: { type: 'deathSave', roll: 20 },
+        expected: dyingPc({ ...blocked, deathSaveSuccesses: 3 }),
+      },
+      {
+        name: 'pc dying blocked: failure still accumulates beyond capped successes',
+        current: dyingPc({ ...blocked, deathSaveSuccesses: 3 }),
+        event: { type: 'deathSave', roll: 5 },
+        expected: dyingPc({
+          ...blocked,
+          deathSaveSuccesses: 3,
+          deathSaveFailures: 2,
+        }),
+      },
+      {
+        name: 'pc dying: natural 20 revives to 1 HP',
+        current: dyingPc({ deathSaveSuccesses: 2 }),
+        event: { type: 'deathSave', roll: 20 },
+        expected: state({ ...pc, hpCurrent: 1 }),
+      },
+      {
+        name: 'pc dying zero max: natural 20 counts as the third success (S34)',
+        current: dyingPc({ ...zeroMax, deathSaveSuccesses: 2 }),
+        event: { type: 'deathSave', roll: 20 },
+        expected: stablePc({ ...zeroMax }),
+      },
+      {
+        name: 'pc dying zero max: natural 20 as first success only counts',
+        current: dyingPc({ ...zeroMax, deathSaveSuccesses: 0 }),
+        event: { type: 'deathSave', roll: 20 },
+        expected: dyingPc({ ...zeroMax, deathSaveSuccesses: 1 }),
+      },
+      {
+        name: 'pc dying zero max blocked: third natural 20 stays dying',
+        current: dyingPc({ ...zeroMax, ...blocked, deathSaveSuccesses: 2 }),
+        event: { type: 'deathSave', roll: 20 },
+        expected: dyingPc({ ...zeroMax, ...blocked, deathSaveSuccesses: 3 }),
+      },
+      {
+        name: 'pc dying: failure adds one',
+        current: dyingPc(),
+        event: { type: 'deathSave', roll: 5 },
+        expected: dyingPc({ deathSaveFailures: 2 }),
+      },
+      {
+        name: 'pc dying: natural 1 on two failures is death',
+        current: dyingPc({ deathSaveFailures: 2 }),
+        event: { type: 'deathSave', roll: 1 },
+        expected: dyingPc({ status: 'dead', deathSaveFailures: 3 }),
+      },
+      {
+        name: 'pc dying: stabilize',
+        current: dyingPc(),
+        event: { type: 'stabilize' },
+        expected: stablePc(),
+      },
+      {
+        name: 'pc dying blocked: stabilize refused',
+        current: dyingPc({ ...blocked }),
+        event: { type: 'stabilize' },
+        expected: { refusal: /cannot stabilize while suffocating/ },
+      },
+      {
+        name: 'pc dying: healing wakes and resets counters',
+        current: dyingPc({ deathSaveSuccesses: 2 }),
+        event: { type: 'heal', amount: 4 },
+        expected: state({ ...pc, hpCurrent: 4 }),
+        regained: undefined,
+      },
+      {
+        name: 'pc dying blocked: healing refused',
+        current: dyingPc({ ...blocked }),
+        event: { type: 'heal', amount: 4 },
+        expected: { refusal: /cannot regain hit points while suffocating/ },
+      },
+      {
+        name: 'pc dying: damage adds a failure, critical adds two',
+        current: dyingPc(),
+        event: { type: 'damage', amount: 1, critical: true },
+        expected: dyingPc({
+          deathSaveFailures: 3,
+          status: 'dead',
+          damageThisTurn: 1,
+        }),
+      },
+      {
+        name: 'pc dying: breathing with three banked successes stabilizes',
+        current: dyingPc({ ...blocked, deathSaveSuccesses: 3 }),
+        event: { type: 'suffocationBreathe' },
+        expected: stablePc(),
+      },
+      {
+        name: 'pc dying: breathing below three keeps dying counters',
+        current: dyingPc({ ...blocked }),
+        event: { type: 'suffocationBreathe' },
+        expected: dyingPc(),
+      },
+      {
+        name: 'pc dying: breathe without a block refused',
+        current: dyingPc(),
+        event: { type: 'suffocationBreathe' },
+        expected: { refusal: /no recovery block/ },
+      },
+      {
+        name: 'pc dying: dropping preserves earned counters',
+        current: dyingPc({ deathSaveSuccesses: 2 }),
+        event: { type: 'suffocationDrop' },
+        expected: dyingPc({ ...blocked, deathSaveSuccesses: 2 }),
+      },
+      {
+        name: 'pc dying: unblocked head regrowth is ordinary healing (S27)',
+        current: dyingPc({ ...headed, deathSaveSuccesses: 2 }),
+        event: regrowth,
+        expected: state({
+          ...pc,
+          hpCurrent: 10,
+          ...headed,
+          headCount: 4,
+          ...settledRegrowth,
+        }),
+        regained: 10,
+      },
+      {
+        name: 'pc dying blocked: regrowth grows heads but keeps zero HP and counters',
+        current: dyingPc({ ...headed, ...blocked, deathSaveSuccesses: 2 }),
+        event: regrowth,
+        expected: dyingPc({
+          ...headed,
+          ...blocked,
+          deathSaveSuccesses: 2,
+          headCount: 4,
+          ...settledRegrowth,
+        }),
+        regained: 0,
+      },
+      // ---- player-character / stable
+      {
+        name: 'pc stable: healing wakes and clears the schedule',
+        current: stablePc(),
+        event: { type: 'heal', amount: 2 },
+        expected: state({ ...pc, hpCurrent: 2 }),
+      },
+      {
+        name: 'pc stable: damage becomes dying with a failure',
+        current: stablePc(),
+        event: { type: 'damage', amount: 2 },
+        expected: dyingPc({
+          deathSaveSuccesses: 0,
+          deathSaveFailures: 1,
+          damageThisTurn: 2,
+        }),
+      },
+      {
+        name: 'pc stable: death save and stabilize refused',
+        current: stablePc(),
+        event: { type: 'deathSave', roll: 12 },
+        expected: { refusal: /only a dying player-character/ },
+      },
+      {
+        name: 'pc stable: recovery due returns to 1 HP',
+        current: stablePc(),
+        event: { type: 'recoveryDue', elapsedMinutes: 180 },
+        expected: state({ ...pc, hpCurrent: 1 }),
+        regained: 1,
+      },
+      {
+        name: 'pc stable: recovery before the deadline refused',
+        current: stablePc(),
+        event: { type: 'recoveryDue', elapsedMinutes: 179 },
+        expected: { refusal: /not due/ },
+      },
+      {
+        name: 'pc stable: regrowth is ordinary healing (S27)',
+        current: stablePc({ ...headed, deathSaveSuccesses: 0 }),
+        event: regrowth,
+        expected: state({
+          ...pc,
+          hpCurrent: 10,
+          ...headed,
+          headCount: 4,
+          ...settledRegrowth,
+        }),
+        regained: 10,
+      },
+      {
+        name: 'pc stable: fire-suppressed regrowth refused',
+        current: stablePc({ ...headed, fireDamageSinceOwnTurn: 1 }),
+        event: { ...regrowth, fireDamage: true },
+        expected: { refusal: /suppressed by fire/ },
+      },
+      {
+        name: 'pc stable: suffocation drop becomes blocked dying with fresh counters',
+        current: stablePc(),
+        event: { type: 'suffocationDrop' },
+        expected: dyingPc({
+          ...blocked,
+          deathSaveSuccesses: 0,
+          deathSaveFailures: 0,
+        }),
+      },
+      // ---- player-character / dead
+      {
+        name: 'pc dead: healing refused',
+        current: state({ ...pc, hpCurrent: 0, status: 'dead' }),
+        event: { type: 'heal', amount: 3 },
+        expected: { refusal: /dead combatant cannot undergo/ },
+      },
+      {
+        name: 'pc dead: death save refused',
+        current: state({ ...pc, hpCurrent: 0, status: 'dead' }),
+        event: { type: 'deathSave', roll: 20 },
+        expected: { refusal: /dead combatant cannot undergo/ },
+      },
+      {
+        name: 'pc dead: positive regrowth refused',
+        current: state({ ...pc, hpCurrent: 0, status: 'dead', ...headed }),
+        event: regrowth,
+        expected: { refusal: /dead combatant cannot undergo/ },
+      },
+    ];
+
+    it.each(cases)('$name', ({ current, event, expected, regained }) => {
+      const result = nextCombatantLifecycle(current, event, {
+        recoverySchedule: schedule,
+      });
+      if ('refusal' in expected) {
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.refusal).toMatch(expected.refusal);
+        return;
+      }
+      expect(result).toMatchObject({ ok: true });
+      if (!result.ok) return;
+      expect(result.state).toEqual(expected);
+      if (regained !== undefined) expect(result.regained).toBe(regained);
+    });
+
+    it('applies a third success through one path for ordinary and natural-20 saves across zero/positive maxima and blocks (S34)', () => {
+      for (const last of [10, 12, 20]) {
+        for (const max of [
+          { effectiveHpMax: 10 },
+          { hpMax: 1, effectiveHpMax: 0, exhaustionLevel: 4 },
+        ]) {
+          for (const block of [null, 'suffocating' as const]) {
+            const current = dyingPc({
+              ...max,
+              recoveryBlock: block,
+              deathSaveSuccesses: 2,
+            });
+            const result = nextCombatantLifecycle(
+              current,
+              { type: 'deathSave', roll: last },
+              { recoverySchedule: schedule },
+            );
+            const label = `${last}/${max.effectiveHpMax}/${block}`;
+            expect(result.ok, label).toBe(true);
+            if (!result.ok) continue;
+            const revives =
+              last === 20 && block === null && max.effectiveHpMax > 0;
+            if (revives) {
+              expect(result.state.status, label).toBe('alive');
+              expect(result.state.hpCurrent, label).toBe(1);
+            } else if (block === null) {
+              expect(result.state, label).toMatchObject({
+                status: 'stable',
+                deathSaveSuccesses: 0,
+                deathSaveFailures: 0,
+                stableRecovery: schedule,
+              });
+            } else {
+              expect(result.state, label).toMatchObject({
+                status: 'dying',
+                deathSaveSuccesses: 3,
+                stableRecovery: null,
+              });
+            }
+          }
+        }
+      }
+    });
+  });
 });
