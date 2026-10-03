@@ -18,7 +18,7 @@ export const stabilizeCharacterTool: Tool = {
   // Writes character life state — a canon write (eshyra-dwkm).
   mutates: true,
   description:
-    'Record stabilization for a dying character or opted-in player-character combatant after a successful check or stabilizing effect.',
+    'Record stabilization for a dying character or opted-in player-character combatant after a successful check or stabilizing effect. For a combatant, this works only during that combatant’s active combat instance; a dying player-character actor whose encounter closed continues its death saves and stabilization when it is next brought into an encounter with start_encounter.',
   inputSchema: {
     type: 'object',
     properties: {

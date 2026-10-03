@@ -1078,7 +1078,7 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     db.close();
   });
 
-  it('revives ordinary monster-rules death by healing but preserves terminal death causes', () => {
+  it('keeps ordinary monster-rules death terminal: healing and revival statuses are refused (D2 reversed)', () => {
     const { db, registry, ctx } = setup();
     expect(
       registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx)
@@ -1102,18 +1102,23 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
         (combatant) => combatant.combatantId === ordinary.combatantId,
       ),
     ).toMatchObject({ status: 'dead', hpCurrent: 0, deathRules: 'monster' });
-    expect(
-      registry.invoke(
-        'update_combatant',
-        { combatantId: ordinary.combatantId, hpDelta: 2 },
-        ctx,
-      ).ok,
-    ).toBe(true);
+    for (const args of [
+      { hpDelta: 2 },
+      { status: 'alive' },
+      { hpDelta: 2, status: 'alive' },
+    ])
+      expect(
+        registry.invoke(
+          'update_combatant',
+          { combatantId: ordinary.combatantId, ...args },
+          ctx,
+        ).ok,
+      ).toBe(false);
     expect(
       listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID).find(
         (combatant) => combatant.combatantId === ordinary.combatantId,
       ),
-    ).toMatchObject({ status: 'alive', hpCurrent: 2 });
+    ).toMatchObject({ status: 'dead', hpCurrent: 0 });
 
     expect(
       registry.invoke(
@@ -1909,9 +1914,13 @@ describe('combatant lifecycle boundary repairs (fifth pass)', () => {
         deathSaveFailures: 0,
         stableRecoveryDeadlineElapsedMinutes: null,
       });
-      // A dead-status bypass or later revival through status stays refused.
-      expect(update({ hpDelta: -1 }).ok).toBe(true);
-      expect(read()).toMatchObject({ status: 'unconscious', hpCurrent: 0 });
+      // Further damage (critical or not) to the knocked-out monster kills it
+      // (S35); the dead monster then refuses healing and revival (D2).
+      expect(update({ hpDelta: -1, critical: overshoot === 1 }).ok).toBe(true);
+      expect(read()).toMatchObject({ status: 'dead', hpCurrent: 0 });
+      expect(update({ hpDelta: 3 }).ok).toBe(false);
+      expect(update({ status: 'unconscious' }).ok).toBe(false);
+      expect(read()).toMatchObject({ status: 'dead', hpCurrent: 0 });
       db.close();
     }
 

@@ -150,20 +150,9 @@ export function nextCombatantLifecycle(
   }
 
   if (next.status === 'dead') {
-    const ordinaryMonsterHealing =
-      event.type === 'heal' &&
-      event.amount > 0 &&
-      next.deathRules === 'monster' &&
-      current.exhaustionLevel < 6 &&
-      current.headCount !== 0 &&
-      next.effectiveHpMax > 0;
-    if (ordinaryMonsterHealing) {
-      next.hpCurrent = Math.min(
-        next.effectiveHpMax,
-        Math.max(0, next.hpCurrent + event.amount),
-      );
-      if (next.hpCurrent > current.hpCurrent) next.status = 'alive';
-    } else if (
+    // D2 (reversed): a dead combatant stays dead in both death-rule modes
+    // (SRD rule:healing); no revival event exists, so positive heals refuse.
+    if (
       event.type === 'exhaustionChanged' ||
       event.type === 'clampToEffectiveMax' ||
       event.type === 'beginTurn' ||
@@ -271,7 +260,12 @@ export function nextCombatantLifecycle(
               next.status = next.deathSaveFailures >= 3 ? 'dead' : 'dying';
             }
           }
-        } else if (oldHp > 0 && next.hpCurrent === 0) {
+        } else if (
+          next.hpCurrent === 0 &&
+          (oldHp > 0 || next.status === 'unconscious')
+        ) {
+          // Monster rules: dropping to 0 kills, and so does any damage to a
+          // knocked-out (unconscious at 0 HP) monster (S35).
           next.status = 'dead';
         }
         if (next.status !== 'stable') {
@@ -693,17 +687,8 @@ export function nextCombatantLifecycle(
     return refusal('recovery block requires dying status');
   if (next.hpCurrent < 0 || next.hpCurrent > next.effectiveHpMax)
     return refusal('HP is outside the effective maximum');
-  if (current.status === 'dead' && next.status !== 'dead') {
-    const monsterHealing =
-      event.type === 'heal' &&
-      event.amount > 0 &&
-      current.deathRules === 'monster' &&
-      next.deathRules === 'monster' &&
-      current.exhaustionLevel < 6 &&
-      current.headCount !== 0 &&
-      next.hpCurrent > current.hpCurrent;
-    if (!monsterHealing) return refusal('dead status is terminal');
-  }
+  if (current.status === 'dead' && next.status !== 'dead')
+    return refusal('dead status is terminal');
 
   return {
     ok: true,

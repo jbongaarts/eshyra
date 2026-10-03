@@ -18,7 +18,7 @@ export const beginTurnTool: Tool = {
     'automatically settles due F3 round and participant-turn effects. ' +
     "At the end of a multi-headed creature's turn, it also applies eligible " +
     'head regrowth and healing and reports the new head count. ' +
-    'A known but dead, escaped, or inactive participant still establishes its ' +
+    'A dying player-character combatant keeps an available turn: record its start-of-turn death save with record_death_save during that turn; its end-of-turn effects (such as head regrowth) settle when that turn ends at the next begin_turn, after the save. A known but dead, stable, escaped, or inactive participant still establishes its ' +
     'boundary and returns turnAvailable:false; skipped initiative boundaries ' +
     'must still be reported when participant-local timers depend on them. Call ' +
     'once per participant per turn in initiative order. Pass round when ' +
