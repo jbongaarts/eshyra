@@ -837,7 +837,23 @@ describe('stabilizeCharacter', () => {
       stable_recovery_settled: 1,
       stable_recovery_deadline_elapsed_minutes: null,
     });
-    adjustExhaustion(db, { ...CTX, characterId: 'pc-1', delta: -1 });
+    grantTemporaryHp(db, 5, CTX);
+    expect(adjustHp(db, 1, CTX)).toMatchObject({ newHp: 0 });
+    adjustExhaustion(db, { ...CTX, characterId: 'pc-1', delta: 1 });
+    expect(
+      db
+        .prepare(
+          "SELECT life_state,hp_current,hp_temp,stable_recovery_settled,stable_recovery_deadline_elapsed_minutes FROM character WHERE id='pc-1'",
+        )
+        .get(),
+    ).toEqual({
+      life_state: 'stable',
+      hp_current: 0,
+      hp_temp: 5,
+      stable_recovery_settled: 1,
+      stable_recovery_deadline_elapsed_minutes: null,
+    });
+    adjustExhaustion(db, { ...CTX, characterId: 'pc-1', delta: -2 });
     expect(
       db
         .prepare(
@@ -854,6 +870,30 @@ describe('stabilizeCharacter', () => {
       ).not.toThrow();
     db.close();
   });
+
+  it('rejects partial settled recovery schedules in writes and clock scans', () => {
+    const db = freshDb({ max: 20, current: 0, lifeState: 'dying' });
+    stabilizeCharacter(db, CTX, createSeededRng(42));
+    db.prepare(
+      `UPDATE character
+       SET stable_recovery_roll=NULL, stable_recovery_settled=1
+       WHERE id='pc-1'`,
+    ).run();
+
+    expect(() => grantTemporaryHp(db, 5, CTX)).toThrow(/recovery schedule/i);
+    expect(() =>
+      advanceWorldTime(db, {
+        ...CTX,
+        campaignId: 'campaign-1',
+        minutes: 1,
+      }),
+    ).toThrow(/schedule/i);
+    expect(
+      db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get(),
+    ).toEqual({ elapsed_minutes: 0 });
+    db.close();
+  });
+
   it('marks a dying character stable and resets the counters', () => {
     const db = freshDb({
       max: 20,

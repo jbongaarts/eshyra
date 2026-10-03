@@ -1526,14 +1526,26 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     expect(
       (
         db
-          .prepare(
-            'SELECT stable_recovery_deadline_elapsed_minutes AS deadline FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        .prepare(
+            'SELECT stable_recovery_deadline_elapsed_minutes AS deadline, stable_recovery_settled AS settled FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
           )
           .get(DEFAULT_TEST_CAMPAIGN_ID, stableOld.combatantId) as {
           deadline: number | null;
+          settled: number;
         }
       ).deadline,
     ).toBeNull();
+    expect(
+      (
+        db
+          .prepare(
+            'SELECT stable_recovery_settled AS settled FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+          )
+          .get(DEFAULT_TEST_CAMPAIGN_ID, stableOld.combatantId) as {
+          settled: number;
+        }
+      ).settled,
+    ).toBe(0);
     expect(
       registry.invoke(
         'update_combatant',

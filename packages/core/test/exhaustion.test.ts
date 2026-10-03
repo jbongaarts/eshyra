@@ -198,7 +198,28 @@ describe('adjust_exhaustion tool', () => {
       stable_recovery_deadline_elapsed_minutes: null,
     });
     expect(
-      registry.invoke('adjust_exhaustion', { combatantId, delta: -1 }, ctx).ok,
+      registry.invoke(
+        'update_combatant',
+        { combatantId, hpDelta: 1 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke('adjust_exhaustion', { combatantId, delta: 1 }, ctx).ok,
+    ).toBe(true);
+    expect(
+      db
+        .prepare(
+          'SELECT status,stable_recovery_settled,stable_recovery_deadline_elapsed_minutes FROM encounter_combatant WHERE combatant_id=?',
+        )
+        .get(combatantId),
+    ).toEqual({
+      status: 'stable',
+      stable_recovery_settled: 1,
+      stable_recovery_deadline_elapsed_minutes: null,
+    });
+    expect(
+      registry.invoke('adjust_exhaustion', { combatantId, delta: -2 }, ctx).ok,
     ).toBe(true);
     for (let i = 0; i < 3; i += 1)
       expect(registry.invoke('advance_time', { minutes: 60 }, ctx).ok).toBe(
