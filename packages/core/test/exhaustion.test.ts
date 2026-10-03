@@ -144,6 +144,37 @@ describe('adjust_exhaustion tool', () => {
     db.close();
   });
 
+  it('routes begin_turn resets through lifecycle repair before committing', () => {
+    const { db, ctx, registry } = setup();
+    const combatantId = startCombatant(ctx, registry);
+    db.prepare(
+      `UPDATE encounter_combatant
+       SET conditions_json='[{"id":"exhaustion","level":6}]',
+           hp_current=12, status='alive'
+       WHERE combatant_id=?`,
+    ).run(combatantId);
+
+    const result = registry.invoke(
+      'begin_turn',
+      { combatantId },
+      ctx,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(
+      db
+        .prepare(
+          'SELECT status, hp_current, damage_turn_key FROM encounter_combatant WHERE combatant_id=?',
+        )
+        .get(combatantId),
+    ).toEqual({
+      status: 'dead',
+      hp_current: 6,
+      damage_turn_key: 'exhaustion-combat:1:combatant:exhaustion-combat-exhaustion-npc',
+    });
+    db.close();
+  });
+
   it('settles and re-arms zero-maximum combatant recovery without blocking later clocks', () => {
     const { db, ctx, registry } = setup();
     expect(
