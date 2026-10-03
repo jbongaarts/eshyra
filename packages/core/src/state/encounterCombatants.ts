@@ -1838,11 +1838,13 @@ function startEncounterInTxn(
             ? actor.status === 'stable' || actor.status === 'dead'
               ? actor.status
               : 'dying'
-            : actor.status === 'unconscious'
-              ? // A monster-rules knockout (0 HP, unconscious) stays
-                // unconscious across projection (S38).
+            : actor.status === 'dead'
+              ? 'dead'
+              : // A monster-rules creature at 0 HP with no terminal cause was
+                // knocked out (its status may since have become inactive or
+                // escaped); it is unconscious, never killed by projection
+                // (S38, S41).
                 'unconscious'
-              : 'dead'
           : actorInput.status === undefined &&
               (actor.status === 'escaped' ||
                 actor.status === 'inactive' ||

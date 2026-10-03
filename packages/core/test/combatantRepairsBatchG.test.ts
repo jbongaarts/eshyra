@@ -266,6 +266,85 @@ describe('S38: projecting a monster-rules knockout keeps it unconscious', () => 
   }
 });
 
+describe('S41/S42: knockout and summon state survive participation changes', () => {
+  for (const status of ['inactive', 'escaped'] as const) {
+    it(`a knocked-out monster later marked ${status} projects as unconscious, not dead`, () => {
+      const s = setup();
+      s.must('start_encounter', {
+        combatInstanceId: 'c1',
+        actors: [
+          {
+            actorId: 'gob',
+            rulesRef: 'creature:goblin',
+            hpMax: 7,
+            hpCurrent: 7,
+          },
+        ],
+      });
+      s.must('update_combatant', {
+        combatantId: 'c1-gob',
+        hpDelta: -10,
+        status: 'unconscious',
+      });
+      s.must('update_combatant', { combatantId: 'c1-gob', status });
+      s.must('close_combat_instance', { status: 'completed' });
+      s.must('start_encounter', {
+        combatInstanceId: 'c2',
+        actors: [{ actorId: 'gob' }],
+      });
+      expect(s.row('c2-gob')).toMatchObject({
+        status: 'unconscious',
+        hpCurrent: 0,
+      });
+      expect(
+        getCampaignActor(s.db, DEFAULT_TEST_CAMPAIGN_ID, 'gob')?.status,
+      ).not.toBe('dead');
+      s.db.close();
+    });
+  }
+});
+
+describe('S42: ending a summon reports a dead or dying creature as released', () => {
+  for (const variant of ['dead', 'dying'] as const) {
+    it(`a ${variant} summoned creature keeps its state and its link is released`, () => {
+      const s = setup();
+      s.must('start_encounter', {
+        combatInstanceId: 'cs',
+        actors: [{ actorId: 'wolf', rulesRef: 'creature:wolf', side: 'ally' }],
+      });
+      const id = 'cs-wolf';
+      s.must('start_effect', {
+        effectId: 'fx-summon',
+        kind: 'summoning',
+        displayName: 'Summoned wolf',
+        source: { kind: 'ruling' },
+        duration: { kind: 'until-removed' },
+        actors: [{ combatantId: id }],
+      });
+      if (variant === 'dying')
+        s.must('update_combatant', {
+          combatantId: id,
+          deathRules: 'player-character',
+        });
+      s.must('update_combatant', { combatantId: id, hpDelta: -1 });
+      s.must('update_combatant', {
+        combatantId: id,
+        hpDelta: -s.row(id).hpCurrent,
+      });
+      expect(s.row(id).status).toBe(variant);
+      const ended = s.must('end_effect', {
+        effectId: 'fx-summon',
+        reason: 'ruled',
+        note: 'summoner dismissed it',
+      });
+      expect(JSON.stringify(ended.data)).toMatch(/"action":"released"/);
+      expect(JSON.stringify(ended.data)).not.toMatch(/"action":"missing"/);
+      expect(s.row(id).status).toBe(variant);
+      s.db.close();
+    });
+  }
+});
+
 describe('S37: both sides hiding is handled with one set_surprised call per side', () => {
   it('derives surprise for each side separately and refuses one mixed call', () => {
     const s = setup();

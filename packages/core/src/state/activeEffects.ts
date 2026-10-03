@@ -45,6 +45,7 @@ import {
   ensureCampaignActorFromCombatant,
   getActiveCombatInstance,
   getCampaignActor,
+  readCombatant,
   updateCampaignActor,
   updateCombatant,
 } from './encounterCombatants.js';
@@ -2333,7 +2334,7 @@ function removeProjection(
   campaignId: string,
   link: EffectLinkRow,
   ctx: EffectMutationContext,
-): 'removed' | 'missing' {
+): 'removed' | 'released' | 'missing' {
   if (link.link_kind === 'condition') {
     if (link.target_kind === 'character') {
       try {
@@ -2397,6 +2398,18 @@ function removeProjection(
         throw e;
       }
     }
+    // A dead summon is already out of play, and a dying or stable
+    // player-character-rules summon stays a participant (it cannot be made
+    // inactive at 0 HP): ownership is released and its state left in place,
+    // never misreported as missing (S42).
+    const summoned = readCombatant(db, campaignId, link.projection_ref);
+    if (
+      summoned !== undefined &&
+      (summoned.status === 'dead' ||
+        summoned.status === 'dying' ||
+        summoned.status === 'stable')
+    )
+      return 'released';
     try {
       updateCombatant(db, {
         campaignId,
