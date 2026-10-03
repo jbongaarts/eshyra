@@ -68,8 +68,19 @@ export function expendAmmunition(
       );
     const characterId = resolveCharacterId(txnDb, ctx.characterId);
     const held = txnDb
-      .prepare('SELECT quantity FROM inventory WHERE id=? AND character_id=?')
-      .get(input.itemId, characterId) as { quantity: number } | undefined;
+      .prepare(
+        `SELECT quantity, name, pack_ref, variant_id, properties_json
+         FROM inventory WHERE id=? AND character_id=?`,
+      )
+      .get(input.itemId, characterId) as
+      | {
+          quantity: number;
+          name: string;
+          pack_ref: string | null;
+          variant_id: string | null;
+          properties_json: string;
+        }
+      | undefined;
     if (held === undefined)
       throw new AmmunitionError(
         `character '${characterId}' does not hold inventory item '${input.itemId}'`,
@@ -124,8 +135,9 @@ export function expendAmmunition(
         `INSERT INTO ammunition_expenditure(
          campaign_id, expenditure_id, combat_instance_id, character_id,
          source_inventory_id, expended_inventory_id, quantity, world_location_id,
-         status, provenance, session_id, created_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'expended', ?, ?, ?)`,
+         status, provenance, session_id, created_at,
+         name, pack_ref, variant_id, properties_json
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'expended', ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         ctx.campaignId,
@@ -139,6 +151,10 @@ export function expendAmmunition(
         ctx.provenance,
         ctx.sessionId,
         ctx.at,
+        held.name,
+        held.pack_ref,
+        held.variant_id,
+        held.properties_json,
       );
     return {
       combatInstanceId: combat.combat_instance_id,
@@ -155,6 +171,10 @@ interface ExpenditureRow {
   expended_inventory_id: string;
   quantity: number;
   world_location_id: string;
+  name: string | null;
+  pack_ref: string | null;
+  variant_id: string | null;
+  properties_json: string | null;
 }
 interface ExpendedItemRow {
   id: string;
@@ -177,6 +197,7 @@ export function recoverAmmunition(
   combatInstanceId: string;
   characterId: string;
   recovered: number;
+  returned: number;
   entitlement: number;
   destroyed: number;
   unavailable: number;
@@ -202,7 +223,9 @@ export function recoverAmmunition(
     const locationId = currentWorldLocation(txnDb);
     const rows = txnDb
       .prepare(
-        `SELECT expenditure_id, source_inventory_id, expended_inventory_id, quantity, world_location_id
+        `SELECT expenditure_id, source_inventory_id, expended_inventory_id,
+                quantity, world_location_id, name, pack_ref, variant_id,
+                properties_json
        FROM ammunition_expenditure
        WHERE campaign_id=? AND combat_instance_id=? AND character_id=? AND status='expended'
        ORDER BY expenditure_id`,
@@ -246,23 +269,17 @@ export function recoverAmmunition(
           ? Math.min(item.quantity, expenditure.quantity)
           : 0;
       unavailable += expenditure.quantity - present;
-      const identityItem =
-        item ??
-        (txnDb
-          .prepare(`SELECT id,name,quantity,properties_json,pack_ref,variant_id,
-        character_id,world_location_id,unheld_disposition FROM inventory WHERE id=?`)
-          .get(expenditure.source_inventory_id) as ExpendedItemRow | undefined);
       const identity =
-        identityItem === undefined
+        expenditure.name !== null
           ? JSON.stringify([
-              'unavailable-source',
-              expenditure.source_inventory_id,
+              expenditure.pack_ref,
+              expenditure.variant_id,
+              expenditure.name,
+              expenditure.properties_json,
             ])
           : JSON.stringify([
-              identityItem.pack_ref,
-              identityItem.variant_id,
-              identityItem.name,
-              identityItem.properties_json,
+              'legacy-unavailable-source',
+              expenditure.source_inventory_id,
             ]);
       const group = groups.get(identity) ?? { rows: [], total: 0, expended: 0 };
       group.expended += expenditure.quantity;
@@ -329,6 +346,7 @@ export function recoverAmmunition(
       characterId,
       entitlement,
       recovered,
+      returned: recovered,
       destroyed,
       unavailable,
       movedAway: unavailable,

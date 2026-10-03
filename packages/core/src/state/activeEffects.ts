@@ -1820,12 +1820,18 @@ function conditionBaseName(conditionId: string): string {
 export function conditionImpliesIncapacitated(
   db: Db,
   conditionId: string,
+  resolver?: CampaignRulesPackResolver,
 ): boolean {
   const base = conditionBaseName(conditionId);
   if (base === 'incapacitated') {
     return true;
   }
-  const record = lookupCampaignRecord(db, 'condition', `condition:${base}`);
+  const record = lookupCampaignRecord(
+    db,
+    'condition',
+    `condition:${base}`,
+    resolver,
+  );
   if (record === undefined) {
     return false;
   }
@@ -1848,8 +1854,11 @@ export function conditionImpliesIncapacitated(
 export function anyConditionImpliesIncapacitated(
   db: Db,
   conditionIds: readonly string[],
+  resolver?: CampaignRulesPackResolver,
 ): boolean {
-  return conditionIds.some((id) => conditionImpliesIncapacitated(db, id));
+  return conditionIds.some((id) =>
+    conditionImpliesIncapacitated(db, id, resolver),
+  );
 }
 
 /**
@@ -1866,6 +1875,7 @@ function requireConcentrationCapableOwner(
   db: Db,
   campaignId: string,
   owner: EffectParticipant,
+  resolver?: CampaignRulesPackResolver,
 ): void {
   if (owner.kind === 'campaign_actor') {
     throw new ActiveEffectError(
@@ -1911,7 +1921,7 @@ function requireConcentrationCapableOwner(
     db,
     campaignId,
     owner,
-  ).find((id) => conditionImpliesIncapacitated(db, id));
+  ).find((id) => conditionImpliesIncapacitated(db, id, resolver));
   if (incapacitating !== undefined) {
     throw new ActiveEffectError(
       `${owner.kind} '${owner.ref}' carries the incapacitating condition ` +
@@ -2650,6 +2660,7 @@ export function createActiveEffect(
         txnDb,
         input.campaignId,
         input.concentration.owner,
+        input.resolveRulesPack,
       );
     }
 
@@ -2805,7 +2816,11 @@ export function createActiveEffect(
         input.concentration !== undefined &&
         projection.target.kind === input.concentration.owner.kind &&
         projection.target.ref === input.concentration.owner.ref &&
-        conditionImpliesIncapacitated(txnDb, projection.condition.id)
+        conditionImpliesIncapacitated(
+          txnDb,
+          projection.condition.id,
+          input.resolveRulesPack,
+        )
       ) {
         throw new ActiveEffectError(
           `condition '${projection.condition.id}' incapacitates, and its target is this ` +

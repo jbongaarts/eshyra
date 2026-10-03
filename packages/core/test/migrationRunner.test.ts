@@ -255,6 +255,75 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0038 snapshots ammunition identity only when the expended row remains', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 37)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(37);
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, quantity, properties_json, provenance,
+         session_id, updated_at, pack_ref, variant_id
+       ) VALUES ('expended-present', 'pc-1', 'Silver Arrow', 2,
+                 '{"material":"silver"}', 'test', 'session', ?,
+                 'magic-item:silver-arrow', 'silver-arrow')`,
+    ).run(NOW());
+    const insert = db.prepare(
+      `INSERT INTO ammunition_expenditure(
+         campaign_id, expenditure_id, combat_instance_id, character_id,
+         source_inventory_id, expended_inventory_id, quantity, world_location_id,
+         status, provenance, session_id, created_at
+       ) VALUES ('campaign-1', ?, 'combat-1', 'pc-1', 'source-arrows', ?, 2,
+                 'battlefield', 'expended', 'test', 'session', ?)`,
+    );
+    insert.run('ammo-present', 'expended-present', NOW());
+    insert.run('ammo-missing', 'expended-deleted', NOW());
+
+    const migration38 = bundled.find((migration) => migration.version === 38);
+    if (!migration38) throw new Error('missing migration 0038');
+    writeFileSync(
+      join(
+        dir,
+        `${String(migration38.version).padStart(4, '0')}_${migration38.name}.sql`,
+      ),
+      migration38.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([38]);
+    expect(
+      db
+        .prepare(
+          `SELECT expenditure_id, name, pack_ref, variant_id, properties_json
+           FROM ammunition_expenditure ORDER BY expenditure_id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        expenditure_id: 'ammo-missing',
+        name: null,
+        pack_ref: null,
+        variant_id: null,
+        properties_json: null,
+      },
+      {
+        expenditure_id: 'ammo-present',
+        name: 'Silver Arrow',
+        pack_ref: 'magic-item:silver-arrow',
+        variant_id: 'silver-arrow',
+        properties_json: '{"material":"silver"}',
+      },
+    ]);
+    db.close();
+  });
+
   it('is idempotent: a second run applies nothing', () => {
     const dir = makeMigrationDir({
       '0001_first.sql': 'CREATE TABLE a (id INTEGER PRIMARY KEY);\n',

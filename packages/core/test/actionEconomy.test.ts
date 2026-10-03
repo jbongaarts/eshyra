@@ -992,6 +992,167 @@ describe('turn-budget tools', () => {
       });
     }
   });
+
+  it('threads the exact campaign resolver through goblin and hydra surprise observers and combatant exhaustion', () => {
+    const db = freshDbWithSession();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(31),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'late-resolver-test',
+      at: NOW,
+    };
+    expect(
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: 'late-resolver-combat',
+          actors: [
+            { actorId: 'ordinary', rulesRef: 'creature:goblin' },
+            { actorId: 'hydra', rulesRef: 'creature:hydra' },
+          ],
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const ids = db
+      .prepare(
+        'SELECT identity_ref,combatant_id FROM encounter_combatant WHERE campaign_id=? ORDER BY identity_ref',
+      )
+      .all(CAMPAIGN) as Array<{ identity_ref: string; combatant_id: string }>;
+    const ordinaryId = ids.find(
+      (row) => row.identity_ref === 'ordinary',
+    )?.combatant_id;
+    const hydraId = ids.find(
+      (row) => row.identity_ref === 'hydra',
+    )?.combatant_id;
+    if (!ordinaryId || !hydraId)
+      throw new Error('expected goblin and hydra combatants');
+    const resolver = installLateAmbiguityAddon(db, NOW).resolver;
+    ctx.resolveRulesPack = resolver;
+
+    const retained = registry.invoke(
+      'roll_retained_check',
+      {
+        kind: 'ability_check',
+        reason: 'the player hides before combat',
+        label: 'player stealth',
+        participant: { character: 'pc-1' },
+      },
+      ctx,
+    );
+    expect(retained.ok).toBe(true);
+    if (!retained.ok) throw new Error(retained.message);
+    const comparison = registry.invoke(
+      'resolve_retained_check',
+      {
+        retainedCheckId: (retained.data as { retainedCheckId: string })
+          .retainedCheckId,
+        reason: 'the goblin and hydra notice the hidden player',
+        passive: [
+          {
+            label: 'ordinary goblin observer',
+            participant: { combatantId: ordinaryId },
+            modifier: -100,
+          },
+          {
+            label: 'hydra observer',
+            participant: { combatantId: hydraId },
+            modifier: -100,
+          },
+        ],
+      },
+      ctx,
+    );
+    expect(comparison.ok).toBe(true);
+    if (!comparison.ok) throw new Error(comparison.message);
+    const comparisonIds = (
+      comparison.data as { comparisons: Array<{ comparisonId: string }> }
+    ).comparisons.map((entry) => entry.comparisonId);
+    expect(comparisonIds).toHaveLength(2);
+
+    const budgetBefore = db
+      .prepare(
+        'SELECT * FROM combat_turn_budget WHERE campaign_id=? ORDER BY participant_ref',
+      )
+      .all(CAMPAIGN);
+    ctx.resolveRulesPack = undefined;
+    let surpriseUnavailable = false;
+    try {
+      const result = registry.invoke('set_surprised', { comparisonIds }, ctx);
+      surpriseUnavailable = !result.ok;
+    } catch {
+      surpriseUnavailable = true;
+    }
+    expect(surpriseUnavailable).toBe(true);
+    expect(
+      db
+        .prepare(
+          'SELECT * FROM combat_turn_budget WHERE campaign_id=? ORDER BY participant_ref',
+        )
+        .all(CAMPAIGN),
+    ).toEqual(budgetBefore);
+
+    ctx.resolveRulesPack = resolver;
+    const surprise = registry.invoke('set_surprised', { comparisonIds }, ctx);
+    expect(surprise).toMatchObject({
+      ok: true,
+      data: {
+        surprised: expect.arrayContaining([
+          { kind: 'combatant', ref: ordinaryId },
+          { kind: 'combatant', ref: hydraId },
+        ]),
+      },
+    });
+
+    const beforeExhaustion = db
+      .prepare(
+        'SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+      )
+      .get(CAMPAIGN, ordinaryId);
+    ctx.resolveRulesPack = undefined;
+    let exhaustionUnavailable = false;
+    try {
+      const result = registry.invoke(
+        'adjust_exhaustion',
+        { combatantId: ordinaryId, delta: 4 },
+        ctx,
+      );
+      exhaustionUnavailable = !result.ok;
+    } catch {
+      exhaustionUnavailable = true;
+    }
+    expect(exhaustionUnavailable).toBe(true);
+    expect(
+      db
+        .prepare(
+          'SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
+        .get(CAMPAIGN, ordinaryId),
+    ).toEqual(beforeExhaustion);
+
+    ctx.resolveRulesPack = resolver;
+    expect(
+      registry.invoke(
+        'adjust_exhaustion',
+        { combatantId: ordinaryId, delta: 4 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      db
+        .prepare(
+          'SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
+        .get(CAMPAIGN, ordinaryId),
+    ).toMatchObject({
+      hp_current: 3,
+      conditions_json: expect.stringContaining('"level":4'),
+    });
+    db.close();
+  });
 });
 
 describe('spendTurnResource — spell casts are pack-derived, never model-declared', () => {

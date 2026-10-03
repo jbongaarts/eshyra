@@ -2344,18 +2344,16 @@ describe('update_combatant concentration wiring', () => {
       }),
     ).toBeUndefined();
 
-    // A further update of the downed combatant reports nothing to break.
+    // A terminal combatant refuses further damage without breaking anything.
     const again = registry.invoke(
       'update_combatant',
       { combatantId: GOBLIN_1, hpDelta: -1 },
       ctx,
     );
-    expect(again.ok).toBe(true);
-    if (again.ok) {
-      expect(
-        (again.data as { concentration?: unknown }).concentration,
-      ).toBeUndefined();
-    }
+    expect(again).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('dead combatant cannot undergo'),
+    });
   });
 });
 

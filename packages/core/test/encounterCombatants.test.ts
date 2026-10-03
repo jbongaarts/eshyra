@@ -1078,6 +1078,69 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     db.close();
   });
 
+  it('revives ordinary monster-rules death by healing but preserves terminal death causes', () => {
+    const { db, registry, ctx } = setup();
+    expect(
+      registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx)
+        .ok,
+    ).toBe(true);
+    const combatants = listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID);
+    const ordinary = combatants[0];
+    const terminal = combatants[1];
+    if (!ordinary || !terminal)
+      throw new Error('goblin encounter is incomplete');
+
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: ordinary.combatantId, hpDelta: -ordinary.hpMax },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID).find(
+        (combatant) => combatant.combatantId === ordinary.combatantId,
+      ),
+    ).toMatchObject({ status: 'dead', hpCurrent: 0, deathRules: 'monster' });
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: ordinary.combatantId, hpDelta: 2 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID).find(
+        (combatant) => combatant.combatantId === ordinary.combatantId,
+      ),
+    ).toMatchObject({ status: 'alive', hpCurrent: 2 });
+
+    expect(
+      registry.invoke(
+        'adjust_exhaustion',
+        { combatantId: terminal.combatantId, delta: 6 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: terminal.combatantId, hpDelta: 2 },
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      listCombatants(db, DEFAULT_TEST_CAMPAIGN_ID).find(
+        (combatant) => combatant.combatantId === terminal.combatantId,
+      ),
+    ).toMatchObject({
+      status: 'dead',
+      hpCurrent: 3,
+      conditions: [{ id: 'exhaustion', level: 6 }],
+    });
+    db.close();
+  });
+
   it('escalates damage at 0 hit points and refuses to heal the dead', () => {
     const { db, update, read, hpMax } = optedIn();
     update({ hpDelta: -hpMax });
@@ -1465,13 +1528,25 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
       (
         db
           .prepare(
-            'SELECT stable_recovery_deadline_elapsed_minutes AS deadline FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+            'SELECT stable_recovery_deadline_elapsed_minutes AS deadline, stable_recovery_settled AS settled FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
           )
           .get(DEFAULT_TEST_CAMPAIGN_ID, stableOld.combatantId) as {
           deadline: number | null;
+          settled: number;
         }
       ).deadline,
     ).toBeNull();
+    expect(
+      (
+        db
+          .prepare(
+            'SELECT stable_recovery_settled AS settled FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+          )
+          .get(DEFAULT_TEST_CAMPAIGN_ID, stableOld.combatantId) as {
+          settled: number;
+        }
+      ).settled,
+    ).toBe(0);
     expect(
       registry.invoke(
         'update_combatant',
@@ -1519,6 +1594,157 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
       deathRules: 'player-character',
       recoveryBlock: 'suffocating',
     });
+    db.close();
+  });
+
+  it('promotes stable recovery through a summoning effect and transfers its single owner', () => {
+    const { db, registry, ctx } = setup();
+    expect(
+      registry.invoke('start_encounter', { encounterId: 'enc-goblins' }, ctx)
+        .ok,
+    ).toBe(true);
+    const source = listCombatants(db, ctx.campaignId)[0];
+    if (!source) throw new Error('encounter did not create a combatant');
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: source.combatantId, deathRules: 'player-character' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: source.combatantId, hpDelta: -source.hpMax },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'stabilize_character',
+        { combatantId: source.combatantId },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const scheduleOf = (combatantId: string) =>
+      db
+        .prepare(
+          `SELECT stable_recovery_roll AS roll,
+                  stable_recovery_anchor_elapsed_minutes AS anchor,
+                  stable_recovery_deadline_elapsed_minutes AS deadline,
+                  stable_recovery_settled AS settled
+           FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?`,
+        )
+        .get(ctx.campaignId, combatantId) as {
+        roll: number | null;
+        anchor: number | null;
+        deadline: number | null;
+        settled: number;
+      };
+    const originalSchedule = scheduleOf(source.combatantId);
+    expect(originalSchedule).toMatchObject({
+      roll: expect.any(Number),
+      anchor: expect.any(Number),
+      deadline: expect.any(Number),
+      settled: 0,
+    });
+
+    expect(
+      registry.invoke(
+        'start_effect',
+        {
+          effectId: 'promote-stable-goblin',
+          kind: 'summoning',
+          displayName: 'Promote the goblin',
+          source: { kind: 'ruling' },
+          duration: { kind: 'until-removed' },
+          actors: [
+            {
+              combatantId: source.combatantId,
+              campaignActorId: 'durable-stable-goblin',
+            },
+          ],
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(scheduleOf(source.combatantId)).toEqual(originalSchedule);
+    expect(
+      getCampaignActor(db, ctx.campaignId, 'durable-stable-goblin')?.state
+        .combatLifecycle,
+    ).toMatchObject({
+      stableRecovery: {
+        roll: originalSchedule.roll,
+        anchor: originalSchedule.anchor,
+        deadline: originalSchedule.deadline,
+      },
+      stableRecoverySettled: false,
+    });
+
+    const promotionInput = {
+      campaignId: ctx.campaignId,
+      combatantId: source.combatantId,
+      actorId: 'durable-stable-goblin',
+      provenance: 'test:repeat-promotion',
+      sessionId: ctx.sessionId,
+      at: ctx.at,
+    };
+    ensureCampaignActorFromCombatant(db, promotionInput);
+    expect(scheduleOf(source.combatantId)).toEqual(originalSchedule);
+
+    expect(
+      registry.invoke(
+        'close_combat_instance',
+        { combatInstanceId: source.combatInstanceId, status: 'completed' },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: 'promotion-next',
+          actors: [
+            {
+              actorId: 'durable-stable-goblin',
+              rulesRef: source.rulesRef,
+            },
+          ],
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const projectedId = 'promotion-next-durable-stable-goblin';
+    expect(scheduleOf(source.combatantId)).toEqual({
+      roll: null,
+      anchor: null,
+      deadline: null,
+      settled: 0,
+    });
+    expect(scheduleOf(projectedId)).toEqual(originalSchedule);
+
+    ensureCampaignActorFromCombatant(db, promotionInput);
+    expect(scheduleOf(projectedId)).toEqual(originalSchedule);
+    const elapsed = (
+      db.prepare('SELECT elapsed_minutes FROM clock WHERE id=1').get() as {
+        elapsed_minutes: number;
+      }
+    ).elapsed_minutes;
+    expect(
+      registry.invoke(
+        'advance_time',
+        { minutes: (originalSchedule.deadline as number) - elapsed + 1 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      listCombatants(db, ctx.campaignId).find(
+        (combatant) => combatant.combatantId === projectedId,
+      ),
+    ).toMatchObject({ status: 'alive', hpCurrent: 1 });
+    expect(
+      getCampaignActor(db, ctx.campaignId, 'durable-stable-goblin'),
+    ).toMatchObject({ status: 'alive', hpCurrent: 1 });
     db.close();
   });
 

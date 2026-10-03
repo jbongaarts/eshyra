@@ -138,6 +138,107 @@ describe('ammunition expenditure and battlefield recovery tools', () => {
   });
 
   it.each([
+    {
+      label: 'first expenditure row destroyed (even total)',
+      quantities: [2, 2],
+      missingIndexes: [0],
+      remainingQuantity: undefined,
+      expected: { entitlement: 2, returned: 2, destroyed: 0, unavailable: 2 },
+    },
+    {
+      label: 'last expenditure row destroyed (odd total)',
+      quantities: [2, 3],
+      missingIndexes: [1],
+      remainingQuantity: undefined,
+      expected: { entitlement: 2, returned: 2, destroyed: 0, unavailable: 3 },
+    },
+    {
+      label: 'all expenditure rows destroyed',
+      quantities: [1, 2],
+      missingIndexes: [0, 1],
+      remainingQuantity: undefined,
+      expected: { entitlement: 1, returned: 0, destroyed: 0, unavailable: 3 },
+    },
+    {
+      label: 'partially destroyed row with pieces left to return and destroy',
+      quantities: [6],
+      missingIndexes: [],
+      remainingQuantity: 5,
+      expected: { entitlement: 3, returned: 3, destroyed: 2, unavailable: 1 },
+    },
+  ])('accounts from the expenditure snapshot when $label', (scenario) => {
+    const { db, registry, ctx } = setup();
+    combat(db);
+    stack(
+      db,
+      'arrows',
+      scenario.quantities.reduce((sum, n) => sum + n, 0),
+    );
+    const expendedIds = scenario.quantities.map(
+      (quantity) =>
+        spend(registry, ctx, 'arrows', quantity).expendedInventoryId,
+    );
+    for (const index of scenario.missingIndexes) {
+      const id = expendedIds[index];
+      if (!id) throw new Error('missing test expenditure row');
+      db.prepare('DELETE FROM inventory WHERE id=?').run(id);
+    }
+    if (scenario.remainingQuantity !== undefined) {
+      const id = expendedIds[0];
+      if (!id) throw new Error('missing test expenditure row');
+      db.prepare('UPDATE inventory SET quantity=? WHERE id=?').run(
+        scenario.remainingQuantity,
+        id,
+      );
+    }
+    close(db);
+    expect(recover(registry, ctx)).toMatchObject({
+      ok: true,
+      data: { ...scenario.expected, recovered: scenario.expected.returned },
+    });
+    db.close();
+  });
+
+  it('keeps mixed identity entitlements separate after rows disappear or mutate', () => {
+    const { db, registry, ctx } = setup();
+    combat(db);
+    stack(db, 'wood-arrows', 4, 'Arrow', 'wood');
+    stack(db, 'silver-arrows', 4, 'Arrow', 'silver');
+    const wood = spend(registry, ctx, 'wood-arrows', 4).expendedInventoryId;
+    const silver = spend(registry, ctx, 'silver-arrows', 4).expendedInventoryId;
+    db.prepare(
+      "UPDATE inventory SET name='Renamed', properties_json='{}' WHERE id=?",
+    ).run(wood);
+    db.prepare('DELETE FROM inventory WHERE id=?').run(silver);
+    close(db);
+
+    expect(recover(registry, ctx)).toMatchObject({
+      ok: true,
+      data: {
+        entitlement: 4,
+        returned: 2,
+        recovered: 2,
+        destroyed: 2,
+        unavailable: 4,
+      },
+    });
+    expect(
+      db
+        .prepare(
+          "SELECT name, quantity, properties_json FROM inventory WHERE character_id='pc-1'",
+        )
+        .all(),
+    ).toEqual([
+      {
+        name: 'Renamed',
+        quantity: 2,
+        properties_json: '{}',
+      },
+    ]);
+    db.close();
+  });
+
+  it.each([
     [2, 2],
     [4, 2],
     [3, 3],
@@ -189,7 +290,7 @@ describe('ammunition expenditure and battlefield recovery tools', () => {
     ).toEqual({ quantity: 2 });
     const record = db
       .prepare(
-        'SELECT combat_instance_id, source_inventory_id, expended_inventory_id, quantity, world_location_id, status FROM ammunition_expenditure',
+        'SELECT combat_instance_id, source_inventory_id, expended_inventory_id, quantity, world_location_id, status, name, pack_ref, variant_id, properties_json FROM ammunition_expenditure',
       )
       .get();
     expect(record).toMatchObject({
@@ -198,6 +299,10 @@ describe('ammunition expenditure and battlefield recovery tools', () => {
       quantity: 1,
       world_location_id: LOCATION,
       status: 'expended',
+      name: 'Arrow',
+      pack_ref: null,
+      variant_id: null,
+      properties_json: JSON.stringify({ material: 'wood' }),
     });
     expect(
       db

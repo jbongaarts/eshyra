@@ -73,6 +73,7 @@ import {
   getActiveCombatInstance,
   listCombatantsForInstance,
   readCombatant,
+  resetCombatantDamageForTurn,
   settleCombatantHeadsAtTurnEnd,
 } from './encounterCombatants.js';
 import type { LifeState } from './hpLifecycle.js';
@@ -848,20 +849,14 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
     // structured turn. Clear accumulators as soon as that identity changes,
     // while preserving heads lost since the multi-headed creature's own turn.
     const damageTurnKey = `${instance.combatInstanceId}:${round}:${participant.kind}:${participant.ref}`;
-    txnDb
-      .prepare(
-        `UPDATE encounter_combatant
-       SET damage_this_turn = 0, head_died_this_turn = 0,
-           damage_turn_key = ?
-       WHERE campaign_id = ? AND combat_instance_id = ?
-         AND (damage_turn_key IS NULL OR damage_turn_key <> ?)`,
-      )
-      .run(
-        damageTurnKey,
-        input.campaignId,
-        instance.combatInstanceId,
-        damageTurnKey,
-      );
+    resetCombatantDamageForTurn(txnDb, {
+      campaignId: input.campaignId,
+      combatInstanceId: instance.combatInstanceId,
+      turnKey: damageTurnKey,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
 
     // Reset the new participant's per-turn budget in place. The reaction
     // count resets at the start of its own turn, and a legendary creature
@@ -1454,6 +1449,7 @@ export function setSurprisedInTransaction(
           input.campaignId,
           instance.combatInstanceId,
           participant,
+          input.resolveRulesPack,
         ),
       ),
       legendaryProfileFor(txnDb, rulesRef, input.resolveRulesPack),

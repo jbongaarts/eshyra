@@ -112,7 +112,7 @@ CREATE TABLE ammunition_expenditure (
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
   created_at TEXT NOT NULL,
-  resolved_at TEXT,
+  resolved_at TEXT, name TEXT, pack_ref TEXT, variant_id TEXT, properties_json TEXT,
   PRIMARY KEY (campaign_id, expenditure_id)
 );
 
