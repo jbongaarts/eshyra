@@ -417,7 +417,6 @@ describe('adjust_exhaustion tool', () => {
       name: string,
       args: unknown,
       expectedSuccess = true,
-      allowMonsterRevival = false,
     ) => {
       operationCount += 1;
       const before = readRows();
@@ -425,32 +424,13 @@ describe('adjust_exhaustion tool', () => {
       expect(result.ok).toBe(expectedSuccess);
       const after = readRows();
       if (!expectedSuccess) expect(after).toEqual(before);
-      if (expectedSuccess)
+      if (expectedSuccess || eventClass.startsWith('refused'))
         successes[eventClass] = (successes[eventClass] ?? 0) + 1;
       const afterById = new Map(after.map((row) => [row.combatant_id, row]));
       for (const previous of before) {
         const next = afterById.get(previous.combatant_id);
-        if (previous.status === 'dead' && next?.status !== 'dead') {
-          const oldConditions = JSON.parse(previous.conditions_json) as Array<{
-            id: string;
-            level?: number;
-          }>;
-          const newConditions = JSON.parse(
-            next?.conditions_json ?? '[]',
-          ) as Array<{ id: string; level?: number }>;
-          expect(allowMonsterRevival).toBe(true);
-          expect(previous.death_rules).toBe('monster');
-          expect(previous.head_count).not.toBe(0);
-          expect(
-            oldConditions.find((condition) => condition.id === 'exhaustion')
-              ?.level,
-          ).not.toBe(6);
-          expect(
-            newConditions.find((condition) => condition.id === 'exhaustion')
-              ?.level,
-          ).not.toBe(6);
-          expect(next?.hp_current).toBeGreaterThan(previous.hp_current);
-        }
+        // I8 (D2 reversed): dead is terminal in both death-rule modes.
+        if (previous.status === 'dead') expect(next?.status).toBe('dead');
       }
       assertState();
       return result;
@@ -722,45 +702,43 @@ describe('adjust_exhaustion tool', () => {
         roll: 20,
       });
     };
-    const doMonsterDamage = () => {
-      let monster = activeRow('monster');
+    // The monster is killed in the last cycle; afterwards it stays dead and
+    // every heal/damage/revival attempt is refused with no state change.
+    const doMonsterDamage = (kill: boolean) => {
+      const monster = activeRow('monster');
       if (monster.status === 'dead') {
         invoke(
-          'heal',
+          'refusedDamage',
           'update_combatant',
-          { combatantId: monster.combatant_id, hpDelta: 1 },
-          true,
-          true,
+          { combatantId: monster.combatant_id, hpDelta: -1 },
+          false,
         );
-        monster = activeRow('monster');
+        return;
       }
       invoke('damage', 'update_combatant', {
         combatantId: monster.combatant_id,
-        hpDelta: -monster.hp_current,
+        hpDelta: kill ? -monster.hp_current : -1,
       });
     };
     const doMonsterHeal = () => {
       const monster = activeRow('monster');
+      const dead = monster.status === 'dead';
       invoke(
-        'heal',
+        dead ? 'refusedHeal' : 'heal',
         'update_combatant',
         { combatantId: monster.combatant_id, hpDelta: 1 },
-        true,
-        monster.status === 'dead',
+        !dead,
       );
+      if (dead)
+        invoke(
+          'refusedRevival',
+          'update_combatant',
+          { combatantId: monster.combatant_id, status: 'alive' },
+          false,
+        );
     };
     const doExhaustion = (delta: 1 | -1) => {
-      let monster = activeRow('monster');
-      if (monster.status === 'dead') {
-        invoke(
-          'heal',
-          'update_combatant',
-          { combatantId: monster.combatant_id, hpDelta: 1 },
-          true,
-          true,
-        );
-        monster = activeRow('monster');
-      }
+      const monster = activeRow('monster');
       invoke(
         delta === 1 ? 'exhaustionUp' : 'exhaustionDown',
         'adjust_exhaustion',
@@ -787,8 +765,9 @@ describe('adjust_exhaustion tool', () => {
       doCloseReopen(cycle + 1);
       doRecovery();
       doSuffocation();
-      doMonsterDamage();
+      doMonsterDamage(cycle === 2);
       doMonsterHeal();
+      if (cycle === 2) doMonsterDamage(false);
       doExhaustion(1);
       doExhaustion(-1);
       doHydraTurn(cycle + 1);
@@ -807,8 +786,11 @@ describe('adjust_exhaustion tool', () => {
     }
     expect(operationCount).toBeGreaterThanOrEqual(75);
     for (const [eventClass, minimum] of Object.entries({
-      damage: 8,
-      heal: 7,
+      damage: 7,
+      heal: 5,
+      refusedDamage: 1,
+      refusedHeal: 1,
+      refusedRevival: 1,
       deathSave: 8,
       stabilize: 4,
       suffocationDrop: 4,

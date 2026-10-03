@@ -583,8 +583,9 @@ function resolveBoundaryParticipant(
       participant: { kind: 'combatant', ref: input.ref },
       displayLabel: combatant.display_label,
       rulesRef: combatant.rules_ref,
+      // A dying player-character combatant keeps an available turn for its
+      // start-of-turn death save, like a dying character (S36).
       ...(combatant.status === 'dead' ||
-      combatant.status === 'dying' ||
       combatant.status === 'stable' ||
       combatant.status === 'escaped' ||
       combatant.status === 'inactive'

@@ -1732,7 +1732,7 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
     ).toEqual({ head_count: 0, status: 'dead', hp_current: 47 });
   });
 
-  it('refuses pre-head-tracking hydras and settles heads on an unavailable turn', () => {
+  it('refuses pre-head-tracking hydras and settles heads when a dying turn ends', () => {
     const { db } = setupLairCombat();
     const registry = createDefaultToolRegistry();
     beginTurn(db, {
@@ -1797,12 +1797,20 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
         dropCtx,
       ).ok,
     ).toBe(true);
-    const ended = beginTurn(second.db, {
+    // A dying player-character combatant keeps an available turn (S36); its
+    // end-of-turn regrowth settles when that turn ends at the next begin_turn.
+    const began = beginTurn(second.db, {
       campaignId: CAMPAIGN,
       participant: participant(HYDRA),
       ...CTX,
     });
-    expect(ended.turnAvailable).toBe(false);
+    expect(began.turnAvailable).toBe(true);
+    expect(began.headRegrowths ?? []).toEqual([]);
+    const ended = beginTurn(second.db, {
+      campaignId: CAMPAIGN,
+      participant: PC,
+      ...CTX,
+    });
     expect(ended.headRegrowths).toMatchObject([
       { headsRegrown: 2, hitPointsRegained: 0, headCount: 6 },
     ]);

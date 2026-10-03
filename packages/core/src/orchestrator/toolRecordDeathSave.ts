@@ -18,7 +18,7 @@ export const recordDeathSaveTool: Tool = {
   // Writes death-save counters and life state — a canon write (eshyra-dwkm).
   mutates: true,
   description:
-    'Record a natural d20 death-save result for a dying character or opted-in player-character combatant. Obtain the natural result through `roll` and pass it here.',
+    'Record a natural d20 death-save result for a dying character or opted-in player-character combatant. Obtain the natural result through `roll` and pass it here. For a combatant, this works only during that combatant’s active combat instance; a dying player-character actor whose encounter closed continues its death saves and stabilization when it is next brought into an encounter with start_encounter.',
   inputSchema: {
     type: 'object',
     properties: {

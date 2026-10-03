@@ -686,19 +686,9 @@ export function assertCombatantLifecycle(
       ownsSchedule)
   )
     fail('I7 (stable recovery schedule is incomplete or unsettled)');
-  if (previous?.status === 'dead' && c.status !== 'dead') {
-    const previousTerminalCause =
-      exhaustionLevel(previous.conditions) === 6 || previous.headCount === 0;
-    const monsterHealing =
-      previous.deathRules === 'monster' &&
-      c.deathRules === 'monster' &&
-      !previousTerminalCause &&
-      exhaustion < 6 &&
-      previous.headCount !== 0 &&
-      c.headCount !== 0 &&
-      c.hpCurrent > previous.hpCurrent;
-    if (!monsterHealing) fail('I8 (dead state is terminal)');
-  }
+  // I8 (D2 reversed): dead is terminal in both death-rule modes.
+  if (previous?.status === 'dead' && c.status !== 'dead')
+    fail('I8 (dead state is terminal)');
 }
 
 function readCombatantLifecycleState(
@@ -1486,19 +1476,10 @@ function upsertCampaignActorInTxn(
     state: nextState,
   };
   readCombatLifecycle(candidate.state);
-  if (existing?.status === 'dead' && candidate.status !== 'dead') {
-    const prior = readCombatLifecycle(existing.state);
-    const monsterHealing =
-      prior?.deathRules === 'monster' &&
-      exhaustionLevel(candidate.conditions) < 6 &&
-      exhaustionLevel(existing.conditions) < 6 &&
-      prior.headCount !== 0 &&
-      (candidate.hpCurrent ?? 0) > (existing.hpCurrent ?? 0);
-    if (!monsterHealing)
-      throw new EncounterCombatantError(
-        `campaign actor '${candidate.actorId}' is dead; use the lifecycle tools`,
-      );
-  }
+  if (existing?.status === 'dead' && candidate.status !== 'dead')
+    throw new EncounterCombatantError(
+      `campaign actor '${candidate.actorId}' is dead; use the lifecycle tools`,
+    );
   assertCampaignActorLifecycle(candidate);
   db.prepare(
     `INSERT INTO campaign_actor(
@@ -1857,7 +1838,11 @@ function startEncounterInTxn(
             ? actor.status === 'stable' || actor.status === 'dead'
               ? actor.status
               : 'dying'
-            : 'dead'
+            : actor.status === 'unconscious'
+              ? // A monster-rules knockout (0 HP, unconscious) stays
+                // unconscious across projection (S38).
+                'unconscious'
+              : 'dead'
           : actorInput.status === undefined &&
               (actor.status === 'escaped' ||
                 actor.status === 'inactive' ||
@@ -2095,8 +2080,15 @@ export function resolveCombatantDeathSave(
       throw new EncounterCombatantError(
         'only a dying player-character combatant may make death saves',
       );
+    // A natural 20 that cannot regain HP (blocked, or effective max 0) takes
+    // the same capped-success path as an ordinary success, so a third success
+    // on it stabilizes and needs the same seeded schedule (S34).
+    const natural20Revives =
+      roll === 20 &&
+      c.recoveryBlock === null &&
+      effectiveHpMax(c.hpMax, c.conditions) > 0;
     const needsSchedule =
-      roll !== 20 &&
+      !natural20Revives &&
       roll >= 10 &&
       c.deathSaveSuccesses >= 2 &&
       c.recoveryBlock === null;
@@ -2111,10 +2103,11 @@ export function resolveCombatantDeathSave(
     persistCombatantLifecycle(txn, c, lifecycle, ctx);
     const outcome =
       roll === 20
-        ? c.recoveryBlock !== null ||
-          effectiveHpMax(c.hpMax, c.conditions) === 0
-          ? 'success'
-          : 'revived'
+        ? natural20Revives
+          ? 'revived'
+          : lifecycle.status === 'stable'
+            ? 'stabilized'
+            : 'success'
         : roll === 1
           ? lifecycle.status === 'dead'
             ? 'dead'

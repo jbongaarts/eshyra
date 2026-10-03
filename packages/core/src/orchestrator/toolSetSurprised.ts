@@ -11,7 +11,7 @@ export const setSurprisedTool: Tool = {
   name: 'set_surprised',
   mutates: true,
   description:
-    'Derive and record which participants are surprised at the start of the active combat instance from passive comparisons. For each observer, any noticed hider means that observer is not surprised; an observer who noticed none is surprised. First roll each hider’s Stealth with roll_retained_check, then compare it with every opposing observer using resolve_retained_check passive, and pass all resulting comparison ids here. If neither side tries to be stealthy, there is no surprise; do not call this tool. The engine enforces loss of the surprised participant’s first turn and begin_turn clears the flag when that turn ends. args: { comparisonIds: string[] }.',
+    'Derive and record which participants are surprised at the start of the active combat instance from passive comparisons. For each observer, any noticed hider means that observer is not surprised; an observer who noticed none is surprised. First roll each hider’s Stealth with roll_retained_check, then compare it with every opposing observer using resolve_retained_check passive, and pass the resulting comparison ids here. When creatures on both sides are hiding, call set_surprised once per side, each time with the passive comparisons for that side’s hiders against the other side’s observers (a single call mixing both sides is refused). If neither side tries to be stealthy, there is no surprise; do not call this tool. The engine enforces loss of the surprised participant’s first turn and begin_turn clears the flag when that turn ends. args: { comparisonIds: string[] }.',
   inputSchema: {
     type: 'object',
     properties: {

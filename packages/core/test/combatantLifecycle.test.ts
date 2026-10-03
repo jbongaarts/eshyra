@@ -356,26 +356,20 @@ describe('nextCombatantLifecycle', () => {
     expect(apply(current, event).state).toEqual(expected);
   });
 
-  it('allows the I8 ordinary monster-healing exception and preserves terminal causes', () => {
-    const ordinary = nextCombatantLifecycle(
-      state({ hpCurrent: 0, status: 'dead' }),
-      { type: 'heal', amount: 2 },
-    );
-    expect(ordinary.ok && ordinary.state).toEqual(
-      state({ hpCurrent: 2, status: 'alive' }),
-    );
-
+  it('keeps dead terminal in both death-rule modes: positive heals and revival statuses are refused (D2 reversed)', () => {
     for (const current of [
+      state({ hpCurrent: 0, status: 'dead' }),
+      state({ hpCurrent: 0, status: 'dead', deathRules: 'player-character' }),
       state({ hpCurrent: 0, status: 'dead', exhaustionLevel: 6 }),
       state({ hpCurrent: 0, status: 'dead', headCount: 0 }),
-      state({ hpCurrent: 0, status: 'dead', deathRules: 'player-character' }),
     ]) {
-      const terminal = nextCombatantLifecycle(current, {
-        type: 'heal',
-        amount: 2,
-      });
-      expect(terminal.ok).toBe(false);
-      expect(terminal).toMatchObject({ ok: false });
+      expect(
+        nextCombatantLifecycle(current, { type: 'heal', amount: 2 }),
+      ).toMatchObject({ ok: false });
+      for (const status of ['alive', 'unconscious', 'stable', 'dying'] as const)
+        expect(
+          nextCombatantLifecycle(current, { type: 'setStatus', status }),
+        ).toMatchObject({ ok: false });
     }
   });
 
@@ -697,12 +691,22 @@ describe('nextCombatantLifecycle', () => {
       },
       // ---- monster / unconscious knockout at 0
       {
-        name: 'monster knocked out: further damage stays unconscious',
+        name: 'monster knocked out: further damage kills (S35)',
         current: state({ hpCurrent: 0, status: 'unconscious' }),
         event: { type: 'damage', amount: 1 },
         expected: state({
           hpCurrent: 0,
-          status: 'unconscious',
+          status: 'dead',
+          damageThisTurn: 1,
+        }),
+      },
+      {
+        name: 'monster knocked out: further critical damage kills (S35)',
+        current: state({ hpCurrent: 0, status: 'unconscious' }),
+        event: { type: 'damage', amount: 1, critical: true },
+        expected: state({
+          hpCurrent: 0,
+          status: 'dead',
           damageThisTurn: 1,
         }),
       },
@@ -733,10 +737,10 @@ describe('nextCombatantLifecycle', () => {
       },
       // ---- monster / dead
       {
-        name: 'monster dead: healing revives',
+        name: 'monster dead: healing refused (D2 reversed)',
         current: state({ hpCurrent: 0, status: 'dead' }),
         event: { type: 'heal', amount: 3 },
-        expected: state({ hpCurrent: 3 }),
+        expected: { refusal: /dead combatant cannot undergo/ },
       },
       {
         name: 'monster dead: damage refused',
