@@ -9,7 +9,7 @@
 // validation of malformed durable state.
 
 import { describe, expect, it } from 'vitest';
-import type { AdventureModule, Db } from '../src/internal.js';
+import type { AdventureModule, Db, ToolContext } from '../src/internal.js';
 import {
   addCondition,
   adjustHp,
@@ -46,6 +46,7 @@ import {
   unsuppressEffect,
   updateCombatant,
 } from '../src/internal.js';
+import { installLateAmbiguityAddon } from './discovery/support/lateAmbiguityAddon.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
@@ -4812,4 +4813,99 @@ describe('stale-snapshot terminalization', () => {
     expect(dump()).toEqual(before);
     expectCleanAudit(db);
   });
+});
+
+describe('exact resolver through condition projection and cleanup (S32)', () => {
+  for (const targetKind of ['combatant', 'campaign_actor'] as const) {
+    it(`threads the installed-stack resolver through start_effect and end_effect for a ${targetKind} target`, () => {
+      const db = freshDbWithSession();
+      const registry = createDefaultToolRegistry();
+      const ctx: ToolContext = {
+        db,
+        rng: createSeededRng(5),
+        campaignId: CAMPAIGN,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: 'resolver-effects',
+        at: NOW,
+      };
+      expect(
+        registry.invoke(
+          'start_encounter',
+          {
+            combatInstanceId: 'resolver-effects',
+            actors: [{ actorId: 'target', rulesRef: 'creature:goblin' }],
+          },
+          ctx,
+        ).ok,
+      ).toBe(true);
+      const ref =
+        targetKind === 'combatant' ? 'resolver-effects-target' : 'target';
+      const start = (effectId: string) =>
+        registry.invoke(
+          'start_effect',
+          {
+            effectId,
+            kind: 'condition-package',
+            displayName: effectId,
+            source: { kind: 'ruling' },
+            duration: { kind: 'until-removed' },
+            conditions: [
+              {
+                target: { kind: targetKind, ref },
+                condition: { id: 'incapacitated' },
+              },
+            ],
+          },
+          ctx,
+        );
+      const hasCondition = () =>
+        (
+          db
+            .prepare(
+              "SELECT conditions_json FROM encounter_combatant WHERE combatant_id='resolver-effects-target'",
+            )
+            .get() as { conditions_json: string }
+        ).conditions_json.includes('incapacitated');
+      const effectStatus = (effectId: string) =>
+        (
+          db
+            .prepare(
+              'SELECT status FROM active_effect WHERE campaign_id=? AND effect_id=?',
+            )
+            .get(CAMPAIGN, effectId) as { status: string } | undefined
+        )?.status;
+
+      // Created on the base stack, cleaned up on the installed stack.
+      expect(start('fx-before-addon').ok).toBe(true);
+      expect(hasCondition()).toBe(true);
+      const installed = installLateAmbiguityAddon(db, NOW);
+
+      // Genuine unavailability refuses atomically in both producers.
+      expect(start('fx-no-resolver').ok).toBe(false);
+      expect(effectStatus('fx-no-resolver')).toBeUndefined();
+      const refusedEnd = registry.invoke(
+        'end_effect',
+        { effectId: 'fx-before-addon', reason: 'ruled', note: 'cleanup' },
+        ctx,
+      );
+      expect(refusedEnd.ok).toBe(false);
+      expect(effectStatus('fx-before-addon')).toBe('active');
+      expect(hasCondition()).toBe(true);
+
+      // With the exact resolver both paths succeed.
+      ctx.resolveRulesPack = installed.resolver;
+      const ended = registry.invoke(
+        'end_effect',
+        { effectId: 'fx-before-addon', reason: 'ruled', note: 'cleanup' },
+        ctx,
+      );
+      expect(ended.ok).toBe(true);
+      expect(effectStatus('fx-before-addon')).toBe('ended');
+      expect(hasCondition()).toBe(false);
+      expect(start('fx-with-resolver').ok).toBe(true);
+      expect(effectStatus('fx-with-resolver')).toBe('active');
+      expect(hasCondition()).toBe(true);
+      db.close();
+    });
+  }
 });

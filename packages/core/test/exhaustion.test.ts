@@ -12,6 +12,7 @@ import {
   upsertCampaignActor,
 } from '../src/internal.js';
 import {
+  ensureCampaignActorFromCombatant,
   resolveCombatantRecoveries,
   stabilizeCombatant,
 } from '../src/state/encounterCombatants.js';
@@ -170,6 +171,58 @@ describe('adjust_exhaustion tool', () => {
         'exhaustion-combat:1:combatant:exhaustion-combat-exhaustion-npc',
     });
     db.close();
+  });
+
+  it('keeps the canonical actor in parity when a begin_turn reset repairs a current projection (S31)', () => {
+    const actorRow = (
+      db: ReturnType<typeof freshDbWithSession>,
+      actorId: string,
+    ) =>
+      db
+        .prepare(
+          'SELECT hp_current, status, conditions_json, state_json FROM campaign_actor WHERE actor_id=?',
+        )
+        .get(actorId);
+    for (const malformed of [
+      {
+        label: 'exhaustion six',
+        conditions: '[{"id":"exhaustion","level":6}]',
+      },
+      { label: 'ordinary row', conditions: '[]' },
+    ]) {
+      const { db, ctx, registry } = setup();
+      const combatantId = startCombatant(ctx, registry);
+      db.prepare(
+        `UPDATE encounter_combatant SET conditions_json=?, hp_current=12, status='alive'
+         WHERE combatant_id=?`,
+      ).run(malformed.conditions, combatantId);
+      db.prepare(
+        `UPDATE campaign_actor SET conditions_json=?, hp_current=12, status='alive'
+         WHERE actor_id='exhaustion-npc'`,
+      ).run(malformed.conditions);
+      const before = actorRow(db, 'exhaustion-npc');
+
+      expect(
+        registry.invoke('begin_turn', { combatantId }, ctx).ok,
+        malformed.label,
+      ).toBe(true);
+
+      const combatant = db
+        .prepare(
+          'SELECT status, hp_current FROM encounter_combatant WHERE combatant_id=?',
+        )
+        .get(combatantId) as { status: string; hp_current: number };
+      const actor = getCampaignActor(db, ctx.campaignId, 'exhaustion-npc');
+      if (malformed.label === 'exhaustion six') {
+        expect(combatant).toEqual({ status: 'dead', hp_current: 6 });
+        expect(actor).toMatchObject({ status: 'dead', hpCurrent: 6 });
+      } else {
+        expect(combatant).toEqual({ status: 'alive', hp_current: 12 });
+        // Accumulator-only reset: the actor row is not rewritten.
+        expect(actorRow(db, 'exhaustion-npc')).toEqual(before);
+      }
+      db.close();
+    }
   });
 
   it('settles and re-arms zero-maximum combatant recovery without blocking later clocks', () => {
@@ -1000,6 +1053,102 @@ describe('adjust_exhaustion tool', () => {
         conditions: [{ id: 'exhaustion', level: 4 }],
       }),
     ).toThrow(/I6/);
+
+    // S25: a refused write leaves the stored row byte-for-byte unchanged,
+    // with and without combatLifecycle, for exhaustion 4 and 6.
+    const lifecycleId = startCombatant(ctx, registry);
+    const lifecycleActor = getCampaignActor(
+      db,
+      ctx.campaignId,
+      'exhaustion-npc',
+    );
+    expect(lifecycleActor?.state.combatLifecycle).toBeDefined();
+    const targets = [
+      {
+        label: 'absent combatLifecycle',
+        actorId: 'legacy-actor',
+        base: actorInput,
+        hpMax: 20,
+      },
+      {
+        label: 'present combatLifecycle',
+        actorId: 'exhaustion-npc',
+        base: {
+          ...actorInput,
+          actorId: 'exhaustion-npc',
+          displayName: lifecycleActor?.displayName ?? 'x',
+          hpCurrent: lifecycleActor?.hpCurrent,
+          hpMax: lifecycleActor?.hpMax,
+          state: lifecycleActor?.state,
+          replaceCombatLifecycle: true,
+        },
+        hpMax: lifecycleActor?.hpMax ?? 0,
+      },
+    ];
+    for (const target of targets) {
+      for (const refused of [
+        { conditions: [{ id: 'exhaustion', level: 6 }], rule: /I1/ },
+        {
+          conditions: [{ id: 'exhaustion', level: 4 }],
+          hpCurrent: target.hpMax,
+          rule: /I6/,
+        },
+      ]) {
+        const before = JSON.stringify(
+          db
+            .prepare('SELECT * FROM campaign_actor WHERE actor_id=?')
+            .get(target.actorId),
+        );
+        expect(
+          () =>
+            upsertCampaignActor(db, {
+              ...target.base,
+              ...(refused.hpCurrent === undefined
+                ? {}
+                : { hpCurrent: refused.hpCurrent }),
+              conditions: refused.conditions,
+            }),
+          `${target.label}/${refused.rule}`,
+        ).toThrow(refused.rule);
+        expect(
+          JSON.stringify(
+            db
+              .prepare('SELECT * FROM campaign_actor WHERE actor_id=?')
+              .get(target.actorId),
+          ),
+          `${target.label}/${refused.rule} row unchanged`,
+        ).toBe(before);
+      }
+    }
+    // ensureCampaignActorFromCombatant owns the same boundary.
+    db.prepare(
+      `UPDATE encounter_combatant
+       SET conditions_json='[{"id":"exhaustion","level":6}]' WHERE combatant_id=?`,
+    ).run(lifecycleId);
+    const promotionBefore = JSON.stringify(
+      db
+        .prepare("SELECT * FROM campaign_actor WHERE actor_id='exhaustion-npc'")
+        .get(),
+    );
+    expect(() =>
+      ensureCampaignActorFromCombatant(db, {
+        campaignId: ctx.campaignId,
+        combatantId: lifecycleId,
+        actorId: 'exhaustion-npc',
+        provenance: 'test',
+        sessionId: ctx.sessionId,
+        at: ctx.at,
+      }),
+    ).toThrow(/I1/);
+    expect(
+      JSON.stringify(
+        db
+          .prepare(
+            "SELECT * FROM campaign_actor WHERE actor_id='exhaustion-npc'",
+          )
+          .get(),
+      ),
+    ).toBe(promotionBefore);
     expect(
       db
         .prepare(

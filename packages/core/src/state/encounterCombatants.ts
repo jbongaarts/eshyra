@@ -2529,8 +2529,7 @@ function updateCombatantInTxn(
   const nextEffectiveMax = effectiveHpMax(baseHpMax, conditions);
   let recoverySchedule: StableRecoverySchedule | undefined;
   const needsStableSchedule =
-    playerKnockout ||
-    (lifecycle.stableRecoverySettled && nextEffectiveMax > 0);
+    playerKnockout || (lifecycle.stableRecoverySettled && nextEffectiveMax > 0);
   if (needsStableSchedule)
     recoverySchedule = newStableRecoverySchedule(
       db,

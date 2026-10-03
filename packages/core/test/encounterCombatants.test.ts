@@ -1869,3 +1869,185 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
     db.close();
   });
 });
+
+describe('combatant lifecycle boundary repairs (fifth pass)', () => {
+  function firstGoblin() {
+    const harness = setup();
+    harness.registry.invoke(
+      'start_encounter',
+      { encounterId: 'enc-goblins' },
+      harness.ctx,
+    );
+    const combatants = listCombatants(harness.db, DEFAULT_TEST_CAMPAIGN_ID);
+    const target = combatants[0];
+    if (!target) throw new Error('encounter did not create a combatant');
+    const id = target.combatantId;
+    const read = () =>
+      listCombatants(harness.db, DEFAULT_TEST_CAMPAIGN_ID).find(
+        (c) => c.combatantId === id,
+      );
+    const update = (args: Record<string, unknown>) =>
+      harness.registry.invoke(
+        'update_combatant',
+        { combatantId: id, ...args },
+        harness.ctx,
+      );
+    return { ...harness, id, hpMax: target.hpMax, read, update };
+  }
+
+  it('recognizes the default monster nonlethal knockout before lethal damage and keeps terminal and PC boundaries (S29)', () => {
+    for (const overshoot of [0, 1, 100]) {
+      const { db, update, read, hpMax } = firstGoblin();
+      expect(
+        update({ hpDelta: -(hpMax + overshoot), status: 'unconscious' }).ok,
+      ).toBe(true);
+      expect(read(), `overshoot ${overshoot}`).toMatchObject({
+        status: 'unconscious',
+        hpCurrent: 0,
+        deathRules: 'monster',
+        deathSaveSuccesses: 0,
+        deathSaveFailures: 0,
+        stableRecoveryDeadlineElapsedMinutes: null,
+      });
+      // A dead-status bypass or later revival through status stays refused.
+      expect(update({ hpDelta: -1 }).ok).toBe(true);
+      expect(read()).toMatchObject({ status: 'unconscious', hpCurrent: 0 });
+      db.close();
+    }
+
+    // Ordinary lethal damage still kills; 'stable' stays refused for monsters.
+    const lethal = firstGoblin();
+    expect(lethal.update({ hpDelta: -lethal.hpMax }).ok).toBe(true);
+    expect(lethal.read()).toMatchObject({ status: 'dead', hpCurrent: 0 });
+    expect(lethal.update({ status: 'unconscious' }).ok).toBe(false);
+    expect(lethal.read()).toMatchObject({ status: 'dead' });
+    lethal.db.close();
+
+    const stable = firstGoblin();
+    expect(stable.update({ hpDelta: -stable.hpMax, status: 'stable' }).ok).toBe(
+      false,
+    );
+    expect(stable.read()).toMatchObject({
+      status: 'alive',
+      hpCurrent: stable.hpMax,
+    });
+    stable.db.close();
+
+    // A knockout that is not damage to zero is not a knockout.
+    const partial = firstGoblin();
+    expect(partial.update({ hpDelta: -1, status: 'unconscious' }).ok).toBe(
+      true,
+    );
+    expect(partial.read()).toMatchObject({
+      status: 'unconscious',
+      hpCurrent: partial.hpMax - 1,
+    });
+    partial.db.close();
+
+    // Terminal exhaustion wins over a knockout request.
+    const terminal = firstGoblin();
+    expect(
+      terminal.registry.invoke(
+        'adjust_exhaustion',
+        { combatantId: terminal.id, delta: 6 },
+        terminal.ctx,
+      ).ok,
+    ).toBe(true);
+    expect(terminal.update({ hpDelta: -1, status: 'unconscious' }).ok).toBe(
+      false,
+    );
+    expect(terminal.read()).toMatchObject({ status: 'dead' });
+    terminal.db.close();
+
+    // Player-character rules: stable knockout succeeds, unconscious refuses.
+    const pcRules = firstGoblin();
+    expect(pcRules.update({ deathRules: 'player-character' }).ok).toBe(true);
+    expect(
+      pcRules.update({ hpDelta: -pcRules.hpMax, status: 'unconscious' }).ok,
+    ).toBe(false);
+    expect(
+      pcRules.update({ hpDelta: -pcRules.hpMax, status: 'stable' }).ok,
+    ).toBe(true);
+    expect(pcRules.read()).toMatchObject({ status: 'stable', hpCurrent: 0 });
+    pcRules.db.close();
+  });
+
+  it('derives heal cap, clamp, and settled re-arm from the resulting base maximum (S30)', () => {
+    const base = {
+      campaignId: DEFAULT_TEST_CAMPAIGN_ID,
+      provenance: 'test',
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      at: NOW,
+    };
+    for (const exhaustion of [0, 4]) {
+      const eff = (max: number) =>
+        exhaustion >= 4 ? Math.floor(max / 2) : max;
+      const { db, registry, ctx, id, read, hpMax } = firstGoblin();
+      if (exhaustion > 0)
+        registry.invoke(
+          'adjust_exhaustion',
+          { combatantId: id, delta: exhaustion },
+          ctx,
+        );
+      const startHp = eff(hpMax);
+      expect(read()).toMatchObject({ hpCurrent: startHp });
+
+      // Increase: healing is capped by the NEW maximum, not the obsolete one.
+      const bigger = hpMax + 10;
+      updateCombatant(db, {
+        ...base,
+        combatantId: id,
+        hpMax: bigger,
+        hpDelta: 100,
+      });
+      expect(read(), `exhaustion ${exhaustion} increase`).toMatchObject({
+        hpMax: bigger,
+        hpCurrent: eff(bigger),
+      });
+
+      // Decrease: a non-damage clamp, never an invariant refusal.
+      const smaller = Math.max(2, Math.floor(hpMax / 2));
+      updateCombatant(db, { ...base, combatantId: id, hpMax: smaller });
+      expect(read(), `exhaustion ${exhaustion} decrease`).toMatchObject({
+        hpMax: smaller,
+        hpCurrent: eff(smaller),
+        status: 'alive',
+      });
+      db.close();
+    }
+
+    // Settled zero -> positive effective maximum re-arms recovery.
+    const { db, registry, ctx, id, read, update } = firstGoblin();
+    expect(update({ deathRules: 'player-character' }).ok).toBe(true);
+    updateCombatant(db, { ...base, combatantId: id, hpMax: 1 });
+    expect(
+      registry.invoke('adjust_exhaustion', { combatantId: id, delta: 4 }, ctx)
+        .ok,
+    ).toBe(true);
+    expect(read()).toMatchObject({ status: 'dying', hpCurrent: 0 });
+    expect(
+      registry.invoke('stabilize_character', { combatantId: id }, ctx).ok,
+    ).toBe(true);
+    advanceWorldTime(db, {
+      ...base,
+      minutes: 241,
+    });
+    const settled = db
+      .prepare(
+        'SELECT stable_recovery_settled AS s, stable_recovery_deadline_elapsed_minutes AS d FROM encounter_combatant WHERE combatant_id=?',
+      )
+      .get(id);
+    expect(settled).toEqual({ s: 1, d: null });
+    updateCombatant(db, { ...base, combatantId: id, hpMax: 4 });
+    expect(
+      db
+        .prepare(
+          'SELECT stable_recovery_settled AS s, stable_recovery_deadline_elapsed_minutes AS d FROM encounter_combatant WHERE combatant_id=?',
+        )
+        .get(id),
+    ).toMatchObject({ s: 0, d: expect.any(Number) });
+    advanceWorldTime(db, { ...base, minutes: 241 });
+    expect(read()).toMatchObject({ status: 'alive', hpCurrent: 1 });
+    db.close();
+  });
+});
