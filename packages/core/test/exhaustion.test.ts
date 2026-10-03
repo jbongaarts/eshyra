@@ -9,6 +9,7 @@ import {
   giveItem,
   listAttunements,
   listCombatants,
+  upsertCampaignActor,
 } from '../src/internal.js';
 import {
   resolveCombatantRecoveries,
@@ -562,6 +563,77 @@ describe('adjust_exhaustion tool', () => {
       ok: false,
       message: expect.stringContaining('adjust_exhaustion'),
     });
+    db.close();
+  });
+
+  it('enforces actor exhaustion invariants without combatLifecycle and refuses condition projections', () => {
+    const { db, ctx, registry } = setup();
+    const actorInput = {
+      campaignId: ctx.campaignId,
+      actorId: 'legacy-actor',
+      displayName: 'Legacy Actor',
+      actorKind: 'monster' as const,
+      sourceKind: 'campaign_created' as const,
+      rulesRef: 'creature:goblin',
+      hpCurrent: 20,
+      hpMax: 20,
+      conditions: [] as { id: string; level?: number }[],
+      status: 'alive' as const,
+      provenance: 'test',
+      sessionId: ctx.sessionId,
+      at: ctx.at,
+    };
+    upsertCampaignActor(db, actorInput);
+
+    expect(
+      registry.invoke(
+        'start_effect',
+        {
+          effectId: 'legacy-exhaustion-projection',
+          kind: 'condition-package',
+          displayName: 'Exhaustion projection',
+          source: { kind: 'ruling' },
+          duration: { kind: 'until-removed' },
+          conditions: [
+            {
+              target: { kind: 'campaign_actor', ref: 'legacy-actor' },
+              condition: { id: 'exhaustion', level: 6 },
+            },
+          ],
+        },
+        ctx,
+      ),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('adjust_exhaustion'),
+    });
+    expect(getCampaignActor(db, ctx.campaignId, 'legacy-actor')).toMatchObject({
+      hpCurrent: 20,
+      status: 'alive',
+      conditions: [],
+      state: {},
+    });
+
+    expect(() =>
+      upsertCampaignActor(db, {
+        ...actorInput,
+        conditions: [{ id: 'exhaustion', level: 6 }],
+      }),
+    ).toThrow(/I1/);
+    expect(() =>
+      upsertCampaignActor(db, {
+        ...actorInput,
+        hpCurrent: 11,
+        conditions: [{ id: 'exhaustion', level: 4 }],
+      }),
+    ).toThrow(/I6/);
+    expect(
+      db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM active_effect WHERE campaign_id=? AND effect_id='legacy-exhaustion-projection'",
+        )
+        .get(ctx.campaignId),
+    ).toEqual({ n: 0 });
     db.close();
   });
 
