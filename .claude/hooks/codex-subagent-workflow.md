@@ -38,6 +38,10 @@ Codex children it dispatches cannot read it.
 - Defaults to `-m gpt-6-luna -c model_reasoning_effort=medium` with YOLO
   (`--dangerously-bypass-approvals-and-sandbox`); override with `--model`,
   `--effort`, `--prompt-file`, or `--sandbox` (drops YOLO).
+- Model tiers: **Luna** is `gpt-6-luna` (the script default). **Sol** is
+  `gpt-6.1-sol`; dispatch it with `--model gpt-6.1-sol`, and only when the user
+  authorizes Sol for the task (for example independent read-only reviews or a
+  task Luna has failed). Never dispatch a GPT-5.x model.
 - It reads `<root>/.worktrees/.dispatch/<child>.prompt`, writes `<child>.log` and
   `<child>.pgid` beside it, refuses to dispatch into the parent checkout, refuses
   a worktree not on the child's own branch, and refuses to double-dispatch a bead
