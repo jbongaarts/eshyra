@@ -380,17 +380,19 @@ export function nextCombatantLifecycle(
           return refusal(
             'only a dying player-character combatant may make death saves',
           );
-        if (event.roll === 20) {
-          if (next.recoveryBlock !== null || next.effectiveHpMax === 0) {
-            next.deathSaveSuccesses = Math.min(3, next.deathSaveSuccesses + 1);
-          } else {
-            next.hpCurrent = Math.min(1, next.effectiveHpMax);
-            next.status = 'alive';
-            next.deathSaveSuccesses = 0;
-            next.deathSaveFailures = 0;
-          }
+        if (
+          event.roll === 20 &&
+          next.recoveryBlock === null &&
+          next.effectiveHpMax > 0
+        ) {
+          next.hpCurrent = Math.min(1, next.effectiveHpMax);
+          next.status = 'alive';
+          next.deathSaveSuccesses = 0;
+          next.deathSaveFailures = 0;
         } else if (event.roll >= 10) {
-          next.deathSaveSuccesses += 1;
+          // Ordinary success, and a natural 20 that cannot regain HP, share
+          // one capped-success path (S28/S34).
+          next.deathSaveSuccesses = Math.min(3, next.deathSaveSuccesses + 1);
           if (next.deathSaveSuccesses >= 3 && next.recoveryBlock === null) {
             next.status = 'stable';
             next.deathSaveSuccesses = 0;
@@ -463,6 +465,16 @@ export function nextCombatantLifecycle(
         if (next.headCount === 0 && event.headMechanic?.deathWhenNoHeads) {
           next.status = 'dead';
           next.recoveryBlock = null;
+          next.stableRecovery = null;
+          next.stableRecoverySettled = false;
+          break;
+        }
+        if (next.deathRules === 'monster') {
+          // Default monster rules: a nonlethal knockout leaves the creature
+          // unconscious at 0 HP with no death-save or recovery state.
+          next.status = 'unconscious';
+          next.deathSaveSuccesses = 0;
+          next.deathSaveFailures = 0;
           next.stableRecovery = null;
           next.stableRecoverySettled = false;
           break;
@@ -583,8 +595,15 @@ export function nextCombatantLifecycle(
                 event.count * event.hpPerHead,
               );
         next.hpCurrent += Math.max(0, regained);
-        if (next.hpCurrent > 0 && next.status === 'stable') {
+        if (
+          regained > 0 &&
+          next.hpCurrent > 0 &&
+          (next.status === 'stable' || next.status === 'dying')
+        ) {
+          // Actual HP regain is ordinary healing for lifecycle purposes (S27).
           next.status = 'alive';
+          next.deathSaveSuccesses = 0;
+          next.deathSaveFailures = 0;
           next.stableRecovery = null;
           next.stableRecoverySettled = false;
         }

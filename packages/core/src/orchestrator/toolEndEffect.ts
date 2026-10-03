@@ -76,6 +76,7 @@ export const endEffectTool: Tool = {
           ...(typeof a.detail === 'string' ? { detail: a.detail } : {}),
           ...(typeof a.note === 'string' ? { note: a.note } : {}),
           ...(typeof a.trigger === 'string' ? { trigger: a.trigger } : {}),
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

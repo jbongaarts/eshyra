@@ -228,6 +228,7 @@ export interface CampaignActorMutationInput {
   readonly hpCurrent?: number;
   readonly hpMax?: number;
   readonly currentLocationId?: string;
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
   readonly provenance: string;
   readonly sessionId: string;
   readonly at: string;
@@ -317,6 +318,9 @@ export function updateCampaignActor(
         ...(input.currentLocationId === undefined
           ? {}
           : { locationId: input.currentLocationId }),
+        ...(input.resolveRulesPack === undefined
+          ? {}
+          : { resolveRulesPack: input.resolveRulesPack }),
         provenance: input.provenance,
         sessionId: input.sessionId,
         at: input.at,
@@ -331,6 +335,23 @@ export function updateCampaignActor(
 }
 
 export function ensureCampaignActorFromCombatant(
+  db: Db,
+  input: {
+    campaignId: string;
+    combatantId: string;
+    actorId: string;
+    provenance: string;
+    sessionId: string;
+    at: string;
+  },
+): CampaignActor {
+  // Own the write boundary: a refused promotion restores the prior actor row.
+  return withTransaction(db, (txnDb) =>
+    ensureCampaignActorFromCombatantInTxn(txnDb, input),
+  );
+}
+
+function ensureCampaignActorFromCombatantInTxn(
   db: Db,
   input: {
     campaignId: string;
@@ -565,7 +586,32 @@ export function resetCombatantDamageForTurn(
       combatant.combatantId,
       combatant,
     );
+    // A reset that repairs HP/life state of a current actor projection keeps
+    // the canonical actor in the same transaction. Accumulator-only resets
+    // and historical rows (syncCombatantActor ignores them) never sync.
+    if (lifecycleRepairedByReset(combatant, lifecycle))
+      syncCombatantActor(db, input.campaignId, combatant.combatantId, input);
   }
+}
+
+function lifecycleRepairedByReset(
+  before: EncounterCombatant,
+  after: CombatantLifecycleState,
+): boolean {
+  return (
+    before.hpCurrent !== after.hpCurrent ||
+    before.hpMax !== after.hpMax ||
+    before.status !== after.status ||
+    before.deathRules !== after.deathRules ||
+    before.deathSaveSuccesses !== after.deathSaveSuccesses ||
+    before.deathSaveFailures !== after.deathSaveFailures ||
+    before.recoveryBlock !== after.recoveryBlock ||
+    before.headCount !== after.headCount ||
+    (before.stableRecoveryRoll ?? null) !==
+      (after.stableRecovery?.roll ?? null) ||
+    (before.stableRecoveryDeadlineElapsedMinutes ?? null) !==
+      (after.stableRecovery?.deadline ?? null)
+  );
 }
 
 export class EncounterCombatantError extends Error {
@@ -1406,6 +1452,15 @@ export function upsertCampaignActor(
   db: Db,
   input: UpsertCampaignActorInput,
 ): CampaignActor {
+  // Own the write boundary: any refusal rolls the stored row back even when
+  // the caller supplied no enclosing transaction.
+  return withTransaction(db, (txnDb) => upsertCampaignActorInTxn(txnDb, input));
+}
+
+function upsertCampaignActorInTxn(
+  db: Db,
+  input: UpsertCampaignActorInput,
+): CampaignActor {
   const existing = getCampaignActor(db, input.campaignId, input.actorId);
   const nextState = { ...(input.state ?? {}) };
   if (
@@ -1413,6 +1468,37 @@ export function upsertCampaignActor(
     existing?.state.combatLifecycle !== undefined
   )
     nextState.combatLifecycle = existing.state.combatLifecycle;
+  // Validate the candidate (I1-I7, terminal transitions) BEFORE any SQL.
+  const candidate: CampaignActor = {
+    campaignId: input.campaignId,
+    actorId: input.actorId,
+    displayName: input.displayName,
+    actorKind: input.actorKind,
+    sourceKind: input.sourceKind,
+    sourceRef: input.sourceRef,
+    rulesRef: input.rulesRef,
+    hpCurrent: input.hpCurrent,
+    hpMax: input.hpMax,
+    conditions: input.conditions ?? [],
+    status: input.status ?? 'unknown',
+    currentLocationId: input.currentLocationId,
+    state: nextState,
+  };
+  readCombatLifecycle(candidate.state);
+  if (existing?.status === 'dead' && candidate.status !== 'dead') {
+    const prior = readCombatLifecycle(existing.state);
+    const monsterHealing =
+      prior?.deathRules === 'monster' &&
+      exhaustionLevel(candidate.conditions) < 6 &&
+      exhaustionLevel(existing.conditions) < 6 &&
+      prior.headCount !== 0 &&
+      (candidate.hpCurrent ?? 0) > (existing.hpCurrent ?? 0);
+    if (!monsterHealing)
+      throw new EncounterCombatantError(
+        `campaign actor '${candidate.actorId}' is dead; use the lifecycle tools`,
+      );
+  }
+  assertCampaignActorLifecycle(candidate);
   db.prepare(
     `INSERT INTO campaign_actor(
        campaign_id, actor_id, display_name, actor_kind, source_kind, source_ref,
@@ -1457,20 +1543,6 @@ export function upsertCampaignActor(
   if (actor === undefined) {
     throw new EncounterCombatantError('campaign actor upsert failed');
   }
-  if (existing?.status === 'dead' && actor.status !== 'dead') {
-    const prior = readCombatLifecycle(existing.state);
-    const monsterHealing =
-      prior?.deathRules === 'monster' &&
-      exhaustionLevel(actor.conditions) < 6 &&
-      exhaustionLevel(existing.conditions) < 6 &&
-      prior.headCount !== 0 &&
-      (actor.hpCurrent ?? 0) > (existing.hpCurrent ?? 0);
-    if (!monsterHealing)
-      throw new EncounterCombatantError(
-        `campaign actor '${actor.actorId}' is dead; use the lifecycle tools`,
-      );
-  }
-  assertCampaignActorLifecycle(actor);
   return actor;
 }
 
@@ -2442,13 +2514,22 @@ function updateCombatantInTxn(
       `status '${input.status}' requires an alive player-character combatant with hit points above 0`,
     );
 
+  // Default monster rules: damage to 0 with status 'unconscious' is a
+  // nonlethal knockout, recognized before ordinary lethal damage.
+  const monsterKnockout =
+    input.status === 'unconscious' &&
+    deathRules === 'monster' &&
+    droppedToZero &&
+    input.hpDelta !== undefined &&
+    input.hpDelta < 0;
+  const playerKnockout = input.status === 'stable' && droppedToZero;
   let lifecycle = readCombatantLifecycleState(db, current);
   const oldExhaustion = exhaustionLevel(current.conditions);
   const nextExhaustion = exhaustionLevel(conditions);
-  const nextEffectiveMax = effectiveHpMax(current.hpMax, conditions);
+  const nextEffectiveMax = effectiveHpMax(baseHpMax, conditions);
   let recoverySchedule: StableRecoverySchedule | undefined;
   const needsStableSchedule =
-    (input.status === 'stable' && droppedToZero) ||
+    playerKnockout ||
     (lifecycle.stableRecoverySettled && nextEffectiveMax > 0);
   if (needsStableSchedule)
     recoverySchedule = newStableRecoverySchedule(
@@ -2509,7 +2590,7 @@ function updateCombatantInTxn(
       : undefined;
     lifecycle = transitionCombatantLifecycle(
       lifecycle,
-      input.status === 'stable' && droppedToZero
+      playerKnockout || monsterKnockout
         ? {
             type: 'knockout',
             damage: -input.hpDelta,
@@ -2543,6 +2624,7 @@ function updateCombatantInTxn(
   if (
     input.status !== undefined &&
     input.status !== 'stable' &&
+    !monsterKnockout &&
     input.status !== lifecycle.status
   ) {
     lifecycle = transitionCombatantLifecycle(
@@ -2705,6 +2787,9 @@ function updateCombatantInTxn(
         provenance: input.provenance,
         sessionId: input.sessionId,
         at: input.at,
+        ...(input.resolveRulesPack === undefined
+          ? {}
+          : { resolveRulesPack: input.resolveRulesPack }),
       },
     );
     if (broken.broken && broken.effectId !== undefined) {
