@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.13",
+  "title": "Define core-owned, rules-pack-bound canonical character sheet authority",
+  "description": "TWO FIXED CONSTRAINTS (not questions to revisit):\n1. CORE-OWNED: the authoritative character sheet lives behind a core-owned model and persistence/API boundary in @eshyra/core, NOT in CLI-only JSON files. CLI, future web, and future app UXes all call the same core character-sheet APIs (repo principle: UI-agnostic core, thin CLI).\n2. RULES-PACK-BOUND: a character sheet is valid only for the rules system, rules pack, and schema version that produced it. It is NOT generic 'D&D-ish' data and is NOT a cross-pack universal model. The sheet stays pinned to the pack it was created under; a rules-pack upgrade must never silently rewrite a character.\n\nThis is already where FinalizedCharacter points: it carries schemaVersion, system ('dnd5e-srd'), rulesPackId (which encodes pack version, e.g. rules__dnd5e-srd-5.1), recipeId, creationMode, plus frozen class/ancestry/background refs and rules-derived fields. That type should become (or convert into) the core-owned, pack-bound canonical sheet.\n\nCurrent state:\n- Core live SQLite 'character' rows are sparse — fine for prompt context, not a long-term authority.\n- FinalizedCharacter is a rich core TYPE but its PERSISTENCE is CLI-side (createFileFinalizedCharacterStore writes JSON).\n- Leveling needs one authoritative, pack-bound record for class refs, provenance, progression events, proficiencies, equipment, languages, spells, HP, ability scores, derived values.\n\nNon-goals:\n- Do NOT design a universal character schema making 5e / Pathfinder / future systems mutually interchangeable.\n- Do NOT support in-place rules-pack migration as part of leveling.\n- Do NOT assume a character is playable under a different rules pack without an explicit conversion.\n\nOpen sub-decisions (the real remaining work; storage shape only):\n- Versioned JSON document first, normalized tables later, or both via projection (recommended lean: core-owned versioned document + sparse live-state projection).\n- Whether FinalizedCharacter evolves into the canonical pack-bound sheet type or is converted into one after creation.\n- How the sparse live 'character' table relates to it (projection/cache/prompt summary — NOT an independent authority).\n- Migration path from existing CLI finalized-character JSON files into core-owned storage.",
+  "acceptance_criteria": "- Canonical sheet records include characterId, schemaVersion, rulesSystem/system, rulesPackId (with pack version), and enough provenance to validate future reads/writes.\n- Persistence and read/write APIs for the canonical sheet are owned by core; CLI calls them now, web/app later.\n- Core progression APIs REFUSE to apply progression when the acting rules pack does not match the sheet's rulesPackId/rulesSystem (fail closed on mismatch).\n- It is defined whether FinalizedCharacter evolves into the canonical pack-bound sheet type or is converted into one.\n- The sparse live 'character' table's relationship to the canonical sheet is defined (projection/cache/prompt summary, not an independent authority).\n- A migration path from CLI-side finalized-character JSON files into core-owned storage is defined.\n- It is recorded that CLI-owned JSON persistence is no longer authoritative, and that cross-pack character conversion is a FUTURE explicit operation that creates a new character/sheet from old character information (new-character generation with imported source facts), NOT an in-place mutation or normal progression.\n- Progression ledger (.2) and level-up engine (.8) are blocked on this boundary.",
+  "notes": "PR #325 (https://github.com/jbongaarts/eshyra/pull/325) — ADR 0011. Decision deliverable; implementation tracked as eshyra-lupf.14. Open for review; close on merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T21:37:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-27T01:04:23Z",
+  "closed_at": "2026-06-27T02:00:16Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.13",
+      "depends_on_id": "eshyra-lupf",
+      "type": "parent-child",
+      "created_at": "2026-06-26T16:37:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.13",
+      "depends_on_id": "eshyra-lupf.1",
+      "type": "blocks",
+      "created_at": "2026-06-26T16:38:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 3,
+  "comment_count": 0
+}

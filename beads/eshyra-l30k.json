@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l30k",
+  "title": "Enforce campaign-rule invariants in an additive migration",
+  "description": "Add a new migration that enforces campaign_rule invariants currently protected only by validateCampaignRule and context accounting: provenance/rule-kind pairing plus non-empty and unique governing_record_keys where SQLite can safely enforce them. Include migration-ledger and restore/legacy-row evidence. Do not edit merged migration 0025; assess compatibility with existing restored malformed rows before choosing the rollout behavior.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-03T13:01:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-03T13:01:01Z",
+  "labels": [
+    "campaign-runtime",
+    "persistence",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-l30k",
+      "depends_on_id": "eshyra-jhpt.rev8",
+      "type": "discovered-from",
+      "created_at": "2026-09-03T08:01:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,33 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l6n",
+  "title": "Isolate Dolt root path for checkpoint invocations (stop using/polluting global ~/.dolt)",
+  "description": "Follow-up from loreweaver-cjs. DoltCli invocations (doltCli.ts) inherit the user's global dolt home (~/.dolt via HOME/USERPROFILE), so the test/checkpoint path reads and writes the user's GLOBAL dolt state: it accumulated ~3000 stale telemetry files in ~/.dolt/eventsData, and dolt's event-flush goroutine makes a network call on commands like 'init'. That global shared state is the prime suspect for the transient 0xc0000005 init crash investigated in loreweaver-cjs, and is also a likely contributor to the dolt-test parallel-load flakiness already noted in beads memory.",
+  "design": "VERIFIED against pinned dolt v2.0.3 on Windows 11 (loreweaver-cjs sanity check):\n\nMechanism (both confirmed empirically):\n1. Set DOLT_ROOT_PATH=<isolated managed dir> in the env passed to every dolt execFileSync in DoltCli (run/available/init). Confirmed it relocates BOTH .dolt/config_global.json AND .dolt/eventsData into that dir; the user's real ~/.dolt was left pristine ({} config, 0 events) by isolated invocations.\n2. One-time, in that isolated home, run 'dolt config --global --add metrics.disabled true'. Confirmed: with metrics disabled, 0 .devts event files accumulate across init+sql cycles vs 2+ with the default; readback 'config --get metrics.disabled' => true. Because it writes to the ISOLATED root (not ~/.dolt), this does NOT violate the doltCli.ts:60-62 'never mutate the user's GLOBAL dolt config' invariant.\n\nPremise confirmed: the CURRENT un-isolated path writes telemetry to the user's real ~/.dolt — running the checkpoint suite (no isolation) deposited event files into ~/.dolt/eventsData during this investigation.\n\nExtra Windows finding: with metrics enabled, dolt spawns a lingering background event-flush process that holds file handles, causing 'file in use' failures when tests try to rmdir their dolt repos. Disabling metrics avoids spawning it — an additional argument for this change and a likely contributor to Windows test-cleanup/teardown flakiness.\n\nRecommended scope: do BOTH (relocate root + disable metrics). Relocating alone stops global pollution but still spawns the flush process/network call; disabling metrics removes the suspected transient-crash trigger and the lingering-handle teardown problem. The managed dolt home (managedDoltDir) is the natural home for the isolated DOLT_ROOT_PATH.",
+  "acceptance_criteria": "Dolt invocations no longer read/write the user's global ~/.dolt; no telemetry accumulates there during the test suite; checkpoint suite remains green; global dolt config remains untouched.",
+  "notes": "REVIEW FIX (commit 35de6d5 on PR #160): ensureDoltRoot() now enforces metrics.disabled on EVERY call. Previously it wrote config_global.json only when absent, so a pre-existing isolated config without metrics.disabled left telemetry enabled. New behavior: read managed config -> set metrics.disabled:true preserving existing keys -> rewrite; missing/empty => {}; invalid/non-object JSON => fail fast with DoltConfigError (no silent overwrite); other fs errors stay best-effort. Added 5 ensureDoltRoot unit tests. Full suite 1233 passed | 3 skipped; npm run check clean; ~/.dolt confirmed untouched. Still narrowly scoped (no repo-storage change, DOLT_DISABLE_EVENT_FLUSH retained).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T03:44:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:14Z",
+  "started_at": "2026-06-06T04:01:56Z",
+  "closed_at": "2026-06-06T04:24:32Z",
+  "close_reason": "Merged to main via PR #160 (feat(checkpoint): isolate dolt root + disable telemetry), including the review follow-up enforcing metrics.disabled on every ensureDoltRoot call.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-l6n",
+      "depends_on_id": "eshyra-cjs",
+      "type": "blocks",
+      "created_at": "2026-06-05T22:44:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

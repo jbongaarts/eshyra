@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.5",
+  "title": "Declare or disposition undeclared condition-name reference leaves outside condition records",
+  "description": "Found while designing condition->condition relationships (docs/design/condition-condition-relationships.md C6, eshyra-o9bd.19.3.4.2). Condition-name leaves with the same fail-open shape (no relationship declaration, so discovery never follows them) exist outside condition records. Snapshot at de7df402 (membership must come from a generated query, not these counts): creature /actions|legendaryActions|reactions|traits/*/mechanics/conditions/*/condition (~359 leaves) -> owner eshyra-o9bd.19.4.2/.3; ancestry /traits/*/mechanics/conditions/*/condition (5) -> eshyra-o9bd.19.3.1; magic-item /mechanics/effects/*/conditions/* (18, includes non-condition values suffocating/any-disease) and /mechanics/effects/*/failedSaveCondition (9, includes 'one exhaustion level') -> eshyra-o9bd.19.4.5. Also: (a) whether /mechanics/effects/*/condition belongs in LEGACY_RELATIONSHIP_BEARING_POINTER_SHAPES (it is overloaded: prose preconditions in magic-item/creature/feature/action/spell, condition names in condition records) with explicit not-a-reference declarations per kind; (b) the five existing mechanics.conditions record-name declarations carry a placeholder relation 'condition' always overridden by the sibling (required-field-filled-mechanically idiom) - migrate them to relationByFieldValue or a declared vocabulary once C1 lands. Uses the C1/C2 resolver generalization from the condition design.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T03:58:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-29T03:58:48Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.5",
+      "depends_on_id": "eshyra-o9bd.19.3",
+      "type": "parent-child",
+      "created_at": "2026-09-28T22:58:48Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

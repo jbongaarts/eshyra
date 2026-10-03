@@ -1,0 +1,140 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4",
+  "title": "Repair rule/action/condition fidelity and discovery relationships",
+  "description": "Repair known rule/action/condition findings, including Search/Help structure, condition\nlifecycle relationships, exhaustion/rest interactions, and source/discovery metadata.\nRules may remain source prose interpreted by the DM. Add structured representation where\nit serves source fidelity, discovery, state integrity, or a positive deterministic capability.",
+  "design": "Depends on the A4 in-band readiness schema for rules. Reconcile the rule\ndisposition work against the existing 2026-07-06 artifacts before re-deriving:\ndocs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-rule-classification.md and\n2026-07-06-o9bd-18-7-8-1-rule-disposition-layer-design.md. Those artifacts\npredate the closure of eshyra-o9bd.18.7.8 and eshyra-2n1t; their conclusions must\nbe re-verified against the current pack, not assumed.",
+  "acceptance_criteria": "- Known Search/Help/condition/exhaustion findings are source-faithfully represented or explicitly dispositioned.\n- Existing correct condition projections are preserved.\n- Runtime discovery can surface governing/related rule material and known exceptions.\n- Pack data consumed by a capability in force is source-faithful; that capability's contract, execution, and state evidence belong to the capability lane (eshyra-o9bd.19.5 / eshyra-olc5).\n- Prose/model adjudication remains a valid default; absence of structured mechanics is never proof of no mechanic.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: nearly every family — engine:F1 through F10.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): RESHAPED. This bead is now LANE A (importer/source-fidelity and projection repair) only. The '*** PACK/ENGINE PAIRING (2026-07-25) ***' note above is SUPERSEDED: the reference engine is not the validator of this bead's representation, and this bead does not coordinate decomposition with engine:F epics. Capability-execution acceptance items were moved to the capability lane (eshyra-o9bd.19.5 family epics / eshyra-olc5.1-.2). Order of work: source -> capture -> identity/provenance -> emitted pack; attach generalized evidence per repaired defect class and search meaningful siblings (no bulk regression program). Every finding-registry row owned here stays owned here.\n2026-09-27 slice 1: PR #582 (branch eshyra-o9bd.19.3.4-rule-fidelity @ 65181901). Repaired action:help (exclusive choice group + first-attack-roll), action:search (paired checkOptions), condition:exhaustion (source-gated levelLifecycle + rule:food-and-water exception); declared action ruleRef/ordinaryInteractionRuleRef + exhaustion exception as discovery relationships; committed-pack test requires every declared reference to resolve. 13 other conditions re-verified exact (CAP-002 narrowed). REMAINING in this bead: (1) opus:F-09 in-band readiness disposition for rule:* prose (dispositions still only in audit-bundle ruleDispositions.ts); (2) condition->condition discovery edges for impliesCondition/imposesCondition (record-name resolver requires a CONDITION_RELATION_VALUES sibling these lack — needs resolver/shape decision); (3) disposition sol:CAP-001 against the result.\n2026-09-28: PR #582 merged (merge commit f1cdca92). Bead remains in_progress for the REMAINING items listed in the slice-1 note.\n2026-09-28: opus:F-09 design proposed in PR #589 (docs/design/rule-record-runtime-statements.md). Awaiting authorization plus decisions Q1 (lookup_rules exposure) and Q2 (sol:CAP-001 -> narrowed). Next state if authorized: six-row vertical slice through the discovery packet.\n2026-09-28: PR #589 revised (d05ed6ad) per review at 97da90f2. Three independent runtime channels (capability ledger unchanged; ruleAdjudicationContext; ruleKnownLimits) behind a read-only ruleAwareness facade. Only 4 source-verified duplicate-of pack edges; the 6 deterministicOwner pointers stay out of the pack. lookup_rules gets a separate ruleAwareness envelope. Decisions: Q1 yes (broadened); Q2 sol:CAP-001 -> narrowed (capability only via positive selection; a known limit creates no engine obligation).\n2026-09-28: PR #589 revision 3 (34089ef9) per re-review at d05ed6ad. R0 added: legacy ENGINE_PROCEDURE_COVERAGE / RULE_DISPOSITIONS rows are candidate evidence, re-derived per row at migration (rule:long-rest and rule:short-rest are stale: toolRest.ts, eshyra-2n1t.9 closed). Facade preserves producer-qualified manifest state and the full resolution union. duplicate-of represented as importer-emitted data.duplicateOf (compiler-projection). Sequence: authorize -> vertical slice (+ CAP-001 narrowed) -> generalization -> F-09 update.\n2026-09-28: PR #589 revision 4 (75a9afef) per re-review at 34089ef9. The facade takes relationshipManifestSource explicitly. RunTurnDeps gains relationshipManifestSource, threaded to ToolContext (lookup_rules) and to shadow/intervention discovery capture (which currently defaults to bundled-only, the same gap). Permanent evidence covers the full producer set through lookup_rules, plus lookup/discovery parity.\n2026-09-28: F-09 design APPROVED and merged: PR #589, merge commit 1b9826d7 (docs/design/rule-record-runtime-statements.md, revision 4). Next state: the vertical-slice PR per design §8 step 2 (§5 rows with R0 outcomes, duplicateOf representation, three independent channels, ruleAwareness facade, relationshipManifestSource live input, lookup_rules envelope, sol:CAP-001 -> narrowed).\n2026-09-29: F-09 vertical slice PR #594 opened (branch eshyra-o9bd.19.3.4, head a3558173). Child eshyra-o9bd.19.3.4.1 integrated after supervisor review batch. Amendment A1: all four duplicate-of candidates failed source comparison; no pack change; follow-up eshyra-o9bd.19.3.6. sol:CAP-001 -> narrowed in this PR. Item (2) condition->condition: design PR #593 (eshyra-o9bd.19.3.4.2); sibling leaves follow-up eshyra-o9bd.19.3.5. Remaining after merge: design §8 step 3 generalization, then opus:F-09 registry update, then #593 implementation.\n2026-09-29: review F1 (suffocation no-stabilize/no-regain disclosure) fixed in a6df371f on PR #594; awaiting re-review.\n2026-09-29: PR #594 (F-09 vertical slice) merged as b9f4fa9e. Bead stays in_progress: remaining item 1 = design §8 step 3 generalization of legacy rows under R0; item 2 = condition->condition relationships (design PR #593 under eshyra-o9bd.19.3.4.2).\n2026-09-29: condition->condition design (docs/design/condition-condition-relationships.md, rev 3, incl. F-09 amendment A2) merged via PR #593 as 7452fbff. Next for item 2: implementation PR per that design's §8 step 2. Item 1 (legacy-row generalization under R0) still open.\n2026-09-29: item 2 condition->condition impl PR #595 (eshyra-o9bd.19.3.4.3); item 1 generalization PR #596 (eshyra-o9bd.19.3.4.4) incl. design amendment A3.\n2026-09-29: item 2 condition->condition relationships merged via PR #595 (d9397578); eshyra-o9bd.19.3.4.3 closed. Remaining: item 1 generalization PR #596 (in repair), then F-09 §8 step 4.\n2026-10-02: item 1 (F-09 generalization, eshyra-o9bd.19.3.4.4) merged via PR #596 as 3a0bb5d4 with design amendments A3, A4, A5. A5: known limits disclose but never discharge blocking engine-capability gaps. This bead is now BLOCKED by seven capability beads: eshyra-o9bd.19.5.10.3, eshyra-o9bd.19.5.7.3, eshyra-o9bd.19.5.7.4, eshyra-o9bd.19.5.7.5, eshyra-o9bd.19.5.7.6, eshyra-o9bd.19.5.11.4, eshyra-o9bd.19.3.4.6. Remaining here: F-09 §8 step 4 (opus:F-09 registry update). It cannot record F-09 resolved while any of those gaps is open. Open follow-up children: eshyra-o9bd.19.3.4.5 (importer ref).\n2026-10-02: F-09 §8 step 4 done: PR #598 merged as 18c1b305; rules-prose-readiness (opus:F-09) is disclosed-dependency (eshyra-o9bd.19.3.4.7 closed). Remaining blockers on this bead are the seven A5 capability beads; open child eshyra-o9bd.19.3.4.5 (importer ref).",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-02T03:35:52Z",
+  "started_at": "2026-09-27T05:46:22Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.6",
+      "type": "blocks",
+      "created_at": "2026-10-01T20:47:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.1",
+      "type": "blocks",
+      "created_at": "2026-09-28T22:49:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.7",
+      "type": "blocks",
+      "created_at": "2026-10-01T22:25:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8",
+      "type": "blocks",
+      "created_at": "2026-10-01T22:42:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.5.7.3",
+      "type": "blocks",
+      "created_at": "2026-10-01T20:47:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.5.11.4",
+      "type": "blocks",
+      "created_at": "2026-10-01T20:47:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.5.10.3",
+      "type": "blocks",
+      "created_at": "2026-10-01T20:46:58Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.1.14",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:10:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.5.7.4",
+      "type": "blocks",
+      "created_at": "2026-10-01T20:47:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.1.4",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:45Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.5.7.5",
+      "type": "blocks",
+      "created_at": "2026-10-01T20:47:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.5.7.6",
+      "type": "blocks",
+      "created_at": "2026-10-01T20:47:04Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.3.4",
+      "depends_on_id": "eshyra-o9bd.19.3",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 13,
+  "dependent_count": 1,
+  "comment_count": 0
+}

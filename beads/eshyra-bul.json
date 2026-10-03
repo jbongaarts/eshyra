@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-bul",
+  "title": "Document user database and storage locations",
+  "description": "Clarify where Loreweaver keeps static data and live user data in the local CLI MVP and what should change for distribution. Cover bundled/static module and SRD data, live campaign SQLite databases, Dolt checkpoint repos, beads separation, config/env files, and the rule that provider secrets must not enter campaign DBs or checkpoints. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "User-facing docs explain default and configurable storage locations, including LOREWEAVER_DB_PATH, <dbPath>.checkpoints, bundled static content in the package, and secret exclusions; any missing default path or app-data-directory decision is filed or resolved.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:11:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:45Z",
+  "started_at": "2026-05-21T21:33:10Z",
+  "closed_at": "2026-05-21T21:37:26Z",
+  "close_reason": "Documented local storage model in README and docs/storage.md; filed loreweaver-ygm for the unresolved default app-data decision; verification: npm run typecheck and npm run test passed.",
+  "comments": [
+    {
+      "id": "c7f07dcb-4b56-5b2f-9f9e-7d6c7b03fb5f",
+      "issue_id": "eshyra-bul",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded on Node v24.14.1/npm 11.12.1; npm run typecheck passed; first parallel npm run test raced before core dist was emitted, rerun sequentially passed with 35 files passed / 1 skipped, 212 passed / 1 skipped.",
+      "created_at": "2026-05-21T21:35:13Z"
+    },
+    {
+      "id": "8f6ac24b-8ede-59f6-9fdb-629878c3c188",
+      "issue_id": "eshyra-bul",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0; npm run test -> exit 0 with 35 test files passed / 1 skipped and 212 tests passed / 1 skipped. Acceptance: README links docs/storage.md; docs/storage.md covers LOREWEAVER_DB_PATH, SQLite sidecars, bundled EMBERFALL_HOLLOW/SRD content, <dbPath>.checkpoints, beads separation, LOREWEAVER_DOLT_BIN/HOME, and provider secret exclusions. Filed loreweaver-ygm for the unresolved default app-data directory decision.",
+      "created_at": "2026-05-21T21:37:19Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

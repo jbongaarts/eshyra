@@ -1,0 +1,58 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cck",
+  "title": "E0 Foundation: TS scaffold, core/CLI boundary, SQLite, Agent SDK",
+  "description": "Foundational scaffold every other sub-epic builds on. TypeScript project, UI-agnostic core library vs thin CLI boundary, SQLite persistence layer (one DB file per campaign), Claude Agent SDK wiring, configuration.",
+  "design": "## Architecture\n\nnpm-workspaces monorepo. `@loreweaver/core` is the UI-agnostic library; `@loreweaver/cli`\nis a thin consumer that depends on core (never the reverse). The workspace package\nboundary is the enforced core/CLI seam (acceptance #1). TypeScript strict, ESM\n(`\"type\": \"module\"`, `NodeNext`). Tests: vitest. SQLite: `better-sqlite3` (synchronous,\nreal transactions with automatic rollback on throw). Model access is isolated behind a\nlocal `ModelClient` interface; an `AgentSdkModelClient` adapts the Claude Agent SDK so\nthe rest of the codebase never imports the SDK directly.\n\n## Tech stack\n\n- Node 24, TypeScript ^5.6, ESM/NodeNext, `tsc --build` project references.\n- vitest ^2 for tests (`vitest run`).\n- better-sqlite3 ^11 (+ @types/better-sqlite3).\n- @anthropic-ai/claude-agent-sdk (Claude Agent SDK, TypeScript) — installed via npm,\n  wrapped behind `ModelClient`; exact SDK surface confined to one adapter file.\n\n## File map\n\n- `package.json` — root: workspaces, scripts (build/test/typecheck), shared devDeps.\n- `tsconfig.base.json` — shared strict compiler options.\n- `tsconfig.json` — root solution file (project references to both packages).\n- `vitest.config.ts` — test discovery (`packages/**/test/**/*.test.ts`).\n- `.env.example` — documents LOREWEAVER_DB_PATH, LOREWEAVER_MODEL, ANTHROPIC_API_KEY.\n- `packages/core/package.json` — core package + deps.\n- `packages/core/tsconfig.json` — composite build config.\n- `packages/core/src/index.ts` — public barrel: re-exports config, persistence, model, seams, `CORE_VERSION`.\n- `packages/core/src/config.ts` — `LoreweaverConfig`, `ConfigError`, `loadConfig(env)`.\n- `packages/core/src/persistence/db.ts` — `openDatabase(path)`, `withTransaction(db, fn)`.\n- `packages/core/src/persistence/schema.ts` — `SCHEMA_VERSION`, `initSchema(db)` (meta table).\n- `packages/core/src/model/client.ts` — `ModelClient`, `ModelMessage` interfaces.\n- `packages/core/src/model/agentSdkClient.ts` — `AgentSdkModelClient` adapter (only file importing the SDK).\n- `packages/core/src/seams.ts` — empty interface stubs: Orchestrator, ContextAssembler, ToolLayer, MemorySubsystem, WorldSubsystem, Persistence (filled by E1–E7).\n- `packages/core/test/*.test.ts` — unit tests per module.\n- `packages/cli/package.json` — cli package, depends on `@loreweaver/core`.\n- `packages/cli/tsconfig.json` — composite, references core.\n- `packages/cli/src/index.ts` — thin entry: `buildBanner`, `main` (prints version + resolved config).\n- `packages/cli/test/cli.test.ts` — tests pure `buildBanner`.\n\n## Boundaries / tradeoffs\n\n- Core has zero dependency on cli (asserted by core building standalone).\n- SDK API surface is uncertain at plan time; confined to `agentSdkClient.ts` and verified\n  against installed types during T5. Unit tests use a fake `ModelClient`; the real\n  round-trip is a single integration test gated on `ANTHROPIC_API_KEY`.\n- Seam interfaces are intentionally empty now; \"typecheck\" == `tsc --build` succeeds.\n",
+  "acceptance_criteria": "1. Core package builds with zero UI deps; CLI consumes core. 2. SQLite layer creates a campaign DB and passes a transactional write/rollback test. 3. Agent SDK wrapper makes a successful round-trip model call behind the interface. 4. Component interface stubs exist and typecheck.",
+  "notes": "SYNTHESIS UPDATE 2026-05-17: E0 must keep Claude Agent SDK as an adapter only. The core model seam should grow toward provider adapters and model profiles (premium_dm, state_extractor, summarizer, rules_adjudicator, memory_reconciler, embedding_provider, economy_or_experimental). Initial config may still expose Anthropic/Claude settings, but naming and interfaces should avoid implying Claude is the only provider.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:30:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-05-18T22:54:12Z",
+  "close_reason": "E0 Foundation complete: all 8 tasks closed and two-stage reviewed; epic acceptance + synthesis scope verified; PR #1 to main, CI green",
+  "comments": [
+    {
+      "id": "334df179-d33b-555b-9c2c-4268f1e0133c",
+      "issue_id": "eshyra-cck",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: fresh repo, no package.json/tests/build yet (scaffold is task cck.1). Branch work/loreweaver-cck clean at 1423dbe. No baseline checks applicable until cck.1 establishes the toolchain.",
+      "created_at": "2026-05-17T05:46:58Z"
+    },
+    {
+      "id": "c2701719-fc5e-5bfa-b4f0-67668abdac43",
+      "issue_id": "eshyra-cck",
+      "author": "Joseph Bongaarts",
+      "text": "SESSION HANDOFF (paused 2026-05-17): Subagent-driven execution of E0 in worktree D:\\src\\loreweaver\\.worktrees\\loreweaver-cck on branch work/loreweaver-cck. DONE+closed: cck.1 (scaffold), cck.2 (config), cck.3 (SQLite persistence) - all spec+quality reviewed. Branch HEAD 66362c4, worktree CLEAN, nothing in_progress. Ready next (per-task loop, one at a time, fresh subagent + spec-review then code-quality-review then bd close): cck.4 (seam stubs - brief already fetched, NOT yet claimed/started), then cck.5 (ModelClient+Agent SDK adapter), cck.6 (thin CLI; deps cck.1+cck.2 done). cck.7 = CI better-sqlite3-prebuild follow-up, infra, defer to finishing/CI phase (not in impl chain). After E0 fully closes, E8 loreweaver-7wc (Dolt checkpoint subsystem) unblocks: chain 7wc.1||7wc.2 -> 7wc.3 -> 7wc.4 -> 7wc.5 -> 7wc.6. Parent loreweaver-ve6 holds locked Hybrid-persistence design. NOT pushed/merged: feature branch is ephemeral (no upstream per bd context); E0 incomplete so do NOT merge to main yet. Resume by re-reading this, then continue subagent-driven-development per-task loop at cck.4.",
+      "created_at": "2026-05-17T06:25:24Z"
+    },
+    {
+      "id": "58b49c6d-b47b-5e2a-9dc9-c3c577d590d3",
+      "issue_id": "eshyra-cck",
+      "author": "Joseph Bongaarts",
+      "text": "SESSION HANDOFF (paused 2026-05-18): Resumed at cck.4 and completed the documented resume chain via subagent-driven-development (impl + spec-review + quality-review per task). CLOSED this session: cck.4 (seam stubs), cck.5 (ModelClient+Agent SDK adapter; quality fix a76d15d narrowed SDK extraction to typed SDKResultSuccess), cck.6 (thin CLI; CRITICAL Windows import.meta.url guard bug fixed b733bd5 via node:url pathToFileURL). Epic 6/8; ALL 4 epic acceptance criteria satisfied (core zero-UI-dep + CLI consumes core; SQLite txn/rollback; Agent SDK round-trip behind interface; seam stubs typecheck). Branch work/loreweaver-cck pushed to origin @ b733bd5; origin/main untouched @ 454b255 (NOT merged to main per design — feature branch now has upstream origin/work/loreweaver-cck). Worktree D:\\src\\loreweaver\\.worktrees\\loreweaver-cck CLEAN, nothing in_progress. REMAINING (user chose to stop here, deferred): cck.7 (CI better-sqlite3 prebuilt-binary install — finishing/CI phase) and cck.8 (provider adapter registry + model profiles — synthesis scope). NEW FOLLOW-UP BEADS (all blocked-by/depend-on their source task): jmv P2 (define ModelClient.complete error-path semantics; pre-E1 Orchestrator blocker), bq1 P3 (offline unit test for AgentSdkModelClient prompt-flattening), 2l0 P2 (build-hygiene: core-alone boundary proof masked by stale tsc --build tsbuildinfo — clear tsbuildinfo or use --force in CI), ho4 P2 (CLI main() test coverage: ConfigError branch + entrypoint guard). PROCESS: cck.6 implementer self-closed bead + pushed before review (controller reopened, ran gates, push was benign feature-branch only) — reinforce no-self-close/no-push to implementers. Beads in embedded mode; no Dolt remote URL configured (bd dolt push unavailable) — bead state persisted locally + passive .beads/issues.jsonl export only; confirm refs/dolt/data sync mechanism for cross-account. Resume by re-reading this; E8 loreweaver-7wc still blocked until cck fully closes (cck.7+cck.8 outstanding).",
+      "created_at": "2026-05-18T05:19:10Z"
+    },
+    {
+      "id": "2ecdc24d-068f-5558-99ca-eb320263311a",
+      "issue_id": "eshyra-cck",
+      "author": "Joseph Bongaarts",
+      "text": "E0 complete: 8/8 children closed, each two-stage reviewed (spec + code-quality). Final integration review: all 4 epic acceptance criteria MET (core zero-UI-dep + CLI consumes core; SQLite txn/rollback; Agent SDK round-trip behind ModelClient; seam stubs typecheck) + synthesis scope (provider-neutral profile/adapter registry cck.8; prebuilt-binary CI strategy cck.7). Gates green: tsc --build --force clean, vitest 20 passed/1 skipped. Branch work/loreweaver-cck @ e47f841, 3 commits ahead of upstream; diverged from origin/main (forked 1423dbe; main @454b255 added strategy docs + CLAUDE.md sections) — requires rebase/merge reconciliation before integration to avoid clobbering main's docs.",
+      "created_at": "2026-05-18T22:33:33Z"
+    },
+    {
+      "id": "4d8d848f-2110-5224-aa21-afef1261b270",
+      "issue_id": "eshyra-cck",
+      "author": "Joseph Bongaarts",
+      "text": "E0 complete: 8/8 children closed, each two-stage reviewed; final integration review passed (4 acceptance criteria + synthesis scope MET; gates green 20 passed/1 skipped). Branch rebased onto origin/main (preserves strategy docs + adds Build&Test section); PR #1 opened to main, CI build-test passing on Node 22. Unblocks E1/E3/E8.",
+      "created_at": "2026-05-18T22:54:11Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 4,
+  "comment_count": 5
+}

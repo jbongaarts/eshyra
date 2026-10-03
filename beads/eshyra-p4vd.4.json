@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-p4vd.4",
+  "title": "Add DM tool to record consequential improvised lore",
+  "description": "Add a constrained DM tool for promoting consequential improvised lore into campaign overlay state.\n\nThe DM should not be forced to pre-author every detail in a module, but when it introduces a consequential fact that may affect future play, it must record that fact.\n\nPossible tool names:\n- record_world_fact\n- record_lore\n- promote_lore\n\nThe exact name is implementation-defined, but the tool must communicate intent clearly.\n\nThe tool should require constrained fields rather than accepting arbitrary unstructured memory.\n\nAcceptance criteria:\n- Add a tool callable by the DM runtime to record campaign overlay lore.\n- The tool validates required fields:\n  - kind\n  - subject or subjectId\n  - fact text\n  - truthStatus\n  - source\n  - scope\n  - visibility\n- The tool rejects or discourages decorative scene color unless it is promoted because the player interacted with it or it became consequential.\n- The tool returns evidence that can be included in the mechanics/world audit for the same turn.\n- Tests cover:\n  - recording a rumor\n  - recording observed evidence\n  - recording an NPC detail\n  - rejecting malformed records\n  - preserving player-visible vs DM-only distinction",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:23:51Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T03:45:02Z",
+  "started_at": "2026-06-24T03:34:22Z",
+  "closed_at": "2026-06-24T03:45:02Z",
+  "close_reason": "Implemented campaign overlay canon, truth-statused lore recording, world_query retrieval/search, audit/prompt guidance, docs, and regression coverage.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-p4vd.4",
+      "depends_on_id": "eshyra-p4vd",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:23:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

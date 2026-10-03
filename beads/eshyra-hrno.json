@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-hrno",
+  "title": "Live model integration tests: accept OAuth token auth + default Opus 4.8",
+  "description": "Update model.integration.test.ts and campaignBibleFaithfulness.integration.test.ts to run with either ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN via a shared liveModelAuth helper; default live model to claude-opus-4-8 (ESHYRA_MODEL still overrides). Add unit coverage and update AGENTS.md/docs.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-17T23:23:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-17T23:27:02Z",
+  "started_at": "2026-06-17T23:23:12Z",
+  "closed_at": "2026-06-17T23:27:02Z",
+  "close_reason": "Live model tests now accept either ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN via shared liveModelAuth helper; default model bumped to claude-opus-4-8. PR #237.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

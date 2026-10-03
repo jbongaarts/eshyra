@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-9l5s.6",
+  "title": "T11: Link the three bare ambiguous ADR 0011/0012 citations",
+  "description": "Audit finding F5 (docs/audits/test-suite-and-verification/2026-09-14-test-suite-and-verification-audit.md), materialized by eshyra-9l5s.5 after confirming all three sites are still present on main at 83a4a3ac.\n\ndocs/adr/ holds two ADR 0011s and two ADR 0012s. The repository already disambiguates by linking the specific file. Three cross-document citations do not:\n\n- docs/install.md:32 'ADR 0011' -> the installer/distribution ADR, docs/adr/0011-multi-provider-installer-editions.md (confirm against the sentence context)\n- docs/the-hollow-beneath-emberfall-outline.md:20 and :32 'ADR 0012' -> docs/adr/0012-rules-pack-campaign-template-adventure-module-campaign-instance.md (confirm: 'Naming' and 'the four layers')\n\nWORK: turn each into a markdown link to the specific ADR file, matching the existing convention (e.g. ADR 0018 and ADR 0016).\n\nEXCLUSIONS: no renumbering of any ADR, no new checker or uniqueness test. The audit records that proposing either reproduced the F6 loop.",
+  "acceptance_criteria": "The three citations link to the specific ADR file, each confirmed against its surrounding context. No ADR renumbered, no checker added, no other file touched.",
+  "notes": "PR #564 opened 2026-09-22 (https://github.com/jbongaarts/eshyra/pull/564), branch eshyra-9l5s.6. All three citations are linked, and each target was confirmed against its context. verify:worktree green (5,619 passed / 3 skipped). The bead stays in_progress until the PR merges, per AGENTS.md.\nPR #564 MERGED 2026-09-22, merge commit 5a8c80d5.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-22T22:47:58Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-22T23:19:27Z",
+  "started_at": "2026-09-22T23:10:10Z",
+  "closed_at": "2026-09-22T23:19:27Z",
+  "close_reason": "PR #564 merged (5a8c80d5).",
+  "labels": [
+    "docs"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-9l5s.6",
+      "depends_on_id": "eshyra-9l5s",
+      "type": "parent-child",
+      "created_at": "2026-09-22T17:47:57Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

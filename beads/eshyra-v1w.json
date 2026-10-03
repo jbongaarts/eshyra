@@ -1,0 +1,37 @@
+{
+  "_type": "issue",
+  "id": "eshyra-v1w",
+  "title": "Add release workflow global-install smoke test",
+  "description": "Add release automation that installs the packed @loreweaver/core and @loreweaver/cli artifacts into a clean npm prefix and invokes the global loreweaver command before publish. Parent context: loreweaver-d4r. This follows from loreweaver-8v8: the repo now has package-content smoke coverage via npm pack --dry-run, but the first publish still needs an end-to-end clean-prefix install smoke in CI/release automation.",
+  "acceptance_criteria": "Release workflow or script packs both workspaces, installs the tarballs into a clean prefix without fetching unpublished workspace packages, invokes loreweaver, verifies the expected config guidance, and documents how to run the smoke locally.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T22:52:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:44Z",
+  "started_at": "2026-05-22T02:35:19Z",
+  "closed_at": "2026-05-22T02:53:37Z",
+  "close_reason": "Added CI-backed clean-prefix CLI install smoke script and docs; verification: npm run typecheck, npm run test, and npm run smoke:cli-install passed.",
+  "comments": [
+    {
+      "id": "2470b6ba-bfa3-5e9a-bdc1-df99ac7cf421",
+      "issue_id": "eshyra-v1w",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install succeeded with expected Node 24 EBADENGINE warnings for Node 22 package policy; npm run typecheck passed; npm run test passed with 35 files passed / 1 skipped and 223 tests passed / 1 skipped.",
+      "created_at": "2026-05-22T02:36:45Z"
+    },
+    {
+      "id": "9701030d-3c07-5b86-9e6c-a528f78432d2",
+      "issue_id": "eshyra-v1w",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> exit 0; npm run test -> exit 0 with 35 files passed / 1 skipped and 223 tests passed / 1 skipped; npm run smoke:cli-install -> exit 0, clean-prefix global install passed and invoked loreweaver with expected config guidance.",
+      "created_at": "2026-05-22T02:53:29Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

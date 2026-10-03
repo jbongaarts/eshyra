@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-t8v3",
+  "title": "Promote vk23 overlay parity false mismatches into clean audit output",
+  "description": "Combined vk23 audit follow-up.\n\nCodex GPT-5.5-max audit found and filed eshyra-jk4d for this issue. This bead exists only if the existing bead was not present in the local Beads database when this script is run; otherwise close or delete this duplicate and use eshyra-jk4d.\n\nFinding:\nThe bundle's overlay parity report flags four false mismatches for prepared casters:\n- cleric data.spellPreparation\n- druid data.spellPreparation\n- paladin data.spellPreparation\n- wizard data.spellPreparation\n\nThe actual pack data is richer and source-backed because it includes preparationFormula. The parity report projection drops that field in:\n- packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts\n\nThe source-backed overlay facts include it in:\n- packages/core/scripts/importers/dnd5e-srd-5.1/creationFacts.ts\n\nThis is not a gameplay data blocker, but the thaw standard requires audit output to be clean and non-misleading.\n\nAcceptance criteria:\n- Prefer using existing bead eshyra-jk4d if present.\n- Update the overlay-vs-pack parity projection to include preparationFormula or otherwise compare equivalent normalized structures.\n- Regenerate the audit bundle and confirm overlay-vs-pack-parity reports no false mismatches.\n- Keep prepared caster spellPreparation data richer than the overlay oracle where source-backed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T22:57:10Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T23:01:12Z",
+  "closed_at": "2026-06-30T23:01:12Z",
+  "close_reason": "duplicate of jk4d\n",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

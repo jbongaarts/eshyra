@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-s3dh",
+  "title": "Restore missing landing page accent image",
+  "description": "The current static site port includes the Vercel reference background and two accent images, but omits the fourth reference asset, hero-module-cover.png. Add the missing image to the site assets and place it in the landing page using the existing responsive visual composition.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T06:28:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-27T06:30:21Z",
+  "started_at": "2026-06-27T06:28:41Z",
+  "closed_at": "2026-06-27T06:30:21Z",
+  "close_reason": "Added the missing hero-module-cover.png asset to the static landing site and placed it in the hero with responsive styling.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

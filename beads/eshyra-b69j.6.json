@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-b69j.6",
+  "title": "Compute level-1 derived character values",
+  "description": "Add deterministic derived value computation for level-1 D&D 5e SRD character creation.\n\nMinimum derived values\n- ability modifiers;\n- proficiency bonus;\n- level-1 hit point maximum from class hit die plus Constitution modifier;\n- spell save DC and spell attack modifier where applicable;\n- passive Perception once skills are modeled;\n- armor class once equipment is modeled;\n- attack bonuses where practical.\n\nHP must not be a required manual input in the default path. Manual HP override can be deferred as an advanced feature.\n\nAcceptance criteria\n- Fighter d10 with CON +2 computes level-1 HP 12.\n- HP is not computed and no nonsense error is emitted when class or Constitution is missing/invalid.\n- Derived values update when class, ancestry, ability scores, or equipment change.\n- Tests cover HP prerequisites and recomputation.",
+  "notes": "PR #288 (open for review): https://github.com/jbongaarts/eshyra/pull/288 — derivedValues.ts shared derivation (HP, modifiers, prof bonus, saving throws). Engine + recipe both route through it. Spell DC/attack deferred to b69j.12 (no spellcasting-ability metadata in pack).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T02:22:08Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T04:34:21Z",
+  "started_at": "2026-06-24T04:17:57Z",
+  "closed_at": "2026-06-24T04:34:21Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-b69j.6",
+      "depends_on_id": "eshyra-b69j",
+      "type": "parent-child",
+      "created_at": "2026-06-23T21:22:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

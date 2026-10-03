@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4ua.2",
+  "title": "06b-A T2: composeArcSummary error and empty-input tests",
+  "description": "Objective:\nExtend the arcSummary test suite with two failure-mode tests: ModelClientError from the provider propagates out of composeArcSummary unchanged, and an empty recaps[] argument throws MemorySummaryError before any model call. Add the empty-input validation to the implementation.\n\nFiles:\n- Modify: packages/core/test/arcSummary.test.ts\n- Modify: packages/core/src/memory/arcSummary.ts\n\nSteps:\n1. Add the two tests in Design to packages/core/test/arcSummary.test.ts (imports gain ModelClientError and MemorySummaryError from '../src/index.js').\n2. Run: npx vitest run packages/core/test/arcSummary.test.ts --reporter=verbose\n   Expected: 1 PASS (ModelClientError propagation already works since await re-throws), 1 FAIL (empty-recaps test — no validation yet, function calls model with empty content).\n3. Add the validation block in Design to composeArcSummary in packages/core/src/memory/arcSummary.ts (import MemorySummaryError from './summary.js'; throw on empty recaps before building messages).\n4. Run the same vitest command.\n   Expected: all 4 tests in this file PASS.\n5. Run: npm run typecheck\n   Expected: success.\n6. Commit:\n     git add packages/core/test/arcSummary.test.ts packages/core/src/memory/arcSummary.ts\n     git commit -m \"Validate composeArcSummary inputs and cover error paths (loreweaver-4ua)\"",
+  "design": "New tests to add (paste into the existing describe block in packages/core/test/arcSummary.test.ts):\n\n  it('propagates ModelClientError from the provider', async () => {\n    const model: ModelClient = {\n      complete: async () => {\n        throw new ModelClientError('boom');\n      },\n    };\n    await expect(\n      composeArcSummary(model, {\n        campaignId: 'camp-1',\n        arcId: 'arc-1',\n        recaps: [recap('session-1', 'r', '2026-05-20T10:00:00.000Z')],\n      }),\n    ).rejects.toBeInstanceOf(ModelClientError);\n  });\n\n  it('throws MemorySummaryError when recaps is empty', async () => {\n    const model: ModelClient = {\n      complete: async () => 'unused',\n    };\n    await expect(\n      composeArcSummary(model, {\n        campaignId: 'camp-1',\n        arcId: 'arc-1',\n        recaps: [],\n      }),\n    ).rejects.toBeInstanceOf(MemorySummaryError);\n  });\n\nImports at the top of the test file gain:\n  ModelClientError,\n  MemorySummaryError,\n\nValidation block to add at the top of composeArcSummary (after the import for MemorySummaryError):\n\n  import { MemorySummaryError } from './summary.js';\n  ...\n  export async function composeArcSummary(\n    model: ModelClient,\n    input: ComposeArcSummaryInput,\n  ): Promise<string> {\n    if (input.recaps.length === 0) {\n      throw new MemorySummaryError(\n        'composeArcSummary requires at least one session recap',\n      );\n    }\n    const userContent = renderRecaps(input.recaps);\n    ...\n  }\n\nRationale: the CLI's rollupCampaignArc already guards on `recaps.length === 0` and returns before calling composeArcSummary, so a call with empty recaps is a programming error — fail loud (matches MemorySummaryError pattern in rest of the module).",
+  "acceptance_criteria": "1. packages/core/test/arcSummary.test.ts contains exactly 4 tests (2 happy + 2 failure) and all pass.\n2. composeArcSummary throws MemorySummaryError synchronously-after-await for empty recaps[].\n3. ModelClientError from the provider propagates out of composeArcSummary unchanged.\n4. npm run typecheck succeeds.\n5. The commit message references loreweaver-4ua.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T04:47:01Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T04:58:16Z",
+  "closed_at": "2026-05-23T05:03:17Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4ua.2",
+      "depends_on_id": "eshyra-4ua.1",
+      "type": "blocks",
+      "created_at": "2026-05-22T23:47:05Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4ua.2",
+      "depends_on_id": "eshyra-4ua",
+      "type": "parent-child",
+      "created_at": "2026-05-22T23:47:00Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "ed6a7180-82ff-5558-ba24-91945e354081",
+      "issue_id": "eshyra-4ua.2",
+      "author": "Joseph Bongaarts",
+      "text": "Code review summary for 6ccad411..408fb7d: Ready to merge. Critical: none. Important: none. Minor: ModelClientError test hand-rolls a ModelClient literal instead of reusing the fakeModel helper (cosmetic).",
+      "created_at": "2026-05-23T05:03:16Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

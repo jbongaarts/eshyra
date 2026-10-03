@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4a7.1.2",
+  "title": "Task 2: sourceInventoryCoverage.ts matching + gate",
+  "description": "Objective: deterministic coverage evaluation of inventory vs emitted records, failing closed on unaccounted items.\n\nFiles:\n- Create: packages/core/scripts/importers/dnd5e-srd-5.1/sourceInventoryCoverage.ts\n- Test: packages/core/test/importers/dnd5e-srd-5.1/sourceInventoryCoverage.test.ts\n\nAPI:\nexport type CoverageStatus = { kind: 'record'; key: string } | { kind: 'child-of'; key: string } | { kind: 'ignored'; reason: string } | { kind: 'known-gap'; beadId: string } | { kind: 'unaccounted' }\nexport interface SourceCoverageEntry { item: SourceInventoryItem; status: CoverageStatus }\nexport function evaluateSourceCoverage(inventory, records: readonly {kind,key,name}[], rules): readonly SourceCoverageEntry[]\nexport class SourceInventoryCoverageError extends Error (lists unaccounted items with page numbers)\nRules = ordered list of predicates: ignoreRule(reasonCode, predicate), knownGapRule(beadId, predicate), childOfRule(key, predicate). Name auto-match runs first: normalized item text == record name (case-insensitive, hyphen/quote-normalized) => record:<key>. Tier 'chapter'/'section' headings auto-ignored as 'document-structure' unless they match a record.\n\nSteps (TDD):\n1. Failing test: leaf item 'Aboleth' + creature record named Aboleth => status record:creature:aboleth. Implement name auto-match. Commit.\n2. Failing test: unmatched leaf item => unaccounted; evaluate-and-throw helper raises SourceInventoryCoverageError naming page+text. Implement. Commit.\n3. Failing test: ignoreRule/knownGapRule/childOfRule application order and stable reason codes. Implement. Commit.\n4. Failing test: determinism — entries sorted by (page, lineIndex). Implement. Commit.\nCommand: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/sourceInventoryCoverage.test.ts",
+  "acceptance_criteria": "Unit tests green; error message includes every unaccounted item with page; no existing files modified",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-11T05:40:20Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-11T05:45:45Z",
+  "closed_at": "2026-06-11T05:47:17Z",
+  "close_reason": "9 unit tests green; evaluator + error type + rule helpers complete",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4a7.1.2",
+      "depends_on_id": "eshyra-4a7.1",
+      "type": "parent-child",
+      "created_at": "2026-06-11T00:40:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-4a7.1.2",
+      "depends_on_id": "eshyra-4a7.1.1",
+      "type": "blocks",
+      "created_at": "2026-06-11T00:40:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

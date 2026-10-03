@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.11.4",
+  "title": "Determine recoverable ammunition after a battle (rule:weapon-properties)",
+  "description": "Problem. SRD rule:weapon-properties (Ammunition): 'At the end of the battle, you can recover half your expended ammunition by taking a minute to search the battlefield.' Expenditure has a deterministic path (remove_item quantity 1, disposition dropped, after each attack leaves claimable rows at the battle location), but no tool determines HOW MANY expended pieces are recoverable (half, rounded down per the SRD division rule) or disposes of the unrecoverable rest. claim_item claims whole rows without a count; deciding which and how many to claim is model arithmetic and resource accounting. Current disclosure: RULE_KNOWN_LIMITS rule:weapon-properties with capability gap 'ammunition-recovery-count'.\n\nRequired capability. Operation: for a character and a battle, compute the recoverable count from the engine-tracked expended ammunition rows (floor of half), and atomically return that many to custody and mark the rest destroyed. Inputs: character identity, battle/location scope (or combat instance), ammunition item identity. Exclusions: whether the character takes the minute to search (DM).\n\nSelection basis: the governing SRD clause requires an engine-owned step (ADR 0020 §3: arithmetic / atomic state mutation / resource accounting / lifecycle), and no registered tool performs it. Under F-09 design amendment A5 (docs/design/rule-record-runtime-statements.md, PR #596) the rule's known limit only DISCLOSES this gap; it does not satisfy or retire the obligation. This bead blocks eshyra-o9bd.19.3.4 (owning rules work for opus:F-09 / sol:CAP-001) until the capability lands or accepted authority explicitly changes the requirement. Do not close it because PR #596 recorded the gap. Enters this engine family by explicit positive selection (the family's out-of-backlog entry clause).",
+  "acceptance_criteria": "- Deterministic recovery operation over tracked expended rows with SRD rounding; atomic custody/destroy.\n- Tests: even/odd counts, mixed ammunition types, wrong location refused, idempotence.\n- rule:weapon-properties known limit rewritten under R0; gap entry removed.\n- eshyra-o9bd.19.3.4 dependency resolves only when this lands.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T01:46:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-02T03:41:57Z",
+  "started_at": "2026-10-02T03:41:57Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.11.4",
+      "depends_on_id": "eshyra-o9bd.19.5.11",
+      "type": "parent-child",
+      "created_at": "2026-10-01T20:46:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.11.4",
+      "depends_on_id": "eshyra-o9bd.19.5.11.4.1",
+      "type": "blocks",
+      "created_at": "2026-10-01T23:29:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

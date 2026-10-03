@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.12.10",
+  "title": "Reconcile P8 fixture's expectedCapabilityStatus.capabilityId with the real packet capabilityId",
+  "description": "packages/core/test/diagnostics/probes/p08Ammunition.ts declares expectedCapabilityStatus.capabilityId: 'magic-item-single-use-spend', but the real packet (packages/core/src/discovery/packet.ts, preflightOperation()) reports capabilityId: contract.operationId = 'assertMagicItemOperationReady' (MAGIC_ITEM_OPERATION_READINESS_CAPABILITY). packet.ts's own doc comment explains why 'magic-item-single-use-spend' was rejected as a capability name (an earlier revision relabelled a green single-use economy as an execution-shaped capability no contract backs). expectedCapabilityStatus is descriptive-only today: fixtureContract.ts shape-validates it but nothing cross-checks it against the real packet output, so this mismatch causes no test failure. Found while repairing eshyra-o9bd.19.12.9 (F1: preflight declared operations instead of a future model tool choice); out of that bead's scope. Either correct the fixture annotation to 'assertMagicItemOperationReady', or if a future workstream wires expectedCapabilityStatus into a real cross-check against the packet, resolve the naming there.",
+  "notes": "Discovered during eshyra-o9bd.19.12.9 (commit 9d37624). Not a defect in current behavior -- the field is unverified today.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-12T00:10:21Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-13T00:30:28Z",
+  "closed_at": "2026-09-13T00:30:28Z",
+  "close_reason": "Resolved inside PR #543 (round-3 repair, merged d889116): p08Ammunition.ts now quotes the real MAGIC_ITEM_OPERATION_READINESS_CAPABILITY (capabilityId assertMagicItemOperationReady) and E8 structurally compares the WHOLE expectation against the contract the packet built, so the annotation is cross-checked rather than descriptive-only.",
+  "labels": [
+    "architecture",
+    "dm-context",
+    "model-context",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.12.10",
+      "depends_on_id": "eshyra-o9bd.19.12",
+      "type": "parent-child",
+      "created_at": "2026-09-11T19:10:20Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

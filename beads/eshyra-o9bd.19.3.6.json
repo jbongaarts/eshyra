@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.6",
+  "title": "Decide source relation for parallel sense definitions (rule:senses-* vs rule:*)",
+  "description": "The four proposed duplicate-of pairs were compared against the vendored SRD_CC_v5.1.pdf and are not duplicates. In particular, rule:senses-darkvision (p. 257) includes seeing in dim light within the radius as if bright light, which rule:darkvision (p. 86) lacks; rule:senses-truesight adds 'within the same range' to its Ethereal Plane clause; rule:senses-blindsight includes the naturally-blind stat-block parenthetical. Determine whether parallel sense definitions across chapters warrant a distinct, source-supported relation and define its emitted representation only if the source supports it. Do not infer edges from audit ownership or canonicalOwner. The current pack text matches the PDF for all eight records; the vertical slice emits no duplicate-of edges.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-29T04:14:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-29T04:14:30Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.6",
+      "depends_on_id": "eshyra-o9bd.19.3",
+      "type": "parent-child",
+      "created_at": "2026-09-28T23:14:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

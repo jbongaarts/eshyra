@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.2",
+  "title": "D2: Decide creation-variant policy (variant feats, background customization)",
+  "description": "feats and customizing-a-background are design-blocked: whether the code-owned character-creation/advancement flow offers variant-feat adoption (with prerequisite tracking) and background customization (swap skill/tool/feature) is a product decision, not a play-time ruling. If yes, small F8-style Codex slices (per docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4 D2).",
+  "notes": "Decision implemented: support the SRD optional feat path at ASI levels with prerequisite and once-only enforcement (including Grappler STR 13), and support exact custom-background skill/tool/language/feature/equipment constraints. Variant Human remains unsupported because it is not in SRD 5.1. Creation finalization and level-up are deterministic and source-grounded.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:40:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:18Z",
+  "started_at": "2026-07-18T16:34:22Z",
+  "closed_at": "2026-07-18T20:23:18Z",
+  "close_reason": "Creation-variant policy decided and implemented with deterministic feat/custom-background validation and tests.",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.2",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:40:08Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

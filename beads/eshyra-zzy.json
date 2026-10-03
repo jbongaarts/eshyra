@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-zzy",
+  "title": "E1 SRD reference store + lookup_srd tool",
+  "description": "Reusable, campaign-independent structured D&D 5e SRD data: monsters, spells, AND character-build options (races, classes/subclasses per SRD, backgrounds, feats, starting equipment, spell lists). Reframes the old heavy rules KB into structured lookup, not RAG. Consumed by E2 (srd_ref), E5 (running creatures), E7 (creation choices).",
+  "design": "Architecture: Add a read-only core SRD module backed by bundled structured TypeScript data, not RAG and not campaign state. The module exposes stable refs plus normalized exact-name lookup for supported kinds; unknown or ambiguous lookups return typed not-found errors instead of fuzzy matches. File map: create packages/core/src/srd/types.ts for public data shapes, packages/core/src/srd/data.ts for the bundled SRD 5.1 seed catalog and license metadata, packages/core/src/srd/store.ts for exact indexes and lookup behavior, packages/core/src/srd/lookup.ts for the lookup_srd tool facade; modify packages/core/src/index.ts to export the public API; add packages/core/test/srd.test.ts for TDD coverage. Tech stack: TypeScript ES modules, Vitest, in-memory readonly catalog for MVP with SQLite migration left to a future scaling issue if full SRD ingestion needs it. Tradeoff: start with a small license-recorded SRD 5.1 seed set proving monster, spell, and class build-option behavior; keep data shapes broad enough for additional SRD records without changing the lookup API.",
+  "acceptance_criteria": "Completion criteria: known monster, spell, and class build option resolve by exact name and stable ref; lookup_srd rejects fuzzy/partial names and wrong kinds; returned data includes SRD 5.1 CC-BY-4.0 attribution metadata; npm run build and npm run test pass from the worktree.",
+  "notes": "SYNTHESIS UPDATE 2026-05-17: SRD rules data remains a separate mechanics/reference store, not mixed into campaign lore or generated memory. License and attribution for SRD-derived data are required product behavior, not just documentation.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-17T04:30:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-19T02:52:09Z",
+  "closed_at": "2026-05-19T03:26:42Z",
+  "close_reason": "Implemented SRD reference store MVP: typed licensed SRD 5.1 seed catalog, exact lookup_srd facade, public core exports, and attribution metadata; all child tasks closed; verification: npm run build passed and npm run test passed with 25 passed / 1 skipped.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-zzy",
+      "depends_on_id": "eshyra-cck",
+      "type": "blocks",
+      "created_at": "2026-05-16T23:34:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "d599e43d-a8fe-558d-8d6c-347d93df1ef1",
+      "issue_id": "eshyra-zzy",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install (exit 0), npm run build (exit 0), npm run test after build (20 passed / 1 skipped). Initial parallel build+test race failed CLI package resolution before dist was ready; sequential documented commands pass.",
+      "created_at": "2026-05-19T02:56:24Z"
+    },
+    {
+      "id": "e17265a3-3495-5a56-9b4c-aa5ee97cba5f",
+      "issue_id": "eshyra-zzy",
+      "author": "Joseph Bongaarts",
+      "text": "PR/merge attempt: fresh verification before integration passed (npm run build exit 0; npm run test exit 0 with 25 passed / 1 skipped). Beads hygiene checked: bd orphans none, bd stale none, bd list --status=in_progress shows only unrelated loreweaver-7wc. Integration blocked because gh auth status reports invalid token for jbongaarts and GH_TOKEN/GITHUB_TOKEN are unset.",
+      "created_at": "2026-05-19T03:39:46Z"
+    },
+    {
+      "id": "ec23cd06-1d08-5cec-820e-b92f84faeca8",
+      "issue_id": "eshyra-zzy",
+      "author": "Joseph Bongaarts",
+      "text": "PR verification refresh: npm run build exit 0; npm run test exit 0 with 25 passed / 1 skipped; branch clean before PR creation.",
+      "created_at": "2026-05-19T03:49:34Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 4,
+  "comment_count": 3
+}

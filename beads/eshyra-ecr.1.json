@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ecr.1",
+  "title": "RED: Magic item importer coverage",
+  "description": "Objective: Add failing tests for SRD 5.1 Magic Items A-Z parsing, emitting, section anchoring, and committed-pack baselines. Files: create packages/core/test/importers/dnd5e-srd-5.1/parseMagicItems.test.ts; modify packages/core/test/importers/dnd5e-srd-5.1/emit.test.ts, packages/core/test/importers/dnd5e-srd-5.1/sections.test.ts, packages/core/test/srdGeneratedPack.test.ts as needed. Steps: write tests for Adamantine Armor, Ammunition +1/+2/+3, Amulet of Health, wrapped names/category lines, attunement parsing, embedded table text retention, magic-item record emission, lookup kind validation, and generated-pack baseline updates. Run focused tests and record the expected failures before production edits.",
+  "acceptance_criteria": "Focused tests fail for missing parseMagicItems module, missing magic-item kind, missing emitter branch, or stale committed-pack baseline; failures are recorded on loreweaver-ecr.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-04T05:57:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-04T05:58:10Z",
+  "closed_at": "2026-06-04T06:04:51Z",
+  "close_reason": "RED tests added and observed failing for expected missing magic-item importer behavior.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ecr.1",
+      "depends_on_id": "eshyra-ecr",
+      "type": "parent-child",
+      "created_at": "2026-06-04T00:57:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "54b09650-66eb-5d2d-87eb-ad42fee56101",
+      "issue_id": "eshyra-ecr.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run parseMagicItems.test.ts emit.test.ts sections.test.ts srdGeneratedPack.test.ts tools.test.ts -> failed as expected: missing parseMagicItems module, missing magicItems anchor, missing magicItemExtractionsToRecords/buildPack branch, lookup enum lacks magic-item, committed pack lacks magic-item spot keys.",
+      "created_at": "2026-06-04T06:04:50Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.12.1",
+  "title": "RED: reference table parser fixtures",
+  "description": "Write failing parser, emitter, and pipeline tests for SRD 5.1 simple reference-table extraction before production code changes.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:43:24Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T17:43:52Z",
+  "closed_at": "2026-05-28T17:44:40Z",
+  "close_reason": "RED test added and failed for expected missing parseTables implementation.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.12.1",
+      "depends_on_id": "eshyra-0m9.5.12",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:43:24Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "82590600-f754-595c-83cf-1888cc8059e2",
+      "issue_id": "eshyra-0m9.5.12.1",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseTables.test.ts -> failed for expected reason: parseTables module does not exist yet.",
+      "created_at": "2026-05-28T17:44:39Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 1
+}

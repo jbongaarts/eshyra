@@ -1,0 +1,80 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5",
+  "title": "Implement deterministic D&D SRD rules-pack importer",
+  "description": "Implement a deterministic importer for the selected D&D SRD corpus.\r\n\r\nThe importer should transform approved source material into canonical Loreweaver rules records with provenance and license metadata. It should not rely on model reasoning for authoritative rules content.",
+  "acceptance_criteria": "- Importer runs from source material to generated records.\r\n- Generated records validate against kind-specific schemas.\r\n- Importer output is deterministic across repeated runs.\r\n- Records include source/provenance/license linkage.\r\n- Importer is documented for future regeneration.",
+  "notes": "Vertical slice landed in PR #92 (commit 5ffe62c): importer foundation (vendor location, pdfjs-dist+pdfkit deps, deterministic pipeline, CLI, typecheck:scripts), real spell stat-block parser (incl. class-list cross-reference), 35 tests across parseSpells/emit/pipeline. Scope guardrail per ADR 0007 + session direction: only spell records are emitted; manifest description lists included kinds explicitly so generated pack cannot pose as reference-complete. Default --out is gitignored scratch path; canonical pack location untouched.\n\nRemaining work tracked as child beads:\n- 0m9.5.1 creatures\n- 0m9.5.2 class\n- 0m9.5.3 conditions\n- 0m9.5.4 equipment/weapons/armor\n- 0m9.5.5 feats\n- 0m9.5.6 races/ancestry\n- 0m9.5.7 rule-text + actions + tables\n- 0m9.5.8 hazards\n- 0m9.5.9 section detection + orchestrator\n\nKeep open until children complete (per session direction 2026-05-27). Or split/rename this issue to 'importer foundation + spells' if a cleaner accounting is preferred.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T05:01:22Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-27T22:37:34Z",
+  "closed_at": "2026-06-06T05:39:16Z",
+  "close_reason": "All 21 child parsers complete (creatures, classes/subclasses/features, conditions, equipment, feats, races, rule-text/actions/tables, hazards incl. poisons/diseases PR #159 and Madness/Objects PR #161, section detection/orchestrator). Deterministic SRD 5.1 importer fully landed; canonical pack regenerated and verified. Held-open condition from 2026-05-27 (children complete) now satisfied.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5",
+      "depends_on_id": "eshyra-0m9.3",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5",
+      "depends_on_id": "eshyra-4zu",
+      "type": "blocks",
+      "created_at": "2026-06-03T17:50:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5",
+      "depends_on_id": "eshyra-0m9.4",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:39Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-05-25T00:01:22Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5",
+      "depends_on_id": "eshyra-0m9.1",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-0m9.5",
+      "depends_on_id": "eshyra-0m9.2",
+      "type": "blocks",
+      "created_at": "2026-05-25T00:01:37Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 5,
+  "dependent_count": 1,
+  "comment_count": 0
+}

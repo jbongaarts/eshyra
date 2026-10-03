@@ -1,0 +1,48 @@
+{
+  "_type": "issue",
+  "id": "eshyra-cck.8",
+  "title": "Add provider adapter registry and model profile configuration",
+  "description": "Extend the initial ModelClient seam into provider-neutral model profile configuration. Loreweaver should support profiles such as premium_dm, state_extractor, summarizer, rules_adjudicator, memory_reconciler, embedding_provider, and economy_or_experimental without assuming one provider handles every task. Claude Agent SDK remains one adapter, not a core assumption.",
+  "acceptance_criteria": "Model profiles are represented in config/types; provider adapters can be selected per profile; premium_dm has explicit quality/capability expectations documented; no non-adapter core code imports Claude/Anthropic SDK APIs.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-18T03:00:28Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-18T21:32:44Z",
+  "closed_at": "2026-05-18T21:40:23Z",
+  "close_reason": "Provider-neutral model profile + adapter registry config; spec+quality reviewed (2 stages), both gates pass, build+test green",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-cck.8",
+      "depends_on_id": "eshyra-cck",
+      "type": "parent-child",
+      "created_at": "2026-05-17T22:00:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-cck.8",
+      "depends_on_id": "eshyra-cck.5",
+      "type": "blocks",
+      "created_at": "2026-05-17T22:00:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "e5f17a3f-f666-5e3e-b483-1910c9b1f29d",
+      "issue_id": "eshyra-cck.8",
+      "author": "Joseph Bongaarts",
+      "text": "Spec review: ✅ compliant — all 4 acceptance criteria met by code inspection; 7 profiles exactly named; no SDK import outside agentSdkClient.ts; loadConfig untouched; no scope creep. Code quality (b733bd5..d202292): Ready to merge — no Critical/Important; Minor JSDoc note on override capability-floor semantics applied in d202292. Gates green: tsc --build exit 0, vitest 20 passed/1 pre-existing skipped.",
+      "created_at": "2026-05-18T21:40:21Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

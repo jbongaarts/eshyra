@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2ze",
+  "title": "parseCreatures: Goblin loses (goblinoid) subtype and description on real SRD PDF",
+  "description": "With loreweaver-9bu landing, verify:dnd5e-srd-pack now runs end-to-end and surfaces a parseCreatures regression on the real SRD 5.1 PDF:\n\n  creature:goblin:\n    data.description: \"Goblins are small, black-hearted humanoids that lair in despoiled dungeons and other dismal settings.\" → <missing>\n    data.type: \"humanoid (goblinoid)\" → \"humanoid\"\n    provenance.locator: \"p. 138\" → \"p. 315\"\n    source: \"SRD 5.1 p. 138\" → \"SRD 5.1 p. 315\"\n\nReproduce: npm run verify:dnd5e-srd-pack on a tree with loreweaver-9bu merged.\n\nInvestigation pointers:\n- p. 315 is the correct location of the Goblin stat block in the real SRD 5.1 PDF (verified by extraction). The committed pack's \"p. 138\" likely reflects an older / different SRD source where the Goblin had additional flavor prose; the committed description (\"black-hearted humanoids that lair in despoiled dungeons...\") is also not present at p. 315 in SRD 5.1, so the <missing> description may actually be correct for this PDF — verify before assuming it's a parser bug.\n- The type collapse \"humanoid (goblinoid)\" → \"humanoid\" IS a parser bug: the parenthesized race/subtype qualifier on the size-and-type line (\"Small humanoid (goblinoid), neutral evil\") is being stripped. parseCreatures probably extracts only the leading kind word and drops the \"(goblinoid)\" tag on the real-PDF layout.\n- The PDF extraction at p. 315 confirms the line is \"Small humanoid (goblinoid), neutral evil\" — clean text, no column-wrap quirk.\n- See packages/core/scripts/importers/dnd5e-srd-5.1/parseCreatures.ts and existing fixture tests for how the type line is parsed.\n- Scope this bead to just the type-qualifier fix; if the description difference turns out to need attention, file a separate bead.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-02T23:26:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:14Z",
+  "started_at": "2026-06-03T00:04:12Z",
+  "closed_at": "2026-06-03T00:19:17Z",
+  "close_reason": "Fixed in branch fix/srd-spell-class-columns-creature-subtype: extract wide-gutter hatch separates single-x spell-list columns (xbh); parseCreatures preserves parenthetical subtype (2ze). Verified against real SRD PDF; full suite green.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

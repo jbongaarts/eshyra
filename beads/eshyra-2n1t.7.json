@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-2n1t.7",
+  "title": "F5: Usage/recharge, resource & attunement state",
+  "description": "Durable per-entity usage counters (X/day, recharge X-Y, legendary per-round) with reset events (turn-start d6 recharge, short/long rest, dawn) + attunement slot machine (max 3, no duplicates, ending conditions) + inspiration boolean resource (no-stockpile cap, spend->advantage, gifting). Members: limited-usage, legendary-actions, attunement, gaining-inspiration, using-inspiration (IMPL); clauses: charges (live expenditure/recharge), conflict (charmed duration, repeat-on-damage, 1/dawn reset). Source: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-8-execution-boundary-classification.md §4.",
+  "notes": "2026-07-10 design (F5): migration 0007 adds entity_usage_counter (per-owner counters: perDay->dawn reset, recharge d6 min, short/long-rest recharge, item charges w/ recharge formula), attunement table (max3/no-dup/one-creature-per-item/death auto-end), character.inspiration bool, and legendary_actions_used/allowance columns on combat_turn_budget. State: state/usageCounters.ts, state/attunement.ts, state/inspiration.ts; legendary economy inside actionEconomy.ts (spend on others' turns, cost from usage.legendaryActionCost, allowance parsed from legendaryActions.description prose, regain at own turn start via beginTurn reset, refused while surprised). Combatant economies derived structurally from creature record (traits/actions/reactions/legendary entries + innate spellcasting per-day groups incl. shared non-each groups); characters/items use validated explicit registration on first spend (maxUses+reset args). Recharge rolls follow record_death_save pattern: model rolls via roll tool, passes natural result. reset_usage(event) is the engine primitive F7 will orchestrate. Tools: spend_usage, restore_usage, reset_usage, attune_item, end_attunement, award_inspiration, use_inspiration + spend_turn_resource legendary_action resource. Dispositions: limited-usage/legendary-actions/attunement/gaining-inspiration -> implemented; using-inspiration -> partial (advantage grammar -> F1); charges/conflict/innate-spellcasting notes updated.\n2026-07-11: Implementation complete and verified (verify:worktree green, 3796 tests). PR #427 open for review: https://github.com/jbongaarts/eshyra/pull/427 (branch eshyra-2n1t-7-f5-usage-recharge, commit c4bb8ec). Handoff stops at the open PR per repo policy. Follow-ups tracked elsewhere: pack-side charge data eshyra-o9bd.18.7.7.1; advantage roll grammar for inspiration spends F1 (eshyra-2n1t.3); rest orchestration calling resetUsage F7 (eshyra-2n1t.9).\n2026-07-11 PR #427 review requested changes: (1) recharge reroll same turn — add once-per-own-turn attempt token; (2) multiple legendary options per turn window — add per-window spend token; (3) item charges keyed to holder not item — re-key owner_kind 'item'; (4) combatant declared economies fail open on unmatched ability — fail closed; (5) pre-0007 budget rows never get legendary allowance — lazy reconciliation in ensureBudgetRow. Fixing on same branch.\n2026-07-11: All five PR #427 review findings fixed in e9deea1 (recharge once-per-own-turn token, one legendary option per turn window, item-owned charge counters w/ possession check, combatant declared economies fail closed, lazy legendary-allowance reconciliation for pre-0007 rows). verify:worktree green (3803 tests). PR comment posted; awaiting re-review.\n2026-07-11: Follow-up review blocker fixed in 1c32a05 — last_spend_turn window token on recharge_roll counters; spend during own turn blocks a recharge roll in the same window (roll precedes use). Adversarial regression test added. verify:worktree green (3804 tests). Reviewer indicated merge after this fix; awaiting merge (not merging myself per repo policy).\n2026-07-11: PR #427 merged to main as 9bed161 (merge commit per repo policy). Worktree and local/remote branches cleaned up. F5 complete.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T05:40:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-11T16:32:46Z",
+  "started_at": "2026-07-11T04:37:26Z",
+  "closed_at": "2026-07-11T16:11:36Z",
+  "close_reason": "Closed",
+  "labels": [
+    "engine",
+    "gameplay"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-2n1t.7",
+      "depends_on_id": "eshyra-2n1t",
+      "type": "parent-child",
+      "created_at": "2026-07-07T00:40:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

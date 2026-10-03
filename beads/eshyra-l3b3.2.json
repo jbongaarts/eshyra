@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l3b3.2",
+  "title": "Add scene-local evidence for immediate audit continuity",
+  "description": "Problem\n\nThe playtest showed that the auditor relies heavily on tool evidence and does not sufficiently use recent accepted scene history. This makes immediate conversational follow-up brittle.\n\nExample:\n- Warden Sela says in an accepted response that she sent two scouts north and they did not return.\n- The player immediately asks what to expect if investigating.\n- A response referencing those scouts may still be rejected unless the model records or re-queries the fact.\n\nEshyra needs scene-local evidence that is weaker than durable campaign overlay lore but strong enough to support immediate local continuity.\n\nDesign direction\n\nIntroduce compact recent-scene evidence for audit/prompt context:\n- accepted NPC statements\n- recently established visible facts\n- recently stated player-visible reports\n- exact details that were accepted into narration, such as \"three houses burned\"\n\nThis should not replace record_world_fact for durable campaign memory. It should support immediate follow-up and prevent contradictions within the same scene.\n\nAcceptance criteria\n\n- Audit prompt receives a compact recent-scene evidence section derived only from accepted turns.\n- Recent accepted NPC statements can support immediate follow-up dialogue.\n- Recent accepted exact details remain available as scene-local evidence until the scene ends or ages out.\n- Scene-local evidence is marked as weaker than module canon, campaign state, and campaign overlay lore.\n- Durable consequential facts still require record_world_fact for long-term recall.\n- Scene-local evidence does not allow failed tool calls or rejected candidate prose to become support.\n- Regression:\n  - Sela says two scouts did not return in an accepted turn.\n  - Player immediately asks what to expect.\n  - DM can reference the missing scouts without hard failure.\n- Regression:\n  - Accepted narration says three houses burned.\n  - A same-scene follow-up can refer to three houses without a contradictory audit result.\n- Regression:\n  - After scene boundary/aging, durable recall requires overlay lore or module canon rather than stale scene-local context.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T23:07:43Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-25T00:02:08Z",
+  "started_at": "2026-06-24T23:57:26Z",
+  "closed_at": "2026-06-25T00:02:08Z",
+  "close_reason": "Added recent accepted scene-log evidence to context assembly and audit prompts for immediate same-scene continuity.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-l3b3.2",
+      "depends_on_id": "eshyra-l3b3",
+      "type": "parent-child",
+      "created_at": "2026-06-24T18:07:43Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

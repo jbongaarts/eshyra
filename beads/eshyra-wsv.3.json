@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-wsv.3",
+  "title": "Implement scene summaries",
+  "description": "Add incremental scene_summary storage and APIs sourced from scene/turn records with salient refs to state or overlay rows.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-19T05:12:12Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:08Z",
+  "started_at": "2026-05-19T05:14:28Z",
+  "closed_at": "2026-05-19T05:16:10Z",
+  "close_reason": "Implemented incremental scene summaries with salient refs; focused test and typecheck pass with RED evidence recorded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-wsv.3",
+      "depends_on_id": "eshyra-wsv",
+      "type": "parent-child",
+      "created_at": "2026-05-19T00:12:11Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "b01ad83e-e5ff-5215-a5c9-d91a2d825e0e",
+      "issue_id": "eshyra-wsv.3",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npm run test -- packages/core/test/memorySummary.test.ts -> failed as expected; recordSceneSummary/listSceneSummaries API is missing.",
+      "created_at": "2026-05-19T05:15:19Z"
+    },
+    {
+      "id": "f15c5880-21cc-5781-b6cb-0ecf59ad9e70",
+      "issue_id": "eshyra-wsv.3",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN/REFACTOR verification: npm run test -- packages/core/test/memorySummary.test.ts -> passed (1 test); npm run typecheck -> passed. Added scene_summary schema plus recordSceneSummary/listSceneSummaries with salient state refs and source turn ids.",
+      "created_at": "2026-05-19T05:16:09Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 2
+}

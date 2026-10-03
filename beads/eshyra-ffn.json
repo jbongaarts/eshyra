@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ffn",
+  "title": "appendSceneLog sequence computation is racy",
+  "description": "Correctness review finding. packages/core/src/orchestrator/scene.ts computes seq via SELECT COALESCE(MAX(seq),0)+1 then INSERT; concurrent writers can read the same MAX and the second INSERT fails the composite PRIMARY KEY. Single-threaded CLI today but runTurn is async. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "Scene-log sequence is collision-free under concurrent appends or single-writer is enforced and documented.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T05:57:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:20Z",
+  "started_at": "2026-05-24T03:40:37Z",
+  "closed_at": "2026-05-24T03:44:11Z",
+  "close_reason": "Fixed via PR #55: appendSceneLog now uses a single INSERT with a subquery for seq and RETURNING seq, so the MAX read and the row write happen under the same write lock. Existing scene-log tests cover monotonic sequencing.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

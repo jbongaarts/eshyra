@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-txxa",
+  "title": "Count nested creature mechanics in gameplay-readiness report",
+  "description": "`reports/gameplay-readiness.json` in the 2026-06-30 SRD audit bundle undercounts creature mechanics projections because `buildGameplayReadinessReport` only checks top-level `data.mechanics`, `data.projection`, `data.traits[].mechanics`, and `data.feature.mechanics`.\n\nConfirmed bundle: `/home/jhbongaarts/src/dnd5e-srd-audit-bundle-0630-1.zip`, extracted to `/tmp/eshyra-audit-bundle-0630-1`.\n\nObserved:\n- `reports/gameplay-readiness.json` reports `byKind.creature.recordsWithMechanicsProjections: 100`.\n- A direct scan of creature `traits`, `actions`, `reactions`, and `legendaryActions.entries` finds 314 creature records with nested `mechanics` objects.\n- Existing audit docs/reporting elsewhere use the 314/317 creature mechanics count, so this report is inconsistent and understates deterministic gameplay readiness for creatures.\n\nRelevant code: `packages/core/scripts/create-dnd5e-srd-audit-bundle/cli.ts`, especially `hasMechanicsProjection` and `buildGameplayReadinessReport`.\n\nAcceptance criteria:\n- `gameplay-readiness` counts nested mechanics in creature actions, reactions, legendary actions, and traits consistently with the mechanics projection audit.\n- Add a regression assertion for the creature mechanics count or for representative nested action/reaction/legendary-action mechanics.\n- The report distinguishes top-level record mechanics from nested gameplay mechanics if both signals remain useful.\n",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T04:35:15Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T13:10:07Z",
+  "started_at": "2026-07-01T13:06:06Z",
+  "closed_at": "2026-07-01T13:10:07Z",
+  "close_reason": "hasMechanicsProjection now also checks nested actions/reactions/legendaryActions.entries; gameplay-readiness now correctly reports creature: 314/317 matching the documented mechanics-projection audit",
+  "labels": [
+    "audit",
+    "reporting",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-txxa",
+      "depends_on_id": "eshyra-erf5",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

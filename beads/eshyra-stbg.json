@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-stbg",
+  "title": "Make rules-pack audit CLI tests deterministic under suite load",
+  "description": "The full Vitest suite intermittently times out packages/core/test/rulesPackAuditCli.test.ts at the fixed 5s default because each test cold-starts the TypeScript CLI subprocess. Observed on 2026-07-14: the strict-audit case took 5.28-6.86s under 4-6 forks and timed out, while the entire file passed alone and the suite passed with one fork. Investigate and remove the load-sensitive cold-start behavior (for example, a testable in-process command boundary or reusable compiled entrypoint) rather than raising the global timeout or merely reducing CI parallelism. If a narrow per-test timeout remains necessary after root-cause work, document why. Also assess the same subprocess pattern in importer/audit CLI tests so the deterministic fix is shared where appropriate.",
+  "acceptance_criteria": "Full default-parallel npm test runs repeatedly without rulesPackAuditCli timeout failures under representative load; solution does not raise Vitest's global timeout or weaken assertions; focused rulesPackAuditCli tests remain green; design/root-cause rationale is documented in the bead/PR.",
+  "notes": "Additional 2026-07-14 evidence during PR #451 review: even VITEST_MAX_FORKS=1 full verification timed out the unchanged human-report and --json cases at 5.66s and 5.72s, while prior isolated runs passed. This rules out Vitest fork contention as a complete solution and reinforces removing/reusing the tsx subprocess cold-start boundary.\nDispatch plan (attempt 1, 2026-07-19, supervisor eshyra-fe3t): Codex gpt-5.6-luna in .worktrees/eshyra-stbg branch eshyra-stbg off eshyra-fe3t (=main 9d252b9). Approach guidance: replace per-test tsx CLI subprocess cold-starts with a testable in-process command boundary (export a run function from the CLI module; keep a thin argv shim); keep CLI-contract coverage via at most one true subprocess smoke test; do not raise global timeouts or weaken assertions; assess the same pattern in other importer/audit CLI tests and share the fix where cheap.\nCompletion report (2026-07-19): Replaced repeated tsx subprocess execution in rulesPackAuditCli.test.ts with an exported in-process runCli(argv, io) boundary. The thin CLI entrypoint now adapts argv/process streams and preserves fail-closed exit codes: 0 success, 1 strict findings/changes, 2 load/validation failure. Tests retain human/JSON, strict audit/diff, invalid-pack, help, and root npm-script wiring assertions without changing global timeout or weakening expectations. Assessed all test-side importer/audit subprocess patterns: only rulesPackAuditCli used the repeated tsx cold-start pattern; installer/release/Unicode tests are unrelated platform/integration subprocess checks. Focused suite: 10/10 passed. Typecheck, direct CLI help, format, and biome ci passed. Required npm run verify:worktree was attempted but blocked by managed sandbox spawnSync git EPERM in check:hidden-unicode; full npm test had 4,616 passing, 4 skipped files, with 23 unrelated child-process/network permission failures under the same sandbox. No follow-up bead discovered.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-14T23:38:09Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-19T07:58:26Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

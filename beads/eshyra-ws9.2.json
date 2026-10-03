@@ -1,0 +1,40 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ws9.2",
+  "title": "E5 Task 1: scene_log + scene-boundary persistence",
+  "description": "The orchestrator needs a live per-scene transcript and scene-boundary records (E5 acceptance #1). Add SQLite schema v5: a scene table (campaign/session/scene id, title, status open|closed, opened/closed timestamps) and a scene_log table (ordered player+DM turn entries within a scene). Provide append/list functions and exports. Live per-turn store only (SQLite), not Dolt.",
+  "acceptance_criteria": "scene + scene_log tables created at schema v5; append + list scene-log entries ordered deterministically; open/close scene boundary recorded; build + test pass.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-20T22:45:03Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-20T22:45:47Z",
+  "closed_at": "2026-05-20T22:48:22Z",
+  "close_reason": "scene_log + scene-boundary persistence implemented and verified",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-ws9.2",
+      "depends_on_id": "eshyra-ws9",
+      "type": "parent-child",
+      "created_at": "2026-05-20T17:45:03Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "2394b119-c520-55d7-9e62-3f0174699ce0",
+      "issue_id": "eshyra-ws9.2",
+      "author": "Joseph Bongaarts",
+      "text": "TDD: RED — test/scene.test.ts 7/9 failing (scene module absent). GREEN — implemented orchestrator/scene.ts + schema v5 scene/scene_log tables; 9/9 pass. REFACTOR — none needed. Full suite 104 passed / 1 skipped. Committed fdb421d.",
+      "created_at": "2026-05-20T22:48:22Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 1
+}

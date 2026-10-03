@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xjp4",
+  "title": "Structure ioun-stone, ring-of-elemental-command, and crystal-ball variants, then model their M2/M3 clauses",
+  "description": "eshyra-o9bd.18.7.7.5 modeled M2 (23 rows) + M3 (38 rows) passive-modifier clauses for 56 of 58 unique tagged magic items via packages/core/scripts/importers/dnd5e-srd-5.1/magicItemPassiveEffects.ts. Ioun Stone and Ring of Elemental Command were deferred (MAGIC_ITEM_M2_M3_DEFERRED in that file) because their M2/M3 benefits are per-variant and mutually exclusive (13 named ioun stones; 4 linked elemental planes), and neither item's variants are structured yet (data.variants only exists for Figurine of Wondrous Power today) -- the mechanics inventory's §0 gap and PR #408's state-contract design §7.4 both flag this as a prerequisite. Scope: extend the magic-item importer/schema to carry a structured variants list for these two items (mirroring the existing Figurine of Wondrous Power / MagicItemVariant shape, or a variant shape rich enough for named sub-benefits), then project each variant's M2/M3 clauses (ability score increases, proficiency bonus, regeneration, language grants for Ioun Stone; language grants and movement modes for the ring) using the same effect vocabulary added in eshyra-o9bd.18.7.7.5 (abilityScoreIncrease, proficiencyBonusIncrease, regeneration, proficiency, speedSet, breathes, walkOnLiquids, earthGlide, ignoreDifficultTerrain). Remove the two entries from MAGIC_ITEM_M2_M3_DEFERRED once modeled and update the srdGeneratedPack.test.ts magic-item.mechanics missingCount baseline (184 -> 182).",
+  "notes": "PR #415 review (2026-07-07): Crystal Ball added to this bead's scope -- its truesight M3 clause belongs only to the legendary 'Crystal Ball of True Seeing' variant and the item has no structured variants field yet, same gap class as Ioun Stone/Ring of Elemental Command. All three are now recorded in MAGIC_ITEM_M2_M3_DEFERRED in magicItemPassiveEffects.ts. Crystal Ball's other two legendary variants (of Mind Reading, of Telepathy) carry C1/C2-owned clauses (detect thoughts/suggestion casts), not M2/M3, but should be structured together with the True Seeing variant since they share the same 'legendary crystal ball variants' inline-variant gap.\nStructured all 14 Ioun Stone, 4 Ring of Elemental Command, and 3 Crystal Ball variants; projected variant-owned passive, state, spell-storage, and activated mechanics with globally unique clause IDs and regenerated the canonical pack.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-07T07:11:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:20Z",
+  "started_at": "2026-07-18T16:34:40Z",
+  "closed_at": "2026-07-18T20:23:20Z",
+  "close_reason": "All three inline variant families structured and their variant-specific mechanics modeled.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-xjp4",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-07T02:12:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

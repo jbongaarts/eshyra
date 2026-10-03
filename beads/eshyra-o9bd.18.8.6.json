@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.8.6",
+  "title": "Improve duplicate-name retrieval context for primary DM lookup",
+  "description": "Finding source:\n- Codex Low finding: duplicate names are expected but name-only retrieval is unsafe.\n- 88 normalized duplicate-name groups include Spellcasting, Ability Score Improvement, Druid, Acolyte, Hide, Shield, and Potion of Healing.\n- Records generally have unique keys and context, but primary DM model discoverability depends on retrieval/display using that context.\n\nAcceptance criteria:\n- Retrieval/display cards expose key, kind, parent class/subclass/background/item context, source locator, and disambiguating category.\n- Deterministic tools use keys/refs, not names.\n- Add fixtures/tests for ambiguous cases: Hide action vs hiding rule, Shield spell vs shield equipment, Potion of Healing item variants, repeated Spellcasting features.",
+  "notes": "PR #388 opened: adds buildRulesRecordCard() card summary to lookup_rules success results and structured candidateKeys on ambiguous errors. Awaiting review/merge.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-03T00:10:20Z",
+  "started_at": "2026-07-03T00:00:20Z",
+  "closed_at": "2026-07-03T00:10:20Z",
+  "close_reason": "Merged PR #388 on main (b110b2f): buildRulesRecordCard() adds key/kind/name/source-locator/grantor-ref card to lookup_rules success results; ambiguous errors carry structured candidateKeys. Tests cover Spellcasting/ASI same-kind ambiguity and Hide/Shield/Potion of Healing cross-kind duplicates.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.8.6",
+      "depends_on_id": "eshyra-o9bd.18.8",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

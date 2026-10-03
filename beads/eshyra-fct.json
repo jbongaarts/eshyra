@@ -1,0 +1,31 @@
+{
+  "_type": "issue",
+  "id": "eshyra-fct",
+  "title": "SRD spell parser fails on real PDF's two-column layout",
+  "description": "After loreweaver-0m9.5.20 fixed the section-anchor mismatch, npm run verify:dnd5e-srd-pack now fails further along the pipeline with:\n\n  importer failed: failed to parse spell \"Alter Self\" at page 114: incomplete spell metadata; got fields: (none)\n\nCause: the SRD 5.1 spell descriptions chapter is rendered as a two-column layout. The extractor groups items by y-coordinate, so adjacent lines from the left and right columns end up interleaved in the line stream — page 114 emits \"Alarm\" then \"Acid Arrow\" immediately as adjacent lines, then their metadata interleaved row-for-row (\"Casting Time:1 minute\" + \"Casting Time:1 action\" etc.). parseSpells expects a single-column flow and treats the second name line (\"Acid Arrow\") as the start of the next spell, leaving \"Alarm\" with zero metadata fields.\n\nSame structural issue is very likely to bite parseCreatures and parseFeatures next (Monsters chapter is also two-column, and class progression tables are tabular). Pipeline tests pass because the pdfkit fixture is single-column.\n\nScope:\n- Make the extractor column-aware: cluster items by x position into columns, sort lines within each column by y, then emit column-by-column rather than y-interleaved across columns. PageText.lines becomes column-grouped flow.\n- Verify parseSpells / parseCreatures / parseFeatures still work on both real PDF and fixture inputs.\n- This may want to be split per parser; track as a child epic if scope warrants.\n\nReproduce: npm run verify:dnd5e-srd-pack.",
+  "notes": "PR opened: https://github.com/jbongaarts/loreweaver/pull/131. Column-aware extraction landed (item-level x partitioning before y-bucketing) + visual-gap row join + footer filter. parseSpells now succeeds on the real SRD PDF. parseCreatures advances from 0 to 193; remaining coverage gap to 300+ tracked in loreweaver-w8h (which depends on this bead).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-01T22:46:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-02T03:23:31Z",
+  "closed_at": "2026-06-02T04:08:18Z",
+  "close_reason": "PR #131 merged. Column-aware extraction landed: item-level x partitioning before y-bucketing, single-cut heuristic with item-count + distinct-x guards, visual-gap row join, and footer filter. parseSpells succeeds end-to-end on the real SRD PDF. Remaining creature coverage gap (194/300+) tracked in loreweaver-w8h.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-fct",
+      "depends_on_id": "eshyra-0m9.5.20",
+      "type": "blocks",
+      "created_at": "2026-06-01T17:46:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

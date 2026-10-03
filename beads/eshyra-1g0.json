@@ -1,0 +1,22 @@
+{
+  "_type": "issue",
+  "id": "eshyra-1g0",
+  "title": "Fix 5 CodeQL alerts: ReDoS + workflow permissions",
+  "description": "GitHub code scanning reports 5 open alerts (all 'warning'; ReDoS ones are security-severity high):\n\n1. packages/core/src/orchestrator/dice.ts:30 — DICE_RE has adjacent \\s* groups + trailing \\s*$, classic polynomial ReDoS on model-supplied dice notation.\n2. packages/core/src/orchestrator/protocol.ts:13 — TOOL_CALL_FENCE has \\s*\\n where \\s matches \\n, then lazy [\\s\\S]*?\\n?, polynomial on model output.\n3. packages/cli/src/registry.ts:131 — slugify uses /^-+|-+$/g, the canonical CodeQL BAD example. Input is trusted CLI name; trivial harden.\n4. packages/core/src/persistence/checkpoint/separation.ts:30 — normalizeRemoteUrl uses /\\/+$/. Trusted local config input; trivial harden.\n5. .github/workflows/ci.yml:49 — workflow has no permissions block; add top-level contents: read.\n\nFix all on one feature branch + PR. No behavior change expected; existing tests must keep passing.",
+  "acceptance_criteria": "All 5 CodeQL alerts close after merge; npm run typecheck and npm run test pass; PR open against main.",
+  "notes": "PR open: https://github.com/jbongaarts/loreweaver/pull/62 — close after merge + CodeQL re-scan confirms alerts #1–#5 resolved.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-25T04:30:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:59Z",
+  "started_at": "2026-05-25T04:30:51Z",
+  "closed_at": "2026-05-25T04:36:11Z",
+  "close_reason": "Merged via PR #62; all 5 CodeQL alerts addressed.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

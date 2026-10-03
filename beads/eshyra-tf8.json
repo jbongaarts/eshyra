@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-tf8",
+  "title": "Prefix smoke test",
+  "description": "Temporary smoke test for Eshyra prefix migration.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T17:50:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:53Z",
+  "closed_at": "2026-06-07T17:50:53Z",
+  "close_reason": "Prefix smoke test passed after full prefix migration.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

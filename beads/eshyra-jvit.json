@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jvit",
+  "title": "Repair agentSdkMcpClient typing for claude-agent-sdk 0.3.260",
+  "description": "PR #528 (dependabot model-provider-sdks: @anthropic-ai/claude-agent-sdk 0.3.251->0.3.260, @anthropic-ai/sdk ^0.122->^0.123) fails npm run typecheck on every platform: packages/core/src/model/agentSdkMcpClient.ts(208,3) TS2322 - SdkMcpToolDefinition<Readonly<{[k:string]: $ZodType<...>}>> is not assignable to SdkMcpToolDefinition<AnyZodRawShape>. The new SDK changed its zod raw-shape typing. Branch off the #528 head, repair the source, verify, and open a superseding PR.",
+  "notes": "PR https://github.com/jbongaarts/eshyra/pull/534 open (supersedes #528, which is closed). Bead stays in_progress until #534 merges.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-07T23:41:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-07T23:57:59Z",
+  "started_at": "2026-09-07T23:44:57Z",
+  "closed_at": "2026-09-07T23:57:59Z",
+  "close_reason": "Closed",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

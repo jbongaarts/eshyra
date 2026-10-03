@@ -1,0 +1,18 @@
+{
+  "_type": "issue",
+  "id": "eshyra-r73p",
+  "title": "Dispatch: PR #455 adversarial review R3 — tests/gates integrity + creation policy (attempt 1)",
+  "description": "Read-only Codex review dispatch (gpt-5.6-luna, reasoning=high, sandbox read-only) in .worktrees/complete-epics. Scope: D2 creation policy (feats/prereqs/custom background, Variant Human unsupported), levelUpEngine, test-weakening sweep of the diff, audit-gate fail-closed integrity (bundle allowlists, srdAudit, deep-audit shingles typed-identifier change), freeze-manifest/thaw-note consistency, schema snapshot. Output: structured findings report to stdout.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-19T06:55:48Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-19T06:58:07Z",
+  "close_reason": "Cancelled: reviews are performed by the supervisor directly (user direction 2026-07-19); Codex dispatches are for code-writing only",
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

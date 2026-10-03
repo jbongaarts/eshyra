@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.1",
+  "title": "Replace latest-schema DDL with migration-first SQLite schema management",
+  "description": "Replace the current hand-maintained latest-schema DDL plus TypeScript migration-chain model with migration-first SQLite schema management.\n\nProblem:\nEshyra currently has a latest-schema bootstrap block and a migration chain that both affect schema shape. That creates duplicate schema authority and allows bootstrap DDL such as CREATE TABLE IF NOT EXISTS / CREATE INDEX IF NOT EXISTS to mask incomplete migrations. Since Eshyra is still pre-1.0, this is the best time to move to a durable model.\n\nTarget design:\n- Versioned SQL migration files are the only executable source of truth for schema changes.\n- Empty DB creation applies all migrations from zero.\n- Existing DB startup applies only pending migrations.\n- A migration ledger records applied version, name, checksum, and timestamp.\n- A generated schema snapshot may exist for review, but it is generated from migrations and verified, not hand-maintained authority.\n- Legacy meta.schema_version databases are either adopted safely or rejected with a clear pre-1.0 reset message.\n\nAcceptance criteria:\n- Add a migration-first design note or ADR covering source of truth, migration ordering, checksum policy, legacy adoption/reset policy, and bootstrap-row handling.\n- Add versioned SQL migrations under packages/core/src/persistence/migrations or an equivalent clear location.\n- Encode the current intended schema as 0001_initial.sql.\n- Add schema_migrations ledger with version, name, checksum, and applied_at.\n- Empty DB initialization applies ordered migrations transactionally.\n- Existing DB initialization verifies already-applied migration checksums and applies only pending migrations.\n- Remove hand-maintained latest-schema CREATE TABLE/CREATE INDEX authority from initSchema.\n- Add tests for fresh init, repeated init, pending migrations, checksum drift, and legacy adoption/reset behavior.\n- Add a migrated-vs-fresh schema parity guard where meaningful.\n- Document the authoring workflow for future schema changes.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T02:51:49Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-06-26T04:32:43Z",
+  "close_reason": "All 7 children merged to main (PRs #313-#318 across the migration-first series; runner/baseline/adoption/initSchema-rewrite/tests in #316-#318). Migration-first SQLite schema management complete per ADR 0015: versioned SQL migrations are the sole executable authority, schema_migrations ledger replaces meta.schema_version, latest-schema repair DDL and the legacy TS chain are removed, legacy DBs adopt-at-baseline-or-reset, and parity/idempotency/checksum/snapshot are test-guarded.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.1",
+      "depends_on_id": "eshyra-4s0r",
+      "type": "parent-child",
+      "created_at": "2026-06-25T21:51:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

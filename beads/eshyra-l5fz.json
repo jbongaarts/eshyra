@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-l5fz",
+  "title": "Refresh README for current project state",
+  "description": "Review README.md against the current repository docs, package scripts, architecture, release/auth behavior, and development workflow; update it so it accurately represents the project for new users and contributors.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-24T04:28:17Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-24T04:31:19Z",
+  "started_at": "2026-06-24T04:28:22Z",
+  "closed_at": "2026-06-24T04:31:19Z",
+  "close_reason": "README reviewed and updated for current CLI, provider, storage, architecture, and development state.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,28 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.3.2",
+  "title": "Tag SRD focus symbol instrument and tool equipment groups",
+  "description": "Child of the equipment grouping audit epic.\n\nThe SRD equipment section groups several leaf items into gameplay-relevant item groups such as arcane focus, druidic focus, holy symbol, musical instrument, artisan tools, gaming sets, and similar tool/equipment categories. The generated records preserve the leaf items but do not carry enough structured group/subtype metadata for deterministic starting-equipment filters.\n\nExamples:\n- Arcane focus candidates: Crystal, Orb, Rod, Staff, Wand.\n- Holy symbol candidates: Amulet, Emblem, Reliquary.\n- Druidic focus candidates: Sprig of mistletoe, Totem, Wooden staff, Yew wand.\n- Musical instrument candidates: Bagpipes, Drum, Dulcimer, Flute, Lute, Lyre, Horn, Pan flute, Shawm, Viol.\n\nAcceptance criteria:\n- Generated equipment/tool records carry structured group/subtype tags for all SRD groups used by starting equipment, class proficiencies, or background/tool choices.\n- select: \"arcane-focus\", \"druidic-focus\", \"holy-symbol\", and \"musical-instrument\" filters resolve without name/prose heuristics.\n- Preserve source provenance for the grouping semantics.\n- Add regression tests for each focus/symbol/instrument group and at least one non-focus tool group.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T05:58:46Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "closed_at": "2026-07-01T12:54:05Z",
+  "close_reason": "Tagged 41 items across 6 named SRD equipment groups (arcane/druidic focus, holy symbol, artisan's tools, gaming set, musical instrument) with structured equipmentGroup",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.3.2",
+      "depends_on_id": "eshyra-erf5.3",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 0
+}

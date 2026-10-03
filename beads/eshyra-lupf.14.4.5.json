@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.14.4.5",
+  "title": "Design future-detour / out-of-order continuity",
+  "description": "Design-only (documentation, maybe warnings) — do NOT implement beyond docs. 'Rejoin' is deliberately avoided: it implies a mechanical merge Eshyra cannot perform honestly. Expose it to users as 'play this as a future branch; later decide how, or whether, to reconcile it.' Parent: eshyra-lupf.14.4; depends on eshyra-lupf.14.4.1.",
+  "acceptance_criteria": "- Define 'future detour' as an out-of-order branch, not a temporary fork that can be automatically rejoined.\n- Document that future-campaign mechanical state is not applied to the earlier campaign until manual reconciliation or catch-up.\n- Define data to track to make it intelligible later: source revision, future branch id, parent campaign, intended chronological placement, warnings acknowledged by user.\n- Decide whether this requires branching support in the registry schema before implementation.\n- Explicitly reject automatic merge of XP, inventory, level, spells, HP, conditions, and campaign-local consequences.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-27T18:05:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-27T18:51:13Z",
+  "started_at": "2026-06-27T18:51:05Z",
+  "closed_at": "2026-06-27T18:51:13Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.14.4.5",
+      "depends_on_id": "eshyra-lupf.14.4.1",
+      "type": "blocks",
+      "created_at": "2026-06-27T13:06:07Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.14.4.5",
+      "depends_on_id": "eshyra-lupf.14.4",
+      "type": "parent-child",
+      "created_at": "2026-06-27T13:05:50Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}

@@ -1,0 +1,27 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jzdw",
+  "title": "Harden schema-invalid closure blocker attribution",
+  "description": "Follow-up from the fail-closed finding-registry repair. findingRegistryClosureBlockers currently conservatively returns canonical row identities when parseRegistry rejects malformed registry structure; refine the parse-error path to attribute schema-invalid blockers as narrowly as possible while preserving fail-closed behavior. This is outside the assigned bead's required derived-generator and snapshot cases.",
+  "acceptance_criteria": "Malformed registry fixtures report the narrowest available blocker identities, valid derived snapshot mismatches still report only the affected canonical row, and the closure gate remains fail-closed.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-28T00:50:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-28T00:50:27Z",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jzdw",
+      "depends_on_id": "eshyra-o9bd.19.1.6.7",
+      "type": "discovered-from",
+      "created_at": "2026-07-27T19:50:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

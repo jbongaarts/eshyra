@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.3",
+  "title": "Make POSIX release launcher portable and smoke-test macOS installer",
+  "description": "Make the generated POSIX release launcher portable across macOS and Linux, and add macOS installer smoke coverage.\n\nProblem:\nRelease artifacts target macOS and Linux, but the generated POSIX launcher uses GNU-style command forms such as readlink -- / dirname -- that are risky on macOS's BSD userland. Existing installer smoke coverage is strongest on Ubuntu and may miss macOS launcher failures.\n\nAcceptance criteria:\n- Replace GNU-specific POSIX launcher logic with a portable implementation tested on macOS and Linux.\n- Preserve symlink resolution behavior expected by installer-created commands.\n- Add or extend release workflow smoke coverage so macOS executes the installed launcher path users will actually run.\n- Keep existing Ubuntu installer smoke coverage.\n- Include focused tests or fixture verification for generated launcher content if practical.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T03:05:55Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T05:08:39Z",
+  "started_at": "2026-06-26T05:00:13Z",
+  "closed_at": "2026-06-26T05:08:39Z",
+  "close_reason": "Portable POSIX launcher (no GNU dirname --/readlink --), refactored into exported render builders, added macOS to installer-smoke matrix, added releaseLauncher.test.ts (static + functional 2-hop symlink). Local release:smoke-installer passes. PR #320.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.3",
+      "depends_on_id": "eshyra-4s0r",
+      "type": "parent-child",
+      "created_at": "2026-06-25T22:05:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

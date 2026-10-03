@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-xeu.1",
+  "title": "GREEN: Wire guided character creation into CLI play",
+  "description": "Implement the smallest CLI play changes needed to pass the character creation gating tests.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-23T03:32:45Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-23T03:34:38Z",
+  "closed_at": "2026-05-23T03:36:24Z",
+  "close_reason": "Implemented CLI character creation gate; focused play tests pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-xeu.1",
+      "depends_on_id": "eshyra-xeu.3",
+      "type": "blocks",
+      "created_at": "2026-05-22T22:33:02Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-xeu.1",
+      "depends_on_id": "eshyra-xeu",
+      "type": "parent-child",
+      "created_at": "2026-05-22T22:32:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "96d44449-6144-5183-b947-22882714f42b",
+      "issue_id": "eshyra-xeu.1",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: npx vitest run packages/cli/test/play.test.ts -> passed (15 tests).",
+      "created_at": "2026-05-23T03:36:24Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 1
+}

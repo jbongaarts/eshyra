@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.24",
+  "title": "Strengthen SRD audit command to catch boundary and coverage failures",
+  "description": "Problem\r\nThe audit bundle's built-in suspicious-record checks reported 0 suspicious records even though the manual audit found clear parser failures.\r\n\r\nEvidence from the 2026-06-07 audit\r\nMissed failures include:\r\n- Class proficiency fields containing class table rows and feature prose.\r\n- Feature records containing Weapons/Tools/Saving Throws/Skills setup blocks.\r\n- Subclass features swallowing adjacent features.\r\n- Ancestry Languages line wraps becoming fake trait names.\r\n- Missing Orb of Dragonkind magic item.\r\n- Broad unrepresented source sections and tables.\r\n\r\nRequired behavior\r\n- Extend audit tooling with structure-aware checks that catch these failure modes.\r\n- The audit should produce actionable findings, not merely generic counts.\r\n- Checks should be deterministic and suitable for local verification.\r\n\r\nAcceptance criteria\r\n- Add suspicious-pattern checks for table-row bleed in class proficiency fields.\r\n- Add checks for class setup labels inside feature bodies.\r\n- Add checks for swallowed adjacent feature headings.\r\n- Add ancestry checks for bogus Languages-derived trait names.\r\n- Add heading coverage checks for magic items, class/subclass features, ancestry traits, and key rule/table sections.\r\n- Add tests proving the new audit checks fail against representative bad fixtures and pass against corrected output.",
+  "notes": "PR #172 updated (commit 498ecb5): coverage now keyed on a SOURCE-coverage layer (packages/core/scripts/importers/dnd5e-srd-5.1/sourceCoverage.ts) = emitted EXPECTED_* baseline + curated known source gaps (SRD_5_1_SOURCE_*_GAPS), deduped. Magic-item gap includes Orb of Dragonkind. Bundle feeds SOURCE_* lists into auditSrd for magic-item/table/rule (creature/ancestry stay on exact emitted gates). Verified: against committed pack the source-coverage audit reports exactly 1 missing magic item (Orb of Dragonkind). 6 new tests added (25 total in srdStructureAudit). Importer fix for Orb stays eshyra-0m9.16. typecheck/check/test all green (1289 passed).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:53Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-08T01:05:43Z",
+  "started_at": "2026-06-07T23:38:54Z",
+  "closed_at": "2026-06-08T01:05:43Z",
+  "close_reason": "Merged to main via PR #172 (squash e8e3e8b). Adds structure-aware SRD audit (auditSrdStructure/auditSrdCoverage/auditSrd in packages/core/src/rules/srdAudit.ts) covering class-proficiency-bleed, feature-setup-label-bleed, swallowed-feature-heading, ancestry-bogus-trait, and missing-coverage; plus a SOURCE-coverage expectation layer (scripts/importers/dnd5e-srd-5.1/sourceCoverage.ts) so the audit catches the Orb of Dragonkind omission that the importer's emitted EXPECTED_* lists could not. Wired into the dnd5e-srd audit bundle. 25 tests. CodeQL ReDoS in slug() fixed. All CI green. Importer fix for Orb of Dragonkind remains eshyra-0m9.16.",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.24",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

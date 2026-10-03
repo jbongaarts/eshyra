@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.21",
+  "title": "Represent SRD magic item usage and attunement rules",
+  "description": "Problem\r\nThe importer emits magic item records, but general SRD magic item usage rules are not adequately represented.\r\n\r\nEvidence from the 2026-06-07 audit\r\nUnrepresented source content around page 206 includes:\r\n- Attunement rules\r\n- Wearing and wielding items\r\n- Paired items\r\n- Activating magic items\r\n- General magic item usage constraints\r\n\r\nRequired behavior\r\n- Import general magic item rules as rule records.\r\n- Keep general rules separate from individual magic item records.\r\n- Preserve headings and provenance so future lookup can answer questions about attunement and activation.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "notes": "Implementation complete; PR #188 open for review (https://github.com/jbongaarts/eshyra/pull/188, branch feat/srd-magic-item-rules-eshyra-0m9-21). 10 new rule records from the new magicItemRules slice (pp206-207): chapter intro, Attunement, Wearing and Wielding Items (+2 leaves), Activating an Item (+4 leaves). Generated diff exactly +10/0/0; verify:worktree green (1391 passed/19 skipped). Sentient Magic Items deliberately stays unimported (DM construction guidance, out of audited scope). Close this bead when the PR merges.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-10T01:29:27Z",
+  "started_at": "2026-06-10T01:14:01Z",
+  "closed_at": "2026-06-10T01:29:27Z",
+  "close_reason": "Merged to main as 2f2a447 (PR #188): 10 Magic Items chapter-intro usage rules (chapter intro, Attunement, Wearing and Wielding Items + leaves, Activating an Item + leaves) via new magicItemRules slice. Rule coverage 190->200.",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.21",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:44Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

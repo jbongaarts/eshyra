@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-54di",
+  "title": "Fix SRD recharge range mechanics projection",
+  "description": "Combined vk23 audit follow-up.\n\nThe generated mechanics projection for creature recharge abilities appears to parse ranges like \"Recharge 5–6\" and \"Recharge 4–6\" incorrectly by setting maximum equal to the lower bound.\n\nExamples observed in the vk23 audit bundle:\n- creature:adult-red-dragon — Fire Breath (Recharge 5–6) projected as { roll: \"d6\", minimum: 5, maximum: 5 }\n- creature:ancient-red-dragon — Fire Breath (Recharge 5–6) projected as { roll: \"d6\", minimum: 5, maximum: 5 }\n- creature:air-elemental — Whirlwind (Recharge 4–6) projected as { roll: \"d6\", minimum: 4, maximum: 4 }\n- creature:blink-dog — Teleport (Recharge 4–6) projected as { roll: \"d6\", minimum: 4, maximum: 4 }\n- creature:water-elemental — Whelm (Recharge 4–6) projected as { roll: \"d6\", minimum: 4, maximum: 4 }\n\nThis is not a source-coverage failure, but it is a deterministic gameplay bug: combat automation would under-trigger recharge abilities.\n\nAcceptance criteria:\n- Parse \"Recharge N–6\" as minimum N and maximum 6, preserving the correct d6 recharge threshold.\n- Add regression coverage for at least Recharge 5–6 and Recharge 4–6 examples.\n- Verify affected generated creature records regenerate with the correct recharge range.\n- Ensure verify:dnd5e-srd-pack remains byte-clean after regeneration.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-30T22:57:02Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-30T23:18:04Z",
+  "started_at": "2026-06-30T23:13:05Z",
+  "closed_at": "2026-06-30T23:18:04Z",
+  "close_reason": "Fixed en-dash recharge range parsing; regenerated pack; regression coverage added",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-54di",
+      "depends_on_id": "eshyra-ajpc",
+      "type": "parent-child",
+      "created_at": "2026-06-30T18:06:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

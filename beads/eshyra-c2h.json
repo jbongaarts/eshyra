@@ -1,0 +1,51 @@
+{
+  "_type": "issue",
+  "id": "eshyra-c2h",
+  "title": "roll tool accepts an empty reason string",
+  "description": "Completeness review finding. packages/core/src/orchestrator/tools.ts rollTool only checks that reason is a string, so an empty reason is accepted, unlike mark_scene which rejects an empty title. The reason feeds the trace and audit trail. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "rollTool rejects an empty reason; a test covers it.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T05:57:30Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:20Z",
+  "started_at": "2026-05-22T21:15:47Z",
+  "closed_at": "2026-05-22T21:51:30Z",
+  "close_reason": "roll rejects empty reason strings; regression test added. Verification: npx vitest run packages/core/test/tools.test.ts passed (23 tests). Broader npm run typecheck and npx vitest run still fail on unrelated existing CLI baseline issues recorded in comments.",
+  "comments": [
+    {
+      "id": "e49a3138-0d0d-5a69-bcb1-82bc58a61381",
+      "issue_id": "eshyra-c2h",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm run test -- packages/core/test/tools.test.ts -> failed before tests during tsc --build with existing CLI errors packages/cli/src/index.ts:111 TS2554 and TS2339.",
+      "created_at": "2026-05-22T21:20:09Z"
+    },
+    {
+      "id": "ca917b2f-158c-5888-89da-d82526e434a8",
+      "issue_id": "eshyra-c2h",
+      "author": "Joseph Bongaarts",
+      "text": "Root cause/TDD RED: rollTool validates reason only with typeof string, unlike mark_scene title length validation. npx vitest run packages/core/test/tools.test.ts -> failed as expected: rejects an empty reason received ok=true.",
+      "created_at": "2026-05-22T21:21:01Z"
+    },
+    {
+      "id": "f1e07142-ac7f-5ec8-a6cf-e1a191ef86ba",
+      "issue_id": "eshyra-c2h",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npx vitest run packages/core/test/tools.test.ts -> passed (23 tests).",
+      "created_at": "2026-05-22T21:21:32Z"
+    },
+    {
+      "id": "6cbd67ae-326f-528b-906d-c28923d23903",
+      "issue_id": "eshyra-c2h",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: npm run typecheck -> failed on existing CLI errors packages/cli/src/index.ts:111 TS2554/TS2339. npx vitest run -> core/tools regression passed and suite had unrelated CLI failures in packages/cli/test/cli.test.ts and packages/cli/test/play.test.ts under Node 24.14.1.",
+      "created_at": "2026-05-22T21:48:33Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

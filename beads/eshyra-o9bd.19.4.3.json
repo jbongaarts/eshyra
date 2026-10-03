@@ -1,0 +1,49 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.4.3",
+  "title": "Repair known creature saves, outcomes, lifecycle, variants, and selected economies",
+  "description": "Repair known creature findings involving save branches/alternatives, rider and ongoing\ndamage, triggers/durations/recovery, variants, transformations/summoning,\nlegendary-economy data, and identified projection losses. Use independently source-derived\nstructural populations for exhaustive assertions; deterministic execution is required only\nfor positive selected operations and state-integrity owners.",
+  "acceptance_criteria": "- Known creature source/projection findings are repaired with generalized evidence over justified bounded source families.\n- Multiple saves and alternatives are represented without flattening.\n- Legendary budgets/costs are accurate wherever projected or consumed by selected capabilities.\n- Rider/ongoing effects retain source semantics for discovery/adjudication even when not deterministically executed.\n- No semantic-review matrix is proof that every creature mechanic is captured or implemented.",
+  "notes": "Bead-writing contract (plan §VI) — this bead must state: exact scope membership\n(explicit records/clauses or a deterministic query that enumerates them), root\ncause, required invariant, source evidence, pack evidence, engine boundary,\nregression predicate + committed assertions, generated outputs, no-repeat alias\nlist, and completion proof. \"Fix the examples above\" is not acceptable scope;\nclose the whole semantic class and reconcile exact membership.\nCOUNT HYGIENE: every number in this bead is a SNAPSHOT at commit 4384f25. The\ngenerated ledger/predicate is authoritative. No acceptance test may require a\nhand-copied number (e.g. 391, 399, 77, 79).\n*** PACK/ENGINE PAIRING (2026-07-25) ***\nPack projection and reference-engine implementation are CO-DESIGNED. Do not\nsplit them into two isolated efforts that meet only at the end.\n\nThis bead pairs with: engine:F2, F6, F8, F9.\n\nCoordinate decomposition and conformance scenarios with those epics under\neshyra-olc5. The reference engine is the executable VALIDATOR of this bead's\nmodeling contract, not a downstream consumer waiting for finished data: a\nrepresentation that cannot drive execution is not done, however complete it\nlooks in isolation. Expect this bead's schema and projectors to be revised\ntogether with the engine as conformance tests expose contract gaps.\n\n*** engine:F* IS A QUALIFIED PREFIX. engine:F1..F10 are the pack's\nexecutionReadiness engineHooks families — NOT the CLOSED epic eshyra-2n1t's\ndifferent F1-F10, and NOT the fable:F1..F8 audit findings.\nADR-0020 authority reconciliation applied 2026-09-10 by eshyra-o9bd.19.6.5.\nThe operative title/description/acceptance criteria supersede contradictory\npre-ADR global-closure language in older notes. Historical notes remain evidence,\nnot current authority.\n2026-09-22 CARRIED FORWARD from eshyra-icv8 (closed as superseded). Finding opus:F-25 (registry row 'half-damage-branches', docs/audits/dnd5e-srd-5.1-final/finding-registry.json, owningBead = this bead) covers creature AND hazard half-damage branches, not only creatures. Some affected branches were OMITTED by the defective projection, so they cannot be enumerated from the committed pack. Any evidence for this finding must enumerate the affected population independently from the vendored SRD source and join each branch to an exact pack path. A pack-derived population would silently exclude the omitted branches. Registry v2 (Foundation 2) holds no membership, so that enumeration belongs in this bead's evidence, not in the registry. The source-obligation mechanism to reuse, if it generalizes, is eshyra-o9bd.19.1.12 (generalize Foundation 1's source-obligation authority).\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): RESHAPED. This bead is now LANE A (importer/source-fidelity and projection repair) only. The '*** PACK/ENGINE PAIRING (2026-07-25) ***' note above is SUPERSEDED: the reference engine is not the validator of this bead's representation, and this bead does not coordinate decomposition with engine:F epics. Capability-execution acceptance items were moved to the capability lane (eshyra-o9bd.19.5 family epics / eshyra-olc5.1-.2). Order of work: source -> capture -> identity/provenance -> emitted pack; attach generalized evidence per repaired defect class and search meaningful siblings (no bulk regression program). Every finding-registry row owned here stays owned here.\nADR-0020 disposition pass 2026-09-22 (eshyra-o9bd.19 rebaseline): RESHAPED. eshyra-o9bd.19.1.12 is RETIRED (no generalized obligation mechanism will be built ahead of consumers). The half-damage evidence here enumerates its population from the vendored source text directly, extending Foundation 1 locally only if a source-anchored obligation proof is actually needed. Magic-item sibling: magic-item:bag-of-beans (see eshyra-o9bd.19.4.5 note). Verified live example: creature:adult-black-dragon Acid Breath mechanics carry saves+damage but no successful-save branch.\n2026-09-22: PR #567 https://github.com/jbongaarts/eshyra/pull/567 (eshyra-o9bd.19.4.3.1, head e18e2bc8) repairs the successful-save half-damage class (registry rows half-damage-branches and hazard-success-branches; Bag of Beans = 19.2.1 item 3). Pending merge; registry row statuses are unchanged by that PR.\n2026-09-23: PR #567 merged (25631abf). The successful-save half-damage class is repaired on main (registry rows half-damage-branches and hazard-success-branches; Bag of Beans = 19.2.1 item 3). Evidence: packages/core/test/importers/dnd5e-srd-5.1/halfDamageSuccessBranches.test.ts plus the committed census. Registry row statuses are for the re-freeze audit to update.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-25T04:22:14Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-23T04:28:58Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.4.3",
+      "depends_on_id": "eshyra-o9bd.19.4",
+      "type": "parent-child",
+      "created_at": "2026-07-24T23:22:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.3",
+      "depends_on_id": "eshyra-o9bd.19.1.2",
+      "type": "blocks",
+      "created_at": "2026-07-24T23:24:55Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.4.3",
+      "depends_on_id": "eshyra-o9bd.19.1.15",
+      "type": "blocks",
+      "created_at": "2026-07-27T22:11:17Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

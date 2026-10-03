@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.7.3",
+  "title": "Raise an existing exhaustion level atomically (rule:food, rule:water, rule:speed)",
+  "description": "Problem. SRD rule:food ('suffers one level of exhaustion' per day beyond the limit), rule:water (one level, or two levels if the character already has exhaustion) and rule:speed Forced March (one level per failed save) impose ADDITIONAL exhaustion levels. add_condition (characters) and update_combatant addCondition (combatants) are no-ops on an existing condition id (domainMutations.ts addCondition; encounterCombatants.ts), and rest.ts requires {id:'exhaustion', level:1..6}. No tool raises an existing level, so the state cannot be persisted; removing and re-adding with a model-computed level is forbidden (model arithmetic, non-atomic). Current disclosure: RULE_KNOWN_LIMITS rule:food / rule:water / rule:speed with capability gap 'graded-exhaustion-increase'.\n\nRequired capability. Operation: add N exhaustion levels (N >= 1, source-declared: 1, or 2 for rule:water when already exhausted) to a character or combatant atomically; absent -> level N; cap and level-6 consequence per condition:exhaustion (death at 6) handled by the engine, not the DM. Inputs: target identity, N. Exclusions: whether the rule's trigger occurred (DM). Long-rest reduction stays in rest.ts and must interoperate.\n\nSelection basis: the governing SRD clause requires an engine-owned step (ADR 0020 §3: arithmetic / atomic state mutation / resource accounting / lifecycle), and no registered tool performs it. Under F-09 design amendment A5 (docs/design/rule-record-runtime-statements.md, PR #596) the rule's known limit only DISCLOSES this gap; it does not satisfy or retire the obligation. This bead blocks eshyra-o9bd.19.3.4 (owning rules work for opus:F-09 / sol:CAP-001) until the capability lands or accepted authority explicitly changes the requirement. Do not close it because PR #596 recorded the gap. Enters this engine family by explicit positive selection (the family's out-of-backlog entry clause).",
+  "acceptance_criteria": "- Deterministic level increase for characters and encounter combatants, atomic, with level-6 death handled by the engine.\n- Tests: absent->N, k->k+N, cap/death at 6, long-rest reduction interop, combatant parity.\n- The three known limits rewritten or retired under R0 and their gap entries removed from ENGINE_CAPABILITY_GAPS; add_condition description updated.\n- eshyra-o9bd.19.3.4 dependency resolves only when this lands.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T01:46:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-02T03:41:56Z",
+  "started_at": "2026-10-02T03:41:56Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.7.3",
+      "depends_on_id": "eshyra-o9bd.19.5.7.3.1",
+      "type": "blocks",
+      "created_at": "2026-10-01T23:29:52Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.7.3",
+      "depends_on_id": "eshyra-o9bd.19.5.7",
+      "type": "parent-child",
+      "created_at": "2026-10-01T20:46:40Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,43 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.5.7.6",
+  "title": "Record a nonlethal melee knockout atomically for characters (rule:knocking-a-creature-out)",
+  "description": "Problem. SRD rule:knocking-a-creature-out: when an attacker reduces a creature to 0 HP with a melee attack it can choose, the instant the damage is dealt, to knock the creature out; 'the creature falls unconscious and is stable.' For a character, hpLifecycle.ts applyDamage turns damage beyond 0 that equals or exceeds the HP maximum into instant death (adjust_hp has no nonlethal option; healing the dead is refused), so the source-selected outcome is unrecordable in that case. (Below the overflow threshold adjust_hp -> dying, then stabilize_character, reaches the source state. Encounter combatants already accept status 'unconscious'.) Current disclosure: RULE_KNOWN_LIMITS rule:knocking-a-creature-out with capability gap 'nonlethal-knockout'.\n\nRequired capability. Operation: a nonlethal-knockout option on character damage application that, in one transaction, sets HP to 0, unconscious and stable (death-save counters reset, stable recovery deadline armed) without dying or the overflow instant-death branch. Inputs: character, damage amount, knockout flag. Exclusions: whether the attack was melee and whether the attacker chose to knock out (DM).\n\nSelection basis: the governing SRD clause requires an engine-owned step (ADR 0020 §3: arithmetic / atomic state mutation / resource accounting / lifecycle), and no registered tool performs it. Under F-09 design amendment A5 (docs/design/rule-record-runtime-statements.md, PR #596) the rule's known limit only DISCLOSES this gap; it does not satisfy or retire the obligation. This bead blocks eshyra-o9bd.19.3.4 (owning rules work for opus:F-09 / sol:CAP-001) until the capability lands or accepted authority explicitly changes the requirement. Do not close it because PR #596 recorded the gap. Enters this engine family by explicit positive selection (the family's out-of-backlog entry clause).",
+  "acceptance_criteria": "- Atomic nonlethal knockout path for characters, including when overflow would otherwise kill.\n- Tests: overflow case, non-overflow case, concentration broken by unconsciousness, stable recovery armed.\n- rule:knocking-a-creature-out known limit rewritten or retired under R0; gap entry removed.\n- eshyra-o9bd.19.3.4 dependency resolves only when this lands.",
+  "status": "in_progress",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-02T01:46:47Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-02T03:41:54Z",
+  "started_at": "2026-10-02T03:41:54Z",
+  "labels": [
+    "engine-capability",
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.5.7.6",
+      "depends_on_id": "eshyra-o9bd.19.5.7",
+      "type": "parent-child",
+      "created_at": "2026-10-01T20:46:46Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-o9bd.19.5.7.6",
+      "depends_on_id": "eshyra-o9bd.19.5.7.6.1",
+      "type": "blocks",
+      "created_at": "2026-10-01T23:04:16Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 0
+}

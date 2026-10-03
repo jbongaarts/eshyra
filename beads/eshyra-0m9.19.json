@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.19",
+  "title": "Represent SRD services, expenses, food, lodging, and spellcasting service tables",
+  "description": "Problem\r\nThe SRD contains mechanically relevant lifestyle, service, and expense tables that are not adequately represented in the imported pack.\r\n\r\nEvidence from the 2026-06-07 audit\r\nUnrepresented source content includes pages 73-74:\r\n- Food, Drink, and Lodging\r\n- Services\r\n- Spellcasting Services\r\n- Related cost tables\r\n\r\nRequired behavior\r\n- Import these sections as rule, table, equipment, service, or another explicitly chosen record type.\r\n- Costs, units, and service names should be preserved in structured form where feasible.\r\n- Spellcasting services should be retrievable as rules data rather than lost prose.\r\n\r\nIMPORTER SAFETY\r\nImporter safety: follow docs/importer-fix-protocol.md. Do not weaken regression tests or audit expectations to match current generated output; fix parser/extractor behavior or document source-backed evidence that the expectation was wrong.",
+  "notes": "Scope note from eshyra-0m9.23 (PR #185): the source tables Standard Exchange Rates (p62), Trade Goods (p72), Lifestyle Expenses (p72-73), Food/Drink/Lodging (p73-74), and Services (p74) are now registered in SRD_5_1_SOURCE_TABLE_GAPS (packages/core/scripts/importers/dnd5e-srd-5.1/sourceCoverage.ts) and surface as missing-coverage audit findings. Exchange Rates / Trade Goods / Lifestyle Expenses are clean 2/6-column tables. Food/Drink/Lodging and Services are NESTED grouped tables (group-header rows like 'Ale'/'Coach cab' with indented sub-item rows) needing a column/sub-row representation decision before a faithful flat-row import. Implement these as table records (or structured fields) here.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-07T23:24:38Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-09T04:47:06Z",
+  "started_at": "2026-06-09T04:16:51Z",
+  "closed_at": "2026-06-09T04:47:06Z",
+  "close_reason": "Completed in PR #186",
+  "labels": [
+    "ingestion",
+    "rules",
+    "rules-pack"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.19",
+      "depends_on_id": "eshyra-0m9",
+      "type": "parent-child",
+      "created_at": "2026-06-07T18:24:38Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

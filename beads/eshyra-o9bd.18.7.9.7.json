@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.9.7",
+  "title": "S3a — Project trigger-based spell semantics",
+  "description": "Project Alarm and Magic Mouth, plus the Contingency portions assigned by the reviewed design, using existing triggeredEffect and spellStoring semantics where they cover the source. Do not invent a parallel generic trigger system. Cover exact S3 membership removal, source gates, schema/pack assertions, regeneration, freeze, readiness, and audit verification.",
+  "notes": "Complete exact registry/membership removals and count reconciliation; verify readiness-report delta; regenerate through the importer; add committed-pack assertions; update thaw evidence and freeze hash as appropriate; run verify:dnd5e-srd-pack, verify:dnd5e-srd-freeze, relevant focused tests, full required worktree/check/typecheck tests, and audit-bundle verification where required.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-11T04:09:34Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-12T04:41:32Z",
+  "started_at": "2026-07-12T04:28:41Z",
+  "closed_at": "2026-07-12T04:41:32Z",
+  "close_reason": "Implemented and verified S3a Alarm, Magic Mouth, and Contingency trigger/lifecycle projections; S3b/S3c remain pending.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.9.7",
+      "depends_on_id": "eshyra-o9bd.18.7.9.6",
+      "type": "parent-child",
+      "created_at": "2026-07-10T23:10:33Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

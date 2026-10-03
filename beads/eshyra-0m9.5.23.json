@@ -1,0 +1,71 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.23",
+  "title": "Decide SRD class callout box import policy",
+  "description": "Problem\r\n\r\nPR #162 fixed a real importer bug: gray class/subclass callout boxes such as \"Your Spellbook\", \"Your Pact Boon\", \"Breaking Your Oath\", and druid sidebars were being absorbed into the preceding feature or subclass records. The fix correctly stops that contamination.\r\n\r\nHowever, those callout boxes are now not represented anywhere in the committed SRD pack. That may be correct if class callout boxes are intentionally out of scope, but some contain useful procedural or rules-adjacent text, especially \"Your Spellbook\".\r\n\r\nGoal\r\n\r\nMake an explicit importer policy decision for SRD class callout boxes and implement or document it.\r\n\r\nOptions\r\n\r\n1. Import relevant class callout boxes as standalone rule/reference records.\r\n2. Import them as another existing record kind if a better fit already exists.\r\n3. Document that SRD class callout boxes are intentionally omitted, with rationale.\r\n\r\nRelevant context\r\n\r\n- Follow-up from PR #162.\r\n- Affected examples include:\r\n  - Wizard: \"Your Spellbook\"\r\n  - Warlock: \"Your Pact Boon\"\r\n  - Paladin: \"Breaking Your Oath\"\r\n  - Druid Circle of the Land / Natural Recovery sidebars\r\n- PR #162 should remain correct: callout boxes must not bleed into feature/subclass bodies.\r\n\r\nLikely files\r\n\r\n- packages/core/scripts/importers/dnd5e-srd-5.1/parseFeatures.ts\r\n- packages/core/scripts/importers/dnd5e-srd-5.1/parseSubclasses.ts\r\n- packages/core/scripts/importers/dnd5e-srd-5.1/parseRules.ts or a new targeted parser if needed\r\n- packages/core/test/srdGeneratedPack.test.ts\r\n- packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json\r\n- packages/core/scripts/importers/dnd5e-srd-5.1/README.md\r\n- docs/audits/srd-5.1-rules-section-coverage.md, if policy documentation belongs there\r\n\r\nAcceptance criteria\r\n\r\n- The importer has an explicit policy for SRD class callout boxes.\r\n- If callout boxes are imported:\r\n  - they are emitted as deterministic, lookupable records with provenance;\r\n  - tests assert representative callouts are present;\r\n  - tests preserve the PR #162 guarantee that callouts do not contaminate feature/subclass records.\r\n- If callout boxes are omitted:\r\n  - the omission is documented with rationale;\r\n  - tests continue to assert they do not contaminate feature/subclass records.\r\n- The canonical generated SRD pack is updated only if the chosen policy imports new records.\r\n- npm run verify:dnd5e-srd-pack passes.\r\n- npm run verify:worktree passes before commit/push.\r\n\r\n",
+  "design": "Architecture:\nImport every structurally detected gray callout box in the SRD 5.1 Classes slice as a standalone kind=rule record. A focused parser tracks the current base class, recognizes only the reviewed h~10.8 callout heading tier on genuine multi-tier extraction, bounds each body at the next heading-tier line, and emits parent-qualified RuleExtraction keys. The importer appends these records to its existing rule families and validates the combined exact key set. Feature and subclass parsers retain the PR #162 boundaries unchanged.\n\nFile map:\n- Create `packages/core/scripts/importers/dnd5e-srd-5.1/parseClassCallouts.ts`: structural Classes-callout parser returning RuleExtraction[].\n- Create `packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts`: unit coverage for detection, class-qualified keys, body boundaries, ordering, and uniform-font rejection.\n- Modify `packages/core/scripts/importers/dnd5e-srd-5.1/index.ts`: integrate class callouts after the Classes slice is available, assemble/validate the combined rule set, and add the five exact keys.\n- Modify `packages/core/test/srdGeneratedPack.test.ts`: update rule count and assert all five standalone records, source pages, representative bodies, and continued feature/subclass non-contamination.\n- Modify `packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json`: deterministic regenerated canonical output with five added rules.\n- Modify `packages/core/scripts/importers/dnd5e-srd-5.1/README.md`: document the all-callouts policy, parser ownership, count, and fail-closed baseline.\n- Modify `docs/audits/srd-5.1-rules-section-coverage.md`: record Classes-callout coverage so the audit no longer implies they are omitted.\n\nTech stack and constraints:\nTypeScript 6, Vitest, existing PageText/RuleExtraction types, existing emit rule path, Biome formatting, and exact importer coverage baselines. Reuse `isCalloutBoxHeading`, `hasHeadingTiers`, and `PARENT_CLASS_NAMES` rather than introducing a second font-band definition. Do not add a record kind, schema field, page/title whitelist, or change PR #162 feature/subclass behavior.",
+  "acceptance_criteria": "All five class callouts are emitted as lookupable rule records with the exact parent-qualified keys documented in the design and SRD page provenance. Representative text from each box is present in its own record. Existing feature and subclass records remain bounded before callout prose. The exact rule-key baseline includes the five records and rejects missing or unexpected class callouts. The canonical pack rule count rises from 166 to 171 with no unrelated record changes. Importer documentation states the all-callouts policy and rationale. npm run verify:dnd5e-srd-pack passes. npm run verify:worktree passes before commit and push.",
+  "notes": "Exploration: PR #162 identifies five Classes-chapter callouts by a stable h~10.8 heading tier and correctly bounds them out of feature/subclass bodies. Existing parseRules already emits same-tier callouts in rules chapters as kind=rule with deterministic keys and page provenance. Classes callouts differ in content: Your Spellbook is concrete mechanical procedure; Breaking Your Oath is GM-facing class procedure; Your Pact Boon is patron-specific illustrative flavor; Sacred Plants and Wood and Druids and the Gods are setting/lore guidance. No standalone reference kind exists, so imported callouts would most naturally be parent-qualified rule records from a targeted Classes parser. Unresolved policy: import every structurally detected class callout for completeness, only rules/procedure callouts, or omit all with documented rationale.\nUser policy decision: import all five structurally detected SRD Classes-chapter callout boxes, including mechanical/procedural and lore/illustrative boxes, rather than filtering by semantic content.\nDesign approved by user: focused structural Classes-callout parser; all five boxes emit as parent-qualified rule records; no new schema kind; preserve PR #162 boundaries.\nImplementation planning approved. Converted this scoped task to a nested epic so parser, integration, and documentation work can be tracked as child beads.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "epic",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T22:51:32Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-06T23:50:24Z",
+  "closed_at": "2026-06-07T15:28:17Z",
+  "close_reason": "Imported all five SRD Classes gray-box callouts as deterministic parent-qualified rule records with provenance; preserved feature/subclass boundaries; regenerated the canonical pack to 171 rules; documented policy and exact fail-closed coverage. Verification: npm run verify:worktree, npm run verify:dnd5e-srd-pack, and git diff --check origin/main..HEAD all passed on 2026-06-07.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.23",
+      "depends_on_id": "eshyra-0m9.5",
+      "type": "parent-child",
+      "created_at": "2026-06-06T17:51:31Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "0c030425-5280-5971-a4d9-4a1d2932b243",
+      "issue_id": "eshyra-0m9.5.23",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: npm install completed with no lockfile changes; npm run verify:dnd5e-srd-pack passed with zero diff; npx vitest run packages/core/test/srdGeneratedPack.test.ts passed (75/75).",
+      "created_at": "2026-06-06T23:51:46Z"
+    },
+    {
+      "id": "761f6091-7056-55f0-ad9d-66ea83048494",
+      "issue_id": "eshyra-0m9.5.23",
+      "author": "Joseph Bongaarts",
+      "text": "Rebased final branch onto current origin/main bbf843d (PR #164), removing apparent unrelated licensing-file diff. Post-rebase verification at c2262a7: npm run verify:worktree passed (1275 tests passed, 3 skipped); verify:dnd5e-srd-pack exact match with 171 rules and zero diff; git diff --check clean; feature branch force-pushed with lease and is up to date with origin.",
+      "created_at": "2026-06-07T05:44:30Z"
+    },
+    {
+      "id": "4be2cd9d-1751-5975-a66d-4a2c562d047b",
+      "issue_id": "eshyra-0m9.5.23",
+      "author": "Joseph Bongaarts",
+      "text": "Whole-epic review bbf843d..c2262a7: Assessment Ready for PR; Critical/Important none. Accepted final hardening: align class-callout apostrophe slugging with established rule slugging; correct the remaining combined-baseline header; add negative RuleCoverageError/no-output tests for missing and unexpected exact keys. The negative tests directly prove the epic acceptance criterion, so these will be completed before PR rather than deferred.",
+      "created_at": "2026-06-07T05:50:38Z"
+    },
+    {
+      "id": "eba85a7b-326a-5c64-bd83-73e29f853744",
+      "issue_id": "eshyra-0m9.5.23",
+      "author": "Joseph Bongaarts",
+      "text": "Final whole-epic review at 3b8583a (performed locally after the delegated reviewer hit its usage limit): Critical findings: none. Important findings: none. Blocking minor findings: none. The final diff is limited to the eight intended importer, tests, generated pack, and documentation files; shared heading guards and PR #162 feature/subclass boundaries are preserved; five parent-qualified callout rules and exact-key failure coverage are present. Fresh verification on 2026-06-07: npm run verify:worktree -> exit 0 (Biome/hidden-Unicode/typecheck clean; Vitest 93 passed, 2 skipped files; 1278 passed, 3 skipped tests). npm run verify:dnd5e-srd-pack -> exit 0 (171 rules; 0 manifest changes; 0 records added/removed/changed versus regenerated output). git diff --check origin/main..HEAD -> exit 0. Beads hygiene: no orphaned or stale issues; only this completed epic remains in progress. bd preflight's printed Go checklist is not applicable to this TypeScript repository, so the repository-defined verification commands above were used.",
+      "created_at": "2026-06-07T15:28:07Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

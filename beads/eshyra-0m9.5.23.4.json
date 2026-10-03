@@ -1,0 +1,74 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.23.4",
+  "title": "Task 4: Harden final class-callout review findings",
+  "description": "Objective:\nAddress the final whole-epic review findings before PR by aligning class-callout key normalization, correcting the combined rule-baseline header, and directly proving exact rule-key coverage fails closed for missing and unexpected keys.\n\nFiles:\n- Modify: `packages/core/scripts/importers/dnd5e-srd-5.1/parseClassCallouts.ts`\n- Modify: `packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts`\n- Modify: `packages/core/scripts/importers/dnd5e-srd-5.1/index.ts`\n- Modify: `packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts`\n\nSteps:\n1. Add a failing parser test with a synthetic callout title containing a straight or curly apostrophe and assert its key slug matches established rule normalization (apostrophe removed, not replaced by a hyphen), e.g. `Wizard's Notes` -> `wizard-wizards-notes`.\n2. Run the focused parser test. Expected RED: current local slug helper emits an extra hyphen (`wizard-wizard-s-notes`).\n3. Change only the local slug normalization to remove straight/curly apostrophes before replacing other non-alphanumerics, matching `parseRules` and `ruleCoverageKey`.\n4. Run the parser test. Expected GREEN.\n5. Import `RuleCoverageError` in pipeline.test.ts and add two end-to-end tests over the existing full valid fixture: one passes an expected key set missing a parsed rule, the other includes an unexpected key. Both must reject with `RuleCoverageError`, identify missing/unexpected keys in the message, and prove `outDir/records.json` was not written.\n6. Run the two new pipeline tests. If they pass immediately, record that they are regression-hardening tests for an already implemented fail-closed path; verify their assertions exercise both diagnostic branches and no-output behavior.\n7. Correct the stale JSDoc header above `EXPECTED_SRD_5_1_RULE_KEYS` from “core-rules baseline” to “combined implemented rule-key baseline,” retaining the detailed core-rule history below.\n8. Run focused parser + pipeline + generated-pack tests, targeted Biome, `npm run verify:dnd5e-srd-pack`, and `npm run verify:worktree`.\n9. Record test evidence and review-resolution notes on this bead.\n10. Commit all four files with `test(srd): harden class callout rule coverage`, push, and leave the bead open for independent review.",
+  "design": "Keep production behavior unchanged except future-proof apostrophe normalization. Reuse the successful fixture's exact parsed rule-key set by extracting a local constant if that improves clarity; do not broaden importer API. The missing-key case should omit one actual parsed fixture key while the unexpected-key case should include all actual keys plus a nonexistent `rule:` key, so both RuleCoverageError diagnostic branches are pinned. No output file may exist after either rejection.",
+  "acceptance_criteria": "Apostrophe slugging matches established rule keys; combined baseline header is accurate; missing and unexpected exact rule-key sets each throw RuleCoverageError and write no records.json; focused tests, Biome, pack reproducibility, and verify:worktree pass; commit pushed.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "estimated_minutes": 30,
+  "created_at": "2026-06-07T05:51:36Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:13Z",
+  "started_at": "2026-06-07T05:51:38Z",
+  "closed_at": "2026-06-07T06:07:47Z",
+  "close_reason": "Resolved final review findings with apostrophe normalization and exact rule-coverage rejection tests; spec/quality reviews and full verification passed.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "review",
+    "rules",
+    "rules-pack",
+    "srd",
+    "tdd",
+    "verification"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.23.4",
+      "depends_on_id": "eshyra-0m9.5.23",
+      "type": "parent-child",
+      "created_at": "2026-06-07T00:51:36Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "b505422f-ad03-514e-adc3-9e537822684e",
+      "issue_id": "eshyra-0m9.5.23.4",
+      "author": "Joseph Bongaarts",
+      "text": "TDD RED: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts -t \"removes apostrophes\" exited 1 as expected; received keySlug wizard-wizard-s-notes instead of wizard-wizards-notes.\r",
+      "created_at": "2026-06-07T05:53:33Z"
+    },
+    {
+      "id": "76afea25-a8e8-5a68-858a-75fe2e2ab154",
+      "issue_id": "eshyra-0m9.5.23.4",
+      "author": "Joseph Bongaarts",
+      "text": "TDD GREEN: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseClassCallouts.test.ts -t \"removes apostrophes\" exited 0 after the minimal slug fix; 1 passed, 5 skipped. Rule-coverage hardening: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -t \"expected rule-key set\" passed immediately (2 passed, 37 skipped), confirming existing fail-closed behavior. The omitted actual key exercises \"unexpected rule(s): rule:resting\"; the added nonexistent key exercises \"missing expected rule(s): rule:nonexistent\"; both assert records.json is absent.\r",
+      "created_at": "2026-06-07T05:55:40Z"
+    },
+    {
+      "id": "8fb64b62-fe7d-5d86-b052-d55635fd96a5",
+      "issue_id": "eshyra-0m9.5.23.4",
+      "author": "Joseph Bongaarts",
+      "text": "Verification evidence: targeted Biome checked 4 scoped files with no fixes; focused Vitest (parseClassCallouts.test.ts, pipeline.test.ts, srdGeneratedPack.test.ts) passed 125/125; npm run verify:dnd5e-srd-pack exited 0 with 171 rules and 0 manifest/record differences; npm run verify:worktree exited 0 (format/check/hidden-Unicode/typecheck all passed; 93 test files passed, 2 skipped; 1278 tests passed, 3 skipped). Scope review: exactly the four bead-listed files changed; git diff --check passed; no generated pack or policy docs changed. Self-review found no outstanding correctness or scope concerns.\r",
+      "created_at": "2026-06-07T05:57:45Z"
+    },
+    {
+      "id": "a59ee2c5-eedd-55ac-95e3-279cd00ba1e7",
+      "issue_id": "eshyra-0m9.5.23.4",
+      "author": "Joseph Bongaarts",
+      "text": "Quality review c2262a7..3b8583a: Assessment Ready for PR; Critical/Important none. Minor: curly apostrophe is not separately parameterized, but production uses the established explicit [’'] removal and the task required a straight-or-curly regression, so no blocking follow-up. Fresh close verification: npm run verify:worktree passed (1278 tests passed, 3 skipped); verify:dnd5e-srd-pack exact match with 171 rules and zero diff; git diff --check clean; branch clean and synchronized.",
+      "created_at": "2026-06-07T06:07:44Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 4
+}

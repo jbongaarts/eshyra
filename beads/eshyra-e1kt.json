@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-e1kt",
+  "title": "Clear three pre-existing high-severity polynomial-ReDoS CodeQL alerts",
+  "description": "Discovered while clearing the CodeQL alert on PR #518 (eshyra-o9bd.19.10).\n\nThree `js/polynomial-redos` alerts, all high security-severity, are open on\nmain and predate that PR (it touches none of these files):\n\n- packages/core/src/state/usageCounters.ts:258\n- packages/core/src/state/usageCounters.ts:353\n- packages/core/src/state/actionEconomy.ts:440\n\nThe CodeQL PR check passes because it gates on alerts a PR introduces, so\nthese do not block any current branch and were not visible as a failure.\n\nThe W8 fix is the worked example of the repair shape: an unanchored `\\d+` (or\nsimilar unbounded repetition) scanned over text that is not tightly\ncontrolled costs quadratic work across start positions when the rest of the\npattern never matches. Bounding both repetitions to the real domain\n(`\\d{1,4}`, a single-character separator class) makes the match linear and\nkept the behavior identical.\n\nSCOPE\nAssess each of the three sites against its actual input source, bound or\nrestructure the expression, and add an adversarial long-input regression per\nsite. If a site's input is genuinely trusted and fixed-size, record that\nfinding and dismiss the alert with the reason rather than changing code.\n\nNON-GOALS\nNo change to usage-counter or action-economy semantics; this is a\nrecognizer-shape repair, not a behavior change.\n",
+  "notes": "CORRECTION to the description's stated cause (supervisor forensics, 2026-09-02).\n\nThe description says the alerts 'were not visible as a failure' because the PR\ncheck gates on alerts a PR introduces. That is wrong as history.\n\nWhat actually happened:\n- All three alerts were created 2026-07-11T15:43:04Z by the FIRST CodeQL\n  analysis of refs/pull/427/head @ c4bb8ec (PR #427, eshyra-2n1t.7, the commit\n  that added normalizeAbilityName / normalizeLegendaryName / the trailing-paren\n  strip). results_count=3, on the PR, before any main scan saw them.\n- They were re-reported on every later PR #427 head (e9deea17, 1c32a05c), each\n  results=3. The 'CodeQL' check on PR #427 is FAILURE to this day.\n- PR #427 was merged anyway at 2026-07-11T16:32:06Z (merge commit 9bed1613).\n  Every refs/heads/main analysis from 9bed1613 onward reports results=3.\n- Nothing blocked the merge because the repo's 'main' ruleset (id 16788697)\n  carries only deletion, non_fast_forward, and pull_request rules\n  (allowed_merge_methods=[merge], required_approving_review_count=0). There is\n  NO required_status_checks rule and no bypass actors, so a red CodeQL check —\n  or a red build-test — is advisory only. PR #427 is the only merged PR in the\n  #427-#430 window with a red CodeQL check.\n\nThe description IS right about why they have stayed invisible since: CodeQL\ndefault setup (state=configured, query_suite=default, threat_model=remote,\nweekly schedule, no codeql.yml in-repo) runs diff-informed analysis on PR\nheads, so a PR touching none of these files reports results=0 while every main\nscan reports results=3. PR #518's scans are results=0 for exactly that reason.\n\nFollow-up worth deciding separately (NOT in this bead's scope): whether to add\na required_status_checks rule to the main ruleset. That is a repo-admin\nconfiguration change, not a code fix, and needs the user's decision.\nPR opened: https://github.com/jbongaarts/eshyra/pull/523 (branch eshyra-e1kt, head c2f4e07). Child eshyra-e1kt.1 closed; its commit 2cd2847 merged into the parent branch. Independent verify:worktree on the merged content: 273 files passed / 4 skipped, 4825 tests passed / 19 skipped. Bead stays in_progress until PR #523 merges (AGENTS.md § Session Completion). Child worktree .worktrees/eshyra-e1kt.1 removed after integration.\nAttempt 2 (eshyra-e1kt.2) integrated: commit c9396ed merged as b0ff8dd, pushed to PR #523. Clears alert #20 (usageCounters.ts:262, /^-+|-+$/g) which surfaced on the PR once the \\([^)]*\\) sink was removed from the same tainted flow. Independent verify:worktree on the merged content: 273 files passed / 4 skipped, 4827 tests passed / 19 skipped. PR body corrected — the original 'Deliberately unchanged' section claimed line 262 stays, which is no longer true. Awaiting the PR's CodeQL re-run.\nBLOCKING review finding on PR #523 @ b0ff8ddf: stripTrailingParenthetical is not equivalent to /\\s*\\([^)]*\\)\\s*$/. It picks the opening paren with lastIndexOf, but the regex is leftmost-match and [^)]* admits '(', so an EARLIER '(' can start the match. Supervisor reproduced independently: 5 of 22 differential inputs mismatch — '(()' (regex '' vs helper '('), 'name ((x)', 'a ((b)', 'x (( )', '  ((a)  '. Root cause is a false lemma in the attempt-1 spec ('leftmost-match forces the ( to be the last ( in the string'), repeated in the helper doc comment and the PR body; the 'nested (a (b) c)' fixture missed it because an interior ')' makes both candidate opens fail, so the two implementations agreed by accident. Correct rule: the open paren is the LEFTMOST '(' after the last ')' strictly before end-1, i.e. indexOf('(', lastClose+1). Not material to real inputs (no SRD/pack ability name carries an unmatched interior '('), but the bead requires exact equivalence and the differential test is the evidence artifact. Repair dispatched as eshyra-e1kt.3.\nAttempt 3 (eshyra-e1kt.3) integrated: commit ae98e4e merged as eced03a, pushed to PR #523 (new head eced03a). stripTrailingParenthetical now selects indexOf('(', lastClose+1). Supervisor evidence beyond the fixture list: exhaustive differential over every string of length <=7 from the alphabet '(' ')' 'a' ' ' — 21845 inputs, 0 mismatches for BOTH stripTrailingParenthetical and replaceParentheticals against their original regexes. Independent verify:worktree on merged content: 273 files passed / 4 skipped, 4827 tests passed / 19 skipped. PR body corrected: the false 'last ( in the string' lemma is replaced with the actual rule and the defect is recorded there.\nPR #523 MERGED 2026-09-03T00:51:21Z as merge commit dded2d4 on main. All four reviewed commits reachable from main (2cd2847, c9396ed, ae98e4e, eced03a) — verified with git merge-base --is-ancestor, per the merge-commit ancestry policy. Branch eshyra-e1kt deleted locally and on origin; worktree removed; dispatch .prompt/.pgid cleared (logs kept as evidence). Alerts #15/#16/#17/#20 all cleared; final CodeQL on eced03a reported results=0.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-09-02T04:56:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-03T00:51:55Z",
+  "started_at": "2026-09-02T23:45:24Z",
+  "closed_at": "2026-09-03T00:51:55Z",
+  "close_reason": "PR #523 merged as dded2d4; four polynomial-ReDoS alerts cleared",
+  "labels": [
+    "architecture"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-e1kt",
+      "depends_on_id": "eshyra-e1kt.2",
+      "type": "blocks",
+      "created_at": "2026-09-02T19:00:21Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-e1kt",
+      "depends_on_id": "eshyra-e1kt.3",
+      "type": "blocks",
+      "created_at": "2026-09-02T19:39:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-e1kt",
+      "depends_on_id": "eshyra-e1kt.1",
+      "type": "blocks",
+      "created_at": "2026-09-02T18:46:29Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 3,
+  "dependent_count": 0,
+  "comment_count": 0
+}

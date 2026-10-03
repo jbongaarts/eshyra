@@ -1,0 +1,57 @@
+{
+  "_type": "issue",
+  "id": "eshyra-uuk.3",
+  "title": "Task 2: Reconstruct Madness and Objects tables",
+  "description": "Objective:\nReconstruct the three Madness effect tables and two Objects statistics tables from extracted SRD lines.\n\nFiles:\n- Modify: packages/core/scripts/importers/dnd5e-srd-5.1/parseTables.ts\n- Test: packages/core/test/importers/dnd5e-srd-5.1/parseTables.test.ts\n\nSteps:\n1. RED: Add SRD-shaped PageText fixtures and assertions for Short-Term Madness (10 rows), Long-Term Madness (12 rows), Indefinite Madness (12 rows), Object Armor Class (7 rows), and Object Hit Points (4 rows): 45 rows total. Assert exact names, columns, values, en-dash ranges, wrapped effect/flaw reflow, numeric AC cells, and source pages.\n2. Run: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseTables.test.ts\nExpected: FAIL because parseTables returns none of the five new tables.\n3. GREEN: Add narrow anchored parsers. Madness rows begin with a d100 range and accumulate following wrapped lines until the next range/heading; object rows use fixed reviewed regexes bounded by their captions. Add all five results to parseTables before its stable name sort.\n4. Re-run the focused test; expect PASS.\n5. REFACTOR: Share only helpers that reduce actual duplication, retain fail-closed row shapes, and ensure unrelated lines cannot become rows.",
+  "design": "Madness tables use columns [d100, Effect] for short/long and [d100, Flaw] for indefinite. Preserve source punctuation and normalize only whitespace introduced by line wrapping. Object Armor Class uses [Substance, AC] with numeric AC. Object Hit Points uses [Size, Fragile, Resilient], keeping examples in the Size cell and HP/dice cells verbatim.",
+  "acceptance_criteria": "- parseTables emits all five reviewed tables with exact row counts and source pages.\n- Wrapped madness text is joined in reading order without consuming Curing Madness or Objects prose.\n- Object parsers reject incomplete/nonmatching rows.\n- Focused parseTables tests pass.",
+  "notes": "Source correction during RED review: Long-Term Madness has 12 rows, making 45 total rows across the five tables.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-06T04:35:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-06T04:43:52Z",
+  "closed_at": "2026-06-06T04:50:17Z",
+  "close_reason": "Implemented five anchored, exact-row-count table reconstructors; fixture, pinned-source check, and typecheck pass.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-uuk.3",
+      "depends_on_id": "eshyra-uuk",
+      "type": "parent-child",
+      "created_at": "2026-06-05T23:35:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-uuk.3",
+      "depends_on_id": "eshyra-uuk.2",
+      "type": "blocks",
+      "created_at": "2026-06-05T23:35:28Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "9eaa4ad9-88d2-54c0-bf45-c195fee49110",
+      "issue_id": "eshyra-uuk.3",
+      "author": "Joseph Bongaarts",
+      "text": "RED verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseTables.test.ts -> failed as expected; parseTables returned [] instead of the five reviewed tables and 45 rows.",
+      "created_at": "2026-06-06T04:46:22Z"
+    },
+    {
+      "id": "6fc11c32-7f1f-5ba3-aa93-c20be8860ee8",
+      "issue_id": "eshyra-uuk.3",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN/REFACTOR verification: parseTables focused suite passed 10/10; pinned PDF pages 201-203 produced exactly Short-Term 10, Long-Term 12, Indefinite 12, Object Armor Class 7, Object Hit Points 4; npm run typecheck passed.",
+      "created_at": "2026-06-06T04:50:11Z"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 1,
+  "comment_count": 2
+}

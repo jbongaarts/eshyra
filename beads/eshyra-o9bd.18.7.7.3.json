@@ -1,0 +1,36 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.7.7.3",
+  "title": "Inventory remaining magic item mechanics and create category slices",
+  "description": "Scope:\n- Ensure the broad magic-item finding is fully decomposed.\n- Categories may include consumables, transformations, deck/flask/apparatus tables, command-word activations, curse/drawback effects, movement/flying/swimming, sensory/detection effects, and spell storage/casting.\n\nAcceptance criteria:\n- Produce an inventory mapping every magic item with gameplay mechanics to modeled, child-bead-owned, unsupported-with-reason, or non-mechanical.\n- Create additional child beads as needed for unresolved categories.\n- Update readiness reporting to avoid counting known unmodeled magic item mechanics as green.",
+  "notes": "INVENTORY COMPLETE (2026-07-06, Fable final session; PR #407, branch eshyra-o9bd-18-7-7-3-magic-item-inventory). Artifact: docs/audits/dnd5e-srd-5.1-final/2026-07-06-o9bd-18-7-7-3-magic-item-mechanics-inventory.md. All 240 magic-item records (mechanically enumerated; 210/216 estimates obsolete) decomposed to clause level with exact owners; key parity + tag census mechanically verified. Census: 75 existing-owned (all clauses C1=18.7.7.1 / C2=18.7.7.2 / structured) / 165 residual / 1 design-blocked clause (orb-of-dragonkind artifact Random Properties tables absent from SRD 5.1 — verified source gap, GM-supplied) / 0 non-mechanical items / 0 modeled today (magic-item kind has no mechanics field). Residual families (row counts): M1 consumables 31, M2 passive stat modifiers 23, M3 movement/senses/env 38, M4 summoning 17, M5 activated forms/apparatus 50, M6 containment/portals 10, M7 curses/oaths 12, M8 random procedures 18, M9 spell storage/slot interop 7, M10 roll manipulation 7, M11 inter-item 9. Children created: .4 (M1), .5 (M2+M3), .6 (M4), .7 (M5), .8 (M6+M11), .9 (M7), .10 (M8), .11 (M9+M10). Recommended order: .5 -> .4 -> .1/.2 rollout -> .10 -> .6 -> .8 -> .11 -> .7. Variant structuring gaps flagged: ioun-stone, crystal-ball, ring-of-elemental-command (importer work). Shared architecture: PR #408 state-contract design. Close this bead after #407 merges; residual work lives in the children.\n2026-07-08 ADR 0017 adjustment: Treat the completed magic-item mechanics inventory as a source-grounded curated clause registry input. Future children should preserve its exact-membership/parity checks, stable clause ownership, and split-owner rule; they should not replace it with ad hoc generated-output edits or duplicate readiness registries unless a distinct failure class requires one.\nImplemented the source-grounded family projector, strict schema validation, clause registry bindings, generated pack projection, and representative/exhaustive tests. The exact 240-row owner-tag conservation census passes; all magic items now carry reviewed executable mechanics.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:27:26Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-18T20:23:24Z",
+  "started_at": "2026-07-18T16:34:29Z",
+  "closed_at": "2026-07-18T20:23:24Z",
+  "close_reason": "Source-faithful executable magic-item family complete; canonical regeneration, conservation gates, deep audit, and full worktree verification pass.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.7.7.3",
+      "depends_on_id": "eshyra-o9bd.18.7.7",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:27:25Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

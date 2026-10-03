@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d4d.1",
+  "title": "Party roster read API",
+  "description": "Add a read API that lists every PC in the party instead of only the active character. readStateSnapshot currently reads a single character and AssembledContext.state.character is singular. Add listParty(db) (and a party-aware snapshot) returning compact roster entries (id, name, class, level, HP, conditions, active flag) for role='pc', with companions/familiars (non-pc role) available under a separate roster grouping. Foundation: schema v9 already multi-row; no migration. Acceptance: listParty returns all PCs ordered deterministically; active PC flagged; companions distinguished by role; unit tests cover solo (one-member), multi-PC, and companion cases.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T17:53:41Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-05-28T17:54:15Z",
+  "closed_at": "2026-05-28T17:57:15Z",
+  "close_reason": "listParty read API added with 4 unit tests; npm run check/typecheck/test all green (743 passed). Committed 69b6fbe.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d4d.1",
+      "depends_on_id": "eshyra-d4d",
+      "type": "parent-child",
+      "created_at": "2026-05-28T12:53:41Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 2,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-bn0",
+  "title": "Import Appendix MM-B NPC stat blocks",
+  "description": "﻿Implement D&D SRD 5.1 Appendix MM-B NPC stat-block import coverage.\r\n\r\nProblem:\r\nAppendix MM-B contains NPC stat blocks such as Bandit Captain and Berserker. These were previously omitted, but that omission is a mistake for Loreweaver gameplay because NPC stat blocks are encounter-usable stat blocks and should be queryable like other combatants.\r\n\r\nScope:\r\n- Import Appendix MM-B Nonplayer Characters from the vendored SRD 5.1 PDF.\r\n- Decide the minimal schema implementation path during coding:\r\n  - preferred: emit them as creature records with an npc/category/source flag if the current creature schema can support that cleanly;\r\n  - otherwise add a dedicated npc/stat-block kind if required by typed boundaries.\r\n- Preserve stat-block fields: name, size, type/subtype, alignment, armor class, hit points, speed, ability scores, challenge rating when present, actions, traits, reactions, spellcasting sections, and source provenance.\r\n- Ensure NPC records do not pollute the existing exact 296 creature baseline for Monsters + Appendix MM-A unless the policy intentionally expands that baseline.\r\n\r\nAcceptance criteria:\r\n- Appendix MM-B NPC stat blocks are represented in the rules pack.\r\n- Tests cover representative NPCs, including Bandit Captain and Berserker.\r\n- Existing creature baseline for Monsters + Appendix MM-A remains meaningful; if NPCs are emitted as creature records, tests distinguish monster-creature coverage from NPC coverage.\r\n- No duplicate key collisions with existing creature records.\r\n- npm run verify:dnd5e-srd-pack exits 0.\r\n- npm run audit:rules-pack -- packages/core/data/rules-packs/rules__dnd5e-srd-5.1 reports no new suspicious findings or only documented reviewed findings.\r\n- npm run check, npm run typecheck, and npm test pass.\r\n- Do not treat this as a policy-decision-only bead; implement the import.\r\n",
+  "notes": "Imported Appendix MM-B (21 NPC stat blocks) under the creature kind with a data.category='npc' discriminator. Monster records unchanged (no category field); creature kind 296->317. New EXPECTED_SRD_5_1_NPC_NAMES exact-coverage gate + NpcCoverageError. verify:dnd5e-srd-pack exits 0; audit 0 suspicious.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-03T05:21:37Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:49Z",
+  "started_at": "2026-06-04T05:10:37Z",
+  "closed_at": "2026-06-04T05:32:44Z",
+  "close_reason": "Imported Appendix MM-B (21 NPC stat blocks) as creature records with data.category='npc'. PR #148. verify exits 0; check/typecheck/test pass.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

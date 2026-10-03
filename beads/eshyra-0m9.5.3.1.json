@@ -1,0 +1,38 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.3.1",
+  "title": "Fix wrapped bullet continuation parsing in parseConditions",
+  "description": "parseConditionBody currently drops continuation lines of wrapped bullet effects into proseLines. Fix: track currentEffect string and append non-blank non-bullet lines to it when currentEffect is active. Add exact-string assertions for full wrapped effects + regression test. Files: parseConditions.ts, parseConditions.test.ts",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-28T03:16:07Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:56Z",
+  "started_at": "2026-05-28T03:16:13Z",
+  "closed_at": "2026-05-28T03:17:49Z",
+  "close_reason": "Closed",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.3.1",
+      "depends_on_id": "eshyra-0m9.5.3",
+      "type": "parent-child",
+      "created_at": "2026-05-27T22:16:06Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

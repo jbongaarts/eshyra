@@ -1,0 +1,56 @@
+{
+  "_type": "issue",
+  "id": "eshyra-eh54.6",
+  "title": "Add adventure module progress audit output",
+  "description": "Add audit/debug output for active adventure modules and module progress.\n\nModule support will be hard to debug if the model appears to forget the adventure, reveal secrets too early, repeat completed scenes, or ignore player-driven deviations. Add inspectable output that distinguishes the immutable source module, the campaign-owned adventure run / module binding, the mutable progress/deviations, and the last bounded runtime context slice.\n",
+  "design": "Follow the spirit of the SRD audit/debug tooling: make invisible model/context behavior inspectable.\n\nOutput should clearly separate four things:\n1. Immutable source module content (authored scenario).\n2. Campaign-owned adventure run / module binding (which module is active, status, session ids).\n3. Mutable progress and deviations (visited, revealed, completed, bypassed, claimed, active clocks, explicit deviations).\n4. Last bounded runtime context slice supplied to the DM (eshyra-eh54.5).\n\nUseful sections:\n- Active adventure runs / module bindings\n- Current module position\n- Module progress\n- Revealed vs unrevealed secrets\n- Objectives\n- Encounters\n- Treasure/rewards\n- Deviations from authored module\n- Last runtime module context slice\n",
+  "acceptance_criteria": "- A debug or audit command can show active module ids and statuses for a campaign (from the campaign-owned adventure run / module binding).\n- Output includes current or inferred module scene/location when available.\n- Output includes visited locations, revealed secrets, completed objectives, encounter outcomes, claimed treasure, active clocks/threats, and recorded deviations.\n- Output can show or capture the last bounded module context slice supplied to the DM runtime.\n- Debug output clearly distinguishes immutable source module content, the campaign-owned adventure run / module binding, mutable progress/deviations, and the last runtime context slice.\n- Tests or snapshots cover representative debug output.",
+  "notes": "Implemented; PR #266 open with green CI (https://github.com/jbongaarts/eshyra/pull/266). Awaiting review/merge. Core adventureAudit.ts + CLI 'eshyra adventures' command. Unblocks eshyra-eh54.7.3.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-18T06:11:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-21T05:17:29Z",
+  "closed_at": "2026-06-21T05:54:35Z",
+  "close_reason": "Merged via PR #266. Core adventureAudit.ts (buildCampaignAdventureAudit/formatCampaignAdventureAudit) separates source/binding/progress/runtime-slice; slice captured only for active runs. CLI 'eshyra adventures' command. Unblocks eshyra-eh54.7.3.",
+  "labels": [
+    "adventure-module",
+    "audit",
+    "campaign-runtime",
+    "debug",
+    "domain-model"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-eh54.6",
+      "depends_on_id": "eshyra-eh54",
+      "type": "parent-child",
+      "created_at": "2026-06-18T01:11:54Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.6",
+      "depends_on_id": "eshyra-eh54.5",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:12:30Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-eh54.6",
+      "depends_on_id": "eshyra-eh54.4",
+      "type": "blocks",
+      "created_at": "2026-06-18T01:12:27Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

@@ -1,0 +1,21 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lus",
+  "title": "Add provider-auth injection seam for BYOK model calls",
+  "description": "Review finding from loreweaver-den. Config validates anthropicApiKey, but AgentSdkModelClient relies on ambient process auth; hosted BYOK and alternate auth modes need explicit per-client or per-request secret injection without storage/logging. Related: loreweaver-qyj. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "AgentSdkModelClient can receive auth env/options explicitly or config key validation is removed; tests assert provider secrets do not enter traces, logs, campaign DBs, or tool payloads; docs clarify local and hosted BYOK auth flow.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:45:44Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:03Z",
+  "started_at": "2026-05-22T02:58:14Z",
+  "closed_at": "2026-05-22T03:15:41Z",
+  "close_reason": "P2 review-findings batch (parent loreweaver-d4r); see PR.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

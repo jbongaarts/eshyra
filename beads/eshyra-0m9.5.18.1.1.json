@@ -1,0 +1,45 @@
+{
+  "_type": "issue",
+  "id": "eshyra-0m9.5.18.1.1",
+  "title": "Review item 2: keep option subheadings in feature bodies",
+  "description": "Add failing tests for title-case option subheadings inside a feature body and update parsing so only table-granted feature headings split records.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-31T03:38:27Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:51Z",
+  "closed_at": "2026-05-31T03:47:40Z",
+  "close_reason": "Implemented option-subheading regression handling; verification: focused importer tests, Biome touched-file CI, typecheck, full npm test, and git diff --check passed.",
+  "labels": [
+    "dnd5e",
+    "importer",
+    "ingestion",
+    "rules",
+    "rules-pack",
+    "srd"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-0m9.5.18.1.1",
+      "depends_on_id": "eshyra-0m9.5.18.1",
+      "type": "parent-child",
+      "created_at": "2026-05-30T22:38:26Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "comments": [
+    {
+      "id": "8bfb4db5-e7d9-5c1b-9fc2-fd7e1cb5415d",
+      "issue_id": "eshyra-0m9.5.18.1.1",
+      "author": "Joseph Bongaarts",
+      "text": "GREEN verification: npx vitest run packages/core/test/importers/dnd5e-srd-5.1/parseFeatures.test.ts packages/core/test/importers/dnd5e-srd-5.1/pipeline.test.ts -> exit 0; focused importer suite later -> 79 passed. Added Fighting Style option-heading regression; unanchored title-case option headings remain in the parent feature description.",
+      "created_at": "2026-05-31T03:47:25Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 1
+}

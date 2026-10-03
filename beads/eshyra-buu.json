@@ -1,0 +1,19 @@
+{
+  "_type": "issue",
+  "id": "eshyra-buu",
+  "title": "Ensure first playable turn always has a persisted scene log",
+  "description": "Review finding from loreweaver-1ek. First-turn scene persistence depends on the model choosing to call mark_scene; if it narrates without opening a scene, a successful turn can have no player/DM scene transcript. Parent context: loreweaver-d4r.",
+  "acceptance_criteria": "A new session's first successful turn persists player and DM lines even if the model does not explicitly open a scene; tests cover successful narration without mark_scene.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-05-21T04:44:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:50:03Z",
+  "closed_at": "2026-05-21T05:48:32Z",
+  "close_reason": "Fixed in PR #23 (merged)",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

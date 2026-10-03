@@ -1,0 +1,46 @@
+{
+  "_type": "issue",
+  "id": "eshyra-erf5.3.3",
+  "title": "Add SRD equipment filter and proficiency resolution audit",
+  "description": "Child of the equipment grouping audit epic.\n\nAfter preserving equipment grouping metadata, add an audit/resolver check that proves generated starting-equipment filters and class proficiency groups are actually satisfiable from the generated catalog.\n\nAcceptance criteria:\n- Add a deterministic audit that enumerates candidates for every generated starting-equipment filter.\n- The audit fails if a filter such as martial melee weapon, arcane focus, druidic focus, holy symbol, musical instrument, artisan tools, gaming set, or similar emits zero candidates.\n- Add a deterministic audit or resolver check for class equipment proficiencies such as Simple weapons, martial weapons, light armor, medium armor, heavy armor, shields, and tool/instrument proficiency groups.\n- The audit should report the candidate count and representative candidate keys for reviewability.\n- Wire the check into the SRD audit bundle or existing playable-model gate so future regressions are visible.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-01T05:58:52Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-01T13:05:03Z",
+  "started_at": "2026-07-01T12:54:51Z",
+  "closed_at": "2026-07-01T13:05:03Z",
+  "close_reason": "Added srdEquipmentResolutionAudit resolving every starting-equipment filter and class equipment proficiency phrase to concrete equipment candidates; wired into the audit bundle CLI and a fail-closed regression test",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-erf5.3.3",
+      "depends_on_id": "eshyra-erf5.3.2",
+      "type": "blocks",
+      "created_at": "2026-07-01T00:59:01Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-erf5.3.3",
+      "depends_on_id": "eshyra-erf5.3.1",
+      "type": "blocks",
+      "created_at": "2026-07-01T00:58:59Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-erf5.3.3",
+      "depends_on_id": "eshyra-erf5.3",
+      "type": "parent-child",
+      "created_at": "2026-07-01T00:58:51Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 0,
+  "comment_count": 0
+}

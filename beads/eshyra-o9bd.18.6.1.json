@@ -1,0 +1,35 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.18.6.1",
+  "title": "Model creature armorClass sources and conditional AC variants",
+  "description": "Scope:\n- Preserve all AC parentheticals and conditional AC values from SRD creature statlines.\n- Fable quantified 206 AC parentheticals.\n- Examples: natural armor, leather armor + shield, Mage \"15 with mage armor\", Druid \"16 with barkskin\", Ankheg \"11 while prone\", lycanthrope beast/hybrid AC.\n\nAcceptance criteria:\n- Creature armorClass supports value plus source/sourceText and optional variants/conditions.\n- All 206 AC parentheticals identified by Fable are represented, or any non-mechanical exception is documented with a test/allowlist.\n- Conditional AC is queryable by deterministic tools.\n- Tests cover armor, natural armor, spell-adjusted AC, prone/conditional AC, and lycanthrope form AC.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-02T03:26:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-07-03T02:38:56Z",
+  "closed_at": "2026-07-03T03:02:26Z",
+  "close_reason": "Implemented in PR #394: armorClass modeled as {value, source?, condition?, variants?, sourceText}; all printed parentheticals preserved (202 base sources + 8 variant-bearing records: Mage/Archmage, Druid/Dryad, Ankheg, 3 dual-form lycanthropes); fail-closed anchored grammar; queryable variants; tests for armor, natural armor, spell-adjusted, prone, and lycanthrope form AC.",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.18.6.1",
+      "depends_on_id": "eshyra-o9bd.18.6",
+      "type": "parent-child",
+      "created_at": "2026-07-01T22:26:35Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 3,
+  "comment_count": 0
+}

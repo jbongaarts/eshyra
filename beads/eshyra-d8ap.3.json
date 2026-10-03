@@ -1,0 +1,47 @@
+{
+  "_type": "issue",
+  "id": "eshyra-d8ap.3",
+  "title": "Reduce expensive primary-DM retry churn from audit rejections",
+  "description": "The latest playtest suggests the main usage/cost issue is not the cheap auditor call itself, but the extra primary DM call required after an audit rejection. Optimize for fewer expensive DM retries and fewer full regeneration loops, especially in combat. A stronger auditor may or may not reduce total cost if it prevents false rejects that trigger primary-DM retries; this bead should measure and reduce retry churn rather than assuming shorter auditor prompts are the main lever.\n\nAcceptance criteria:\n\n- Add or improve metrics that distinguish auditor call count, primary DM call count, primary DM retry count, retry cause, whether retry succeeded, tools rerun during retry, and usage estimates by primary DM vs auditor where available.\n- Identify common audit failures that can be prevented before generating a full primary DM response.\n- Add deterministic preflight or postflight checks where appropriate for common combat failures, such as player-affecting roll exists but is not surfaced, HP changed without a valid state mutation, combatant target is invalid, and death/unconscious condition is narrated without state support.\n- Avoid full primary-DM regeneration for presentation-only failures when all tool calls and state mutations are already valid. If this is not safe yet, document why and create a follow-up.\n- Preserve fail-closed behavior for true state/tool errors.\n- Regression tests cover: accepted first-pass combat turn requires one primary DM candidate plus one auditor pass, not a retry; hidden roll-ledger presentation failure is detected; invalid combatant HP target still requires real state repair; retry diagnostics identify whether the expensive retry was caused by missing state, missing world evidence, missing roll visibility, invalid target, or auditor over-rejection.\n",
+  "notes": "PR #307 updated after review: persisted audit retry diagnostics in ModelUsageStore with turn_audit table, turn_outcome retry aggregate migrations, timeline reconstruction/rendering, and CLI store/usage tests. npm run verify:worktree now passes after installing local workspace links in the worktree; package-lock unchanged.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-25T05:21:56Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-25T23:05:56Z",
+  "closed_at": "2026-06-25T23:38:45Z",
+  "close_reason": "Merged PR #307 with audit retry diagnostics, persisted ModelUsageStore audit/outcome metrics, tests, and docs.",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-d8ap.3",
+      "depends_on_id": "eshyra-d8ap",
+      "type": "parent-child",
+      "created_at": "2026-06-25T00:21:56Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d8ap.3",
+      "depends_on_id": "eshyra-d8ap.2",
+      "type": "blocks",
+      "created_at": "2026-06-25T00:22:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-d8ap.3",
+      "depends_on_id": "eshyra-d8ap.1",
+      "type": "blocks",
+      "created_at": "2026-06-25T00:22:10Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 2,
+  "dependent_count": 1,
+  "comment_count": 0
+}

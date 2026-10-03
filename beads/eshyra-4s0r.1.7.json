@@ -1,0 +1,30 @@
+{
+  "_type": "issue",
+  "id": "eshyra-4s0r.1.7",
+  "title": "Add migration parity, idempotency, and checksum tests",
+  "description": "Add tests and CI guards for migration-first schema management.\n\nAcceptance criteria:\n- Fresh empty DB applies all migrations successfully.\n- Calling initSchema twice leaves the DB unchanged and applies no duplicate migrations.\n- A DB with a pending migration applies only the pending migration.\n- Editing an already-applied migration file causes checksum verification to fail closed.\n- Legacy adoption/reset path is tested.\n- A migrated DB and a fresh DB are compared for schema parity where applicable.\n- If a generated schema snapshot is added, CI verifies it matches the schema produced by applying migrations.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-26T03:05:50Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-26T04:32:27Z",
+  "started_at": "2026-06-26T04:08:43Z",
+  "closed_at": "2026-06-26T04:32:27Z",
+  "close_reason": "Parity/idempotency/checksum/legacy tests + generated schema.snapshot.sql with drift guard. Landed in PR #318 (merged).",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-4s0r.1.7",
+      "depends_on_id": "eshyra-4s0r.1",
+      "type": "parent-child",
+      "created_at": "2026-06-25T22:05:49Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

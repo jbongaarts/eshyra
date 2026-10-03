@@ -1,0 +1,97 @@
+{
+  "_type": "issue",
+  "id": "eshyra-jhpt.8",
+  "title": "Replay an immediately disputed turn under a new campaign rule",
+  "description": "Objective\nHandle a player objection to the current/immediately preceding adjudication by establishing an approved ruling or house rule effective from the start of that disputed turn, restoring pre-turn state, and replaying once under the new rule.\n\nRequired behavior\nRecognize an explicit objection to the immediate adjudication, obtain player-approved prose/kind, persist canonical rule identity with effective position at disputed-turn start, restore the checkpoint/state immediately before that turn, replay the same player turn with the rule active in both DM and auditor contexts, and commit the accepted replay as campaign canon. Required canonical-conflict scenario: after a material-component rejection, \"we don't use spell components\" creates a house rule, rolls back the disputed turn, replays under it, and commits the replay. Abandoned adjudication may remain diagnostic/provenance history but not continuing campaign canon.\n\nArchitecture and references\nUse eshyra-jhpt.1-.4 for domain/storage/context parity, audited-turn staging eshyra-67qo, turn rollback proof eshyra-c07.8, and checkpoint restore foundation eshyra-7wc.5. Preserve canonical campaign history and auditor evidence across the replay boundary.\n\nNon-goals\nNo arbitrary historical retroactivity or replay of older turns; no automatic objection inference; no rule without player approval; no prose-to-mechanics compiler; no automatic house rule from an unaccepted canonical violation; no changes to immutable pack semantics.",
+  "acceptance_criteria": "An immediate material-components objection creates approved house-rule prose effective at disputed-turn start, restores exact pre-turn state, replays once with identical DM/auditor active rules, and makes accepted replay canonical; ordinary new rules remain prospective; failed replay preserves a recoverable canonical pre-turn state; older-turn retroactivity is rejected; diagnostic history distinguishes abandoned and canonical attempts.",
+  "notes": "Implementation uses one durable latest-turn snapshot with a full-state hash, original input/seed/actor, transactionally restored pre-turn rows, approved disputed rule, and diagnostic original trace. Only the latest unreplayed accepted turn is eligible; subsequent state changes reject replay rather than erase them. Failed replay retains pending recovery and blocks new turns; CLI /dispute retry resumes the same approved action, and quit preserves the open session. No Dolt dependency on the per-turn path.\nSingle completion PR opened: https://github.com/jbongaarts/eshyra/pull/536 at 5162e6d (base 84e8e79). Covers .7 accepted implicit precedents, .8 explicit disputed-turn replay/recovery, .9 all ten end-to-end scenarios, and .6.2 campaign-aware bounded preflight. npm run verify:worktree passed: 285 files/5049 tests, 3 files/20 documented live-API/Dolt skips. 27 new core/CLI acceptance tests cover negative audit/rollback boundaries, persisted parity, source bytes, approval, recovery/checkpoint round trip, and replay-triggered player choices. Feature branch pushed; awaiting external review. Beads stay in_progress until PR merges. No merge authorized.\nPR #536 review at 5162e6d requests two blocking repairs: derive disputed source-ambiguity governing keys from the runtime stack (including add-ons); preserve semantic insertion ordering across exact replay restoration. Source survey additionally found listCharacterWalletEvents in campaign currency.ts orders by rowid, besides scene getLastDmOutput. Repair will persist logical insertion order for both campaign consumers through an append-only migration, leaving shared checkpoint serialization unchanged. Add adversarial producer/consumer tests and prove they fail on reviewed head before repair.\nPR #536 review repairs committed as 4dd0241: disputed source rulings derive declaring keys from the exact resolved base/add-on stack; CLI omits free-form source-key prompt for that branch. Migration 0029 persists insertion chronology for scene logs and campaign wallet events; producer allocation and both consumers now preserve order through replay/checkpoint restoration without changing shared serialization. Two adversarial source cases and real last-DM replay regression failed before repair. Added historical migration, checkpoint/new-write, wallet replay/new-write, and CLI evidence. Final npm run verify:worktree passed before commit: 285 files / 5054 tests passed, 3 files / 20 documented skips. Requires re-review of new head including wallet sibling and migration. Beads remain in_progress until merge; no merge authorized.\nReview of PR #536 at 4dd0241 found two new material blockers: semantic schema objects omitted by snapshot/hash/checkpoint restoration, and capability preflight global ambiguity expansion coupling unrelated source defects to item readiness. Repair remains in PR #536. Reconcile all snapshot producers/readers, schema enforcement and drift checks, plus bounded target ambiguity validation and real use_item behavior; add negative regressions before fixes and perform fresh full self-review/verification before handoff.\nMaterial repair design and self-review: snapshot schema payload v2 retains each table/view plus standalone indexes/triggers while keeping Dolt outer record kinds unchanged. Capture uses one read transaction; materialize creates tables/views and indexes before rows (including standalone UNIQUE FK parents), defers trigger installation to preserve grandfathered data and avoid duplicate side effects, then atomically publishes. Replay hashes all schema, excluding only diagnostic/recovery rows. Old payloads lack enough evidence to reconstruct lost objects and now reject with a fresh-checkpoint-from-original-DB instruction, consistent with the pre-v1 fail-closed policy; no migration replay/guessing. A2 validates target declared IDs before expanding matching stack declarations, retaining duplicate/malformed/missing relevant-ID failures and the original readiness gate. Negative regressions reproduced both new finding classes; expanded coverage includes base/add-on defects with empty and nonempty target ambiguity sets, useItem execution, Dolt payload transport seam, views/INSTEAD OF triggers, side-effect triggers, inventory insert/update guards, uniqueness, deferred FK parents, legacy rejection, and failed-restore destination cleanup. Fresh full review of the new head is required.\nBoth material findings from review at 4dd0241 repaired in ec229d1 on the existing PR #536: https://github.com/jbongaarts/eshyra/pull/536 . Completed class/sibling self-review and final npm run verify:worktree before commit: 286 files / 5070 tests passed; 3 files / 20 documented live-API/Dolt skips. New schema-integrity suite exercises the actual Dolt payload reader without requiring Dolt, then materialization/reopen and real constraints. Test coverage also includes the reserved sqlite_ prefix filter, in-place replay views, and schema changes on excluded-row recovery tables. PR description documents material scope and old incomplete-checkpoint rejection; fresh full review required at ec229d1. No additional known implementation finding remains from this pass; independent review is pending. All owning beads remain in_progress until merge.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-07-10T21:25:13Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-09-08T03:27:25Z",
+  "started_at": "2026-09-07T22:52:50Z",
+  "closed_at": "2026-09-08T03:27:25Z",
+  "close_reason": "Merged via PR #536, merge commit 59d2ef905eaddc82ba38e6e84168c662ef6cf682. Reviewed head ec229d1; all CI checks passed.",
+  "labels": [
+    "audit",
+    "campaign-runtime",
+    "checkpoint",
+    "model-context",
+    "replay",
+    "rollback",
+    "rules"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-c07.8",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt",
+      "type": "parent-child",
+      "created_at": "2026-07-10T16:25:12Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt.4",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-67qo",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt.3",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-7wc.5",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:15Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt.1",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-jhpt.8",
+      "depends_on_id": "eshyra-jhpt.2",
+      "type": "blocks",
+      "created_at": "2026-07-10T16:25:14Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 7,
+  "dependent_count": 1,
+  "comment_count": 0
+}

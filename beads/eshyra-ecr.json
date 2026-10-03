@@ -1,0 +1,50 @@
+{
+  "_type": "issue",
+  "id": "eshyra-ecr",
+  "title": "Import SRD 5.1 magic item records",
+  "description": "﻿Implement D&D SRD 5.1 magic item import coverage.\r\n\r\nProblem:\r\nThe SRD 5.1 PDF contains a large Magic Items A-Z section with item names, item categories, rarities, attunement information, descriptions, and embedded tables. The current rules pack has no magic-item record kind or equivalent imported records. This is a major gameplay content gap for treasure, rewards, inventory, and item lookup.\r\n\r\nScope:\r\n- Define a magic item record schema/kind if one does not already exist.\r\n- Parse the SRD 5.1 Magic Items A-Z section into deterministic records.\r\n- Capture name, item type/category, rarity when present, attunement requirement when present, description text, source provenance, and license metadata.\r\n- Handle embedded tables either as part of the magic item record or as linked table records, with a documented policy.\r\n- Add reviewed magic item name/count baselines.\r\n- Regenerate the canonical D&D SRD 5.1 pack after implementation.\r\n\r\nAcceptance criteria:\r\n- Magic item records are emitted for the SRD 5.1 Magic Items A-Z section.\r\n- Records have deterministic keys and schema validation.\r\n- Representative records such as Adamantine Armor, Ammunition +1/+2/+3, and Amulet of Health are covered by tests or reviewed baseline checks.\r\n- Attunement and rarity parsing are tested where present.\r\n- Embedded magic item tables are either imported or explicitly documented as intentionally handled inside item text.\r\n- npm run verify:dnd5e-srd-pack exits 0.\r\n- npm run audit:rules-pack -- packages/core/data/rules-packs/rules__dnd5e-srd-5.1 reports no new suspicious findings or only documented reviewed findings.\r\n- npm run check, npm run typecheck, and npm test pass.\r\n- Do not introduce Pathfinder work.\r\n",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-03T05:21:35Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-07-21T01:35:50Z",
+  "started_at": "2026-06-04T05:39:40Z",
+  "closed_at": "2026-06-05T02:31:40Z",
+  "close_reason": "Implemented SRD 5.1 magic-item import coverage with schema/tool support, exact 236-name baseline, regenerated canonical pack, documented embedded-table policy, and all required verification gates passing.",
+  "comments": [
+    {
+      "id": "16fad6c8-e8a5-52da-9b46-1766b5368574",
+      "issue_id": "eshyra-ecr",
+      "author": "Joseph Bongaarts",
+      "text": "Worktree baseline: recreated at D:\\src\\loreweaver-ecr because .worktrees/ is ignored and caused npm run check to process 0 files. Baseline passed: npm run check; npm run typecheck; npm run verify:dnd5e-srd-pack; npm run audit:rules-pack -- packages/core/data/rules-packs/rules__dnd5e-srd-5.1 (0 suspicious records); npm test (87 files passed, 2 skipped; 1130 tests passed, 3 skipped).",
+      "created_at": "2026-06-04T05:47:48Z"
+    },
+    {
+      "id": "f4643bc4-0682-54a7-b1da-0f8bb2d6cc55",
+      "issue_id": "eshyra-ecr",
+      "author": "Joseph Bongaarts",
+      "text": "Design draft pending approval: add a new magic-item RulesRecordKind/key prefix, extend validation/tool enum/baselines, parse Magic Items A-Z from a new fail-closed section slice, emit data with itemType, rarity/rarityText, requiresAttunement/attunementRequirement, description, provenance/license, preserve embedded item tables inside description with README policy, regenerate canonical DND5E SRD pack, and verify with parser/pipeline/generated-pack tests plus npm run verify:dnd5e-srd-pack/audit/check/typecheck/test.",
+      "created_at": "2026-06-04T05:49:52Z"
+    },
+    {
+      "id": "cb530bc7-a746-597d-b00e-04404215faf9",
+      "issue_id": "eshyra-ecr",
+      "author": "Joseph Bongaarts",
+      "text": "User approved design on 2026-06-04: implement magic-item kind/importer with deterministic parsing/emission, embedded tables retained in item descriptions and documented, canonical pack regenerated, and full gates run.",
+      "created_at": "2026-06-04T05:53:57Z"
+    },
+    {
+      "id": "ad872d88-614c-5c99-9535-5d714b0bb103",
+      "issue_id": "eshyra-ecr",
+      "author": "Joseph Bongaarts",
+      "text": "Verification: implemented SRD 5.1 magic-item import with 236 generated records, deterministic magic-item keys/schema validation, representative generated-pack checks for Adamantine Armor/Ammunition/Amulet/attunement/table text, embedded item tables documented as parent description text, and no Pathfinder changes. Final gates: npm run verify:dnd5e-srd-pack exit 0 with zero diffs; audit exit 0 with 0 suspicious records; npm run check exit 0; npm run typecheck exit 0; npm test exit 0 with 88 passed / 2 skipped files and 1151 passed / 3 skipped tests.",
+      "created_at": "2026-06-05T02:31:34Z"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 1,
+  "comment_count": 4
+}

@@ -1,0 +1,20 @@
+{
+  "_type": "issue",
+  "id": "eshyra-7ok",
+  "title": "Fix final SRD spell-section boundary contamination",
+  "description": "﻿Fix D&D SRD 5.1 spell parser boundary contamination found during the final pack accuracy audit.\r\n\r\nProblem:\r\nThe committed canonical pack contains spell records whose descriptions include text from adjacent or non-spell sections:\r\n- spell:word-of-recall has stray text contamination around the ending, including text associated with Wish / neighboring spell content.\r\n- spell:zone-of-truth absorbs the following Traps section after the spell should end.\r\n\r\nThis means the spell parser can have correct spell counts while still corrupting the final spell bodies.\r\n\r\nScope:\r\n- Fix spell-section slicing / spell body termination for the end of the Spell Descriptions section.\r\n- Ensure the final spell, Zone of Truth, ends at the true spell text boundary and does not include Traps content.\r\n- Ensure Word of Recall body text matches the vendored SRD 5.1 PDF and is not contaminated by neighboring spell content.\r\n- Regenerate the canonical D&D SRD 5.1 pack after parser fixes.\r\n- Keep verify:dnd5e-srd-pack strict and green.\r\n\r\nAcceptance criteria:\r\n- spell:word-of-recall description is supported by the vendored SRD 5.1 PDF and contains no neighboring-spell contamination.\r\n- spell:zone-of-truth description ends at the spell text and does not contain Traps section content.\r\n- Add targeted regression tests for both Word of Recall and Zone of Truth.\r\n- npm run verify:dnd5e-srd-pack exits 0.\r\n- npm run audit:rules-pack -- packages/core/data/rules-packs/rules__dnd5e-srd-5.1 reports no new suspicious findings.\r\n- npm run check, npm run typecheck, and npm test pass.\r\n- Do not change source vendoring policy.\r\n- Do not add exact creature name work; that is already covered by the reviewed creature baseline.\r\n",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Joseph Bongaarts",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-03T05:21:31Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-07T17:49:42Z",
+  "started_at": "2026-06-03T06:17:24Z",
+  "closed_at": "2026-06-03T21:37:55Z",
+  "close_reason": "Fixed in PR #143: added Traps to spellDescriptions end anchor (Zone of Truth boundary) and added gutter-straggler reassignment in extract.ts (Word of Recall 'wish' contamination). Pack regenerated; verify/audit/check/typecheck/test all green; regression tests added.",
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

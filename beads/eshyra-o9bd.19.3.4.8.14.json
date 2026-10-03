@@ -1,0 +1,32 @@
+{
+  "_type": "issue",
+  "id": "eshyra-o9bd.19.3.4.8.14",
+  "title": "Review: adversarial Opus 5.5 pass over the A5 integration PR",
+  "description": "READ-ONLY REVIEW. Do not edit, create, or delete any file; do not commit; do not push. Your only writes are bd notes on this bead and closing it.\n\nSCOPE: the full diff of branch eshyra-o9bd.19.3.4.8 against origin/main (`git diff origin/main...HEAD`) — one PR carrying eight beads: eshyra-o9bd.19.5.7.4 (character suffocation recovery gate, migration 0032, set_suffocation, calc breath formulas), eshyra-o9bd.19.5.7.5 (player-character death rules for encounter combatants, migration 0033), eshyra-o9bd.19.5.7.6 (adjust_hp knockOut), eshyra-o9bd.19.5.7.3 (adjust_exhaustion, derived level-4 HP maximum, level-6 death), eshyra-o9bd.19.5.11.4 (expend_ammunition / recover_ammunition, migration 0034), eshyra-o9bd.19.5.10.3 (roll_retained_check / resolve_retained_check / end_retained_check, set_surprised derived from comparisons, migration 0035), eshyra-o9bd.19.3.4.6 (hydra Multiple Heads curated mechanic, tracked head count, derived reaction allowance, migration 0036), eshyra-o9bd.19.3.4.5 (action:use-an-object ordinaryInteractionRuleRef -> rule:other-activity-on-your-turn, importer). Run `bd show` on each bead and on eshyra-o9bd.19.3.4.8 for the specs and acceptance criteria.\n\nAUTHORITY: AGENTS.md; docs/design-and-pr-review-policy.md (profile rules-clause-complete); ADR 0020 §§2-3 (dice, arithmetic, atomic state mutation, resource accounting, state integrity are deterministic; adjudicated outcomes still pass through those boundaries); docs/design/rule-record-runtime-statements.md amendments A3-A5 and invariants 12-13; ADR 0015 (migration-first schema); docs/importer-fix-protocol.md for the importer parts; the committed SRD source text for every rule (packages/core/data/rules-packs/rules__dnd5e-srd-5.1/records.json, records use the `key` field).\n\nMETHOD (review the mechanism, not the narrative):\n1. For each capability, print the governing SRD source text beside the implementation and check source fidelity of every engine rule (thresholds, tie semantics, rounding, ordering, what counts as damage/healing, lifecycle start/end).\n2. Check every model-facing surface (tool descriptions, schemas, Hybrid Contract in protocol.ts, known-limit statements in ruleKnownLimits.ts, error/rejection messages) against the real code: truthful, no model-side arithmetic/comparison or model-held canonical state offered as a fallback, target domain correct (character vs combatant), no stale wording from the pre-capability disclosures.\n3. State integrity: atomicity (single transaction), invariants across the full state space (alive/dying/stable/dead, monster vs player-character rules, recovery block, exhaustion levels, closed vs active combat instances, missing/malformed rows), concentration and attunement side effects, campaign-actor sync, provenance conventions, deterministic ids/replay, write paths that bypass established helpers (mutateState, claimItem, removeItem), migration correctness (constraints, indexes, data preservation, contiguity, schema snapshot).\n4. Write paths that let a model persist an unsupported/derived value (the A5 forbidden-substitution class), and any place a refusal could be bypassed through another tool (e.g. add_condition, update_combatant status, rest, level-up).\n5. Test evidence: does each acceptance criterion have a test that distinguishes the bad state from the good state? Name missing evidence only where a real requirement is unprotected.\n6. Sibling search: for each defect, look for the same class elsewhere in the diff.\n\nREPORT with `bd update <this bead> --append-notes`, then `bd close <this bead>`. One entry per finding: ID (S1, S2, ...), severity (blocker / should-fix / nit), file:line, the violated requirement and its authority, a concrete failure scenario (inputs -> wrong state), and the minimal fix. Then a short list of what you checked and found correct. Apply the review policy's \"From observation to finding\" test: an observation without an operative requirement is \"no requirement\" in one line, not a finding. Do not stop at the first defect; batch everything you can find.\n\nSIXTH PASS (adversarial Opus 5.5 reviewer; Sol is unavailable). Prior Sol reviews: eshyra-o9bd.19.3.4.8.1, .8.4, .8.6, .8.8, .8.11 (read all; the latest, .8.11, lists S24, S25, S27-S34 as open). Since .8.11: Sonnet repair batches F1 (.8.12, combatant side) and F2 (.8.13, character side), and a supervisor commit making updateCombatant resolve the creature record only for HP changes and threading the resolver through begin_turn/close_combat_instance effect settlement. (1) State CLOSED/OPEN for S24, S25, S27, S28, S29, S30, S31, S32, S33, S34 with fresh adversarial evidence. (2) Be adversarial: actively try to break the lifecycle transition function (state/combatantLifecycle.ts), the character HP lifecycle (state/hpLifecycle.ts), actor persistence/projection, ammunition accounting, retained checks/surprise, and exhaustion — construct sequences through the real tool registry, not only unit calls. (3) Fresh full review of the rest of the PR (IDs from S35). Apply \"From observation to finding\" strictly: no speculative robustness findings. Close with APPROVE-READY or CHANGES REQUESTED.",
+  "acceptance_criteria": "Closure states plus any new findings recorded in bd notes with an overall disposition; no file changes; bead closed by the reviewer.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-10-03T22:19:54Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-10-03T22:19:54Z",
+  "labels": [
+    "importer",
+    "srd",
+    "thaw"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "eshyra-o9bd.19.3.4.8.14",
+      "depends_on_id": "eshyra-o9bd.19.3.4.8",
+      "type": "parent-child",
+      "created_at": "2026-10-03T17:19:53Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 0,
+  "dependent_count": 0,
+  "comment_count": 0
+}

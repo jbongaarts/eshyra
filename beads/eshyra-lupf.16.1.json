@@ -1,0 +1,39 @@
+{
+  "_type": "issue",
+  "id": "eshyra-lupf.16.1",
+  "title": "Add CLI chronicle inspection and curation",
+  "description": "Expose character chronicle records through CLI commands so players can inspect portable memories and mark records as portable/private/archived before carrying a character onward.",
+  "acceptance_criteria": "CLI can list chronicle records for a registry character and update portability/visibility/archive status; commands are explicit and do not mutate campaign canon; tests cover list and curation flows.",
+  "notes": "Implemented: registry-level 'eshyra chronicle' subcommand (list/show/set/archive) in packages/cli/src/chronicle.ts, wired in index.ts, tested in packages/cli/test/chronicle.test.ts. PR #350 open (branch eshyra-lupf-16-1-chronicle-cli). verify:worktree green (2819 passed). Close when #350 merges, then close the lupf.16 epic.\nPR #350 review addressed (commit 95ec777): registry-membership check added to show/set/archive (was list-only); dm-only records spoiler-hidden by default in list/show with --include-dm-only to reveal, and dm-only text redacted in curation confirmations. Tests 10 -> 17, verify:worktree green (2826 passed).\nLanded on main: PR #350 merged (merge commit e32baaa, reachable from main HEAD). chronicle.ts + chronicle.test.ts present. Branch and worktree cleaned up. Closing.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "owner": "joe@wtfs.net",
+  "created_at": "2026-06-28T04:20:19Z",
+  "created_by": "Joseph Bongaarts",
+  "updated_at": "2026-06-28T06:12:22Z",
+  "started_at": "2026-06-28T05:59:29Z",
+  "closed_at": "2026-06-28T06:12:22Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "eshyra-lupf.16.1",
+      "depends_on_id": "eshyra-lupf.16.2",
+      "type": "blocks",
+      "created_at": "2026-06-27T23:20:34Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "eshyra-lupf.16.1",
+      "depends_on_id": "eshyra-lupf.16",
+      "type": "parent-child",
+      "created_at": "2026-06-27T23:20:19Z",
+      "created_by": "Joseph Bongaarts",
+      "metadata": "{}"
+    }
+  ],
+  "dependency_count": 1,
+  "dependent_count": 0,
+  "comment_count": 0
+}
