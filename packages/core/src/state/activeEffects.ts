@@ -40,7 +40,11 @@ import {
   type CampaignRulesPackResolver,
   lookupCampaignRecord,
 } from './campaignRecordLookup.js';
-import { vanishesAtZeroHp, type ZeroHpRule } from './combatantLifecycle.js';
+import {
+  describeZeroHpRule,
+  leavesPlayAtZeroHp,
+  type ZeroHpRule,
+} from './combatantLifecycle.js';
 import { addCondition, removeCondition } from './domainMutations.js';
 import {
   EncounterCombatantError,
@@ -49,6 +53,8 @@ import {
   getCampaignActor,
   removeCampaignActorFromPlay,
   removeCombatantFromPlay,
+  revertCampaignActorToNaturalForm,
+  revertCombatantToNaturalForm,
   setCombatantZeroHpRule,
   updateCampaignActor,
   updateCombatant,
@@ -163,7 +169,20 @@ export const DIRECT_CONCENTRATION_BREAK_CAUSES: readonly ConcentrationBreakCause
   ['voluntary', 'forced'];
 
 export type EffectLinkKind = 'condition' | 'actor' | 'zone' | 'form';
-export type EffectCleanupPolicy = 'remove' | 'release';
+/** What an owned projection's cleanup does: 'remove' takes it out of play,
+ *  'release' drops ownership and leaves it, 'revert' (actor links carrying a
+ *  natural form only) restores the creature's natural form and leaves it in
+ *  play. */
+export type EffectCleanupPolicy = 'remove' | 'release' | 'revert';
+
+/** A creature's natural form, recorded when a transformation spell (Giant
+ *  Insect) changes it: the hit points it had and its rules reference, which
+ *  reversion restores exactly. */
+export interface NaturalForm {
+  readonly hpCurrent: number;
+  readonly hpMax: number;
+  readonly rulesRef: string;
+}
 export type EffectTargetKind =
   | 'character'
   | 'combatant'
@@ -204,6 +223,10 @@ export interface EffectActorLinkInput {
    *  'vanish' when its part of the effect ends. A declaration that
    *  contradicts the record is refused. */
   readonly atZeroHitPoints?: 'vanish' | 'vanish-bonded';
+  /** The creature's natural form at cast. REQUIRED when the spell record's
+   *  0-hit-point rule is 'revert-form' (Giant Insect: the creature returns
+   *  to this form on reversion), REFUSED otherwise. */
+  readonly naturalForm?: NaturalForm;
 }
 
 export interface EffectZoneProjectionInput {
@@ -261,6 +284,8 @@ export interface EffectLinkView {
   readonly campaignActorId?: string;
   readonly cleanupOnEnd: EffectCleanupPolicy;
   readonly cleanupOnBreak: EffectCleanupPolicy;
+  /** Natural form recorded on a transformation actor link. */
+  readonly naturalForm?: NaturalForm;
   readonly status: 'active' | 'removed' | 'released';
   readonly removedReason?: string;
   readonly removedAt?: string;
@@ -316,10 +341,11 @@ export interface EffectCleanupAction {
   readonly projectionRef: string;
   /** 'removed' = projection deleted (an owned creature is taken out of play,
    *  status absent); 'released' = ownership dropped, state left in place
-   *  (only ever from a stored 'release' policy); 'missing' = the projection's
-   *  holder no longer exists / is unreachable, so only the link record was
-   *  closed. */
-  readonly action: 'removed' | 'released' | 'missing';
+   *  (only ever from a stored 'release' policy); 'reverted' = the creature
+   *  returned to its recorded natural form and stays in play (only ever from
+   *  a stored 'revert' policy); 'missing' = the projection's holder no longer
+   *  exists / is unreachable, so only the link record was closed. */
+  readonly action: 'removed' | 'released' | 'reverted' | 'missing';
 }
 
 export interface EffectCleanupSummary {
@@ -661,6 +687,7 @@ interface EffectLinkRow {
   readonly status: 'active' | 'removed' | 'released';
   readonly removed_reason: string | null;
   readonly removed_at: string | null;
+  readonly natural_form_json: string | null;
 }
 
 const detailColumn = jsonColumn<Record<string, unknown>>(
@@ -963,6 +990,9 @@ function effectView(
         : { campaignActorId: link.campaign_actor_id }),
       cleanupOnEnd: link.cleanup_on_end,
       cleanupOnBreak: link.cleanup_on_break,
+      ...(link.natural_form_json === null
+        ? {}
+        : { naturalForm: JSON.parse(link.natural_form_json) as NaturalForm }),
       status: link.status,
       ...(link.removed_reason === null
         ? {}
@@ -1107,7 +1137,7 @@ function readLinkRows(
     .prepare(
       `SELECT effect_id, link_kind, target_kind, target_ref, projection_ref,
               campaign_actor_id, cleanup_on_end, cleanup_on_break, status, removed_reason,
-              removed_at
+              removed_at, natural_form_json
        FROM active_effect_link
        WHERE campaign_id = ? AND effect_id = ?
        ORDER BY link_kind, target_kind, target_ref, projection_ref`,
@@ -1507,6 +1537,22 @@ export function auditActiveEffectIntegrity(
           issue: `${link.link_kind} link '${link.projection_ref}' has unsupported release cleanup; zone/form links require remove for end and break`,
         });
       }
+      if (
+        (link.cleanup_on_end === 'revert' ||
+          link.cleanup_on_break === 'revert') &&
+        parseNaturalForm(link.natural_form_json) === undefined
+      ) {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `${link.link_kind} link '${link.projection_ref}' has the 'revert' cleanup policy but no valid natural form to restore`,
+        });
+      }
+      if (link.natural_form_json !== null && link.link_kind !== 'actor') {
+        issues.push({
+          effectId: row.effect_id,
+          issue: `${link.link_kind} link '${link.projection_ref}' records a natural form; only an actor link may`,
+        });
+      }
       if (link.status !== 'active') {
         continue;
       }
@@ -1593,6 +1639,33 @@ export function auditActiveEffectIntegrity(
     issues.push({
       effectId: '(campaign-actor)',
       issue: `campaign actor '${owner.target_ref}' is owned by ${owner.n} live effects`,
+    });
+  }
+  // A present 'revert-form' creature must have an active actor link carrying
+  // the natural form its reversion restores. A creature migrated from before
+  // natural forms were recorded has none: its 0-hit-point reversion refuses.
+  const unrecoverableForms = db
+    .prepare(
+      `SELECT c.combatant_id FROM encounter_combatant c
+       JOIN combat_instance i
+         ON i.campaign_id = c.campaign_id AND i.combat_instance_id = c.combat_instance_id
+       WHERE c.campaign_id = ? AND i.status = 'active'
+         AND c.zero_hp_rule = 'revert-form' AND c.status != 'absent'
+         AND NOT EXISTS (
+           SELECT 1 FROM active_effect_link l
+           WHERE l.campaign_id = c.campaign_id AND l.link_kind = 'actor'
+             AND l.status = 'active' AND l.natural_form_json IS NOT NULL
+             AND ((l.target_kind = 'combatant' AND l.projection_ref = c.combatant_id)
+               OR (c.identity_kind = 'campaign_actor'
+                   AND (l.campaign_actor_id = c.identity_ref
+                     OR (l.target_kind = 'campaign_actor' AND l.target_ref = c.identity_ref)))))
+       ORDER BY c.combatant_id`,
+    )
+    .all(campaignId) as { combatant_id: string }[];
+  for (const orphan of unrecoverableForms) {
+    issues.push({
+      effectId: '(combatant)',
+      issue: `combatant '${orphan.combatant_id}' reverts to its natural form at 0 hit points but no active actor link records that natural form`,
     });
   }
   const stalePersistentLinks = db
@@ -2298,12 +2371,7 @@ function cleanupOwnedState(
   for (const link of links) {
     const policy =
       mode === 'break' ? link.cleanup_on_break : link.cleanup_on_end;
-    let action: EffectCleanupAction['action'];
-    if (policy === 'release') {
-      action = 'released';
-    } else {
-      action = removeProjection(db, campaignId, link, ctx);
-    }
+    const action = applyLinkPolicy(db, campaignId, link, policy, ctx);
     db.prepare(
       `UPDATE active_effect_link
        SET status = ?, removed_reason = ?, removed_at = ?,
@@ -2349,6 +2417,104 @@ function cleanupOwnedState(
     ).changes;
 
   return { links: actions, targetsRemoved };
+}
+
+/** Apply one stored cleanup policy to an owned projection. */
+function applyLinkPolicy(
+  db: Db,
+  campaignId: string,
+  link: EffectLinkRow,
+  policy: EffectCleanupPolicy,
+  ctx: EffectMutationContext,
+): EffectCleanupAction['action'] {
+  if (policy === 'release') return 'released';
+  if (policy === 'revert') return revertProjection(db, campaignId, link, ctx);
+  return removeProjection(db, campaignId, link, ctx);
+}
+
+function parseNaturalForm(json: string | null): NaturalForm | undefined {
+  if (json === null) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (isNaturalForm(parsed)) return parsed;
+  } catch {
+    // fall through to undefined
+  }
+  return undefined;
+}
+
+function isNaturalForm(value: unknown): value is NaturalForm {
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    return false;
+  const v = value as Record<string, unknown>;
+  return (
+    Number.isInteger(v.hpCurrent) &&
+    (v.hpCurrent as number) > 0 &&
+    Number.isInteger(v.hpMax) &&
+    (v.hpMax as number) >= (v.hpCurrent as number) &&
+    typeof v.rulesRef === 'string' &&
+    v.rulesRef.length > 0
+  );
+}
+
+/** Restore an owned creature's recorded natural form (the 'revert' cleanup):
+ *  it stays in play. 'missing' when the holder is unreachable, or is dead or
+ *  already gone. */
+function revertProjection(
+  db: Db,
+  campaignId: string,
+  link: EffectLinkRow,
+  ctx: EffectMutationContext,
+): 'reverted' | 'missing' {
+  const naturalForm = parseNaturalForm(link.natural_form_json);
+  if (link.link_kind !== 'actor' || naturalForm === undefined)
+    throw new ActiveEffectError(
+      `link '${link.projection_ref}' has the 'revert' cleanup policy but no recorded natural form; its stored state is inconsistent`,
+    );
+  if (link.target_kind === 'campaign_actor')
+    return revertCampaignActorToNaturalForm(db, {
+      campaignId,
+      actorId: link.target_ref,
+      naturalForm,
+      ...ctx,
+    });
+  return revertCombatantToNaturalForm(db, {
+    campaignId,
+    combatantId: link.projection_ref,
+    naturalForm,
+    ...ctx,
+  });
+}
+
+/** The natural form recorded on the active actor link held by this combatant
+ *  or its durable actor, with the owning effect. */
+export function findActiveNaturalForm(
+  db: Db,
+  campaignId: string,
+  holder: { combatantId?: string; actorId?: string },
+): { effectId: string; naturalForm: NaturalForm | undefined } | undefined {
+  const match = activeActorLinkMatcher(holder);
+  const effectIds = db
+    .prepare(
+      `SELECT DISTINCT effect_id FROM active_effect_link
+       WHERE campaign_id = ? AND link_kind = 'actor' AND status = 'active'
+       ORDER BY effect_id`,
+    )
+    .all(campaignId) as { effect_id: string }[];
+  for (const { effect_id } of effectIds) {
+    const link = readLinkRows(db, campaignId, effect_id).find(
+      (candidate) =>
+        candidate.link_kind === 'actor' &&
+        candidate.status === 'active' &&
+        match(candidate),
+    );
+    if (link !== undefined)
+      return {
+        effectId: effect_id,
+        naturalForm: parseNaturalForm(link.natural_form_json),
+      };
+  }
+  return undefined;
 }
 
 /** Delete one owned projection from its holder through the canonical seams. */
@@ -2549,6 +2715,7 @@ function finalizeEnd(
 
 interface RecordTransition {
   readonly effectKind: string | undefined;
+  readonly profile: string | undefined;
   readonly id: string;
   readonly trigger: string;
   readonly changes: readonly { axis: string; to: string }[];
@@ -2573,6 +2740,7 @@ function recordTransitions(record: RulesRecord): RecordTransition[] {
       if (typeof t.trigger !== 'string') continue;
       out.push({
         effectKind: typeof e.kind === 'string' ? e.kind : undefined,
+        profile: typeof e.profile === 'string' ? e.profile : undefined,
         id: typeof t.id === 'string' ? t.id : t.trigger,
         trigger: t.trigger,
         changes: Array.isArray(t.changes)
@@ -2603,8 +2771,12 @@ function changesTo(
  *  and ends its part of the effect, means it disappears ('vanish'); one that
  *  removes presence while the effect and link stay active means it
  *  disappears but stays bonded ('vanish-bonded': Find Familiar/Steed, S1
- *  invariant 8); one that restores the original form means it reverts
- *  ('revert'). */
+ *  invariant 8); one that restores the original form means it reverts: to an
+ *  object that leaves play for an animated-object profile (Animate Objects,
+ *  'revert-object'), to the same creature in its natural form for a
+ *  target-transformation profile (Giant Insect, 'revert-form'). Any other
+ *  profile's original form is unknown, so it is refused rather than
+ *  guessed. */
 function deriveZeroHpRule(record: RulesRecord): ZeroHpRule | null {
   const rules = new Set<ZeroHpRule>();
   for (const t of recordTransitions(record)) {
@@ -2616,7 +2788,14 @@ function deriveZeroHpRule(record: RulesRecord): ZeroHpRule | null {
           ? 'vanish'
           : 'vanish-bonded',
       );
-    else if (changesTo(t, 'form', 'original')) rules.add('revert');
+    else if (changesTo(t, 'form', 'original')) {
+      if (t.profile === 'animated-object') rules.add('revert-object');
+      else if (t.profile === 'target-transformation') rules.add('revert-form');
+      else
+        throw new ActiveEffectError(
+          `'${record.name}' transition '${t.id}' restores the original form at 0 hit points, but its profile '${t.profile ?? 'none'}' does not say whether that original is an object or a creature; the engine will not guess`,
+        );
+    }
   }
   if (rules.size > 1)
     throw new ActiveEffectError(
@@ -2667,6 +2846,35 @@ function deriveSummonCleanup(
       policy: 'remove',
       because: `'${record.name}' requires concentration and its spell-ended transition '${spellEnd.id}' removes the creature when the spell ends`,
     };
+  // Reversion spells: the spell ending reverts the creature to its original
+  // form. An animated object stops being a creature (it leaves play); a
+  // transformed creature returns to its natural form and stays in play.
+  const reversion = transitions.find(
+    (t) => t.trigger === 'spell-ended' && changesTo(t, 'form', 'original'),
+  );
+  if (reversion?.profile === 'animated-object') {
+    out.onEnd = {
+      policy: 'remove',
+      because: `'${record.name}' transition '${reversion.id}' (spell-ended) reverts the animated object to its original object form, so the creature leaves play`,
+    };
+    if (concentrationRequired)
+      out.onBreak = {
+        policy: 'remove',
+        because: `'${record.name}' requires concentration and its transition '${reversion.id}' reverts the animated object to its original object form when the spell ends, so the creature leaves play`,
+      };
+  } else if (reversion?.profile === 'target-transformation') {
+    out.onEnd = {
+      policy: 'revert',
+      because: `'${record.name}' transition '${reversion.id}' (spell-ended) returns the creature to its original form, which stays in play`,
+    };
+    out.onBreak = {
+      policy: 'revert',
+      because: `'${record.name}' transition '${reversion.id}' returns the creature to its original form when the spell ends, which a broken concentration also ends`,
+    };
+  } else if (reversion !== undefined)
+    throw new ActiveEffectError(
+      `'${record.name}' transition '${reversion.id}' restores the original form when the spell ends, but its profile '${reversion.profile ?? 'none'}' does not say whether that original is an object or a creature; the engine will not guess`,
+    );
   return out;
 }
 
@@ -2729,6 +2937,10 @@ export function closeActorLinkAtZeroHp(
   /** 'keep' for a bonded creature ('vanish-bonded'): its absence does not
    *  end the link or the effect; only the owning effect id is reported. */
   mode: 'close' | 'keep' = 'close',
+  /** How the creature's part ended: 'left-play' (it disappeared, or reverted
+   *  to an object), or 'reverted-form' (it returned to its natural form and
+   *  stays in play). Only the audit ledger text differs. */
+  how: 'left-play' | 'reverted-form' = 'left-play',
 ): { effectId: string | null; effectEnded: boolean } {
   const match = activeActorLinkMatcher(holder);
   const effectIds = db
@@ -2798,7 +3010,7 @@ export function closeActorLinkAtZeroHp(
             targetKind: link.target_kind,
             targetRef: link.target_ref,
             projectionRef: link.projection_ref,
-            action: 'removed',
+            action: how === 'reverted-form' ? 'reverted' : 'removed',
           },
         ],
       },
@@ -2815,7 +3027,10 @@ export function closeActorLinkAtZeroHp(
       {
         reason: 'source-removed',
         detail: 'zero-hit-points',
-        note: `its last owned creature '${link.projection_ref}' dropped to 0 hit points and disappeared`,
+        note:
+          how === 'reverted-form'
+            ? `its last owned creature '${link.projection_ref}' dropped to 0 hit points and returned to its natural form`
+            : `its last owned creature '${link.projection_ref}' dropped to 0 hit points and left play`,
       },
       ctx,
     );
@@ -3096,6 +3311,11 @@ export function createActiveEffect(
         'condition projection target',
       );
       validateConditionsJson([projection.condition], 'condition projection');
+      for (const policy of [projection.cleanupOnEnd, projection.cleanupOnBreak])
+        if (policy !== undefined && policy !== 'remove' && policy !== 'release')
+          throw new ActiveEffectError(
+            `condition projection '${projection.condition.id}' cleanup '${policy}' is unsupported: 'revert' is legal only on an actor link that records a natural form`,
+          );
       const key = `${projection.target.kind}:${projection.target.ref}:${projection.condition.id}`;
       if (seenProjections.has(key)) {
         throw new ActiveEffectError(
@@ -3155,6 +3375,7 @@ export function createActiveEffect(
       string,
       { onEnd: EffectCleanupPolicy; onBreak: EffectCleanupPolicy }
     >();
+    const actorZeroHpRules = new Map<string, ZeroHpRule>();
     const derivedZeroHpRule =
       spellRecord === undefined ? null : deriveZeroHpRule(spellRecord);
     const derivedCleanup: DerivedSummonCleanup =
@@ -3210,11 +3431,11 @@ export function createActiveEffect(
       )
         throw new ActiveEffectError(
           `'${spellRecord?.name}' record says its creature ${
-            derivedZeroHpRule === 'revert'
-              ? 'returns to its original form'
-              : derivedZeroHpRule === 'vanish-bonded'
-                ? 'disappears but stays bonded'
-                : 'disappears and its part of the effect ends'
+            derivedZeroHpRule === 'vanish-bonded'
+              ? 'disappears but stays bonded'
+              : derivedZeroHpRule === 'vanish'
+                ? 'disappears and its part of the effect ends'
+                : describeZeroHpRule(derivedZeroHpRule)
           } at 0 hit points (rule '${derivedZeroHpRule}'); atZeroHitPoints '${actor.atZeroHitPoints}' contradicts it`,
         );
       const declaredZeroHpRule: ZeroHpRule | null =
@@ -3229,6 +3450,28 @@ export function createActiveEffect(
         );
       const effectiveZeroHpRule: ZeroHpRule | null =
         declaredZeroHpRule ?? combatant?.zero_hp_rule ?? null;
+      // The natural form is the snapshot a form reversion restores: recorded
+      // exactly when the spell record's rule is 'revert-form', never else.
+      if (actor.naturalForm !== undefined && !isNaturalForm(actor.naturalForm))
+        throw new ActiveEffectError(
+          `linked actor '${actor.combatantId}' naturalForm must be { hpCurrent: integer above 0, hpMax: integer at least hpCurrent, rulesRef: non-empty string }`,
+        );
+      if (derivedZeroHpRule === 'revert-form') {
+        if (actor.naturalForm === undefined)
+          throw new ActiveEffectError(
+            `linked actor '${actor.combatantId}' needs naturalForm: '${spellRecord?.name}' transforms an existing creature and returns it to its original form at 0 hit points, so record the hit points (hpCurrent, hpMax) and rulesRef it has at cast`,
+          );
+      } else if (actor.naturalForm !== undefined)
+        throw new ActiveEffectError(
+          `linked actor '${actor.combatantId}' naturalForm is refused: only a spell whose record returns the creature to its original form at 0 hit points (a target transformation such as Giant Insect) records a natural form`,
+        );
+      if (
+        effectiveZeroHpRule === 'revert-form' &&
+        derivedZeroHpRule !== 'revert-form'
+      )
+        throw new ActiveEffectError(
+          `combatant '${actor.combatantId}' already has the 0-hit-point rule 'revert-form' from another effect, which only the transformation spell that set it may link`,
+        );
       // A bond that survives absence is a persistent identity (S1 invariant
       // 8); combat closure releases instance-only links, so the creature
       // needs a durable campaign-actor identity (S50).
@@ -3243,6 +3486,13 @@ export function createActiveEffect(
         );
       let onEnd = actor.cleanupOnEnd;
       let onBreak = actor.cleanupOnBreak;
+      if (
+        (onEnd === 'revert' || onBreak === 'revert') &&
+        actor.naturalForm === undefined
+      )
+        throw new ActiveEffectError(
+          `linked actor '${actor.combatantId}' cleanup 'revert' is legal only on an actor link that records a natural form (naturalForm)`,
+        );
       if (derivedCleanup.onEnd !== undefined) {
         if (onEnd !== undefined && onEnd !== derivedCleanup.onEnd.policy)
           throw new ActiveEffectError(
@@ -3262,6 +3512,8 @@ export function createActiveEffect(
         onBreak: onBreak ?? 'remove',
       };
       actorPolicies.set(actor.combatantId, policies);
+      if (effectiveZeroHpRule !== null)
+        actorZeroHpRules.set(actor.combatantId, effectiveZeroHpRule);
       if (
         combatant?.death_rules === 'player-character' &&
         (effectiveZeroHpRule !== null ||
@@ -3271,22 +3523,23 @@ export function createActiveEffect(
         throw new ActiveEffectError(
           `combatant '${actor.combatantId}' already uses player-character death rules, so it can be dying or stable and could not be taken out of play: ${
             effectiveZeroHpRule !== null
-              ? `its spell says it ${
-                  effectiveZeroHpRule === 'revert'
-                    ? 'returns to its original form'
-                    : 'disappears'
-                } at 0 hit points`
+              ? `its spell says it ${describeZeroHpRule(
+                  effectiveZeroHpRule,
+                )} at 0 hit points`
               : "a 'remove' cleanup policy needs to be able to take it out of play"
           }`,
         );
       if (
-        vanishesAtZeroHp(effectiveZeroHpRule) &&
+        (leavesPlayAtZeroHp(effectiveZeroHpRule) ||
+          effectiveZeroHpRule === 'revert-form') &&
         combatant !== undefined &&
         combatant.hp_current === 0 &&
         combatant.status !== 'dead'
       )
         throw new ActiveEffectError(
-          `combatant '${actor.combatantId}' is already at 0 hit points, where a creature that disappears at 0 hit points would already be gone; it cannot be linked`,
+          `combatant '${actor.combatantId}' is already at 0 hit points, where a creature whose spell says it ${describeZeroHpRule(
+            effectiveZeroHpRule as ZeroHpRule,
+          )} at 0 hit points would already be gone or reverted; it cannot be linked`,
         );
       if (
         effectiveZeroHpRule !== null &&
@@ -3390,10 +3643,12 @@ export function createActiveEffect(
       }
       if (
         zone.cleanupOnEnd === 'release' ||
-        zone.cleanupOnBreak === 'release'
+        zone.cleanupOnBreak === 'release' ||
+        zone.cleanupOnEnd === 'revert' ||
+        zone.cleanupOnBreak === 'revert'
       ) {
         throw new ActiveEffectError(
-          'zone projections require remove cleanup; released zones have no supported mutation lifecycle',
+          'zone projections require remove cleanup; released or reverted zones have no supported mutation lifecycle',
         );
       }
       if (seenZones.has(zone.zoneId))
@@ -3432,10 +3687,12 @@ export function createActiveEffect(
       requireNonEmptyString(form.formRef, 'form projection formRef');
       if (
         form.cleanupOnEnd === 'release' ||
-        form.cleanupOnBreak === 'release'
+        form.cleanupOnBreak === 'release' ||
+        form.cleanupOnEnd === 'revert' ||
+        form.cleanupOnBreak === 'revert'
       ) {
         throw new ActiveEffectError(
-          'form projections require remove cleanup; released forms have no supported mutation lifecycle',
+          'form projections require remove cleanup; released or reverted forms have no supported mutation lifecycle',
         );
       }
       const key = `${form.target.kind}:${form.target.ref}`;
@@ -3626,9 +3883,9 @@ export function createActiveEffect(
       `INSERT INTO active_effect_link(
          campaign_id, effect_id, link_kind, target_kind, target_ref,
          projection_ref, campaign_actor_id, cleanup_on_end, cleanup_on_break, status,
-         provenance, session_id, updated_at
+         provenance, session_id, updated_at, natural_form_json
        )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
     );
 
     for (const projection of conditions) {
@@ -3691,10 +3948,24 @@ export function createActiveEffect(
         input.provenance,
         input.sessionId,
         input.at,
+        null,
       );
     }
 
     for (const actor of actors) {
+      // The concentration replacement above may have ended a prior effect
+      // that set (and on its end cleared) this creature's 0-hit-point rule;
+      // the new link carries the rule again (a no-op when it still holds).
+      const zeroHpRule = actorZeroHpRules.get(actor.combatantId);
+      if (zeroHpRule !== undefined)
+        setCombatantZeroHpRule(txnDb, {
+          campaignId: input.campaignId,
+          combatantId: actor.combatantId,
+          rule: zeroHpRule,
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+        });
       insertLink.run(
         input.campaignId,
         input.effectId,
@@ -3708,6 +3979,13 @@ export function createActiveEffect(
         input.provenance,
         input.sessionId,
         input.at,
+        actor.naturalForm === undefined
+          ? null
+          : JSON.stringify({
+              hpCurrent: actor.naturalForm.hpCurrent,
+              hpMax: actor.naturalForm.hpMax,
+              rulesRef: actor.naturalForm.rulesRef,
+            }),
       );
     }
 
@@ -3739,6 +4017,7 @@ export function createActiveEffect(
         input.provenance,
         input.sessionId,
         input.at,
+        null,
       );
     }
     for (const form of forms) {
@@ -3768,6 +4047,7 @@ export function createActiveEffect(
         input.provenance,
         input.sessionId,
         input.at,
+        null,
       );
     }
 
@@ -4387,10 +4667,13 @@ export function removeEffectTarget(
         if (current === undefined || current.status !== 'active') {
           continue;
         }
-        const action =
-          link.cleanup_on_end === 'release'
-            ? 'released'
-            : removeProjection(txnDb, input.campaignId, link, input);
+        const action = applyLinkPolicy(
+          txnDb,
+          input.campaignId,
+          link,
+          link.cleanup_on_end,
+          input,
+        );
         // The cascade inside removeProjection may have ended this effect and
         // terminally closed the link; only stamp our provenance if it is
         // still ours to close — never overwrite the winning cleanup reason.

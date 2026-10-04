@@ -357,6 +357,47 @@ describe('nextCombatantLifecycle', () => {
     expect(apply(current, event).state).toEqual(expected);
   });
 
+  it('zero-hit-point reversion rules: an object leaves play, a transformed creature stays alive for the adapter to restore', () => {
+    const events: CombatantLifecycleEvent[] = [
+      { type: 'damage', amount: 25 },
+      { type: 'suffocationDrop' },
+      { type: 'clampToEffectiveMax' },
+    ];
+    for (const event of events) {
+      const base =
+        event.type === 'clampToEffectiveMax'
+          ? state({ hpCurrent: 5, effectiveHpMax: 0 })
+          : state();
+      const object = apply(
+        { ...base, zeroHpRule: 'revert-object' },
+        event,
+      ).state;
+      expect(object).toMatchObject({ status: 'absent', hpCurrent: 0 });
+      const form = apply({ ...base, zeroHpRule: 'revert-form' }, event).state;
+      expect(form).toMatchObject({
+        status: 'alive',
+        hpCurrent: 0,
+        recoveryBlock: null,
+        deathSaveFailures: 0,
+      });
+    }
+    // Neither accepts a knockout or player-character death rules.
+    for (const zeroHpRule of ['revert-object', 'revert-form'] as const) {
+      const current = state({ zeroHpRule });
+      expect(
+        nextCombatantLifecycle(current, {
+          type: 'knockout',
+          damage: 12,
+        }),
+      ).toMatchObject({ ok: false });
+      expect(
+        nextCombatantLifecycle(current, {
+          type: 'optIntoPlayerCharacterRules',
+        }),
+      ).toMatchObject({ ok: false });
+    }
+  });
+
   it('keeps dead terminal in both death-rule modes: positive heals and revival statuses are refused (D2 reversed)', () => {
     for (const current of [
       state({ hpCurrent: 0, status: 'dead' }),

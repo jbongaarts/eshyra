@@ -64,16 +64,20 @@ CREATE TABLE "active_effect_link" (
   link_kind TEXT NOT NULL CHECK (link_kind IN ('condition','actor','zone','form')),
   target_kind TEXT NOT NULL CHECK (target_kind IN ('character','combatant','campaign_actor','scope')),
   target_ref TEXT NOT NULL, projection_ref TEXT NOT NULL, campaign_actor_id TEXT,
-  cleanup_on_end TEXT NOT NULL DEFAULT 'remove' CHECK (cleanup_on_end IN ('remove','release')),
-  cleanup_on_break TEXT NOT NULL DEFAULT 'remove' CHECK (cleanup_on_break IN ('remove','release')),
+  cleanup_on_end TEXT NOT NULL DEFAULT 'remove' CHECK (cleanup_on_end IN ('remove','release','revert')),
+  cleanup_on_break TEXT NOT NULL DEFAULT 'remove' CHECK (cleanup_on_break IN ('remove','release','revert')),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','removed','released')),
   removed_reason TEXT, removed_at TEXT, provenance TEXT NOT NULL,
   session_id TEXT NOT NULL, updated_at TEXT NOT NULL,
+  natural_form_json TEXT,
   PRIMARY KEY (campaign_id,effect_id,link_kind,target_kind,target_ref,projection_ref),
   CHECK ((link_kind = 'zone' AND target_kind = 'scope')
          OR (link_kind != 'zone' AND target_kind != 'scope')),
   CHECK (link_kind NOT IN ('zone','form')
          OR (cleanup_on_end = 'remove' AND cleanup_on_break = 'remove')),
+  CHECK (cleanup_on_end != 'revert' OR (link_kind = 'actor' AND natural_form_json IS NOT NULL)),
+  CHECK (cleanup_on_break != 'revert' OR (link_kind = 'actor' AND natural_form_json IS NOT NULL)),
+  CHECK (natural_form_json IS NULL OR link_kind = 'actor'),
   CHECK (status = 'active' OR (removed_reason IS NOT NULL AND removed_at IS NOT NULL)),
   CHECK (status != 'active' OR (removed_reason IS NULL AND removed_at IS NULL))
 );
@@ -506,7 +510,7 @@ CREATE TABLE "encounter_combatant" (
   head_died_this_turn INTEGER NOT NULL DEFAULT 0,
   stable_recovery_settled INTEGER NOT NULL DEFAULT 0
   CHECK (stable_recovery_settled IN (0, 1)),
-  zero_hp_rule TEXT CHECK (zero_hp_rule IS NULL OR zero_hp_rule IN ('vanish', 'vanish-bonded', 'revert')),
+  zero_hp_rule TEXT CHECK (zero_hp_rule IS NULL OR zero_hp_rule IN ('vanish', 'vanish-bonded', 'revert-object', 'revert-form')),
   PRIMARY KEY (campaign_id, combatant_id)
 );
 

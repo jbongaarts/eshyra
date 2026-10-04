@@ -59,7 +59,9 @@ provenance/session/updated-at like every other live-state table:
   forms. Each link carries two
   cleanup policies (`cleanup_on_end`, `cleanup_on_break`) so normal spell end
   and concentration break can differ (the Conjure Elemental distinction: break
-  releases the elemental, ordinary end removes it).
+  releases the elemental, ordinary end removes it). The policies are `remove`,
+  `release`, and `revert` (migration 0040: legal only on an actor link that
+  carries a natural form, `natural_form_json`; see §8 and §9).
 - **`active_effect_event`** — append-only per-effect audit ledger
   (`seq` starting at 1) with a typed, validated `detail_json` per event kind:
   `created`, `refreshed`, `suppressed`, `unsuppressed`, `concentration-check`,
@@ -374,6 +376,28 @@ absent never returns to another status on the same row). `released` is
 reported only for a stored `release` policy. A holder that is truly
 unreachable (deleted, closed instance) is `missing`.
 
+### Revert cleanup and the natural form (eshyra-ysr3)
+
+A `revert` cleanup of an actor link restores the owned creature's recorded
+**natural form** through an engine seam (`revertCombatantToNaturalForm` /
+`revertCampaignActorToNaturalForm`, mirroring the remove seams: the combatant
+in an active instance, else the campaign actor, delegating to its active
+projection) and the creature **stays in play**: the action is reported
+`reverted`, the link closes with status `removed` (there is no link status for
+it), and a holder that is unreachable, dead, or already absent is `missing`.
+The natural form (`{ hpCurrent, hpMax, rulesRef }`) is captured at cast
+(`start_effect` actors entry `naturalForm`): required exactly when the spell
+record's 0-HP rule is `revert-form`, refused for every other source including
+ruling-sourced actors. Reversion restores exactly these values (the hit
+points the creature had when transformed, clamped to the effective maximum, so
+exhaustion still applies), sets the status alive, keeps conditions (the same
+creature; effect-owned projections are cleaned by normal link cleanup),
+clears the creature's 0-HP rule, and takes the armor class from the natural
+form's record when it resolves (otherwise it is unset). No damage carries
+over (the source states carry-over only for Animate Objects). `revert` is
+refused on condition/zone/form links, on ruling-sourced links, and on any
+actor link without a snapshot.
+
 A dying or stable creature is **unreachable** under `remove`: the engine
 refuses `deathRules: 'player-character'` for a creature owned under a
 `remove` policy (or one whose spell has a 0-HP rule), and refuses to link a
@@ -425,9 +449,46 @@ creates a new familiar).
   concentration breaks (owner-removed), its link closes (`removed`, reason
   `zero-hit-points`) and the effect ends (`source-removed`) when no owned
   creature remains. Releasing a link does not clear the property. A knockout
-  of such a creature is refused. **`revert`** (form->original: Animate
-  Objects, Giant Insect) only feeds the guards; its 0-HP behaviour is pending
-  (eshyra-ysr3).
+  of such a creature is refused.
+  **`revert-object`** (form->original on an `animated-object` profile:
+  Animate Objects; the original form is an object, not a creature) is
+  executed like `vanish` for the creature: at 0 HP by any route it becomes
+  absent (never dead/dying/stable/unconscious), its concentration breaks
+  (owner-removed), its link closes (`removed`, reason `zero-hit-points`) and
+  the effect ends (`source-removed`) when no animated object remains. The
+  result is `reverted` (never `vanished`) and reports `carriedOverDamage`:
+  the damage beyond the hit points it had (`max(0, damage - hpBefore)`; 0 for
+  a suffocation drop or exhaustion clamping). The engine does not track
+  object hit points, so the amount is reported, not stored. The cleanups are
+  derived: `spell-end-reversion` requires `cleanupOnEnd 'remove'` and, for a
+  concentration spell, `cleanupOnBreak 'remove'` (the object stops being a
+  creature, so it leaves play when the spell ends or concentration breaks);
+  a contradicting explicit value (for example `release`) is refused with the
+  transition id.
+  **`revert-form`** (form->original on a `target-transformation` profile:
+  Giant Insect; the original is the same creature at natural size) never
+  removes the creature. At 0 HP by any route (damage, suffocation drop,
+  exhaustion clamping; exhaustion level 6 is still death) it returns to the
+  recorded natural form (hit points, maximum, rules reference), alive with
+  its 0-HP rule cleared; its link closes (`removed`, reason
+  `zero-hit-points`) and the effect ends (`source-removed`) when no
+  transformed creature remains. The result is `reverted` with the restored
+  `naturalForm`. The cleanups are derived as `revert` for both spell end and
+  concentration break (explicit `remove`/`release` is refused), and the same
+  restoration happens on spell end, concentration break, and per-target
+  `remove_effect_target` (the "action to dismiss the effect on it"). A
+  form->original zero-hit-points transition on any other profile is refused
+  as an unknown reversion target rather than guessed. The knockout and
+  player-character death-rule refusals apply to all four rule values. A
+  present `revert-form` creature must hold an active actor link with a
+  natural form: `auditActiveEffectIntegrity` reports one that does not, and
+  its 0-HP reversion refuses with a message naming the missing natural form.
+  Migration 0040 rewrites legacy `revert` rows (and the mirrored actor
+  lifecycle JSON) to `revert-object` when any actor link, in any status,
+  holding that creature belongs to a `spell:animate-objects` effect and to
+  `revert-form` otherwise; legacy `revert-form` rows carry no snapshot
+  (nothing was released with the old rule), so they exist only in
+  development databases.
 - **S3 wards / transformations / item lifecycles**: suppression tools are
   available, and `zone`/`form` link kinds use canonical S3/C1 projection
   stores through F3 cleanup: `remove` invokes the

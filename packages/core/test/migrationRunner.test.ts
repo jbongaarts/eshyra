@@ -404,6 +404,176 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0040 splits the legacy revert rule by owning spell and adds the natural-form column', () => {
+    const bundled = discoverMigrations();
+    const file = (m: { version: number; name: string }) =>
+      `${String(m.version).padStart(4, '0')}_${m.name}.sql`;
+    const dir = makeMigrationDir(
+      Object.fromEntries(bundled.slice(0, 39).map((m) => [file(m), m.sql])),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(39);
+    const addCombatant = (
+      id: string,
+      identity: string | null,
+      rule: string | null,
+    ) =>
+      db
+        .prepare(
+          `INSERT INTO encounter_combatant(
+             campaign_id, combat_instance_id, combatant_id, identity_kind,
+             identity_ref, display_label, rules_ref, side, hp_current, hp_max,
+             status, provenance, session_id, updated_at, zero_hp_rule
+           ) VALUES ('c1','ci1',?,?,?,?,'creature:goblin','ally',5,5,'alive',
+                     'test','s',?,?)`,
+        )
+        .run(
+          id,
+          identity === null ? 'encounter_instance' : 'campaign_actor',
+          identity,
+          id,
+          NOW(),
+          rule,
+        );
+    const addEffect = (effectId: string, ref: string) =>
+      db
+        .prepare(
+          `INSERT INTO active_effect(
+             campaign_id, effect_id, kind, display_name, source_kind, source_ref,
+             duration_kind, created_at, provenance, session_id, updated_at
+           ) VALUES ('c1', ?, 'summoning', ?, 'spell', ?, 'until-removed', ?,
+                     'test', 's', ?)`,
+        )
+        .run(effectId, effectId, ref, NOW(), NOW());
+    const addLink = (
+      effectId: string,
+      combatantId: string,
+      actorId: string | null,
+      status: 'active' | 'removed',
+    ) =>
+      db
+        .prepare(
+          `INSERT INTO active_effect_link(
+             campaign_id, effect_id, link_kind, target_kind, target_ref,
+             projection_ref, campaign_actor_id, cleanup_on_end, cleanup_on_break,
+             status, removed_reason, removed_at, provenance, session_id,
+             updated_at
+           ) VALUES ('c1', ?, 'actor', 'combatant', ?, ?, ?, 'remove', 'remove',
+                     ?, ?, ?, 'test', 's', ?)`,
+        )
+        .run(
+          effectId,
+          combatantId,
+          combatantId,
+          actorId,
+          status,
+          status === 'active' ? null : 'zero-hit-points',
+          status === 'active' ? null : NOW(),
+          NOW(),
+        );
+    addEffect('fx-objects', 'spell:animate-objects');
+    addEffect('fx-insect', 'spell:giant-insect');
+    // An object whose link already closed (any status counts), a live
+    // transformed insect, a durable animated object, and an unlinked row.
+    addCombatant('obj', null, 'revert');
+    addLink('fx-objects', 'obj', null, 'removed');
+    addCombatant('insect', null, 'revert');
+    addLink('fx-insect', 'insect', null, 'active');
+    addCombatant('durable-obj', 'a-obj', 'revert');
+    addLink('fx-objects', 'durable-obj', 'a-obj', 'active');
+    addCombatant('plain', null, null);
+    addCombatant('vanisher', null, 'vanish');
+    const lifecycle = (rule: string) =>
+      JSON.stringify({ combatLifecycle: { zeroHpRule: rule } });
+    for (const [id, rule] of [
+      ['a-obj', 'revert'],
+      ['a-insect', 'revert'],
+      ['a-vanish', 'vanish'],
+    ])
+      db.prepare(
+        `INSERT INTO campaign_actor(campaign_id, actor_id, display_name,
+           actor_kind, source_kind, status, state_json, provenance, session_id,
+           updated_at)
+         VALUES ('c1', ?, ?, 'creature', 'campaign_created', 'alive', ?, 'test',
+                 's', ?)`,
+      ).run(id, id, lifecycle(rule as string), NOW());
+    db.prepare(
+      `INSERT INTO active_effect_link(
+         campaign_id, effect_id, link_kind, target_kind, target_ref,
+         projection_ref, campaign_actor_id, cleanup_on_end, cleanup_on_break,
+         status, provenance, session_id, updated_at)
+       VALUES ('c1', 'fx-insect', 'actor', 'campaign_actor', 'a-insect',
+               'a-insect', 'a-insect', 'remove', 'remove', 'active', 'test',
+               's', ?)`,
+    ).run(NOW());
+
+    const migration40 = bundled.find((m) => m.version === 40);
+    if (!migration40) throw new Error('missing migration 0040');
+    writeFileSync(join(dir, file(migration40)), migration40.sql);
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([40]);
+
+    const rules = Object.fromEntries(
+      (
+        db
+          .prepare(
+            'SELECT combatant_id, zero_hp_rule FROM encounter_combatant ORDER BY combatant_id',
+          )
+          .all() as { combatant_id: string; zero_hp_rule: string | null }[]
+      ).map((r) => [r.combatant_id, r.zero_hp_rule]),
+    );
+    expect(rules).toEqual({
+      obj: 'revert-object',
+      insect: 'revert-form',
+      'durable-obj': 'revert-object',
+      plain: null,
+      vanisher: 'vanish',
+    });
+    const actorRules = Object.fromEntries(
+      (
+        db.prepare('SELECT actor_id, state_json FROM campaign_actor').all() as {
+          actor_id: string;
+          state_json: string;
+        }[]
+      ).map((r) => [
+        r.actor_id,
+        JSON.parse(r.state_json).combatLifecycle.zeroHpRule,
+      ]),
+    );
+    expect(actorRules).toEqual({
+      'a-obj': 'revert-object',
+      'a-insect': 'revert-form',
+      'a-vanish': 'vanish',
+    });
+    // The legacy rows keep their links and have no natural form.
+    expect(
+      db
+        .prepare(
+          'SELECT COUNT(*) AS n FROM active_effect_link WHERE natural_form_json IS NOT NULL',
+        )
+        .get(),
+    ).toEqual({ n: 0 });
+    expect(
+      db.prepare('SELECT COUNT(*) AS n FROM active_effect_link').get(),
+    ).toEqual({ n: 4 });
+    expect(() =>
+      db.prepare("UPDATE encounter_combatant SET zero_hp_rule='revert'").run(),
+    ).toThrow();
+    // A 'revert' policy needs an actor link carrying a natural form.
+    expect(() =>
+      db
+        .prepare(
+          "UPDATE active_effect_link SET cleanup_on_end='revert' WHERE effect_id='fx-insect'",
+        )
+        .run(),
+    ).toThrow();
+    db.prepare(
+      `UPDATE active_effect_link SET cleanup_on_end='revert',
+         natural_form_json='{"hpCurrent":1,"hpMax":1,"rulesRef":"creature:spider"}'
+       WHERE effect_id='fx-insect' AND projection_ref='insect'`,
+    ).run();
+    db.close();
+  });
+
   it('is idempotent: a second run applies nothing', () => {
     const dir = makeMigrationDir({
       '0001_first.sql': 'CREATE TABLE a (id INTEGER PRIMARY KEY);\n',

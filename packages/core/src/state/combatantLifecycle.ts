@@ -24,13 +24,47 @@ export type CombatantLifeStatus =
  *  'vanish-bonded' = it disappears but stays bonded to its summoner, so the
  *  same creature can return (Find Familiar, Find Steed: S1 design invariant
  *  8, physical absence does not end the link);
- *  'revert' = it returns to its original form (Animate Objects, Giant
- *  Insect). Only the two vanish rules change the lifecycle automatically. */
-export type ZeroHpRule = 'vanish' | 'vanish-bonded' | 'revert';
+ *  'revert-object' = it reverts to its original OBJECT form and so leaves
+ *  play as a creature (Animate Objects: the object is not a combatant);
+ *  'revert-form' = it reverts to its original CREATURE form and stays in play
+ *  (Giant Insect: the same creature at natural size, restored from the
+ *  natural-form snapshot recorded when it was transformed).
+ *  The first three leave play (status absent) at 0 hit points; 'revert-form'
+ *  never does, so the adapter restores the natural form in the same
+ *  transaction (the pure transition only keeps the creature from dying). */
+export type ZeroHpRule =
+  | 'vanish'
+  | 'vanish-bonded'
+  | 'revert-object'
+  | 'revert-form';
 
-/** True when the creature disappears (becomes absent) at 0 hit points. */
-export function vanishesAtZeroHp(rule: ZeroHpRule | null): boolean {
-  return rule === 'vanish' || rule === 'vanish-bonded';
+/** True when the creature leaves play (becomes absent) at 0 hit points:
+ *  vanishes, or reverts to an object. It cannot be present, or admitted, at
+ *  0 HP. */
+export function leavesPlayAtZeroHp(rule: ZeroHpRule | null): boolean {
+  return (
+    rule === 'vanish' || rule === 'vanish-bonded' || rule === 'revert-object'
+  );
+}
+
+/** True when the creature returns to its natural creature form at 0 hit
+ *  points and stays in play ('revert-form'). */
+export function revertsFormAtZeroHp(rule: ZeroHpRule | null): boolean {
+  return rule === 'revert-form';
+}
+
+/** What the creature's own rule says happens at 0 hit points, as a verb
+ *  phrase for refusals ("its spell says it <phrase> when it drops to 0 hit
+ *  points"). */
+export function describeZeroHpRule(rule: ZeroHpRule): string {
+  switch (rule) {
+    case 'revert-object':
+      return 'reverts to its original object form';
+    case 'revert-form':
+      return 'reverts to its original form';
+    default:
+      return 'disappears';
+  }
 }
 
 export interface StableRecoverySchedule {
@@ -142,6 +176,22 @@ export type CombatantLifecycleResult =
 
 function refusal(refusal: string): CombatantLifecycleResult {
   return { ok: false, refusal };
+}
+
+/** A creature that reverts to its natural form at 0 hit points never dies,
+ *  falls dying, or becomes unconscious: it stays alive for the adapter to
+ *  restore its natural form in the same transaction. */
+function toRevertingForm(
+  next: {
+    -readonly [K in keyof CombatantLifecycleState]: CombatantLifecycleState[K];
+  },
+): void {
+  next.status = 'alive';
+  next.deathSaveSuccesses = 0;
+  next.deathSaveFailures = 0;
+  next.recoveryBlock = null;
+  next.stableRecovery = null;
+  next.stableRecoverySettled = false;
 }
 
 /** Leave a combatant out of play with no residual life-state bookkeeping. */
@@ -322,12 +372,20 @@ export function nextCombatantLifecycle(
         if (next.headCount === 0 && event.headMechanic?.deathWhenNoHeads) {
           next.status = 'dead';
         } else if (
-          vanishesAtZeroHp(next.zeroHpRule) &&
+          leavesPlayAtZeroHp(next.zeroHpRule) &&
           oldHp > 0 &&
           next.hpCurrent === 0
         ) {
-          // The creature's own rules say it disappears at 0 hit points.
+          // The creature's own rules say it leaves play at 0 hit points.
           toAbsent(next);
+        } else if (
+          revertsFormAtZeroHp(next.zeroHpRule) &&
+          oldHp > 0 &&
+          next.hpCurrent === 0
+        ) {
+          // It reverts to its natural form and stays in play; the adapter
+          // restores that form in the same transaction. Never death rules.
+          toRevertingForm(next);
         } else if (next.deathRules === 'player-character') {
           if (oldHp > 0 && next.hpCurrent === 0) {
             const overflow = Math.max(0, event.amount - oldHp);
@@ -405,8 +463,10 @@ export function nextCombatantLifecycle(
       case 'clampToEffectiveMax':
         next.hpCurrent = Math.min(next.hpCurrent, next.effectiveHpMax);
         if (current.hpCurrent > 0 && next.hpCurrent === 0) {
-          if (vanishesAtZeroHp(next.zeroHpRule)) {
+          if (leavesPlayAtZeroHp(next.zeroHpRule)) {
             toAbsent(next);
+          } else if (revertsFormAtZeroHp(next.zeroHpRule)) {
+            toRevertingForm(next);
           } else {
             next.status =
               next.deathRules === 'player-character' ? 'dying' : 'dead';
@@ -462,11 +522,9 @@ export function nextCombatantLifecycle(
       case 'optIntoPlayerCharacterRules':
         if (next.zeroHpRule !== null)
           return refusal(
-            `cannot opt a creature whose spell says it ${
-              next.zeroHpRule === 'revert'
-                ? 'returns to its original form'
-                : 'disappears'
-            } at 0 hit points into player-character death rules`,
+            `cannot opt a creature whose spell says it ${describeZeroHpRule(
+              next.zeroHpRule,
+            )} at 0 hit points into player-character death rules`,
           );
         if (next.hpCurrent === 0 && current.status !== 'dead')
           return refusal(
@@ -534,11 +592,9 @@ export function nextCombatantLifecycle(
       case 'knockout': {
         if (next.zeroHpRule !== null)
           return refusal(
-            `a knockout is refused: the creature's spell says it ${
-              next.zeroHpRule === 'revert'
-                ? 'returns to its original form'
-                : 'disappears'
-            } when it drops to 0 hit points`,
+            `a knockout is refused: the creature's spell says it ${describeZeroHpRule(
+              next.zeroHpRule,
+            )} when it drops to 0 hit points`,
           );
         if (
           !Number.isInteger(event.damage) ||
@@ -603,8 +659,12 @@ export function nextCombatantLifecycle(
         if (next.recoveryBlock === null) {
           const wasDying = next.status === 'dying';
           next.hpCurrent = 0;
-          if (vanishesAtZeroHp(next.zeroHpRule)) {
+          if (leavesPlayAtZeroHp(next.zeroHpRule)) {
             toAbsent(next);
+            break;
+          }
+          if (revertsFormAtZeroHp(next.zeroHpRule)) {
+            toRevertingForm(next);
             break;
           }
           next.status =
@@ -655,8 +715,10 @@ export function nextCombatantLifecycle(
         } else {
           next.hpCurrent = Math.min(next.hpCurrent, next.effectiveHpMax);
           if (current.hpCurrent > 0 && next.hpCurrent === 0) {
-            if (vanishesAtZeroHp(next.zeroHpRule)) {
+            if (leavesPlayAtZeroHp(next.zeroHpRule)) {
               toAbsent(next);
+            } else if (revertsFormAtZeroHp(next.zeroHpRule)) {
+              toRevertingForm(next);
             } else {
               next.status =
                 next.deathRules === 'player-character' ? 'dying' : 'dead';
@@ -829,7 +891,7 @@ export function nextCombatantLifecycle(
       );
   }
   if (
-    vanishesAtZeroHp(next.zeroHpRule) &&
+    leavesPlayAtZeroHp(next.zeroHpRule) &&
     next.hpCurrent === 0 &&
     next.status !== 'absent' &&
     !(
