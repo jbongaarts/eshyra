@@ -3463,6 +3463,70 @@ export function createActiveEffect(
           cleanup: outcome.cleanup,
         };
       }
+      // The replaced effect's cleanup may have taken creatures out of play
+      // (e.g. a recast Conjure Animals: the first casting's beasts disappear
+      // when it ends). Participants were validated before that cleanup, so
+      // re-check them: the new effect cannot use a creature that just left.
+      const participants: [EffectParticipant, string][] = [
+        ...(input.source.actor === undefined
+          ? []
+          : [
+              [input.source.actor, 'source.actor'] as [
+                EffectParticipant,
+                string,
+              ],
+            ]),
+        ...(input.concentration === undefined
+          ? []
+          : [
+              [input.concentration.owner, 'concentration.owner'] as [
+                EffectParticipant,
+                string,
+              ],
+            ]),
+        ...targets
+          .filter((t) => t.kind !== 'scope')
+          .map(
+            (t) =>
+              [{ kind: t.kind, ref: t.ref } as EffectParticipant, 'target'] as [
+                EffectParticipant,
+                string,
+              ],
+          ),
+        ...conditions.map(
+          (c) =>
+            [c.target, 'condition projection target'] as [
+              EffectParticipant,
+              string,
+            ],
+        ),
+        ...actors.map(
+          (a) =>
+            [
+              { kind: 'combatant', ref: a.combatantId } as EffectParticipant,
+              'linked actor',
+            ] as [EffectParticipant, string],
+        ),
+        ...forms.map(
+          (f) =>
+            [f.target, 'form projection target'] as [EffectParticipant, string],
+        ),
+      ];
+      for (const [participant, label] of participants) {
+        const status =
+          participant.kind === 'combatant'
+            ? readCombatantParticipant(txnDb, input.campaignId, participant.ref)
+                ?.status
+            : participant.kind === 'campaign_actor'
+              ? getCampaignActor(txnDb, input.campaignId, participant.ref)
+                  ?.status
+              : undefined;
+        if (status === 'absent')
+          throw new ActiveEffectError(
+            `${label} '${participant.ref}' left play when effect '${priorConcentration.effect_id}' ended ` +
+              `(its concentration was replaced by '${input.effectId}'); a new casting needs creatures that are still in play`,
+          );
+      }
     }
 
     txnDb

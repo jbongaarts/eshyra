@@ -769,7 +769,7 @@ export function assertCombatantLifecycle(
       (c.zeroHpRule === 'vanish' &&
         c.hpCurrent === 0 &&
         c.status !== 'absent' &&
-        c.status !== 'dead'))
+        !(c.status === 'dead' && (exhaustion === 6 || c.headCount === 0))))
   )
     fail(
       'I11 (a creature with a 0-hit-point rule cannot use player-character death rules or stay present at 0 HP)',
@@ -1950,6 +1950,18 @@ function startEncounterInTxn(
       actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax,
       effectiveHpMax(hpMax, conditions),
     );
+    // A creature that disappears at 0 hit points leaves no body: it cannot be
+    // admitted at 0 HP in any status (only a terminal death by exhaustion or
+    // lost heads, already recorded, can stand at 0 HP).
+    if (
+      lifecycleBefore?.zeroHpRule === 'vanish' &&
+      hpCurrent === 0 &&
+      !(existing?.status === 'dead' && terminalCause)
+    )
+      throw new EncounterCombatantError(
+        `campaign actor '${actorInput.actorId}' disappears at 0 hit points (its zero-hit-point rule), so it cannot be admitted at 0 hit points; ` +
+          'reduce it to 0 with damage in play (it becomes absent) or admit it with hit points above 0',
+      );
     const actor = upsertCampaignActor(db, {
       campaignId: input.campaignId,
       actorId: actorInput.actorId,
@@ -2940,6 +2952,20 @@ function updateCombatantInTxn(
     input.hpDelta !== undefined &&
     input.hpDelta < 0;
   const playerKnockout = input.status === 'stable' && droppedToZero;
+  // A creature that disappears at 0 hit points has no status of its own to
+  // take at 0 HP: the damage alone makes it absent. Refuse a status passed
+  // with that damage up front, rather than failing later with a misleading
+  // 'absent' refusal while the creature is still in play.
+  if (
+    current.zeroHpRule === 'vanish' &&
+    droppedToZero &&
+    input.status !== undefined &&
+    !(monsterKnockout || playerKnockout)
+  )
+    throw new EncounterCombatantError(
+      `status '${input.status}' is refused with damage that brings combatant '${input.combatantId}' to 0 hit points: ` +
+        'its spell says it disappears at 0 hit points, so the damage alone makes it absent (out of play); pass the hpDelta without a status',
+    );
   if (
     current.zeroHpRule !== null &&
     droppedToZero &&

@@ -592,3 +592,79 @@ describe('absent combatants', () => {
     expect(s.row('c2-b1').zeroHpRule).toBe('vanish');
   });
 });
+
+describe('eighth-review repairs (S45-S47)', () => {
+  it('S45: a recast cannot claim the creatures its predecessor took out of play', () => {
+    const s = setup();
+    expect(
+      s.spell('e1', 'spell:conjure-animals', [{ combatantId: 'c-b1' }]).ok,
+    ).toBe(true);
+    const recast = s.spell('e2', 'spell:conjure-animals', [
+      { combatantId: 'c-b1' },
+    ]);
+    expect(recast.ok).toBe(false);
+    expect(JSON.stringify(recast)).toMatch(/left play when effect 'e1' ended/);
+    // The refusal rolled the whole cast back: e1 still holds its beast.
+    expect(s.effect('e1').status).toBe('active');
+    expect(s.row('c-b1').status).toBe('alive');
+    // A recast with a creature still in play (a fresh beast) succeeds, and
+    // the first casting's beast disappears with it.
+    expect(
+      s.spell('e2', 'spell:conjure-animals', [{ combatantId: 'c-b2' }]).ok,
+    ).toBe(true);
+    expect(s.row('c-b1').status).toBe('absent');
+    expect(s.row('c-b2').status).toBe('alive');
+  });
+
+  it('S46: lethal damage with a status on a vanishing creature is refused truthfully', () => {
+    const s = setup();
+    s.must('start_effect', {
+      effectId: 'fx',
+      kind: 'summoning',
+      displayName: 'x',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      actors: [{ combatantId: 'c-b1', atZeroHitPoints: 'vanish' }],
+    });
+    for (const status of ['dead', 'escaped', 'inactive', 'alive']) {
+      const r = s.call('update_combatant', {
+        combatantId: 'c-b1',
+        hpDelta: -10,
+        status,
+      });
+      expect(r.ok).toBe(false);
+      expect(JSON.stringify(r)).toMatch(/pass the hpDelta without a status/);
+      expect(s.row('c-b1')).toMatchObject({ status: 'alive', hpCurrent: 7 });
+    }
+  });
+
+  it('S47: a vanishing creature cannot be admitted at 0 HP as a body', () => {
+    const s = setup(['b1']);
+    s.must('start_effect', {
+      effectId: 'fx',
+      kind: 'summoning',
+      displayName: 'Familiar',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      actors: [{ combatantId: 'c-b1', atZeroHitPoints: 'vanish' }],
+    });
+    s.must('close_combat_instance', { status: 'completed' });
+    for (const actor of [
+      { actorId: 'b1', hpCurrent: 0, status: 'dead' },
+      { actorId: 'b1', hpCurrent: 0 },
+    ]) {
+      const r = s.call('start_encounter', {
+        combatInstanceId: 'c2',
+        actors: [actor],
+      });
+      expect(r.ok).toBe(false);
+      expect(JSON.stringify(r)).toMatch(/cannot be admitted at 0 hit points/);
+    }
+    expect(
+      getCampaignActor(s.db, DEFAULT_TEST_CAMPAIGN_ID, 'b1'),
+    ).toMatchObject({
+      status: 'alive',
+      hpCurrent: 7,
+    });
+  });
+});

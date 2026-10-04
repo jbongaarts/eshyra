@@ -815,7 +815,10 @@ export function nextCombatantLifecycle(
     next.zeroHpRule === 'vanish' &&
     next.hpCurrent === 0 &&
     next.status !== 'absent' &&
-    next.status !== 'dead'
+    !(
+      next.status === 'dead' &&
+      (next.exhaustionLevel === 6 || next.headCount === 0)
+    )
   )
     return refusal(
       'a creature that disappears at 0 hit points cannot be present at 0 HP',
