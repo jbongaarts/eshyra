@@ -1667,6 +1667,10 @@ describe('player-character death rules for combatants (eshyra-o9bd.19.5.7.5)', (
             {
               combatantId: source.combatantId,
               campaignActorId: 'durable-stable-goblin',
+              // A stable creature stays a participant, so its owner can only
+              // release it (a remove policy would need it out of play).
+              cleanupOnEnd: 'release',
+              cleanupOnBreak: 'release',
             },
           ],
         },

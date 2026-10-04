@@ -1539,7 +1539,7 @@ describe('cleanup ownership', () => {
       ...CTX,
     });
     expect(dispelled.cleanup.links[0]?.action).toBe('removed');
-    expect(combatantState(db, GOBLIN_1).status).toBe('inactive');
+    expect(combatantState(db, GOBLIN_1).status).toBe('absent');
   });
 
   it('refuses linking an actor another live effect already owns', () => {
@@ -3724,7 +3724,7 @@ describe('cascading cleanup topology', () => {
       reason: 'dispelled',
       ...CTX,
     });
-    expect(combatantState(db, GOBLIN_1).status).toBe('inactive');
+    expect(combatantState(db, GOBLIN_1).status).toBe('absent');
     const goblinConc = listActiveEffects(db, CAMPAIGN, {
       includeEnded: true,
     }).find((effect) => effect.effectId === 'fx-goblin-conc');
@@ -3798,8 +3798,8 @@ describe('cascading cleanup topology', () => {
         effectId,
       ).toHaveLength(1);
     }
-    expect(combatantState(db, GOBLIN_1).status).toBe('inactive');
-    expect(combatantState(db, GOBLIN_2).status).toBe('inactive');
+    expect(combatantState(db, GOBLIN_1).status).toBe('absent');
+    expect(combatantState(db, GOBLIN_2).status).toBe('absent');
     expectCleanAudit(db);
   });
 
@@ -4000,9 +4000,9 @@ describe('campaign-actor persistent lifecycle regressions', () => {
       ...CTX,
     });
     expect(getCampaignActor(db, CAMPAIGN, 'actor-familiar')?.status).toBe(
-      'inactive',
+      'absent',
     );
-    expect(combatantState(db, second.combatantId).status).toBe('inactive');
+    expect(combatantState(db, second.combatantId).status).toBe('absent');
     expect(
       listActiveEffects(db, CAMPAIGN, { includeEnded: true }).find(
         (effect) => effect.effectId === 'fx-actor-own-concentration',

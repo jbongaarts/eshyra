@@ -304,47 +304,6 @@ describe('S41/S42: knockout and summon state survive participation changes', () 
   }
 });
 
-describe('S42: ending a summon reports a dead or dying creature as released', () => {
-  for (const variant of ['dead', 'dying'] as const) {
-    it(`a ${variant} summoned creature keeps its state and its link is released`, () => {
-      const s = setup();
-      s.must('start_encounter', {
-        combatInstanceId: 'cs',
-        actors: [{ actorId: 'wolf', rulesRef: 'creature:wolf', side: 'ally' }],
-      });
-      const id = 'cs-wolf';
-      s.must('start_effect', {
-        effectId: 'fx-summon',
-        kind: 'summoning',
-        displayName: 'Summoned wolf',
-        source: { kind: 'ruling' },
-        duration: { kind: 'until-removed' },
-        actors: [{ combatantId: id }],
-      });
-      if (variant === 'dying')
-        s.must('update_combatant', {
-          combatantId: id,
-          deathRules: 'player-character',
-        });
-      s.must('update_combatant', { combatantId: id, hpDelta: -1 });
-      s.must('update_combatant', {
-        combatantId: id,
-        hpDelta: -s.row(id).hpCurrent,
-      });
-      expect(s.row(id).status).toBe(variant);
-      const ended = s.must('end_effect', {
-        effectId: 'fx-summon',
-        reason: 'ruled',
-        note: 'summoner dismissed it',
-      });
-      expect(JSON.stringify(ended.data)).toMatch(/"action":"released"/);
-      expect(JSON.stringify(ended.data)).not.toMatch(/"action":"missing"/);
-      expect(s.row(id).status).toBe(variant);
-      s.db.close();
-    });
-  }
-});
-
 describe('S37: both sides hiding is handled with one set_surprised call per side', () => {
   it('derives surprise for each side separately and refuses one mixed call', () => {
     const s = setup();

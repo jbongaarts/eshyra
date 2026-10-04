@@ -20,8 +20,8 @@ requested round and active participant are made durable. F3 then settles round
 deadlines followed by source- and target-turn deadlines through `finalizeEnd`.
 If cleanup removes the entering combatant, the boundary still commits and
 returns `turnAvailable: false` with the participant unavailable reason.
-Boundary identity is separate from availability: a known dead, escaped, or
-inactive participant still establishes its turn-start boundary, while the
+Boundary identity is separate from availability: a known dead, escaped,
+inactive, or absent participant still establishes its turn-start boundary, while the
 completed boundary clears the active marker and surprise and returns no usable
 turn.
 
@@ -345,9 +345,9 @@ rebound to `campaign_actor`. Instance-only references retain the fail-closed
 release/remove/detach behavior. Campaign actors never become concentration
 owners or participant-turn anchors. Closure notes use
 global rounds only for ordinary round anchors; source/target turn anchors
-report remaining participant turn-start boundaries. `inactive` means
-removed from play: it cannot start concentrating and transitioning into it
-breaks concentration, which is what lets owned-actor cleanup cascade
+report remaining participant turn-start boundaries. `inactive` and `absent`
+mean removed from play: such a combatant cannot start concentrating and
+transitioning into either breaks concentration, which is what lets owned-actor cleanup cascade
 (terminal transitions flip status before cleanup, so cycles terminate).
 `escaped` combatants remain capable while the instance is active. Every
 operation that invokes nested cleanup re-reads its own liveness afterwards:
@@ -362,14 +362,58 @@ cleans exactly the links addressed to that target. There is no generic
 model-facing mutation tool: `mutateState` is a trusted `/internal` seam and
 the historical `mutate_state` wrapper was deleted (audit §5).
 
+### Remove cleanup and `absent` (S44)
+
+A `remove` cleanup of an actor link takes the owned creature out of play
+through an engine seam (`removeCombatantFromPlay` /
+`removeCampaignActorFromPlay`): status becomes **`absent`** (on the
+combatant, its campaign actor and the active projection) and the action is
+reported `removed`. alive, unconscious, escaped, inactive, dead and already
+absent creatures all become absent (dead may become absent and nothing else;
+absent never returns to another status on the same row). `released` is
+reported only for a stored `release` policy. A holder that is truly
+unreachable (deleted, closed instance) is `missing`.
+
+A dying or stable creature is **unreachable** under `remove`: the engine
+refuses `deathRules: 'player-character'` for a creature owned under a
+`remove` policy (or one whose spell has a 0-HP rule), and refuses to link a
+creature already on player-character rules under `remove` or a 0-HP rule.
+If the seam ever meets a dying or stable creature it raises an internal
+invariant error and never translates the action. An absent combatant takes
+no turn and cannot be damaged, healed, given or relieved of conditions,
+save, stabilize, or suffocate. Re-admitting an absent campaign actor to an
+encounter is a new manifestation: it needs `hpCurrent` above 0 and starts
+alive as a new creature with a fresh lifecycle. Nothing from the manifestation
+that left play carries over (conditions, exhaustion, death rules, 0-HP rule,
+heads); a new owning effect sets its own 0-HP rule.
+
 ## 9. Downstream hooks
 
 - **F7 rest engine**: long rest is a caller of `endActiveEffect`/
   `expire`-style sweeps; F3 exposes the typed timers it needs.
 - **F4 spells**: slot spend on cast is F4's; F3 records the resulting effect.
-- **S1 summons**: `summoning` kind + `actor` links + `cleanup_on_break =
-  'release'` encode the reviewed control/break matrix; per-spell projection
-  stays in S1.
+- **S1 summons**: `summoning` kind + `actor` links encode the reviewed
+  control/break matrix; per-spell projection stays in S1. For spell sources
+  the record decides the defaults and a contradicting explicit policy is
+  refused: a `spell-ended` transition that removes presence requires
+  `cleanupOnEnd 'remove'`; a `concentration-broken` transition that leaves
+  presence alone (Conjure Elemental/Fey, control -> uncontrolled) requires
+  `cleanupOnBreak 'release'`; otherwise a concentration spell whose
+  spell-ended transition removes presence requires `cleanupOnBreak 'remove'`.
+  Omitted policies take those values. The 0-HP rule is a durable creature
+  property (`zero_hp_rule`, mirrored into the actor's `combatLifecycle`),
+  derived from the record's `zero-hit-points` transition or declared as
+  `atZeroHitPoints: 'vanish'` for a ruling-sourced familiar/steed.
+  **`vanish`** (presence->absent or integrity->destroyed: the conjure spells,
+  Find Familiar/Steed, Simulacrum) is executed: reaching 0 HP by any route
+  (damage, suffocation, exhaustion clamping; exhaustion level 6 is death, not
+  0 HP) makes the creature absent, never dead/dying/stable/unconscious; its
+  concentration breaks (owner-removed), its link closes (`removed`, reason
+  `zero-hit-points`) and the effect ends (`source-removed`) when no owned
+  creature remains. Releasing a link does not clear the property. A knockout
+  of such a creature is refused. **`revert`** (form->original: Animate
+  Objects, Giant Insect) only feeds the guards; its 0-HP behaviour is pending
+  (eshyra-ysr3).
 - **S3 wards / transformations / item lifecycles**: suppression tools are
   available, and `zone`/`form` link kinds use canonical S3/C1 projection
   stores through F3 cleanup: `remove` invokes the

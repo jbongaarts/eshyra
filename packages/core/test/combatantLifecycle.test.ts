@@ -29,6 +29,7 @@ function state(
     damageThisTurn: 0,
     damageTurnKey: null,
     headDiedThisTurn: 0,
+    zeroHpRule: null,
     ...overrides,
   };
 }

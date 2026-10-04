@@ -88,6 +88,7 @@ export function adjustExhaustion(
         hpMax,
         hpCurrent: update.combatant.hpCurrent,
         died: newLevel === 6,
+        ...(update.vanished === undefined ? {} : { vanished: update.vanished }),
         ...(update.concentrationBroken?.cause === 'dead'
           ? {
               concentrationBroken: {

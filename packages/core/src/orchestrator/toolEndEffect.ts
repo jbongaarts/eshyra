@@ -11,7 +11,9 @@ export const endEffectTool: Tool = {
   description:
     'End an active effect by its actual rule and clean up exactly the ' +
     'state it owns (its projected conditions and linked actors), in one ' +
-    'transaction. Reasons: "expired" (natural duration end; an ' +
+    'transaction. A linked creature under a "remove" policy is taken out ' +
+    'of play (status absent; reported "removed"); under "release" it stays ' +
+    'in play, unowned (reported "released"). Reasons: "expired" (natural duration end; an ' +
     'until-trigger effect needs its trigger named; a round timer still in ' +
     'combat cannot expire early), "dismissed" (requires a dismissible ' +
     'effect), "concentration-broken" with detail "voluntary" or "forced" ' +

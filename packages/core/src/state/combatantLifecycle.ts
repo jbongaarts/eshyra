@@ -13,7 +13,16 @@ export type CombatantLifeStatus =
   | 'escaped'
   | 'inactive'
   | 'dying'
-  | 'stable';
+  | 'stable'
+  /** Out of play under a rule (vanished at 0 HP, melted, or removed by its
+   *  owning effect). Engine-owned; never returns to another status. */
+  | 'absent';
+
+/** What a creature's own rules say happens when it drops to 0 hit points:
+ *  'vanish' = it disappears (Conjure Animals, Find Familiar, Simulacrum);
+ *  'revert' = it returns to its original form (Animate Objects, Giant
+ *  Insect). Only 'vanish' changes the lifecycle automatically. */
+export type ZeroHpRule = 'vanish' | 'revert';
 
 export interface StableRecoverySchedule {
   readonly roll: number;
@@ -41,6 +50,8 @@ export interface CombatantLifecycleState {
   readonly damageThisTurn: number;
   readonly damageTurnKey: string | null;
   readonly headDiedThisTurn: number;
+  /** Durable creature property set by the owning effect (see ZeroHpRule). */
+  readonly zeroHpRule: ZeroHpRule | null;
 }
 
 export interface CombatantHeadMechanic {
@@ -64,6 +75,8 @@ export type CombatantLifecycleEvent =
   | { readonly type: 'clampToEffectiveMax' }
   | { readonly type: 'setStatus'; readonly status: CombatantLifeStatus }
   | { readonly type: 'optIntoPlayerCharacterRules' }
+  /** F3 remove: take the combatant out of play (status absent). */
+  | { readonly type: 'removeFromPlay' }
   | { readonly type: 'deathSave'; readonly roll: number }
   | { readonly type: 'stabilize' }
   | {
@@ -122,6 +135,20 @@ function refusal(refusal: string): CombatantLifecycleResult {
   return { ok: false, refusal };
 }
 
+/** Leave a combatant out of play with no residual life-state bookkeeping. */
+function toAbsent(
+  next: {
+    -readonly [K in keyof CombatantLifecycleState]: CombatantLifecycleState[K];
+  },
+): void {
+  next.status = 'absent';
+  next.deathSaveSuccesses = 0;
+  next.deathSaveFailures = 0;
+  next.recoveryBlock = null;
+  next.stableRecovery = null;
+  next.stableRecoverySettled = false;
+}
+
 function scheduleFor(
   context: CombatantLifecycleContext,
 ): StableRecoverySchedule | null {
@@ -141,7 +168,10 @@ export function nextCombatantLifecycle(
 
   // Terminal causes are applied before the event. A level/head death cannot be
   // undone by the effective-maximum clamp at the end of another transition.
-  if (next.exhaustionLevel === 6 || next.headCount === 0) {
+  if (
+    next.status !== 'absent' &&
+    (next.exhaustionLevel === 6 || next.headCount === 0)
+  ) {
     next.status = 'dead';
     next.hpCurrent = Math.min(next.hpCurrent, next.effectiveHpMax);
     next.recoveryBlock = null;
@@ -149,7 +179,46 @@ export function nextCombatantLifecycle(
     next.stableRecoverySettled = false;
   }
 
-  if (next.status === 'dead') {
+  if (next.status === 'absent') {
+    // An absent combatant is out of play: no turn, no death saves, no
+    // stabilizing, no recovery, no suffocation, no healing or damage. Only
+    // bookkeeping that cannot change its participation is accepted.
+    if (event.type === 'beginTurn') {
+      next.damageThisTurn = 0;
+      next.damageTurnKey = event.turnKey ?? null;
+      next.headDiedThisTurn = 0;
+    } else if (event.type === 'invalidateProjection') {
+      next.projectionOwner = false;
+    } else if (event.type === 'removeFromPlay') {
+      // Idempotent: already out of play.
+    } else if (
+      event.type !== 'admission' &&
+      event.type !== 'clampToEffectiveMax' &&
+      event.type !== 'exhaustionChanged' &&
+      !(event.type === 'headsRegrown' && event.count === 0) &&
+      !(event.type === 'transferSchedule' && event.schedule === null)
+    ) {
+      return refusal(
+        event.type === 'setStatus'
+          ? 'an absent combatant cannot change status'
+          : 'an absent combatant is out of play and cannot undergo this lifecycle event',
+      );
+    }
+    if (event.type === 'exhaustionChanged') {
+      next.exhaustionLevel = event.newLevel;
+      next.effectiveHpMax = event.newEffectiveHpMax;
+      if (event.newHpMax !== undefined) next.hpMax = event.newHpMax;
+    }
+    next.hpCurrent = Math.min(next.hpCurrent, next.effectiveHpMax);
+  } else if (event.type === 'removeFromPlay') {
+    // F3 remove. Dying and stable creatures are unreachable here: a creature
+    // whose owner can remove it never has player-character death rules.
+    if (next.status === 'dying' || next.status === 'stable')
+      return refusal(
+        `internal invariant: a ${next.status} combatant cannot be removed from play`,
+      );
+    toAbsent(next);
+  } else if (next.status === 'dead') {
     // D2 (reversed): a dead combatant stays dead in both death-rule modes
     // (SRD rule:healing); no revival event exists, so positive heals refuse.
     if (
@@ -237,6 +306,13 @@ export function nextCombatantLifecycle(
         }
         if (next.headCount === 0 && event.headMechanic?.deathWhenNoHeads) {
           next.status = 'dead';
+        } else if (
+          next.zeroHpRule === 'vanish' &&
+          oldHp > 0 &&
+          next.hpCurrent === 0
+        ) {
+          // The creature's own rules say it disappears at 0 hit points.
+          toAbsent(next);
         } else if (next.deathRules === 'player-character') {
           if (oldHp > 0 && next.hpCurrent === 0) {
             const overflow = Math.max(0, event.amount - oldHp);
@@ -314,10 +390,14 @@ export function nextCombatantLifecycle(
       case 'clampToEffectiveMax':
         next.hpCurrent = Math.min(next.hpCurrent, next.effectiveHpMax);
         if (current.hpCurrent > 0 && next.hpCurrent === 0) {
-          next.status =
-            next.deathRules === 'player-character' ? 'dying' : 'dead';
-          next.deathSaveSuccesses = 0;
-          next.deathSaveFailures = 0;
+          if (next.zeroHpRule === 'vanish') {
+            toAbsent(next);
+          } else {
+            next.status =
+              next.deathRules === 'player-character' ? 'dying' : 'dead';
+            next.deathSaveSuccesses = 0;
+            next.deathSaveFailures = 0;
+          }
         }
         if (next.status !== 'stable') {
           next.stableRecovery = null;
@@ -326,6 +406,10 @@ export function nextCombatantLifecycle(
         if (next.status === 'dead') next.recoveryBlock = null;
         break;
       case 'setStatus':
+        if (event.status === 'absent')
+          return refusal(
+            "status 'absent' is engine-owned: a creature leaves play through its owning effect or its zero-hit-point rule",
+          );
         if (event.status === 'dying' && next.deathRules !== 'player-character')
           return refusal(
             "status 'dying' requires player-character death rules",
@@ -361,6 +445,14 @@ export function nextCombatantLifecycle(
         if (event.status === 'dead') next.recoveryBlock = null;
         break;
       case 'optIntoPlayerCharacterRules':
+        if (next.zeroHpRule !== null)
+          return refusal(
+            `cannot opt a creature whose spell says it ${
+              next.zeroHpRule === 'vanish'
+                ? 'disappears'
+                : 'returns to its original form'
+            } at 0 hit points into player-character death rules`,
+          );
         if (next.hpCurrent === 0 && current.status !== 'dead')
           return refusal(
             'cannot opt a 0 HP combatant into player-character death rules unless it is dead',
@@ -425,6 +517,14 @@ export function nextCombatantLifecycle(
         next.stableRecoverySettled = false;
         break;
       case 'knockout': {
+        if (next.zeroHpRule !== null)
+          return refusal(
+            `a knockout is refused: the creature's spell says it ${
+              next.zeroHpRule === 'vanish'
+                ? 'disappears'
+                : 'returns to its original form'
+            } when it drops to 0 hit points`,
+          );
         if (
           !Number.isInteger(event.damage) ||
           event.damage <= 0 ||
@@ -488,6 +588,10 @@ export function nextCombatantLifecycle(
         if (next.recoveryBlock === null) {
           const wasDying = next.status === 'dying';
           next.hpCurrent = 0;
+          if (next.zeroHpRule === 'vanish') {
+            toAbsent(next);
+            break;
+          }
           next.status =
             next.deathRules === 'player-character' ? 'dying' : 'dead';
           next.recoveryBlock = next.status === 'dying' ? 'suffocating' : null;
@@ -536,10 +640,14 @@ export function nextCombatantLifecycle(
         } else {
           next.hpCurrent = Math.min(next.hpCurrent, next.effectiveHpMax);
           if (current.hpCurrent > 0 && next.hpCurrent === 0) {
-            next.status =
-              next.deathRules === 'player-character' ? 'dying' : 'dead';
-            next.deathSaveSuccesses = 0;
-            next.deathSaveFailures = 0;
+            if (next.zeroHpRule === 'vanish') {
+              toAbsent(next);
+            } else {
+              next.status =
+                next.deathRules === 'player-character' ? 'dying' : 'dead';
+              next.deathSaveSuccesses = 0;
+              next.deathSaveFailures = 0;
+            }
           }
           if (current.stableRecoverySettled && event.newEffectiveHpMax > 0) {
             if (!scheduleFor(context))
@@ -667,9 +775,17 @@ export function nextCombatantLifecycle(
     );
   if (!next.projectionOwner && next.stableRecovery !== null)
     return refusal('a historical actor projection cannot own stable recovery');
-  if (next.exhaustionLevel === 6 && next.status !== 'dead')
+  if (
+    next.exhaustionLevel === 6 &&
+    next.status !== 'dead' &&
+    next.status !== 'absent'
+  )
     return refusal('exhaustion level 6 requires dead status');
-  if (next.headCount === 0 && next.status !== 'dead')
+  if (
+    next.headCount === 0 &&
+    next.status !== 'dead' &&
+    next.status !== 'absent'
+  )
     return refusal('zero heads requires dead status');
   if (next.status === 'dying' || next.status === 'stable') {
     if (next.deathRules !== 'player-character' || next.hpCurrent !== 0)
@@ -678,17 +794,45 @@ export function nextCombatantLifecycle(
   if (
     next.deathRules === 'player-character' &&
     next.hpCurrent === 0 &&
-    !['dying', 'stable', 'dead'].includes(next.status)
+    !['dying', 'stable', 'dead', 'absent'].includes(next.status)
   )
     return refusal(
-      '0 HP player-character state must be dying, stable, or dead',
+      '0 HP player-character state must be dying, stable, dead, or absent',
+    );
+  if (next.status === 'absent') {
+    if (
+      next.stableRecovery !== null ||
+      next.stableRecoverySettled ||
+      next.recoveryBlock !== null ||
+      next.deathSaveSuccesses !== 0 ||
+      next.deathSaveFailures !== 0
+    )
+      return refusal(
+        'absent requires no recovery schedule, no recovery block, and no death-save counters',
+      );
+  }
+  if (
+    next.zeroHpRule === 'vanish' &&
+    next.hpCurrent === 0 &&
+    next.status !== 'absent' &&
+    next.status !== 'dead'
+  )
+    return refusal(
+      'a creature that disappears at 0 hit points cannot be present at 0 HP',
     );
   if (next.recoveryBlock !== null && next.status !== 'dying')
     return refusal('recovery block requires dying status');
   if (next.hpCurrent < 0 || next.hpCurrent > next.effectiveHpMax)
     return refusal('HP is outside the effective maximum');
-  if (current.status === 'dead' && next.status !== 'dead')
+  // I8 (amended): dead is terminal except that it may become absent.
+  if (
+    current.status === 'dead' &&
+    next.status !== 'dead' &&
+    next.status !== 'absent'
+  )
     return refusal('dead status is terminal');
+  if (current.status === 'absent' && next.status !== 'absent')
+    return refusal('absent status is terminal');
 
   return {
     ok: true,
