@@ -77,6 +77,32 @@ describe('audit retry diagnostics', () => {
     ).toBeNull();
   });
 
+  it('accepts retained-check rolls as explicit roll-ledger evidence', () => {
+    expect(
+      classifyAuditPresentationRepair(
+        reject({
+          missingRequiredCalls: [{ tool: 'roll' }],
+          presentationOnlyRepair: { kind: 'roll_ledger' },
+        }),
+        [
+          toolCall('roll_retained_check', {
+            ok: true,
+            data: {
+              reason: 'Stealth check',
+              visibility: 'player_visible',
+              category: 'ability_check',
+              dice: '1d20',
+              rolls: [14],
+              natural: 14,
+              total: 17,
+              modifierTotal: 3,
+            },
+          }),
+        ],
+      ),
+    ).toBe('presentation_only_roll_ledger');
+  });
+
   it('does not repair presentation when state, evidence, disallowed-tool, or failed-tool issues remain', () => {
     expect(
       classifyAuditPresentationRepair(

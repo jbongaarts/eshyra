@@ -8,22 +8,21 @@ import {
 } from '../src/internal.js';
 
 describe('DM system prompt', () => {
-  it('never asks the model to total state-dependent extra reactions', () => {
-    // The Hybrid Contract is a second producer of the reactionAllowance
-    // contract; it discloses the gap (eshyra-o9bd.19.3.4.6) instead.
+  it('describes engine-derived state-dependent reaction allowance', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
-    expect(prompt).toContain(
-      'are not derived by any tool, so they cannot currently',
-    );
-    expect(prompt).not.toMatch(/current total recorded/);
+    expect(prompt).toContain('derive from its tracked head count');
+    expect(prompt).toMatch(/never\s+compute or supply the total/);
+    expect(prompt).toContain('restricted to opportunity attacks');
   });
 
-  it('never leaves the surprise comparison to the model', () => {
-    // Stealth vs passive Perception is the retained-total capability gap
-    // (eshyra-o9bd.19.5.10.3), disclosed rather than adjudicated.
+  it('routes surprise through retained-check comparisons', () => {
     const prompt = buildSystemPrompt(createDefaultToolRegistry());
-    expect(prompt).toContain(
-      'no tool performs, so it cannot currently be determined',
+    expect(prompt).toContain('roll_retained_check');
+    expect(prompt).toContain('resolve_retained_check');
+    expect(prompt).toContain('set_surprised');
+    expect(prompt).toContain('Never compare totals');
+    expect(prompt).toMatch(
+      /If neither side is stealthy,\s+there is no surprise/,
     );
     expect(prompt).not.toMatch(/adjudicating\s+surprise/);
   });

@@ -13,12 +13,8 @@
 //   that crosses turn boundaries (reactions). Typed `extraReactions` pack
 //   mechanics raise it: a `perTurn` grant (marilith Reactive) refreshes the
 //   count at the start of EVERY turn; a `formula` grant (hydra Reactive
-//   Heads, one per head beyond one) depends on live state the engine does
-//   not track. {@link setReactionAllowance} stores a supplied total, accepted
-//   only for creatures whose record structurally carries such a mechanic,
-//   but nothing derives that total, and arithmetic is engine-owned, so the
-//   model-facing contract discloses the extra reactions as unrecordable
-//   (blocking capability gap eshyra-o9bd.19.3.4.6; F-09 design A5). A `restrictedTo` clause
+//   Heads, one per head beyond one) derives from the engine-tracked head count.
+//   A `restrictedTo` clause
 //   (hydra: opportunity attacks only) is surfaced on extra spends; whether
 //   a given activity satisfies it stays a ruling.
 // - Casting a spell as a bonus action restricts every other spell cast that
@@ -31,9 +27,8 @@
 // - A surprised participant can take no move, action, or bonus action on its
 //   first turn and no reaction until that turn ends (surprise). This module
 //   owns recording and enforcing the restriction. Surprise determination
-//   (Stealth vs passive Perception) is a comparison no tool performs yet
-//   (capability gap eshyra-o9bd.19.5.10.3), so the model-facing contract
-//   discloses it as undeterminable rather than leaving it to a DM ruling.
+//   runs through roll_retained_check, resolve_retained_check, and
+//   set_surprised; the model chooses applicability and observers.
 // - Two-weapon fighting's extra attack is an ordinary bonus-action spend;
 //   its damage composition is F9's, its weapon eligibility a ruling
 //   (two-weapon-fighting).
@@ -77,6 +72,9 @@ import {
 import {
   getActiveCombatInstance,
   listCombatantsForInstance,
+  readCombatant,
+  resetCombatantDamageForTurn,
+  settleCombatantHeadsAtTurnEnd,
 } from './encounterCombatants.js';
 import type { LifeState } from './hpLifecycle.js';
 import { replaceParentheticals } from './nameNormalization.js';
@@ -163,12 +161,20 @@ export interface BeginTurnResult {
   readonly combatInstanceId: string;
   readonly roundNumber: number;
   readonly budget: TurnBudget;
+  /** Present for a combatant whose rules record carries Multiple Heads. */
+  readonly headCount?: number;
   /** True when the participant is surprised: every spend on this turn will
    *  be refused, and its reaction returns only when this turn ends. */
   readonly surprisedRestricted: boolean;
   readonly turnAvailable: boolean;
   readonly participantUnavailableReason?: string;
   readonly boundaryEffects: readonly TurnBoundaryEffectSummary[];
+  readonly headRegrowths: readonly {
+    readonly combatantId: string;
+    readonly headsRegrown: number;
+    readonly hitPointsRegained: number;
+    readonly headCount: number;
+  }[];
 }
 
 export interface SpendTurnResourceInput extends TurnMutationContext {
@@ -202,25 +208,10 @@ export interface SpendTurnResourceResult {
   readonly extraReactionRestriction?: string;
 }
 
-export interface SetReactionAllowanceInput extends TurnMutationContext {
-  readonly campaignId: string;
-  readonly combatantId: string;
-  /** A reactions-per-round total to store. Nothing derives it from the
-   *  creature's state (eshyra-o9bd.19.3.4.6). */
-  readonly allowance: number;
-}
-
-export interface SetReactionAllowanceResult {
-  readonly combatInstanceId: string;
-  readonly participant: TurnParticipant;
-  readonly reactionAllowance: number;
-  /** The granting mechanic's restriction clause, when it carries one. */
-  readonly restrictedTo?: string;
-}
-
 export interface SetSurprisedInput extends TurnMutationContext {
   readonly campaignId: string;
   readonly participants: readonly TurnParticipantInput[];
+  readonly resolveRulesPack?: CampaignRulesPackResolver;
 }
 
 export interface SetSurprisedResult {
@@ -339,16 +330,12 @@ const SPELL_CAST_ACTIVITY = /\bcast(?:s|ing)?\b|\bspell/i;
 interface ReactionProfile {
   readonly allowance: number;
   readonly refresh: ReactionRefresh;
-  /** The record carries a formula-based (state-dependent) grant, so the
-   *  validated runtime allowance grant is available. */
-  readonly hasFormulaGrant: boolean;
   readonly restrictedTo: string | undefined;
 }
 
 const DEFAULT_REACTION_PROFILE: ReactionProfile = {
   allowance: 1,
   refresh: 'own_turn',
-  hasFormulaGrant: false,
   restrictedTo: undefined,
 };
 
@@ -381,6 +368,7 @@ function reactionProfileFor(
   db: Db,
   rulesRef: string | undefined,
   resolver?: CampaignRulesPackResolver,
+  headCount?: number | null,
 ): ReactionProfile {
   if (rulesRef === undefined) {
     return DEFAULT_REACTION_PROFILE;
@@ -396,7 +384,6 @@ function reactionProfileFor(
   }
   let allowance = 1;
   let refresh: ReactionRefresh = 'own_turn';
-  let hasFormulaGrant = false;
   let restrictedTo: string | undefined;
   for (const effect of effects) {
     if (typeof effect.perTurn === 'number' && effect.perTurn >= 1) {
@@ -406,16 +393,57 @@ function reactionProfileFor(
       refresh = 'every_turn';
     }
     if (typeof effect.formula === 'string') {
-      // State-dependent grant (e.g. one per hydra head beyond one): the
-      // engine cannot count heads, so the DM records the current total via
-      // the validated setReactionAllowance grant.
-      hasFormulaGrant = true;
+      // The one-per-head-beyond-one formula totals one base reaction plus
+      // every head after the first, which is equal to the tracked head count.
+      if (effect.formula === 'one-per-head-beyond-one') {
+        allowance = Math.max(allowance, Math.max(1, headCount ?? 1));
+      }
     }
     if (typeof effect.restrictedTo === 'string') {
       restrictedTo = effect.restrictedTo;
     }
   }
-  return { allowance, refresh, hasFormulaGrant, restrictedTo };
+  return { allowance, refresh, restrictedTo };
+}
+
+function combatantHeadCount(
+  db: Db,
+  campaignId: string,
+  instanceId: string,
+  participant: TurnParticipant,
+  resolver?: CampaignRulesPackResolver,
+  rejectUnknown = true,
+): number | null {
+  if (participant.kind !== 'combatant') return null;
+  const row = db
+    .prepare(
+      `SELECT head_count FROM encounter_combatant
+     WHERE campaign_id = ? AND combat_instance_id = ? AND combatant_id = ?`,
+    )
+    .get(campaignId, instanceId, participant.ref) as
+    | { head_count: number | null }
+    | undefined;
+  const count = row?.head_count ?? null;
+  const combatant = readCombatant(db, campaignId, participant.ref);
+  const hasMultipleHeads = (value: unknown): boolean =>
+    Array.isArray(value)
+      ? value.some(hasMultipleHeads)
+      : typeof value === 'object' && value !== null
+        ? (value as Record<string, unknown>).kind === 'multipleHeads' ||
+          Object.values(value).some(hasMultipleHeads)
+        : false;
+  if (
+    rejectUnknown &&
+    count === null &&
+    combatant &&
+    hasMultipleHeads(
+      lookupCampaignRecord(db, 'creature', combatant.rulesRef, resolver)?.data,
+    )
+  )
+    throw new ActionEconomyError(
+      "this creature's head count is unknown because its state predates head tracking; Eshyra cannot reconstruct it, so head-dependent damage, healing, turn settlement, and extra reactions are refused",
+    );
+  return count;
 }
 
 /** A legendary creature's per-round action economy, derived from its
@@ -555,9 +583,13 @@ function resolveBoundaryParticipant(
       participant: { kind: 'combatant', ref: input.ref },
       displayLabel: combatant.display_label,
       rulesRef: combatant.rules_ref,
+      // A dying player-character combatant keeps an available turn for its
+      // start-of-turn death save, like a dying character (S36).
       ...(combatant.status === 'dead' ||
+      combatant.status === 'stable' ||
       combatant.status === 'escaped' ||
-      combatant.status === 'inactive'
+      combatant.status === 'inactive' ||
+      combatant.status === 'absent'
         ? {
             unavailableReason: `combatant '${input.ref}' is ${combatant.status} and has no actionable turn`,
           }
@@ -761,6 +793,9 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       round = input.round;
     }
 
+    const headRegrowths: NonNullable<
+      BeginTurnResult['headRegrowths']
+    >[number][] = [];
     // Ending the previous participant's turn is implicit in beginning the
     // next: it has now taken a turn, and — surprise lasting only until the
     // end of the first turn — its surprised flag clears.
@@ -778,6 +813,17 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
         },
         input,
       );
+      if (turn.active_participant_kind === 'combatant') {
+        const regrowth = settleCombatantHeadsAtTurnEnd(txnDb, {
+          campaignId: input.campaignId,
+          combatantId: turn.active_participant_ref,
+          resolveRulesPack: input.resolveRulesPack,
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+        });
+        if (regrowth !== undefined) headRegrowths.push(regrowth);
+      }
     }
 
     // Update the durable boundary marker before any F3 settlement. This makes
@@ -801,6 +847,19 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
         instance.combatInstanceId,
       );
 
+    // Damage toward Multiple Heads' threshold belongs to the actor's
+    // structured turn. Clear accumulators as soon as that identity changes,
+    // while preserving heads lost since the multi-headed creature's own turn.
+    const damageTurnKey = `${instance.combatInstanceId}:${round}:${participant.kind}:${participant.ref}`;
+    resetCombatantDamageForTurn(txnDb, {
+      campaignId: input.campaignId,
+      combatInstanceId: instance.combatInstanceId,
+      turnKey: damageTurnKey,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+
     // Reset the new participant's per-turn budget in place. The reaction
     // count resets at the start of its own turn, and a legendary creature
     // regains its spent legendary actions (legendary-actions); surprised,
@@ -810,7 +869,18 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       input.campaignId,
       instance.combatInstanceId,
       participant,
-      reactionProfileFor(txnDb, rulesRef, input.resolveRulesPack),
+      reactionProfileFor(
+        txnDb,
+        rulesRef,
+        input.resolveRulesPack,
+        combatantHeadCount(
+          txnDb,
+          input.campaignId,
+          instance.combatInstanceId,
+          participant,
+          input.resolveRulesPack,
+        ),
+      ),
       legendaryProfileFor(txnDb, rulesRef, input.resolveRulesPack),
       input,
     );
@@ -872,6 +942,7 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
       provenance: input.provenance,
       sessionId: input.sessionId,
       at: input.at,
+      resolveRulesPack: input.resolveRulesPack,
     });
 
     const currentBoundaryIdentity = resolveBoundaryParticipant(
@@ -906,6 +977,17 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
         participant,
         input,
       );
+      if (participant.kind === 'combatant') {
+        const regrowth = settleCombatantHeadsAtTurnEnd(txnDb, {
+          campaignId: input.campaignId,
+          combatantId: participant.ref,
+          resolveRulesPack: input.resolveRulesPack,
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+        });
+        if (regrowth !== undefined) headRegrowths.push(regrowth);
+      }
     }
 
     const row = readBudgetRow(
@@ -917,16 +999,25 @@ export function beginTurn(db: Db, input: BeginTurnInput): BeginTurnResult {
     if (row === undefined) {
       throw new ActionEconomyError('turn budget row disappeared during reset');
     }
+    const headCount = combatantHeadCount(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+      participant,
+      input.resolveRulesPack,
+    );
     return {
       combatInstanceId: instance.combatInstanceId,
       roundNumber: round,
       budget: rowToBudget(row, displayLabel),
+      ...(headCount === null ? {} : { headCount }),
       surprisedRestricted: row.surprised === 1,
       turnAvailable,
       ...(participantUnavailableReason === undefined
         ? {}
         : { participantUnavailableReason }),
       boundaryEffects,
+      headRegrowths,
     };
   });
 }
@@ -1011,7 +1102,19 @@ export function spendTurnResource(
       );
     }
 
-    const profile = reactionProfileFor(txnDb, rulesRef, input.resolveRulesPack);
+    const profile = reactionProfileFor(
+      txnDb,
+      rulesRef,
+      input.resolveRulesPack,
+      combatantHeadCount(
+        txnDb,
+        input.campaignId,
+        instance.combatInstanceId,
+        participant,
+        input.resolveRulesPack,
+        false,
+      ),
+    );
     const legendaryProfile = legendaryProfileFor(
       txnDb,
       rulesRef,
@@ -1090,6 +1193,14 @@ export function spendTurnResource(
         break;
       }
       case 'reaction': {
+        if (row.reactions_used >= 1 && participant.kind === 'combatant')
+          combatantHeadCount(
+            txnDb,
+            input.campaignId,
+            instance.combatInstanceId,
+            participant,
+            input.resolveRulesPack,
+          );
         if (row.reactions_used >= row.reaction_allowance) {
           const spent =
             row.reaction_allowance === 1
@@ -1101,9 +1212,10 @@ export function spendTurnResource(
               : row.reaction_allowance === 1
                 ? '; it returns at the start of their next turn'
                 : '; they return at the start of their next turn';
-          const grantHint = profile.hasFormulaGrant
-            ? " This creature has a state-dependent extra-reaction mechanic, but Eshyra does not derive the extra reactions it grants from the creature's state, so they cannot currently be recorded."
-            : '';
+          const grantHint =
+            row.reaction_allowance > 1
+              ? ' The allowance is derived from its tracked head count; these extra reactions can be used only for opportunity attacks.'
+              : '';
           throw new ActionEconomyError(
             `${displayLabel} has already used ${spent} this round` +
               (row.reaction_activity === null
@@ -1286,89 +1398,23 @@ export function spendTurnResource(
 }
 
 /**
- * Record a combatant's current total reaction allowance — the validated
- * runtime grant for formula-based `extraReactions` mechanics whose value
- * depends on live state the engine does not track (hydra Reactive Heads:
- * one extra reaction per head beyond one). Rejected unless the combatant's
- * creature record structurally carries such a mechanic, so the model cannot
- * invent extra reactions for ordinary creatures. It stores the supplied
- * total and derives nothing; the deterministic derivation is the open
- * capability gap eshyra-o9bd.19.3.4.6.
- */
-export function setReactionAllowance(
-  db: Db,
-  input: SetReactionAllowanceInput,
-): SetReactionAllowanceResult {
-  if (!Number.isInteger(input.allowance) || input.allowance < 1) {
-    throw new ActionEconomyError(
-      "reaction allowance must be a positive integer (the creature's current total reactions per round)",
-    );
-  }
-
-  return withTransaction(db, (txnDb) => {
-    const instance = requireActiveInstance(txnDb, input.campaignId);
-    const { participant, displayLabel, rulesRef } = resolveParticipant(
-      txnDb,
-      input.campaignId,
-      instance.combatInstanceId,
-      { kind: 'combatant', ref: input.combatantId },
-    );
-    const profile = reactionProfileFor(txnDb, rulesRef);
-    if (!profile.hasFormulaGrant) {
-      throw new ActionEconomyError(
-        `${displayLabel} has no state-dependent extra-reaction mechanic in its rules record; its reaction allowance is fixed`,
-      );
-    }
-
-    ensureBudgetRow(
-      txnDb,
-      input.campaignId,
-      instance.combatInstanceId,
-      participant,
-      profile,
-      legendaryProfileFor(txnDb, rulesRef),
-      input,
-    );
-    txnDb
-      .prepare(
-        `UPDATE combat_turn_budget
-         SET reaction_allowance = ?,
-             provenance = ?, session_id = ?, updated_at = ?
-         WHERE campaign_id = ? AND combat_instance_id = ?
-           AND participant_kind = ? AND participant_ref = ?`,
-      )
-      .run(
-        input.allowance,
-        input.provenance,
-        input.sessionId,
-        input.at,
-        input.campaignId,
-        instance.combatInstanceId,
-        participant.kind,
-        participant.ref,
-      );
-
-    return {
-      combatInstanceId: instance.combatInstanceId,
-      participant,
-      reactionAllowance: input.allowance,
-      ...(profile.restrictedTo === undefined
-        ? {}
-        : { restrictedTo: profile.restrictedTo }),
-    };
-  });
-}
-
-/**
- * Record which participants are surprised. Nothing determines who is: the
- * Stealth-vs-passive-Perception comparison is the open capability gap
- * eshyra-o9bd.19.5.10.3, so the model-facing contract discloses surprise as
- * undeterminable (F-09 design A5). Surprise applies only to the
- * first turn of combat, so a participant that has already taken a turn is
+ * Record participants already derived as surprised from retained-check
+ * comparisons. Surprise applies only to the first turn of combat, so a
+ * participant that has already taken a turn is
  * rejected; {@link beginTurn} clears the flag when the surprised turn ends.
  */
 export function setSurprised(
   db: Db,
+  input: SetSurprisedInput,
+): SetSurprisedResult {
+  return withTransaction(db, (txnDb) =>
+    setSurprisedInTransaction(txnDb, input),
+  );
+}
+
+/** Internal transaction seam for the comparison-backed tool. */
+export function setSurprisedInTransaction(
+  txnDb: Db,
   input: SetSurprisedInput,
 ): SetSurprisedResult {
   if (input.participants.length === 0) {
@@ -1377,92 +1423,101 @@ export function setSurprised(
     );
   }
 
-  return withTransaction(db, (txnDb) => {
-    const instance = requireActiveInstance(txnDb, input.campaignId);
-    const turn = readInstanceTurnFields(
+  const instance = requireActiveInstance(txnDb, input.campaignId);
+  const turn = readInstanceTurnFields(
+    txnDb,
+    input.campaignId,
+    instance.combatInstanceId,
+  );
+  const surprised: TurnParticipant[] = [];
+
+  for (const participantInput of input.participants) {
+    const { participant, displayLabel, rulesRef } = resolveParticipant(
       txnDb,
       input.campaignId,
       instance.combatInstanceId,
+      participantInput,
     );
-    const surprised: TurnParticipant[] = [];
-
-    for (const participantInput of input.participants) {
-      const { participant, displayLabel, rulesRef } = resolveParticipant(
+    ensureBudgetRow(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+      participant,
+      reactionProfileFor(
         txnDb,
-        input.campaignId,
-        instance.combatInstanceId,
-        participantInput,
+        rulesRef,
+        input.resolveRulesPack,
+        combatantHeadCount(
+          txnDb,
+          input.campaignId,
+          instance.combatInstanceId,
+          participant,
+          input.resolveRulesPack,
+        ),
+      ),
+      legendaryProfileFor(txnDb, rulesRef, input.resolveRulesPack),
+      input,
+    );
+    const row = readBudgetRow(
+      txnDb,
+      input.campaignId,
+      instance.combatInstanceId,
+      participant,
+    );
+    if (row !== undefined && row.turns_taken > 0) {
+      throw new ActionEconomyError(
+        `${displayLabel} has already taken a turn this combat; surprise applies only to the first turn`,
       );
-      ensureBudgetRow(
-        txnDb,
-        input.campaignId,
-        instance.combatInstanceId,
-        participant,
-        reactionProfileFor(txnDb, rulesRef),
-        legendaryProfileFor(txnDb, rulesRef),
-        input,
+    }
+    if (
+      turn.active_participant_kind === participant.kind &&
+      turn.active_participant_ref === participant.ref
+    ) {
+      throw new ActionEconomyError(
+        `${displayLabel}'s first turn is already underway; surprise must be recorded before it begins`,
       );
-      const row = readBudgetRow(
-        txnDb,
-        input.campaignId,
-        instance.combatInstanceId,
-        participant,
+    }
+    if (
+      row !== undefined &&
+      (row.action_used === 1 ||
+        row.bonus_action_used === 1 ||
+        row.reactions_used > 0 ||
+        // The every_turn refresh (perTurn extraReactions) zeroes
+        // reactions_used at each turn start, but the retained activity
+        // still evidences a pre-first-turn reaction — a surprised
+        // creature could not have taken it.
+        row.reaction_activity !== null ||
+        row.free_interaction_used === 1 ||
+        row.movement_note !== null ||
+        // Same evidence logic for legendary actions: beginTurn zeroes the
+        // count, but a retained activity proves a pre-first-turn spend.
+        row.legendary_actions_used > 0 ||
+        row.legendary_action_activity !== null)
+    ) {
+      throw new ActionEconomyError(
+        `${displayLabel} has already acted this combat (a surprised creature could not have); surprise must be recorded before any spend`,
       );
-      if (row !== undefined && row.turns_taken > 0) {
-        throw new ActionEconomyError(
-          `${displayLabel} has already taken a turn this combat; surprise applies only to the first turn`,
-        );
-      }
-      if (
-        turn.active_participant_kind === participant.kind &&
-        turn.active_participant_ref === participant.ref
-      ) {
-        throw new ActionEconomyError(
-          `${displayLabel}'s first turn is already underway; surprise must be recorded before it begins`,
-        );
-      }
-      if (
-        row !== undefined &&
-        (row.action_used === 1 ||
-          row.bonus_action_used === 1 ||
-          row.reactions_used > 0 ||
-          // The every_turn refresh (perTurn extraReactions) zeroes
-          // reactions_used at each turn start, but the retained activity
-          // still evidences a pre-first-turn reaction — a surprised
-          // creature could not have taken it.
-          row.reaction_activity !== null ||
-          row.free_interaction_used === 1 ||
-          row.movement_note !== null ||
-          // Same evidence logic for legendary actions: beginTurn zeroes the
-          // count, but a retained activity proves a pre-first-turn spend.
-          row.legendary_actions_used > 0 ||
-          row.legendary_action_activity !== null)
-      ) {
-        throw new ActionEconomyError(
-          `${displayLabel} has already acted this combat (a surprised creature could not have); surprise must be recorded before any spend`,
-        );
-      }
-      txnDb
-        .prepare(
-          `UPDATE combat_turn_budget
+    }
+    txnDb
+      .prepare(
+        `UPDATE combat_turn_budget
            SET surprised = 1, provenance = ?, session_id = ?, updated_at = ?
            WHERE campaign_id = ? AND combat_instance_id = ?
              AND participant_kind = ? AND participant_ref = ?`,
-        )
-        .run(
-          input.provenance,
-          input.sessionId,
-          input.at,
-          input.campaignId,
-          instance.combatInstanceId,
-          participant.kind,
-          participant.ref,
-        );
-      surprised.push(participant);
-    }
+      )
+      .run(
+        input.provenance,
+        input.sessionId,
+        input.at,
+        input.campaignId,
+        instance.combatInstanceId,
+        participant.kind,
+        participant.ref,
+      );
+    surprised.push(participant);
+  }
 
-    return { combatInstanceId: instance.combatInstanceId, surprised };
-  });
+  return { combatInstanceId: instance.combatInstanceId, surprised };
 }
 
 /**

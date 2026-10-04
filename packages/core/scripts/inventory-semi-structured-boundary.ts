@@ -868,6 +868,23 @@ const rules: readonly ClassificationRule[] = [
       ),
   },
   {
+    name: 'Multiple Heads engine lifecycle',
+    matches: ({ fieldPath }) =>
+      /^data\.traits\[\]\.mechanics\.effects\[\]\.(?:initialHeads|headDiesWhenDamageInOneTurnAtLeast|headsRegrownPerDeadHead|regrowthSuppressedByDamageType|hitPointsPerRegrownHead|deathWhenNoHeads|sourceSpan)$/.test(
+        fieldPath,
+      ),
+    classify: () =>
+      result(
+        'scalar-like',
+        'complete',
+        'tracked combatant head lifecycle and derived reaction allowance in state/encounterCombatants.ts and state/actionEconomy.ts',
+        'kindSchemas multipleHeads validator checks the curated source values',
+        'encounter combatant head lifecycle consumes the typed values; the importer pins them to the Multiple Heads source span',
+        'Multiple Heads typed engine contract',
+        'mechanicsProjections.ts, rules/kindSchemas.ts, and the combatant engine',
+      ),
+  },
+  {
     name: 'mechanics closed scalar contracts',
     matches: ({ fieldPath }) =>
       /^data\.(?:mechanics|traits\[\]\.mechanics|actions\[\]\.mechanics|reactions\[\]\.mechanics|legendaryActions\.entries\[\]\.mechanics)\.(?:actionEconomy\.cost|effects\[\]\.(?:kind|mode|cost|ability|frequency|timing|attackType)|effects\[\]\.(?:creation|identity|placement|statBlockBasis)\.kind|effects\[\]\.(?:creation|creation\.options\[\]|creation\.cardinality|creation\.options\[\]\.cardinality|scaling\[\]|scaling\[\]\.options\[\]\.choices\[\]|transitions\[\]\.operation)\.kind|effects\[\]\.(?:creation\.cardinality|creation\.options\[\]\.cardinality|scaling\[\]\.options\[\]\.choices\[\]\.cardinality|transitions\[\]\.operation\.cardinality)\.mode|saves\[\]\.ability|spellcasting\.(?:ability|mode|componentRequirement)|levels\[\]\.effects\[\]\.(?:kind|mode))$/.test(

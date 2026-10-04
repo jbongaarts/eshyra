@@ -161,12 +161,8 @@ describe('rule awareness', () => {
     const suffocating = renderedFor('rule:suffocating');
     expect(suffocating).toContain('### Eshyra known limits');
     expect(suffocating).toContain('(finding: readiness-integrity)');
-    // Source-fidelity: the SRD rule forbids HP regain and stabilization until
-    // the creature can breathe again, and no runtime gate enforces it.
-    expect(suffocating).toContain(
-      'does not gate stabilization or HP recovery on renewed breathing',
-    );
-    expect(suffocating).toContain('do not call stabilize_character');
+    expect(suffocating).toContain('with set_suffocation instead');
+    expect(suffocating).toContain('calc suffocation_survival_rounds');
     expect(suffocating).not.toMatch(
       /held its breath|suffocation round countdown/i,
     );
@@ -174,60 +170,75 @@ describe('rule awareness', () => {
     expect(lair).not.toContain('### Eshyra known limits');
   });
 
-  it('scopes suffocation HP guidance by target domain', () => {
+  it('names the damage-path trap and the survival timing for suffocation', () => {
     const [limit] = ruleStatements('rule:suffocating').knownLimits;
-    // adjust_hp / stabilize_character address characters only; encounter
-    // combatants take HP through update_combatant hpDelta.
+    const sourceText = (
+      stack.recordsByKey.get('rule:suffocating')?.record.data as
+        | { text?: string }
+        | undefined
+    )?.text;
+    expect(sourceText).toContain('At the start of its next turn');
+    expect(sourceText).toContain('2 rounds to reach air before it drops');
+    // The trap: damage through the HP tools reaches 0 without the breathing
+    // gate. The timing: the drop follows the survival interval, it does not
+    // happen when breath runs out.
     expect(limit?.statement).toContain(
-      'When a character drops to 0 hit points',
+      'as damage through adjust_hp or update_combatant does not block healing or stabilization',
     );
-    expect(limit?.statement).not.toMatch(/When the creature drops/);
-    // Encounter combatants: updateCombatant defaults 0 HP to 'dead' and
-    // CombatantStatus has no dying state, so the source's dying transition is
-    // disclosed as unrepresentable, never offered as an update_combatant path.
-    expect(limit?.statement).toContain('encounter combatant');
-    expect(limit?.statement).toContain('cannot be recorded');
     expect(limit?.statement).toContain(
-      'to dead unless another status is given',
+      'after the survival interval from calc suffocation_survival_rounds expires, not when its breath runs out',
     );
     expect(limit?.statement).not.toMatch(/unconscious/);
+    const description = DEFAULT_TOOLS.find(
+      (tool) => tool.name === 'set_suffocation',
+    )?.description;
+    expect(description).toContain(
+      'event drop sets it to 0 hit points and blocks healing and stabilization',
+    );
+    expect(description).toContain(
+      'Never apply the drop as damage with adjust_hp or update_combatant',
+    );
+    expect(description).not.toMatch(/calc_suffocation/);
   });
 
-  it('discloses that add_condition cannot raise graded exhaustion', () => {
-    // domainMutations.ts addCondition no-ops on an existing id, and rest.ts
-    // applyExhaustion requires {id:'exhaustion', level:1..6}; SRD food, water,
-    // and forced march each impose (further) exhaustion levels.
+  it('retires exhaustion procedure limits after adjust_exhaustion landed', () => {
     for (const key of ['rule:food', 'rule:water', 'rule:speed']) {
-      const [limit] = ruleStatements(key).knownLimits;
-      expect(limit?.findingId).toBe('readiness-integrity');
-      expect(limit?.statement).toContain('level: 1');
-      // The increment is disclosed as unpersistable; canonical state is never
-      // delegated to the DM (ADR 0020 §2).
-      expect(limit?.statement).toContain('cannot currently be persisted');
-      expect(limit?.statement).not.toMatch(/DM tracks/);
+      expect(ruleStatements(key).knownLimits).toEqual([]);
+      expect(RULE_KNOWN_LIMITS[key]).toBeUndefined();
     }
   });
 
-  it('discloses the unresolvable fixed-total hiding comparison', () => {
+  it('states the retained-check trap for surprise without a procedure recipe', () => {
+    const [limit] = ruleStatements('rule:surprise').knownLimits;
+    expect(limit?.statement).toContain('resolve_contest');
+    expect(limit?.statement).toContain('resolve_retained_check');
+    expect(limit?.statement).toContain('set_surprised');
+    expect(limit?.statement).not.toMatch(
+      /Record each|compare every|first roll/i,
+    );
+  });
+
+  it('routes hiding comparisons through retained checks and preserves the old traps', () => {
     // SRD rule:hiding: the retained Stealth total is contested by a later
     // search (a tie keeps the hider hidden) and compared with passive
-    // Perception; no deterministic tool performs either comparison.
+    // Perception; comparisons now use the retained-check tools.
     const [limit] = ruleStatements('rule:hiding').knownLimits;
     expect(limit?.findingId).toBe('readiness-integrity');
+    expect(limit?.statement).toContain('roll_retained_check');
+    expect(limit?.statement).toContain('resolve_retained_check');
     expect(limit?.statement).toContain(
-      'cannot currently be resolved deterministically',
+      'resolve_contest always rolls both sides',
     );
-    expect(limit?.statement).toContain('resolve_contest rolls both sides');
     expect(limit?.statement).not.toMatch(/compare (it|the totals?) yourself/i);
   });
 
-  it('preserves the knockout, ready, water, and ammunition known limits', () => {
-    expect(
-      ruleStatements('rule:knocking-a-creature-out').knownLimits[0]?.statement,
-    ).toContain('instant death');
-    expect(ruleStatements('rule:water').knownLimits[0]?.statement).toContain(
-      'two levels at once',
-    );
+  it('preserves the bounded knockout, ready, water, and ammunition known limits', () => {
+    const knockout = ruleStatements('rule:knocking-a-creature-out')
+      .knownLimits[0];
+    expect(knockout?.statement).toContain('knockOut=true to adjust_hp');
+    expect(knockout?.statement).toContain('stabilize_character');
+    expect(knockout?.capabilityGaps ?? []).toEqual([]);
+    expect(ruleStatements('rule:water').knownLimits).toEqual([]);
     // A5 re-evaluation: the held energy can be tracked as a ruling-sourced
     // concentration effect, so the save stays engine-owned (DC included)
     // through resolve_concentration; the DM never computes the DC.
@@ -238,12 +249,13 @@ describe('rule awareness', () => {
     expect(ready).toContain('resolve_concentration resolves it');
     expect(ready).not.toMatch(/whichever is higher|half the damage/);
     const ammo = ruleStatements('rule:weapon-properties').knownLimits[0];
-    expect(ammo?.statement).toContain('disposition dropped');
-    expect(ammo?.statement).toContain('claim_item');
-    expect(ammo?.statement).toContain(
-      'no tool determines how many of the expended pieces are recoverable',
-    );
-    expect(ammo?.statement).not.toMatch(/recover half of/);
+    expect(ammo?.statement).toContain('expend_ammunition');
+    expect(ammo?.statement).toContain('recover_ammunition');
+    expect(
+      RULE_KNOWN_LIMITS['rule:weapon-properties']?.[0]?.participants,
+    ).toEqual(['resolve_check', 'expend_ammunition', 'recover_ammunition']);
+    expect(ammo?.statement).toContain('half the expended ammunition');
+    expect(ammo?.capabilityGaps).toBeUndefined();
   });
 
   it('validates finding identities in known limits', () => {
@@ -262,19 +274,8 @@ describe('rule awareness', () => {
         return gaps.length === 0 ? [] : [[key, gaps]];
       }),
     );
-    expect(gapsByKey).toEqual({
-      'rule:food': ['graded-exhaustion-increase'],
-      'rule:hiding': ['retained-check-total-resolution'],
-      'rule:knocking-a-creature-out': ['nonlethal-knockout'],
-      'rule:speed': ['graded-exhaustion-increase'],
-      'rule:suffocating': [
-        'suffocation-recovery-gate',
-        'combatant-dying-state',
-      ],
-      'rule:surprise': ['retained-check-total-resolution'],
-      'rule:water': ['graded-exhaustion-increase'],
-      'rule:weapon-properties': ['ammunition-recovery-count'],
-    });
+    expect(gapsByKey).toEqual({});
+    expect(ENGINE_CAPABILITY_GAPS).toEqual({});
     for (const gap of Object.values(ENGINE_CAPABILITY_GAPS))
       expect(gap.findingId).toBe('engine-capability-ownership');
 
@@ -289,10 +290,12 @@ describe('rule awareness', () => {
     expect(
       validateRuleKnownLimits(
         registeredTools,
-        { 'rule:x': [limit({ capabilityGaps: ['nonlethal-knockout'] })] },
+        {
+          'rule:x': [limit({ capabilityGaps: ['unknown' as never] })],
+        },
         {},
       ),
-    ).toEqual(["rule:x: unknown capability gap 'nonlethal-knockout'"]);
+    ).toEqual(["rule:x: unknown capability gap 'unknown'"]);
     // An owned gap no limit discloses, or an owner that is not a bead.
     expect(
       validateRuleKnownLimits(
@@ -312,41 +315,43 @@ describe('rule awareness', () => {
     ]);
     // An ADR 0018 deferral narrows the requirement; it is never a gap.
     expect(
-      validateRuleKnownLimits(registeredTools, {
-        'rule:x': [
-          limit({
-            limit: 'deferred',
-            participants: [],
-            capabilityGaps: ['nonlethal-knockout'],
-          }),
-        ],
-      }).filter((error) => error.startsWith('rule:x')),
+      validateRuleKnownLimits(
+        registeredTools,
+        {
+          'rule:x': [
+            limit({
+              limit: 'deferred',
+              participants: [],
+              capabilityGaps: ['unknown' as never],
+            }),
+          ],
+        },
+        {
+          unknown: {
+            operation: 'Synthetic operation.',
+            ownerBead: 'eshyra-x.1',
+            findingId: 'engine-capability-ownership',
+          },
+        },
+      ).filter((error) => error.startsWith('rule:x')),
     ).toEqual([
-      "rule:x: a deferred limit cannot carry capability gap 'nonlethal-knockout'",
+      "rule:x: a deferred limit cannot carry capability gap 'unknown'",
     ]);
   });
 
-  it('identifies participating tools without requiring a state writer (invariant 12)', () => {
-    // rule:hiding is a resolution-only trap: every participant is read-only,
-    // and the validator admits it.
+  it('identifies the retained-check tools and resolve traps (invariant 12)', () => {
     const [hiding] = RULE_KNOWN_LIMITS['rule:hiding'] ?? [];
     expect(hiding?.participants).toEqual([
       'resolve_contest',
       'resolve_check',
-      'calc',
+      'roll_retained_check',
+      'resolve_retained_check',
     ]);
-    for (const name of hiding?.participants ?? [])
-      expect(DEFAULT_TOOLS.find((tool) => tool.name === name)?.mutates).toBe(
-        false,
-      );
     expect(
       validateRuleKnownLimits(
         registeredTools,
         { 'rule:hiding': RULE_KNOWN_LIMITS['rule:hiding'] ?? [] },
-        {
-          'retained-check-total-resolution':
-            ENGINE_CAPABILITY_GAPS['retained-check-total-resolution'],
-        },
+        {},
       ),
     ).toEqual([]);
 
@@ -381,14 +386,12 @@ describe('rule awareness', () => {
   it('offers no substitute for a missing deterministic operation', () => {
     // Targeted regressions for substitutes the gaps invite (ADR 0020 §2/§3):
     // skipping or hand-tracking engine-owned death saves, and removing and
-    // re-adding exhaustion at a model-computed level.
+    // re-adding exhaustion instead of using its level owner.
     const suffocating =
       ruleStatements('rule:suffocating').knownLimits[0]?.statement;
-    expect(suffocating).toContain('record_death_save is not gated');
+    expect(suffocating).toContain('with set_suffocation instead');
     expect(suffocating).not.toMatch(/skip|in prose|yourself|narrat/i);
     for (const key of ['rule:food', 'rule:water', 'rule:speed'])
-      expect(ruleStatements(key).knownLimits[0]?.statement).not.toMatch(
-        /remove_condition|re-?add|level: [2-6]/,
-      );
+      expect(ruleStatements(key).knownLimits).toEqual([]);
   });
 });

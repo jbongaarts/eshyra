@@ -1,8 +1,4 @@
-import {
-  ActionEconomyError,
-  type SetReactionAllowanceResult,
-  setReactionAllowance,
-} from '../state/actionEconomy.js';
+import { ActionEconomyError } from '../state/actionEconomy.js';
 import {
   concentrationSaveDc,
   getConcentrationEffect,
@@ -22,6 +18,9 @@ const COMBATANT_STATUSES: readonly CombatantStatus[] = [
   'unconscious',
   'escaped',
   'inactive',
+  'dying',
+  'stable',
+  'absent',
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -32,7 +31,7 @@ export const updateCombatantTool: Tool = {
   name: 'update_combatant',
   mutates: true,
   description:
-    'Update a live encounter combatant by exact combatant id. args: { combatantId: string, hpDelta?: integer, addCondition?: {id:string,...}, removeCondition?: string, status?: "alive"|"dead"|"unconscious"|"escaped"|"inactive", locationId?: string, placement?: string, reactionAllowance?: integer }. reactionAllowance stores a reactions-per-round total only for a creature whose rules record carries a state-dependent extraReactions mechanic, and is refused for other creatures. Neither this tool nor any other derives that total from the current state of the creature (for example the Reactive Heads of a hydra), and that state is not tracked, so the extra reactions such a mechanic grants cannot currently be recorded. An hpDelta that brings the combatant to 0 hit points sets its status to dead unless status is also passed (for example "unconscious" for a nonlethal knockout); combatants have no dying or death-save state.',
+    'Update a live encounter combatant by exact combatant id. args: { combatantId, hpDelta?, damageTypes?, critical?, deathRules?, addCondition?, removeCondition?, status?, locationId?, placement? }. A dead combatant stays dead in both death-rule modes: it cannot be healed and a non-dead status is refused. Monster death rules are the default: an hpDelta that brings the combatant to 0 hit points sets it dead unless status is also passed (for a nonlethal knockout, "unconscious"). That knockout is hit points 0 with status unconscious and no death, but any further damage to the knocked-out monster kills it; "stable" is refused for monsters. damageTypes declares the types in the resolve_damage result for a negative hpDelta. For creatures with tracked heads, the engine tracks head loss and regrowth; extra reactions derive from the current head count. deathRules: "player-character" opts the combatant into the character death rules for good: reaching 0 hit points makes it dying (dead outright when the damage beyond 0 reaches its effective hit point maximum), damage at 0 hit points adds a death-save failure (two when critical is true), healing from 0 returns it to alive, and a nonlethal knockout is passed as status "stable" together with that damage. Otherwise "dying" and "stable" are engine-owned and refused as explicit statuses. addCondition cannot add exhaustion; use adjust_exhaustion to change exhaustion levels. Status "absent" means out of play under a rule and is engine-owned: it is refused as an explicit status, and an absent combatant takes no turn and cannot be damaged, healed, or given or relieved of conditions; it returns only through a new start_encounter admission that supplies hit points above 0. A creature whose spell says it disappears when it drops to 0 hit points (the conjure spells, Simulacrum, or an owned creature declared atZeroHitPoints "vanish" or "vanish-bonded") becomes absent when hpDelta brings it to 0 hit points, never dead, dying, stable, or unconscious, and the result reports vanished. Under "vanish" its owning link closes (the effect ends when no owned creature remains); under "vanish-bonded" (familiar, steed) the link and effect stay active and the result reports linkKept; start_encounter cannot bring it back. For such a creature a knockout (status "unconscious" or "stable" with damage to 0) is refused, as is any other status passed with damage that brings it to 0 (pass the hpDelta alone), and deathRules "player-character" is refused, as it is for any creature owned by an effect with a "remove" cleanup policy (that effect must be able to take it out of play).',
   inputSchema: {
     type: 'object',
     properties: {
@@ -47,10 +46,25 @@ export const updateCombatantTool: Tool = {
         description:
           'Signed HP delta. Negative damages, positive heals; clamped to [0, hpMax].',
       },
+      damageTypes: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Damage types from resolve_damage for negative hpDelta.',
+      },
+      deathRules: {
+        type: 'string',
+        enum: ['player-character'],
+        description:
+          'One-way opt-in to player-character death rules for this combatant. Refused for a creature whose spell says it disappears (or reverts) at 0 hit points, and for a creature owned by an effect with a "remove" cleanup policy: such a creature must be able to leave play and so can never be dying or stable.',
+      },
+      critical: {
+        type: 'boolean',
+        description: 'Damage at 0 HP was a critical hit.',
+      },
       addCondition: {
         type: 'object',
         description:
-          'Condition object to add. Must include a non-empty id; extra JSON fields are preserved.',
+          'Condition object to add. Must include a non-empty id; extra JSON fields are preserved. Exhaustion is refused here; use adjust_exhaustion.',
         properties: {
           id: { type: 'string', minLength: 1 },
         },
@@ -76,16 +90,6 @@ export const updateCombatantTool: Tool = {
         type: 'string',
         description: 'Optional updated tactical placement or zone.',
         minLength: 1,
-      },
-      reactionAllowance: {
-        type: 'integer',
-        description:
-          'A reactions-per-round total to store, accepted only for a ' +
-          'creature whose rules record grants state-dependent extra ' +
-          'reactions. The engine checks only that the record grants them; ' +
-          'it does not derive the total or check it against the ' +
-          "creature's state, and no tool derives it.",
-        minimum: 1,
       },
     },
     required: ['combatantId'],
@@ -132,41 +136,24 @@ export const updateCombatantTool: Tool = {
     if (a.placement !== undefined && typeof a.placement !== 'string') {
       return err('invalid_args', 'update_combatant placement must be a string');
     }
-    if (
-      a.reactionAllowance !== undefined &&
-      typeof a.reactionAllowance !== 'number'
-    ) {
-      return err(
-        'invalid_args',
-        'update_combatant reactionAllowance must be an integer',
-      );
-    }
-    const hasCombatantUpdate =
-      a.hpDelta !== undefined ||
-      a.addCondition !== undefined ||
-      a.removeCondition !== undefined ||
-      a.status !== undefined ||
-      a.locationId !== undefined ||
-      a.placement !== undefined;
     try {
-      let reactionAllowance: SetReactionAllowanceResult | undefined;
-      if (typeof a.reactionAllowance === 'number') {
-        reactionAllowance = setReactionAllowance(ctx.db, {
-          campaignId: ctx.campaignId,
-          combatantId: a.combatantId,
-          allowance: a.reactionAllowance,
-          provenance: `model:${ctx.turnId}`,
-          sessionId: ctx.sessionId,
-          at: ctx.at,
-        });
-        if (!hasCombatantUpdate) {
-          return ok({ reactionAllowance });
-        }
-      }
       const update = updateCombatant(ctx.db, {
         campaignId: ctx.campaignId,
         combatantId: a.combatantId,
         ...(typeof a.hpDelta === 'number' ? { hpDelta: a.hpDelta } : {}),
+        ...(Array.isArray(a.damageTypes)
+          ? {
+              damageTypes: a.damageTypes.filter(
+                (v): v is string => typeof v === 'string',
+              ),
+            }
+          : {}),
+        resolveRulesPack: ctx.resolveRulesPack,
+        ...(a.deathRules === 'player-character'
+          ? { deathRules: 'player-character' as const }
+          : {}),
+        ...(typeof a.critical === 'boolean' ? { critical: a.critical } : {}),
+        rng: ctx.rng,
         ...(isRecord(a.addCondition)
           ? { addCondition: a.addCondition as CharacterConditionEntry }
           : {}),
@@ -194,7 +181,8 @@ export const updateCombatantTool: Tool = {
       const downed =
         update.combatant.hpCurrent === 0 ||
         update.combatant.status === 'dead' ||
-        update.combatant.status === 'unconscious';
+        update.combatant.status === 'unconscious' ||
+        update.combatant.status === 'absent';
       if (update.concentrationBroken !== undefined) {
         concentration = { broken: update.concentrationBroken };
       } else if (!downed && typeof a.hpDelta === 'number' && a.hpDelta < 0) {
@@ -215,7 +203,22 @@ export const updateCombatantTool: Tool = {
       }
       return ok({
         ...update,
-        ...(reactionAllowance === undefined ? {} : { reactionAllowance }),
+        ...(update.vanished === undefined
+          ? {}
+          : {
+              vanished: {
+                ...update.vanished,
+                message:
+                  `${update.combatant.displayLabel} dropped to 0 hit points and disappeared (its spell's zero-hit-point rule): it is now absent, out of play, not dead` +
+                  (update.vanished.effectId === null
+                    ? '.'
+                    : update.vanished.linkKept
+                      ? `; it stays bonded: its link to effect '${update.vanished.effectId}' and that effect remain active, so the same creature can return.`
+                      : update.vanished.effectEnded
+                        ? `; its link to effect '${update.vanished.effectId}' closed and that effect ended (source-removed) because no owned creature remains.`
+                        : `; its link to effect '${update.vanished.effectId}' closed and that effect continues.`),
+              },
+            }),
         ...(concentration === undefined ? {} : { concentration }),
       });
     } catch (e) {

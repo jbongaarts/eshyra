@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   deriveActionMechanics,
@@ -9,6 +10,68 @@ import type {
   ActionExtraction,
   SpellExtraction,
 } from '../../../scripts/importers/dnd5e-srd-5.1/types.js';
+import { validateRecordKindSchema } from '../../../src/rules/kindSchemas.js';
+import type { RulesRecord } from '../../../src/rules/types.js';
+
+describe('Multiple Heads curated source mechanic', () => {
+  it('projects the source-backed values and provenance on the real Hydra trait', () => {
+    const records = JSON.parse(
+      readFileSync(
+        new URL(
+          '../../../data/rules-packs/rules__dnd5e-srd-5.1/records.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    ) as RulesRecord[];
+    const hydra = records.find((record) => record.key === 'creature:hydra');
+    if (hydra === undefined) throw new Error('creature:hydra was not emitted');
+    const traits = (
+      hydra.data as {
+        traits: { name: string; mechanics?: { effects?: unknown[] } }[];
+      }
+    ).traits;
+    const mechanic = traits
+      .find((trait) => trait.name === 'Multiple Heads')
+      ?.mechanics?.effects?.find(
+        (effect) =>
+          typeof effect === 'object' &&
+          effect !== null &&
+          (effect as { kind?: string }).kind === 'multipleHeads',
+      );
+    expect(mechanic).toEqual({
+      kind: 'multipleHeads',
+      initialHeads: 5,
+      headDiesWhenDamageInOneTurnAtLeast: 25,
+      headsRegrownPerDeadHead: 2,
+      regrowthSuppressedByDamageType: 'fire',
+      hitPointsPerRegrownHead: 10,
+      deathWhenNoHeads: true,
+      sourceSpan: 'The hydra has five heads.',
+    });
+    expect(hydra?.provenance.locator).toMatch(/^p\. \d+$/);
+    expect(() =>
+      validateRecordKindSchema(hydra as RulesRecord, 'hydra'),
+    ).not.toThrow();
+    const invalid = structuredClone(hydra) as RulesRecord;
+    const invalidTraits = (
+      invalid.data as {
+        traits: {
+          name: string;
+          mechanics?: { effects?: Record<string, unknown>[] };
+        }[];
+      }
+    ).traits;
+    const invalidEffect = invalidTraits
+      .find((trait) => trait.name === 'Multiple Heads')
+      ?.mechanics?.effects?.find((effect) => effect.kind === 'multipleHeads');
+    expect(invalidEffect).toBeDefined();
+    if (invalidEffect !== undefined) invalidEffect.initialHeads = 0;
+    expect(() => validateRecordKindSchema(invalid, 'hydra')).toThrow(
+      /initialHeads/,
+    );
+  });
+});
 
 describe('deriveCreatureEntryMechanics recharge parsing (eshyra-54di)', () => {
   it('parses an en-dash recharge range as minimum..maximum, not minimum..minimum', () => {
@@ -623,7 +686,7 @@ describe('deriveActionMechanics standard action semantics (eshyra-o9bd.18.7.2)',
         kind: 'objectInteraction',
         useWhen: 'object-requires-your-action',
         alsoUseWhen: 'interact-with-more-than-one-object-on-your-turn',
-        ordinaryInteractionRuleRef: 'rule:interacting-with-objects',
+        ordinaryInteractionRuleRef: 'rule:other-activity-on-your-turn',
       },
     ]);
   });

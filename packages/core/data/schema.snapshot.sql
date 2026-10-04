@@ -99,6 +99,23 @@ CREATE TABLE adventure_run (
   PRIMARY KEY (campaign_id, run_id)
 );
 
+CREATE TABLE ammunition_expenditure (
+  campaign_id TEXT NOT NULL,
+  expenditure_id TEXT NOT NULL,
+  combat_instance_id TEXT NOT NULL,
+  character_id TEXT NOT NULL,
+  source_inventory_id TEXT NOT NULL,
+  expended_inventory_id TEXT NOT NULL,
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  world_location_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('expended', 'resolved')),
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  resolved_at TEXT, name TEXT, pack_ref TEXT, variant_id TEXT, properties_json TEXT,
+  PRIMARY KEY (campaign_id, expenditure_id)
+);
+
 CREATE TABLE arc_summary (
   campaign_id TEXT NOT NULL,
   arc_id TEXT NOT NULL,
@@ -122,36 +139,18 @@ CREATE TABLE attunement (
   PRIMARY KEY (campaign_id, character_id, item_id)
 );
 
-CREATE TABLE campaign_actor (
+CREATE TABLE "campaign_actor" (
   campaign_id TEXT NOT NULL,
   actor_id TEXT NOT NULL,
   display_name TEXT NOT NULL,
-  actor_kind TEXT NOT NULL CHECK (actor_kind IN (
-    'npc',
-    'creature',
-    'monster',
-    'companion',
-    'other'
-  )),
-  source_kind TEXT NOT NULL CHECK (source_kind IN (
-    'module_npc',
-    'module_creature',
-    'encounter_instance',
-    'campaign_created'
-  )),
+  actor_kind TEXT NOT NULL CHECK (actor_kind IN ('npc', 'creature', 'monster', 'companion', 'other')),
+  source_kind TEXT NOT NULL CHECK (source_kind IN ('module_npc', 'module_creature', 'encounter_instance', 'campaign_created')),
   source_ref TEXT,
   rules_ref TEXT,
   hp_current INTEGER CHECK (hp_current IS NULL OR hp_current >= 0),
   hp_max INTEGER CHECK (hp_max IS NULL OR hp_max >= 0),
   conditions_json TEXT NOT NULL DEFAULT '[]',
-  status TEXT NOT NULL CHECK (status IN (
-    'alive',
-    'dead',
-    'unconscious',
-    'escaped',
-    'inactive',
-    'unknown'
-  )),
+  status TEXT NOT NULL CHECK (status IN ('alive', 'dead', 'unconscious', 'escaped', 'inactive', 'unknown', 'dying', 'stable', 'absent')),
   current_location_id TEXT,
   state_json TEXT NOT NULL DEFAULT '{}',
   provenance TEXT NOT NULL,
@@ -327,7 +326,9 @@ CREATE TABLE character (
     CHECK (life_state IN ('alive', 'dying', 'stable', 'dead')), death_save_successes INTEGER NOT NULL DEFAULT 0
     CHECK (death_save_successes BETWEEN 0 AND 3), death_save_failures INTEGER NOT NULL DEFAULT 0
     CHECK (death_save_failures BETWEEN 0 AND 3), inspiration INTEGER NOT NULL DEFAULT 0
-    CHECK (inspiration IN (0, 1)), stable_recovery_roll INTEGER CHECK (stable_recovery_roll BETWEEN 1 AND 4), stable_recovery_anchor_elapsed_minutes INTEGER CHECK (stable_recovery_anchor_elapsed_minutes >= 0), stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0));
+    CHECK (inspiration IN (0, 1)), stable_recovery_roll INTEGER CHECK (stable_recovery_roll BETWEEN 1 AND 4), stable_recovery_anchor_elapsed_minutes INTEGER CHECK (stable_recovery_anchor_elapsed_minutes >= 0), stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0), recovery_block TEXT
+  CHECK (recovery_block IS NULL OR recovery_block = 'suffocating'), stable_recovery_settled INTEGER NOT NULL DEFAULT 0
+  CHECK (stable_recovery_settled IN (0, 1)));
 
 CREATE TABLE character_hit_dice (
   character_id TEXT PRIMARY KEY REFERENCES character(id),
@@ -463,16 +464,13 @@ CREATE TABLE effect_transformation_form (
   PRIMARY KEY (campaign_id, target_kind, target_ref)
 );
 
-CREATE TABLE encounter_combatant (
+CREATE TABLE "encounter_combatant" (
   campaign_id TEXT NOT NULL,
   combat_instance_id TEXT NOT NULL,
   source_encounter_id TEXT,
   combatant_id TEXT NOT NULL,
   identity_kind TEXT NOT NULL CHECK (identity_kind IN (
-    'encounter_instance',
-    'module_npc',
-    'module_creature',
-    'campaign_actor'
+    'encounter_instance', 'module_npc', 'module_creature', 'campaign_actor'
   )),
   identity_ref TEXT,
   display_label TEXT NOT NULL,
@@ -484,17 +482,31 @@ CREATE TABLE encounter_combatant (
   ac INTEGER CHECK (ac IS NULL OR ac >= 0),
   conditions_json TEXT NOT NULL DEFAULT '[]',
   status TEXT NOT NULL CHECK (status IN (
-    'alive',
-    'dead',
-    'unconscious',
-    'escaped',
-    'inactive'
+    'alive', 'dead', 'unconscious', 'escaped', 'inactive', 'dying', 'stable',
+    'absent'
   )),
   location_id TEXT,
   placement TEXT,
   provenance TEXT NOT NULL,
   session_id TEXT NOT NULL,
   updated_at TEXT NOT NULL,
+  death_rules TEXT NOT NULL DEFAULT 'monster' CHECK (death_rules IN ('monster', 'player-character')),
+  death_save_successes INTEGER NOT NULL DEFAULT 0 CHECK (death_save_successes BETWEEN 0 AND 3),
+  death_save_failures INTEGER NOT NULL DEFAULT 0 CHECK (death_save_failures BETWEEN 0 AND 3),
+  recovery_block TEXT CHECK (recovery_block IS NULL OR recovery_block = 'suffocating'),
+  stable_recovery_roll INTEGER CHECK (stable_recovery_roll BETWEEN 1 AND 4),
+  stable_recovery_anchor_elapsed_minutes INTEGER CHECK (stable_recovery_anchor_elapsed_minutes >= 0),
+  stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0),
+  head_count INTEGER CHECK (head_count IS NULL OR head_count >= 0),
+  heads_died_since_own_turn INTEGER NOT NULL DEFAULT 0,
+  fire_damage_since_own_turn INTEGER NOT NULL DEFAULT 0
+  CHECK (fire_damage_since_own_turn IN (0, 1)),
+  damage_this_turn INTEGER NOT NULL DEFAULT 0,
+  damage_turn_key TEXT,
+  head_died_this_turn INTEGER NOT NULL DEFAULT 0,
+  stable_recovery_settled INTEGER NOT NULL DEFAULT 0
+  CHECK (stable_recovery_settled IN (0, 1)),
+  zero_hp_rule TEXT CHECK (zero_hp_rule IS NULL OR zero_hp_rule IN ('vanish', 'vanish-bonded', 'revert')),
   PRIMARY KEY (campaign_id, combatant_id)
 );
 
@@ -772,6 +784,51 @@ CREATE TABLE rest_participant (
   FOREIGN KEY (campaign_id, rest_id) REFERENCES rest_event(campaign_id, rest_id)
 );
 
+CREATE TABLE retained_check (
+  campaign_id TEXT NOT NULL,
+  retained_check_id TEXT NOT NULL,
+  label TEXT NOT NULL,
+  participant_kind TEXT CHECK (participant_kind IN ('character', 'combatant')),
+  participant_ref TEXT,
+  combat_instance_id TEXT,
+  dice TEXT NOT NULL,
+  rolls_json TEXT NOT NULL,
+  natural INTEGER NOT NULL,
+  modifier_total INTEGER NOT NULL,
+  total INTEGER NOT NULL,
+  visibility TEXT NOT NULL CHECK (visibility IN ('player_visible', 'dm_only')),
+  status TEXT NOT NULL CHECK (status IN ('active', 'ended')),
+  end_reason TEXT,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  ended_at TEXT,
+  PRIMARY KEY (campaign_id, retained_check_id),
+  CHECK ((participant_kind IS NULL) = (participant_ref IS NULL)),
+  CHECK ((status = 'active' AND ended_at IS NULL AND end_reason IS NULL)
+      OR (status = 'ended' AND ended_at IS NOT NULL AND end_reason IS NOT NULL))
+);
+
+CREATE TABLE retained_check_comparison (
+  campaign_id TEXT NOT NULL,
+  comparison_id TEXT NOT NULL,
+  retained_check_id TEXT NOT NULL,
+  mode TEXT NOT NULL CHECK (mode IN ('search', 'passive')),
+  observer_label TEXT NOT NULL,
+  observer_kind TEXT CHECK (observer_kind IN ('character', 'combatant')),
+  observer_ref TEXT,
+  observer_total INTEGER NOT NULL,
+  noticed INTEGER NOT NULL CHECK (noticed IN (0, 1)),
+  resolution_json TEXT NOT NULL,
+  provenance TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (campaign_id, comparison_id),
+  FOREIGN KEY (campaign_id, retained_check_id)
+    REFERENCES retained_check(campaign_id, retained_check_id),
+  CHECK ((observer_kind IS NULL) = (observer_ref IS NULL))
+);
+
 CREATE TABLE scene (
   campaign_id TEXT NOT NULL,
   session_id TEXT NOT NULL,
@@ -877,13 +934,14 @@ CREATE UNIQUE INDEX active_effect_one_concentration_per_owner ON active_effect(c
 
 CREATE INDEX active_effect_status ON active_effect(campaign_id,status);
 
+CREATE INDEX ammunition_expenditure_combat_character
+  ON ammunition_expenditure(campaign_id, combat_instance_id, character_id);
+
 CREATE INDEX attunement_item ON attunement(campaign_id, item_id);
 
-CREATE INDEX campaign_actor_location
-  ON campaign_actor(campaign_id, current_location_id);
+CREATE INDEX campaign_actor_location ON campaign_actor(campaign_id, current_location_id);
 
-CREATE INDEX campaign_actor_source
-  ON campaign_actor(campaign_id, source_kind, source_ref);
+CREATE INDEX campaign_actor_source ON campaign_actor(campaign_id, source_kind, source_ref);
 
 CREATE UNIQUE INDEX campaign_arc_one_open
   ON campaign_arc(campaign_id) WHERE status = 'open';
@@ -921,14 +979,11 @@ CREATE INDEX combat_instance_source
 CREATE INDEX combat_turn_budget_instance
   ON combat_turn_budget(campaign_id, combat_instance_id);
 
-CREATE INDEX encounter_combatant_identity
-  ON encounter_combatant(campaign_id, identity_kind, identity_ref);
+CREATE INDEX encounter_combatant_identity ON encounter_combatant(campaign_id, identity_kind, identity_ref);
 
-CREATE INDEX encounter_combatant_instance
-  ON encounter_combatant(campaign_id, combat_instance_id);
+CREATE INDEX encounter_combatant_instance ON encounter_combatant(campaign_id, combat_instance_id);
 
-CREATE INDEX encounter_combatant_status
-  ON encounter_combatant(campaign_id, status);
+CREATE INDEX encounter_combatant_status ON encounter_combatant(campaign_id, status);
 
 CREATE INDEX entity_usage_counter_owner
   ON entity_usage_counter(campaign_id, owner_kind, owner_ref);
@@ -947,6 +1002,12 @@ CREATE INDEX inventory_wear_state_character
   ON inventory_wear_state(character_id, wear_state, inventory_id);
 
 CREATE INDEX rest_event_long_benefit_time ON rest_event(campaign_id, kind, end_elapsed_minutes);
+
+CREATE INDEX retained_check_campaign_status
+  ON retained_check(campaign_id, status);
+
+CREATE INDEX retained_check_comparison_retained
+  ON retained_check_comparison(campaign_id, retained_check_id, mode);
 
 CREATE UNIQUE INDEX scene_log_insertion_order ON scene_log(insertion_order);
 

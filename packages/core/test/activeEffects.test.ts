@@ -9,13 +9,14 @@
 // validation of malformed durable state.
 
 import { describe, expect, it } from 'vitest';
-import type { AdventureModule, Db } from '../src/internal.js';
+import type { AdventureModule, Db, ToolContext } from '../src/internal.js';
 import {
   addCondition,
   adjustHp,
   advanceWorldTime,
   applyCombatClosureToEffects,
   auditActiveEffectIntegrity,
+  beginSuffocation,
   beginTurn,
   breakCombatantConcentration,
   closeCombatInstance,
@@ -45,6 +46,7 @@ import {
   unsuppressEffect,
   updateCombatant,
 } from '../src/internal.js';
+import { installLateAmbiguityAddon } from './discovery/support/lateAmbiguityAddon.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
@@ -1004,6 +1006,19 @@ describe('adjustHp concentration integration', () => {
     });
   });
 
+  it('breaks concentration when suffocation applies the 0 HP dying transition', () => {
+    const { db, pcId } = setup();
+    castBless(db, pcId);
+    beginSuffocation(db, { ...CTX, characterId: pcId });
+    expect(getConcentrationEffect(db, CAMPAIGN, pc(pcId))).toBeUndefined();
+    expect(
+      listEffectEvents(db, CAMPAIGN, 'fx-bless').at(-1)?.detail,
+    ).toMatchObject({
+      reason: 'concentration-broken',
+      detail: 'incapacitated',
+    });
+  });
+
   it('records death as the break cause on instant death', () => {
     const { db, pcId } = setup();
     castBless(db, pcId);
@@ -1524,7 +1539,7 @@ describe('cleanup ownership', () => {
       ...CTX,
     });
     expect(dispelled.cleanup.links[0]?.action).toBe('removed');
-    expect(combatantState(db, GOBLIN_1).status).toBe('inactive');
+    expect(combatantState(db, GOBLIN_1).status).toBe('absent');
   });
 
   it('refuses linking an actor another live effect already owns', () => {
@@ -2330,18 +2345,16 @@ describe('update_combatant concentration wiring', () => {
       }),
     ).toBeUndefined();
 
-    // A further update of the downed combatant reports nothing to break.
+    // A terminal combatant refuses further damage without breaking anything.
     const again = registry.invoke(
       'update_combatant',
       { combatantId: GOBLIN_1, hpDelta: -1 },
       ctx,
     );
-    expect(again.ok).toBe(true);
-    if (again.ok) {
-      expect(
-        (again.data as { concentration?: unknown }).concentration,
-      ).toBeUndefined();
-    }
+    expect(again).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('dead combatant cannot undergo'),
+    });
   });
 });
 
@@ -2442,15 +2455,15 @@ describe('updateCombatant concentration atomicity', () => {
       displayName: 'Goblin Focus',
       cause: 'dead',
     });
-    // An explicit unconscious status also downs (and would break) — but an
-    // already-down combatant triggers nothing further.
-    const again = updateCombatant(db, {
-      campaignId: CAMPAIGN,
-      combatantId: GOBLIN_1,
-      status: 'unconscious',
-      ...CTX,
-    });
-    expect(again.concentrationBroken).toBeUndefined();
+    // Terminal death cannot be rewritten through a participation status.
+    expect(() =>
+      updateCombatant(db, {
+        campaignId: CAMPAIGN,
+        combatantId: GOBLIN_1,
+        status: 'unconscious',
+        ...CTX,
+      }),
+    ).toThrow(/dead combatant cannot change status/);
   });
 });
 
@@ -3711,7 +3724,7 @@ describe('cascading cleanup topology', () => {
       reason: 'dispelled',
       ...CTX,
     });
-    expect(combatantState(db, GOBLIN_1).status).toBe('inactive');
+    expect(combatantState(db, GOBLIN_1).status).toBe('absent');
     const goblinConc = listActiveEffects(db, CAMPAIGN, {
       includeEnded: true,
     }).find((effect) => effect.effectId === 'fx-goblin-conc');
@@ -3785,8 +3798,8 @@ describe('cascading cleanup topology', () => {
         effectId,
       ).toHaveLength(1);
     }
-    expect(combatantState(db, GOBLIN_1).status).toBe('inactive');
-    expect(combatantState(db, GOBLIN_2).status).toBe('inactive');
+    expect(combatantState(db, GOBLIN_1).status).toBe('absent');
+    expect(combatantState(db, GOBLIN_2).status).toBe('absent');
     expectCleanAudit(db);
   });
 
@@ -3987,9 +4000,9 @@ describe('campaign-actor persistent lifecycle regressions', () => {
       ...CTX,
     });
     expect(getCampaignActor(db, CAMPAIGN, 'actor-familiar')?.status).toBe(
-      'inactive',
+      'absent',
     );
-    expect(combatantState(db, second.combatantId).status).toBe('inactive');
+    expect(combatantState(db, second.combatantId).status).toBe('absent');
     expect(
       listActiveEffects(db, CAMPAIGN, { includeEnded: true }).find(
         (effect) => effect.effectId === 'fx-actor-own-concentration',
@@ -4799,5 +4812,131 @@ describe('stale-snapshot terminalization', () => {
     ).toBe(false);
     expect(dump()).toEqual(before);
     expectCleanAudit(db);
+  });
+});
+
+describe('exact resolver through condition projection and cleanup (S32)', () => {
+  for (const targetKind of ['combatant', 'campaign_actor'] as const) {
+    it(`threads the installed-stack resolver through start_effect and end_effect for a ${targetKind} target`, () => {
+      const db = freshDbWithSession();
+      const registry = createDefaultToolRegistry();
+      const ctx: ToolContext = {
+        db,
+        rng: createSeededRng(5),
+        campaignId: CAMPAIGN,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: 'resolver-effects',
+        at: NOW,
+      };
+      expect(
+        registry.invoke(
+          'start_encounter',
+          {
+            combatInstanceId: 'resolver-effects',
+            actors: [{ actorId: 'target', rulesRef: 'creature:goblin' }],
+          },
+          ctx,
+        ).ok,
+      ).toBe(true);
+      const ref =
+        targetKind === 'combatant' ? 'resolver-effects-target' : 'target';
+      const start = (effectId: string) =>
+        registry.invoke(
+          'start_effect',
+          {
+            effectId,
+            kind: 'condition-package',
+            displayName: effectId,
+            source: { kind: 'ruling' },
+            duration: { kind: 'until-removed' },
+            conditions: [
+              {
+                target: { kind: targetKind, ref },
+                condition: { id: 'incapacitated' },
+              },
+            ],
+          },
+          ctx,
+        );
+      const hasCondition = () =>
+        (
+          db
+            .prepare(
+              "SELECT conditions_json FROM encounter_combatant WHERE combatant_id='resolver-effects-target'",
+            )
+            .get() as { conditions_json: string }
+        ).conditions_json.includes('incapacitated');
+      const effectStatus = (effectId: string) =>
+        (
+          db
+            .prepare(
+              'SELECT status FROM active_effect WHERE campaign_id=? AND effect_id=?',
+            )
+            .get(CAMPAIGN, effectId) as { status: string } | undefined
+        )?.status;
+
+      // Created on the base stack, cleaned up on the installed stack.
+      expect(start('fx-before-addon').ok).toBe(true);
+      expect(hasCondition()).toBe(true);
+      const installed = installLateAmbiguityAddon(db, NOW);
+
+      // Creating a projection resolves the stack, so genuine unavailability
+      // refuses it atomically.
+      expect(start('fx-no-resolver').ok).toBe(false);
+      expect(effectStatus('fx-no-resolver')).toBeUndefined();
+      // Cleanup removes a condition from the row and needs no creature
+      // record, so it succeeds even without the resolver.
+      const cleanedUp = registry.invoke(
+        'end_effect',
+        { effectId: 'fx-before-addon', reason: 'ruled', note: 'cleanup' },
+        ctx,
+      );
+      expect(cleanedUp.ok).toBe(true);
+      expect(effectStatus('fx-before-addon')).toBe('ended');
+      expect(hasCondition()).toBe(false);
+
+      // With the exact resolver, projection and cleanup both succeed.
+      ctx.resolveRulesPack = installed.resolver;
+      expect(start('fx-with-resolver').ok).toBe(true);
+      expect(effectStatus('fx-with-resolver')).toBe('active');
+      expect(hasCondition()).toBe(true);
+      const ended = registry.invoke(
+        'end_effect',
+        { effectId: 'fx-with-resolver', reason: 'ruled', note: 'cleanup' },
+        ctx,
+      );
+      expect(ended.ok).toBe(true);
+      expect(effectStatus('fx-with-resolver')).toBe('ended');
+      expect(hasCondition()).toBe(false);
+      db.close();
+    });
+  }
+});
+
+describe('persistent bond identity (S50)', () => {
+  it("refuses 'vanish-bonded' for an instance-only combatant, accepts it with a durable identity", () => {
+    const { db } = setupCombat();
+    const bonded = (effectId: string, campaignActorId?: string) =>
+      createActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId,
+        kind: 'summoning',
+        displayName: 'Find Steed',
+        source: { kind: 'ruling' },
+        duration: { kind: 'until-removed' },
+        actors: [
+          {
+            combatantId: GOBLIN_1,
+            atZeroHitPoints: 'vanish-bonded',
+            ...(campaignActorId === undefined ? {} : { campaignActorId }),
+          },
+        ],
+        ...CTX,
+      });
+    // Combat closure releases instance-only links, so a persistent bond
+    // without a durable identity would not survive (S1 invariant 8).
+    expect(() => bonded('fx-steed')).toThrow(/no durable identity/);
+    expect(() => bonded('fx-steed', 'steed')).not.toThrow();
+    db.close();
   });
 });

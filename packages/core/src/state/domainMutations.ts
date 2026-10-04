@@ -82,6 +82,11 @@ export function addCondition(
   if (typeof condition.id !== 'string' || condition.id.length === 0) {
     throw new MutateStateError('condition id must be a non-empty string');
   }
+  if (condition.id === 'exhaustion' || condition.id === 'exhausted') {
+    throw new MutateStateError(
+      'exhaustion levels must be changed with adjust_exhaustion',
+    );
+  }
 
   return withTransaction(db, (txnDb) => {
     const charId = resolveCharacterId(txnDb, ctx.characterId);
@@ -158,6 +163,11 @@ export function removeCondition(
 ): RemoveConditionResult {
   if (typeof conditionId !== 'string' || conditionId.length === 0) {
     throw new MutateStateError('condition id must be a non-empty string');
+  }
+  if (conditionId === 'exhaustion' || conditionId === 'exhausted') {
+    throw new MutateStateError(
+      'exhaustion levels must be changed with adjust_exhaustion',
+    );
   }
 
   return withTransaction(db, (txnDb) => {
@@ -295,6 +305,19 @@ export function giveItem(
         if (quarantine !== undefined) throw new MutateStateError(quarantine);
       }
       if (collision !== undefined && collision.character_id !== charId) {
+        if (
+          collision.character_id === null &&
+          collision.unheld_disposition === 'dropped' &&
+          txnDb
+            .prepare(
+              `SELECT 1 FROM ammunition_expenditure
+               WHERE expended_inventory_id=? AND status='expended' LIMIT 1`,
+            )
+            .get(rowId) !== undefined
+        )
+          throw new MutateStateError(
+            `inventory item '${rowId}' is reserved for recover_ammunition; destroy it in place or recover ammunition after combat`,
+          );
         throw new MutateStateError(
           collision.character_id === null
             ? collision.unheld_disposition === 'dropped'
@@ -552,6 +575,16 @@ export function claimItem(
     if (row.unheld_disposition !== 'dropped')
       throw new MutateStateError(
         `inventory item '${itemId}' has unheld disposition '${row.unheld_disposition ?? 'unknown'}' and is not a generally claimable drop`,
+      );
+    const reserved = txnDb
+      .prepare(
+        `SELECT 1 FROM ammunition_expenditure
+         WHERE expended_inventory_id=? AND status='expended' LIMIT 1`,
+      )
+      .get(itemId);
+    if (reserved !== undefined)
+      throw new MutateStateError(
+        `inventory item '${itemId}' is reserved for recover_ammunition; destroy it in place or recover ammunition after combat`,
       );
     let currentLocation: string;
     try {

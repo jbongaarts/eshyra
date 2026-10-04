@@ -158,6 +158,26 @@ describe('days_without_food_limit (SRD food)', () => {
   });
 });
 
+describe('suffocation formulas (SRD suffocating)', () => {
+  it('matches the SRD Con 14 example and both source minimums', () => {
+    expect(
+      evaluateCalc('breath_hold_duration', { constitutionModifier: 2 }).outputs,
+    ).toEqual({ minutes: 3, seconds: 180 });
+    expect(
+      evaluateCalc('suffocation_survival_rounds', { constitutionModifier: 2 })
+        .outputs,
+    ).toEqual({ rounds: 2 });
+    expect(
+      evaluateCalc('breath_hold_duration', { constitutionModifier: -4 })
+        .outputs,
+    ).toEqual({ minutes: 0.5, seconds: 30 });
+    expect(
+      evaluateCalc('suffocation_survival_rounds', { constitutionModifier: -4 })
+        .outputs,
+    ).toEqual({ rounds: 1 });
+  });
+});
+
 describe('forced_march_dc (SRD speed)', () => {
   it('computes 10 + 1 per hour past 8', () => {
     expect(

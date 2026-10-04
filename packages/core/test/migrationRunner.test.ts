@@ -255,6 +255,155 @@ describe('runMigrations', () => {
     db.close();
   });
 
+  it('migration 0038 snapshots ammunition identity only when the expended row remains', () => {
+    const bundled = discoverMigrations();
+    const dir = makeMigrationDir(
+      Object.fromEntries(
+        bundled
+          .slice(0, 37)
+          .map((migration) => [
+            `${String(migration.version).padStart(4, '0')}_${migration.name}.sql`,
+            migration.sql,
+          ]),
+      ),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(37);
+    db.prepare(
+      `INSERT INTO inventory(
+         id, character_id, name, quantity, properties_json, provenance,
+         session_id, updated_at, pack_ref, variant_id
+       ) VALUES ('expended-present', 'pc-1', 'Silver Arrow', 2,
+                 '{"material":"silver"}', 'test', 'session', ?,
+                 'magic-item:silver-arrow', 'silver-arrow')`,
+    ).run(NOW());
+    const insert = db.prepare(
+      `INSERT INTO ammunition_expenditure(
+         campaign_id, expenditure_id, combat_instance_id, character_id,
+         source_inventory_id, expended_inventory_id, quantity, world_location_id,
+         status, provenance, session_id, created_at
+       ) VALUES ('campaign-1', ?, 'combat-1', 'pc-1', 'source-arrows', ?, 2,
+                 'battlefield', 'expended', 'test', 'session', ?)`,
+    );
+    insert.run('ammo-present', 'expended-present', NOW());
+    insert.run('ammo-missing', 'expended-deleted', NOW());
+
+    const migration38 = bundled.find((migration) => migration.version === 38);
+    if (!migration38) throw new Error('missing migration 0038');
+    writeFileSync(
+      join(
+        dir,
+        `${String(migration38.version).padStart(4, '0')}_${migration38.name}.sql`,
+      ),
+      migration38.sql,
+    );
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([38]);
+    expect(
+      db
+        .prepare(
+          `SELECT expenditure_id, name, pack_ref, variant_id, properties_json
+           FROM ammunition_expenditure ORDER BY expenditure_id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        expenditure_id: 'ammo-missing',
+        name: null,
+        pack_ref: null,
+        variant_id: null,
+        properties_json: null,
+      },
+      {
+        expenditure_id: 'ammo-present',
+        name: 'Silver Arrow',
+        pack_ref: 'magic-item:silver-arrow',
+        variant_id: 'silver-arrow',
+        properties_json: '{"material":"silver"}',
+      },
+    ]);
+    db.close();
+  });
+
+  it('migration 0039 adds absent status and zero_hp_rule while preserving rows', () => {
+    const bundled = discoverMigrations();
+    const file = (m: { version: number; name: string }) =>
+      `${String(m.version).padStart(4, '0')}_${m.name}.sql`;
+    const dir = makeMigrationDir(
+      Object.fromEntries(bundled.slice(0, 38).map((m) => [file(m), m.sql])),
+    );
+    const db = openDatabase(':memory:');
+    expect(runMigrations(db, { dir, now: NOW }).currentVersion).toBe(38);
+    db.prepare(
+      `INSERT INTO encounter_combatant(
+         campaign_id, combat_instance_id, combatant_id, identity_kind,
+         display_label, rules_ref, side, hp_current, hp_max, status,
+         provenance, session_id, updated_at, death_rules, head_count,
+         damage_this_turn, stable_recovery_settled
+       ) VALUES ('c1','ci1','m1','encounter_instance','Goblin','creature:goblin',
+                 'enemy', 3, 7, 'alive', 'test', 's', ?, 'monster', 2, 4, 0)`,
+    ).run(NOW());
+    db.prepare(
+      `INSERT INTO campaign_actor(campaign_id, actor_id, display_name,
+         actor_kind, source_kind, status, provenance, session_id, updated_at)
+       VALUES ('c1','a1','Actor','creature','campaign_created','dead','test','s',?)`,
+    ).run(NOW());
+    expect(() =>
+      db.prepare("UPDATE encounter_combatant SET status='absent'").run(),
+    ).toThrow();
+
+    const migration39 = bundled.find((m) => m.version === 39);
+    if (!migration39) throw new Error('missing migration 0039');
+    writeFileSync(join(dir, file(migration39)), migration39.sql);
+    expect(runMigrations(db, { dir, now: NOW }).applied).toEqual([39]);
+
+    expect(
+      db
+        .prepare(
+          `SELECT status, hp_current, hp_max, head_count, damage_this_turn,
+                  zero_hp_rule FROM encounter_combatant WHERE combatant_id='m1'`,
+        )
+        .get(),
+    ).toEqual({
+      status: 'alive',
+      hp_current: 3,
+      hp_max: 7,
+      head_count: 2,
+      damage_this_turn: 4,
+      zero_hp_rule: null,
+    });
+    expect(
+      db.prepare("SELECT status FROM campaign_actor WHERE actor_id='a1'").get(),
+    ).toEqual({ status: 'dead' });
+    db.prepare(
+      "UPDATE encounter_combatant SET status='absent', zero_hp_rule='vanish'",
+    ).run();
+    db.prepare("UPDATE campaign_actor SET status='absent'").run();
+    expect(() =>
+      db.prepare("UPDATE encounter_combatant SET zero_hp_rule='x'").run(),
+    ).toThrow();
+    expect(() =>
+      db.prepare("UPDATE campaign_actor SET status='bogus'").run(),
+    ).toThrow();
+    expect(
+      (
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'encounter_combatant_%' OR name LIKE 'campaign_actor_%' ORDER BY name",
+          )
+          .all() as { name: string }[]
+      ).map((r) => r.name),
+    ).toEqual(
+      expect.arrayContaining([
+        'campaign_actor_location',
+        'campaign_actor_source',
+        'encounter_combatant_identity',
+        'encounter_combatant_instance',
+        'encounter_combatant_status',
+      ]),
+    );
+    db.close();
+  });
+
   it('is idempotent: a second run applies nothing', () => {
     const dir = makeMigrationDir({
       '0001_first.sql': 'CREATE TABLE a (id INTEGER PRIMARY KEY);\n',

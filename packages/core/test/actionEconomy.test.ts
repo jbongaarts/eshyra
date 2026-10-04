@@ -24,13 +24,13 @@ import {
   mutateState,
   readCombatTurnState,
   renderContextMessage,
-  setReactionAllowance,
   setSurprised,
   spendTurnResource,
   startAdventureRun,
   startEncounter,
   updateCombatant,
 } from '../src/internal.js';
+import { installLateAmbiguityAddon } from './discovery/support/lateAmbiguityAddon.js';
 import { makeTestAdventureModule } from './support/adventureModuleFixture.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
@@ -586,11 +586,59 @@ describe('spendTurnResource — bonus-action-spell timing', () => {
 describe('surprise', () => {
   it('denies every spend on the surprised first turn and clears when that turn ends', () => {
     const { db } = setupCombat();
-    setSurprised(db, {
+    const registry = createDefaultToolRegistry();
+    const toolCtx: ToolContext = {
+      db,
+      rng: createSeededRng(7),
       campaignId: CAMPAIGN,
-      participants: [participant(GOBLIN_1)],
-      ...CTX,
-    });
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'surprise-path',
+      at: NOW,
+    };
+    const retained = registry.invoke(
+      'roll_retained_check',
+      {
+        kind: 'ability_check',
+        reason: 'hide from goblin 1',
+        label: 'goblin 2 stealth',
+        participant: { combatantId: GOBLIN_2 },
+      },
+      toolCtx,
+    );
+    expect(retained.ok).toBe(true);
+    if (!retained.ok) throw new Error(retained.message);
+    const retainedId = (retained.data as { retainedCheckId: string })
+      .retainedCheckId;
+    const comparison = registry.invoke(
+      'resolve_retained_check',
+      {
+        retainedCheckId: retainedId,
+        reason: 'ambush surprise',
+        passive: [
+          {
+            label: 'goblin 1',
+            participant: { combatantId: GOBLIN_1 },
+            modifier: -100,
+          },
+        ],
+      },
+      toolCtx,
+    );
+    expect(comparison.ok).toBe(true);
+    if (!comparison.ok) throw new Error(comparison.message);
+    const firstComparison = (
+      comparison.data as { comparisons: Array<{ comparisonId: string }> }
+    ).comparisons[0];
+    if (firstComparison === undefined)
+      throw new Error('missing surprise comparison');
+    const comparisonId = firstComparison.comparisonId;
+    expect(
+      registry.invoke(
+        'set_surprised',
+        { comparisonIds: [comparisonId] },
+        toolCtx,
+      ).ok,
+    ).toBe(true);
 
     // Reaction denied even before its first turn begins.
     expect(() =>
@@ -759,9 +807,46 @@ describe('turn-budget tools', () => {
   it('begin_turn / spend_turn_resource / set_surprised run end to end', () => {
     const { registry, ctx } = toolSetup();
 
+    const retained = registry.invoke(
+      'roll_retained_check',
+      {
+        kind: 'ability_check',
+        reason: 'hide from goblin 2',
+        label: 'goblin 1 stealth',
+        participant: { combatantId: GOBLIN_1 },
+      },
+      ctx,
+    );
+    expect(retained.ok).toBe(true);
+    if (!retained.ok) throw new Error(retained.message);
+    const retainedId = (retained.data as { retainedCheckId: string })
+      .retainedCheckId;
+    const compared = registry.invoke(
+      'resolve_retained_check',
+      {
+        retainedCheckId: retainedId,
+        reason: 'ambush surprise',
+        passive: [
+          {
+            label: 'goblin 2',
+            participant: { combatantId: GOBLIN_2 },
+            modifier: -100,
+          },
+        ],
+      },
+      ctx,
+    );
+    expect(compared.ok).toBe(true);
+    if (!compared.ok) throw new Error(compared.message);
+    const firstComparison = (
+      compared.data as { comparisons: Array<{ comparisonId: string }> }
+    ).comparisons[0];
+    if (firstComparison === undefined)
+      throw new Error('missing surprise comparison');
+    const comparisonId = firstComparison.comparisonId;
     const surprised = registry.invoke(
       'set_surprised',
-      { combatantIds: [GOBLIN_2] },
+      { comparisonIds: [comparisonId] },
       ctx,
     );
     expect(surprised.ok).toBe(true);
@@ -846,19 +931,227 @@ describe('turn-budget tools', () => {
     }
   });
 
-  it('set_surprised resolves party members by name/id and requires a participant', () => {
+  it('set_surprised derives party-member surprise and rejects the former free-list arguments', () => {
     const { pcId, registry, ctx } = toolSetup();
+    ctx.resolveRulesPack = installLateAmbiguityAddon(ctx.db, NOW).resolver;
 
     const none = registry.invoke('set_surprised', {}, ctx);
     expect(none.ok).toBe(false);
-
-    const byId = registry.invoke('set_surprised', { characters: [pcId] }, ctx);
+    expect(
+      registry.invoke('set_surprised', { characters: [pcId] }, ctx).ok,
+    ).toBe(false);
+    expect(
+      registry.invoke('set_surprised', { combatantIds: [GOBLIN_1] }, ctx).ok,
+    ).toBe(false);
+    const retained = registry.invoke(
+      'roll_retained_check',
+      {
+        kind: 'ability_check',
+        reason: 'hide from the party',
+        label: 'goblin stealth',
+        participant: { combatantId: GOBLIN_1 },
+      },
+      ctx,
+    );
+    expect(retained.ok).toBe(true);
+    if (!retained.ok) throw new Error(retained.message);
+    const retainedId = (retained.data as { retainedCheckId: string })
+      .retainedCheckId;
+    const comparison = registry.invoke(
+      'resolve_retained_check',
+      {
+        retainedCheckId: retainedId,
+        reason: 'ambush surprise',
+        passive: [
+          {
+            label: 'party member',
+            participant: { character: pcId },
+            modifier: -100,
+          },
+        ],
+      },
+      ctx,
+    );
+    expect(comparison.ok).toBe(true);
+    if (!comparison.ok) throw new Error(comparison.message);
+    const firstComparison = (
+      comparison.data as { comparisons: Array<{ comparisonId: string }> }
+    ).comparisons[0];
+    if (firstComparison === undefined)
+      throw new Error('missing surprise comparison');
+    const comparisonId = firstComparison.comparisonId;
+    const byId = registry.invoke(
+      'set_surprised',
+      { comparisonIds: [comparisonId] },
+      ctx,
+    );
     expect(byId.ok).toBe(true);
     if (byId.ok) {
       expect(byId.data).toMatchObject({
         surprised: [{ kind: 'character', ref: pcId }],
       });
     }
+  });
+
+  it('threads the exact campaign resolver through goblin and hydra surprise observers and combatant exhaustion', () => {
+    const db = freshDbWithSession();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(31),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'late-resolver-test',
+      at: NOW,
+    };
+    expect(
+      registry.invoke(
+        'start_encounter',
+        {
+          combatInstanceId: 'late-resolver-combat',
+          actors: [
+            { actorId: 'ordinary', rulesRef: 'creature:goblin' },
+            { actorId: 'hydra', rulesRef: 'creature:hydra' },
+          ],
+        },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    const ids = db
+      .prepare(
+        'SELECT identity_ref,combatant_id FROM encounter_combatant WHERE campaign_id=? ORDER BY identity_ref',
+      )
+      .all(CAMPAIGN) as Array<{ identity_ref: string; combatant_id: string }>;
+    const ordinaryId = ids.find(
+      (row) => row.identity_ref === 'ordinary',
+    )?.combatant_id;
+    const hydraId = ids.find(
+      (row) => row.identity_ref === 'hydra',
+    )?.combatant_id;
+    if (!ordinaryId || !hydraId)
+      throw new Error('expected goblin and hydra combatants');
+    const resolver = installLateAmbiguityAddon(db, NOW).resolver;
+    ctx.resolveRulesPack = resolver;
+
+    const retained = registry.invoke(
+      'roll_retained_check',
+      {
+        kind: 'ability_check',
+        reason: 'the player hides before combat',
+        label: 'player stealth',
+        participant: { character: 'pc-1' },
+      },
+      ctx,
+    );
+    expect(retained.ok).toBe(true);
+    if (!retained.ok) throw new Error(retained.message);
+    const comparison = registry.invoke(
+      'resolve_retained_check',
+      {
+        retainedCheckId: (retained.data as { retainedCheckId: string })
+          .retainedCheckId,
+        reason: 'the goblin and hydra notice the hidden player',
+        passive: [
+          {
+            label: 'ordinary goblin observer',
+            participant: { combatantId: ordinaryId },
+            modifier: -100,
+          },
+          {
+            label: 'hydra observer',
+            participant: { combatantId: hydraId },
+            modifier: -100,
+          },
+        ],
+      },
+      ctx,
+    );
+    expect(comparison.ok).toBe(true);
+    if (!comparison.ok) throw new Error(comparison.message);
+    const comparisonIds = (
+      comparison.data as { comparisons: Array<{ comparisonId: string }> }
+    ).comparisons.map((entry) => entry.comparisonId);
+    expect(comparisonIds).toHaveLength(2);
+
+    const budgetBefore = db
+      .prepare(
+        'SELECT * FROM combat_turn_budget WHERE campaign_id=? ORDER BY participant_ref',
+      )
+      .all(CAMPAIGN);
+    ctx.resolveRulesPack = undefined;
+    let surpriseUnavailable = false;
+    try {
+      const result = registry.invoke('set_surprised', { comparisonIds }, ctx);
+      surpriseUnavailable = !result.ok;
+    } catch {
+      surpriseUnavailable = true;
+    }
+    expect(surpriseUnavailable).toBe(true);
+    expect(
+      db
+        .prepare(
+          'SELECT * FROM combat_turn_budget WHERE campaign_id=? ORDER BY participant_ref',
+        )
+        .all(CAMPAIGN),
+    ).toEqual(budgetBefore);
+
+    ctx.resolveRulesPack = resolver;
+    const surprise = registry.invoke('set_surprised', { comparisonIds }, ctx);
+    expect(surprise).toMatchObject({
+      ok: true,
+      data: {
+        surprised: expect.arrayContaining([
+          { kind: 'combatant', ref: ordinaryId },
+          { kind: 'combatant', ref: hydraId },
+        ]),
+      },
+    });
+
+    const beforeExhaustion = db
+      .prepare(
+        'SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+      )
+      .get(CAMPAIGN, ordinaryId);
+    ctx.resolveRulesPack = undefined;
+    let exhaustionUnavailable = false;
+    try {
+      const result = registry.invoke(
+        'adjust_exhaustion',
+        { combatantId: ordinaryId, delta: 4 },
+        ctx,
+      );
+      exhaustionUnavailable = !result.ok;
+    } catch {
+      exhaustionUnavailable = true;
+    }
+    expect(exhaustionUnavailable).toBe(true);
+    expect(
+      db
+        .prepare(
+          'SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
+        .get(CAMPAIGN, ordinaryId),
+    ).toEqual(beforeExhaustion);
+
+    ctx.resolveRulesPack = resolver;
+    expect(
+      registry.invoke(
+        'adjust_exhaustion',
+        { combatantId: ordinaryId, delta: 4 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    expect(
+      db
+        .prepare(
+          'SELECT hp_current,conditions_json FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
+        .get(CAMPAIGN, ordinaryId),
+    ).toMatchObject({
+      hp_current: 3,
+      conditions_json: expect.stringContaining('"level":4'),
+    });
+    db.close();
   });
 });
 
@@ -1031,74 +1324,503 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
     ).toBe(1);
   });
 
-  it('hydra Reactive Heads (formula): the validated allowance grant unlocks extra reactions', () => {
+  it('derives hydra reaction allowance from tracked heads and preserves the restriction', () => {
     const { db } = setupLairCombat();
     beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
-
-    expect(
-      spendReaction(db, HYDRA, 'opportunity attack').budget.reactionsUsed,
-    ).toBe(1);
-    // The default allowance holds. The rejection discloses that the extra
-    // reactions are not derived (ADR 0020 §2: the model never computes the
-    // total), and never points the model at reactionAllowance.
-    let rejection = '';
-    try {
-      spendReaction(db, HYDRA, 'opportunity attack');
-    } catch (error) {
-      rejection = String(error);
-    }
-    expect(rejection).toMatch(
-      /state-dependent extra-reaction mechanic.*cannot currently be recorded/,
-    );
-    expect(rejection).not.toMatch(/reactionAllowance|record the total/);
-
-    // Five heads: 1 + 4 extra reactions.
-    const grant = setReactionAllowance(db, {
+    const opened = beginTurn(db, {
       campaignId: CAMPAIGN,
-      combatantId: HYDRA,
-      allowance: 5,
+      participant: participant(HYDRA),
       ...CTX,
     });
-    expect(grant.reactionAllowance).toBe(5);
-    expect(grant.restrictedTo).toBe('opportunity-attacks');
-
-    // Extra spends succeed and surface the mechanic's restriction clause.
+    expect(opened.headCount).toBe(5);
+    const rendered = renderContextMessage(
+      assembleContext({
+        db,
+        campaignId: CAMPAIGN,
+        campaignPosition: DEFAULT_TEST_CAMPAIGN_POSITION,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        playerInput: 'What do I see?',
+      }),
+    );
+    expect(rendered).toContain('heads 5');
+    expect(
+      spendReaction(db, HYDRA, 'opportunity attack').budget.reactionAllowance,
+    ).toBe(5);
     const second = spendReaction(db, HYDRA, 'opportunity attack (second head)');
     expect(second.budget.reactionsUsed).toBe(2);
     expect(second.extraReactionRestriction).toBe('opportunity-attacks');
-
-    for (const n of [3, 4, 5]) {
+    for (const count of [3, 4, 5]) {
       expect(
-        spendReaction(db, HYDRA, `opportunity attack (head ${n})`).budget
+        spendReaction(db, HYDRA, `opportunity attack ${count}`).budget
           .reactionsUsed,
-      ).toBe(n);
+      ).toBe(count);
     }
-    expect(() => spendReaction(db, HYDRA, 'one bite too many')).toThrow(
-      /all 5 of their reactions \(5\/5\)/,
+    expect(() => spendReaction(db, HYDRA, 'over budget')).toThrow(
+      /derived from its tracked head count.*only for opportunity attacks/,
     );
   });
 
-  it('the allowance grant is refused for creatures without a formula-based mechanic', () => {
+  it('initializes head count and applies the 24/25 single-turn threshold once', () => {
+    const { db } = setupLairCombat();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(3),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'heads',
+      at: NOW,
+    };
+    expect(
+      (
+        db
+          .prepare(
+            'SELECT head_count FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+          )
+          .get(CAMPAIGN, HYDRA) as { head_count: number | null }
+      ).head_count,
+    ).toBe(5);
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    spendReaction(db, HYDRA, 'opportunity attack');
+    expect(
+      readCombatTurnState(db, CAMPAIGN)?.budgets.find(
+        (entry) => entry.participant.ref === HYDRA,
+      )?.reactionAllowance,
+    ).toBe(5);
+    registry.invoke(
+      'update_combatant',
+      { combatantId: HYDRA, hpDelta: -24, damageTypes: ['slashing'] },
+      ctx,
+    );
+    expect(
+      (
+        db
+          .prepare(
+            'SELECT head_count FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+          )
+          .get(CAMPAIGN, HYDRA) as { head_count: number | null }
+      ).head_count,
+    ).toBe(5);
+    const decapitation = registry.invoke(
+      'update_combatant',
+      { combatantId: HYDRA, hpDelta: -1, damageTypes: ['slashing'] },
+      ctx,
+    );
+    expect(decapitation).toMatchObject({
+      ok: true,
+      data: { combatant: { headCount: 4 } },
+    });
+    registry.invoke(
+      'update_combatant',
+      { combatantId: HYDRA, hpDelta: -50, damageTypes: ['slashing'] },
+      ctx,
+    );
+    expect(
+      (
+        db
+          .prepare(
+            'SELECT head_count FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+          )
+          .get(CAMPAIGN, HYDRA) as { head_count: number | null }
+      ).head_count,
+    ).toBe(4);
+    expect(
+      readCombatTurnState(db, CAMPAIGN)?.budgets.find(
+        (entry) => entry.participant.ref === HYDRA,
+      )?.reactionAllowance,
+    ).toBe(4);
+  });
+
+  it('leaves creatures without Multiple Heads on the ordinary one-reaction budget', () => {
     const { db } = setupCombat();
-    expect(() =>
-      setReactionAllowance(db, {
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    expect(
+      spendTurnResource(db, {
         campaignId: CAMPAIGN,
-        combatantId: GOBLIN_1,
-        allowance: 2,
+        participant: participant(GOBLIN_1),
+        resource: 'reaction',
+        activity: 'opportunity attack',
+        ...CTX,
+      }).budget.reactionAllowance,
+    ).toBe(1);
+    expect(
+      (
+        db
+          .prepare(
+            'SELECT head_count FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+          )
+          .get(CAMPAIGN, GOBLIN_1) as { head_count: number | null }
+      ).head_count,
+    ).toBeNull();
+  });
+
+  it('resets the damage threshold on the next structured turn', () => {
+    const { db } = setupLairCombat();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(3),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'heads',
+      at: NOW,
+    };
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    registry.invoke(
+      'update_combatant',
+      { combatantId: HYDRA, hpDelta: -20 },
+      ctx,
+    );
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(MARILITH),
+      ...CTX,
+    });
+    registry.invoke(
+      'update_combatant',
+      { combatantId: HYDRA, hpDelta: -5 },
+      ctx,
+    );
+    expect(
+      (
+        db
+          .prepare(
+            'SELECT head_count FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+          )
+          .get(CAMPAIGN, HYDRA) as { head_count: number | null }
+      ).head_count,
+    ).toBe(5);
+  });
+
+  it("fire damage suppresses regrowth at the end of the creature's turn", () => {
+    const { db } = setupLairCombat();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(3),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'heads',
+      at: NOW,
+    };
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    registry.invoke(
+      'update_combatant',
+      { combatantId: HYDRA, hpDelta: -25, damageTypes: ['fire'] },
+      ctx,
+    );
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      ...CTX,
+    });
+    const suppressed = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: PC,
+      ...CTX,
+    });
+    expect(suppressed.headRegrowths).toEqual([]);
+    expect(
+      (
+        db
+          .prepare(
+            'SELECT head_count FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+          )
+          .get(CAMPAIGN, HYDRA) as { head_count: number | null }
+      ).head_count,
+    ).toBe(4);
+  });
+
+  it('regrows two heads per dead head and heals 10 HP for each regrown head', () => {
+    const { db } = setupLairCombat();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(3),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'heads',
+      at: NOW,
+    };
+    beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: HYDRA, hpDelta: -25 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(MARILITH),
+      ...CTX,
+    });
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: HYDRA, hpDelta: -25 },
+        ctx,
+      ).ok,
+    ).toBe(true);
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      round: 2,
+      ...CTX,
+    });
+    const regrown = beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: PC,
+      round: 3,
+      ...CTX,
+    });
+    expect(regrown.headRegrowths).toMatchObject([
+      { headsRegrown: 4, hitPointsRegained: 40, headCount: 7 },
+    ]);
+    const hydra = db
+      .prepare(
+        'SELECT head_count, hp_current FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+      )
+      .get(CAMPAIGN, HYDRA) as {
+      head_count: number | null;
+      hp_current: number;
+    };
+    expect(hydra).toEqual({ head_count: 7, hp_current: 162 });
+  });
+
+  it('settles own-turn regrowth through the lifecycle for dying player-character hydras with earned counters (S27)', () => {
+    for (const blocked of [false, true]) {
+      const { db } = setupLairCombat();
+      const registry = createDefaultToolRegistry();
+      const ctx: ToolContext = {
+        db,
+        rng: createSeededRng(3),
+        campaignId: CAMPAIGN,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: 'heads',
+        at: NOW,
+      };
+      const row = () =>
+        db
+          .prepare(
+            `SELECT status, hp_current, head_count, death_save_successes,
+                    death_save_failures, recovery_block
+             FROM encounter_combatant WHERE combatant_id=?`,
+          )
+          .get(HYDRA);
+      beginTurn(db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+      expect(
+        registry.invoke(
+          'update_combatant',
+          { combatantId: HYDRA, deathRules: 'player-character' },
+          ctx,
+        ).ok,
+      ).toBe(true);
+      const maxHp = (
+        db
+          .prepare(
+            'SELECT hp_max FROM encounter_combatant WHERE combatant_id=?',
+          )
+          .get(HYDRA) as { hp_max: number }
+      ).hp_max;
+      expect(
+        registry.invoke(
+          'update_combatant',
+          { combatantId: HYDRA, hpDelta: -maxHp },
+          ctx,
+        ).ok,
+      ).toBe(true);
+      expect(row()).toMatchObject({ status: 'dying', hp_current: 0 });
+      registry.invoke(
+        'record_death_save',
+        { combatantId: HYDRA, roll: 12 },
+        ctx,
+      );
+      registry.invoke(
+        'record_death_save',
+        { combatantId: HYDRA, roll: 5 },
+        ctx,
+      );
+      if (blocked)
+        expect(
+          registry.invoke(
+            'set_suffocation',
+            { combatantId: HYDRA, event: 'drop' },
+            ctx,
+          ).ok,
+        ).toBe(true);
+      expect(row()).toMatchObject({
+        status: 'dying',
+        death_save_successes: 1,
+        death_save_failures: 1,
+      });
+      const heads = (row() as { head_count: number }).head_count;
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: participant(HYDRA),
+        round: 2,
+        ...CTX,
+      });
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: PC,
+        round: 3,
+        ...CTX,
+      });
+      if (blocked) {
+        // Blocked: heads regrow, zero regain, still dying with counters kept.
+        expect(row()).toMatchObject({
+          status: 'dying',
+          hp_current: 0,
+          death_save_successes: 1,
+          death_save_failures: 1,
+          recovery_block: 'suffocating',
+        });
+      } else {
+        expect(row()).toMatchObject({
+          status: 'alive',
+          death_save_successes: 0,
+          death_save_failures: 0,
+        });
+        expect((row() as { hp_current: number }).hp_current).toBeGreaterThan(0);
+      }
+      expect((row() as { head_count: number }).head_count).toBeGreaterThan(
+        heads,
+      );
+      db.close();
+    }
+  });
+
+  it('sets a tracked multi-head creature dead when its final head dies', () => {
+    const { db } = setupLairCombat();
+    const registry = createDefaultToolRegistry();
+    const ctx: ToolContext = {
+      db,
+      rng: createSeededRng(3),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'heads',
+      at: NOW,
+    };
+    for (let round = 1; round <= 5; round += 1) {
+      beginTurn(db, { campaignId: CAMPAIGN, participant: PC, round, ...CTX });
+      registry.invoke(
+        'update_combatant',
+        { combatantId: HYDRA, hpDelta: -25, damageTypes: ['fire'] },
+        ctx,
+      );
+    }
+    const hydra = db
+      .prepare(
+        'SELECT head_count, status FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = ?',
+      )
+      .get(CAMPAIGN, HYDRA) as { head_count: number | null; status: string };
+    expect(hydra).toEqual({ head_count: 0, status: 'dead' });
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: HYDRA, hpDelta: 1, status: 'alive' },
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(
+      db
+        .prepare(
+          'SELECT head_count,status,hp_current FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+        )
+        .get(CAMPAIGN, HYDRA),
+    ).toEqual({ head_count: 0, status: 'dead', hp_current: 47 });
+  });
+
+  it('refuses pre-head-tracking hydras and settles heads when a dying turn ends', () => {
+    const { db } = setupLairCombat();
+    const registry = createDefaultToolRegistry();
+    beginTurn(db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      ...CTX,
+    });
+    db.prepare(
+      'UPDATE encounter_combatant SET head_count=NULL WHERE campaign_id=? AND combatant_id=?',
+    ).run(CAMPAIGN, HYDRA);
+    expect(() =>
+      beginTurn(db, {
+        campaignId: CAMPAIGN,
+        participant: participant(HYDRA),
         ...CTX,
       }),
-    ).toThrow(/no state-dependent extra-reaction mechanic/);
-    // The marilith's perTurn mechanic is typed but not state-dependent:
-    // also refused.
-    const { db: lairDb } = setupLairCombat();
-    expect(() =>
-      setReactionAllowance(lairDb, {
-        campaignId: CAMPAIGN,
-        combatantId: MARILITH,
-        allowance: 4,
-        ...CTX,
-      }),
-    ).toThrow(/no state-dependent extra-reaction mechanic/);
+    ).toThrow(/head count is unknown/);
+    expect(
+      registry.invoke(
+        'update_combatant',
+        { combatantId: HYDRA, hpDelta: -25 },
+        {
+          db,
+          rng: createSeededRng(1),
+          campaignId: CAMPAIGN,
+          sessionId: DEFAULT_TEST_SESSION_ID,
+          turnId: 'legacy',
+          at: NOW,
+        },
+      ),
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringMatching(/head count is unknown/),
+    });
+    expect(spendReaction(db, HYDRA, 'opportunity attack')).toBeDefined();
+    expect(() => spendReaction(db, HYDRA, 'second opportunity attack')).toThrow(
+      /head count is unknown/,
+    );
+    db.close();
+
+    const second = setupLairCombat();
+    beginTurn(second.db, { campaignId: CAMPAIGN, participant: PC, ...CTX });
+    updateCombatant(second.db, {
+      campaignId: CAMPAIGN,
+      combatantId: HYDRA,
+      deathRules: 'player-character',
+      hpDelta: -25,
+      ...CTX,
+    });
+    const dropCtx: ToolContext = {
+      db: second.db,
+      rng: createSeededRng(2),
+      campaignId: CAMPAIGN,
+      sessionId: DEFAULT_TEST_SESSION_ID,
+      turnId: 'suffocation',
+      at: NOW,
+    };
+    expect(
+      createDefaultToolRegistry().invoke(
+        'set_suffocation',
+        { combatantId: HYDRA, event: 'drop' },
+        dropCtx,
+      ).ok,
+    ).toBe(true);
+    // A dying player-character combatant keeps an available turn (S36); its
+    // end-of-turn regrowth settles when that turn ends at the next begin_turn.
+    const began = beginTurn(second.db, {
+      campaignId: CAMPAIGN,
+      participant: participant(HYDRA),
+      ...CTX,
+    });
+    expect(began.turnAvailable).toBe(true);
+    expect(began.headRegrowths ?? []).toEqual([]);
+    const ended = beginTurn(second.db, {
+      campaignId: CAMPAIGN,
+      participant: PC,
+      ...CTX,
+    });
+    expect(ended.headRegrowths).toMatchObject([
+      { headsRegrown: 2, hitPointsRegained: 0, headCount: 6 },
+    ]);
+    const hydra = second.db
+      .prepare(
+        'SELECT hp_current,head_count,status FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?',
+      )
+      .get(CAMPAIGN, HYDRA);
+    expect(hydra).toEqual({ hp_current: 0, head_count: 6, status: 'dying' });
+    second.db.close();
   });
 
   it('the every_turn refresh does not erase the evidence the surprise guard needs', () => {
@@ -1128,42 +1850,22 @@ describe('extraReactions mechanics (hydra, marilith)', () => {
     ).toThrow(/already acted this combat/);
   });
 
-  it('update_combatant carries the grant as a validated tool arg', () => {
+  it('rejects a model-supplied reaction allowance argument', () => {
     const { db } = setupLairCombat();
     const registry = createDefaultToolRegistry();
-    const ctx: ToolContext = {
-      db,
-      rng: createSeededRng(7),
-      campaignId: CAMPAIGN,
-      sessionId: DEFAULT_TEST_SESSION_ID,
-      turnId: 'turn-1',
-      at: NOW,
-    };
-
-    const granted = registry.invoke(
+    const result = registry.invoke(
       'update_combatant',
       { combatantId: HYDRA, reactionAllowance: 3 },
-      ctx,
+      {
+        db,
+        rng: createSeededRng(7),
+        campaignId: CAMPAIGN,
+        sessionId: DEFAULT_TEST_SESSION_ID,
+        turnId: 'turn-1',
+        at: NOW,
+      },
     );
-    expect(granted.ok).toBe(true);
-    if (granted.ok) {
-      expect(granted.data).toMatchObject({
-        reactionAllowance: {
-          reactionAllowance: 3,
-          restrictedTo: 'opportunity-attacks',
-        },
-      });
-    }
-
-    const refused = registry.invoke(
-      'update_combatant',
-      { combatantId: MARILITH, reactionAllowance: 3 },
-      ctx,
-    );
-    expect(refused.ok).toBe(false);
-    if (!refused.ok) {
-      expect(refused.code).toBe('turn_budget_error');
-    }
+    expect(result.ok).toBe(false);
   });
 });
 

@@ -1586,8 +1586,16 @@ describe('D&D 5e SRD 5.1 committed pack', () => {
         kind: 'objectInteraction',
         useWhen: 'object-requires-your-action',
         alsoUseWhen: 'interact-with-more-than-one-object-on-your-turn',
-        ordinaryInteractionRuleRef: 'rule:interacting-with-objects',
+        ordinaryInteractionRuleRef: 'rule:other-activity-on-your-turn',
       });
+      const ordinaryInteractionRule = pack.records.find(
+        (record) => record.key === 'rule:other-activity-on-your-turn',
+      );
+      expect(
+        (ordinaryInteractionRule?.data as { text?: unknown } | undefined)?.text,
+      ).toContain(
+        'interact with one object or feature of the environment for free',
+      );
     });
 
     it('queries representative condition mechanics without parsing prose (eshyra-o9bd.18.7.1)', () => {

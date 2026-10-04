@@ -532,8 +532,8 @@
       "canonicalId": "rules-prose-readiness",
       "aliases": ["opus:F-09"],
       "invariant": "Rules prose has an in-band readiness disposition",
-      "status": "disclosed-dependency",
-      "statusReasoning": "Read under ADR 0020 and docs/design/rule-record-runtime-statements.md, not as uniform in-band readiness across every record kind. A runtime consumer of a rule:* or action:* record obtains, without an audit-only artifact, the source relationships Eshyra curates for it and Eshyra's own bounded statements, positively selected capabilities and known limits, through the ruleAwareness facade, the lookup_rules envelope, and the discovery packet. Absence of a statement makes no claim, and no readiness label enters the pack. Under amendment A5 a known limit discloses a blocking engine-capability gap without discharging it, so F-09 is not recorded as resolved while those gaps are open: each is owned under engine-capability-ownership by a bead that blocks eshyra-o9bd.19.3.4.",
+      "status": "narrowed",
+      "statusReasoning": "Read under ADR 0020 and docs/design/rule-record-runtime-statements.md, not as uniform in-band readiness across every record kind. A runtime consumer of a rule:* or action:* record obtains, without an audit-only artifact, the source relationships Eshyra curates for it and Eshyra's own bounded statements, positively selected capabilities and known limits, through the ruleAwareness facade, the lookup_rules envelope, and the discovery packet. Absence of a statement makes no claim, and no readiness label enters the pack. Under amendment A5 a known limit discloses a blocking engine-capability gap without discharging it; every gap recorded at A5 landed in eshyra-o9bd.19.3.4.8 (beads eshyra-o9bd.19.5.10.3, eshyra-o9bd.19.5.7.3 through eshyra-o9bd.19.5.7.6, eshyra-o9bd.19.5.11.4), so no blocking gap remains open. A later gap found by re-derivation reopens this dependency.",
       "provenance": {
         "auditFinding": "opus:F-09",
         "evidenceBasis": "code"

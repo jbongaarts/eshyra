@@ -43,7 +43,13 @@ import {
 } from './activeEffects.js';
 import { endAllAttunementsOnDeath } from './attunement.js';
 import type { DomainMutationContext } from './domainMutations.js';
-import { MutateStateError, mutateStateBatch } from './mutateState.js';
+import { effectiveHpMax } from './exhaustion.js';
+import type { CharacterConditionEntry } from './liveStateSchema.js';
+import {
+  MutateStateError,
+  mutateState,
+  mutateStateBatch,
+} from './mutateState.js';
 
 export type LifeState = 'alive' | 'dying' | 'stable' | 'dead';
 
@@ -59,11 +65,17 @@ export function formatHpStatus(status: {
   lifeState: LifeState;
   deathSaveSuccesses: number;
   deathSaveFailures: number;
+  recoveryBlock?: 'suffocating' | null;
 }): string {
   const temp = status.hpTemp > 0 ? ` (+${status.hpTemp} temp)` : '';
+  // The block is engine state the DM must see to record `breathe` later.
+  const blocked =
+    status.recoveryBlock === 'suffocating'
+      ? ', suffocating: no healing or stabilizing'
+      : '';
   let state = '';
   if (status.lifeState === 'dying') {
-    state = ` [dying, death saves ${status.deathSaveSuccesses}S/${status.deathSaveFailures}F]`;
+    state = ` [dying${blocked}, death saves ${status.deathSaveSuccesses}S/${status.deathSaveFailures}F]`;
   } else if (status.lifeState === 'stable') {
     state = ' [stable at 0 HP]';
   } else if (status.lifeState === 'dead') {
@@ -87,6 +99,8 @@ export interface AdjustHpResult {
   lifeState: LifeState;
   /** True when overflow >= hp_max killed the character outright. */
   instantDeath: boolean;
+  /** True when this damage reduced a living character to 0 HP nonlethally. */
+  knockedOut: boolean;
   /** Death-save failures added by damage taken at 0 HP (0, 1, or 2). */
   deathSaveFailuresAdded: number;
   deathSaveSuccesses: number;
@@ -121,6 +135,112 @@ export interface AdjustHpOptions {
    * where a critical costs two death-save failures instead of one.
    */
   critical?: boolean;
+  /** Choose a nonlethal knockout for damage that reduces an able character to 0 HP. */
+  knockOut?: boolean;
+  /** Seeded source for the stable-recovery deadline when knockOut is selected. */
+  rng?: Rng;
+}
+
+export interface SuffocationResult {
+  lifeState: LifeState;
+  hpCurrent: number;
+  alreadySuffocating?: true;
+}
+
+/** Apply the SRD suffocation drop for a character. */
+export function beginSuffocation(
+  db: Db,
+  ctx: DomainMutationContext,
+): SuffocationResult {
+  return withTransaction(db, (txnDb) => {
+    const charId = resolveCharacterId(txnDb, ctx.characterId);
+    const row = readHpRow(txnDb, charId);
+    if (row.life_state === 'dead')
+      throw new MutateStateError(
+        'cannot begin suffocation for a dead character',
+      );
+    if (row.recovery_block === 'suffocating')
+      return {
+        lifeState: row.life_state,
+        hpCurrent: row.hp_current,
+        alreadySuffocating: true,
+      };
+    writeHpFields(
+      txnDb,
+      charId,
+      row,
+      {
+        hp_current: 0,
+        hp_temp: row.hp_temp, // The source says hit points; temporary hit points are a separate buffer.
+        life_state: 'dying',
+        death_save_successes:
+          row.life_state === 'dying' ? row.death_save_successes : 0,
+        death_save_failures:
+          row.life_state === 'dying' ? row.death_save_failures : 0,
+      },
+      ctx,
+    );
+    mutateState(txnDb, {
+      target: 'character',
+      id: charId,
+      field: 'recovery_block',
+      op: 'set',
+      value: 'suffocating',
+      ...ctx,
+    });
+    assertCharacterLifecycle(txnDb, charId, row);
+    return { lifeState: 'dying', hpCurrent: 0 };
+  });
+}
+
+/** Clear the breathing recovery block and resolve an accrued third success. */
+export function endSuffocation(
+  db: Db,
+  ctx: DomainMutationContext,
+  rng: Rng = createSeededRng(0),
+): SuffocationResult {
+  return withTransaction(db, (txnDb) => {
+    const charId = resolveCharacterId(txnDb, ctx.characterId);
+    const row = readHpRow(txnDb, charId);
+    if (row.recovery_block === null)
+      throw new MutateStateError('character has no recovery block to clear');
+    if (row.life_state === 'dying' && row.death_save_successes >= 3) {
+      writeHpFields(
+        txnDb,
+        charId,
+        row,
+        {
+          hp_current: row.hp_current,
+          hp_temp: row.hp_temp,
+          life_state: 'stable',
+          death_save_successes: 0,
+          death_save_failures: 0,
+        },
+        ctx,
+      );
+      mutateState(txnDb, {
+        target: 'character',
+        id: charId,
+        field: 'recovery_block',
+        op: 'set',
+        value: null,
+        ...ctx,
+      });
+      scheduleStableRecovery(txnDb, charId, ctx, rng);
+      assertCharacterLifecycle(txnDb, charId, row);
+      return { lifeState: 'stable', hpCurrent: row.hp_current };
+    }
+    mutateState(txnDb, {
+      target: 'character',
+      id: charId,
+      field: 'recovery_block',
+      op: 'set',
+      value: null,
+      ...ctx,
+    });
+    assertCharacterLifecycle(txnDb, charId, row);
+    return { lifeState: row.life_state, hpCurrent: row.hp_current };
+  });
 }
 
 interface HpRow {
@@ -133,6 +253,13 @@ interface HpRow {
   stable_recovery_roll: number | null;
   stable_recovery_anchor_elapsed_minutes: number | null;
   stable_recovery_deadline_elapsed_minutes: number | null;
+  stable_recovery_settled: number;
+  recovery_block: 'suffocating' | null;
+  conditions_json: string;
+}
+
+function rowEffectiveHpMax(row: HpRow): number {
+  return effectiveHpMax(row.hp_max, JSON.parse(row.conditions_json));
 }
 
 function scheduleStableRecovery(
@@ -182,6 +309,14 @@ function scheduleStableRecovery(
       value: deadline,
       ...ctx,
     },
+    {
+      target: 'character',
+      id: charId,
+      field: 'stable_recovery_settled',
+      op: 'set',
+      value: 0,
+      ...ctx,
+    },
   ]);
   return { roll, anchor, deadline };
 }
@@ -189,10 +324,11 @@ function scheduleStableRecovery(
 function readHpRow(db: Db, charId: string): HpRow {
   const row = db
     .prepare(
-      `SELECT hp_current, hp_max, hp_temp, life_state,
+      `SELECT hp_current, hp_max, hp_temp, life_state, conditions_json,
               death_save_successes, death_save_failures,
               stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
               stable_recovery_deadline_elapsed_minutes
+              , recovery_block, stable_recovery_settled
        FROM character WHERE id = ?`,
     )
     .get(charId) as HpRow | undefined;
@@ -202,12 +338,60 @@ function readHpRow(db: Db, charId: string): HpRow {
   return row;
 }
 
+/** Apply the exhaustion condition, effective-maximum clamp, and level-six death
+ * as one character lifecycle transition before validating the resulting row. */
+export function applyCharacterExhaustionChanged(
+  db: Db,
+  input: {
+    readonly characterId: string;
+    readonly conditions: readonly CharacterConditionEntry[];
+  },
+  ctx: DomainMutationContext,
+): { hpCurrent: number; hpMax: number; died: boolean } {
+  return withTransaction(db, (txnDb) => {
+    const charId = resolveCharacterId(txnDb, input.characterId);
+    const before = readHpRow(txnDb, charId);
+    const hpMax = effectiveHpMax(before.hp_max, input.conditions);
+    const hpCurrent = Math.min(before.hp_current, hpMax);
+    const died =
+      input.conditions.find((condition) => condition.id === 'exhaustion')
+        ?.level === 6;
+    const downed = before.hp_current > 0 && hpCurrent === 0;
+    const lifeState = died
+      ? 'dead'
+      : before.life_state === 'dead'
+        ? 'dead'
+        : downed
+          ? 'dying'
+          : before.life_state;
+
+    writeHpFields(
+      txnDb,
+      charId,
+      before,
+      {
+        conditions_json: JSON.stringify(input.conditions),
+        hp_current: hpCurrent,
+        hp_temp: before.hp_temp,
+        life_state: lifeState,
+        death_save_successes: downed ? 0 : before.death_save_successes,
+        death_save_failures: downed ? 0 : before.death_save_failures,
+      },
+      ctx,
+    );
+    if (!died) rearmSettledStableRecovery(txnDb, charId, ctx);
+    assertCharacterLifecycle(txnDb, charId, before);
+    return { hpCurrent, hpMax, died };
+  });
+}
+
 /** Write the HP-machine fields that changed, as one atomic batch. */
 function writeHpFields(
   db: Db,
   charId: string,
   before: HpRow,
   after: {
+    conditions_json?: string;
     hp_current: number;
     hp_temp: number;
     life_state: LifeState;
@@ -229,6 +413,8 @@ function writeHpFields(
         after.life_state === 'stable'
           ? before.stable_recovery_deadline_elapsed_minutes
           : null,
+      stable_recovery_settled:
+        after.life_state === 'stable' ? before.stable_recovery_settled : 0,
     }) as [keyof HpRow, number | string | null][]
   )
     .filter(([field, value]) => before[field] !== value)
@@ -243,13 +429,31 @@ function writeHpFields(
   if (mutations.length > 0) {
     mutateStateBatch(db, mutations);
   }
+  if (after.life_state === 'dead' && before.recovery_block !== null) {
+    mutateState(db, {
+      target: 'character',
+      id: charId,
+      field: 'recovery_block',
+      op: 'set',
+      value: null,
+      ...ctx,
+    });
+  }
   // Death ends attunement (SRD ending condition, F5): every life_state
   // transition into 'dead' — instant death, third failure, damage-at-0
   // escalation — releases the character's attunement slots.
   if (after.life_state === 'dead' && before.life_state !== 'dead') {
     endAllAttunementsOnDeath(db, charId);
   }
-  // Leaving 'alive' (dying or outright dead) is incapacitation, which breaks
+  if (
+    after.life_state !== 'stable' ||
+    (before.stable_recovery_roll !== null &&
+      before.stable_recovery_anchor_elapsed_minutes !== null &&
+      before.stable_recovery_deadline_elapsed_minutes !== null) ||
+    before.stable_recovery_settled === 1
+  )
+    assertCharacterLifecycle(db, charId, before);
+  // Leaving 'alive' (dying, stable, or dead) is incapacitation, which breaks
   // concentration (SRD concentration; F3). One-way reaction: the life-state
   // machine stays here, the effect cleanup lives in activeEffects.
   if (before.life_state === 'alive' && after.life_state !== 'alive') {
@@ -260,6 +464,56 @@ function writeHpFields(
       ctx,
     );
   }
+}
+
+function assertCharacterLifecycle(db: Db, charId: string, before: HpRow): void {
+  const row = readHpRow(db, charId);
+  const conditions = JSON.parse(
+    row.conditions_json,
+  ) as CharacterConditionEntry[];
+  const level = conditions.find(
+    (condition) => condition.id === 'exhaustion',
+  )?.level;
+  const schedule = [
+    row.stable_recovery_roll,
+    row.stable_recovery_anchor_elapsed_minutes,
+    row.stable_recovery_deadline_elapsed_minutes,
+  ];
+  const present = schedule.filter((value) => value !== null).length;
+  const fail = (rule: string): never => {
+    throw new MutateStateError(
+      `character lifecycle invariant ${rule} violated for '${charId}'`,
+    );
+  };
+  if (level === 6 && row.life_state !== 'dead')
+    fail('I1 (exhaustion level 6 requires dead)');
+  if (
+    (row.life_state === 'dying' || row.life_state === 'stable') &&
+    row.hp_current !== 0
+  )
+    fail('I3 (dying/stable requires 0 HP)');
+  if (
+    row.hp_max !== 0 &&
+    row.hp_current === 0 &&
+    !['dying', 'stable', 'dead'].includes(row.life_state)
+  )
+    fail('I4 (0 HP character must be dying, stable, or dead)');
+  if (row.recovery_block !== null && row.life_state !== 'dying')
+    fail('I5 (recovery block requires dying)');
+  if (row.hp_current > effectiveHpMax(row.hp_max, conditions))
+    fail('I6 (HP exceeds effective maximum)');
+  if (
+    (row.life_state !== 'stable' && present > 0) ||
+    (present > 0 && present !== 3) ||
+    (row.stable_recovery_settled === 1 &&
+      (row.life_state !== 'stable' || present !== 0)) ||
+    (row.life_state === 'stable' &&
+      present === 0 &&
+      row.stable_recovery_settled !== 1)
+  )
+    fail('I7 (stable recovery schedule is incomplete or unsettled)');
+  if (before.life_state === 'dead' && row.life_state !== 'dead')
+    fail('I8 (dead state is terminal)');
 }
 
 export function adjustHp(
@@ -276,12 +530,35 @@ export function adjustHp(
     const charId = resolveCharacterId(txnDb, ctx.characterId);
     const row = readHpRow(txnDb, charId);
 
+    if (options.knockOut === true) {
+      if (amount >= 0) {
+        throw new MutateStateError(
+          'a knockout applies only to damage that reduces the character to 0 hit points',
+        );
+      }
+      if (row.recovery_block !== null) {
+        throw new MutateStateError(
+          `cannot stabilize a character while ${row.recovery_block}`,
+        );
+      }
+      if (row.hp_current === 0 || row.life_state === 'dead') {
+        throw new MutateStateError(
+          'a knockout applies only when the damage reduces the character to 0 hit points',
+        );
+      }
+    }
+
     if (row.life_state === 'dead') {
       throw new MutateStateError(
         amount > 0
           ? 'character is dead: healing cannot restore a dead character ' +
               '(revival is a distinct act, not an adjust_hp call)'
           : 'character is dead: hp changes no longer apply',
+      );
+    }
+    if (amount > 0 && row.recovery_block !== null) {
+      throw new MutateStateError(
+        `cannot regain hit points while ${row.recovery_block}`,
       );
     }
 
@@ -294,10 +571,24 @@ export function adjustHp(
 
     const state =
       amount < 0
-        ? applyDamage(row, -amount, options.critical === true)
+        ? applyDamage(
+            row,
+            -amount,
+            options.critical === true,
+            options.knockOut === true,
+          )
         : applyHealing(row, amount);
 
     writeHpFields(txnDb, charId, row, state.after, ctx);
+    if (state.knockedOut) {
+      scheduleStableRecovery(
+        txnDb,
+        charId,
+        ctx,
+        options.rng ?? createSeededRng(0),
+      );
+    }
+    assertCharacterLifecycle(txnDb, charId, row);
 
     let concentrationCheck: AdjustHpResult['concentrationCheck'];
     let concentrationBroken: AdjustHpResult['concentrationBroken'];
@@ -319,7 +610,7 @@ export function adjustHp(
     return {
       previousHp: row.hp_current,
       newHp: state.after.hp_current,
-      hpMax: row.hp_max,
+      hpMax: rowEffectiveHpMax(row),
       clamped: state.clamped,
       previousTempHp: row.hp_temp,
       newTempHp: state.after.hp_temp,
@@ -328,6 +619,7 @@ export function adjustHp(
       previousLifeState: row.life_state,
       lifeState: state.after.life_state,
       instantDeath: state.instantDeath,
+      knockedOut: state.knockedOut,
       deathSaveFailuresAdded: state.deathSaveFailuresAdded,
       deathSaveSuccesses: state.after.death_save_successes,
       deathSaveFailures: state.after.death_save_failures,
@@ -349,6 +641,7 @@ interface HpTransition {
   tempHpAbsorbed: number;
   overflow: number;
   instantDeath: boolean;
+  knockedOut: boolean;
   deathSaveFailuresAdded: number;
 }
 
@@ -356,6 +649,7 @@ function applyDamage(
   row: HpRow,
   damage: number,
   critical: boolean,
+  knockOut: boolean,
 ): HpTransition {
   const tempHpAbsorbed = Math.min(row.hp_temp, damage);
   const penetrating = damage - tempHpAbsorbed;
@@ -367,6 +661,7 @@ function applyDamage(
   let successes = row.death_save_successes;
   let failures = row.death_save_failures;
   let instantDeath = false;
+  let knockedOut = false;
   let failuresAdded = 0;
 
   if (row.hp_max === 0) {
@@ -374,9 +669,17 @@ function applyDamage(
     // clamp behavior — a death machine keyed on hp_max would treat any hit
     // as instant death.
   } else if (row.hp_current > 0 && newHp === 0) {
-    // Dropping to 0: instant death when the remainder reaches the maximum,
-    // otherwise fall unconscious and start dying with fresh counters.
-    if (overflow >= row.hp_max) {
+    // Dropping to 0: an explicitly chosen knockout takes precedence over the
+    // overflow instant-death threshold, otherwise use the ordinary lifecycle.
+    if (knockOut) {
+      lifeState = 'stable';
+      successes = 0;
+      failures = 0;
+      knockedOut = true;
+    } else if (
+      rowEffectiveHpMax(row) > 0 &&
+      overflow >= rowEffectiveHpMax(row)
+    ) {
       lifeState = 'dead';
       instantDeath = true;
     } else {
@@ -387,10 +690,9 @@ function applyDamage(
   } else if (row.hp_current === 0) {
     // Damage at 0 HP: the damage *event* costs a death-save failure (double
     // on a crit) and knocks a stable character back to dying even when the
-    // temp-HP buffer absorbs every point — temp HP reduce the HP loss, not
-    // the hit. Only the penetrating remainder (= overflow here) feeds the
-    // instant-death threshold, which applies first.
-    if (overflow >= row.hp_max) {
+    // temp-HP buffer absorbs every point — temp HP reduce HP loss, not damage.
+    // Instant death at 0 HP compares the complete damage event.
+    if (damage >= rowEffectiveHpMax(row)) {
       lifeState = 'dead';
       instantDeath = true;
     } else {
@@ -412,13 +714,14 @@ function applyDamage(
     tempHpAbsorbed,
     overflow,
     instantDeath,
+    knockedOut,
     deathSaveFailuresAdded: failuresAdded,
   };
 }
 
 function applyHealing(row: HpRow, amount: number): HpTransition {
   const raw = row.hp_current + amount;
-  const newHp = Math.min(raw, row.hp_max);
+  const newHp = Math.min(raw, rowEffectiveHpMax(row));
   const revived = row.life_state !== 'alive' && newHp > 0;
 
   return {
@@ -433,6 +736,7 @@ function applyHealing(row: HpRow, amount: number): HpTransition {
     tempHpAbsorbed: 0,
     overflow: 0,
     instantDeath: false,
+    knockedOut: false,
     deathSaveFailuresAdded: 0,
   };
 }
@@ -452,6 +756,50 @@ export interface DeathSaveResult {
   deathSaveFailures: number;
   lifeState: LifeState;
   hpCurrent: number;
+  recoveryBlocked?: 'suffocating';
+}
+
+/** Pure shared death-save state transition used by characters and combatants. */
+export function resolveDeathSaveTransition(input: {
+  roll: number;
+  successes: number;
+  failures: number;
+  hp: number;
+  hpMax: number;
+  recoveryBlocked: boolean;
+}) {
+  let { successes, failures } = input;
+  let hpCurrent = input.hp;
+  let lifeState: LifeState = 'dying';
+  let outcome: DeathSaveOutcome;
+  const reviving =
+    input.roll === 20 && !input.recoveryBlocked && input.hpMax > 0;
+  if (reviving) {
+    hpCurrent = Math.min(1, input.hpMax);
+    lifeState = 'alive';
+    successes = 0;
+    failures = 0;
+    outcome = 'revived';
+  } else if (input.roll === 1) {
+    failures = Math.min(3, failures + 2);
+    lifeState = failures >= 3 ? 'dead' : 'dying';
+    outcome = failures >= 3 ? 'dead' : 'critical-failure';
+  } else if (input.roll >= 10) {
+    // A natural 20 that cannot regain HP (zero effective maximum or a
+    // recovery block) is an ordinary capped success.
+    successes = Math.min(3, successes + 1);
+    if (successes >= 3 && !input.recoveryBlocked) {
+      lifeState = 'stable';
+      successes = 0;
+      failures = 0;
+      outcome = 'stabilized';
+    } else outcome = 'success';
+  } else {
+    failures = Math.min(3, failures + 1);
+    lifeState = failures >= 3 ? 'dead' : 'dying';
+    outcome = failures >= 3 ? 'dead' : 'failure';
+  }
+  return { hpCurrent, lifeState, successes, failures, outcome };
 }
 
 /**
@@ -481,39 +829,16 @@ export function recordDeathSave(
       );
     }
 
-    let outcome: DeathSaveOutcome;
-    let hpCurrent = row.hp_current;
-    let lifeState: LifeState = 'dying';
-    let successes = row.death_save_successes;
-    let failures = row.death_save_failures;
-
-    if (roll === 20) {
-      // Natural 20: regain 1 hit point; counters reset on regaining HP.
-      outcome = 'revived';
-      hpCurrent = Math.min(1, row.hp_max);
-      lifeState = 'alive';
-      successes = 0;
-      failures = 0;
-    } else if (roll === 1) {
-      failures = Math.min(3, failures + 2);
-      outcome = failures >= 3 ? 'dead' : 'critical-failure';
-      lifeState = failures >= 3 ? 'dead' : 'dying';
-    } else if (roll >= 10) {
-      successes += 1;
-      if (successes >= 3) {
-        // Third success: stable; counters reset on becoming stable.
-        outcome = 'stabilized';
-        lifeState = 'stable';
-        successes = 0;
-        failures = 0;
-      } else {
-        outcome = 'success';
-      }
-    } else {
-      failures += 1;
-      outcome = failures >= 3 ? 'dead' : 'failure';
-      lifeState = failures >= 3 ? 'dead' : 'dying';
-    }
+    const recoveryBlocked = row.recovery_block !== null;
+    const transition = resolveDeathSaveTransition({
+      roll,
+      successes: row.death_save_successes,
+      failures: row.death_save_failures,
+      hp: row.hp_current,
+      hpMax: rowEffectiveHpMax(row),
+      recoveryBlocked,
+    });
+    const { hpCurrent, lifeState, successes, failures, outcome } = transition;
 
     writeHpFields(
       txnDb,
@@ -529,6 +854,7 @@ export function recordDeathSave(
       ctx,
     );
     if (lifeState === 'stable') scheduleStableRecovery(txnDb, charId, ctx, rng);
+    assertCharacterLifecycle(txnDb, charId, row);
 
     return {
       roll,
@@ -537,6 +863,7 @@ export function recordDeathSave(
       deathSaveFailures: failures,
       lifeState,
       hpCurrent,
+      ...(recoveryBlocked ? { recoveryBlocked: 'suffocating' as const } : {}),
     };
   });
 }
@@ -566,6 +893,11 @@ export function stabilizeCharacter(
         `only a dying character can be stabilized (current state: ${row.life_state})`,
       );
     }
+    if (row.recovery_block !== null) {
+      throw new MutateStateError(
+        `cannot stabilize a character while ${row.recovery_block}`,
+      );
+    }
 
     writeHpFields(
       txnDb,
@@ -581,6 +913,7 @@ export function stabilizeCharacter(
       ctx,
     );
     scheduleStableRecovery(txnDb, charId, ctx, rng);
+    assertCharacterLifecycle(txnDb, charId, row);
 
     return { lifeState: 'stable', hpCurrent: row.hp_current };
   });
@@ -605,12 +938,27 @@ export function resolveStableRecoveries(
     .prepare(
       `SELECT id
        FROM character
-       WHERE life_state='stable' AND hp_current=0
-         AND (
-           stable_recovery_roll IS NULL
-           OR stable_recovery_anchor_elapsed_minutes IS NULL
-           OR stable_recovery_deadline_elapsed_minutes IS NULL
+       WHERE (
+         life_state='stable' AND (
+           hp_current<>0 OR
+           (stable_recovery_roll IS NULL AND
+            stable_recovery_anchor_elapsed_minutes IS NULL AND
+            stable_recovery_deadline_elapsed_minutes IS NULL AND
+            stable_recovery_settled=0) OR
+           ((stable_recovery_roll IS NULL) +
+            (stable_recovery_anchor_elapsed_minutes IS NULL) +
+            (stable_recovery_deadline_elapsed_minutes IS NULL)) IN (1, 2) OR
+           (stable_recovery_settled=1 AND
+            (stable_recovery_roll IS NOT NULL OR
+             stable_recovery_anchor_elapsed_minutes IS NOT NULL OR
+             stable_recovery_deadline_elapsed_minutes IS NOT NULL))
+         ) OR (
+           life_state<>'stable' AND
+           (stable_recovery_settled=1 OR stable_recovery_roll IS NOT NULL OR
+            stable_recovery_anchor_elapsed_minutes IS NOT NULL OR
+            stable_recovery_deadline_elapsed_minutes IS NOT NULL)
          )
+       )
        ORDER BY id`,
     )
     .all() as Array<{ id: string }>;
@@ -625,7 +973,7 @@ export function resolveStableRecoveries(
     .prepare(
       `SELECT id, stable_recovery_roll, stable_recovery_deadline_elapsed_minutes
        FROM character
-       WHERE life_state='stable' AND hp_current=0
+       WHERE life_state='stable' AND hp_current=0 AND stable_recovery_settled=0
          AND stable_recovery_roll IS NOT NULL
          AND stable_recovery_anchor_elapsed_minutes IS NOT NULL
          AND stable_recovery_deadline_elapsed_minutes IS NOT NULL
@@ -637,12 +985,79 @@ export function resolveStableRecoveries(
     stable_recovery_roll: number;
     stable_recovery_deadline_elapsed_minutes: number;
   }>;
-  return rows.map((row) => ({
-    characterId: row.id,
-    recoveryRoll: row.stable_recovery_roll,
-    deadlineElapsedMinutes: row.stable_recovery_deadline_elapsed_minutes,
-    hp: adjustHp(db, 1, { ...ctx, characterId: row.id }),
-  }));
+  return rows.map((row) => {
+    const hp = adjustHp(db, 1, { ...ctx, characterId: row.id });
+    if (hp.newHp === 0)
+      db.prepare(`UPDATE character SET stable_recovery_roll=NULL,
+        stable_recovery_anchor_elapsed_minutes=NULL,
+        stable_recovery_deadline_elapsed_minutes=NULL, stable_recovery_settled=1,
+        provenance=?,session_id=?,updated_at=? WHERE id=?`).run(
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+        row.id,
+      );
+    if (hp.newHp === 0)
+      assertCharacterLifecycle(db, row.id, readHpRow(db, row.id));
+    return {
+      characterId: row.id,
+      recoveryRoll: row.stable_recovery_roll,
+      deadlineElapsedMinutes: row.stable_recovery_deadline_elapsed_minutes,
+      hp,
+    };
+  });
+}
+
+/** A later lifecycle mutation after settled zero-maximum recovery starts a fresh recovery window. */
+export function rearmSettledStableRecovery(
+  db: Db,
+  charId: string,
+  ctx: DomainMutationContext,
+): void {
+  const row = readHpRow(db, charId);
+  if (
+    row.life_state === 'stable' &&
+    row.stable_recovery_settled === 1 &&
+    rowEffectiveHpMax(row) > 0 &&
+    row.stable_recovery_roll === null &&
+    row.stable_recovery_anchor_elapsed_minutes === null &&
+    row.stable_recovery_deadline_elapsed_minutes === null
+  )
+    scheduleStableRecovery(db, charId, ctx, createSeededRng(0));
+}
+
+/** Lower current HP to the derived maximum without creating a damage event. */
+export function clampCharacterHpToEffectiveMaximum(
+  db: Db,
+  ctx: DomainMutationContext,
+): number {
+  return withTransaction(db, (txnDb) => {
+    const charId = resolveCharacterId(txnDb, ctx.characterId);
+    const row = readHpRow(txnDb, charId);
+    const maximum = rowEffectiveHpMax(row);
+    const hp = Math.min(row.hp_current, maximum);
+    if (hp === row.hp_current) return hp;
+    const downed = row.hp_current > 0 && hp === 0;
+    writeHpFields(
+      txnDb,
+      charId,
+      row,
+      {
+        hp_current: hp,
+        hp_temp: row.hp_temp,
+        life_state:
+          row.life_state === 'dead'
+            ? 'dead'
+            : downed
+              ? 'dying'
+              : row.life_state,
+        death_save_successes: downed ? 0 : row.death_save_successes,
+        death_save_failures: downed ? 0 : row.death_save_failures,
+      },
+      ctx,
+    );
+    return hp;
+  });
 }
 
 export interface GrantTemporaryHpOptions {

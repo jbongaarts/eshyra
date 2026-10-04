@@ -14,8 +14,15 @@ import {
 import type { ExpiredWorldEffectSummary } from './activeEffects.js';
 import { expireElapsedWorldEffects } from './activeEffects.js';
 import type { CampaignRulesPackResolver } from './campaignRecordLookup.js';
+import { resolveCombatantRecoveries } from './encounterCombatants.js';
+import {
+  effectiveHpMax,
+  exhaustionLevel,
+  withExhaustionLevel,
+} from './exhaustion.js';
 import {
   adjustHp,
+  applyCharacterExhaustionChanged,
   expireTemporaryHp,
   type LifeState,
   resolveStableRecoveries,
@@ -210,6 +217,11 @@ export function advanceWorldTime(
       at: input.at,
     });
     const stableRecoveries = resolveStableRecoveries(txn, next, input);
+    const combatantStableRecoveries = resolveCombatantRecoveries(
+      txn,
+      next,
+      input,
+    );
     const itemEvents = resolveDueItemClockEvents(txn, {
       ...input,
       campaignId: input.campaignId,
@@ -227,6 +239,7 @@ export function advanceWorldTime(
       expiredEffects,
       closedRecoveryWindows,
       stableRecoveries,
+      combatantStableRecoveries,
       itemResets: itemEvents.itemResets,
       itemTimerResolutions: itemEvents.itemTimerResolutions,
     };
@@ -314,7 +327,7 @@ export function readOpenShortRestRecovery(
   const row = db
     .prepare(
       `SELECT p.rest_id, p.character_id, h.dice_maximum, h.dice_used,
-              h.die_faces, c.hp_current, c.hp_max
+              h.die_faces, c.hp_current, c.hp_max, c.conditions_json
        FROM rest_participant p
        JOIN rest_event r USING(campaign_id, rest_id)
        JOIN character c ON c.id = p.character_id
@@ -332,6 +345,7 @@ export function readOpenShortRestRecovery(
         die_faces: number | null;
         hp_current: number;
         hp_max: number;
+        conditions_json: string;
       }
     | undefined;
   if (!row || row.dice_maximum === null || row.die_faces === null)
@@ -342,7 +356,7 @@ export function readOpenShortRestRecovery(
     remainingHitDice: row.dice_maximum - (row.dice_used ?? 0),
     hitDieFaces: row.die_faces,
     hpCurrent: row.hp_current,
-    hpMax: row.hp_max,
+    hpMax: effectiveHpMax(row.hp_max, JSON.parse(row.conditions_json)),
   };
 }
 
@@ -417,13 +431,24 @@ function readLife(
 ): { hp: number; max: number; life: LifeState; temp: number } {
   const row = db
     .prepare(
-      'SELECT hp_current hp, hp_max max, life_state life, hp_temp temp FROM character WHERE id = ?',
+      'SELECT hp_current hp, hp_max, life_state life, hp_temp temp, conditions_json FROM character WHERE id = ?',
     )
     .get(id) as
-    | { hp: number; max: number; life: LifeState; temp: number }
+    | {
+        hp: number;
+        hp_max: number;
+        life: LifeState;
+        temp: number;
+        conditions_json: string;
+      }
     | undefined;
   if (!row) throw new RestError(`participant '${id}' does not exist`);
-  return row;
+  return {
+    hp: row.hp,
+    max: effectiveHpMax(row.hp_max, JSON.parse(row.conditions_json)),
+    life: row.life,
+    temp: row.temp,
+  };
 }
 
 function applyExhaustion(
@@ -443,33 +468,26 @@ function applyExhaustion(
   } catch {
     throw new RestError(`malformed conditions for '${id}'`);
   }
-  const index = conditions.findIndex(
-    (condition) =>
-      condition.id === 'exhaustion' || condition.id === 'exhausted',
-  );
-  if (index < 0 || !eligible) return { changed: false };
-  const level = conditions[index]?.level;
-  if (
-    !Number.isInteger(level) ||
-    (level as number) < 1 ||
-    (level as number) > 6
-  )
+  let level: number;
+  try {
+    level = exhaustionLevel(conditions as never);
+  } catch {
     throw new RestError(`malformed exhaustion state for '${id}'`);
-  const next = [...conditions];
-  if (level === 1) next.splice(index, 1);
-  else next[index] = { ...conditions[index], level: (level as number) - 1 };
-  mutateState(db, {
-    target: 'character',
-    id,
-    field: 'conditions_json',
-    op: 'set',
-    value: next,
-    ...input,
-  });
+  }
+  if (level === 0 || !eligible) return { changed: false };
+  const nextLevel = level - 1;
+  const next = withExhaustionLevel(conditions as never, nextLevel);
+  // Canonical exhaustion/lifecycle transition: a settled zero-maximum stable
+  // character re-arms its recovery schedule when the maximum rises above 0.
+  applyCharacterExhaustionChanged(
+    db,
+    { characterId: id, conditions: next as never },
+    { ...input, characterId: id },
+  );
   return {
     changed: true,
     from: level,
-    to: level === 1 ? 0 : (level as number) - 1,
+    to: nextLevel,
   };
 }
 
@@ -649,7 +667,14 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           recoveryOpen: true,
         };
       if (kind === 'long') {
-        const healed = adjustHp(txn, s.max - s.hp, {
+        const exhaustion = applyExhaustion(
+          txn,
+          s.id,
+          (normalizedQualification as LongRestQualification).foodAndDrink,
+          input,
+        );
+        const finalState = readLife(txn, s.id);
+        const healed = adjustHp(txn, finalState.max - finalState.hp, {
           ...input,
           characterId: s.id,
         });
@@ -662,7 +687,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           )
           .run(restored, input.provenance, input.sessionId, input.at, s.id);
         const finalPool = resolvePool(txn, s.id, input);
-        benefits.hpRestored[s.id] = healed.newHp - s.hp;
+        benefits.hpRestored[s.id] = healed.newHp - finalState.hp;
         benefits.temporaryHpRemoved[s.id] = temp.previousTempHp;
         benefits.hitDiceRestored[s.id] = {
           restored,
@@ -680,12 +705,7 @@ function complete(db: Db, kind: RestKind, input: CompleteRestInput): unknown {
           event: 'long_rest',
           owner: { kind: 'character', ref: s.id },
         }).reset;
-        benefits.exhaustion[s.id] = applyExhaustion(
-          txn,
-          s.id,
-          (normalizedQualification as LongRestQualification).foodAndDrink,
-          input,
-        );
+        benefits.exhaustion[s.id] = exhaustion;
         txn
           .prepare(
             'UPDATE rest_participant SET short_recovery_open=0 WHERE campaign_id=? AND rest_id=? AND character_id=?',

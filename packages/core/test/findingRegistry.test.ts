@@ -58,7 +58,11 @@ describe('finding registry', () => {
         .filter((row) => row.status === 'narrowed')
         .map((row) => row.canonicalId)
         .sort(),
-    ).toEqual(['condition-structure-no-regression', 'rule-corpus-procedures']);
+    ).toEqual([
+      'condition-structure-no-regression',
+      'rule-corpus-procedures',
+      'rules-prose-readiness',
+    ]);
     expect(
       real.rows.find((row) => row.canonicalId === 'rule-corpus-procedures'),
     ).toMatchObject({
@@ -72,19 +76,15 @@ describe('finding registry', () => {
         .filter((row) => row.status === 'disclosed-dependency')
         .map((row) => row.canonicalId)
         .sort(),
-    ).toEqual([
-      'engine-capability-ownership',
-      'magic-item-effects',
-      'rules-prose-readiness',
-    ]);
-    // F-09 (design §8 step 4): the ADR 0020 reading is in place, but A5
-    // blocking engine-capability gaps keep it from being recorded resolved.
+    ).toEqual(['engine-capability-ownership', 'magic-item-effects']);
+    // F-09 (design §8 step 4): the ADR 0020 reading is in place and every
+    // A5 blocking gap has landed, so the finding is narrowed, not open.
     expect(
       real.rows.find((row) => row.canonicalId === 'rules-prose-readiness'),
     ).toMatchObject({
-      status: 'disclosed-dependency',
+      status: 'narrowed',
       statusReasoning: expect.stringContaining(
-        'F-09 is not recorded as resolved while those gaps are open',
+        'so no blocking gap remains open',
       ),
     });
     for (const row of real.rows.filter((row) => row.status !== 'accepted'))

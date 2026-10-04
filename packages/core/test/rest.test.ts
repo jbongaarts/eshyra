@@ -5,8 +5,8 @@ import type {
   RulesRecord,
 } from '../src/internal.js';
 import {
-  addCondition,
   advanceWorldTime,
+  beginSuffocation,
   completeLongRest,
   completeShortRest,
   createActiveEffect,
@@ -40,6 +40,7 @@ import {
 } from '../src/orchestrator/contextAssembler.js';
 import { playerVisibleRollEntries } from '../src/orchestrator/playerVisibleRollLedger.js';
 import type { ExecutedToolCall } from '../src/orchestrator/turnLoop.js';
+import { effectiveHpMax } from '../src/state/exhaustion.js';
 import {
   DEFAULT_TEST_CAMPAIGN_ID,
   DEFAULT_TEST_CAMPAIGN_POSITION,
@@ -53,6 +54,17 @@ const CTX = {
   sessionId: DEFAULT_TEST_SESSION_ID,
   at: '2026-07-14T00:00:00.000Z',
 };
+
+function recordExhaustion(
+  db: ReturnType<typeof freshDbWithSession>,
+  delta: number,
+) {
+  return createDefaultToolRegistry().invoke(
+    'adjust_exhaustion',
+    { delta },
+    { db, rng: createSeededRng(1), turnId: 'rest-exhaustion', ...CTX },
+  );
+}
 
 function sheet(
   classKey: 'class:wizard' | 'class:warlock',
@@ -464,6 +476,52 @@ describe('F7 rest qualification boundary', () => {
     db.close();
   });
 
+  it('refuses short-rest Hit Die recovery before spending the die while suffocating', () => {
+    const db = setupCharacters();
+    completeShortRest(db, {
+      ...CTX,
+      restId: 'suffocating-short-rest',
+      participants: ['pc-1'],
+      qualification: { durationMinutes: 60, strenuousActivity: false },
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'hp_current',
+      op: 'set',
+      value: 0,
+      ...CTX,
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'life_state',
+      op: 'set',
+      value: 'dying',
+      ...CTX,
+    });
+    beginSuffocation(db, { ...CTX, characterId: 'pc-1' });
+    const before = db
+      .prepare('SELECT dice_used FROM character_hit_dice WHERE character_id=?')
+      .get('pc-1');
+    expect(() =>
+      spendRestHitDie(db, {
+        ...CTX,
+        restId: 'suffocating-short-rest',
+        characterId: 'pc-1',
+        rng: createSeededRng(1),
+      }),
+    ).toThrow('cannot regain hit points while suffocating');
+    expect(
+      db
+        .prepare(
+          'SELECT dice_used FROM character_hit_dice WHERE character_id=?',
+        )
+        .get('pc-1'),
+    ).toEqual(before);
+    db.close();
+  });
+
   it('closes recovery before combat becomes active', () => {
     const db = setupCharacters();
     completeShortRest(db, {
@@ -789,11 +847,7 @@ describe('F7 rest qualification boundary', () => {
       ability: 'Second Wind',
       declared: { maxUses: 1, reset: 'short_rest' },
     });
-    addCondition(
-      db,
-      { id: 'exhaustion', level: 2 },
-      { ...CTX, characterId: 'pc-1' },
-    );
+    expect(recordExhaustion(db, 2).ok).toBe(true);
     grantTemporaryHp(db, 5, { ...CTX, characterId: 'pc-1' });
     completeShortRest(db, {
       ...CTX,
@@ -873,11 +927,7 @@ describe('F7 rest qualification boundary', () => {
 
   it('long rest restores HP, temporary HP, resources, half Hit Dice, and one exhaustion level with food', () => {
     const db = setupCharacters();
-    addCondition(
-      db,
-      { id: 'exhaustion', level: 2 },
-      { ...CTX, characterId: 'pc-1' },
-    );
+    expect(recordExhaustion(db, 2).ok).toBe(true);
     grantTemporaryHp(db, 5, { ...CTX, characterId: 'pc-1' });
     syncSpellSlots(db, { ...CTX, characterId: 'pc-1' });
     syncSpellSlots(db, { ...CTX, characterId: 'pc-2' });
@@ -1151,13 +1201,68 @@ describe('F7 rest qualification boundary', () => {
     db.close();
   });
 
+  it('long rest refuses a settled zero-maximum stable character without touching exhaustion', () => {
+    const db = setupCharacters();
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'hp_max',
+      op: 'set',
+      value: 1,
+      ...CTX,
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'hp_current',
+      op: 'set',
+      value: 0,
+      ...CTX,
+    });
+    mutateState(db, {
+      target: 'character',
+      id: 'pc-1',
+      field: 'life_state',
+      op: 'set',
+      value: 'dying',
+      ...CTX,
+    });
+    expect(recordExhaustion(db, 4).ok).toBe(true);
+    stabilizeCharacter(db, { ...CTX, characterId: 'pc-1' }, createSeededRng(3));
+    advanceWorldTime(db, { campaignId: CTX.campaignId, minutes: 241, ...CTX });
+    expect(
+      db
+        .prepare(
+          "SELECT stable_recovery_settled s, stable_recovery_deadline_elapsed_minutes d FROM character WHERE id='pc-1'",
+        )
+        .get(),
+    ).toEqual({ s: 1, d: null });
+    // A long rest can never be a rearm producer for a settled stable
+    // character: 0-HP participants are refused before any exhaustion write.
+    const before = db.prepare("SELECT * FROM character WHERE id='pc-1'").get();
+    expect(() =>
+      completeLongRest(db, {
+        ...CTX,
+        restId: 'long-settled',
+        participants: ['pc-1'],
+        qualification: {
+          durationMinutes: 480,
+          sleepMinutes: 360,
+          lightActivityMinutes: 120,
+          strenuousInterruptionMinutes: 0,
+          foodAndDrink: true,
+        },
+      }),
+    ).toThrow(/cannot benefit from a long rest/);
+    expect(db.prepare("SELECT * FROM character WHERE id='pc-1'").get()).toEqual(
+      before,
+    );
+    db.close();
+  });
+
   it('does not reduce exhaustion when a long rest lacks food and drink', () => {
     const db = setupCharacters();
-    addCondition(
-      db,
-      { id: 'exhaustion', level: 2 },
-      { ...CTX, characterId: 'pc-1' },
-    );
+    expect(recordExhaustion(db, 2).ok).toBe(true);
     completeLongRest(db, {
       ...CTX,
       restId: 'no-food-long',
@@ -1177,6 +1282,44 @@ describe('F7 rest qualification boundary', () => {
     });
     db.close();
   });
+
+  it.each([3, 4, 5])(
+    'restores to the final effective maximum at exhaustion %i with and without food',
+    (level) => {
+      for (const foodAndDrink of [true, false]) {
+        const db = setupCharacters();
+        expect(recordExhaustion(db, level).ok).toBe(true);
+        db.prepare("UPDATE character SET hp_current=3 WHERE id='pc-1'").run();
+        completeLongRest(db, {
+          ...CTX,
+          restId: `exhaustion-${level}-${foodAndDrink}`,
+          participants: ['pc-1'],
+          qualification: {
+            durationMinutes: 480,
+            sleepMinutes: 360,
+            lightActivityMinutes: 0,
+            strenuousInterruptionMinutes: 0,
+            foodAndDrink,
+          },
+        });
+        const row = db
+          .prepare(
+            "SELECT hp_current, hp_max, conditions_json FROM character WHERE id='pc-1'",
+          )
+          .get() as {
+          hp_current: number;
+          hp_max: number;
+          conditions_json: string;
+        };
+        const conditions = JSON.parse(row.conditions_json) as Array<{
+          id: string;
+          level?: number;
+        }>;
+        expect(row.hp_current).toBe(effectiveHpMax(row.hp_max, conditions));
+        db.close();
+      }
+    },
+  );
 
   it('rejects coercible, malformed, and unknown qualification fields', () => {
     const db = freshDbWithSession();

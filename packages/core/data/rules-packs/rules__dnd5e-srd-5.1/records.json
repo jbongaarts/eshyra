@@ -475,7 +475,7 @@
             "kind": "objectInteraction",
             "useWhen": "object-requires-your-action",
             "alsoUseWhen": "interact-with-more-than-one-object-on-your-turn",
-            "ordinaryInteractionRuleRef": "rule:interacting-with-objects"
+            "ordinaryInteractionRuleRef": "rule:other-activity-on-your-turn"
           }
         ]
       }
@@ -41143,6 +41143,16 @@
                 "mode": "advantage",
                 "against": "being blinded, charmed, deafened, frightened, stunned",
                 "condition": "While it has more than one head"
+              },
+              {
+                "kind": "multipleHeads",
+                "initialHeads": 5,
+                "headDiesWhenDamageInOneTurnAtLeast": 25,
+                "headsRegrownPerDeadHead": 2,
+                "regrowthSuppressedByDamageType": "fire",
+                "hitPointsPerRegrownHead": 10,
+                "deathWhenNoHeads": true,
+                "sourceSpan": "The hydra has five heads."
               }
             ]
           }

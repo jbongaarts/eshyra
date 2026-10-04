@@ -37,6 +37,8 @@ import {
   readCampaignRulesBinding,
 } from '../rules/binding.js';
 import { resolveCharacterId } from '../state/activeCharacter.js';
+import { effectiveHpMax } from '../state/exhaustion.js';
+import { validateConditionsJson } from '../state/liveStateSchema.js';
 import { mutateState } from '../state/mutateState.js';
 import {
   type ProgressionEventRecord,
@@ -342,12 +344,19 @@ export function applyLevelUp(
     // character could end up dying/dead at positive HP. Level-ups are a
     // living character's action; fail closed before any write.
     const lifeRow = txnDb
-      .prepare('SELECT life_state FROM character WHERE id = ?')
-      .get(characterId) as { life_state: string } | undefined;
-    if (lifeRow !== undefined && lifeRow.life_state !== 'alive') {
+      .prepare('SELECT life_state, recovery_block FROM character WHERE id = ?')
+      .get(characterId) as
+      | { life_state: string; recovery_block: 'suffocating' | null }
+      | undefined;
+    if (
+      lifeRow !== undefined &&
+      (lifeRow.life_state !== 'alive' || lifeRow.recovery_block !== null)
+    ) {
       throw new LevelUpEngineError(
         `cannot apply a level-up to a ${lifeRow.life_state} character: ` +
-          'stabilize and heal them first',
+          (lifeRow.recovery_block === 'suffocating'
+            ? 'cannot regain hit points while suffocating'
+            : 'stabilize and heal them first'),
       );
     }
     const sheet = input.store.load(characterId);
@@ -1294,8 +1303,10 @@ function projectToLiveCharacter(
   input: ApplyLevelUpInput,
 ): void {
   const row = db
-    .prepare('SELECT hp_current FROM character WHERE id = ?')
-    .get(characterId) as { hp_current: number } | undefined;
+    .prepare('SELECT hp_current, conditions_json FROM character WHERE id = ?')
+    .get(characterId) as
+    | { hp_current: number; conditions_json: string }
+    | undefined;
 
   const ctx = {
     provenance: input.provenance,
@@ -1352,10 +1363,18 @@ function projectToLiveCharacter(
       id: characterId,
       field: 'hp_current',
       op: 'set',
-      value:
+      value: Math.min(
         row.hp_current +
-        (changeSet.hitPoints.maxHitPoints.to -
-          changeSet.hitPoints.maxHitPoints.from),
+          (changeSet.hitPoints.maxHitPoints.to -
+            changeSet.hitPoints.maxHitPoints.from),
+        effectiveHpMax(
+          changeSet.hitPoints.maxHitPoints.to,
+          validateConditionsJson(
+            JSON.parse(row.conditions_json),
+            `character[${characterId}].conditions_json`,
+          ),
+        ),
+      ),
       ...ctx,
     });
   }

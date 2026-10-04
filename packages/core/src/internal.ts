@@ -1384,8 +1384,6 @@ export type {
   CombatTurnState,
   OtherSpellCast,
   ReactionRefresh,
-  SetReactionAllowanceInput,
-  SetReactionAllowanceResult,
   SetSurprisedInput,
   SetSurprisedResult,
   SpendTurnResourceInput,
@@ -1402,7 +1400,6 @@ export {
   beginTurn,
   formatTurnBudget,
   readCombatTurnState,
-  setReactionAllowance,
   setSurprised,
   spendTurnResource,
 } from './state/actionEconomy.js';
@@ -1578,8 +1575,10 @@ export type {
   UpdateCombatantInput,
   UpdateCombatantResult,
   UpsertCampaignActorInput,
+  VanishedOutcome,
 } from './state/encounterCombatants.js';
 export {
+  CombatantLifecycleInvariantError,
   closeCombatInstance,
   EncounterCombatantError,
   getActiveCombatInstance,
@@ -1588,7 +1587,10 @@ export {
   listCombatants,
   listCombatantsForInstance,
   readCombatInstance,
+  removeCampaignActorFromPlay,
+  removeCombatantFromPlay,
   startEncounter,
+  updateCampaignActor,
   updateCombatant,
   upsertCampaignActor,
 } from './state/encounterCombatants.js';
@@ -1603,10 +1605,13 @@ export type {
   LifeState,
   StabilizeResult,
   StableRecoveryResult,
+  SuffocationResult,
 } from './state/hpLifecycle.js';
 // HP write path + death/dying/temp-HP state machine (F6, eshyra-2n1t.8).
 export {
   adjustHp,
+  beginSuffocation,
+  endSuffocation,
   expireTemporaryHp,
   grantTemporaryHp,
   recordDeathSave,

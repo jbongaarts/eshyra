@@ -187,6 +187,8 @@ export function deriveTraceFields(
       // never needs to reconstruct math from narration.
       checks: okData('resolve_check'),
       contests: okData('resolve_contest'),
+      retainedChecks: okData('roll_retained_check'),
+      retainedCheckComparisons: okData('resolve_retained_check'),
       damage: okData('resolve_damage'),
       calcs: okData('calc'),
       rulesLookups: okData('lookup_rules'),

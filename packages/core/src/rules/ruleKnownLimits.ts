@@ -16,45 +16,11 @@ export interface EngineCapabilityGap {
   readonly findingId: 'engine-capability-ownership';
 }
 
-export const ENGINE_CAPABILITY_GAPS = Object.freeze({
-  'retained-check-total-resolution': Object.freeze({
-    operation:
-      'Resolve a retained d20 check total against a later opposing check (tie leaves the situation unchanged) and against passive scores.',
-    ownerBead: 'eshyra-o9bd.19.5.10.3',
-    findingId: 'engine-capability-ownership' as const,
-  }),
-  'graded-exhaustion-increase': Object.freeze({
-    operation:
-      'Raise an existing exhaustion level by a source-declared number of levels, atomically.',
-    ownerBead: 'eshyra-o9bd.19.5.7.3',
-    findingId: 'engine-capability-ownership' as const,
-  }),
-  'suffocation-recovery-gate': Object.freeze({
-    operation:
-      'Keep a dying character from regaining hit points or being stabilized, including through death saves, until it can breathe again.',
-    ownerBead: 'eshyra-o9bd.19.5.7.4',
-    findingId: 'engine-capability-ownership' as const,
-  }),
-  'combatant-dying-state': Object.freeze({
-    operation: 'Represent dying and death saves for an encounter combatant.',
-    ownerBead: 'eshyra-o9bd.19.5.7.5',
-    findingId: 'engine-capability-ownership' as const,
-  }),
-  'nonlethal-knockout': Object.freeze({
-    operation:
-      'Apply a melee knockout to a character as unconscious and stable in one step, including when the damage would otherwise kill outright.',
-    ownerBead: 'eshyra-o9bd.19.5.7.6',
-    findingId: 'engine-capability-ownership' as const,
-  }),
-  'ammunition-recovery-count': Object.freeze({
-    operation:
-      'Determine and apply the recoverable half of a character’s expended ammunition after a battle.',
-    ownerBead: 'eshyra-o9bd.19.5.11.4',
-    findingId: 'engine-capability-ownership' as const,
-  }),
-} satisfies Record<string, EngineCapabilityGap>);
+export const ENGINE_CAPABILITY_GAPS: Readonly<
+  Record<string, EngineCapabilityGap>
+> = Object.freeze({});
 
-export type EngineCapabilityGapId = keyof typeof ENGINE_CAPABILITY_GAPS;
+export type EngineCapabilityGapId = string;
 
 export interface RuleKnownLimit {
   readonly limit: 'partial' | 'unimplemented' | 'deferred';
@@ -76,19 +42,6 @@ export interface RuleKnownLimit {
     /** Historical owning bead; history only. `findingId` is the identity. */
     readonly bead: string;
   }[];
-}
-
-function exhaustionLevelLimit(
-  cause: string,
-  sourceSpecific = '',
-): RuleKnownLimit {
-  return Object.freeze({
-    limit: 'partial' as const,
-    participants: Object.freeze(['add_condition']),
-    capabilityGaps: Object.freeze(['graded-exhaustion-increase' as const]),
-    statement: `Exhaustion from ${cause} is graded. add_condition can record it only for a character with no exhaustion yet, and must then pass {id: "exhaustion", level: 1}, because long-rest recovery requires a level from 1 to 6. add_condition ignores an exhaustion condition the character already has, and no exposed tool raises an existing exhaustion level, so a further level from this rule cannot currently be persisted.${sourceSpecific}`,
-    findingId: 'readiness-integrity',
-  });
 }
 
 /** Source-grounded limits re-derived against current runtime behavior under R0. */
@@ -195,57 +148,49 @@ export const RULE_KNOWN_LIMITS: Readonly<
       designOwner: 'eshyra-2n1t.1',
     }),
   ]),
-  // R0 confirmed, target-domain split: for characters hpLifecycle.ts adjustHp handles the 0-HP transition to dying, and toolAdjustHp.ts / toolStabilizeCharacter.ts (character-only) do not gate recovery on breathing; A5 re-evaluation: hpLifecycle.ts recordDeathSave stabilizes on a third success and restores 1 HP on a natural 20 with no breathing gate, and death saves are engine-owned, so the clause is a blocking gap. For encounter combatants, encounterCombatants.ts updateCombatant defaults status to 'dead' when hpDelta reaches 0, and CombatantStatus has no dying state, so the source's 0-HP-and-dying transition is not representable there.
+  // R0 re-derived after combatant death lifecycle landed.
   'rule:suffocating': Object.freeze([
     Object.freeze({
       participants: Object.freeze([
+        'set_suffocation',
+        'calc',
         'adjust_hp',
-        'stabilize_character',
-        'record_death_save',
         'update_combatant',
-      ]),
-      capabilityGaps: Object.freeze([
-        'suffocation-recovery-gate' as const,
-        'combatant-dying-state' as const,
       ]),
       limit: 'partial',
       statement:
-        'When a character drops to 0 hit points, apply it with adjust_hp, which runs the dying rules. Eshyra does not gate stabilization or HP recovery on renewed breathing: do not call stabilize_character or restore the character’s HP with adjust_hp before it can breathe. record_death_save is not gated either: it stabilizes the character on a third success and restores 1 hit point on a natural 20, so while the character cannot breathe its death saves cannot currently be resolved as this rule requires. For an encounter combatant, the dying state this rule requires cannot be recorded: update_combatant sets a combatant whose hpDelta reaches 0 hit points to dead unless another status is given, and combatant state has no dying status.',
+        'Applying the suffocation drop to 0 hit points as damage through adjust_hp or update_combatant does not block healing or stabilization, so record the drop and the later breathing with set_suffocation instead. The drop comes at the start of the creature’s next turn after the survival interval from calc suffocation_survival_rounds expires, not when its breath runs out.',
       findingId: 'readiness-integrity',
     }),
   ]),
-  // R0 new trap (review @5e2b74ad): the source keeps the hider's Stealth
-  // total and contests it against a later active search (a tie leaves the
-  // hider hidden) and compares it with passive Perception. toolResolveContest.ts
-  // rolls both sides; resolution.ts resolveD20 resolves `total >= vs` with vs
-  // limited to 1..99; calc passive_score computes the score but compares
-  // nothing. No tool performs either comparison.
+  // R0 re-derived after retained-check resolution landed in
+  // eshyra-o9bd.19.5.10.3. resolve_contest and resolve_check remain traps for
+  // a fixed retained total; use the retained-check tools instead.
   'rule:hiding': Object.freeze([
     Object.freeze({
-      participants: Object.freeze(['resolve_contest', 'resolve_check', 'calc']),
-      capabilityGaps: Object.freeze([
-        'retained-check-total-resolution' as const,
+      participants: Object.freeze([
+        'resolve_contest',
+        'resolve_check',
+        'roll_retained_check',
+        'resolve_retained_check',
       ]),
       limit: 'partial' as const,
       statement:
-        'No tool resolves a search against a hider’s retained Stealth total: resolve_contest rolls both sides, so it would reroll the hider, and resolve_check counts a total equal to vs as success and accepts vs only from 1 to 99, while this rule leaves the hider hidden on a tie. No tool compares a passive Perception score from calc passive_score with that total either. These comparisons cannot currently be resolved deterministically.',
+        'Record the hider’s check with roll_retained_check and compare later searches or passive scores with resolve_retained_check. resolve_contest always rolls both sides, and resolve_check treats a tie as success, so neither resolves a retained Stealth total under this rule’s tie semantics. The DM decides whether hiding applies and which creatures search or observe.',
       findingId: 'readiness-integrity',
     }),
   ]),
-  // A5 (user decision 2026-10-01): set_surprised previously left the
-  // Stealth-vs-passive-Perception comparison to the DM. The comparison is the
-  // retained-total resolution gap (one Stealth total per hider against each
-  // observer's passive score); calc passive_score computes a score and
-  // compares nothing, and set_surprised (toolSetSurprised.ts) only records.
+  // R0 re-derived after the deterministic retained-check path landed.
   'rule:surprise': Object.freeze([
     Object.freeze({
-      participants: Object.freeze(['calc', 'set_surprised']),
-      capabilityGaps: Object.freeze([
-        'retained-check-total-resolution' as const,
+      participants: Object.freeze([
+        'roll_retained_check',
+        'resolve_retained_check',
+        'set_surprised',
       ]),
       limit: 'partial' as const,
       statement:
-        'Deciding who is surprised needs each hider’s Stealth total compared with each observer’s passive Perception score. calc passive_score computes a score but compares nothing, and set_surprised only records an outcome, so who is surprised cannot currently be determined deterministically.',
+        'A hider’s Stealth check is retained with roll_retained_check. resolve_check and resolve_contest cannot determine surprise: each roll compares one check against one target, and a fresh roll replaces a hider’s retained check. Surprise is determined only from passive comparisons recorded by resolve_retained_check and passed to set_surprised.',
       findingId: 'readiness-integrity',
     }),
   ]),
@@ -271,30 +216,18 @@ export const RULE_KNOWN_LIMITS: Readonly<
       findingId: 'readiness-integrity',
     }),
   ]),
-  // R0 new trap (Sol review F3): hpLifecycle.ts applyDamage turns overflow
-  // >= hp_max into instant death and toolAdjustHp.ts has no nonlethal option;
-  // hpLifecycle.ts stabilizeCharacter refuses any state but dying.
+  // R0 re-derived after eshyra-o9bd.19.5.7.6: adjust_hp can choose the
+  // nonlethal state atomically with the damage; a later stabilize call cannot
+  // undo an instant death already recorded.
   'rule:knocking-a-creature-out': Object.freeze([
     Object.freeze({
       participants: Object.freeze(['adjust_hp', 'stabilize_character']),
-      capabilityGaps: Object.freeze(['nonlethal-knockout' as const]),
       limit: 'partial' as const,
       statement:
-        'adjust_hp applies instant death when damage beyond 0 hit points equals or exceeds the character’s hit point maximum, even when the attacker chooses to knock the character out, and stabilize_character stabilizes only a dying character. A nonlethal knockout of a character killed outright by that damage cannot currently be recorded.',
+        'When the attacker chooses to knock a character out, pass knockOut=true to adjust_hp with the damage as it is dealt; a later stabilize_character call cannot undo an instant death already recorded.',
       findingId: 'readiness-integrity',
     }),
   ]),
-  // R0 rewritten (graded exhaustion): add_condition no-ops on an existing id;
-  // rest.ts requires {id:'exhaustion', level:1..6}. A further level cannot be
-  // persisted. Shared by the food, water, and forced-march procedures.
-  'rule:food': Object.freeze([exhaustionLevelLimit('lack of food')]),
-  'rule:water': Object.freeze([
-    exhaustionLevelLimit(
-      'inadequate water',
-      ' When the character already has exhaustion, this rule imposes two levels at once, and neither can currently be persisted.',
-    ),
-  ]),
-  'rule:speed': Object.freeze([exhaustionLevelLimit('a forced march')]),
   // R0 confirmed: the source says an Unarmored Defense feature from a second class is not gained; ADR 0018 §6 and closed bead eshyra-2n1t.1 defer the interaction.
   'rule:unarmored-defense': Object.freeze([
     Object.freeze({
@@ -305,18 +238,17 @@ export const RULE_KNOWN_LIMITS: Readonly<
       designOwner: 'eshyra-2n1t.1',
     }),
   ]),
-  // R0 rewritten: packages/core/src/orchestrator/toolResolveCheck.ts resolveCheckTool resolves ranged attacks without the source ammunition expenditure; packages/core/src/orchestrator/toolRemoveItem.ts removeItemTool requires an explicit inventory mutation.
+  // R0 rewritten: resolve_check leaves expenditure to expend_ammunition and recovery to recover_ammunition; both are deterministic character inventory operations.
   'rule:weapon-properties': Object.freeze([
     Object.freeze({
       participants: Object.freeze([
         'resolve_check',
-        'remove_item',
-        'claim_item',
+        'expend_ammunition',
+        'recover_ammunition',
       ]),
-      capabilityGaps: Object.freeze(['ammunition-recovery-count' as const]),
       limit: 'partial',
       statement:
-        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece after each such attack with remove_item and disposition dropped, which keeps expended ammunition as claimable rows at the battle location; after the battle, claim_item claims whole rows, but no tool determines how many of the expended pieces are recoverable, so that recovery cannot currently be applied. Apply the loading restriction before another attack with that weapon.',
+        'resolve_check does not spend ammunition for an attack with the ammunition property. For a character, spend one piece with expend_ammunition after each attack with an ammunition weapon. After the battle, recover_ammunition returns half the expended ammunition, rounded down, limited to what is still at the battlefield; it destroys the remaining present pieces and reports unavailable pieces. Apply the loading restriction before another attack with that weapon.',
       findingId: 'readiness-integrity',
     }),
   ]),

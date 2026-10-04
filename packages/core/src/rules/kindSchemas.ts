@@ -105,6 +105,7 @@ const MECHANICS_EFFECT_KINDS: ReadonlySet<string> = new Set([
   'illusoryDisguise',
   'summonCreature',
   'extraReactions',
+  'multipleHeads',
   'extraWeaponDamageDie',
   'hiddenFromView',
   'ignoreDifficultTerrain',
@@ -2992,6 +2993,36 @@ const MECHANICS_EFFECT_PAYLOAD_VALIDATORS: Readonly<
       reqStr(effect, 'formula', path);
     }
     optStr(effect, 'restrictedTo', path);
+  },
+  multipleHeads: (effect, path) => {
+    requireOnlyKeys(
+      effect,
+      [
+        'kind',
+        'initialHeads',
+        'headDiesWhenDamageInOneTurnAtLeast',
+        'headsRegrownPerDeadHead',
+        'regrowthSuppressedByDamageType',
+        'hitPointsPerRegrownHead',
+        'deathWhenNoHeads',
+        'sourceSpan',
+      ],
+      path,
+    );
+    reqInt(effect, 'initialHeads', path, 1);
+    reqInt(effect, 'headDiesWhenDamageInOneTurnAtLeast', path, 1);
+    reqInt(effect, 'headsRegrownPerDeadHead', path, 1);
+    reqEnum(
+      effect,
+      'regrowthSuppressedByDamageType',
+      path,
+      SRD_5_1_DAMAGE_TYPES,
+    );
+    reqInt(effect, 'hitPointsPerRegrownHead', path, 1);
+    if (effect.deathWhenNoHeads !== true) {
+      throw new RulesPackError(`${path}.deathWhenNoHeads must be true`);
+    }
+    reqStr(effect, 'sourceSpan', path);
   },
   extraWeaponDamageDie: (effect, path) => {
     reqInt(effect, 'extraDice', path, 1);

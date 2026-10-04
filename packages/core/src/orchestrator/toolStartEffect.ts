@@ -145,8 +145,29 @@ export const startEffectTool: Tool = {
         type: 'array',
         description:
           'Combatants the effect owns (summons/animations; kind ' +
-          '"summoning" only). cleanupOnBreak "release" keeps the entity ' +
-          'in play when concentration breaks (e.g. Conjure Elemental).',
+          '"summoning" only). For a spell source the record decides how ' +
+          'each creature leaves play: when the record says the creature ' +
+          'disappears at spell end, cleanupOnEnd must be "remove" (the ' +
+          'creature becomes absent, out of play); a record that leaves a ' +
+          'creature present but uncontrolled when concentration breaks ' +
+          '(Conjure Elemental, Conjure Fey) requires cleanupOnBreak ' +
+          '"release", otherwise a concentration spell removes it. Omit ' +
+          "both policies to take the record's values; a contradicting " +
+          'policy is refused with the record text. "remove" takes the ' +
+          'creature out of play (status absent), never leaves it dying or ' +
+          'stable, so a creature already on player-character death rules ' +
+          'cannot be linked under it. A creature whose record says it ' +
+          'disappears when it drops to 0 hit points (Conjure Animals and ' +
+          'the other conjure spells, Simulacrum) vanishes at 0 HP: it ' +
+          'becomes absent, never dead, dying, stable or unconscious, its ' +
+          'link closes, and the effect ends when its last owned creature ' +
+          'is gone. A ruling-sourced creature declares its rule with ' +
+          'atZeroHitPoints: "vanish-bonded" for a familiar or steed, which ' +
+          'disappears at 0 HP but stays bonded (its link and the effect stay ' +
+          'active; it needs campaignActorId), or "vanish" for one whose part ' +
+          'of the effect ends. An absent bonded creature returns only by its ' +
+          'spell being cast again, which the engine cannot yet execute; ' +
+          'start_encounter refuses it until the bond is ended.',
         items: {
           type: 'object',
           properties: {
@@ -159,6 +180,12 @@ export const startEffectTool: Tool = {
             },
             cleanupOnEnd: CLEANUP_SCHEMA,
             cleanupOnBreak: CLEANUP_SCHEMA,
+            atZeroHitPoints: {
+              type: 'string',
+              enum: ['vanish', 'vanish-bonded'],
+              description:
+                'What happens when the creature drops to 0 hit points. "vanish": it disappears and its part of the effect ends (its link closes; the effect ends when no owned creature remains). "vanish-bonded": it disappears but stays bonded, so the link and effect stay active (Find Familiar, Find Steed); requires campaignActorId, and the absent creature returns only when its spell is cast again (not yet executable by the engine). Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature.',
+            },
           },
           required: ['combatantId'],
           additionalProperties: false,
@@ -271,16 +298,30 @@ export const startEffectTool: Tool = {
       if (actor === undefined || typeof actor.combatantId !== 'string') {
         return err('invalid_args', 'each actors entry must have combatantId');
       }
+      if (
+        actor.atZeroHitPoints !== undefined &&
+        actor.atZeroHitPoints !== 'vanish' &&
+        actor.atZeroHitPoints !== 'vanish-bonded'
+      )
+        return err(
+          'invalid_args',
+          'each actors entry atZeroHitPoints must be "vanish" or "vanish-bonded" when given',
+        );
       actors.push({
         combatantId: actor.combatantId,
         ...(typeof actor.campaignActorId === 'string'
           ? { campaignActorId: actor.campaignActorId }
           : {}),
-        ...(actor.cleanupOnEnd === 'release'
-          ? { cleanupOnEnd: 'release' as const }
+        ...(actor.cleanupOnEnd === 'release' || actor.cleanupOnEnd === 'remove'
+          ? { cleanupOnEnd: actor.cleanupOnEnd }
           : {}),
-        ...(actor.cleanupOnBreak === 'release'
-          ? { cleanupOnBreak: 'release' as const }
+        ...(actor.cleanupOnBreak === 'release' ||
+        actor.cleanupOnBreak === 'remove'
+          ? { cleanupOnBreak: actor.cleanupOnBreak }
+          : {}),
+        ...(actor.atZeroHitPoints === 'vanish' ||
+        actor.atZeroHitPoints === 'vanish-bonded'
+          ? { atZeroHitPoints: actor.atZeroHitPoints }
           : {}),
       });
     }

@@ -14,7 +14,7 @@ export const claimItemTool: Tool = {
   mutates: true,
   requiresExplicitAction: true,
   description:
-    'Claim an existing unheld physical inventory row after a character explicitly picks it up or recovers it. Requires the item world location to exactly match the current campaign location, then preserves the exact row id, pack/variant identity, quantity, properties, mutable item state, and any still-existing attunement while clearing its world placement. Refuses unknown-location, remote, or already-held items.',
+    'Claim an existing unheld physical inventory row after a character explicitly picks it up or recovers it. Requires the item world location to exactly match the current campaign location, then preserves the exact row id, pack/variant identity, quantity, properties, mutable item state, and any still-existing attunement while clearing its world placement. Refuses unknown-location, remote, already-held items, and expended ammunition reserved for recover_ammunition (which must account for the recovery first).',
   inputSchema: {
     type: 'object',
     properties: {

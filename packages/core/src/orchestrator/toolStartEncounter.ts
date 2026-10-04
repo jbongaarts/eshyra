@@ -69,7 +69,7 @@ export const startEncounterTool: Tool = {
   name: 'start_encounter',
   mutates: true,
   description:
-    'Start a new live combat instance from an authored encounter template and optional persistent actors. args: { encounterId?: string, combatInstanceId?: string, runId?: string, locationId?: string, actors?: [...] }.',
+    'Start a new live combat instance from an authored encounter template and optional persistent actors. args: { encounterId?: string, combatInstanceId?: string, runId?: string, locationId?: string, actors?: [...] }. An absent actor (one that vanished at 0 hit points or was removed from play by its owning effect) is admitted only as a new manifestation: pass hpCurrent above 0; it starts alive with no conditions or rules carried over, An absent actor still bonded to its summoner (a familiar or steed under "vanish-bonded") is refused: it returns only when its spell is cast again, which the engine cannot yet execute; ending the owning effect releases the bond, after which admission is a new creature. A creature that disappears at 0 hit points cannot be admitted at 0 hit points.',
   inputSchema: {
     type: 'object',
     properties: {

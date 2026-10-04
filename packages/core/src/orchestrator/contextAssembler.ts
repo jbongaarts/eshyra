@@ -52,6 +52,7 @@ import {
   listCampaignActors,
   listCombatants,
 } from '../state/encounterCombatants.js';
+import { effectiveHpMax } from '../state/exhaustion.js';
 import { formatHpStatus, type LifeState } from '../state/hpLifecycle.js';
 import {
   assertNoInventoryIdentityRepairs,
@@ -183,6 +184,7 @@ export interface CharacterSnapshot {
   lifeState: LifeState;
   deathSaveSuccesses: number;
   deathSaveFailures: number;
+  recoveryBlock: 'suffocating' | null;
   abilityScores: AbilityScores;
   conditions: readonly CharacterConditionEntry[];
   role: string;
@@ -214,6 +216,15 @@ export interface NearbyInventoryItem {
   worldLocationId: string;
 }
 
+export interface RetainedCheckSnapshot {
+  retainedCheckId: string;
+  label: string;
+  participantKind: string | undefined;
+  participantRef: string | undefined;
+  combatInstanceId: string | undefined;
+  visibility: string;
+}
+
 export interface ClockSnapshot {
   inGameTime: string;
   currentLocationId: string | undefined;
@@ -229,6 +240,8 @@ export interface StateSnapshot {
   /** Deterministically bounded unheld physical rows co-located with the clock. */
   nearbyInventory: NearbyInventoryItem[];
   nearbyInventoryTruncated: boolean;
+  /** Most recent 20 active campaign checks; totals remain engine-owned. */
+  retainedChecks: RetainedCheckSnapshot[];
   /** The acting character's attuned magic items (F5), at most three. */
   attunements: readonly AttunementEntry[];
   /** Live (active or suppressed) durable effects (F3): concentration and
@@ -302,6 +315,7 @@ interface CharacterRow {
   life_state: LifeState;
   death_save_successes: number;
   death_save_failures: number;
+  recovery_block: 'suffocating' | null;
   ability_scores_json: string;
   conditions_json: string;
   role: string;
@@ -354,6 +368,7 @@ export function readStateSnapshot(
     .prepare(
       `SELECT id, name, ancestry, class_name, level, hp_current, hp_max,
               hp_temp, life_state, death_save_successes, death_save_failures,
+              recovery_block,
               ability_scores_json, conditions_json, role, inspiration
        FROM character WHERE id = ?`,
     )
@@ -396,12 +411,30 @@ export function readStateSnapshot(
              FROM inventory
              WHERE character_id IS NULL
                AND unheld_disposition = 'dropped'
+               AND NOT EXISTS (SELECT 1 FROM ammunition_expenditure e WHERE e.expended_inventory_id=inventory.id AND e.status='expended')
                AND world_location_id = ?
                AND trim(world_location_id) <> ''
              ORDER BY id
              LIMIT 21`,
         )
         .all(clock.current_location_id) as NearbyInventoryRow[]);
+
+  const retainedChecks =
+    campaignId === undefined
+      ? []
+      : (db
+          .prepare(`SELECT retained_check_id, label, participant_kind, participant_ref,
+                     combat_instance_id, visibility
+              FROM retained_check WHERE campaign_id=? AND status='active'
+              ORDER BY created_at DESC, retained_check_id DESC LIMIT 20`)
+          .all(campaignId) as Array<{
+          retained_check_id: string;
+          label: string;
+          participant_kind: string | null;
+          participant_ref: string | null;
+          combat_instance_id: string | null;
+          visibility: string;
+        }>);
 
   const plotFlagRows = db
     .prepare('SELECT key, value_json FROM plot_flags ORDER BY key')
@@ -454,11 +487,15 @@ export function readStateSnapshot(
       className: character.class_name ?? undefined,
       level: character.level,
       hpCurrent: character.hp_current,
-      hpMax: character.hp_max,
+      hpMax: effectiveHpMax(
+        character.hp_max,
+        validateConditionsJson(rawConditions, 'character.conditions_json'),
+      ),
       hpTemp: character.hp_temp,
       lifeState: character.life_state,
       deathSaveSuccesses: character.death_save_successes,
       deathSaveFailures: character.death_save_failures,
+      recoveryBlock: character.recovery_block,
       abilityScores: validateAbilityScoresJson(
         rawAbilityScores,
         'character.ability_scores_json',
@@ -510,6 +547,14 @@ export function readStateSnapshot(
     nearbyInventory,
     nearbyInventoryTruncated:
       nearbyInventoryRows.length > nearbyInventory.length,
+    retainedChecks: retainedChecks.map((row) => ({
+      retainedCheckId: row.retained_check_id,
+      label: row.label,
+      participantKind: row.participant_kind ?? undefined,
+      participantRef: row.participant_ref ?? undefined,
+      combatInstanceId: row.combat_instance_id ?? undefined,
+      visibility: row.visibility,
+    })),
     attunements:
       campaignId === undefined ? [] : listAttunements(db, campaignId, charId),
     activeEffects:
@@ -810,6 +855,20 @@ function renderState(state: StateSnapshot): string {
       lines.push(`- ${formatActiveEffect(effect)}`);
     }
   }
+  if (state.retainedChecks.length > 0) {
+    lines.push(
+      'Active retained checks (most recent 20; totals are engine-owned):',
+    );
+    for (const check of state.retainedChecks) {
+      const participant =
+        check.participantKind === undefined
+          ? 'unattributed'
+          : `${check.participantKind}/${check.participantRef ?? ''}`;
+      lines.push(
+        `- ${check.retainedCheckId}: ${check.label}; participant ${participant}; combat ${check.combatInstanceId ?? 'none'}; visibility ${check.visibility}`,
+      );
+    }
+  }
   if (state.inventory.length > 0) {
     lines.push(
       `Inventory: ${state.inventory
@@ -826,7 +885,9 @@ function renderState(state: StateSnapshot): string {
     lines.push('Inventory: (empty)');
   }
   if (state.nearbyInventory.length > 0) {
-    lines.push('Nearby unheld items (claim with exact id via claim_item):');
+    lines.push(
+      'Nearby unheld items (claimable with claim_item; expended ammunition reserved for recover_ammunition is omitted):',
+    );
     for (const item of state.nearbyInventory) {
       const pack = item.packRef === undefined ? '' : `; ${item.packRef}`;
       const variant =
@@ -844,6 +905,8 @@ function renderState(state: StateSnapshot): string {
     lines.push('Active combatants:');
     for (const combatant of state.combatants) {
       const ac = combatant.ac === undefined ? '' : `, AC ${combatant.ac}`;
+      const heads =
+        combatant.headCount === null ? '' : `, heads ${combatant.headCount}`;
       const conditions =
         combatant.conditions.length === 0
           ? ''
@@ -858,8 +921,12 @@ function renderState(state: StateSnapshot): string {
         combatant.identityRef === undefined
           ? ''
           : `, identity: ${combatant.identityRef}`;
+      const effectiveMax = effectiveHpMax(
+        combatant.hpMax,
+        combatant.conditions,
+      );
       lines.push(
-        `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}], ${combatant.side}, HP ${combatant.hpCurrent}/${combatant.hpMax}${ac}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
+        `- ${combatant.combatantId}: ${combatant.displayLabel} [${combatant.status}${combatant.status === 'dying' ? `, death saves ${combatant.deathSaveSuccesses}S/${combatant.deathSaveFailures}F${combatant.recoveryBlock ? ', suffocating: no healing or stabilizing' : ''}` : ''}], ${combatant.side}, HP ${combatant.hpCurrent}/${effectiveMax}${ac}${heads}${conditions}${location}${placement}${identity}, combat: ${combatant.combatInstanceId}`,
       );
     }
   }
@@ -949,7 +1016,7 @@ function renderState(state: StateSnapshot): string {
       const hp =
         actor.hpCurrent === undefined || actor.hpMax === undefined
           ? ''
-          : `, HP ${actor.hpCurrent}/${actor.hpMax}`;
+          : `, HP ${actor.hpCurrent}/${effectiveHpMax(actor.hpMax, actor.conditions)}`;
       const conditions =
         actor.conditions.length === 0
           ? ''

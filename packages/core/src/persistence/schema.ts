@@ -30,6 +30,9 @@ import { migrateDatabase } from './migrationRunner.js';
  *                                        validated by `character/currency.ts`)
  *
  * Typed live campaign canon:
+ *   - `character.recovery_block`       (nullable lifecycle prohibition; currently
+ *                                        `suffocating` blocks HP recovery and
+ *                                        stabilization until breathing resumes)
  *   - `campaign_overlay_lore`           (improvised lore and continuity
  *                                        dressing promoted during play;
  *                                        append-friendly rows with truth status,
@@ -39,8 +42,18 @@ import { migrateDatabase } from './migrationRunner.js';
  *   - `campaign_actor`                  (persistent named/recurring actor
  *                                        mechanics across combat instances)
  *   - `encounter_combatant`             (live/historical tactical projection
- *                                        of anonymous creatures or actors into
- *                                        one combat instance)
+ *                                        with per-combatant death rules, death
+ *                                        saves, recovery block, stable recovery,
+ *                                        and tracked creature head lifecycle)
+ *   - `ammunition_expenditure`           (combat-scoped ammunition expenditure
+ *                                        linked to its battlefield inventory row)
+ *   - `ammunition_expenditure`           (combat-scoped expenditure rows tied
+ *                                        to the physical battlefield items)
+ *   - `retained_check`                   (engine-recorded d20 totals kept for
+ *                                        later comparison, with explicit end
+ *                                        lifecycle and provenance)
+ *   - `retained_check_comparison`        (search/passive observer outcomes
+ *                                        against a retained check total)
  *
  * Archival / trace / generated — deliberately opaque, jsonColumn<TraceJsonValue[]>.
  * Do not add shape validation here; these blobs are owned by the memory subsystem:

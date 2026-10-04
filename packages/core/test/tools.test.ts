@@ -158,6 +158,7 @@ describe('ToolRegistry', () => {
       [
         'accept_ambiguity_precedent',
         'add_condition',
+        'adjust_exhaustion',
         'adjust_hp',
         'advance_time',
         'adopt_item',
@@ -174,6 +175,7 @@ describe('ToolRegistry', () => {
         'don_item',
         'end_attunement',
         'end_effect',
+        'expend_ammunition',
         'finish_short_rest_recovery',
         'gain_currency',
         'give_item',
@@ -187,12 +189,14 @@ describe('ToolRegistry', () => {
         'reacquire_item',
         'record_death_save',
         'record_world_fact',
+        'recover_ammunition',
         'remove_condition',
         'remove_item',
         'reset_usage',
         'resolve_check',
         'resolve_contest',
         'resolve_damage',
+        'resolve_retained_check',
         'resolve_spell_upcast',
         'refresh_effect',
         'remove_effect_target',
@@ -200,8 +204,11 @@ describe('ToolRegistry', () => {
         'suppress_effect',
         'restore_usage',
         'roll',
+        'roll_retained_check',
         'set_plot_flag',
+        'set_suffocation',
         'set_surprised',
+        'end_retained_check',
         'set_world_fact',
         'spend_currency',
         'spend_rest_hit_die',
@@ -436,6 +443,43 @@ describe('mark_scene tool', () => {
 });
 
 describe('lookup_rules tool', () => {
+  it('registers set_suffocation and applies drop/breathe events end to end', () => {
+    const toolContext = ctx();
+    const registry = createDefaultToolRegistry();
+    const dropped = registry.invoke(
+      'set_suffocation',
+      { event: 'drop' },
+      toolContext,
+    );
+    expect(dropped.ok).toBe(true);
+    expect(
+      toolContext.db
+        .prepare(
+          "SELECT life_state, recovery_block FROM character WHERE id='pc-1'",
+        )
+        .get(),
+    ).toEqual({ life_state: 'dying', recovery_block: 'suffocating' });
+    const healed = registry.invoke('adjust_hp', { amount: 1 }, toolContext);
+    expect(healed).toMatchObject({
+      ok: false,
+      message: 'cannot regain hit points while suffocating',
+    });
+    const breathed = registry.invoke(
+      'set_suffocation',
+      { event: 'breathe' },
+      toolContext,
+    );
+    expect(breathed.ok).toBe(true);
+    expect(
+      (
+        toolContext.db
+          .prepare("SELECT recovery_block FROM character WHERE id='pc-1'")
+          .get() as { recovery_block: string | null }
+      ).recovery_block,
+    ).toBeNull();
+    toolContext.db.close();
+  });
+
   it('returns relationship awareness beside the unchanged source record', () => {
     const result = createDefaultToolRegistry().invoke(
       'lookup_rules',
@@ -489,9 +533,7 @@ describe('lookup_rules tool', () => {
       };
       expect(data.ruleAwareness.knownLimits[0]).toMatchObject({
         findingId: 'readiness-integrity',
-        statement: expect.stringContaining(
-          'does not gate stabilization or HP recovery',
-        ),
+        statement: expect.stringContaining('with set_suffocation instead'),
       });
       expect(data.ruleAwareness.knownLimits[0].statement).not.toMatch(
         /held its breath|suffocation round countdown/i,
@@ -1019,6 +1061,63 @@ describe('domain mutation tools', () => {
       expect(data.previousHp).toBe(15);
       expect(data.newHp).toBe(10);
     }
+  });
+
+  it('adjust_hp exposes knockout and reports incapacitation through the tool result', () => {
+    const c = ctx();
+    const registry = createDefaultToolRegistry();
+    c.db
+      .prepare(
+        `UPDATE character SET hp_max = 10, hp_current = 5 WHERE id = 'pc-1'`,
+      )
+      .run();
+    registry.invoke(
+      'start_effect',
+      {
+        effectId: 'knockout-concentration',
+        kind: 'spell-effect',
+        displayName: 'Bless',
+        source: { kind: 'spell', ref: 'spell:bless' },
+        concentrationOwner: { kind: 'character', ref: 'pc-1' },
+        duration: {
+          kind: 'timed',
+          amount: 1,
+          unit: 'minute',
+          anchor: 'spell-cast',
+        },
+        conditions: [
+          {
+            target: { kind: 'character', ref: 'pc-1' },
+            condition: { id: 'blessed:knockout-concentration' },
+          },
+        ],
+      },
+      c,
+    );
+
+    const result = registry.invoke(
+      'adjust_hp',
+      { amount: -20, knockOut: true },
+      c,
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        newHp: 0,
+        lifeState: 'stable',
+        instantDeath: false,
+        knockedOut: true,
+        concentrationBroken: {
+          effectId: 'knockout-concentration',
+          cause: 'incapacitated',
+        },
+      },
+    });
+    const schema = DEFAULT_TOOLS.find((tool) => tool.name === 'adjust_hp')
+      ?.inputSchema as JsonSchema;
+    expect(schema.properties).toMatchObject({
+      knockOut: { type: 'boolean' },
+    });
   });
 
   it('adjust_hp returns error for non-integer amount', () => {
@@ -2118,26 +2217,21 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       resolve_check:
         "vs is the target's unmodified DC or AC from 1 to 99, and a total equal to vs succeeds. Modifiers apply only to the roller and are summed by the engine. When the source adds a term to the target's AC or to a DC, pass the base number as vs and declare the term as an equal negative modifier on the roll: for example a cover bonus to AC, or the Charisma modifier in a DC of 12 + a Charisma modifier. Declare a bonus to the roller's own save as a positive modifier.",
       resolve_contest:
-        "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed.",
+        "Both sides always roll, so it does not resolve a contest in which one side's total is already fixed; compare against a retained total with resolve_retained_check.",
       add_condition:
-        'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Because it is a no-op on an existing id, it cannot raise a graded condition: add exhaustion with its level (1-6); a later level increase cannot be recorded with this tool.',
+        'Characters only: for an encounter combatant, use update_combatant addCondition. No-op if a condition with the same id already exists. Exhaustion must be changed with adjust_exhaustion.',
       remove_condition:
-        'Remove a condition from a character by id (characters only: for an encounter combatant, use update_combatant removeCondition). No-op if the condition is not present.',
+        'Remove a condition from a character by id (characters only: for an encounter combatant, use update_combatant removeCondition). Exhaustion cannot be removed here: use adjust_exhaustion. No-op if the condition is not present.',
       adjust_hp:
         'Characters only: for an encounter combatant, use update_combatant hpDelta.',
       update_combatant:
-        'An hpDelta that brings the combatant to 0 hit points sets its status to dead unless status is also passed (for example "unconscious" for a nonlethal knockout); combatants have no dying or death-save state.',
+        'Monster death rules are the default: an hpDelta that brings the combatant to 0 hit points sets it dead unless status is also passed (for a nonlethal knockout, "unconscious").',
     };
     for (const [name, sentence] of Object.entries(expected))
       expect(descriptions.get(name)).toContain(sentence);
   });
 
-  it('discloses state-dependent extra reactions instead of asking for a derived total', () => {
-    // ADR 0020 §2: the arithmetic is engine-owned. setReactionAllowance only
-    // stores a supplied total; nothing derives it from the creature's state
-    // (blocking gap eshyra-o9bd.19.3.4.6), so neither the description nor
-    // the schema field may ask the model for the current total or give a
-    // per-head recipe.
+  it('describes derived reaction allowance and rejects supplied totals', () => {
     const tool = DEFAULT_TOOLS.find(
       (entry) => entry.name === 'update_combatant',
     );
@@ -2145,24 +2239,19 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       string,
       { description?: string }
     >;
-    const field = properties.reactionAllowance?.description;
-    expect(tool?.description).toContain(
-      'the extra reactions such a mechanic grants cannot currently be recorded',
-    );
-    expect(field).toContain('no tool derives it');
-    for (const text of [tool?.description, field]) {
-      expect(text).not.toMatch(/heads? beyond one|current total/i);
-    }
+    expect(tool?.description).toContain('derive from the current head count');
+    expect(properties.reactionAllowance).toBeUndefined();
+    expect(tool?.inputSchema.additionalProperties).toBe(false);
   });
 
-  it('discloses surprise as undeterminable instead of leaving the comparison to the DM', () => {
-    // The Stealth-vs-passive-Perception comparison is the retained-total gap
-    // (eshyra-o9bd.19.5.10.3); set_surprised only records an outcome.
+  it('describes the deterministic surprise comparison path', () => {
     const description = DEFAULT_TOOLS.find(
       (entry) => entry.name === 'set_surprised',
     )?.description;
+    expect(description).toContain('resolve_retained_check');
+    expect(description).toContain('comparison ids');
     expect(description).toContain(
-      'surprise cannot currently be determined deterministically',
+      'If neither side tries to be stealthy, there is no surprise',
     );
     expect(description).not.toMatch(/adjudicate/i);
   });
@@ -2179,12 +2268,16 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       expect(description).toBeDefined();
       // "never roll two d20s yourself" is a prohibition, not a fallback.
       expect(description).not.toMatch(
-        /compare|retained|strictly|total yourself/i,
+        /compare .* yourself|you (?:may|should|can) compare/i,
       );
       // Target-side bonuses are engine-summed roller modifiers, never folded
       // into vs by the model.
       expect(description).not.toMatch(/goes into vs|add .* to vs/i);
     }
+    expect(
+      DEFAULT_TOOLS.find((tool) => tool.name === 'resolve_retained_check')
+        ?.description,
+    ).toContain('Never compare totals yourself');
   });
 
   const VALIDATED_SCHEMA_KEYWORDS = new Set([
@@ -2266,6 +2359,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
       [
         'accept_ambiguity_precedent',
         'add_condition',
+        'adjust_exhaustion',
         'adjust_hp',
         'adopt_item',
         'advance_time',
@@ -2282,6 +2376,7 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'don_item',
         'end_attunement',
         'end_effect',
+        'expend_ammunition',
         'finish_short_rest_recovery',
         'gain_currency',
         'give_item',
@@ -2295,12 +2390,14 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'reacquire_item',
         'record_death_save',
         'record_world_fact',
+        'recover_ammunition',
         'remove_condition',
         'remove_item',
         'reset_usage',
         'resolve_check',
         'resolve_contest',
         'resolve_damage',
+        'resolve_retained_check',
         'resolve_spell_upcast',
         'refresh_effect',
         'remove_effect_target',
@@ -2308,7 +2405,10 @@ describe('tool schema metadata (eshyra-0jq.10)', () => {
         'suppress_effect',
         'restore_usage',
         'roll',
+        'roll_retained_check',
+        'end_retained_check',
         'set_plot_flag',
+        'set_suffocation',
         'set_surprised',
         'set_world_fact',
         'spend_currency',

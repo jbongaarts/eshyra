@@ -79,6 +79,7 @@ export const removeEffectTargetTool: Tool = {
           effectId: a.effectId,
           target,
           reason: a.reason,
+          resolveRulesPack: ctx.resolveRulesPack,
           provenance: `model:${ctx.turnId}`,
           sessionId: ctx.sessionId,
           at: ctx.at,

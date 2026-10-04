@@ -22,6 +22,7 @@ export { ToolRegistry } from './toolRegistry.js';
 
 import { acceptAmbiguityPrecedentTool } from './toolAcceptAmbiguityPrecedent.js';
 import { addConditionTool } from './toolAddCondition.js';
+import { adjustExhaustionTool } from './toolAdjustExhaustion.js';
 import { adjustHpTool } from './toolAdjustHp.js';
 import { adoptItemTool } from './toolAdoptItem.js';
 import { attuneItemTool } from './toolAttuneItem.js';
@@ -33,6 +34,8 @@ import { closeCombatInstanceTool } from './toolCloseCombatInstance.js';
 import { convertCurrencyTool } from './toolConvertCurrency.js';
 import { endAttunementTool } from './toolEndAttunement.js';
 import { endEffectTool } from './toolEndEffect.js';
+import { endRetainedCheckTool } from './toolEndRetainedCheck.js';
+import { expendAmmunitionTool } from './toolExpendAmmunition.js';
 import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
@@ -44,6 +47,7 @@ import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
 import { reacquireItemTool } from './toolReacquireItem.js';
 import { recordDeathSaveTool } from './toolRecordDeathSave.js';
 import { recordWorldFactTool } from './toolRecordWorldFact.js';
+import { recoverAmmunitionTool } from './toolRecoverAmmunition.js';
 import { refreshEffectTool } from './toolRefreshEffect.js';
 import type { Tool } from './toolRegistry.js';
 import { ToolRegistry } from './toolRegistry.js';
@@ -56,6 +60,7 @@ import { resolveCheckTool } from './toolResolveCheck.js';
 import { resolveConcentrationTool } from './toolResolveConcentration.js';
 import { resolveContestTool } from './toolResolveContest.js';
 import { resolveDamageTool } from './toolResolveDamage.js';
+import { resolveRetainedCheckTool } from './toolResolveRetainedCheck.js';
 import { resolveSpellUpcastTool } from './toolResolveSpellUpcast.js';
 import {
   advanceTimeTool,
@@ -66,7 +71,9 @@ import {
 } from './toolRest.js';
 import { restoreUsageTool } from './toolRestoreUsage.js';
 import { rollTool } from './toolRoll.js';
+import { rollRetainedCheckTool } from './toolRollRetainedCheck.js';
 import { setPlotFlagTool } from './toolSetPlotFlag.js';
+import { setSuffocationTool } from './toolSetSuffocation.js';
 import { setSurprisedTool } from './toolSetSurprised.js';
 import { setWorldFactTool } from './toolSetWorldFact.js';
 import { spendCurrencyTool } from './toolSpendCurrency.js';
@@ -90,6 +97,9 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   rollTool,
   resolveCheckTool,
   resolveContestTool,
+  rollRetainedCheckTool,
+  resolveRetainedCheckTool,
+  endRetainedCheckTool,
   resolveDamageTool,
   resolveSpellUpcastTool,
   calcTool,
@@ -104,7 +114,9 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   spendTurnResourceTool,
   setSurprisedTool,
   adjustHpTool,
+  adjustExhaustionTool,
   recordDeathSaveTool,
+  setSuffocationTool,
   stabilizeCharacterTool,
   grantTempHpTool,
   addConditionTool,
@@ -138,6 +150,8 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   donItemTool,
   doffItemTool,
   removeItemTool,
+  expendAmmunitionTool,
+  recoverAmmunitionTool,
   updateClockTool,
   advanceTimeTool,
   completeShortRestTool,

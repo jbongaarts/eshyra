@@ -1,3 +1,7 @@
+import {
+  EncounterCombatantError,
+  stabilizeCombatant,
+} from '../state/encounterCombatants.js';
 import { stabilizeCharacter } from '../state/hpLifecycle.js';
 import { MutateStateError } from '../state/mutateState.js';
 import type { Tool } from './toolRegistry.js';
@@ -14,22 +18,40 @@ export const stabilizeCharacterTool: Tool = {
   // Writes character life state — a canon write (eshyra-dwkm).
   mutates: true,
   description:
-    'Mark a dying character stable, after a successful DC 10 Wisdom ' +
-    '(Medicine) check (rolled via `roll`) or a stabilizing effect. A stable ' +
-    'character stays at 0 HP and unconscious but makes no more death saves; ' +
-    'their death-save counters reset. The engine records a seeded 1d4-hour ' +
-    'recovery deadline and automatically regains 1 hit point if they remain ' +
-    'at 0 HP when campaign time reaches it. Damage knocks a stable character ' +
-    'back to dying.',
+    'Record stabilization for a dying character or opted-in player-character combatant after a successful check or stabilizing effect. For a combatant, this works only during that combatant’s active combat instance; a dying player-character actor whose encounter closed continues its death saves and stabilization when it is next brought into an encounter with start_encounter.',
   inputSchema: {
     type: 'object',
     properties: {
       character: CHARACTER_TARGET_SCHEMA,
+      combatantId: { type: 'string', minLength: 1 },
     },
     additionalProperties: false,
   },
   run(args, ctx) {
     const a = asRecord(args) ?? {};
+    if (a.character !== undefined && a.combatantId !== undefined)
+      return err('invalid_args', 'provide character or combatantId, not both');
+    if (typeof a.combatantId === 'string') {
+      try {
+        return ok(
+          stabilizeCombatant(
+            ctx.db,
+            ctx.campaignId,
+            a.combatantId,
+            {
+              provenance: `model:${ctx.turnId}`,
+              sessionId: ctx.sessionId,
+              at: ctx.at,
+            },
+            ctx.rng,
+          ),
+        );
+      } catch (e) {
+        if (e instanceof EncounterCombatantError)
+          return err('mutate_error', e.message);
+        throw e;
+      }
+    }
     const target = resolveTargetCharacterId(a.character, ctx);
     if ('ok' in target) {
       return target;
