@@ -453,9 +453,12 @@ creates a new familiar).
   verbatim, including anchor kind, `anchor_at`, `anchor_game_time`,
   `anchor_elapsed_minutes` and `deadline_elapsed_minutes`. The deadline is
   therefore 1 hour after the summoning, never 1 hour after the break. The
-  original's declared duration must equal the record timer (amount, unit,
-  anchor) and carry elapsed-world evidence; otherwise the break fails closed
-  with an error rather than guessing. Everything else follows from the
+  original's anchor must mark the moment of summoning (`spell-cast`, or
+  `effect-created`, since the effect is created at that casting), and its
+  duration must equal the record timer's amount and unit. `createActiveEffect`
+  refuses any other anchor for such a spell, so the break (which must never
+  fail and roll back the write that caused it) always has a deadline to copy;
+  the break-time check only guards corrupt rows. Everything else follows from the
   ordinary machinery: world-time advance expires the successor at its deadline
   (`expired`) and its `remove` cleanup makes the creature absent; the creature
   still vanishes at 0 HP (the successor ends `source-removed`); `dismissed` is

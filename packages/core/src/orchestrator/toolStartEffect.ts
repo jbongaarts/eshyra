@@ -160,7 +160,9 @@ export const startEffectTool: Tool = {
           '(Conjure Elemental, Conjure Fey) requires cleanupOnBreak ' +
           '"release": on that break the creature moves to the successor ' +
           'effect "<id>:uncontrolled" (not dismissible, no concentration), ' +
-          'which removes it 1 hour after it was summoned; otherwise a concentration spell removes it. Omit ' +
+          'which removes it 1 hour after it was summoned (so such an effect ' +
+          'must be a 1 hour timer anchored to "spell-cast" or ' +
+          '"effect-created"); otherwise a concentration spell removes it. Omit ' +
           "both policies to take the record's values; a contradicting " +
           'policy is refused with the record text. "remove" takes the ' +
           'creature out of play (status absent), never leaves it dying or ' +

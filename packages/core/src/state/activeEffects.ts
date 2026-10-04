@@ -2730,6 +2730,16 @@ function finalizeEnd(
  *  'absolute-time-reached' that removes presence, applying only when the
  *  creature is 'uncontrolled', with a cast-anchored timer. Derived from the
  *  record's transitions, never from spell names. */
+/** Anchors that mark the moment a creature was summoned: the record's
+ *  'spell-cast' anchor, or the effect's own creation, which happens at that
+ *  casting. createActiveEffect admits only these for a cast-anchored removal,
+ *  so the successor created at a concentration break can always copy the
+ *  deadline. */
+const SUMMONING_MOMENT_ANCHORS: readonly string[] = [
+  'spell-cast',
+  'effect-created',
+];
+
 function deriveUncontrolledRemoval(
   record: RulesRecord,
 ): { id: string; amount: number; unit: string; anchor: string } | undefined {
@@ -2800,7 +2810,8 @@ function createUncontrolledSuccessor(
     original.duration_kind !== 'timed' ||
     original.duration_amount !== removal.amount ||
     original.duration_unit !== removal.unit ||
-    original.anchor_kind !== removal.anchor ||
+    original.anchor_kind === null ||
+    !SUMMONING_MOMENT_ANCHORS.includes(original.anchor_kind) ||
     original.anchor_elapsed_minutes === null ||
     original.deadline_elapsed_minutes === null ||
     original.anchor_at === null
@@ -3633,6 +3644,26 @@ export function createActiveEffect(
       spellRecord === undefined || input.kind !== 'summoning'
         ? {}
         : deriveSummonCleanup(spellRecord, concentrationRule === 'required');
+    // A creature the record removes a fixed time after it was summoned once
+    // uncontrolled (Conjure Elemental/Fey) inherits this effect's anchor when
+    // a broken concentration hands it to the successor. Gate the anchor here,
+    // so the break (which must never fail) always has a summoning-moment
+    // deadline to copy.
+    const uncontrolledRemoval =
+      spellRecord === undefined || input.kind !== 'summoning'
+        ? undefined
+        : deriveUncontrolledRemoval(spellRecord);
+    if (
+      uncontrolledRemoval !== undefined &&
+      (duration.kind !== 'timed' ||
+        duration.amount !== uncontrolledRemoval.amount ||
+        duration.unit !== uncontrolledRemoval.unit ||
+        duration.anchorKind === null ||
+        !SUMMONING_MOMENT_ANCHORS.includes(duration.anchorKind))
+    )
+      throw new ActiveEffectError(
+        `'${spellRecord?.name}' transition '${uncontrolledRemoval.id}' removes an uncontrolled creature ${uncontrolledRemoval.amount} ${uncontrolledRemoval.unit}(s) after it was summoned, so the effect must be a ${uncontrolledRemoval.amount}-${uncontrolledRemoval.unit} timer anchored to 'spell-cast' or 'effect-created' (the moment of summoning)`,
+      );
     for (const actor of actors) {
       requireNonEmptyString(actor.combatantId, 'linked actor combatantId');
       if (seenActors.has(actor.combatantId)) {

@@ -405,3 +405,52 @@ describe('uncontrolled successor of a broken Conjure Elemental / Conjure Fey', (
     });
   });
 });
+
+describe('the summoning-moment anchor the successor inherits', () => {
+  it('an effect anchored to its own creation (the summoning) hands that deadline to the successor', () => {
+    const s = setup();
+    s.cast('fx', 'spell:conjure-elemental', 'c-e1', {
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        anchor: 'effect-created',
+      },
+    });
+    const original = s.raw('fx');
+    s.advance(20);
+    s.voluntaryBreak('fx');
+    const successor = s.raw('fx:uncontrolled');
+    expect(successor.anchor_kind).toBe('effect-created');
+    expect(successor.deadline_elapsed_minutes).toBe(
+      original.deadline_elapsed_minutes,
+    );
+    expect(s.row('c-e1').status).toBe('alive');
+  });
+
+  it('refuses at creation an anchor that is not the moment of summoning, so a later break cannot fail', () => {
+    const s = setup();
+    const refused = s.call('start_effect', {
+      effectId: 'fx',
+      kind: 'summoning',
+      displayName: 'Conjure Elemental',
+      source: {
+        kind: 'spell',
+        ref: 'spell:conjure-elemental',
+        actor: { kind: 'combatant', ref: 'c-wiz' },
+      },
+      concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+      duration: {
+        kind: 'timed',
+        amount: 1,
+        unit: 'hour',
+        anchor: 'trigger-occurred',
+        anchorTrigger: 'elemental-emerged',
+      },
+      targets: [{ kind: 'combatant', ref: 'c-e1' }],
+      actors: [{ combatantId: 'c-e1' }],
+    });
+    expect(refused.ok).toBe(false);
+    expect(JSON.stringify(refused)).toMatch(/cast-anchored-removal/);
+  });
+});
