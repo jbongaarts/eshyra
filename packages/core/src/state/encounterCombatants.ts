@@ -26,6 +26,7 @@ import {
   type CombatantLifecycleState,
   nextCombatantLifecycle,
   type StableRecoverySchedule,
+  vanishesAtZeroHp,
   type ZeroHpRule,
 } from './combatantLifecycle.js';
 import { effectiveHpMax, exhaustionLevel } from './exhaustion.js';
@@ -309,7 +310,7 @@ export function updateCampaignActor(
       projection === undefined &&
       input.hpCurrent === 0 &&
       (actor.hpCurrent ?? 0) > 0 &&
-      readCombatLifecycle(actor.state)?.zeroHpRule === 'vanish';
+      vanishesAtZeroHp(readCombatLifecycle(actor.state)?.zeroHpRule ?? null);
     upsertCampaignActor(txnDb, {
       campaignId: input.campaignId,
       actorId: input.actorId,
@@ -335,6 +336,9 @@ export function updateCampaignActor(
         input.campaignId,
         { actorId: input.actorId },
         input,
+        readCombatLifecycle(actor.state)?.zeroHpRule === 'vanish-bonded'
+          ? 'keep'
+          : 'close',
       );
     if (projection !== undefined) {
       updateCombatant(txnDb, {
@@ -486,16 +490,19 @@ export interface UpdateCombatantResult {
     readonly displayName: string;
     readonly cause: 'incapacitated' | 'dead' | 'owner-removed';
   };
-  /** Set when this update brought a creature with the 'vanish' zero-hit-point
-   *  rule to 0 HP: it is now absent, its summoning link was closed, and its
-   *  effect ended when that was the last owned creature. */
+  /** Set when this update brought a creature that disappears at 0 HP to 0:
+   *  it is now absent. Under 'vanish' its summoning link was closed and its
+   *  effect ended when that was the last owned creature; under
+   *  'vanish-bonded' (familiar, steed) the link and effect stay active. */
   readonly vanished?: VanishedOutcome;
 }
 
 export interface VanishedOutcome {
-  readonly rule: 'vanish';
+  readonly rule: 'vanish' | 'vanish-bonded';
   readonly effectId: string | null;
   readonly effectEnded: boolean;
+  /** True when the creature's bond survives its absence ('vanish-bonded'). */
+  readonly linkKept: boolean;
 }
 
 export interface CombatantHeadRegrowthResult {
@@ -521,7 +528,10 @@ export function settleCombatantHeadsAtTurnEnd(
   },
 ): CombatantHeadRegrowthResult | undefined {
   const combatant = readCombatant(db, input.campaignId, input.combatantId);
-  if (combatant === undefined) return undefined;
+  // An absent creature is out of play: it has no turn-end head settlement
+  // (S49); removal to absent already cleared its pending head counters.
+  if (combatant === undefined || combatant.status === 'absent')
+    return undefined;
   const mechanic = multipleHeadsMechanic(
     lookupCampaignRecord(
       db,
@@ -766,7 +776,7 @@ export function assertCombatantLifecycle(
   if (
     c.zeroHpRule !== null &&
     (c.deathRules === 'player-character' ||
-      (c.zeroHpRule === 'vanish' &&
+      (vanishesAtZeroHp(c.zeroHpRule) &&
         c.hpCurrent === 0 &&
         c.status !== 'absent' &&
         !(c.status === 'dead' && (exhaustion === 6 || c.headCount === 0))))
@@ -1201,6 +1211,7 @@ function readCombatLifecycle(
     (v.zeroHpRule !== undefined &&
       v.zeroHpRule !== null &&
       v.zeroHpRule !== 'vanish' &&
+      v.zeroHpRule !== 'vanish-bonded' &&
       v.zeroHpRule !== 'revert')
   )
     return fail();
@@ -1897,6 +1908,22 @@ function startEncounterInTxn(
     // the manifestation that left play (conditions, exhaustion, death rules,
     // 0-HP rule, heads) carries over; a new owning effect sets its own rules.
     const remanifest = existing?.status === 'absent';
+    // A bonded creature (familiar, steed) whose link survived its absence
+    // returns as the same bonded creature: it keeps its 0-HP rule (S48).
+    const keptZeroHpRule =
+      remanifest &&
+      existing !== undefined &&
+      db
+        .prepare(
+          `SELECT 1 FROM active_effect_link
+           WHERE campaign_id = ? AND link_kind = 'actor' AND status = 'active'
+             AND (campaign_actor_id = ?
+               OR (target_kind = 'campaign_actor' AND target_ref = ?))
+           LIMIT 1`,
+        )
+        .get(input.campaignId, existing.actorId, existing.actorId) !== undefined
+        ? (readCombatLifecycle(existing.state)?.zeroHpRule ?? null)
+        : null;
     const conditions =
       actorInput.conditions ?? (remanifest ? [] : (existing?.conditions ?? []));
     const lifecycleBefore =
@@ -1954,7 +1981,7 @@ function startEncounterInTxn(
     // admitted at 0 HP in any status (only a terminal death by exhaustion or
     // lost heads, already recorded, can stand at 0 HP).
     if (
-      lifecycleBefore?.zeroHpRule === 'vanish' &&
+      vanishesAtZeroHp(lifecycleBefore?.zeroHpRule ?? null) &&
       hpCurrent === 0 &&
       !(existing?.status === 'dead' && terminalCause)
     )
@@ -2063,7 +2090,7 @@ function startEncounterInTxn(
       lifecycle?.stableRecovery?.anchor ?? null,
       lifecycle?.stableRecovery?.deadline ?? null,
       lifecycle?.stableRecoverySettled ? 1 : 0,
-      lifecycle?.zeroHpRule ?? null,
+      lifecycle?.zeroHpRule ?? keptZeroHpRule,
       input.campaignId,
       projectedId,
     );
@@ -2592,6 +2619,7 @@ function completeZeroHpVanish(
     resolveRulesPack?: CampaignRulesPackResolver;
   },
 ): VanishedOutcome {
+  const bonded = before.zeroHpRule === 'vanish-bonded';
   const closed = closeActorLinkAtZeroHp(
     db,
     before.campaignId,
@@ -2603,11 +2631,13 @@ function completeZeroHpVanish(
         : {}),
     },
     ctx,
+    bonded ? 'keep' : 'close',
   );
   return {
-    rule: 'vanish',
+    rule: bonded ? 'vanish-bonded' : 'vanish',
     effectId: closed.effectId,
     effectEnded: closed.effectEnded,
+    linkKept: bonded,
   };
 }
 
@@ -2816,9 +2846,9 @@ function updateCombatantInTxn(
     if (current.zeroHpRule !== null)
       throw new EncounterCombatantError(
         `cannot opt combatant '${input.combatantId}' into player-character death rules: its spell says it ${
-          current.zeroHpRule === 'vanish'
-            ? 'disappears'
-            : 'returns to its original form'
+          current.zeroHpRule === 'revert'
+            ? 'returns to its original form'
+            : 'disappears'
         } when it drops to 0 hit points (zero-hit-point rule)`,
       );
     const owner = findRemovePolicyActorLink(db, input.campaignId, {
@@ -2957,7 +2987,7 @@ function updateCombatantInTxn(
   // with that damage up front, rather than failing later with a misleading
   // 'absent' refusal while the creature is still in play.
   if (
-    current.zeroHpRule === 'vanish' &&
+    vanishesAtZeroHp(current.zeroHpRule) &&
     droppedToZero &&
     input.status !== undefined &&
     !(monsterKnockout || playerKnockout)
@@ -2973,9 +3003,9 @@ function updateCombatantInTxn(
   )
     throw new EncounterCombatantError(
       `a knockout is refused for combatant '${input.combatantId}': its spell says it ${
-        current.zeroHpRule === 'vanish'
-          ? 'disappears'
-          : 'returns to its original form'
+        current.zeroHpRule === 'revert'
+          ? 'returns to its original form'
+          : 'disappears'
       } when it drops to 0 hit points (zero-hit-point rule)`,
     );
   let lifecycle = readCombatantLifecycleState(db, current);

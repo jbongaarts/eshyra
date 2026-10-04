@@ -161,8 +161,11 @@ export const startEffectTool: Tool = {
           'the other conjure spells, Simulacrum) vanishes at 0 HP: it ' +
           'becomes absent, never dead, dying, stable or unconscious, its ' +
           'link closes, and the effect ends when its last owned creature ' +
-          'is gone. Declare atZeroHitPoints "vanish" for a ruling-sourced ' +
-          'creature that does the same (Find Familiar, Find Steed).',
+          'is gone. A ruling-sourced creature declares its rule with ' +
+          'atZeroHitPoints: "vanish-bonded" for a familiar or steed, which ' +
+          'disappears at 0 HP but stays bonded (its link and the effect stay ' +
+          'active so the same creature can return), or "vanish" for one ' +
+          'whose part of the effect ends.',
         items: {
           type: 'object',
           properties: {
@@ -177,9 +180,9 @@ export const startEffectTool: Tool = {
             cleanupOnBreak: CLEANUP_SCHEMA,
             atZeroHitPoints: {
               type: 'string',
-              enum: ['vanish'],
+              enum: ['vanish', 'vanish-bonded'],
               description:
-                'The creature disappears when it drops to 0 hit points. Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature such as a familiar or steed.',
+                'What happens when the creature drops to 0 hit points. "vanish": it disappears and its part of the effect ends (its link closes; the effect ends when no owned creature remains). "vanish-bonded": it disappears but stays bonded, so the link and effect stay active and the same creature can return (Find Familiar, Find Steed). Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature.',
             },
           },
           required: ['combatantId'],
@@ -295,11 +298,12 @@ export const startEffectTool: Tool = {
       }
       if (
         actor.atZeroHitPoints !== undefined &&
-        actor.atZeroHitPoints !== 'vanish'
+        actor.atZeroHitPoints !== 'vanish' &&
+        actor.atZeroHitPoints !== 'vanish-bonded'
       )
         return err(
           'invalid_args',
-          'each actors entry atZeroHitPoints must be "vanish" when given',
+          'each actors entry atZeroHitPoints must be "vanish" or "vanish-bonded" when given',
         );
       actors.push({
         combatantId: actor.combatantId,
@@ -313,8 +317,9 @@ export const startEffectTool: Tool = {
         actor.cleanupOnBreak === 'remove'
           ? { cleanupOnBreak: actor.cleanupOnBreak }
           : {}),
-        ...(actor.atZeroHitPoints === 'vanish'
-          ? { atZeroHitPoints: 'vanish' as const }
+        ...(actor.atZeroHitPoints === 'vanish' ||
+        actor.atZeroHitPoints === 'vanish-bonded'
+          ? { atZeroHitPoints: actor.atZeroHitPoints }
           : {}),
       });
     }

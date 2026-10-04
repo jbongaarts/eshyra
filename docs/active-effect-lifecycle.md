@@ -403,9 +403,15 @@ heads); a new owning effect sets its own 0-HP rule.
   Omitted policies take those values. The 0-HP rule is a durable creature
   property (`zero_hp_rule`, mirrored into the actor's `combatLifecycle`),
   derived from the record's `zero-hit-points` transition or declared as
-  `atZeroHitPoints: 'vanish'` for a ruling-sourced familiar/steed.
-  **`vanish`** (presence->absent or integrity->destroyed: the conjure spells,
-  Find Familiar/Steed, Simulacrum) is executed: reaching 0 HP by any route
+  `atZeroHitPoints` for a ruling-sourced creature (Find Familiar and Find
+  Steed are instantaneous, so they cannot be spell-sourced effects).
+  **`vanish-bonded`** (presence->absent with the effect and link left active:
+  Find Familiar, Find Steed; S1 invariant 8, physical absence does not end the
+  link) makes the creature absent at 0 HP while its link and effect stay
+  active, so the same bonded creature can return; re-admitting it with HP
+  above 0 keeps its rule while the link is active.
+  **`vanish`** (integrity->destroyed, or presence->absent together with the
+  effect ending: the conjure spells, Simulacrum) is executed: reaching 0 HP by any route
   (damage, suffocation, exhaustion clamping; exhaustion level 6 is death, not
   0 HP) makes the creature absent, never dead/dying/stable/unconscious; its
   concentration breaks (owner-removed), its link closes (`removed`, reason

@@ -506,7 +506,7 @@ CREATE TABLE "encounter_combatant" (
   head_died_this_turn INTEGER NOT NULL DEFAULT 0,
   stable_recovery_settled INTEGER NOT NULL DEFAULT 0
   CHECK (stable_recovery_settled IN (0, 1)),
-  zero_hp_rule TEXT CHECK (zero_hp_rule IS NULL OR zero_hp_rule IN ('vanish', 'revert')),
+  zero_hp_rule TEXT CHECK (zero_hp_rule IS NULL OR zero_hp_rule IN ('vanish', 'vanish-bonded', 'revert')),
   PRIMARY KEY (campaign_id, combatant_id)
 );
 

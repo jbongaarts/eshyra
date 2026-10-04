@@ -19,10 +19,19 @@ export type CombatantLifeStatus =
   | 'absent';
 
 /** What a creature's own rules say happens when it drops to 0 hit points:
- *  'vanish' = it disappears (Conjure Animals, Find Familiar, Simulacrum);
+ *  'vanish' = it disappears and its part of the summoning ends (the conjure
+ *  spells, Simulacrum);
+ *  'vanish-bonded' = it disappears but stays bonded to its summoner, so the
+ *  same creature can return (Find Familiar, Find Steed: S1 design invariant
+ *  8, physical absence does not end the link);
  *  'revert' = it returns to its original form (Animate Objects, Giant
- *  Insect). Only 'vanish' changes the lifecycle automatically. */
-export type ZeroHpRule = 'vanish' | 'revert';
+ *  Insect). Only the two vanish rules change the lifecycle automatically. */
+export type ZeroHpRule = 'vanish' | 'vanish-bonded' | 'revert';
+
+/** True when the creature disappears (becomes absent) at 0 hit points. */
+export function vanishesAtZeroHp(rule: ZeroHpRule | null): boolean {
+  return rule === 'vanish' || rule === 'vanish-bonded';
+}
 
 export interface StableRecoverySchedule {
   readonly roll: number;
@@ -147,6 +156,12 @@ function toAbsent(
   next.recoveryBlock = null;
   next.stableRecovery = null;
   next.stableRecoverySettled = false;
+  // Turn-bound Multiple Heads work belongs to a creature in play; none of it
+  // survives leaving play (S49).
+  next.headsDiedSinceOwnTurn = 0;
+  next.fireDamageSinceOwnTurn = 0;
+  next.damageThisTurn = 0;
+  next.headDiedThisTurn = 0;
 }
 
 function scheduleFor(
@@ -307,7 +322,7 @@ export function nextCombatantLifecycle(
         if (next.headCount === 0 && event.headMechanic?.deathWhenNoHeads) {
           next.status = 'dead';
         } else if (
-          next.zeroHpRule === 'vanish' &&
+          vanishesAtZeroHp(next.zeroHpRule) &&
           oldHp > 0 &&
           next.hpCurrent === 0
         ) {
@@ -390,7 +405,7 @@ export function nextCombatantLifecycle(
       case 'clampToEffectiveMax':
         next.hpCurrent = Math.min(next.hpCurrent, next.effectiveHpMax);
         if (current.hpCurrent > 0 && next.hpCurrent === 0) {
-          if (next.zeroHpRule === 'vanish') {
+          if (vanishesAtZeroHp(next.zeroHpRule)) {
             toAbsent(next);
           } else {
             next.status =
@@ -448,9 +463,9 @@ export function nextCombatantLifecycle(
         if (next.zeroHpRule !== null)
           return refusal(
             `cannot opt a creature whose spell says it ${
-              next.zeroHpRule === 'vanish'
-                ? 'disappears'
-                : 'returns to its original form'
+              next.zeroHpRule === 'revert'
+                ? 'returns to its original form'
+                : 'disappears'
             } at 0 hit points into player-character death rules`,
           );
         if (next.hpCurrent === 0 && current.status !== 'dead')
@@ -520,9 +535,9 @@ export function nextCombatantLifecycle(
         if (next.zeroHpRule !== null)
           return refusal(
             `a knockout is refused: the creature's spell says it ${
-              next.zeroHpRule === 'vanish'
-                ? 'disappears'
-                : 'returns to its original form'
+              next.zeroHpRule === 'revert'
+                ? 'returns to its original form'
+                : 'disappears'
             } when it drops to 0 hit points`,
           );
         if (
@@ -588,7 +603,7 @@ export function nextCombatantLifecycle(
         if (next.recoveryBlock === null) {
           const wasDying = next.status === 'dying';
           next.hpCurrent = 0;
-          if (next.zeroHpRule === 'vanish') {
+          if (vanishesAtZeroHp(next.zeroHpRule)) {
             toAbsent(next);
             break;
           }
@@ -640,7 +655,7 @@ export function nextCombatantLifecycle(
         } else {
           next.hpCurrent = Math.min(next.hpCurrent, next.effectiveHpMax);
           if (current.hpCurrent > 0 && next.hpCurrent === 0) {
-            if (next.zeroHpRule === 'vanish') {
+            if (vanishesAtZeroHp(next.zeroHpRule)) {
               toAbsent(next);
             } else {
               next.status =
@@ -805,14 +820,16 @@ export function nextCombatantLifecycle(
       next.stableRecoverySettled ||
       next.recoveryBlock !== null ||
       next.deathSaveSuccesses !== 0 ||
-      next.deathSaveFailures !== 0
+      next.deathSaveFailures !== 0 ||
+      next.headsDiedSinceOwnTurn !== 0 ||
+      next.fireDamageSinceOwnTurn !== 0
     )
       return refusal(
-        'absent requires no recovery schedule, no recovery block, and no death-save counters',
+        'absent requires no recovery schedule, no recovery block, no death-save counters, and no pending head settlement',
       );
   }
   if (
-    next.zeroHpRule === 'vanish' &&
+    vanishesAtZeroHp(next.zeroHpRule) &&
     next.hpCurrent === 0 &&
     next.status !== 'absent' &&
     !(

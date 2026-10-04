@@ -668,3 +668,94 @@ describe('eighth-review repairs (S45-S47)', () => {
     });
   });
 });
+
+describe('PR review 5404301046 repairs (S48-S49)', () => {
+  it('S48: a bonded familiar disappears at 0 HP but keeps its bond and can return', () => {
+    const s = setup(['b1']);
+    s.must('start_effect', {
+      effectId: 'fam',
+      kind: 'summoning',
+      displayName: 'Find Familiar',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      actors: [
+        {
+          combatantId: 'c-b1',
+          campaignActorId: 'b1',
+          atZeroHitPoints: 'vanish-bonded',
+        },
+      ],
+    });
+    const hit = s.must('update_combatant', {
+      combatantId: 'c-b1',
+      hpDelta: -7,
+    });
+    expect(hit.data).toMatchObject({
+      vanished: {
+        rule: 'vanish-bonded',
+        effectId: 'fam',
+        effectEnded: false,
+        linkKept: true,
+      },
+    });
+    expect(s.row('c-b1').status).toBe('absent');
+    // S1 invariant 8: physical absence does not end the familiar's link.
+    expect(s.effect('fam').status).toBe('active');
+    expect(
+      s.effect('fam').links.find((l) => l.linkKind === 'actor')?.status,
+    ).toBe('active');
+    // The same bonded creature returns with its rule intact.
+    s.must('close_combat_instance', { status: 'completed' });
+    s.must('start_encounter', {
+      combatInstanceId: 'c2',
+      actors: [{ actorId: 'b1', hpCurrent: 7 }],
+    });
+    expect(s.row('c2-b1')).toMatchObject({
+      status: 'alive',
+      zeroHpRule: 'vanish-bonded',
+    });
+    expect(s.effect('fam').status).toBe('active');
+    // Contrast (terminal 'vanish'): the Conjure Animals test above closes the
+    // link and ends the effect when its last beast disappears.
+  });
+
+  it('S49: removing a hydra with a head owed leaves no settlement to block the next turn', () => {
+    const s = setup(['b1']);
+    s.must('close_combat_instance', { status: 'completed' });
+    s.must('start_encounter', {
+      combatInstanceId: 'h',
+      actors: [
+        { actorId: 'hydra', rulesRef: 'creature:hydra' },
+        { actorId: 'gob', rulesRef: 'creature:goblin' },
+      ],
+    });
+    s.must('start_effect', {
+      effectId: 'own',
+      kind: 'summoning',
+      displayName: 'owner',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      actors: [{ combatantId: 'h-hydra' }],
+    });
+    s.must('begin_turn', { combatantId: 'h-hydra', round: 1 });
+    s.must('update_combatant', { combatantId: 'h-hydra', hpDelta: -30 });
+    const before = s.row('h-hydra');
+    expect(before.headCount).toBe(4);
+    s.end('own');
+    expect(s.row('h-hydra').status).toBe('absent');
+    const next = s.must('begin_turn', { combatantId: 'h-gob', round: 1 });
+    expect(JSON.stringify(next.data)).not.toMatch(/"headsRegrown":[1-9]/);
+    expect(s.row('h-hydra')).toMatchObject({
+      status: 'absent',
+      headCount: 4,
+      hpCurrent: before.hpCurrent,
+    });
+    const counters = s.db
+      .prepare(
+        `SELECT heads_died_since_own_turn AS d, fire_damage_since_own_turn AS f
+         FROM encounter_combatant WHERE campaign_id = ? AND combatant_id = 'h-hydra'`,
+      )
+      .get(DEFAULT_TEST_CAMPAIGN_ID) as { d: number; f: number };
+    expect(counters).toEqual({ d: 0, f: 0 });
+  });
+});

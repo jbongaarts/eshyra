@@ -69,7 +69,7 @@ export const startEncounterTool: Tool = {
   name: 'start_encounter',
   mutates: true,
   description:
-    'Start a new live combat instance from an authored encounter template and optional persistent actors. args: { encounterId?: string, combatInstanceId?: string, runId?: string, locationId?: string, actors?: [...] }. An absent actor (one that vanished at 0 hit points or was removed from play by its owning effect) is admitted only as a new manifestation: pass hpCurrent above 0; it starts alive with no conditions or rules carried over. A creature that disappears at 0 hit points cannot be admitted at 0 hit points.',
+    'Start a new live combat instance from an authored encounter template and optional persistent actors. args: { encounterId?: string, combatInstanceId?: string, runId?: string, locationId?: string, actors?: [...] }. An absent actor (one that vanished at 0 hit points or was removed from play by its owning effect) is admitted only as a new manifestation: pass hpCurrent above 0; it starts alive with no conditions or rules carried over, except that a bonded familiar or steed whose link is still active keeps its 0-hit-point rule. A creature that disappears at 0 hit points cannot be admitted at 0 hit points.',
   inputSchema: {
     type: 'object',
     properties: {

@@ -40,7 +40,7 @@ import {
   type CampaignRulesPackResolver,
   lookupCampaignRecord,
 } from './campaignRecordLookup.js';
-import type { ZeroHpRule } from './combatantLifecycle.js';
+import { vanishesAtZeroHp, type ZeroHpRule } from './combatantLifecycle.js';
 import { addCondition, removeCondition } from './domainMutations.js';
 import {
   EncounterCombatantError,
@@ -198,10 +198,12 @@ export interface EffectActorLinkInput {
   readonly cleanupOnEnd?: EffectCleanupPolicy;
   readonly cleanupOnBreak?: EffectCleanupPolicy;
   /** What the creature's own rules say happens at 0 hit points. Derived from
-   *  the spell record for spell-sourced effects; declare 'vanish' for a
-   *  ruling-sourced creature that disappears (e.g. Find Familiar, Find
-   *  Steed). A declaration that contradicts the record is refused. */
-  readonly atZeroHitPoints?: 'vanish';
+   *  the spell record for spell-sourced effects; declare it for a
+   *  ruling-sourced creature that disappears: 'vanish-bonded' when it stays
+   *  bonded and the same creature can return (Find Familiar, Find Steed),
+   *  'vanish' when its part of the effect ends. A declaration that
+   *  contradicts the record is refused. */
+  readonly atZeroHitPoints?: 'vanish' | 'vanish-bonded';
 }
 
 export interface EffectZoneProjectionInput {
@@ -2597,30 +2599,30 @@ function changesTo(
 }
 
 /** The creature's 0-hit-point rule, read from the spell record: a transition
- *  on 'zero-hit-points' that removes presence or destroys the creature means
- *  it disappears ('vanish'); one that restores the original form means it
- *  reverts ('revert'). */
+ *  on 'zero-hit-points' that destroys the creature, or removes its presence
+ *  and ends its part of the effect, means it disappears ('vanish'); one that
+ *  removes presence while the effect and link stay active means it
+ *  disappears but stays bonded ('vanish-bonded': Find Familiar/Steed, S1
+ *  invariant 8); one that restores the original form means it reverts
+ *  ('revert'). */
 function deriveZeroHpRule(record: RulesRecord): ZeroHpRule | null {
-  let vanish: RecordTransition | undefined;
-  let revert: RecordTransition | undefined;
+  const rules = new Set<ZeroHpRule>();
   for (const t of recordTransitions(record)) {
     if (t.trigger !== 'zero-hit-points') continue;
-    if (
-      changesTo(t, 'presence', 'absent') ||
-      changesTo(t, 'integrity', 'destroyed')
-    )
-      vanish ??= t;
-    else if (changesTo(t, 'form', 'original')) revert ??= t;
+    if (changesTo(t, 'integrity', 'destroyed')) rules.add('vanish');
+    else if (changesTo(t, 'presence', 'absent'))
+      rules.add(
+        changesTo(t, 'effect', 'ended') || changesTo(t, 'link', 'none')
+          ? 'vanish'
+          : 'vanish-bonded',
+      );
+    else if (changesTo(t, 'form', 'original')) rules.add('revert');
   }
-  if (vanish !== undefined && revert !== undefined)
+  if (rules.size > 1)
     throw new ActiveEffectError(
-      `'${record.name}' record declares both a vanishing and a reverting 0-hit-point transition; its zero-hit-point rule is ambiguous`,
+      `'${record.name}' record declares conflicting 0-hit-point transitions (${[...rules].join(', ')}); its zero-hit-point rule is ambiguous`,
     );
-  return vanish !== undefined
-    ? 'vanish'
-    : revert !== undefined
-      ? 'revert'
-      : null;
+  return rules.values().next().value ?? null;
 }
 
 interface DerivedSummonCleanup {
@@ -2724,6 +2726,9 @@ export function closeActorLinkAtZeroHp(
   campaignId: string,
   holder: { combatantId?: string; actorId?: string },
   ctx: EffectMutationContext,
+  /** 'keep' for a bonded creature ('vanish-bonded'): its absence does not
+   *  end the link or the effect; only the owning effect id is reported. */
+  mode: 'close' | 'keep' = 'close',
 ): { effectId: string | null; effectEnded: boolean } {
   const match = activeActorLinkMatcher(holder);
   const effectIds = db
@@ -2741,6 +2746,7 @@ export function closeActorLinkAtZeroHp(
         match(candidate),
     );
     if (link === undefined) continue;
+    if (mode === 'keep') return { effectId: effect_id, effectEnded: false };
     db.prepare(
       `UPDATE active_effect_link
        SET status = 'removed', removed_reason = 'zero-hit-points', removed_at = ?,
@@ -3191,10 +3197,11 @@ export function createActiveEffect(
       // derived from the spell record; declarations may not contradict it.
       if (
         actor.atZeroHitPoints !== undefined &&
-        actor.atZeroHitPoints !== 'vanish'
+        actor.atZeroHitPoints !== 'vanish' &&
+        actor.atZeroHitPoints !== 'vanish-bonded'
       )
         throw new ActiveEffectError(
-          "atZeroHitPoints must be 'vanish' when declared",
+          "atZeroHitPoints must be 'vanish' or 'vanish-bonded' when declared",
         );
       if (
         derivedZeroHpRule !== null &&
@@ -3203,10 +3210,12 @@ export function createActiveEffect(
       )
         throw new ActiveEffectError(
           `'${spellRecord?.name}' record says its creature ${
-            derivedZeroHpRule === 'vanish'
-              ? 'disappears'
-              : 'returns to its original form'
-          } at 0 hit points; atZeroHitPoints '${actor.atZeroHitPoints}' contradicts it`,
+            derivedZeroHpRule === 'revert'
+              ? 'returns to its original form'
+              : derivedZeroHpRule === 'vanish-bonded'
+                ? 'disappears but stays bonded'
+                : 'disappears and its part of the effect ends'
+          } at 0 hit points (rule '${derivedZeroHpRule}'); atZeroHitPoints '${actor.atZeroHitPoints}' contradicts it`,
         );
       const declaredZeroHpRule: ZeroHpRule | null =
         derivedZeroHpRule ?? actor.atZeroHitPoints ?? null;
@@ -3251,15 +3260,15 @@ export function createActiveEffect(
           `combatant '${actor.combatantId}' already uses player-character death rules, so it can be dying or stable and could not be taken out of play: ${
             effectiveZeroHpRule !== null
               ? `its spell says it ${
-                  effectiveZeroHpRule === 'vanish'
-                    ? 'disappears'
-                    : 'returns to its original form'
+                  effectiveZeroHpRule === 'revert'
+                    ? 'returns to its original form'
+                    : 'disappears'
                 } at 0 hit points`
               : "a 'remove' cleanup policy needs to be able to take it out of play"
           }`,
         );
       if (
-        effectiveZeroHpRule === 'vanish' &&
+        vanishesAtZeroHp(effectiveZeroHpRule) &&
         combatant !== undefined &&
         combatant.hp_current === 0 &&
         combatant.status !== 'dead'
