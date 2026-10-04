@@ -542,8 +542,22 @@ describe('absent combatants', () => {
     expect(refused.map((r) => r.ok)).toEqual(refused.map(() => false));
   });
 
-  it('re-admission needs hp above 0, then starts alive and keeps its rule', () => {
-    const s = vanished();
+  it('re-admission needs hp above 0, then starts as a new creature', () => {
+    const s = setup(['b1']);
+    s.must('start_effect', {
+      effectId: 'fx',
+      kind: 'summoning',
+      displayName: 'Familiar',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      actors: [{ combatantId: 'c-b1', atZeroHitPoints: 'vanish' }],
+    });
+    s.must('update_combatant', {
+      combatantId: 'c-b1',
+      addCondition: { id: 'poisoned' },
+    });
+    s.must('update_combatant', { combatantId: 'c-b1', hpDelta: -7 });
+    expect(s.row('c-b1').status).toBe('absent');
     s.must('close_combat_instance', { status: 'completed' });
     const without = s.call('start_encounter', {
       combatInstanceId: 'c2',
@@ -555,14 +569,26 @@ describe('absent combatants', () => {
       combatInstanceId: 'c2',
       actors: [{ actorId: 'b1', hpCurrent: 5 }],
     });
+    // Nothing from the manifestation that left play carries over: no
+    // conditions and no 0-HP rule until a new owning effect sets one.
     expect(s.row('c2-b1')).toMatchObject({
       status: 'alive',
       hpCurrent: 5,
       deathSaveFailures: 0,
-      zeroHpRule: 'vanish',
+      zeroHpRule: null,
+      conditions: [],
     });
     expect(getCampaignActor(s.db, DEFAULT_TEST_CAMPAIGN_ID, 'b1')?.status).toBe(
       'alive',
     );
+    s.must('start_effect', {
+      effectId: 'fx2',
+      kind: 'summoning',
+      displayName: 'Familiar',
+      source: { kind: 'ruling' },
+      duration: { kind: 'until-removed' },
+      actors: [{ combatantId: 'c2-b1', atZeroHitPoints: 'vanish' }],
+    });
+    expect(s.row('c2-b1').zeroHpRule).toBe('vanish');
   });
 });

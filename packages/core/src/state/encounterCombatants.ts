@@ -1236,6 +1236,13 @@ function readCombatLifecycle(
   };
 }
 
+function withoutCombatLifecycle(
+  state: Record<string, JsonValue>,
+): Record<string, JsonValue> {
+  const { combatLifecycle: _dropped, ...rest } = state;
+  return rest;
+}
+
 /** Actor state for a creature that left play: no life-state bookkeeping
  *  survives (absent requires zero counters, no schedule, no block). */
 function absentActorState(
@@ -1886,10 +1893,14 @@ function startEncounterInTxn(
     const record = lookupCreatureRecord(db, rulesRef, input.resolveRulesPack);
     const baselineHp = readCreatureHp(record);
     const hpMax = actorInput.hpMax ?? existing?.hpMax ?? baselineHp;
-    const conditions = actorInput.conditions ?? existing?.conditions ?? [];
-    const lifecycleBefore = existing
-      ? readCombatLifecycle(existing.state)
-      : undefined;
+    // A new manifestation of an absent actor is a new creature: nothing from
+    // the manifestation that left play (conditions, exhaustion, death rules,
+    // 0-HP rule, heads) carries over; a new owning effect sets its own rules.
+    const remanifest = existing?.status === 'absent';
+    const conditions =
+      actorInput.conditions ?? (remanifest ? [] : (existing?.conditions ?? []));
+    const lifecycleBefore =
+      existing && !remanifest ? readCombatLifecycle(existing.state) : undefined;
     const suppliedHp = actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax;
     if (
       existing &&
@@ -1963,7 +1974,10 @@ function startEncounterInTxn(
         actorInput.currentLocationId ??
         existing?.currentLocationId ??
         locationId,
-      state: actorInput.state ?? existing?.state,
+      state: remanifest
+        ? withoutCombatLifecycle(actorInput.state ?? existing?.state ?? {})
+        : (actorInput.state ?? existing?.state),
+      ...(remanifest ? { replaceCombatLifecycle: true } : {}),
       provenance: input.provenance,
       sessionId: input.sessionId,
       at: input.at,

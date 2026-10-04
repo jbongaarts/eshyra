@@ -383,7 +383,9 @@ invariant error and never translates the action. An absent combatant takes
 no turn and cannot be damaged, healed, given or relieved of conditions,
 save, stabilize, or suffocate. Re-admitting an absent campaign actor to an
 encounter is a new manifestation: it needs `hpCurrent` above 0 and starts
-alive with a fresh lifecycle.
+alive as a new creature with a fresh lifecycle. Nothing from the manifestation
+that left play carries over (conditions, exhaustion, death rules, 0-HP rule,
+heads); a new owning effect sets its own 0-HP rule.
 
 ## 9. Downstream hooks
 
