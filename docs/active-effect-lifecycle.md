@@ -385,7 +385,10 @@ save, stabilize, or suffocate. Re-admitting an absent campaign actor to an
 encounter is a new manifestation: it needs `hpCurrent` above 0 and starts
 alive as a new creature with a fresh lifecycle. Nothing from the manifestation
 that left play carries over (conditions, exhaustion, death rules, 0-HP rule,
-heads); a new owning effect sets its own 0-HP rule.
+heads); a new owning effect sets its own 0-HP rule. The one exception is a
+bonded creature (`vanish-bonded`: familiar, steed) whose actor link is still
+active: it returns as the same bonded creature and keeps its 0-HP rule (S1
+invariant 8).
 
 ## 9. Downstream hooks
 

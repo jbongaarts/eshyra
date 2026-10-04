@@ -2637,7 +2637,8 @@ function completeZeroHpVanish(
     rule: bonded ? 'vanish-bonded' : 'vanish',
     effectId: closed.effectId,
     effectEnded: closed.effectEnded,
-    linkKept: bonded,
+    // Only a bond that actually survives is reported as kept.
+    linkKept: bonded && closed.effectId !== null,
   };
 }
 
