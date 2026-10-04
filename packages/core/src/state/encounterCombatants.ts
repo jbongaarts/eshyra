@@ -1908,9 +1908,14 @@ function startEncounterInTxn(
     // the manifestation that left play (conditions, exhaustion, death rules,
     // 0-HP rule, heads) carries over; a new owning effect sets its own rules.
     const remanifest = existing?.status === 'absent';
-    // A bonded creature (familiar, steed) whose link survived its absence
-    // returns as the same bonded creature: it keeps its 0-HP rule (S48).
-    const keptZeroHpRule =
+    // An absent actor still held by an active actor link is a bonded
+    // creature (familiar, steed: 'vanish-bonded'). S1 returns it only through
+    // its spell: a Find Familiar cast restores presence, a Find Steed recast
+    // restores the same steed to maximum hit points. That recast is not
+    // executable yet (eshyra follow-up), so admission must not stand in for
+    // it (S50). Ending the owning effect frees the actor; a later admission
+    // is then a new creature.
+    if (
       remanifest &&
       existing !== undefined &&
       db
@@ -1922,8 +1927,12 @@ function startEncounterInTxn(
            LIMIT 1`,
         )
         .get(input.campaignId, existing.actorId, existing.actorId) !== undefined
-        ? (readCombatLifecycle(existing.state)?.zeroHpRule ?? null)
-        : null;
+    )
+      throw new EncounterCombatantError(
+        `campaign actor '${existing.actorId}' is absent but still bonded to its summoner (it disappeared at 0 hit points under its zero-hit-point rule); ` +
+          'it returns only when its summoner casts its spell again (Find Familiar, or Find Steed at maximum hit points), which the engine cannot yet execute. ' +
+          'Starting an encounter cannot bring it back; end the owning effect to release the bond if a new creature is wanted instead',
+      );
     const conditions =
       actorInput.conditions ?? (remanifest ? [] : (existing?.conditions ?? []));
     const lifecycleBefore =
@@ -2090,7 +2099,7 @@ function startEncounterInTxn(
       lifecycle?.stableRecovery?.anchor ?? null,
       lifecycle?.stableRecovery?.deadline ?? null,
       lifecycle?.stableRecoverySettled ? 1 : 0,
-      lifecycle?.zeroHpRule ?? keptZeroHpRule,
+      lifecycle?.zeroHpRule ?? null,
       input.campaignId,
       projectedId,
     );

@@ -4912,3 +4912,31 @@ describe('exact resolver through condition projection and cleanup (S32)', () => 
     });
   }
 });
+
+describe('persistent bond identity (S50)', () => {
+  it("refuses 'vanish-bonded' for an instance-only combatant, accepts it with a durable identity", () => {
+    const { db } = setupCombat();
+    const bonded = (effectId: string, campaignActorId?: string) =>
+      createActiveEffect(db, {
+        campaignId: CAMPAIGN,
+        effectId,
+        kind: 'summoning',
+        displayName: 'Find Steed',
+        source: { kind: 'ruling' },
+        duration: { kind: 'until-removed' },
+        actors: [
+          {
+            combatantId: GOBLIN_1,
+            atZeroHitPoints: 'vanish-bonded',
+            ...(campaignActorId === undefined ? {} : { campaignActorId }),
+          },
+        ],
+        ...CTX,
+      });
+    // Combat closure releases instance-only links, so a persistent bond
+    // without a durable identity would not survive (S1 invariant 8).
+    expect(() => bonded('fx-steed')).toThrow(/no durable identity/);
+    expect(() => bonded('fx-steed', 'steed')).not.toThrow();
+    db.close();
+  });
+});

@@ -3229,6 +3229,18 @@ export function createActiveEffect(
         );
       const effectiveZeroHpRule: ZeroHpRule | null =
         declaredZeroHpRule ?? combatant?.zero_hp_rule ?? null;
+      // A bond that survives absence is a persistent identity (S1 invariant
+      // 8); combat closure releases instance-only links, so the creature
+      // needs a durable campaign-actor identity (S50).
+      if (
+        effectiveZeroHpRule === 'vanish-bonded' &&
+        actor.campaignActorId === undefined &&
+        combatant?.identity_kind !== 'campaign_actor'
+      )
+        throw new ActiveEffectError(
+          `linked actor '${actor.combatantId}' has the 'vanish-bonded' rule (a persistent bond such as a familiar or steed) but no durable identity; ` +
+            'pass campaignActorId so the bond survives combat closing',
+        );
       let onEnd = actor.cleanupOnEnd;
       let onBreak = actor.cleanupOnBreak;
       if (derivedCleanup.onEnd !== undefined) {

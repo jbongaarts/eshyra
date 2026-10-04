@@ -670,7 +670,7 @@ describe('eighth-review repairs (S45-S47)', () => {
 });
 
 describe('PR review 5404301046 repairs (S48-S49)', () => {
-  it('S48: a bonded familiar disappears at 0 HP but keeps its bond and can return', () => {
+  it('S48/S50: a bonded familiar disappears at 0 HP, keeps its bond, and only its spell can bring it back', () => {
     const s = setup(['b1']);
     s.must('start_effect', {
       effectId: 'fam',
@@ -699,24 +699,34 @@ describe('PR review 5404301046 repairs (S48-S49)', () => {
       },
     });
     expect(s.row('c-b1').status).toBe('absent');
-    // S1 invariant 8: physical absence does not end the familiar's link.
-    expect(s.effect('fam').status).toBe('active');
-    expect(
-      s.effect('fam').links.find((l) => l.linkKind === 'actor')?.status,
-    ).toBe('active');
-    // The same bonded creature returns with its rule intact.
+    const bondActive = () =>
+      s.effect('fam').status === 'active' &&
+      s.effect('fam').links.find((l) => l.linkKind === 'actor')?.status ===
+        'active';
+    // S1 invariant 8: physical absence does not end the familiar's link,
+    // and neither does combat closing (durable identity).
+    expect(bondActive()).toBe(true);
     s.must('close_combat_instance', { status: 'completed' });
+    expect(bondActive()).toBe(true);
+    // S50: presence returns only through the spell's recast (not yet
+    // executable), never through a plain admission with chosen hit points.
+    const back = s.call('start_encounter', {
+      combatInstanceId: 'c2',
+      actors: [{ actorId: 'b1', hpCurrent: 3 }],
+    });
+    expect(back.ok).toBe(false);
+    expect(JSON.stringify(back)).toMatch(/still bonded to its summoner/);
+    expect(getCampaignActor(s.db, DEFAULT_TEST_CAMPAIGN_ID, 'b1')?.status).toBe(
+      'absent',
+    );
+    expect(bondActive()).toBe(true);
+    // Ending the bond frees the actor; a later admission is a new creature.
+    s.must('end_effect', { effectId: 'fam', reason: 'ruled', note: 'test' });
     s.must('start_encounter', {
       combatInstanceId: 'c2',
       actors: [{ actorId: 'b1', hpCurrent: 7 }],
     });
-    expect(s.row('c2-b1')).toMatchObject({
-      status: 'alive',
-      zeroHpRule: 'vanish-bonded',
-    });
-    expect(s.effect('fam').status).toBe('active');
-    // Contrast (terminal 'vanish'): the Conjure Animals test above closes the
-    // link and ends the effect when its last beast disappears.
+    expect(s.row('c2-b1')).toMatchObject({ status: 'alive', zeroHpRule: null });
   });
 
   it('S49: removing a hydra with a head owed leaves no settlement to block the next turn', () => {

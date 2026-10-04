@@ -385,10 +385,13 @@ save, stabilize, or suffocate. Re-admitting an absent campaign actor to an
 encounter is a new manifestation: it needs `hpCurrent` above 0 and starts
 alive as a new creature with a fresh lifecycle. Nothing from the manifestation
 that left play carries over (conditions, exhaustion, death rules, 0-HP rule,
-heads); a new owning effect sets its own 0-HP rule. The one exception is a
-bonded creature (`vanish-bonded`: familiar, steed) whose actor link is still
-active: it returns as the same bonded creature and keeps its 0-HP rule (S1
-invariant 8).
+heads); a new owning effect sets its own 0-HP rule. An absent actor still
+held by an active actor link (a `vanish-bonded` familiar or steed) is refused
+instead: S1 returns it only through its spell (a Find Familiar cast restores
+presence; a Find Steed recast restores the same steed to maximum HP), and that
+recast is not executable yet (eshyra-s02z). Ending the owning effect releases
+the bond; a later admission is then a new creature (S1: with no link a cast
+creates a new familiar).
 
 ## 9. Downstream hooks
 
@@ -411,8 +414,10 @@ invariant 8).
   **`vanish-bonded`** (presence->absent with the effect and link left active:
   Find Familiar, Find Steed; S1 invariant 8, physical absence does not end the
   link) makes the creature absent at 0 HP while its link and effect stay
-  active, so the same bonded creature can return; re-admitting it with HP
-  above 0 keeps its rule while the link is active.
+  active. It requires a durable campaign-actor identity (`campaignActorId`),
+  since combat closure releases instance-only links. Restoring the same
+  creature is the spell's recast (eshyra-s02z, not yet executable);
+  `start_encounter` refuses it meanwhile.
   **`vanish`** (integrity->destroyed, or presence->absent together with the
   effect ending: the conjure spells, Simulacrum) is executed: reaching 0 HP by any route
   (damage, suffocation, exhaustion clamping; exhaustion level 6 is death, not
