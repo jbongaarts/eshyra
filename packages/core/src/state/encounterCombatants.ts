@@ -1913,6 +1913,26 @@ function insertCombatant(
   );
 }
 
+/** True when an active actor link still binds the campaign actor to its
+ *  owning effect (a bonded creature: familiar, steed). */
+function hasActiveBondLink(
+  db: Db,
+  campaignId: string,
+  actorId: string,
+): boolean {
+  return (
+    db
+      .prepare(
+        `SELECT 1 FROM active_effect_link
+         WHERE campaign_id = ? AND link_kind = 'actor' AND status = 'active'
+           AND (campaign_actor_id = ?
+             OR (target_kind = 'campaign_actor' AND target_ref = ?))
+         LIMIT 1`,
+      )
+      .get(campaignId, actorId, actorId) !== undefined
+  );
+}
+
 export function startEncounter(
   db: Db,
   input: StartEncounterInput,
@@ -2026,26 +2046,17 @@ function startEncounterInTxn(
     // An absent actor still held by an active actor link is a bonded
     // creature (familiar, steed: 'vanish-bonded'). S1 returns it only through
     // its spell: a Find Familiar cast restores presence, a Find Steed recast
-    // restores the same steed to maximum hit points. That recast is not
-    // executable yet (eshyra follow-up), so admission must not stand in for
-    // it (S50). Ending the owning effect frees the actor; a later admission
-    // is then a new creature.
+    // restores the same steed to maximum hit points. Admission must not stand in for
+    // it (S50): recast_bonded_summon restores it. Ending the owning effect
+    // frees the actor; a later admission is then a new creature.
     if (
       remanifest &&
       existing !== undefined &&
-      db
-        .prepare(
-          `SELECT 1 FROM active_effect_link
-           WHERE campaign_id = ? AND link_kind = 'actor' AND status = 'active'
-             AND (campaign_actor_id = ?
-               OR (target_kind = 'campaign_actor' AND target_ref = ?))
-           LIMIT 1`,
-        )
-        .get(input.campaignId, existing.actorId, existing.actorId) !== undefined
+      hasActiveBondLink(db, input.campaignId, existing.actorId)
     )
       throw new EncounterCombatantError(
         `campaign actor '${existing.actorId}' is absent but still bonded to its summoner (it disappeared at 0 hit points under its zero-hit-point rule); ` +
-          'it returns only when its summoner casts its spell again (Find Familiar, or Find Steed at maximum hit points), which the engine cannot yet execute. ' +
+          'it returns only when its summoner casts its spell again, which the model reports with recast_bonded_summon (Find Familiar, or Find Steed at maximum hit points). ' +
           'Starting an encounter cannot bring it back; end the owning effect to release the bond if a new creature is wanted instead',
       );
     const conditions =
@@ -3115,6 +3126,113 @@ export function removeCampaignActorFromPlay(
       at: input.at,
     });
     return 'removed';
+  });
+}
+
+/** The bonded-summon restore seam (eshyra-s02z): the ONLY path that moves a
+ *  campaign actor from absent back to alive, and only for a creature whose own
+ *  0-hit-point rule is 'vanish-bonded' while its actor link is still active
+ *  (the spell is cast again). 'maximum' restores the same actor to its
+ *  effective hit point maximum (Find Steed); 'new-form' also sets the rules
+ *  reference and takes that creature record's hit points (Find Familiar).
+ *  Nothing else about the actor changes: conditions, exhaustion, the 0-hit-point
+ *  rule and the display name stay as stored. Refuses an actor that is not
+ *  absent, a creature with no bond, and one that still has a combatant in an
+ *  active combat instance (the recast takes 10 minutes or longer). */
+export function restoreBondedCampaignActor(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly actorId: string;
+    readonly restore:
+      | { readonly kind: 'maximum' }
+      | { readonly kind: 'new-form'; readonly rulesRef: string };
+    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+): { rulesRef: string | undefined; hpCurrent: number; hpMax: number } {
+  return withTransaction(db, (txn) => {
+    const actor = getCampaignActor(txn, input.campaignId, input.actorId);
+    if (actor === undefined)
+      throw new EncounterCombatantError(
+        `unknown campaign actor '${input.actorId}'`,
+      );
+    if (actor.status !== 'absent')
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' is ${actor.status}, not absent; only a bonded creature that has disappeared can be restored by a recast. Reforming a present or pocketed familiar is not yet supported by the engine`,
+      );
+    if (readCombatLifecycle(actor.state)?.zeroHpRule !== 'vanish-bonded')
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' does not have the 'vanish-bonded' zero-hit-point rule; a recast restores only a bonded familiar or steed`,
+      );
+    if (!hasActiveBondLink(txn, input.campaignId, actor.actorId))
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' is no longer bonded to a summoner (its link was released or its effect ended); with no bond a new cast creates a new creature`,
+      );
+    const projection = txn
+      .prepare(
+        `SELECT combatant_id FROM encounter_combatant
+         WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
+           AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
+         ORDER BY combatant_id LIMIT 1`,
+      )
+      .get(input.campaignId, actor.actorId, input.campaignId) as
+      | { combatant_id: string }
+      | undefined;
+    if (projection !== undefined)
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' still has combatant '${projection.combatant_id}' in an active combat instance; the recast takes 10 minutes or longer, so close the combat instance first`,
+      );
+    if (exhaustionLevel(actor.conditions) === 6)
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' has exhaustion level 6 and cannot be restored to life`,
+      );
+    let rulesRef = actor.rulesRef;
+    let hpMax = actor.hpMax;
+    if (input.restore.kind === 'new-form') {
+      const record = lookupCreatureRecord(
+        txn,
+        input.restore.rulesRef,
+        input.resolveRulesPack,
+      );
+      if (record === undefined)
+        throw new EncounterCombatantError(
+          `unknown creature record '${input.restore.rulesRef}' for the new form`,
+        );
+      rulesRef = input.restore.rulesRef;
+      hpMax = readCreatureHp(record);
+    }
+    if (hpMax === undefined)
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' has no recorded hit point maximum to restore`,
+      );
+    const hpCurrent = effectiveHpMax(hpMax, actor.conditions);
+    if (hpCurrent < 1)
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' would be restored with no hit points`,
+      );
+    upsertCampaignActor(txn, {
+      campaignId: input.campaignId,
+      actorId: actor.actorId,
+      displayName: actor.displayName,
+      actorKind: actor.actorKind,
+      sourceKind: actor.sourceKind,
+      sourceRef: actor.sourceRef,
+      rulesRef,
+      hpCurrent,
+      hpMax,
+      conditions: actor.conditions,
+      status: 'alive',
+      currentLocationId: actor.currentLocationId,
+      state: actor.state,
+      replaceCombatLifecycle: true,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+    return { rulesRef, hpCurrent, hpMax };
   });
 }
 
