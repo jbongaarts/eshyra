@@ -14,7 +14,11 @@ export const removeEffectTargetTool: Tool = {
     'Remove one target from a multi-target active effect — e.g. a Hold ' +
     'Person target that made its save — cleaning up exactly that ' +
     'target’s projected conditions while the effect (and every other ' +
-    'target) continues. This never ends the effect itself: when the rule ' +
+    'target) continues. For an owned creature this applies its cleanup: ' +
+    'a "remove" creature leaves play (reported "removed"), a "release" ' +
+    'creature stays in play unowned ("released"), and a "revert" creature ' +
+    '(Giant Insect: the "action to dismiss the effect on it") returns to its ' +
+    'recorded natural form and stays in play ("reverted"). This never ends the effect itself: when the rule ' +
     'ends the whole effect, use end_effect. Repeating the same removal is ' +
     'a harmless no-op.',
   inputSchema: {

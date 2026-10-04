@@ -469,42 +469,7 @@ describe('guards', () => {
       actors: [{ combatantId: 'c-b1', atZeroHitPoints: 'vanish' }],
     });
     expect(contradiction.ok).toBe(false);
-    expect(JSON.stringify(contradiction)).toMatch(/original form/);
-  });
-
-  it('a reverting creature gets the guards but no automatic 0-HP behaviour', () => {
-    const s = setup(['b1']);
-    s.must('start_effect', {
-      effectId: 'fx',
-      kind: 'summoning',
-      displayName: 'Animate Objects',
-      source: {
-        kind: 'spell',
-        ref: 'spell:animate-objects',
-        actor: { kind: 'combatant', ref: 'c-wiz' },
-      },
-      concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
-      duration: {
-        kind: 'timed',
-        amount: 1,
-        unit: 'minute',
-        anchor: 'spell-cast',
-      },
-      actors: [
-        {
-          combatantId: 'c-b1',
-          cleanupOnEnd: 'release',
-          cleanupOnBreak: 'release',
-        },
-      ],
-    });
-    expect(s.row('c-b1').zeroHpRule).toBe('revert');
-    expect(
-      s.call('update_combatant', {
-        combatantId: 'c-b1',
-        deathRules: 'player-character',
-      }).ok,
-    ).toBe(false);
+    expect(JSON.stringify(contradiction)).toMatch(/original object form/);
   });
 });
 

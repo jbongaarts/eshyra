@@ -14,7 +14,9 @@ import {
   applyCombatClosureToEffects,
   breakCombatantConcentration,
   closeActorLinkAtZeroHp,
+  findActiveNaturalForm,
   findRemovePolicyActorLink,
+  type NaturalForm,
 } from './activeEffects.js';
 import {
   type CampaignRulesPackResolver,
@@ -24,9 +26,11 @@ import {
   type CombatantHeadMechanic,
   type CombatantLifecycleEvent,
   type CombatantLifecycleState,
+  describeZeroHpRule,
+  leavesPlayAtZeroHp,
   nextCombatantLifecycle,
+  revertsFormAtZeroHp,
   type StableRecoverySchedule,
-  vanishesAtZeroHp,
   type ZeroHpRule,
 } from './combatantLifecycle.js';
 import { effectiveHpMax, exhaustionLevel } from './exhaustion.js';
@@ -304,13 +308,62 @@ export function updateCampaignActor(
       .get(input.campaignId, input.actorId, input.campaignId) as
       | { combatant_id: string; hp_current: number; hp_max: number }
       | undefined;
-    // Out of combat, a creature whose rule is 'vanish' disappears when its
-    // hit points are reduced to 0 (in combat the lifecycle does the same).
-    const vanishesOutOfCombat =
+    // Out of combat, a creature that leaves play at 0 hit points does so when
+    // its hit points are reduced to 0 (in combat the lifecycle does the
+    // same); one that reverts to its natural form is restored instead.
+    const droppedOutOfCombat =
       projection === undefined &&
       input.hpCurrent === 0 &&
-      (actor.hpCurrent ?? 0) > 0 &&
-      vanishesAtZeroHp(readCombatLifecycle(actor.state)?.zeroHpRule ?? null);
+      (actor.hpCurrent ?? 0) > 0;
+    const vanishesOutOfCombat =
+      droppedOutOfCombat &&
+      leavesPlayAtZeroHp(readCombatLifecycle(actor.state)?.zeroHpRule ?? null);
+    if (
+      droppedOutOfCombat &&
+      revertsFormAtZeroHp(readCombatLifecycle(actor.state)?.zeroHpRule ?? null)
+    ) {
+      const found = findActiveNaturalForm(txnDb, input.campaignId, {
+        actorId: input.actorId,
+      });
+      if (found?.naturalForm === undefined)
+        throw new EncounterCombatantError(noNaturalFormMessage(input.actorId));
+      const form = found.naturalForm;
+      const hp = Math.min(
+        form.hpCurrent,
+        effectiveHpMax(form.hpMax, conditions),
+      );
+      upsertCampaignActor(txnDb, {
+        campaignId: input.campaignId,
+        actorId: input.actorId,
+        displayName: actor.displayName,
+        actorKind: actor.actorKind,
+        sourceKind: actor.sourceKind,
+        sourceRef: actor.sourceRef,
+        rulesRef: form.rulesRef,
+        hpCurrent: hp,
+        hpMax: form.hpMax,
+        conditions,
+        status: hp === 0 ? 'dead' : 'alive',
+        currentLocationId: input.currentLocationId ?? actor.currentLocationId,
+        state: revertedActorState(actor.state),
+        replaceCombatLifecycle: true,
+        provenance: input.provenance,
+        sessionId: input.sessionId,
+        at: input.at,
+      });
+      closeActorLinkAtZeroHp(
+        txnDb,
+        input.campaignId,
+        { actorId: input.actorId },
+        input,
+        'close',
+        'reverted-form',
+      );
+      const reverted = getCampaignActor(txnDb, input.campaignId, input.actorId);
+      if (reverted === undefined)
+        throw new EncounterCombatantError('campaign actor update failed');
+      return reverted;
+    }
     upsertCampaignActor(txnDb, {
       campaignId: input.campaignId,
       actorId: input.actorId,
@@ -495,6 +548,67 @@ export interface UpdateCombatantResult {
    *  effect ended when that was the last owned creature; under
    *  'vanish-bonded' (familiar, steed) the link and effect stay active. */
   readonly vanished?: VanishedOutcome;
+  /** Set when this update brought a creature that reverts at 0 HP to 0:
+   *  an animated object left play as a creature ('revert-object', absent);
+   *  a transformed creature is back in its natural form and still in play
+   *  ('revert-form'). */
+  readonly reverted?: RevertedOutcome;
+}
+
+/** A creature's reversion at 0 hit points. The link to its owning effect
+ *  closed (reason zero-hit-points) and the effect ended when that was the
+ *  last owned creature. */
+export type RevertedOutcome = {
+  readonly effectId: string | null;
+  readonly effectEnded: boolean;
+} & (
+  | {
+      readonly rule: 'revert-object';
+      /** Damage beyond the hit points the creature had, which carries over to
+       *  its original object form (objects are not tracked: the amount is
+       *  reported, never stored). 0 when the drop was not damage. */
+      readonly carriedOverDamage: number;
+    }
+  | {
+      readonly rule: 'revert-form';
+      /** The natural form restored: exactly the values recorded at cast
+       *  (hit points clamped to the effective maximum). */
+      readonly naturalForm: NaturalForm;
+    }
+);
+
+function noNaturalFormMessage(subject: string): string {
+  return (
+    `'${subject}' reverts to its natural form at 0 hit points, but no active effect link records its natural form ` +
+    '(it was transformed before natural forms were recorded); that reversion cannot be resolved. ' +
+    'Ending or removing its owning effect target still works'
+  );
+}
+
+/** Actor state after reverting to a natural form: the 0-hit-point rule and
+ *  life-state bookkeeping of the transformation do not survive. */
+function revertedActorState(
+  state: Record<string, JsonValue>,
+): Record<string, JsonValue> {
+  const lifecycle = state.combatLifecycle;
+  if (
+    typeof lifecycle !== 'object' ||
+    lifecycle === null ||
+    Array.isArray(lifecycle)
+  )
+    return state;
+  return {
+    ...state,
+    combatLifecycle: {
+      ...lifecycle,
+      deathSaveSuccesses: 0,
+      deathSaveFailures: 0,
+      recoveryBlock: null,
+      stableRecovery: null,
+      stableRecoverySettled: false,
+      zeroHpRule: null,
+    },
+  };
 }
 
 export interface VanishedOutcome {
@@ -776,7 +890,7 @@ export function assertCombatantLifecycle(
   if (
     c.zeroHpRule !== null &&
     (c.deathRules === 'player-character' ||
-      (vanishesAtZeroHp(c.zeroHpRule) &&
+      (leavesPlayAtZeroHp(c.zeroHpRule) &&
         c.hpCurrent === 0 &&
         c.status !== 'absent' &&
         !(c.status === 'dead' && (exhaustion === 6 || c.headCount === 0))))
@@ -1212,7 +1326,8 @@ function readCombatLifecycle(
       v.zeroHpRule !== null &&
       v.zeroHpRule !== 'vanish' &&
       v.zeroHpRule !== 'vanish-bonded' &&
-      v.zeroHpRule !== 'revert')
+      v.zeroHpRule !== 'revert-object' &&
+      v.zeroHpRule !== 'revert-form')
   )
     return fail();
   let stableRecovery: CombatLifecycle['stableRecovery'] = null;
@@ -1986,17 +2101,18 @@ function startEncounterInTxn(
       actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax,
       effectiveHpMax(hpMax, conditions),
     );
-    // A creature that disappears at 0 hit points leaves no body: it cannot be
-    // admitted at 0 HP in any status (only a terminal death by exhaustion or
+    // A creature that leaves play or reverts at 0 hit points has no body at 0
+    // HP: it cannot be admitted at 0 HP in any status (only a terminal death by exhaustion or
     // lost heads, already recorded, can stand at 0 HP).
     if (
-      vanishesAtZeroHp(lifecycleBefore?.zeroHpRule ?? null) &&
+      (leavesPlayAtZeroHp(lifecycleBefore?.zeroHpRule ?? null) ||
+        revertsFormAtZeroHp(lifecycleBefore?.zeroHpRule ?? null)) &&
       hpCurrent === 0 &&
       !(existing?.status === 'dead' && terminalCause)
     )
       throw new EncounterCombatantError(
-        `campaign actor '${actorInput.actorId}' disappears at 0 hit points (its zero-hit-point rule), so it cannot be admitted at 0 hit points; ` +
-          'reduce it to 0 with damage in play (it becomes absent) or admit it with hit points above 0',
+        `campaign actor '${actorInput.actorId}' ${describeZeroHpRule(lifecycleBefore?.zeroHpRule as ZeroHpRule)} at 0 hit points (its zero-hit-point rule), so it cannot be admitted at 0 hit points; ` +
+          'reduce it to 0 with damage in play (its rule then applies) or admit it with hit points above 0',
       );
     const actor = upsertCampaignActor(db, {
       campaignId: input.campaignId,
@@ -2425,36 +2541,57 @@ export function setCombatantSuffocation(
       recoverySchedule,
     );
     persistCombatantLifecycle(txn, c, lifecycle, ctx);
+    let reverted: RevertedOutcome | undefined;
+    if (
+      event === 'drop' &&
+      revertsFormAtZeroHp(c.zeroHpRule) &&
+      c.hpCurrent > 0 &&
+      lifecycle.hpCurrent === 0 &&
+      lifecycle.status !== 'dead'
+    ) {
+      const atZero = readCombatant(txn, campaignId, combatantId);
+      if (atZero === undefined)
+        throw new EncounterCombatantError('unknown combatant');
+      reverted = completeZeroHpFormReversion(txn, atZero, ctx);
+    }
+    const settledNow =
+      reverted === undefined
+        ? lifecycle
+        : (readCombatant(txn, campaignId, combatantId) ?? lifecycle);
     const isDown =
-      lifecycle.hpCurrent === 0 ||
-      lifecycle.status === 'dead' ||
-      lifecycle.status === 'unconscious' ||
-      lifecycle.status === 'inactive' ||
-      lifecycle.status === 'dying' ||
-      lifecycle.status === 'stable' ||
-      lifecycle.status === 'absent';
+      settledNow.hpCurrent === 0 ||
+      settledNow.status === 'dead' ||
+      settledNow.status === 'unconscious' ||
+      settledNow.status === 'inactive' ||
+      settledNow.status === 'dying' ||
+      settledNow.status === 'stable' ||
+      settledNow.status === 'absent';
     if (!wasDown && isDown)
       breakCombatantConcentration(
         txn,
         campaignId,
         combatantId,
-        lifecycle.status === 'dead'
+        settledNow.status === 'dead'
           ? 'dead'
-          : lifecycle.status === 'absent'
+          : settledNow.status === 'absent'
             ? 'owner-removed'
             : 'incapacitated',
         ctx,
       );
     syncCombatantActor(txn, campaignId, combatantId, ctx);
     assertCombatantLifecycle(txn, campaignId, combatantId, c);
-    const vanished =
-      c.status !== 'absent' && lifecycle.status === 'absent'
-        ? completeZeroHpVanish(txn, c, ctx)
-        : undefined;
+    let vanished: VanishedOutcome | undefined;
+    if (c.status !== 'absent' && lifecycle.status === 'absent') {
+      // A drop is not damage: nothing carries over to an original object form.
+      if (c.zeroHpRule === 'revert-object')
+        reverted = completeZeroHpObjectReversion(txn, c, 0, ctx);
+      else vanished = completeZeroHpVanish(txn, c, ctx);
+    }
     return {
-      lifeState: lifecycle.status,
-      hpCurrent: lifecycle.hpCurrent,
+      lifeState: settledNow.status,
+      hpCurrent: settledNow.hpCurrent,
       ...(vanished === undefined ? {} : { vanished }),
+      ...(reverted === undefined ? {} : { reverted }),
     };
   });
 }
@@ -2604,7 +2741,7 @@ function syncCombatantActor(
     actorKind: a.actorKind,
     sourceKind: a.sourceKind,
     sourceRef: a.sourceRef,
-    rulesRef: a.rulesRef,
+    rulesRef: c.rulesRef,
     hpCurrent: c.hpCurrent,
     hpMax: c.hpMax,
     conditions: c.conditions,
@@ -2649,6 +2786,213 @@ function completeZeroHpVanish(
     // Only a bond that actually survives is reported as kept.
     linkKept: bonded && closed.effectId !== null,
   };
+}
+
+/** Aftermath of a 0-hit-point 'revert-object' (same transaction): the animated
+ *  creature has left play (status absent) as its object form; its link closes
+ *  with reason zero-hit-points and the effect ends when it was the last owned
+ *  creature. Objects are not tracked, so the damage beyond the hit points the
+ *  creature had is reported as carried over, never stored. */
+function completeZeroHpObjectReversion(
+  db: Db,
+  before: EncounterCombatant,
+  carriedOverDamage: number,
+  ctx: EffectCtx,
+): RevertedOutcome {
+  const closed = closeActorLinkAtZeroHp(
+    db,
+    before.campaignId,
+    holderOf(before),
+    ctx,
+    'close',
+  );
+  return {
+    rule: 'revert-object',
+    effectId: closed.effectId,
+    effectEnded: closed.effectEnded,
+    carriedOverDamage,
+  };
+}
+
+/** Aftermath of a 0-hit-point 'revert-form' (same transaction): restore the
+ *  natural form recorded on the creature's active link, then close that link
+ *  (reason zero-hit-points); the effect ends when it was the last owned
+ *  creature. Refuses, rolling the transaction back, when no natural form was
+ *  ever recorded (a legacy row). */
+function completeZeroHpFormReversion(
+  db: Db,
+  before: EncounterCombatant,
+  ctx: EffectCtx,
+): RevertedOutcome {
+  const found = findActiveNaturalForm(db, before.campaignId, holderOf(before));
+  if (found?.naturalForm === undefined)
+    throw new EncounterCombatantError(noNaturalFormMessage(before.combatantId));
+  const restored = applyNaturalForm(db, before, found.naturalForm, ctx);
+  const closed = closeActorLinkAtZeroHp(
+    db,
+    before.campaignId,
+    holderOf(before),
+    ctx,
+    'close',
+    'reverted-form',
+  );
+  return {
+    rule: 'revert-form',
+    effectId: closed.effectId,
+    effectEnded: closed.effectEnded,
+    naturalForm: restored,
+  };
+}
+
+type EffectCtx = {
+  provenance: string;
+  sessionId: string;
+  at: string;
+  resolveRulesPack?: CampaignRulesPackResolver;
+};
+
+function holderOf(c: EncounterCombatant): {
+  combatantId: string;
+  actorId?: string;
+} {
+  return {
+    combatantId: c.combatantId,
+    ...(c.identityKind === 'campaign_actor' && c.identityRef !== undefined
+      ? { actorId: c.identityRef }
+      : {}),
+  };
+}
+
+/** Restore a combatant row to its natural form: the recorded rules reference
+ *  and maximum, the recorded current hit points clamped to the effective
+ *  maximum (exhaustion still applies), alive, with the 0-hit-point rule and
+ *  life-state bookkeeping cleared. Conditions stay: it is the same creature.
+ *  Returns the hit points and form actually restored. */
+function applyNaturalForm(
+  db: Db,
+  current: EncounterCombatant,
+  form: NaturalForm,
+  ctx: EffectCtx,
+): NaturalForm {
+  const hpCurrent = Math.min(
+    form.hpCurrent,
+    effectiveHpMax(form.hpMax, current.conditions),
+  );
+  const record = lookupCreatureRecord(db, form.rulesRef, ctx.resolveRulesPack);
+  db.prepare(
+    `UPDATE encounter_combatant SET hp_current=?, hp_max=?, rules_ref=?, ac=?,
+       status=?, zero_hp_rule=NULL, death_save_successes=0, death_save_failures=0,
+       recovery_block=NULL, stable_recovery_roll=NULL,
+       stable_recovery_anchor_elapsed_minutes=NULL,
+       stable_recovery_deadline_elapsed_minutes=NULL, stable_recovery_settled=0,
+       provenance=?, session_id=?, updated_at=?
+     WHERE campaign_id=? AND combatant_id=?`,
+  ).run(
+    hpCurrent,
+    form.hpMax,
+    form.rulesRef,
+    readCreatureAc(record) ?? null,
+    hpCurrent === 0 ? 'dead' : 'alive',
+    ctx.provenance,
+    ctx.sessionId,
+    ctx.at,
+    current.campaignId,
+    current.combatantId,
+  );
+  syncCombatantActor(db, current.campaignId, current.combatantId, ctx);
+  assertCombatantLifecycle(db, current.campaignId, current.combatantId);
+  return { hpCurrent, hpMax: form.hpMax, rulesRef: form.rulesRef };
+}
+
+/** F3 revert seam for an owned combatant: restore its natural form and leave
+ *  it in play. 'missing' when the holder is unreachable, or is dead or
+ *  already out of play (nothing to restore). */
+export function revertCombatantToNaturalForm(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly combatantId: string;
+    readonly naturalForm: NaturalForm;
+    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+): 'reverted' | 'missing' {
+  return withTransaction(db, (txn) => {
+    const current = readCombatant(txn, input.campaignId, input.combatantId);
+    if (current === undefined) return 'missing';
+    if (
+      readCombatInstance(txn, input.campaignId, current.combatInstanceId)
+        ?.status !== 'active'
+    )
+      return 'missing';
+    if (current.status === 'absent' || current.status === 'dead')
+      return 'missing';
+    applyNaturalForm(txn, current, input.naturalForm, input);
+    return 'reverted';
+  });
+}
+
+/** F3 revert seam for a durable (campaign actor) link: the actor, or its
+ *  active projection when there is one, returns to its natural form. */
+export function revertCampaignActorToNaturalForm(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly actorId: string;
+    readonly naturalForm: NaturalForm;
+    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+): 'reverted' | 'missing' {
+  return withTransaction(db, (txn) => {
+    const actor = getCampaignActor(txn, input.campaignId, input.actorId);
+    if (actor === undefined) return 'missing';
+    const projection = txn
+      .prepare(
+        `SELECT combatant_id FROM encounter_combatant
+         WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
+           AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
+         ORDER BY combatant_id LIMIT 1`,
+      )
+      .get(input.campaignId, input.actorId, input.campaignId) as
+      | { combatant_id: string }
+      | undefined;
+    if (projection !== undefined)
+      return revertCombatantToNaturalForm(txn, {
+        ...input,
+        combatantId: projection.combatant_id,
+      });
+    if (actor.status === 'absent' || actor.status === 'dead') return 'missing';
+    const form = input.naturalForm;
+    const hpCurrent = Math.min(
+      form.hpCurrent,
+      effectiveHpMax(form.hpMax, actor.conditions),
+    );
+    upsertCampaignActor(txn, {
+      campaignId: input.campaignId,
+      actorId: actor.actorId,
+      displayName: actor.displayName,
+      actorKind: actor.actorKind,
+      sourceKind: actor.sourceKind,
+      sourceRef: actor.sourceRef,
+      rulesRef: form.rulesRef,
+      hpCurrent,
+      hpMax: form.hpMax,
+      conditions: actor.conditions,
+      status: hpCurrent === 0 ? 'dead' : 'alive',
+      currentLocationId: actor.currentLocationId,
+      state: revertedActorState(actor.state),
+      replaceCombatLifecycle: true,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+    return 'reverted';
+  });
 }
 
 /** F3 remove seam for an owned combatant: take it out of play (status
@@ -2855,11 +3199,9 @@ function updateCombatantInTxn(
   if (input.deathRules === 'player-character') {
     if (current.zeroHpRule !== null)
       throw new EncounterCombatantError(
-        `cannot opt combatant '${input.combatantId}' into player-character death rules: its spell says it ${
-          current.zeroHpRule === 'revert'
-            ? 'returns to its original form'
-            : 'disappears'
-        } when it drops to 0 hit points (zero-hit-point rule)`,
+        `cannot opt combatant '${input.combatantId}' into player-character death rules: its spell says it ${describeZeroHpRule(
+          current.zeroHpRule,
+        )} when it drops to 0 hit points (zero-hit-point rule)`,
       );
     const owner = findRemovePolicyActorLink(db, input.campaignId, {
       combatantId: current.combatantId,
@@ -2997,14 +3339,19 @@ function updateCombatantInTxn(
   // with that damage up front, rather than failing later with a misleading
   // 'absent' refusal while the creature is still in play.
   if (
-    vanishesAtZeroHp(current.zeroHpRule) &&
+    (leavesPlayAtZeroHp(current.zeroHpRule) ||
+      revertsFormAtZeroHp(current.zeroHpRule)) &&
     droppedToZero &&
     input.status !== undefined &&
     !(monsterKnockout || playerKnockout)
   )
     throw new EncounterCombatantError(
       `status '${input.status}' is refused with damage that brings combatant '${input.combatantId}' to 0 hit points: ` +
-        'its spell says it disappears at 0 hit points, so the damage alone makes it absent (out of play); pass the hpDelta without a status',
+        `its spell says it ${describeZeroHpRule(current.zeroHpRule as ZeroHpRule)} at 0 hit points, so the damage alone settles it (${
+          leavesPlayAtZeroHp(current.zeroHpRule)
+            ? 'it leaves play, absent'
+            : 'it returns to its natural form'
+        }); pass the hpDelta without a status`,
     );
   if (
     current.zeroHpRule !== null &&
@@ -3012,11 +3359,9 @@ function updateCombatantInTxn(
     (monsterKnockout || playerKnockout)
   )
     throw new EncounterCombatantError(
-      `a knockout is refused for combatant '${input.combatantId}': its spell says it ${
-        current.zeroHpRule === 'revert'
-          ? 'returns to its original form'
-          : 'disappears'
-      } when it drops to 0 hit points (zero-hit-point rule)`,
+      `a knockout is refused for combatant '${input.combatantId}': its spell says it ${describeZeroHpRule(
+        current.zeroHpRule,
+      )} when it drops to 0 hit points (zero-hit-point rule)`,
     );
   let lifecycle = readCombatantLifecycleState(db, current);
   const oldExhaustion = exhaustionLevel(current.conditions);
@@ -3056,6 +3401,9 @@ function updateCombatantInTxn(
   }
 
   let damageTurnKey: string | undefined;
+  // Hit points the creature had when the damage event applied (after any
+  // exhaustion clamp), for damage carried over to an original object form.
+  let hpBeforeDamage = 0;
   if (
     input.hpDelta !== undefined &&
     input.hpDelta < 0 &&
@@ -3082,6 +3430,7 @@ function updateCombatantInTxn(
             currentMechanic.regrowthSuppressedByDamageType === 'fire',
         }
       : undefined;
+    hpBeforeDamage = lifecycle.hpCurrent;
     lifecycle = transitionCombatantLifecycle(
       lifecycle,
       playerKnockout || monsterKnockout
@@ -3220,6 +3569,31 @@ function updateCombatantInTxn(
       current.combatantId,
     );
   }
+  // Zero-hit-point 'revert-form' (same transaction): the creature returns to
+  // the natural form recorded at cast and stays in play, before anything
+  // reacts to the transient 0 hit points.
+  let reverted: RevertedOutcome | undefined;
+  if (
+    revertsFormAtZeroHp(current.zeroHpRule) &&
+    current.hpCurrent > 0 &&
+    nextHp === 0 &&
+    status !== 'dead'
+  ) {
+    const atZero = readCombatant(db, input.campaignId, input.combatantId);
+    if (atZero === undefined)
+      throw new EncounterCombatantError('combatant disappeared during update');
+    reverted = completeZeroHpFormReversion(db, atZero, input);
+  }
+  const settled =
+    reverted === undefined
+      ? { hp: nextHp, status }
+      : (() => {
+          const row = readCombatant(db, input.campaignId, input.combatantId);
+          return {
+            hp: row?.hpCurrent ?? nextHp,
+            status: row?.status ?? status,
+          };
+        })();
   assertCombatantLifecycle(db, input.campaignId, input.combatantId, current);
 
   let syncedActor: CampaignActor | undefined;
@@ -3247,13 +3621,13 @@ function updateCombatantInTxn(
     current.status === 'inactive' ||
     current.status === 'absent';
   const isDown =
-    nextHp === 0 ||
-    status === 'dead' ||
-    status === 'unconscious' ||
-    status === 'dying' ||
-    status === 'stable' ||
-    status === 'inactive' ||
-    status === 'absent';
+    settled.hp === 0 ||
+    settled.status === 'dead' ||
+    settled.status === 'unconscious' ||
+    settled.status === 'dying' ||
+    settled.status === 'stable' ||
+    settled.status === 'inactive' ||
+    settled.status === 'absent';
   const wasIncapacitated =
     wasDown ||
     anyConditionImpliesIncapacitated(
@@ -3302,12 +3676,23 @@ function updateCombatantInTxn(
     }
   }
 
-  // Zero-hit-point 'vanish' aftermath (same transaction): the creature's
-  // spell link closes with reason zero-hit-points, and the effect ends with
-  // source-removed when that was its last owned creature.
+  // Zero-hit-point 'vanish' / 'revert-object' aftermath (same transaction):
+  // the creature's spell link closes with reason zero-hit-points, and the
+  // effect ends with source-removed when that was its last owned creature.
+  // An animated object's damage beyond 0 carries over to its object form.
   let vanished: VanishedOutcome | undefined;
-  if (current.status !== 'absent' && status === 'absent')
-    vanished = completeZeroHpVanish(db, current, input);
+  if (current.status !== 'absent' && status === 'absent') {
+    if (current.zeroHpRule === 'revert-object')
+      reverted = completeZeroHpObjectReversion(
+        db,
+        current,
+        input.hpDelta !== undefined && input.hpDelta < 0 && hpBeforeDamage > 0
+          ? Math.max(0, -input.hpDelta - hpBeforeDamage)
+          : 0,
+        input,
+      );
+    else vanished = completeZeroHpVanish(db, current, input);
+  }
 
   const combatant = readCombatant(db, input.campaignId, input.combatantId);
   if (combatant === undefined) {
@@ -3322,5 +3707,6 @@ function updateCombatantInTxn(
     conditionRemoved,
     ...(concentrationBroken === undefined ? {} : { concentrationBroken }),
     ...(vanished === undefined ? {} : { vanished }),
+    ...(reverted === undefined ? {} : { reverted }),
   };
 }
