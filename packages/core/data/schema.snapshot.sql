@@ -150,7 +150,7 @@ CREATE TABLE "campaign_actor" (
   hp_current INTEGER CHECK (hp_current IS NULL OR hp_current >= 0),
   hp_max INTEGER CHECK (hp_max IS NULL OR hp_max >= 0),
   conditions_json TEXT NOT NULL DEFAULT '[]',
-  status TEXT NOT NULL CHECK (status IN ('alive', 'dead', 'unconscious', 'escaped', 'inactive', 'unknown', 'dying', 'stable')),
+  status TEXT NOT NULL CHECK (status IN ('alive', 'dead', 'unconscious', 'escaped', 'inactive', 'unknown', 'dying', 'stable', 'absent')),
   current_location_id TEXT,
   state_json TEXT NOT NULL DEFAULT '{}',
   provenance TEXT NOT NULL,
@@ -482,7 +482,8 @@ CREATE TABLE "encounter_combatant" (
   ac INTEGER CHECK (ac IS NULL OR ac >= 0),
   conditions_json TEXT NOT NULL DEFAULT '[]',
   status TEXT NOT NULL CHECK (status IN (
-    'alive', 'dead', 'unconscious', 'escaped', 'inactive', 'dying', 'stable'
+    'alive', 'dead', 'unconscious', 'escaped', 'inactive', 'dying', 'stable',
+    'absent'
   )),
   location_id TEXT,
   placement TEXT,
@@ -495,9 +496,17 @@ CREATE TABLE "encounter_combatant" (
   recovery_block TEXT CHECK (recovery_block IS NULL OR recovery_block = 'suffocating'),
   stable_recovery_roll INTEGER CHECK (stable_recovery_roll BETWEEN 1 AND 4),
   stable_recovery_anchor_elapsed_minutes INTEGER CHECK (stable_recovery_anchor_elapsed_minutes >= 0),
-  stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0), head_count INTEGER CHECK (head_count IS NULL OR head_count >= 0), heads_died_since_own_turn INTEGER NOT NULL DEFAULT 0, fire_damage_since_own_turn INTEGER NOT NULL DEFAULT 0
-  CHECK (fire_damage_since_own_turn IN (0, 1)), damage_this_turn INTEGER NOT NULL DEFAULT 0, damage_turn_key TEXT, head_died_this_turn INTEGER NOT NULL DEFAULT 0, stable_recovery_settled INTEGER NOT NULL DEFAULT 0
+  stable_recovery_deadline_elapsed_minutes INTEGER CHECK (stable_recovery_deadline_elapsed_minutes >= 0),
+  head_count INTEGER CHECK (head_count IS NULL OR head_count >= 0),
+  heads_died_since_own_turn INTEGER NOT NULL DEFAULT 0,
+  fire_damage_since_own_turn INTEGER NOT NULL DEFAULT 0
+  CHECK (fire_damage_since_own_turn IN (0, 1)),
+  damage_this_turn INTEGER NOT NULL DEFAULT 0,
+  damage_turn_key TEXT,
+  head_died_this_turn INTEGER NOT NULL DEFAULT 0,
+  stable_recovery_settled INTEGER NOT NULL DEFAULT 0
   CHECK (stable_recovery_settled IN (0, 1)),
+  zero_hp_rule TEXT CHECK (zero_hp_rule IS NULL OR zero_hp_rule IN ('vanish', 'revert')),
   PRIMARY KEY (campaign_id, combatant_id)
 );
 

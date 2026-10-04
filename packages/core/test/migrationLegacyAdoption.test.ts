@@ -265,7 +265,7 @@ describe('migration 0013 elapsed-world transition', () => {
     );
     expect(migrateDatabase(db, { now: NOW }).migrations.applied).toEqual([
       13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-      31, 32, 33, 34, 35, 36, 37, 38,
+      31, 32, 33, 34, 35, 36, 37, 38, 39,
     ]);
     expect(
       db
@@ -327,7 +327,7 @@ describe('migrateDatabase (end to end)', () => {
     expect(result.legacy.action).toBe('empty');
     expect(result.migrations.applied).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
+      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
     ]);
     expect(readMigrationLedger(db).map((r) => [r.version, r.name])).toEqual([
       [1, 'initial'],
@@ -368,6 +368,7 @@ describe('migrateDatabase (end to end)', () => {
       [36, 'combatant_heads'],
       [37, 'stable_recovery_settled'],
       [38, 'ammunition_identity_snapshot'],
+      [39, 'absent_status_zero_hp_rule'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -386,12 +387,12 @@ describe('migrateDatabase (end to end)', () => {
     // 0001 is adopted (already applied); the post-baseline migrations apply.
     expect(result.migrations.applied).toEqual([
       2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
+      22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
     ]);
     expect(result.migrations.alreadyApplied).toEqual([1]);
     expect(
       readMigrationLedger(db)
-        .slice(-11)
+        .slice(-12)
         .map((r) => [r.version, r.name]),
     ).toEqual([
       [28, 'disputed_turn_replay'],
@@ -405,6 +406,7 @@ describe('migrateDatabase (end to end)', () => {
       [36, 'combatant_heads'],
       [37, 'stable_recovery_settled'],
       [38, 'ammunition_identity_snapshot'],
+      [39, 'absent_status_zero_hp_rule'],
     ]);
     expect(activeEffectTableNames(db)).toEqual([
       'active_effect',
@@ -631,7 +633,7 @@ describe('migration 0005 death-state backfill (eshyra-2n1t.8)', () => {
 
     expect(result.migrations.applied).toEqual([
       5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-      25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
+      25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
     ]);
     const row = db
       .prepare(

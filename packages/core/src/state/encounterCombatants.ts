@@ -13,6 +13,8 @@ import {
   anyConditionImpliesIncapacitated,
   applyCombatClosureToEffects,
   breakCombatantConcentration,
+  closeActorLinkAtZeroHp,
+  findRemovePolicyActorLink,
 } from './activeEffects.js';
 import {
   type CampaignRulesPackResolver,
@@ -24,6 +26,7 @@ import {
   type CombatantLifecycleState,
   nextCombatantLifecycle,
   type StableRecoverySchedule,
+  type ZeroHpRule,
 } from './combatantLifecycle.js';
 import { effectiveHpMax, exhaustionLevel } from './exhaustion.js';
 import type { CharacterConditionEntry, JsonValue } from './liveStateSchema.js';
@@ -50,7 +53,8 @@ export type ActorStatus =
   | 'inactive'
   | 'unknown'
   | 'dying'
-  | 'stable';
+  | 'stable'
+  | 'absent';
 export type CombatantIdentityKind =
   | 'encounter_instance'
   | 'module_npc'
@@ -63,7 +67,8 @@ export type CombatantStatus =
   | 'escaped'
   | 'inactive'
   | 'dying'
-  | 'stable';
+  | 'stable'
+  | 'absent';
 
 export interface CombatInstance {
   readonly campaignId: string;
@@ -121,6 +126,8 @@ export interface EncounterCombatant {
   readonly stableRecoveryDeadlineElapsedMinutes: number | null;
   /** Current creature head count when its record has a multipleHeads mechanic. */
   readonly headCount: number | null;
+  /** The creature's own 0-hit-point rule, set by its owning effect. */
+  readonly zeroHpRule: ZeroHpRule | null;
 }
 
 export interface UpsertCampaignActorInput {
@@ -257,6 +264,21 @@ export function updateCampaignActor(
         `unknown campaign actor '${input.actorId}'`,
       );
     }
+    if (input.status === 'absent')
+      throw new EncounterCombatantError(
+        "status 'absent' is engine-owned: a creature leaves play through its owning effect or its zero-hit-point rule",
+      );
+    if (
+      actor.status === 'absent' &&
+      (input.status !== undefined ||
+        input.hpCurrent !== undefined ||
+        input.hpMax !== undefined ||
+        input.addCondition !== undefined ||
+        input.removeCondition !== undefined)
+    )
+      throw new EncounterCombatantError(
+        `campaign actor '${input.actorId}' is absent (out of play); only a new admission with hit points above 0 brings it back`,
+      );
     const conditions = [...actor.conditions];
     if (
       input.addCondition !== undefined &&
@@ -271,6 +293,23 @@ export function updateCampaignActor(
         ...conditions.filter((c) => c.id !== input.removeCondition),
       );
     }
+    const projection = txnDb
+      .prepare(
+        `SELECT combatant_id, hp_current, hp_max FROM encounter_combatant
+         WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
+           AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
+         ORDER BY combatant_id LIMIT 1`,
+      )
+      .get(input.campaignId, input.actorId, input.campaignId) as
+      | { combatant_id: string; hp_current: number; hp_max: number }
+      | undefined;
+    // Out of combat, a creature whose rule is 'vanish' disappears when its
+    // hit points are reduced to 0 (in combat the lifecycle does the same).
+    const vanishesOutOfCombat =
+      projection === undefined &&
+      input.hpCurrent === 0 &&
+      (actor.hpCurrent ?? 0) > 0 &&
+      readCombatLifecycle(actor.state)?.zeroHpRule === 'vanish';
     upsertCampaignActor(txnDb, {
       campaignId: input.campaignId,
       actorId: input.actorId,
@@ -282,23 +321,21 @@ export function updateCampaignActor(
       hpCurrent: input.hpCurrent ?? actor.hpCurrent,
       hpMax: input.hpMax ?? actor.hpMax,
       conditions,
-      status: input.status ?? actor.status,
+      status: vanishesOutOfCombat ? 'absent' : (input.status ?? actor.status),
       currentLocationId: input.currentLocationId ?? actor.currentLocationId,
-      state: actor.state,
+      state: vanishesOutOfCombat ? absentActorState(actor.state) : actor.state,
+      ...(vanishesOutOfCombat ? { replaceCombatLifecycle: true } : {}),
       provenance: input.provenance,
       sessionId: input.sessionId,
       at: input.at,
     });
-    const projection = txnDb
-      .prepare(
-        `SELECT combatant_id, hp_current, hp_max FROM encounter_combatant
-         WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
-           AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-         ORDER BY combatant_id LIMIT 1`,
-      )
-      .get(input.campaignId, input.actorId, input.campaignId) as
-      | { combatant_id: string; hp_current: number; hp_max: number }
-      | undefined;
+    if (vanishesOutOfCombat)
+      closeActorLinkAtZeroHp(
+        txnDb,
+        input.campaignId,
+        { actorId: input.actorId },
+        input,
+      );
     if (projection !== undefined) {
       updateCombatant(txnDb, {
         campaignId: input.campaignId,
@@ -449,6 +486,16 @@ export interface UpdateCombatantResult {
     readonly displayName: string;
     readonly cause: 'incapacitated' | 'dead' | 'owner-removed';
   };
+  /** Set when this update brought a creature with the 'vanish' zero-hit-point
+   *  rule to 0 HP: it is now absent, its summoning link was closed, and its
+   *  effect ended when that was the last owned creature. */
+  readonly vanished?: VanishedOutcome;
+}
+
+export interface VanishedOutcome {
+  readonly rule: 'vanish';
+  readonly effectId: string | null;
+  readonly effectEnded: boolean;
 }
 
 export interface CombatantHeadRegrowthResult {
@@ -622,6 +669,15 @@ export class EncounterCombatantError extends Error {
   }
 }
 
+/** A state the engine's own guards make unreachable. Never translated into a
+ *  cleanup action: callers must let it propagate. */
+export class CombatantLifecycleInvariantError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CombatantLifecycleInvariantError';
+  }
+}
+
 /** Validate canonical lifecycle after a combatant write, before its transaction commits. */
 export function assertCombatantLifecycle(
   db: Db,
@@ -655,9 +711,9 @@ export function assertCombatantLifecycle(
       `combatant lifecycle invariant ${rule} violated for '${combatantId}'`,
     );
   };
-  if (exhaustion === 6 && c.status !== 'dead')
+  if (exhaustion === 6 && c.status !== 'dead' && c.status !== 'absent')
     fail('I1 (exhaustion level 6 requires dead)');
-  if (c.headCount === 0 && c.status !== 'dead')
+  if (c.headCount === 0 && c.status !== 'dead' && c.status !== 'absent')
     fail('I2 (zero heads requires dead)');
   if (
     (c.status === 'dying' || c.status === 'stable') &&
@@ -667,7 +723,7 @@ export function assertCombatantLifecycle(
   if (
     c.deathRules === 'player-character' &&
     c.hpCurrent === 0 &&
-    !['dying', 'stable', 'dead'].includes(c.status)
+    !['dying', 'stable', 'dead', 'absent'].includes(c.status)
   )
     fail('I4 (0 HP player-character state must be dying, stable, or dead)');
   if (c.recoveryBlock !== null && c.status !== 'dying')
@@ -686,9 +742,38 @@ export function assertCombatantLifecycle(
       ownsSchedule)
   )
     fail('I7 (stable recovery schedule is incomplete or unsettled)');
-  // I8 (D2 reversed): dead is terminal in both death-rule modes.
-  if (previous?.status === 'dead' && c.status !== 'dead')
+  // I8 (D2 reversed): dead is terminal in both death-rule modes, except that
+  // it may become absent (removed from play by its owning effect).
+  if (
+    previous?.status === 'dead' &&
+    c.status !== 'dead' &&
+    c.status !== 'absent'
+  )
     fail('I8 (dead state is terminal)');
+  if (previous?.status === 'absent' && c.status !== 'absent')
+    fail('I9 (absent never returns to another status on the same row)');
+  if (
+    c.status === 'absent' &&
+    (c.recoveryBlock !== null ||
+      c.deathSaveSuccesses !== 0 ||
+      c.deathSaveFailures !== 0 ||
+      present !== 0 ||
+      row.stable_recovery_settled === 1)
+  )
+    fail(
+      'I10 (absent requires no recovery block, no schedule, and zero death-save counters)',
+    );
+  if (
+    c.zeroHpRule !== null &&
+    (c.deathRules === 'player-character' ||
+      (c.zeroHpRule === 'vanish' &&
+        c.hpCurrent === 0 &&
+        c.status !== 'absent' &&
+        c.status !== 'dead'))
+  )
+    fail(
+      'I11 (a creature with a 0-hit-point rule cannot use player-character death rules or stay present at 0 HP)',
+    );
 }
 
 function readCombatantLifecycleState(
@@ -699,7 +784,7 @@ function readCombatantLifecycleState(
   const row = db
     .prepare(`SELECT heads_died_since_own_turn, fire_damage_since_own_turn,
       damage_this_turn, damage_turn_key, head_died_this_turn,
-      stable_recovery_settled, identity_kind, identity_ref FROM encounter_combatant
+      stable_recovery_settled, zero_hp_rule, identity_kind, identity_ref FROM encounter_combatant
       WHERE campaign_id=? AND combatant_id=?`)
     .get(combatant.campaignId, combatant.combatantId) as
     | {
@@ -709,6 +794,7 @@ function readCombatantLifecycleState(
         damage_turn_key: string | null;
         head_died_this_turn: number;
         stable_recovery_settled: number;
+        zero_hp_rule: ZeroHpRule | null;
         identity_kind: string;
         identity_ref: string | null;
       }
@@ -762,6 +848,7 @@ function readCombatantLifecycleState(
     damageThisTurn: row.damage_this_turn,
     damageTurnKey: row.damage_turn_key,
     headDiedThisTurn: row.head_died_this_turn,
+    zeroHpRule: row.zero_hp_rule,
   };
 }
 
@@ -873,7 +960,8 @@ function assertCampaignActorLifecycle(actor: CampaignActor): void {
       `campaign actor lifecycle invariant ${rule} violated for '${actor.actorId}'`,
     );
   };
-  if (exhaustion === 6 && actor.status !== 'dead') fail('I1');
+  if (exhaustion === 6 && actor.status !== 'dead' && actor.status !== 'absent')
+    fail('I1');
   if (
     actor.hpCurrent !== undefined &&
     actor.hpMax !== undefined &&
@@ -881,7 +969,12 @@ function assertCampaignActorLifecycle(actor: CampaignActor): void {
   )
     fail('I6');
   if (!lifecycle) return;
-  if (lifecycle.headCount === 0 && actor.status !== 'dead') fail('I2');
+  if (
+    lifecycle.headCount === 0 &&
+    actor.status !== 'dead' &&
+    actor.status !== 'absent'
+  )
+    fail('I2');
   if (
     (actor.status === 'dying' || actor.status === 'stable') &&
     (lifecycle.deathRules !== 'player-character' || actor.hpCurrent !== 0)
@@ -890,9 +983,18 @@ function assertCampaignActorLifecycle(actor: CampaignActor): void {
   if (
     lifecycle.deathRules === 'player-character' &&
     actor.hpCurrent === 0 &&
-    !['dying', 'stable', 'dead'].includes(actor.status)
+    !['dying', 'stable', 'dead', 'absent'].includes(actor.status)
   )
     fail('I4');
+  if (
+    actor.status === 'absent' &&
+    (lifecycle.recoveryBlock !== null ||
+      lifecycle.deathSaveSuccesses !== 0 ||
+      lifecycle.deathSaveFailures !== 0 ||
+      lifecycle.stableRecovery !== null ||
+      lifecycle.stableRecoverySettled)
+  )
+    fail('I10');
   if (lifecycle.recoveryBlock !== null && actor.status !== 'dying') fail('I5');
   if (
     (lifecycle.stableRecovery !== null && actor.status !== 'stable') ||
@@ -916,6 +1018,10 @@ function requireActiveCombatant(
   )
     throw new EncounterCombatantError(
       `combatant '${c.combatantId}' belongs to inactive combat instance '${c.combatInstanceId}'`,
+    );
+  if (c.status === 'absent')
+    throw new EncounterCombatantError(
+      `combatant '${c.combatantId}' is absent (out of play) and takes no part in combat`,
     );
 }
 
@@ -1001,6 +1107,7 @@ interface CombatantRow {
   readonly stable_recovery_anchor_elapsed_minutes: number | null;
   readonly stable_recovery_deadline_elapsed_minutes: number | null;
   readonly head_count: number | null;
+  readonly zero_hp_rule: ZeroHpRule | null;
 }
 
 function rowToCombatInstance(row: CombatInstanceRow): CombatInstance {
@@ -1056,6 +1163,7 @@ interface CombatLifecycle {
   headsDiedSinceOwnTurn: number;
   fireDamageSinceOwnTurn: number;
   stableRecoverySettled: boolean;
+  zeroHpRule: ZeroHpRule | null;
 }
 
 function readCombatLifecycle(
@@ -1089,7 +1197,11 @@ function readCombatLifecycle(
       v.fireDamageSinceOwnTurn !== 0 &&
       v.fireDamageSinceOwnTurn !== 1) ||
     (v.stableRecoverySettled !== undefined &&
-      typeof v.stableRecoverySettled !== 'boolean')
+      typeof v.stableRecoverySettled !== 'boolean') ||
+    (v.zeroHpRule !== undefined &&
+      v.zeroHpRule !== null &&
+      v.zeroHpRule !== 'vanish' &&
+      v.zeroHpRule !== 'revert')
   )
     return fail();
   let stableRecovery: CombatLifecycle['stableRecovery'] = null;
@@ -1120,6 +1232,32 @@ function readCombatLifecycle(
     headsDiedSinceOwnTurn: (v.headsDiedSinceOwnTurn as number | undefined) ?? 0,
     fireDamageSinceOwnTurn:
       (v.fireDamageSinceOwnTurn as number | undefined) ?? 0,
+    zeroHpRule: (v.zeroHpRule as ZeroHpRule | null | undefined) ?? null,
+  };
+}
+
+/** Actor state for a creature that left play: no life-state bookkeeping
+ *  survives (absent requires zero counters, no schedule, no block). */
+function absentActorState(
+  state: Record<string, JsonValue>,
+): Record<string, JsonValue> {
+  const lifecycle = state.combatLifecycle;
+  if (
+    typeof lifecycle !== 'object' ||
+    lifecycle === null ||
+    Array.isArray(lifecycle)
+  )
+    return state;
+  return {
+    ...state,
+    combatLifecycle: {
+      ...lifecycle,
+      deathSaveSuccesses: 0,
+      deathSaveFailures: 0,
+      recoveryBlock: null,
+      stableRecovery: null,
+      stableRecoverySettled: false,
+    },
   };
 }
 
@@ -1151,6 +1289,7 @@ function combatLifecycleForCombatant(
     headCount: lifecycle.headCount,
     headsDiedSinceOwnTurn: lifecycle.headsDiedSinceOwnTurn,
     fireDamageSinceOwnTurn: lifecycle.fireDamageSinceOwnTurn,
+    zeroHpRule: lifecycle.zeroHpRule,
   } as unknown as Record<string, JsonValue>;
 }
 
@@ -1183,6 +1322,7 @@ function rowToCombatant(row: CombatantRow): EncounterCombatant {
     stableRecoveryDeadlineElapsedMinutes:
       row.stable_recovery_deadline_elapsed_minutes,
     headCount: row.head_count,
+    zeroHpRule: row.zero_hp_rule,
   };
 }
 
@@ -1476,7 +1616,11 @@ function upsertCampaignActorInTxn(
     state: nextState,
   };
   readCombatLifecycle(candidate.state);
-  if (existing?.status === 'dead' && candidate.status !== 'dead')
+  if (
+    existing?.status === 'dead' &&
+    candidate.status !== 'dead' &&
+    candidate.status !== 'absent'
+  )
     throw new EncounterCombatantError(
       `campaign actor '${candidate.actorId}' is dead; use the lifecycle tools`,
     );
@@ -1541,7 +1685,7 @@ export function listCombatantsForInstance(
               conditions_json, status, location_id, placement, death_rules,
               death_save_successes, death_save_failures, recovery_block,
               stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
-              stable_recovery_deadline_elapsed_minutes, head_count
+              stable_recovery_deadline_elapsed_minutes, head_count, zero_hp_rule
        FROM encounter_combatant
        WHERE campaign_id = ? AND combat_instance_id = ?
        ORDER BY combatant_id`,
@@ -1727,6 +1871,18 @@ function startEncounterInTxn(
         `actor '${actorInput.actorId}' needs rulesRef for combat projection`,
       );
     }
+    if (existing?.status === 'absent') {
+      // Admitting an absent actor is a new manifestation: it needs hit
+      // points of its own and starts alive with a fresh lifecycle.
+      if (actorInput.hpCurrent === undefined || actorInput.hpCurrent <= 0)
+        throw new EncounterCombatantError(
+          `campaign actor '${actorInput.actorId}' is absent (it vanished or was removed from play by its owning effect); admitting it again is a new manifestation and needs hpCurrent above 0`,
+        );
+      if (actorInput.status !== undefined && actorInput.status !== 'alive')
+        throw new EncounterCombatantError(
+          `campaign actor '${actorInput.actorId}' is absent; a new manifestation starts alive, not '${actorInput.status}'`,
+        );
+    }
     const record = lookupCreatureRecord(db, rulesRef, input.resolveRulesPack);
     const baselineHp = readCreatureHp(record);
     const hpMax = actorInput.hpMax ?? existing?.hpMax ?? baselineHp;
@@ -1799,7 +1955,10 @@ function startEncounterInTxn(
       hpCurrent,
       hpMax,
       conditions,
-      status: actorInput.status ?? existing?.status ?? 'alive',
+      status:
+        existing?.status === 'absent'
+          ? 'alive'
+          : (actorInput.status ?? existing?.status ?? 'alive'),
       currentLocationId:
         actorInput.currentLocationId ??
         existing?.currentLocationId ??
@@ -1867,7 +2026,7 @@ function startEncounterInTxn(
       `UPDATE encounter_combatant SET death_rules=?, death_save_successes=?,
        death_save_failures=?, recovery_block=?, stable_recovery_roll=?,
        stable_recovery_anchor_elapsed_minutes=?, stable_recovery_deadline_elapsed_minutes=?,
-       stable_recovery_settled=?
+       stable_recovery_settled=?, zero_hp_rule=?
        WHERE campaign_id=? AND combatant_id=?`,
     ).run(
       lifecycle?.deathRules ?? 'monster',
@@ -1878,6 +2037,7 @@ function startEncounterInTxn(
       lifecycle?.stableRecovery?.anchor ?? null,
       lifecycle?.stableRecovery?.deadline ?? null,
       lifecycle?.stableRecoverySettled ? 1 : 0,
+      lifecycle?.zeroHpRule ?? null,
       input.campaignId,
       projectedId,
     );
@@ -2045,7 +2205,7 @@ export function readCombatant(
               conditions_json, status, location_id, placement, death_rules,
               death_save_successes, death_save_failures, recovery_block,
               stable_recovery_roll, stable_recovery_anchor_elapsed_minutes,
-              stable_recovery_deadline_elapsed_minutes, head_count
+              stable_recovery_deadline_elapsed_minutes, head_count, zero_hp_rule
        FROM encounter_combatant
        WHERE campaign_id = ? AND combatant_id = ?`,
     )
@@ -2190,7 +2350,8 @@ export function setCombatantSuffocation(
       c.status === 'unconscious' ||
       c.status === 'inactive' ||
       c.status === 'dying' ||
-      c.status === 'stable';
+      c.status === 'stable' ||
+      c.status === 'absent';
     const shouldStabilize =
       event === 'breathe' && c.status === 'dying' && c.deathSaveSuccesses >= 3;
     const recoverySchedule = shouldStabilize
@@ -2208,18 +2369,31 @@ export function setCombatantSuffocation(
       lifecycle.status === 'unconscious' ||
       lifecycle.status === 'inactive' ||
       lifecycle.status === 'dying' ||
-      lifecycle.status === 'stable';
+      lifecycle.status === 'stable' ||
+      lifecycle.status === 'absent';
     if (!wasDown && isDown)
       breakCombatantConcentration(
         txn,
         campaignId,
         combatantId,
-        lifecycle.status === 'dead' ? 'dead' : 'incapacitated',
+        lifecycle.status === 'dead'
+          ? 'dead'
+          : lifecycle.status === 'absent'
+            ? 'owner-removed'
+            : 'incapacitated',
         ctx,
       );
     syncCombatantActor(txn, campaignId, combatantId, ctx);
     assertCombatantLifecycle(txn, campaignId, combatantId, c);
-    return { lifeState: lifecycle.status, hpCurrent: lifecycle.hpCurrent };
+    const vanished =
+      c.status !== 'absent' && lifecycle.status === 'absent'
+        ? completeZeroHpVanish(txn, c, ctx)
+        : undefined;
+    return {
+      lifeState: lifecycle.status,
+      hpCurrent: lifecycle.hpCurrent,
+      ...(vanished === undefined ? {} : { vanished }),
+    };
   });
 }
 
@@ -2358,6 +2532,7 @@ function syncCombatantActor(
       headCount: c.headCount,
       headsDiedSinceOwnTurn: pending.heads_died_since_own_turn,
       fireDamageSinceOwnTurn: pending.fire_damage_since_own_turn,
+      zeroHpRule: c.zeroHpRule,
     } as unknown as JsonValue,
   };
   upsertCampaignActor(db, {
@@ -2378,6 +2553,195 @@ function syncCombatantActor(
     provenance: ctx.provenance,
     sessionId: ctx.sessionId,
     at: ctx.at,
+  });
+}
+
+function completeZeroHpVanish(
+  db: Db,
+  before: EncounterCombatant,
+  ctx: {
+    provenance: string;
+    sessionId: string;
+    at: string;
+    resolveRulesPack?: CampaignRulesPackResolver;
+  },
+): VanishedOutcome {
+  const closed = closeActorLinkAtZeroHp(
+    db,
+    before.campaignId,
+    {
+      combatantId: before.combatantId,
+      ...(before.identityKind === 'campaign_actor' &&
+      before.identityRef !== undefined
+        ? { actorId: before.identityRef }
+        : {}),
+    },
+    ctx,
+  );
+  return {
+    rule: 'vanish',
+    effectId: closed.effectId,
+    effectEnded: closed.effectEnded,
+  };
+}
+
+/** F3 remove seam for an owned combatant: take it out of play (status
+ *  absent). 'missing' only when the holder is truly unreachable. A dying or
+ *  stable creature is unreachable by construction and raises an invariant
+ *  error instead of being translated into another cleanup action. */
+export function removeCombatantFromPlay(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly combatantId: string;
+    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+): 'removed' | 'missing' {
+  return withTransaction(db, (txn) => {
+    const current = readCombatant(txn, input.campaignId, input.combatantId);
+    if (current === undefined) return 'missing';
+    if (
+      readCombatInstance(txn, input.campaignId, current.combatInstanceId)
+        ?.status !== 'active'
+    )
+      return 'missing';
+    if (current.status === 'absent') return 'removed';
+    if (current.status === 'dying' || current.status === 'stable')
+      throw new CombatantLifecycleInvariantError(
+        `combatant '${current.combatantId}' is ${current.status} under a remove-policy owner; the engine guards make this state unreachable`,
+      );
+    const lifecycle = transitionCombatantLifecycle(
+      readCombatantLifecycleState(txn, current),
+      { type: 'removeFromPlay' },
+    );
+    persistCombatantLifecycle(txn, current, lifecycle, input);
+    assertCombatantLifecycle(txn, input.campaignId, input.combatantId, current);
+    syncCombatantActor(txn, input.campaignId, input.combatantId, input);
+    // F3 reaction, as for any other way of leaving active play: concentration
+    // ends with the owner (transition-gated).
+    const wasIncapacitated =
+      current.hpCurrent === 0 ||
+      ['dead', 'unconscious', 'inactive'].includes(current.status) ||
+      anyConditionImpliesIncapacitated(
+        txn,
+        current.conditions.map((c) => c.id),
+        input.resolveRulesPack,
+      );
+    if (!wasIncapacitated)
+      breakCombatantConcentration(
+        txn,
+        input.campaignId,
+        input.combatantId,
+        'owner-removed',
+        {
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+          ...(input.resolveRulesPack === undefined
+            ? {}
+            : { resolveRulesPack: input.resolveRulesPack }),
+        },
+      );
+    return 'removed';
+  });
+}
+
+/** F3 remove seam for a durable (campaign actor) link: the actor and its
+ *  active projection, when there is one, become absent. */
+export function removeCampaignActorFromPlay(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly actorId: string;
+    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+): 'removed' | 'missing' {
+  return withTransaction(db, (txn) => {
+    const actor = getCampaignActor(txn, input.campaignId, input.actorId);
+    if (actor === undefined) return 'missing';
+    const projection = txn
+      .prepare(
+        `SELECT combatant_id FROM encounter_combatant
+         WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
+           AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
+         ORDER BY combatant_id LIMIT 1`,
+      )
+      .get(input.campaignId, input.actorId, input.campaignId) as
+      | { combatant_id: string }
+      | undefined;
+    if (projection !== undefined)
+      return removeCombatantFromPlay(txn, {
+        ...input,
+        combatantId: projection.combatant_id,
+      });
+    if (actor.status === 'absent') return 'removed';
+    if (actor.status === 'dying' || actor.status === 'stable')
+      throw new CombatantLifecycleInvariantError(
+        `campaign actor '${actor.actorId}' is ${actor.status} under a remove-policy owner; the engine guards make this state unreachable`,
+      );
+    upsertCampaignActor(txn, {
+      campaignId: input.campaignId,
+      actorId: actor.actorId,
+      displayName: actor.displayName,
+      actorKind: actor.actorKind,
+      sourceKind: actor.sourceKind,
+      sourceRef: actor.sourceRef,
+      rulesRef: actor.rulesRef,
+      hpCurrent: actor.hpCurrent,
+      hpMax: actor.hpMax,
+      conditions: actor.conditions,
+      status: 'absent',
+      currentLocationId: actor.currentLocationId,
+      state: absentActorState(actor.state),
+      replaceCombatLifecycle: true,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+    return 'removed';
+  });
+}
+
+/** Record the creature's own 0-hit-point rule (set by its owning effect). */
+export function setCombatantZeroHpRule(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly combatantId: string;
+    readonly rule: ZeroHpRule;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+): void {
+  withTransaction(db, (txn) => {
+    const current = readCombatant(txn, input.campaignId, input.combatantId);
+    if (current === undefined)
+      throw new EncounterCombatantError(
+        `unknown combatant '${input.combatantId}'`,
+      );
+    if (current.zeroHpRule === input.rule) return;
+    txn
+      .prepare(
+        `UPDATE encounter_combatant SET zero_hp_rule=?, provenance=?, session_id=?, updated_at=?
+         WHERE campaign_id=? AND combatant_id=?`,
+      )
+      .run(
+        input.rule,
+        input.provenance,
+        input.sessionId,
+        input.at,
+        input.campaignId,
+        input.combatantId,
+      );
+    assertCombatantLifecycle(txn, input.campaignId, input.combatantId, current);
+    syncCombatantActor(txn, input.campaignId, input.combatantId, input);
   });
 }
 
@@ -2403,6 +2767,45 @@ function updateCombatantInTxn(
     throw new EncounterCombatantError(
       `combatant '${input.combatantId}' belongs to inactive combat instance '${current.combatInstanceId}'`,
     );
+  }
+  if (input.status === 'absent')
+    throw new EncounterCombatantError(
+      "status 'absent' is engine-owned: a creature leaves play through its owning effect or its zero-hit-point rule",
+    );
+  if (
+    current.status === 'absent' &&
+    (input.hpMax !== undefined ||
+      input.hpDelta !== undefined ||
+      input.clampToEffectiveMaximum === true ||
+      input.addCondition !== undefined ||
+      input.removeCondition !== undefined ||
+      input.replaceConditions !== undefined ||
+      input.status !== undefined ||
+      input.deathRules !== undefined)
+  )
+    throw new EncounterCombatantError(
+      `combatant '${input.combatantId}' is absent (out of play) and cannot be damaged, healed, given or relieved of conditions, or have its status changed`,
+    );
+  if (input.deathRules === 'player-character') {
+    if (current.zeroHpRule !== null)
+      throw new EncounterCombatantError(
+        `cannot opt combatant '${input.combatantId}' into player-character death rules: its spell says it ${
+          current.zeroHpRule === 'vanish'
+            ? 'disappears'
+            : 'returns to its original form'
+        } when it drops to 0 hit points (zero-hit-point rule)`,
+      );
+    const owner = findRemovePolicyActorLink(db, input.campaignId, {
+      combatantId: current.combatantId,
+      ...(current.identityKind === 'campaign_actor' &&
+      current.identityRef !== undefined
+        ? { actorId: current.identityRef }
+        : {}),
+    });
+    if (owner !== undefined)
+      throw new EncounterCombatantError(
+        `cannot opt combatant '${input.combatantId}' into player-character death rules: effect '${owner.effectId}' owns it with a 'remove' cleanup policy and must be able to take it out of play, which a dying or stable creature cannot be`,
+      );
   }
   // The creature record is needed only for HP changes (head loss and the
   // unknown-head refusal). Condition and participation writes — including
@@ -2523,6 +2926,18 @@ function updateCombatantInTxn(
     input.hpDelta !== undefined &&
     input.hpDelta < 0;
   const playerKnockout = input.status === 'stable' && droppedToZero;
+  if (
+    current.zeroHpRule !== null &&
+    droppedToZero &&
+    (monsterKnockout || playerKnockout)
+  )
+    throw new EncounterCombatantError(
+      `a knockout is refused for combatant '${input.combatantId}': its spell says it ${
+        current.zeroHpRule === 'vanish'
+          ? 'disappears'
+          : 'returns to its original form'
+      } when it drops to 0 hit points (zero-hit-point rule)`,
+    );
   let lifecycle = readCombatantLifecycleState(db, current);
   const oldExhaustion = exhaustionLevel(current.conditions);
   const nextExhaustion = exhaustionLevel(conditions);
@@ -2749,14 +3164,16 @@ function updateCombatantInTxn(
     current.status === 'unconscious' ||
     current.status === 'dying' ||
     current.status === 'stable' ||
-    current.status === 'inactive';
+    current.status === 'inactive' ||
+    current.status === 'absent';
   const isDown =
     nextHp === 0 ||
     status === 'dead' ||
     status === 'unconscious' ||
     status === 'dying' ||
     status === 'stable' ||
-    status === 'inactive';
+    status === 'inactive' ||
+    status === 'absent';
   const wasIncapacitated =
     wasDown ||
     anyConditionImpliesIncapacitated(
@@ -2779,7 +3196,7 @@ function updateCombatantInTxn(
       input.combatantId,
       status === 'dead'
         ? 'dead'
-        : status === 'inactive'
+        : status === 'inactive' || status === 'absent'
           ? 'owner-removed'
           : 'incapacitated',
       {
@@ -2798,12 +3215,19 @@ function updateCombatantInTxn(
         cause:
           status === 'dead'
             ? 'dead'
-            : status === 'inactive'
+            : status === 'inactive' || status === 'absent'
               ? 'owner-removed'
               : 'incapacitated',
       };
     }
   }
+
+  // Zero-hit-point 'vanish' aftermath (same transaction): the creature's
+  // spell link closes with reason zero-hit-points, and the effect ends with
+  // source-removed when that was its last owned creature.
+  let vanished: VanishedOutcome | undefined;
+  if (current.status !== 'absent' && status === 'absent')
+    vanished = completeZeroHpVanish(db, current, input);
 
   const combatant = readCombatant(db, input.campaignId, input.combatantId);
   if (combatant === undefined) {
@@ -2817,5 +3241,6 @@ function updateCombatantInTxn(
     conditionAdded,
     conditionRemoved,
     ...(concentrationBroken === undefined ? {} : { concentrationBroken }),
+    ...(vanished === undefined ? {} : { vanished }),
   };
 }

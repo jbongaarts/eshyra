@@ -532,6 +532,11 @@ function resolveOwner(
         `combatant '${input.ref}' is dead; its abilities spend nothing`,
       );
     }
+    if (combatant.status === 'absent') {
+      throw new UsageCounterError(
+        `combatant '${input.ref}' is absent (out of play); its abilities spend nothing`,
+      );
+    }
     return {
       owner: { kind: 'combatant', ref: input.ref },
       ownerLabel: combatant.display_label,

@@ -649,7 +649,16 @@ describe('adjust_exhaustion tool', () => {
         displayName: 'Lifecycle promotion',
         source: { kind: 'ruling' },
         duration: { kind: 'until-removed' },
-        actors: [{ combatantId: activeId('pc'), campaignActorId: 'pc' }],
+        actors: [
+          {
+            combatantId: activeId('pc'),
+            campaignActorId: 'pc',
+            // A player-character-rules creature can be dying or stable, so
+            // its owner may only release it, never remove it from play.
+            cleanupOnEnd: 'release',
+            cleanupOnBreak: 'release',
+          },
+        ],
       });
     const doCloseReopen = (nextIndex: number) => {
       const old = activeInstance();

@@ -1575,8 +1575,10 @@ export type {
   UpdateCombatantInput,
   UpdateCombatantResult,
   UpsertCampaignActorInput,
+  VanishedOutcome,
 } from './state/encounterCombatants.js';
 export {
+  CombatantLifecycleInvariantError,
   closeCombatInstance,
   EncounterCombatantError,
   getActiveCombatInstance,
@@ -1585,7 +1587,10 @@ export {
   listCombatants,
   listCombatantsForInstance,
   readCombatInstance,
+  removeCampaignActorFromPlay,
+  removeCombatantFromPlay,
   startEncounter,
+  updateCampaignActor,
   updateCombatant,
   upsertCampaignActor,
 } from './state/encounterCombatants.js';

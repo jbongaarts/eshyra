@@ -588,7 +588,8 @@ function resolveBoundaryParticipant(
       ...(combatant.status === 'dead' ||
       combatant.status === 'stable' ||
       combatant.status === 'escaped' ||
-      combatant.status === 'inactive'
+      combatant.status === 'inactive' ||
+      combatant.status === 'absent'
         ? {
             unavailableReason: `combatant '${input.ref}' is ${combatant.status} and has no actionable turn`,
           }

@@ -145,8 +145,24 @@ export const startEffectTool: Tool = {
         type: 'array',
         description:
           'Combatants the effect owns (summons/animations; kind ' +
-          '"summoning" only). cleanupOnBreak "release" keeps the entity ' +
-          'in play when concentration breaks (e.g. Conjure Elemental).',
+          '"summoning" only). For a spell source the record decides how ' +
+          'each creature leaves play: when the record says the creature ' +
+          'disappears at spell end, cleanupOnEnd must be "remove" (the ' +
+          'creature becomes absent, out of play); a record that leaves a ' +
+          'creature present but uncontrolled when concentration breaks ' +
+          '(Conjure Elemental, Conjure Fey) requires cleanupOnBreak ' +
+          '"release", otherwise a concentration spell removes it. Omit ' +
+          "both policies to take the record's values; a contradicting " +
+          'policy is refused with the record text. "remove" takes the ' +
+          'creature out of play (status absent), never leaves it dying or ' +
+          'stable, so a creature already on player-character death rules ' +
+          'cannot be linked under it. A creature whose record says it ' +
+          'disappears when it drops to 0 hit points (Conjure Animals and ' +
+          'the other conjure spells, Simulacrum) vanishes at 0 HP: it ' +
+          'becomes absent, never dead, dying, stable or unconscious, its ' +
+          'link closes, and the effect ends when its last owned creature ' +
+          'is gone. Declare atZeroHitPoints "vanish" for a ruling-sourced ' +
+          'creature that does the same (Find Familiar, Find Steed).',
         items: {
           type: 'object',
           properties: {
@@ -159,6 +175,12 @@ export const startEffectTool: Tool = {
             },
             cleanupOnEnd: CLEANUP_SCHEMA,
             cleanupOnBreak: CLEANUP_SCHEMA,
+            atZeroHitPoints: {
+              type: 'string',
+              enum: ['vanish'],
+              description:
+                'The creature disappears when it drops to 0 hit points. Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature such as a familiar or steed.',
+            },
           },
           required: ['combatantId'],
           additionalProperties: false,
@@ -271,16 +293,28 @@ export const startEffectTool: Tool = {
       if (actor === undefined || typeof actor.combatantId !== 'string') {
         return err('invalid_args', 'each actors entry must have combatantId');
       }
+      if (
+        actor.atZeroHitPoints !== undefined &&
+        actor.atZeroHitPoints !== 'vanish'
+      )
+        return err(
+          'invalid_args',
+          'each actors entry atZeroHitPoints must be "vanish" when given',
+        );
       actors.push({
         combatantId: actor.combatantId,
         ...(typeof actor.campaignActorId === 'string'
           ? { campaignActorId: actor.campaignActorId }
           : {}),
-        ...(actor.cleanupOnEnd === 'release'
-          ? { cleanupOnEnd: 'release' as const }
+        ...(actor.cleanupOnEnd === 'release' || actor.cleanupOnEnd === 'remove'
+          ? { cleanupOnEnd: actor.cleanupOnEnd }
           : {}),
-        ...(actor.cleanupOnBreak === 'release'
-          ? { cleanupOnBreak: 'release' as const }
+        ...(actor.cleanupOnBreak === 'release' ||
+        actor.cleanupOnBreak === 'remove'
+          ? { cleanupOnBreak: actor.cleanupOnBreak }
+          : {}),
+        ...(actor.atZeroHitPoints === 'vanish'
+          ? { atZeroHitPoints: 'vanish' as const }
           : {}),
       });
     }

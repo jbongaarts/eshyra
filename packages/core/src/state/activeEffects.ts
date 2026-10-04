@@ -35,17 +35,21 @@
 import type { Db } from '../persistence/db.js';
 import { withTransaction } from '../persistence/db.js';
 import { jsonColumn } from '../persistence/jsonColumn.js';
+import type { RulesRecord } from '../rules/types.js';
 import {
   type CampaignRulesPackResolver,
   lookupCampaignRecord,
 } from './campaignRecordLookup.js';
+import type { ZeroHpRule } from './combatantLifecycle.js';
 import { addCondition, removeCondition } from './domainMutations.js';
 import {
   EncounterCombatantError,
   ensureCampaignActorFromCombatant,
   getActiveCombatInstance,
   getCampaignActor,
-  readCombatant,
+  removeCampaignActorFromPlay,
+  removeCombatantFromPlay,
+  setCombatantZeroHpRule,
   updateCampaignActor,
   updateCombatant,
 } from './encounterCombatants.js';
@@ -193,6 +197,11 @@ export interface EffectActorLinkInput {
   readonly campaignActorId?: string;
   readonly cleanupOnEnd?: EffectCleanupPolicy;
   readonly cleanupOnBreak?: EffectCleanupPolicy;
+  /** What the creature's own rules say happens at 0 hit points. Derived from
+   *  the spell record for spell-sourced effects; declare 'vanish' for a
+   *  ruling-sourced creature that disappears (e.g. Find Familiar, Find
+   *  Steed). A declaration that contradicts the record is refused. */
+  readonly atZeroHitPoints?: 'vanish';
 }
 
 export interface EffectZoneProjectionInput {
@@ -303,9 +312,11 @@ export interface EffectCleanupAction {
   readonly linkKind: EffectLinkKind;
   readonly target: EffectTargetInput;
   readonly projectionRef: string;
-  /** 'removed' = projection deleted; 'released' = ownership dropped, state
-   *  left in place; 'missing' = the projection's holder no longer exists /
-   *  is unreachable, so only the link record was closed. */
+  /** 'removed' = projection deleted (an owned creature is taken out of play,
+   *  status absent); 'released' = ownership dropped, state left in place
+   *  (only ever from a stored 'release' policy); 'missing' = the projection's
+   *  holder no longer exists / is unreachable, so only the link record was
+   *  closed. */
   readonly action: 'removed' | 'released' | 'missing';
 }
 
@@ -1729,12 +1740,21 @@ function requireParticipant(
         `${label} references unknown campaign actor '${participant.ref}'`,
       );
     }
+    if (getCampaignActor(db, campaignId, participant.ref)?.status === 'absent')
+      throw new ActiveEffectError(
+        `${label} references campaign actor '${participant.ref}', which is absent (out of play)`,
+      );
     return;
   }
   const row = readCombatantParticipant(db, campaignId, participant.ref);
   if (row === undefined) {
     throw new ActiveEffectError(
       `${label} references unknown combatant '${participant.ref}'`,
+    );
+  }
+  if (row.status === 'absent') {
+    throw new ActiveEffectError(
+      `${label} references combatant '${participant.ref}', which is absent (out of play)`,
     );
   }
   if (row.instance_status !== 'active') {
@@ -1907,7 +1927,8 @@ function requireConcentrationCapableOwner(
       (row.hp_current === 0 ||
         row.status === 'dead' ||
         row.status === 'unconscious' ||
-        row.status === 'inactive')
+        row.status === 'inactive' ||
+        row.status === 'absent')
     ) {
       // 'inactive' means removed from active play (audit §7); 'escaped' is
       // documented as still capable while the instance stays active.
@@ -2334,7 +2355,7 @@ function removeProjection(
   campaignId: string,
   link: EffectLinkRow,
   ctx: EffectMutationContext,
-): 'removed' | 'released' | 'missing' {
+): 'removed' | 'missing' {
   if (link.link_kind === 'condition') {
     if (link.target_kind === 'character') {
       try {
@@ -2384,46 +2405,22 @@ function removeProjection(
     }
   }
   if (link.link_kind === 'actor') {
-    if (link.target_kind === 'campaign_actor') {
-      try {
-        updateCampaignActor(db, {
-          campaignId,
-          actorId: link.target_ref,
-          status: 'inactive',
-          ...ctx,
-        });
-        return 'removed';
-      } catch (e) {
-        if (e instanceof EncounterCombatantError) return 'missing';
-        throw e;
-      }
-    }
-    // A dead summon is already out of play, and a dying or stable
-    // player-character-rules summon stays a participant (it cannot be made
-    // inactive at 0 HP): ownership is released and its state left in place,
-    // never misreported as missing (S42).
-    const summoned = readCombatant(db, campaignId, link.projection_ref);
-    if (
-      summoned !== undefined &&
-      (summoned.status === 'dead' ||
-        summoned.status === 'dying' ||
-        summoned.status === 'stable')
-    )
-      return 'released';
-    try {
-      updateCombatant(db, {
+    // F3 remove takes an owned creature out of play through the engine seam
+    // (status absent): 'removed' unless the holder is truly unreachable.
+    // A dying or stable creature is unreachable by the start_effect and
+    // update_combatant guards; the seam raises an invariant error for it,
+    // which propagates rather than being translated into another action.
+    if (link.target_kind === 'campaign_actor')
+      return removeCampaignActorFromPlay(db, {
         campaignId,
-        combatantId: link.projection_ref,
-        status: 'inactive',
+        actorId: link.target_ref,
         ...ctx,
       });
-      return 'removed';
-    } catch (e) {
-      if (e instanceof EncounterCombatantError) {
-        return 'missing';
-      }
-      throw e;
-    }
+    return removeCombatantFromPlay(db, {
+      campaignId,
+      combatantId: link.projection_ref,
+      ...ctx,
+    });
   }
   if (link.link_kind === 'zone') {
     return db
@@ -2471,7 +2468,7 @@ interface FinalizeEndOutcome {
  * `performed: false` and must not report the transition as theirs.
  *
  * The claim happens FIRST, cleanup second (invariant 12): cleanup can
- * cascade — removing an owned actor sets it inactive, which breaks that
+ * cascade — removing an owned actor takes it out of play (absent), which breaks that
  * actor's own concentration, whose cleanup can cascade further. Every nested
  * break re-derives liveness from the durable row, so re-entry onto this
  * effect is a no-op: no double-end, no duplicate terminal event, no infinite
@@ -2545,6 +2542,283 @@ function finalizeEnd(
 }
 
 // ---------------------------------------------------------------------------
+// Spell-record derivation for owned creatures (0-HP rule, cleanup policies)
+// ---------------------------------------------------------------------------
+
+interface RecordTransition {
+  readonly effectKind: string | undefined;
+  readonly id: string;
+  readonly trigger: string;
+  readonly changes: readonly { axis: string; to: string }[];
+}
+
+function recordTransitions(record: RulesRecord): RecordTransition[] {
+  const mechanics = (record.data as Record<string, unknown> | undefined)
+    ?.mechanics;
+  const effects =
+    typeof mechanics === 'object' && mechanics !== null
+      ? (mechanics as Record<string, unknown>).effects
+      : undefined;
+  const out: RecordTransition[] = [];
+  if (!Array.isArray(effects)) return out;
+  for (const effect of effects) {
+    if (typeof effect !== 'object' || effect === null) continue;
+    const e = effect as Record<string, unknown>;
+    if (!Array.isArray(e.transitions)) continue;
+    for (const raw of e.transitions) {
+      if (typeof raw !== 'object' || raw === null) continue;
+      const t = raw as Record<string, unknown>;
+      if (typeof t.trigger !== 'string') continue;
+      out.push({
+        effectKind: typeof e.kind === 'string' ? e.kind : undefined,
+        id: typeof t.id === 'string' ? t.id : t.trigger,
+        trigger: t.trigger,
+        changes: Array.isArray(t.changes)
+          ? t.changes.filter(
+              (c): c is { axis: string; to: string } =>
+                typeof c === 'object' &&
+                c !== null &&
+                typeof (c as Record<string, unknown>).axis === 'string' &&
+                typeof (c as Record<string, unknown>).to === 'string',
+            )
+          : [],
+      });
+    }
+  }
+  return out;
+}
+
+function changesTo(
+  transition: RecordTransition,
+  axis: string,
+  to: string,
+): boolean {
+  return transition.changes.some((c) => c.axis === axis && c.to === to);
+}
+
+/** The creature's 0-hit-point rule, read from the spell record: a transition
+ *  on 'zero-hit-points' that removes presence or destroys the creature means
+ *  it disappears ('vanish'); one that restores the original form means it
+ *  reverts ('revert'). */
+function deriveZeroHpRule(record: RulesRecord): ZeroHpRule | null {
+  let vanish: RecordTransition | undefined;
+  let revert: RecordTransition | undefined;
+  for (const t of recordTransitions(record)) {
+    if (t.trigger !== 'zero-hit-points') continue;
+    if (
+      changesTo(t, 'presence', 'absent') ||
+      changesTo(t, 'integrity', 'destroyed')
+    )
+      vanish ??= t;
+    else if (changesTo(t, 'form', 'original')) revert ??= t;
+  }
+  if (vanish !== undefined && revert !== undefined)
+    throw new ActiveEffectError(
+      `'${record.name}' record declares both a vanishing and a reverting 0-hit-point transition; its zero-hit-point rule is ambiguous`,
+    );
+  return vanish !== undefined
+    ? 'vanish'
+    : revert !== undefined
+      ? 'revert'
+      : null;
+}
+
+interface DerivedSummonCleanup {
+  readonly onEnd?: { policy: EffectCleanupPolicy; because: string };
+  readonly onBreak?: { policy: EffectCleanupPolicy; because: string };
+}
+
+/** Cleanup policies the spell record dictates for a presence-family summon:
+ *  spell end removes the creature; a broken concentration either keeps it
+ *  (Conjure Elemental/Fey: control -> uncontrolled) or removes it. */
+function deriveSummonCleanup(
+  record: RulesRecord,
+  concentrationRequired: boolean,
+): DerivedSummonCleanup {
+  const transitions = recordTransitions(record).filter(
+    (t) => t.effectKind === 'summoning',
+  );
+  const spellEnd = transitions.find(
+    (t) => t.trigger === 'spell-ended' && changesTo(t, 'presence', 'absent'),
+  );
+  const brokenKeepsPresence = transitions.find(
+    (t) =>
+      t.trigger === 'concentration-broken' &&
+      !t.changes.some((c) => c.axis === 'presence'),
+  );
+  const out: {
+    onEnd?: { policy: EffectCleanupPolicy; because: string };
+    onBreak?: { policy: EffectCleanupPolicy; because: string };
+  } = {};
+  if (spellEnd !== undefined)
+    out.onEnd = {
+      policy: 'remove',
+      because: `'${record.name}' transition '${spellEnd.id}' (spell-ended) removes the creature`,
+    };
+  if (brokenKeepsPresence !== undefined)
+    out.onBreak = {
+      policy: 'release',
+      because: `'${record.name}' transition '${brokenKeepsPresence.id}' (concentration-broken) leaves the creature present but uncontrolled`,
+    };
+  else if (spellEnd !== undefined && concentrationRequired)
+    out.onBreak = {
+      policy: 'remove',
+      because: `'${record.name}' requires concentration and its spell-ended transition '${spellEnd.id}' removes the creature when the spell ends`,
+    };
+  return out;
+}
+
+/** An active actor link whose cleanup policy removes the creature, held by
+ *  this combatant or its durable campaign actor. */
+export function findRemovePolicyActorLink(
+  db: Db,
+  campaignId: string,
+  holder: { combatantId?: string; actorId?: string },
+): { effectId: string } | undefined {
+  const match = activeActorLinkMatcher(holder);
+  const effectIds = db
+    .prepare(
+      `SELECT DISTINCT effect_id FROM active_effect_link
+       WHERE campaign_id = ? AND link_kind = 'actor' AND status = 'active'
+         AND (cleanup_on_end = 'remove' OR cleanup_on_break = 'remove')`,
+    )
+    .all(campaignId) as { effect_id: string }[];
+  for (const { effect_id } of effectIds) {
+    const link = readLinkRows(db, campaignId, effect_id).find(
+      (candidate) =>
+        candidate.link_kind === 'actor' &&
+        candidate.status === 'active' &&
+        (candidate.cleanup_on_end === 'remove' ||
+          candidate.cleanup_on_break === 'remove') &&
+        match(candidate),
+    );
+    if (link !== undefined) return { effectId: effect_id };
+  }
+  return undefined;
+}
+
+function activeActorLinkMatcher(holder: {
+  combatantId?: string;
+  actorId?: string;
+}): (link: EffectLinkRow) => boolean {
+  return (link) =>
+    (link.target_kind === 'combatant' &&
+      holder.combatantId !== undefined &&
+      link.projection_ref === holder.combatantId) ||
+    (holder.actorId !== undefined &&
+      (link.campaign_actor_id === holder.actorId ||
+        (link.target_kind === 'campaign_actor' &&
+          link.target_ref === holder.actorId)));
+}
+
+/**
+ * A creature whose own rules say it disappears at 0 hit points just did:
+ * close its active actor link (status 'removed', reason zero-hit-points) and,
+ * when that was the effect's last owned creature, end the effect through the
+ * normal F3 end path with reason 'source-removed'. Runs inside the caller's
+ * transaction. Returns the affected effect id (null when the creature held
+ * no active link, e.g. after an instance-only release).
+ */
+export function closeActorLinkAtZeroHp(
+  db: Db,
+  campaignId: string,
+  holder: { combatantId?: string; actorId?: string },
+  ctx: EffectMutationContext,
+): { effectId: string | null; effectEnded: boolean } {
+  const match = activeActorLinkMatcher(holder);
+  const effectIds = db
+    .prepare(
+      `SELECT DISTINCT effect_id FROM active_effect_link
+       WHERE campaign_id = ? AND link_kind = 'actor' AND status = 'active'
+       ORDER BY effect_id`,
+    )
+    .all(campaignId) as { effect_id: string }[];
+  for (const { effect_id } of effectIds) {
+    const link = readLinkRows(db, campaignId, effect_id).find(
+      (candidate) =>
+        candidate.link_kind === 'actor' &&
+        candidate.status === 'active' &&
+        match(candidate),
+    );
+    if (link === undefined) continue;
+    db.prepare(
+      `UPDATE active_effect_link
+       SET status = 'removed', removed_reason = 'zero-hit-points', removed_at = ?,
+           provenance = ?, session_id = ?, updated_at = ?
+       WHERE campaign_id = ? AND effect_id = ? AND link_kind = ?
+         AND target_kind = ? AND target_ref = ? AND projection_ref = ?`,
+    ).run(
+      ctx.at,
+      ctx.provenance,
+      ctx.sessionId,
+      ctx.at,
+      campaignId,
+      effect_id,
+      link.link_kind,
+      link.target_kind,
+      link.target_ref,
+      link.projection_ref,
+    );
+    db.prepare(
+      `UPDATE active_effect_target
+       SET status = 'removed', removed_reason = 'zero-hit-points',
+           removed_at = ?, provenance = ?, session_id = ?, updated_at = ?
+       WHERE campaign_id = ? AND effect_id = ? AND status = 'active'
+         AND target_kind = ? AND target_ref = ?`,
+    ).run(
+      ctx.at,
+      ctx.provenance,
+      ctx.sessionId,
+      ctx.at,
+      campaignId,
+      effect_id,
+      link.target_kind,
+      link.target_ref,
+    );
+    const effect = readEffectRow(db, campaignId, effect_id);
+    if (effect === undefined || effect.status === 'ended')
+      return { effectId: effect_id, effectEnded: false };
+    appendEvent(
+      db,
+      campaignId,
+      effect_id,
+      'target-removed',
+      {
+        target: { kind: link.target_kind, ref: link.target_ref },
+        reason: 'zero-hit-points',
+        cleanup: [
+          {
+            linkKind: link.link_kind,
+            targetKind: link.target_kind,
+            targetRef: link.target_ref,
+            projectionRef: link.projection_ref,
+            action: 'removed',
+          },
+        ],
+      },
+      ctx,
+    );
+    const ownsMore = readLinkRows(db, campaignId, effect_id).some(
+      (candidate) =>
+        candidate.link_kind === 'actor' && candidate.status === 'active',
+    );
+    if (ownsMore) return { effectId: effect_id, effectEnded: false };
+    const outcome = finalizeEnd(
+      db,
+      effect,
+      {
+        reason: 'source-removed',
+        detail: 'zero-hit-points',
+        note: `its last owned creature '${link.projection_ref}' dropped to 0 hit points and disappeared`,
+      },
+      ctx,
+    );
+    return { effectId: effect_id, effectEnded: outcome.performed };
+  }
+  return { effectId: null, effectEnded: false };
+}
+
+// ---------------------------------------------------------------------------
 // createActiveEffect
 // ---------------------------------------------------------------------------
 
@@ -2579,6 +2853,7 @@ export function createActiveEffect(
     }
     let concentrationRule: 'required' | 'forbidden' | 'declared' = 'declared';
     let recordDuration: ParsedSpellDurationForm | undefined;
+    let spellRecord: RulesRecord | undefined;
     if (input.source.kind === 'spell') {
       const ref = requireNonEmptyString(
         input.source.ref,
@@ -2596,6 +2871,7 @@ export function createActiveEffect(
             "find the exact key via lookup_rules, or use source kind 'ruling' for homebrew",
         );
       }
+      spellRecord = record;
       const data = record.data as Record<string, unknown>;
       if (typeof data.duration === 'string') {
         const parsed = parseSpellDurationText(data.duration);
@@ -2869,6 +3145,16 @@ export function createActiveEffect(
     }
     const seenActors = new Set<string>();
     const actorDurableIds = new Map<string, string>();
+    const actorPolicies = new Map<
+      string,
+      { onEnd: EffectCleanupPolicy; onBreak: EffectCleanupPolicy }
+    >();
+    const derivedZeroHpRule =
+      spellRecord === undefined ? null : deriveZeroHpRule(spellRecord);
+    const derivedCleanup: DerivedSummonCleanup =
+      spellRecord === undefined || input.kind !== 'summoning'
+        ? {}
+        : deriveSummonCleanup(spellRecord, concentrationRule === 'required');
     for (const actor of actors) {
       requireNonEmptyString(actor.combatantId, 'linked actor combatantId');
       if (seenActors.has(actor.combatantId)) {
@@ -2885,7 +3171,9 @@ export function createActiveEffect(
       );
       const combatant = txnDb
         .prepare(
-          `SELECT identity_kind, identity_ref, rules_ref FROM encounter_combatant
+          `SELECT identity_kind, identity_ref, rules_ref, death_rules,
+                  zero_hp_rule, hp_current, status
+         FROM encounter_combatant
          WHERE campaign_id = ? AND combatant_id = ?`,
         )
         .get(input.campaignId, actor.combatantId) as
@@ -2893,8 +3181,104 @@ export function createActiveEffect(
             identity_kind: string;
             identity_ref: string | null;
             rules_ref: string;
+            death_rules: string;
+            zero_hp_rule: ZeroHpRule | null;
+            hp_current: number;
+            status: string;
           }
         | undefined;
+      // Owned-creature rules: the 0-hit-point rule and cleanup policies are
+      // derived from the spell record; declarations may not contradict it.
+      if (
+        actor.atZeroHitPoints !== undefined &&
+        actor.atZeroHitPoints !== 'vanish'
+      )
+        throw new ActiveEffectError(
+          "atZeroHitPoints must be 'vanish' when declared",
+        );
+      if (
+        derivedZeroHpRule !== null &&
+        actor.atZeroHitPoints !== undefined &&
+        (derivedZeroHpRule as ZeroHpRule) !== actor.atZeroHitPoints
+      )
+        throw new ActiveEffectError(
+          `'${spellRecord?.name}' record says its creature ${
+            derivedZeroHpRule === 'vanish'
+              ? 'disappears'
+              : 'returns to its original form'
+          } at 0 hit points; atZeroHitPoints '${actor.atZeroHitPoints}' contradicts it`,
+        );
+      const declaredZeroHpRule: ZeroHpRule | null =
+        derivedZeroHpRule ?? actor.atZeroHitPoints ?? null;
+      if (
+        declaredZeroHpRule !== null &&
+        combatant?.zero_hp_rule != null &&
+        combatant.zero_hp_rule !== declaredZeroHpRule
+      )
+        throw new ActiveEffectError(
+          `combatant '${actor.combatantId}' already has the 0-hit-point rule '${combatant.zero_hp_rule}', which contradicts '${declaredZeroHpRule}'`,
+        );
+      const effectiveZeroHpRule: ZeroHpRule | null =
+        declaredZeroHpRule ?? combatant?.zero_hp_rule ?? null;
+      let onEnd = actor.cleanupOnEnd;
+      let onBreak = actor.cleanupOnBreak;
+      if (derivedCleanup.onEnd !== undefined) {
+        if (onEnd !== undefined && onEnd !== derivedCleanup.onEnd.policy)
+          throw new ActiveEffectError(
+            `cleanupOnEnd '${onEnd}' contradicts the spell record: ${derivedCleanup.onEnd.because}; it must be '${derivedCleanup.onEnd.policy}'`,
+          );
+        onEnd = derivedCleanup.onEnd.policy;
+      }
+      if (derivedCleanup.onBreak !== undefined) {
+        if (onBreak !== undefined && onBreak !== derivedCleanup.onBreak.policy)
+          throw new ActiveEffectError(
+            `cleanupOnBreak '${onBreak}' contradicts the spell record: ${derivedCleanup.onBreak.because}; it must be '${derivedCleanup.onBreak.policy}'`,
+          );
+        onBreak = derivedCleanup.onBreak.policy;
+      }
+      const policies = {
+        onEnd: onEnd ?? 'remove',
+        onBreak: onBreak ?? 'remove',
+      };
+      actorPolicies.set(actor.combatantId, policies);
+      if (
+        combatant?.death_rules === 'player-character' &&
+        (effectiveZeroHpRule !== null ||
+          policies.onEnd === 'remove' ||
+          policies.onBreak === 'remove')
+      )
+        throw new ActiveEffectError(
+          `combatant '${actor.combatantId}' already uses player-character death rules, so it can be dying or stable and could not be taken out of play: ${
+            effectiveZeroHpRule !== null
+              ? `its spell says it ${
+                  effectiveZeroHpRule === 'vanish'
+                    ? 'disappears'
+                    : 'returns to its original form'
+                } at 0 hit points`
+              : "a 'remove' cleanup policy needs to be able to take it out of play"
+          }`,
+        );
+      if (
+        effectiveZeroHpRule === 'vanish' &&
+        combatant !== undefined &&
+        combatant.hp_current === 0 &&
+        combatant.status !== 'dead'
+      )
+        throw new ActiveEffectError(
+          `combatant '${actor.combatantId}' is already at 0 hit points, where a creature that disappears at 0 hit points would already be gone; it cannot be linked`,
+        );
+      if (
+        effectiveZeroHpRule !== null &&
+        combatant?.zero_hp_rule !== effectiveZeroHpRule
+      )
+        setCombatantZeroHpRule(txnDb, {
+          campaignId: input.campaignId,
+          combatantId: actor.combatantId,
+          rule: effectiveZeroHpRule,
+          provenance: input.provenance,
+          sessionId: input.sessionId,
+          at: input.at,
+        });
       const durableId =
         actor.campaignActorId ??
         (combatant?.identity_kind === 'campaign_actor'
@@ -3234,8 +3618,8 @@ export function createActiveEffect(
         actor.combatantId,
         actor.combatantId,
         actorDurableIds.get(actor.combatantId) ?? null,
-        actor.cleanupOnEnd ?? 'remove',
-        actor.cleanupOnBreak ?? 'remove',
+        actorPolicies.get(actor.combatantId)?.onEnd ?? 'remove',
+        actorPolicies.get(actor.combatantId)?.onBreak ?? 'remove',
         input.provenance,
         input.sessionId,
         input.at,
