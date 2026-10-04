@@ -158,7 +158,9 @@ export const startEffectTool: Tool = {
           'creature becomes absent, out of play); a record that leaves a ' +
           'creature present but uncontrolled when concentration breaks ' +
           '(Conjure Elemental, Conjure Fey) requires cleanupOnBreak ' +
-          '"release", otherwise a concentration spell removes it. Omit ' +
+          '"release": on that break the creature moves to the successor ' +
+          'effect "<id>:uncontrolled" (not dismissible, no concentration), ' +
+          'which removes it 1 hour after it was summoned; otherwise a concentration spell removes it. Omit ' +
           "both policies to take the record's values; a contradicting " +
           'policy is refused with the record text. "remove" takes the ' +
           'creature out of play (status absent), never leaves it dying or ' +
