@@ -1488,9 +1488,9 @@ describe('cleanup ownership', () => {
     expect(b?.links[0]?.status).toBe('active');
   });
 
-  it('release-on-break keeps the summoned actor while ordinary end removes it (Conjure Elemental)', () => {
+  it('release-on-break keeps the summoned actor under an uncontrolled successor while ordinary end removes it (Conjure Elemental)', () => {
     const { db, pcId } = setupCombat();
-    const summon = (effectId: string) =>
+    const summon = (effectId: string, creature = GOBLIN_1) =>
       createActiveEffect(db, {
         campaignId: CAMPAIGN,
         effectId,
@@ -1510,7 +1510,7 @@ describe('cleanup ownership', () => {
         },
         actors: [
           {
-            combatantId: GOBLIN_1,
+            combatantId: creature,
             cleanupOnEnd: 'remove',
             cleanupOnBreak: 'release',
           },
@@ -1530,8 +1530,15 @@ describe('cleanup ownership', () => {
     expect(broken.cleanup.links[0]?.action).toBe('released');
     expect(combatantState(db, GOBLIN_1).status).toBe('alive');
 
-    // The released entity can be owned by a new effect; ordinary end removes it.
-    summon('fx-elemental-2');
+    // The uncontrolled creature is owned by the successor effect (it
+    // disappears 1 hour after it was summoned), so no new effect can claim it.
+    expect(broken.cleanup.successorEffectId).toBe(
+      'fx-elemental-1:uncontrolled',
+    );
+    expect(() => summon('fx-elemental-2')).toThrow(/already owned by effect/);
+
+    // Another creature's ordinary end still removes it.
+    summon('fx-elemental-2', GOBLIN_2);
     const dispelled = endActiveEffect(db, {
       campaignId: CAMPAIGN,
       effectId: 'fx-elemental-2',
@@ -1539,7 +1546,8 @@ describe('cleanup ownership', () => {
       ...CTX,
     });
     expect(dispelled.cleanup.links[0]?.action).toBe('removed');
-    expect(combatantState(db, GOBLIN_1).status).toBe('absent');
+    expect(combatantState(db, GOBLIN_2).status).toBe('absent');
+    expect(combatantState(db, GOBLIN_1).status).toBe('alive');
   });
 
   it('refuses linking an actor another live effect already owns', () => {

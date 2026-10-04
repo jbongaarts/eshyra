@@ -15,7 +15,12 @@ export const endEffectTool: Tool = {
     'of play (status absent; reported "removed"); under "release" it stays ' +
     'in play, unowned (reported "released"); under "revert" (Giant ' +
     'Insect) it returns to the natural form recorded when it was ' +
-    'transformed and stays in play (reported "reverted"). Reasons: "expired" (natural duration end; an ' +
+    'transformed and stays in play (reported "reverted"). A broken ' +
+    'concentration on Conjure Elemental or Conjure Fey leaves the creature ' +
+    'present (reported "released"), uncontrolled and hostile under the ' +
+    'successor effect "<id>:uncontrolled" (reported as cleanup.' +
+    'successorEffectId), which removes it 1 hour after it was summoned and ' +
+    'which the caster cannot dismiss. Reasons: "expired" (natural duration end; an ' +
     'until-trigger effect needs its trigger named; a round timer still in ' +
     'combat cannot expire early), "dismissed" (requires a dismissible ' +
     'effect), "concentration-broken" with detail "voluntary" or "forced" ' +

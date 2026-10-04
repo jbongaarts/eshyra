@@ -59,13 +59,17 @@ provenance/session/updated-at like every other live-state table:
   forms. Each link carries two
   cleanup policies (`cleanup_on_end`, `cleanup_on_break`) so normal spell end
   and concentration break can differ (the Conjure Elemental distinction: break
-  releases the elemental, ordinary end removes it). The policies are `remove`,
+  releases the elemental, ordinary end removes it; a released elemental or fey
+  creature moves to the successor effect `<id>:uncontrolled`, which removes it
+  1 hour after it was summoned, see §9). The policies are `remove`,
   `release`, and `revert` (migration 0040: legal only on an actor link that
   carries a natural form, `natural_form_json`; see §8 and §9).
 - **`active_effect_event`** — append-only per-effect audit ledger
   (`seq` starting at 1) with a typed, validated `detail_json` per event kind:
   `created`, `refreshed`, `suppressed`, `unsuppressed`, `concentration-check`,
-  `target-removed`, `ended`.
+  `target-removed`, `ended`. An `ended` event records `successorEffectId` when
+  the end started an uncontrolled successor; that successor's `created` event
+  records `predecessorEffectId` and the record's `recordTransitionId`.
 
 ### Effect kinds are semantic licenses
 
@@ -430,7 +434,42 @@ creates a new familiar).
   presence alone (Conjure Elemental/Fey, control -> uncontrolled) requires
   `cleanupOnBreak 'release'`; otherwise a concentration spell whose
   spell-ended transition removes presence requires `cleanupOnBreak 'remove'`.
-  Omitted policies take those values. The 0-HP rule is a durable creature
+  Omitted policies take those values.
+  **Uncontrolled successor (Conjure Elemental/Fey).** SRD: after a broken
+  concentration "the elemental doesn't disappear. Instead, you lose control of
+  the elemental, it becomes hostile toward you and your companions ... An
+  uncontrolled elemental can't be dismissed by you, and it disappears 1 hour
+  after you summoned it." The concentration effect still ends terminally
+  (`concentration-broken`, links `released`). When the spell record has a
+  `summoning` transition triggered by `absolute-time-reached` that removes
+  presence, applies only to an `uncontrolled` creature, and carries a timer
+  (derived from the transitions, never from spell names), `finalizeEnd` creates
+  in the same transaction one successor effect `<original id>:uncontrolled`
+  (creation fails if that id exists; no other id is invented): kind
+  `summoning`, display name `<original> (uncontrolled)`, the same spell source
+  and source actor, no concentration, not dismissible, an active actor link
+  per released creature with `remove`/`remove` cleanup (and a target entry when
+  the creature was a target), and the original's timed duration copied
+  verbatim, including anchor kind, `anchor_at`, `anchor_game_time`,
+  `anchor_elapsed_minutes` and `deadline_elapsed_minutes`. The deadline is
+  therefore 1 hour after the summoning, never 1 hour after the break. The
+  original's anchor must mark the moment of summoning (`spell-cast`, or
+  `effect-created`, since the effect is created at that casting), and its
+  duration must equal the record timer's amount and unit. `createActiveEffect`
+  refuses any other anchor for such a spell, so the break (which must never
+  fail and roll back the write that caused it) always has a deadline to copy;
+  the break-time check only guards corrupt rows. Everything else follows from the
+  ordinary machinery: world-time advance expires the successor at its deadline
+  (`expired`) and its `remove` cleanup makes the creature absent; the creature
+  still vanishes at 0 HP (the successor ends `source-removed`); `dismissed` is
+  refused; `dispelled` and `ruled` work; the caster, holding no concentration
+  for it, may concentrate on another spell. Every break route produces it
+  (failed damage save, incapacitation/death, new-concentration replacement,
+  voluntary or forced break, owner removal at combat closure; at closure a
+  creature with a durable campaign-actor identity has the successor link
+  rebound to it like any owned actor, an instance-only creature is released).
+  Break results report it as `cleanup.successorEffectId`. Spells whose break
+  transition removes presence (Conjure Animals) get no successor. The 0-HP rule is a durable creature
   property (`zero_hp_rule`, mirrored into the actor's `combatLifecycle`),
   derived from the record's `zero-hit-points` transition or declared as
   `atZeroHitPoints` for a ruling-sourced creature (Find Familiar and Find

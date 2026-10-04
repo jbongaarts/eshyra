@@ -351,6 +351,11 @@ export interface EffectCleanupAction {
 export interface EffectCleanupSummary {
   readonly links: readonly EffectCleanupAction[];
   readonly targetsRemoved: number;
+  /** Set when a concentration break released an owned creature whose spell
+   *  record removes it one hour after casting once uncontrolled (Conjure
+   *  Elemental, Conjure Fey): the id of the non-concentration, non-dismissible
+   *  successor effect that now owns it and carries the cast-anchored deadline. */
+  readonly successorEffectId?: string;
 }
 
 export interface CreateActiveEffectResult {
@@ -2675,7 +2680,9 @@ function finalizeEnd(
   if (claim.changes === 0) {
     return { performed: false, cleanup: { links: [], targetsRemoved: 0 } };
   }
-  const cleanup = cleanupOwnedState(
+  const priorTargets =
+    mode === 'break' ? readTargetRows(db, row.campaign_id, row.effect_id) : [];
+  const baseCleanup = cleanupOwnedState(
     db,
     row.campaign_id,
     row.effect_id,
@@ -2683,6 +2690,14 @@ function finalizeEnd(
     reasonLabel,
     ctx,
   );
+  const successorEffectId =
+    mode === 'break'
+      ? createUncontrolledSuccessor(db, row, priorTargets, reasonLabel, ctx)
+      : undefined;
+  const cleanup: EffectCleanupSummary =
+    successorEffectId === undefined
+      ? baseCleanup
+      : { ...baseCleanup, successorEffectId };
   appendEvent(
     db,
     row.campaign_id,
@@ -2693,6 +2708,7 @@ function finalizeEnd(
       ...(input.detail === undefined ? {} : { detail: input.detail }),
       ...(input.note === undefined ? {} : { note: input.note }),
       ...(input.trigger === undefined ? {} : { trigger: input.trigger }),
+      ...(successorEffectId === undefined ? {} : { successorEffectId }),
       cleanup: {
         links: cleanup.links.map((action) => ({
           linkKind: action.linkKind,
@@ -2709,6 +2725,226 @@ function finalizeEnd(
   return { performed: true, cleanup };
 }
 
+/** The record transition that removes an uncontrolled summoned creature at an
+ *  absolute time after casting (Conjure Elemental, Conjure Fey): trigger
+ *  'absolute-time-reached' that removes presence, applying only when the
+ *  creature is 'uncontrolled', with a cast-anchored timer. Derived from the
+ *  record's transitions, never from spell names. */
+/** Anchors that mark the moment a creature was summoned: the record's
+ *  'spell-cast' anchor, or the effect's own creation, which happens at that
+ *  casting. createActiveEffect admits only these for a cast-anchored removal,
+ *  so the successor created at a concentration break can always copy the
+ *  deadline. */
+const SUMMONING_MOMENT_ANCHORS: readonly string[] = [
+  'spell-cast',
+  'effect-created',
+];
+
+function deriveUncontrolledRemoval(
+  record: RulesRecord,
+): { id: string; amount: number; unit: string; anchor: string } | undefined {
+  for (const t of recordTransitions(record)) {
+    if (
+      t.effectKind === 'summoning' &&
+      t.trigger === 'absolute-time-reached' &&
+      changesTo(t, 'presence', 'absent') &&
+      t.whenControl.length === 1 &&
+      t.whenControl[0] === 'uncontrolled' &&
+      t.timer !== undefined
+    )
+      return { id: t.id, ...t.timer };
+  }
+  return undefined;
+}
+
+/**
+ * A broken concentration released an owned creature whose spell record says
+ * that, once uncontrolled, it disappears a fixed time after the spell was
+ * cast. The terminal end of the concentration effect is unchanged; in the same
+ * transaction the released creatures move to one successor effect
+ * `<id>:uncontrolled`: no concentration, not dismissible ("An uncontrolled
+ * elemental can't be dismissed by you"), the original cast anchor and
+ * deadline copied verbatim (the removal is anchored to the casting, never to
+ * the break), and 'remove' cleanup so the ordinary world-time expiry takes the
+ * creature out of play. Returns the successor id, or undefined when the spell
+ * has no such transition or no creature was released.
+ */
+function createUncontrolledSuccessor(
+  db: Db,
+  snapshot: ActiveEffectRow,
+  priorTargets: readonly EffectTargetRow[],
+  reasonLabel: string,
+  ctx: EffectMutationContext,
+): string | undefined {
+  // Anchor evidence comes from the durable row, never the caller's snapshot.
+  const original =
+    readEffectRow(db, snapshot.campaign_id, snapshot.effect_id) ?? snapshot;
+  if (original.source_kind !== 'spell' || original.source_ref === null)
+    return undefined;
+  const released = readLinkRows(
+    db,
+    original.campaign_id,
+    original.effect_id,
+  ).filter(
+    (link) =>
+      link.link_kind === 'actor' &&
+      link.status === 'released' &&
+      link.removed_reason === reasonLabel,
+  );
+  if (released.length === 0) return undefined;
+  const record = lookupCampaignRecord(
+    db,
+    'spell',
+    original.source_ref,
+    ctx.resolveRulesPack,
+  );
+  if (record === undefined) return undefined;
+  const removal = deriveUncontrolledRemoval(record);
+  if (removal === undefined) return undefined;
+  const successorId = `${original.effect_id}:uncontrolled`;
+  if (readEffectRow(db, original.campaign_id, successorId) !== undefined)
+    throw new ActiveEffectError(
+      `cannot create the uncontrolled successor '${successorId}' of effect '${original.effect_id}': an effect with that id already exists`,
+    );
+  if (
+    original.duration_kind !== 'timed' ||
+    original.duration_amount !== removal.amount ||
+    original.duration_unit !== removal.unit ||
+    original.anchor_kind === null ||
+    !SUMMONING_MOMENT_ANCHORS.includes(original.anchor_kind) ||
+    original.anchor_elapsed_minutes === null ||
+    original.deadline_elapsed_minutes === null ||
+    original.anchor_at === null
+  )
+    throw new ActiveEffectError(
+      `cannot create the uncontrolled successor of effect '${original.effect_id}': '${record.name}' transition '${removal.id}' removes the creature ${removal.amount} ${removal.unit}(s) after '${removal.anchor}', so the effect must be a ${removal.amount}-${removal.unit} timer anchored to '${removal.anchor}' with elapsed-world anchor evidence; it is ${original.duration_kind} ${original.duration_amount ?? ''} ${original.duration_unit ?? ''} anchored to '${original.anchor_kind ?? 'none'}' (elapsed evidence ${original.anchor_elapsed_minutes === null ? 'missing' : 'present'}); the engine will not guess the deadline`,
+    );
+  const displayName = `${original.display_name} (uncontrolled)`;
+  db.prepare(
+    `INSERT INTO active_effect(
+       campaign_id, effect_id, kind, display_name, source_kind,
+       source_ref, source_actor_kind, source_actor_ref,
+       requires_concentration, concentration_owner_kind,
+       concentration_owner_ref, duration_kind, duration_amount,
+       duration_unit, anchor_kind, anchor_at, anchor_game_time,
+       anchor_elapsed_minutes, deadline_elapsed_minutes,
+       dismissible, status, created_at, provenance, session_id, updated_at
+     )
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 'timed', ?, ?, ?, ?, ?,
+             ?, ?, 0, 'active', ?, ?, ?, ?)`,
+  ).run(
+    original.campaign_id,
+    successorId,
+    original.kind,
+    displayName,
+    original.source_kind,
+    original.source_ref,
+    original.source_actor_kind,
+    original.source_actor_ref,
+    original.duration_amount,
+    original.duration_unit,
+    original.anchor_kind,
+    original.anchor_at,
+    original.anchor_game_time,
+    original.anchor_elapsed_minutes,
+    original.deadline_elapsed_minutes,
+    ctx.at,
+    ctx.provenance,
+    ctx.sessionId,
+    ctx.at,
+  );
+  const insertTarget = db.prepare(
+    `INSERT INTO active_effect_target(
+       campaign_id, effect_id, target_kind, target_ref, status,
+       provenance, session_id, updated_at
+     )
+     VALUES (?, ?, ?, ?, 'active', ?, ?, ?)`,
+  );
+  const insertLink = db.prepare(
+    `INSERT INTO active_effect_link(
+       campaign_id, effect_id, link_kind, target_kind, target_ref,
+       projection_ref, campaign_actor_id, cleanup_on_end, cleanup_on_break,
+       status, provenance, session_id, updated_at, natural_form_json
+     )
+     VALUES (?, ?, 'actor', ?, ?, ?, ?, 'remove', 'remove', 'active', ?, ?, ?,
+             NULL)`,
+  );
+  const targets: { kind: string; ref: string }[] = [];
+  for (const link of released) {
+    insertLink.run(
+      original.campaign_id,
+      successorId,
+      link.target_kind,
+      link.target_ref,
+      link.projection_ref,
+      link.campaign_actor_id,
+      ctx.provenance,
+      ctx.sessionId,
+      ctx.at,
+    );
+    const wasTarget = priorTargets.some(
+      (target) =>
+        target.status === 'active' &&
+        target.target_kind === link.target_kind &&
+        target.target_ref === link.target_ref,
+    );
+    if (wasTarget) {
+      insertTarget.run(
+        original.campaign_id,
+        successorId,
+        link.target_kind,
+        link.target_ref,
+        ctx.provenance,
+        ctx.sessionId,
+        ctx.at,
+      );
+      targets.push({ kind: link.target_kind, ref: link.target_ref });
+    }
+  }
+  appendEvent(
+    db,
+    original.campaign_id,
+    successorId,
+    'created',
+    {
+      kind: original.kind,
+      displayName,
+      source: {
+        kind: original.source_kind,
+        ref: original.source_ref,
+        ...(original.source_actor_kind === null ||
+        original.source_actor_ref === null
+          ? {}
+          : {
+              actor: {
+                kind: original.source_actor_kind,
+                ref: original.source_actor_ref,
+              },
+            }),
+      },
+      duration: {
+        kind: 'timed',
+        amount: original.duration_amount,
+        unit: original.duration_unit,
+        anchorKind: original.anchor_kind,
+        anchorAt: original.anchor_at,
+        ...(original.anchor_game_time === null
+          ? {}
+          : { anchorGameTime: original.anchor_game_time }),
+      },
+      targets,
+      conditions: [],
+      actors: released.map((link) => link.projection_ref),
+      zones: [],
+      forms: [],
+      predecessorEffectId: original.effect_id,
+      recordTransitionId: removal.id,
+    },
+    ctx,
+  );
+  return successorId;
+}
+
 // ---------------------------------------------------------------------------
 // Spell-record derivation for owned creatures (0-HP rule, cleanup policies)
 // ---------------------------------------------------------------------------
@@ -2719,6 +2955,9 @@ interface RecordTransition {
   readonly id: string;
   readonly trigger: string;
   readonly changes: readonly { axis: string; to: string }[];
+  /** The `when.control` states the transition applies in (empty when it names none). */
+  readonly whenControl: readonly string[];
+  readonly timer: { amount: number; unit: string; anchor: string } | undefined;
 }
 
 function recordTransitions(record: RulesRecord): RecordTransition[] {
@@ -2752,10 +2991,33 @@ function recordTransitions(record: RulesRecord): RecordTransition[] {
                 typeof (c as Record<string, unknown>).to === 'string',
             )
           : [],
+        whenControl: transitionWhenControl(t.when),
+        timer: transitionTimer(t.timer),
       });
     }
   }
   return out;
+}
+
+function transitionWhenControl(when: unknown): string[] {
+  if (typeof when !== 'object' || when === null) return [];
+  const control = (when as Record<string, unknown>).control;
+  if (typeof control === 'string') return [control];
+  return Array.isArray(control)
+    ? control.filter((c): c is string => typeof c === 'string')
+    : [];
+}
+
+function transitionTimer(
+  timer: unknown,
+): { amount: number; unit: string; anchor: string } | undefined {
+  if (typeof timer !== 'object' || timer === null) return undefined;
+  const t = timer as Record<string, unknown>;
+  return typeof t.amount === 'number' &&
+    typeof t.unit === 'string' &&
+    typeof t.anchor === 'string'
+    ? { amount: t.amount, unit: t.unit, anchor: t.anchor }
+    : undefined;
 }
 
 function changesTo(
@@ -3382,6 +3644,26 @@ export function createActiveEffect(
       spellRecord === undefined || input.kind !== 'summoning'
         ? {}
         : deriveSummonCleanup(spellRecord, concentrationRule === 'required');
+    // A creature the record removes a fixed time after it was summoned once
+    // uncontrolled (Conjure Elemental/Fey) inherits this effect's anchor when
+    // a broken concentration hands it to the successor. Gate the anchor here,
+    // so the break (which must never fail) always has a summoning-moment
+    // deadline to copy.
+    const uncontrolledRemoval =
+      spellRecord === undefined || input.kind !== 'summoning'
+        ? undefined
+        : deriveUncontrolledRemoval(spellRecord);
+    if (
+      uncontrolledRemoval !== undefined &&
+      (duration.kind !== 'timed' ||
+        duration.amount !== uncontrolledRemoval.amount ||
+        duration.unit !== uncontrolledRemoval.unit ||
+        duration.anchorKind === null ||
+        !SUMMONING_MOMENT_ANCHORS.includes(duration.anchorKind))
+    )
+      throw new ActiveEffectError(
+        `'${spellRecord?.name}' transition '${uncontrolledRemoval.id}' removes an uncontrolled creature ${uncontrolledRemoval.amount} ${uncontrolledRemoval.unit}(s) after it was summoned, so the effect must be a ${uncontrolledRemoval.amount}-${uncontrolledRemoval.unit} timer anchored to 'spell-cast' or 'effect-created' (the moment of summoning)`,
+      );
     for (const actor of actors) {
       requireNonEmptyString(actor.combatantId, 'linked actor combatantId');
       if (seenActors.has(actor.combatantId)) {

@@ -337,7 +337,9 @@ describe('zero-hit-point vanish', () => {
       hpDelta: -7,
     });
     expect(s.row('c-e1').status).toBe('absent');
-    expect(hit.data).toMatchObject({ vanished: { effectId: null } });
+    expect(hit.data).toMatchObject({
+      vanished: { effectId: 'fx:uncontrolled', effectEnded: true },
+    });
   });
 
   it('suffocation drop and exhaustion clamping to 0 vanish too', () => {
