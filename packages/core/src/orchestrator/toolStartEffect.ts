@@ -177,8 +177,8 @@ export const startEffectTool: Tool = {
           'disappears at 0 HP but stays bonded (its link and the effect stay ' +
           'active; it needs campaignActorId), or "vanish" for one whose part ' +
           'of the effect ends. An absent bonded creature returns only by its ' +
-          'spell being cast again, which the engine cannot yet execute; ' +
-          'start_encounter refuses it until the bond is ended. A record ' +
+          'spell being cast again (recast_bonded_summon); ' +
+          'start_encounter refuses it until then or until the bond is ended. A record ' +
           'that animates an object (Animate Objects) makes the creature ' +
           'leave play at 0 HP and when the spell ends or concentration ' +
           'breaks (cleanupOnEnd and cleanupOnBreak "remove": it reverts to ' +
@@ -222,7 +222,7 @@ export const startEffectTool: Tool = {
               type: 'string',
               enum: ['vanish', 'vanish-bonded'],
               description:
-                'What happens when the creature drops to 0 hit points. "vanish": it disappears and its part of the effect ends (its link closes; the effect ends when no owned creature remains). "vanish-bonded": it disappears but stays bonded, so the link and effect stay active (Find Familiar, Find Steed); requires campaignActorId, and the absent creature returns only when its spell is cast again (not yet executable by the engine). Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature.',
+                'What happens when the creature drops to 0 hit points. "vanish": it disappears and its part of the effect ends (its link closes; the effect ends when no owned creature remains). "vanish-bonded": it disappears but stays bonded, so the link and effect stay active (Find Familiar, Find Steed); requires campaignActorId, and the absent creature returns only when its spell is cast again (recast_bonded_summon). Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature.',
             },
           },
           required: ['combatantId'],

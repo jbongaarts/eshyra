@@ -45,6 +45,7 @@ import { lookupRulesTool } from './toolLookupRules.js';
 import { markSceneTool } from './toolMarkScene.js';
 import { memoryDrilldownTool } from './toolMemoryDrilldown.js';
 import { reacquireItemTool } from './toolReacquireItem.js';
+import { recastBondedSummonTool } from './toolRecastBondedSummon.js';
 import { recordDeathSaveTool } from './toolRecordDeathSave.js';
 import { recordWorldFactTool } from './toolRecordWorldFact.js';
 import { recoverAmmunitionTool } from './toolRecoverAmmunition.js';
@@ -127,6 +128,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   suppressEffectTool,
   unsuppressEffectTool,
   refreshEffectTool,
+  recastBondedSummonTool,
   removeEffectTargetTool,
   resolveConcentrationTool,
   spendUsageTool,

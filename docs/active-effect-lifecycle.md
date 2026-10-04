@@ -282,6 +282,35 @@ typed audit events.
   an inference).
 - `refreshEffect` — re-anchors an active effect's timer (Animate Dead-style
   reassertion), optionally with a new validated duration.
+- `recastBondedSummon` (model tool `recast_bonded_summon`, eshyra-s02z) —
+  records the source recast of a bonded summon: the spell record's `cast-again`
+  transition (`when` presence absent, link active; presence -> present)
+  decides the result by its operation, never by the spell's name.
+  `restore-same-actor` with `hitPoints: maximum` (Find Steed) takes no form and
+  returns the same campaign actor alive at its effective hit point maximum
+  (the stored maximum, halved at exhaustion level 4 or more).
+  `select-new-form` (Find Familiar) requires `form`, a `creatureRef` from the
+  record's creation forms (the form it had before is allowed), and returns the
+  same actor in that form with that creature record's hit points as its
+  maximum and, under the same exhaustion rule, its current hit points. Any
+  other operation is refused. Everything else about the actor (conditions,
+  exhaustion, display name, its `vanish-bonded` rule, so it can vanish again)
+  stays as stored; the effect and its link are untouched. Preconditions,
+  validated before any write: the effect is active (not ended, not suppressed)
+  and `summoning`; for a spell-sourced effect, `spellRef` is its source; it
+  holds exactly one active actor link to a durable campaign actor that is
+  `absent` with the `vanish-bonded` rule; and that actor has no combatant in an
+  active combat instance (both spells take 10 minutes or longer to cast, so the
+  recast happens outside combat). A present or pocketed familiar (reforming
+  it), an ended effect or released bond (a new cast creates a new creature),
+  and a recast without a recorded absent bonded creature are refused. The
+  engine write is `restoreBondedCampaignActor` in `encounterCombatants.ts`, the
+  only path from absent back to alive, and records a `recast` event (`spellRef`,
+  `transitionId`, `actor`, `hpCurrent`, `hpMax`, `form` when given). It spends
+  no spell slot (spend it, or cast the ritual, separately) and moves no
+  creature in space (`reappearancePlacement` is narrated). Permanent dismissal
+  after a 0-HP absence stays gated on
+  `ambiguity:find-familiar-permanent-dismissal-after-zero-hp`.
 - `suppressEffect` / `unsuppressEffect` — antimagic-style suppression without
   end/cleanup, exposed to the model as model-facing tools
   `suppress_effect` and `unsuppress_effect`.
@@ -416,8 +445,8 @@ that left play carries over (conditions, exhaustion, death rules, 0-HP rule,
 heads); a new owning effect sets its own 0-HP rule. An absent actor still
 held by an active actor link (a `vanish-bonded` familiar or steed) is refused
 instead: S1 returns it only through its spell (a Find Familiar cast restores
-presence; a Find Steed recast restores the same steed to maximum HP), and that
-recast is not executable yet (eshyra-s02z). Ending the owning effect releases
+presence; a Find Steed recast restores the same steed to maximum HP), and
+`recast_bonded_summon` executes that recast. Ending the owning effect releases
 the bond; a later admission is then a new creature (S1: with no link a cast
 creates a new familiar).
 
@@ -479,8 +508,8 @@ creates a new familiar).
   link) makes the creature absent at 0 HP while its link and effect stay
   active. It requires a durable campaign-actor identity (`campaignActorId`),
   since combat closure releases instance-only links. Restoring the same
-  creature is the spell's recast (eshyra-s02z, not yet executable);
-  `start_encounter` refuses it meanwhile.
+  creature is the spell's recast, executed by `recast_bonded_summon`
+  (eshyra-s02z, below); `start_encounter` refuses it meanwhile.
   **`vanish`** (integrity->destroyed, or presence->absent together with the
   effect ending: the conjure spells, Simulacrum) is executed: reaching 0 HP by any route
   (damage, suffocation, exhaustion clamping; exhaustion level 6 is death, not

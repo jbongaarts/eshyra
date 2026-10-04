@@ -53,6 +53,7 @@ import {
   getCampaignActor,
   removeCampaignActorFromPlay,
   removeCombatantFromPlay,
+  restoreBondedCampaignActor,
   revertCampaignActorToNaturalForm,
   revertCombatantToNaturalForm,
   setCombatantZeroHpRule,
@@ -455,6 +456,27 @@ export interface RefreshEffectInput extends EffectMutationContext {
   readonly note?: string;
 }
 
+export interface RecastBondedSummonInput extends EffectMutationContext {
+  readonly campaignId: string;
+  readonly effectId: string;
+  /** The spell record whose cast-again transition governs the restoration. */
+  readonly spellRef: string;
+  /** The new form's creature ref: required by a select-new-form recast,
+   *  refused by a restore-same-actor recast. */
+  readonly form?: string;
+}
+
+export interface RecastBondedSummonResult {
+  readonly effect: ActiveEffectView;
+  readonly spellRef: string;
+  readonly transitionId: string;
+  readonly actorId: string;
+  readonly rulesRef: string | undefined;
+  readonly hpCurrent: number;
+  readonly hpMax: number;
+  readonly form?: string;
+}
+
 export interface SuppressEffectInput extends EffectMutationContext {
   readonly campaignId: string;
   readonly effectId: string;
@@ -505,6 +527,7 @@ export interface ActiveEffectEventView {
     | 'concentration-check'
     | 'target-removed'
     | 'combat-closed'
+    | 'recast'
     | 'ended';
   readonly detail: Record<string, unknown>;
   readonly occurredAt: string;
@@ -5038,6 +5061,221 @@ export function removeEffectTarget(
       ...(superseded ? { superseded: true } : {}),
       effect: requireEffectView(txnDb, input.campaignId, input.effectId),
       cleanup: actions,
+    };
+  });
+}
+
+interface BondedRecastTransition {
+  readonly id: string;
+  readonly operation: 'restore-same-actor' | 'select-new-form';
+  readonly forms: readonly string[];
+}
+
+const asObject = (v: unknown): Record<string, unknown> | undefined =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+    ? (v as Record<string, unknown>)
+    : undefined;
+
+const axisIncludes = (v: unknown, value: string): boolean =>
+  v === value || (Array.isArray(v) && v.includes(value));
+
+/** The spell record's cast-again transition that restores an absent creature
+ *  whose link is still active (presence -> present). Its operation, never the
+ *  spell's name, decides what a recast does. */
+function findBondedRecastTransition(
+  record: RulesRecord,
+):
+  | { transition: BondedRecastTransition }
+  | { unsupportedOperation: string }
+  | undefined {
+  const mechanics = asObject(asObject(record.data)?.mechanics);
+  const effects = Array.isArray(mechanics?.effects) ? mechanics.effects : [];
+  for (const rawEffect of effects) {
+    const effect = asObject(rawEffect);
+    const transitions = Array.isArray(effect?.transitions)
+      ? effect.transitions
+      : [];
+    for (const rawTransition of transitions) {
+      const t = asObject(rawTransition);
+      const when = asObject(t?.when);
+      if (
+        t === undefined ||
+        t.trigger !== 'cast-again' ||
+        !axisIncludes(when?.presence, 'absent') ||
+        !axisIncludes(when?.link, 'active') ||
+        !(Array.isArray(t.changes) ? t.changes : []).some((c) => {
+          const change = asObject(c);
+          return change?.axis === 'presence' && change.to === 'present';
+        })
+      )
+        continue;
+      const kind = asObject(t.operation)?.kind;
+      const rawForms = asObject(effect?.creation)?.forms;
+      const forms = (Array.isArray(rawForms) ? rawForms : [])
+        .map((f: unknown) => asObject(f)?.creatureRef)
+        .filter((r): r is string => typeof r === 'string');
+      if (kind === 'select-new-form') {
+        return {
+          transition: {
+            id: String(t.id ?? 'cast-again'),
+            operation: 'select-new-form',
+            forms,
+          },
+        };
+      }
+      if (
+        kind === 'restore-same-actor' &&
+        asObject(t.operation)?.hitPoints === 'maximum'
+      ) {
+        return {
+          transition: {
+            id: String(t.id ?? 'cast-again'),
+            operation: 'restore-same-actor',
+            forms,
+          },
+        };
+      }
+      return {
+        unsupportedOperation: typeof kind === 'string' ? kind : 'no operation',
+      };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * recast_bonded_summon (eshyra-s02z): the source recast of a bonded summon
+ * restores its absent creature. The effect keeps its active link to a campaign
+ * actor that vanished at 0 hit points ('vanish-bonded'); the spell record's
+ * cast-again transition (absent + link active -> present) says what the
+ * recast does: restore-same-actor at maximum hit points (Find Steed), or
+ * select-new-form (Find Familiar: the creature returns in a form chosen from
+ * the record's creation forms, with that creature record's hit points).
+ * Validated before any write; spends no spell slot.
+ */
+export function recastBondedSummon(
+  db: Db,
+  input: RecastBondedSummonInput,
+): RecastBondedSummonResult {
+  return withTransaction(db, (txnDb) => {
+    const row = readEffectRow(txnDb, input.campaignId, input.effectId);
+    if (row === undefined)
+      throw new ActiveEffectError(
+        `no active effect '${input.effectId}' exists`,
+      );
+    if (row.status === 'ended')
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' has ended; with no bond a new cast creates a new creature (start_effect, then start_encounter), never a recast`,
+      );
+    if (row.status !== 'active')
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' is suppressed; a recast needs an active bond (unsuppress it first)`,
+      );
+    if (row.kind !== 'summoning')
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' is a ${row.kind} effect; recast_bonded_summon applies only to a summoning effect`,
+      );
+    if (row.source_kind === 'spell' && row.source_ref !== input.spellRef)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' was cast from '${row.source_ref ?? 'no spell'}', not '${input.spellRef}'`,
+      );
+    const record = lookupCampaignRecord(
+      txnDb,
+      'spell',
+      input.spellRef,
+      input.resolveRulesPack,
+    );
+    if (record === undefined)
+      throw new ActiveEffectError(
+        `no spell record '${input.spellRef}' resolves in this campaign's rules`,
+      );
+    const found = findBondedRecastTransition(record);
+    if (found === undefined)
+      throw new ActiveEffectError(
+        `spell '${record.name}' has no cast-again transition that restores an absent creature whose link is active; recast_bonded_summon does not apply`,
+      );
+    if ('unsupportedOperation' in found)
+      throw new ActiveEffectError(
+        `spell '${record.name}' restores an absent creature with operation '${found.unsupportedOperation}', which the engine cannot execute`,
+      );
+    const { transition } = found;
+    const activeLinks = readLinkRows(
+      txnDb,
+      input.campaignId,
+      input.effectId,
+    ).filter((link) => link.link_kind === 'actor' && link.status === 'active');
+    const link = activeLinks[0];
+    if (link === undefined)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' holds no active actor link (it was released or its creature is gone); with no bond a new cast creates a new creature (start_effect, then start_encounter), never a recast`,
+      );
+    if (activeLinks.length !== 1)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' holds ${activeLinks.length} active actor links; a bonded recast needs exactly one`,
+      );
+    if (link.campaign_actor_id === null)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' links an encounter-only creature with no durable campaign actor; only a durable bonded creature can be recast`,
+      );
+    if (transition.operation === 'restore-same-actor') {
+      if (input.form !== undefined)
+        throw new ActiveEffectError(
+          `'${record.name}' restores the same creature; it takes no form`,
+        );
+    } else if (input.form === undefined) {
+      throw new ActiveEffectError(
+        `'${record.name}' lets the creature adopt a form on its return: pass form as one of ${transition.forms.join(', ')}`,
+      );
+    } else if (!transition.forms.includes(input.form)) {
+      throw new ActiveEffectError(
+        `form '${input.form}' is not one of the forms '${record.name}' lists: ${transition.forms.join(', ')}`,
+      );
+    }
+    let restored: ReturnType<typeof restoreBondedCampaignActor>;
+    try {
+      restored = restoreBondedCampaignActor(txnDb, {
+        campaignId: input.campaignId,
+        actorId: link.campaign_actor_id,
+        restore:
+          transition.operation === 'select-new-form' && input.form !== undefined
+            ? { kind: 'new-form', rulesRef: input.form }
+            : { kind: 'maximum' },
+        ...(input.resolveRulesPack === undefined
+          ? {}
+          : { resolveRulesPack: input.resolveRulesPack }),
+        provenance: input.provenance,
+        sessionId: input.sessionId,
+        at: input.at,
+      });
+    } catch (e) {
+      if (e instanceof EncounterCombatantError)
+        throw new ActiveEffectError(e.message);
+      throw e;
+    }
+    appendEvent(
+      txnDb,
+      input.campaignId,
+      input.effectId,
+      'recast',
+      {
+        spellRef: input.spellRef,
+        transitionId: transition.id,
+        actor: link.campaign_actor_id,
+        hpCurrent: restored.hpCurrent,
+        hpMax: restored.hpMax,
+        ...(input.form === undefined ? {} : { form: input.form }),
+      },
+      input,
+    );
+    return {
+      effect: requireEffectView(txnDb, input.campaignId, input.effectId),
+      spellRef: input.spellRef,
+      transitionId: transition.id,
+      actorId: link.campaign_actor_id,
+      rulesRef: restored.rulesRef,
+      hpCurrent: restored.hpCurrent,
+      hpMax: restored.hpMax,
+      ...(input.form === undefined ? {} : { form: input.form }),
     };
   });
 }

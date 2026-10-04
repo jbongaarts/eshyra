@@ -38,7 +38,7 @@ CREATE TABLE "active_effect" (
   CHECK (CASE WHEN anchor_kind = 'trigger-occurred' THEN CASE WHEN anchor_trigger IS NOT NULL AND length(trim(anchor_trigger)) > 0 THEN 1 ELSE 0 END ELSE CASE WHEN anchor_trigger IS NULL THEN 1 ELSE 0 END END)
 );
 
-CREATE TABLE active_effect_event (
+CREATE TABLE "active_effect_event" (
   campaign_id TEXT NOT NULL,
   effect_id TEXT NOT NULL,
   seq INTEGER NOT NULL CHECK (seq >= 1),
@@ -50,6 +50,7 @@ CREATE TABLE active_effect_event (
     'concentration-check',
     'target-removed',
     'combat-closed',
+    'recast',
     'ended'
   )),
   detail_json TEXT NOT NULL,
