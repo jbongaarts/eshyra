@@ -5142,6 +5142,8 @@ export function removeEffectTarget(
 
 interface BondedRecastTransition {
   readonly id: string;
+  /** The modelled presence the transition applies from. */
+  readonly from: 'absent' | 'present';
   readonly operation: 'restore-same-actor' | 'select-new-form';
   readonly forms: readonly string[];
 }
@@ -5154,11 +5156,13 @@ const asObject = (v: unknown): Record<string, unknown> | undefined =>
 const axisIncludes = (v: unknown, value: string): boolean =>
   v === value || (Array.isArray(v) && v.includes(value));
 
-/** The spell record's cast-again transition that restores an absent creature
- *  whose link is still active (presence -> present). Its operation, never the
- *  spell's name, decides what a recast does. */
+/** The spell record's cast-again transition for a creature whose link is still
+ *  active and whose modelled presence is `from`. From 'absent' it must restore
+ *  presence (presence -> present); from 'present' it must change no presence.
+ *  Its operation, never the spell's name, decides what a recast does. */
 function findBondedRecastTransition(
   record: RulesRecord,
+  from: 'absent' | 'present',
 ):
   | { transition: BondedRecastTransition }
   | { unsupportedOperation: string }
@@ -5176,12 +5180,18 @@ function findBondedRecastTransition(
       if (
         t === undefined ||
         t.trigger !== 'cast-again' ||
-        !axisIncludes(when?.presence, 'absent') ||
-        !axisIncludes(when?.link, 'active') ||
-        !(Array.isArray(t.changes) ? t.changes : []).some((c) => {
-          const change = asObject(c);
-          return change?.axis === 'presence' && change.to === 'present';
-        })
+        !axisIncludes(when?.presence, from) ||
+        !axisIncludes(when?.link, 'active')
+      )
+        continue;
+      const presenceChanges = (Array.isArray(t.changes) ? t.changes : [])
+        .map(asObject)
+        .filter((c) => c?.axis === 'presence');
+      // Absent: the recast must restore presence. Present: it changes none.
+      if (
+        from === 'absent'
+          ? !presenceChanges.some((c) => c?.to === 'present')
+          : presenceChanges.length > 0
       )
         continue;
       const kind = asObject(t.operation)?.kind;
@@ -5193,18 +5203,21 @@ function findBondedRecastTransition(
         return {
           transition: {
             id: String(t.id ?? 'cast-again'),
+            from,
             operation: 'select-new-form',
             forms,
           },
         };
       }
       if (
+        from === 'absent' &&
         kind === 'restore-same-actor' &&
         asObject(t.operation)?.hitPoints === 'maximum'
       ) {
         return {
           transition: {
             id: String(t.id ?? 'cast-again'),
+            from,
             operation: 'restore-same-actor',
             forms,
           },
@@ -5220,12 +5233,15 @@ function findBondedRecastTransition(
 
 /**
  * recast_bonded_summon (eshyra-s02z): the source recast of a bonded summon
- * restores its absent creature. The effect keeps its active link to a campaign
- * actor that vanished at 0 hit points ('vanish-bonded'); the spell record's
- * cast-again transition (absent + link active -> present) says what the
- * recast does: restore-same-actor at maximum hit points (Find Steed), or
- * select-new-form (Find Familiar: the creature returns in a form chosen from
- * the record's creation forms, with that creature record's hit points).
+ * restores its absent creature, or reforms a present one (eshyra-71u1). The
+ * effect keeps its active link to a campaign actor; the actor's modelled
+ * presence (absent -> 'absent', alive -> 'present') selects the spell record's
+ * cast-again transition. From absent (link active, presence -> present):
+ * restore-same-actor at maximum hit points (Find Steed), or select-new-form
+ * (Find Familiar: the creature returns in a form chosen from the record's
+ * creation forms, with that creature record's hit points). From present (link
+ * active, no presence change): only select-new-form (Find Familiar reforms the
+ * same actor); a spell with no such transition (Find Steed) is refused.
  * Validated before any write; spends no spell slot.
  */
 export function recastBondedSummon(
@@ -5264,16 +5280,6 @@ export function recastBondedSummon(
       throw new ActiveEffectError(
         `no spell record '${input.spellRef}' resolves in this campaign's rules`,
       );
-    const found = findBondedRecastTransition(record);
-    if (found === undefined)
-      throw new ActiveEffectError(
-        `spell '${record.name}' has no cast-again transition that restores an absent creature whose link is active; recast_bonded_summon does not apply`,
-      );
-    if ('unsupportedOperation' in found)
-      throw new ActiveEffectError(
-        `spell '${record.name}' restores an absent creature with operation '${found.unsupportedOperation}', which the engine cannot execute`,
-      );
-    const { transition } = found;
     const activeLinks = readLinkRows(
       txnDb,
       input.campaignId,
@@ -5292,6 +5298,38 @@ export function recastBondedSummon(
       throw new ActiveEffectError(
         `effect '${input.effectId}' links an encounter-only creature with no durable campaign actor; only a durable bonded creature can be recast`,
       );
+    const bondedActor = getCampaignActor(
+      txnDb,
+      input.campaignId,
+      link.campaign_actor_id,
+    );
+    if (bondedActor === undefined)
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' links campaign actor '${link.campaign_actor_id}', which does not exist`,
+      );
+    // The engine models two presences: absent (vanished at 0 HP) and present.
+    const presence: 'absent' | 'present' | undefined =
+      bondedActor.status === 'absent'
+        ? 'absent'
+        : bondedActor.status === 'alive'
+          ? 'present'
+          : undefined;
+    if (presence === undefined)
+      throw new ActiveEffectError(
+        `campaign actor '${bondedActor.actorId}' is ${bondedActor.status}, which is neither absent nor present; a recast cannot reason about that presence`,
+      );
+    const found = findBondedRecastTransition(record, presence);
+    if (found === undefined)
+      throw new ActiveEffectError(
+        presence === 'absent'
+          ? `spell '${record.name}' has no cast-again transition that restores an absent creature whose link is active; recast_bonded_summon does not apply`
+          : `spell '${record.name}' has no cast-again transition for a present creature whose link is active; recast_bonded_summon does not apply`,
+      );
+    if ('unsupportedOperation' in found)
+      throw new ActiveEffectError(
+        `spell '${record.name}' recasts a${presence === 'absent' ? 'n absent' : ' present'} creature with operation '${found.unsupportedOperation}', which the engine cannot execute`,
+      );
+    const { transition } = found;
     if (transition.operation === 'restore-same-actor') {
       if (input.form !== undefined)
         throw new ActiveEffectError(
@@ -5311,6 +5349,7 @@ export function recastBondedSummon(
       restored = restoreBondedCampaignActor(txnDb, {
         campaignId: input.campaignId,
         actorId: link.campaign_actor_id,
+        expectedPresence: transition.from,
         restore:
           transition.operation === 'select-new-form' && input.form !== undefined
             ? { kind: 'new-form', rulesRef: input.form }

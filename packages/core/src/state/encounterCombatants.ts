@@ -3129,21 +3129,28 @@ export function removeCampaignActorFromPlay(
   });
 }
 
-/** The bonded-summon restore seam (eshyra-s02z): the ONLY path that moves a
- *  campaign actor from absent back to alive, and only for a creature whose own
- *  0-hit-point rule is 'vanish-bonded' while its actor link is still active
- *  (the spell is cast again). 'maximum' restores the same actor to its
- *  effective hit point maximum (Find Steed); 'new-form' also sets the rules
- *  reference and takes that creature record's hit points (Find Familiar).
- *  Nothing else about the actor changes: conditions, exhaustion, the 0-hit-point
- *  rule and the display name stay as stored. Refuses an actor that is not
- *  absent, a creature with no bond, and one that still has a combatant in an
- *  active combat instance (the recast takes 10 minutes or longer). */
+/** The bonded-summon recast seam (eshyra-s02z, eshyra-71u1): the ONLY path
+ *  that moves a campaign actor from absent back to alive, AND the reform of a
+ *  present bonded familiar. Only for a creature whose own 0-hit-point rule is
+ *  'vanish-bonded' while its actor link is still active (the spell is cast
+ *  again). `expectedPresence` says which case the caller selected and must match
+ *  the actor's status ('absent' or 'alive'). From 'absent', 'maximum' restores
+ *  the same actor to its effective hit point maximum (Find Steed) and
+ *  'new-form' also sets the rules reference and takes that creature record's
+ *  hit points (Find Familiar). From 'present' only 'new-form' is allowed: the
+ *  same alive actor takes the new form's statistics, including its hit points
+ *  (the familiar "has the statistics of the chosen form"; no damage carries
+ *  across), at the exhaustion-adjusted maximum. Nothing else about the actor
+ *  changes: conditions, exhaustion, the 0-hit-point rule and the display name
+ *  stay as stored. Refuses a status that does not match, a creature with no
+ *  bond, and one that still has a combatant in an active combat instance (the
+ *  recast takes 10 minutes or longer). */
 export function restoreBondedCampaignActor(
   db: Db,
   input: {
     readonly campaignId: string;
     readonly actorId: string;
+    readonly expectedPresence: 'absent' | 'present';
     readonly restore:
       | { readonly kind: 'maximum' }
       | { readonly kind: 'new-form'; readonly rulesRef: string };
@@ -3159,9 +3166,18 @@ export function restoreBondedCampaignActor(
       throw new EncounterCombatantError(
         `unknown campaign actor '${input.actorId}'`,
       );
-    if (actor.status !== 'absent')
+    if (input.expectedPresence === 'present') {
+      if (actor.status !== 'alive')
+        throw new EncounterCombatantError(
+          `campaign actor '${actor.actorId}' is ${actor.status}, not alive; only a present bonded creature can be reformed by a recast`,
+        );
+      if (input.restore.kind !== 'new-form')
+        throw new EncounterCombatantError(
+          `campaign actor '${actor.actorId}' is present; a recast can only reform it into a new form, never restore it at maximum hit points`,
+        );
+    } else if (actor.status !== 'absent')
       throw new EncounterCombatantError(
-        `campaign actor '${actor.actorId}' is ${actor.status}, not absent; only a bonded creature that has disappeared can be restored by a recast. Reforming a present or pocketed familiar is not yet supported by the engine`,
+        `campaign actor '${actor.actorId}' is ${actor.status}, not absent; an absent bonded creature is restored by a recast, and a present one is reformed`,
       );
     if (readCombatLifecycle(actor.state)?.zeroHpRule !== 'vanish-bonded')
       throw new EncounterCombatantError(
@@ -3183,7 +3199,7 @@ export function restoreBondedCampaignActor(
       | undefined;
     if (projection !== undefined)
       throw new EncounterCombatantError(
-        `campaign actor '${actor.actorId}' still has combatant '${projection.combatant_id}' in an active combat instance; the recast takes 10 minutes or longer, so close the combat instance first`,
+        `campaign actor '${actor.actorId}' still has combatant '${projection.combatant_id}' in an active combat instance; the recast takes 10 minutes or longer (a restore or reform), so close the combat instance first`,
       );
     if (exhaustionLevel(actor.conditions) === 6)
       throw new EncounterCombatantError(
