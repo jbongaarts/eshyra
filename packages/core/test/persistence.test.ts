@@ -38,8 +38,8 @@ describe('persistence', () => {
     );
     expect(ledger[0].name).toBe('initial');
     expect(ledger.at(-1)).toMatchObject({
-      version: 39,
-      name: 'absent_status_zero_hp_rule',
+      version: 41,
+      name: 'active_effect_recast_event',
     });
     db.close();
   });

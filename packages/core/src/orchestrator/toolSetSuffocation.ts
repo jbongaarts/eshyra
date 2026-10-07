@@ -12,12 +12,13 @@ import {
   ok,
   resolveTargetCharacterId,
 } from './toolRegistry.js';
+import { revertedMessage } from './toolUpdateCombatant.js';
 
 export const setSuffocationTool: Tool = {
   name: 'set_suffocation',
   mutates: true,
   description:
-    'Record suffocation for a character or combatant (combatantId). When breath runs out, the creature survives the interval from calc suffocation_survival_rounds; at the start of its next turn after that interval, event drop sets it to 0 hit points and blocks healing and stabilization until event breathe records that it can breathe again. A character or a player-character-rules combatant becomes dying; a monster-rules combatant dies; a combatant whose spell says it disappears at 0 hit points becomes absent (out of play) and the result reports vanished. Never apply the drop as damage with adjust_hp or update_combatant.',
+    'Record suffocation for a character or combatant (combatantId). When breath runs out, the creature survives the interval from calc suffocation_survival_rounds; at the start of its next turn after that interval, event drop sets it to 0 hit points and blocks healing and stabilization until event breathe records that it can breathe again. A character or a player-character-rules combatant becomes dying; a monster-rules combatant dies; a combatant whose spell says it disappears at 0 hit points becomes absent (out of play) and the result reports vanished; an animated object (Animate Objects) reverts to its original object form, so it becomes absent and the result reports reverted with carriedOverDamage 0 (a drop is not damage); a creature transformed by Giant Insect returns to its natural form, stays in play alive with the hit points it had when transformed, and the result reports reverted with that naturalForm. Never apply the drop as damage with adjust_hp or update_combatant.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -40,19 +41,28 @@ export const setSuffocationTool: Tool = {
       return err('invalid_args', 'provide character or combatantId, not both');
     if (typeof a.combatantId === 'string') {
       try {
+        const result = setCombatantSuffocation(
+          ctx.db,
+          ctx.campaignId,
+          a.combatantId,
+          a.event,
+          {
+            provenance: `model:${ctx.turnId}`,
+            sessionId: ctx.sessionId,
+            at: ctx.at,
+          },
+          ctx.rng,
+        );
         return ok(
-          setCombatantSuffocation(
-            ctx.db,
-            ctx.campaignId,
-            a.combatantId,
-            a.event,
-            {
-              provenance: `model:${ctx.turnId}`,
-              sessionId: ctx.sessionId,
-              at: ctx.at,
-            },
-            ctx.rng,
-          ),
+          result.reverted === undefined
+            ? result
+            : {
+                ...result,
+                reverted: {
+                  ...result.reverted,
+                  message: revertedMessage(a.combatantId, result.reverted),
+                },
+              },
         );
       } catch (e) {
         if (e instanceof EncounterCombatantError)

@@ -6,6 +6,7 @@ import {
 import {
   type CombatantStatus,
   EncounterCombatantError,
+  type RevertedOutcome,
   updateCombatant,
 } from '../state/encounterCombatants.js';
 import type { CharacterConditionEntry } from '../state/liveStateSchema.js';
@@ -27,11 +28,36 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Model-facing sentence for a 0-hit-point reversion, shared with the other
+ *  tools that can drop a creature to 0 hit points. */
+export function revertedMessage(
+  label: string,
+  reverted: RevertedOutcome,
+): string {
+  const link =
+    reverted.effectId === null
+      ? '.'
+      : reverted.effectEnded
+        ? `; its link to effect '${reverted.effectId}' closed and that effect ended (source-removed) because no owned creature remains.`
+        : `; its link to effect '${reverted.effectId}' closed and that effect continues.`;
+  if (reverted.rule === 'revert-object')
+    return (
+      `${label} dropped to 0 hit points and reverted to its original object form (its spell's zero-hit-point rule): it left play as a creature and is now absent, not dead; ` +
+      `${reverted.carriedOverDamage} damage carries over to the object (objects are not tracked)` +
+      link
+    );
+  const form = reverted.naturalForm;
+  return (
+    `${label} dropped to 0 hit points and reverted to its natural form (its spell's zero-hit-point rule): it is still in play, alive, with ${form.hpCurrent}/${form.hpMax} hit points as ${form.rulesRef}, the hit points it had when transformed; no damage carries over` +
+    link
+  );
+}
+
 export const updateCombatantTool: Tool = {
   name: 'update_combatant',
   mutates: true,
   description:
-    'Update a live encounter combatant by exact combatant id. args: { combatantId, hpDelta?, damageTypes?, critical?, deathRules?, addCondition?, removeCondition?, status?, locationId?, placement? }. A dead combatant stays dead in both death-rule modes: it cannot be healed and a non-dead status is refused. Monster death rules are the default: an hpDelta that brings the combatant to 0 hit points sets it dead unless status is also passed (for a nonlethal knockout, "unconscious"). That knockout is hit points 0 with status unconscious and no death, but any further damage to the knocked-out monster kills it; "stable" is refused for monsters. damageTypes declares the types in the resolve_damage result for a negative hpDelta. For creatures with tracked heads, the engine tracks head loss and regrowth; extra reactions derive from the current head count. deathRules: "player-character" opts the combatant into the character death rules for good: reaching 0 hit points makes it dying (dead outright when the damage beyond 0 reaches its effective hit point maximum), damage at 0 hit points adds a death-save failure (two when critical is true), healing from 0 returns it to alive, and a nonlethal knockout is passed as status "stable" together with that damage. Otherwise "dying" and "stable" are engine-owned and refused as explicit statuses. addCondition cannot add exhaustion; use adjust_exhaustion to change exhaustion levels. Status "absent" means out of play under a rule and is engine-owned: it is refused as an explicit status, and an absent combatant takes no turn and cannot be damaged, healed, or given or relieved of conditions; it returns only through a new start_encounter admission that supplies hit points above 0. A creature whose spell says it disappears when it drops to 0 hit points (the conjure spells, Simulacrum, or an owned creature declared atZeroHitPoints "vanish" or "vanish-bonded") becomes absent when hpDelta brings it to 0 hit points, never dead, dying, stable, or unconscious, and the result reports vanished. Under "vanish" its owning link closes (the effect ends when no owned creature remains); under "vanish-bonded" (familiar, steed) the link and effect stay active and the result reports linkKept; start_encounter cannot bring it back. For such a creature a knockout (status "unconscious" or "stable" with damage to 0) is refused, as is any other status passed with damage that brings it to 0 (pass the hpDelta alone), and deathRules "player-character" is refused, as it is for any creature owned by an effect with a "remove" cleanup policy (that effect must be able to take it out of play).',
+    'Update a live encounter combatant by exact combatant id. args: { combatantId, hpDelta?, damageTypes?, critical?, deathRules?, addCondition?, removeCondition?, status?, locationId?, placement? }. A dead combatant stays dead in both death-rule modes: it cannot be healed and a non-dead status is refused. Monster death rules are the default: an hpDelta that brings the combatant to 0 hit points sets it dead unless status is also passed (for a nonlethal knockout, "unconscious"). That knockout is hit points 0 with status unconscious and no death, but any further damage to the knocked-out monster kills it; "stable" is refused for monsters. damageTypes declares the types in the resolve_damage result for a negative hpDelta. For creatures with tracked heads, the engine tracks head loss and regrowth; extra reactions derive from the current head count. deathRules: "player-character" opts the combatant into the character death rules for good: reaching 0 hit points makes it dying (dead outright when the damage beyond 0 reaches its effective hit point maximum), damage at 0 hit points adds a death-save failure (two when critical is true), healing from 0 returns it to alive, and a nonlethal knockout is passed as status "stable" together with that damage. Otherwise "dying" and "stable" are engine-owned and refused as explicit statuses. addCondition cannot add exhaustion; use adjust_exhaustion to change exhaustion levels. Status "absent" means out of play under a rule and is engine-owned: it is refused as an explicit status, and an absent combatant takes no turn and cannot be damaged, healed, or given or relieved of conditions; it returns only through a new start_encounter admission that supplies hit points above 0. A creature whose spell says it disappears when it drops to 0 hit points (the conjure spells, Simulacrum, or an owned creature declared atZeroHitPoints "vanish" or "vanish-bonded") becomes absent when hpDelta brings it to 0 hit points, never dead, dying, stable, or unconscious, and the result reports vanished. Under "vanish" its owning link closes (the effect ends when no owned creature remains); under "vanish-bonded" (familiar, steed) the link and effect stay active and the result reports linkKept; start_encounter cannot bring it back; only recast_bonded_summon (its spell cast again) does. For such a creature a knockout (status "unconscious" or "stable" with damage to 0) is refused, as is any other status passed with damage that brings it to 0 (pass the hpDelta alone), and deathRules "player-character" is refused, as it is for any creature owned by an effect with a "remove" cleanup policy (that effect must be able to take it out of play). A creature whose spell says it reverts to its original form when it drops to 0 hit points never dies, makes death saves, or falls unconscious either, and the result reports reverted. An animated object (Animate Objects) reverts to its original object form and so leaves play as a creature: it becomes absent, its owning link closes (the effect ends when no animated object remains), and the result reports reverted with carriedOverDamage, the damage beyond the hit points it had, which carries over to the object (objects are not tracked, so the amount is reported, not stored); reducing it to 0 by exhaustion carries over 0. A creature transformed by Giant Insect returns to its natural form and stays in play: its hit points, maximum, and rules reference are restored to those recorded when it was transformed (no damage carries over), it is alive, its owning link closes (the effect ends when no transformed creature remains), and the result reports reverted with that naturalForm. The same reversion happens when exhaustion reduces the creature to 0 hit points, but exhaustion level 6 still kills it. Knockouts, other statuses passed with the damage, and deathRules "player-character" are refused for these creatures too.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -217,6 +243,17 @@ export const updateCombatantTool: Tool = {
                       : update.vanished.effectEnded
                         ? `; its link to effect '${update.vanished.effectId}' closed and that effect ended (source-removed) because no owned creature remains.`
                         : `; its link to effect '${update.vanished.effectId}' closed and that effect continues.`),
+              },
+            }),
+        ...(update.reverted === undefined
+          ? {}
+          : {
+              reverted: {
+                ...update.reverted,
+                message: revertedMessage(
+                  update.combatant.displayLabel,
+                  update.reverted,
+                ),
               },
             }),
         ...(concentration === undefined ? {} : { concentration }),

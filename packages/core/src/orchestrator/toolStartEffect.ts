@@ -1,6 +1,7 @@
 import type {
   CreateActiveEffectInput,
   EffectParticipant,
+  NaturalForm,
 } from '../state/activeEffects.js';
 import { createActiveEffect } from '../state/activeEffects.js';
 import type { CharacterConditionEntry } from '../state/liveStateSchema.js';
@@ -17,6 +18,12 @@ import { asRecord, err, ok } from './toolRegistry.js';
 const CLEANUP_SCHEMA = {
   type: 'string',
   enum: ['remove', 'release'],
+} as const;
+
+/** Owned-creature links may also revert (restore a recorded natural form). */
+const ACTOR_CLEANUP_SCHEMA = {
+  type: 'string',
+  enum: ['remove', 'release', 'revert'],
 } as const;
 
 export const startEffectTool: Tool = {
@@ -151,7 +158,12 @@ export const startEffectTool: Tool = {
           'creature becomes absent, out of play); a record that leaves a ' +
           'creature present but uncontrolled when concentration breaks ' +
           '(Conjure Elemental, Conjure Fey) requires cleanupOnBreak ' +
-          '"release", otherwise a concentration spell removes it. Omit ' +
+          '"release": on that break the creature moves to the successor ' +
+          'effect "<id>:uncontrolled" (not dismissible, no concentration), ' +
+          'which removes it 1 hour after it was summoned (so such an effect ' +
+          'must be a 1 hour timer anchored to "spell-cast" or ' +
+          '"effect-created"; effect ids ending in ":uncontrolled" are ' +
+          'reserved for these successors); otherwise a concentration spell removes it. Omit ' +
           "both policies to take the record's values; a contradicting " +
           'policy is refused with the record text. "remove" takes the ' +
           'creature out of play (status absent), never leaves it dying or ' +
@@ -166,8 +178,23 @@ export const startEffectTool: Tool = {
           'disappears at 0 HP but stays bonded (its link and the effect stay ' +
           'active; it needs campaignActorId), or "vanish" for one whose part ' +
           'of the effect ends. An absent bonded creature returns only by its ' +
-          'spell being cast again, which the engine cannot yet execute; ' +
-          'start_encounter refuses it until the bond is ended.',
+          'spell being cast again (recast_bonded_summon); ' +
+          'start_encounter refuses it until then or until the bond is ended. A record ' +
+          'that animates an object (Animate Objects) makes the creature ' +
+          'leave play at 0 HP and when the spell ends or concentration ' +
+          'breaks (cleanupOnEnd and cleanupOnBreak "remove": it reverts to ' +
+          'an object, which is not a creature): at 0 HP the creature becomes ' +
+          'absent (never dead), its link closes, the effect ends when no ' +
+          'animated object remains, and the damage beyond 0 is reported as ' +
+          'carriedOverDamage (objects are not tracked). A record that ' +
+          'transforms an existing creature (Giant Insect) requires ' +
+          'naturalForm for each creature and derives cleanupOnEnd and ' +
+          'cleanupOnBreak "revert": at 0 HP, when the spell ends, when ' +
+          'concentration breaks, or when remove_effect_target dismisses that ' +
+          'creature, it returns to that natural form and stays in play ' +
+          '(alive, never dead or absent); explicit "remove" or "release" ' +
+          'for such a record is refused. "revert" is legal only on an ' +
+          'actor link that records a naturalForm.',
         items: {
           type: 'object',
           properties: {
@@ -178,13 +205,25 @@ export const startEffectTool: Tool = {
               description:
                 'Stable durable identity for a persistent owned creature; omit for an instance-only summon.',
             },
-            cleanupOnEnd: CLEANUP_SCHEMA,
-            cleanupOnBreak: CLEANUP_SCHEMA,
+            cleanupOnEnd: ACTOR_CLEANUP_SCHEMA,
+            cleanupOnBreak: ACTOR_CLEANUP_SCHEMA,
+            naturalForm: {
+              type: 'object',
+              description:
+                'The creature\'s natural form at cast: { hpCurrent (above 0), hpMax (at least hpCurrent), rulesRef (non-empty, e.g. "creature:spider") }. REQUIRED for a spell whose record transforms an existing creature and returns it to its original form at 0 hit points (Giant Insect), refused for every other source. Reversion restores exactly these values (hit points clamped to the effective maximum), so record the hit points the creature has before it is transformed.',
+              properties: {
+                hpCurrent: { type: 'integer', minimum: 1 },
+                hpMax: { type: 'integer', minimum: 1 },
+                rulesRef: { type: 'string', minLength: 1 },
+              },
+              required: ['hpCurrent', 'hpMax', 'rulesRef'],
+              additionalProperties: false,
+            },
             atZeroHitPoints: {
               type: 'string',
               enum: ['vanish', 'vanish-bonded'],
               description:
-                'What happens when the creature drops to 0 hit points. "vanish": it disappears and its part of the effect ends (its link closes; the effect ends when no owned creature remains). "vanish-bonded": it disappears but stays bonded, so the link and effect stay active (Find Familiar, Find Steed); requires campaignActorId, and the absent creature returns only when its spell is cast again (not yet executable by the engine). Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature.',
+                'What happens when the creature drops to 0 hit points. "vanish": it disappears and its part of the effect ends (its link closes; the effect ends when no owned creature remains). "vanish-bonded": it disappears but stays bonded, so the link and effect stay active (Find Familiar, Find Steed); requires campaignActorId, and the absent creature returns only when its spell is cast again (recast_bonded_summon). Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature.',
             },
           },
           required: ['combatantId'],
@@ -307,18 +346,33 @@ export const startEffectTool: Tool = {
           'invalid_args',
           'each actors entry atZeroHitPoints must be "vanish" or "vanish-bonded" when given',
         );
+      let naturalForm: NaturalForm | undefined;
+      if (actor.naturalForm !== undefined) {
+        const raw = asRecord(actor.naturalForm);
+        if (raw === undefined)
+          return err(
+            'invalid_args',
+            'each actors entry naturalForm must be { hpCurrent, hpMax, rulesRef }',
+          );
+        // Shape and range are validated by the engine with the spell record.
+        naturalForm = raw as unknown as NaturalForm;
+      }
       actors.push({
         combatantId: actor.combatantId,
         ...(typeof actor.campaignActorId === 'string'
           ? { campaignActorId: actor.campaignActorId }
           : {}),
-        ...(actor.cleanupOnEnd === 'release' || actor.cleanupOnEnd === 'remove'
+        ...(actor.cleanupOnEnd === 'release' ||
+        actor.cleanupOnEnd === 'remove' ||
+        actor.cleanupOnEnd === 'revert'
           ? { cleanupOnEnd: actor.cleanupOnEnd }
           : {}),
         ...(actor.cleanupOnBreak === 'release' ||
-        actor.cleanupOnBreak === 'remove'
+        actor.cleanupOnBreak === 'remove' ||
+        actor.cleanupOnBreak === 'revert'
           ? { cleanupOnBreak: actor.cleanupOnBreak }
           : {}),
+        ...(naturalForm === undefined ? {} : { naturalForm }),
         ...(actor.atZeroHitPoints === 'vanish' ||
         actor.atZeroHitPoints === 'vanish-bonded'
           ? { atZeroHitPoints: actor.atZeroHitPoints }

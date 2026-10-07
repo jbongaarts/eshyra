@@ -59,11 +59,17 @@ provenance/session/updated-at like every other live-state table:
   forms. Each link carries two
   cleanup policies (`cleanup_on_end`, `cleanup_on_break`) so normal spell end
   and concentration break can differ (the Conjure Elemental distinction: break
-  releases the elemental, ordinary end removes it).
+  releases the elemental, ordinary end removes it; a released elemental or fey
+  creature moves to the successor effect `<id>:uncontrolled`, which removes it
+  1 hour after it was summoned, see §9). The policies are `remove`,
+  `release`, and `revert` (migration 0040: legal only on an actor link that
+  carries a natural form, `natural_form_json`; see §8 and §9).
 - **`active_effect_event`** — append-only per-effect audit ledger
   (`seq` starting at 1) with a typed, validated `detail_json` per event kind:
   `created`, `refreshed`, `suppressed`, `unsuppressed`, `concentration-check`,
-  `target-removed`, `ended`.
+  `target-removed`, `ended`. An `ended` event records `successorEffectId` when
+  the end started an uncontrolled successor; that successor's `created` event
+  records `predecessorEffectId` and the record's `recordTransitionId`.
 
 ### Effect kinds are semantic licenses
 
@@ -276,6 +282,35 @@ typed audit events.
   an inference).
 - `refreshEffect` — re-anchors an active effect's timer (Animate Dead-style
   reassertion), optionally with a new validated duration.
+- `recastBondedSummon` (model tool `recast_bonded_summon`, eshyra-s02z) —
+  records the source recast of a bonded summon: the spell record's `cast-again`
+  transition (`when` presence absent, link active; presence -> present)
+  decides the result by its operation, never by the spell's name.
+  `restore-same-actor` with `hitPoints: maximum` (Find Steed) takes no form and
+  returns the same campaign actor alive at its effective hit point maximum
+  (the stored maximum, halved at exhaustion level 4 or more).
+  `select-new-form` (Find Familiar) requires `form`, a `creatureRef` from the
+  record's creation forms (the form it had before is allowed), and returns the
+  same actor in that form with that creature record's hit points as its
+  maximum and, under the same exhaustion rule, its current hit points. Any
+  other operation is refused. Everything else about the actor (conditions,
+  exhaustion, display name, its `vanish-bonded` rule, so it can vanish again)
+  stays as stored; the effect and its link are untouched. Preconditions,
+  validated before any write: the effect is active (not ended, not suppressed)
+  and `summoning`; for a spell-sourced effect, `spellRef` is its source; it
+  holds exactly one active actor link to a durable campaign actor that is
+  `absent` with the `vanish-bonded` rule; and that actor has no combatant in an
+  active combat instance (both spells take 10 minutes or longer to cast, so the
+  recast happens outside combat). A present or pocketed familiar (reforming
+  it), an ended effect or released bond (a new cast creates a new creature),
+  and a recast without a recorded absent bonded creature are refused. The
+  engine write is `restoreBondedCampaignActor` in `encounterCombatants.ts`, the
+  only path from absent back to alive, and records a `recast` event (`spellRef`,
+  `transitionId`, `actor`, `hpCurrent`, `hpMax`, `form` when given). It spends
+  no spell slot (spend it, or cast the ritual, separately) and moves no
+  creature in space (`reappearancePlacement` is narrated). Permanent dismissal
+  after a 0-HP absence stays gated on
+  `ambiguity:find-familiar-permanent-dismissal-after-zero-hp`.
 - `suppressEffect` / `unsuppressEffect` — antimagic-style suppression without
   end/cleanup, exposed to the model as model-facing tools
   `suppress_effect` and `unsuppress_effect`.
@@ -374,6 +409,28 @@ absent never returns to another status on the same row). `released` is
 reported only for a stored `release` policy. A holder that is truly
 unreachable (deleted, closed instance) is `missing`.
 
+### Revert cleanup and the natural form (eshyra-ysr3)
+
+A `revert` cleanup of an actor link restores the owned creature's recorded
+**natural form** through an engine seam (`revertCombatantToNaturalForm` /
+`revertCampaignActorToNaturalForm`, mirroring the remove seams: the combatant
+in an active instance, else the campaign actor, delegating to its active
+projection) and the creature **stays in play**: the action is reported
+`reverted`, the link closes with status `removed` (there is no link status for
+it), and a holder that is unreachable, dead, or already absent is `missing`.
+The natural form (`{ hpCurrent, hpMax, rulesRef }`) is captured at cast
+(`start_effect` actors entry `naturalForm`): required exactly when the spell
+record's 0-HP rule is `revert-form`, refused for every other source including
+ruling-sourced actors. Reversion restores exactly these values (the hit
+points the creature had when transformed, clamped to the effective maximum, so
+exhaustion still applies), sets the status alive, keeps conditions (the same
+creature; effect-owned projections are cleaned by normal link cleanup),
+clears the creature's 0-HP rule, and takes the armor class from the natural
+form's record when it resolves (otherwise it is unset). No damage carries
+over (the source states carry-over only for Animate Objects). `revert` is
+refused on condition/zone/form links, on ruling-sourced links, and on any
+actor link without a snapshot.
+
 A dying or stable creature is **unreachable** under `remove`: the engine
 refuses `deathRules: 'player-character'` for a creature owned under a
 `remove` policy (or one whose spell has a 0-HP rule), and refuses to link a
@@ -388,8 +445,8 @@ that left play carries over (conditions, exhaustion, death rules, 0-HP rule,
 heads); a new owning effect sets its own 0-HP rule. An absent actor still
 held by an active actor link (a `vanish-bonded` familiar or steed) is refused
 instead: S1 returns it only through its spell (a Find Familiar cast restores
-presence; a Find Steed recast restores the same steed to maximum HP), and that
-recast is not executable yet (eshyra-s02z). Ending the owning effect releases
+presence; a Find Steed recast restores the same steed to maximum HP), and
+`recast_bonded_summon` executes that recast. Ending the owning effect releases
 the bond; a later admission is then a new creature (S1: with no link a cast
 creates a new familiar).
 
@@ -406,7 +463,45 @@ creates a new familiar).
   presence alone (Conjure Elemental/Fey, control -> uncontrolled) requires
   `cleanupOnBreak 'release'`; otherwise a concentration spell whose
   spell-ended transition removes presence requires `cleanupOnBreak 'remove'`.
-  Omitted policies take those values. The 0-HP rule is a durable creature
+  Omitted policies take those values.
+  **Uncontrolled successor (Conjure Elemental/Fey).** SRD: after a broken
+  concentration "the elemental doesn't disappear. Instead, you lose control of
+  the elemental, it becomes hostile toward you and your companions ... An
+  uncontrolled elemental can't be dismissed by you, and it disappears 1 hour
+  after you summoned it." The concentration effect still ends terminally
+  (`concentration-broken`, links `released`). When the spell record has a
+  `summoning` transition triggered by `absolute-time-reached` that removes
+  presence, applies only to an `uncontrolled` creature, and carries a timer
+  (derived from the transitions, never from spell names), `finalizeEnd` creates
+  in the same transaction one successor effect `<original id>:uncontrolled`
+  (the `:uncontrolled` id suffix is engine-owned: `createActiveEffect` refuses
+  a caller id ending in it, and refuses such a spell's effect when its derived
+  successor id is already stored, so the break never meets a taken id; no
+  other id is invented): kind
+  `summoning`, display name `<original> (uncontrolled)`, the same spell source
+  and source actor, no concentration, not dismissible, an active actor link
+  per released creature with `remove`/`remove` cleanup (and a target entry when
+  the creature was a target), and the original's timed duration copied
+  verbatim, including anchor kind, `anchor_at`, `anchor_game_time`,
+  `anchor_elapsed_minutes` and `deadline_elapsed_minutes`. The deadline is
+  therefore 1 hour after the summoning, never 1 hour after the break. The
+  original's anchor must mark the moment of summoning (`spell-cast`, or
+  `effect-created`, since the effect is created at that casting), and its
+  duration must equal the record timer's amount and unit. `createActiveEffect`
+  refuses any other anchor for such a spell, so the break (which must never
+  fail and roll back the write that caused it) always has a deadline to copy;
+  the break-time check only guards corrupt rows. Everything else follows from the
+  ordinary machinery: world-time advance expires the successor at its deadline
+  (`expired`) and its `remove` cleanup makes the creature absent; the creature
+  still vanishes at 0 HP (the successor ends `source-removed`); `dismissed` is
+  refused; `dispelled` and `ruled` work; the caster, holding no concentration
+  for it, may concentrate on another spell. Every break route produces it
+  (failed damage save, incapacitation/death, new-concentration replacement,
+  voluntary or forced break, owner removal at combat closure; at closure a
+  creature with a durable campaign-actor identity has the successor link
+  rebound to it like any owned actor, an instance-only creature is released).
+  Break results report it as `cleanup.successorEffectId`. Spells whose break
+  transition removes presence (Conjure Animals) get no successor. The 0-HP rule is a durable creature
   property (`zero_hp_rule`, mirrored into the actor's `combatLifecycle`),
   derived from the record's `zero-hit-points` transition or declared as
   `atZeroHitPoints` for a ruling-sourced creature (Find Familiar and Find
@@ -416,8 +511,8 @@ creates a new familiar).
   link) makes the creature absent at 0 HP while its link and effect stay
   active. It requires a durable campaign-actor identity (`campaignActorId`),
   since combat closure releases instance-only links. Restoring the same
-  creature is the spell's recast (eshyra-s02z, not yet executable);
-  `start_encounter` refuses it meanwhile.
+  creature is the spell's recast, executed by `recast_bonded_summon`
+  (eshyra-s02z, below); `start_encounter` refuses it meanwhile.
   **`vanish`** (integrity->destroyed, or presence->absent together with the
   effect ending: the conjure spells, Simulacrum) is executed: reaching 0 HP by any route
   (damage, suffocation, exhaustion clamping; exhaustion level 6 is death, not
@@ -425,9 +520,50 @@ creates a new familiar).
   concentration breaks (owner-removed), its link closes (`removed`, reason
   `zero-hit-points`) and the effect ends (`source-removed`) when no owned
   creature remains. Releasing a link does not clear the property. A knockout
-  of such a creature is refused. **`revert`** (form->original: Animate
-  Objects, Giant Insect) only feeds the guards; its 0-HP behaviour is pending
-  (eshyra-ysr3).
+  of such a creature is refused.
+  **`revert-object`** (form->original on an `animated-object` profile:
+  Animate Objects; the original form is an object, not a creature) is
+  executed like `vanish` for the creature: at 0 HP by any route it becomes
+  absent (never dead/dying/stable/unconscious), its concentration breaks
+  (owner-removed), its link closes (`removed`, reason `zero-hit-points`) and
+  the effect ends (`source-removed`) when no animated object remains. The
+  result is `reverted` (never `vanished`) and reports `carriedOverDamage`:
+  the damage beyond the hit points it had (`max(0, damage - hpBefore)`; 0 for
+  a suffocation drop or exhaustion clamping). The engine does not track
+  object hit points, so the amount is reported, not stored. The cleanups are
+  derived: `spell-end-reversion` requires `cleanupOnEnd 'remove'` and, for a
+  concentration spell, `cleanupOnBreak 'remove'` (the object stops being a
+  creature, so it leaves play when the spell ends or concentration breaks);
+  a contradicting explicit value (for example `release`) is refused with the
+  transition id.
+  **`revert-form`** (form->original on a `target-transformation` profile:
+  Giant Insect; the original is the same creature at natural size) never
+  removes the creature. At 0 HP by any route (damage, suffocation drop,
+  exhaustion clamping; exhaustion level 6 is still death) it returns to the
+  recorded natural form (hit points, maximum, rules reference), alive with
+  its 0-HP rule cleared; its link closes (`removed`, reason
+  `zero-hit-points`) and the effect ends (`source-removed`) when no
+  transformed creature remains. The result is `reverted` with the restored
+  `naturalForm`. The cleanups are derived as `revert` for both spell end and
+  concentration break (explicit `remove`/`release` is refused), and the same
+  restoration happens on spell end, concentration break, and per-target
+  `remove_effect_target` (the "action to dismiss the effect on it"). A
+  form->original zero-hit-points transition on any other profile is refused
+  as an unknown reversion target rather than guessed. The knockout and
+  player-character death-rule refusals apply to all four rule values. A
+  present `revert-form` creature must hold an active actor link with a
+  natural form: `auditActiveEffectIntegrity` reports one that does not, and
+  its 0-HP reversion refuses with a message naming the missing natural form.
+  Migration 0040 rewrites legacy `revert` rows (and the mirrored actor
+  lifecycle JSON) to `revert-object` when any actor link, in any status,
+  holding that creature belongs to a `spell:animate-objects` effect and to
+  `revert-form` otherwise; legacy `revert-form` rows carry no snapshot
+  (nothing was released with the old rule), so they exist only in
+  development databases. Their links keep the old `remove`/`release`
+  policy, which would take the creature out of play (or leave it
+  transformed) instead of reverting it, so the shared cleanup seam (effect
+  end, concentration break, `remove_effect_target`) refuses any non-`revert`
+  policy on a live `revert-form` holder rather than translating it.
 - **S3 wards / transformations / item lifecycles**: suppression tools are
   available, and `zone`/`form` link kinds use canonical S3/C1 projection
   stores through F3 cleanup: `remove` invokes the

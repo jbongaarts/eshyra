@@ -32,7 +32,11 @@ export const resolveConcentrationTool: Tool = {
     'the seeded RNG (2d20kh1/kl1 under advantage/disadvantage), applies ' +
     'your declared Constitution-save modifiers and proficiency, derives ' +
     'the outcome, and on failure ends the effect and cleans up its owned ' +
-    'projections (break-policy aware) in the same transaction. Never roll ' +
+    'projections (break-policy aware) in the same transaction; a broken ' +
+    'Conjure Elemental or Conjure Fey concentration leaves the creature ' +
+    'present, uncontrolled and hostile under successor effect ' +
+    '"<id>:uncontrolled" (cleanup.successorEffectId), which removes it 1 ' +
+    'hour after it was summoned and which the caster cannot dismiss. Never roll ' +
     'the save separately or report an outcome yourself. Incapacitation and ' +
     'death break concentration automatically — no save, no call needed.',
   inputSchema: {
