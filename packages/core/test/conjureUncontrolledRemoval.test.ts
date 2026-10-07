@@ -318,23 +318,71 @@ describe('uncontrolled successor of a broken Conjure Elemental / Conjure Fey', (
     ).not.toContain('fx:uncontrolled');
   });
 
-  it('refuses to invent another id when the successor id is taken', () => {
-    const s = setup();
-    s.must('start_effect', {
-      effectId: 'fx:uncontrolled',
-      kind: 'summoning',
-      displayName: 'squatter',
-      source: { kind: 'ruling' },
-      duration: { kind: 'until-removed' },
+  describe('the successor identity is engine-owned in both admission orders', () => {
+    it('a caller cannot claim an id ending in :uncontrolled, before or after the predecessor exists', () => {
+      const s = setup();
+      const squat = (effectId: string) =>
+        s.call('start_effect', {
+          effectId,
+          kind: 'summoning',
+          displayName: 'squatter',
+          source: { kind: 'ruling' },
+          duration: { kind: 'until-removed' },
+        });
+      const before = squat('fx:uncontrolled');
+      expect(before.ok).toBe(false);
+      expect(JSON.stringify(before)).toMatch(/reserved/);
+      s.cast('fx', 'spell:conjure-elemental', 'c-e1');
+      const after = squat('fx:uncontrolled');
+      expect(after.ok).toBe(false);
+      expect(JSON.stringify(after)).toMatch(/reserved/);
     });
-    s.cast('fx', 'spell:conjure-elemental', 'c-e1');
-    const r = s.call('end_effect', {
-      effectId: 'fx',
-      reason: 'concentration-broken',
-      detail: 'voluntary',
+
+    it('a predecessor whose successor id is already stored (legacy row) is refused at creation', () => {
+      const s = setup();
+      s.db
+        .prepare(
+          `INSERT INTO active_effect(campaign_id, effect_id, kind, display_name,
+             source_kind, duration_kind, created_at, provenance, session_id,
+             updated_at)
+           VALUES (?, 'fx:uncontrolled', 'summoning', 'legacy', 'ruling',
+                   'until-removed', ?, 'test', ?, ?)`,
+        )
+        .run(DEFAULT_TEST_CAMPAIGN_ID, at, DEFAULT_TEST_SESSION_ID, at);
+      const r = s.call('start_effect', {
+        effectId: 'fx',
+        kind: 'summoning',
+        displayName: 'Conjure Elemental',
+        source: {
+          kind: 'spell',
+          ref: 'spell:conjure-elemental',
+          actor: { kind: 'combatant', ref: 'c-wiz' },
+        },
+        concentrationOwner: { kind: 'combatant', ref: 'c-wiz' },
+        duration: {
+          kind: 'timed',
+          amount: 1,
+          unit: 'hour',
+          anchor: 'spell-cast',
+        },
+        targets: [{ kind: 'combatant', ref: 'c-e1' }],
+        actors: [{ combatantId: 'c-e1' }],
+      });
+      expect(r.ok).toBe(false);
+      expect(JSON.stringify(r)).toMatch(/already taken/);
     });
-    expect(r.ok).toBe(false);
-    expect(s.effect('fx').status).toBe('active');
+
+    it('the damage that breaks concentration commits and the successor is created', () => {
+      const s = setup();
+      s.cast('fx', 'spell:conjure-elemental', 'c-e1');
+      // Damage that drops the caster to 0 breaks concentration in the same
+      // transaction as the hit point write.
+      s.must('update_combatant', { combatantId: 'c-wiz', hpDelta: -20 });
+      expect(s.row('c-wiz')).toMatchObject({ hpCurrent: 0, status: 'dead' });
+      expect(s.effect('fx').endReason).toBe('concentration-broken');
+      expect(s.effect('fx:uncontrolled').status).toBe('active');
+      expect(s.row('c-e1').status).toBe('alive');
+    });
   });
 
   describe('every concentration-break route produces the successor', () => {

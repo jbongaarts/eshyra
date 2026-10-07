@@ -2455,9 +2455,53 @@ function applyLinkPolicy(
   policy: EffectCleanupPolicy,
   ctx: EffectMutationContext,
 ): EffectCleanupAction['action'] {
+  if (policy !== 'revert') refuseLegacyFormReversion(db, campaignId, link);
   if (policy === 'release') return 'released';
   if (policy === 'revert') return revertProjection(db, campaignId, link, ctx);
   return removeProjection(db, campaignId, link, ctx);
+}
+
+/** A live creature whose 0-hit-point rule is 'revert-form' returns to its
+ *  natural form when its transformation ends; only a 'revert' link records
+ *  that form. A link migrated from before natural forms were recorded (0040)
+ *  still carries the old remove/release policy and no snapshot: applying it
+ *  would make the creature absent (or leave it transformed), so refuse
+ *  instead of translating it. */
+function refuseLegacyFormReversion(
+  db: Db,
+  campaignId: string,
+  link: EffectLinkRow,
+): void {
+  if (link.link_kind !== 'actor') return;
+  const holder =
+    link.target_kind === 'campaign_actor'
+      ? (db
+          .prepare(
+            `SELECT status, json_extract(state_json, '$.combatLifecycle.zeroHpRule') AS rule
+             FROM campaign_actor WHERE campaign_id = ? AND actor_id = ?`,
+          )
+          .get(campaignId, link.target_ref) as
+          | { status: string; rule: string | null }
+          | undefined)
+      : (db
+          .prepare(
+            `SELECT status, zero_hp_rule AS rule FROM encounter_combatant
+             WHERE campaign_id = ? AND combatant_id = ?`,
+          )
+          .get(campaignId, link.projection_ref) as
+          | { status: string; rule: string | null }
+          | undefined);
+  if (
+    holder === undefined ||
+    holder.rule !== 'revert-form' ||
+    holder.status === 'dead' ||
+    holder.status === 'absent'
+  )
+    return;
+  throw new ActiveEffectError(
+    `'${link.projection_ref}' returns to its natural form when its transformation ends, but its link was recorded before natural forms were (it has no snapshot to restore); ` +
+      'its stored cleanup would take it out of play instead, so this cleanup is refused. The engine cannot recover that natural form (state from a development build before migration 0040)',
+  );
 }
 
 function parseNaturalForm(json: string | null): NaturalForm | undefined {
@@ -2758,6 +2802,13 @@ function finalizeEnd(
  *  casting. createActiveEffect admits only these for a cast-anchored removal,
  *  so the successor created at a concentration break can always copy the
  *  deadline. */
+/** Effect-id suffix reserved for the engine-created uncontrolled successor. */
+const UNCONTROLLED_SUCCESSOR_SUFFIX = ':uncontrolled';
+
+function uncontrolledSuccessorId(effectId: string): string {
+  return `${effectId}${UNCONTROLLED_SUCCESSOR_SUFFIX}`;
+}
+
 const SUMMONING_MOMENT_ANCHORS: readonly string[] = [
   'spell-cast',
   'effect-created',
@@ -2824,7 +2875,10 @@ function createUncontrolledSuccessor(
   if (record === undefined) return undefined;
   const removal = deriveUncontrolledRemoval(record);
   if (removal === undefined) return undefined;
-  const successorId = `${original.effect_id}:uncontrolled`;
+  const successorId = uncontrolledSuccessorId(original.effect_id);
+  // Unreachable through createActiveEffect, which reserves the suffix and
+  // refuses a predecessor whose successor id is taken; this guards corrupt
+  // rows only.
   if (readEffectRow(db, original.campaign_id, successorId) !== undefined)
     throw new ActiveEffectError(
       `cannot create the uncontrolled successor '${successorId}' of effect '${original.effect_id}': an effect with that id already exists`,
@@ -3349,6 +3403,14 @@ export function createActiveEffect(
         `an effect with id '${input.effectId}' already exists; effect ids are stable identities and are never reused`,
       );
     }
+    // '<id>:uncontrolled' is the engine-owned identity of the successor a
+    // concentration break creates (Conjure Elemental/Fey). A caller may never
+    // claim it: the break must always be able to create it.
+    if (input.effectId.endsWith(UNCONTROLLED_SUCCESSOR_SUFFIX)) {
+      throw new ActiveEffectError(
+        `effect id '${input.effectId}' ends with '${UNCONTROLLED_SUCCESSOR_SUFFIX}', which is reserved for the uncontrolled successor the engine creates when concentration on Conjure Elemental or Conjure Fey breaks; choose another id`,
+      );
+    }
 
     // Source grounding.
     if (!profile.sourceKinds.includes(input.source.kind)) {
@@ -3686,6 +3748,19 @@ export function createActiveEffect(
     )
       throw new ActiveEffectError(
         `'${spellRecord?.name}' transition '${uncontrolledRemoval.id}' removes an uncontrolled creature ${uncontrolledRemoval.amount} ${uncontrolledRemoval.unit}(s) after it was summoned, so the effect must be a ${uncontrolledRemoval.amount}-${uncontrolledRemoval.unit} timer anchored to 'spell-cast' or 'effect-created' (the moment of summoning)`,
+      );
+    // The other admission direction: an effect stored under the derived
+    // successor id before the suffix was reserved would make the break fail.
+    if (
+      uncontrolledRemoval !== undefined &&
+      readEffectRow(
+        txnDb,
+        input.campaignId,
+        uncontrolledSuccessorId(input.effectId),
+      ) !== undefined
+    )
+      throw new ActiveEffectError(
+        `effect id '${input.effectId}' cannot be used for '${spellRecord?.name}': its uncontrolled successor id '${uncontrolledSuccessorId(input.effectId)}' is already taken, so a broken concentration could not hand the creature over; choose another id`,
       );
     for (const actor of actors) {
       requireNonEmptyString(actor.combatantId, 'linked actor combatantId');

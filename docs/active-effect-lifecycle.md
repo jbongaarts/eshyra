@@ -474,7 +474,10 @@ creates a new familiar).
   presence, applies only to an `uncontrolled` creature, and carries a timer
   (derived from the transitions, never from spell names), `finalizeEnd` creates
   in the same transaction one successor effect `<original id>:uncontrolled`
-  (creation fails if that id exists; no other id is invented): kind
+  (the `:uncontrolled` id suffix is engine-owned: `createActiveEffect` refuses
+  a caller id ending in it, and refuses such a spell's effect when its derived
+  successor id is already stored, so the break never meets a taken id; no
+  other id is invented): kind
   `summoning`, display name `<original> (uncontrolled)`, the same spell source
   and source actor, no concentration, not dismissible, an active actor link
   per released creature with `remove`/`remove` cleanup (and a target entry when
@@ -556,7 +559,11 @@ creates a new familiar).
   holding that creature belongs to a `spell:animate-objects` effect and to
   `revert-form` otherwise; legacy `revert-form` rows carry no snapshot
   (nothing was released with the old rule), so they exist only in
-  development databases.
+  development databases. Their links keep the old `remove`/`release`
+  policy, which would take the creature out of play (or leave it
+  transformed) instead of reverting it, so the shared cleanup seam (effect
+  end, concentration break, `remove_effect_target`) refuses any non-`revert`
+  policy on a live `revert-form` holder rather than translating it.
 - **S3 wards / transformations / item lifecycles**: suppression tools are
   available, and `zone`/`form` link kinds use canonical S3/C1 projection
   stores through F3 cleanup: `remove` invokes the

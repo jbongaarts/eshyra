@@ -601,6 +601,50 @@ describe('Giant Insect: reverts to its natural form at 0 hit points', () => {
     expect(s.row('c-b1')).toMatchObject({ hpCurrent: 26, status: 'alive' });
   });
 
+  it('a migrated legacy transformation (remove cleanup, no natural form) refuses end, break and target removal instead of taking the creature out of play', () => {
+    for (const act of [
+      (t: ReturnType<typeof setup>) =>
+        t.call('end_effect', { effectId: 'fx', reason: 'dismissed' }),
+      (t: ReturnType<typeof setup>) =>
+        t.call('end_effect', {
+          effectId: 'fx',
+          reason: 'concentration-broken',
+          detail: 'voluntary',
+        }),
+      (t: ReturnType<typeof setup>) =>
+        t.call('remove_effect_target', {
+          effectId: 'fx',
+          target: { kind: 'combatant', ref: 'c-b1' },
+          reason: 'dismissed',
+        }),
+    ]) {
+      const s = setup(['b1'], 26, GIANT);
+      s.insects(['c-b1'], { dismissible: true });
+      // Exactly what migration 0040 leaves for a v39 Giant Insect: the rule
+      // becomes revert-form, the link keeps its old remove/remove policy and
+      // has no natural form.
+      s.db
+        .prepare(
+          `UPDATE active_effect_link SET cleanup_on_end='remove',
+             cleanup_on_break='remove', natural_form_json=NULL
+           WHERE effect_id='fx' AND projection_ref='c-b1'`,
+        )
+        .run();
+      const r = act(s);
+      expect(r.ok).toBe(false);
+      expect(JSON.stringify(r)).toMatch(/natural form/);
+      expect(s.row('c-b1')).toMatchObject({
+        status: 'alive',
+        hpCurrent: 26,
+        rulesRef: GIANT,
+        zeroHpRule: 'revert-form',
+      });
+      expect(s.effect('fx').status).toBe('active');
+      expect(s.link('fx', 'c-b1').status).toBe('active');
+      s.db.close();
+    }
+  });
+
   it('a well-formed transformation has no integrity issue', () => {
     const s = setup(['b1'], 26, GIANT);
     s.insects(['c-b1']);
