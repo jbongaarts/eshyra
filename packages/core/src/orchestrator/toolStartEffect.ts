@@ -42,7 +42,14 @@ export const startEffectTool: Tool = {
     'effect and are cleaned up exactly when it ends. Give every timer a ' +
     'quantity, unit, and anchor. Use projected condition ids unique to the ' +
     'effect (e.g. "blessed:fx-bless-1"). Do NOT use this for instantaneous ' +
-    'spells — their consequences land through their own mutations.',
+    'spells — they leave no active effect and their consequences land through ' +
+    'their own mutations — EXCEPT a bonded summon whose record keeps a ' +
+    'persistent link after casting (Find Familiar, Find Steed). Those are ' +
+    'spell-sourced summoning effects with duration until-removed and ' +
+    'source.actor set to the caster as a character or campaign_actor (the ' +
+    'bond outlives combat, so never a combatant id), with one bond per ' +
+    'caster per spell ' +
+    '(casting again while the bond lasts is recast_bonded_summon).',
   inputSchema: {
     type: 'object',
     properties: {
@@ -173,11 +180,13 @@ export const startEffectTool: Tool = {
           'the other conjure spells, Simulacrum) vanishes at 0 HP: it ' +
           'becomes absent, never dead, dying, stable or unconscious, its ' +
           'link closes, and the effect ends when its last owned creature ' +
-          'is gone. A ruling-sourced creature declares its rule with ' +
-          'atZeroHitPoints: "vanish-bonded" for a familiar or steed, which ' +
-          'disappears at 0 HP but stays bonded (its link and the effect stay ' +
-          'active; it needs campaignActorId), or "vanish" for one whose part ' +
-          'of the effect ends. An absent bonded creature returns only by its ' +
+          'is gone. A spell-sourced familiar or steed (Find Familiar, Find ' +
+          'Steed) derives "vanish-bonded" from its record: it disappears at ' +
+          '0 HP but stays bonded (its link and the effect stay active; it ' +
+          'needs campaignActorId). A ruling-sourced creature declares its ' +
+          'rule with atZeroHitPoints: "vanish-bonded" for a homebrew bonded ' +
+          'creature (recast_bonded_summon cannot recast it), or "vanish" for ' +
+          'one whose part of the effect ends. An absent bonded creature returns only by its ' +
           'spell being cast again (recast_bonded_summon); ' +
           'start_encounter refuses it until then or until the bond is ended. A record ' +
           'that animates an object (Animate Objects) makes the creature ' +
@@ -223,7 +232,7 @@ export const startEffectTool: Tool = {
               type: 'string',
               enum: ['vanish', 'vanish-bonded'],
               description:
-                'What happens when the creature drops to 0 hit points. "vanish": it disappears and its part of the effect ends (its link closes; the effect ends when no owned creature remains). "vanish-bonded": it disappears but stays bonded, so the link and effect stay active (Find Familiar, Find Steed); requires campaignActorId, and the absent creature returns only when its spell is cast again (recast_bonded_summon). Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature.',
+                'What happens when the creature drops to 0 hit points. "vanish": it disappears and its part of the effect ends (its link closes; the effect ends when no owned creature remains). "vanish-bonded": it disappears but stays bonded, so the link and effect stay active (Find Familiar, Find Steed); requires campaignActorId, and the absent creature returns only when its spell is cast again (recast_bonded_summon). Derived from the spell record for spell sources (a contradicting value is refused); declare it for a ruling-sourced creature (the ruling form is for homebrew bonded creatures).',
             },
           },
           required: ['combatantId'],

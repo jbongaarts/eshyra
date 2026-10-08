@@ -92,7 +92,20 @@ A `spell` source **requires** a `source_ref` that resolves in the campaign
 rules stack (homebrew goes through `ruling`). The spell record's duration text
 is authoritative where it parses:
 
-- `Instantaneous` → refused (instantaneous spells leave no active effect).
+- `Instantaneous` → refused (instantaneous spells leave no active effect),
+  except a bonded summon (eshyra-qxnc): a `summoning` effect whose record has a
+  summoning effect with `identity.kind: persistent-linked` and
+  `initialState.link: active` (Find Familiar, Find Steed), decided by the
+  record, never the spell's name. Such a bond must declare an `until-removed`
+  duration (it lasts until released or dismissed), a `source.actor` (the
+  caster it is bonded to, as a `character` or `campaign_actor`: the bond
+  outlives any combat instance, so a `combatant` id, which names one
+  projection in one instance, is refused), and between one and
+  `identity.maximumLinked` actors
+  entries. A caster may hold one such bond per spell: creation is refused while
+  another active or suppressed effect has the same spell, the same source
+  actor, and an active actor link, and points at `recast_bonded_summon`.
+  Ending that effect (or closing its links) releases the bond.
 - `Concentration, up to N <unit>` → concentration **required** and the declared
   timed duration must match `N <unit>` exactly.
 - `N <unit>` → concentration **forbidden**; declared duration must match.
@@ -322,8 +335,9 @@ typed audit events.
     operation and no presence change; the recorded transition is always
     `reform-present-familiar`.
   - Preconditions, validated before any write: the effect is active (not
-    ended, not suppressed) and `summoning`; for a spell-sourced effect,
-    `spellRef` is its source; it holds exactly one active actor link to a
+    ended, not suppressed) and `summoning`; it is
+    spell-sourced (a ruling-sourced bond is refused: the engine cannot tell
+    which spell created it) and `spellRef` is its source; it holds exactly one active actor link to a
     durable campaign actor with the `vanish-bonded` rule that is `absent` or
     `alive`; and that actor has no combatant in an active combat instance (both
     spells take 10 minutes or longer to cast, and a Find Familiar reform is the
@@ -530,8 +544,11 @@ creates a new familiar).
   transition removes presence (Conjure Animals) get no successor. The 0-HP rule is a durable creature
   property (`zero_hp_rule`, mirrored into the actor's `combatLifecycle`),
   derived from the record's `zero-hit-points` transition or declared as
-  `atZeroHitPoints` for a ruling-sourced creature (Find Familiar and Find
-  Steed are instantaneous, so they cannot be spell-sourced effects).
+  `atZeroHitPoints` for a ruling-sourced creature. Find Familiar and Find Steed
+  are instantaneous but keep a persistent link, so they are spell-sourced
+  (see Source grounding) and derive `vanish-bonded`; a contradicting
+  declaration is refused. The ruling form stays legal for homebrew bonded
+  creatures, which `recast_bonded_summon` cannot recast.
   **`vanish-bonded`** (presence->absent with the effect and link left active:
   Find Familiar, Find Steed; S1 invariant 8, physical absence does not end the
   link) makes the creature absent at 0 HP while its link and effect stay

@@ -3378,6 +3378,35 @@ export function closeActorLinkAtZeroHp(
   return { effectId: null, effectEnded: false };
 }
 
+/** eshyra-qxnc: the bonded-summon effect of an instantaneous spell record: a
+ *  summoning effect whose identity is persistent-linked and whose initial link
+ *  is active (Find Familiar, Find Steed). The record, never the spell's name,
+ *  decides it. `maximumLinked` is the identity's positive-integer limit. */
+function findPersistentBondEffect(
+  record: RulesRecord,
+): { maximumLinked: number | undefined } | undefined {
+  const mechanics = asObject(asObject(record.data)?.mechanics);
+  const effects = Array.isArray(mechanics?.effects) ? mechanics.effects : [];
+  for (const raw of effects) {
+    const effect = asObject(raw);
+    const identity = asObject(effect?.identity);
+    if (
+      effect?.kind !== 'summoning' ||
+      identity?.kind !== 'persistent-linked' ||
+      asObject(effect.initialState)?.link !== 'active'
+    )
+      continue;
+    const max = identity.maximumLinked;
+    return {
+      maximumLinked:
+        typeof max === 'number' && Number.isInteger(max) && max > 0
+          ? max
+          : undefined,
+    };
+  }
+  return undefined;
+}
+
 // ---------------------------------------------------------------------------
 // createActiveEffect
 // ---------------------------------------------------------------------------
@@ -3422,6 +3451,7 @@ export function createActiveEffect(
     let concentrationRule: 'required' | 'forbidden' | 'declared' = 'declared';
     let recordDuration: ParsedSpellDurationForm | undefined;
     let spellRecord: RulesRecord | undefined;
+    let bondedSummon: { maximumLinked: number | undefined } | undefined;
     if (input.source.kind === 'spell') {
       const ref = requireNonEmptyString(
         input.source.ref,
@@ -3446,10 +3476,16 @@ export function createActiveEffect(
         concentrationRule = parsed.concentration ? 'required' : 'forbidden';
         recordDuration = parsed.form;
         if (parsed.form.kind === 'instantaneous') {
-          throw new ActiveEffectError(
-            `'${record.name}' is instantaneous per its record; instantaneous spells leave no ` +
-              'active effect — their consequences land through their own mutations',
-          );
+          const bondEffect =
+            input.kind === 'summoning'
+              ? findPersistentBondEffect(record)
+              : undefined;
+          if (bondEffect === undefined)
+            throw new ActiveEffectError(
+              `'${record.name}' is instantaneous per its record; instantaneous spells leave no ` +
+                'active effect — their consequences land through their own mutations',
+            );
+          bondedSummon = bondEffect;
         }
       }
     } else if (
@@ -3476,6 +3512,51 @@ export function createActiveEffect(
         input.source.actor,
         'source.actor',
       );
+    }
+
+    if (bondedSummon !== undefined) {
+      if (input.duration.kind !== 'until-removed')
+        throw new ActiveEffectError(
+          `'${spellRecord?.name}' bonds its creature until it is released or dismissed, so the effect lasts until removed: declare an 'until-removed' duration`,
+        );
+      if (input.source.actor === undefined)
+        throw new ActiveEffectError(
+          `'${spellRecord?.name}' bonds its creature to the caster: declare source.actor (the caster the creature is bonded to)`,
+        );
+      // The bond outlives any combat instance, so its caster needs a durable
+      // identity; a combatant id names one projection in one instance.
+      if (input.source.actor.kind === 'combatant')
+        throw new ActiveEffectError(
+          `'${spellRecord?.name}' bonds its creature to the caster beyond any one combat: declare source.actor as the caster's character or campaign_actor, not combatant '${input.source.actor.ref}'`,
+        );
+      const linked = (input.actors ?? []).length;
+      const max = bondedSummon.maximumLinked;
+      if (linked < 1 || (max !== undefined && linked > max))
+        throw new ActiveEffectError(
+          `'${spellRecord?.name}' bonds ${max === undefined ? 'at least one creature' : `at most ${max} creature${max === 1 ? '' : 's'}`} per casting; ${linked} actors entries were declared`,
+        );
+      const held = txnDb
+        .prepare(
+          `SELECT e.effect_id FROM active_effect e
+           WHERE e.campaign_id = ? AND e.status IN ('active', 'suppressed')
+             AND e.source_kind = 'spell' AND e.source_ref = ?
+             AND e.source_actor_kind = ? AND e.source_actor_ref = ?
+             AND EXISTS (
+               SELECT 1 FROM active_effect_link l
+               WHERE l.campaign_id = e.campaign_id AND l.effect_id = e.effect_id
+                 AND l.link_kind = 'actor' AND l.status = 'active')
+           ORDER BY e.effect_id LIMIT 1`,
+        )
+        .get(
+          input.campaignId,
+          input.source.ref,
+          input.source.actor.kind,
+          input.source.actor.ref,
+        ) as { effect_id: string } | undefined;
+      if (held !== undefined)
+        throw new ActiveEffectError(
+          `${input.source.actor.kind} '${input.source.actor.ref}' already holds a '${spellRecord?.name}' bond: effect '${held.effect_id}'. A caster has one such bond at a time; casting the spell again while the bond lasts is recast_bonded_summon (Find Familiar reforms the familiar, Find Steed restores an absent steed), and ending effect '${held.effect_id}' releases the bond`,
+        );
     }
 
     // Concentration.
@@ -5266,7 +5347,11 @@ export function recastBondedSummon(
       throw new ActiveEffectError(
         `effect '${input.effectId}' is a ${row.kind} effect; recast_bonded_summon applies only to a summoning effect`,
       );
-    if (row.source_kind === 'spell' && row.source_ref !== input.spellRef)
+    if (row.source_kind !== 'spell')
+      throw new ActiveEffectError(
+        `effect '${input.effectId}' was not recorded from its spell (source kind '${row.source_kind}'), so the engine cannot tell which spell created the bond; a recast applies only to a bond created with start_effect source { kind: 'spell', ref }`,
+      );
+    if (row.source_ref !== input.spellRef)
       throw new ActiveEffectError(
         `effect '${input.effectId}' was cast from '${row.source_ref ?? 'no spell'}', not '${input.spellRef}'`,
       );
