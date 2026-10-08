@@ -39,6 +39,7 @@ import { expendAmmunitionTool } from './toolExpendAmmunition.js';
 import { gainCurrencyTool } from './toolGainCurrency.js';
 import { giveItemTool } from './toolGiveItem.js';
 import { grantTempHpTool } from './toolGrantTempHp.js';
+import { joinCombatTool } from './toolJoinCombat.js';
 import { listNearbyItemsTool } from './toolListNearbyItems.js';
 import { listRecoverableItemsTool } from './toolListRecoverableItems.js';
 import { lookupRulesTool } from './toolLookupRules.js';
@@ -110,6 +111,7 @@ export const DEFAULT_TOOLS: readonly Tool[] = [
   requestAmbiguityRulingTool,
   acceptAmbiguityPrecedentTool,
   startEncounterTool,
+  joinCombatTool,
   updateCombatantTool,
   closeCombatInstanceTool,
   beginTurnTool,

@@ -1587,6 +1587,7 @@ export {
   EncounterCombatantError,
   getActiveCombatInstance,
   getCampaignActor,
+  joinCombat,
   listCampaignActors,
   listCombatants,
   listCombatantsForInstance,

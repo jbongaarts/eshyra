@@ -260,6 +260,7 @@ export function buildSystemPrompt(
     '  game-state scope. Do not reactivate an old combat instance; returning',
     '  to a prior encounter or location starts a new instance after the current',
     '  one is closed or interrupted.',
+    "- Creatures arriving mid-combat (a summon cast in the fight, reinforcements) join the active instance with `join_combat`; a recalled familiar is automatic. Initiative stays narrated; record a summon's effect afterwards with `start_effect` using the returned combatant ids.",
     '- Each live monster/NPC has an exact combatant id in Active combatants.',
     '  Use `update_combatant` for monster/NPC HP, conditions, placement, and',
     '  alive/dead/unconscious/escaped/inactive status. Use `adjust_hp` only for',
