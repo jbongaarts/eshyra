@@ -1496,6 +1496,7 @@ export {
   SUPPORTED_EFFECT_ANCHOR_KINDS,
   settleEffectsAtTurnBoundary,
   suppressEffect,
+  transitionBondedSummon,
   unsuppressEffect,
 } from './state/activeEffects.js';
 // Campaign advancement policy (mode + resolved XP threshold table).

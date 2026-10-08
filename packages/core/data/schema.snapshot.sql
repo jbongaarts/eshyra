@@ -51,6 +51,7 @@ CREATE TABLE "active_effect_event" (
     'target-removed',
     'combat-closed',
     'recast',
+    'presence-transition',
     'ended'
   )),
   detail_json TEXT NOT NULL,
@@ -155,7 +156,7 @@ CREATE TABLE "campaign_actor" (
   hp_current INTEGER CHECK (hp_current IS NULL OR hp_current >= 0),
   hp_max INTEGER CHECK (hp_max IS NULL OR hp_max >= 0),
   conditions_json TEXT NOT NULL DEFAULT '[]',
-  status TEXT NOT NULL CHECK (status IN ('alive', 'dead', 'unconscious', 'escaped', 'inactive', 'unknown', 'dying', 'stable', 'absent')),
+  status TEXT NOT NULL CHECK (status IN ('alive', 'dead', 'unconscious', 'escaped', 'inactive', 'unknown', 'dying', 'stable', 'absent', 'pocketed')),
   current_location_id TEXT,
   state_json TEXT NOT NULL DEFAULT '{}',
   provenance TEXT NOT NULL,

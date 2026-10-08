@@ -297,8 +297,9 @@ typed audit events.
   reassertion), optionally with a new validated duration.
 - `recastBondedSummon` (model tool `recast_bonded_summon`, eshyra-s02z,
   eshyra-71u1) — records the source recast of a bonded summon. The engine
-  models two presences for the bonded actor and maps its status to one:
-  `absent` -> `absent`, `alive` -> `present`; any other status is refused,
+  models three presences for the bonded actor and maps its status to one:
+  `absent` -> `absent`, `alive` -> `present`, `pocketed` ->
+  `pocket-dimension` (eshyra-82uk); any other status is refused,
   naming it. The spell record's `cast-again` transition whose `when` includes
   that presence and the active link decides the result by its operation, never
   by the spell's name.
@@ -328,18 +329,19 @@ typed audit events.
     (conditions, exhaustion, display name, location, its `vanish-bonded` rule,
     so it can vanish again) stays as stored; the effect and its link are
     untouched.
-  - **Pocket presence is not modelled** (eshyra-82uk): the engine cannot tell
-    a familiar dismissed to its pocket dimension from a present one, so both
-    are a live actor with an active bond. The reform is still correct for a
-    pocketed familiar, because `reform-pocketed-familiar` has the same
-    operation and no presence change; the recorded transition is always
-    `reform-present-familiar`.
+  - **Pocket-dimension** (the transition changes no presence). Only
+    `select-new-form` is executable (Find Familiar, `reform-pocketed-familiar`):
+    `form` is required and the same actor takes the new form's hit points as
+    for the present reform (exhaustion maximum included), but it **stays
+    pocketed** (`restoreBondedCampaignActor` with `expectedPresence:
+    'pocket-dimension'`). The recast does not recall it; `transition_bonded_summon`
+    does.
   - Preconditions, validated before any write: the effect is active (not
     ended, not suppressed) and `summoning`; it is
     spell-sourced (a ruling-sourced bond is refused: the engine cannot tell
     which spell created it) and `spellRef` is its source; it holds exactly one active actor link to a
-    durable campaign actor with the `vanish-bonded` rule that is `absent` or
-    `alive`; and that actor has no combatant in an active combat instance (both
+    durable campaign actor with the `vanish-bonded` rule that is `absent`,
+    `alive` or `pocketed`; and that actor has no combatant in an active combat instance (both
     spells take 10 minutes or longer to cast, and a Find Familiar reform is the
     same cast, so the recast happens outside combat). An ended effect or
     released bond (a new cast creates a new creature) is refused. The engine
@@ -351,6 +353,63 @@ typed audit events.
     creature in space (`reappearancePlacement` is narrated). Permanent dismissal
     after a 0-HP absence stays gated on
     `ambiguity:find-familiar-permanent-dismissal-after-zero-hp`.
+- `transitionBondedSummon` (model tool `transition_bonded_summon`,
+  eshyra-82uk) — executes the **action-triggered presence transitions** of a
+  bonded summon's spell record. Input `{ effectId, spellRef, trigger, side?,
+  faction?, placement? }`, `trigger` one of `action-temporary-dismissal`,
+  `action-recall`, `action-permanent-dismissal`, `action-dismissal`,
+  `action-release`. The preconditions are the recast's (active, `summoning`,
+  spell-sourced with `spellRef` as its source, exactly one active actor link
+  to a durable `vanish-bonded` campaign actor). The record transition is
+  selected by the trigger, the actor's presence (`alive` -> `present`,
+  `pocketed` -> `pocket-dimension`, `absent` -> `absent`; any other status is
+  refused naming it) and an active link, never by the spell's name; none ->
+  refused naming spell, trigger and presence. A transition with an
+  `availability` gate is refused naming its ambiguity id
+  (`ambiguity:find-familiar-permanent-dismissal-after-zero-hp`), as is any
+  change or operation combination the engine does not execute. It is executed
+  by the transition's `changes`, atomically (validated before any write):
+  - **presence present -> pocket-dimension** (Find Familiar
+    `temporary-pocket-dismissal`). Out of combat the actor's status becomes
+    `pocketed`, everything else unchanged. With a live combatant in the active
+    instance the combatant leaves play through `removeCombatantFromPlay` (its
+    row becomes `absent`, concentration ends as for any leaving play), the
+    references it held (links, targets, source actor) are rebound to the
+    campaign actor (the same `rebindCombatantReferencesToActor` combat closure
+    uses) and the actor is `pocketed` with the hit points, conditions, rules
+    reference and lifecycle the combatant had.
+  - **presence pocket-dimension -> present** (`pocket-recall`). The actor
+    returns `alive`, everything else unchanged. With a combat instance
+    active it is projected into it as a **new** combatant row (an absent row
+    never returns) through `admitCampaignActorToInstance`, the projection
+    `start_encounter` uses: id `<instance>-<slug(actor)>`, else the next free
+    `-2`, `-3`, ... ; side and faction default to the actor's most recent row
+    in that instance, and an actor with no earlier row there needs `side`.
+    Initiative is narrated, not tracked, so none is kept or rerolled; the
+    record's `place-in-unoccupied-space` (30 ft) is reported as
+    `narratedPlacement`, never tracked.
+  - **presence present -> absent, link unchanged** (Find Steed
+    `action-dismissal`). The combatant (if any) leaves play with the same
+    rebind and the actor becomes `absent`; the link and effect are untouched,
+    so `start_encounter` refuses it and `recast_bonded_summon`'s
+    `restore-same-steed` returns it at maximum hit points (once combat is
+    closed).
+  - **link -> none, presence -> absent** (Find Familiar
+    `permanent-dismissal-from-present-or-pocket`, Find Steed `release-bond`).
+    The creature leaves play (a present or pocketed creature becomes `absent`;
+    an absent steed stays absent), its actor link closes (`removed`, reason
+    `bond-ended:<transition>`) and the effect ends with reason `dismissed`
+    through the normal end path when no active actor link remains (the
+    `presence-transition` event precedes the terminal `ended` event). It does
+    not go through `end_effect`: these spells derive no spell-ended cleanup, so
+    a stored `release` policy would leave the creature alive and unbonded.
+    Afterwards the actor is an unbonded `absent` actor: `start_encounter`
+    admits it only as a new manifestation, and a released or permanently
+    dismissed creature can return only as a new creature from a new cast.
+  One `presence-transition` event records `spellRef`, `transitionId`,
+  `trigger`, `actor`, `from`, `to` and the combatant ids that left/entered.
+  The tool spends no action: in combat the model spends the caster's action
+  with `spend_turn_resource`.
 - `suppressEffect` / `unsuppressEffect` — antimagic-style suppression without
   end/cleanup, exposed to the model as model-facing tools
   `suppress_effect` and `unsuppress_effect`.
@@ -489,6 +548,28 @@ presence; a Find Steed recast restores the same steed to maximum HP), and
 `recast_bonded_summon` executes that recast. Ending the owning effect releases
 the bond; a later admission is then a new creature (S1: with no link a cast
 creates a new familiar).
+
+**`pocketed` is not `absent`** (eshyra-82uk). A campaign actor (never a
+combatant: `CombatantStatus` has no such value) is `pocketed` while a bonded
+familiar is dismissed to its pocket dimension. Like `absent` it is out of play:
+it has no turn, takes no part in combat, `start_encounter` refuses it ("it is in
+its pocket dimension; recall it with transition_bonded_summon trigger
+action-recall"), and `update` paths refuse the `pocketed` status and any hit
+point, condition or status edit of a pocketed actor (the status is engine-owned,
+as `absent` is). Unlike `absent` it is not terminal and not a 0-HP state: it
+keeps `hp_current`, `hp_max`, `rules_ref`, conditions (exhaustion included) and
+its combat lifecycle, and only `transition_bonded_summon` `action-recall` (or
+`recast_bonded_summon`, which reforms it and leaves it pocketed) acts on it. It
+exists only while exactly one active actor link of a live, spell-sourced
+summoning effect holds it (`auditActiveEffectIntegrity` reports anything
+else): any other way the bond ends (`end_effect`, `remove_effect_target`, a
+`remove` or `release` cleanup) takes it out of play as `absent`, reported
+`removed`, never an unbonded pocketed actor. The stale `absent` row a
+mid-combat dismissal leaves is never allowed to overwrite the actor
+(`syncCombatantActor` and combat closure skip it), a recalled creature is a new
+row and the newest row in an instance is its current projection
+(`currentActorProjectionId` breaks ties by newest row). Persisted by migration
+`0042` (`campaign_actor.status` and the `presence-transition` event kind).
 
 ## 9. Downstream hooks
 

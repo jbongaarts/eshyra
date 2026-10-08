@@ -5,7 +5,7 @@ import { asRecord, err, ok } from './toolRegistry.js';
 
 export const recastBondedSummonTool: Tool = {
   name: 'recast_bonded_summon',
-  // Restores an absent / reforms a present bonded creature via its spell's recast (eshyra-s02z, eshyra-71u1).
+  // Restores an absent / reforms a present or pocketed bonded creature via its spell's recast (eshyra-s02z, eshyra-71u1).
   mutates: true,
   description:
     'Record that the summoner casts a bonded-summon spell again (Find ' +
@@ -24,9 +24,10 @@ export const recastBondedSummonTool: Tool = {
     'has a cast-again transition for it: a recast of Find Familiar while the ' +
     'familiar is present REQUIRES form, and the same actor stays present in ' +
     'the new form with that creature’s hit points (damage does not carry ' +
-    'across; the exhaustion-adjusted maximum applies). The engine does not ' +
-    'track a familiar dismissed to its pocket dimension: such a familiar is ' +
-    'recorded as present, and the reform has the same effect. A present Find ' +
+    'across; the exhaustion-adjusted maximum applies). A familiar dismissed ' +
+    'to its pocket dimension (transition_bonded_summon, status pocketed) is ' +
+    'reformed the same way and STAYS in its pocket dimension: only its form ' +
+    'and hit points change. A present Find ' +
     'Steed is refused. Nothing else about the actor changes. Refused: when ' +
     'the effect ended or the bond was released (a new cast then creates a ' +
     'new creature: start_effect, then start_encounter), when the effect is ' +

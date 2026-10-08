@@ -59,7 +59,11 @@ export type ActorStatus =
   | 'unknown'
   | 'dying'
   | 'stable'
-  | 'absent';
+  | 'absent'
+  /** eshyra-82uk: a bonded summon dismissed to its pocket dimension (Find
+   *  Familiar). Out of play but not terminal: it keeps hit points,
+   *  conditions and its lifecycle. Campaign actors only; engine-owned. */
+  | 'pocketed';
 export type CombatantIdentityKind =
   | 'encounter_instance'
   | 'module_npc'
@@ -273,6 +277,21 @@ export function updateCampaignActor(
       throw new EncounterCombatantError(
         "status 'absent' is engine-owned: a creature leaves play through its owning effect or its zero-hit-point rule",
       );
+    if (input.status === 'pocketed')
+      throw new EncounterCombatantError(
+        "status 'pocketed' is engine-owned: a bonded creature is dismissed to its pocket dimension with transition_bonded_summon (action-temporary-dismissal)",
+      );
+    if (
+      actor.status === 'pocketed' &&
+      (input.status !== undefined ||
+        input.hpCurrent !== undefined ||
+        input.hpMax !== undefined ||
+        input.addCondition !== undefined ||
+        input.removeCondition !== undefined)
+    )
+      throw new EncounterCombatantError(
+        `campaign actor '${input.actorId}' is in its pocket dimension (out of play); recall it with transition_bonded_summon trigger action-recall before changing it`,
+      );
     if (
       actor.status === 'absent' &&
       (input.status !== undefined ||
@@ -303,7 +322,7 @@ export function updateCampaignActor(
         `SELECT combatant_id, hp_current, hp_max FROM encounter_combatant
          WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
            AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-         ORDER BY combatant_id LIMIT 1`,
+         ORDER BY rowid DESC LIMIT 1`,
       )
       .get(input.campaignId, input.actorId, input.campaignId) as
       | { combatant_id: string; hp_current: number; hp_max: number }
@@ -468,6 +487,9 @@ function ensureCampaignActorFromCombatantInTxn(
       `unknown combatant '${input.combatantId}'`,
     );
   const existing = getCampaignActor(db, input.campaignId, input.actorId);
+  // The stale absent row a pocketed actor left behind never overwrites it.
+  if (existing?.status === 'pocketed' && combatant.status === 'absent')
+    return existing;
   if (
     existing !== undefined &&
     existing.rulesRef !== undefined &&
@@ -1157,7 +1179,7 @@ function currentActorProjectionId(
   const row = db
     .prepare(`SELECT c.combatant_id FROM encounter_combatant c JOIN combat_instance i USING(campaign_id,combat_instance_id)
     WHERE c.campaign_id=? AND c.identity_kind='campaign_actor' AND c.identity_ref=?
-    ORDER BY (i.status='active') DESC, i.rowid DESC LIMIT 1`)
+    ORDER BY (i.status='active') DESC, i.rowid DESC, c.rowid DESC LIMIT 1`)
     .get(campaignId, actorId) as { combatant_id: string } | undefined;
   return row?.combatant_id;
 }
@@ -1933,6 +1955,288 @@ function hasActiveBondLink(
   );
 }
 
+/** The campaign-actor projection of start_encounter, factored so the bonded
+ *  recall (eshyra-82uk) projects an actor into an active instance by exactly
+ *  the same rules: validates the admission, writes the actor, inserts ONE new
+ *  combatant row `combatantId` and syncs. Returns the new combatant id. */
+function admitCampaignActorToInstance(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+  instance: {
+    readonly combatInstanceId: string;
+    readonly sourceEncounterId: string | undefined;
+    readonly locationId: string | undefined;
+  },
+  actorInput: StartEncounterActorInput,
+  projectedId: string,
+): string {
+  const { locationId } = instance;
+  if (actorInput.state?.combatLifecycle !== undefined)
+    throw new EncounterCombatantError(
+      'state.combatLifecycle is engine-owned and cannot be supplied when starting an encounter',
+    );
+  const existing = getCampaignActor(db, input.campaignId, actorInput.actorId);
+  if (existing?.status === 'pocketed')
+    throw new EncounterCombatantError(
+      `campaign actor '${actorInput.actorId}' is in its pocket dimension; recall it with transition_bonded_summon trigger action-recall`,
+    );
+  if (actorInput.status === 'pocketed')
+    throw new EncounterCombatantError(
+      "status 'pocketed' is engine-owned: a bonded creature is dismissed to its pocket dimension with transition_bonded_summon",
+    );
+  const rulesRef = actorInput.rulesRef ?? existing?.rulesRef;
+  if (rulesRef === undefined) {
+    throw new EncounterCombatantError(
+      `actor '${actorInput.actorId}' needs rulesRef for combat projection`,
+    );
+  }
+  if (existing?.status === 'absent') {
+    // Admitting an absent actor is a new manifestation: it needs hit
+    // points of its own and starts alive with a fresh lifecycle.
+    if (actorInput.hpCurrent === undefined || actorInput.hpCurrent <= 0)
+      throw new EncounterCombatantError(
+        `campaign actor '${actorInput.actorId}' is absent (it vanished or was removed from play by its owning effect); admitting it again is a new manifestation and needs hpCurrent above 0`,
+      );
+    if (actorInput.status !== undefined && actorInput.status !== 'alive')
+      throw new EncounterCombatantError(
+        `campaign actor '${actorInput.actorId}' is absent; a new manifestation starts alive, not '${actorInput.status}'`,
+      );
+  }
+  const record = lookupCreatureRecord(db, rulesRef, input.resolveRulesPack);
+  const baselineHp = readCreatureHp(record);
+  const hpMax = actorInput.hpMax ?? existing?.hpMax ?? baselineHp;
+  // A new manifestation of an absent actor is a new creature: nothing from
+  // the manifestation that left play (conditions, exhaustion, death rules,
+  // 0-HP rule, heads) carries over; a new owning effect sets its own rules.
+  const remanifest = existing?.status === 'absent';
+  // An absent actor still held by an active actor link is a bonded
+  // creature (familiar, steed: 'vanish-bonded'). S1 returns it only through
+  // its spell: a Find Familiar cast restores presence, a Find Steed recast
+  // restores the same steed to maximum hit points. Admission must not stand in for
+  // it (S50): recast_bonded_summon restores it. Ending the owning effect
+  // frees the actor; a later admission is then a new creature.
+  if (
+    remanifest &&
+    existing !== undefined &&
+    hasActiveBondLink(db, input.campaignId, existing.actorId)
+  )
+    throw new EncounterCombatantError(
+      `campaign actor '${existing.actorId}' is absent but still bonded to its summoner (it disappeared at 0 hit points under its zero-hit-point rule); ` +
+        'it returns only when its summoner casts its spell again, which the model reports with recast_bonded_summon (Find Familiar, or Find Steed at maximum hit points). ' +
+        'Starting an encounter cannot bring it back; end the owning effect to release the bond if a new creature is wanted instead',
+    );
+  const conditions =
+    actorInput.conditions ?? (remanifest ? [] : (existing?.conditions ?? []));
+  const lifecycleBefore =
+    existing && !remanifest ? readCombatLifecycle(existing.state) : undefined;
+  const suppliedHp = actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax;
+  if (
+    existing &&
+    ['dead', 'dying', 'stable'].includes(existing.status) &&
+    ((actorInput.status !== undefined &&
+      actorInput.status !== existing.status) ||
+      (existing.status === 'dead' && suppliedHp > (existing.hpCurrent ?? 0)) ||
+      (existing.status !== 'dead' && suppliedHp > 0))
+  )
+    throw new EncounterCombatantError(
+      `start_encounter cannot change a ${existing.status} campaign actor or supply replacement HP; use the lifecycle tools`,
+    );
+  if (
+    lifecycleBefore?.recoveryBlock !== null &&
+    lifecycleBefore?.recoveryBlock !== undefined &&
+    suppliedHp > (existing?.hpCurrent ?? 0)
+  )
+    throw new EncounterCombatantError(
+      'start_encounter cannot raise HP while recovery is blocked; use the lifecycle tools',
+    );
+  const actorHeadCount = lifecycleBefore?.headCount ?? initialHeadCount(record);
+  const terminalCause =
+    exhaustionLevel(conditions) === 6 || actorHeadCount === 0;
+  if (
+    terminalCause &&
+    actorInput.status !== undefined &&
+    actorInput.status !== 'dead'
+  )
+    throw new EncounterCombatantError(
+      'start_encounter cannot admit a terminally dead creature as alive; use the lifecycle tools',
+    );
+  if (
+    (lifecycleBefore?.deathRules === 'player-character' ||
+      actorInput.status === 'dying' ||
+      actorInput.status === 'stable') &&
+    suppliedHp === 0 &&
+    !['dead', 'dying', 'stable'].includes(
+      actorInput.status ?? existing?.status ?? '',
+    )
+  )
+    throw new EncounterCombatantError(
+      'start_encounter cannot admit a 0 HP player-character as alive; use the lifecycle tools',
+    );
+  const hpCurrent = Math.min(
+    actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax,
+    effectiveHpMax(hpMax, conditions),
+  );
+  // A creature that leaves play or reverts at 0 hit points has no body at 0
+  // HP: it cannot be admitted at 0 HP in any status (only a terminal death by exhaustion or
+  // lost heads, already recorded, can stand at 0 HP).
+  if (
+    (leavesPlayAtZeroHp(lifecycleBefore?.zeroHpRule ?? null) ||
+      revertsFormAtZeroHp(lifecycleBefore?.zeroHpRule ?? null)) &&
+    hpCurrent === 0 &&
+    !(existing?.status === 'dead' && terminalCause)
+  )
+    throw new EncounterCombatantError(
+      `campaign actor '${actorInput.actorId}' ${describeZeroHpRule(lifecycleBefore?.zeroHpRule as ZeroHpRule)} at 0 hit points (its zero-hit-point rule), so it cannot be admitted at 0 hit points; ` +
+        'reduce it to 0 with damage in play (its rule then applies) or admit it with hit points above 0',
+    );
+  const actor = upsertCampaignActor(db, {
+    campaignId: input.campaignId,
+    actorId: actorInput.actorId,
+    displayName:
+      actorInput.displayName ??
+      existing?.displayName ??
+      record?.name ??
+      displayNameFromRulesRef(rulesRef),
+    actorKind: actorInput.actorKind ?? existing?.actorKind ?? 'creature',
+    sourceKind:
+      actorInput.sourceKind ?? existing?.sourceKind ?? 'campaign_created',
+    sourceRef: actorInput.sourceRef ?? existing?.sourceRef,
+    rulesRef,
+    hpCurrent,
+    hpMax,
+    conditions,
+    status:
+      existing?.status === 'absent'
+        ? 'alive'
+        : (actorInput.status ?? existing?.status ?? 'alive'),
+    currentLocationId:
+      actorInput.currentLocationId ?? existing?.currentLocationId ?? locationId,
+    state: remanifest
+      ? withoutCombatLifecycle(actorInput.state ?? existing?.state ?? {})
+      : (actorInput.state ?? existing?.state),
+    ...(remanifest ? { replaceCombatLifecycle: true } : {}),
+    provenance: input.provenance,
+    sessionId: input.sessionId,
+    at: input.at,
+  });
+  const lifecycle = readCombatLifecycle(actor.state);
+  // A new active row becomes the sole schedule owner via
+  // isCurrentActorProjection's ordering. Historical rows retain their valid
+  // lifecycle snapshots and are no longer eligible for clock resolution.
+  insertCombatant(db, {
+    campaignId: input.campaignId,
+    combatInstanceId: instance.combatInstanceId,
+    sourceEncounterId: instance.sourceEncounterId,
+    combatantId: projectedId,
+    identityKind: 'campaign_actor',
+    identityRef: actor.actorId,
+    displayLabel: actor.displayName,
+    rulesRef,
+    side: actorInput.side ?? 'enemy',
+    faction: actorInput.faction,
+    hpCurrent: Math.min(
+      actor.hpCurrent ?? hpMax,
+      effectiveHpMax(actor.hpMax ?? hpMax, actor.conditions),
+    ),
+    hpMax: actor.hpMax ?? hpMax,
+    ac: readCreatureAc(record),
+    conditions: actor.conditions,
+    status: terminalCause
+      ? 'dead'
+      : hpCurrent === 0
+        ? (lifecycle?.deathRules ?? 'monster') === 'player-character'
+          ? actor.status === 'stable' || actor.status === 'dead'
+            ? actor.status
+            : 'dying'
+          : actor.status === 'dead'
+            ? 'dead'
+            : // A monster-rules creature at 0 HP with no terminal cause was
+              // knocked out (its status may since have become inactive or
+              // escaped); it is unconscious, never killed by projection
+              // (S38, S41).
+              'unconscious'
+        : actorInput.status === undefined &&
+            (actor.status === 'escaped' ||
+              actor.status === 'inactive' ||
+              actor.status === 'unknown')
+          ? 'alive'
+          : actor.status === 'unknown' || actor.status === 'pocketed'
+            ? 'alive'
+            : actor.status,
+    headCount: lifecycle
+      ? (lifecycle.headCount ?? undefined)
+      : initialHeadCount(record),
+    locationId: actor.currentLocationId ?? locationId,
+    placement: actorInput.placement,
+    provenance: input.provenance,
+    sessionId: input.sessionId,
+    at: input.at,
+  });
+  db.prepare(
+    `UPDATE encounter_combatant SET death_rules=?, death_save_successes=?,
+     death_save_failures=?, recovery_block=?, stable_recovery_roll=?,
+     stable_recovery_anchor_elapsed_minutes=?, stable_recovery_deadline_elapsed_minutes=?,
+     stable_recovery_settled=?, zero_hp_rule=?
+     WHERE campaign_id=? AND combatant_id=?`,
+  ).run(
+    lifecycle?.deathRules ?? 'monster',
+    lifecycle?.deathSaveSuccesses ?? 0,
+    lifecycle?.deathSaveFailures ?? 0,
+    lifecycle?.recoveryBlock ?? null,
+    lifecycle?.stableRecovery?.roll ?? null,
+    lifecycle?.stableRecovery?.anchor ?? null,
+    lifecycle?.stableRecovery?.deadline ?? null,
+    lifecycle?.stableRecoverySettled ? 1 : 0,
+    lifecycle?.zeroHpRule ?? null,
+    input.campaignId,
+    projectedId,
+  );
+  if (lifecycle) {
+    db.prepare(`UPDATE encounter_combatant SET heads_died_since_own_turn=?, fire_damage_since_own_turn=?
+      WHERE campaign_id=? AND combatant_id=?`).run(
+      lifecycle.headsDiedSinceOwnTurn,
+      lifecycle.fireDamageSinceOwnTurn,
+      input.campaignId,
+      projectedId,
+    );
+  }
+  admitCombatantLifecycle(db, input.campaignId, projectedId, input);
+  const historicalRows = db
+    .prepare(`SELECT combatant_id FROM encounter_combatant
+      WHERE campaign_id=? AND identity_kind='campaign_actor' AND identity_ref=?
+        AND combatant_id<>? ORDER BY combat_instance_id, combatant_id`)
+    .all(input.campaignId, actor.actorId, projectedId) as Array<{
+    combatant_id: string;
+  }>;
+  for (const historical of historicalRows) {
+    const oldProjection = readCombatant(
+      db,
+      input.campaignId,
+      historical.combatant_id,
+    );
+    if (!oldProjection) continue;
+    const invalidated = transitionCombatantLifecycle(
+      readCombatantLifecycleState(db, oldProjection),
+      { type: 'invalidateProjection' },
+    );
+    persistCombatantLifecycle(db, oldProjection, invalidated, input);
+    assertCombatantLifecycle(
+      db,
+      input.campaignId,
+      oldProjection.combatantId,
+      oldProjection,
+    );
+  }
+  syncCombatantActor(db, input.campaignId, projectedId, input);
+  return projectedId;
+}
+
 export function startEncounter(
   db: Db,
   input: StartEncounterInput,
@@ -2013,260 +2317,13 @@ function startEncounterInTxn(
   }
 
   for (const actorInput of input.actors ?? []) {
-    if (actorInput.state?.combatLifecycle !== undefined)
-      throw new EncounterCombatantError(
-        'state.combatLifecycle is engine-owned and cannot be supplied when starting an encounter',
-      );
-    const existing = getCampaignActor(db, input.campaignId, actorInput.actorId);
-    const rulesRef = actorInput.rulesRef ?? existing?.rulesRef;
-    if (rulesRef === undefined) {
-      throw new EncounterCombatantError(
-        `actor '${actorInput.actorId}' needs rulesRef for combat projection`,
-      );
-    }
-    if (existing?.status === 'absent') {
-      // Admitting an absent actor is a new manifestation: it needs hit
-      // points of its own and starts alive with a fresh lifecycle.
-      if (actorInput.hpCurrent === undefined || actorInput.hpCurrent <= 0)
-        throw new EncounterCombatantError(
-          `campaign actor '${actorInput.actorId}' is absent (it vanished or was removed from play by its owning effect); admitting it again is a new manifestation and needs hpCurrent above 0`,
-        );
-      if (actorInput.status !== undefined && actorInput.status !== 'alive')
-        throw new EncounterCombatantError(
-          `campaign actor '${actorInput.actorId}' is absent; a new manifestation starts alive, not '${actorInput.status}'`,
-        );
-    }
-    const record = lookupCreatureRecord(db, rulesRef, input.resolveRulesPack);
-    const baselineHp = readCreatureHp(record);
-    const hpMax = actorInput.hpMax ?? existing?.hpMax ?? baselineHp;
-    // A new manifestation of an absent actor is a new creature: nothing from
-    // the manifestation that left play (conditions, exhaustion, death rules,
-    // 0-HP rule, heads) carries over; a new owning effect sets its own rules.
-    const remanifest = existing?.status === 'absent';
-    // An absent actor still held by an active actor link is a bonded
-    // creature (familiar, steed: 'vanish-bonded'). S1 returns it only through
-    // its spell: a Find Familiar cast restores presence, a Find Steed recast
-    // restores the same steed to maximum hit points. Admission must not stand in for
-    // it (S50): recast_bonded_summon restores it. Ending the owning effect
-    // frees the actor; a later admission is then a new creature.
-    if (
-      remanifest &&
-      existing !== undefined &&
-      hasActiveBondLink(db, input.campaignId, existing.actorId)
-    )
-      throw new EncounterCombatantError(
-        `campaign actor '${existing.actorId}' is absent but still bonded to its summoner (it disappeared at 0 hit points under its zero-hit-point rule); ` +
-          'it returns only when its summoner casts its spell again, which the model reports with recast_bonded_summon (Find Familiar, or Find Steed at maximum hit points). ' +
-          'Starting an encounter cannot bring it back; end the owning effect to release the bond if a new creature is wanted instead',
-      );
-    const conditions =
-      actorInput.conditions ?? (remanifest ? [] : (existing?.conditions ?? []));
-    const lifecycleBefore =
-      existing && !remanifest ? readCombatLifecycle(existing.state) : undefined;
-    const suppliedHp = actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax;
-    if (
-      existing &&
-      ['dead', 'dying', 'stable'].includes(existing.status) &&
-      ((actorInput.status !== undefined &&
-        actorInput.status !== existing.status) ||
-        (existing.status === 'dead' &&
-          suppliedHp > (existing.hpCurrent ?? 0)) ||
-        (existing.status !== 'dead' && suppliedHp > 0))
-    )
-      throw new EncounterCombatantError(
-        `start_encounter cannot change a ${existing.status} campaign actor or supply replacement HP; use the lifecycle tools`,
-      );
-    if (
-      lifecycleBefore?.recoveryBlock !== null &&
-      lifecycleBefore?.recoveryBlock !== undefined &&
-      suppliedHp > (existing?.hpCurrent ?? 0)
-    )
-      throw new EncounterCombatantError(
-        'start_encounter cannot raise HP while recovery is blocked; use the lifecycle tools',
-      );
-    const actorHeadCount =
-      lifecycleBefore?.headCount ?? initialHeadCount(record);
-    const terminalCause =
-      exhaustionLevel(conditions) === 6 || actorHeadCount === 0;
-    if (
-      terminalCause &&
-      actorInput.status !== undefined &&
-      actorInput.status !== 'dead'
-    )
-      throw new EncounterCombatantError(
-        'start_encounter cannot admit a terminally dead creature as alive; use the lifecycle tools',
-      );
-    if (
-      (lifecycleBefore?.deathRules === 'player-character' ||
-        actorInput.status === 'dying' ||
-        actorInput.status === 'stable') &&
-      suppliedHp === 0 &&
-      !['dead', 'dying', 'stable'].includes(
-        actorInput.status ?? existing?.status ?? '',
-      )
-    )
-      throw new EncounterCombatantError(
-        'start_encounter cannot admit a 0 HP player-character as alive; use the lifecycle tools',
-      );
-    const hpCurrent = Math.min(
-      actorInput.hpCurrent ?? existing?.hpCurrent ?? hpMax,
-      effectiveHpMax(hpMax, conditions),
+    admitCampaignActorToInstance(
+      db,
+      input,
+      { combatInstanceId, sourceEncounterId: input.encounterId, locationId },
+      actorInput,
+      `${combatInstanceId}-${slug(actorInput.actorId)}`,
     );
-    // A creature that leaves play or reverts at 0 hit points has no body at 0
-    // HP: it cannot be admitted at 0 HP in any status (only a terminal death by exhaustion or
-    // lost heads, already recorded, can stand at 0 HP).
-    if (
-      (leavesPlayAtZeroHp(lifecycleBefore?.zeroHpRule ?? null) ||
-        revertsFormAtZeroHp(lifecycleBefore?.zeroHpRule ?? null)) &&
-      hpCurrent === 0 &&
-      !(existing?.status === 'dead' && terminalCause)
-    )
-      throw new EncounterCombatantError(
-        `campaign actor '${actorInput.actorId}' ${describeZeroHpRule(lifecycleBefore?.zeroHpRule as ZeroHpRule)} at 0 hit points (its zero-hit-point rule), so it cannot be admitted at 0 hit points; ` +
-          'reduce it to 0 with damage in play (its rule then applies) or admit it with hit points above 0',
-      );
-    const actor = upsertCampaignActor(db, {
-      campaignId: input.campaignId,
-      actorId: actorInput.actorId,
-      displayName:
-        actorInput.displayName ??
-        existing?.displayName ??
-        record?.name ??
-        displayNameFromRulesRef(rulesRef),
-      actorKind: actorInput.actorKind ?? existing?.actorKind ?? 'creature',
-      sourceKind:
-        actorInput.sourceKind ?? existing?.sourceKind ?? 'campaign_created',
-      sourceRef: actorInput.sourceRef ?? existing?.sourceRef,
-      rulesRef,
-      hpCurrent,
-      hpMax,
-      conditions,
-      status:
-        existing?.status === 'absent'
-          ? 'alive'
-          : (actorInput.status ?? existing?.status ?? 'alive'),
-      currentLocationId:
-        actorInput.currentLocationId ??
-        existing?.currentLocationId ??
-        locationId,
-      state: remanifest
-        ? withoutCombatLifecycle(actorInput.state ?? existing?.state ?? {})
-        : (actorInput.state ?? existing?.state),
-      ...(remanifest ? { replaceCombatLifecycle: true } : {}),
-      provenance: input.provenance,
-      sessionId: input.sessionId,
-      at: input.at,
-    });
-    const lifecycle = readCombatLifecycle(actor.state);
-    // A new active row becomes the sole schedule owner via
-    // isCurrentActorProjection's ordering. Historical rows retain their valid
-    // lifecycle snapshots and are no longer eligible for clock resolution.
-    insertCombatant(db, {
-      campaignId: input.campaignId,
-      combatInstanceId,
-      sourceEncounterId: input.encounterId,
-      combatantId: `${combatInstanceId}-${slug(actor.actorId)}`,
-      identityKind: 'campaign_actor',
-      identityRef: actor.actorId,
-      displayLabel: actor.displayName,
-      rulesRef,
-      side: actorInput.side ?? 'enemy',
-      faction: actorInput.faction,
-      hpCurrent: Math.min(
-        actor.hpCurrent ?? hpMax,
-        effectiveHpMax(actor.hpMax ?? hpMax, actor.conditions),
-      ),
-      hpMax: actor.hpMax ?? hpMax,
-      ac: readCreatureAc(record),
-      conditions: actor.conditions,
-      status: terminalCause
-        ? 'dead'
-        : hpCurrent === 0
-          ? (lifecycle?.deathRules ?? 'monster') === 'player-character'
-            ? actor.status === 'stable' || actor.status === 'dead'
-              ? actor.status
-              : 'dying'
-            : actor.status === 'dead'
-              ? 'dead'
-              : // A monster-rules creature at 0 HP with no terminal cause was
-                // knocked out (its status may since have become inactive or
-                // escaped); it is unconscious, never killed by projection
-                // (S38, S41).
-                'unconscious'
-          : actorInput.status === undefined &&
-              (actor.status === 'escaped' ||
-                actor.status === 'inactive' ||
-                actor.status === 'unknown')
-            ? 'alive'
-            : actor.status === 'unknown'
-              ? 'alive'
-              : actor.status,
-      headCount: lifecycle
-        ? (lifecycle.headCount ?? undefined)
-        : initialHeadCount(record),
-      locationId: actor.currentLocationId ?? locationId,
-      placement: actorInput.placement,
-      provenance: input.provenance,
-      sessionId: input.sessionId,
-      at: input.at,
-    });
-    const projectedId = `${combatInstanceId}-${slug(actor.actorId)}`;
-    db.prepare(
-      `UPDATE encounter_combatant SET death_rules=?, death_save_successes=?,
-       death_save_failures=?, recovery_block=?, stable_recovery_roll=?,
-       stable_recovery_anchor_elapsed_minutes=?, stable_recovery_deadline_elapsed_minutes=?,
-       stable_recovery_settled=?, zero_hp_rule=?
-       WHERE campaign_id=? AND combatant_id=?`,
-    ).run(
-      lifecycle?.deathRules ?? 'monster',
-      lifecycle?.deathSaveSuccesses ?? 0,
-      lifecycle?.deathSaveFailures ?? 0,
-      lifecycle?.recoveryBlock ?? null,
-      lifecycle?.stableRecovery?.roll ?? null,
-      lifecycle?.stableRecovery?.anchor ?? null,
-      lifecycle?.stableRecovery?.deadline ?? null,
-      lifecycle?.stableRecoverySettled ? 1 : 0,
-      lifecycle?.zeroHpRule ?? null,
-      input.campaignId,
-      projectedId,
-    );
-    if (lifecycle) {
-      db.prepare(`UPDATE encounter_combatant SET heads_died_since_own_turn=?, fire_damage_since_own_turn=?
-        WHERE campaign_id=? AND combatant_id=?`).run(
-        lifecycle.headsDiedSinceOwnTurn,
-        lifecycle.fireDamageSinceOwnTurn,
-        input.campaignId,
-        projectedId,
-      );
-    }
-    admitCombatantLifecycle(db, input.campaignId, projectedId, input);
-    const historicalRows = db
-      .prepare(`SELECT combatant_id FROM encounter_combatant
-        WHERE campaign_id=? AND identity_kind='campaign_actor' AND identity_ref=?
-          AND combatant_id<>? ORDER BY combat_instance_id, combatant_id`)
-      .all(input.campaignId, actor.actorId, projectedId) as Array<{
-      combatant_id: string;
-    }>;
-    for (const historical of historicalRows) {
-      const oldProjection = readCombatant(
-        db,
-        input.campaignId,
-        historical.combatant_id,
-      );
-      if (!oldProjection) continue;
-      const invalidated = transitionCombatantLifecycle(
-        readCombatantLifecycleState(db, oldProjection),
-        { type: 'invalidateProjection' },
-      );
-      persistCombatantLifecycle(db, oldProjection, invalidated, input);
-      assertCombatantLifecycle(
-        db,
-        input.campaignId,
-        oldProjection.combatantId,
-        oldProjection,
-      );
-    }
-    syncCombatantActor(db, input.campaignId, projectedId, input);
   }
 
   const combatInstance = activeInstance(db, input.campaignId);
@@ -2715,6 +2772,9 @@ function syncCombatantActor(
   if (!isCurrentActorProjection(db, campaignId, c.identityRef, id)) return;
   const a = getCampaignActor(db, campaignId, c.identityRef);
   if (!a) return;
+  // A pocketed actor is out of play with its state already captured: the
+  // stale absent row it left behind must never overwrite it (eshyra-82uk).
+  if (a.status === 'pocketed' && c.status === 'absent') return;
   const pending = db
     .prepare(`SELECT heads_died_since_own_turn, fire_damage_since_own_turn, stable_recovery_settled
     FROM encounter_combatant WHERE campaign_id=? AND combatant_id=?`)
@@ -2967,7 +3027,7 @@ export function revertCampaignActorToNaturalForm(
         `SELECT combatant_id FROM encounter_combatant
          WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
            AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-         ORDER BY combatant_id LIMIT 1`,
+         ORDER BY rowid DESC LIMIT 1`,
       )
       .get(input.campaignId, input.actorId, input.campaignId) as
       | { combatant_id: string }
@@ -3091,12 +3151,14 @@ export function removeCampaignActorFromPlay(
         `SELECT combatant_id FROM encounter_combatant
          WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
            AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-         ORDER BY combatant_id LIMIT 1`,
+         ORDER BY rowid DESC LIMIT 1`,
       )
       .get(input.campaignId, input.actorId, input.campaignId) as
       | { combatant_id: string }
       | undefined;
-    if (projection !== undefined)
+    // A pocketed actor is already out of play; its stale absent row (if any)
+    // carries no state. Leaving play for good makes it absent (eshyra-82uk).
+    if (projection !== undefined && actor.status !== 'pocketed')
       return removeCombatantFromPlay(txn, {
         ...input,
         combatantId: projection.combatant_id,
@@ -3150,7 +3212,7 @@ export function restoreBondedCampaignActor(
   input: {
     readonly campaignId: string;
     readonly actorId: string;
-    readonly expectedPresence: 'absent' | 'present';
+    readonly expectedPresence: 'absent' | 'present' | 'pocket-dimension';
     readonly restore:
       | { readonly kind: 'maximum' }
       | { readonly kind: 'new-form'; readonly rulesRef: string };
@@ -3166,7 +3228,16 @@ export function restoreBondedCampaignActor(
       throw new EncounterCombatantError(
         `unknown campaign actor '${input.actorId}'`,
       );
-    if (input.expectedPresence === 'present') {
+    if (input.expectedPresence === 'pocket-dimension') {
+      if (actor.status !== 'pocketed')
+        throw new EncounterCombatantError(
+          `campaign actor '${actor.actorId}' is ${actor.status}, not in its pocket dimension; only a pocketed bonded creature can be reformed by a pocket-dimension recast`,
+        );
+      if (input.restore.kind !== 'new-form')
+        throw new EncounterCombatantError(
+          `campaign actor '${actor.actorId}' is in its pocket dimension; a recast can only reform it into a new form, never restore it at maximum hit points`,
+        );
+    } else if (input.expectedPresence === 'present') {
       if (actor.status !== 'alive')
         throw new EncounterCombatantError(
           `campaign actor '${actor.actorId}' is ${actor.status}, not alive; only a present bonded creature can be reformed by a recast`,
@@ -3192,7 +3263,7 @@ export function restoreBondedCampaignActor(
         `SELECT combatant_id FROM encounter_combatant
          WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
            AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
-         ORDER BY combatant_id LIMIT 1`,
+         ORDER BY rowid DESC LIMIT 1`,
       )
       .get(input.campaignId, actor.actorId, input.campaignId) as
       | { combatant_id: string }
@@ -3240,7 +3311,9 @@ export function restoreBondedCampaignActor(
       hpCurrent,
       hpMax,
       conditions: actor.conditions,
-      status: 'alive',
+      // A pocketed familiar stays in its pocket dimension: only its form changes.
+      status:
+        input.expectedPresence === 'pocket-dimension' ? 'pocketed' : 'alive',
       currentLocationId: actor.currentLocationId,
       state: actor.state,
       replaceCombatLifecycle: true,
@@ -3249,6 +3322,215 @@ export function restoreBondedCampaignActor(
       at: input.at,
     });
     return { rulesRef, hpCurrent, hpMax };
+  });
+}
+
+/** The live (non-absent) combatant row an actor currently has in the active
+ *  combat instance, if any: the newest row, since a bonded creature that was
+ *  dismissed and recalled leaves older absent rows behind. */
+export function findLiveActorCombatantId(
+  db: Db,
+  campaignId: string,
+  actorId: string,
+): string | undefined {
+  const row = db
+    .prepare(
+      `SELECT combatant_id, status FROM encounter_combatant
+       WHERE campaign_id = ? AND identity_kind = 'campaign_actor' AND identity_ref = ?
+         AND combat_instance_id IN (SELECT combat_instance_id FROM combat_instance WHERE campaign_id = ? AND status = 'active')
+       ORDER BY rowid DESC LIMIT 1`,
+    )
+    .get(campaignId, actorId, campaignId) as
+    | { combatant_id: string; status: string }
+    | undefined;
+  return row === undefined || row.status === 'absent'
+    ? undefined
+    : row.combatant_id;
+}
+
+/** eshyra-82uk: take a bonded creature out of play. 'absent' is for dismissal
+ *  forever, release and the steed's dismissal; 'pocketed' is Find Familiar's
+ *  temporary dismissal to its pocket dimension. When the creature has a live
+ *  combatant in the active instance, that combatant leaves through the F3
+ *  remove seam (row becomes absent, concentration ends as for any leaving
+ *  play) and the actor takes the combatant's hit points, conditions and
+ *  lifecycle; otherwise the actor itself changes status. A pocketed actor
+ *  keeps its hit points, conditions, rules reference and lifecycle. */
+export function moveBondedCreatureOutOfPlay(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly actorId: string;
+    readonly to: 'absent' | 'pocketed';
+    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+): { readonly combatantLeft: string | undefined } {
+  return withTransaction(db, (txn) => {
+    const actor = getCampaignActor(txn, input.campaignId, input.actorId);
+    if (actor === undefined)
+      throw new EncounterCombatantError(
+        `unknown campaign actor '${input.actorId}'`,
+      );
+    const combatantLeft = findLiveActorCombatantId(
+      txn,
+      input.campaignId,
+      input.actorId,
+    );
+    if (input.to === 'absent') {
+      removeCampaignActorFromPlay(txn, input);
+      return { combatantLeft };
+    }
+    if (actor.status !== 'alive')
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' is ${actor.status}; only a present creature can be dismissed to its pocket dimension`,
+      );
+    if (combatantLeft !== undefined)
+      removeCombatantFromPlay(txn, {
+        campaignId: input.campaignId,
+        combatantId: combatantLeft,
+        ...(input.resolveRulesPack === undefined
+          ? {}
+          : { resolveRulesPack: input.resolveRulesPack }),
+        provenance: input.provenance,
+        sessionId: input.sessionId,
+        at: input.at,
+      });
+    // The remove seam synced the combatant's state onto the actor (as absent);
+    // keep all of it and only change the status.
+    const synced = getCampaignActor(txn, input.campaignId, input.actorId);
+    if (synced === undefined)
+      throw new EncounterCombatantError('campaign actor update failed');
+    upsertCampaignActor(txn, {
+      campaignId: input.campaignId,
+      actorId: synced.actorId,
+      displayName: synced.displayName,
+      actorKind: synced.actorKind,
+      sourceKind: synced.sourceKind,
+      sourceRef: synced.sourceRef,
+      rulesRef: synced.rulesRef,
+      hpCurrent: synced.hpCurrent,
+      hpMax: synced.hpMax,
+      conditions: synced.conditions,
+      status: 'pocketed',
+      currentLocationId: synced.currentLocationId,
+      state: synced.state,
+      replaceCombatLifecycle: true,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+    return { combatantLeft };
+  });
+}
+
+/** eshyra-82uk: recall a pocketed bonded creature (Find Familiar). The actor
+ *  returns alive with the hit points, conditions and lifecycle it had. When a
+ *  combat instance is active it is projected into it as a NEW combatant row
+ *  (an absent row never returns) through the same projection start_encounter
+ *  uses; side and faction default to the actor's most recent row in that
+ *  instance, and a creature with no such row needs `side`. */
+export function recallPocketedCampaignActor(
+  db: Db,
+  input: {
+    readonly campaignId: string;
+    readonly actorId: string;
+    readonly side?: string;
+    readonly faction?: string;
+    readonly placement?: string;
+    readonly resolveRulesPack?: CampaignRulesPackResolver;
+    readonly provenance: string;
+    readonly sessionId: string;
+    readonly at: string;
+  },
+): { readonly combatantEntered: string | undefined } {
+  return withTransaction(db, (txn) => {
+    const actor = getCampaignActor(txn, input.campaignId, input.actorId);
+    if (actor === undefined)
+      throw new EncounterCombatantError(
+        `unknown campaign actor '${input.actorId}'`,
+      );
+    if (actor.status !== 'pocketed')
+      throw new EncounterCombatantError(
+        `campaign actor '${actor.actorId}' is ${actor.status}, not in its pocket dimension`,
+      );
+    const instance = activeInstance(txn, input.campaignId);
+    let side = input.side;
+    let faction = input.faction;
+    let projectedId: string | undefined;
+    if (instance !== undefined) {
+      const prior = txn
+        .prepare(
+          `SELECT side, faction FROM encounter_combatant
+           WHERE campaign_id = ? AND combat_instance_id = ?
+             AND identity_kind = 'campaign_actor' AND identity_ref = ?
+           ORDER BY rowid DESC LIMIT 1`,
+        )
+        .get(input.campaignId, instance.combatInstanceId, actor.actorId) as
+        | { side: string; faction: string | null }
+        | undefined;
+      side ??= prior?.side;
+      if (input.faction === undefined && prior?.side === side)
+        faction = prior?.faction ?? undefined;
+      if (side === undefined)
+        throw new EncounterCombatantError(
+          `combat instance '${instance.combatInstanceId}' is active and '${actor.actorId}' has no combatant in it to take a side from; pass side (and faction) for the recalled creature`,
+        );
+      const base = `${instance.combatInstanceId}-${slug(actor.actorId)}`;
+      projectedId = base;
+      for (
+        let n = 2;
+        readCombatant(txn, input.campaignId, projectedId) !== undefined;
+        n += 1
+      )
+        projectedId = `${base}-${n}`;
+    }
+    upsertCampaignActor(txn, {
+      campaignId: input.campaignId,
+      actorId: actor.actorId,
+      displayName: actor.displayName,
+      actorKind: actor.actorKind,
+      sourceKind: actor.sourceKind,
+      sourceRef: actor.sourceRef,
+      rulesRef: actor.rulesRef,
+      hpCurrent: actor.hpCurrent,
+      hpMax: actor.hpMax,
+      conditions: actor.conditions,
+      status: 'alive',
+      currentLocationId: actor.currentLocationId,
+      state: actor.state,
+      replaceCombatLifecycle: true,
+      provenance: input.provenance,
+      sessionId: input.sessionId,
+      at: input.at,
+    });
+    if (
+      instance === undefined ||
+      projectedId === undefined ||
+      side === undefined
+    )
+      return { combatantEntered: undefined };
+    admitCampaignActorToInstance(
+      txn,
+      input,
+      {
+        combatInstanceId: instance.combatInstanceId,
+        sourceEncounterId: instance.sourceEncounterId,
+        locationId: instance.locationId,
+      },
+      {
+        actorId: actor.actorId,
+        side,
+        ...(faction === undefined ? {} : { faction }),
+        ...(input.placement === undefined
+          ? {}
+          : { placement: input.placement }),
+      },
+      projectedId,
+    );
+    return { combatantEntered: projectedId };
   });
 }
 
