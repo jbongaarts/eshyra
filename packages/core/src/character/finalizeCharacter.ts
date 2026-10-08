@@ -113,6 +113,61 @@ export interface FinalizeMetadata {
  * core {@link CharacterSheetStore}; the live `character` row projects a few of
  * its columns for the per-turn path.
  */
+/**
+ * One durable option-catalog / list feature choice the character has made
+ * (eshyra-ug4i.3): a Fighting Style, Metamagic, Eldritch Invocation, Pact Boon,
+ * Hunter option and the like. `featureRef` is the owning `feature:` record,
+ * `choiceId` the `choices[].id` within it, `optionIds` the selected option ids
+ * (e.g. `pact-boon:pact-of-the-chain`), `level` the class level it was taken at.
+ */
+export interface CharacterFeatureChoice {
+  readonly featureRef: string;
+  readonly choiceId: string;
+  readonly optionIds: readonly string[];
+  readonly level: number;
+}
+
+/** Validate the shape of a sheet's optional `featureChoices` (old sheets omit it). */
+export function validateCharacterSheetFeatureChoices(
+  sheet: CharacterSheet,
+): void {
+  const entries: unknown = sheet.featureChoices;
+  if (entries === undefined) return;
+  if (!Array.isArray(entries)) {
+    throw new Error('character sheet featureChoices must be an array');
+  }
+  for (const [index, entry] of entries.entries()) {
+    const where = `character sheet featureChoices[${index}]`;
+    if (entry === null || typeof entry !== 'object') {
+      throw new Error(`${where} must be an object`);
+    }
+    const { featureRef, choiceId, optionIds, level } = entry as Record<
+      string,
+      unknown
+    >;
+    if (
+      typeof featureRef !== 'string' ||
+      !/^feature:[^\s]+$/.test(featureRef)
+    ) {
+      throw new Error(`${where}.featureRef must be a 'feature:' record ref`);
+    }
+    if (typeof choiceId !== 'string' || choiceId.length === 0) {
+      throw new Error(`${where}.choiceId must be a non-empty string`);
+    }
+    if (
+      !Array.isArray(optionIds) ||
+      optionIds.length === 0 ||
+      optionIds.some((id) => typeof id !== 'string' || id.length === 0) ||
+      new Set(optionIds).size !== optionIds.length
+    ) {
+      throw new Error(`${where}.optionIds must be distinct non-empty strings`);
+    }
+    if (!Number.isInteger(level) || (level as number) < 1) {
+      throw new Error(`${where}.level must be a positive integer`);
+    }
+  }
+}
+
 export interface CharacterSheet {
   readonly schemaVersion: 1;
   readonly system: string;
@@ -169,6 +224,13 @@ export interface CharacterSheet {
   readonly wallet?: CharacterWallet;
   readonly languages: readonly string[];
   readonly spells: readonly string[];
+  /**
+   * Option-catalog feature choices made at level-up (fighting style, metamagic,
+   * eldritch invocations, pact boon, hunter options), in acquisition order.
+   * Optional: sheets that predate it, and characters who have made none, omit
+   * it. Level-1 creation choices are not recorded here yet (eshyra-nnj6).
+   */
+  readonly featureChoices?: readonly CharacterFeatureChoice[];
   readonly metadata: FinalizeMetadata;
 }
 
@@ -176,6 +238,9 @@ export interface CharacterSheet {
 export function validateCharacterSheetRollEvidence(
   sheet: CharacterSheet,
 ): void {
+  // Every store/registry path that persists or loads a sheet already calls this
+  // validator, so the optional `featureChoices` shape check rides along here.
+  validateCharacterSheetFeatureChoices(sheet);
   if (sheet.rolledAbilityScores === undefined) return;
   validateRolledAbilityScoreSet(sheet.rolledAbilityScores);
   const assigned = Object.fromEntries(

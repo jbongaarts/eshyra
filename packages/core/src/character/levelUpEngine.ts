@@ -16,6 +16,15 @@
 //   - the HP increase, using fixed average or immutable caller-supplied rolled
 //     evidence, with floor(hitDie/2)+1 and CON modifier for fixed average.
 //
+// Option-catalog / list feature choices (eshyra-ug4i.3): a Fighting Style,
+// Metamagic options, Eldritch Invocations (plus their growth and the optional
+// replacement), a Pact Boon and Hunter options are detected from the pack's
+// feature `choices[]`, validated against the option catalog and structured
+// prerequisites, applied through the choice change set, and PERSISTED on the
+// sheet's optional `featureChoices`. Only the pick is recorded: the chosen
+// option's mechanical effect (Archery's +2, an invocation's benefit) is NOT
+// implemented here and stays DM-adjudicated. See levelUpFeatureChoices.ts.
+//
 // The whole step is one transaction: the updated sheet is saved, the live
 // `character` projection (level, hp_max, hp_current) is mutated through the
 // validated provenance seam, and a `level-up` ledger row carrying the full
@@ -53,6 +62,11 @@ import {
 } from './characterSheetStore.js';
 import type { SavingThrowDerived } from './derivedValues.js';
 import type { CharacterSheet } from './finalizeCharacter.js';
+import {
+  applyFeatureChoicesToSheet,
+  detectFeatureChoiceDescriptors,
+  resolveFeatureChoiceSelection,
+} from './levelUpFeatureChoices.js';
 import {
   getBundledDnd5eCharacterResolver,
   type ResolvedClassData,
@@ -203,6 +217,18 @@ export type LevelUpRequiredChoiceKind =
 
 export type LevelUpRequiredChoiceStatus = 'supported' | 'unsupported';
 
+/** A displayable option of a list choice, with its prerequisite when it has one. */
+export interface LevelUpChoiceOption {
+  readonly id: string;
+  readonly name: string;
+  /** Verbatim SRD prerequisite text. */
+  readonly prerequisite?: string;
+  /** Structured prerequisite clauses the engine validates (fail closed if unknown). */
+  readonly prerequisites?: NonNullable<
+    import('../rules/featureChoices.js').FeatureChoiceOption['prerequisites']
+  >;
+}
+
 /** A required level-up decision the engine surfaces instead of guessing. */
 export interface LevelUpRequiredChoice {
   /** Stable identifier used as the key in {@link ApplyLevelUpInput.choices}. */
@@ -215,6 +241,21 @@ export interface LevelUpRequiredChoice {
   readonly choose?: number;
   /** The option set, when structured. */
   readonly from?: readonly string[];
+  /** Option display data (names, prerequisites) for a list choice. */
+  readonly options?: readonly LevelUpChoiceOption[];
+  /** An optional choice never blocks: an empty selection skips it. */
+  readonly optional?: boolean;
+  /**
+   * Set on option-catalog feature choices: which `featureChoices` entry the
+   * selection is persisted under. `replacement` choices take `[oldId, newId]`
+   * and `heldOptionIds` lists the options that may be replaced.
+   */
+  readonly featureChoice?: {
+    readonly featureRef: string;
+    readonly choiceId: string;
+    readonly replacement?: boolean;
+    readonly heldOptionIds?: readonly string[];
+  };
   /** Human-readable explanation of what must be decided. */
   readonly reason: string;
   /** The pack feature ref that triggered this choice, when applicable. */
@@ -231,11 +272,23 @@ export interface LevelUpAppliedChoice {
   readonly id: string;
   readonly kind: Extract<
     LevelUpRequiredChoiceKind,
-    'subclass' | 'ability-score-improvement'
+    | 'subclass'
+    | 'ability-score-improvement'
+    | 'fighting-style'
+    | 'class-feature-choice'
   >;
   readonly value: string;
   readonly label: string;
   readonly featureRefs: readonly string[];
+  /** Option-catalog pick persisted on `CharacterSheet.featureChoices`. */
+  readonly featureChoice?: {
+    readonly featureRef: string;
+    readonly choiceId: string;
+    readonly optionIds: readonly string[];
+    readonly level: number;
+    /** Set when this pick replaced a held option (invocation replacement). */
+    readonly replaces?: string;
+  };
   readonly abilityScoreIncreases?: readonly AppliedAbilityScoreIncrease[];
   readonly featRef?: string;
 }
@@ -281,7 +334,13 @@ const SUBCLASS_FEATURE_SUFFIXES: ReadonlySet<string> = new Set([
   'arcane-tradition',
 ]);
 
-/** Other choice-bearing class features that require a player pick. */
+/**
+ * Other choice-bearing class features that require a player pick. Since
+ * eshyra-ug4i.3 these are a FALLBACK: a feature whose pack record carries a
+ * structured list choice is handled by levelUpFeatureChoices.ts, and only a
+ * feature the structured path did not cover (no/unsupported structured choice)
+ * still falls back to the unsupported descriptor.
+ */
 const CLASS_FEATURE_CHOICE_SUFFIXES: ReadonlySet<string> = new Set([
   'eldritch-invocations',
   'pact-boon',
@@ -437,6 +496,7 @@ export function previewLevelUpChangeSet(
     sheet,
     resolver,
     binding,
+    input.choices ?? {},
   );
   const resolvedChoices = resolveLevelUpChoices(
     requiredChoices,
@@ -566,6 +626,7 @@ export function detectLevelUpRequiredChoices(
   sheet: CharacterSheet,
   resolver: RulesPackCharacterResolver = getBundledDnd5eCharacterResolver(),
   binding: CampaignRulesBinding = DEFAULT_DND5E_SRD_BINDING,
+  selections: LevelUpChoiceSelections = {},
 ): readonly LevelUpRequiredChoice[] {
   assertSupportedCharacterBuild(sheet, {
     operation: 'level-up choice detection',
@@ -602,6 +663,72 @@ export function detectLevelUpRequiredChoices(
       );
     }
   }
+
+  // Option-catalog list choices (eshyra-ug4i.3). `selections` lets a choice
+  // that only exists because of another pick in this level-up (a Hunter option
+  // after choosing the Hunter subclass; Tome cantrips after Pact of the Tome)
+  // appear once that pick is supplied.
+  const subclassSelection = choices.find(
+    (choice) => choice.kind === 'subclass' && choice.status === 'supported',
+  );
+  const selectedSubclass =
+    subclassSelection === undefined
+      ? undefined
+      : resolveSubclassSelection(
+          selections[subclassSelection.id]?.[0] ?? '',
+          classKey,
+          resolver,
+        );
+  const targetFeatureRefs = [
+    ...toRow.featureRefs,
+    ...existingSubclassFeatureRefsForLevel(sheet, toLevel, resolver),
+    ...(selectedSubclass === undefined
+      ? []
+      : subclassFeatureRefsForLevel(selectedSubclass, toLevel, resolver)),
+  ];
+  const heldFeatureRefs = new Set<string>();
+  for (let level = 1; level <= sheet.level; level += 1) {
+    const heldRow = resolver.resolveClassLevel(classKey, level);
+    if (heldRow.ok) {
+      for (const ref of heldRow.record.featureRefs) heldFeatureRefs.add(ref);
+    }
+    if (sheet.subclass !== undefined) {
+      for (const ref of existingSubclassFeatureRefsForLevel(
+        sheet,
+        level,
+        resolver,
+      )) {
+        heldFeatureRefs.add(ref);
+      }
+    }
+  }
+  const featureChoices = detectFeatureChoiceDescriptors({
+    sheet,
+    classKey,
+    fromLevel: sheet.level,
+    toLevel,
+    targetFeatureRefs,
+    heldFeatureRefs,
+    invocationsKnown: {
+      from: fromRow?.spellcasting?.invocationsKnown,
+      to: toRow.spellcasting?.invocationsKnown,
+    },
+    resolver,
+    selections,
+  });
+  if (featureChoices.coveredFeatureRefs.size > 0) {
+    for (let index = choices.length - 1; index >= 0; index -= 1) {
+      const entry = choices[index];
+      if (
+        entry?.featureRef !== undefined &&
+        entry.status === 'unsupported' &&
+        featureChoices.coveredFeatureRefs.has(entry.featureRef)
+      ) {
+        choices.splice(index, 1);
+      }
+    }
+  }
+  choices.push(...featureChoices.choices);
 
   choices.push(
     ...subclassFeatureSlotChoices(
@@ -833,6 +960,25 @@ function resolveLevelUpChoices(
       continue;
     }
     const selected = selections[choice.id] ?? [];
+    if (choice.featureChoice !== undefined) {
+      const resolution = resolveFeatureChoiceSelection(
+        choice,
+        selected,
+        sheet,
+        targetLevel,
+        resolver,
+        selections,
+      );
+      if (!resolution.ok) {
+        blockers.push({
+          ...choice,
+          reason: `${choice.reason}; selection refused: ${resolution.reason}`,
+        });
+      } else if (resolution.applied !== undefined) {
+        applied.push(resolution.applied);
+      }
+      continue;
+    }
     if (
       choice.kind !== 'ability-score-improvement' &&
       selected.length !== (choice.choose ?? 1)
@@ -1236,8 +1382,13 @@ function applyChangeSetToSheet(
       ? []
       : [{ key: choice.featRef, name: choice.label }],
   );
+  const featureChoices = applyFeatureChoicesToSheet(
+    sheet.featureChoices,
+    appliedChoices,
+  );
   const next: CharacterSheet = {
     ...sheet,
+    ...(featureChoices !== undefined ? { featureChoices } : {}),
     level: changeSet.level.to,
     proficiencyBonus: changeSet.proficiencyBonus.to,
     maxHitPoints: changeSet.hitPoints.maxHitPoints.to,

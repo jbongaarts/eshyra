@@ -251,6 +251,7 @@ export {
 } from './character/currency.js';
 export { DND5E_SRD_CHARACTER_RECIPE } from './character/dnd5eRecipe.js';
 export type {
+  CharacterFeatureChoice,
   CharacterSheet,
   CharacterWallet,
 } from './character/finalizeCharacter.js';
